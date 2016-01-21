@@ -1,0 +1,52 @@
+/* Copyright (C) 2015 PISM Authors
+ *
+ * This file is part of PISM.
+ *
+ * PISM is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PISM; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include <cmath>
+
+#include "Hooke.hh"
+#include "base/util/PISMConfigInterface.hh"
+
+namespace pism {
+namespace rheology {
+
+// Hooke
+
+Hooke::Hooke(const std::string &prefix,
+             const Config &config, EnthalpyConverter::Ptr EC)
+  : PatersonBudd(prefix, config, EC) {
+  m_name = "Hooke";
+
+  m_Q_Hooke  = config.get_double("Hooke_Q");
+  m_A_Hooke  = config.get_double("Hooke_A");
+  m_C_Hooke  = config.get_double("Hooke_C");
+  m_K_Hooke  = config.get_double("Hooke_k");
+  m_Tr_Hooke = config.get_double("Hooke_Tr");
+}
+
+Hooke::~Hooke() {
+  // empty
+}
+
+double Hooke::softness_from_temp(double T_pa) const {
+  return m_A_Hooke * exp(-m_Q_Hooke/(m_ideal_gas_constant * T_pa)
+                         + 3.0 * m_C_Hooke * pow(m_Tr_Hooke - T_pa, -m_K_Hooke));
+}
+
+} // end of namespace rheology
+} // end of namespace pism

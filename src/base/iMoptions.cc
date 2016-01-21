@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,123 +22,94 @@
 #include <set>
 
 #include "iceModel.hh"
-#include "PISMBedDef.hh"
-#include "bedrockThermalUnit.hh"
-#include "PISMYieldStress.hh"
-#include "PISMOceanKill.hh"
-#include "PISMHydrology.hh"
-#include "PISMStressBalance.hh"
-#include "PISMOcean.hh"
-#include "PISMSurface.hh"
-#include "pism_options.hh"
-#include "IceGrid.hh"
+
+#include "base/basalstrength/PISMYieldStress.hh"
+#include "base/calving/PISMOceanKill.hh"
+#include "base/energy/bedrockThermalUnit.hh"
+#include "base/hydrology/PISMHydrology.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/pism_options.hh"
+#include "coupler/PISMOcean.hh"
+#include "coupler/PISMSurface.hh"
+#include "earth/PISMBedDef.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 
 //! Read some runtime (command line) options and alter the corresponding parameters or flags as appropriate.
-PetscErrorCode  IceModel::setFromOptions() {
-  PetscErrorCode ierr;
-  bool flag;
+void IceModel::setFromOptions() {
 
-  ierr = verbPrintf(3, grid.com,
-                    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
+  m_log->message(3,
+             "Processing physics-related command-line options...\n");
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options overriding config flags and parameters", ""); CHKERRQ(ierr);
+  set_config_from_options(*m_config);
 
-  ierr = set_config_from_options(grid.com, config); CHKERRQ(ierr);
-
-  ierr = OptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
-  ierr = OptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
-
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  id = options::Integer("-id", "Specifies the sounding row", id);
+  jd = options::Integer("-jd", "Specifies the sounding column", jd);
 
   // Set global attributes using the config database:
-  global_attributes.set_string("title", config.get_string("run_title"));
-  global_attributes.set_string("institution", config.get_string("institution"));
+  global_attributes.set_string("title", m_config->get_string("run_title"));
+  global_attributes.set_string("institution", m_config->get_string("institution"));
   global_attributes.set_string("command", pism_args_string());
 
   // warn about some option combinations
 
-  if (config.get("maximum_time_step_years") <= 0) {
-    PetscPrintf(grid.com, "PISM ERROR: maximum_time_step_years has to be greater than 0.\n");
-    PISMEnd();
-  }
-  
-  if (config.get_flag("do_mass_conserve") == false &&
-      config.get_flag("do_skip")) {
-    ierr = verbPrintf(2, grid.com,
-      "PISM WARNING: Both -skip and -no_mass are set.\n"
-      "              -skip only makes sense in runs updating ice geometry.\n"); CHKERRQ(ierr);
+  if (m_config->get_double("maximum_time_step_years") <= 0) {
+    throw RuntimeError("maximum_time_step_years has to be greater than 0.");
   }
 
-  if (config.get_string("calving_methods").find("thickness_calving") != std::string::npos &&
-      config.get_flag("part_grid") == false) {
-    ierr = verbPrintf(2, grid.com,
-      "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
-      "              without application of partially filled grid cell scheme (-part_grid)\n"
-      "              may lead to (incorrect) non-moving ice shelf front.\n"); CHKERRQ(ierr);
+  if (not m_config->get_boolean("do_mass_conserve") &&
+      m_config->get_boolean("do_skip")) {
+    m_log->message(2,
+               "PISM WARNING: Both -skip and -no_mass are set.\n"
+               "              -skip only makes sense in runs updating ice geometry.\n");
   }
 
-
-  // implements an option e.g. described in \ref Greve that is the
-  // enhancement factor is coupled to the age of the ice with
-  // e = 1 (A < 11'000 years), e = 3 otherwise
-  if (config.get_flag("e_age_coupling")) {
-    ierr = verbPrintf(2, grid.com,
-                      "  setting age-dependent enhancement factor: "
-                      "e=1 if A<11'000 years, e=3 otherwise\n"); CHKERRQ(ierr);
-
+  if (m_config->get_string("calving_methods").find("thickness_calving") != std::string::npos &&
+      not m_config->get_boolean("part_grid")) {
+    m_log->message(2,
+               "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
+               "              without application of partially filled grid cell scheme (-part_grid)\n"
+               "              may lead to (incorrect) non-moving ice shelf front.\n");
   }
-
-  return 0;
 }
 
 //! Set the output file size using a command-line option.
-PetscErrorCode IceModel::output_size_from_option(const std::string &option,
-                                                 const std::string &description,
-                                                 const std::string &default_value,
-                                                 std::set<std::string> &result) {
-  PetscErrorCode ierr;
+std::set<std::string> IceModel::output_size_from_option(const std::string &option,
+                                                        const std::string &description,
+                                                        const std::string &default_value) {
 
-  std::set<std::string> choices;
-  std::string keyword;
-  bool flag;
+  options::Keyword o_size(option, description, "none,small,medium,big,2dbig",
+                          default_value);
 
-  choices.insert("none");
-  choices.insert("small");
-  choices.insert("medium");
-  choices.insert("big");
-  ierr = OptionsList(grid.com, option,
-                     description, choices,
-                     default_value, keyword, flag); CHKERRQ(ierr);
-
-  ierr = set_output_size(keyword, result); CHKERRQ(ierr);
-
-  return 0;
+  return set_output_size(o_size);
 }
 
 //! Assembles a list of variables corresponding to an output file size.
-PetscErrorCode IceModel::set_output_size(const std::string &keyword,
-                                         std::set<std::string> &result) {
-  result.clear();
+std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
+  std::set<std::string> result;
 
   if (keyword == "none") {
-    return 0;
+    return result;
   }
 
   // Add all the model-state variables:
-  std::set<std::string> vars = variables.keys();
+  std::set<std::string> vars = m_grid->variables().keys();
 
-  std::set<std::string>::const_iterator i = vars.begin();
-  while (i != vars.end()) {
-    IceModelVec *var = variables.get(*i);
-    NCSpatialVariable &m = var->metadata();
+  std::set<std::string>::const_iterator i;
+  for (i = vars.begin(); i != vars.end(); ++i) {
+    const SpatialVariableMetadata &m = m_grid->variables().get(*i)->metadata();
 
     std::string intent = m.get_string("pism_intent");
-    if ((intent == "model_state") || (intent == "mapping") || (intent == "climate_steady")) {
+
+    if (intent == "model_state" or
+        intent == "mapping"     or
+        intent == "climate_steady") {
       result.insert(*i);
     }
-    ++i;
   }
 
   // add cumulative quantities to ensure continuity after restarting
@@ -160,75 +131,87 @@ PetscErrorCode IceModel::set_output_size(const std::string &keyword,
 
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):
-    std::string tmp = config.get_string("output_medium");
+    std::string tmp = m_config->get_string("output_medium");
     std::istringstream keywords(tmp);
 
     // split the list; note that this also removes any duplicate entries
     while (getline(keywords, tmp, ' ')) {
-      if (!tmp.empty())                // this ignores multiple spaces separating variable names
+      if (not tmp.empty()) {                // this ignores multiple spaces separating variable names
        result.insert(tmp);
+      }
+    }
+  } else if (keyword == "2dbig") {
+    // add all the variables listed in the config file ("2dbig" size):
+    std::string tmp = m_config->get_string("output_2dbig");
+    std::istringstream keywords(tmp);
+
+    // split the list; note that this also removes any duplicate entries
+    while (getline(keywords, tmp, ' ')) {
+      if (not tmp.empty()) { // this ignores multiple spaces separating variable names
+       result.insert(tmp);
+      }
     }
   } else if (keyword == "big") {
     // add all the variables listed in the config file ("big" size):
-    std::string tmp = config.get_string("output_big");
+    std::string tmp = m_config->get_string("output_big");
     std::istringstream keywords(tmp);
 
     // split the list; note that this also removes any duplicate entries
     while (getline(keywords, tmp, ' ')) {
-      if (!tmp.empty())                // this ignores multiple spaces separating variable names
+      if (not tmp.empty()) { // this ignores multiple spaces separating variable names
        result.insert(tmp);
+      }
     }
 
-    if (!config.get_flag("do_age"))
+    if (not m_config->get_boolean("do_age")) {
       result.erase("age");
+    }
   }
 
-  if (config.get_flag("do_age"))
+  if (m_config->get_boolean("do_age")) {
     result.insert("age");
+  }
 
-  if (ocean_kill_calving != NULL)
+  if (ocean_kill_calving != NULL) {
     ocean_kill_calving->add_vars_to_output(keyword, result);
+  }
 
-  if (beddef != NULL)
+  if (beddef != NULL) {
     beddef->add_vars_to_output(keyword, result);
+  }
 
-  if (btu != NULL)
+  if (btu != NULL) {
     btu->add_vars_to_output(keyword, result);
+  }
 
-  if (basal_yield_stress_model != NULL)
+  if (basal_yield_stress_model != NULL) {
     basal_yield_stress_model->add_vars_to_output(keyword, result);
+  }
 
   // Ask the stress balance module to add more variables:
-  if (stress_balance != NULL)
+  if (stress_balance != NULL) {
     stress_balance->add_vars_to_output(keyword, result);
+  }
 
-  if (subglacial_hydrology != NULL)
+  if (subglacial_hydrology != NULL) {
     subglacial_hydrology->add_vars_to_output(keyword, result);
+  }
 
   // Ask ocean and surface models to add more variables to the list:
-  if (ocean != NULL)
+  if (ocean != NULL) {
     ocean->add_vars_to_output(keyword, result);
+  }
 
-  if (surface != NULL)
+  if (surface != NULL) {
     surface->add_vars_to_output(keyword, result);
-
-  return 0;
+  }
+  return result;
 }
 
 
 //! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
 std::string IceModel::get_output_size(const std::string &option) {
-  std::set<std::string> choices;
-  std::string keyword;
-  bool flag;
-  choices.insert("none");
-  choices.insert("small");
-  choices.insert("medium");
-  choices.insert("big");
-  OptionsList(grid.com, option,
-                  "UNKNOWN", choices,
-                  "UNKNOWN", keyword, flag);
-  return keyword;
+  return options::Keyword(option, "no description", "none,small,medium,big,2dbig", "no default");
 }
 
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,28 +17,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
+
 #include "PISMOceanKill.hh"
-#include "pism_options.hh"
-#include "PISMVars.hh"
-#include "Mask.hh"
-#include <assert.h>
+#include "base/util/pism_options.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/Mask.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
+namespace calving {
 
-OceanKill::OceanKill(IceGrid &g, const Config &conf)
-  : Component(g, conf) {
-  PetscErrorCode ierr;
+OceanKill::OceanKill(IceGrid::ConstPtr g)
+  : Component(g) {
 
-  ierr = m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
-                                  config.get("grid_max_stencil_width"));
-  if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for OceanKill.\n");
-    PISMEnd();
-  }
+  m_ocean_kill_mask.create(m_grid, "ocean_kill_mask", WITH_GHOSTS,
+                           m_config->get_double("grid_max_stencil_width"));
 
-  ierr = m_ocean_kill_mask.set_attrs("internal",
-                                     "mask specifying fixed calving front locations",
-                                     "", ""); CHKERRCONTINUE(ierr);
+  m_ocean_kill_mask.set_attrs("internal",
+                              "mask specifying fixed calving front locations",
+                              "", "");
   m_ocean_kill_mask.set_time_independent(true);
 }
 
@@ -46,66 +46,62 @@ OceanKill::~OceanKill() {
   // empty
 }
 
-PetscErrorCode OceanKill::init(Vars &vars) {
-  PetscErrorCode ierr;
-  std::string filename;
-  bool flag;
+void OceanKill::init() {
+  m_log->message(2,
+             "* Initializing calving at a fixed calving front...\n");
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing calving at a fixed calving front...\n"); CHKERRQ(ierr);
+  options::String ocean_kill_file("-ocean_kill_file",
+                                  "Specifies a file to get ocean_kill thickness from");
 
-  ierr = PetscOptionsBegin(grid.com, "", "Fixed calving front options", ""); CHKERRQ(ierr);
-  {
-    ierr = OptionsString("-ocean_kill_file", "Specifies a file to get ocean_kill thickness from",
-                             filename, flag); CHKERRQ(ierr);
+  if (not ocean_kill_file.is_set()) {
+    throw RuntimeError("option -ocean_kill_file is required.");
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  assert(mask != NULL);
-  MaskQuery m(*mask);
+  IceModelVec2S thickness, bed;
 
-  IceModelVec2S thickness, *tmp;
+  {
+    m_log->message(2,
+               "  setting fixed calving front location using\n"
+               "  ice thickness and bed topography from '%s'\n"
+               "  assuming sea level elevation of 0 meters.\n", ocean_kill_file->c_str());
 
-  if (flag == false) {
-    PetscPrintf(grid.com, "PISM ERROR: option -ocean_kill_file is required.\n");
-    PISMEnd();
-  } else {
-    ierr = verbPrintf(2, grid.com,
-       "  setting fixed calving front location using\n"
-       "  ice thickness from '%s'.\n", filename.c_str()); CHKERRQ(ierr);
-
-    ierr = thickness.create(grid, "thk", WITHOUT_GHOSTS); CHKERRQ(ierr);
-    ierr = thickness.set_attrs("temporary", "land ice thickness",
-                               "m", "land_ice_thickness"); CHKERRQ(ierr);
+    thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
+    thickness.set_attrs("temporary", "land ice thickness",
+                        "m", "land_ice_thickness");
     thickness.metadata().set_double("valid_min", 0.0);
 
-    ierr = thickness.regrid(filename, CRITICAL); CHKERRQ(ierr);
+    bed.create(m_grid, "topg", WITHOUT_GHOSTS);
+    bed.set_attrs("temporary", "bedrock surface elevation",
+                  "m", "bedrock_altitude");
 
-    tmp = &thickness;
+    thickness.regrid(ocean_kill_file, CRITICAL);
+    bed.regrid(ocean_kill_file, CRITICAL);
   }
 
   IceModelVec::AccessList list;
   list.add(m_ocean_kill_mask);
-  list.add(*tmp);
-  list.add(*mask);
+  list.add(thickness);
+  list.add(bed);
 
-  for (Points p(grid); p; p.next()) {
+  GeometryCalculator gc(0.0, *m_config);
+
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if ((*tmp)(i, j) > 0 || m.grounded(i, j)) // FIXME: use GeometryCalculator
+    int M = gc.mask(bed(i, j), thickness(i, j));
+
+    if (thickness(i, j) > 0 or mask::grounded(M)) {
       m_ocean_kill_mask(i, j) = 0;
-    else
+    } else {
       m_ocean_kill_mask(i, j) = 1;
+    }
   }
 
-  ierr = m_ocean_kill_mask.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  m_ocean_kill_mask.update_ghosts();
 }
 
 // Updates mask and ice thickness, including ghosts.
-PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
+void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
   IceModelVec::AccessList list;
   list.add(m_ocean_kill_mask);
   list.add(pism_mask);
@@ -115,7 +111,7 @@ PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
   assert(m_ocean_kill_mask.get_stencil_width() >= GHOSTS);
   assert(ice_thickness.get_stencil_width()     >= GHOSTS);
 
-  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_ocean_kill_mask(i, j) > 0.5) {
@@ -123,34 +119,28 @@ PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
       ice_thickness(i, j) = 0.0;
     }
   }
-
-  return 0;
 }
 
-void OceanKill::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big")
+void OceanKill::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert(m_ocean_kill_mask.metadata().get_string("short_name"));
+  }
 }
 
-PetscErrorCode OceanKill::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void OceanKill::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                IO_Type nctype) {
-  PetscErrorCode ierr;
 
   if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {
-    ierr = m_ocean_kill_mask.define(nc, nctype); CHKERRQ(ierr);
+    m_ocean_kill_mask.define(nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode OceanKill::write_variables(const std::set<std::string> &vars, const PIO& nc) {
-  PetscErrorCode ierr;
+void OceanKill::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
 
   if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {
-    ierr = m_ocean_kill_mask.write(nc); CHKERRQ(ierr);
+    m_ocean_kill_mask.write(nc);
   }
-
-  return 0;
 }
 
+} // end of namespace calving
 } // end of namespace pism

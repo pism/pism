@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,99 +16,168 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+
 #include "PISMBedDef.hh"
-#include "PISMTime.hh"
-#include "PISMVars.hh"
-#include "IceGrid.hh"
-#include "PISMConfig.hh"
+#include "base/util/pism_utilities.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
+namespace bed {
 
-BedDef::BedDef(IceGrid &g, const Config &conf)
-  : Component_TS(g, conf) {
+BedDef::BedDef(IceGrid::ConstPtr g)
+  : Component_TS(g) {
 
-  thk    = NULL;
-  topg   = NULL;
-  uplift = NULL;
+  m_t_beddef_last = GSL_NAN;
 
-  t_beddef_last = GSL_NAN;
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
 
-  PetscErrorCode ierr = pismbeddef_allocate();
-  if (ierr != 0) {
-    PetscPrintf(grid.com, "BedDef::BedDef(...): pismbeddef_allocate() failed\n");
-    PISMEnd();
-  }
+  m_topg.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  m_topg.set_attrs("model_state", "bedrock surface elevation",
+                   "m", "bedrock_altitude");
+
+  m_topg_initial.create(m_grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);
+  m_topg_initial.set_attrs("model_state",
+                           "bedrock surface elevation (at the beginning of the run)",
+                           "m", "");
+
+  m_topg_last.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  m_topg_last.set_attrs("model_state", "bedrock surface elevation",
+                        "m", "bedrock_altitude");
+
+  m_uplift.create(m_grid, "dbdt", WITHOUT_GHOSTS);
+  m_uplift.set_attrs("model_state", "bedrock uplift rate",
+                     "m s-1", "tendency_of_bedrock_altitude");
+  m_uplift.metadata().set_string("glaciological_units", "m year-1");
+  m_uplift.write_in_glaciological_units = true;
+
+  // Set default values (we set them early so that pismv can override
+  // them in IceCompModel::set_vars_from_options(), which is called
+  // before BedDef::init()).
+  m_topg.set(0.0);
+  m_uplift.set(0.0);
 }
 
-PetscErrorCode BedDef::pismbeddef_allocate() {
-  PetscErrorCode ierr;
-  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
-
-  ierr = topg_initial.create(grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
-                                "m", ""); CHKERRQ(ierr);
-
-  ierr = topg_last.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = topg_last.set_attrs("model_state", "bedrock surface elevation",
-                             "m", "bedrock_altitude"); CHKERRQ(ierr);
-
-  return 0;
+BedDef::~BedDef() {
+  // empty
 }
 
-void BedDef::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
+void BedDef::set_elevation(const IceModelVec2S &input) {
+  m_topg.copy_from(input);
+  m_topg.update_ghosts();
+}
+
+void BedDef::set_uplift(const IceModelVec2S &input) {
+  m_uplift.copy_from(input);
+}
+
+const IceModelVec2S& BedDef::bed_elevation() const {
+  return m_topg;
+}
+
+const IceModelVec2S& BedDef::uplift() const {
+  return m_uplift;
+}
+
+
+void BedDef::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("topg_initial");
 }
 
-PetscErrorCode BedDef::define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                            IO_Type nctype) {
-  PetscErrorCode ierr;
-
+void BedDef::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                              IO_Type nctype) {
   if (set_contains(vars, "topg_initial")) {
-    ierr = topg_initial.define(nc, nctype); CHKERRQ(ierr);
+    m_topg_initial.define(nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
-
+void BedDef::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "topg_initial")) {
-    ierr = topg_initial.write(nc); CHKERRQ(ierr);
+    m_topg_initial.write(nc);
   }
-
-  return 0;
 }
 
-PetscErrorCode BedDef::init(Vars &vars) {
-  PetscErrorCode ierr;
+void BedDef::init() {
+  this->init_impl();
+}
 
-  t_beddef_last = grid.time->start();
+//! Initialize using provided bed elevation and uplift.
+void BedDef::init(const IceModelVec2S &bed,
+                  const IceModelVec2S &bed_uplift,
+                  const IceModelVec2S &ice_thickness) {
+  this->init_with_inputs_impl(bed, bed_uplift, ice_thickness);
+}
 
-  thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (!thk) SETERRQ(grid.com, 1, "ERROR: thk is not available");
+void BedDef::init_with_inputs_impl(const IceModelVec2S &bed,
+                                   const IceModelVec2S &bed_uplift,
+                                   const IceModelVec2S &ice_thickness) {
+  m_topg.copy_from(bed);
+  m_uplift.copy_from(bed_uplift);
+  // suppress a compiler warning:
+  (void) ice_thickness;
+}
 
-  topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (!topg) SETERRQ(grid.com, 1, "ERROR: topg is not available");
+void BedDef::update_impl(double t, double dt) {
+  const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  this->update_with_thickness_impl(*thk, t, dt);
+}
 
-  uplift = dynamic_cast<IceModelVec2S*>(vars.get("tendency_of_bedrock_altitude"));
-  if (!uplift) SETERRQ(grid.com, 1, "ERROR: uplift is not available");
+void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
+  this->update_with_thickness_impl(ice_thickness, t, dt);
+}
 
-  // Save the bed elevation at the beginning of the run:
-  ierr = topg_initial.copy_from(*topg); CHKERRQ(ierr);
+//! Initialize from the context (input file and the "variables" database).
+void BedDef::init_impl() {
+  m_t_beddef_last = m_grid->ctx()->time()->start();
 
-  return 0;
+  m_t  = GSL_NAN;
+  m_dt = GSL_NAN;
+
+  std::string input_file;
+  bool do_regrid = false;
+  int start = -1;
+
+  bool input_given = find_pism_input(input_file, do_regrid, start);
+
+  if (input_given) {
+    // read bed elevation and uplift rate from file
+    m_log->message(2,
+               "    reading bed topography and bed uplift rate\n"
+               "    from %s ... \n",
+               input_file.c_str());
+    if (do_regrid) {
+      // bootstrapping
+      m_topg.regrid(input_file, OPTIONAL,
+                    m_config->get_double("bootstrapping_bed_value_no_var"));
+      m_uplift.regrid(input_file, OPTIONAL,
+                      m_config->get_double("bootstrapping_uplift_value_no_var"));
+    } else {
+      // re-starting
+      m_topg.read(input_file, start); // fails if not found!
+      m_uplift.read(input_file, start); // fails if not found!
+    }
+  } else {
+    // do nothing, keeping values set elsewhere
+  }
+
+  // process -regrid_file and -regrid_vars
+  regrid("BedDef", m_topg);
+  regrid("BedDef", m_uplift);
+
+  // this should be the last thing we do here
+  m_topg_initial.copy_from(m_topg);
+  m_topg_last.copy_from(m_topg);
 }
 
 //! Compute bed uplift (dt_beddef is in seconds).
-PetscErrorCode BedDef::compute_uplift(double dt_beddef) {
-  PetscErrorCode ierr;
-
-  ierr = topg->add(-1, topg_last, *uplift); CHKERRQ(ierr);
+void BedDef::compute_uplift(double dt_beddef) {
+  m_topg.add(-1, m_topg_last, m_uplift);
   //! uplift = (topg - topg_last) / dt
-  ierr = uplift->scale(1.0 / dt_beddef); CHKERRQ(ierr); 
-
-  return 0;
+  m_uplift.scale(1.0 / dt_beddef);
 }
 
+} // end of namespace bed
 } // end of namespace pism

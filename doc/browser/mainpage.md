@@ -19,24 +19,23 @@ derived from pism::IceModel and re-implementing one or more of its methods.
 
 ### Major sub-models
 
-See these classes, as well as *the ones derived from these*. (This is
-a summary.)
+See these namespaces and classes, as well as *the ones derived from
+these classes*. (This is a summary.)
 
-- pism::StressBalance, pism::ShallowStressBalance, pism::SSB_Modifier (stress
-  balance models)
-- pism::Hydrology (sub-glacial hydrology models)
-- pism::BedDef (bed deformation models)
+- pism::stressbalance (stress balance models)
+- pism::energy (energy balance models)
+- pism::hydrology (sub-glacial hydrology models)
+- pism::bed::BedDef (bed deformation models)
 - pism::YieldStress, pism::IceBasalResistancePlasticLaw (basal strength)
-- pism::CalvingAtThickness, pism::EigenCalving, pism::FloatKill,
-  pism::OceanKill, pism::IcebergRemover (calving and "iceberg removal")
-- pism::IceFlowLaw (rheology)
+- pism::calving (calving and "iceberg removal")
+- pism::rheology (ice rheology)
 
 #### Climatic inputs
 
-- pism::SurfaceModel ("surface" models, i.e. melt and snow processes)
-- pism::AtmosphereModel ("atmosphere", provides inputs to a pism::SurfaceModel)
-- pism::OceanModel ("ocean" model, provides sub-shelf boundary
-  conditions, melange back-pressure, and sea level elevation)
+- pism::surface ("surface" models, i.e. melt and snow processes)
+- pism::atmosphere ("atmosphere", provides inputs to a pism::surface::SurfaceModel)
+- pism::ocean ("ocean" model, provides sub-shelf boundary conditions,
+  melange back-pressure, and sea level elevation)
 
 ### Infrastructure (utility) classes
 
@@ -45,7 +44,7 @@ a summary.)
 - pism::IceModelVec2S, pism::IceModelVec2Stag, pism::IceModelVec2V, and pism::IceModelVec3 (storage)
 - pism::Timeseries (scalar forcing)
 - pism::IceModelVec2T (2D time-dependent forcing)
-- pism::NCVariable (variable metadata such as physical units)
+- pism::VariableMetadata (variable metadata such as physical units)
 - pism::Config (configuration parameter database)
 - pism::Time (time management, including calendars)
 - pism::PIO (file I/O)
@@ -91,7 +90,7 @@ Just do `"make browser"` in the build directory and look in
   should suffice for understanding PISM unless one wants to modify it
   or couple another model to it.
 
-> Copyright (C) 2008-2014 the PISM authors.
+> Copyright (C) 2008-2015 the PISM authors.
 
 > This document is part of PISM. PISM is free software; you can redistribute it
 > and/or modify it under the terms of the GNU General Public License as published

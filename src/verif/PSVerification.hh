@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,51 +20,41 @@
 #ifndef _PSVERIFICATION_H_
 #define _PSVERIFICATION_H_
 
-#include "PISMSurface.hh"
-#include "iceModelVec.hh"
+#include "coupler/surface/PSFormulas.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
-
-class EnthalpyConverter;
+namespace surface {
 
 //! Climate inputs for verification tests.
-class PSVerification : public SurfaceModel {
+class Verification : public PSFormulas {
 public:
-  PSVerification(IceGrid &g, const Config &conf, EnthalpyConverter *EC, int test);
-  ~PSVerification();
-
-  // the interface:
-  PetscErrorCode init(Vars &vars);
-  void attach_atmosphere_model(AtmosphereModel *input);
-  PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  PetscErrorCode update(PetscReal t, PetscReal dt);
-  void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                  IO_Type nctype);
-  PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  Verification(IceGrid::ConstPtr g, EnthalpyConverter::Ptr EC, int test);
+  ~Verification();
 private:
+  void init_impl();
+  MaxTimestep max_timestep_impl(double t);
+  void update_impl(PetscReal t, PetscReal dt);
   int m_testname;
-  IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
-  EnthalpyConverter *m_EC;
-  PetscErrorCode allocate_PSVerification();
-  PetscErrorCode update_ABCDEH(double t);
-  PetscErrorCode update_FG(double t);
-  PetscErrorCode update_KO();
-  PetscErrorCode update_L();
-  PetscErrorCode update_V();
+  EnthalpyConverter::Ptr m_EC;
+  void update_ABCDH(double t);
+  void update_FG(double t);
+  void update_KO();
+  void update_L();
+  void update_V();
 
   // FIXME: get rid of code duplication (these constants are defined
   // both here and in IceCompModel).
   static const double secpera, ablationRateOutside;
 
-  static const PetscScalar ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
-  static const PetscScalar Tmin;    // K;       minimum temperature (at center)
-  static const PetscScalar LforFG;  // m;  exact radius of tests F&G ice sheet
-  static const PetscScalar ApforG;  // m;  magnitude A_p of annular perturbation for test G;
+  static const double ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
+  static const double Tmin;    // K;       minimum temperature (at center)
+  static const double LforFG;  // m;  exact radius of tests F&G ice sheet
+  static const double ApforG;  // m;  magnitude A_p of annular perturbation for test G;
 
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSVERIFICATION_H_ */

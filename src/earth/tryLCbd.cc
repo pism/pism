@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,198 +41,256 @@ static char help[] =
 #include <cstdio>
 #include <petscvec.h>
 #include <petscdmda.h>
-#include "pism_const.hh"
-#include "PISMConfig.hh"
+#include <petscdraw.h>
+
+#include "base/util/pism_const.hh"
+#include "base/util/Context.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "deformation.hh"
-#include "pism_options.hh"
+#include "base/util/pism_options.hh"
+
+#include "base/util/petscwrappers/Viewer.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/petscwrappers/Vec.hh"
+#include "base/util/petscwrappers/DM.hh"
 
 using namespace pism;
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;  // won't be used except for rank,size
-  int rank, size;
+  MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank
+  int rank;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  petsc::Initializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
-  
+  MPI_Comm_rank(com, &rank);
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
-    UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+  try {
+    Context::Ptr ctx = context_from_options(com, "tryLCbd");
+    Config::Ptr config = ctx->config();
 
-    BedDeformLC bdlc;
-    DM          da2;
-    Vec         H, bed, Hstart, bedstart, uplift;
-    
-    PetscBool  include_elastic = PETSC_FALSE,
-                do_uplift = PETSC_FALSE;
-    double H0 = 1000.0;            // ice disc load thickness
+    pism::petsc::DM da2;
+    petsc::Vec H, bed, Hstart, bedstart, uplift;
 
-    if (argc >= 2) {
-      // FIXME:  should use PETSC-style options
-      switch (argv[1][0]) {
-        case '1':
-          include_elastic = PETSC_FALSE;  do_uplift = PETSC_FALSE;  H0 = 1000.0;
-          break;
-        case '2':
-          include_elastic = PETSC_TRUE;  do_uplift = PETSC_FALSE;  H0 = 1000.0;
-          break;
-        case '3':
-          include_elastic = PETSC_FALSE;  do_uplift = PETSC_TRUE;  H0 = 0.0;
-          break;
-        case '4':
-          include_elastic = PETSC_TRUE;  do_uplift = PETSC_TRUE;  H0 = 1000.0;
-          break;
-        default:
-          break; // accept default which is scenario 1
-      }
+    bool
+      include_elastic = false,
+      do_uplift       = false;
+    double H0         = 1000.0; // ice disc load thickness
+
+    options::Keyword scenario("-scenario",
+                              "chooses a scenario",
+                              "1,2,3,4", "1");
+
+    if (scenario == "1") {
+      include_elastic = false;
+      do_uplift       = false;
+      H0              = 1000.0;
+    } else if (scenario == "2") {
+      include_elastic = true;
+      do_uplift       = false;
+      H0              = 1000.0;
+    } else if (scenario == "3") {
+      include_elastic = false;
+      do_uplift       = true;
+      H0              = 0.0;
+    } else if (scenario == "4") {
+      include_elastic = true;
+      do_uplift       = true;
+      H0              = 1000.0;
+    } else {
+      // this can't happen (options::Keyword validates its input), but still
+      throw RuntimeError::formatted("invalid scenario %s", scenario->c_str());
     }
+
     const double R0 = 1000.0e3;          // ice disc load radius
     const double tfinalyears = 150.0e3;  // total run time
 
-    // FIXME: should accept options here
-    const int    Mx = 193, 
-                      My = 129;
+    options::Integer Mx("-Mx", "grid size in the X direction", 193);
+    options::Integer My("-My", "grid size in the Y direction", 129);
 
-    const double Lx = 3000.0e3, 
-                      Ly = 2000.0e3;
-    const int    Z = 2;
+    options::Real Lx("-Lx", "grid half-width in the X direction", 3000.0e3);
+    options::Real Ly("-Ly", "grid half-width in the Y direction", 2000.0e3);
+
+    const int Z = 2;
     const double dtyears = 100.0;
-    
+
     if (rank == 0) { // only runs on proc 0; all sequential
       // allocate the variables needed before BedDeformLC can work:
-      ierr = VecCreateSeq(PETSC_COMM_SELF, Mx*My, &H); CHKERRQ(ierr);
-      ierr = VecDuplicate(H, &Hstart); CHKERRQ(ierr);
-      ierr = VecDuplicate(H, &bedstart); CHKERRQ(ierr);
-      ierr = VecDuplicate(H, &uplift); CHKERRQ(ierr);
+      ierr = VecCreateSeq(PETSC_COMM_SELF, Mx*My, H.rawptr());
+      PISM_CHK(ierr, "VecCreateSeq");
 
-      // in order to show bed elevation as a picture, create a da 
+      ierr = VecDuplicate(H, Hstart.rawptr());
+      PISM_CHK(ierr, "VecDuplicate");
+
+      ierr = VecDuplicate(H, bedstart.rawptr());
+      PISM_CHK(ierr, "VecDuplicate");
+
+      ierr = VecDuplicate(H, uplift.rawptr());
+      PISM_CHK(ierr, "VecDuplicate");
+
+      // in order to show bed elevation as a picture, create a da
 #if PETSC_VERSION_LT(3,5,0)
       ierr = DMDACreate2d(PETSC_COMM_SELF,
                           DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
-                          NULL, NULL, &da2); CHKERRQ(ierr);
+                          NULL, NULL, da2.rawptr());
+      PISM_CHK(ierr, "DMDACreate2d");
 #else
       ierr = DMDACreate2d(PETSC_COMM_SELF,
                           DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
-                          NULL, NULL, &da2); CHKERRQ(ierr);
+                          NULL, NULL, da2.rawptr());
+      PISM_CHK(ierr, "DMDACreate2d");
 #endif
-      ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 0, 0); CHKERRQ(ierr);
-      ierr = DMCreateGlobalVector(da2, &bed); CHKERRQ(ierr);
+      ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 0, 0);
+      PISM_CHK(ierr, "DMDASetUniformCoordinates");
+
+      ierr = DMCreateGlobalVector(da2, bed.rawptr());
+      PISM_CHK(ierr, "DMCreateGlobalVector");
 
       // create a bed viewer
-      PetscViewer viewer;
-      PetscDraw   draw;
-      const int  windowx = 500,
-                      windowy = (int) (((float) windowx) * Ly / Lx);
+      PetscDraw draw = NULL;
+      const int
+        windowx = 500,
+        windowy = (int) (((float) windowx) * Ly / Lx);
+
+      petsc::Viewer viewer;
       ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, NULL, "bed elev (m)",
-           PETSC_DECIDE, PETSC_DECIDE, windowy, windowx, &viewer);  CHKERRQ(ierr);
+                                 PETSC_DECIDE, PETSC_DECIDE, windowy, windowx,
+                                 viewer.rawptr());
+      PISM_CHK(ierr, "PetscViewerDrawOpen");
       // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
       // there is a no-titles bug
-      ierr = PetscViewerDrawGetDraw(viewer,0,&draw); CHKERRQ(ierr);
-      ierr = PetscDrawSetDoubleBuffer(draw); CHKERRQ(ierr);  // remove flicker while we are at it
-      ierr = PetscDrawSetTitle(draw,"bed elev (m)"); CHKERRQ(ierr);
+      ierr = PetscViewerDrawGetDraw(viewer,0,&draw);
+      PISM_CHK(ierr, "PetscViewerDrawGetDraw");
+
+      ierr = PetscDrawSetDoubleBuffer(draw);
+      PISM_CHK(ierr, "PetscDrawSetDoubleBuffer");  // remove flicker while we are at it
+
+      ierr = PetscDrawSetTitle(draw,"bed elev (m)");
+      PISM_CHK(ierr, "PetscDrawSetTitle");
 
       // make disc load
-      ierr = PetscPrintf(PETSC_COMM_SELF,"creating disc load\n"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_SELF,"creating disc load\n");
+      PISM_CHK(ierr, "PetscPrintf");
+
       // see "Results: Earth deformation only" section of Bueler et al "Fast computation ..."
-      const double dx = (2.0*Lx)/((double) Mx - 1), 
-                        dy = (2.0*Ly)/((double) My - 1);
-      const int    imid = (Mx-1)/2, jmid = (My-1)/2;
-      double **HH;
-      ierr = VecGetArray2d(H, Mx, My, 0, 0, &HH); CHKERRQ(ierr);
-      for (int i=0; i<Mx; i++) {
+      const double
+        dx = (2.0*Lx)/((double) Mx - 1),
+        dy = (2.0*Ly)/((double) My - 1);
+      const int
+        imid = (Mx-1)/2,
+        jmid = (My-1)/2;
+
+      {
+        petsc::VecArray2D HH(H, Mx, My);
         for (int j=0; j<My; j++) {
-          const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
-          if (r < R0) {
-            HH[i][j] = H0;
-          } else {
-            HH[i][j] = 0.0;
-          }
-        }
-      }
-      ierr = VecRestoreArray2d(H, Mx, My, 0, 0, &HH); CHKERRQ(ierr);
-      ierr = VecSet(Hstart, 0.0); CHKERRQ(ierr);    // load was zero up till t=0
-      ierr = VecSet(bedstart, 0.0); CHKERRQ(ierr);       // initially flat bed
-      
-      const double peak_up = unit_system.convert(10, "mm/year", "m/s");  // 10 mm/year
-      // initialize uplift
-      if (do_uplift == PETSC_TRUE) {
-        double **upl;
-        ierr = VecGetArray2d(uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
-        for (int i=0; i<Mx; i++) {
-          for (int j=0; j<My; j++) {
+          for (int i=0; i<Mx; i++) {
             const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
-            if (r < 1.5 * R0) {
-              upl[i][j] = peak_up * (cos(M_PI * (r / (1.5 * R0))) + 1.0) / 2.0; 
+            if (r < R0) {
+              HH(i, j) = H0;
             } else {
-              upl[i][j] = 0.0;
+              HH(i, j) = 0.0;
             }
           }
         }
-        ierr = VecRestoreArray2d(uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
-      } else {
-        ierr = VecSet(uplift, 0.0); CHKERRQ(ierr);
       }
 
-      ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n"); CHKERRQ(ierr);
-      ierr = bdlc.settings(config,
-                           include_elastic, Mx, My, dx, dy, Z,
-                           &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
+      ierr = VecSet(Hstart, 0.0);
+      PISM_CHK(ierr, "VecSet");
 
-      ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n"); CHKERRQ(ierr);
-      ierr = bdlc.alloc(); CHKERRQ(ierr);
-      
-      ierr = PetscPrintf(PETSC_COMM_SELF,"initializing BedDeformLC from uplift map\n"); CHKERRQ(ierr);
-      ierr = bdlc.init(); CHKERRQ(ierr);
-      ierr = bdlc.uplift_init(); CHKERRQ(ierr);
-      
-      ierr = PetscPrintf(PETSC_COMM_SELF,"stepping BedDeformLC\n"); CHKERRQ(ierr);
-      const int     KK = (int) (tfinalyears / dtyears);
-      double **b;
-      ierr = VecGetArray2d(bedstart, Mx, My, 0, 0, &b); CHKERRQ(ierr);
-      double b0old = b[imid][jmid];
-      ierr = VecRestoreArray2d(bedstart, Mx, My, 0, 0, &b); CHKERRQ(ierr);
+      ierr = VecSet(bedstart, 0.0);
+      PISM_CHK(ierr, "VecSet");
+
+      const double peak_up = units::convert(ctx->unit_system(), 10, "mm/year", "m/s");  // 10 mm/year
+      // initialize uplift
+      if (do_uplift == true) {
+        petsc::VecArray2D upl(uplift, Mx, My);
+        for (int j=0; j<My; j++) {
+          for (int i=0; i<Mx; i++) {
+            const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
+            if (r < 1.5 * R0) {
+              upl(i, j) = peak_up * (cos(M_PI * (r / (1.5 * R0))) + 1.0) / 2.0;
+            } else {
+              upl(i, j) = 0.0;
+            }
+          }
+        }
+      } else {
+        ierr = VecSet(uplift, 0.0);
+        PISM_CHK(ierr, "VecSet");
+      }
+
+      ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n");
+      PISM_CHK(ierr, "PetscPrintf");
+
+      pism::bed::BedDeformLC bdlc(*config,
+                                  include_elastic, Mx, My, dx, dy, Z,
+                                  Hstart, bedstart, uplift, H, bed);
+
+      ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n");
+      PISM_CHK(ierr, "PetscPrintf");
+
+      ierr = PetscPrintf(PETSC_COMM_SELF,"initializing BedDeformLC from uplift map\n");
+      PISM_CHK(ierr, "PetscPrintf");
+
+      bdlc.uplift_init();
+
+      ierr = PetscPrintf(PETSC_COMM_SELF,"stepping BedDeformLC\n");
+      PISM_CHK(ierr, "PetscPrintf");
+
+      const int KK = (int) (tfinalyears / dtyears);
+
+      double b0old = 0.0;
+      {
+        petsc::VecArray2D b(bedstart, Mx, My);
+        b0old = b(imid, jmid);
+      }
+
       for (int k=0; k<KK; k++) {
         const double tyears = k*dtyears;
-        ierr = bdlc.step(dtyears, tyears); CHKERRQ(ierr);
-        ierr = VecView(bed,viewer); CHKERRQ(ierr);
-        ierr = VecGetArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
-        const double b0new = b[imid][jmid];
-        ierr = VecRestoreArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
+
+        bdlc.step(dtyears, tyears);
+
+        ierr = VecView(bed,viewer);
+        PISM_CHK(ierr, "VecView");
+
+        double b0new = 0.0;
+        {
+          petsc::VecArray2D b(bed, Mx, My);
+          b0new = b(imid, jmid);
+        }
+
         const double dbdt0 = (b0new - b0old) / (dtyears);
 
         ierr = PetscPrintf(PETSC_COMM_SELF,
                   "   t=%8.0f (a)   b(0,0)=%11.5f (m)  dbdt(0,0)=%11.7f (m/year)\n",
-                  tyears, b0new, dbdt0); CHKERRQ(ierr);
+                           tyears, b0new, dbdt0);
+        PISM_CHK(ierr, "PetscPrintf");
 
         char title[100];
         snprintf(title,100, "bed elev (m)  [t = %9.1f]", tyears);
-        ierr = PetscDrawSetTitle(draw,title); CHKERRQ(ierr);
+
+        ierr = PetscDrawSetTitle(draw,title);
+        PISM_CHK(ierr, "PetscDrawSetTitle");
+
         b0old = b0new;
       }
-      ierr = PetscPrintf(PETSC_COMM_SELF,"\ndone\n"); CHKERRQ(ierr);
 
-      ierr = VecDestroy(&H); CHKERRQ(ierr);
-      ierr = VecDestroy(&bed); CHKERRQ(ierr);
-      ierr = VecDestroy(&Hstart); CHKERRQ(ierr);
-      ierr = VecDestroy(&bedstart); CHKERRQ(ierr);
-      ierr = VecDestroy(&uplift); CHKERRQ(ierr);
-      ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-      ierr = DMDestroy(&da2); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_SELF,"\ndone\n");
+      PISM_CHK(ierr, "PetscPrintf");
     }
   }
+  catch (...) {
+    handle_fatal_errors(com);
+    return 1;
+  }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

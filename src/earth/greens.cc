@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007, 2015 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <vector>
 #include <cmath>
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_integration.h>
@@ -23,7 +24,8 @@
 
 #include "greens.hh"
 
-
+namespace pism {
+namespace bed {
 double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* paramsIN) {
   // Matlab:  function z=integrand(xi,eta,dx,dy,p,q)
 
@@ -96,11 +98,10 @@ double viscDisc(double t, double H0, double R0, double r,
   const int         N_gsl_workspace = 1000;
   gsl_integration_workspace*
                     w = gsl_integration_workspace_alloc(N_gsl_workspace);
-  double*           pts;
   const int         lengthpts = 142;
   
   // Matlab:  pts=[10.^(-3:-0.05:-10) 1.0e-14];
-  pts = new double[lengthpts];
+  std::vector<double> pts(lengthpts);
   for (int j=0; j < lengthpts-1; j++) {
     pts[j] = pow(10.0,-3.0 - 0.05 * (double) j);
   }
@@ -126,9 +127,10 @@ double viscDisc(double t, double H0, double R0, double r,
     sum += result;
   }
   
-  delete [] pts;
   gsl_integration_workspace_free(w);
   // u(k)=rhoi*g*H0*R0*result;
   return rho * grav * H0 * R0 * sum;
 }
 
+} // end of namespace bed
+} // end of namespace pism

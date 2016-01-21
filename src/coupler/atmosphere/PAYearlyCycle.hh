@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,48 +19,49 @@
 #ifndef _PAYEARLYCYCLE_H_
 #define _PAYEARLYCYCLE_H_
 
-#include "PISMAtmosphere.hh"
-#include "iceModelVec.hh"
+#include "coupler/PISMAtmosphere.hh"
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
+namespace atmosphere {
 
 //! A class containing an incomplete implementation of an atmosphere model
 //! based on a temperature parameterization using mean annual and mean July
 //! (mean summer) temperatures and a cosine yearly cycle. Uses a stored
 //! (constant in time) precipitation field.
-class PAYearlyCycle : public AtmosphereModel {
+class YearlyCycle : public AtmosphereModel {
 public:
-  PAYearlyCycle(IceGrid &g, const Config &conf);
-  virtual ~PAYearlyCycle();
+  YearlyCycle(IceGrid::ConstPtr g);
+  virtual ~YearlyCycle();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void init();
   //! This method implements the parameterization.
-  virtual PetscErrorCode update(double my_t, double my_dt) = 0;
-  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+  virtual void mean_precipitation(IceModelVec2S &result);
+  virtual void mean_annual_temp(IceModelVec2S &result);
+  virtual void begin_pointwise_access();
+  virtual void end_pointwise_access();
+  virtual void temp_snapshot(IceModelVec2S &result);
 
-  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
-  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &result);
-  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &result);
+  virtual void init_timeseries(const std::vector<double> &ts);
+  virtual void temp_time_series(int i, int j, std::vector<double> &result);
+  virtual void precip_time_series(int i, int j, std::vector<double> &result);
 protected:
-  PetscErrorCode init_internal(const std::string &input_filename, bool regrid,
+  virtual void update_impl(double my_t, double my_dt) = 0;
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype);
+protected:
+  void init_internal(const std::string &input_filename, bool regrid,
                                unsigned int start);
-  Vars *m_variables;
   double m_snow_temp_july_day;
   std::string m_reference, m_precip_filename;
   IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;
-  NCSpatialVariable m_air_temp_snapshot;
+  SpatialVariableMetadata m_air_temp_snapshot;
   std::vector<double> m_ts_times, m_cosine_cycle;
-private:
-  PetscErrorCode allocate_PAYearlyCycle();
 };
 
+} // end of namespace atmosphere
 } // end of namespace pism
 
 #endif /* _PAYEARLYCYCLE_H_ */

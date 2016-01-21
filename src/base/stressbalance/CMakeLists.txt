@@ -1,5 +1,3 @@
-include_directories (../../verif/tests/ ../util)
-
 add_library (pismstressbalance
   PISMStressBalance.cc
   PISMStressBalance_diagnostics.cc
@@ -13,7 +11,6 @@ add_library (pismstressbalance
   sia/PISMBedSmoother.cc
   sia/SIAFD.cc
   sia/SIAFD_diagnostics.cc
-  sia/SIA_Sliding.cc
   ../basalstrength/basal_resistance.cc
 )
 target_link_libraries (pismstressbalance

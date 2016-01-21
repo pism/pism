@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,105 +20,113 @@
 #define _SSAFD_H_
 
 #include "SSA.hh"
-#include <petscksp.h>
+
+#include "base/util/error_handling.hh"
+#include "base/util/petscwrappers/Viewer.hh"
+#include "base/util/petscwrappers/KSP.hh"
+#include "base/util/petscwrappers/Mat.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! PISM's SSA solver: the finite difference implementation.
 class SSAFD : public SSA
 {
   friend class SSAFD_nuH;
 public:
-  SSAFD(IceGrid &g, EnthalpyConverter &e, const Config &c);
+  SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~SSAFD();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
 
-  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
-
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
 protected:
-  virtual PetscErrorCode allocate_fd();
+  virtual void init_impl();
 
-  virtual PetscErrorCode deallocate_fd();
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
 
-  virtual PetscErrorCode pc_setup_bjacobi();
+  virtual void pc_setup_bjacobi();
 
-  virtual PetscErrorCode pc_setup_asm();
+  virtual void pc_setup_asm();
   
-  virtual PetscErrorCode solve();
+  virtual void solve();
 
-  virtual PetscErrorCode picard_iteration(unsigned int max_iterations,
-                                          double ssa_relative_tolerance,
-                                          double nuH_regularization,
-                                          double nuH_iter_failure_underrelax);
+  virtual void picard_iteration(double nuH_regularization,
+                                double nuH_iter_failure_underrelax);
 
-  virtual PetscErrorCode strategy_1_regularization();
+  virtual void picard_manager(double nuH_regularization,
+                              double nuH_iter_failure_underrelax);
 
-  virtual PetscErrorCode strategy_2_asm();
+  virtual void picard_strategy_regularization();
 
-  virtual PetscErrorCode compute_hardav_staggered();
+  virtual void compute_hardav_staggered();
 
-  virtual PetscErrorCode compute_nuH_staggered(IceModelVec2Stag &result,
-                                               double epsilon);
+  virtual void compute_nuH_staggered(IceModelVec2Stag &result,
+                                     double epsilon);
 
-  virtual PetscErrorCode compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
-                                                    double nuH_regularization);
+  virtual void compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
+                                          double nuH_regularization);
 
-  virtual PetscErrorCode compute_nuH_norm(double &norm,
-                                          double &norm_change);
+  virtual void compute_nuH_norm(double &norm,
+                                double &norm_change);
 
-  virtual PetscErrorCode assemble_matrix(bool include_basal_shear, Mat A);
+  virtual void assemble_matrix(bool include_basal_shear, Mat A);
 
-  virtual PetscErrorCode assemble_rhs();
+  virtual void assemble_rhs();
 
-  virtual PetscErrorCode write_system_petsc(const std::string &namepart);
+  virtual void write_system_petsc(const std::string &namepart);
 
-  virtual PetscErrorCode write_system_matlab(const std::string &namepart);
+  virtual void write_system_matlab(const std::string &namepart);
+private:
+  PetscErrorCode write_system_matlab_c(const petsc::Viewer &viewer,
+                                       const std::string &file_name,
+                                       const std::string &cmdstr,
+                                       double year);
+protected:
+  virtual void update_nuH_viewers();
 
-  virtual PetscErrorCode update_nuH_viewers();
-
-  virtual PetscErrorCode set_diagonal_matrix_entry(Mat A, int i, int j,
-                                                   double value);
+  virtual void set_diagonal_matrix_entry(Mat A, int i, int j,
+                                         double value);
 
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
-  virtual PetscErrorCode fracture_induced_softening();
+  virtual void fracture_induced_softening();
 
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
   IceModelVec2 m_work;
-  KSP m_KSP;
-  Mat m_A;
+  petsc::KSP m_KSP;
+  petsc::Mat m_A;
   IceModelVec2V m_b;            // right hand side
   double m_scaling;
 
-  IceModelVec2S *fracture_density, *m_melange_back_pressure;
+  const IceModelVec2S *fracture_density, *m_melange_back_pressure;
   IceModelVec2V m_velocity_old;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;
   
   bool view_nuh;
-  PetscViewer nuh_viewer;
+  petsc::Viewer::Ptr nuh_viewer;
   int nuh_viewer_size;
 
   bool dump_system_matlab;
+
+  class KSPFailure : public RuntimeError {
+  public:
+    KSPFailure(const char* reason);
+  };
+
+  class PicardFailure : public RuntimeError {
+  public:
+    PicardFailure(const std::string &message);
+  };
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid &, EnthalpyConverter &, const Config &);
+SSA * SSAFDFactory(IceGrid::ConstPtr , EnthalpyConverter::Ptr);
 
-//! \brief Reports the nuH (viscosity times thickness) product on the staggered
-//! grid.
-class SSAFD_nuH : public Diag<SSAFD>
-{
-public:
-  SSAFD_nuH(SSAFD *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _SSAFD_H_ */

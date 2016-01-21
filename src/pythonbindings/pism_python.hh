@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 David Maxwell
+// Copyright (C) 2011, 2014, 2015 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,19 +19,35 @@
 
 #ifndef _PISM_PYTHON_
 #define _PISM_PYTHON_
-#include "petsc.h"
 
-#include <string>
+namespace pism {
 
-PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm);
-PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm);
-PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm);
-
-PetscErrorCode optionsGroupBegin(MPI_Comm comm,const std::string &prefix,const std::string &mess,const std::string &sec);
-void optionsGroupNext();
-bool optionsGroupContinue();
-PetscErrorCode optionsGroupEnd();
+//! @brief Code added for use in Python wrappers.
+namespace python {
 
 void set_abort_on_sigint(bool abort);
+
+int check_signal();
+void sigint_handler(int sig);
+
+extern bool gSIGINT_is_fatal;
+
+//! Installs a signal handler on construction; deinstalls on destruction.
+class SigInstaller
+{
+public:
+  //! Installs handle \a new_handler for signal \a sig.
+  SigInstaller(int sig, void (*new_handler)(int));
+  //! Restores the signal handler to its previous value.
+  void release();
+
+  ~SigInstaller();
+private:
+  void (*m_old_handler)(int);
+  int m_sig;
+};
+
+} // end of namespace python
+} // end of namespace pism
 
 #endif

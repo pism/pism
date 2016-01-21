@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -19,15 +19,17 @@
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
 
-#include "PISMComponent.hh"     // derives from Component
-#include "iceModelVec.hh"
+#include "base/util/PISMComponent.hh"     // derives from Component
+#include "base/util/iceModelVec.hh"
 
 namespace pism {
+class Diagnostic;
+
+//! Stress balance models and related diagnostics.
+namespace stressbalance {
 
 class ShallowStressBalance;
 class SSB_Modifier;
-class Diagnostic;
-class OceanModel;
 
 //! The class defining PISM's interface to the shallow stress balance code.
 /*!
@@ -43,102 +45,90 @@ class OceanModel;
 class StressBalance : public Component
 {
 public:
-  StressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
-                    const Config &config);
+  StressBalance(IceGrid::ConstPtr g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod);
   virtual ~StressBalance();
 
   //! \brief Initialize the StressBalance object.
-  virtual PetscErrorCode init(Vars &vars);
-
-  //! \brief Adds more variable names to result (to respect -o_size and
-  //! -save_size).
-  /*!
-    Keyword can be one of "small", "medium" or "big".
-  */
-  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-
-  //! Defines requested fields to file and/or asks an attached
-  //! model to do so.
-  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/);
-
-  //! Writes requested fields to a file.
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  void init();
 
   //! \brief Set the vertically-averaged ice velocity boundary condition.
   /*!
    * Does not affect the SIA computation.
    */
-  virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &locations,
-                                                 IceModelVec2V &velocities);
+  void set_boundary_conditions(const IceModelVec2Int &locations,
+                               const IceModelVec2V &velocities);
 
-  virtual PetscErrorCode set_basal_melt_rate(IceModelVec2S *bmr);
+  void set_basal_melt_rate(const IceModelVec2S &bmr);
 
-  //! \brief Update all the fields if fast == false, only update diffusive flux
+  //! \brief Update all the fields if (not fast), only update diffusive flux
   //! and max. diffusivity otherwise.
-  virtual PetscErrorCode update(bool fast, double sea_level,
-                                IceModelVec2S &melange_back_pressure);
+  void update(bool fast, double sea_level,
+              const IceModelVec2S &melange_back_pressure);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
-  virtual PetscErrorCode get_2D_advective_velocity(IceModelVec2V* &result);
+  const IceModelVec2V& advective_velocity();
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result);
+  const IceModelVec2Stag& diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_diffusivity(double &D);
+  double max_diffusivity();
 
   // for the energy/age time step:
 
   //! \brief Get the 3D velocity (for the energy/age time-stepping).
-  virtual PetscErrorCode get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v, IceModelVec3* &w);
+  const IceModelVec3& velocity_u();
+  const IceModelVec3& velocity_v();
+  const IceModelVec3& velocity_w();
 
   //! \brief Get the basal frictional heating (for the energy time-stepping).
-  virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result);
+  const IceModelVec2S& basal_frictional_heating();
 
-  virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result);
+  const IceModelVec3& volumetric_strain_heating();
 
   // for the calving, etc.:
 
   //! \brief Get the largest and smallest eigenvalues of the strain rate tensor.
-  virtual PetscErrorCode compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                                           IceModelVec2 &result);
+  void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
+                                         const IceModelVec2Int &mask,
+                                         IceModelVec2 &result);
 
   //! \brief Get the components of the 2D deviatoric stress tensor.
-  virtual PetscErrorCode compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                             IceModelVec2 &result);
+  void compute_2D_stresses(const IceModelVec2V &velocity,
+                           const IceModelVec2Int &mask,
+                           IceModelVec2 &result);
 
   //! \brief Produce a report string for the standard output.
-  virtual PetscErrorCode stdout_report(std::string &result);
-
-  //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(int old_Mz);
-
-  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                               std::map<std::string, TSDiagnostic*> &ts_dict);
+  std::string stdout_report();
 
   //! \brief Returns a pointer to a stress balance solver implementation.
-  virtual ShallowStressBalance* get_stressbalance()
-  { return m_stress_balance; }
+  ShallowStressBalance* get_stressbalance();
 
   //! \brief Returns a pointer to a stress balance modifier implementation.
-  virtual SSB_Modifier* get_ssb_modifier()
-  { return m_modifier; }
+  SSB_Modifier* get_ssb_modifier();
 protected:
-  virtual PetscErrorCode allocate();
-  virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
-                                                   IceModelVec2S *bmr, IceModelVec3 &result);
-  virtual PetscErrorCode compute_volumetric_strain_heating();
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
 
-  Vars *m_variables;
+  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                     IO_Type nctype);
+
+  virtual void compute_vertical_velocity(const IceModelVec3 &u,
+                                         const IceModelVec3 &v,
+                                         const IceModelVec2S *bmr,
+                                         IceModelVec3 &result);
+  virtual void compute_volumetric_strain_heating();
 
   IceModelVec3 m_w, m_strain_heating;
-  IceModelVec2S *m_basal_melt_rate;
+  const IceModelVec2S *m_basal_melt_rate;
 
-  ShallowStressBalance *m_stress_balance;
+  ShallowStressBalance *m_shallow_stress_balance;
   SSB_Modifier *m_modifier;
 };
 
+} // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _PISMSTRESSBALANCE_H_ */

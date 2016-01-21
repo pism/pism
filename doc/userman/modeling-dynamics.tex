@@ -16,7 +16,7 @@ This SSA description of ice streams is, however, also the preferred ``sliding la
 
 Of course there is more to the use of a stress balance than just turning it on!  At all grounded points a yield stress, or a pseudo-yield-stress in the case of power law sliding (subsection \ref{subsect:basestrength}), is computed from the amount of stored basal water and from a (generally) spatially-varying till strength.  The amount of stored basal water is modeled by the subglacial hydrology mode choice (subsection \ref{subsect:subhydro}) based on the basal melt rate which is, primarily, thermodynamically-determined (subsection \ref{subsect:basestrength}).
 
-Table \ref{tab:stressbalchoice} describes the basic choice of stress balance.  If the SSA stress balance is used, a choice of two solvers is available, namely \texttt{-ssa_method fd} (default) or \texttt{-ssa_method fem}.  See Table \ref{tab:ssausage}, which describes additional controls on the numerical solution of the stress balance equations.  If option \texttt{-ssa_method fd} is chosen then several more controls on numerics are available; see Table \ref{tab:ssafdcontrols}.  If the ice sheet being modeled has any floating ice then the user is advised to read section \ref{sec:pism-pik} on modeling marine ice sheets.
+Table \ref{tab:stress-balance-choice} describes the basic choice of stress balance.  If the SSA stress balance is used, a choice of two solvers is available, namely \texttt{-ssa_method fd} (default) or \texttt{-ssa_method fem}.  See Table \ref{tab:ssa-usage}, which describes additional controls on the numerical solution of the stress balance equations.  If option \texttt{-ssa_method fd} is chosen then several more controls on numerics are available; see Table \ref{tab:ssafd-controls}.  If the ice sheet being modeled has any floating ice then the user is advised to read section \ref{sec:pism-pik} on modeling marine ice sheets.
 
 \begin{table}[ht]
 \centering
@@ -34,7 +34,7 @@ Table \ref{tab:stressbalchoice} describes the basic choice of stress balance.  I
 \end{tabular}
 \normalsize
 \caption{The basic choice of stress balance.}
-\label{tab:stressbalchoice} 
+\label{tab:stress-balance-choice} 
 \end{table}
 
 
@@ -49,7 +49,7 @@ Table \ref{tab:stressbalchoice} describes the basic choice of stress balance.  I
 \bottomrule
 \end{tabular}
 \caption{Choice of, and controls on, the numerical SSA stress balance.}
-\label{tab:ssausage}
+\label{tab:ssa-usage}
 \end{table}
 
 \begin{table}[ht]
@@ -68,7 +68,7 @@ where $Z=$ \texttt{ssa_rtol}. \\
 \bottomrule
 \end{tabular}
 \caption{Controls on the numerical iteration of the \texttt{-ssa_method fd} solver.}
-\label{tab:ssafdcontrols}
+\label{tab:ssafd-controls}
 \end{table}
 
 \clearpage
@@ -110,13 +110,13 @@ All flow law parameters can be changed using configuration parameters; see secti
 \small
 \begin{tabular}{p{0.16\linewidth}p{0.2\linewidth}p{0.58\linewidth}}\toprule
 \textbf{Name} & C++ Class & \textbf{Comments and References} \\ \midrule
-\texttt{gpbld} &\texttt{GPBLDIce}  & Glen-Paterson-Budd-Lliboutry-Duval law \cite{LliboutryDuval1985}, the enthalpy-based default in PISM \cite{AschwandenBuelerKhroulevBlatter}.  Extends the Paterson-Budd law (below) to positive liquid water fraction.  If $A_{c}(T)$ is from Paterson-Budd then this law returns $A(T,\omega) = A_{c}(T) (1 + C \omega)$, where $\omega$ is the liquid water fraction, $C$ is a configuration parameter \texttt{gpbld_water_frac_coeff} [default $C=181.25$], and $\omega$ is capped at level \texttt{gpbld_water_frac_observed_limit}.  \\  \midrule
-\texttt{pb} &\texttt{ThermoGlenIce}  & Paterson-Budd law, the cold-mode default.  Fixed Glen exponent $n=3$.  Has a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
+\texttt{gpbld} &\texttt{GPBLD}  & Glen-Paterson-Budd-Lliboutry-Duval law \cite{LliboutryDuval1985}, the enthalpy-based default in PISM \cite{AschwandenBuelerKhroulevBlatter}.  Extends the Paterson-Budd law (below) to positive liquid water fraction.  If $A_{c}(T)$ is from Paterson-Budd then this law returns $A(T,\omega) = A_{c}(T) (1 + C \omega)$, where $\omega$ is the liquid water fraction, $C$ is a configuration parameter \texttt{gpbld_water_frac_coeff} [default $C=181.25$], and $\omega$ is capped at level \texttt{gpbld_water_frac_observed_limit}.  \\  \midrule
+\texttt{pb} &\texttt{PatersonBudd}  & Paterson-Budd law, the cold-mode default.  Fixed Glen exponent $n=3$.  Has a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
  \mbox{$A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* > 263$ K; here $T^*$ is pressure-adjusted temperature \cite{PatersonBudd}. \\
-\texttt{arr} &  \texttt{ThermoGlenArrIce} & \emph{Cold} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in  the Paterson-Budd law apply.  This is the flow law used in the thermomechanically-coupled exact solutions run by \texttt{pismv -test F} and \texttt{pismv -test G} \cite{BBL,BB}. \\
-\texttt{arrwarm} & \texttt{ThermoGlenArrIceWarm} & \emph{Warm} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
-\texttt{hooke} & \texttt{HookeIce} & Hooke law with \mbox{$A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$.}  Fixed Glen exponent $n=3$ and constants as in \cite{Hooke,PayneBaldwin}.\\
-\texttt{isothermal_glen} &  \texttt{IsothermalGlenIce} & The isothermal Glen flow law.  Here $F(\sigma) = A_0 \sigma^{n-1}$ with inverse $\nu(D) = \frac{1}{2} B_0 D^{(1-n)/(2n)}$ where $A_0$ is the ice softness and $B_0=A_0^{-1/n}$ is the ice hardness. \\
+\texttt{arr} &  \texttt{PatersonBuddCold} & \emph{Cold} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in  the Paterson-Budd law apply.  This is the flow law used in the thermomechanically-coupled exact solutions run by \texttt{pismv -test F} and \texttt{pismv -test G} \cite{BBL,BB}. \\
+\texttt{arrwarm} & \texttt{PatersonBuddWarm} & \emph{Warm} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
+\texttt{hooke} & \texttt{Hooke} & Hooke law with \mbox{$A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$.}  Fixed Glen exponent $n=3$ and constants as in \cite{Hooke,PayneBaldwin}.\\
+\texttt{isothermal_glen} &  \texttt{IsothermalGlen} & The isothermal Glen flow law.  Here $F(\sigma) = A_0 \sigma^{n-1}$ with inverse $\nu(D) = \frac{1}{2} B_0 D^{(1-n)/(2n)}$ where $A_0$ is the ice softness and $B_0=A_0^{-1/n}$ is the ice hardness. \\
 \bottomrule
 \normalsize	
 \end{tabular}
@@ -130,7 +130,7 @@ All flow law parameters can be changed using configuration parameters; see secti
 \small
 \begin{tabular}{p{0.1\linewidth}p{0.2\linewidth}p{0.55\linewidth}}\toprule
 \textbf{Name} & C++ Class & \textbf{Comments and References} \\ \midrule
-\texttt{gk} & \texttt{GoldsbyKohlstedtIce} & This law has a combination of exponents from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt}.  It can only be used by the SIA stress balance.  Because it has more than one power, option \texttt{-sia_n} has no effect, though \texttt{-sia_e} works as expected.  This law does not use the liquid water fraction, but only the temperature. \\
+\texttt{gk} & \texttt{GoldsbyKohlstedt} & This law has a combination of exponents from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt}.  It can only be used by the SIA stress balance.  Because it has more than one power, option \texttt{-sia_n} has no effect, though \texttt{-sia_e} works as expected.  This law does not use the liquid water fraction, but only the temperature. \\
 \bottomrule
 \normalsize	
 \end{tabular}

@@ -1,0 +1,33 @@
+\newcommand{\R}{\frac{\Delta t\,K^{n}_{k}}{\Delta z^2\,\rho_{i}}}
+\newcommand{\mufactor}{\frac{\Delta t}{2\,\Delta z}}
+\newcommand{\discretization}{\rho_{i}\,\left(\frac{w^{n}_{k}\,\Delta\left(E^{n+1}_{k}\right)\,\lambda}{2\,\Delta z}+\frac{w^{n}_{k}\,\operatorname{Up}\left(E^{n+1}_{k} , w^{n}_{k}\right)\,\left(1-\lambda\right)}{\Delta z}+\frac{E^{n+1}_{k}-E^{n}_{k}}{\Delta t}\right)-\left(\frac{K^{n}_{k+\frac{1}{2}}\,\mathbf{\delta}_{+}\left(E^{n+1}_{k}\right)}{\Delta z}-\frac{K^{n}_{k-\frac{1}{2}}\,\mathbf{\delta}_{-}\left(E^{n+1}_{k}\right)}{\Delta z}\right)\,\frac{1}{\Delta z}=\Phi^{n}_{k}}
+% Values of E on the grid, for the generic equation.
+\newcommand{\E}{E^{n+1}}
+\newcommand{\El}{E^{n+1}_{k-1}}
+\newcommand{\Eu}{E^{n+1}_{k+1}}
+% Matrix entries, w > 0.
+\newcommand{\Lp}{w^{n}_{k}\,\mu\,\left(\lambda-2\right)-R^{n}_{k-\frac{1}{2}}}
+\newcommand{\Dp}{-2\,w^{n}_{k}\,\mu\,\left(\lambda-1\right)+R^{n}_{k+\frac{1}{2}}+R^{n}_{k-\frac{1}{2}}+1}
+\newcommand{\Up}{w^{n}_{k}\,\mu\,\lambda-R^{n}_{k+\frac{1}{2}}}
+\newcommand{\Bp}{\frac{\Delta t\,\Phi^{n}_{k}}{\rho_{i}}+E^{n}_{k}}
+% Matrix entries, w < 0.
+\newcommand{\Lm}{-w^{n}_{k}\,\mu\,\lambda-R^{n}_{k-\frac{1}{2}}}
+\newcommand{\Dm}{2\,w^{n}_{k}\,\mu\,\left(\lambda-1\right)+R^{n}_{k+\frac{1}{2}}+R^{n}_{k-\frac{1}{2}}+1}
+\newcommand{\Um}{-w^{n}_{k}\,\mu\,\left(\lambda-2\right)-R^{n}_{k+\frac{1}{2}}}
+\newcommand{\Bm}{\frac{\Delta t\,\Phi^{n}_{k}}{\rho_{i}}+E^{n}_{k}}
+% Neumann B. C. at the base.
+\newcommand{\neumannb}{\frac{E^{n+1}_{1}-E^{n+1}_{-1}}{2\,\Delta z}=G_{0}}
+\newcommand{\Dpb}{-2\,w^{n}_{0}\,\mu\,\left(\lambda-1\right)+R^{n}_{\frac{1}{2}}+R^{n}_{-\frac{1}{2}}+1}
+\newcommand{\Upb}{2\,w^{n}_{0}\,\mu\,\left(\lambda-1\right)-R^{n}_{\frac{1}{2}}-R^{n}_{-\frac{1}{2}}}
+\newcommand{\Bpb}{2\,G_{0}\,\Delta z\,\left(w^{n}_{0}\,\mu\,\lambda-2\,w^{n}_{0}\,\mu-R^{n}_{-\frac{1}{2}}\right)+\frac{\Phi^{n}_{0}\,\Delta t}{\rho_{i}}+E^{n}_{0}}
+\newcommand{\Dmb}{2\,w^{n}_{0}\,\mu\,\left(\lambda-1\right)+R^{n}_{\frac{1}{2}}+R^{n}_{-\frac{1}{2}}+1}
+\newcommand{\Umb}{-2\,w^{n}_{0}\,\mu\,\left(\lambda-1\right)-R^{n}_{\frac{1}{2}}-R^{n}_{-\frac{1}{2}}}
+\newcommand{\Bmb}{-2\,G_{0}\,\Delta z\,\left(w^{n}_{0}\,\mu\,\lambda+R^{n}_{-\frac{1}{2}}\right)+\frac{\Phi^{n}_{0}\,\Delta t}{\rho_{i}}+E^{n}_{0}}
+% Neumann B. C. at the surface.
+\newcommand{\neumanns}{\frac{E^{n+1}_{k_{s}+1}-E^{n+1}_{k_{s}-1}}{2\,\Delta z}=G_{k_{s}}}
+\newcommand{\Lps}{2\,w^{n}_{k_{s}}\,\mu\,\left(\lambda-1\right)-R^{n}_{k_{s}+\frac{1}{2}}-R^{n}_{k_{s}-\frac{1}{2}}}
+\newcommand{\Dps}{-2\,w^{n}_{k_{s}}\,\mu\,\left(\lambda-1\right)+R^{n}_{k_{s}+\frac{1}{2}}+R^{n}_{k_{s}-\frac{1}{2}}+1}
+\newcommand{\Bps}{-2\,\Delta z\,G_{k_{s}}\,\left(w^{n}_{k_{s}}\,\mu\,\lambda-R^{n}_{k_{s}+\frac{1}{2}}\right)+\frac{\Delta t\,\Phi^{n}_{k_{s}}}{\rho_{i}}+E^{n}_{k_{s}}}
+\newcommand{\Lms}{-2\,w^{n}_{k_{s}}\,\mu\,\left(\lambda-1\right)-R^{n}_{k_{s}+\frac{1}{2}}-R^{n}_{k_{s}-\frac{1}{2}}}
+\newcommand{\Dms}{2\,w^{n}_{k_{s}}\,\mu\,\left(\lambda-1\right)+R^{n}_{k_{s}+\frac{1}{2}}+R^{n}_{k_{s}-\frac{1}{2}}+1}
+\newcommand{\Bms}{2\,\Delta z\,G_{k_{s}}\,\left(w^{n}_{k_{s}}\,\mu\,\lambda-2\,w^{n}_{k_{s}}\,\mu+R^{n}_{k_{s}+\frac{1}{2}}\right)+\frac{\Delta t\,\Phi^{n}_{k_{s}}}{\rho_{i}}+E^{n}_{k_{s}}}

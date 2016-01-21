@@ -29,6 +29,8 @@
                    from -Wall
 
 16Sep10 C. Khroulev: very minor changes to get rid of *very* pedantic warnings
+
+23Jan15 C. Khroulev: avoid calling realloc(ptr, 0) (see heap_free())
 */
 
 
@@ -551,8 +553,14 @@ typedef struct {
 
 static void heap_resize(heap *h, unsigned nalloc)
 {
+  if (nalloc != 0) {
      h->nalloc = nalloc;
      h->items = (heap_item *) realloc(h->items, sizeof(heap_item) * nalloc);
+  } else {
+    h->nalloc = 0;
+    free(h->items);
+    h->items = NULL;
+  }
 }
 
 static heap heap_alloc(unsigned nalloc)

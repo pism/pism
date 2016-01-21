@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,173 +16,162 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+
 #include "POConstant.hh"
-#include "PISMVars.hh"
-#include "PISMConfig.hh"
-#include "IceGrid.hh"
-#include "pism_options.hh"
-#include "iceModelVec.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/io/io_helpers.hh"
+#include "base/util/MaxTimestep.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
+namespace ocean {
+Constant::Constant(IceGrid::ConstPtr g)
+  : OceanModel(g),
+    m_shelfbmassflux(m_sys, "shelfbmassflux"),
+    m_shelfbtemp(m_sys, "shelfbtemp") {
 
-POConstant::POConstant(IceGrid &g, const Config &conf)
-  : OceanModel(g, conf),
-    shelfbmassflux(g.get_unit_system()),
-    shelfbtemp(g.get_unit_system()) {
-  PetscErrorCode ierr = allocate_POConstant(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+  {
+    const double
+      Q           = m_config->get_double("ocean_sub_shelf_heat_flux_into_ice"),
+      L           = m_config->get_double("water_latent_heat_fusion"),
+      ice_density = m_config->get_double("ice_density");
 
-}
+    // Set default melt rate using configuration parameters
+    // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
+    m_meltrate = Q / (L * ice_density);
 
-PetscErrorCode POConstant::allocate_POConstant() {
-  mymeltrate = 0.0;
-  meltrate_set = false;
+    // check the command-line option
+    options::Real meltrate("-shelf_base_melt_rate",
+                           "Specifies a sub shelf ice-equivalent melt rate in meters/year",
+                           units::convert(m_sys, m_meltrate, "m / second", "m / year"));
 
-  shelfbmassflux.init_2d("shelfbmassflux", grid);
-  shelfbmassflux.set_string("pism_intent", "climate_state");
-  shelfbmassflux.set_string("long_name",
+    // tell the user that we're using it
+    if (meltrate.is_set()) {
+      m_log->message(2,
+                     "    - option '-shelf_base_melt_rate' seen, "
+                     "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
+                     (double)meltrate);
+    }
+
+    // here meltrate was set using the command-line option OR the default provided above
+    m_meltrate = units::convert(m_sys, meltrate, "m / year", "m / second");
+
+    // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
+    m_meltrate = m_meltrate * ice_density;
+  }
+
+  m_shelfbmassflux.set_string("pism_intent", "climate_state");
+  m_shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("kg m-2 s-1");
-  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
+  m_shelfbmassflux.set_string("units", "kg m-2 s-1");
+  m_shelfbmassflux.set_string("glaciological_units", "kg m-2 year-1");
 
-  shelfbtemp.init_2d("shelfbtemp", grid);
-  shelfbtemp.set_string("pism_intent", "climate_state");
-  shelfbtemp.set_string("long_name",
+  m_shelfbtemp.set_string("pism_intent", "climate_state");
+  m_shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_units("Kelvin");
-
-  return 0;
+  m_shelfbtemp.set_string("units", "Kelvin");
 }
 
-PetscErrorCode POConstant::init(Vars &vars) {
-  PetscErrorCode ierr;
+Constant::~Constant() {
+  // empty
+}
+
+void Constant::update_impl(double my_t, double my_dt) {
+  // do nothing
+  m_t = my_t;
+  m_dt = my_dt;
+}
+
+void Constant::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  if (!config.get_flag("is_dry_simulation")) {
-    ierr = verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n"); CHKERRQ(ierr);
+  if (!m_config->get_boolean("is_dry_simulation")) {
+    m_log->message(2, "* Initializing the constant ocean model...\n");
   }
-
-  ierr = PetscOptionsBegin(grid.com, "", "Ocean model", ""); CHKERRQ(ierr);
-
-  ierr = OptionsReal("-shelf_base_melt_rate",
-                          "Specifies a sub shelf ice-equivalent melt rate in meters/year",
-                          mymeltrate, meltrate_set); CHKERRQ(ierr);
-
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (meltrate_set) {
-    ierr = verbPrintf(2, grid.com,
-                      "    - option '-shelf_base_melt_rate' seen, "
-                      "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
-                      mymeltrate); CHKERRQ(ierr);
-  }
-
-  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (!ice_thickness) { SETERRQ(grid.com, 1, "ERROR: ice thickness is not available"); }
-
-  return 0;
 }
 
-PetscErrorCode POConstant::sea_level_elevation(double &result) {
-  result = sea_level;
-  return 0;
+MaxTimestep Constant::max_timestep_impl(double t) {
+  (void) t;
+  return MaxTimestep();
 }
 
-PetscErrorCode POConstant::shelf_base_temperature(IceModelVec2S &result) {
-  const double T0 = config.get("water_melting_point_temperature"), // K
-    beta_CC       = config.get("beta_CC"),
-    g             = config.get("standard_gravity"),
-    ice_density   = config.get("ice_density");
+void Constant::sea_level_elevation_impl(double &result) {
+  result = m_sea_level;
+}
+
+void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
+  const double T0 = m_config->get_double("water_melting_point_temperature"), // K
+    beta_CC       = m_config->get_double("beta_CC"),
+    g             = m_config->get_double("standard_gravity"),
+    ice_density   = m_config->get_double("ice_density");
+
+  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
   list.add(result);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME issue #15
     // temp is set to melting point at depth
     result(i,j) = T0 - beta_CC * pressure;
   }
-
-  return 0;
 }
 
 //! @brief Computes mass flux in [kg m-2 s-1], from assumption that
 //! basal heat flux rate converts to mass flux.
-PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  double
-    L           = config.get("water_latent_heat_fusion"),
-    ice_density = config.get("ice_density"),
-    meltrate    = 0.0;
-
-  if (meltrate_set) {
-
-    meltrate = grid.convert(mymeltrate, "m year-1", "m s-1");
-
-  } else {
-
-    // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
-    meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * ice_density); // m s-1
-
-  }
-
-  // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
-  meltrate = meltrate * ice_density;
-
-  ierr = result.set(meltrate); CHKERRQ(ierr);
-
-  return 0;
+void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+  result.set(m_meltrate);
 }
 
-void POConstant::add_vars_to_output(const std::string&, std::set<std::string> &result) {
+void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string> &result) {
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-PetscErrorCode POConstant::define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                            IO_Type nctype) {
-  PetscErrorCode ierr;
+void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+                                  IO_Type nctype) {
+  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
-    ierr = shelfbtemp.define(nc, nctype, true); CHKERRQ(ierr);
+    io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    ierr = shelfbmassflux.define(nc, nctype, true); CHKERRQ(ierr);
+    io::define_spatial_variable(m_shelfbmassflux, *m_grid, nc, nctype, order, true);
   }
-
-  return 0;
 }
 
-PetscErrorCode POConstant::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
+void Constant::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbtemp;
-    ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.metadata() = m_shelfbtemp;
+    shelf_base_temperature(tmp);
+    tmp.write(nc);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbmassflux;
+    tmp.metadata() = m_shelfbmassflux;
     tmp.write_in_glaciological_units = true;
-    ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    shelf_base_mass_flux(tmp);
+    tmp.write(nc);
   }
-
-  return 0;
 }
-
+} // end of namespape ocean
 } // end of namespace pism

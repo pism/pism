@@ -1,0 +1,63 @@
+texput(E, "E^{n+1}")$
+texput(Eold, "E^{n}")$
+texput(rho, "\\rho_{i}")$
+texput(w, "w^{n}")$
+texput(K, "K^{n}")$
+texput(R, "R^{n}")$
+texput(Phi, "\\Phi^{n}")$
+texput(one_over_dz, "\\frac{1}{\\Delta z}")$
+texput(half, "\\frac{1}{2}")$
+texput(nounify(Up), "\\operatorname{Up}")$
+texput(k_s, "k_{s}");
+texput(nounify(Delta), "\\Delta")$
+texput(nounify(delta_p), "\\mathbf{\\delta}_{+}")$
+texput(nounify(delta_m), "\\mathbf{\\delta}_{-}")$
+
+load("neumann_bc.mac")$
+
+file : openw("formulas.tex")$
+
+print_eq(name, equation) := printf(file, "\\newcommand{\\~a}{~a}~%", name, tex1(equation))$
+
+print_eq(R, rhs(R_eq[k]))$
+print_eq(mufactor, rhs(mu_eq))$
+
+print_eq(discretization, eq)$
+
+printf(file, "% Values of E on the grid, for the generic equation.~%")$
+print_eq(E, E)$
+print_eq(El, E[k-1])$
+print_eq(Eu, E[k+1])$
+
+printf(file, "% Matrix entries, w > 0.~%")$
+print_eq(Lp, l[p])$
+print_eq(Dp, d[p])$
+print_eq(Up, u[p])$
+print_eq(Bp, b[p])$
+
+printf(file, "% Matrix entries, w < 0.~%")$
+print_eq(Lm, l[m])$
+print_eq(Dm, d[m])$
+print_eq(Um, u[m])$
+print_eq(Bm, b[m])$
+
+printf(file, "% Neumann B. C. at the base.~%")$
+print_eq(neumannb, neumann[0])$
+print_eq(Dpb, d_base[p])$
+print_eq(Upb, u_base[p])$
+print_eq(Bpb, b_base[p])$
+print_eq(Dmb, d_base[m])$
+print_eq(Umb, u_base[m])$
+print_eq(Bmb, b_base[m])$
+
+printf(file, "% Neumann B. C. at the surface.~%")$
+print_eq(neumanns, neumann[k_s])$
+print_eq(Lps, l_surface[p])$
+print_eq(Dps, d_surface[p])$
+print_eq(Bps, b_surface[p])$
+print_eq(Lms, l_surface[m])$
+print_eq(Dms, d_surface[m])$
+print_eq(Bms, b_surface[m])$
+
+/* Close the file */
+close(file)$

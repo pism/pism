@@ -8,13 +8,16 @@ experiments.
 It should not be cluttered with plotting or NetCDF output code.
 """
 
+
 def secpera():
     "Number of seconds per year."
     return 3.15569259747e7
 
+
 def L():
     "The length of the MISMIP domain."
     return 1800e3
+
 
 def N(mode):
     "Number of grid spaces corresponding to a MISMIP 'mode.'"
@@ -25,6 +28,7 @@ def N(mode):
         return 1500
 
     raise ValueError("invalid mode (%s)" % mode)
+
 
 def A(experiment, step):
     """Ice softness parameter for given experiment and step."""
@@ -61,6 +65,7 @@ def A(experiment, step):
 
     raise ValueError("invalid experiment (%s)" % experiment)
 
+
 def run_length(experiment, step):
     """Returns the time interval for an experiment 3 step."""
     T3a = np.array([3.0e4, 1.5e4, 1.5e4,
@@ -88,35 +93,43 @@ def run_length(experiment, step):
 
     return 3e4
 
+
 def rho_i():
     "Ice density"
     return 900.0
+
 
 def rho_w():
     "Water density"
     return 1000.0
 
+
 def g():
-    "Acceleration due to gravity"
-    return 9.81
+    """Acceleration due to gravity. (Table 2 on page 19 of mismip_4.pdf
+    uses this value, i.e. g = 9.8 m s-2.)"""
+    return 9.8
+
 
 def n():
     "Glen exponent"
     return 3.0
 
+
 def a():
     "Accumulation rate (m/s)"
     return 0.3 / secpera()
 
+
 def m(experiment):
     "Sliding law exponent"
     if experiment in ("1a", "2a", "3a"):
-        return 1/3.0
+        return 1 / 3.0
 
     if experiment in ("1b", "2b", "3b"):
         return 1.0
 
     raise ValueError("invalid experiment (%s)" % experiment)
+
 
 def C(experiment):
     "Sliding law coefficient"
@@ -128,6 +141,7 @@ def C(experiment):
 
     raise ValueError("invalid experiment (%s)" % experiment)
 
+
 def b(experiment, x):
     "Bed depth below sea level. (-b(x) = topg(x))"
 
@@ -136,9 +150,10 @@ def b(experiment, x):
 
     if experiment in ("3a", "3b"):
         xx = x / 7.5e5
-        return -(729. - 2184.8 * xx**2. + 1031.72 * xx**4. - 151.72 * xx**6.)
+        return -(729. - 2184.8 * xx ** 2. + 1031.72 * xx ** 4. - 151.72 * xx ** 6.)
 
     raise ValueError("invalid experiment (%s)" % experiment)
+
 
 def b_slope(experiment, x):
     """The x-derivative of b(experiment, x)."""
@@ -148,23 +163,25 @@ def b_slope(experiment, x):
 
     if experiment in ("3a", "3b"):
         xx = x / 7.5e5
-        return -(- 2184.8 * (2./7.5e5) * xx
-                 + 1031.72 * (4./7.5e5) * xx**3.
-                 - 151.72 * (6./7.5e5) * xx**5.)
+        return -(- 2184.8 * (2. / 7.5e5) * xx
+                 + 1031.72 * (4. / 7.5e5) * xx ** 3.
+                 - 151.72 * (6. / 7.5e5) * xx ** 5.)
 
     raise ValueError("invalid experiment (%s)" % experiment)
+
 
 def cold_function(experiment, step, x, theta=0.0):
     """Evaluates function whose zeros define x_g in 'cold' steady marine sheet problem."""
     r = rho_i() / rho_w()
-    h_f = r**(-1.) * b(experiment, x)
-    b_x = b_slope(experiment, x);
-    s = a() * x;
+    h_f = r ** (-1.) * b(experiment, x)
+    b_x = b_slope(experiment, x)
+    s = a() * x
     rho_g = rho_i() * g()
     return (theta * a()
-            + C(experiment) * s**(m(experiment) + 1.0) / (rho_g * h_f**(m(experiment) + 2.))
+            + C(experiment) * s ** (m(experiment) + 1.0) / (rho_g * h_f ** (m(experiment) + 2.))
             - theta * s * b_x / h_f
-            - A(experiment, step) * (rho_g * (1.0 - r) / 4.0)**n() * h_f**(n() + 1.0))
+            - A(experiment, step) * (rho_g * (1.0 - r) / 4.0) ** n() * h_f ** (n() + 1.0))
+
 
 def x_g(experiment, step, theta=0.0):
     """Computes the theoretical grounding line location using Newton's method."""
@@ -175,7 +192,7 @@ def x_g(experiment, step, theta=0.0):
     else:
         x = 1270.0e3
 
-    delta_x = 10. # Finite difference step size (metres) for gradient calculation
+    delta_x = 10.  # Finite difference step size (metres) for gradient calculation
     tolf = 1.e-4  # Tolerance for finding zeros
     eps = np.finfo(float).eps
     normf = tolf + eps
@@ -188,12 +205,13 @@ def x_g(experiment, step, theta=0.0):
 
     while (normf > tolf) or (abs(dx) > toldelta):
         f = F(x)
-        normf = abs(f);
+        normf = abs(f)
         grad = (F(x + delta_x) - f) / delta_x
         dx = -f / grad
         x = x + dx
 
     return x
+
 
 def thickness(experiment, step, x, theta=0.0):
     """Compute ice thickness for x > 0.
@@ -205,7 +223,7 @@ def thickness(experiment, step, x, theta=0.0):
         b_x = b_slope(experiment, x)
         rho_g = rho_i() * g()
         s = a() * np.abs(x)
-        return b_x - (C(experiment) / rho_g) * s**m(experiment) / h**(m(experiment) + 1)
+        return b_x - (C(experiment) / rho_g) * s ** m(experiment) / h ** (m(experiment) + 1)
 
     # extract the grounded part of the grid
     x_grounded = x[x < xg]
@@ -235,11 +253,12 @@ def thickness(experiment, step, x, theta=0.0):
     r = rho_i() / rho_w()
     rho_g = rho_i() * g()
     numer = h_f * (q_0 + a() * (x_floating - xg))
-    base = q_0**(n() + 1) + h_f**(n() + 1) * ((1 - r) * rho_g / 4)**n() * A(experiment, step) \
-           * ((q_0 + a() * (x_floating - xg))**(n() + 1) - q_0**(n() + 1)) / a()
-    thk_floating = numer / (base**(1.0 / (n() + 1)));
+    base = q_0 ** (n() + 1) + h_f ** (n() + 1) * ((1 - r) * rho_g / 4) ** n() * A(experiment, step) \
+        * ((q_0 + a() * (x_floating - xg)) ** (n() + 1) - q_0 ** (n() + 1)) / a()
+    thk_floating = numer / (base ** (1.0 / (n() + 1)))
 
     return np.r_[thk_grounded, thk_floating]
+
 
 def plot_profile(experiment, step, out_file):
     from pylab import figure, subplot, hold, plot, xlabel, ylabel, text, title, axis, vlines, savefig
@@ -257,18 +276,18 @@ def plot_profile(experiment, step, out_file):
     figure(1)
     ax = subplot(111)
     hold(True)
-    plot(x/1e3, np.zeros_like(x), ls='dotted', color='red')
-    plot(x/1e3, -b(experiment, x), color='black')
-    plot(x/1e3, np.r_[thk_grounded - b(experiment, x_grounded),
-                      thk_floating * (1 - rho_i()/rho_w())],
+    plot(x / 1e3, np.zeros_like(x), ls='dotted', color='red')
+    plot(x / 1e3, -b(experiment, x), color='black')
+    plot(x / 1e3, np.r_[thk_grounded - b(experiment, x_grounded),
+                        thk_floating * (1 - rho_i() / rho_w())],
          color='blue')
-    plot(x_floating/1e3, -thk_floating * (rho_i()/rho_w()), color='blue')
-    _, _, ymin, ymax = axis(xmin=0, xmax=x.max()/1e3)
-    vlines(xg/1e3, ymin, ymax, linestyles='dashed', color='black')
+    plot(x_floating / 1e3, -thk_floating * (rho_i() / rho_w()), color='blue')
+    _, _, ymin, ymax = axis(xmin=0, xmax=x.max() / 1e3)
+    vlines(xg / 1e3, ymin, ymax, linestyles='dashed', color='black')
 
     xlabel('distance from the summit, km')
     ylabel('elevation, m')
-    text(0.6, 0.9, "$x_g$ (theory) = %4.0f km" % (xg/1e3),
+    text(0.6, 0.9, "$x_g$ (theory) = %4.0f km" % (xg / 1e3),
          color='black', transform=ax.transAxes)
     title("MISMIP experiment %s, step %d" % (experiment, step))
     savefig(out_file)

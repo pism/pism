@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007--2012 Ed Bueler
+   Copyright (C) 2007--2012, 2015 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -19,12 +19,20 @@
 */
 
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_matrix.h>
+
+#include <gsl/gsl_version.h>
+#if (defined GSL_MAJOR_VERSION) && (defined GSL_MINOR_VERSION) && \
+  ((GSL_MAJOR_VERSION >= 1 && GSL_MINOR_VERSION >= 15) || (GSL_MAJOR_VERSION >= 2))
+#define PISM_USE_ODEIV2 1
 #include <gsl/gsl_odeiv2.h>
+#endif
+
 #include "exactTestL.h"
 
 #define pi       3.1415926535897931
@@ -65,6 +73,7 @@ int funcL(double r, const double u[], double f[], void *params) {
   return GSL_SUCCESS;
 }
 
+#ifdef PISM_USE_ODEIV2
 
 /* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
    is believed to be predictable and accurate */
@@ -115,7 +124,9 @@ int getU(double *r, int N, double *u,
      u[count] = (count == 0) ? 0.0 : u[count-1];
      while (rr > r[count]) {
        status = gsl_odeiv2_driver_apply(d, &rr, r[count], &(u[count]));
-       if (status != GSL_SUCCESS)   break;
+       if (status != GSL_SUCCESS){
+         break;
+       }
      }
    }
 
@@ -123,6 +134,19 @@ int getU(double *r, int N, double *u,
    return status;
 }
 
+#else  /* old GSL (< 1.15) */
+int getU(double *r, int N, double *u,
+         const double EPS_ABS, const double EPS_REL, const int ode_method) {
+  (void) r;
+  (void) N;
+  (void) u;
+  (void) EPS_ABS;
+  (void) EPS_REL;
+  (void) ode_method;
+  assert(0 && "Test L requires GSL version 1.15 or later.");
+  return 0;
+}
+#endif
 
 int exactL(double r, double *H, double *b, double *a, 
            const double EPS_ABS, const double EPS_REL, const int ode_method) {
@@ -154,6 +178,7 @@ int exactL_list(double *r, int N, double *H, double *b, double *a) {
      believed to be predictable and accurate */
   stat = getU(r,N,u,1.0e-12,0.0,1); 
   if (stat != GSL_SUCCESS) {
+    free(u);
     return stat;
   }
   

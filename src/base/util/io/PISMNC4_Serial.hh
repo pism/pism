@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "PISMNC4File.hh"
 
 namespace pism {
+namespace io {
 
 class NC4_Serial : public NC4File
 {
@@ -29,16 +30,17 @@ public:
   NC4_Serial(MPI_Comm c, unsigned int compression_level)
     : NC4File(c, compression_level) {}
   virtual ~NC4_Serial() {}
-
-  // open/create/close
-  virtual int open(const std::string &filename, IO_Mode mode);
-
-  virtual int create(const std::string &filename);
 protected:
-  virtual int integer_open_mode(IO_Mode input) const;
+  // open/create/close
+  int open_impl(const std::string &filename, IO_Mode mode);
+
+  int create_impl(const std::string &filename);
+protected:
+  int integer_open_mode(IO_Mode input) const;
 };
 
 
+} // end of namespace io
 } // end of namespace pism
 
 #endif /* _NC4_Serial_H_ */

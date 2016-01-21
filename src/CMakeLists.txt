@@ -1,24 +1,4 @@
-include_directories (
-  base
-  base/stressbalance
-  base/stressbalance/sia
-  base/stressbalance/ssa
-  base/stressbalance/blatter
-  base/calving
-  base/util
-  base/util/io
-  base/energy
-  base/rheology
-  base/basalstrength
-  base/hydrology
-  earth
-  coupler
-  coupler/atmosphere
-  coupler/surface
-  coupler/ocean
-  coupler/util
-  calcalcs
-  )
+include_directories (.)
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
@@ -27,12 +7,29 @@ set(PISM_PARALLEL_IO_FLAGS "")
 
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
+  base/util/petscwrappers/PetscInitializer.cc
+  base/util/petscwrappers/DM.cc
+  base/util/petscwrappers/IS.cc
+  base/util/petscwrappers/KSP.cc
+  base/util/petscwrappers/Mat.cc
+  base/util/petscwrappers/SNES.cc
+  base/util/petscwrappers/Vec.cc
+  base/util/petscwrappers/VecScatter.cc
+  base/util/petscwrappers/Viewer.cc
+  base/util/Logger.cc
+  base/util/error_handling.cc
+  base/util/options.cc
+  base/util/interpolation.cc
+  base/util/Context.cc
+  base/util/MaxTimestep.cc
+  base/util/PISMDiagnostic.cc
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
-  base/util/IceGrid.cc
+  base/util/ColumnInterpolation.cc
   base/util/Mask.cc
-  base/util/NCVariable.cc
+  base/util/VariableMetadata.cc
   base/util/PISMConfig.cc
+  base/util/PISMConfigInterface.cc
   base/util/PISMComponent.cc
   base/util/PISMTime.cc
   base/util/PISMTime_Calendar.cc
@@ -43,7 +40,8 @@ set(PISMUTIL_SRC
   base/util/iceModelVec2T.cc
   base/util/iceModelVec2V.cc
   base/util/iceModelVec3.cc
-  base/util/IceModelVec3Custom.cc
+  base/util/iceModelVec3Custom.cc
+  base/util/io/io_helpers.cc
   base/util/io/LocalInterpCtx.cc
   base/util/io/PIO.cc
   base/util/io/PISMNC3File.cc
@@ -51,12 +49,18 @@ set(PISMUTIL_SRC
   base/util/io/PISMNC4_Quilt.cc
   base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
+  base/util/pism_utilities.cc
+  base/util/Profiling.cc
   base/util/pism_default_config.cc
   base/util/pism_options.cc
   base/util/TerminationReason.cc
   base/util/PISMUnits.cc
-  base/varcEnthalpyConverter.cc
+  base/util/projection.cc
   )
+
+if(Pism_USE_TAO)
+  list(APPEND PISMUTIL_SRC base/util/petscwrappers/Tao.cc)
+endif()
 
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)
@@ -103,13 +107,6 @@ set_source_files_properties (base/pism_revision.cc
 add_library (pismrevision STATIC base/pism_revision.cc)
 add_dependencies (pismrevision touch_pism_revision)
 
-# Flow laws.
-add_library (pismflowlaws
-  base/rheology/flowlaw_factory.cc
-  base/rheology/flowlaws.cc
-)
-target_link_libraries (pismflowlaws pismutil ${Pism_EXTERNAL_LIBS})
-
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
 add_library (pismbase
@@ -126,6 +123,7 @@ add_library (pismbase
   base/iMenthalpy.cc
   base/iMfractures.cc
   base/iMgeometry.cc
+  base/grounded_cell_fraction.cc
   base/iMinit.cc
   base/iMIO.cc
   base/iMoptions.cc
@@ -138,6 +136,7 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc
+  base/basalstrength/PISMYieldStress.cc
   base/basalstrength/PISMMohrCoulombYieldStress.cc
   base/basalstrength/PISMConstantYieldStress.cc
   base/hydrology/PISMHydrology.cc
@@ -159,6 +158,7 @@ set(PISMEARTH_SRC
   earth/PBPointwiseIsostasy.cc
   earth/PISMBedDef.cc
   earth/PBLingleClark.cc
+  earth/PBNull.cc
   earth/deformation.cc
   earth/greens.cc
   earth/cubature.c
@@ -184,7 +184,7 @@ add_library (pismverif
   verif/tests/exactTestK.c
   verif/tests/exactTestO.c
   verif/tests/exactTestL.c
-  verif/tests/exactTestsABCDE.c
+  verif/tests/exactTestsABCD.c
   verif/tests/exactTestsFG.c
   verif/tests/exactTestsIJ.c
 )
@@ -195,8 +195,7 @@ add_executable (pismr pismr.cc)
 
 # Simplified geometry
 add_executable (pisms pisms.cc
-  eismint/iceEISModel.cc
-  eismint/PS_EISMINTII.cc)
+  eismint/iceEISModel.cc)
 
 # All of the following are linked against pismbase
 foreach (EXEC pismr pisms)
@@ -227,7 +226,7 @@ add_custom_target (pism_config DEPENDS pism_config.nc)
 # Install libraries only if BUILD_SHARED_LIBS is ON.
 if (${BUILD_SHARED_LIBS})
   install (TARGETS
-    pismutil pismverif pismbase pismflowlaws pismearth # libraries
+    pismutil pismverif pismbase pismearth # libraries
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
 endif ()
@@ -254,7 +253,7 @@ target_link_libraries (bedrough_test pismutil)
 install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 if (Pism_BUILD_EXTRA_EXECS)
-  set (EXTRA_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
+  set (EXTRA_EXECS simpleABCD simpleFG simpleH simpleI simpleJ simpleL)
   foreach (EXEC ${EXTRA_EXECS})
     add_executable (${EXEC} verif/tests/${EXEC}.c)
     target_link_libraries (${EXEC} pismverif)
@@ -276,6 +275,7 @@ if (Pism_BUILD_EXTRA_EXECS)
 endif (Pism_BUILD_EXTRA_EXECS)
 
 add_subdirectory (calcalcs)
+add_subdirectory (base/rheology)
 add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (regional)

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2015 Jed Brown and Ed Bueler
   
    This file is part of Pism.
   
@@ -45,7 +45,7 @@ Results from Test J:
 
 int main() {
 
-  double x, y, u, v, H, nu;
+  double x, y;
   int    scanret;
   const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
   
@@ -62,10 +62,14 @@ int main() {
     return 1;
   }
 
-  printf("\nResults from Test J (returned %d):\n", 
-         exactJ(x*1000.0,y*1000.0, &H, &nu, &u, &v));
-  printf("  H   = %10.3f (m)     nu    = %10.3f (MPa a)\n",H,(nu*1.0e-6)/secpera);
-  printf("  u   = %10.5f (m/a)   v     = %10.5f (m/a)\n",u*secpera,v*secpera);
+  struct TestJParameters p = exactJ(x * 1000.0, y * 1000.0);
+
+  printf("\nResults from Test J:\n");
+  printf("  H   = %10.3f (m)     nu    = %10.3f (MPa a)\n",
+         p.H, (p.nu * 1.0e-6) / secpera);
+  printf("  u   = %10.5f (m/a)   v     = %10.5f (m/a)\n",
+         p.u * secpera,
+         p.v * secpera);
 
   return 0;
 }

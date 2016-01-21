@@ -1,4 +1,4 @@
-input=-boot_file flood.nc -Mx 101 -My 101 -Mz 21 -Lz 1500
+input=-i flood.nc -bootstrap -Mx 201 -My 101 -Mz 21 -Lz 1500
 ssa=-stress_balance ssa+sia -plastic_phi 15
 ocean=-ocean constant,delta_SL -ocean_delta_SL_file flood.nc
 misc=-energy none
@@ -18,7 +18,7 @@ cfbc: flood.nc
 
 # this works the way it should
 cfbc_kill_icebergs: flood.nc
-	pismr ${options} -cfbc -kill_icebergs -o $@.nc -extra_file ex_$@.nc
+	mpiexec -n 4 pismr ${options} -cfbc -kill_icebergs -o $@.nc -extra_file ex_$@.nc
 
 flood.nc: generate_input.py
 	python generate_input.py -o $@

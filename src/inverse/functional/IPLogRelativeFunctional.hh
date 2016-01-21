@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell
+// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 //! Implements a functional for log-relative errors.
 /*!  Specifically, given a reference function \f$u_{obs}=[U_i]\f$,
@@ -34,15 +35,15 @@ namespace pism {
 */
 class IPLogRelativeFunctional : public IPFunctional<IceModelVec2V> {
 public:
-  IPLogRelativeFunctional(IceGrid &grid, IceModelVec2V &u_observed, double eps,
+  IPLogRelativeFunctional(IceGrid::ConstPtr grid, IceModelVec2V &u_observed, double eps,
                           IceModelVec2S *weights=NULL) :
     IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRelativeFunctional() {};
 
-  virtual PetscErrorCode normalize(double scale);
+  virtual void normalize(double scale);
 
-  virtual PetscErrorCode valueAt(IceModelVec2V &x, double *OUTPUT);
-  virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(IceModelVec2V &x, double *OUTPUT);
+  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 protected:
   IceModelVec2V &m_u_observed;
@@ -52,6 +53,7 @@ protected:
 };
 
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG */

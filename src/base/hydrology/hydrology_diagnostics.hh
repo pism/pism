@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,23 +19,24 @@
 #ifndef _HYDROLOGY_DIAGNOSTICS_H_
 #define _HYDROLOGY_DIAGNOSTICS_H_
 
-#include "iceModelVec.hh"
-#include "PISMDiagnostic.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/PISMDiagnostic.hh"
 #include "PISMHydrology.hh"
 
 namespace pism {
+namespace hydrology {
 /*! \file
   Interfaces for the following diagnostics which are handled by Hydrology
   instances; some of these may be replaced by state variables; listed by short
   name:
-  * bwat [replace by state var in RoutingHydrology and DistributedHydrology]
-  * bwp [replace by state var in DistributedHydrology]
+  * bwat [replace by state var in hydrology::Routing and hydrology::Distributed]
+  * bwp [replace by state var in hydrology::Distributed]
   * bwprel
   * effbwp
   * hydroinput
   * wallmelt
   Interfaces for the following diagnostics which are handled by
-  RoutingHydrology instances:
+  hydrology::Routing instances:
   * bwatvel
   */
 
@@ -44,8 +45,9 @@ namespace pism {
 class Hydrology_bwat : public Diag<Hydrology>
 {
 public:
-  Hydrology_bwat(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  Hydrology_bwat(Hydrology *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -53,8 +55,9 @@ public:
 class Hydrology_bwp : public Diag<Hydrology>
 {
 public:
-  Hydrology_bwp(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  Hydrology_bwp(Hydrology *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -62,8 +65,9 @@ public:
 class Hydrology_bwprel : public Diag<Hydrology>
 {
 public:
-  Hydrology_bwprel(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  Hydrology_bwprel(Hydrology *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -71,8 +75,9 @@ public:
 class Hydrology_effbwp : public Diag<Hydrology>
 {
 public:
-  Hydrology_effbwp(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  Hydrology_effbwp(Hydrology *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -80,8 +85,9 @@ public:
 class Hydrology_hydrobmelt : public Diag<Hydrology>
 {
 public:
-  Hydrology_hydrobmelt(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  Hydrology_hydrobmelt(Hydrology *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -89,8 +95,9 @@ public:
 class Hydrology_hydroinput : public Diag<Hydrology>
 {
 public:
-  Hydrology_hydroinput(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  Hydrology_hydroinput(Hydrology *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
@@ -98,29 +105,101 @@ public:
 class Hydrology_wallmelt : public Diag<Hydrology>
 {
 public:
-  Hydrology_wallmelt(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  Hydrology_wallmelt(Hydrology *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 
 //! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
-/*! Only available for RoutingHydrology and its derived classes. */
-class RoutingHydrology_bwatvel : public Diag<RoutingHydrology>
+/*! Only available for hydrology::Routing and its derived classes. */
+class Routing_bwatvel : public Diag<Routing>
 {
 public:
-  RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  Routing_bwatvel(Routing *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Reports the values of velbase_mag seen by the Hydrology model.
-/*! Only available for DistributedHydrology. */
-class DistributedHydrology_hydrovelbase_mag : public Diag<DistributedHydrology>
+/*! Only available for hydrology::Distributed. */
+class Distributed_hydrovelbase_mag : public Diag<Distributed>
 {
 public:
-  DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  Distributed_hydrovelbase_mag(Distributed *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
+
+// Diagnostic time-series for mass-conserving ("MC") subglacial hydrology models.
+// These eight report the quantities computed in hydrology::Routing::boundary_mass_changes()
+
+//! \brief Reports the cumulative loss of liquid water, in kg, to locations with mask "ice_free_land()==true".
+class MCHydrology_ice_free_land_loss_cumulative : public TSDiag<Routing>
+{
+public:
+  MCHydrology_ice_free_land_loss_cumulative(Routing *m);
+  virtual void update(double a, double b);
+};
+
+//! \brief Reports the rate of loss of liquid water, in kg/s, to locations with mask "ice_free_land()==true".
+class MCHydrology_ice_free_land_loss : public TSDiag<Routing>
+{
+public:
+  MCHydrology_ice_free_land_loss(Routing *m);
+  virtual void update(double a, double b);
+};
+
+//! \brief Reports the cumulative loss of liquid water, in kg, to locations with mask "ocean()==true".
+class MCHydrology_ocean_loss_cumulative : public TSDiag<Routing>
+{
+public:
+  MCHydrology_ocean_loss_cumulative(Routing *m);
+  virtual void update(double a, double b);
+};
+
+//! \brief Reports the rate of loss of liquid water, in kg/s, to locations with mask "ocean()==true".
+class MCHydrology_ocean_loss : public TSDiag<Routing>
+{
+public:
+  MCHydrology_ocean_loss(Routing *m);
+  virtual void update(double a, double b);
+};
+
+//! \brief Reports the cumulative non-conserving gain of liquid water, in kg, from water thickness coming out negative during a time step, and being projected up to zero.
+class MCHydrology_negative_thickness_gain_cumulative : public TSDiag<Routing>
+{
+public:
+  MCHydrology_negative_thickness_gain_cumulative(Routing *m);
+  virtual void update(double a, double b);
+};
+
+//! \brief Reports the rate of non-conserving gain of liquid water, in kg/s, from water thickness coming out negative during a time step, and being projected up to zero.
+class MCHydrology_negative_thickness_gain : public TSDiag<Routing>
+{
+public:
+  MCHydrology_negative_thickness_gain(Routing *m);
+  virtual void update(double a, double b);
+};
+
+//! \brief Reports the cumulative loss of liquid water, in kg, to locations in the null strip, if that strip has positive width.
+class MCHydrology_null_strip_loss_cumulative : public TSDiag<Routing>
+{
+public:
+  MCHydrology_null_strip_loss_cumulative(Routing *m);
+  virtual void update(double a, double b);
+};
+
+//! \brief Reports the rate of loss of liquid water, in kg/s, to locations in the null strip, if that strip has positive width.
+class MCHydrology_null_strip_loss : public TSDiag<Routing>
+{
+public:
+  MCHydrology_null_strip_loss(Routing *m);
+  virtual void update(double a, double b);
+};
+
+} // end of namespace hydrology
 } // end of namespace pism
 
 #endif /* _HYDROLOGY_DIAGNOSTICS_H_ */

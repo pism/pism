@@ -17,7 +17,7 @@ grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
 extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,Href,velbar -extra_file "
 
-pismopts="-boot_file $infile $grid -stress_balance ssa+sia -ssa_dirichlet_bc"
+pismopts="-i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_dirichlet_bc"
 
 doit="mpiexec -n $N pismr $pismopts"
 

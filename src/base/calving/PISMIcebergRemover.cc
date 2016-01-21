@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2015 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,32 +19,26 @@
 
 #include "PISMIcebergRemover.hh"
 #include "connected_components.hh"
-#include "Mask.hh"
-#include "PISMVars.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/IceGrid.hh"
 
 namespace pism {
+namespace calving {
 
-IcebergRemover::IcebergRemover(IceGrid &g, const Config &conf)
-  : Component(g, conf) {
+IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
+  : Component(g) {
 
-  PetscErrorCode ierr = allocate();
-  if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate IcebergRemover.\n");
-    PISMEnd();
-  }
+  m_iceberg_mask.create(m_grid, "iceberg_mask", WITHOUT_GHOSTS);
+  m_mask_p0 = m_iceberg_mask.allocate_proc0_copy();
 }
 
 IcebergRemover::~IcebergRemover() {
-  PetscErrorCode ierr = deallocate();
-  if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to deallocate IcebergRemover.\n");
-    PISMEnd();
-  }
+  // empty
 }
 
-PetscErrorCode IcebergRemover::init(Vars &vars) {
-  m_bcflag = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
-  return 0;
+void IcebergRemover::init() {
 }
 
 /**
@@ -53,9 +47,8 @@ PetscErrorCode IcebergRemover::init(Vars &vars) {
  * @param[in,out] pism_mask PISM's ice cover mask
  * @param[in,out] ice_thickness ice thickness
  */
-PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
-                                      IceModelVec2S &ice_thickness) {
-  PetscErrorCode ierr;
+void IcebergRemover::update(IceModelVec2Int &pism_mask,
+                            IceModelVec2S &ice_thickness) {
   const int
     mask_grounded_ice = 1,
     mask_floating_ice = 2;
@@ -64,49 +57,54 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
   // prepare the mask that will be handed to the connected component
   // labeling code:
   {
-    ierr = m_iceberg_mask.set(0.0); CHKERRQ(ierr);
+    m_iceberg_mask.set(0.0);
 
     IceModelVec::AccessList list;
     list.add(pism_mask);
     list.add(m_iceberg_mask);
 
-    for (Points p(grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (M.grounded_ice(i,j) == true)
+      if (M.grounded_ice(i,j) == true) {
         m_iceberg_mask(i,j) = mask_grounded_ice;
-      else if (M.floating_ice(i,j) == true)
+      } else if (M.floating_ice(i,j) == true) {
         m_iceberg_mask(i,j) = mask_floating_ice;
+      }
     }
 
     // Mark icy SSA Dirichlet B.C. cells as "grounded" because we
     // don't want them removed.
-    if (m_bcflag) {
-      list.add(*m_bcflag);
+    if (m_grid->variables().is_available("bc_mask")) {
+      const IceModelVec2Int &bc_mask = *m_grid->variables().get_2d_mask("bc_mask");
+      list.add(bc_mask);
 
-      for (Points p(grid); p; p.next()) {
+      for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        if ((*m_bcflag)(i,j) > 0.5 && M.icy(i,j))
+        if (bc_mask(i,j) > 0.5 and M.icy(i,j)) {
           m_iceberg_mask(i,j) = mask_grounded_ice;
+        }
       }
     }
   }
 
   // identify icebergs using serial code on processor 0:
   {
-    ierr = m_iceberg_mask.put_on_proc0(m_mask_p0); CHKERRQ(ierr);
+    m_iceberg_mask.put_on_proc0(*m_mask_p0);
 
-    if (grid.rank == 0) {
-      double *mask;
-      ierr = VecGetArray(m_mask_p0, &mask); CHKERRQ(ierr);
-
-      cc(mask, grid.Mx, grid.My, true, mask_grounded_ice);
-
-      ierr = VecRestoreArray(m_mask_p0, &mask); CHKERRQ(ierr);
+    ParallelSection rank0(m_grid->com);
+    try {
+      if (m_grid->rank() == 0) {
+        petsc::VecArray mask(*m_mask_p0);
+        cc(mask.get(), m_grid->My(), m_grid->Mx(), true, mask_grounded_ice);
+      }
+    } catch (...) {
+      rank0.failed();
     }
+    rank0.check();
 
-    ierr = m_iceberg_mask.get_from_proc0(m_mask_p0); CHKERRQ(ierr);
+    m_iceberg_mask.get_from_proc0(*m_mask_p0);
   }
 
   // correct ice thickness and the cell type mask using the resulting
@@ -117,22 +115,23 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
     list.add(pism_mask);
     list.add(m_iceberg_mask);
 
-    if (m_bcflag != NULL) {
+    if (m_grid->variables().is_available("bc_mask")) {
+      const IceModelVec2Int &bc_mask = *m_grid->variables().get_2d_mask("bc_mask");
       // if SSA Dirichlet B.C. are in use, do not modify mask and ice
       // thickness at Dirichlet B.C. locations
-      list.add(*m_bcflag);
+      list.add(bc_mask);
 
-      for (Points p(grid); p; p.next()) {
+      for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        if (m_iceberg_mask(i,j) > 0.5 && (*m_bcflag)(i,j) < 0.5) {
+        if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {
           ice_thickness(i,j) = 0.0;
           pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
         }
       }
     } else {
 
-      for (Points p(grid); p; p.next()) {
+      for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         if (m_iceberg_mask(i,j) > 0.5) {
@@ -145,42 +144,22 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
 
   // update ghosts of the mask and the ice thickness (then surface
   // elevation can be updated redundantly)
-  ierr = pism_mask.update_ghosts(); CHKERRQ(ierr);
-  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  pism_mask.update_ghosts();
+  ice_thickness.update_ghosts();
 }
 
-PetscErrorCode IcebergRemover::allocate() {
-  PetscErrorCode ierr;
-
-  ierr = m_iceberg_mask.create(grid, "iceberg_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_iceberg_mask.allocate_proc0_copy(m_mask_p0); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode IcebergRemover::deallocate() {
-  PetscErrorCode ierr;
-
-  ierr = VecDestroy(&m_mask_p0); CHKERRQ(ierr);
-
-  return 0;
-}
-
-void IcebergRemover::add_vars_to_output(const std::string &, std::set<std::string> &) {
+void IcebergRemover::add_vars_to_output_impl(const std::string &, std::set<std::string> &) {
   // empty
 }
 
-PetscErrorCode IcebergRemover::define_variables(const std::set<std::string> &, const PIO &,
+void IcebergRemover::define_variables_impl(const std::set<std::string> &, const PIO &,
                                                 IO_Type) {
   // empty
-  return 0;
 }
 
-PetscErrorCode IcebergRemover::write_variables(const std::set<std::string> &, const PIO&) {
+void IcebergRemover::write_variables_impl(const std::set<std::string> &, const PIO&) {
   // empty
-  return 0;
 }
 
+} // end of namespace calving
 } // end of namespace pism

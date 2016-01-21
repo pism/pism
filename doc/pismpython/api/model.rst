@@ -12,8 +12,6 @@ Classes that determine model data and physics used throughout PISM.
 
 .. automodule:: PISM.model
    :members:
-   :undoc-members:
    :private-members:
    :special-members:
    :show-inheritance:
-   :exclude-members: var_cmp

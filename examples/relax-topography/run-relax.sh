@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2013, 2014 Andy Aschwanden
+# Copyright (C) 2013, 2014, 2015 Andy Aschwanden
 #
 # *****************************************************************************
 # Relax Greenland Topography
@@ -194,7 +194,7 @@ EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
 EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"
 
 
-cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -boot_file $BOOTNAME 
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $BOOTNAME -bootstrap 
      $GRID $COUPLER \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \

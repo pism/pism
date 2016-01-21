@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -29,44 +29,48 @@ static char help[] =
   "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
   "  class thereof.\n\n";
 
-#include "pism_const.hh"
-#include "pism_options.hh"
-#include "iceModelVec.hh"
-#include "flowlaws.hh" // IceFlowLaw
-#include "basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "PIO.hh"
-#include "NCVariable.hh"
-#include "SSAFEM.hh"
-#include "SSAFD.hh"
-#include "exactTestsIJ.h"
-#include "SSATestCase.hh"
-#include <math.h>
+#include <cmath>
 
-using namespace pism;
+#include "base/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
+#include "base/stressbalance/ssa/SSAFD.hh"
+#include "base/stressbalance/ssa/SSAFEM.hh"
+#include "base/stressbalance/ssa/SSATestCase.hh"
+#include "base/util/Context.hh"
+#include "base/util/VariableMetadata.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/pism_options.hh"
+#include "verif/tests/exactTestsIJ.h"
 
-class SSATestCasePlug: public SSATestCase
-{
+namespace pism {
+namespace stressbalance {
+
+class SSATestCasePlug: public SSATestCase {
 public:
-  SSATestCasePlug(MPI_Comm com, Config &c, double n)
-    : SSATestCase(com, c)
-  { 
-    H0 = 2000.; //m
-    L=50.e3; // 50km half-width
-    dhdx = 0.001; // pure number, slope of surface & bed
-    tauc0 = 0.; // No basal shear stress
-    B0 = 3.7e8; // Pa s^{1/3}; hardness 
-               // given on p. 239 of Schoof; why so big?
-    this->glen_n = n;      
+  SSATestCasePlug(Context::Ptr ctx, double n)
+    : SSATestCase(ctx) {
+    H0    = 2000.;              //m
+    L     = 50.e3;              // 50km half-width
+    dhdx  = 0.001;              // pure number, slope of surface & bed
+    tauc0 = 0.;                 // No basal shear stress
+
+    // Pa s^{1/3}; hardness given on p. 239 of Schoof; why so big?
+    B0           = 3.7e8;
+
+    this->glen_n = n;
   }
-  
+
 protected:
-  virtual PetscErrorCode initializeGrid(int Mx,int My);
+  virtual void initializeGrid(int Mx,int My);
 
-  virtual PetscErrorCode initializeSSAModel();
+  virtual void initializeSSAModel();
 
-  virtual PetscErrorCode initializeSSACoefficients();
+  virtual void initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j, 
+  virtual void exactSolution(int i, int j,
     double x, double y, double *u, double *v);
 
 
@@ -78,174 +82,160 @@ protected:
   double glen_n;
 
   bool dimensionless;
-  
+
 };
 
 
-PetscErrorCode SSATestCasePlug::initializeGrid(int Mx,int My)
-{
-  double Lx=L, Ly = L; 
-  init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
-  return 0;
+void SSATestCasePlug::initializeGrid(int Mx,int My) {
+  double Lx=L, Ly = L;
+  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
+                            0.0, 0.0, // center: (x0,y0)
+                            Mx, My, NOT_PERIODIC);
 }
 
 
-PetscErrorCode SSATestCasePlug::initializeSSAModel()
-{
+void SSATestCasePlug::initializeSSAModel() {
   // Basal sliding law parameters are irrelevant because tauc=0
 
   // Enthalpy converter is irrelevant (but still required) for this test.
-  enthalpyconverter = new EnthalpyConverter(config);
+  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
   // Use constant hardness
-  config.set_string("ssa_flow_law", "isothermal_glen");
-  config.set_double("ice_softness", pow(B0, -glen_n));
-  return 0;
+  m_config->set_string("ssa_flow_law", "isothermal_glen");
+  m_config->set_double("ice_softness", pow(B0, -glen_n));
 }
 
-PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
-{
-  PetscErrorCode ierr;
+void SSATestCasePlug::initializeSSACoefficients() {
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  config.set_flag("compute_surf_grad_inward_ssa", true);
-  config.set_double("epsilon_ssa", 0.0);
+  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
+  m_config->set_double("epsilon_ssa", 0.0);
 
   // Ensure we never use the strength extension.
-  ssa->strength_extension->set_min_thickness(H0/2);
+  m_ssa->strength_extension->set_min_thickness(H0/2);
 
   // Set constant coefficients.
-  ierr = thickness.set(H0); CHKERRQ(ierr);
-  ierr = tauc.set(tauc0); CHKERRQ(ierr);
+  m_thickness.set(H0);
+  m_tauc.set(tauc0);
 
 
   // Set boundary conditions (Dirichlet all the way around).
-  ierr = bc_mask.set(0.0); CHKERRQ(ierr);
+  m_bc_mask.set(0.0);
 
   IceModelVec::AccessList list;
-  list.add(vel_bc);
-  list.add(bc_mask);
-  list.add(bed);
-  list.add(surface);
+  list.add(m_bc_values);
+  list.add(m_bc_mask);
+  list.add(m_bed);
+  list.add(m_surface);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid.x[i], myy=grid.y[j];
+    const double myx = m_grid->x(i), myy=m_grid->y(j);
 
-    bed(i,j) = -myx*(dhdx);
-    surface(i,j) = bed(i,j) + H0;
-      
-    bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
+    m_bed(i,j) = -myx*(dhdx);
+    m_surface(i,j) = m_bed(i,j) + H0;
+
+    bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
+                 (i == 0) || (i == (int)m_grid->Mx() - 1));
     if (edge) {
-      bc_mask(i,j) = 1;
+      m_bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);
-      vel_bc(i,j).u = myu;
-      vel_bc(i,j).v = myv;
+      m_bc_values(i,j).u = myu;
+      m_bc_values(i,j).v = myv;
     }
   }
 
-  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
-  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-  ierr = bed.update_ghosts(); CHKERRQ(ierr);
-  ierr = surface.update_ghosts(); CHKERRQ(ierr);
+  m_bc_values.update_ghosts();
+  m_bc_mask.update_ghosts();
+  m_bed.update_ghosts();
+  m_surface.update_ghosts();
 
-  ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
-
-  return 0;
+  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
 }
 
-PetscErrorCode SSATestCasePlug::exactSolution(int /*i*/, int /*j*/, 
+void SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
                                               double /*x*/, double y,
-                                              double *u, double *v)
-{
-  double earth_grav = config.get("standard_gravity"),
-    ice_rho = config.get("ice_density");
+                                              double *u, double *v) {
+  double earth_grav = m_config->get_double("standard_gravity"),
+    ice_rho = m_config->get_double("ice_density");
   double f = ice_rho * earth_grav * H0* dhdx;
   double ynd = y/L;
 
   *u = 0.5*pow(f,3)*pow(L,4)/pow(B0*H0,3)*(1-pow(ynd,4));
   *v = 0;
-  return 0;
 }
 
+} // end of namespace stressbalance
+} // end of namespace pism
+
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
-  MPI_Comm    com;  // won't be used except for rank,size
+  using namespace pism;
+  using namespace pism::stressbalance;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank,size
+  petsc::Initializer petsc(argc, argv, help);
+  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {  
-    UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+  try {
+    Context::Ptr ctx = context_from_options(com, "ssa_test_plug");
+    Config::Ptr config = ctx->config();
 
-    ierr = setVerbosityLevel(5); CHKERRQ(ierr);
+    setVerbosityLevel(5);
 
-    PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
-    if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
-      PetscPrintf(com,
-                  "\n"
-                  "usage of SSA_TEST_PLUG:\n"
-                  "  run ssa_test_plug -Mx <number> -My <number> -ssa_method <fd|fem>\n"
-                  "\n");
+    bool
+      usage_set = options::Bool("-usage", "show the usage message"),
+      help_set  = options::Bool("-help", "show the help message");
+    if (usage_set or help_set) {
+      ierr = PetscPrintf(com,
+                         "\n"
+                         "usage of SSA_TEST_PLUG:\n"
+                         "  run ssa_test_plug -Mx <number> -My <number> -ssa_method <fd|fem>\n"
+                         "\n");
+      PISM_CHK(ierr, "PetscPrintf");
     }
 
     // Parameters that can be overridden by command line options
-    int Mx=11;
-    int My=61;
-    std::string output_file = "ssa_test_plug.nc";
 
-    std::set<std::string> ssa_choices;
-    ssa_choices.insert("fem");
-    ssa_choices.insert("fd");
-    std::string driver = "fem";
+    options::Integer Mx("-Mx", "Number of grid points in the X direction", 11);
+    options::Integer My("-My", "Number of grid points in the Y direction", 61);
 
-    // double H0dim = 1.;
-    double glen_n = 3.;
+    options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
+                            "fem,fd", "fem");
 
-    ierr = PetscOptionsBegin(com, "", "SSA_TEST_PLUG options", ""); CHKERRQ(ierr);
-    {
-      bool flag;
-      int my_verbosity_level;
-      ierr = OptionsInt("-Mx", "Number of grid points in the X direction", 
-                                                      Mx, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-My", "Number of grid points in the Y direction", 
-                                                      My, flag); CHKERRQ(ierr);
-      ierr = OptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
-                             ssa_choices, driver, driver, flag); CHKERRQ(ierr);
-             
-      ierr = OptionsString("-o", "Set the output file name", 
-                                              output_file, flag); CHKERRQ(ierr);
-      ierr = OptionsReal("-ssa_glen_n", "", glen_n, flag); CHKERRQ(ierr);
+    options::String output_file("-o", "Set the output file name", "ssa_test_plug.nc");
+    options::Real glen_n("-ssa_glen_n", "Glen exponent for the SSA", 3.0);
 
-      ierr = OptionsInt("-verbose", "Verbosity level",
-                            my_verbosity_level, flag); CHKERRQ(ierr);
-      if (flag) setVerbosityLevel(my_verbosity_level);
+    options::Integer my_verbosity_level("-verbose", "Verbosity level", 2);
+    if (my_verbosity_level.is_set()) {
+      setVerbosityLevel(my_verbosity_level);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if (driver == "fem") ssafactory = SSAFEMFactory;
-    else if (driver == "fd") ssafactory = SSAFDFactory;
-    else { /* can't happen */ }
+    if (method == "fem") {
+      ssafactory = SSAFEMFactory;
+    } else if (method == "fd") {
+      ssafactory = SSAFDFactory;
+    } else {
+      /* can't happen */
+    }
 
-    SSATestCasePlug testcase(com,config,glen_n);
-    ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
-    ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report("plug"); CHKERRQ(ierr);
-    ierr = testcase.write(output_file); CHKERRQ(ierr);
+    SSATestCasePlug testcase(ctx, glen_n);
+    testcase.init(Mx,My,ssafactory);
+    testcase.run();
+    testcase.report("plug");
+    testcase.write(output_file);
+  }
+  catch (...) {
+    handle_fatal_errors(com);
+    return 1;
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

@@ -6,7 +6,7 @@ MPIEXEC=$2
 echo "Test # 6: bootstrapping from symmetric and non-symmetric x- and y-vars."
 files="foo-06.nc bar-06.nc baz-06.nc"
 
-OPTS="-boot_file foo-06.nc -Mx 21 -My 11 -Mz 31 -Mbz 1 -Lz 4000 -y 0 -o_size small"
+OPTS="-i foo-06.nc -bootstrap -Mx 21 -My 11 -Mz 31 -Mbz 1 -Lz 4000 -y 0 -o_size small"
 
 set -e -x
 

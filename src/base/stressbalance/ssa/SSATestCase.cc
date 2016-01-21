@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,431 +17,384 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSATestCase.hh"
-#include "PIO.hh"
-
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
-#include "pism_options.hh"
-#include "Mask.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/io/io_helpers.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
+namespace stressbalance {
 
 //! Initialize the storage for the various coefficients used as input to the SSA
-//! (ice elevation, thickness, etc.)  
-PetscErrorCode SSATestCase::buildSSACoefficients()
+//! (ice elevation, thickness, etc.)
+void SSATestCase::buildSSACoefficients()
 {
-  PetscErrorCode ierr;
 
-  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
-  
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+
   // ice surface elevation
-  ierr = surface.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = surface.set_attrs("diagnostic", "ice upper surface elevation", "m", 
-                                      "surface_altitude"); CHKERRQ(ierr);
-  ierr = vars.add(surface); CHKERRQ(ierr);
-  
+  m_surface.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
+  m_surface.set_attrs("diagnostic", "ice upper surface elevation", "m",
+                      "surface_altitude");
+  m_grid->variables().add(m_surface);
+
   // land ice thickness
-  ierr = thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = thickness.set_attrs("model_state", "land ice thickness", "m", 
-                             "land_ice_thickness"); CHKERRQ(ierr);
-  thickness.metadata().set_double("valid_min", 0.0);
-  ierr = vars.add(thickness); CHKERRQ(ierr);
+  m_thickness.create(m_grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
+  m_thickness.set_attrs("model_state", "land ice thickness", "m",
+                        "land_ice_thickness");
+  m_thickness.metadata().set_double("valid_min", 0.0);
+  m_grid->variables().add(m_thickness);
 
   // bedrock surface elevation
-  ierr = bed.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = bed.set_attrs("model_state", "bedrock surface elevation", "m", 
-                                          "bedrock_altitude"); CHKERRQ(ierr);
-  ierr = vars.add(bed); CHKERRQ(ierr);
+  m_bed.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  m_bed.set_attrs("model_state", "bedrock surface elevation", "m",
+                  "bedrock_altitude");
+  m_grid->variables().add(m_bed);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
-  ierr = tauc.create(grid, "tauc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = tauc.set_attrs("diagnostic",  
-  "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
-      CHKERRQ(ierr);
-  ierr = vars.add(tauc); CHKERRQ(ierr);
+  m_tauc.create(m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
+  m_tauc.set_attrs("diagnostic",
+                   "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
+  m_grid->variables().add(m_tauc);
 
   // enthalpy
-  ierr = enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = enthalpy.set_attrs("model_state",
-              "ice enthalpy (includes sensible heat, latent heat, pressure)",
-              "J kg-1", ""); CHKERRQ(ierr);
-  ierr = vars.add(enthalpy); CHKERRQ(ierr);
+  m_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
+  m_enthalpy.set_attrs("model_state",
+                       "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                       "J kg-1", "");
+  m_grid->variables().add(m_enthalpy);
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
-  ierr = vel_bc.create(grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); // u_bc and v_bc
-  ierr = vel_bc.set_attrs("intent", 
-            "X-component of the SSA velocity boundary conditions", 
-            "m s-1", "", 0); CHKERRQ(ierr);
-  ierr = vel_bc.set_attrs("intent", 
-            "Y-component of the SSA velocity boundary conditions", 
-            "m s-1", "", 1); CHKERRQ(ierr);
-  ierr = vel_bc.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vel_bc.metadata(0).set_double("valid_min", grid.convert(-1e6, "m/year", "m/second"));
-  vel_bc.metadata(0).set_double("valid_max", grid.convert( 1e6, "m/year", "m/second"));
-  vel_bc.metadata(0).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
-  vel_bc.metadata(1).set_double("valid_min", grid.convert(-1e6, "m/year", "m/second"));
-  vel_bc.metadata(1).set_double("valid_max", grid.convert( 1e6, "m/year", "m/second"));
-  vel_bc.metadata(1).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
-  vel_bc.write_in_glaciological_units = true;
-  ierr = vel_bc.set(config.get("fill_value", "m/year", "m/s")); CHKERRQ(ierr);
-  
+  m_bc_values.create(m_grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
+  m_bc_values.set_attrs("intent",
+                     "X-component of the SSA velocity boundary conditions",
+                     "m s-1", "", 0);
+  m_bc_values.set_attrs("intent",
+                     "Y-component of the SSA velocity boundary conditions",
+                     "m s-1", "", 1);
+
+  Config::ConstPtr config = m_grid->ctx()->config();
+  units::System::Ptr sys = m_grid->ctx()->unit_system();
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+
+  m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
+  m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_bc_values.metadata(0).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
+  m_bc_values.metadata(0).set_double("_FillValue", fill_value);
+
+  m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
+  m_bc_values.metadata(1).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
+  m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
+  m_bc_values.metadata(1).set_double("_FillValue", fill_value);
+
+  m_bc_values.write_in_glaciological_units = true;
+  m_bc_values.set(fill_value);
+
   // grounded_dragging_floating integer mask
-  ierr = ice_mask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = ice_mask.set_attrs("model_state", 
-          "grounded_dragging_floating integer mask", "", ""); CHKERRQ(ierr);
+  m_ice_mask.create(m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
+  m_ice_mask.set_attrs("model_state",
+                       "grounded_dragging_floating integer mask", "", "");
   std::vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
   mask_values[2] = MASK_FLOATING;
   mask_values[3] = MASK_ICE_FREE_OCEAN;
-  ice_mask.metadata().set_doubles("flag_values", mask_values);
-  ice_mask.metadata().set_string("flag_meanings",
-                                 "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  ierr = vars.add(ice_mask); CHKERRQ(ierr);
+  m_ice_mask.metadata().set_doubles("flag_values", mask_values);
+  m_ice_mask.metadata().set_string("flag_meanings",
+                                   "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
+  m_grid->variables().add(m_ice_mask);
 
-  ierr = ice_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
+  m_ice_mask.set(MASK_GROUNDED);
 
   // Dirichlet B.C. mask
-  ierr = bc_mask.create(grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = bc_mask.set_attrs("model_state", 
-          "grounded_dragging_floating integer mask", "", ""); CHKERRQ(ierr);
+  m_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
+  m_bc_mask.set_attrs("model_state",
+                      "grounded_dragging_floating integer mask", "", "");
   mask_values.resize(2);
   mask_values[0] = 0;
   mask_values[1] = 1;
-  bc_mask.metadata().set_doubles("flag_values", mask_values);
-  bc_mask.metadata().set_string("flag_meanings",
-                                "no_data ssa_dirichlet_bc_location");
-  ierr = vars.add(bc_mask); CHKERRQ(ierr);
+  m_bc_mask.metadata().set_doubles("flag_values", mask_values);
+  m_bc_mask.metadata().set_string("flag_meanings",
+                                  "no_data ssa_dirichlet_bc_location");
+  m_grid->variables().add(m_bc_mask);
 
-  ierr = melange_back_pressure.create(grid, "melange_back_pressure_fraction",
-                                      WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = melange_back_pressure.set_attrs("boundary_condition",
-                                         "melange back pressure fraction", "", ""); CHKERRQ(ierr);
-  ierr = melange_back_pressure.set(0.0); CHKERRQ(ierr);
-  
-  return 0;
+  m_melange_back_pressure.create(m_grid, "melange_back_pressure_fraction",
+                                 WITH_GHOSTS, WIDE_STENCIL);
+  m_melange_back_pressure.set_attrs("boundary_condition",
+                                    "melange back pressure fraction", "", "");
+  m_melange_back_pressure.set(0.0);
 }
 
-SSATestCase::SSATestCase(MPI_Comm com, Config &c)
-  : config(c), grid(com, config), enthalpyconverter(0), ssa(0)
-{
+SSATestCase::SSATestCase(Context::Ptr ctx)
+  : m_com(ctx->com()), m_config(ctx->config()), m_ctx(ctx),
+    m_sys(ctx->unit_system()), m_ssa(NULL) {
   // empty
 }
 
 SSATestCase::~SSATestCase()
 {
-  delete enthalpyconverter;
-  delete ssa;
+  delete m_ssa;
 }
 
 //! Initialize the test case at the start of a run
-PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
+void SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 {
-  PetscErrorCode ierr;
-
-  // Set options from command line.  
-  ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssafd"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence"); CHKERRQ(ierr);
-
-  // Subclass builds grid.
-  ierr = initializeGrid(Mx,My);
+  // Subclass builds grid->
+  initializeGrid(Mx,My);
 
   // Subclass builds ice flow law, basal resistance, etc.
-  ierr = initializeSSAModel(); CHKERRQ(ierr);
+  initializeSSAModel();
 
   // We setup storage for the coefficients.
-  ierr = buildSSACoefficients(); CHKERRQ(ierr);
+  buildSSACoefficients();
 
   // Allocate the actual SSA solver.
-  ssa = ssafactory(grid, *enthalpyconverter, config);
-  ierr = ssa->init(vars); CHKERRQ(ierr); // vars was setup preivouisly with buildSSACoefficients
+  m_ssa = ssafactory(m_grid, m_enthalpyconverter);
+  m_ssa->init(); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.
-  ierr = initializeSSACoefficients(); CHKERRQ(ierr);
-
-  return 0;
+  initializeSSACoefficients();
 }
 
 //! Solve the SSA
-PetscErrorCode SSATestCase::run()
-{
-  PetscErrorCode ierr;
+void SSATestCase::run() {
   // Solve (fast==true means "no update"):
-  ierr = verbPrintf(2,grid.com,"* Solving the SSA stress balance ...\n"); CHKERRQ(ierr);
+  m_ctx->log()->message(2,"* Solving the SSA stress balance ...\n");
 
   bool fast = false;
-  ierr = ssa->update(fast, melange_back_pressure); CHKERRQ(ierr);
-
-  return 0;
+  m_ssa->update(fast, m_melange_back_pressure);
 }
 
 //! Report on the generated solution
-PetscErrorCode SSATestCase::report(const std::string &testname) {
-  PetscErrorCode  ierr;
-    
-  std::string ssa_stdout;
-  ierr = ssa->stdout_report(ssa_stdout); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,ssa_stdout.c_str()); CHKERRQ(ierr);
-  
-  double maxvecerr = 0.0, avvecerr = 0.0, 
+void SSATestCase::report(const std::string &testname) {
+
+  m_ctx->log()->message(3, m_ssa->stdout_report());
+
+  double maxvecerr = 0.0, avvecerr = 0.0,
     avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
   double gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
     gmaxuerr = 0.0, gmaxverr = 0.0;
 
-  if (config.get_flag("do_pseudo_plastic_till") &&
-      config.get("pseudo_plastic_q") != 1.0) {
-    ierr = verbPrintf(1,grid.com, 
-                    "WARNING: numerical errors not valid for pseudo-plastic till\n"); CHKERRQ(ierr);
+  if (m_config->get_boolean("do_pseudo_plastic_till") &&
+      m_config->get_double("pseudo_plastic_q") != 1.0) {
+    m_ctx->log()->message(1,
+                          "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }
-  ierr = verbPrintf(1,grid.com, 
-                    "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
+  m_ctx->log()->message(1,
+                        "NUMERICAL ERRORS in velocity relative to exact solution:\n");
 
 
-  IceModelVec2V *vel_ssa;
-  ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
+  const IceModelVec2V &vel_ssa = m_ssa->velocity();
 
   IceModelVec::AccessList list;
-  list.add(*vel_ssa);
+  list.add(vel_ssa);
 
   double exactvelmax = 0, gexactvelmax = 0;
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double uexact, vexact;
-    double myx = grid.x[i], myy = grid.y[j];
+    double myx = m_grid->x(i), myy = m_grid->y(j);
 
     exactSolution(i,j,myx,myy,&uexact,&vexact);
 
     double exactnormsq=sqrt(uexact*uexact+vexact*vexact);
-    exactvelmax = PetscMax(exactnormsq,exactvelmax);
+    exactvelmax = std::max(exactnormsq,exactvelmax);
 
     // compute maximum errors
-    const double uerr = PetscAbsReal((*vel_ssa)(i,j).u - uexact);
-    const double verr = PetscAbsReal((*vel_ssa)(i,j).v - vexact);
+    const double uerr = fabs(vel_ssa(i,j).u - uexact);
+    const double verr = fabs(vel_ssa(i,j).v - vexact);
     avuerr = avuerr + uerr;
     avverr = avverr + verr;
-    maxuerr = PetscMax(maxuerr,uerr);
-    maxverr = PetscMax(maxverr,verr);
+    maxuerr = std::max(maxuerr,uerr);
+    maxverr = std::max(maxverr,verr);
     const double vecerr = sqrt(uerr * uerr + verr * verr);
-    maxvecerr = PetscMax(maxvecerr,vecerr);
+    maxvecerr = std::max(maxvecerr,vecerr);
     avvecerr = avvecerr + vecerr;
   }
 
+  unsigned int N = (m_grid->Mx()*m_grid->My());
+  gexactvelmax = GlobalMax(m_grid->com, exactvelmax);
+  gmaxuerr = GlobalMax(m_grid->com, maxuerr);
+  gmaxverr = GlobalMax(m_grid->com, maxverr);
+  gavuerr = GlobalSum(m_grid->com, avuerr);
+  gavuerr = gavuerr / N;
+  gavverr = GlobalSum(m_grid->com, avverr);
+  gavverr = gavverr / N;
+  gmaxvecerr = GlobalMax(m_grid->com, maxvecerr);
+  gavvecerr = GlobalSum(m_grid->com, avvecerr);
+  gavvecerr = gavvecerr / N;
 
-  ierr = GlobalMax(grid.com, &exactvelmax,  &gexactvelmax); CHKERRQ(ierr);
-  ierr = GlobalMax(grid.com, &maxuerr,  &gmaxuerr); CHKERRQ(ierr);
-  ierr = GlobalMax(grid.com, &maxverr,  &gmaxverr); CHKERRQ(ierr);
-  ierr = GlobalSum(grid.com, &avuerr,  &gavuerr); CHKERRQ(ierr);
-  gavuerr = gavuerr/(grid.Mx*grid.My);
-  ierr = GlobalSum(grid.com, &avverr,  &gavverr); CHKERRQ(ierr);
-  gavverr = gavverr/(grid.Mx*grid.My);
-  ierr = GlobalMax(grid.com, &maxvecerr,  &gmaxvecerr); CHKERRQ(ierr);
-  ierr = GlobalSum(grid.com, &avvecerr,  &gavvecerr); CHKERRQ(ierr);
-  gavvecerr = gavvecerr/(grid.Mx*grid.My);
+  m_ctx->log()->message(1,
+                        "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
+  m_ctx->log()->message(1,
+                        "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n",
+                        units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
+                        (gavvecerr/gexactvelmax)*100.0,
+                        units::convert(m_sys, gmaxuerr, "m/second", "m/year"),
+                        units::convert(m_sys, gmaxverr, "m/second", "m/year"),
+                        units::convert(m_sys, gavuerr, "m/second", "m/year"),
+                        units::convert(m_sys, gavverr, "m/second", "m/year"));
 
-  ierr = verbPrintf(1,grid.com, 
-                    "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
-  CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, 
-                    "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
-                    grid.convert(gmaxvecerr, "m/second", "m/year"),
-                    (gavvecerr/gexactvelmax)*100.0,
-                    grid.convert(gmaxuerr, "m/second", "m/year"),
-                    grid.convert(gmaxverr, "m/second", "m/year"),
-                    grid.convert(gavuerr, "m/second", "m/year"),
-                    grid.convert(gavverr, "m/second", "m/year")); CHKERRQ(ierr);
+  m_ctx->log()->message(1, "NUM ERRORS DONE\n");
 
-  ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
-
-  ierr = report_netcdf(testname,
-                       grid.convert(gmaxvecerr, "m/second", "m/year"),
-                       (gavvecerr/gexactvelmax)*100.0,
-                       grid.convert(gmaxuerr, "m/second", "m/year"),
-                       grid.convert(gmaxverr, "m/second", "m/year"),
-                       grid.convert(gavuerr, "m/second", "m/year"),
-                       grid.convert(gavverr, "m/second", "m/year")); CHKERRQ(ierr);
-
-  return 0;
+  report_netcdf(testname,
+                units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
+                (gavvecerr/gexactvelmax)*100.0,
+                units::convert(m_sys, gmaxuerr, "m/second", "m/year"),
+                units::convert(m_sys, gmaxverr, "m/second", "m/year"),
+                units::convert(m_sys, gavuerr, "m/second", "m/year"),
+                units::convert(m_sys, gavverr, "m/second", "m/year"));
 }
 
-PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
-                                          double max_vector,
-                                          double rel_vector,
-                                          double max_u,
-                                          double max_v,
-                                          double avg_u,
-                                          double avg_v) {
-  PetscErrorCode ierr;
-  NCTimeseries err("N", "N", grid.get_unit_system());
+void SSATestCase::report_netcdf(const std::string &testname,
+                                double max_vector,
+                                double rel_vector,
+                                double max_u,
+                                double max_v,
+                                double avg_u,
+                                double avg_v) {
+  TimeseriesMetadata err("N", "N", m_grid->ctx()->unit_system());
   unsigned int start;
-  std::string filename;
-  bool flag, append;
-  NCVariable global_attributes("PISM_GLOBAL", grid.get_unit_system());
+  VariableMetadata global_attributes("PISM_GLOBAL", m_grid->ctx()->unit_system());
 
-  ierr = OptionsString("-report_file", "NetCDF error report file",
-                           filename, flag); CHKERRQ(ierr);
+  options::String filename("-report_file", "NetCDF error report file");
 
-  if (flag == false)
-    return 0;
+  if (not filename.is_set()) {
+    return;
+  }
 
-  err.set_units("1");
+  err.set_string("units", "1");
 
-  ierr = verbPrintf(2, grid.com, "Also writing errors to '%s'...\n", filename.c_str());
-  CHKERRQ(ierr);
+  m_ctx->log()->message(2, "Also writing errors to '%s'...\n", filename->c_str());
 
-  ierr = OptionsIsSet("-append", "Append the NetCDF error report",
-                          append); CHKERRQ(ierr);
+  bool append = options::Bool("-append", "Append the NetCDF error report");
 
   IO_Mode mode = PISM_READWRITE;
-  if (append == false) {
+  if (not append) {
     mode = PISM_READWRITE_MOVE;
   }
 
   global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
   // Find the number of records in this file:
-  PIO nc(grid, "netcdf3");      // OK to use NetCDF3.
-  ierr = nc.open(filename, mode); CHKERRQ(ierr);
-  ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
+  PIO nc(m_grid->com, "netcdf3");      // OK to use NetCDF3.
+  nc.open(filename, mode);
+  start = nc.inq_dimlen("N");
 
-  ierr = nc.write_global_attributes(global_attributes); CHKERRQ(ierr);
+  io::write_global_attributes(nc, global_attributes);
 
   // Write the dimension variable:
-  ierr = nc.write_timeseries(err, (size_t)start, (double)(start + 1), PISM_INT); CHKERRQ(ierr);
+  io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);
 
   // Always write grid parameters:
   err.set_name("dx");
-  ierr = err.set_units("meters"); CHKERRQ(ierr);
-  ierr = nc.write_timeseries(err, (size_t)start, grid.dx); CHKERRQ(ierr);
+  err.set_string("units", "meters");
+  io::write_timeseries(nc, err, (size_t)start, m_grid->dx());
   err.set_name("dy");
-  ierr = nc.write_timeseries(err, (size_t)start, grid.dy); CHKERRQ(ierr);
+  io::write_timeseries(nc, err, (size_t)start, m_grid->dy());
 
   // Always write the test name:
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("test");
-  ierr = nc.write_timeseries(err, (size_t)start, testname[0], PISM_BYTE); CHKERRQ(ierr);
+  io::write_timeseries(nc, err, (size_t)start, testname[0], PISM_BYTE);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("max_velocity");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_string("units", "m/year");
   err.set_string("long_name", "maximum ice velocity magnitude error");
-  ierr = nc.write_timeseries(err, (size_t)start, max_vector); CHKERRQ(ierr);
+  io::write_timeseries(nc, err, (size_t)start, max_vector);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("relative_velocity");
-  ierr = err.set_units("percent"); CHKERRQ(ierr);
+  err.set_string("units", "percent");
   err.set_string("long_name", "relative ice velocity magnitude error");
-  ierr = nc.write_timeseries(err, (size_t)start, rel_vector); CHKERRQ(ierr);
+  io::write_timeseries(nc, err, (size_t)start, rel_vector);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_u");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_string("units", "m/year");
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
-  ierr = nc.write_timeseries(err, (size_t)start, max_u); CHKERRQ(ierr);
+  io::write_timeseries(nc, err, (size_t)start, max_u);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_v");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_string("units", "m/year");
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
-  ierr = nc.write_timeseries(err, (size_t)start, max_v); CHKERRQ(ierr);
+  io::write_timeseries(nc, err, (size_t)start, max_v);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_u");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_string("units", "m/year");
   err.set_string("long_name", "average error in the X-component of the ice velocity");
-  ierr = nc.write_timeseries(err, (size_t)start, avg_u); CHKERRQ(ierr);
+  io::write_timeseries(nc, err, (size_t)start, avg_u);
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_v");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_string("units", "m/year");
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
-  ierr = nc.write_timeseries(err, (size_t)start, avg_v); CHKERRQ(ierr);
+  io::write_timeseries(nc, err, (size_t)start, avg_v);
 
-  ierr = nc.close(); CHKERRQ(ierr);
-
-  return 0;
+  nc.close();
 }
 
-PetscErrorCode SSATestCase::exactSolution(int /*i*/, int /*j*/, 
-                                          double /*x*/, double /*y*/,
-                                          double *u, double *v)
-{
+void SSATestCase::exactSolution(int /*i*/, int /*j*/,
+                                double /*x*/, double /*y*/,
+                                double *u, double *v) {
   *u=0; *v=0;
-  return 0;
 }
 
 //! Save the computation and data to a file.
-PetscErrorCode SSATestCase::write(const std::string &filename)
-{
-  PetscErrorCode ierr;
+void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(grid, grid.config.get_string("output_format"));
-  ierr = pio.open(filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
-  ierr = pio.def_time(config.get_string("time_dimension_name"),
-                      grid.time->calendar(),
-                      grid.time->CF_units_string()); CHKERRQ(ierr);
-  ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
+  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output_format"));
+  pio.open(filename, PISM_READWRITE_MOVE);
+  io::define_time(pio, m_config->get_string("time_dimension_name"),
+                  m_grid->ctx()->time()->calendar(),
+                  m_grid->ctx()->time()->CF_units_string(),
+                  m_grid->ctx()->unit_system());
+  io::append_time(pio, m_config->get_string("time_dimension_name"), 0.0);
 
-  ierr = surface.write(pio); CHKERRQ(ierr);
-  ierr = thickness.write(pio); CHKERRQ(ierr);
-  ierr = bc_mask.write(pio); CHKERRQ(ierr);
-  ierr = tauc.write(pio); CHKERRQ(ierr);
-  ierr = bed.write(pio); CHKERRQ(ierr);
-  ierr = enthalpy.write(pio); CHKERRQ(ierr);
-  ierr = vel_bc.write(pio); CHKERRQ(ierr);
+  m_surface.write(pio);
+  m_thickness.write(pio);
+  m_bc_mask.write(pio);
+  m_tauc.write(pio);
+  m_bed.write(pio);
+  m_enthalpy.write(pio);
+  m_bc_values.write(pio);
 
-  IceModelVec2V *vel_ssa;
-  ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
-  ierr = vel_ssa->write(pio); CHKERRQ(ierr);
+  const IceModelVec2V &vel_ssa = m_ssa->velocity();
+  vel_ssa.write(pio);
 
   IceModelVec2V exact;
-  ierr = exact.create(grid, "_exact", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = exact.set_attrs("diagnostic", 
-            "X-component of the SSA exact solution", 
-            "m s-1", "", 0); CHKERRQ(ierr);
-  ierr = exact.set_attrs("diagnostic", 
-            "Y-component of the SSA exact solution", 
-            "m s-1", "", 1); CHKERRQ(ierr);
-  ierr = exact.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  exact.create(m_grid, "_exact", WITHOUT_GHOSTS);
+  exact.set_attrs("diagnostic",
+                  "X-component of the SSA exact solution",
+                  "m s-1", "", 0);
+  exact.set_attrs("diagnostic",
+                  "Y-component of the SSA exact solution",
+                  "m s-1", "", 1);
+  exact.metadata(0).set_string("glaciological_units", "m year-1");
+  exact.metadata(1).set_string("glaciological_units", "m year-1");
   exact.write_in_glaciological_units = true;
 
   IceModelVec::AccessList list(exact);
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    exactSolution(i, j, grid.x[i], grid.y[j],
+    exactSolution(i, j, m_grid->x(i), m_grid->y(j),
                   &(exact(i,j).u), &(exact(i,j).v));
   }
-  ierr = exact.write(pio); CHKERRQ(ierr);
+  exact.write(pio);
 
-  ierr = pio.close(); CHKERRQ(ierr);
-  return 0;
+  pio.close();
 }
 
-
-/*! Initialize a uniform, shallow (3 z-levels), doubly periodic grid with 
-half-widths (Lx,Ly) and Mx by My nodes for time-independent computations.*/
-PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx, 
-				 double Ly, int Mx, int My, Periodicity p)
-{
-  PetscErrorCode ierr;
-  
-  grid.Lx = Lx;
-  grid.Ly = Ly;
-  grid.periodicity = p;
-  grid.Mx = Mx; grid.My=My; grid.Mz = 3;
-  
-  grid.compute_nprocs();
-  grid.compute_ownership_ranges();
-  ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
-  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-  ierr = grid.allocate(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
+} // end of namespace stressbalance
 } // end of namespace pism

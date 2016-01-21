@@ -1,4 +1,5 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010--2015 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy
+// Aschwanden
 //
 // This file is part of PISM.
 //
@@ -16,30 +17,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-static char help[] =
-  "Ice sheet driver for PISM regional (outlet glacier) simulations, initialized\n"
-  "from data.\n";
-
-#include <petsc.h>
-#include "IceGrid.hh"
-#include "iceModel.hh"
-
-#include "regional.hh"
-
-#include "PAFactory.hh"
-#include "POFactory.hh"
-#include "PSFactory.hh"
-#include "PISMStressBalance.hh"
-#include "PISMMohrCoulombYieldStress.hh"
-#include "PISMConstantYieldStress.hh"
-#include "PIO.hh"
-#include "pism_options.hh"
-
-using namespace pism;
-
-//! \file pismo.cc A regional (outlet glacier) model form of PISM.
-/*! \file pismo.cc 
-The classes in this file modify basic PISM whole ice sheet modeling assumptions.
+//! @file pismo.cc A regional (outlet glacier) model form of PISM.
+/*! @file pismo.cc
+The classes used by this driver program modify basic PISM whole ice sheet modeling assumptions.
 Normally in PISM the ice sheet occupies a continent which is surrounded by
 ocean.  Or at least PISM assumes that the edge of the computational domain is in
 a region with strong ablation that the ice will not cross.
@@ -53,463 +33,93 @@ the gradient of a saved surface elevation, and
 * the base is made strong so that no sliding occurs.
 
 Also options `-force_to_thickness_file` and variable `ftt_mask` play a role in isolating
-the modeled outlet glacier.  But there is no code here for that purpose. 
-Instead see the PSForceThickness surface model modifier class.
+the modeled outlet glacier.  But there is no code here for that purpose.
+Instead see the ForceThickness surface model modifier class.
  */
 
-//! \brief A version of the PISM core class (IceModel) which knows about the
-//! no_model_mask and its semantics.
-class IceRegionalModel : public IceModel {
-public:
-  IceRegionalModel(IceGrid &g, Config &c, Config &o)
-     : IceModel(g,c,o) {};
-protected:
-  virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode bootstrap_2d(const std::string &filename);
-  virtual PetscErrorCode initFromFile(const std::string &filename);
-  virtual PetscErrorCode model_state_setup();
-  virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode allocate_stressbalance();
-  virtual PetscErrorCode allocate_basal_yield_stress();
-  virtual PetscErrorCode massContExplicitStep();
-  virtual void cell_interface_fluxes(bool dirichlet_bc,
-                                     int i, int j,
-                                     planeStar<Vector2> input_velocity,
-                                     planeStar<double> input_flux,
-                                     planeStar<double> &output_velocity,
-                                     planeStar<double> &output_flux);
-  virtual PetscErrorCode enthalpyAndDrainageStep(double* vertSacrCount,
-                                                 double* liquifiedVol,
-                                                 double* bulgeCount);
-private:
-  IceModelVec2Int no_model_mask;
-  IceModelVec2S   usurfstore, thkstore;
-  IceModelVec2S   bmr_stored;
-  PetscErrorCode  set_no_model_strip(double stripwidth);
-};
-
-//! \brief Set no_model_mask variable to have value 1 in strip of width 'strip'
-//! m around edge of computational domain, and value 0 otherwise.
-PetscErrorCode IceRegionalModel::set_no_model_strip(double strip) {
-  PetscErrorCode ierr;
-
-  IceModelVec::AccessList list(no_model_mask);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (grid.in_null_strip(i, j, strip) == true) {
-      no_model_mask(i, j) = 1;
-    } else {
-      no_model_mask(i, j) = 0;
-    }
-  }
-
-  no_model_mask.metadata().set_string("pism_intent", "model_state");
-
-  ierr = no_model_mask.update_ghosts(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode IceRegionalModel::createVecs() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::createVecs(); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com,
-     "  creating IceRegionalModel vecs ...\n"); CHKERRQ(ierr);
-
-  // stencil width of 2 needed for surfaceGradientSIA() action
-  ierr = no_model_mask.create(grid, "no_model_mask", WITH_GHOSTS, 2); CHKERRQ(ierr);
-  ierr = no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
-    "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
-    "", ""); CHKERRQ(ierr); // no units and no standard name
-  double NMMASK_NORMAL   = 0.0,
-         NMMASK_ZERO_OUT = 1.0;
-  std::vector<double> mask_values(2);
-  mask_values[0] = NMMASK_NORMAL;
-  mask_values[1] = NMMASK_ZERO_OUT;
-  no_model_mask.metadata().set_doubles("flag_values", mask_values);
-  no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
-  no_model_mask.set_time_independent(true);
-  ierr = no_model_mask.set(NMMASK_NORMAL); CHKERRQ(ierr);
-  ierr = variables.add(no_model_mask); CHKERRQ(ierr);
-
-  // stencil width of 2 needed for differentiation because GHOSTS=1
-  ierr = usurfstore.create(grid, "usurfstore", WITH_GHOSTS, 2); CHKERRQ(ierr);
-  ierr = usurfstore.set_attrs(
-    "model_state", // ensures that it gets written at the end of the run
-    "saved surface elevation for use to keep surface gradient constant in no_model strip",
-    "m",
-    ""); CHKERRQ(ierr); //  no standard name
-  ierr = variables.add(usurfstore); CHKERRQ(ierr);
-
-  // stencil width of 1 needed for differentiation
-  ierr = thkstore.create(grid, "thkstore", WITH_GHOSTS, 1); CHKERRQ(ierr);
-  ierr = thkstore.set_attrs(
-    "model_state", // ensures that it gets written at the end of the run
-    "saved ice thickness for use to keep driving stress constant in no_model strip",
-    "m",
-    ""); CHKERRQ(ierr); //  no standard name
-  ierr = variables.add(thkstore); CHKERRQ(ierr);
-
-  // Note that the name of this variable (bmr_stored) does not matter: it is
-  // *never* read or written. We make a copy of bmelt instead.
-  ierr = bmr_stored.create(grid, "bmr_stored", WITH_GHOSTS, 2); CHKERRQ(ierr);
-  ierr = bmr_stored.set_attrs("internal",
-                              "time-independent basal melt rate in the no-model-strip",
-                              "m s-1", ""); CHKERRQ(ierr);
-
-  if (config.get_flag("ssa_dirichlet_bc")) {
-    // remove the bcflag variable from the dictionary
-    variables.remove("bcflag");
-
-    variables.add(no_model_mask, "bcflag");
-  }
-
-  return 0;
-}
-
-PetscErrorCode IceRegionalModel::model_state_setup() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::model_state_setup(); CHKERRQ(ierr);
-
-  // Now save the basal melt rate at the beginning of the run.
-  ierr = bmr_stored.copy_from(basal_melt_rate); CHKERRQ(ierr);
-
-  bool zgwnm;
-  ierr = OptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
-  if (zgwnm) {
-    ierr = thkstore.set(0.0); CHKERRQ(ierr);
-    ierr = usurfstore.set(0.0); CHKERRQ(ierr);
-  }
-
-  bool nmstripSet;
-  double stripkm = 0.0;
-  ierr = OptionsReal("-no_model_strip", 
-                         "width in km of strip near boundary in which modeling is turned off",
-                         stripkm, nmstripSet);
-
-  if (nmstripSet) {
-    ierr = verbPrintf(2, grid.com,
-                      "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
-                      stripkm); CHKERRQ(ierr);
-    ierr = set_no_model_strip(grid.convert(stripkm, "km", "m")); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
-PetscErrorCode IceRegionalModel::allocate_stressbalance() {
-  PetscErrorCode ierr;
-
-  if (stress_balance != NULL)
-    return 0;
-
-  std::string model = config.get_string("stress_balance_model");
-
-  ShallowStressBalance *sliding = NULL;
-  if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(grid, *EC, config);
-  } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(grid, *EC, config);
-  } else if (model == "ssa" || model == "ssa+sia") {
-    sliding = new SSAFD_Regional(grid, *EC, config);
-  } else {
-    SETERRQ(grid.com, 1, "invalid stress balance model");
-  }
-
-  SSB_Modifier *modifier = NULL;
-  if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(grid, *EC, config);
-  } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
-    modifier = new SIAFD_Regional(grid, *EC, config);
-  } else {
-    SETERRQ(grid.com, 1, "invalid stress balance model");
-  }
-
-  // ~StressBalance() will de-allocate sliding and modifier.
-  stress_balance = new StressBalance(grid, sliding, modifier, config);
-
-  // PISM stress balance computations are diagnostic, i.e. do not
-  // have a state that changes in time.  Therefore this call can be here
-  // and not in model_state_setup().  We don't need to re-initialize after
-  // the "diagnostic time step".
-  ierr = stress_balance->init(variables); CHKERRQ(ierr);
-
-  if (config.get_flag("include_bmr_in_continuity")) {
-    ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
-
-PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
-
-  if (basal_yield_stress_model != NULL)
-    return 0;
-
-  std::string model = config.get_string("stress_balance_model");
-
-  // only these two use the yield stress (so far):
-  if (model == "ssa" || model == "ssa+sia") {
-    std::string yield_stress_model = config.get_string("yield_stress_model");
-
-    if (yield_stress_model == "constant") {
-      basal_yield_stress_model = new ConstantYieldStress(grid, config);
-    } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress_model = new RegionalDefaultYieldStress(grid, config, subglacial_hydrology);
-    } else {
-      PetscPrintf(grid.com, "PISM ERROR: yield stress model \"%s\" is not supported.\n",
-                  yield_stress_model.c_str());
-      PISMEnd();
-    }
-  }
-
-  return 0;
-}
-
-
-PetscErrorCode IceRegionalModel::bootstrap_2d(const std::string &filename) {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::bootstrap_2d(filename); CHKERRQ(ierr);
-
-  ierr = usurfstore.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
-  ierr =   thkstore.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-PetscErrorCode IceRegionalModel::initFromFile(const std::string &filename) {
-  PetscErrorCode  ierr;
-  PIO nc(grid, "guess_mode");
-
-  bool no_model_strip_set;
-  ierr = OptionsIsSet("-no_model_strip", "No-model strip, in km",
-                          no_model_strip_set); CHKERRQ(ierr);
-
-  if (no_model_strip_set) {
-    no_model_mask.metadata().set_string("pism_intent", "internal");
-  }
-
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
-                    filename.c_str()); CHKERRQ(ierr);
-
-  // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
-  // The user is probably using -regrid_file to bring in SSA B.C. data.
-  if (config.get_flag("ssa_dirichlet_bc")) {
-    bool u_ssa_exists, v_ssa_exists;
-
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.inq_var("u_ssa_bc", u_ssa_exists); CHKERRQ(ierr);
-    ierr = nc.inq_var("v_ssa_bc", v_ssa_exists); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
-
-    if (! (u_ssa_exists && v_ssa_exists)) {
-      vBCvel.metadata().set_string("pism_intent", "internal");
-      ierr = verbPrintf(2, grid.com,
-                        "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
-                        "              This may be overridden by the -regrid_file option.\n",
-                        filename.c_str()); CHKERRQ(ierr);
-
-      ierr = vBCvel.set(0.0); CHKERRQ(ierr);
-    }
-  }
-
-  bool zgwnm;
-  ierr = OptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
-  if (zgwnm) {
-    thkstore.metadata().set_string("pism_intent", "internal");
-    usurfstore.metadata().set_string("pism_intent", "internal");
-  }
-
-  ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
-
-  if (config.get_flag("ssa_dirichlet_bc")) {
-      vBCvel.metadata().set_string("pism_intent", "model_state");
-  }
-
-  if (zgwnm) {
-    thkstore.metadata().set_string("pism_intent", "model_state");
-    usurfstore.metadata().set_string("pism_intent", "model_state");
-  }
-
-  return 0;
-}
-
-
-PetscErrorCode IceRegionalModel::set_vars_from_options() {
-  PetscErrorCode ierr;
-  bool nmstripSet;
-
-  // base class reads the -boot_file option and does the bootstrapping:
-  ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
-
-  ierr = OptionsIsSet("-no_model_strip", 
-                          "width in km of strip near boundary in which modeling is turned off",
-                          nmstripSet);
-  if (!nmstripSet) {
-    ierr = PetscPrintf(grid.com,
-      "PISMO ERROR: option '-no_model_strip X' (X in km) is REQUIRED if '-i' is not used.\n"
-      "   pismo has no well-defined semantics without it!  ENDING ...\n\n"); CHKERRQ(ierr);
-    PISMEnd();
-  }
-
-  if (config.get_flag("do_cold_ice_methods")) {
-    PetscPrintf(grid.com, "PISM ERROR: pismo does not support the 'cold' mode.\n");
-    PISMEnd();
-  }
-
-  return 0;
-}
-
-PetscErrorCode IceRegionalModel::massContExplicitStep() {
-  PetscErrorCode ierr;
-
-  // This ensures that no_model_mask is available in
-  // IceRegionalModel::cell_interface_fluxes() below.
-  IceModelVec::AccessList list(no_model_mask);
-
-  ierr = IceModel::massContExplicitStep(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
-                                             int i, int j,
-                                             planeStar<Vector2> input_velocity,
-                                             planeStar<double> input_flux,
-                                             planeStar<double> &output_velocity,
-                                             planeStar<double> &output_flux) {
-
-  IceModel::cell_interface_fluxes(dirichlet_bc, i, j,
-                                  input_velocity,
-                                  input_flux,
-                                  output_velocity,
-                                  output_flux);
-
-  planeStar<int> nmm = no_model_mask.int_star(i,j);
-  Direction dirs[4] = {North, East, South, West};
-
-  for (int n = 0; n < 4; ++n) {
-    Direction direction = dirs[n];
-
-      if ((nmm.ij == 1) ||
-          (nmm.ij == 0 && nmm[direction] == 1)) {
-      output_velocity[direction] = 0.0;
-      output_flux[direction] = 0.0;
-    }
-  }
-  //
-}
-
-PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, double* liquifiedVol,
-                                                         double* bulgeCount) {
-  PetscErrorCode ierr;
-  double *new_enthalpy, *old_enthalpy;
-
-  ierr = IceModel::enthalpyAndDrainageStep(vertSacrCount, liquifiedVol, bulgeCount); CHKERRQ(ierr);
-
-  // note that the call above sets vWork3d; ghosts are comminucated later (in
-  // IceModel::energyStep()).
-  IceModelVec::AccessList list;
-  list.add(no_model_mask);
-  list.add(vWork3d);
-  list.add(Enth3);
-
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (no_model_mask(i, j) < 0.5)
-      continue;
-
-    ierr = vWork3d.getInternalColumn(i, j, &new_enthalpy); CHKERRQ(ierr);
-    ierr = Enth3.getInternalColumn(i, j, &old_enthalpy); CHKERRQ(ierr);
-
-    for (unsigned int k = 0; k < grid.Mz; ++k)
-      new_enthalpy[k] = old_enthalpy[k];
-  }
-
-  // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
-  list.add(basal_melt_rate);
-  list.add(bmr_stored);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (no_model_mask(i, j) < 0.5)
-      continue;
-
-    basal_melt_rate(i, j) = bmr_stored(i, j);
-  }
-
-  return 0;
-}
-
+static char help[] =
+  "Ice sheet driver for PISM regional (outlet glacier) simulations, initialized\n"
+  "from data.\n";
+
+#include <petscsys.h>
+
+#include "base/util/IceGrid.hh"
+#include "IceRegionalModel.hh"
+
+#include "base/util/PISMConfig.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/Context.hh"
+#include "IceGrid_Regional.hh"
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
-  MPI_Comm    com = PETSC_COMM_WORLD;
+  using namespace pism;
+
+  MPI_Comm com = MPI_COMM_WORLD;
+
+  petsc::Initializer petsc(argc, argv, help);
+
+  com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+  try {
+    verbosityLevelFromOptions();
+    Context::Ptr ctx = context_from_options(com, "pismo");
+    Logger::Ptr log = ctx->log();
 
-    ierr = verbPrintf(2,com, "PISMO %s (regional outlet-glacier run mode)\n",
-                      PISM_Revision); CHKERRQ(ierr);
-    ierr = stop_on_version_option(); CHKERRQ(ierr);
+    log->message(2, "PISMO %s (regional outlet-glacier run mode)\n",
+                 PISM_Revision);
 
-    bool iset, bfset;
-    ierr = OptionsIsSet("-i", iset); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
+    }
+
+    options::String input_file("-i", "input file name");
     std::string usage =
-      "  pismo {-i IN.nc|-boot_file IN.nc} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pismo -i IN.nc [-bootstrap] [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
-      "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -boot_file  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
-      "              heuristics will build initial model state\n"
+      "  -i IN.nc   is input file in NetCDF format: contains PISM-written model state\n"
+      "  -bootstrap enables heuristics used to produce an initial state from incomplete input\n"
       "  -no_model_strip X (re-)set width of no-model strip along edge of\n"
       "              computational domain to X km\n"
       "notes:\n"
-      "  * one of -i or -boot_file is required\n"
-      "  * if -boot_file is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
-    if ((!iset) && (!bfset)) {
-      ierr = PetscPrintf(com,
-         "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
-      ierr = show_usage_and_quit(com, "pismo", usage); CHKERRQ(ierr);
-    } else {
-      std::vector<std::string> required;
-      required.clear();
-      ierr = show_usage_check_req_opts(com, "pismo", required, usage); CHKERRQ(ierr);
+      "  * option -i is required\n"
+      "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
+
+    if (not input_file.is_set()) {
+      throw RuntimeError("options -i is required\n\n" + usage);
     }
 
-    UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
+    bool done = show_usage_check_req_opts(*log, "pismo",
+                                          std::vector<std::string>(), // no required options
+                                          usage);
+    if (done) {
+      return 0;
+    }
 
-    // initialize the ice dynamics model
-    IceGrid g(com, config);
-    IceRegionalModel m(g, config, overrides);
-    ierr = m.setExecName("pismo"); CHKERRQ(ierr);
+    Config::Ptr config = ctx->config();
 
-    ierr = m.init(); CHKERRQ(ierr);
+    IceGrid::Ptr g = regional_grid_from_options(ctx);
 
-    ierr = m.run(); CHKERRQ(ierr);
+    IceRegionalModel m(g, ctx);
 
-    ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
+    m.init();
+
+    m.run();
+
+    log->message(2, "... done with run\n");
 
     // provide a default output file name if no -o option is given.
-    ierr = m.writeFiles("unnamed_regional.nc"); CHKERRQ(ierr);
+    m.writeFiles("unnamed_regional.nc");
+
+    print_unused_parameters(*log, 3, *config);
+  }
+  catch (...) {
+    handle_fatal_errors(com);
+    return 1;
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
-

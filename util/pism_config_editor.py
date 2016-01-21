@@ -1,63 +1,63 @@
 #!/usr/bin/env python
 # import modules:
 
-## @package pism_config_editor
+# @package pism_config_editor
 ##
-## A script simplifying creating configuration files to use with PISM's -config_override option.
-## 
-## Does not take any command-line options; the only argument is a name of a
-## NetCDF configuration file to start from. Run
-## \verbatim
-## pism_config_editor.py lib/pism_config.nc
-## \endverbatim
-## to edit lib/pism_config.nc or create a file based on lib/pism_config.nc
+# A script simplifying creating configuration files to use with PISM's -config_override option.
 ##
-## \verbatim
-## macbook:pism> pism_config_editor.py lib/pism_config.nc 
-## PISM config file editor: using attributes from 'pism_config' in 'lib/pism_config.nc'.
-## 
-## # Please enter a parameter name or hit Return to save your changes.
-## # You can also hit 'tab' for completions.
-## >
-## \endverbatim
-## Next, start typing the name of a flag or parameter you want to change; hit [tab] to complete:
-## \verbatim
-## > sta[tab][tab]
-## standard_gravity  start_year        
-## > sta
-## \endverbatim
-## typing "n[tab][return]" produces:
-## \verbatim 
-## > standard_gravity
-## 
-## # Documentation: m s-2; acceleration due to gravity on Earth geoid
-## # Current value: standard_gravity = 9.8100000000000005
-## #     New value: standard_gravity =
-## \endverbatim
-## enter the new value (10, for example), press [return]; you would see
-## \verbatim 
-## # New value set: standard_gravity = 10.0
-## 
-## ## List of changes so far:
-## ## standard_gravity = 10.0
-## 
-## # Please enter a parameter name or hit Return to save your changes.
-## # You can also hit 'tab' for completions.
-## >
-## \endverbatim
-## 
-## Now you can select a different parameter or hit [return] to save to a file:
-## \verbatim
-## Please enter the file name to save to or hit Return to save to the original file (lib/pism_config.nc).
-## > g_equals_10.nc
-## \endverbatim
-## Next, press [return] if you edited a PISM config file containing \b all the
-## parameters or type "pism_overrides[return]" to create a config to use with -config_override.
-## \verbatim
-## > pism_overrides
-## # Created variable pism_overrides in g_equals_10.nc.
-## Done.
-## \endverbatim
+# Does not take any command-line options; the only argument is a name of a
+# NetCDF configuration file to start from. Run
+# \verbatim
+# pism_config_editor.py lib/pism_config.nc
+# \endverbatim
+# to edit lib/pism_config.nc or create a file based on lib/pism_config.nc
+##
+# \verbatim
+# macbook:pism> pism_config_editor.py lib/pism_config.nc
+# PISM config file editor: using attributes from 'pism_config' in 'lib/pism_config.nc'.
+##
+# Please enter a parameter name or hit Return to save your changes.
+# You can also hit 'tab' for completions.
+# >
+# \endverbatim
+# Next, start typing the name of a flag or parameter you want to change; hit [tab] to complete:
+# \verbatim
+# > sta[tab][tab]
+# standard_gravity  start_year
+# > sta
+# \endverbatim
+# typing "n[tab][return]" produces:
+# \verbatim
+# > standard_gravity
+##
+# Documentation: m s-2; acceleration due to gravity on Earth geoid
+# Current value: standard_gravity = 9.8100000000000005
+# New value: standard_gravity =
+# \endverbatim
+# enter the new value (10, for example), press [return]; you would see
+# \verbatim
+# New value set: standard_gravity = 10.0
+##
+# List of changes so far:
+# standard_gravity = 10.0
+##
+# Please enter a parameter name or hit Return to save your changes.
+# You can also hit 'tab' for completions.
+# >
+# \endverbatim
+##
+# Now you can select a different parameter or hit [return] to save to a file:
+# \verbatim
+# Please enter the file name to save to or hit Return to save to the original file (lib/pism_config.nc).
+# > g_equals_10.nc
+# \endverbatim
+# Next, press [return] if you edited a PISM config file containing \b all the
+# parameters or type "pism_overrides[return]" to create a config to use with -config_override.
+# \verbatim
+# > pism_overrides
+# Created variable pism_overrides in g_equals_10.nc.
+# Done.
+# \endverbatim
 
 import sys
 from numpy import double
@@ -73,6 +73,7 @@ except:
     print "netCDF4 is not installed!"
     sys.exit(1)
 
+
 def list_completer(text, state, list):
     """Completes strings from the list 'list'. Skips documenting strings."""
     matches = filter(lambda(x): (x.startswith(text) and not x.endswith("_doc")), list)
@@ -80,6 +81,7 @@ def list_completer(text, state, list):
         return None
     else:
         return matches[state]
+
 
 def edit_attr(dict, attr):
     """Edits an attribute in the dictionary dict."""
@@ -102,7 +104,7 @@ def edit_attr(dict, attr):
             break
 
         try:
-            new_value = double(new_value) # try interpreting as a number
+            new_value = double(new_value)  # try interpreting as a number
         except:
             pass                # leave as a string
 
@@ -110,6 +112,7 @@ def edit_attr(dict, attr):
 
     readline.set_completer(completer)
     return new_value
+
 
 def main_loop(dict):
     changes = {}
@@ -132,6 +135,7 @@ def main_loop(dict):
         for each in changes.keys():
             print "## %s = %s" % (each, str(changes[each]))
     return changes
+
 
 def read(filename):
     """Reads attributes from a file."""
@@ -163,6 +167,7 @@ def read(filename):
 
     return (varname, dict)
 
+
 def save(dict, changes, default_filename, default_varname):
     """Saves attributes stored in the dictionary changes, adding doc-strings from dict."""
     readline.set_completer(None)
@@ -191,7 +196,7 @@ def save(dict, changes, default_filename, default_varname):
         nc = NC(filename, 'a')      # append
     except:
         try:
-            nc = NC(filename, 'w',format='NETCDF3_CLASSIC') # if not found, then create
+            nc = NC(filename, 'w', format='NETCDF3_CLASSIC')  # if not found, then create
         except:
             print "ERROR: can't open '%s'." % filename
             return False
@@ -240,6 +245,8 @@ varname, dict = read(filename)
 print "PISM config file editor: using attributes from '%s' in '%s'." % (varname, filename)
 
 # Set up tab completion:
+
+
 def complete(text, state):
     return list_completer(text, state, dict.keys())
 
@@ -247,7 +254,7 @@ readline.parse_and_bind("tab: complete")
 readline.set_completer(complete)
 
 # Process user input:
-changes = main_loop(dict)    
+changes = main_loop(dict)
 if changes == {}:
     sys.exit(0)
 

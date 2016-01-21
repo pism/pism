@@ -12,8 +12,6 @@ A basic message logging system.
 
 .. automodule:: PISM.logging
    :members:
-   :undoc-members:
    :private-members:
-   :special-members:
    :show-inheritance:
    :exclude-members: getkey

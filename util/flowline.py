@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## @package flowline
+# @package flowline
 # \brief This script aids in setting up and visualizing flow-line modeling runs.
 #
 # \details This script expands and collapses NetCDF datasets along the 'x' or
@@ -29,28 +29,35 @@ except:
 
 import numpy as np
 
-from sys import argv,exit
+from sys import argv, exit
 from time import asctime
 
-def get_slice(dimensions, x = None, y = None):
-    """Get an x- or y-slice of a variable."""        
+
+def get_slice(dimensions, x=None, y=None):
+    """Get an x- or y-slice of a variable."""
     All = slice(None)
 
-    if not dimensions: return All   # so that it does not break processing "mapping"
+    if not dimensions:
+        return All   # so that it does not break processing "mapping"
 
-    index_list = [All]*len(dimensions)
+    index_list = [All] * len(dimensions)
 
     if x != None:
-        try: index_list[dimensions.index('x')] = x
-        except: pass
+        try:
+            index_list[dimensions.index('x')] = x
+        except:
+            pass
 
     if y != None:
-        try: index_list[dimensions.index('y')] = y
-        except: pass
+        try:
+            index_list[dimensions.index('y')] = y
+        except:
+            pass
 
     return index_list
 
-def permute(variable, output_order = ('t', 'z', 'zb', 'y', 'x')):
+
+def permute(variable, output_order=('t', 'z', 'zb', 'y', 'x')):
     """Permute dimensions of a NetCDF variable to match the output storage order."""
     input_dimensions = variable.dimensions
 
@@ -67,6 +74,7 @@ def permute(variable, output_order = ('t', 'z', 'zb', 'y', 'x')):
     else:
         return variable[:]              # so that it does not break processing "mapping"
 
+
 def copy_dim(nc1, nc2, name, direction):
     """Copy a dimension from nc1 to nc2."""
     if (name == direction):
@@ -74,11 +82,13 @@ def copy_dim(nc1, nc2, name, direction):
     dim1 = nc1.dimensions[name]
     dim2 = nc2.createDimension(name, len(dim1))
 
+
 def copy_attributes(var1, var2):
     """Copy attributes of var1 to var2. Skips _FillValue."""
     for each in var1.ncattrs():
         if each != "_FillValue":
             setattr(var2, each, getattr(var1, each))
+
 
 def process(input, output, direction, collapse):
     """Process the file 'input', expanding or collapsing data according to
@@ -94,7 +104,7 @@ def process(input, output, direction, collapse):
     except:
         print "ERROR: Can't open %s" % output
         exit(1)
-        
+
     copy_attributes(nc, out)
 
     for name in nc.dimensions.keys():
@@ -118,21 +128,22 @@ def process(input, output, direction, collapse):
         delta = np.diff(var1[:])[0]
 
         var2 = out.createVariable(direction, 'f8', (direction,))
-        var2.axis          = "%s" % direction.upper()
-        var2.long_name     = "%s-coordinate in Cartesian system" % direction.upper()
+        var2.axis = "%s" % direction.upper()
+        var2.long_name = "%s-coordinate in Cartesian system" % direction.upper()
         var2.standard_name = "projection_%s_coordinate" % direction
         var2.units = var1.units
         var2[:] = [-delta, 0, delta]
-        
+
         for name in nc.variables.keys():
             expand_var(nc, out, name, direction)
 
     message = asctime() + ': ' + ' '.join(argv) + '\n'
     if 'history' in out.ncattrs():
-      out.history = message + out.history  # prepend to history string
+        out.history = message + out.history  # prepend to history string
     else:
-      out.history = message
+        out.history = message
     out.close()
+
 
 def collapse_var(nc, out, name, direction):
     """Saves a collapsed (according to 'direction')
@@ -148,24 +159,25 @@ def collapse_var(nc, out, name, direction):
     try:
         fill_value = var1._FillValue
         var2 = out.createVariable(name, var1.dtype,
-                                  dimensions=dims, fill_value = fill_value)
+                                  dimensions=dims, fill_value=fill_value)
     except:
         var2 = out.createVariable(name, var1.dtype,
                                   dimensions=dims)
-        
+
     copy_attributes(var1, var2)
 
     if direction == 'x':
-        var2[:] = var1[get_slice(var1.dimensions, x = N)]
+        var2[:] = var1[get_slice(var1.dimensions, x=N)]
     elif direction == 'y':
-        var2[:] = var1[get_slice(var1.dimensions, y = N)]
+        var2[:] = var1[get_slice(var1.dimensions, y=N)]
+
 
 def expand_var(nc, out, name, direction):
     """Saves an expanded (according to 'direction')
     copy of a variable 'name' in 'nc' to 'out'."""
     if name == direction:
         return
-    
+
     var1 = nc.variables[name]
 
     print "Processing %s..." % name
@@ -178,7 +190,7 @@ def expand_var(nc, out, name, direction):
         return
 
     dims = var1.dimensions
-    if   len(dims) == 1:
+    if len(dims) == 1:
         dims = ('y', 'x')
     elif len(dims) == 2:
         dims = ('t', 'y', 'x')
@@ -244,5 +256,5 @@ if opts.collapse:
     print "Collapsing %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename)
 else:
     print "Expanding %s in the %s direction, writing to %s..." % (args[0], opts.direction, opts.output_filename)
-    
+
 process(args[0], opts.output_filename, opts.direction, opts.collapse or (not opts.expand))

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,82 +16,87 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism_const.hh"
-#include "pism_options.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/pism_options.hh"
 #include "pismmerge.hh"
+
+#include "base/util/petscwrappers/PetscInitializer.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/Logger.hh"
 
 using namespace pism;
 
 static char help[] =
   "Tool for merging PISM output files produced using '-o_format quilt'.\n";
 
+using pism::io::NC4_Serial;
+
 int process_one_variable(std::string var_name, std::string input_file, std::string output_file,
                          unsigned int compression_level) {
   NC4_Serial input(MPI_COMM_SELF, 0),
     output(MPI_COMM_SELF, compression_level);
   bool exists;
-  int ierr;
 
   fprintf(stderr, "Merging variable %s from %s into %s, compression level %d...\n",
           var_name.c_str(), input_file.c_str(), output_file.c_str(), compression_level);
 
   // Fill the output file with metadata using the rank=0 "patch".
-  ierr = input.open(patch_filename(input_file, 0), PISM_READONLY); CHKERRQ(ierr);
+  input.open(patch_filename(input_file, 0), PISM_READONLY);
 
   // Create the output file
-  ierr = output.create(output_file); CHKERRQ(ierr);
+  output.create(output_file);
 
   // global attributes
-  ierr = copy_attributes(input, output, "PISM_GLOBAL"); CHKERRQ(ierr);
+  copy_attributes(input, output, "PISM_GLOBAL");
 
-  ierr = define_variable(input, output, var_name); CHKERRQ(ierr);
+  define_variable(input, output, var_name);
 
-  ierr = input.inq_varid("time_bounds", exists); CHKERRQ(ierr);
+  input.inq_varid("time_bounds", exists);
   if (exists) {
-    ierr = define_variable(input, output, "time_bounds"); CHKERRQ(ierr);
+    define_variable(input, output, "time_bounds");
   }
 
   // mapping
-  ierr = input.inq_varid("mapping", exists); CHKERRQ(ierr);
+  input.inq_varid("mapping", exists);
   if (exists) {
-    ierr = define_variable(input, output, "mapping"); CHKERRQ(ierr);
+    define_variable(input, output, "mapping");
   }
 
   // pism_override
-  ierr = input.inq_varid("pism_override", exists); CHKERRQ(ierr);
+  input.inq_varid("pism_override", exists);
   if (exists) {
-    ierr = define_variable(input, output, "pism_override"); CHKERRQ(ierr);
+    define_variable(input, output, "pism_override");
   }
 
   // run_stats
-  ierr = input.inq_varid("run_stats", exists); CHKERRQ(ierr);
+  input.inq_varid("run_stats", exists);
   if (exists) {
-    ierr = define_variable(input, output, "run_stats"); CHKERRQ(ierr);
+    define_variable(input, output, "run_stats");
   }
 
   // timestamp
-  ierr = input.inq_varid("timestamp", exists); CHKERRQ(ierr);
+  input.inq_varid("timestamp", exists);
   if (exists) {
-    ierr = define_variable(input, output, "timestamp"); CHKERRQ(ierr);
+    define_variable(input, output, "timestamp");
   }
 
   // lat
-  ierr = input.inq_varid("lat", exists); CHKERRQ(ierr);
+  input.inq_varid("lat", exists);
   if (exists) {
-    ierr = define_variable(input, output, "lat"); CHKERRQ(ierr);
+    define_variable(input, output, "lat");
   }
 
   // lon
-  ierr = input.inq_varid("lon", exists); CHKERRQ(ierr);
+  input.inq_varid("lon", exists);
   if (exists) {
-    ierr = define_variable(input, output, "lon"); CHKERRQ(ierr);
+    define_variable(input, output, "lon");
   }
 
-  ierr = input.close(); CHKERRQ(ierr);
+  input.close();
 
-  ierr = copy_all_variables(input_file, output); CHKERRQ(ierr);
+  copy_all_variables(input_file, output);
 
-  ierr = output.close(); CHKERRQ(ierr);
+  output.close();
 
   fprintf(stderr, "Done.\n");
 
@@ -100,7 +105,6 @@ int process_one_variable(std::string var_name, std::string input_file, std::stri
 
 int process_all_variables(std::string input_file, std::string output_file,
                           unsigned int compression_level) {
-  int ierr, n_vars;
   NC4_Serial input(MPI_COMM_SELF, 0),
     output(MPI_COMM_SELF, compression_level);
 
@@ -108,69 +112,65 @@ int process_all_variables(std::string input_file, std::string output_file,
           input_file.c_str(), output_file.c_str(), compression_level);
 
   // Fill the output file with metadata using the rank=0 "patch".
-  ierr = input.open(patch_filename(input_file, 0), PISM_READONLY); CHKERRQ(ierr);
+  input.open(patch_filename(input_file, 0), PISM_READONLY);
 
   // Create the output file
-  ierr = output.create(output_file); CHKERRQ(ierr);
+  output.create(output_file);
 
   // global attributes
-  ierr = copy_attributes(input, output, "PISM_GLOBAL"); CHKERRQ(ierr);
+  copy_attributes(input, output, "PISM_GLOBAL");
 
   // define all variables (except for {x,y}_patch)
-  ierr = input.inq_nvars(n_vars); check(ierr);
+  int n_vars;
+  input.inq_nvars(n_vars);
 
   for (int j = 0; j < n_vars; ++j) {
     std::string var_name;
 
-    ierr = input.inq_varname(j, var_name); check(ierr);
+    input.inq_varname(j, var_name);
 
-    if (var_name == "x_patch" || var_name == "y_patch")
+    if (var_name == "x_patch" || var_name == "y_patch") {
       continue;
+    }
 
-    ierr = define_variable(input, output, var_name); check(ierr);
+    define_variable(input, output, var_name);
   }
 
-  ierr = copy_all_variables(input_file, output); CHKERRQ(ierr);
+  copy_all_variables(input_file, output);
 
-  ierr = output.close(); CHKERRQ(ierr);
+  output.close();
 
   fprintf(stderr, "Done.\n");
 
   return 0;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;
-  int rank, size;
+  MPI_Comm    com = MPI_COMM_WORLD;
+  int rank;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  petsc::Initializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+  try {
+    verbosityLevelFromOptions();
+    Logger log(com, getVerbosityLevel());
 
-    ierr = verbPrintf(2,com, "PISM-MERGE %s (output file merging tool)\n",
-                      PISM_Revision); CHKERRQ(ierr);
-    ierr = stop_on_version_option(); CHKERRQ(ierr);
+    log.message(2, "PISM-MERGE %s (output file merging tool)\n",
+                PISM_Revision);
+    if (options::Bool("-version", "stop after printing print PISM version")) {
+      return 0;
+    }
 
-    bool i_set, o_set, var_name_set, compression_level_set;
-    std::string i_name, o_name, var_name;
-    int compression_level = 0;
-    ierr = OptionsString("-i", "Input file name",
-                             i_name, i_set); CHKERRQ(ierr);
-    ierr = OptionsString("-o", "Output file name",
-                             o_name, o_set); CHKERRQ(ierr);
-    ierr = OptionsString("-v", "Name of the variable to merge",
-                             var_name, var_name_set); CHKERRQ(ierr);
-    ierr = OptionsInt("-L", "Output compression level",
-                          compression_level, compression_level_set); CHKERRQ(ierr);
+    options::String input_file("-i", "Input file name");
+    options::String output_name("-o", "Output file name");
+    options::String var_name("-v", "Name of the variable to merge");
+    options::Integer compression_level("-L", "Output compression level", 0);
     std::string usage =
       "  Merges output file created using '-o_format quilt'.\n\n"
       "  pismmerge {-i in.nc} [-o out.nc]\n"
@@ -184,38 +184,45 @@ int main(int argc, char *argv[])
 
     std::vector<std::string> required;
     required.push_back("-i");
-    ierr = show_usage_check_req_opts(com, "pismmerge", required, usage); CHKERRQ(ierr);
 
-    check_input_files(i_name);
+    bool done = show_usage_check_req_opts(log, "pismmerge", required, usage);
+    if (done) {
+      return 0;
+    }
+
+    check_input_files(input_file);
 
     // Check the validity of the -L option.
-    if (compression_level_set) {
+    if (compression_level.is_set()) {
       if (compression_level < 0 || compression_level > 9) {
-        PetscPrintf(com, "PISMMERGE ERROR: invalid compression level: %d.\n",
-                    compression_level);
-        PISMEnd();
+        throw RuntimeError::formatted("invalid compression level: %d.",
+                                      compression_level.value());
       }
     }
 
     // Set the output file name.
-    if (o_set == false) {
-      if (var_name_set == false) {
-        o_name = output_filename(i_name, "ALL");
+    std::string o_name = output_name;
+    if (not output_name.is_set()) {
+      if (not var_name.is_set()) {
+        o_name = output_filename(input_file, "ALL");
       } else {
-        o_name = output_filename(i_name, var_name);
+        o_name = output_filename(input_file, var_name);
       }
     }
 
     if (rank == 0) {
-      if (var_name_set) {
-        ierr = process_one_variable(var_name, i_name, o_name, compression_level); CHKERRQ(ierr);
+      if (var_name.is_set()) {
+        process_one_variable(var_name, input_file, o_name, compression_level);
       } else {
-        ierr = process_all_variables(i_name, o_name, compression_level); CHKERRQ(ierr);
+        process_all_variables(input_file, o_name, compression_level);
       }
     }
   }
+  catch (...) {
+    handle_fatal_errors(com);
+    return 1;
+  }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;
 }

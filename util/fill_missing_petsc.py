@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## @package fill_missing
+# @package fill_missing
 # @brief This script solves the Laplace equation as a method of filling holes in map-plane data.
 #
 # Uses an approximation to Laplace's equation
@@ -18,17 +18,19 @@
 # Each of the requested variables must have missing values specified
 # using the _FillValue attribute.
 
-import petsc4py, sys
+import petsc4py
+import sys
 petsc4py.init(sys.argv)
 
 from petsc4py import PETSc
 import numpy as np
 
+
 def assemble_matrix(mask):
     """Assemble the matrix corresponding to the standard 5-point stencil
     approximation of the Laplace operator on the domain defined by
     mask == True, where mask is a 2D NumPy array. The stencil wraps
-    around the grid, i.e. this is the approximation of the Laplacian
+    around the grid, i.e. this is an approximation of the Laplacian
     on a torus.
 
     The grid spacing is ignored, which is equivalent to assuming equal
@@ -41,17 +43,17 @@ def assemble_matrix(mask):
     # create sparse matrix
     A = PETSc.Mat()
     A.create(PETSc.COMM_WORLD)
-    A.setSizes([nrow*ncol, nrow*ncol])
-    A.setType('aij') # sparse
+    A.setSizes([nrow * ncol, nrow * ncol])
+    A.setType('aij')  # sparse
     A.setPreallocationNNZ(5)
 
     # precompute values for setting
     # diagonal and non-diagonal entries
     diagonal = 4.0
-    offdx =  - 1.0
-    offdy =  - 1.0
+    offdx = - 1.0
+    offdy = - 1.0
 
-    def R(i,j):
+    def R(i, j):
         "Map from the (row,column) pair to the linear row number."
         return i * ncol + j
 
@@ -62,44 +64,44 @@ def assemble_matrix(mask):
         A[row, row] = diagonal
 
         i = row // ncol    # map row number to
-        j = row - i * ncol # grid coordinates
+        j = row - i * ncol  # grid coordinates
 
-        if mask[i,j] == False:
+        if mask[i, j] == False:
             continue
 
         # i
         if i == 0:              # top row
             col = R(nrow - 1, j)
-            A[row,col] = offdx
+            A[row, col] = offdx
 
         if i > 0:               # interior
             col = R(i - 1, j)
-            A[row,col] = offdx
+            A[row, col] = offdx
 
         if i < nrow - 1:        # interior
             col = R(i + 1, j)
-            A[row,col] = offdx
+            A[row, col] = offdx
 
         if i == nrow - 1:       # bottom row
             col = R(0, j)
-            A[row,col] = offdx
+            A[row, col] = offdx
 
         # j
         if j == 0:              # left-most column
             col = R(i, ncol - 1)
-            A[row,col] = offdy
+            A[row, col] = offdy
 
         if j > 0:               # interior
             col = R(i, j - 1)
-            A[row,col] = offdy
+            A[row, col] = offdy
 
         if j < ncol - 1:        # interior
             col = R(i, j + 1)
-            A[row,col] = offdy
+            A[row, col] = offdy
 
         if j == ncol - 1:       # right-most column
             col = R(i, 0)
-            A[row,col] = offdy
+            A[row, col] = offdy
 
     # communicate off-processor values
     # and setup internal data structures
@@ -109,6 +111,7 @@ def assemble_matrix(mask):
 
     PETSc.Sys.Print("done.")
     return A
+
 
 def assemble_rhs(rhs, X):
     """Assemble the right-hand side of the system approximating the
@@ -125,15 +128,16 @@ def assemble_rhs(rhs, X):
     # nodes.
     rhs.set(0.0)
 
-    for row in xrange(row_start, row_end) :
+    for row in xrange(row_start, row_end):
         i = row // ncol    # map row number to
-        j = row - i * ncol # grid coordinates
+        j = row - i * ncol  # grid coordinates
 
-        if X.mask[i,j] == False:
-            rhs[row] = 4.0*X[i,j]
+        if X.mask[i, j] == False:
+            rhs[row] = 4.0 * X[i, j]
 
     rhs.assemble()
     # PETSc.Sys.Print("done.")
+
 
 def create_solver():
     "Create the KSP solver"
@@ -149,6 +153,7 @@ def create_solver():
     ksp.setInitialGuessNonzero(True)
 
     return ksp
+
 
 def fill_missing(field, matrix=None):
     """Fill missing values in a NumPy array 'field' using the matrix
@@ -185,6 +190,7 @@ def fill_missing(field, matrix=None):
 
     return vec0, A
 
+
 def create_scatter(vector):
     "Create the scatter to processor 0."
     comm = vector.getComm()
@@ -195,17 +201,20 @@ def create_scatter(vector):
 
     return V0, scatter
 
+
 def scatter_to_0(vector, vector_0, scatter):
     "Scatter a distributed 'vector' to 'vector_0' on processor 0 using 'scatter'."
     comm = vector.getComm()
     scatter.scatter(vector, vector_0, False, PETSc.Scatter.Mode.FORWARD)
     comm.barrier()
 
+
 def scatter_from_0(vector_0, vector, scatter):
     "Scatter 'vector_0' on processor 0 to a distributed 'vector' using 'scatter'."
     comm = vector.getComm()
     scatter.scatter(vector, vector_0, False, PETSc.Scatter.Mode.REVERSE)
     comm.barrier()
+
 
 def fill_2d_record(data, matrix=None):
     "Fill missing values in a 2D record."
@@ -218,24 +227,25 @@ def fill_2d_record(data, matrix=None):
 
     return filled_data, A
 
+
 def test():
     "Test fill_missing() using synthetic data."
     N = 201
     M = N * 1.5
     x = np.linspace(-1, 1, N)
     y = np.linspace(-1, 1, M)
-    xx,yy = np.meshgrid(x,y)
-    zz = np.sin(2.5*np.pi*xx) * np.cos(2.0*np.pi*yy)
+    xx, yy = np.meshgrid(x, y)
+    zz = np.sin(2.5 * np.pi * xx) * np.cos(2.0 * np.pi * yy)
 
     K = 10
     mask = np.random.randint(0, K, zz.size).reshape(zz.shape) / float(K)
 
-    mask[(xx - 1.0)**2 + (yy - 1.0)**2 < 1.0] = 1
-    mask[(xx + 1.0)**2 + (yy + 1.0)**2 < 1.0] = 1
+    mask[(xx - 1.0) ** 2 + (yy - 1.0) ** 2 < 1.0] = 1
+    mask[(xx + 1.0) ** 2 + (yy + 1.0) ** 2 < 1.0] = 1
 
     field = np.ma.array(zz, mask=mask)
 
-    zzz,_ = fill_missing(field)
+    zzz, _ = fill_missing(field)
 
     rank = PETSc.COMM_WORLD.getRank()
     if rank == 0:
@@ -254,6 +264,7 @@ def test():
 
         plt.show()
 
+
 def fill_variable(nc, name):
     "Fill missing values in one variable."
     PETSc.Sys.Print("Processing %s..." % name)
@@ -268,21 +279,21 @@ def fill_variable(nc, name):
         A = None
         n_records = var.shape[0]
         for t in xrange(n_records):
-            PETSc.Sys.Print("Processing record %d/%d..." % (t+1, n_records))
-            data = var[t,:,:]
+            PETSc.Sys.Print("Processing record %d/%d..." % (t + 1, n_records))
+            data = var[t, :, :]
 
             filled_data, A = fill_2d_record(data, A)
             if rank == 0:
-                var[t,:,:] = filled_data
+                var[t, :, :] = filled_data
 
             comm.barrier()
         PETSc.Sys.Print("Time elapsed: %5f seconds." % (time() - t0))
     elif var.ndim == 2:
-        data = var[:,:]
+        data = var[:, :]
 
-        filled_data,_ = fill_2d_record(data)
+        filled_data, _ = fill_2d_record(data)
         if rank == 0:
-            var[:,:] = filled_data
+            var[:, :] = filled_data
 
         comm.barrier()
         PETSc.Sys.Print("Time elapsed: %5f seconds." % (time() - t0))
@@ -302,6 +313,7 @@ def fill_variable(nc, name):
     except:
         pass
 
+
 def add_history(nc):
     "Update the history attribute in a NetCDF file nc."
     comm = PETSc.COMM_WORLD
@@ -310,17 +322,20 @@ def add_history(nc):
     if rank != 0:
         return
 
-    ## add history global attribute (after checking if present)
+    # add history global attribute (after checking if present)
     historysep = ' '
     historystr = asctime() + ': ' + historysep.join(sys.argv) + '\n'
     if 'history' in nc.ncattrs():
-      nc.history = historystr + nc.history  # prepend to history string
+        nc.history = historystr + nc.history  # prepend to history string
     else:
-      nc.history = historystr
+        nc.history = historystr
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
-    import os, os.path, tempfile, shutil
+    import os
+    import os.path
+    import tempfile
+    import shutil
     from time import time, asctime
 
     try:
@@ -339,7 +354,7 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--vars", dest="variables",
                         help="comma-separated list of variables to process")
 
-    options,_ = parser.parse_known_args()
+    options, _ = parser.parse_known_args()
 
     input_filename = options.INPUT[0]
     output_filename = options.OUTPUT[0]
@@ -373,7 +388,7 @@ if __name__ == "__main__":
                                                       suffix=".nc",
                                                       dir=dirname)
 
-            os.close(handle) # mkstemp returns a file handle (which we don't need)
+            os.close(handle)  # mkstemp returns a file handle (which we don't need)
         except IOError:
             PETSc.Sys.Print("ERROR: Can't create %s, Exiting..." % tmp_filename)
 
@@ -390,9 +405,9 @@ if __name__ == "__main__":
         else:
             nc = NC(input_filename, 'r')
     except Exception, message:
-       PETSc.Sys.Print(message)
-       PETSc.Sys.Print("Note: %s was not modified." % output_filename)
-       sys.exit(-1)
+        PETSc.Sys.Print(message)
+        PETSc.Sys.Print("Note: %s was not modified." % output_filename)
+        sys.exit(-1)
 
     add_history(nc)
 

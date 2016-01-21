@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -17,51 +17,63 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "PISMSurface.hh"
-#include "PISMAtmosphere.hh"
-#include "PIO.hh"
-#include "PISMVars.hh"
-#include "PISMTime.hh"
-#include "IceGrid.hh"
-#include "pism_options.hh"
-#include "iceModelVec.hh"
-#include <assert.h>
+#include <cassert>
+#include <gsl/gsl_math.h>
+
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMAtmosphere.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/PISMTime.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
+namespace surface {
 
 ///// PISMSurfaceModel base class:
 
-SurfaceModel::SurfaceModel(IceGrid &g, const Config &conf)
-  : Component_TS(g, conf) {
-  atmosphere = NULL;
+SurfaceModel::SurfaceModel(IceGrid::ConstPtr g)
+  : Component_TS(g) {
+  m_atmosphere = NULL;
 }
 
 SurfaceModel::~SurfaceModel() {
-  delete atmosphere;
+  delete m_atmosphere;
 }
 
-void SurfaceModel::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) {
+  this->ice_surface_mass_flux_impl(result);
+}
+
+void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                        std::map<std::string, TSDiagnostic*> &ts_dict) {
-  if (atmosphere)
-    atmosphere->get_diagnostics(dict, ts_dict);
-}
-
-void SurfaceModel::attach_atmosphere_model(AtmosphereModel *input) {
-  if (atmosphere != NULL) {
-    delete atmosphere;
+  if (m_atmosphere) {
+    m_atmosphere->get_diagnostics(dict, ts_dict);
   }
-  atmosphere = input;
 }
 
-PetscErrorCode SurfaceModel::init(Vars &vars) {
-  PetscErrorCode ierr;
+void SurfaceModel::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
+  this->attach_atmosphere_model_impl(input);
+}
 
+void SurfaceModel::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input) {
+  if (m_atmosphere != NULL) {
+    delete m_atmosphere;
+  }
+  m_atmosphere = input;
+}
+
+void SurfaceModel::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
+  this->init_impl();
+}
 
-  assert(atmosphere != NULL);
-  ierr = atmosphere->init(vars); CHKERRQ(ierr);
-
-  return 0;
+void SurfaceModel::init_impl() {
+  assert(m_atmosphere != NULL);
+  m_atmosphere->init();
 }
 
 //! \brief Returns mass held in the surface layer.
@@ -69,12 +81,12 @@ PetscErrorCode SurfaceModel::init(Vars &vars) {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-PetscErrorCode SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
-  PetscErrorCode ierr;
+void SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
+  this->mass_held_in_surface_layer_impl(result);
+}
 
-  ierr = result.set(0.0); CHKERRQ(ierr);
-
-  return 0;
+void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
 //! \brief Returns thickness of the surface layer. Used to compute surface
@@ -84,63 +96,55 @@ PetscErrorCode SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-PetscErrorCode SurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = result.set(0.0); CHKERRQ(ierr);
-
-  return 0;
+void SurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
+  this->surface_layer_thickness_impl(result);
 }
 
+void SurfaceModel::surface_layer_thickness_impl(IceModelVec2S &result) {
+  result.set(0.0);
+}
+
+void SurfaceModel::ice_surface_temperature(IceModelVec2S &result) {
+  this->ice_surface_temperature_impl(result);
+}
 //! \brief Returns the liquid water fraction of the ice at the top ice surface.
 /*!
  * Most PISM surface models return 0.
  */
-PetscErrorCode SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = result.set(0.0); CHKERRQ(ierr);
-
-  return 0;
+void SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+  this->ice_surface_liquid_water_fraction_impl(result);
 }
 
-PetscErrorCode SurfaceModel::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
+void SurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
+  result.set(0.0);
+}
 
-  if (atmosphere != NULL) {
-    ierr = atmosphere->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+void SurfaceModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+  if (m_atmosphere != NULL) {
+    m_atmosphere->define_variables(vars, nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode SurfaceModel::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
-
-  if (atmosphere != NULL) {
-    ierr = atmosphere->write_variables(vars, nc); CHKERRQ(ierr);
+void SurfaceModel::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+  if (m_atmosphere != NULL) {
+    m_atmosphere->write_variables(vars, nc);
   }
-
-  return 0;
 }
 
-PetscErrorCode SurfaceModel::max_timestep(double my_t, double &my_dt, bool &restrict) {
-  PetscErrorCode ierr;
-
-  if (atmosphere != NULL) {
-    ierr = atmosphere->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+MaxTimestep SurfaceModel::max_timestep_impl(double my_t) {
+  if (m_atmosphere != NULL) {
+    return m_atmosphere->max_timestep(my_t);
   } else {
-    my_dt = -1;
-    restrict = false;
-  }
-
-  return 0;
-}
-
-void SurfaceModel::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
-  if (atmosphere != NULL) {
-    atmosphere->add_vars_to_output(keyword, result);
+    return MaxTimestep();
   }
 }
 
+void SurfaceModel::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  if (m_atmosphere != NULL) {
+    m_atmosphere->add_vars_to_output(keyword, result);
+  }
+}
+
+} // end of namespace surface
 } // end of namespace pism
+

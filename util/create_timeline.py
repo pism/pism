@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## @package create_timeline
+# @package create_timeline
 # \author Andy Aschwanden, University of Alaska Fairbanks, USA
 # \brief Script creates a timeline for enviornmental forcing.
 # \details Script creates a timeline file that can be used with
@@ -16,6 +16,7 @@
 # \verbatim $ create_timeline.py --start_date '1991-1-1' -end_date '2001-1-1'
 # time_1991-2000.nc \endverbatim
 
+import os
 from argparse import ArgumentParser
 from dateutil import rrule
 from dateutil.parser import parse
@@ -61,8 +62,13 @@ ref_unit = options.ref_unit
 ref_date = options.ref_date
 args = options.FILE
 infile = args[0]
-nc = NC(infile, 'w', format='NETCDF3_CLASSIC')
 
+# Check if file exists. If True, append, otherwise create it.
+if os.path.isfile(infile):
+    nc = NC(infile, 'a')
+else:
+    nc = NC(infile, 'w', format='NETCDF3_CLASSIC')
+    
 time_units = ("%s since %s" % (ref_unit, ref_date))
 # currently PISM only supports the gregorian standard calendar
 # once this changes, calendar should become a command-line option
@@ -122,8 +128,8 @@ time_var.axis = "T"
 
 # create time bounds variable
 time_bnds_var = nc.createVariable(bnds_var_name, 'd', dimensions=(time_dim, bnds_dim))
-time_bnds_var[:,0] = bnds_interval_since_refdate[0:-1]
-time_bnds_var[:,1] = bnds_interval_since_refdate[1::]
+time_bnds_var[:, 0] = bnds_interval_since_refdate[0:-1]
+time_bnds_var[:, 1] = bnds_interval_since_refdate[1::]
 
 # writing global attributes
 script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],

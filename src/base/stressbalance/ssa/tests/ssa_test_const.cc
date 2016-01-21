@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -35,214 +35,202 @@ static char help[] =
   "  class thereof.Also may be used in a PISM\n"
   "  software (regression) test.\n\n";
 
-#include "pism_const.hh"
-#include "iceModelVec.hh"
-#include "flowlaws.hh" // IceFlowLaw
-#include "basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "PIO.hh"
-#include "NCVariable.hh"
-#include "SSAFEM.hh"
-#include "SSAFD.hh"
-#include "exactTestsIJ.h"
-#include "SSATestCase.hh"
-#include <math.h>
-#include "pism_options.hh"
-#include "Mask.hh"
+#include <cmath>
 
-using namespace pism;
+#include "base/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
+#include "base/stressbalance/ssa/SSAFD.hh"
+#include "base/stressbalance/ssa/SSAFEM.hh"
+#include "base/stressbalance/ssa/SSATestCase.hh"
+#include "base/util/Mask.hh"
+#include "base/util/Context.hh"
+#include "base/util/VariableMetadata.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/petscwrappers/PetscInitializer.hh"
+#include "base/util/pism_const.hh"
+#include "base/util/pism_options.hh"
+#include "verif/tests/exactTestsIJ.h"
+
+namespace pism {
+namespace stressbalance {
 
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(MPI_Comm com, Config &c, double q): 
-    SSATestCase(com, c), basal_q(q)
+  SSATestCaseConst(Context::Ptr ctx, double q):
+    SSATestCase(ctx), basal_q(q)
   {
-    UnitSystem s = c.get_unit_system();
-
-    L     = s.convert(50.0, "km", "m"); // 50km half-width
+    L     = units::convert(ctx->unit_system(), 50.0, "km", "m"); // 50km half-width
     H0    = 500;                        // m
     dhdx  = 0.005;                      // pure number
-    nu0   = s.convert(30.0, "MPa year", "Pa s");
+    nu0   = units::convert(ctx->unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // Pa
   };
-  
+
 protected:
-  virtual PetscErrorCode initializeGrid(int Mx,int My);
+  virtual void initializeGrid(int Mx,int My);
 
-  virtual PetscErrorCode initializeSSAModel();
+  virtual void initializeSSAModel();
 
-  virtual PetscErrorCode initializeSSACoefficients();
+  virtual void initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(int i, int j, 
+  virtual void exactSolution(int i, int j,
     double x, double y, double *u, double *v);
 
   double basal_q,
     L, H0, dhdx, nu0, tauc0;
 };
 
-PetscErrorCode SSATestCaseConst::initializeGrid(int Mx,int My)
-{
-  double Lx=L, Ly = L; 
-  init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
-  return 0;
+void SSATestCaseConst::initializeGrid(int Mx,int My) {
+  double Lx=L, Ly = L;
+  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
+                            0.0, 0.0, // center: (x0,y0)
+                            Mx, My, NOT_PERIODIC);
 }
 
 
-PetscErrorCode SSATestCaseConst::initializeSSAModel()
-{
-  config.set_flag("do_pseudo_plastic_till", true);
-  config.set_double("pseudo_plastic_q", basal_q);
+void SSATestCaseConst::initializeSSAModel() {
+  m_config->set_boolean("do_pseudo_plastic_till", true);
+  m_config->set_double("pseudo_plastic_q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
-  config.set_flag("do_pseudo_plastic_till", true);
+  m_config->set_boolean("do_pseudo_plastic_till", true);
 
   // The following is irrelevant because we will force linear rheology later.
-  enthalpyconverter = new EnthalpyConverter(config);
-
-  return 0;
+  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 }
 
-PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
-{
-  PetscErrorCode ierr;
+void SSATestCaseConst::initializeSSACoefficients() {
 
   // Force linear rheology
-  ssa->strength_extension->set_notional_strength(nu0 * H0);
-  ssa->strength_extension->set_min_thickness(0.5*H0);
+  m_ssa->strength_extension->set_notional_strength(nu0 * H0);
+  m_ssa->strength_extension->set_min_thickness(0.5*H0);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  config.set_flag("compute_surf_grad_inward_ssa", true);
+  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
 
   // Set constant thickness, tauc
-  ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
-  ierr = thickness.set(H0); CHKERRQ(ierr);
-  ierr = tauc.set(tauc0); CHKERRQ(ierr);
+  m_bc_mask.set(MASK_GROUNDED);
+  m_thickness.set(H0);
+  m_tauc.set(tauc0);
 
   IceModelVec::AccessList list;
-  list.add(vel_bc);
-  list.add(bc_mask);
-  list.add(bed);
-  list.add(surface);
+  list.add(m_bc_values);
+  list.add(m_bc_mask);
+  list.add(m_bed);
+  list.add(m_surface);
 
-  for (Points p(grid); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;
-    const double myx = grid.x[i], myy=grid.y[j];
+    const double myx = m_grid->x(i), myy=m_grid->y(j);
 
-    bed(i,j) = -myx*(dhdx);
-    surface(i,j) = bed(i,j) + H0;
-      
-    bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
+    m_bed(i,j) = -myx*(dhdx);
+    m_surface(i,j) = m_bed(i,j) + H0;
+
+    bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
+                 (i == 0) || (i == (int)m_grid->Mx() - 1));
     if (edge) {
-      bc_mask(i,j) = 1;
+      m_bc_mask(i,j) = 1;
       exactSolution(i,j,myx,myy,&myu,&myv);
-      vel_bc(i,j).u = myu;
-      vel_bc(i,j).v = myv;
+      m_bc_values(i,j).u = myu;
+      m_bc_values(i,j).v = myv;
     }
   }
-  
-  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
-  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-  ierr = bed.update_ghosts(); CHKERRQ(ierr);
-  ierr = surface.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
+  m_bc_values.update_ghosts();
+  m_bc_mask.update_ghosts();
+  m_bed.update_ghosts();
+  m_surface.update_ghosts();
 
-  return 0;
+  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
 }
 
 
-PetscErrorCode SSATestCaseConst::exactSolution(int /*i*/, int /*j*/, 
- double /*x*/, double /*y*/, double *u, double *v)
-{
-  double earth_grav = config.get("standard_gravity"),
-    tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
-                                         "m/year", "m/second"),
-    ice_rho = config.get("ice_density");
-  
+void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
+                                     double /*x*/, double /*y*/,
+                                     double *u, double *v) {
+  double earth_grav = m_config->get_double("standard_gravity"),
+    tauc_threshold_velocity = m_config->get_double("pseudo_plastic_uthreshold",
+                                                   "m/second"),
+    ice_rho = m_config->get_double("ice_density");
+
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
   *v = 0;
-  return 0;
 }
 
+} // end of namespace stressbalance
+} // end of namespace pism
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
-  MPI_Comm    com;  // won't be used except for rank,size
+  using namespace pism;
+  using namespace pism::stressbalance;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank,size
+  petsc::Initializer petsc(argc, argv, help);
+  PetscErrorCode ierr;
 
   com = PETSC_COMM_WORLD;
-  
+
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {  
-    UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+  try {
+    Context::Ptr ctx = context_from_options(com, "ssa_test_const");
+    Config::Ptr config = ctx->config();
 
-    ierr = setVerbosityLevel(5); CHKERRQ(ierr);
+    setVerbosityLevel(5);
 
-    PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
-    if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
-      PetscPrintf(com,
-                  "\n"
-                  "usage of SSA_TEST_CONST:\n"
-                  "  run ssa_test_const -Mx <number> -My <number> -ssa_method <fd|fem>\n"
-                  "\n");
+    bool usage_set = options::Bool("-usage", "show the usage info");
+    bool help_set = options::Bool("-help", "show the help message");
+    if (usage_set or help_set) {
+      ierr = PetscPrintf(com,
+                         "\n"
+                         "usage of SSA_TEST_CONST:\n"
+                         "  run ssa_test_const -Mx <number> -My <number> -ssa_method <fd|fem>\n"
+                         "\n");
+      PISM_CHK(ierr, "PetscPrintf");
     }
 
     // Parameters that can be overridden by command line options
-    int Mx=61;
-    int My=61;
-    double basal_q = 1.; // linear
-    std::string output_file = "ssa_test_const.nc";
+    options::Integer Mx("-Mx", "Number of grid points in the X direction", 61);
+    options::Integer My("-My", "Number of grid points in the Y direction", 61);
 
-    std::set<std::string> ssa_choices;
-    ssa_choices.insert("fem");
-    ssa_choices.insert("fd");
-    std::string driver = "fem";
+    options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
+                            "fem,fd", "fem");
 
-    ierr = PetscOptionsBegin(com, "", "SSA_TEST_CONST options", ""); CHKERRQ(ierr);
-    {
-      bool flag;
-      int my_verbosity_level;
-      ierr = OptionsInt("-Mx", "Number of grid points in the X direction", 
-                                                      Mx, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-My", "Number of grid points in the Y direction", 
-                                                      My, flag); CHKERRQ(ierr);
+    options::Real basal_q("-ssa_basal_q", "Exponent q in the pseudo-plastic flow law",
+                          1.0);
 
-      ierr = OptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
-                             ssa_choices, driver, driver, flag); CHKERRQ(ierr);
-             
-      ierr = OptionsReal("-ssa_basal_q", "Exponent q in the pseudo-plastic flow law",
-                                                  basal_q, flag); CHKERRQ(ierr);                                                      
-      ierr = OptionsString("-o", "Set the output file name", 
-                                              output_file, flag); CHKERRQ(ierr);
+    options::String output_file("-o", "Set the output file name",
+                                "ssa_test_const.nc");
 
-      ierr = OptionsInt("-verbose", "Verbosity level",
-                            my_verbosity_level, flag); CHKERRQ(ierr);
-      if (flag) setVerbosityLevel(my_verbosity_level);
+    options::Integer my_verbosity_level("-verbose", "Verbosity level", 2);
+    if (my_verbosity_level.is_set()) {
+      setVerbosityLevel(my_verbosity_level);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if (driver == "fem") ssafactory = SSAFEMFactory;
-    else if (driver == "fd") ssafactory = SSAFDFactory;
-    else { /* can't happen */ }
+    if (method == "fem") {
+      ssafactory = SSAFEMFactory;
+    } else if (method == "fd") {
+      ssafactory = SSAFDFactory;
+    } else {
+      /* can't happen */
+    }
 
-    SSATestCaseConst testcase(com,config,basal_q);
-    ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
-    ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report("const"); CHKERRQ(ierr);
-    ierr = testcase.write(output_file); CHKERRQ(ierr);
+    SSATestCaseConst testcase(ctx, basal_q);
+    testcase.init(Mx,My,ssafactory);
+    testcase.run();
+    testcase.report("const");
+    testcase.write(output_file);
+  }
+  catch (...) {
+    handle_fatal_errors(com);
+    return 1;
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014, 2015  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,27 +19,38 @@
 #ifndef IP_SSATAUCTIKHONOVGN_HH_SIU7F33G
 #define IP_SSATAUCTIKHONOVGN_HH_SIU7F33G
 
-#include "iceModelVec.hh"
 #include "IP_SSATaucForwardProblem.hh"
+#include "base/util/TerminationReason.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/petscwrappers/KSP.hh"
 #include "functional/IPFunctional.hh"
-#include "TerminationReason.hh"
 
 namespace pism {
+namespace inverse {
 
-template<class C,PetscErrorCode (C::*MultiplyCallback)(Vec,Vec) >
+template<class C, void (C::*MultiplyCallback)(Vec,Vec) >
 class MatrixMultiplyCallback {
 public:
-  static PetscErrorCode connect(Mat A) {
+  static void connect(Mat A) {
     PetscErrorCode ierr;
-    ierr = MatShellSetOperation(A,MATOP_MULT,(void(*)(void))MatrixMultiplyCallback::multiply); CHKERRQ(ierr); 
-    return 0;
+    ierr = MatShellSetOperation(A, MATOP_MULT,
+                                (void(*)(void))MatrixMultiplyCallback::callback);
+    PISM_CHK(ierr, "MatShellSetOperation");
   }
 protected:
-  static PetscErrorCode multiply(Mat A, Vec x, Vec y) {
-    PetscErrorCode ierr;
-    C *ctx;
-    ierr = MatShellGetContext(A,&ctx); CHKERRQ(ierr);
-    ierr = (ctx->*MultiplyCallback)(x,y); CHKERRQ(ierr);
+  static PetscErrorCode callback(Mat A, Vec x, Vec y) {
+    try {
+      C *ctx;
+      PetscErrorCode ierr = MatShellGetContext(A,&ctx);
+      PISM_CHK(ierr, "MatShellGetContext");
+      (ctx->*MultiplyCallback)(x,y);
+    } catch (...) {
+      MPI_Comm com = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)A, &com); CHKERRQ(ierr);
+      handle_fatal_errors(com);
+      SETERRQ(com, 1, "A PISM callback failed");
+    }
     return 0;
   }
 };
@@ -55,51 +66,47 @@ public:
 
   ~IP_SSATaucTikhonovGNSolver();
   
-  virtual StateVec &stateSolution() {
+  virtual StateVec::Ptr stateSolution() {
     return m_ssaforward.solution();
   }
 
-  virtual DesignVec &designSolution() {
+  virtual DesignVec::Ptr designSolution() {
     return m_d;
   }
 
-  virtual PetscErrorCode setInitialGuess(DesignVec &d) {
-    PetscErrorCode ierr;
-    ierr = m_d.copy_from(d); CHKERRQ(ierr);
-    return 0;
+  virtual void setInitialGuess(DesignVec &d) {
+    m_d->copy_from(d);
   }
 
   //! Sets the desired target misfit (in units of \f$\sqrt{J_{\rm misfit}}\f$).
-  virtual PetscErrorCode setTargetMisfit(double misfit) {
+  virtual void setTargetMisfit(double misfit) {
     m_target_misfit = misfit;
-    return 0;
   }
 
-  virtual PetscErrorCode evaluateGNFunctional(DesignVec &h, double *value);
+  virtual void evaluateGNFunctional(DesignVec &h, double *value);
 
-  virtual PetscErrorCode apply_GN(IceModelVec2S &h, IceModelVec2S &out);
-  virtual PetscErrorCode apply_GN(Vec h, Vec out);
+  virtual void apply_GN(IceModelVec2S &h, IceModelVec2S &out);
+  virtual void apply_GN(Vec h, Vec out);
 
-  virtual PetscErrorCode init(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr init();
 
-  virtual PetscErrorCode check_convergence(TerminationReason::Ptr &reason); 
+  virtual TerminationReason::Ptr check_convergence(); 
   
-  virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr solve();
 
-  virtual PetscErrorCode evaluate_objective_and_gradient(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr evaluate_objective_and_gradient();
 
 protected:
 
-  virtual PetscErrorCode assemble_GN_rhs(DesignVec &out);
+  virtual void assemble_GN_rhs(DesignVec &out);
 
-  virtual PetscErrorCode solve_linearized(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr solve_linearized();
 
-  virtual PetscErrorCode compute_dlogalpha(double *dalpha, TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr compute_dlogalpha(double *dalpha);
 
-  virtual PetscErrorCode linesearch(TerminationReason::Ptr &reason);
+  virtual TerminationReason::Ptr linesearch();
 
-  PetscErrorCode construct();
-  PetscErrorCode destruct();
+  void construct();
 
   IP_SSATaucForwardProblem &m_ssaforward;
 
@@ -117,9 +124,9 @@ protected:
 
   DesignVec  m_GN_rhs;
 
+  DesignVec::Ptr m_d;
   DesignVec &m_d0;
   DesignVec m_dGlobal;
-  DesignVec m_d;
   DesignVec m_d_diff;
   DesignVec m_d_diff_lin;
 
@@ -138,8 +145,8 @@ protected:
   StateVec &m_u_obs;
   StateVec m_u_diff;
 
-  KSP m_ksp;  
-  Mat m_mat_GN;
+  petsc::KSP m_ksp;  
+  petsc::Mat m_mat_GN;
 
   double m_eta;
   IPInnerProductFunctional<DesignVec> &m_designFunctional;
@@ -158,6 +165,7 @@ protected:
 
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVGN_HH_SIU7F33G */

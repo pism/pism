@@ -1,8 +1,9 @@
 \documentclass[titlepage,letterpaper,final]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 
 \usepackage{scrindex}           % multiple index support using the "index" package
 \usepackage{index}
-
 \input{pism-macros.tex}
 
 %\addtolength\topmargin{-.1in}
@@ -46,7 +47,7 @@ urlcolor=blue     % only if colorlinks=true
     {\Huge \usekomafont{title} User's Manual}
     \vspace{2.0cm}
 
-    \includegraphics[width=4.2in,keepaspectratio=true]{grn-1km-csurf}
+    \includegraphics[width=3.0in,keepaspectratio=true]{gris-flow-600m}
 
     \vfill
 
@@ -81,7 +82,7 @@ PISM is a joint project between developers in the ice sheet modeling group at th
 \textbf{Johannes Feldman (PIK)} & marine ice sheet processes \\
 \textbf{Bob Fischer (GFDL)} & coupling design \\
 \textbf{Marijke Habermann (UAF)} & inversion\\
-\textbf{Marianne Haselhoff (UBC)} & ice streams: physics and numerics\\
+\textbf{Marianne Haseloff (UBC)} & ice streams: physics and numerics\\
 \textbf{Regine Hock (UAF)} & surface mass and energy balance \\
 \textbf{\underline{Constantine Khroulev} (UAF)} & \begin{minipage}[t]{4in} source code primary author, input/output, software design, climate couplers, parallelization, testing, user support, most documentation, most bug fixes, regional tools, \dots \end{minipage} \\
 \textbf{Anders Levermann (PIK)} & calving, ice shelf processes \\
@@ -99,7 +100,7 @@ PISM is a joint project between developers in the ice sheet modeling group at th
 \noindent Email the \underline{underlined} UAF developers at \qquad \PISMEMAIL.
 
 \bigskip\bigskip
-\noindent \textsc{Front page}:  Magnitude of horizontal surface velocity from PISM run on a horizontal grid resolution of 1\,km.  Visualization by IDV.
+\noindent \textsc{Front page}:  Magnitude of horizontal surface velocity from PISM run on a horizontal grid resolution of 600\,m.  Visualization by QGIS.
 
 \vfill
 
@@ -124,10 +125,10 @@ The Snow, Ice, and Permafrost group\index{Organizations!Geophysical Institute!Sn
 Thanks for comments/questions from many PISM users around the world, including these not already listed as PISM authors:
 
 \begin{quote}
-Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Tore Hattermann, Moritz H\"utten, Thomas Kleiner, Leo van Kampenhout, Marianne Madsen, Malou Maris, Tim Morey, Mirena Olaizola, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Synne H\o{}yer Svendsen, Martin Truffer, Shuting Yang, Ryan Woodard
+Tolly A{\dh}algeirsd{\'o}ttir, Antje Fitzner, Nick Golledge, Tore Hattermann, Moritz H\"utten, Thomas Kleiner, Leo van Kampenhout, Marianne Madsen, Malou Maris, Tim Morey, Mirena Olaizola, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Synne H\o{}yer Svendsen, Martin Truffer, Shuting Yang, Ryan Woodard
 \end{quote}
 
-\noindent for helpful comments and questions on PISM and this \emph{Manual}.  Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and computations.  Bob Bindshadler, Sophie Nowicki, Jesse Johnson, and others in the SeaRISE\index{SeaRISE!group} group have motivated and assisted PISM development in many ways.  
+\noindent for helpful comments and questions on PISM and this \emph{Manual}.  Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and computations.  Bob Bindschadler, Sophie Nowicki, Jesse Johnson, and others in the SeaRISE\index{SeaRISE!group} group have motivated and assisted PISM development in many ways.
 
 \normalsize
 

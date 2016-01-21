@@ -1,8 +1,6 @@
 # A patch by Tristan Carel that will be included in the next release of CMake
 # Downloaded from http://www.itk.org/Bug/view.php?id=4147&nbn=4
 
-include_directories( .. )
-
 #
 # Get dependencies of the generated wrapper.
 #
@@ -57,12 +55,27 @@ ENDMACRO(SWIG_GET_WRAPPER_DEPENDENCIES)
 if (Pism_BUILD_PYTHON_BINDINGS)
     include(${SWIG_USE_FILE})
 
-    include_directories (../verif/tests/ . ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDES})
+    include_directories (. ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDES})
     
     set(PISM_PYTHON_BINDING_LIBRARIES "pismbase" "pismutil" "pismflowlaws" "pismverif" "pismstressbalance"  "pisminverse" "pismregional" )
 
     # Get module dependencies:
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)
+
+    list(APPEND PISM_Python_deps
+      petsc_version.i
+      pism_ColumnSystem.i
+      pism_IceGrid.i
+      pism_IceModelVec.i
+      pism_PIO.i
+      pism_SIA.i
+      pism_SSA.i
+      pism_Timeseries.i
+      pism_Vars.i
+      pism_exception.i
+      pism_inverse.i
+      pism_options.i
+      )
 
     if(Pism_USE_TAO)
       set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TAO" APPEND)
@@ -76,10 +89,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       CPLUSPLUS ON
       SWIG_MODULE_NAME cpp)
 
-    set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps}) # has to be set *before* calling SWIG_ADD_MODULE
+    # has to be set *before* calling SWIG_ADD_MODULE
+    set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps})
     
-    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc pism_python_signal.cpp)
-    SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES} )
+    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc)
+    SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES})
 
     # Disable compiler warnings:
     SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
@@ -134,5 +148,19 @@ add_custom_target (install_python_bindings_in_the_build_directory ALL
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
   VERBATIM
   DEPENDS ${SWIG_MODULE_cpp_REAL_NAME}  _petsc_version install_site_packages_in_the_build_directory )
+
+configure_file(${Pism_SOURCE_DIR}/test/pylintrc pylintrc)
+add_custom_target (install_python_bindings_in_the_source_directory ALL
+  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_cpp_LOCATION} ${Pism_SOURCE_DIR}/site-packages/PISM
+  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_petsc_version_LOCATION} ${Pism_SOURCE_DIR}/site-packages/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${Pism_SOURCE_DIR}/site-packages/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${Pism_SOURCE_DIR}/site-packages/PISM/
+  VERBATIM
+  DEPENDS ${SWIG_MODULE_cpp_REAL_NAME}  _petsc_version)
+add_custom_target (pylint
+  COMMAND pylint --rcfile=${CMAKE_CURRENT_BINARY_DIR}/pylintrc ${Pism_SOURCE_DIR}/site-packages/PISM
+  VERBATIM
+  DEPENDS install_python_bindings_in_the_source_directory
+)
 
 endif(Pism_BUILD_PYTHON_BINDINGS)

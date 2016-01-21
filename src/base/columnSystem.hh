@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014 Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define __columnSystem_hh
 
 #include <string>
-#include <petsc.h>
+#include <ostream>
 
 namespace pism {
 
@@ -40,17 +40,21 @@ namespace pism {
   The tridiagonal algorithm here comes from Numerical Recipes in C
   Section 2.4, page 50.  It solves the system:
 
+@verbatim
   [b_1  c_1   0   ...                           ] [  u_1  ]   [   r_1   ]
   [a_2  b_2  c_2  ...                           ] [  u_2  ]   [   r_2   ]
   [               ...                           ].[  ...  ] = [   ...   ]
   [               ...  a_{N-1}  b_{N-1}  c_{N-1}] [u_{N-1}]   [ r_{N-1} ]
   [               ...     0     a_N      b_N    ] [  u_N  ]   [   r_N   ]
+@endverbatim
 
   HOWEVER... the version in this code is different from Numerical
   Recipes in two ways:
-  a) Indexing is zero-based
-  b) Variables have been renamed.
 
+  - Indexing is zero-based
+  -  Variables have been renamed.
+
+@verbatim
   NR      PISM
   ==================
   a       L       "Lower Diagonal" (L doesn't use index 0)
@@ -62,65 +66,122 @@ namespace pism {
   j       k
   n       n
   gam     work
-
+@endverbatim
 
   Therefore... this version of the code solves the following problem:
 
+@verbatim
   [D_0  U_0   0   ...                           ] [  x_0  ]   [   r_0   ]
   [L_1  D_1  U_1  ...                           ] [  x_1  ]   [   r_1   ]
   [               ...                           ].[  ...  ] = [   ...   ]
   [               ...  L_{N-2}  D_{N-2}  U_{N-2}] [x_{N-2}]   [ r_{N-2} ]
   [               ...     0     L_{N-1}  D_{N-1}] [x_{N-1}]   [ r_{N-1} ]
-
+@endverbatim
 */
-class columnSystemCtx {
-
+class TridiagonalSystem {
 public:
-  columnSystemCtx(unsigned int my_nmax, const std::string &my_prefix);
-  virtual ~columnSystemCtx();
+  TridiagonalSystem(unsigned int max_size, const std::string &prefix);
 
-  PetscErrorCode setIndicesAndClearThisColumn(int my_i, int my_j,
-                                              double ice_thickness, double dz,
-                                              unsigned int Mz);  
+  double norm1(unsigned int system_size) const;
+  double ddratio(unsigned int system_size) const;
+  void reset();
 
-  double    norm1(unsigned int n) const;
-  double    ddratio(unsigned int n) const;
+  // uses an output argument to allow re-using storage and avoid
+  // copying
+  void solve(unsigned int system_size, std::vector<double> &result);
 
-  PetscErrorCode viewVectorValues(PetscViewer viewer,
-                                  const std::vector<double> &v,
-                                  unsigned int M,
-                                  const std::string &info) const;
-  PetscErrorCode viewMatrix(PetscViewer viewer,
-                            unsigned int M,
-                            const std::string &info) const;
-  virtual PetscErrorCode viewSystem(PetscViewer viewer,
-                                    unsigned int M) const;
+  void save_system_with_solution(const std::string &filename,
+                                 unsigned int system_size,
+                                 const std::vector<double> &solution);
 
-  PetscErrorCode reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex,
-                                                 unsigned int M);
-  PetscErrorCode viewColumnInfoMFile(const std::vector<double> &x,
-                                     unsigned int M);
-  PetscErrorCode viewColumnInfoMFile(const std::string &filename,
-                                     unsigned int M,
-                                     const std::vector<double> &x);
+  //! Save the system to a stream using the ASCII MATLAB (Octave)
+  //! format. Virtual to allow saving more info in derived classes.
+  void save_system(std::ostream &output,
+                   unsigned int system_size) const;
+
+
+  void save_matrix(std::ostream &output,
+                   unsigned int system_size,
+                   const std::string &info) const;
+
+  void save_vector(std::ostream &output,
+                   const std::vector<double> &v,
+                   unsigned int system_size, const std::string &info) const;
+
+  std::string prefix() const;
+
+  double& L(size_t i) {
+    return m_L[i];
+  }
+  double& D(size_t i) {
+    return m_D[i];
+  }
+  double& U(size_t i) {
+    return m_U[i];
+  }
+  double& RHS(size_t i) {
+    return m_rhs[i];
+  }
+private:
+  unsigned int m_max_system_size;         // maximum system size
+  std::vector<double> m_L, m_D, m_U, m_rhs, m_work; // vectors for tridiagonal system
+
+  std::string m_prefix;
+};
+
+class IceModelVec3;
+class ColumnInterpolation;
+
+//! Base class for tridiagonal systems in the ice.
+/*! Adds data members used in time-dependent systems with advection
+  (dx, dy, dz, dt, velocity components).
+ */
+class columnSystemCtx {
+public:
+  columnSystemCtx(const std::vector<double>& storage_grid, const std::string &prefix,
+                  double dx, double dy, double dt,
+                  const IceModelVec3 &u3, const IceModelVec3 &v3, const IceModelVec3 &w3);
+  ~columnSystemCtx();
+
+  void save_to_file(const std::vector<double> &x);
+  void save_to_file(const std::string &filename, const std::vector<double> &x);
 
   unsigned int ks() const;
+  double dz() const;
+  const std::vector<double>& z() const;
+  void fine_to_coarse(const std::vector<double> &fine, int i, int j,
+                      IceModelVec3& coarse) const;
 protected:
-  unsigned int m_nmax;
-  std::vector<double> L, D, U, rhs, work; // vectors for tridiagonal system
+  TridiagonalSystem *m_solver;
 
-  int m_i, m_j;
+  ColumnInterpolation *m_interp;
+
+  //! current system size; corresponds to the highest vertical level within the ice
   unsigned int m_ks;
+  //! current column indexes
+  int m_i, m_j;
 
-  // deliberately protected so only derived classes can use
-  PetscErrorCode solveTridiagonalSystem(unsigned int n, std::vector<double> &x);
-  PetscErrorCode createViewer(const std::string &filename,
-                              unsigned int M,
-                              PetscViewer &result);
-  std::string prefix;
-private:
-  bool        indicesValid;
-  PetscErrorCode resetColumn();
+  double m_dx, m_dy, m_dz, m_dt;
+
+  //! u-component if the ice velocity
+  std::vector<double> m_u;
+  //! v-component if the ice velocity
+  std::vector<double> m_v;
+  //! w-component if the ice velocity
+  std::vector<double> m_w;
+  //! levels of the fine vertical grid
+  std::vector<double> m_z;
+
+  //! pointers to 3D velocity components
+  const IceModelVec3 &m_u3, &m_v3, &m_w3;
+
+  void init_column(int i, int j, double ice_thickness);
+
+  void reportColumnZeroPivotErrorMFile(unsigned int M);
+
+  void init_fine_grid(const std::vector<double>& storage_grid);
+
+  void coarse_to_fine(const IceModelVec3 &coarse, int i, int j, double* fine) const;
 };
 
 } // end of namespace pism

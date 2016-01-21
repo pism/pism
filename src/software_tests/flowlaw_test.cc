@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015 PISM Authors
 //
 // This file is part of Pism.
 //
@@ -17,49 +17,47 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include "pism_const.hh"
-#include "flowlaw_factory.hh"
-#include "PISMConfig.hh"
-#include "enthalpyConverter.hh"
-#include "pism_options.hh"
+#include "base/util/pism_const.hh"
+#include "base/rheology/FlowLawFactory.hh"
+#include "base/enthalpyConverter.hh"
+#include "base/util/pism_options.hh"
+
+#include "base/util/Context.hh"
+
+#include "base/util/petscwrappers/PetscInitializer.hh"
+#include "base/util/error_handling.hh"
+
+#include "base/util/PISMConfigInterface.hh"
 
 using namespace pism;
 
 static char help[] =
-  "Calls IceFlowLaw with various values of arguments and prints results.\n"
+  "Calls FlowLaw with various values of arguments and prints results.\n"
   "Used for software tests.  Tests the flow() method but prints\n"
   "temperature and liquid fraction as inputs and flow coefficient as output.\n"
-  "Thus also tests methods getPressureFromDepth(), getMeltingTemp(), and\n"
-  "getEnth() methods of EnthalpyConverter.  Nonetheless a change to the\n"
+  "Thus also tests methods pressure(), melting_temperature(), and\n"
+  "enthalpy() methods of EnthalpyConverter.  Nonetheless a change to the\n"
   "enthalpy normalization only should not affect the outcome.  Only physically-\n"
   "meaningful inputs and output appear at stdout.\n";
 
 int main(int argc, char *argv[]) {
-  PetscErrorCode  ierr;
 
-  MPI_Comm    com;
+  MPI_Comm com = MPI_COMM_WORLD;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  petsc::Initializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
-    UnitSystem unit_system;
-    Config config(com, "pism_config", unit_system),
-      overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+  try {
 
-    EnthalpyConverter EC(config);
+    Context::Ptr ctx = context_from_options(com, "flowlaw_test");
 
-    IceFlowLaw *flow_law = NULL;
-    IceFlowLawFactory ice_factory(com, "sia_", config, &EC);
+    EnthalpyConverter::Ptr EC(new EnthalpyConverter(*ctx->config()));
 
-    std::string flow_law_name = ICE_GPBLD;
-    ice_factory.setType(ICE_GPBLD); // set the default type
-
-    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ice_factory.create(&flow_law);
+    rheology::FlowLaw *flow_law = NULL;
+    rheology::FlowLawFactory ice_factory("sia_", ctx->config(), EC);
+    flow_law = ice_factory.create();
 
     double     TpaC[]  = {-30.0, -5.0, 0.0, 0.0},  // pressure-adjusted, deg C
                depth   = 2000.0,
@@ -67,8 +65,8 @@ int main(int argc, char *argv[]) {
                omega0  = 0.005,  // some laws use liquid fraction; used w TpaC[3]
                sigma[] = {1e4, 5e4, 1e5, 1.5e5};
 
-    double     p       = EC.getPressureFromDepth(depth),
-               Tm      = EC.getMeltingTemp(p);
+    double     p       = EC->pressure(depth),
+               Tm      = EC->melting_temperature(p);
 
     printf("flow law:   \"%s\"\n", flow_law->name().c_str());
     printf("pressure = %9.3e Pa = (hydrostatic at depth %7.2f m)\n",
@@ -82,9 +80,8 @@ int main(int argc, char *argv[]) {
         double T     = Tm + TpaC[j],
                omega = (j == 3) ? omega0 : 0.0;
 
-        double E, flowcoeff;
-        EC.getEnth(T, omega, p, E);
-        flowcoeff = flow_law->flow(sigma[i], E, p, gs);
+        double E = EC->enthalpy(T, omega, p);
+        double flowcoeff = flow_law->flow(sigma[i], E, p, gs);
 
         printf("    %10.2e   %10.3f  %9.3f = %10.6e\n",
                sigma[i], T, omega, flowcoeff);
@@ -93,8 +90,11 @@ int main(int argc, char *argv[]) {
     }
 
     delete flow_law;
-  } // end explicit scope
+  }
+  catch (...) {
+    handle_fatal_errors(com);
+    return 1;
+  }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

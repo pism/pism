@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "IPFunctional.hh"
 
 namespace pism {
+namespace inverse {
 
 
 //! Implements a functional corresponding to (the square of) an \f$H^1\f$ norm of a scalar valued function.
@@ -36,7 +37,7 @@ namespace pism {
 */
 class IP_H1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IP_H1NormFunctional2S(IceGrid &grid, ///< computational grid
+  IP_H1NormFunctional2S(IceGrid::ConstPtr grid, ///< computational grid
                         double cL2, ///< The constant \f$c_{L^2}\f$.
                         double cH1, ///< The constant \f$c_{H^1}\f$.
                         IceModelVec2Int *dirichletLocations=NULL ///< Nodes where the function will be set to zero prior to integration.
@@ -45,10 +46,10 @@ public:
     m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations) {};
   virtual ~IP_H1NormFunctional2S() {};
   
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
-  virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
-  virtual PetscErrorCode assemble_form(Mat J);
+  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
+  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
+  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void assemble_form(Mat J);
 
 protected:
 
@@ -60,6 +61,7 @@ private:
   IP_H1NormFunctional2S & operator=(IP_H1NormFunctional2S const &);  
 };
 
+} // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: H1NORMFUNCTIONAL_HH_TF8AKRNQ */

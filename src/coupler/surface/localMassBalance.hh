@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,22 +19,13 @@
 #ifndef __localMassBalance_hh
 #define __localMassBalance_hh
 
-#include <petsc.h>
+
 #include <gsl/gsl_rng.h>
-#include "NCVariable.hh"
-#include "iceModelVec.hh"  // only needed for FaustoGrevePDDObject
+
+#include "base/util/iceModelVec.hh"  // only needed for FaustoGrevePDDObject
 
 namespace pism {
-//! A struct which holds degree day factors.
-/*!
-  Degree day factors convert positive degree days (=PDDs) into amount of melt.
-*/
-struct DegreeDayFactors {
-  double  snow, //!< m day^-1 K^-1; ice-equivalent amount of snow melted, per PDD
-    ice,  //!< m day^-1 K^-1; ice-equivalent amount of ice melted, per PDD
-    refreezeFrac;  //!< fraction of melted snow which refreezes as ice
-};
-
+namespace surface {
 
 //! \brief Base class for a model which computes surface mass flux rate (ice
 //! thickness per time) from precipitation and temperature.
@@ -55,16 +46,30 @@ struct DegreeDayFactors {
   modeled temperature away from the input temperature time series which contains
   the part of location-dependent temperature cycle on the time interval.
 
-  \note 
-  \li Please avoid using config.get("...") and config.get_flag("...") calls
+  @note 
+  - Please avoid using `config.get...("...")` calls
   inside those methods of this class which are called inside loops over 
   spatial grids.  Doing otherwise increases computational costs.
-  \li This base class should be more general.  For instance, it could allow as
+  - This base class should be more general.  For instance, it could allow as
   input a time series for precipation rate.
 */
 class LocalMassBalance {
 public:
-  LocalMassBalance(const Config &myconfig);
+
+  //! A struct which holds degree day factors.
+  /*!
+    Degree day factors convert positive degree days (=PDDs) into amount of melt.
+  */
+  struct DegreeDayFactors {
+    //! m day^-1 K^-1; ice-equivalent amount of snow melted, per PDD
+    double snow;
+    //! m day^-1 K^-1; ice-equivalent amount of ice melted, per PDD
+    double ice;
+    //! fraction of melted snow which refreezes as ice
+    double refreezeFrac;
+  };
+
+  LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system);
   virtual ~LocalMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt) = 0;
@@ -99,9 +104,9 @@ public:
                     double &cumulative_smb) = 0;
 
 protected:
-  const Config& config;
-  UnitSystem m_unit_system;
-  const double seconds_per_day;
+  const Config::ConstPtr m_config;
+  const units::System::Ptr m_unit_system;
+  const double m_seconds_per_day;
 };
 
 
@@ -114,7 +119,7 @@ protected:
 class PDDMassBalance : public LocalMassBalance {
 
 public:
-  PDDMassBalance(const Config& myconfig);
+  PDDMassBalance(Config::ConstPtr myconfig, units::System::Ptr system);
   virtual ~PDDMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt);
@@ -158,7 +163,7 @@ protected:
 class PDDrandMassBalance : public PDDMassBalance {
 
 public:
-  PDDrandMassBalance(const Config& myconfig,
+  PDDrandMassBalance(Config::ConstPtr myconfig, units::System::Ptr system,
                      bool repeatable); //! repeatable==true to seed with zero every time.
   virtual ~PDDrandMassBalance();
 
@@ -188,25 +193,28 @@ protected:
 class FaustoGrevePDDObject {
 
 public:
-  FaustoGrevePDDObject(IceGrid &g, const Config &myconfig);
+  FaustoGrevePDDObject(IceGrid::ConstPtr g);
   virtual ~FaustoGrevePDDObject() {}
 
-  virtual PetscErrorCode update_temp_mj(IceModelVec2S *surfelev, IceModelVec2S *lat, IceModelVec2S *lon);
+  virtual void update_temp_mj(const IceModelVec2S &surfelev,
+                              const IceModelVec2S &lat,
+                              const IceModelVec2S &lon);
 
   /*! If this method is called, it is assumed that i,j is in the ownership range
     for IceModelVec2S temp_mj. */
-  virtual PetscErrorCode setDegreeDayFactors(int i, int j,
-                                             double /* usurf */, double lat, double /* lon */,
-                                             DegreeDayFactors &ddf);
+  virtual void setDegreeDayFactors(int i, int j,
+                                   double /* usurf */, double lat, double /* lon */,
+                                   LocalMassBalance::DegreeDayFactors &ddf);
 
 protected:
-  IceGrid &grid;
-  const Config &config;
+  IceGrid::ConstPtr m_grid;
+  const Config::ConstPtr m_config;
   double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
     fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;
-  IceModelVec2S temp_mj;
+  IceModelVec2S m_temp_mj;
 };
 
+} // end of namespace surface
 } // end of namespace pism
 
 #endif

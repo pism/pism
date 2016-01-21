@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014 PISM Authors
+// Copyright (C) 2011, 2014, 2015 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,22 +20,16 @@
 #define _PSFACTORY_H_
 
 #include "PSModifier.hh"
+#include "coupler/util/PCFactory.hh"
 
 namespace pism {
-
-class PSFactory : public PCFactory<SurfaceModel,PSModifier> {
+namespace surface {
+class Factory : public PCFactory<SurfaceModel,SurfaceModifier> {
 public:
-  PSFactory(IceGrid& g, const Config& conf)
-    : PCFactory<SurfaceModel,PSModifier>(g, conf)
-  {
-    add_standard_types();
-    m_option = "surface";
-  }
-
-  virtual ~PSFactory() {}
-  virtual void add_standard_types();
+  Factory(IceGrid::ConstPtr  g);
+  ~Factory();
 };
-
+} // end of namespace surface
 } // end of namespace pism
 
 #endif /* _PSFACTORY_H_ */

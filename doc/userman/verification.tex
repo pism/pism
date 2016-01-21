@@ -22,15 +22,15 @@ In PISM there is a separate executable \texttt{pismv} which is used for SIA-rela
 A & isothermal SIA, steady,  flat bed, constant accumulation &  & \cite{BLKCB} \\
 B & isothermal SIA, flat bed, zero accum & similarity soln & \cite{BLKCB,Halfar83} \\
 C & isothermal SIA, flat bed, growing accum & similarity soln & \cite{BLKCB} \\
-D & isothermal SIA, flat bed, oscillating accum & compensatory accum & \cite{BLKCB} \\
-E & isothermal SIA; as A  but with sliding in a sector &  compensatory accum & \cite{BLKCB} \\
-F & thermomechanically coupled SIA (mass and energy cons.), steady, flat bed &  compensatory accum and comp~heating& \cite{BB,BBL} \\
+D & isothermal SIA, flat bed, oscillating accum & compensatory accum. & \cite{BLKCB} \\
+E & isothermal SIA; as A  but with sliding in a sector &  compensatory accum. & \cite{BLKCB} \\
+F & thermomechanically coupled SIA (mass and energy cons.), steady, flat bed &  compensatory accum.~and heating& \cite{BB,BBL} \\
 G & thermomechanically coupled SIA; as F  but with oscillating accumulation  & ditto & \cite{BB,BBL} \\
 H & bed deformation coupled with isothermal SIA & joined similarity & \cite{BLKfastearth} \\
 I & stream velocity computation using SSA (plastic till) &  & \cite{SchoofStream,BBssasliding} \\
-J & shelf velocity computation using SSA  &  & [IN PREP] \\
+J & shelf velocity computation using SSA  &  & (source code) \\
 K & pure conduction in ice and bedrock & & \cite{BuelerTestK} \\
-L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREP] \\ \bottomrule
+L & isothermal SIA, steady, non-flat bed & numerical ODE soln & (source code) \\ \bottomrule
 \normalsize
 \end{tabular}
 \caption{Exact solutions for verification.}
@@ -50,8 +50,8 @@ E & \texttt{pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000}  \\
 F & \texttt{pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000}  \\
 G & \texttt{pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000}  \\
 H & \texttt{pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso} \\
-I & \texttt{ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ssafd_ksp_rtol 1e-11} \\ % FIXME: use .py 
-J & \texttt{ssa_testj -ssa_method fd -Mx 60 -My 60 -Mz 11 -ssafd_ksp_rtol 1e-12} \\ % FIXME: use .py 
+I & \texttt{ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ssafd_ksp_rtol 1e-11} \\ % FIXME?: use .py 
+J & \texttt{ssa_testj -ssa_method fd -Mx 60 -My 60 -ssafd_ksp_rtol 1e-12} \\ % FIXME?: use .py 
 K & \texttt{pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000} \\
 L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\ \bottomrule
 \normalsize
@@ -77,7 +77,9 @@ L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\ \bottomrule
 \label{tab:pismv-options}
 \end{table}
 
-Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.  Table \ref{tab:tests-exec} shows how to run each of them on a coarse grids.  Table \ref{tab:pismv-options} gives the special verification-related options of the \texttt{pismv} executable.
+Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.
+
+Table \ref{tab:tests-exec} shows how to run each of them on a coarse grids.  Note that tests I and J require special executables \texttt{ssa_testi,ssa_testj} which are built with configuration flag \texttt{Pism_BUILD_EXTRA_EXECS} equal to \texttt{ON}.  Table \ref{tab:pismv-options} gives the special verification-related options of the \texttt{pismv} executable.
 
 Numerical errors are not, however, the dominant reasons why ice sheet models give imperfect results.  The largest sources of errors include those from using the wrong (e.g.~over-simplified or incorrectly-parameterized) continuum model, and from observational or pre-processing errors present in input data.  Our focus here on numerical errors has a model-maintenance goal.  It is \emph{easier} to maintain code by quantitatively confirming that it produces small errors in cases where those can be measured, rather than ``eyeballing'' results to see that they are ``right'' according to human judgment.
 

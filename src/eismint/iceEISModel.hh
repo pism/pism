@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,7 @@
 #ifndef __iceEISModel_hh
 #define __iceEISModel_hh
 
-#include <petscdmda.h>
-#include "iceModel.hh"
+#include "base/iceModel.hh"
 
 namespace pism {
 
@@ -33,17 +32,15 @@ namespace pism {
 */
 class IceEISModel : public IceModel {
 public:
-  IceEISModel(IceGrid &g, Config &config, Config &overrides);
-  virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode allocate_stressbalance();
-  virtual PetscErrorCode allocate_couplers();
-  virtual PetscErrorCode set_grid_defaults();
+  IceEISModel(IceGrid::Ptr g, Context::Ptr ctx, char experiment);
+  virtual void set_vars_from_options();
+  virtual void allocate_stressbalance();
+  virtual void allocate_couplers();
 protected:
   char m_experiment;
 
-  virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
-  virtual PetscErrorCode generateMoundTopography();   // for experiments K,L
+  virtual void generateTroughTopography(IceModelVec2S &result);  // for experiments I,J
+  virtual void generateMoundTopography(IceModelVec2S &result);   // for experiments K,L
 };
 
 } // end of namespace pism
