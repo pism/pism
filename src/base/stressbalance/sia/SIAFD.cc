@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2016 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,6 +30,7 @@
 #include "base/util/Profiling.hh"
 
 #include "base/util/PISMTime.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {

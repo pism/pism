@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,10 +27,12 @@
 #include <cstring>              // memset
 #include <cstdio>               // stderr, fprintf
 
-namespace pism {
-namespace io {
+#include "base/util/pism_utilities.hh" // join
 
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
+
+namespace pism {
+namespace io {
 
 NC3File::NC3File(MPI_Comm c)
   : NCFile(c), m_rank(0) {
@@ -787,8 +789,8 @@ static int get_att_text(int ncid, int varid, const std::string &att_name,
   return 0;
 }
 
-// Get a string attribute on rank 0. Ignores all but the first string in NetCDF-4 "string array"
-// attributes.
+// Get a string attribute on rank 0. In "string array" attributes array elements are concatenated
+// using "," as the separator.
 static int get_att_string(int ncid, int varid, const std::string &att_name,
                           std::string &result) {
   int stat = 0;
@@ -803,7 +805,11 @@ static int get_att_string(int ncid, int varid, const std::string &att_name,
   std::vector<char*> buffer(attlen, NULL);
   stat = nc_get_att_string(ncid, varid, att_name.c_str(), &buffer[0]);
   if (stat == NC_NOERR) {
-    result = buffer[0];
+    std::vector<std::string> strings(attlen);
+    for (size_t k = 0; k < attlen; ++k) {
+      strings[k] = buffer[k];
+    }
+    result = join(strings, ",");
   } else {
     result = "";
   }

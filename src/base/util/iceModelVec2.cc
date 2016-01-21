@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,6 +38,7 @@ using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
 #include "base/util/petscwrappers/Vec.hh"
 #include "base/util/petscwrappers/VecScatter.hh"
 #include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "io/io_helpers.hh"
 #include "base/util/Logger.hh"
 

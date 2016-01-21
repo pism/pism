@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace bed {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 
 #include "IceGrid.hh"
 #include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "PISMTime.hh"
 #include "PISMTime_Calendar.hh"
 #include "PISMConfigInterface.hh"

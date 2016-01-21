@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 
 //! Convert PISM's IO types into NetCDF types and back. Note that NC_* may be
 //! macros, so you need to include the appropriate NetCDF header first.
+namespace pism {
 
 static nc_type pism_type_to_nc_type(pism::IO_Type input) {
   switch (input) {
@@ -58,3 +59,5 @@ static pism::IO_Type nc_type_to_pism_type(int input) {
     return PISM_NAT;
   }
 }
+
+} // end of namespace pism

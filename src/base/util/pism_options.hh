@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,10 @@
 
 #ifndef _PISM_OPTIONS_H_
 #define _PISM_OPTIONS_H_
+
+#include <string>
+#include <vector>
+#include <set>
 
 #include "pism_const.hh"
 

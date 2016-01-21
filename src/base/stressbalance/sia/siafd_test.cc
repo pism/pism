@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,7 @@ static char help[] =
 #include "base/util/pism_options.hh"
 #include "verif/tests/exactTestsFG.h"
 #include "base/util/io/io_helpers.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

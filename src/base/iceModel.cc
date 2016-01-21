@@ -47,6 +47,7 @@
 #include "pism_signal.h"
 #include "base/util/PISMVars.hh"
 #include "base/util/Profiling.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

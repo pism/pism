@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/io/io_helpers.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 #include "base/util/io/PIO.hh"
 #include "IceGrid.hh"
 #include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "VariableMetadata.hh"
 #include "iceModelVec.hh"
 #include "pism_options.hh"

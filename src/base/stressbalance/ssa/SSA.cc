@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
+#include "base/util/pism_utilities.hh"
 
 #include "SSA_diagnostics.hh"
 

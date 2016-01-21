@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include <cassert>
 
 #include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "iceModelVec.hh"
 #include "base/util/io/PIO.hh"
 #include "PISMTime.hh"

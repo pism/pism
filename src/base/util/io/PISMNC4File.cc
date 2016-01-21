@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,10 +28,11 @@
 #endif
 #include <netcdf.h>
 
+#include "pism_type_conversion.hh"
+#include "base/util/pism_utilities.hh"
+
 namespace pism {
 namespace io {
-
-#include "pism_type_conversion.hh"
 
 NC4File::NC4File(MPI_Comm c, unsigned int compression_level)
   : NCFile(c), m_compression_level(compression_level) {
@@ -384,8 +385,8 @@ static int get_att_text(int ncid, int varid, const std::string &att_name,
   return 0;
 }
 
-// Get a string attribute on rank 0. Ignores all but the first string in NetCDF-4 "string array"
-// attributes.
+// Get a string attribute on rank 0. In "string array" attributes array elements are concatenated
+// using "," as the separator.
 static int get_att_string(int ncid, int varid, const std::string &att_name,
                           std::string &result) {
   int stat = 0;
@@ -400,7 +401,11 @@ static int get_att_string(int ncid, int varid, const std::string &att_name,
   std::vector<char*> buffer(attlen, NULL);
   stat = nc_get_att_string(ncid, varid, att_name.c_str(), &buffer[0]);
   if (stat == NC_NOERR) {
-    result = buffer[0];
+    std::vector<std::string> strings(attlen);
+    for (size_t k = 0; k < attlen; ++k) {
+      strings[k] = buffer[k];
+    }
+    result = join(strings, ",");
   } else {
     result = "";
   }

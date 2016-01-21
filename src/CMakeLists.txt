@@ -49,6 +49,7 @@ set(PISMUTIL_SRC
   base/util/io/PISMNC4_Quilt.cc
   base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
+  base/util/pism_utilities.cc
   base/util/Profiling.cc
   base/util/pism_default_config.cc
   base/util/pism_options.cc

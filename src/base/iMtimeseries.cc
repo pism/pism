@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2015 Constantine Khroulev
+// Copyright (C) 2009-2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,6 +33,7 @@
 #include "base/util/io/io_helpers.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/Profiling.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

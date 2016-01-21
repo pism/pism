@@ -33,6 +33,8 @@
 
 #include "base/util/interpolation.hh"
 
+#include "base/util/pism_utilities.hh"
+
 #include "base/util/PISMUnits.hh"
 #include "pism_python.hh"
 
@@ -165,6 +167,7 @@
 
 /* PISM header with no dependence on other PISM headers. */
 %include "base/util/pism_const.hh"
+%include "base/util/pism_utilities.hh"
 %include "base/util/interpolation.hh"
 
 %shared_ptr(pism::Logger);
