@@ -899,8 +899,9 @@ def netcdf_string_attribute_test():
         cdl = """
 netcdf string_attribute_test {
   string :string_attribute = "%s" ;
+  :text_attribute = "%s" ;
 }
-""" % attribute
+""" % (attribute, attribute)
         with open(basename + ".cdl", "w") as f:
             f.write(cdl)
 
@@ -914,12 +915,15 @@ netcdf string_attribute_test {
     def compare(pio):
         pio.open(basename + ".nc", PISM.PISM_READONLY)
         read_string = pio.get_att_text("PISM_GLOBAL", "string_attribute")
+        read_text = pio.get_att_text("PISM_GLOBAL", "text_attribute")
         pio.close()
 
         # check that written and read strings are the same
         print "written string: '%s'" % attribute
         print "read string:    '%s'" % read_string
+        print "read text:      '%s'" % read_text
         assert read_string == attribute
+        assert read_text == attribute
 
     def netcdf3():
         # try reading this attribute
