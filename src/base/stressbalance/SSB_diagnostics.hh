@@ -32,7 +32,8 @@ class SSB_beta : public Diag<ShallowStressBalance>
 {
 public:
   SSB_beta(ShallowStressBalance *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the gravitational driving stress (diagnostically).
@@ -40,7 +41,8 @@ class SSB_taud : public Diag<ShallowStressBalance>
 {
 public:
   SSB_taud(ShallowStressBalance *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the magnitude of the gravitational driving stress
@@ -49,7 +51,8 @@ class SSB_taud_mag : public Diag<ShallowStressBalance>
 {
 public:
   SSB_taud_mag(ShallowStressBalance *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! @brief Computes the basal shear stress @f$ \tau_b @f$.
@@ -57,7 +60,8 @@ class SSB_taub : public Diag<ShallowStressBalance>
 {
 public:
   SSB_taub(ShallowStressBalance *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the magnitude of the basal shear stress
@@ -66,7 +70,8 @@ class SSB_taub_mag : public Diag<ShallowStressBalance>
 {
 public:
   SSB_taub_mag(ShallowStressBalance *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace stressbalance

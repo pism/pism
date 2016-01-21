@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@ static char help[] =
 #include "base/util/IceGrid.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/PISMVars.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/util/pism_options.hh"

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,13 @@
 #include "SSA.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/rheology/flowlaw_factory.hh"
+#include "base/rheology/FlowLawFactory.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
+#include "base/util/pism_utilities.hh"
 
 #include "SSA_diagnostics.hh"
 
@@ -105,7 +106,7 @@ SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
   {
     rheology::FlowLawFactory ice_factory("ssa_", m_config, m_EC);
-    ice_factory.remove_type(ICE_GOLDSBY_KOHLSTEDT);
+    ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
     m_flow_law = ice_factory.create();
   }
 }
@@ -419,7 +420,7 @@ SSA_taud::SSA_taud(SSA *m)
   }
 }
 
-IceModelVec::Ptr SSA_taud::compute() {
+IceModelVec::Ptr SSA_taud::compute_impl() {
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "result", WITHOUT_GHOSTS);
@@ -443,7 +444,7 @@ SSA_taud_mag::SSA_taud_mag(SSA *m)
                      "this is the magnitude of the driving stress used by the SSA solver");
 }
 
-IceModelVec::Ptr SSA_taud_mag::compute() {
+IceModelVec::Ptr SSA_taud_mag::compute_impl() {
 
   // Allocate memory:
   IceModelVec2S::Ptr result(new IceModelVec2S);

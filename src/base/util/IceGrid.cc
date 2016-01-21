@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 
 #include "IceGrid.hh"
 #include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "PISMTime.hh"
 #include "PISMTime_Calendar.hh"
 #include "PISMConfigInterface.hh"
@@ -182,7 +183,8 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
 IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
   : com(context->com()), m_impl(new Impl) {
 
-  try {  m_impl->ctx = context;
+  try {
+    m_impl->ctx = context;
 
     m_impl->bsearch_accel = gsl_interp_accel_alloc();
     if (m_impl->bsearch_accel == NULL) {
@@ -1215,7 +1217,8 @@ void GridParameters::horizontal_extent_from_options() {
 }
 
 void GridParameters::vertical_grid_from_options(Config::ConstPtr config) {
-  options::Real Lz("-Lz", "height of the computational domain", z.back());
+  options::Real Lz("-Lz", "height of the computational domain",
+                   z.size() > 0 ? z.back() : 0.0);
   options::Integer Mz("-Mz", "grid size in Y direction", z.size());
 
   double lambda = config->get_double("grid_lambda");

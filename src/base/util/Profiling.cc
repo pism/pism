@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <petscviewer.h>
+
 #include "Profiling.hh"
 #include "error_handling.hh"
 
@@ -28,6 +30,39 @@ Profiling::Profiling() {
   PetscErrorCode ierr = PetscClassIdRegister("PISM", &m_classid);
   PISM_CHK(ierr, "PetscClassIdRegister");
 }
+
+//! Enable PETSc logging.
+void Profiling::start() const {
+  PetscErrorCode ierr = PetscLogBegin(); PISM_CHK(ierr, "PetscLogBegin");
+}
+
+//! Save detailed profiling data to a Python script.
+void Profiling::report(const std::string &filename) const {
+  PetscErrorCode ierr;
+  PetscViewer log_viewer;
+
+  ierr = PetscViewerCreate(PETSC_COMM_WORLD, &log_viewer);
+  PISM_CHK(ierr, "PetscViewerCreate");
+
+  ierr = PetscViewerSetType(log_viewer, PETSCVIEWERASCII);
+  PISM_CHK(ierr, "PetscViewerSetType");
+
+  ierr = PetscViewerFileSetName(log_viewer, filename.c_str());
+  PISM_CHK(ierr, "PetscViewerFileSetName");
+
+  ierr = PetscViewerSetFormat(log_viewer, PETSC_VIEWER_ASCII_INFO_DETAIL);
+  PISM_CHK(ierr, "PetscViewerSetFormat");
+
+  ierr = PetscViewerSetUp(log_viewer);
+  PISM_CHK(ierr, "PetscViewerSetUp");
+
+  ierr = PetscLogView(log_viewer);
+  PISM_CHK(ierr, "PetscLogView"); PISM_CHK(ierr, "PetscLogView");
+
+  ierr = PetscViewerDestroy(&log_viewer);
+  PISM_CHK(ierr, "PetscViewerDestroy");
+}
+
 
 void Profiling::begin(const char * name) const {
   PetscLogEvent event = 0;

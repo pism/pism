@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,6 +30,7 @@
 #include "enthalpyConverter.hh"
 #include "iceModel.hh"
 #include "base/util/Profiling.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

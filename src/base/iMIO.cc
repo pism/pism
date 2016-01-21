@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,6 +45,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/Profiling.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -706,8 +707,8 @@ void IceModel::write_snapshot() {
 
   if (split_snapshots) {
     snapshots_file_is_ready = false;    // each snapshot is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
-             snapshots_filename.c_str(), m_time->date().c_str());
+    snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
+             snapshots_filename.c_str(), m_time->date(saving_after).c_str());
   } else {
     strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
@@ -790,6 +791,9 @@ void IceModel::write_backup() {
     return;
   }
 
+  const Profiling &profiling = m_ctx->profiling();
+  profiling.begin("backup");
+
   last_backup_time = wall_clock_hours;
 
   // create a history string:
@@ -799,9 +803,11 @@ void IceModel::write_backup() {
            "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
            m_time->date().c_str(), wall_clock_hours);
 
+  PetscLogDouble backup_start_time = GetTime();
+
   m_log->message(2,
-             "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
-             backup_filename.c_str(), wall_clock_hours);
+                 "  [%s] Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
+                 pism_timestamp(m_grid->com).c_str(), backup_filename.c_str(), wall_clock_hours);
 
   stampHistory(tmp);
 
@@ -824,6 +830,15 @@ void IceModel::write_backup() {
 
   // Also flush time-series:
   flush_timeseries();
+
+  PetscLogDouble backup_end_time = GetTime();
+  m_log->message(2,
+                 "  [%s] Done saving an automatic backup in %f seconds (%f minutes).\n",
+                 pism_timestamp(m_grid->com).c_str(),
+                 backup_end_time - backup_start_time,
+                 (backup_end_time - backup_start_time) / 60.0);
+
+  profiling.end("backup");
 }
 
 

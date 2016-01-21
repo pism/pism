@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2007, 2016 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -32,7 +32,7 @@ Results:
 */
 
 #include <stdio.h>
-#include "exactTestsABCDE.h"
+#include "exactTestsABCD.h"
 
 int main() {
 

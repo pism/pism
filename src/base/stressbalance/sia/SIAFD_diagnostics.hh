@@ -35,7 +35,8 @@ class SIAFD_schoofs_theta : public Diag<SIAFD>
 {
 public:
   SIAFD_schoofs_theta(SIAFD *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the smoothed bed elevation from Schoof's (2003) theory of the
@@ -47,7 +48,8 @@ class SIAFD_topgsmooth : public Diag<SIAFD>
 {
 public:
   SIAFD_topgsmooth(SIAFD *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the thickness relative to the smoothed bed elevation in
@@ -59,7 +61,8 @@ class SIAFD_thksmooth : public Diag<SIAFD>
 {
 public:
   SIAFD_thksmooth(SIAFD *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Compute diffusivity of the SIA flow.
@@ -67,7 +70,8 @@ class SIAFD_diffusivity : public Diag<SIAFD>
 {
 public:
   SIAFD_diffusivity(SIAFD *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Compute diffusivity of the SIA flow (on the staggered grid).
@@ -75,7 +79,8 @@ class SIAFD_diffusivity_staggered : public Diag<SIAFD>
 {
 public:
   SIAFD_diffusivity_staggered(SIAFD *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Reports the x-component of the ice surface gradient on the staggered
@@ -84,7 +89,8 @@ class SIAFD_h_x : public Diag<SIAFD>
 {
 public:
   SIAFD_h_x(SIAFD *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Reports the y-component of the ice surface gradient on the staggered
@@ -93,7 +99,8 @@ class SIAFD_h_y : public Diag<SIAFD>
 {
 public:
   SIAFD_h_y(SIAFD *m);
-  virtual IceModelVec::Ptr compute();
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace stressbalance

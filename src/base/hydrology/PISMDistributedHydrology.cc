@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2015 PISM Authors
+// Copyright (C) 2012-2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
 #include "hydrology_diagnostics.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace hydrology {
@@ -504,7 +505,7 @@ Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(Distributed *m)
 }
 
 
-IceModelVec::Ptr Distributed_hydrovelbase_mag::compute() {
+IceModelVec::Ptr Distributed_hydrovelbase_mag::compute_impl() {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "hydrovelbase_mag", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];

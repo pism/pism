@@ -6,7 +6,11 @@ netcdf pism_config {
 
     pism_config:extras_force_output_times_type = "boolean";
     pism_config:extras_force_output_times = "yes";
-    pism_config:extras_force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times and -ts_times.";
+    pism_config:extras_force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times.";
+
+    pism_config:save_force_output_times_type = "boolean";
+    pism_config:save_force_output_times = "no";
+    pism_config:save_force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -save_times.";
 
     pism_config:ts_force_output_times_type = "boolean";
     pism_config:ts_force_output_times = "no";
@@ -169,16 +173,6 @@ netcdf pism_config {
     pism_config:hydrology_model = "null";
     pism_config:hydrology_model_doc = "Choose the hydrology sub-model from 'null', 'routing', 'distributed'.";
 
-    pism_config:use_linear_in_temperature_heat_capacity_type = "boolean";
-    pism_config:use_linear_in_temperature_heat_capacity_option = "varc";
-    pism_config:use_linear_in_temperature_heat_capacity = "no";
-    pism_config:use_linear_in_temperature_heat_capacity_doc = "If yes, use varcEnthalpyConverter class to convert (internally) temperature to/from enthalpy.  It is based on equation (4.39) in [@ref GreveBlatter2009].  Otherwise use default class EnthalpyConverter which has temperature-independent (i.e. constant) specific heat capacity, set by constant ice_specific_heat_capacity.";
-
-    pism_config:use_Kirchhoff_law_type = "boolean";
-    pism_config:use_Kirchhoff_law_option = "use_Kirchhoff_law";
-    pism_config:use_Kirchhoff_law = "no";
-    pism_config:use_Kirchhoff_law_doc = "If yes, use Kirchhoff's law of thermochemistry to define the latent heat of fusion of water as a function of pressure-melting temperature. See pism::KirchhoffEnthalpyConverter for more details.";
-
     pism_config:use_temperature_dependent_thermal_conductivity_type = "boolean";
     pism_config:use_temperature_dependent_thermal_conductivity_option = "vark";
     pism_config:use_temperature_dependent_thermal_conductivity = "no";
@@ -283,11 +277,23 @@ netcdf pism_config {
     pism_config:sia_enhancement_factor = 1.0;
     pism_config:sia_enhancement_factor_doc = "Flow enhancement factor for SIA";
 
+    pism_config:sia_enhancement_factor_interglacial_option = "sia_e_interglacial";
+    pism_config:sia_enhancement_factor_interglacial_units = "1";
+    pism_config:sia_enhancement_factor_interglacial_type = "scalar";
+    pism_config:sia_enhancement_factor_interglacial = 1.0;
+    pism_config:sia_enhancement_factor_interglacial_doc = "Flow enhancement factor for SIA; used for ice accumulated during interglacial periods.";
+
     pism_config:ssa_enhancement_factor_option = "ssa_e";
     pism_config:ssa_enhancement_factor_units = "1";
     pism_config:ssa_enhancement_factor_type = "scalar";
     pism_config:ssa_enhancement_factor = 1.0;
     pism_config:ssa_enhancement_factor_doc = "Flow enhancement factor for SSA";
+
+    pism_config:ssa_enhancement_factor_interglacial_option = "ssa_e_interglacial";
+    pism_config:ssa_enhancement_factor_interglacial_units = "1";
+    pism_config:ssa_enhancement_factor_interglacial_type = "scalar";
+    pism_config:ssa_enhancement_factor_interglacial = 1.0;
+    pism_config:ssa_enhancement_factor_interglacial_doc = "Flow enhancement factor for SSA; used for ice accumulated during interglacial periods.";
 
     pism_config:brutal_sliding_type = "boolean";
     pism_config:brutal_sliding_option = "brutal_sliding";
@@ -315,6 +321,21 @@ netcdf pism_config {
     pism_config:e_age_coupling_option = "e_age_coupling";
     pism_config:e_age_coupling = "no";
     pism_config:e_age_coupling_doc = "Couple the SIA enhancement factor to age as in [@ref Greve].";
+
+    pism_config:eemian_start = -132000.0;
+    pism_config:eemian_start_type = "scalar";
+    pism_config:eemian_start_units = "years";
+    pism_config:eemian_start_doc = "Start of the Eemian interglacial period. See [@ref Greve97Greenland].";
+
+    pism_config:eemian_end = -114500.0;
+    pism_config:eemian_end_type = "scalar";
+    pism_config:eemian_end_units = "years";
+    pism_config:eemian_end_doc = "End of the Eemian interglacial period. See [@ref Greve97Greenland].";
+
+    pism_config:holocene_start = -11000.0;
+    pism_config:holocene_start_type = "scalar";
+    pism_config:holocene_start_units = "years";
+    pism_config:holocene_start_doc = "Start of the Holocene interglacial period. See [@ref Greve97Greenland].";
 
     pism_config:start_year_units = "years";
     pism_config:start_year_type = "scalar";
@@ -801,6 +822,11 @@ netcdf pism_config {
     pism_config:force_to_thickness_ice_free_thickness_threshold = 1.0;
     pism_config:force_to_thickness_ice_free_thickness_threshold_doc = "threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use force_to_thickness_ice_free_alpha_factor.";
 
+    pism_config:force_to_thickness_start_time_units = "years";
+    pism_config:force_to_thickness_start_time_type = "scalar";
+    pism_config:force_to_thickness_start_time = -4.54e9;
+    pism_config:force_to_thickness_start_time_doc = "Starting time for the \"force to thickness\" modifier; the default is \"start from the creation of the Earth.\"";
+
     // PISMOceanModel constants
 
     pism_config:ocean_sub_shelf_heat_flux_into_ice_units = "W meter-2";
@@ -1097,13 +1123,13 @@ netcdf pism_config {
 
     pism_config:sia_flow_law_type = "keyword";
     pism_config:sia_flow_law_option = "sia_flow_law";
-    pism_config:sia_flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb";
+    pism_config:sia_flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb,gpbld3";
     pism_config:sia_flow_law = "gpbld";
     pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
     pism_config:ssa_flow_law_type = "keyword";
     pism_config:ssa_flow_law_option = "ssa_flow_law";
-    pism_config:ssa_flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
+    pism_config:ssa_flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb,gpbld3";
     pism_config:ssa_flow_law = "gpbld";
     pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
@@ -1356,10 +1382,16 @@ netcdf pism_config {
     pism_config:grid_lambda = 4.0;
     pism_config:grid_lambda_doc = "Vertical grid spacing parameter. Roughly equal to the factor by which the grid is coarser at an end away from the ice-bedrock interface.";
 
-    pism_config:cold_mode_is_temperate_ice_tolerance_units = "Kelvin";
-    pism_config:cold_mode_is_temperate_ice_tolerance_type = "scalar";
-    pism_config:cold_mode_is_temperate_ice_tolerance = 0.001;
-    pism_config:cold_mode_is_temperate_ice_tolerance_doc = "Tolerance within which ice is treated as temperate (cold-ice mode only).";
+    pism_config:regional_no_model_strip = 5.0;
+    pism_config:regional_no_model_strip_units = "km";
+    pism_config:regional_no_model_strip_type = "scalar";
+    pism_config:regional_no_model_strip_doc = "Default width of the 'no model strip' in regional setups.";
+    pism_config:regional_no_model_strip_option = "no_model_strip";
+
+    pism_config:relaxed_is_temperate_ice_tolerance_units = "Kelvin";
+    pism_config:relaxed_is_temperate_ice_tolerance_type = "scalar";
+    pism_config:relaxed_is_temperate_ice_tolerance = 0.001;
+    pism_config:relaxed_is_temperate_ice_tolerance_doc = "Tolerance within which ice is treated as temperate (cold-ice mode and diagnostics).";
 
     pism_config:correct_cell_areas_type = "boolean";
     pism_config:correct_cell_areas = "yes";

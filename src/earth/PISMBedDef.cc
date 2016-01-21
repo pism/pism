@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PISMBedDef.hh"
+#include "base/util/pism_utilities.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/IceGrid.hh"

@@ -29,6 +29,8 @@ namespace pism {
 class Profiling {
 public:
   Profiling();
+  void start() const;
+  void report(const std::string &filename) const;
   void begin(const char *name) const;
   void end(const char *name) const;
   void stage_begin(const char *name) const;

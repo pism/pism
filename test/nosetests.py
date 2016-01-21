@@ -697,6 +697,112 @@ def flowlaw_test():
             flowcoeff = law.flow(sigma[i], E, p, gs)
             print "    %10.2e   %10.3f  %9.3f = %10.6e" % (sigma[i], T, omega[j], flowcoeff)
 
+def gpbld3_flow_test():
+    "Test the optimized version of GPBLD."
+    ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
+    EC = ctx.enthalpy_converter()
+    gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
+
+    import numpy as np
+    N = 11
+    TpaC = np.linspace(-30, 0, N)
+    depth = np.linspace(0, 4000, N)
+    omega = np.linspace(0, 0.02, N)
+    sigma = [1e4, 5e4, 1e5, 1.5e5]
+
+    gs = 1e-3
+
+    for d in depth:
+        p = EC.pressure(d)
+        Tm = EC.melting_temperature(p)
+        for Tpa in TpaC:
+            T = Tm + Tpa
+            for o in omega:
+                if T >= Tm:
+                    E = EC.enthalpy(T, o, p)
+                else:
+                    E = EC.enthalpy(T, 0.0, p)
+                for s in sigma:
+                    regular = gpbld.flow(s, E, p, gs)
+                    optimized = gpbld3.flow(s, E, p, gs)
+                    assert np.fabs(regular - optimized) / regular < 2e-14
+
+def gpbld3_hardness_test():
+    "Test the hardness implementation in the optimized version of GPBLD."
+    ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
+    EC = ctx.enthalpy_converter()
+    gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
+
+    import numpy as np
+    N = 11
+    TpaC = np.linspace(-30, 0, N)
+    depth = np.linspace(0, 4000, N)
+    omega = np.linspace(0, 0.02, N)
+
+    for d in depth:
+        p = EC.pressure(d)
+        Tm = EC.melting_temperature(p)
+        for Tpa in TpaC:
+            T = Tm + Tpa
+            for o in omega:
+                if T >= Tm:
+                    E = EC.enthalpy(T, o, p)
+                else:
+                    E = EC.enthalpy(T, 0.0, p)
+
+                regular = gpbld.hardness(E, p)
+                optimized = gpbld3.hardness(E, p)
+                print np.fabs(regular - optimized) / regular
+                assert np.fabs(regular - optimized) / regular < 4e-15
+
+
+def gpbld3_error_report():
+    """Print max. absolute and relative difference between GPBLD and
+    GPBLD3. Uses 101*101*101*101 samples in a "reasonable" range of
+    pressure-adjusted temperatures, depth, water fraction, and
+    effective stress. This takes about 15 minutes to complete.
+    """
+    ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
+    EC = ctx.enthalpy_converter()
+    gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
+
+    import numpy as np
+    N = 31
+    TpaC = np.linspace(-30, 0, N)
+    depth = np.linspace(0, 5000, N)
+    omega = np.linspace(0, 0.02, N)
+    sigma = np.linspace(0, 5e5, N)
+
+    gs = 1e-3
+
+    max_difference = 0.0
+    max_rel_difference = 0.0
+
+    for d in depth:
+        p = EC.pressure(d)
+        Tm = EC.melting_temperature(p)
+        for Tpa in TpaC:
+            T = Tm + Tpa
+            for o in omega:
+                if T >= Tm:
+                    E = EC.enthalpy(T, o, p)
+                else:
+                    E = EC.enthalpy(T, 0.0, p)
+                for s in sigma:
+                    regular = gpbld.flow(s, E, p, gs)
+                    optimized = gpbld3.flow(s, E, p, gs)
+                    max_difference = max(np.fabs(regular - optimized), max_difference)
+                    if regular > 0.0:
+                        max_rel_difference = max(np.fabs(regular - optimized) / regular,
+                                                 max_rel_difference)
+
+    print "%d (%e) samples" % (N**4, N**4)
+    print "max difference", max_difference
+    print "max relative difference", max_rel_difference
+
 def ssa_trivial_test():
     "Test the SSA solver using a trivial setup."
 
@@ -863,3 +969,68 @@ def po_constant_test():
         assert np.fabs(mass_flux_1[0, 0] - M * rho) < 1e-16
         assert np.fabs(mass_flux_2[0, 0] - M * rho) < 1e-16
 
+def netcdf_string_attribute_test():
+    "Test reading a NetCDF-4 string attribute."
+    import os
+
+    basename = "string_attribute_test"
+    attribute = "string attribute"
+
+    def setup():
+        cdl = """
+netcdf string_attribute_test {
+  string :string_attribute = "%s" ;
+  :text_attribute = "%s" ;
+}
+""" % (attribute, attribute)
+        with open(basename + ".cdl", "w") as f:
+            f.write(cdl)
+
+        os.system("ncgen -4 %s.cdl" % basename)
+
+    def teardown():
+        # remove the temporary file
+        os.remove(basename + ".nc")
+        os.remove(basename + ".cdl")
+
+    def compare(pio):
+        pio.open(basename + ".nc", PISM.PISM_READONLY)
+        read_string = pio.get_att_text("PISM_GLOBAL", "string_attribute")
+        read_text = pio.get_att_text("PISM_GLOBAL", "text_attribute")
+        pio.close()
+
+        # check that written and read strings are the same
+        print "written string: '%s'" % attribute
+        print "read string:    '%s'" % read_string
+        print "read text:      '%s'" % read_text
+        assert read_string == attribute
+        assert read_text == attribute
+
+    def netcdf3():
+        # try reading this attribute
+        pio = PISM.PIO(PISM.PETSc.COMM_WORLD, "netcdf3")
+
+        print "\nTesting pism::io::NC3File::get_att_text_impl()..."
+        compare(pio)
+
+    def netcdf4_parallel():
+        # try reading this attribute
+        try:
+            # try creating a netcdf4_parallel backend, stop the test
+            # (without failing) if this fails -- PISM may not have
+            # been compiled with parallel NetCDF-4.
+            pio = PISM.PIO(PISM.PETSc.COMM_WORLD, "netcdf4_parallel")
+        except:
+            return
+
+        print "\nTesting pism::io::NC4File::get_att_text_impl()..."
+        compare(pio)
+
+    setup()
+
+    netcdf3()
+    netcdf4_parallel()
+
+    teardown()
+
+netcdf_string_attribute_test()

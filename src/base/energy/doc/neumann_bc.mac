@@ -1,0 +1,41 @@
+load("generic_equation.mac")$
+
+/* ethalpy equation for the positive and negative w[k] cases */
+eq[pm] := E[k-1]*l[pm] + E[k]*d[pm] + E[k+1]*u[pm] = b[pm];
+
+/* Additional equation implementing the Neumann B.C. */
+neumann[k] := (E[k+1] - E[k-1]) / (2 * dz) = G[k];
+
+/* Basal equation */
+E_base : solve(neumann[0], E[-1])[1];
+eq_base[pm] := facsum(subst([k=0, E_base], eq[pm]), E[0], E[1]);
+
+/* Matrix entries for the basal equation */
+d_base[pm] := facsum(coeff(lhs(eq_base[pm]), E[0]), w[0]);
+u_base[pm] := facsum(coeff(lhs(eq_base[pm]), E[1]), w[0]);
+
+b_base[pm] :=
+expandwrt(
+  facsum(
+    expand(
+      rhs(eq_base[pm]) - (lhs(eq_base[pm]) - E[0]*d_base[pm] - E[1]*u_base[pm])),
+    dz),
+  rho);
+
+/* Surface equation */
+eq_surface[pm] := facsum(subst([k=k_s, E_surface], eq[pm]), E[k_s-1], E[k_s]);
+E_surface : solve(neumann[k_s], E[k_s+1])[1];
+
+/* Matrix entries for the surface equation */
+l_surface[pm] := facsum(coeff(lhs(eq_surface[pm]), E[k_s-1]), w[k_s]);
+d_surface[pm] := facsum(coeff(lhs(eq_surface[pm]), E[k_s]), w[k_s]);
+
+b_surface[pm] :=
+expandwrt(
+  facsum(
+    expand(
+      rhs(eq_surface[pm]) - (lhs(eq_surface[pm]) - E[k_s-1]*l_surface[pm] - E[k_s]*d_surface[pm])),
+    dz),
+  rho);
+
+G_eq : G = phi / K;

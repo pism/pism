@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -82,12 +82,6 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
 
   switch (testname) {
   case 'A':
-  case 'E':
-    // use 1600km by 1600km by 4000m rectangular domain
-    P.Lx = 800e3;
-    P.Ly = P.Lx;
-    Lz = 4000;
-    break;
   case 'B':
   case 'H':
     // use 2400km by 2400km by 4000m rectangular domain
@@ -169,9 +163,11 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     verbosityLevelFromOptions();
+    Context::Ptr ctx = pismv_context(com, "pismv");
+    Logger::Ptr log = ctx->log();
 
-    verbPrintf(2, com, "PISMV %s (verification mode)\n",
-               PISM_Revision);
+    log->message(2, "PISMV %s (verification mode)\n",
+                 PISM_Revision);
 
     if (options::Bool("-version", "stop after printing print PISM version")) {
       return 0;
@@ -180,7 +176,7 @@ int main(int argc, char *argv[]) {
     std::string usage =
       "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
-      "  -test x     SIA-type verification test (x = A|B|C|D|E|F|G|H|K|L)\n"
+      "  -test x     SIA-type verification test (x = A|B|C|D|F|G|H|K|L)\n"
       "  -no_report  do not give error report at end of run\n"
       "  -eo         do not do numerical run; exact solution only\n"
       "(see User's Manual for tests I and J).\n";
@@ -188,36 +184,32 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> required;
     required.push_back("-test");
 
-    bool done = show_usage_check_req_opts(com, "pismv", required, usage);
+    bool done = show_usage_check_req_opts(*log, "pismv", required, usage);
     if (done) {
       return 0;
     }
 
-    Context::Ptr ctx = pismv_context(com, "pismv");
     Config::Ptr config = ctx->config();
 
     // determine test (and whether to report error)
     std::string testname = options::Keyword("-test", "Specifies PISM verification test",
-                                            "A,B,C,D,E,F,G,H,K,L,V", "A");
+                                            "A,B,C,D,F,G,H,K,L,V", "A");
 
     IceGrid::Ptr g = pismv_grid(ctx, testname[0]);
 
-    // actually construct and run one of the derived classes of IceModel
-    // run derived class for compensatory source SIA solutions
-    // (i.e. compensatory accumulation or compensatory heating)
     IceCompModel m(g, ctx, testname[0]);
 
     m.init();
 
     m.run();
-    verbPrintf(2,com, "done with run\n");
+    log->message(2, "done with run\n");
 
     m.reportErrors();
 
     // provide a default output file name if no -o option is given.
     m.writeFiles("unnamed.nc");
 
-    print_unused_parameters(*ctx->log(), 3, *config);
+    print_unused_parameters(*log, 3, *config);
   }
   catch (...) {
     handle_fatal_errors(com);

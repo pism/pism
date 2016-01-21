@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {
@@ -253,7 +254,9 @@ MaxTimestep BedThermalUnit::max_timestep_impl(double t) {
 }
 
 
-/* FIXME:  the old scheme had better stability properties, as follows:
+/** Perform a step of the bedrock thermal model.
+
+@todo The old scheme had better stability properties, as follows:
 
 Because there is no advection, the simplest centered implicit (backward Euler) scheme is easily "bombproof" without choosing \f$\lambda\f$, or other complications.  It has this scaled form,
 \anchor bedrockeqn
@@ -263,7 +266,7 @@ where
   \f[ R_b = \frac{k_b \Delta t}{\rho_b c_b \Delta z^2}. \f]
 This is unconditionally stable for a pure bedrock problem, and has a maximum principle, without any further qualification [\ref MortonMayers].
 
-FIXME:  now a trapezoid rule could be used
+@todo Now a trapezoid rule could be used
 */
 void BedThermalUnit::update_impl(double my_t, double my_dt) {
 

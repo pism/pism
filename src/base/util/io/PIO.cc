@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -566,11 +566,30 @@ void PIO::def_dim(const std::string &name, size_t length) const {
   }
 }
 
-
 //! \brief Define a variable.
 void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims) const {
   try {
     m_impl->nc->def_var(name, nctype, dims);
+
+    // FIXME: I need to write and tune chunk_dimensions that would be called below before we use
+    // this.
+    //
+    /*
+    // if it's not a spatial variable, we're done
+    if (dims.size() < 2) {
+      return;
+    }
+
+    std::vector<size_t> dim_lengths;
+    for (unsigned int k = 0; k < dims.size(); ++k) {
+      dim_lengths.push_back(this->inq_dimlen(dims[k]));
+    }
+
+    std::vector<size_t> chunk_dims = chunk_dimensions(nctype, dim_lengths);
+
+    m_impl->nc->def_var_chunking(name, chunk_dims);
+    */
+
   } catch (RuntimeError &e) {
     e.add_context("defining variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;

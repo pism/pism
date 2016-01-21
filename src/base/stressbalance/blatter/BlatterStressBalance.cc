@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,12 +23,12 @@
 #include "base/basalstrength/basal_resistance.hh"
 #include "FE3DTools.h"
 #include "base/enthalpyConverter.hh"
-#include "base/rheology/flowlaws.hh"
-#include "base/rheology/flowlaw_factory.hh"
+#include "base/rheology/FlowLaw.hh"
+#include "base/rheology/FlowLawFactory.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
-
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -150,9 +150,9 @@ BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr g,
 
   {
     rheology::FlowLawFactory ice_factory("blatter_", config, e);
-    ice_factory.remove_type(ICE_GOLDSBY_KOHLSTEDT);
+    ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
 
-    ice_factory.set_default_type(config->get_string("blatter_flow_law"));
+    ice_factory.set_default(config->get_string("blatter_flow_law"));
 
     m_flow_law = ice_factory.create();
   }
@@ -304,7 +304,7 @@ void BlatterStressBalance::initialize_ice_hardness() {
         E_local = E[Mz-1];
       }
 
-      hardness[i][j][k] = m_flow_law->hardness_parameter(E_local, pressure);
+      hardness[i][j][k] = m_flow_law->hardness(E_local, pressure);
     }
   }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,7 @@ private:
   void update_impl(PetscReal t, PetscReal dt);
   int m_testname;
   EnthalpyConverter::Ptr m_EC;
-  void update_ABCDEH(double t);
+  void update_ABCDH(double t);
   void update_FG(double t);
   void update_KO();
   void update_L();

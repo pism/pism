@@ -20,13 +20,13 @@
 
 #include "IP_SSAHardavForwardProblem.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/rheology/flowlaws.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
+#include "base/rheology/FlowLaw.hh"
 
 namespace pism {
 namespace inverse {
@@ -586,10 +586,10 @@ void IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMo
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid->com,
-               "IP_SSAHardavForwardProblem::apply_linearization converged"
-               " (KSP reason %s)\n",
-               KSPConvergedReasons[reason]);
+    m_log->message(4,
+                   "IP_SSAHardavForwardProblem::apply_linearization converged"
+                   " (KSP reason %s)\n",
+                   KSPConvergedReasons[reason]);
   }
 
   du.copy_from(m_du_global);
@@ -656,9 +656,9 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
     throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
-    verbPrintf(4, m_grid->com,
-               "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
-               KSPConvergedReasons[reason]);
+    m_log->message(4,
+                   "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
+                   KSPConvergedReasons[reason]);
   }
 
   this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta);

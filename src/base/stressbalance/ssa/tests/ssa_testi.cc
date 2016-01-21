@@ -24,7 +24,6 @@ static char help[] =
   "  software (regression) test.\n\n";
 
 #include "base/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "base/rheology/flowlaws.hh" // FlowLaw
 #include "base/stressbalance/ssa/SSAFD.hh"
 #include "base/stressbalance/ssa/SSAFEM.hh"
 #include "base/stressbalance/ssa/SSATestCase.hh"

@@ -18,7 +18,7 @@
 
 #include <petsc.h>
 #include "base/util/pism_const.hh"
-#include "base/rheology/flowlaw_factory.hh"
+#include "base/rheology/FlowLawFactory.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/util/pism_options.hh"
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@
 #include "base/util/pism_options.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/io/io_helpers.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {
@@ -41,6 +42,8 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, SurfaceModel *input)
   m_alpha = m_config->get_double("force_to_thickness_alpha", "s-1");
   m_alpha_ice_free_factor = m_config->get_double("force_to_thickness_ice_free_alpha_factor");
   m_ice_free_thickness_threshold = m_config->get_double("force_to_thickness_ice_free_thickness_threshold");
+
+  m_start_time = m_config->get_double("force_to_thickness_start_time", "seconds");
 
   m_target_thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
   // will set attributes in init()
@@ -276,6 +279,10 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
   // get the surface mass balance result from the next level up
   input_model->ice_surface_mass_flux(result);
+
+  if (m_t < m_start_time) {
+    return;
+  }
 
   m_log->message(5,
              "    updating surface mass balance using -force_to_thickness mechanism ...");

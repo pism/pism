@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,6 +31,7 @@
 #include <cassert>
 
 #include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "error_handling.hh"
 
 extern FILE *petsc_history;
@@ -98,55 +99,6 @@ void verbPrintf(const int threshold,
       va_end(Argp);
     }
   }
-}
-
-
-//! Returns true if `str` ends with `suffix` and false otherwise.
-bool ends_with(const std::string &str, const std::string &suffix) {
-  if (suffix.size() > str.size()) {
-    return false;
-  }
-
-  if (str.rfind(suffix) + suffix.size() == str.size()) {
-    return true;
-  }
-
-  return false;
-}
-
-//! Concatenate `strings`, inserting `separator` between elements.
-std::string join(const std::vector<std::string> &strings, const std::string &separator) {
-  std::vector<std::string>::const_iterator j = strings.begin();
-  std::string result = *j;
-  ++j;
-  while (j != strings.end()) {
-    result += separator + *j;
-    ++j;
-  }
-  return result;
-}
-
-//! Transform a `separator`-separated list (a string) into a vector of strings.
-std::vector<std::string> split(const std::string &input, char separator) {
-  std::istringstream input_list(input);
-  std::string token;
-  std::vector<std::string> result;
-
-  while (getline(input_list, token, separator)) {
-    result.push_back(token);
-  }
-  return result;
-}
-
-//! Checks if a vector of doubles is strictly increasing.
-bool is_increasing(const std::vector<double> &a) {
-  int len = (int)a.size();
-  for (int k = 0; k < len-1; k++) {
-    if (a[k] >= a[k+1]) {
-      return false;
-    }
-  }
-  return true;
 }
 
 //! Creates a time-stamp used for the history NetCDF attribute.
@@ -288,46 +240,5 @@ double wall_clock_hours(MPI_Comm com, double start_time) {
 
   return result;
 }
-
-
-bool set_contains(const std::set<std::string> &S, const std::string &name) {
-  return (S.find(name) != S.end());
-}
-
-void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
-  int err = MPI_Allreduce(local, result, count, MPIU_REAL, op, comm);
-  PISM_C_CHK(err, 0, "MPI_Allreduce");
-}
-
-void GlobalMin(MPI_Comm comm, double *local, double *result, int count) {
-  GlobalReduce(comm, local, result, count, MPI_MIN);
-}
-
-void GlobalMax(MPI_Comm comm, double *local, double *result, int count) {
-  GlobalReduce(comm, local, result, count, MPI_MAX);
-}
-
-void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
-  GlobalReduce(comm, local, result, count, MPI_SUM);
-}
-
-double GlobalMin(MPI_Comm comm, double local) {
-  double result;
-  GlobalMin(comm, &local, &result, 1);
-  return result;
-}
-
-double GlobalMax(MPI_Comm comm, double local) {
-  double result;
-  GlobalMax(comm, &local, &result, 1);
-  return result;
-}
-
-double GlobalSum(MPI_Comm comm, double local) {
-  double result;
-  GlobalSum(comm, &local, &result, 1);
-  return result;
-}
-
 
 } // end of namespace pism

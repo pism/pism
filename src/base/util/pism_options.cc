@@ -24,6 +24,7 @@
 #include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"
+#include "Logger.hh"
 
 namespace pism {
 
@@ -59,13 +60,13 @@ void verbosityLevelFromOptions() {
 }
 
 //! \brief Print a usage message.
-void show_usage(MPI_Comm com, const std::string &execname, const std::string &usage) {
-  verbPrintf(1, com,
+void show_usage(const Logger &log, const std::string &execname, const std::string &usage) {
+  log.message(1,
              "%s is a PISM (http://www.pism-docs.org) executable.\n"
              "Options cheat-sheet:\n",
              execname.c_str());
-  verbPrintf(1, com, usage.c_str());
-  verbPrintf(1, com,
+  log.message(1, usage);
+  log.message(1,
              "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
              "For more help with PISM:\n"
              "  1. download PDF User's Manual:\n"
@@ -80,7 +81,7 @@ void show_usage(MPI_Comm com, const std::string &execname, const std::string &us
 
 //! @brief In a single call a driver program can provide a usage string to
 //! the user and check if required options are given, and if not, end.
-bool show_usage_check_req_opts(MPI_Comm com,
+bool show_usage_check_req_opts(const Logger &log,
                                const std::string &execname,
                                const std::vector<std::string> &required_options,
                                const std::string &usage) {
@@ -89,7 +90,7 @@ bool show_usage_check_req_opts(MPI_Comm com,
     terminate = true;
 
   if (options::Bool("-usage", "print PISM usage")) {
-    show_usage(com, execname, usage);
+    show_usage(log, execname, usage);
     return terminate;
   }
 
@@ -98,20 +99,19 @@ bool show_usage_check_req_opts(MPI_Comm com,
   for (size_t k = 0; k < required_options.size(); ++k) {
     if (not options::Bool(required_options[k], "a required option")) {
       req_absent = true;
-      verbPrintf(1, com,
-                 "PISM ERROR: option %s required\n", required_options[k].c_str());
+      log.error("PISM ERROR: option %s required\n", required_options[k].c_str());
     }
   }
 
   if (req_absent) {
-    verbPrintf(1, com, "\n");
-    show_usage(com, execname, usage);
+    log.error("\n");
+    show_usage(log, execname, usage);
     return terminate;
   }
 
   // show usage message with -help, but don't stop
   if (options::Bool("-help", "print help on all options")) {
-    show_usage(com, execname, usage);
+    show_usage(log, execname, usage);
   }
   return keep_running;
 }

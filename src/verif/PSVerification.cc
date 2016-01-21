@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,12 +22,12 @@
 
 #include "PSVerification.hh"
 #include "coupler/PISMAtmosphere.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/PatersonBuddCold.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMConfigInterface.hh"
 
-#include "tests/exactTestsABCDE.h"
+#include "tests/exactTestsABCD.h"
 #include "tests/exactTestsFG.h"
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.h"
@@ -133,9 +133,8 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
   case 'B':
   case 'C':
   case 'D':
-  case 'E':
   case 'H':
-    update_ABCDEH(t);
+    update_ABCDH(t);
     break;
   case 'F':
   case 'G':
@@ -166,8 +165,8 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
  *
  * @return 0 on success
  */
-void Verification::update_ABCDEH(double time) {
-  double         A0, T0, H, accum, dummy1, dummy2, dummy3;
+void Verification::update_ABCDH(double time) {
+  double         A0, T0, H, accum;
 
   double f = m_config->get_double("ice_density") / m_config->get_double("lithosphere_density");
 
@@ -186,8 +185,7 @@ void Verification::update_ABCDEH(double time) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double xx = m_grid->x(i), yy = m_grid->y(j),
-        r = radius(*m_grid, i, j);
+      const double r = radius(*m_grid, i, j);
       switch (m_testname) {
       case 'A':
         exactA(r, &H, &accum);
@@ -201,14 +199,11 @@ void Verification::update_ABCDEH(double time) {
       case 'D':
         exactD(time, r, &H, &accum);
         break;
-      case 'E':
-        exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
-        break;
       case 'H':
         exactH(f, time, r, &H, &accum);
         break;
       default:
-        throw RuntimeError::formatted("test must be A, B, C, D, E, or H, got %c",
+        throw RuntimeError::formatted("test must be A, B, C, D, or H, got %c",
                                       m_testname);
       }
       m_climatic_mass_balance(i, j) = accum;

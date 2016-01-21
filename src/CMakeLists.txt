@@ -49,13 +49,13 @@ set(PISMUTIL_SRC
   base/util/io/PISMNC4_Quilt.cc
   base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
+  base/util/pism_utilities.cc
   base/util/Profiling.cc
   base/util/pism_default_config.cc
   base/util/pism_options.cc
   base/util/TerminationReason.cc
   base/util/PISMUnits.cc
   base/util/projection.cc
-  base/varcEnthalpyConverter.cc
   )
 
 if(Pism_USE_TAO)
@@ -107,13 +107,6 @@ set_source_files_properties (base/pism_revision.cc
 add_library (pismrevision STATIC base/pism_revision.cc)
 add_dependencies (pismrevision touch_pism_revision)
 
-# Flow laws.
-add_library (pismflowlaws
-  base/rheology/flowlaw_factory.cc
-  base/rheology/flowlaws.cc
-)
-target_link_libraries (pismflowlaws pismutil ${Pism_EXTERNAL_LIBS})
-
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
 add_library (pismbase
@@ -130,6 +123,7 @@ add_library (pismbase
   base/iMenthalpy.cc
   base/iMfractures.cc
   base/iMgeometry.cc
+  base/grounded_cell_fraction.cc
   base/iMinit.cc
   base/iMIO.cc
   base/iMoptions.cc
@@ -190,7 +184,7 @@ add_library (pismverif
   verif/tests/exactTestK.c
   verif/tests/exactTestO.c
   verif/tests/exactTestL.c
-  verif/tests/exactTestsABCDE.c
+  verif/tests/exactTestsABCD.c
   verif/tests/exactTestsFG.c
   verif/tests/exactTestsIJ.c
 )
@@ -232,7 +226,7 @@ add_custom_target (pism_config DEPENDS pism_config.nc)
 # Install libraries only if BUILD_SHARED_LIBS is ON.
 if (${BUILD_SHARED_LIBS})
   install (TARGETS
-    pismutil pismverif pismbase pismflowlaws pismearth # libraries
+    pismutil pismverif pismbase pismearth # libraries
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
 endif ()
@@ -259,7 +253,7 @@ target_link_libraries (bedrough_test pismutil)
 install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 if (Pism_BUILD_EXTRA_EXECS)
-  set (EXTRA_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
+  set (EXTRA_EXECS simpleABCD simpleFG simpleH simpleI simpleJ simpleL)
   foreach (EXEC ${EXTRA_EXECS})
     add_executable (${EXEC} verif/tests/${EXEC}.c)
     target_link_libraries (${EXEC} pismverif)
@@ -281,6 +275,7 @@ if (Pism_BUILD_EXTRA_EXECS)
 endif (Pism_BUILD_EXTRA_EXECS)
 
 add_subdirectory (calcalcs)
+add_subdirectory (base/rheology)
 add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (regional)

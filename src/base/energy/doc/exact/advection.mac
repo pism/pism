@@ -1,0 +1,10 @@
+E(z,t) := sin(%pi / H * (z - w * t));
+
+eq: 'diff('E(z,t), t) + w * 'diff('E(z,t), z) = 0;
+
+Q[0] : subst([z = 0], diff(E(z,t), z));
+
+Q[H] : subst([z = H], diff(E(z,t), z));
+
+e[0] : E(0, t);
+e[H] : E(H, t);

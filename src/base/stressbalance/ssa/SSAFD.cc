@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/util/pism_options.hh"
-#include "base/rheology/flowlaws.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMTime.hh"
@@ -288,6 +288,7 @@ void SSAFD::assemble_rhs() {
     rho_ocean = m_config->get_double("sea_water_density"),
     rho_ice = m_config->get_double("ice_density");
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  const bool is_dry_simulation = m_config->get_boolean("is_dry_simulation");
 
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = m_config->get_boolean("ssa_dirichlet_bc");
@@ -381,7 +382,7 @@ void SSAFD::assemble_rhs() {
           ocean_pressure = 0.5 * rho_g * (1.0 - (rho_ice / rho_ocean)) * H_ij2;
         } else {
           // grounded terminus
-          if (b >= sea_level) {
+          if (b >= sea_level or is_dry_simulation) {
             ocean_pressure = 0.5 * rho_g * H_ij2;
           } else {
             ocean_pressure = 0.5 * rho_g * (H_ij2 - (rho_ocean / rho_ice) * pow(sea_level - b, 2.0));
@@ -1230,8 +1231,9 @@ void SSAFD::compute_hardav_staggered() {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        hardness(i,j,o) = m_flow_law->averaged_hardness(H, m_grid->kBelowHeight(H),
-                                                        &(m_grid->z()[0]), &E[0]);
+        hardness(i,j,o) = rheology::averaged_hardness(*m_flow_law,
+                                                      H, m_grid->kBelowHeight(H),
+                                                      &(m_grid->z()[0]), &E[0]);
       } // o
     }
   } catch (...) {
@@ -1800,7 +1802,7 @@ SSAFD_nuH::SSAFD_nuH(SSAFD *m)
             "Pa s m", "kPa s m", 1);
 }
 
-IceModelVec::Ptr SSAFD_nuH::compute() {
+IceModelVec::Ptr SSAFD_nuH::compute_impl() {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "nuH", WITH_GHOSTS);

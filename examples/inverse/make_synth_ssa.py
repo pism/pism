@@ -82,7 +82,7 @@ if __name__ == '__main__':
     * -i is required
   """ % (sys.argv[0], sys.argv[0])
 
-    PISM.show_usage_check_req_opts(com, sys.argv[0], ["-i"], usage)
+    PISM.show_usage_check_req_opts(context.log, sys.argv[0], ["-i"], usage)
 
     config = context.config
     if not PISM.OptionString("-ssa_method", "").is_set():
@@ -182,7 +182,7 @@ if __name__ == '__main__':
         ice_factory.setType(config.get_string("ssa_flow_law"))
         ice_factory.setFromOptions()
         flow_law = ice_factory.create()
-        flow_law.averaged_hardness_vec(vecs.land_ice_thickness, vecs.enthalpy, vecs.hardav)
+        averaged_hardness_vec(flow_law, vecs.land_ice_thickness, vecs.enthalpy, vecs.hardav)
 
         if design_prior_const is not None:
             vecs.hardav_prior.set(design_prior_const)

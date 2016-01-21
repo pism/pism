@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,6 +33,7 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -65,6 +66,10 @@ double IceModel::max_timestep_cfl_3d() {
   MaskQuery mask(vMask);
 
   // update global max of abs of velocities for CFL; only velocities under surface
+  const double
+    one_over_dx = 1.0 / m_grid->dx(),
+    one_over_dy = 1.0 / m_grid->dy();
+
   double max_u = 0.0, max_v = 0.0, max_w = 0.0;
   ParallelSection loop(m_grid->com);
   try {
@@ -84,11 +89,14 @@ double IceModel::max_timestep_cfl_3d() {
             absv = fabs(v[k]);
           max_u = std::max(max_u, absu);
           max_v = std::max(max_v, absv);
-          max_w = std::max(max_w, fabs(w[k]));
-          const double denom = fabs(absu / m_grid->dx()) + fabs(absv / m_grid->dy());
+          const double denom = fabs(absu * one_over_dx) + fabs(absv * one_over_dy);
           if (denom > 0.0) {
             max_dt = std::min(max_dt, 1.0 / denom);
           }
+        }
+
+        for (int k = 0; k <= ks; ++k) {
+          max_w = std::max(max_w, fabs(w[k]));
         }
       }
     }
@@ -253,14 +261,13 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     dt_restrictions["-extra_... reporting"] = extras_dt.value();
   }
 
-  if (dt_force > 0.0) {
-    dt_restrictions["fixed"] = dt_force;
-    // If the user asked for fixed time-steps, we're done; proceed to
-    // comparing time-step restrictions.
-  } else {
+  MaxTimestep save_dt = save_max_timestep(current_time);
+  if (save_dt.is_finite()) {
+    dt_restrictions["-save_... reporting"] = save_dt.value();
+  }
 
-    // ... else query sub-models, which might add more time-step
-    // restrictions.
+  {
+    // Query sub-models, which might add time-step restrictions.
 
     MaxTimestep surface_dt = surface->max_timestep(current_time);
     if (surface_dt.is_finite())  {

@@ -1,0 +1,21 @@
+assume(w[k] > 0);
+load("discretization.mac");
+
+l[p] : l;
+d[p] : d;
+u[p] : u;
+b[p] : b;
+
+eq_generic[p] : eq4;
+
+forget(w[k] > 0);
+assume(w[k] < 0);
+
+load("discretization.mac");
+
+l[m] : l;
+d[m] : d;
+u[m] : u;
+b[m] : b;
+
+eq_generic[m] : eq4;

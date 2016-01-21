@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -69,8 +69,8 @@ protected:
                                        double &centerHerr);
   virtual void summary(bool tempAndAge);
 
-  // related to tests A B C D E H
-  void initTestABCDEH();
+  // related to tests A B C D H
+  void initTestABCDH();
   void fillSolnTestABCDH();  // only used with exactOnly == true
   
   // related to test E
@@ -81,7 +81,7 @@ protected:
                                             double &gmaxvecerr, double &gavvecerr,
                                             double &gmaxuberr, double &gmaxvberr);
 
-  void reset_thickness_tests_AE();
+  void reset_thickness_test_A();
 
   // related to test L
   IceModelVec2S   vHexactL;

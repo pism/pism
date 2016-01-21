@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_const.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace inverse {

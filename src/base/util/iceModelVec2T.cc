@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Constantine Khroulev
+// Copyright (C) 2009--2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #include <algorithm>
 #include "iceModelVec2T.hh"
 #include "base/util/io/PIO.hh"
-#include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "PISMConfigInterface.hh"

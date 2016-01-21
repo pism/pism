@@ -6,7 +6,7 @@
 
 Most of the work on PISM since the release of v0.6 was aimed at making PISM easier to maintain, test, extend, and couple to other models.  These changes consist of approximately 1200 individual Git commits.  They touched over 650 files, more than half of PISM's C++ code (44,000 out of 84,000 lines).
 
-Some changes listed below were included in v0.6.1 or v0.6.2.
+All changes listed below are included in v0.7 (May 12, 2015) and later.  Some changes listed below were included in v0.6.1 or v0.6.2.
 
 ### User-visible changes
 
