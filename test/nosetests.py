@@ -969,3 +969,68 @@ def po_constant_test():
         assert np.fabs(mass_flux_1[0, 0] - M * rho) < 1e-16
         assert np.fabs(mass_flux_2[0, 0] - M * rho) < 1e-16
 
+def netcdf_string_attribute_test():
+    "Test reading a NetCDF-4 string attribute."
+    import os
+
+    basename = "string_attribute_test"
+    attribute = "string attribute"
+
+    def setup():
+        cdl = """
+netcdf string_attribute_test {
+  string :string_attribute = "%s" ;
+  :text_attribute = "%s" ;
+}
+""" % (attribute, attribute)
+        with open(basename + ".cdl", "w") as f:
+            f.write(cdl)
+
+        os.system("ncgen -4 %s.cdl" % basename)
+
+    def teardown():
+        # remove the temporary file
+        os.remove(basename + ".nc")
+        os.remove(basename + ".cdl")
+
+    def compare(pio):
+        pio.open(basename + ".nc", PISM.PISM_READONLY)
+        read_string = pio.get_att_text("PISM_GLOBAL", "string_attribute")
+        read_text = pio.get_att_text("PISM_GLOBAL", "text_attribute")
+        pio.close()
+
+        # check that written and read strings are the same
+        print "written string: '%s'" % attribute
+        print "read string:    '%s'" % read_string
+        print "read text:      '%s'" % read_text
+        assert read_string == attribute
+        assert read_text == attribute
+
+    def netcdf3():
+        # try reading this attribute
+        pio = PISM.PIO(PISM.PETSc.COMM_WORLD, "netcdf3")
+
+        print "\nTesting pism::io::NC3File::get_att_text_impl()..."
+        compare(pio)
+
+    def netcdf4_parallel():
+        # try reading this attribute
+        try:
+            # try creating a netcdf4_parallel backend, stop the test
+            # (without failing) if this fails -- PISM may not have
+            # been compiled with parallel NetCDF-4.
+            pio = PISM.PIO(PISM.PETSc.COMM_WORLD, "netcdf4_parallel")
+        except:
+            return
+
+        print "\nTesting pism::io::NC4File::get_att_text_impl()..."
+        compare(pio)
+
+    setup()
+
+    netcdf3()
+    netcdf4_parallel()
+
+    teardown()
+
+netcdf_string_attribute_test()

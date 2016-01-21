@@ -31,6 +31,7 @@
 #include "coupler/PISMOcean.hh"
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

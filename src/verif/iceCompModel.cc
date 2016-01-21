@@ -47,6 +47,7 @@
 #include "base/util/Context.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/Logger.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

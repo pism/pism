@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 PISM Authors
+// Copyright (C) 2008-2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {

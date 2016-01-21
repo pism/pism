@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,7 +24,7 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/VariableMetadata.hh"
 #include "base/util/error_handling.hh"
-#include "base/util/pism_const.hh"
+#include "base/util/pism_utilities.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/io/LocalInterpCtx.hh"
 #include "base/util/PISMTime.hh"

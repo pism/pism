@@ -36,6 +36,7 @@
 #include "enthalpyConverter.hh"
 #include "iceModel_diagnostics.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

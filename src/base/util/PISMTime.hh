@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #ifndef _PISMTIME_H_
 #define _PISMTIME_H_
+
+#include <vector>
 
 #include "pism_memory.hh"
 #include "pism_const.hh"

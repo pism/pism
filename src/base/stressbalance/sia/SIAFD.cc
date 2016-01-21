@@ -30,6 +30,7 @@
 #include "base/util/Profiling.hh"
 
 #include "base/util/PISMTime.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {

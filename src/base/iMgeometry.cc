@@ -33,6 +33,7 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "earth/PISMBedDef.hh"
+#include "base/util/pism_utilities.hh"
 
 #include "base/grounded_cell_fraction.hh"
 
