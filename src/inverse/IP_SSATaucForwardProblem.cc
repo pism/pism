@@ -287,7 +287,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double dtauc_q[Nq];
 
   // An Nq by Nk array of test function values.
-  const fem::FunctionGerm (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   fem::DirichletData_Vector dirichletBC;
   dirichletBC.init(m_dirichletLocations, m_dirichletValues,
@@ -437,7 +437,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   double dzeta_e[Nk];
 
   // An Nq by Nk array of test function values.
-  const fem::FunctionGerm (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   fem::DirichletData_Vector  dirichletBC;
   // Aliases to help with notation consistency.

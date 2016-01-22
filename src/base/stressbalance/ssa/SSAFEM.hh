@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -44,15 +44,21 @@ public:
 
 protected:
   virtual void init_impl();
-  void cacheQuadPtValues();
+  void cache_inputs();
 
   //! Storage for SSA coefficients at a quadrature point.
   struct Coefficients {
-    double H,                     //!< ice thickness
-      tauc,                       //!< basal yield stress
-      b,                          //!< bed elevation
-      B;                          //!< ice hardness
+    //! ice thickness
+    double H;
+    //! basal yield stress
+    double tauc;
+    //! bed elevation
+    double b;
+    //! ice hardness
+    double B;
+    //! prescribed gravitational driving stress
     Vector2 driving_stress;
+    //! mask used to choose basal conditions
     int mask;
   };
 

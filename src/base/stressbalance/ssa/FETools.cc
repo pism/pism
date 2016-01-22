@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -217,6 +217,7 @@ void DOFMap::markColInvalid(int k) {
 void DOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
+      // skip rows marked as "invalid"
       continue;
     }
     yg[m_row[k].j][m_row[k].i].u += y[k].u;
@@ -227,6 +228,7 @@ void DOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
 void DOFMap::addLocalResidualBlock(const double *y, double **yg) {
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
+      // skip rows marked as "invalid"
       continue;
     }
     yg[m_row[k].j][m_row[k].i] += y[k];
@@ -236,6 +238,7 @@ void DOFMap::addLocalResidualBlock(const double *y, double **yg) {
 void DOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
+      // skip rows marked as "invalid"
       continue;
     }
     y_global(m_row[k].i, m_row[k].j).u += y[k].u;
@@ -246,6 +249,7 @@ void DOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
 void DOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
+      // skip rows marked as "invalid"
       continue;
     }
     y_global(m_row[k].i, m_row[k].j) += y[k];
@@ -263,8 +267,10 @@ void DOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
  *  should be.)
  */
 void DOFMap::addLocalJacobianBlock(const double *K, Mat J) {
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, fem::ShapeQ1::Nk, m_row,
-                                                   fem::ShapeQ1::Nk, m_col, K, ADD_VALUES);
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
+                                                   fem::ShapeQ1::Nk, m_row,
+                                                   fem::ShapeQ1::Nk, m_col,
+                                                   K, ADD_VALUES);
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
@@ -314,20 +320,20 @@ Quadrature_Vector::Quadrature_Vector(double dx, double dy, double L)
 }
 
 //! Return the values at all quadrature points of all shape functions.
-//* The return value is an Nq by Nk array of FunctionGerms. */
-const Quadrature2x2::FunctionGermArray* Quadrature2x2::testFunctionValues()
+//* The return value is an Nq by Nk array of Germ<double>s. */
+const Quadrature2x2::ScalarGermArray* Quadrature2x2::testFunctionValues()
 {
   return m_germs;
 }
 
 //! Return the values of all shape functions at quadrature point `q`
-//* The return value is an array of Nk FunctionGerms. */
-const FunctionGerm *Quadrature2x2::testFunctionValues(int q) {
+//* The return value is an array of Nk Germ<double>s. */
+const Germ<double> *Quadrature2x2::testFunctionValues(int q) {
   return m_germs[q];
 }
 
 //! Return the values at quadrature point `q` of shape function `k`.
-const FunctionGerm *Quadrature2x2::testFunctionValues(int q, int k) {
+const Germ<double> *Quadrature2x2::testFunctionValues(int q, int k) {
   return m_germs[q] + k;
 }
 
@@ -337,7 +343,7 @@ const FunctionGerm *Quadrature2x2::testFunctionValues(int q, int k) {
 /*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
 void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals) {
   for (unsigned int q = 0; q < Nq; q++) {
-    const FunctionGerm *test = m_germs[q];
+    const Germ<double> *test = m_germs[q];
     vals[q] = 0;
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q] += test[k].val * x_local[k];
@@ -352,7 +358,7 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double
   and `dy`. */
 void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals, double *dx, double *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
-    const FunctionGerm *test = m_germs[q];
+    const Germ<double> *test = m_germs[q];
     vals[q] = 0;
     dx[q] = 0;
     dy[q] = 0;
@@ -407,7 +413,7 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
   for (unsigned int q = 0; q < Nq; q++) {
     result[q].u = 0;
     result[q].v = 0;
-    const FunctionGerm *test = m_germs[q];
+    const Germ<double> *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       result[q].u += test[k].val * x_local[k].u;
       result[q].v += test[k].val * x_local[k].v;
@@ -434,7 +440,7 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
     Dvq[0] = 0;
     Dvq[1] = 0;
     Dvq[2] = 0;
-    const FunctionGerm *test = m_germs[q];
+    const Germ<double> *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
       vals[q].v += test[k].val * x_local[k].v;
@@ -459,7 +465,7 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
     dx[q].v   = 0;
     dy[q].u   = 0;
     dy[q].v   = 0;
-    const FunctionGerm *test = m_germs[q];
+    const Germ<double> *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
       vals[q].v += test[k].val * x_local[k].v;
@@ -591,7 +597,7 @@ void DirichletData_Scalar::init(const IceModelVec2Int *indices,
   init_impl(indices, m_values, weight);
 }
 
-void DirichletData_Scalar::update(const DOFMap &dofmap, double* x_local) {
+void DirichletData_Scalar::update(const DOFMap &dofmap, double* x_nodal) {
   assert(m_values != NULL);
 
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
@@ -599,7 +605,7 @@ void DirichletData_Scalar::update(const DOFMap &dofmap, double* x_local) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
       dofmap.localToGlobal(k, &i, &j);
-      x_local[k] = (*m_values)(i,j);
+      x_nodal[k] = (*m_values)(i,j);
     }
   }
 }

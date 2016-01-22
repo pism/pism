@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -155,20 +155,15 @@ namespace fem {
 
 //! Struct for gathering the value and derivative of a function at a point.
 /*! Germ in meant in the mathematical sense, sort of. */
-struct FunctionGerm
+template <typename T>
+struct Germ
 {
-  double val,  //!< Function value.
-    dx,  //!< Function deriviative with respect to x.
-    dy;  //!< Function derivative with respect to y.
-};
-
-//! Struct for gathering the value and derivative of a vector valued function at a point.
-/*! Germ in meant in the mathematical sense, sort of. */
-struct Vector2Germ
-{
-  Vector2  val,  //!< Function value.
-    dx,  //!< Function deriviative with respect to x.
-    dy;  //!< Function derivative with respect to y.
+  //! Function value.
+  T val;
+  //! Function deriviative with respect to x.
+  T dx;
+  //! Function derivative with respect to y.
+  T dy;
 };
 
 
@@ -182,8 +177,8 @@ struct Vector2Germ
 class ShapeQ1 {
 public:
   //! Compute values and derivatives of the shape function supported at node k.
-  static FunctionGerm eval(unsigned int k, double xi, double eta) {
-    FunctionGerm result;
+  static Germ<double> eval(unsigned int k, double xi, double eta) {
+    Germ<double> result;
 
     result.val = 0.25 * (1.0 + xis[k] * xi) * (1.0 + etas[k] * eta);
     result.dx =  0.25 *  xis[k] * (1.0 + etas[k] * eta);
@@ -387,13 +382,13 @@ public:
   //! Number of quadrature points.
   static const unsigned int Nq = 4;
   
-  // define FunctionGermArray, which is an array of Quadrature2x2::Nq
-  // FunctionGerms
-  typedef FunctionGerm FunctionGermArray[Quadrature2x2::Nq];
+  // define ScalarGermArray, which is an array of Quadrature2x2::Nq
+  // Germ<double>s
+  typedef Germ<double> ScalarGermArray[Quadrature2x2::Nq];
 
-  const FunctionGermArray* testFunctionValues();
-  const FunctionGerm* testFunctionValues(int q);
-  const FunctionGerm* testFunctionValues(int q, int k);
+  const ScalarGermArray* testFunctionValues();
+  const Germ<double>* testFunctionValues(int q);
+  const Germ<double>* testFunctionValues(int q, int k);
   
   const double* getWeightedJacobian();
 
@@ -412,7 +407,7 @@ protected:
   double m_JxW[Nq];
 
   //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
-  FunctionGerm m_germs[Nq][ShapeQ1::Nk];
+  Germ<double> m_germs[Nq][ShapeQ1::Nk];
 };
 
 //! This version supports 2D scalar fields.
@@ -513,16 +508,16 @@ public:
   //! Number of quadrature points per side.
   static const unsigned int Nq = 2;
 
-  inline const FunctionGerm& germ(unsigned int side,
+  inline const Germ<double>& germ(unsigned int side,
                                   unsigned int func,
                                   unsigned int pt) const;
 private:
-  FunctionGerm m_germs[n_sides][ShapeQ1::Nk][Nq];
+  Germ<double> m_germs[n_sides][ShapeQ1::Nk][Nq];
 };
 
 //! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
 //! evaluated at the point `pt` on the side `side` of an element.
-inline const FunctionGerm& BoundaryQuadrature2::germ(unsigned int side,
+inline const Germ<double>& BoundaryQuadrature2::germ(unsigned int side,
                                                      unsigned int k,
                                                      unsigned int pt) const {
   assert(side < n_sides);

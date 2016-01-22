@@ -173,7 +173,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::FunctionGerm (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -251,7 +251,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::FunctionGerm (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -284,8 +284,8 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
       for (unsigned int q=0; q<Nq; q++) {
         for (unsigned int k = 0; k < Nk; k++) {   // Test functions
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
-            const fem::FunctionGerm &test_qk=test[q][k];
-            const fem::FunctionGerm &test_ql=test[q][l];
+            const fem::Germ<double> &test_qk=test[q][k];
+            const fem::Germ<double> &test_ql=test[q][l];
             K[k][l]     += JxW[q]*(m_cL2*test_qk.val*test_ql.val
               +  m_cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy));
           } // l

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -133,7 +133,7 @@ void SSAFEM::init_impl() {
   m_velocity_global.copy_from(m_velocity);
 
   // Store coefficient data at the quadrature points.
-  cacheQuadPtValues();
+  cache_inputs();
 }
 
 //! Solve the SSA.  The FEM solver exchanges time for memory by computing
@@ -161,7 +161,7 @@ void SSAFEM::solve() {
 TerminationReason::Ptr SSAFEM::solve_with_reason() {
 
   // Set up the system to solve (store coefficient data at the quadrature points):
-  cacheQuadPtValues();
+  cache_inputs();
 
   return solve_nocache();
 }
@@ -231,15 +231,19 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
 }
 
 //! Initialize stored data from the coefficients in the SSA.  Called by SSAFEM::solve.
-/* This method is should be called after SSAFEM::init and whenever
-any geometry or temperature related coefficients have changed. The method
-stores the values of the coefficients at the quadrature points of each
-element so that these interpolated values do not need to be computed
-during each outer iteration of the nonlinear solve.*/
-void SSAFEM::cacheQuadPtValues() {
+/**
+  This method is should be called after SSAFEM::init and whenever any geometry or temperature
+  related coefficients have changed. The method stores the values of the coefficients at quadrature
+  points of each element so that these interpolated values do not need to be computed during each
+  outer iteration of the nonlinear solve.
+
+  In addition to coefficients at quadrature points we store "node types" used to identify interior
+  elements, exterior elements, and boundary faces.
+*/
+void SSAFEM::cache_inputs() {
 
   using fem::Quadrature2x2;
-  using fem::FunctionGerm;
+  using fem::Germ;
 
   const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
@@ -334,7 +338,7 @@ void SSAFEM::cacheQuadPtValues() {
         // but the way we have just obtained the values at the element vertices
         // using getInternalColumn doesn't make this straightforward.  So we compute the values
         // by hand.
-        const FunctionGerm (*test)[Nk] = m_quadrature.testFunctionValues();
+        const Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
         for (unsigned int k = 0; k < m_grid->Mz(); k++) {
           Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
           for (unsigned int q = 0; q < Nq; q++) {
@@ -448,7 +452,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   double Du[Nq][3];
 
   // An Nq by Nk array of test function values.
-  const FunctionGerm (*test)[Nk] = m_quadrature.testFunctionValues();
+  const Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Iterate over the elements.
   const int
@@ -478,11 +482,14 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
       if (dirichlet_data) {
+        // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
         dirichlet_data.update(m_dofmap, velocity_nodal);
+        // mark Dirichlet nodes in m_dofmap so that they are not touched by addLocalResidualBlock()
+        // below
         dirichlet_data.constrain(m_dofmap);
       }
 
-      // Zero out the element-local residual in prep for updating it.
+      // Zero out the element-local residual in preparation for updating it.
       for (unsigned int k = 0; k < Nk; k++) {
         residual[k].u = 0;
         residual[k].v = 0;
@@ -514,7 +521,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         // Loop over test functions.
         for (unsigned int k = 0; k < Nk; k++) {
-          const FunctionGerm &psi = test[q][k];
+          const Germ<double> &psi = test[q][k];
 
           residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
                                      - psi.val * (tau_b.u + tau_d.u));
@@ -612,7 +619,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::FunctionGerm (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
   int
@@ -675,7 +682,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
 
             // Current trial function and its derivatives:
-            const fem::FunctionGerm &phi = test[q][l];
+            const fem::Germ<double> &phi = test[q][l];
 
             // Derivatives of \gamma with respect to u_l and v_l:
             const double
@@ -698,7 +705,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
               // Current test function and its derivatives:
 
-              const fem::FunctionGerm &psi = test[q][k];
+              const fem::Germ<double> &psi = test[q][k];
 
               if (eta == 0) {
                 ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
