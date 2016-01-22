@@ -17,6 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "base/util/iceModelVec.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/error_handling.hh"
+
+namespace pism {
+
 enum NodeType {
   NODE_INTERIOR = 0,
   NODE_BOUNDARY = 1,
@@ -28,13 +34,20 @@ enum NodeType {
 
    Uses width=1 ghosts of `ice_thickness` (a "box" stencil).
 
-   An element if either interior, a boundary, or exterior.
+   A node is can be *interior*, *boundary*, or *exterior*.
 
-   FIXME: we need to use temporary storage and scatter ghosts to it instead of expecting a ghosted
-   ice_thickness.
+   An element is considered *icy* if all four of its nodes have ice thickness above
+   `thickness_threshold`.
 
-   Now an element side is a part of a boundary if and only if both of its nodes are on a boundary.
+   A node is considered *interior* if all of the elements it belongs to are icy.
 
+   A node is considered *boundary* if it is not interior and at least one element it belongs to is
+   icy.
+
+   A node is considered *exterior* if it is neither interior nor boundary.
+
+   Now an element "face" (side) is a part of a boundary if and only if both of its nodes are
+   boundary nodes.
 
 Cell layout:
 ~~~
@@ -64,7 +77,7 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.();
+      const int i = p.i(), j = p.j();
 
       // indexing shortcuts (to reduce chances of making typos below)
       const int
@@ -75,28 +88,30 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
 
       // booleans indicating whether the current node and its neighbors are "icy"
       const bool
-        current_is_icy = H(i, j) >= H_min,
-        nw_is_icy      = H(W, N) >= H_min,
-        n_is_icy       = H(i, N) >= H_min,
-        ne_is_icy      = H(E, N) >= H_min,
-        e_is_icy       = H(E, j) >= H_min,
-        se_is_icy      = H(E, S) >= H_min,
-        s_is_icy       = H(i, S) >= H_min,
-        sw_is_icy      = H(W, S) >= H_min,
-        w_is_icy       = H(W, j) >= H_min;
+        icy_ij = H(i, j) >= H_min,
+        icy_nw = H(W, N) >= H_min,
+        icy_n  = H(i, N) >= H_min,
+        icy_ne = H(E, N) >= H_min,
+        icy_e  = H(E, j) >= H_min,
+        icy_se = H(E, S) >= H_min,
+        icy_s  = H(i, S) >= H_min,
+        icy_sw = H(W, S) >= H_min,
+        icy_w  = H(W, j) >= H_min;
 
       // booleans indicating whether neighboring elements are "icy" (and element is icy if all its
       // nodes are icy)
       const bool
-        ne_elt_is_icy = (current_is_icy and e_is_icy and ne_is_icy and n_is_icy),
-        nw_elt_is_icy = (current_is_icy and n_is_icy and nw_is_icy and w_is_icy),
-        sw_elt_is_icy = (current_is_icy and w_is_icy and sw_is_icy and s_is_icy),
-        se_elt_is_icy = (current_is_icy and s_is_icy and se_is_icy and e_is_icy);
+        ne_element_is_icy = (icy_ij and icy_e and icy_ne and icy_n),
+        nw_element_is_icy = (icy_ij and icy_n and icy_nw and icy_w),
+        sw_element_is_icy = (icy_ij and icy_w and icy_sw and icy_s),
+        se_element_is_icy = (icy_ij and icy_s and icy_se and icy_e);
 
-      if (ne_elt_is_icy and nw_elt_is_icy and sw_elt_is_icy and se_elt_is_icy) {
+      if (ne_element_is_icy and nw_element_is_icy and
+          sw_element_is_icy and se_element_is_icy) {
         // all four elements are icy: we are at an interior node
         result(i, j) = NODE_INTERIOR;
-      } else if (ne_elt_is_icy or nw_elt_is_icy or sw_elt_is_icy or se_elt_is_icy) {
+      } else if (ne_element_is_icy or nw_element_is_icy or
+                 sw_element_is_icy or se_element_is_icy) {
         // at least one element is icy: we are at a boundary node
         result(i, j) = NODE_BOUNDARY;
       } else {
@@ -110,3 +125,5 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
   }
   loop.check();
 }
+
+} // end of namespace pism
