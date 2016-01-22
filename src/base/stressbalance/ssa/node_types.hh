@@ -22,6 +22,14 @@
 
 namespace pism {
 
+//! Node types (in the map plane). These are used to implement boundary conditions in the Q1 FEM
+//! code.
+enum NodeType {
+  NODE_INTERIOR = 0,
+  NODE_BOUNDARY = 1,
+  NODE_EXTERIOR = 2
+};
+
 class IceModelVec2S;
 class IceModelVec2Int;
 

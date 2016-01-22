@@ -17,17 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "node_types.hh"
+
 #include "base/util/iceModelVec.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/error_handling.hh"
 
 namespace pism {
-
-enum NodeType {
-  NODE_INTERIOR = 0,
-  NODE_BOUNDARY = 1,
-  NODE_EXTERIOR = 2
-};
 
 /**
    Identify node types of all the nodes (grid points).
