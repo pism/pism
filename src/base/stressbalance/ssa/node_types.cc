@@ -47,15 +47,15 @@ namespace pism {
 
 Cell layout:
 ~~~
-+-------N--------+
-|       |        |
-|  NW   |   NE   |
-|       |        |
-W-----(i,j)------E
-|       |        |
-|  SW   |   SE   |
-|       |        |
-+-------S--------+
+(i-1,j+1) +-------N--------+ (i+1,j+1)
+          |       |        |
+          |  NW   |   NE   |
+          |       |        |
+          W-----(i,j)------E
+          |       |        |
+          |  SW   |   SE   |
+          |       |        |
+(i-1,j-1) +-------S--------+ (i+1,j-1)
 ~~~
  */
 void compute_node_types(const IceModelVec2S &ice_thickness,

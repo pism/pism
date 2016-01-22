@@ -25,6 +25,8 @@
 #include "base/util/pism_options.hh"
 #include "base/util/error_handling.hh"
 
+#include "node_types.hh"
+
 namespace pism {
 namespace stressbalance {
 
@@ -98,6 +100,11 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   // elements, and Quadrature2x2::Nq quadrature points.
   int nElements = m_element_index.element_count();
   m_coefficients.resize(fem::Quadrature2x2::Nq * nElements);
+
+  m_node_type.create(m_grid, "node_type", WITH_GHOSTS, 1);
+  m_node_type.set_attrs("internal", // intent
+                        "node types: interior, boundary, exterior", // long name
+                        "", ""); // no units or standard name
 }
 
 SSA* SSAFEMFactory(IceGrid::ConstPtr g, EnthalpyConverter::Ptr ec) {
@@ -364,6 +371,11 @@ void SSAFEM::cache_inputs() {
     loop.failed();
   }
   loop.check();
+
+  // Note: the call below uses ghosts of m_thickness.
+  compute_node_types(*m_thickness,
+                     m_config->get_double("mask_icefree_thickness_standard"),
+                     m_node_type);
 }
 
 /** @brief Compute the "(regularized effective viscosity) x (ice thickness)" and effective viscous
