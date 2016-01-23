@@ -146,6 +146,14 @@ void DOFMap::extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) co
   extractLocalDOFs(m_i, m_j, x_global, x_local);
 }
 
+void DOFMap::extractLocalDOFs(const IceModelVec2Int &x_global, int *x_local) const
+{
+  x_local[0] = x_global.as_int(m_i, m_j);
+  x_local[1] = x_global.as_int(m_i + 1, m_j);
+  x_local[2] = x_global.as_int(m_i + 1, m_j + 1);
+  x_local[3] = x_global.as_int(m_i, m_j + 1);
+}
+
 void DOFMap::extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) const
 {
   extractLocalDOFs(m_i, m_j, x_global, x_local);

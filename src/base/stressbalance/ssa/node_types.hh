@@ -24,10 +24,16 @@ namespace pism {
 
 //! Node types (in the map plane). These are used to implement boundary conditions in the Q1 FEM
 //! code.
+/**
+   Note: The condition node_type > 0.5 is also used to detect "exterior" (ice-free) nodes where we
+   prescribe homogeneous Dirichlet B.C. See DirichletData_*::fix_residual_homogeneous.
+
+   This means that interior and boundary types should not use positive values.
+ */
 enum NodeType {
-  NODE_INTERIOR = 0,
-  NODE_BOUNDARY = 1,
-  NODE_EXTERIOR = 2
+  NODE_INTERIOR = -1,
+  NODE_BOUNDARY = 0,
+  NODE_EXTERIOR = 1
 };
 
 class IceModelVec2S;

@@ -223,6 +223,7 @@ public:
 
   // scalar
   void extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) const;
+  void extractLocalDOFs(const IceModelVec2Int &x_global, int *x_local) const;
   void extractLocalDOFs(double const*const*x_global, double *x_local) const;
 
   void extractLocalDOFs(int i, int j, const IceModelVec2S &x_global, double *x_local) const;
@@ -355,16 +356,18 @@ public:
   In this concrete implementation, the reference element \f$R\f$ is the square 
   \f$[-1,1]\times[-1,1]\f$.  On a given element, nodes (o) and quadrature points (*) 
   are ordered as follows:
-  \verbatim
+
+  ~~~
   3 o------------------o  2
-  |  3             2 |
-  |    *        *    |
-  |                  |
-  |                  |
-  |    *        *    |
-  |  0            1  |
-  0  o------------------o  1
-  \endverbatim
+    |  3             2 |
+    |    *        *    |
+    |                  |
+    |                  |
+    |    *        *    |
+    |  0            1  |
+  0 o------------------o  1
+  ~~~
+
   So there are four quad points per element, which occur at \f$x,y=\pm 1/\sqrt{3}\f$.  This corresponds to the tensor product
   of Gaussian integration on an interval that is exact for cubic functions on the interval.
 

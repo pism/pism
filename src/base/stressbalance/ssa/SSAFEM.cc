@@ -441,6 +441,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                     Vector2 **residual_global) {
   using namespace fem;
 
+  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+
   const unsigned int Nk = ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
@@ -451,6 +453,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
     residual_global[j][i].u = 0.0;
     residual_global[j][i].v = 0.0;
   }
+
+  IceModelVec::AccessList list(m_node_type);
 
   // Start access to Dirichlet data if present.
   DirichletData_Vector dirichlet_data;
@@ -475,74 +479,88 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      // Storage for the solution and residuals at element nodes.
-      Vector2 velocity_nodal[Nk];
-      Vector2 residual[Nk];
-
-      // Index into coefficient storage in m_coefficients
-      const int ij = m_element_index.flatten(i, j);
-
-      // Coefficients and weights for this quadrature point.
-      const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, *m_grid);
 
-      // Obtain the value of the solution at the nodes adjacent to the element.
-      m_dofmap.extractLocalDOFs(velocity_global, velocity_nodal);
+      int node_type[Nk];
+      m_dofmap.extractLocalDOFs(m_node_type, node_type);
 
-      // These values now need to be adjusted if some nodes in the element have
-      // Dirichlet data.
-      if (dirichlet_data) {
-        // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
-        dirichlet_data.update(m_dofmap, velocity_nodal);
-        // mark Dirichlet nodes in m_dofmap so that they are not touched by addLocalResidualBlock()
-        // below
-        dirichlet_data.constrain(m_dofmap);
-      }
+      const bool interior_element = (node_type[0] == NODE_INTERIOR and
+                                     node_type[1] == NODE_INTERIOR and
+                                     node_type[2] == NODE_INTERIOR and
+                                     node_type[3] == NODE_INTERIOR);
 
-      // Zero out the element-local residual in preparation for updating it.
-      for (unsigned int k = 0; k < Nk; k++) {
-        residual[k].u = 0;
-        residual[k].v = 0;
-      }
+      if (interior_element or (not use_cfbc)) {
 
-      // Compute the solution values and symmetric gradient at the quadrature points.
-      m_quadrature_vector.computeTrialFunctionValues(velocity_nodal, // input
-                                                     u, Du);         // outputs
+        // Storage for the solution and residuals at element nodes.
+        Vector2 velocity_nodal[Nk];
+        Vector2 residual[Nk];
 
-      // loop over quadrature points on this element:
-      for (unsigned int q = 0; q < Nq; q++) {
+        // Index into coefficient storage in m_coefficients
+        const int ij = m_element_index.flatten(i, j);
 
-        // Symmetric gradient at the quadrature point.
-        const double *Duq = Du[q];
+        // Coefficients and weights for this quadrature point.
+        const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
-        double eta = 0.0, beta = 0.0;
-        PointwiseNuHAndBeta(coefficients[q], u[q], Duq, // inputs
-                            &eta, NULL, &beta, NULL);              // outputs
+        // Obtain the value of the solution at the nodes adjacent to the element.
+        m_dofmap.extractLocalDOFs(velocity_global, velocity_nodal);
 
-        // The next few lines compute the actual residual for the element.
-        const Vector2
-          tau_b = u[q] * (- beta), // basal shear stress
-          tau_d = coefficients[q].driving_stress; // gravitational driving stress
+        // These values now need to be adjusted if some nodes in the element have
+        // Dirichlet data.
+        if (dirichlet_data) {
+          // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
+          dirichlet_data.update(m_dofmap, velocity_nodal);
+          // mark Dirichlet nodes in m_dofmap so that they are not touched by addLocalResidualBlock()
+          // below
+          dirichlet_data.constrain(m_dofmap);
+        }
 
-        const double
-          U_x          = Duq[0],
-          V_y          = Duq[1],
-          U_y_plus_V_x = 2.0 * Duq[2];
-
-        // Loop over test functions.
+        // Zero out the element-local residual in preparation for updating it.
         for (unsigned int k = 0; k < Nk; k++) {
-          const Germ<double> &psi = test[q][k];
+          residual[k].u = 0;
+          residual[k].v = 0;
+        }
 
-          residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
-                                     - psi.val * (tau_b.u + tau_d.u));
-          residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
-                                     - psi.val * (tau_b.v + tau_d.v));
-        } // k
-      } // q
+        // Compute the solution values and symmetric gradient at the quadrature points.
+        m_quadrature_vector.computeTrialFunctionValues(velocity_nodal, // input
+                                                       u, Du);         // outputs
 
-      m_dofmap.addLocalResidualBlock(residual, residual_global);
+        // loop over quadrature points on this element:
+        for (unsigned int q = 0; q < Nq; q++) {
+
+          // Symmetric gradient at the quadrature point.
+          const double *Duq = Du[q];
+
+          double eta = 0.0, beta = 0.0;
+          PointwiseNuHAndBeta(coefficients[q], u[q], Duq, // inputs
+                              &eta, NULL, &beta, NULL);              // outputs
+
+          // The next few lines compute the actual residual for the element.
+          const Vector2
+            tau_b = u[q] * (- beta), // basal shear stress
+            tau_d = coefficients[q].driving_stress; // gravitational driving stress
+
+          const double
+            U_x          = Duq[0],
+            V_y          = Duq[1],
+            U_y_plus_V_x = 2.0 * Duq[2];
+
+          // Loop over test functions.
+          for (unsigned int k = 0; k < Nk; k++) {
+            const Germ<double> &psi = test[q][k];
+
+            residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
+                                       - psi.val * (tau_b.u + tau_d.u));
+            residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
+                                       - psi.val * (tau_b.v + tau_d.v));
+          } // k
+        } // q
+
+        m_dofmap.addLocalResidualBlock(residual, residual_global);
+      } else {
+        // an exterior element: no contribution, but see the fix_residual_homogeneous() call below.
+      }
     } // j-loop
   } // i-loop
 
@@ -550,6 +568,14 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   // We fix this now.
   if (dirichlet_data) {
     dirichlet_data.fix_residual(velocity_global, residual_global);
+  }
+
+  if (use_cfbc) {
+    DirichletData_Vector dirichlet_ice_free;
+
+    dirichlet_ice_free.init(&m_node_type, NULL, m_dirichletScale);
+    dirichlet_ice_free.fix_residual_homogeneous(residual_global);
+    dirichlet_ice_free.finish();
   }
 
   dirichlet_data.finish();
