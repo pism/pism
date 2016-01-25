@@ -363,7 +363,8 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double
   degrees of freedom `x_local`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`,
   and `dy`. */
-void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals, double *dx, double *dy) {
+void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local,
+                                                   double *vals, double *dx, double *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
     const Germ<double> *test = m_germs[q];
     vals[q] = 0;
@@ -580,6 +581,7 @@ void DirichletData::finish_impl(const IceModelVec *values) {
   }
 }
 
+//! @brief Constrain `dofmap`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
 void DirichletData::constrain(DOFMap &dofmap) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
