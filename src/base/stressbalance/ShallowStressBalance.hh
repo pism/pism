@@ -87,8 +87,8 @@ protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
                                     std::map<std::string, TSDiagnostic*> &ts_dict);
 
-  double sea_level;
-  IceBasalResistancePlasticLaw *basal_sliding_law;
+  double m_sea_level;
+  IceBasalResistancePlasticLaw *m_basal_sliding_law;
   rheology::FlowLaw *m_flow_law;
   EnthalpyConverter::Ptr m_EC;
 

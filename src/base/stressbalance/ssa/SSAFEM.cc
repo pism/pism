@@ -267,7 +267,7 @@ void SSAFEM::cache_inputs() {
     Enth_q[q].resize(m_grid->Mz());
   }
 
-  GeometryCalculator gc(sea_level, *m_config);
+  GeometryCalculator gc(m_sea_level, *m_config);
 
   IceModelVec::AccessList list;
   list.add(*m_enthalpy);
@@ -414,7 +414,7 @@ void SSAFEM::PointwiseNuHAndBeta(const Coefficients &coefficients,
   }
 
   if (mask::grounded_ice(coefficients.mask)) {
-    basal_sliding_law->drag_with_derivative(coefficients.tauc, u.u, u.v, beta, dbeta);
+    m_basal_sliding_law->drag_with_derivative(coefficients.tauc, u.u, u.v, beta, dbeta);
   } else {
     *beta = 0;
 
