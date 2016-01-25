@@ -801,6 +801,17 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
   const double jacobian_x = 0.5*dx;
   const double jacobian_y = 0.5*dy;
 
+  // Note that all quadrature weights are 1.0 (and so they are implicitly included below).
+  //
+  // bottom
+  m_weighted_jacobian[0] = jacobian_x;
+  // right
+  m_weighted_jacobian[1] = jacobian_y;
+  // top
+  m_weighted_jacobian[0] = jacobian_x;
+  // left
+  m_weighted_jacobian[0] = jacobian_y;
+
   const double C = 1.0 / sqrt(3);
   const double pts[n_sides][Nq][2] = {
     {{  -C, -1.0}, {   C, -1.0}}, // South

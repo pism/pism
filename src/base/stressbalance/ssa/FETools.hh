@@ -510,12 +510,19 @@ public:
   //! Number of quadrature points per side.
   static const unsigned int Nq = 2;
 
+  inline double weighted_jacobian(unsigned int side) const;
+
   inline const Germ<double>& germ(unsigned int side,
                                   unsigned int func,
                                   unsigned int pt) const;
 private:
   Germ<double> m_germs[n_sides][ShapeQ1::Nk][Nq];
+  double m_weighted_jacobian[n_sides];
 };
+
+inline double BoundaryQuadrature2::weighted_jacobian(unsigned int side) const {
+  return m_weighted_jacobian[side];
+}
 
 //! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
 //! evaluated at the point `pt` on the side `side` of an element.
