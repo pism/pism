@@ -121,7 +121,7 @@ void SSAFEM::init_impl() {
   SSA::init_impl();
 
   m_log->message(2,
-             "  [using the SNES-based finite element method implementation]\n");
+                 "  [using the SNES-based finite element method implementation]\n");
 
   // process command-line options
   {
@@ -239,13 +239,13 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
 
 //! Initialize stored data from the coefficients in the SSA.  Called by SSAFEM::solve.
 /**
-  This method is should be called after SSAFEM::init and whenever any geometry or temperature
-  related coefficients have changed. The method stores the values of the coefficients at quadrature
-  points of each element so that these interpolated values do not need to be computed during each
-  outer iteration of the nonlinear solve.
+   This method is should be called after SSAFEM::init and whenever any geometry or temperature
+   related coefficients have changed. The method stores the values of the coefficients at quadrature
+   points of each element so that these interpolated values do not need to be computed during each
+   outer iteration of the nonlinear solve.
 
-  In addition to coefficients at quadrature points we store "node types" used to identify interior
-  elements, exterior elements, and boundary faces.
+   In addition to coefficients at quadrature points we store "node types" used to identify interior
+   elements, exterior elements, and boundary faces.
 */
 void SSAFEM::cache_inputs() {
 
@@ -632,7 +632,7 @@ void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
   @f[ J_{ij}{kl} \frac{d r_{ij}}{d x_{kl}}= G(x, \psi_{ij}) @f]
 
   where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current
-approximate solution, and the \f$\psi_{ij}\f$ are test functions.
+  approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 
 */
 void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global, Mat Jac) {
@@ -822,8 +822,8 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
   snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", (int)iter);
 
   m_log->message(2,
-             "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
-             file_name);
+                 "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
+                 file_name);
 
   petsc::Viewer viewer(m_grid->com);
 
