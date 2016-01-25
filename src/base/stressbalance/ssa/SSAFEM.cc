@@ -492,6 +492,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                      node_type[3] == NODE_INTERIOR);
 
       if (interior_element or (not use_cfbc)) {
+        // Note: without CFBC all elements are "interior".
 
         // Storage for the solution and residuals at element nodes.
         Vector2 velocity_nodal[Nk];
@@ -571,6 +572,9 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   }
 
   if (use_cfbc) {
+    // Prescribe homogeneous Dirichlet B.C. at ice-free nodes. This uses the fact that m_node_type
+    // can be used as a "Dirichlet B.C. mask", i.e. ice-free nodes (and only ice-free nodes) are
+    // marked with ones.
     DirichletData_Vector dirichlet_ice_free;
 
     dirichlet_ice_free.init(&m_node_type, NULL, m_dirichletScale);
