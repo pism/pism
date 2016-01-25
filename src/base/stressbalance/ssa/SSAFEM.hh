@@ -52,8 +52,6 @@ protected:
     double H;
     //! basal yield stress
     double tauc;
-    //! bed elevation
-    double b;
     //! ice hardness
     double B;
     //! prescribed gravitational driving stress

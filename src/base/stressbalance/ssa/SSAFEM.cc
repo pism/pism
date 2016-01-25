@@ -314,7 +314,6 @@ void SSAFEM::cache_inputs() {
         Coefficients *coefficients = &m_coefficients[4*ij];
         for (unsigned int q = 0; q < Nq; q++) {
           coefficients[q].H  = Hq[q];
-          coefficients[q].b  = bq[q];
           coefficients[q].tauc = taucq[q];
           if (driving_stress_explicit) {
             coefficients[q].driving_stress.u = ds_xq[q];
@@ -324,7 +323,7 @@ void SSAFEM::cache_inputs() {
             coefficients[q].driving_stress.v = -rho_g * Hq[q]*hyq[q];
           }
 
-          coefficients[q].mask = gc.mask(coefficients[q].b, coefficients[q].H);
+          coefficients[q].mask = gc.mask(bq[q], coefficients[q].H);
         }
 
         // In the following, we obtain the averaged hardness value from enthalpy by
