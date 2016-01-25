@@ -485,10 +485,11 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
       int node_type[Nk];
       m_dofmap.extractLocalDOFs(m_node_type, node_type);
 
-      const bool interior_element = (node_type[0] == NODE_INTERIOR and
-                                     node_type[1] == NODE_INTERIOR and
-                                     node_type[2] == NODE_INTERIOR and
-                                     node_type[3] == NODE_INTERIOR);
+      // an element is "interior" if all its nodes are interior or boundary
+      const bool interior_element = (node_type[0] < NODE_EXTERIOR and
+                                     node_type[1] < NODE_EXTERIOR and
+                                     node_type[2] < NODE_EXTERIOR and
+                                     node_type[3] < NODE_EXTERIOR);
 
       if (interior_element or (not use_cfbc)) {
         // Note: without CFBC all elements are "interior".
