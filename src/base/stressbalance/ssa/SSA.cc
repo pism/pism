@@ -460,8 +460,9 @@ IceModelVec::Ptr SSA_taud_mag::compute_impl() {
 }
 
 //! Evaluate the ocean pressure difference term in the calving-front BC.
-double SSA::ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
-                                      double rho_ice, double rho_ocean, double g) {
+double SSA::ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
+                                      double sea_level, double rho_ice, double rho_ocean,
+                                      double g) {
   if (shelf) {
     // floating shelf
     return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;
