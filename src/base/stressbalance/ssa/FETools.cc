@@ -31,8 +31,8 @@ namespace pism {
 //! FEM (Finite Element Method) utilities
 namespace fem {
 
-const double ShapeQ1::xis[]  = {-1.0,  1.0,  1.0, -1.0};
-const double ShapeQ1::etas[] = {-1.0, -1.0,  1.0,  1.0};
+const double ShapeQ1::m_xi[]  = {-1.0,  1.0,  1.0, -1.0};
+const double ShapeQ1::m_eta[] = {-1.0, -1.0,  1.0,  1.0};
 
 ElementMap::ElementMap(const IceGrid &g) {
   // Start by assuming ghost elements exist in all directions.
@@ -307,10 +307,9 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
   double jacobian_y = 0.5*dy / L;
   m_jacobianDet = jacobian_x*jacobian_y;
 
-  ShapeQ1 shape;
   for (unsigned int q = 0; q < Nq; q++) {
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      m_germs[q][k] = shape.eval(k, quadPoints[q][0], quadPoints[q][1]);
+      m_germs[q][k] = ShapeQ1::eval(k, quadPoints[q][0], quadPoints[q][1]);
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;
     }
