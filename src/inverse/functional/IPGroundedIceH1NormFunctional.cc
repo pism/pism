@@ -41,7 +41,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   list.add(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
@@ -104,7 +104,7 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
@@ -176,7 +176,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
@@ -240,7 +240,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   PISM_CHK(ierr, "MatZeroEntries");
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   fem::DirichletData_Scalar zeroLocs;
   zeroLocs.init(m_dirichletIndices, NULL);

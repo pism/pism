@@ -460,7 +460,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   dirichlet_data.init(m_bc_mask, m_bc_values, m_dirichletScale);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Storage for the current solution and its derivatives at quadrature points.
   Vector2 u[Nq];
@@ -653,7 +653,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   dirichlet_data.init(m_bc_mask, m_bc_values, m_dirichletScale);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Storage for the current solution at quadrature points.
   Vector2 u[Nq];

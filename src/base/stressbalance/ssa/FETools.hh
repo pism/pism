@@ -384,23 +384,23 @@ public:
   //! Number of quadrature points.
   static const unsigned int Nq = 4;
 
-  // define ScalarGermArray, which is an array of Quadrature2x2::Nq
+  // define GermArray, which is an array of Quadrature2x2::Nq
   // Germ<double>s
-  typedef Germ<double> ScalarGermArray[Quadrature2x2::Nq];
+  typedef Germ<double> GermArray[Nq];
 
-  const ScalarGermArray* testFunctionValues();
+  const GermArray* testFunctionValues();
   const Germ<double>* testFunctionValues(int q);
   const Germ<double>* testFunctionValues(int q, int k);
 
-  const double* getWeightedJacobian();
+  const double* weighted_jacobian();
 
+protected:
   //! The coordinates of the quadrature points on the reference element.
   static const double quadPoints[Nq][2];
 
   //! The weights for quadrature on the reference element.
   static const double quadWeights[Nq];
 
-protected:
   //! The determinant of the Jacobian of the map from the reference element to the physical element.
   double m_jacobianDet;
 

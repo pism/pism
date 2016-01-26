@@ -292,7 +292,7 @@ Quadrature_Scalar::Quadrature_Scalar(double dx, double dy, double L)
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
-const double* Quadrature2x2::getWeightedJacobian() {
+const double* Quadrature2x2::weighted_jacobian() {
   return m_JxW;
 }
 
@@ -328,7 +328,7 @@ Quadrature_Vector::Quadrature_Vector(double dx, double dy, double L)
 
 //! Return the values at all quadrature points of all shape functions.
 //* The return value is an Nq by Nk array of Germ<double>s. */
-const Quadrature2x2::ScalarGermArray* Quadrature2x2::testFunctionValues()
+const Quadrature2x2::GermArray* Quadrature2x2::testFunctionValues()
 {
   return m_germs;
 }

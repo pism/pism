@@ -296,7 +296,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   fixedZeta.init(m_fixed_tauc_locations, NULL);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -449,7 +449,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                    m_dirichletWeight);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {

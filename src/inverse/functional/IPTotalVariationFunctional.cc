@@ -46,7 +46,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);
@@ -101,7 +101,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   fem::DirichletData_Scalar dirichletBC;
   dirichletBC.init(m_dirichletIndices, NULL);

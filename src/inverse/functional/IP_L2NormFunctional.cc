@@ -39,7 +39,7 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all LOCAL elements.
   const int
@@ -81,7 +81,7 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all LOCAL elements.
   const int
@@ -125,7 +125,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all local and ghosted elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -170,7 +170,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all local and ghosted elements.
   const int
@@ -212,7 +212,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all LOCAL elements.
   const int
@@ -256,7 +256,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all local and ghosted elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
