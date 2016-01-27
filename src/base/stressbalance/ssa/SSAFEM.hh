@@ -99,7 +99,6 @@ protected:
   IceModelVec2S m_boundary_integral;
 
   double m_dirichletScale;
-  double m_ocean_rho;
   double m_beta_ice_free_bedrock;
   double m_epsilon_ssa;
 

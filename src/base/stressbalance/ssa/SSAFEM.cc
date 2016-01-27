@@ -42,7 +42,6 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   PetscErrorCode ierr;
 
   m_dirichletScale = 1.0;
-  m_ocean_rho = m_config->get_double("sea_water_density");
   m_beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
 
   ierr = SNESCreate(m_grid->com, m_snes.rawptr());
@@ -106,7 +105,9 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
                         "node types: interior, boundary, exterior", // long name
                         "", ""); // no units or standard name
 
-  m_boundary_integral.create(m_grid, "boundary_integral", WITHOUT_GHOSTS);
+  // DOFMap::extractLocalDOFs() expects a ghosted IceModelVec2S. Ghosts if this field are never
+  // assigned to and not communocated, though.
+  m_boundary_integral.create(m_grid, "boundary_integral", WITH_GHOSTS, 1);
   m_boundary_integral.set_attrs("internal", // intent
                                 "residual contribution from lateral boundaries", // long name
                                 "", ""); // no units or standard name
@@ -435,16 +436,27 @@ void SSAFEM::PointwiseNuHAndBeta(const Coefficients &coefficients,
   }
 }
 
+
+//! Compute and cache residual contributions from the integral over the lateral boundary.
+/**
+
+   This method computes FIXME.
+
+ */
 void SSAFEM::cache_residual_cfbc() {
 
-  using fem::ShapeQ1;
-  using fem::BoundaryQuadrature2;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
+  const unsigned int Nq = fem::BoundaryQuadrature2::Nq;
+  const unsigned int n_sides = fem::BoundaryQuadrature2::n_sides;
   using mask::ocean;
 
-  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
-  const bool is_dry_simulation = m_config->get_boolean("is_dry_simulation");
+  const bool
+    use_cfbc          = m_config->get_boolean("calving_front_stress_boundary_condition"),
+    is_dry_simulation = m_config->get_boolean("is_dry_simulation");
+
   const double
     ice_density      = m_config->get_double("ice_density"),
+    ocean_density    = m_config->get_double("sea_water_density"),
     standard_gravity = m_config->get_double("standard_gravity");
 
   if (not use_cfbc) {
@@ -452,16 +464,14 @@ void SSAFEM::cache_residual_cfbc() {
     return;
   }
 
-  const unsigned int Nk = ShapeQ1::Nk;
-  const unsigned int Nq = BoundaryQuadrature2::Nq;
-
-  BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy());
+  fem::BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy());
 
   GeometryCalculator gc(m_sea_level, *m_config);
 
   IceModelVec::AccessList list(m_node_type);
   list.add(*m_thickness);
   list.add(*m_bed);
+  list.add(m_boundary_integral);
 
   // Iterate over the elements.
   const int
@@ -469,8 +479,6 @@ void SSAFEM::cache_residual_cfbc() {
     xm = m_element_index.xm,
     ys = m_element_index.ys,
     ym = m_element_index.ym;
-
-  const unsigned int n_sides = BoundaryQuadrature2::n_sides;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
@@ -486,27 +494,31 @@ void SSAFEM::cache_residual_cfbc() {
                                      node_type[2] < NODE_EXTERIOR and
                                      node_type[3] < NODE_EXTERIOR);
 
+      // residual contributions at element nodes
+      double I[Nk] = {0.0, 0.0, 0.0, 0.0};
+
       if (not interior_element) {
-        // not an interior element; skip it
-        m_boundary_integral(i, j) = 0.0;
+        // not an interior element: the contribution is zero
+        m_dofmap.addLocalResidualBlock(I, m_boundary_integral);
         continue;
       }
 
       double H_nodal[Nk];
       m_dofmap.extractLocalDOFs(*m_thickness, H_nodal);
 
-      double bed_nodal[Nk];
+      double b_nodal[Nk];
       m_dofmap.extractLocalDOFs(*m_bed, H_nodal);
 
       // nodes corresponding to a given element "side"
       const int nodes[n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
+      // storage for test function values psi[0] for the first "end" of a side, psi[1] for the
+      // second
       double psi[2] = {0.0, 0.0};
-
-      // residual contributions at element nodes
-      double I[Nk] = {0.0, 0.0, 0.0, 0.0};
 
       // loop over element sides
       for (unsigned int side = 0; side < n_sides; ++side) {
+
+        // nodes incident to the current side
         const int
           n0 = nodes[side][0],
           n1 = nodes[side][1];
@@ -516,9 +528,9 @@ void SSAFEM::cache_residual_cfbc() {
           continue;
         }
 
-        // in our case (i.e. uniform spacing in x and y directions) WxJ is the same at all
+        // in our case (i.e. uniform spacing in x and y directions) JxW is the same at all
         // quadrature points along a side.
-        const double WxJ = bq.weighted_jacobian(side);
+        const double JxW = bq.weighted_jacobian(side);
 
         for (unsigned int q = 0; q < Nq; ++q) {
 
@@ -527,23 +539,25 @@ void SSAFEM::cache_residual_cfbc() {
           psi[0] = bq.germ(side, q, n0).val;
           psi[1] = bq.germ(side, q, n1).val;
 
-          // compute ice thickness and bed elevation at a quadrature point
+          // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
+          // expansion on the side.
           const double
-            H   =   H_nodal[n0] * psi[0] +   H_nodal[n1] * psi[1],
-            bed = bed_nodal[n0] * psi[0] + bed_nodal[n1] * psi[1];
+            H   = H_nodal[n0] * psi[0] + H_nodal[n1] * psi[1],
+            bed = b_nodal[n0] * psi[0] + b_nodal[n1] * psi[1];
 
-          const int mask = gc.mask(bed, H);
+          const bool floating = ocean(gc.mask(bed, H));
 
           // ocean pressure difference at a quadrature point
-          const double dP = ocean_pressure_difference(ocean(mask), is_dry_simulation,
+          const double dP = ocean_pressure_difference(floating, is_dry_simulation,
                                                       H, bed, m_sea_level,
-                                                      ice_density, m_ocean_rho,
+                                                      ice_density, ocean_density,
                                                       standard_gravity);
 
-          // this integral contributes to the residual at 2 nodes: the ones incident to the current
-          // side
-          I[n0] += WxJ * psi[0] * dP;
-          I[n1] += WxJ * psi[1] * dP;
+          // this integral contributes to the residual at 2 nodes (the ones incident to the current
+          // side). Note the minus sign: this is so that we can *add* the boundary contribution in
+          // the residual computation.
+          I[n0] += JxW * (- psi[0] * dP);
+          I[n1] += JxW * (- psi[1] * dP);
         } // q-loop
 
       } // loop over element sides
@@ -581,6 +595,10 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   }
 
   IceModelVec::AccessList list(m_node_type);
+
+  if (use_cfbc) {
+    list.add(m_boundary_integral);
+  }
 
   // Start access to Dirichlet data if present.
   DirichletData_Vector dirichlet_data;
@@ -684,6 +702,17 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                        - psi.val * (tau_b.v + tau_d.v));
           } // k
         } // q
+
+        if (use_cfbc) {
+          // add the boundary contribution
+          double boundary_integral[Nk];
+          m_dofmap.extractLocalDOFs(m_boundary_integral, boundary_integral);
+
+          for (unsigned int k = 0; k < Nk; ++k) {
+            residual[k].u += boundary_integral[k];
+            residual[k].v += boundary_integral[k];
+          }
+        }
 
         m_dofmap.addLocalResidualBlock(residual, residual_global);
       } else {
