@@ -380,6 +380,8 @@ void SSAFEM::cache_inputs() {
   compute_node_types(*m_thickness,
                      m_config->get_double("mask_icefree_thickness_standard"),
                      m_node_type);
+
+  cache_residual_cfbc();
 }
 
 /** @brief Compute the "(regularized effective viscosity) x (ice thickness)" and effective viscous
