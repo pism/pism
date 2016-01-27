@@ -480,92 +480,98 @@ void SSAFEM::cache_residual_cfbc() {
     ys = m_element_index.ys,
     ym = m_element_index.ym;
 
-  for (int j = ys; j < ys + ym; j++) {
-    for (int i = xs; i < xs + xm; i++) {
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, *m_grid);
+  ParallelSection loop(m_grid->com);
+  try {
+    for (int j = ys; j < ys + ym; j++) {
+      for (int i = xs; i < xs + xm; i++) {
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, *m_grid);
 
-      int node_type[Nk];
-      m_dofmap.extractLocalDOFs(m_node_type, node_type);
+        int node_type[Nk];
+        m_dofmap.extractLocalDOFs(m_node_type, node_type);
 
-      // an element is "interior" if all its nodes are interior or boundary
-      const bool interior_element = (node_type[0] < NODE_EXTERIOR and
-                                     node_type[1] < NODE_EXTERIOR and
-                                     node_type[2] < NODE_EXTERIOR and
-                                     node_type[3] < NODE_EXTERIOR);
+        // an element is "interior" if all its nodes are interior or boundary
+        const bool interior_element = (node_type[0] < NODE_EXTERIOR and
+                                       node_type[1] < NODE_EXTERIOR and
+                                       node_type[2] < NODE_EXTERIOR and
+                                       node_type[3] < NODE_EXTERIOR);
 
-      // residual contributions at element nodes
-      double I[Nk] = {0.0, 0.0, 0.0, 0.0};
+        // residual contributions at element nodes
+        double I[Nk] = {0.0, 0.0, 0.0, 0.0};
 
-      if (not interior_element) {
-        // not an interior element: the contribution is zero
-        m_dofmap.addLocalResidualBlock(I, m_boundary_integral);
-        continue;
-      }
-
-      double H_nodal[Nk];
-      m_dofmap.extractLocalDOFs(*m_thickness, H_nodal);
-
-      double b_nodal[Nk];
-      m_dofmap.extractLocalDOFs(*m_bed, H_nodal);
-
-      // nodes corresponding to a given element "side"
-      const int nodes[n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
-      // storage for test function values psi[0] for the first "end" of a side, psi[1] for the
-      // second
-      double psi[2] = {0.0, 0.0};
-
-      // loop over element sides
-      for (unsigned int side = 0; side < n_sides; ++side) {
-
-        // nodes incident to the current side
-        const int
-          n0 = nodes[side][0],
-          n1 = nodes[side][1];
-
-        if (not (node_type[n0] == NODE_BOUNDARY and node_type[n1] == NODE_BOUNDARY)) {
-          // not a boundary side; skip it
+        if (not interior_element) {
+          // not an interior element: the contribution is zero
+          m_dofmap.addLocalResidualBlock(I, m_boundary_integral);
           continue;
         }
 
-        // in our case (i.e. uniform spacing in x and y directions) JxW is the same at all
-        // quadrature points along a side.
-        const double JxW = bq.weighted_jacobian(side);
+        double H_nodal[Nk];
+        m_dofmap.extractLocalDOFs(*m_thickness, H_nodal);
 
-        for (unsigned int q = 0; q < Nq; ++q) {
+        double b_nodal[Nk];
+        m_dofmap.extractLocalDOFs(*m_bed, H_nodal);
 
-          // test functions at nodes incident to the current side, evaluated at the quadrature point
-          // q
-          psi[0] = bq.germ(side, q, n0).val;
-          psi[1] = bq.germ(side, q, n1).val;
+        // nodes corresponding to a given element "side"
+        const int nodes[n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
+        // storage for test function values psi[0] for the first "end" of a side, psi[1] for the
+        // second
+        double psi[2] = {0.0, 0.0};
 
-          // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
-          // expansion on the side.
-          const double
-            H   = H_nodal[n0] * psi[0] + H_nodal[n1] * psi[1],
-            bed = b_nodal[n0] * psi[0] + b_nodal[n1] * psi[1];
+        // loop over element sides
+        for (unsigned int side = 0; side < n_sides; ++side) {
 
-          const bool floating = ocean(gc.mask(bed, H));
+          // nodes incident to the current side
+          const int
+            n0 = nodes[side][0],
+            n1 = nodes[side][1];
 
-          // ocean pressure difference at a quadrature point
-          const double dP = ocean_pressure_difference(floating, is_dry_simulation,
-                                                      H, bed, m_sea_level,
-                                                      ice_density, ocean_density,
-                                                      standard_gravity);
+          if (not (node_type[n0] == NODE_BOUNDARY and node_type[n1] == NODE_BOUNDARY)) {
+            // not a boundary side; skip it
+            continue;
+          }
 
-          // this integral contributes to the residual at 2 nodes (the ones incident to the current
-          // side). Note the minus sign: this is so that we can *add* the boundary contribution in
-          // the residual computation.
-          I[n0] += JxW * (- psi[0] * dP);
-          I[n1] += JxW * (- psi[1] * dP);
-        } // q-loop
+          // in our case (i.e. uniform spacing in x and y directions) JxW is the same at all
+          // quadrature points along a side.
+          const double JxW = bq.weighted_jacobian(side);
 
-      } // loop over element sides
+          for (unsigned int q = 0; q < Nq; ++q) {
 
-      m_dofmap.addLocalResidualBlock(I, m_boundary_integral);
+            // test functions at nodes incident to the current side, evaluated at the quadrature point
+            // q
+            psi[0] = bq.germ(side, q, n0).val;
+            psi[1] = bq.germ(side, q, n1).val;
 
-    } // i-loop
-  } // j-loop
+            // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
+            // expansion on the side.
+            const double
+              H   = H_nodal[n0] * psi[0] + H_nodal[n1] * psi[1],
+              bed = b_nodal[n0] * psi[0] + b_nodal[n1] * psi[1];
+
+            const bool floating = ocean(gc.mask(bed, H));
+
+            // ocean pressure difference at a quadrature point
+            const double dP = ocean_pressure_difference(floating, is_dry_simulation,
+                                                        H, bed, m_sea_level,
+                                                        ice_density, ocean_density,
+                                                        standard_gravity);
+
+            // this integral contributes to the residual at 2 nodes (the ones incident to the current
+            // side). Note the minus sign: this is so that we can *add* the boundary contribution in
+            // the residual computation.
+            I[n0] += JxW * (- psi[0] * dP);
+            I[n1] += JxW * (- psi[1] * dP);
+          } // q-loop
+
+        } // loop over element sides
+
+        m_dofmap.addLocalResidualBlock(I, m_boundary_integral);
+
+      } // i-loop
+    } // j-loop
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 }
 
 
@@ -621,105 +627,111 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
     ys = m_element_index.ys,
     ym = m_element_index.ym;
 
-  for (int j = ys; j < ys + ym; j++) {
-    for (int i = xs; i < xs + xm; i++) {
+  ParallelSection loop(m_grid->com);
+  try {
+    for (int j = ys; j < ys + ym; j++) {
+      for (int i = xs; i < xs + xm; i++) {
 
-      // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, *m_grid);
+        // Initialize the map from global to local degrees of freedom for this element.
+        m_dofmap.reset(i, j, *m_grid);
 
-      int node_type[Nk];
-      m_dofmap.extractLocalDOFs(m_node_type, node_type);
+        int node_type[Nk];
+        m_dofmap.extractLocalDOFs(m_node_type, node_type);
 
-      // an element is "interior" if all its nodes are interior or boundary
-      const bool interior_element = (node_type[0] < NODE_EXTERIOR and
-                                     node_type[1] < NODE_EXTERIOR and
-                                     node_type[2] < NODE_EXTERIOR and
-                                     node_type[3] < NODE_EXTERIOR);
+        // an element is "interior" if all its nodes are interior or boundary
+        const bool interior_element = (node_type[0] < NODE_EXTERIOR and
+                                       node_type[1] < NODE_EXTERIOR and
+                                       node_type[2] < NODE_EXTERIOR and
+                                       node_type[3] < NODE_EXTERIOR);
 
-      if (interior_element or (not use_cfbc)) {
-        // Note: without CFBC all elements are "interior".
+        if (interior_element or (not use_cfbc)) {
+          // Note: without CFBC all elements are "interior".
 
-        // Storage for the solution and residuals at element nodes.
-        Vector2 velocity_nodal[Nk];
-        Vector2 residual[Nk];
+          // Storage for the solution and residuals at element nodes.
+          Vector2 velocity_nodal[Nk];
+          Vector2 residual[Nk];
 
-        // Index into coefficient storage in m_coefficients
-        const int ij = m_element_index.flatten(i, j);
+          // Index into coefficient storage in m_coefficients
+          const int ij = m_element_index.flatten(i, j);
 
-        // Coefficients and weights for this quadrature point.
-        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+          // Coefficients and weights for this quadrature point.
+          const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
-        // Obtain the value of the solution at the nodes adjacent to the element.
-        m_dofmap.extractLocalDOFs(velocity_global, velocity_nodal);
+          // Obtain the value of the solution at the nodes adjacent to the element.
+          m_dofmap.extractLocalDOFs(velocity_global, velocity_nodal);
 
-        // These values now need to be adjusted if some nodes in the element have
-        // Dirichlet data.
-        if (dirichlet_data) {
-          // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
-          dirichlet_data.update(m_dofmap, velocity_nodal);
-          // mark Dirichlet nodes in m_dofmap so that they are not touched by addLocalResidualBlock()
-          // below
-          dirichlet_data.constrain(m_dofmap);
-        }
-
-        // Zero out the element-local residual in preparation for updating it.
-        for (unsigned int k = 0; k < Nk; k++) {
-          residual[k].u = 0;
-          residual[k].v = 0;
-        }
-
-        // Compute the solution values and symmetric gradient at the quadrature points.
-        m_quadrature_vector.computeTrialFunctionValues(velocity_nodal, // input
-                                                       u, Du);         // outputs
-
-        // loop over quadrature points on this element:
-        for (unsigned int q = 0; q < Nq; q++) {
-
-          // Symmetric gradient at the quadrature point.
-          const double *Duq = Du[q];
-
-          double eta = 0.0, beta = 0.0;
-          PointwiseNuHAndBeta(coefficients[q], u[q], Duq, // inputs
-                              &eta, NULL, &beta, NULL);              // outputs
-
-          // The next few lines compute the actual residual for the element.
-          const Vector2
-            tau_b = u[q] * (- beta), // basal shear stress
-            tau_d = coefficients[q].driving_stress; // gravitational driving stress
-
-          const double
-            U_x          = Duq[0],
-            V_y          = Duq[1],
-            U_y_plus_V_x = 2.0 * Duq[2];
-
-          // Loop over test functions.
-          for (unsigned int k = 0; k < Nk; k++) {
-            const Germ<double> &psi = test[q][k];
-
-            residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
-                                       - psi.val * (tau_b.u + tau_d.u));
-            residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
-                                       - psi.val * (tau_b.v + tau_d.v));
-          } // k
-        } // q
-
-        if (use_cfbc) {
-          // add the boundary contribution
-          double boundary_integral[Nk];
-          m_dofmap.extractLocalDOFs(m_boundary_integral, boundary_integral);
-
-          for (unsigned int k = 0; k < Nk; ++k) {
-            residual[k].u += boundary_integral[k];
-            residual[k].v += boundary_integral[k];
+          // These values now need to be adjusted if some nodes in the element have
+          // Dirichlet data.
+          if (dirichlet_data) {
+            // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
+            dirichlet_data.update(m_dofmap, velocity_nodal);
+            // mark Dirichlet nodes in m_dofmap so that they are not touched by addLocalResidualBlock()
+            // below
+            dirichlet_data.constrain(m_dofmap);
           }
-        }
 
-        m_dofmap.addLocalResidualBlock(residual, residual_global);
-      } else {
-        // an exterior element: no contribution, but see the fix_residual_homogeneous() call below.
-      }
-    } // j-loop
-  } // i-loop
+          // Zero out the element-local residual in preparation for updating it.
+          for (unsigned int k = 0; k < Nk; k++) {
+            residual[k].u = 0;
+            residual[k].v = 0;
+          }
+
+          // Compute the solution values and symmetric gradient at the quadrature points.
+          m_quadrature_vector.computeTrialFunctionValues(velocity_nodal, // input
+                                                         u, Du);         // outputs
+
+          // loop over quadrature points on this element:
+          for (unsigned int q = 0; q < Nq; q++) {
+
+            // Symmetric gradient at the quadrature point.
+            const double *Duq = Du[q];
+
+            double eta = 0.0, beta = 0.0;
+            PointwiseNuHAndBeta(coefficients[q], u[q], Duq, // inputs
+                                &eta, NULL, &beta, NULL);              // outputs
+
+            // The next few lines compute the actual residual for the element.
+            const Vector2
+              tau_b = u[q] * (- beta), // basal shear stress
+              tau_d = coefficients[q].driving_stress; // gravitational driving stress
+
+            const double
+              U_x          = Duq[0],
+              V_y          = Duq[1],
+              U_y_plus_V_x = 2.0 * Duq[2];
+
+            // Loop over test functions.
+            for (unsigned int k = 0; k < Nk; k++) {
+              const Germ<double> &psi = test[q][k];
+
+              residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
+                                         - psi.val * (tau_b.u + tau_d.u));
+              residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
+                                         - psi.val * (tau_b.v + tau_d.v));
+            } // k
+          } // q
+
+          if (use_cfbc) {
+            // add the boundary contribution
+            double boundary_integral[Nk];
+            m_dofmap.extractLocalDOFs(m_boundary_integral, boundary_integral);
+
+            for (unsigned int k = 0; k < Nk; ++k) {
+              residual[k].u += boundary_integral[k];
+              residual[k].v += boundary_integral[k];
+            }
+          }
+
+          m_dofmap.addLocalResidualBlock(residual, residual_global);
+        } else {
+          // an exterior element: no contribution, but see the fix_residual_homogeneous() call below.
+        }
+      } // j-loop
+    } // i-loop
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 
   // Until now we have not touched rows in the residual corresponding to Dirichlet data.
   // We fix this now.
