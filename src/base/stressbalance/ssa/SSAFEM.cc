@@ -981,7 +981,7 @@ PetscErrorCode SSAFEM::function_callback(DMDALocalInfo *info,
     fe->ssa->compute_local_function(velocity, residual);
   } catch (...) {
     MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)info, &com); CHKERRQ(ierr);
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)fe->da, &com); CHKERRQ(ierr);
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }
@@ -998,7 +998,7 @@ PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **ve
     *str = SAME_NONZERO_PATTERN;
   } catch (...) {
     MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)info, &com); CHKERRQ(ierr);
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)fe->da, &com); CHKERRQ(ierr);
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }
@@ -1014,7 +1014,7 @@ PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info,
     fe->ssa->compute_local_jacobian(velocity, J);
   } catch (...) {
     MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)info, &com); CHKERRQ(ierr);
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)fe->da, &com); CHKERRQ(ierr);
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }
