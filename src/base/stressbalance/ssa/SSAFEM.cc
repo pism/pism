@@ -522,7 +522,8 @@ void SSAFEM::cache_residual_cfbc() {
 
         for (unsigned int q = 0; q < Nq; ++q) {
 
-          // test functions at nodes incident to the current side
+          // test functions at nodes incident to the current side, evaluated at the quadrature point
+          // q
           psi[0] = bq.germ(side, q, n0).val;
           psi[1] = bq.germ(side, q, n1).val;
 
