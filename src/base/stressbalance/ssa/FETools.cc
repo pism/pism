@@ -810,9 +810,9 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
   // right
   m_weighted_jacobian[1] = jacobian_y;
   // top
-  m_weighted_jacobian[0] = jacobian_x;
+  m_weighted_jacobian[2] = jacobian_x;
   // left
-  m_weighted_jacobian[0] = jacobian_y;
+  m_weighted_jacobian[3] = jacobian_y;
 
   const double C = 1.0 / sqrt(3);
   const double pts[n_sides][Nq][2] = {
@@ -823,10 +823,10 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
   };
 
   for (unsigned int side = 0; side < n_sides; ++side) {
-    for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
-      for (unsigned int q = 0; q < Nq; ++q) {
-        const double xi = pts[side][q][0];
-        const double eta = pts[side][q][1];
+    for (unsigned int q = 0; q < Nq; ++q) {
+      const double xi = pts[side][q][0];
+      const double eta = pts[side][q][1];
+      for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
         m_germs[side][k][q] = ShapeQ1::eval(k, xi, eta);
         // convert from derivatives with respect to xi and eta to derivatives with respect to x and
         // y

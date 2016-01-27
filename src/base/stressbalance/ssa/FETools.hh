@@ -516,7 +516,7 @@ public:
                                   unsigned int func,
                                   unsigned int pt) const;
 private:
-  Germ<double> m_germs[n_sides][ShapeQ1::Nk][Nq];
+  Germ<double> m_germs[n_sides][Nq][ShapeQ1::Nk];
   double m_weighted_jacobian[n_sides];
 };
 
@@ -527,13 +527,13 @@ inline double BoundaryQuadrature2::weighted_jacobian(unsigned int side) const {
 //! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
 //! evaluated at the point `pt` on the side `side` of an element.
 inline const Germ<double>& BoundaryQuadrature2::germ(unsigned int side,
-                                                     unsigned int k,
-                                                     unsigned int pt) const {
+                                                     unsigned int q,
+                                                     unsigned int k) const {
   assert(side < n_sides);
   assert(k < ShapeQ1::Nk);
-  assert(pt < 2);
+  assert(q < 2);
 
-  return m_germs[side][k][pt];
+  return m_germs[side][q][k];
 }
 
 } // end of namespace fem
