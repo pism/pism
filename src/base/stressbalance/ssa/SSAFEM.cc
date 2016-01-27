@@ -798,11 +798,15 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
+  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+
   PetscErrorCode ierr;
 
   // Zero out the Jacobian in preparation for updating it.
   ierr = MatZeroEntries(Jac);
   PISM_CHK(ierr, "MatZeroEntries");
+
+  IceModelVec::AccessList list(m_node_type);
 
   // Start access to Dirichlet data if present.
   fem::DirichletData_Vector dirichlet_data;
@@ -847,86 +851,99 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         // Initialize the map from global to local degrees of freedom for this element.
         m_dofmap.reset(i, j, *m_grid);
 
-        // Obtain the value of the solution at the adjacent nodes to the element.
-        m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
+        int node_type[Nk];
+        m_dofmap.extractLocalDOFs(m_node_type, node_type);
+        // an element is "interior" if all its nodes are interior or boundary
+        const bool interior_element = (node_type[0] < NODE_EXTERIOR and
+                                       node_type[1] < NODE_EXTERIOR and
+                                       node_type[2] < NODE_EXTERIOR and
+                                       node_type[3] < NODE_EXTERIOR);
 
-        // These values now need to be adjusted if some nodes in the element have
-        // Dirichlet data.
-        if (dirichlet_data) {
-          dirichlet_data.update(m_dofmap, velocity_local);
-          dirichlet_data.constrain(m_dofmap);
+        if (interior_element or (not use_cfbc)) {
+
+          // Obtain the value of the solution at the adjacent nodes to the element.
+          m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
+
+          // These values now need to be adjusted if some nodes in the element have
+          // Dirichlet data.
+          if (dirichlet_data) {
+            dirichlet_data.update(m_dofmap, velocity_local);
+            dirichlet_data.constrain(m_dofmap);
+          }
+
+          // Compute the values of the solution at the quadrature points.
+          m_quadrature_vector.computeTrialFunctionValues(velocity_local, u, Du);
+
+          // Build the element-local Jacobian.
+          ierr = PetscMemzero(K, sizeof(K));
+          PISM_CHK(ierr, "PetscMemzero");
+
+          for (unsigned int q = 0; q < Nq; q++) {
+            const double
+              jw           = JxW[q],
+              U            = u[q].u,
+              V            = u[q].v,
+              U_x          = Du[q][0],
+              V_y          = Du[q][1],
+              U_y_plus_V_x = 2.0 * Du[q][2]; // u_y + v_x is twice the symmetric gradient
+
+            double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
+            PointwiseNuHAndBeta(coefficients[q], u[q], Du[q],
+                                &eta, &deta, &beta, &dbeta);
+
+            for (unsigned int l = 0; l < Nk; l++) { // Trial functions
+
+              // Current trial function and its derivatives:
+              const fem::Germ<double> &phi = test[q][l];
+
+              // Derivatives of \gamma with respect to u_l and v_l:
+              const double
+                gamma_u = (2.0 * U_x + V_y) * phi.dx + Du[q][2] * phi.dy,
+                gamma_v = Du[q][2] * phi.dx + (U_x + 2.0 * V_y) * phi.dy;
+
+              // Derivatives if \eta (\nu*H) with respect to u_l and v_l:
+              const double
+                eta_u = deta * gamma_u,
+                eta_v = deta * gamma_v;
+
+              // Derivatives of the basal shear stress term (\tau_b):
+              const double
+                taub_xu = -dbeta * U * U * phi.val - beta * phi.val, // x-component, derivative with respect to u_l
+                taub_xv = -dbeta * U * V * phi.val,              // x-component, derivative with respect to u_l
+                taub_yu = -dbeta * V * U * phi.val,              // y-component, derivative with respect to v_l
+                taub_yv = -dbeta * V * V * phi.val - beta * phi.val; // y-component, derivative with respect to v_l
+
+              for (unsigned int k = 0; k < Nk; k++) {   // Test functions
+
+                // Current test function and its derivatives:
+
+                const fem::Germ<double> &psi = test[q][k];
+
+                if (eta == 0) {
+                  ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
+                  PISM_CHK(ierr, "PetscPrintf");
+                }
+
+                // u-u coupling
+                K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi.dx * (4 * U_x + 2 * V_y) + psi.dy * U_y_plus_V_x)
+                                             + eta * (4 * psi.dx * phi.dx + psi.dy * phi.dy) - psi.val * taub_xu);
+                // u-v coupling
+                K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi.dx * (4 * U_x + 2 * V_y) + psi.dy * U_y_plus_V_x)
+                                             + eta * (2 * psi.dx * phi.dy + psi.dy * phi.dx) - psi.val * taub_xv);
+                // v-u coupling
+                K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi.dx * U_y_plus_V_x + psi.dy * (2 * U_x + 4 * V_y))
+                                             + eta * (psi.dx * phi.dy + 2 * psi.dy * phi.dx) - psi.val * taub_yu);
+                // v-v coupling
+                K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi.dx * U_y_plus_V_x + psi.dy * (2 * U_x + 4 * V_y))
+                                             + eta * (psi.dx * phi.dx + 4 * psi.dy * phi.dy) - psi.val * taub_yv);
+
+              } // l
+            } // k
+          } // q
+          m_dofmap.addLocalJacobianBlock(&K[0][0], Jac);
+        } else {
+          // an exterior element: no contribution
         }
-
-        // Compute the values of the solution at the quadrature points.
-        m_quadrature_vector.computeTrialFunctionValues(velocity_local, u, Du);
-
-        // Build the element-local Jacobian.
-        ierr = PetscMemzero(K, sizeof(K));
-        PISM_CHK(ierr, "PetscMemzero");
-
-        for (unsigned int q = 0; q < Nq; q++) {
-          const double
-            jw           = JxW[q],
-            U            = u[q].u,
-            V            = u[q].v,
-            U_x          = Du[q][0],
-            V_y          = Du[q][1],
-            U_y_plus_V_x = 2.0 * Du[q][2]; // u_y + v_x is twice the symmetric gradient
-
-          double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
-          PointwiseNuHAndBeta(coefficients[q], u[q], Du[q],
-                              &eta, &deta, &beta, &dbeta);
-
-          for (unsigned int l = 0; l < Nk; l++) { // Trial functions
-
-            // Current trial function and its derivatives:
-            const fem::Germ<double> &phi = test[q][l];
-
-            // Derivatives of \gamma with respect to u_l and v_l:
-            const double
-              gamma_u = (2.0 * U_x + V_y) * phi.dx + Du[q][2] * phi.dy,
-              gamma_v = Du[q][2] * phi.dx + (U_x + 2.0 * V_y) * phi.dy;
-
-            // Derivatives if \eta (\nu*H) with respect to u_l and v_l:
-            const double
-              eta_u = deta * gamma_u,
-              eta_v = deta * gamma_v;
-
-            // Derivatives of the basal shear stress term (\tau_b):
-            const double
-              taub_xu = -dbeta * U * U * phi.val - beta * phi.val, // x-component, derivative with respect to u_l
-              taub_xv = -dbeta * U * V * phi.val,              // x-component, derivative with respect to u_l
-              taub_yu = -dbeta * V * U * phi.val,              // y-component, derivative with respect to v_l
-              taub_yv = -dbeta * V * V * phi.val - beta * phi.val; // y-component, derivative with respect to v_l
-
-            for (unsigned int k = 0; k < Nk; k++) {   // Test functions
-
-              // Current test function and its derivatives:
-
-              const fem::Germ<double> &psi = test[q][k];
-
-              if (eta == 0) {
-                ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
-                PISM_CHK(ierr, "PetscPrintf");
-              }
-
-              // u-u coupling
-              K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi.dx * (4 * U_x + 2 * V_y) + psi.dy * U_y_plus_V_x)
-                                           + eta * (4 * psi.dx * phi.dx + psi.dy * phi.dy) - psi.val * taub_xu);
-              // u-v coupling
-              K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi.dx * (4 * U_x + 2 * V_y) + psi.dy * U_y_plus_V_x)
-                                           + eta * (2 * psi.dx * phi.dy + psi.dy * phi.dx) - psi.val * taub_xv);
-              // v-u coupling
-              K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi.dx * U_y_plus_V_x + psi.dy * (2 * U_x + 4 * V_y))
-                                           + eta * (psi.dx * phi.dy + 2 * psi.dy * phi.dx) - psi.val * taub_yu);
-              // v-v coupling
-              K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi.dx * U_y_plus_V_x + psi.dy * (2 * U_x + 4 * V_y))
-                                           + eta * (psi.dx * phi.dx + 4 * psi.dy * phi.dy) - psi.val * taub_yv);
-
-            } // l
-          } // k
-        } // q
-        m_dofmap.addLocalJacobianBlock(&K[0][0], Jac);
       } // j
     } // i
   } catch (...) {
@@ -945,6 +962,17 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   }
 
   dirichlet_data.finish();
+
+  if (use_cfbc) {
+    // Prescribe homogeneous Dirichlet B.C. at ice-free nodes. This uses the fact that m_node_type
+    // can be used as a "Dirichlet B.C. mask", i.e. ice-free nodes (and only ice-free nodes) are
+    // marked with ones.
+    fem::DirichletData_Vector dirichlet_ice_free;
+
+    dirichlet_ice_free.init(&m_node_type, NULL, m_dirichletScale);
+    dirichlet_ice_free.fix_jacobian(Jac);
+    dirichlet_ice_free.finish();
+  }
 
   ierr = MatAssemblyBegin(Jac, MAT_FINAL_ASSEMBLY);
   PISM_CHK(ierr, "MatAssemblyBegin");
