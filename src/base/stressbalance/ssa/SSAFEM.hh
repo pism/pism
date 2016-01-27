@@ -95,6 +95,8 @@ protected:
 
   //! Storage for node types (interior, boundary, exterior).
   IceModelVec2Int m_node_type;
+  //! Boundary integral (CFBC contribution to the residual).
+  IceModelVec2S m_boundary_integral;
 
   double m_dirichletScale;
   double m_ocean_rho;
@@ -107,6 +109,7 @@ protected:
   fem::DOFMap m_dofmap;
 
 private:
+  void cache_residual_cfbc();
   void monitor_jacobian(Mat Jac);
   void monitor_function(Vector2 const *const *const velocity_global,
                         Vector2 const *const *const residual_global);

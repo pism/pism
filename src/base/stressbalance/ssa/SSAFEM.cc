@@ -105,6 +105,11 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_node_type.set_attrs("internal", // intent
                         "node types: interior, boundary, exterior", // long name
                         "", ""); // no units or standard name
+
+  m_boundary_integral.create(m_grid, "boundary_integral", WITHOUT_GHOSTS);
+  m_boundary_integral.set_attrs("internal", // intent
+                                "residual contribution from lateral boundaries", // long name
+                                "", ""); // no units or standard name
 }
 
 SSA* SSAFEMFactory(IceGrid::ConstPtr g, EnthalpyConverter::Ptr ec) {
@@ -427,6 +432,125 @@ void SSAFEM::PointwiseNuHAndBeta(const Coefficients &coefficients,
     }
   }
 }
+
+void SSAFEM::cache_residual_cfbc() {
+
+  using fem::ShapeQ1;
+  using fem::BoundaryQuadrature2;
+  using mask::ocean;
+
+  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  const bool is_dry_simulation = m_config->get_boolean("is_dry_simulation");
+  const double
+    ice_density      = m_config->get_double("ice_density"),
+    standard_gravity = m_config->get_double("standard_gravity");
+
+  if (not use_cfbc) {
+    m_boundary_integral.set(0.0);
+    return;
+  }
+
+  const unsigned int Nk = ShapeQ1::Nk;
+  const unsigned int Nq = BoundaryQuadrature2::Nq;
+
+  BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy());
+
+  GeometryCalculator gc(m_sea_level, *m_config);
+
+  IceModelVec::AccessList list(m_node_type);
+  list.add(*m_thickness);
+  list.add(*m_bed);
+
+  // Iterate over the elements.
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
+  const unsigned int n_sides = BoundaryQuadrature2::n_sides;
+
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
+      // Initialize the map from global to local degrees of freedom for this element.
+      m_dofmap.reset(i, j, *m_grid);
+
+      int node_type[Nk];
+      m_dofmap.extractLocalDOFs(m_node_type, node_type);
+
+      // an element is "interior" if all its nodes are interior or boundary
+      const bool interior_element = (node_type[0] < NODE_EXTERIOR and
+                                     node_type[1] < NODE_EXTERIOR and
+                                     node_type[2] < NODE_EXTERIOR and
+                                     node_type[3] < NODE_EXTERIOR);
+
+      if (not interior_element) {
+        // not an interior element; skip it
+        m_boundary_integral(i, j) = 0.0;
+        continue;
+      }
+
+      double H_nodal[Nk];
+      m_dofmap.extractLocalDOFs(*m_thickness, H_nodal);
+
+      double bed_nodal[Nk];
+      m_dofmap.extractLocalDOFs(*m_bed, H_nodal);
+
+      // nodes corresponding to a given element "side"
+      const int nodes[n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
+      double psi[2] = {0.0, 0.0};
+
+      // residual contributions at element nodes
+      double I[Nk] = {0.0, 0.0, 0.0, 0.0};
+
+      // loop over element sides
+      for (unsigned int side = 0; side < n_sides; ++side) {
+        const int
+          n0 = nodes[side][0],
+          n1 = nodes[side][1];
+
+        if (not (node_type[n0] == NODE_BOUNDARY and node_type[n1] == NODE_BOUNDARY)) {
+          // not a boundary side; skip it
+          continue;
+        }
+
+        // in our case (i.e. uniform spacing in x and y directions) WxJ is the same at all
+        // quadrature points along a side.
+        const double WxJ = bq.weighted_jacobian(side);
+
+        for (unsigned int q = 0; q < Nq; ++q) {
+
+          // test functions at nodes incident to the current side
+          psi[0] = bq.germ(side, q, n0).val;
+          psi[1] = bq.germ(side, q, n1).val;
+
+          // compute ice thickness and bed elevation at a quadrature point
+          const double
+            H   =   H_nodal[n0] * psi[0] +   H_nodal[n1] * psi[1],
+            bed = bed_nodal[n0] * psi[0] + bed_nodal[n1] * psi[1];
+
+          const int mask = gc.mask(bed, H);
+
+          // ocean pressure difference at a quadrature point
+          const double dP = ocean_pressure_difference(ocean(mask), is_dry_simulation,
+                                                      H, bed, m_sea_level,
+                                                      ice_density, m_ocean_rho,
+                                                      standard_gravity);
+
+          // this integral contributes to the residual at 2 nodes: the ones incident to the current
+          // side
+          I[n0] += WxJ * psi[0] * dP;
+          I[n1] += WxJ * psi[1] * dP;
+        } // q-loop
+
+      } // loop over element sides
+
+      m_dofmap.addLocalResidualBlock(I, m_boundary_integral);
+
+    } // i-loop
+  } // j-loop
+}
+
 
 //! Implements the callback for computing the SNES local function.
 /*!
