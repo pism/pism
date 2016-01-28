@@ -548,17 +548,9 @@ DirichletData::~DirichletData() {
   }
 }
 
-void DirichletData::init(const IceModelVec2Int *indices, double weight) {
-  init_impl(indices, NULL, weight);
-}
-
-void DirichletData::finish() {
-  finish_impl(NULL);
-}
-
-void DirichletData::init_impl(const IceModelVec2Int *indices,
-                              const IceModelVec *values,
-                              double weight) {
+void DirichletData::init(const IceModelVec2Int *indices,
+                         const IceModelVec *values,
+                         double weight) {
   m_weight  = weight;
 
   if (indices != NULL) {
@@ -571,7 +563,7 @@ void DirichletData::init_impl(const IceModelVec2Int *indices,
   }
 }
 
-void DirichletData::finish_impl(const IceModelVec *values) {
+void DirichletData::finish(const IceModelVec *values) {
   if (m_indices != NULL) {
     m_indices->end_access();
     m_indices = NULL;
@@ -596,15 +588,11 @@ void DirichletData::constrain(DOFMap &dofmap) {
 
 // Scalar version
 
-DirichletData_Scalar::DirichletData_Scalar()
-  : m_values(NULL) {
-}
-
-void DirichletData_Scalar::init(const IceModelVec2Int *indices,
-                                const IceModelVec2S *values,
-                                double weight) {
-  m_values = values;
-  init_impl(indices, m_values, weight);
+DirichletData_Scalar::DirichletData_Scalar(const IceModelVec2Int *indices,
+                                           const IceModelVec2S *values,
+                                           double weight)
+  : m_values(values) {
+  init(indices, m_values, weight);
 }
 
 void DirichletData_Scalar::update(const DOFMap &dofmap, double* x_nodal) {
@@ -690,21 +678,17 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
 }
 
 void DirichletData_Scalar::finish() {
-  finish_impl(m_values);
+  DirichletData::finish(m_values);
   m_values = NULL;
 }
 
 // Vector version
 
-DirichletData_Vector::DirichletData_Vector()
-  : m_values(NULL) {
-}
-
-void DirichletData_Vector::init(const IceModelVec2Int *indices,
-                                const IceModelVec2V *values,
-                                double weight) {
-  m_values = values;
-  init_impl(indices, m_values, weight);
+DirichletData_Vector::DirichletData_Vector(const IceModelVec2Int *indices,
+                                           const IceModelVec2V *values,
+                                           double weight)
+  : m_values(values) {
+  init(indices, m_values, weight);
 }
 
 void DirichletData_Vector::update(const DOFMap &dofmap, Vector2* x_local) {
@@ -795,7 +779,7 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
 }
 
 void DirichletData_Vector::finish() {
-  finish_impl(m_values);
+  DirichletData::finish(m_values);
   m_values = NULL;
 }
 

@@ -621,8 +621,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   }
 
   // Start access to Dirichlet data if present.
-  DirichletData_Vector dirichlet_data;
-  dirichlet_data.init(m_bc_mask, m_bc_values, m_dirichletScale);
+  DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
@@ -746,9 +745,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
     // Prescribe homogeneous Dirichlet B.C. at ice-free nodes. This uses the fact that m_node_type
     // can be used as a "Dirichlet B.C. mask", i.e. ice-free nodes (and only ice-free nodes) are
     // marked with ones.
-    DirichletData_Vector dirichlet_ice_free;
-
-    dirichlet_ice_free.init(&m_node_type, NULL, m_dirichletScale);
+    DirichletData_Vector dirichlet_ice_free(&m_node_type, NULL, m_dirichletScale);
     dirichlet_ice_free.fix_residual_homogeneous(residual_global);
     dirichlet_ice_free.finish();
   }
@@ -824,8 +821,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   IceModelVec::AccessList list(m_node_type);
 
   // Start access to Dirichlet data if present.
-  fem::DirichletData_Vector dirichlet_data;
-  dirichlet_data.init(m_bc_mask, m_bc_values, m_dirichletScale);
+  fem::DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
@@ -982,9 +978,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
     // Prescribe homogeneous Dirichlet B.C. at ice-free nodes. This uses the fact that m_node_type
     // can be used as a "Dirichlet B.C. mask", i.e. ice-free nodes (and only ice-free nodes) are
     // marked with ones.
-    fem::DirichletData_Vector dirichlet_ice_free;
-
-    dirichlet_ice_free.init(&m_node_type, NULL, m_dirichletScale);
+    fem::DirichletData_Vector dirichlet_ice_free(&m_node_type, NULL, m_dirichletScale);
     dirichlet_ice_free.fix_jacobian(Jac);
     dirichlet_ice_free.finish();
   }

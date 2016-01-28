@@ -43,8 +43,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
 
-  fem::DirichletData_Scalar dirichletBC;
-  dirichletBC.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
   MaskQuery iceQuery(m_ice_mask);
@@ -106,8 +105,7 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
 
-  fem::DirichletData_Scalar dirichletBC;
-  dirichletBC.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
   MaskQuery iceQuery(m_ice_mask);
@@ -178,8 +176,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
 
-  fem::DirichletData_Scalar dirichletBC;
-  dirichletBC.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
   MaskQuery iceQuery(m_ice_mask);
@@ -242,8 +239,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
 
-  fem::DirichletData_Scalar zeroLocs;
-  zeroLocs.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar zeroLocs(m_dirichletIndices, NULL);
 
   IceModelVec::AccessList list;
   list.add(m_ice_mask);

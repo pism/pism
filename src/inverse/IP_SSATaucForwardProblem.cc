@@ -289,11 +289,9 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // An Nq by Nk array of test function values.
   const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
-  fem::DirichletData_Vector dirichletBC;
-  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                   m_dirichletWeight);
-  fem::DirichletData_Scalar fixedZeta;
-  fixedZeta.init(m_fixed_tauc_locations, NULL);
+  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
+                                        m_dirichletWeight);
+  fem::DirichletData_Scalar fixedZeta(m_fixed_tauc_locations, NULL);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
@@ -439,14 +437,13 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   // An Nq by Nk array of test function values.
   const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
-  fem::DirichletData_Vector  dirichletBC;
   // Aliases to help with notation consistency.
-  const IceModelVec2Int      *m_dirichletLocations = m_bc_mask;
-  const IceModelVec2V        *m_dirichletValues    = m_bc_values;
-  double                m_dirichletWeight    = m_dirichletScale;
+  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
+  double                 m_dirichletWeight    = m_dirichletScale;
 
-  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                   m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
+                                        m_dirichletWeight);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
@@ -525,8 +522,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   }
 
   if (m_fixed_tauc_locations) {
-    fem::DirichletData_Scalar fixedTauc;
-    fixedTauc.init(m_fixed_tauc_locations, NULL);
+    fem::DirichletData_Scalar fixedTauc(m_fixed_tauc_locations, NULL);
     fixedTauc.fix_residual_homogeneous(dzeta_a);
     fixedTauc.finish();
   }
@@ -620,8 +616,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
 
   m_du_global.copy_from(du);
   Vector2 **du_a = m_du_global.get_array();
-  fem::DirichletData_Vector dirichletBC;
-  dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
 
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);

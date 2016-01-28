@@ -458,15 +458,13 @@ class DirichletData {
 public:
   DirichletData();
   ~DirichletData();
-  void init(const IceModelVec2Int *indices, double weight = 1.0);
   void constrain(DOFMap &dofmap);
   operator bool() {
     return m_indices != NULL;
   }
-  void finish();
 protected:
-  void init_impl(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
-  void finish_impl(const IceModelVec *values);
+  void init(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
+  void finish(const IceModelVec *values);
 
   const IceModelVec2Int *m_indices;
   double m_indices_e[ShapeQ1::Nk];
@@ -475,8 +473,7 @@ protected:
 
 class DirichletData_Scalar : public DirichletData {
 public:
-  DirichletData_Scalar();
-  void init(const IceModelVec2Int *indices, const IceModelVec2S *values, double weight = 1.0);
+  DirichletData_Scalar(const IceModelVec2Int *indices, const IceModelVec2S *values, double weight = 1.0);
   void update(const DOFMap &dofmap, double* x_e);
   void update_homogeneous(const DOFMap &dofmap, double* x_e);
   void fix_residual(double const *const *const x_global, double **r_global);
@@ -489,8 +486,7 @@ protected:
 
 class DirichletData_Vector : public DirichletData {
 public:
-  DirichletData_Vector();
-  void init(const IceModelVec2Int *indices, const IceModelVec2V *values, double weight);
+  DirichletData_Vector(const IceModelVec2Int *indices, const IceModelVec2V *values, double weight);
   void update(const DOFMap &dofmap, Vector2* x_e);
   void update_homogeneous(const DOFMap &dofmap, Vector2* x_e);
   void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
@@ -521,6 +517,7 @@ private:
 };
 
 inline double BoundaryQuadrature2::weighted_jacobian(unsigned int side) const {
+  assert(side < n_sides);
   return m_weighted_jacobian[side];
 }
 
