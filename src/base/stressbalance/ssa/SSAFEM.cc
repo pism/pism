@@ -459,8 +459,11 @@ void SSAFEM::cache_residual_cfbc() {
     ocean_density    = m_config->get_double("sea_water_density"),
     standard_gravity = m_config->get_double("standard_gravity");
 
+  // Reset the boundary integral so that all values are overwritten.
+  m_boundary_integral.set(0.0);
+
   if (not use_cfbc) {
-    m_boundary_integral.set(0.0);
+    // If CFBC is not used then we're done.
     return;
   }
 
