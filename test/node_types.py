@@ -52,8 +52,11 @@ def spy_vec(vec, value):
 
     array = v0.get()[:].reshape(shape, order="f")
 
+    print vec.get_name()
+    print array
+
     plt.title(vec.get_name())
-    plt.spy(array == value)
+    plt.imshow(array, interpolation="nearest")
 
 def init(H, vec):
 
