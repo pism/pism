@@ -509,7 +509,7 @@ void SSAFEM::cache_residual_cfbc() {
         m_dofmap.extractLocalDOFs(*m_thickness, H_nodal);
 
         double b_nodal[Nk];
-        m_dofmap.extractLocalDOFs(*m_bed, H_nodal);
+        m_dofmap.extractLocalDOFs(*m_bed, b_nodal);
 
         // nodes corresponding to a given element "side"
         const int nodes[n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
