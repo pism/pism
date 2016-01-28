@@ -120,6 +120,8 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
     loop.failed();
   }
   loop.check();
+
+  result.update_ghosts();
 }
 
 } // end of namespace pism
