@@ -18,6 +18,7 @@
 
 // Utility functions used by the SSAFEM code.
 #include <cassert>
+#include <cstring>
 
 #include "FETools.hh"
 #include "base/util/IceGrid.hh"
@@ -822,16 +823,18 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
     {{-1.0,   -C}, {-1.0,    C}}  // West
   };
 
+  memset(m_germs, 0, n_sides*Nq*ShapeQ1::Nk*sizeof(Germ<double>));
+
   for (unsigned int side = 0; side < n_sides; ++side) {
     for (unsigned int q = 0; q < Nq; ++q) {
       const double xi = pts[side][q][0];
       const double eta = pts[side][q][1];
       for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
-        m_germs[side][k][q] = ShapeQ1::eval(k, xi, eta);
+        m_germs[side][q][k] = ShapeQ1::eval(k, xi, eta);
         // convert from derivatives with respect to xi and eta to derivatives with respect to x and
         // y
-        m_germs[side][k][q].dx /= jacobian_x;
-        m_germs[side][k][q].dy /= jacobian_y;
+        m_germs[side][q][k].dx /= jacobian_x;
+        m_germs[side][q][k].dy /= jacobian_y;
       }
     }
   }
