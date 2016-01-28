@@ -592,18 +592,30 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   const unsigned int Nk = ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
-  // Zero out the portion of the function we are responsible for computing.
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    residual_global[j][i].u = 0.0;
-    residual_global[j][i].v = 0.0;
-  }
-
   IceModelVec::AccessList list(m_node_type);
 
   if (use_cfbc) {
     list.add(m_boundary_integral);
+  }
+
+  if (use_cfbc) {
+    // Set the boundary contribution of the residual. This is computed at the nodes, so we don't
+    // want to set it using DOFMap::addLocalResidualBlock() because that would lead to
+    // double-counting.
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      residual_global[j][i].u = m_boundary_integral(i, j);
+      residual_global[j][i].v = m_boundary_integral(i, j);
+    }
+  } else {
+    // Zero out the portion of the function we are responsible for computing.
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      residual_global[j][i].u = 0.0;
+      residual_global[j][i].v = 0.0;
+    }
   }
 
   // Start access to Dirichlet data if present.
@@ -710,17 +722,6 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                          - psi.val * (tau_b.v + tau_d.v));
             } // k
           } // q
-
-          if (use_cfbc) {
-            // add the boundary contribution
-            double boundary_integral[Nk];
-            m_dofmap.extractLocalDOFs(m_boundary_integral, boundary_integral);
-
-            for (unsigned int k = 0; k < Nk; ++k) {
-              residual[k].u += boundary_integral[k];
-              residual[k].v += boundary_integral[k];
-            }
-          }
 
           m_dofmap.addLocalResidualBlock(residual, residual_global);
         } else {
