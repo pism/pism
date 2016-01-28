@@ -497,11 +497,11 @@ void SSAFEM::cache_residual_cfbc() {
                                        node_type[3] < NODE_EXTERIOR);
 
         // residual contributions at element nodes
-        double I[Nk] = {0.0, 0.0, 0.0, 0.0};
+        std::vector<Vector2> I(Nk);
 
         if (not interior_element) {
           // not an interior element: the contribution is zero
-          m_dofmap.addLocalResidualBlock(I, m_boundary_integral);
+          m_dofmap.addLocalResidualBlock(&I[0], m_boundary_integral);
           continue;
         }
 
@@ -558,13 +558,18 @@ void SSAFEM::cache_residual_cfbc() {
             // this integral contributes to the residual at 2 nodes (the ones incident to the current
             // side). Note the minus sign: this is so that we can *add* the boundary contribution in
             // the residual computation.
-            I[n0] += JxW * (- psi[0] * dP);
-            I[n1] += JxW * (- psi[1] * dP);
+            if (side == 0 or side == 2) {
+              I[n0].v += JxW * (- psi[0] * dP);
+              I[n1].v += JxW * (- psi[1] * dP);
+            } else {
+              I[n0].u += JxW * (- psi[0] * dP);
+              I[n1].u += JxW * (- psi[1] * dP);
+            }
           } // q-loop
 
         } // loop over element sides
 
-        m_dofmap.addLocalResidualBlock(I, m_boundary_integral);
+        m_dofmap.addLocalResidualBlock(&I[0], m_boundary_integral);
 
       } // i-loop
     } // j-loop
@@ -594,19 +599,16 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
   IceModelVec::AccessList list(m_node_type);
 
-  if (use_cfbc) {
-    list.add(m_boundary_integral);
-  }
 
   if (use_cfbc) {
     // Set the boundary contribution of the residual. This is computed at the nodes, so we don't
     // want to set it using DOFMap::addLocalResidualBlock() because that would lead to
     // double-counting.
+    list.add(m_boundary_integral);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      residual_global[j][i].u = m_boundary_integral(i, j);
-      residual_global[j][i].v = m_boundary_integral(i, j);
+      residual_global[j][i] = m_boundary_integral(i, j);
     }
   } else {
     // Zero out the portion of the function we are responsible for computing.

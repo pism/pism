@@ -96,7 +96,7 @@ protected:
   //! Storage for node types (interior, boundary, exterior).
   IceModelVec2Int m_node_type;
   //! Boundary integral (CFBC contribution to the residual).
-  IceModelVec2S m_boundary_integral;
+  IceModelVec2V m_boundary_integral;
 
   double m_dirichletScale;
   double m_beta_ice_free_bedrock;
