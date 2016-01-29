@@ -1739,7 +1739,8 @@ PetscErrorCode SSAFD::write_system_matlab_c(const petsc::Viewer &viewer,
   PetscErrorCode ierr;
 
   ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
+  ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
+
   ierr = PetscViewerFileSetName(viewer, file_name.c_str()); CHKERRQ(ierr);
 
   // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
@@ -1783,6 +1784,8 @@ PetscErrorCode SSAFD::write_system_matlab_c(const petsc::Viewer &viewer,
   ierr = PetscViewerASCIIPrintf(viewer, "[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer, "echo on\n"); CHKERRQ(ierr);
+
+  ierr = PetscViewerPopFormat(viewer); CHKERRQ(ierr);
 
   return 0;
 }
