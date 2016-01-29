@@ -558,15 +558,29 @@ void SSAFEM::cache_residual_cfbc() {
                                                         ice_density, ocean_density,
                                                         standard_gravity);
 
-            // this integral contributes to the residual at 2 nodes (the ones incident to the current
-            // side). Note the minus sign: this is so that we can *add* the boundary contribution in
-            // the residual computation.
-            if (side == 0 or side == 2) {
-              I[n0].v += JxW * (- psi[0] * dP);
-              I[n1].v += JxW * (- psi[1] * dP);
-            } else {
+            // This integral contributes to the residual at 2 nodes (the ones incident to the
+            // current side). This is is written in a way that allows *adding* (... += ...) the
+            // boundary contribution in the residual computation. Note also that we need to worry
+            // about the direction of the normal to the lateral boundary.
+            switch (side) {
+            case 0:             // south
+              I[n0].v += - JxW * (- psi[0] * dP);
+              I[n1].v += - JxW * (- psi[1] * dP);
+              break;
+            case 1:             // east
               I[n0].u += JxW * (- psi[0] * dP);
               I[n1].u += JxW * (- psi[1] * dP);
+              break;
+            case 2:             // north
+              I[n0].v += JxW * (- psi[0] * dP);
+              I[n1].v += JxW * (- psi[1] * dP);
+              break;
+            case 3:             // west
+              I[n0].u += - JxW * (- psi[0] * dP);
+              I[n1].u += - JxW * (- psi[1] * dP);
+              break;
+            default:
+              throw RuntimeError::formatted("invalid side number: %d", side);
             }
           } // q-loop
 
