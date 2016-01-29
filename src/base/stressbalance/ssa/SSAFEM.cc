@@ -1041,8 +1041,8 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
   ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);
   PISM_CHK(ierr, "PetscViewerSetType");
 
-  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
-  PISM_CHK(ierr, "PetscViewerSetFormat");
+  ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
+  PISM_CHK(ierr, "PetscViewerPushFormat");
 
   ierr = PetscViewerFileSetName(viewer, file_name);
   PISM_CHK(ierr, "PetscViewerFileSetName");
@@ -1052,6 +1052,9 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
 
   ierr = MatView(Jac, viewer);
   PISM_CHK(ierr, "MatView");
+
+  ierr = PetscViewerPopFormat(viewer);
+  PISM_CHK(ierr, "PetscViewerPopFormat");
 }
 
 //!
