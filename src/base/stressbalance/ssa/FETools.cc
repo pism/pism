@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 // Utility functions used by the SSAFEM code.
 #include <cassert>
+#include <cstring>
 
 #include "FETools.hh"
 #include "base/util/IceGrid.hh"
@@ -31,8 +32,8 @@ namespace pism {
 //! FEM (Finite Element Method) utilities
 namespace fem {
 
-const ShapeQ1::ShapeFunctionSpec ShapeQ1::shapeFunction[ShapeQ1::Nk] =
-  {ShapeQ1::shape0, ShapeQ1::shape1, ShapeQ1::shape2, ShapeQ1::shape3};
+const double ShapeQ1::m_xi[]  = {-1.0,  1.0,  1.0, -1.0};
+const double ShapeQ1::m_eta[] = {-1.0, -1.0,  1.0,  1.0};
 
 ElementMap::ElementMap(const IceGrid &g) {
   // Start by assuming ghost elements exist in all directions.
@@ -146,6 +147,14 @@ void DOFMap::extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) co
   extractLocalDOFs(m_i, m_j, x_global, x_local);
 }
 
+void DOFMap::extractLocalDOFs(const IceModelVec2Int &x_global, int *x_local) const
+{
+  x_local[0] = x_global.as_int(m_i, m_j);
+  x_local[1] = x_global.as_int(m_i + 1, m_j);
+  x_local[2] = x_global.as_int(m_i + 1, m_j + 1);
+  x_local[3] = x_global.as_int(m_i, m_j + 1);
+}
+
 void DOFMap::extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) const
 {
   extractLocalDOFs(m_i, m_j, x_global, x_local);
@@ -164,9 +173,10 @@ void DOFMap::localToGlobal(int k, int *i, int *j) const {
 }
 
 void DOFMap::reset(int i, int j) {
-  m_i = i; m_j = j;
+  m_i = i;
+  m_j = j;
 
-  for (unsigned int k = 0; k < Nk; ++k) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; ++k) {
     m_col[k].i = i + kIOffset[k];
     m_col[k].j = j + kJOffset[k];
     m_col[k].k = 0;
@@ -183,7 +193,7 @@ void DOFMap::reset(int i, int j) {
 void DOFMap::reset(int i, int j, const IceGrid &grid) {
   reset(i, j);
   // We do not ever sum into rows that are not owned by the local rank.
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     int pism_i = m_row[k].i, pism_j = m_row[k].j;
     if (pism_i < grid.xs() || grid.xs() + grid.xm() - 1 < pism_i ||
         pism_j < grid.ys() || grid.ys() + grid.ym() - 1 < pism_j) {
@@ -214,8 +224,9 @@ void DOFMap::markColInvalid(int k) {
   vector `yg`. */
 /*! The element-local residual should be an array of Nk values.*/
 void DOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
+      // skip rows marked as "invalid"
       continue;
     }
     yg[m_row[k].j][m_row[k].i].u += y[k].u;
@@ -224,8 +235,9 @@ void DOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
 }
 
 void DOFMap::addLocalResidualBlock(const double *y, double **yg) {
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
+      // skip rows marked as "invalid"
       continue;
     }
     yg[m_row[k].j][m_row[k].i] += y[k];
@@ -233,8 +245,9 @@ void DOFMap::addLocalResidualBlock(const double *y, double **yg) {
 }
 
 void DOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
+      // skip rows marked as "invalid"
       continue;
     }
     y_global(m_row[k].i, m_row[k].j).u += y[k].u;
@@ -243,8 +256,9 @@ void DOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
 }
 
 void DOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
-  for (unsigned int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
+      // skip rows marked as "invalid"
       continue;
     }
     y_global(m_row[k].i, m_row[k].j) += y[k];
@@ -262,40 +276,41 @@ void DOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
  *  should be.)
  */
 void DOFMap::addLocalJacobianBlock(const double *K, Mat J) {
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row,
-                                                   Nk, m_col, K, ADD_VALUES);
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
+                                                   fem::ShapeQ1::Nk, m_row,
+                                                   fem::ShapeQ1::Nk, m_col,
+                                                   K, ADD_VALUES);
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
 const int DOFMap::kIOffset[4] = {0, 1, 1, 0};
 const int DOFMap::kJOffset[4] = {0, 0, 1, 1};
 
-Quadrature_Scalar::Quadrature_Scalar(const IceGrid &grid, double L)
-  : Quadrature(grid, L) {
-  PetscErrorCode ierr = PetscMemzero(m_tmp, Nk*sizeof(double));
+Quadrature_Scalar::Quadrature_Scalar(double dx, double dy, double L)
+  : Quadrature2x2(dx, dy, L) {
+  PetscErrorCode ierr = PetscMemzero(m_tmp, ShapeQ1::Nk*sizeof(double));
   PISM_CHK(ierr, "PetscMemzero");
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
-const double* Quadrature::getWeightedJacobian() {
+const double* Quadrature2x2::weighted_jacobian() {
   return m_JxW;
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
-Quadrature::Quadrature(const IceGrid &grid, double L) {
+Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
   // Since we use uniform cartesian coordinates, the Jacobian is
   // constant and diagonal on every element.
   //
   // Note that the reference element is @f$ [-1,1]^2 @f$ hence the
   // extra factor of 1/2.
-  double jacobian_x = 0.5*grid.dx() / L;
-  double jacobian_y = 0.5*grid.dy() / L;
+  double jacobian_x = 0.5*dx / L;
+  double jacobian_y = 0.5*dy / L;
   m_jacobianDet = jacobian_x*jacobian_y;
 
-  ShapeQ1 shape;
   for (unsigned int q = 0; q < Nq; q++) {
-    for (unsigned int k = 0; k < Nk; k++) {
-      shape.eval(k, quadPoints[q][0], quadPoints[q][1], &m_germs[q][k]);
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+      m_germs[q][k] = ShapeQ1::eval(k, quadPoints[q][0], quadPoints[q][1]);
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;
     }
@@ -306,39 +321,39 @@ Quadrature::Quadrature(const IceGrid &grid, double L) {
   }
 }
 
-Quadrature_Vector::Quadrature_Vector(const IceGrid &grid, double L)
-  : Quadrature(grid, L) {
-  PetscErrorCode ierr = PetscMemzero(m_tmp, Nk*sizeof(Vector2));
+Quadrature_Vector::Quadrature_Vector(double dx, double dy, double L)
+  : Quadrature2x2(dx, dy, L) {
+  PetscErrorCode ierr = PetscMemzero(m_tmp, ShapeQ1::Nk*sizeof(Vector2));
   PISM_CHK(ierr, "PetscMemzero");
 }
 
 //! Return the values at all quadrature points of all shape functions.
-//* The return value is an Nq by Nk array of FunctionGerms. */
-const Quadrature::FunctionGermArray* Quadrature::testFunctionValues()
+//* The return value is an Nq by Nk array of Germ<double>s. */
+const Quadrature2x2::GermArray* Quadrature2x2::testFunctionValues()
 {
   return m_germs;
 }
 
 //! Return the values of all shape functions at quadrature point `q`
-//* The return value is an array of Nk FunctionGerms. */
-const FunctionGerm *Quadrature::testFunctionValues(int q) {
+//* The return value is an array of Nk Germ<double>s. */
+const Germ<double> *Quadrature2x2::testFunctionValues(int q) {
   return m_germs[q];
 }
 
 //! Return the values at quadrature point `q` of shape function `k`.
-const FunctionGerm *Quadrature::testFunctionValues(int q, int k) {
+const Germ<double> *Quadrature2x2::testFunctionValues(int q, int k) {
   return m_germs[q] + k;
 }
 
 
 /*! @brief Compute the values at the quadrature ponits of a scalar-valued
   finite-element function with element-local degrees of freedom `x_local`.*/
-/*! There should be room for Quadrature::Nq values in the output vector `vals`. */
+/*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
 void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals) {
   for (unsigned int q = 0; q < Nq; q++) {
-    const FunctionGerm *test = m_germs[q];
+    const Germ<double> *test = m_germs[q];
     vals[q] = 0;
-    for (unsigned int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q] += test[k].val * x_local[k];
     }
   }
@@ -347,13 +362,16 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double
 /*! @brief Compute the values and first derivatives at the quadrature
   points of a scalar-valued finite-element function with element-local
   degrees of freedom `x_local`.*/
-/*! There should be room for Quadrature::Nq values in the output vectors `vals`, `dx`,
+/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`,
   and `dy`. */
-void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals, double *dx, double *dy) {
+void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local,
+                                                   double *vals, double *dx, double *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
-    const FunctionGerm *test = m_germs[q];
-    vals[q] = 0; dx[q] = 0; dy[q] = 0;
-    for (unsigned int k = 0; k < Nk; k++) {
+    const Germ<double> *test = m_germs[q];
+    vals[q] = 0;
+    dx[q] = 0;
+    dy[q] = 0;
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q] += test[k].val * x_local[k];
       dx[q]   += test[k].dx * x_local[k];
       dy[q]   += test[k].dy * x_local[k];
@@ -363,7 +381,7 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double
 
 /*! @brief Compute the values at the quadrature points on element (`i`,`j`)
   of a scalar-valued finite-element function with global degrees of freedom `x`.*/
-/*! There should be room for Quadrature::Nq values in the output vector `vals`. */
+/*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
 void Quadrature_Scalar::computeTrialFunctionValues(int i, int j, const DOFMap &dof,
                                                    double const*const*x_global, double *vals) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
@@ -380,7 +398,7 @@ void Quadrature_Scalar::computeTrialFunctionValues(int i, int j, const DOFMap &d
 /*! @brief Compute the values and first derivatives at the quadrature
   points on element (`i`,`j`) of a scalar-valued finite-element function
   with global degrees of freedom `x`.*/
-/*! There should be room for Quadrature::Nq values in the output
+/*! There should be room for Quadrature2x2::Nq values in the output
   vectors `vals`, `dx`, and `dy`. */
 void Quadrature_Scalar::computeTrialFunctionValues(int i, int j,
                                                    const DOFMap &dof, double const*const*x_global,
@@ -399,13 +417,13 @@ void Quadrature_Scalar::computeTrialFunctionValues(int i, int j,
 
 /*! @brief Compute the values at the quadrature points of a vector-valued
   finite-element function with element-local degrees of freedom `x_local`.*/
-/*! There should be room for Quadrature::Nq values in the output vector `vals`. */
+/*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
 void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *result) {
   for (unsigned int q = 0; q < Nq; q++) {
     result[q].u = 0;
     result[q].v = 0;
-    const FunctionGerm *test = m_germs[q];
-    for (unsigned int k = 0; k < Nk; k++) {
+    const Germ<double> *test = m_germs[q];
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       result[q].u += test[k].val * x_local[k].u;
       result[q].v += test[k].val * x_local[k].v;
     }
@@ -416,7 +434,7 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
  *         points of a vector-valued finite-element function with
  *         element-local degrees of freedom `x_local`.
  *
- * There should be room for Quadrature::Nq values in the output
+ * There should be room for Quadrature2x2::Nq values in the output
  * vectors `vals` and `Dv`. Each entry of `Dv` is an array of three
  * numbers:
  * @f[ \left[
@@ -425,11 +443,14 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
  */
 void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *vals, double (*Dv)[3]) {
   for (unsigned int q = 0; q < Nq; q++) {
-    vals[q].u = 0; vals[q].v = 0;
+    vals[q].u = 0;
+    vals[q].v = 0;
     double *Dvq = Dv[q];
-    Dvq[0] = 0; Dvq[1] = 0; Dvq[2] = 0;
-    const FunctionGerm *test = m_germs[q];
-    for (unsigned int k = 0; k < Nk; k++) {
+    Dvq[0] = 0;
+    Dvq[1] = 0;
+    Dvq[2] = 0;
+    const Germ<double> *test = m_germs[q];
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
       vals[q].v += test[k].val * x_local[k].v;
       Dvq[0] += test[k].dx * x_local[k].u;
@@ -441,23 +462,26 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
 
 /*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
   finite-element function with element-local degrees of freedom `x_local`.*/
-/*! There should be room for Quadrature::Nq values in the output vectors `vals`, \ dx, and `dy`.
+/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.
   Each element of `dx` is the derivative of the vector-valued finite-element function in the x direction,
   and similarly for `dy`.
 */
 void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *vals, Vector2 *dx, Vector2 *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
-    vals[q].u = 0; vals[q].v = 0;
-    dx[q].u = 0; dx[q].v = 0;
-    dy[q].u = 0; dy[q].v = 0;
-    const FunctionGerm *test = m_germs[q];
-    for (unsigned int k = 0; k < Nk; k++) {
+    vals[q].u = 0;
+    vals[q].v = 0;
+    dx[q].u   = 0;
+    dx[q].v   = 0;
+    dy[q].u   = 0;
+    dy[q].v   = 0;
+    const Germ<double> *test = m_germs[q];
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
       vals[q].v += test[k].val * x_local[k].v;
-      dx[q].u += test[k].dx * x_local[k].u;
-      dx[q].v += test[k].dx * x_local[k].v;
-      dy[q].u += test[k].dy * x_local[k].u;
-      dy[q].v += test[k].dy * x_local[k].v;
+      dx[q].u   += test[k].dx * x_local[k].u;
+      dx[q].v   += test[k].dx * x_local[k].v;
+      dy[q].u   += test[k].dy * x_local[k].u;
+      dy[q].v   += test[k].dy * x_local[k].v;
     }
   }
 }
@@ -465,7 +489,7 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
 
 /*! @brief Compute the values at the quadrature points of a vector-valued
   finite-element function on element (`i`,`j`) with global degrees of freedom `x_global`.*/
-/*! There should be room for Quadrature::Nq values in the output vectors `vals`. */
+/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`. */
 void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const DOFMap &dof,
                                                    Vector2 const*const*x_global, Vector2 *vals) {
   dof.extractLocalDOFs(i, j, x_global, m_tmp);
@@ -481,7 +505,7 @@ void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const DOFMap &d
 
 /*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
   finite-element function on element (`i`,`j`) with global degrees of freedom `x_global`.*/
-/*! There should be room for Quadrature::Nq values in the output vectors `vals` and `Dv`.
+/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals` and `Dv`.
   Each entry of `Dv` is an array of three numbers:
   @f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]@f].
 */
@@ -500,18 +524,18 @@ void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const DOFMap &d
 }
 
 //! The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
-const double Quadrature::quadPoints[Quadrature::Nq][2] =
+const double Quadrature2x2::quadPoints[Quadrature2x2::Nq][2] =
   {{-0.57735026918962573, -0.57735026918962573},
    { 0.57735026918962573, -0.57735026918962573},
    { 0.57735026918962573,  0.57735026918962573},
    {-0.57735026918962573,  0.57735026918962573}};
 
 //! The weights w_i for gaussian quadrature on the reference element with these quadrature points
-const double Quadrature::quadWeights[Quadrature::Nq]  = {1.0, 1.0, 1.0, 1.0};
+const double Quadrature2x2::quadWeights[Quadrature2x2::Nq]  = {1.0, 1.0, 1.0, 1.0};
 
 DirichletData::DirichletData()
   : m_indices(NULL), m_weight(1.0) {
-  for (unsigned int k = 0; k < Quadrature::Nk; ++k) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
     m_indices_e[k] = 0;
   }
 }
@@ -524,17 +548,9 @@ DirichletData::~DirichletData() {
   }
 }
 
-void DirichletData::init(const IceModelVec2Int *indices, double weight) {
-  init_impl(indices, NULL, weight);
-}
-
-void DirichletData::finish() {
-  finish_impl(NULL);
-}
-
-void DirichletData::init_impl(const IceModelVec2Int *indices,
-                              const IceModelVec *values,
-                              double weight) {
+void DirichletData::init(const IceModelVec2Int *indices,
+                         const IceModelVec *values,
+                         double weight) {
   m_weight  = weight;
 
   if (indices != NULL) {
@@ -547,7 +563,7 @@ void DirichletData::init_impl(const IceModelVec2Int *indices,
   }
 }
 
-void DirichletData::finish_impl(const IceModelVec *values) {
+void DirichletData::finish(const IceModelVec *values) {
   if (m_indices != NULL) {
     m_indices->end_access();
     m_indices = NULL;
@@ -558,9 +574,10 @@ void DirichletData::finish_impl(const IceModelVec *values) {
   }
 }
 
+//! @brief Constrain `dofmap`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
 void DirichletData::constrain(DOFMap &dofmap) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
       dofmap.markRowInvalid(k);
@@ -571,40 +588,36 @@ void DirichletData::constrain(DOFMap &dofmap) {
 
 // Scalar version
 
-DirichletData_Scalar::DirichletData_Scalar()
-  : m_values(NULL) {
+DirichletData_Scalar::DirichletData_Scalar(const IceModelVec2Int *indices,
+                                           const IceModelVec2S *values,
+                                           double weight)
+  : m_values(values) {
+  init(indices, m_values, weight);
 }
 
-void DirichletData_Scalar::init(const IceModelVec2Int *indices,
-                                const IceModelVec2S *values,
-                                double weight) {
-  m_values = values;
-  init_impl(indices, m_values, weight);
-}
-
-void DirichletData_Scalar::update(const DOFMap &dofmap, double* x_local) {
+void DirichletData_Scalar::update(const DOFMap &dofmap, double* x_nodal) {
   assert(m_values != NULL);
 
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
       dofmap.localToGlobal(k, &i, &j);
-      x_local[k] = (*m_values)(i,j);
+      x_nodal[k] = (*m_values)(i,j);
     }
   }
 }
 
 void DirichletData_Scalar::update_homogeneous(const DOFMap &dofmap, double* x_local) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_local[k] = 0.;
     }
   }
 }
 
-void DirichletData_Scalar::fix_residual(const double **x_global, double **r_global) {
+void DirichletData_Scalar::fix_residual(double const *const *const x_global, double **r_global) {
   assert(m_values != NULL);
 
   const IceGrid &grid = *m_indices->get_grid();
@@ -651,7 +664,8 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
 
       if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
-        row.j = j; row.i = i;
+        row.j = j;
+        row.i = i;
         PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
                                                          ADD_VALUES);
         PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
@@ -664,28 +678,24 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
 }
 
 void DirichletData_Scalar::finish() {
-  finish_impl(m_values);
+  DirichletData::finish(m_values);
   m_values = NULL;
 }
 
 // Vector version
 
-DirichletData_Vector::DirichletData_Vector()
-  : m_values(NULL) {
-}
-
-void DirichletData_Vector::init(const IceModelVec2Int *indices,
-                                const IceModelVec2V *values,
-                                double weight) {
-  m_values = values;
-  init_impl(indices, m_values, weight);
+DirichletData_Vector::DirichletData_Vector(const IceModelVec2Int *indices,
+                                           const IceModelVec2V *values,
+                                           double weight)
+  : m_values(values) {
+  init(indices, m_values, weight);
 }
 
 void DirichletData_Vector::update(const DOFMap &dofmap, Vector2* x_local) {
   assert(m_values != NULL);
 
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
       dofmap.localToGlobal(k, &i, &j);
@@ -697,7 +707,7 @@ void DirichletData_Vector::update(const DOFMap &dofmap, Vector2* x_local) {
 
 void DirichletData_Vector::update_homogeneous(const DOFMap &dofmap, Vector2* x_local) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_local[k].u = 0.0;
       x_local[k].v = 0.0;
@@ -705,7 +715,7 @@ void DirichletData_Vector::update_homogeneous(const DOFMap &dofmap, Vector2* x_l
   }
 }
 
-void DirichletData_Vector::fix_residual(const Vector2 **x_global, Vector2 **r_global) {
+void DirichletData_Vector::fix_residual(Vector2 const *const *const x_global, Vector2 **r_global) {
   assert(m_values != NULL);
 
   const IceGrid &grid = *m_indices->get_grid();
@@ -755,7 +765,8 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
 
       if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
-        row.j = j; row.i = i;
+        row.j = j;
+        row.i = i;
         PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
                                                          ADD_VALUES);
         PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
@@ -768,8 +779,49 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
 }
 
 void DirichletData_Vector::finish() {
-  finish_impl(m_values);
+  DirichletData::finish(m_values);
   m_values = NULL;
+}
+
+BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
+
+  const double jacobian_x = 0.5*dx;
+  const double jacobian_y = 0.5*dy;
+
+  // Note that all quadrature weights are 1.0 (and so they are implicitly included below).
+  //
+  // bottom
+  m_weighted_jacobian[0] = jacobian_x;
+  // right
+  m_weighted_jacobian[1] = jacobian_y;
+  // top
+  m_weighted_jacobian[2] = jacobian_x;
+  // left
+  m_weighted_jacobian[3] = jacobian_y;
+
+  const double C = 1.0 / sqrt(3);
+  const double pts[n_sides][Nq][2] = {
+    {{  -C, -1.0}, {   C, -1.0}}, // South
+    {{ 1.0,   -C}, { 1.0,    C}}, // East
+    {{  -C,  1.0}, {   C,  1.0}}, // North
+    {{-1.0,   -C}, {-1.0,    C}}  // West
+  };
+
+  memset(m_germs, 0, n_sides*Nq*ShapeQ1::Nk*sizeof(Germ<double>));
+
+  for (unsigned int side = 0; side < n_sides; ++side) {
+    for (unsigned int q = 0; q < Nq; ++q) {
+      const double xi = pts[side][q][0];
+      const double eta = pts[side][q][1];
+      for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+        m_germs[side][q][k] = ShapeQ1::eval(k, xi, eta);
+        // convert from derivatives with respect to xi and eta to derivatives with respect to x and
+        // y
+        m_germs[side][q][k].dx /= jacobian_x;
+        m_germs[side][q][k].dy /= jacobian_y;
+      }
+    }
+  }
 }
 
 } // end of namespace fem

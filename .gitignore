@@ -1,5 +1,11 @@
 .gitignore
 build*/
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
 *.nc
 *~
 *.dat

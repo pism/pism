@@ -105,7 +105,9 @@ if(Pism_BUILD_EXTRA_EXECS)
   # with default settings.
   pism_test (Verification:PISMBedThermalUnit_test_K btu_regression.sh)
 
-  pism_test (Verification:test_V_SSAFD_CFBC ssa/ssa_test_cfbc.sh)
+  pism_test (Verification:test_V_SSAFD_CFBC ssa/ssa_test_cfbc_fd.sh)
+
+  pism_test (Verification:test_V_SSAFEM_CFBC ssa/ssa_test_cfbc_fem.sh)
 
   pism_test (Verification:test_I_SSAFD ssa/ssa_testi_fd.sh)
 

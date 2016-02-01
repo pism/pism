@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -44,15 +44,19 @@ public:
 
 protected:
   virtual void init_impl();
-  void cacheQuadPtValues();
+  void cache_inputs();
 
   //! Storage for SSA coefficients at a quadrature point.
   struct Coefficients {
-    double H,                     //!< ice thickness
-      tauc,                       //!< basal yield stress
-      b,                          //!< bed elevation
-      B;                          //!< ice hardness
+    //! ice thickness
+    double H;
+    //! basal yield stress
+    double tauc;
+    //! ice hardness
+    double B;
+    //! prescribed gravitational driving stress
     Vector2 driving_stress;
+    //! mask used to choose basal conditions
     int mask;
   };
 
@@ -61,9 +65,10 @@ protected:
                            double *nuH, double *dnuH,
                            double *beta, double *dbeta);
 
-  void compute_local_function(DMDALocalInfo *info, const Vector2 **xg, Vector2 **yg);
+  void compute_local_function(Vector2 const *const *const velocity,
+                              Vector2 **residual);
 
-  void compute_local_jacobian(DMDALocalInfo *info, const Vector2 **xg, Mat J);
+  void compute_local_jacobian(Vector2 const *const *const velocity, Mat J);
 
   virtual void solve();
 
@@ -87,9 +92,13 @@ protected:
 
   petsc::SNES m_snes;
   std::vector<Coefficients> m_coefficients;
+
+  //! Storage for node types (interior, boundary, exterior).
+  IceModelVec2Int m_node_type;
+  //! Boundary integral (CFBC contribution to the residual).
+  IceModelVec2V m_boundary_integral;
+
   double m_dirichletScale;
-  double m_ocean_rho;
-  double m_earth_grav;
   double m_beta_ice_free_bedrock;
   double m_epsilon_ssa;
 
@@ -99,22 +108,25 @@ protected:
   fem::DOFMap m_dofmap;
 
 private:
+  void cache_residual_cfbc();
   void monitor_jacobian(Mat Jac);
-  void monitor_function(const Vector2 **velocity_global,
-                        Vector2 **residual_global);
+  void monitor_function(Vector2 const *const *const velocity_global,
+                        Vector2 const *const *const residual_global);
 
   //! SNES callbacks.
   /*! These simply forward the call on to the SSAFEM member of the CallbackData */
+static PetscErrorCode function_callback(DMDALocalInfo *info,
+                                        Vector2 const *const *const velocity,
+                                        Vector2 **residual,
+                                        CallbackData *fe);
 #if PETSC_VERSION_LT(3,5,0)
-  static PetscErrorCode function_callback(DMDALocalInfo *, const Vector2 **,
-                                          Vector2 **, CallbackData *);
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const Vector2 **xg,
-                                          Mat A, Mat J,
-                                          MatStructure *str, CallbackData *fe);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
+                                          Vector2 const *const *const xg,
+                                          Mat A, Mat J, MatStructure *str,
+                                          CallbackData *fe);
 #else
-  static PetscErrorCode function_callback(DMDALocalInfo *, const Vector2 **,
-                                          Vector2 **, CallbackData *);
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const Vector2 **xg,
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
+                                          Vector2 const *const *const xg,
                                           Mat A, Mat J, CallbackData *fe);
 #endif
 

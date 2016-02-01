@@ -368,26 +368,9 @@ void SSAFD::assemble_rhs() {
             bMM = 0;
         }
 
-        const double H_ij2 = H_ij*H_ij,
-          b     = (*m_bed)(i,j),
-          rho_g = rho_ice * standard_gravity;
-
-        double ocean_pressure;
-        // this is not really the ocean_pressure, but the difference
-        // between ocean_pressure and isotrop.normal stresses
-        // (=pressure) from within the ice
-
-        if (ocean(M_ij)) {
-          // floating shelf
-          ocean_pressure = 0.5 * rho_g * (1.0 - (rho_ice / rho_ocean)) * H_ij2;
-        } else {
-          // grounded terminus
-          if (b >= sea_level or is_dry_simulation) {
-            ocean_pressure = 0.5 * rho_g * H_ij2;
-          } else {
-            ocean_pressure = 0.5 * rho_g * (H_ij2 - (rho_ocean / rho_ice) * pow(sea_level - b, 2.0));
-          }
-        }
+        double ocean_pressure = ocean_pressure_difference(ocean(M_ij), is_dry_simulation,
+                                                          H_ij, (*m_bed)(i,j), m_sea_level,
+                                                          rho_ice, rho_ocean, standard_gravity);
 
         if (m_melange_back_pressure != NULL) {
           double lambda = (*m_melange_back_pressure)(i, j);
@@ -745,7 +728,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       double beta = 0.0;
       if (include_basal_shear) {
         if (grounded_ice(M_ij)) {
-          beta = basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          beta = m_basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
         } else if (ice_free_land(M_ij)) {
           // apply drag even in this case, to help with margins; note ice free
           // areas already have a strength extension
@@ -754,7 +737,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         if (sub_gl) {
           // reduce the basal drag at grid cells that are partially grounded:
           if (icy(M_ij)) {
-            beta = (*m_gl_mask)(i,j) * basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
+            beta = (*m_gl_mask)(i,j) * m_basal_sliding_law->drag((*m_tauc)(i,j), vel(i,j).u, vel(i,j).v);
           }
         }
       }

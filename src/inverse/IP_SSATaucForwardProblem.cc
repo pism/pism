@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -36,8 +36,8 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g, Enthalpy
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
     m_element_index(*m_grid),
-    m_quadrature(*g, 1.0),
-    m_quadrature_vector(*g, 1.0),
+    m_quadrature(g->dx(), g->dy(), 1.0),
+    m_quadrature_vector(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
   this->construct();
 }
@@ -123,7 +123,8 @@ kept.
 */
 void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
-  using fem::Quadrature;
+  using fem::Quadrature2x2;
+  const unsigned int Nq = Quadrature2x2::Nq;
 
   IceModelVec2S &tauc = m_tauc_copy;
 
@@ -133,7 +134,7 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
   m_tauc_param.convertToDesignVariable(*m_zeta, tauc);
 
   // Cache tauc at the quadrature points in m_coefficients.
-  double tauc_q[Quadrature::Nq];
+  double tauc_q[Nq];
   IceModelVec::AccessList list(tauc);
 
   int
@@ -145,8 +146,8 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
     for (int i = xs; i < xs + xm; i++) {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
-      Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+      Coefficients *coefficients = &m_coefficients[ij*Nq];
+      for (unsigned int q = 0; q < Nq; q++) {
         coefficients[q].tauc = tauc_q[q];
       }
     }
@@ -173,8 +174,7 @@ void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V
     **u_a   = u.get_array(),
     **rhs_a = RHS.get_array();
 
-  DMDALocalInfo *info = NULL;
-  this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
+  this->compute_local_function(u_a, rhs_a);
 
   u.end_access();
   RHS.end_access();
@@ -186,10 +186,8 @@ the method is identical to the assemble_residual returning values as a StateVec 
 void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
 
   Vector2 **u_a = u.get_array();
-  DMDALocalInfo *info = NULL;
   petsc::DMDAVecArray rhs_a(m_da, RHS);
-  this->compute_local_function(info, const_cast<const Vector2 **>(u_a),
-                               (Vector2**)rhs_a.get());
+  this->compute_local_function(u_a, (Vector2**)rhs_a.get());
   u.end_access();
 }
 
@@ -205,10 +203,7 @@ void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac
 
   Vector2 **u_a = u.get_array();
 
-  DMDALocalInfo *info = NULL;
-  this->compute_local_jacobian(info,
-                               const_cast<const Vector2 **>(u_a),
-                               Jac);
+  this->compute_local_jacobian(u_a, Jac);
 
   u.end_access();
 }
@@ -249,7 +244,9 @@ to this method.
 void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                      IceModelVec2S &dzeta,
                                                      Vector2 **du_a) {
-  using fem::Quadrature;
+  using fem::Quadrature2x2;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
+  const unsigned int Nq = Quadrature2x2::Nq;
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -277,29 +274,27 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   const IceModelVec2V   *m_dirichletValues    = m_bc_values;
   double           m_dirichletWeight    = m_dirichletScale;
 
-  Vector2 u_e[Quadrature::Nk];
-  Vector2 u_q[Quadrature::Nq];
+  Vector2 u_e[Nk];
+  Vector2 u_q[Nq];
 
-  Vector2 du_e[Quadrature::Nk];
+  Vector2 du_e[Nk];
 
-  double dzeta_e[Quadrature::Nk];
+  double dzeta_e[Nk];
 
-  double zeta_e[Quadrature::Nk];
+  double zeta_e[Nk];
 
-  double dtauc_e[Quadrature::Nk];
-  double dtauc_q[Quadrature::Nq];
+  double dtauc_e[Nk];
+  double dtauc_q[Nq];
 
   // An Nq by Nk array of test function values.
-  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
-  fem::DirichletData_Vector dirichletBC;
-  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                   m_dirichletWeight);
-  fem::DirichletData_Scalar fixedZeta;
-  fixedZeta.init(m_fixed_tauc_locations, NULL);
+  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
+                                        m_dirichletWeight);
+  fem::DirichletData_Scalar fixedZeta(m_fixed_tauc_locations, NULL);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -310,7 +305,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
       for (int i = xs; i < xs + xm; i++) {
 
         // Zero out the element - local residual in prep for updating it.
-        for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+        for (unsigned int k = 0; k < Nk; k++) {
           du_e[k].u = 0;
           du_e[k].v = 0;
         }
@@ -338,24 +333,24 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
         // Compute the change in tau_c with respect to zeta at the quad points.
         m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
-        for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+        for (unsigned int k = 0; k < Nk; k++) {
           m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
           dtauc_e[k] *= dzeta_e[k];
         }
         m_quadrature.computeTrialFunctionValues(dtauc_e, dtauc_q);
 
-        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+        for (unsigned int q = 0; q < Nq; q++) {
           Vector2 u_qq = u_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
+          const Coefficients *coefficients = &m_coefficients[ij*Nq + q];
 
           // Determine "dbeta / dzeta" at the quadrature point
           double dbeta = 0;
           if (mask::grounded_ice(coefficients->mask)) {
-            dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
+            dbeta = m_basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
           }
 
-          for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+          for (unsigned int k = 0; k < Nk; k++) {
             du_e[k].u += JxW[q]*dbeta*u_qq.u*test[q][k].val;
             du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
           }
@@ -414,7 +409,9 @@ to this method.
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                double **dzeta_a) {
-  using fem::Quadrature;
+  using fem::Quadrature2x2;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
+  const unsigned int Nq = Quadrature2x2::Nq;
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -429,28 +426,27 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   }
   list.add(*du_local);
 
-  Vector2 u_e[Quadrature::Nk];
-  Vector2 u_q[Quadrature::Nq];
+  Vector2 u_e[Nk];
+  Vector2 u_q[Nq];
 
-  Vector2 du_e[Quadrature::Nk];
-  Vector2 du_q[Quadrature::Nq];
+  Vector2 du_e[Nk];
+  Vector2 du_q[Nq];
 
-  double dzeta_e[Quadrature::Nk];
+  double dzeta_e[Nk];
 
   // An Nq by Nk array of test function values.
-  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
-  fem::DirichletData_Vector  dirichletBC;
   // Aliases to help with notation consistency.
-  const IceModelVec2Int      *m_dirichletLocations = m_bc_mask;
-  const IceModelVec2V        *m_dirichletValues    = m_bc_values;
-  double                m_dirichletWeight    = m_dirichletScale;
+  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
+  double                 m_dirichletWeight    = m_dirichletScale;
 
-  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                   m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
+                                        m_dirichletWeight);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {
@@ -486,23 +482,23 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
         m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
 
         // Zero out the element-local residual in prep for updating it.
-        for (unsigned int k=0; k<Quadrature::Nk; k++) {
+        for (unsigned int k=0; k<Nk; k++) {
           dzeta_e[k] = 0;
         }
 
-        for (unsigned int q=0; q<Quadrature::Nq; q++) {
+        for (unsigned int q=0; q<Nq; q++) {
           Vector2 du_qq = du_q[q];
           Vector2 u_qq = u_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq+q];
+          const Coefficients *coefficients = &m_coefficients[ij*Nq+q];
 
           // Determine "dbeta/dtauc" at the quadrature point
           double dbeta_dtauc = 0;
           if (mask::grounded_ice(coefficients->mask)) {
-            dbeta_dtauc = basal_sliding_law->drag(1., u_qq.u, u_qq.v);
+            dbeta_dtauc = m_basal_sliding_law->drag(1., u_qq.u, u_qq.v);
           }
 
-          for (unsigned int k=0; k<Quadrature::Nk; k++) {
+          for (unsigned int k=0; k<Nk; k++) {
             dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
           }
         } // q
@@ -526,8 +522,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   }
 
   if (m_fixed_tauc_locations) {
-    fem::DirichletData_Scalar fixedTauc;
-    fixedTauc.init(m_fixed_tauc_locations, NULL);
+    fem::DirichletData_Scalar fixedTauc(m_fixed_tauc_locations, NULL);
     fixedTauc.fix_residual_homogeneous(dzeta_a);
     fixedTauc.finish();
   }
@@ -621,8 +616,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
 
   m_du_global.copy_from(du);
   Vector2 **du_a = m_du_global.get_array();
-  fem::DirichletData_Vector dirichletBC;
-  dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
 
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);

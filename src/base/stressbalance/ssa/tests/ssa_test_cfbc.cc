@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@ static char help[] =
 #include "base/stressbalance/ssa/SSAFD.hh"
 #include "base/stressbalance/ssa/SSAFD_diagnostics.hh"
 #include "base/stressbalance/ssa/SSATestCase.hh"
+#include "base/stressbalance/ssa/SSAFEM.hh"
 #include "base/util/Mask.hh"
 #include "base/util/Context.hh"
 #include "base/util/VariableMetadata.hh"
@@ -81,11 +82,9 @@ protected:
 void SSATestCaseCFBC::write_nuH(const std::string &filename) {
 
   SSAFD *ssafd = dynamic_cast<SSAFD*>(m_ssa);
-  if (ssafd == NULL) {
-    throw RuntimeError("ssa_test_cfbc error: have to use the SSAFD solver.");
+  if (ssafd != NULL) {
+    SSAFD_nuH(ssafd).compute()->write(filename);
   }
-
-  SSAFD_nuH(ssafd).compute()->write(filename);
 }
 
 void SSATestCaseCFBC::initializeGrid(int Mx, int My) {
@@ -196,9 +195,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
+    verbosityLevelFromOptions();
     Context::Ptr ctx = context_from_options(com, "ssa_test_cfbc");
-
-    setVerbosityLevel(5);
 
     bool
       usage_set = options::Bool("-usage", "print usage info"),
@@ -215,6 +213,10 @@ int main(int argc, char *argv[]) {
     // Parameters that can be overridden by command line options
     options::Integer Mx("-Mx", "Number of grid points in the X direction", 61);
     options::Integer My("-My", "Number of grid points in the Y direction", 61);
+
+    options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
+                            "fem,fd", "fd");
+
     options::String output_file("-o", "Set the output file name", "ssa_test_cfbc.nc");
 
     options::Integer my_verbosity_level("-verbose", "Verbosity level", 2);
@@ -222,7 +224,15 @@ int main(int argc, char *argv[]) {
       setVerbosityLevel(my_verbosity_level);
     }
 
-    SSAFactory ssafactory = SSAFDFactory;
+    // Determine the kind of solver to use.
+    SSAFactory ssafactory = NULL;
+    if (method == "fem") {
+      ssafactory = SSAFEMFactory;
+    } else if (method == "fd") {
+      ssafactory = SSAFDFactory;
+    } else {
+      /* can't happen */
+    }
 
     SSATestCaseCFBC testcase(ctx);
     testcase.init(Mx,My,ssafactory);
