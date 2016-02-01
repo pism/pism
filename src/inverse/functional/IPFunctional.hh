@@ -43,8 +43,8 @@ public:
   IPFunctional(IceGrid::ConstPtr grid)
     : m_grid(grid),
       m_element_index(*m_grid),
-      m_quadrature(*grid, 1.0),
-      m_quadrature_vector(*grid, 1.0)
+      m_quadrature(grid->dx(), grid->dy(), 1.0),
+      m_quadrature_vector(grid->dx(), grid->dy(), 1.0)
   {
   }
 

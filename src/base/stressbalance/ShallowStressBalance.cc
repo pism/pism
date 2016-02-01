@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -35,18 +35,18 @@ namespace stressbalance {
 using pism::mask::ice_free;
 
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : Component(g), basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
+  : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
 
   m_bc_values = NULL;
   m_bc_mask = NULL;
-  sea_level = 0;
+  m_sea_level = 0.0;
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
 
   if (m_config->get_boolean("do_pseudo_plastic_till") == true) {
-    basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
+    m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
   } else {
-    basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
+    m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
   }
 
   m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
@@ -71,7 +71,7 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g, EnthalpyConverte
 }
 
 ShallowStressBalance::~ShallowStressBalance() {
-  delete basal_sliding_law;
+  delete m_basal_sliding_law;
 }
 
 void ShallowStressBalance::init() {
@@ -95,7 +95,7 @@ EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() {
 }
 
 const IceBasalResistancePlasticLaw* ShallowStressBalance::sliding_law() {
-  return basal_sliding_law;
+  return m_basal_sliding_law;
 }
 
 
@@ -108,7 +108,7 @@ void ShallowStressBalance::set_boundary_conditions(const IceModelVec2Int &locati
 //! \brief Set the sea level used to check for floatation. (Units: meters,
 //! relative to the geoid.)
 void ShallowStressBalance::set_sea_level_elevation(double new_sea_level) {
-  sea_level = new_sea_level;
+  m_sea_level = new_sea_level;
 }
 
 //! \brief Get the thickness-advective 2D velocity.
@@ -195,7 +195,7 @@ void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V 
       result(i,j) = 0.0;
     } else {
       const double
-        C = basal_sliding_law->drag(tauc(i,j), V(i,j).u, V(i,j).v),
+        C = m_basal_sliding_law->drag(tauc(i,j), V(i,j).u, V(i,j).v),
         basal_stress_x = - C * V(i,j).u,
         basal_stress_y = - C * V(i,j).v;
       result(i,j) = - basal_stress_x * V(i,j).u - basal_stress_y * V(i,j).v;

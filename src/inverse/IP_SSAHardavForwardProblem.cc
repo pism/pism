@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g, Enth
     m_fixed_design_locations(NULL),
     m_design_param(tp),
     m_element_index(*m_grid),
-    m_quadrature(*m_grid, 1.0),
+    m_quadrature(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
   this->construct();
 }
@@ -104,7 +104,8 @@ kept.
 */
 void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
-  using fem::Quadrature;
+  using fem::Quadrature2x2;
+  const unsigned int Nq = Quadrature2x2::Nq;
 
   m_zeta = &new_zeta;
 
@@ -112,7 +113,7 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
   m_design_param.convertToDesignVariable(*m_zeta, m_hardav);
 
   // Cache hardav at the quadrature points in m_coefficients.
-  double hardav_q[Quadrature::Nq];
+  double hardav_q[Nq];
   IceModelVec::AccessList list(m_hardav);
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -121,8 +122,8 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
     for (int i = xs; i < xs + xm; i++) {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, m_hardav, hardav_q);
       const int ij = m_element_index.flatten(i, j);
-      Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq];
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+      Coefficients *coefficients = &m_coefficients[ij*Nq];
+      for (unsigned int q = 0; q < Nq; q++) {
         coefficients[q].B = hardav_q[q];
       }
     }
@@ -149,8 +150,7 @@ void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec
     **u_a   = u.get_array(),
     **rhs_a = RHS.get_array();
 
-  DMDALocalInfo *info = NULL;
-  this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
+  this->compute_local_function(u_a, rhs_a);
 
   u.end_access();
   RHS.end_access();
@@ -164,9 +164,7 @@ void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
   Vector2 **u_a = u.get_array();
 
   petsc::DMDAVecArray rhs_a(m_da, RHS);
-  DMDALocalInfo *info = NULL;
-  this->compute_local_function(info, const_cast<const Vector2 **>(u_a),
-                               (Vector2**)rhs_a.get());
+  this->compute_local_function(u_a, (Vector2**)rhs_a.get());
   u.end_access();
 }
 
@@ -180,10 +178,9 @@ to this method.
 */
 void IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
 
-  Vector2 **u_a = u.get_array();
+  Vector2 const *const *const u_a = u.get_array();
 
-  DMDALocalInfo *info = NULL;
-  this->compute_local_jacobian(info, const_cast<const Vector2 **>(u_a), Jac);
+  this->compute_local_jacobian(u_a, Jac);
 
   u.end_access();
 }
@@ -235,7 +232,9 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                        IceModelVec2S &dzeta,
                                                        Vector2 **du_a) {
-  using fem::Quadrature;
+  using fem::Quadrature2x2;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
+  const unsigned int Nq = Quadrature2x2::Nq;
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -263,30 +262,28 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   const IceModelVec2V   *m_dirichletValues    = m_bc_values;
   double           m_dirichletWeight    = m_dirichletScale;
 
-  Vector2 u_e[Quadrature::Nk];
-  Vector2 u_q[Quadrature::Nq];
-  double Du_q[Quadrature::Nq][3];
+  Vector2 u_e[Nk];
+  Vector2 u_q[Nq];
+  double Du_q[Nq][3];
 
-  Vector2 du_e[Quadrature::Nk];
+  Vector2 du_e[Nk];
 
-  double dzeta_e[Quadrature::Nk];
+  double dzeta_e[Nk];
 
-  double zeta_e[Quadrature::Nk];
+  double zeta_e[Nk];
 
-  double dB_e[Quadrature::Nk];
-  double dB_q[Quadrature::Nq];
+  double dB_e[Nk];
+  double dB_q[Nq];
 
   // An Nq by Nk array of test function values.
-  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
-  fem::DirichletData_Vector dirichletBC;
-  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                   m_dirichletWeight);
-  fem::DirichletData_Scalar fixedZeta;
-  fixedZeta.init(m_fixed_design_locations, NULL);
+  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
+                                        m_dirichletWeight);
+  fem::DirichletData_Scalar fixedZeta(m_fixed_design_locations, NULL);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all elements.
   int xs = m_element_index.xs,
@@ -300,7 +297,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
       for (int i =xs; i<xs+xm; i++) {
 
         // Zero out the element-local residual in prep for updating it.
-        for (unsigned int k=0; k<Quadrature::Nk; k++) {
+        for (unsigned int k=0; k<Nk; k++) {
           du_e[k].u = 0;
           du_e[k].v = 0;
         }
@@ -328,17 +325,17 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
         // Compute the change in hardav with respect to zeta at the quad points.
         m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
-        for (unsigned int k=0; k<Quadrature::Nk; k++) {
+        for (unsigned int k=0; k<Nk; k++) {
           m_design_param.toDesignVariable(zeta_e[k], NULL, dB_e + k);
           dB_e[k]*=dzeta_e[k];
         }
         m_quadrature.computeTrialFunctionValues(dB_e, dB_q);
 
-        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+        for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
           double *Duqq = Du_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
+          const Coefficients *coefficients = &m_coefficients[ij*Nq + q];
 
           double d_nuH = 0;
           if (coefficients->H >= strength_extension->get_min_thickness()) {
@@ -346,8 +343,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
             d_nuH *= (2*coefficients->H);
           }
 
-          for (unsigned int k = 0; k < Quadrature::Nk; k++) {
-            const fem::FunctionGerm &testqk = test[q][k];
+          for (unsigned int k = 0; k < Nk; k++) {
+            const fem::Germ<double> &testqk = test[q][k];
             du_e[k].u += JxW[q]*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
             du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
           }
@@ -416,7 +413,9 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                  IceModelVec2V &du,
                                                                  double **dzeta_a) {
-  using fem::Quadrature;
+  using fem::Quadrature2x2;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
+  const unsigned int Nq = Quadrature2x2::Nq;
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -431,30 +430,30 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   }
   list.add(*du_local);
 
-  Vector2 u_e[Quadrature::Nk];
-  Vector2 u_q[Quadrature::Nq];
-  double Du_q[Quadrature::Nq][3];
+  Vector2 u_e[Nk];
+  Vector2 u_q[Nq];
+  double Du_q[Nq][3];
 
-  Vector2 du_e[Quadrature::Nk];
-  Vector2 du_q[Quadrature::Nq];
-  Vector2 du_dx_q[Quadrature::Nq];
-  Vector2 du_dy_q[Quadrature::Nq];
+  Vector2 du_e[Nk];
+  Vector2 du_q[Nq];
+  Vector2 du_dx_q[Nq];
+  Vector2 du_dy_q[Nq];
 
-  double dzeta_e[Quadrature::Nk];
+  double dzeta_e[Nk];
 
   // An Nq by Nk array of test function values.
-  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
-  fem::DirichletData_Vector dirichletBC;
   // Aliases to help with notation consistency.
   const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
   const IceModelVec2V   *m_dirichletValues = m_bc_values;
   double        m_dirichletWeight = m_dirichletScale;
-  dirichletBC.init(m_dirichletLocations, m_dirichletValues,
-                   m_dirichletWeight);
+
+  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
+                                        m_dirichletWeight);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {
@@ -490,15 +489,15 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
         m_quadrature_vector.computeTrialFunctionValues(u_e, u_q, Du_q);
 
         // Zero out the element - local residual in prep for updating it.
-        for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+        for (unsigned int k = 0; k < Nk; k++) {
           dzeta_e[k] = 0;
         }
 
-        for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+        for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
           double *Duqq = Du_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Quadrature::Nq + q];
+          const Coefficients *coefficients = &m_coefficients[ij*Nq + q];
 
           // Determine "d_nuH / dB" at the quadrature point
           double d_nuH_dB = 0;
@@ -507,7 +506,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
             d_nuH_dB *= (2*coefficients->H);
           }
 
-          for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+          for (unsigned int k = 0; k < Nk; k++) {
             dzeta_e[k] += JxW[q]*d_nuH_dB*test[q][k].val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
                                                            du_dy_q[q].u*Duqq[2]) +
                                                           (du_dy_q[q].v*(2*Duqq[1] + Duqq[0]) +
@@ -534,8 +533,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   }
 
   if (m_fixed_design_locations) {
-    fem::DirichletData_Scalar fixedZeta;
-    fixedZeta.init(m_fixed_design_locations, NULL);
+    fem::DirichletData_Scalar fixedZeta(m_fixed_design_locations, NULL);
     fixedZeta.fix_residual_homogeneous(dzeta_a);
     fixedZeta.finish();
   }
@@ -629,8 +627,8 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
 
   m_du_global.copy_from(du);
   Vector2 **du_a = m_du_global.get_array();
-  fem::DirichletData_Vector dirichletBC;
-  dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
+                                        m_dirichletWeight);
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);
   }

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -134,6 +134,9 @@ protected:
 
   virtual void solve() = 0;
 
+  double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
+                                   double rho_ice, double rho_ocean, double g);
+
   const IceModelVec2Int *m_mask;
   const IceModelVec2S *m_thickness;
   const IceModelVec2S *m_tauc;
@@ -159,4 +162,3 @@ protected:
 } // end of namespace pism
 
 #endif /* _SSA_H_ */
-

@@ -33,25 +33,30 @@ IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid::ConstPtr gri
 
 void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  using fem::Quadrature;
+  using fem::Quadrature2x2;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
+  const unsigned int Nq = Quadrature2x2::Nq;
 
   // The value of the objective
   double value = 0;
 
-  double x_e[Quadrature::Nk];
-  double x_q[Quadrature::Nq], dxdx_q[Quadrature::Nq], dxdy_q[Quadrature::Nq];
+  double x_e[Nk];
+  double x_q[Nq], dxdx_q[Nq], dxdy_q[Nq];
 
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
-  fem::DirichletData_Scalar dirichletBC;
-  dirichletBC.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
       m_dofmap.reset(i, j, *m_grid);
@@ -63,7 +68,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       }
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+      for (unsigned int q = 0; q < Nq; q++) {
         value += m_c*JxW[q]*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2);
       } // q
     } // j
@@ -76,31 +81,33 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  using fem::Quadrature;
+  using fem::Quadrature2x2;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
+  const unsigned int Nq = Quadrature2x2::Nq;
 
   // Clear the gradient before doing anything with it.
   gradient.set(0);
 
-  double x_e[Quadrature::Nk];
-  double x_q[Quadrature::Nq], dxdx_q[Quadrature::Nq], dxdy_q[Quadrature::Nq];
+  double x_e[Nk];
+  double x_q[Nq], dxdx_q[Nq], dxdy_q[Nq];
 
-  double gradient_e[Quadrature::Nk];
+  double gradient_e[Nk];
 
   IceModelVec::AccessList list(x);
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* JxW = m_quadrature.weighted_jacobian();
 
-  fem::DirichletData_Scalar dirichletBC;
-  dirichletBC.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs, xm = m_element_index.xm,
+    ys = m_element_index.ys, ym = m_element_index.ym;
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 
@@ -116,13 +123,13 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element - local residual in prep for updating it.
-      for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+      for (unsigned int k = 0; k < Nk; k++) {
         gradient_e[k] = 0;
       }
 
-      for (unsigned int q = 0; q < Quadrature::Nq; q++) {
+      for (unsigned int q = 0; q < Nq; q++) {
         const double &dxdx_qq = dxdx_q[q], &dxdy_qq = dxdy_q[q];
-        for (unsigned int k = 0; k < Quadrature::Nk; k++) {
+        for (unsigned int k = 0; k < Nk; k++) {
           gradient_e[k] += m_c*JxW[q]*(m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2 - 1)
             *(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy);
         } // k

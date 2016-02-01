@@ -265,6 +265,7 @@
 
 %include "base/util/projection.hh"
 
+%include "base/stressbalance/ssa/FETools.hh"
 
 %include pism_inverse.i
 
