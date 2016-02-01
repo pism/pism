@@ -1144,6 +1144,12 @@ netcdf pism_config {
     pism_config:blatter_enhancement_factor = 1.0;
     pism_config:blatter_enhancement_factor_doc = "; Flow enhancement factor for the Blatter stress balance flow law";
 
+    pism_config:blatter_enhancement_factor_interglacial_option = "blatter_e_interglacial";
+    pism_config:blatter_enhancement_factor_interglacial_units = "1";
+    pism_config:blatter_enhancement_factor_interglacial_type = "scalar";
+    pism_config:blatter_enhancement_factor_interglacial = 1.0;
+    pism_config:blatter_enhancement_factor_interglacial_doc = "Flow enhancement factor for Blatter stress balance solver; used for ice accumulated during interglacial periods.";
+
     pism_config:enthalpy_cold_bulge_max_units = "Joule / kg";
     pism_config:enthalpy_cold_bulge_max_type = "scalar";
     pism_config:enthalpy_cold_bulge_max = 60270.0;
