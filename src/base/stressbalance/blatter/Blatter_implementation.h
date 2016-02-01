@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2015 Jed Brown and the PISM Authors
+/* Copyright (C) 2013, 2015, 2016 Jed Brown and the PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,17 +38,25 @@ typedef struct {
 
 /*! Storage for model parameters (at each node of the 2D grid). */
 typedef struct {
-  PetscScalar ice_bottom; /*!< elevation of the bottom surface of the ice */
-  PetscScalar thickness;  /*!< thickness */
-  PetscScalar tauc;	  /*!< till yield stress */
+  /*! elevation of the bottom surface of the ice */
+  PetscScalar ice_bottom;
+  /*! thickness */
+  PetscScalar thickness;
+  /*! till yield stress */
+  PetscScalar tauc;
 } PrmNode;
 
 typedef struct {
-  PetscReal Lx;			/*!< full width of the model domain in the x-direction */
-  PetscReal Ly;			/*!< full width of the model domain in the y-direction */
-  PetscReal dirichlet_scale;	/*!< scaling for Dirichlet boundary conditions */
-  PetscReal rhog;		/*!< ice density times standard gravity */
-  PetscBool no_slip;		/*!< whether to use the no slip condition at the base */
+  /*! full width of the model domain in the x-direction */
+  PetscReal Lx;
+  /*! full width of the model domain in the y-direction */
+  PetscReal Ly;
+  /*! scaling for Dirichlet boundary conditions */
+  PetscReal dirichlet_scale;
+  /*! ice density times standard gravity */
+  PetscReal rhog;
+  /*! whether to use the no slip condition at the base */
+  PetscBool no_slip;
   struct {
     /*! Function evaluating effective viscosity as a function of ice
         hardness and the second invariant \f$ \gamma \f$
