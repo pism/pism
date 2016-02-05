@@ -94,7 +94,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   thickness_threshold_calving = NULL;
   eigen_calving               = NULL;
 
-  // initializr maximum |u|,|v|,|w| in ice
+  // initialize maximum |u|,|v|,|w| in ice
   gmaxu = 0;
   gmaxv = 0;
   gmaxw = 0;
