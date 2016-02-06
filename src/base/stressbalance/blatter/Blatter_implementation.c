@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 Jed Brown and the PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 Jed Brown and the PISM Authors
 
    This file is part of PISM.
 
@@ -268,7 +268,7 @@ static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
   if (!mat) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
                     "No DMDA_Restriction composed with given DMDA");
 
-  /* get the 2D DMDA from the fine grid DM */
+  /* get the DMDA from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, dm_name,
                           (PetscObject*)&da2_fine); CHKERRQ(ierr);
   if (!da2_fine) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
@@ -280,7 +280,7 @@ static PetscErrorCode BlatterQ1_restrict(DM fine, DM coarse,
   if (!X_fine) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
                        "No DMDA_Vec composed with given DMDA");
 
-  /* get the 2D DMDA from the coarse grid DM */
+  /* get the DMDA from the coarse grid DM */
   ierr = PetscObjectQuery((PetscObject)coarse, dm_name,
                           (PetscObject*)&da2_coarse); CHKERRQ(ierr);
   if (!da2_coarse) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
