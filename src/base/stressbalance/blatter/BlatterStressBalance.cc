@@ -236,19 +236,19 @@ void BlatterStressBalance::setup() {
     // compute the elevation of the bottom surface of the ice
     if (bed(i,j) > -alpha * thickness(i,j)) {
       // grounded
-      parameters[i][j].ice_bottom = bed(i,j);
+      parameters[j][i].ice_bottom = bed(i,j);
     } else {
       // floating
-      parameters[i][j].ice_bottom = -alpha * thickness(i,j);
+      parameters[j][i].ice_bottom = -alpha * thickness(i,j);
     }
 
-    parameters[i][j].thickness = thickness(i,j);
+    parameters[j][i].thickness = thickness(i,j);
 
     // fudge ice thickness (FIXME!!!)
     if (thickness(i,j) < m_min_thickness)
-      parameters[i][j].thickness += m_min_thickness;
+      parameters[j][i].thickness += m_min_thickness;
 
-    parameters[i][j].tauc = tauc(i,j);
+    parameters[j][i].tauc = tauc(i,j);
   }
 
   ierr = BlatterQ1_end_2D_parameter_access(da, PETSC_FALSE, &param_vec, &parameters);
@@ -304,7 +304,7 @@ void BlatterStressBalance::initialize_ice_hardness() {
         E_local = E[Mz-1];
       }
 
-      hardness[i][j][k] = m_flow_law->hardness(E_local, pressure);
+      hardness[j][i][k] = m_flow_law->hardness(E_local, pressure);
     }
   }
 
@@ -356,8 +356,8 @@ void BlatterStressBalance::transfer_velocity() {
     // compute vertically-averaged velocity using trapezoid rule
     double ubar = 0, vbar = 0;
     for (unsigned int k = 0; k < Mz_fem - 1; ++k) {
-      ubar += U[i][j][k].u + U[i][j][k+1].u;
-      vbar += U[i][j][k].v + U[i][j][k+1].v;
+      ubar += U[j][i][k].u + U[j][i][k+1].u;
+      vbar += U[j][i][k].v + U[j][i][k+1].v;
     }
     // finish the traperoidal rule (1/2 * dz) and compute the average:
     m_velocity(i,j).u = ubar * (0.5*dz_fem) / thk;
@@ -376,16 +376,16 @@ void BlatterStressBalance::transfer_velocity() {
         double z0 = current_level * dz_fem,
           lambda = (zlevels[k] - z0) / dz_fem;
 
-        u_ij[k] = (U[i][j][current_level].u * (1 - lambda) +
-                   U[i][j][current_level+1].u * lambda);
+        u_ij[k] = (U[j][i][current_level].u * (1 - lambda) +
+                   U[j][i][current_level+1].u * lambda);
 
-        v_ij[k] = (U[i][j][current_level].v * (1 - lambda) +
-                   U[i][j][current_level+1].v * lambda);
+        v_ij[k] = (U[j][i][current_level].v * (1 - lambda) +
+                   U[j][i][current_level+1].v * lambda);
 
       } else {
         // extrapolate above the surface
-        u_ij[k] = U[i][j][Mz_fem-1].u;
-        v_ij[k] = U[i][j][Mz_fem-1].v;
+        u_ij[k] = U[j][i][Mz_fem-1].u;
+        v_ij[k] = U[j][i][Mz_fem-1].v;
       }
 
     }	// k-loop
@@ -423,8 +423,8 @@ void BlatterStressBalance::save_velocity() {
         *v_ij = m_v_sigma.get_column(i, j);
 
       for (unsigned int k = 0; k < Mz_fem; ++k) {
-        u_ij[k] = U[i][j][k].u;
-        v_ij[k] = U[i][j][k].v;
+        u_ij[k] = U[j][i][k].u;
+        v_ij[k] = U[j][i][k].v;
       }
     } // loop over map-plane grid points
 
