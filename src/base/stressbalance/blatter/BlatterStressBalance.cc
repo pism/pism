@@ -76,6 +76,44 @@ PetscErrorCode drag(void *ctx, double tauc, double u, double v,
   return 0;
 }
 
+/*! @brief A no-cost wrapper around 2D arrays. Hides the indexing order. */
+template <typename T>
+class PointerWrapper2D {
+  T **m_data;
+public:
+  PointerWrapper2D() {
+    m_data = NULL;
+  }
+
+  T*** address() {
+    return &m_data;
+  }
+
+  T& operator()(int i, int j) {
+    // NOTE: this indexing order is important!
+    return m_data[j][i];
+  }
+};
+
+/*! @brief A no-cost wrapper around 3D arrays. Hides the indexing order. */
+template <typename T>
+class PointerWrapper3D {
+  T ***m_data;
+public:
+  PointerWrapper3D() {
+    m_data = NULL;
+  }
+
+  T**** address() {
+    return &m_data;
+  }
+
+  T& operator()(int i, int j, int k) {
+    // NOTE: this indexing order is important!
+    return m_data[j][i][k];
+  }
+};
+
 BlatterStressBalance::BlatterStressBalance(IceGrid::ConstPtr g,
                                            EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e), m_min_thickness(10.0) {
@@ -208,7 +246,7 @@ void BlatterStressBalance::update(bool fast, const IceModelVec2S &melange_back_p
 void BlatterStressBalance::setup() {
   PetscErrorCode ierr;
   Vec param_vec;
-  PrmNode **parameters;
+  PointerWrapper2D<PrmNode> parameters;
   DM da;
   double
     ice_density = m_config->get_double("ice_density"),
@@ -217,7 +255,7 @@ void BlatterStressBalance::setup() {
 
   ierr = SNESGetDM(this->m_snes, &da); PISM_CHK(ierr, "SNESGetDM");
 
-  ierr = BlatterQ1_begin_2D_parameter_access(da, PETSC_FALSE, &param_vec, &parameters);
+  ierr = BlatterQ1_begin_2D_parameter_access(da, PETSC_FALSE, &param_vec, parameters.address());
   PISM_CHK(ierr, "BlatterQ1_begin_2D_parameter_access");
 
   const IceModelVec2S
@@ -236,36 +274,37 @@ void BlatterStressBalance::setup() {
     // compute the elevation of the bottom surface of the ice
     if (bed(i,j) > -alpha * thickness(i,j)) {
       // grounded
-      parameters[j][i].ice_bottom = bed(i,j);
+      parameters(i, j).ice_bottom = bed(i,j);
     } else {
       // floating
-      parameters[j][i].ice_bottom = -alpha * thickness(i,j);
+      parameters(i, j).ice_bottom = -alpha * thickness(i,j);
     }
 
-    parameters[j][i].thickness = thickness(i,j);
+    parameters(i, j).thickness = thickness(i,j);
 
     // fudge ice thickness (FIXME!!!)
     if (thickness(i,j) < m_min_thickness)
-      parameters[j][i].thickness += m_min_thickness;
+      parameters(i, j).thickness += m_min_thickness;
 
-    parameters[j][i].tauc = tauc(i,j);
+    parameters(i, j).tauc = tauc(i,j);
   }
 
-  ierr = BlatterQ1_end_2D_parameter_access(da, PETSC_FALSE, &param_vec, &parameters);
+  ierr = BlatterQ1_end_2D_parameter_access(da, PETSC_FALSE, &param_vec, parameters.address());
   PISM_CHK(ierr, "BlatterQ1_end_2D_parameter_access");
 }
 
 //! Initialize ice hardness on the "sigma" grid.
 void BlatterStressBalance::initialize_ice_hardness() {
   PetscErrorCode ierr;
-  PetscScalar ***hardness = NULL;
+
+  PointerWrapper3D<PetscScalar> hardness;
   unsigned int Mz_fem = static_cast<unsigned int>(m_config->get_double("blatter_Mz"));
   DM da;
   Vec hardness_vec;
 
   ierr = SNESGetDM(this->m_snes, &da); PISM_CHK(ierr, "SNESGetDM");
 
-  ierr = BlatterQ1_begin_hardness_access(da, PETSC_FALSE, &hardness_vec, &hardness);
+  ierr = BlatterQ1_begin_hardness_access(da, PETSC_FALSE, &hardness_vec, hardness.address());
   PISM_CHK(ierr, "BlatterQ1_begin_hardness_access");
 
   IceModelVec::AccessList list;
@@ -304,11 +343,11 @@ void BlatterStressBalance::initialize_ice_hardness() {
         E_local = E[Mz-1];
       }
 
-      hardness[j][i][k] = m_flow_law->hardness(E_local, pressure);
+      hardness(i, j, k) = m_flow_law->hardness(E_local, pressure);
     }
   }
 
-  ierr = BlatterQ1_end_hardness_access(da, PETSC_FALSE, &hardness_vec, &hardness);
+  ierr = BlatterQ1_end_hardness_access(da, PETSC_FALSE, &hardness_vec, hardness.address());
   PISM_CHK(ierr, "BlatterQ1_end_hardness_access");
 }
 
@@ -319,7 +358,7 @@ void BlatterStressBalance::initialize_ice_hardness() {
 void BlatterStressBalance::transfer_velocity() {
   PetscErrorCode ierr;
 
-  Vector2 ***U;
+  PointerWrapper3D<Vector2> U;
   double *u_ij, *v_ij;
   DM da;
   Vec X;
@@ -328,7 +367,7 @@ void BlatterStressBalance::transfer_velocity() {
   ierr = SNESGetDM(this->m_snes, &da); PISM_CHK(ierr, "SNESGetDM");
   ierr = SNESGetSolution(this->m_snes, &X); PISM_CHK(ierr, "SNESGetSolution");
 
-  ierr = DMDAVecGetArray(da, X, &U); PISM_CHK(ierr, "DMDAVecGetArray");
+  ierr = DMDAVecGetArray(da, X, U.address()); PISM_CHK(ierr, "DMDAVecGetArray");
 
   IceModelVec::AccessList list;
   list.add(m_u);
@@ -356,8 +395,8 @@ void BlatterStressBalance::transfer_velocity() {
     // compute vertically-averaged velocity using trapezoid rule
     double ubar = 0, vbar = 0;
     for (unsigned int k = 0; k < Mz_fem - 1; ++k) {
-      ubar += U[j][i][k].u + U[j][i][k+1].u;
-      vbar += U[j][i][k].v + U[j][i][k+1].v;
+      ubar += U(i, j, k).u + U(i, j, k+1).u;
+      vbar += U(i, j, k).v + U(i, j, k+1).v;
     }
     // finish the traperoidal rule (1/2 * dz) and compute the average:
     m_velocity(i,j).u = ubar * (0.5*dz_fem) / thk;
@@ -376,22 +415,22 @@ void BlatterStressBalance::transfer_velocity() {
         double z0 = current_level * dz_fem,
           lambda = (zlevels[k] - z0) / dz_fem;
 
-        u_ij[k] = (U[j][i][current_level].u * (1 - lambda) +
-                   U[j][i][current_level+1].u * lambda);
+        u_ij[k] = (U(i, j, current_level).u * (1 - lambda) +
+                   U(i, j, current_level+1).u * lambda);
 
-        v_ij[k] = (U[j][i][current_level].v * (1 - lambda) +
-                   U[j][i][current_level+1].v * lambda);
+        v_ij[k] = (U(i, j, current_level).v * (1 - lambda) +
+                   U(i, j, current_level+1).v * lambda);
 
       } else {
         // extrapolate above the surface
-        u_ij[k] = U[j][i][Mz_fem-1].u;
-        v_ij[k] = U[j][i][Mz_fem-1].v;
+        u_ij[k] = U(i, j, Mz_fem-1).u;
+        v_ij[k] = U(i, j, Mz_fem-1).v;
       }
 
     }	// k-loop
   } // loop over map-plane grid points
 
-  ierr = DMDAVecRestoreArray(da, X, &U); PISM_CHK(ierr, "DMDAVecRestoreArray");
+  ierr = DMDAVecRestoreArray(da, X, U.address()); PISM_CHK(ierr, "DMDAVecRestoreArray");
 
   m_u.update_ghosts();
   m_v.update_ghosts();
@@ -401,7 +440,7 @@ void BlatterStressBalance::transfer_velocity() {
 void BlatterStressBalance::save_velocity() {
   PetscErrorCode ierr;
 
-  Vector2 ***U;
+  PointerWrapper3D<Vector2> U;
   DM da;
   Vec X;
   unsigned int Mz_fem = static_cast<unsigned int>(m_config->get_double("blatter_Mz"));
@@ -409,7 +448,7 @@ void BlatterStressBalance::save_velocity() {
   ierr = SNESGetDM(this->m_snes, &da); PISM_CHK(ierr, "SNESGetDM");
   ierr = SNESGetSolution(this->m_snes, &X); PISM_CHK(ierr, "SNESGetSolution");
 
-  ierr = DMDAVecGetArray(da, X, &U); PISM_CHK(ierr, "DMDAVecGetArray");
+  ierr = DMDAVecGetArray(da, X, U.address()); PISM_CHK(ierr, "DMDAVecGetArray");
 
   IceModelVec::AccessList list;
   list.add(m_u_sigma);
@@ -423,12 +462,12 @@ void BlatterStressBalance::save_velocity() {
         *v_ij = m_v_sigma.get_column(i, j);
 
       for (unsigned int k = 0; k < Mz_fem; ++k) {
-        u_ij[k] = U[j][i][k].u;
-        v_ij[k] = U[j][i][k].v;
+        u_ij[k] = U(i, j, k).u;
+        v_ij[k] = U(i, j, k).v;
       }
     } // loop over map-plane grid points
 
-  ierr = DMDAVecRestoreArray(da, X, &U); PISM_CHK(ierr, "DMDAVecRestoreArray");
+  ierr = DMDAVecRestoreArray(da, X, U.address()); PISM_CHK(ierr, "DMDAVecRestoreArray");
 }
 
 const IceModelVec3& BlatterStressBalance::velocity_u() const {
