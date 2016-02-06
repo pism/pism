@@ -232,7 +232,7 @@ void BlatterStressBalance::update(bool fast, const IceModelVec2S &melange_back_p
   transfer_velocity();
 
   // Copy solution from the SNES to m_u_sigma and m_v_sigma.
-  save_velocity();
+  copy_velocity(FROM_SNES_STORAGE);
 
   compute_volumetric_strain_heating();
 }
@@ -437,7 +437,7 @@ void BlatterStressBalance::transfer_velocity() {
 }
 
 //! Copy velocity from a dof=2 vector to special storage (to save it for re-starting).
-void BlatterStressBalance::save_velocity() {
+void BlatterStressBalance::copy_velocity(Direction direction) {
   PetscErrorCode ierr;
 
   PointerWrapper3D<Vector2> U;
@@ -454,18 +454,25 @@ void BlatterStressBalance::save_velocity() {
   list.add(m_u_sigma);
   list.add(m_v_sigma);
 
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      double
-        *u_ij = m_u_sigma.get_column(i, j),
-        *v_ij = m_v_sigma.get_column(i, j);
+    double
+      *u_ij = m_u_sigma.get_column(i, j),
+      *v_ij = m_v_sigma.get_column(i, j);
 
+    if (direction == FROM_SNES_STORAGE) {
       for (unsigned int k = 0; k < Mz_fem; ++k) {
         u_ij[k] = U(i, j, k).u;
         v_ij[k] = U(i, j, k).v;
       }
-    } // loop over map-plane grid points
+    } else {
+      for (unsigned int k = 0; k < Mz_fem; ++k) {
+        U(i, j, k).u = u_ij[k];
+        U(i, j, k).v = v_ij[k];
+      }
+    }
+  } // loop over map-plane grid points
 
   ierr = DMDAVecRestoreArray(da, X, U.address()); PISM_CHK(ierr, "DMDAVecRestoreArray");
 }
@@ -516,7 +523,7 @@ void BlatterStressBalance::define_variables_impl(const std::set<std::string> &va
 void BlatterStressBalance::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, "u_sigma") or set_contains(vars, "v_sigma")) {
-    save_velocity();
+    copy_velocity(FROM_SNES_STORAGE);
   }
 
   if (set_contains(vars, "u_sigma")) {

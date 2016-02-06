@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -116,7 +116,10 @@ protected:
   void setup();
 
   void compute_volumetric_strain_heating();
-  void save_velocity();
+
+  enum Direction {FROM_SNES_STORAGE, TO_SNES_STORAGE};
+
+  void copy_velocity(Direction);
 
   IceModelVec3 m_u, m_v, m_strain_heating;
 
