@@ -157,8 +157,12 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
 
@@ -215,10 +219,11 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
   const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
-  int xs = m_element_index.xs,
-    xm   = m_element_index.xm,
-    ys   = m_element_index.ys,
-    ym   = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {

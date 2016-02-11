@@ -106,8 +106,11 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
 
   // Loop through all local and ghosted elements.
   const int
-    xs = m_element_index.xs, xm = m_element_index.xm,
-    ys = m_element_index.ys, ym = m_element_index.ym;
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 

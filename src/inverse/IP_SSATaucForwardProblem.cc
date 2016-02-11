@@ -137,11 +137,12 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
   double tauc_q[Nq];
   IceModelVec::AccessList list(tauc);
 
-  int
+  const int
     xs = m_element_index.xs,
     xm = m_element_index.xm,
     ys = m_element_index.ys,
     ym = m_element_index.ym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, tauc, tauc_q);
@@ -297,8 +298,12 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   ParallelSection loop(m_grid->com);
   try {
     for (int j = ys; j < ys + ym; j++) {
@@ -455,8 +460,12 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
     dzeta_a[j][i] = 0;
   }
 
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   ParallelSection loop(m_grid->com);
   try {
     for (int j=ys; j<ys+ym; j++) {

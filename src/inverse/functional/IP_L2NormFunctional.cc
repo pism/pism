@@ -128,8 +128,12 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 
@@ -259,8 +263,12 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   const double* JxW = m_quadrature.weighted_jacobian();
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 

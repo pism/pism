@@ -182,8 +182,12 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
       bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
@@ -250,8 +254,12 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (j=ys; j<ys+ym; j++) {
     for (i=xs; i<xs+xm; i++) {
       bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
