@@ -351,16 +351,16 @@ void IceModel::createVecs() {
   if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos ||
       m_config->get_boolean("do_fracture_density") == true) {
 
-    strain_rates.create(m_grid, "edot", WITH_GHOSTS,
+    strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,
                         2, // stencil width, has to match or exceed the "offset" in eigenCalving
                         2);
 
-    strain_rates.metadata(0).set_name("edot_1");
+    strain_rates.metadata(0).set_name("eigen1");
     strain_rates.set_attrs("internal",
                            "major principal component of horizontal strain-rate",
                            "1/s", "", 0);
 
-    strain_rates.metadata(1).set_name("edot_2");
+    strain_rates.metadata(1).set_name("eigen2");
     strain_rates.set_attrs("internal",
                            "minor principal component of horizontal strain-rate",
                            "1/s", "", 1);
