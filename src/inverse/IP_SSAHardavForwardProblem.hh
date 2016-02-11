@@ -182,7 +182,7 @@ protected:
   IceModelVec2V  m_du_local;                 ///< Temporary storage when state vectors need to be used with ghosts.
   IceModelVec2S  m_hardav;
 
-  fem::ElementMap m_element_index;
+  fem::ElementIterator m_element_index;
   fem::Quadrature_Scalar m_quadrature;
   fem::DOFMap     m_dofmap;
 

@@ -113,7 +113,7 @@ namespace fem {
   \f]
 
   Computations of these 'integrals' are done by adding up the contributions from each element (an
-  ElementMap helps with iterating over the elements). For a fixed element, there is a locally
+  ElementIterator helps with iterating over the elements). For a fixed element, there is a locally
   defined trial function \f$\hat w_h\f$ (with 4 degrees of freedom in the scalar case) and 4 local
   test functions \f$\hat\psi_k\f$, one for each vertex.
 
@@ -144,7 +144,7 @@ namespace fem {
   All of the above is a simplified description of what happens in practice. The complications below
   treated by the following classes, and discussed in their documentation:
 
-  - Ghost elements (as well as periodic boundary conditions): ElementMap
+  - Ghost elements (as well as periodic boundary conditions): ElementIterator
   - Dirichlet data: DOFMap
   - Vector valued functions: (DOFMap, Quadrature2x2)
 
@@ -295,15 +295,15 @@ private:
   vertex.
 
   The calculation of what elements to index over needs to account for ghosts and the
-  presence or absense of periodic boundary conditions in the IceGrid.  The ElementMap performs
-  that computation for you (see ElementMap::xs and friends).
+  presence or absense of periodic boundary conditions in the IceGrid.  The ElementIterator performs
+  that computation for you (see ElementIterator::xs and friends).
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class ElementMap
+class ElementIterator
 {
 public:
-  ElementMap(const IceGrid &g);
+  ElementIterator(const IceGrid &g);
 
   /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
   int element_count()

@@ -35,7 +35,7 @@ namespace fem {
 const double ShapeQ1::m_xi[]  = {-1.0,  1.0,  1.0, -1.0};
 const double ShapeQ1::m_eta[] = {-1.0, -1.0,  1.0,  1.0};
 
-ElementMap::ElementMap(const IceGrid &g) {
+ElementIterator::ElementIterator(const IceGrid &g) {
   // Start by assuming ghost elements exist in all directions.
   // Elements are indexed by their lower left vertex.  If there is a ghost
   // element on the right, its i-index will be the same as the maximum

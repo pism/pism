@@ -102,7 +102,7 @@ protected:
   double m_beta_ice_free_bedrock;
   double m_epsilon_ssa;
 
-  fem::ElementMap m_element_index;
+  fem::ElementIterator m_element_index;
   fem::Quadrature_Scalar m_quadrature;
   fem::Quadrature_Vector m_quadrature_vector;
   fem::DOFMap m_dofmap;
