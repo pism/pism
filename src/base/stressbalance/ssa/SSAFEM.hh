@@ -105,7 +105,7 @@ protected:
   fem::ElementIterator m_element_index;
   fem::Quadrature_Scalar m_quadrature;
   fem::Quadrature_Vector m_quadrature_vector;
-  fem::DOFMap m_dofmap;
+  fem::ElementMap m_element_map;
 
 private:
   void cache_residual_cfbc();

@@ -105,7 +105,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
                         "node types: interior, boundary, exterior", // long name
                         "", ""); // no units or standard name
 
-  // DOFMap::extractLocalDOFs() expects a ghosted IceModelVec2S. Ghosts if this field are never
+  // ElementMap::extractLocalDOFs() expects a ghosted IceModelVec2S. Ghosts if this field are never
   // assigned to and not communocated, though.
   m_boundary_integral.create(m_grid, "boundary_integral", WITH_GHOSTS, 1);
   m_boundary_integral.set_attrs("internal", // intent
@@ -305,16 +305,16 @@ void SSAFEM::cache_inputs() {
         double hq[Nq], hxq[Nq], hyq[Nq];
         double ds_xq[Nq], ds_yq[Nq];
         if (driving_stress_explicit) {
-          m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_x, ds_xq);
-          m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_driving_stress_y, ds_yq);
+          m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_driving_stress_x, ds_xq);
+          m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_driving_stress_y, ds_yq);
         } else {
-          m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_surface, hq, hxq, hyq);
+          m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_surface, hq, hxq, hyq);
         }
 
         double Hq[Nq], bq[Nq], taucq[Nq];
-        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_thickness, Hq);
-        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_bed, bq);
-        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, taucq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_thickness, Hq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_bed, bq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_tauc, taucq);
 
         const int ij = m_element_index.flatten(i, j);
         Coefficients *coefficients = &m_coefficients[4*ij];
@@ -488,10 +488,10 @@ void SSAFEM::cache_residual_cfbc() {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, *m_grid);
+        m_element_map.reset(i, j, *m_grid);
 
         int node_type[Nk];
-        m_dofmap.extractLocalDOFs(m_node_type, node_type);
+        m_element_map.extractLocalDOFs(m_node_type, node_type);
 
         // an element is "interior" if all its nodes are interior or boundary
         const bool interior_element = (node_type[0] < NODE_EXTERIOR and
@@ -504,15 +504,15 @@ void SSAFEM::cache_residual_cfbc() {
 
         if (not interior_element) {
           // not an interior element: the contribution is zero
-          m_dofmap.addLocalResidualBlock(&I[0], m_boundary_integral);
+          m_element_map.addLocalResidualBlock(&I[0], m_boundary_integral);
           continue;
         }
 
         double H_nodal[Nk];
-        m_dofmap.extractLocalDOFs(*m_thickness, H_nodal);
+        m_element_map.extractLocalDOFs(*m_thickness, H_nodal);
 
         double b_nodal[Nk];
-        m_dofmap.extractLocalDOFs(*m_bed, b_nodal);
+        m_element_map.extractLocalDOFs(*m_bed, b_nodal);
 
         // nodes corresponding to a given element "side"
         const int nodes[n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
@@ -586,7 +586,7 @@ void SSAFEM::cache_residual_cfbc() {
 
         } // loop over element sides
 
-        m_dofmap.addLocalResidualBlock(&I[0], m_boundary_integral);
+        m_element_map.addLocalResidualBlock(&I[0], m_boundary_integral);
 
       } // i-loop
     } // j-loop
@@ -619,7 +619,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
   if (use_cfbc) {
     // Set the boundary contribution of the residual. This is computed at the nodes, so we don't
-    // want to set it using DOFMap::addLocalResidualBlock() because that would lead to
+    // want to set it using ElementMap::addLocalResidualBlock() because that would lead to
     // double-counting.
     list.add(m_boundary_integral);
     for (Points p(*m_grid); p; p.next()) {
@@ -663,10 +663,10 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
       for (int i = xs; i < xs + xm; i++) {
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, *m_grid);
+        m_element_map.reset(i, j, *m_grid);
 
         int node_type[Nk];
-        m_dofmap.extractLocalDOFs(m_node_type, node_type);
+        m_element_map.extractLocalDOFs(m_node_type, node_type);
 
         // an element is "interior" if all its nodes are interior or boundary
         const bool interior_element = (node_type[0] < NODE_EXTERIOR and
@@ -688,16 +688,16 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
           // Obtain the value of the solution at the nodes adjacent to the element.
-          m_dofmap.extractLocalDOFs(velocity_global, velocity_nodal);
+          m_element_map.extractLocalDOFs(velocity_global, velocity_nodal);
 
           // These values now need to be adjusted if some nodes in the element have
           // Dirichlet data.
           if (dirichlet_data) {
             // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
-            dirichlet_data.update(m_dofmap, velocity_nodal);
-            // mark Dirichlet nodes in m_dofmap so that they are not touched by addLocalResidualBlock()
+            dirichlet_data.update(m_element_map, velocity_nodal);
+            // mark Dirichlet nodes in m_element_map so that they are not touched by addLocalResidualBlock()
             // below
-            dirichlet_data.constrain(m_dofmap);
+            dirichlet_data.constrain(m_element_map);
           }
 
           // Zero out the element-local residual in preparation for updating it.
@@ -741,7 +741,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
             } // k
           } // q
 
-          m_dofmap.addLocalResidualBlock(residual, residual_global);
+          m_element_map.addLocalResidualBlock(residual, residual_global);
         } else {
           // an exterior element: no contribution, but see the fix_residual_homogeneous() call below.
         }
@@ -877,10 +877,10 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, *m_grid);
+        m_element_map.reset(i, j, *m_grid);
 
         int node_type[Nk];
-        m_dofmap.extractLocalDOFs(m_node_type, node_type);
+        m_element_map.extractLocalDOFs(m_node_type, node_type);
         // an element is "interior" if all its nodes are interior or boundary
         const bool interior_element = (node_type[0] < NODE_EXTERIOR and
                                        node_type[1] < NODE_EXTERIOR and
@@ -890,13 +890,13 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         if (interior_element or (not use_cfbc)) {
 
           // Obtain the value of the solution at the adjacent nodes to the element.
-          m_dofmap.extractLocalDOFs(velocity_global, velocity_local);
+          m_element_map.extractLocalDOFs(velocity_global, velocity_local);
 
           // These values now need to be adjusted if some nodes in the element have
           // Dirichlet data.
           if (dirichlet_data) {
-            dirichlet_data.update(m_dofmap, velocity_local);
-            dirichlet_data.constrain(m_dofmap);
+            dirichlet_data.update(m_element_map, velocity_local);
+            dirichlet_data.constrain(m_element_map);
           }
 
           // Compute the values of the solution at the quadrature points.
@@ -968,7 +968,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
               } // l
             } // k
           } // q
-          m_dofmap.addLocalJacobianBlock(&K[0][0], Jac);
+          m_element_map.addLocalJacobianBlock(&K[0][0], Jac);
         } else {
           // an exterior element: no contribution
         }

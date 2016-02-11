@@ -124,7 +124,7 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, m_hardav, hardav_q);
+      m_quadrature.computeTrialFunctionValues(i, j, m_element_map, m_hardav, hardav_q);
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[ij*Nq];
       for (unsigned int q = 0; q < Nq; q++) {
@@ -311,25 +311,25 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, *m_grid);
+        m_element_map.reset(i, j, *m_grid);
 
         // Obtain the value of the solution at the nodes adjacent to the element,
         // fix dirichlet values, and compute values at quad pts.
-        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        m_element_map.extractLocalDOFs(i, j, u, u_e);
         if (dirichletBC) {
-          dirichletBC.constrain(m_dofmap);
-          dirichletBC.update(m_dofmap, u_e);
+          dirichletBC.constrain(m_element_map);
+          dirichletBC.update(m_element_map, u_e);
         }
         m_quadrature_vector.computeTrialFunctionValues(u_e, u_q, Du_q);
 
         // Compute dzeta at the nodes
-        m_dofmap.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
+        m_element_map.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
         if (fixedZeta) {
-          fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
+          fixedZeta.update_homogeneous(m_element_map, dzeta_e);
         }
 
         // Compute the change in hardav with respect to zeta at the quad points.
-        m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
+        m_element_map.extractLocalDOFs(i, j, *m_zeta, zeta_e);
         for (unsigned int k=0; k<Nk; k++) {
           m_design_param.toDesignVariable(zeta_e[k], NULL, dB_e + k);
           dB_e[k]*=dzeta_e[k];
@@ -354,7 +354,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
             du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
           }
         } // q
-        m_dofmap.addLocalResidualBlock(du_e, du_a);
+        m_element_map.addLocalResidualBlock(du_e, du_a);
       } // j
     } // i
   } catch (...) {
@@ -481,19 +481,19 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, *m_grid);
+        m_element_map.reset(i, j, *m_grid);
 
         // Obtain the value of the solution at the nodes adjacent to the element.
         // Compute the solution values and symmetric gradient at the quadrature points.
-        m_dofmap.extractLocalDOFs(i, j, du, du_e);
+        m_element_map.extractLocalDOFs(i, j, du, du_e);
         if (dirichletBC) {
-          dirichletBC.update_homogeneous(m_dofmap, du_e);
+          dirichletBC.update_homogeneous(m_element_map, du_e);
         }
         m_quadrature_vector.computeTrialFunctionValues(du_e, du_q, du_dx_q, du_dy_q);
 
-        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        m_element_map.extractLocalDOFs(i, j, u, u_e);
         if (dirichletBC) {
-          dirichletBC.update(m_dofmap, u_e);
+          dirichletBC.update(m_element_map, u_e);
         }
         m_quadrature_vector.computeTrialFunctionValues(u_e, u_q, Du_q);
 
@@ -523,7 +523,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
           }
         } // q
 
-        m_dofmap.addLocalResidualBlock(dzeta_e, dzeta_a);
+        m_element_map.addLocalResidualBlock(dzeta_e, dzeta_a);
       } // j
     } // i
   } catch (...) {

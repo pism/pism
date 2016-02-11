@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell
+// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -184,7 +184,7 @@ protected:
 
   fem::ElementIterator m_element_index;
   fem::Quadrature_Scalar m_quadrature;
-  fem::DOFMap     m_dofmap;
+  fem::ElementMap     m_element_map;
 
   petsc::KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
   petsc::Mat  m_J_state;                            ///< Mat used in \ref apply_linearization and \ref apply_linearization_transpose

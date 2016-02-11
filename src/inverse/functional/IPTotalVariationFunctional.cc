@@ -59,12 +59,12 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_dofmap.reset(i, j, *m_grid);
+      m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(x, x_e);
+      m_element_map.extractLocalDOFs(x, x_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_dofmap, x_e);
+        dirichletBC.update_homogeneous(m_element_map, x_e);
       }
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
@@ -115,13 +115,13 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
     for (int i = xs; i < xs + xm; i++) {
 
       // Reset the DOF map for this element.
-      m_dofmap.reset(i, j, *m_grid);
+      m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(i, j, x, x_e);
+      m_element_map.extractLocalDOFs(i, j, x, x_e);
       if (dirichletBC) {
-        dirichletBC.constrain(m_dofmap);
-        dirichletBC.update_homogeneous(m_dofmap, x_e);
+        dirichletBC.constrain(m_element_map);
+        dirichletBC.update_homogeneous(m_element_map, x_e);
       }
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
@@ -137,7 +137,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
             *(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy);
         } // k
       } // q
-      m_dofmap.addLocalResidualBlock(gradient_e, gradient);
+      m_element_map.addLocalResidualBlock(gradient_e, gradient);
     } // j
   } // i
 

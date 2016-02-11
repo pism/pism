@@ -121,7 +121,7 @@ namespace fem {
   in the case of computing the residual):
 
   - Extract from the global degrees of freedom \f$c\f$ defining \f$w_h\f$ the local degrees of
-    freedom \f$d\f$ defining \f$\hat w_h\f$. (DOFMap)
+    freedom \f$d\f$ defining \f$\hat w_h\f$. (ElementMap)
 
   - Evaluate the local trial function \f$w_h\f$ (values and derivatives as needed) at the quadrature
     points \f$x_q\f$ (Quadrature2x2)
@@ -136,7 +136,7 @@ namespace fem {
 
   - Each sum \f$y_k\f$ is the contribution of the current element to a residual entry \f$r_{ij}\f$,
     where local degree of freedom \f$k\f$ corresponds with global degree of freedom \f$(i,j)\f$. The
-    local contibutions now need to be added to the global residual vector (DOFMap).
+    local contibutions now need to be added to the global residual vector (ElementMap).
 
   Computation of the Jacobian is similar, except that there are now multiple integrals per element
   (one for each local degree of freedom of \f$\hat w_h\f$).
@@ -145,8 +145,8 @@ namespace fem {
   treated by the following classes, and discussed in their documentation:
 
   - Ghost elements (as well as periodic boundary conditions): ElementIterator
-  - Dirichlet data: DOFMap
-  - Vector valued functions: (DOFMap, Quadrature2x2)
+  - Dirichlet data: ElementMap
+  - Vector valued functions: (ElementMap, Quadrature2x2)
 
   The classes in this module are not intended to be a fancy finite element package. Their purpose is
   to clarify the steps that occur in the computation of residuals and Jacobians in SSAFEM, and to
@@ -203,21 +203,21 @@ private:
   for the purposes of local computation, (and the results added back again to the global residual
   and Jacobian arrays).
 
-  An DOFMap mediates the transfer between element-local and global degrees of freedom. In this very
+  An ElementMap mediates the transfer between element-local and global degrees of freedom. In this very
   concrete implementation, the global degrees of freedom are either scalars (double's) or vectors
   (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element are
   ShapeQ1::Nk (%i.e. four) scalars or vectors, one for each vertex of the element.
 
-  The DOFMap is also (perhaps awkwardly) overloaded to also mediate transfering locally computed
+  The ElementMap is also (perhaps awkwardly) overloaded to also mediate transfering locally computed
   contributions to residual and Jacobian matricies to their global counterparts.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class DOFMap
+class ElementMap
 {
 public:
-  DOFMap();
-  ~DOFMap();
+  ElementMap();
+  ~ElementMap();
 
   // scalar
   void extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) const;
@@ -419,14 +419,14 @@ public:
   void computeTrialFunctionValues(const double *x, double *vals);
   void computeTrialFunctionValues(const double *x, double *vals, double *dx, double *dy);
 
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, double const*const*x_global,
+  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, double const*const*x_global,
                                   double *vals);
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, double const*const*x_global,
+  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, double const*const*x_global,
                                   double *vals, double *dx, double *dy);
 
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2S &x_global,
+  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, const IceModelVec2S &x_global,
                                   double *vals);
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2S &x_global,
+  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, const IceModelVec2S &x_global,
                                   double *vals, double *dx, double *dy);
 private:
   double m_tmp[ShapeQ1::Nk];
@@ -440,14 +440,14 @@ public:
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);
 
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, Vector2 const*const*x_global,
+  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, Vector2 const*const*x_global,
                                   Vector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, Vector2 const*const*x_global,
+  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, Vector2 const*const*x_global,
                                   Vector2 *vals, double (*Dv)[3]);
 
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2V &x_global,
+  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, const IceModelVec2V &x_global,
                                   Vector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2V &x_global,
+  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, const IceModelVec2V &x_global,
                                   Vector2 *vals, double (*Dv)[3]);
 private:
   Vector2 m_tmp[ShapeQ1::Nk];
@@ -458,7 +458,7 @@ class DirichletData {
 public:
   DirichletData();
   ~DirichletData();
-  void constrain(DOFMap &dofmap);
+  void constrain(ElementMap &dofmap);
   operator bool() {
     return m_indices != NULL;
   }
@@ -474,8 +474,8 @@ protected:
 class DirichletData_Scalar : public DirichletData {
 public:
   DirichletData_Scalar(const IceModelVec2Int *indices, const IceModelVec2S *values, double weight = 1.0);
-  void update(const DOFMap &dofmap, double* x_e);
-  void update_homogeneous(const DOFMap &dofmap, double* x_e);
+  void update(const ElementMap &dofmap, double* x_e);
+  void update_homogeneous(const ElementMap &dofmap, double* x_e);
   void fix_residual(double const *const *const x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
@@ -487,8 +487,8 @@ protected:
 class DirichletData_Vector : public DirichletData {
 public:
   DirichletData_Vector(const IceModelVec2Int *indices, const IceModelVec2V *values, double weight);
-  void update(const DOFMap &dofmap, Vector2* x_e);
-  void update_homogeneous(const DOFMap &dofmap, Vector2* x_e);
+  void update(const ElementMap &dofmap, Vector2* x_e);
+  void update_homogeneous(const ElementMap &dofmap, Vector2* x_e);
   void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
   void fix_residual_homogeneous(Vector2 **r);
   void fix_jacobian(Mat J);

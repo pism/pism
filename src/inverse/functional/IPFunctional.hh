@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2016  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -72,7 +72,7 @@ protected:
   fem::ElementIterator m_element_index;
   fem::Quadrature_Scalar m_quadrature;
   fem::Quadrature_Vector m_quadrature_vector;
-  fem::DOFMap     m_dofmap;
+  fem::ElementMap     m_element_map;
 
 private:
   // Hide copy/assignment operations
