@@ -379,7 +379,7 @@ public:
 class Quadrature2x2
 {
 public:
-  Quadrature2x2(double dx, double dy, double L=1.0); // FIXME Allow a length scale to be specified.
+  Quadrature2x2(double dx, double dy, double L=1.0);
 
   //! Number of quadrature points.
   static const unsigned int Nq = 4;
