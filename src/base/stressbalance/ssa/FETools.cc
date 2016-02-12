@@ -94,76 +94,76 @@ ElementMap::~ElementMap() {
 }
 
 
-/*! @brief Extract local degrees of freedom for element (`i`,`j`) from global vector `x_global` to
-  local vector `x_local` (scalar-valued DOF version). */
-void ElementMap::extractLocalDOFs(int i, int j, double const*const*x_global, double *x_local) const
+/*! @brief Extract nodal values for element (`i`,`j`) from the gridded field `x_global` into
+  an array `result` (scalar-valued DOF version). */
+void ElementMap::nodal_values(int i, int j, double const*const*x_global, double *result) const
 {
-  x_local[0] = x_global[j][i];
-  x_local[1] = x_global[j][i + 1];
-  x_local[2] = x_global[j + 1][i + 1];
-  x_local[3] = x_global[j + 1][i];
+  result[0] = x_global[j][i];
+  result[1] = x_global[j][i + 1];
+  result[2] = x_global[j + 1][i + 1];
+  result[3] = x_global[j + 1][i];
 }
 
-void ElementMap::extractLocalDOFs(int i, int j,
-                              const IceModelVec2S &x_global, double *x_local) const
+void ElementMap::nodal_values(int i, int j,
+                              const IceModelVec2S &x_global, double *result) const
 {
-  x_local[0] = x_global(i, j);
-  x_local[1] = x_global(i + 1, j);
-  x_local[2] = x_global(i + 1, j + 1);
-  x_local[3] = x_global(i, j + 1);
+  result[0] = x_global(i, j);
+  result[1] = x_global(i + 1, j);
+  result[2] = x_global(i + 1, j + 1);
+  result[3] = x_global(i, j + 1);
 }
 
 /*! @brief Extract local degrees of freedom for element (`i`,`j`) from global vector `x_global` to
-  local vector `x_local` (vector-valued DOF version).
+  local vector `result` (vector-valued DOF version).
 */
-void ElementMap::extractLocalDOFs(int i, int j, Vector2 const*const*x_global,
-                              Vector2 *x_local) const
+void ElementMap::nodal_values(int i, int j, Vector2 const*const*x_global,
+                              Vector2 *result) const
 {
-  x_local[0] = x_global[j][i];
-  x_local[1] = x_global[j][i + 1];
-  x_local[2] = x_global[j + 1][i + 1];
-  x_local[3] = x_global[j + 1][i];
+  result[0] = x_global[j][i];
+  result[1] = x_global[j][i + 1];
+  result[2] = x_global[j + 1][i + 1];
+  result[3] = x_global[j + 1][i];
 }
 
-void ElementMap::extractLocalDOFs(int i, int j,
+void ElementMap::nodal_values(int i, int j,
                               const IceModelVec2V &x_global,
-                              Vector2 *x_local) const
+                              Vector2 *result) const
 {
-  x_local[0] = x_global(i, j);
-  x_local[1] = x_global(i + 1, j);
-  x_local[2] = x_global(i + 1, j + 1);
-  x_local[3] = x_global(i, j + 1);
+  result[0] = x_global(i, j);
+  result[1] = x_global(i + 1, j);
+  result[2] = x_global(i + 1, j + 1);
+  result[3] = x_global(i, j + 1);
 }
 
 
 //! Extract scalar degrees of freedom for the element specified previously with ElementMap::reset
-void ElementMap::extractLocalDOFs(double const*const*x_global, double *x_local) const
+void ElementMap::nodal_values(double const*const*x_global, double *result) const
 {
-  extractLocalDOFs(m_i, m_j, x_global, x_local);
+  nodal_values(m_i, m_j, x_global, result);
 }
 
-void ElementMap::extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) const
+void ElementMap::nodal_values(const IceModelVec2S &x_global, double *result) const
 {
-  extractLocalDOFs(m_i, m_j, x_global, x_local);
+  nodal_values(m_i, m_j, x_global, result);
 }
 
-void ElementMap::extractLocalDOFs(const IceModelVec2Int &x_global, int *x_local) const
+void ElementMap::nodal_values(const IceModelVec2Int &x_global, int *result) const
 {
-  x_local[0] = x_global.as_int(m_i, m_j);
-  x_local[1] = x_global.as_int(m_i + 1, m_j);
-  x_local[2] = x_global.as_int(m_i + 1, m_j + 1);
-  x_local[3] = x_global.as_int(m_i, m_j + 1);
+  result[0] = x_global.as_int(m_i, m_j);
+  result[1] = x_global.as_int(m_i + 1, m_j);
+  result[2] = x_global.as_int(m_i + 1, m_j + 1);
+  result[3] = x_global.as_int(m_i, m_j + 1);
 }
 
-void ElementMap::extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) const
+void ElementMap::nodal_values(Vector2 const*const*x_global, Vector2 *result) const
 {
-  extractLocalDOFs(m_i, m_j, x_global, x_local);
+  nodal_values(m_i, m_j, x_global, result);
 }
 
 //! Extract vector degrees of freedom for the element specified previously with ElementMap::reset
-void ElementMap::extractLocalDOFs(const IceModelVec2V &x_global, Vector2 *x_local) const
+void ElementMap::nodal_values(const IceModelVec2V &x_global, Vector2 *result) const
 {
-  extractLocalDOFs(m_i, m_j, x_global, x_local);
+  nodal_values(m_i, m_j, x_global, result);
 }
 
 //! Convert a local degree of freedom index `k` to a global degree of freedom index (`i`,`j`).
@@ -223,18 +223,7 @@ void ElementMap::markColInvalid(int k) {
 /*!@brief Add the values of element-local residual contributions `y` to the global residual
   vector `yg`. */
 /*! The element-local residual should be an array of Nk values.*/
-void ElementMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
-  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
-    if (m_row[k].k == 1) {
-      // skip rows marked as "invalid"
-      continue;
-    }
-    yg[m_row[k].j][m_row[k].i].u += y[k].u;
-    yg[m_row[k].j][m_row[k].i].v += y[k].v;
-  }
-}
-
-void ElementMap::addLocalResidualBlock(const double *y, double **yg) {
+void ElementMap::add_residual_contribution(const Vector2 *y, Vector2 **yg) const {
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
       // skip rows marked as "invalid"
@@ -244,18 +233,27 @@ void ElementMap::addLocalResidualBlock(const double *y, double **yg) {
   }
 }
 
-void ElementMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
+void ElementMap::add_residual_contribution(const double *y, double **yg) const {
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
       // skip rows marked as "invalid"
       continue;
     }
-    y_global(m_row[k].i, m_row[k].j).u += y[k].u;
-    y_global(m_row[k].i, m_row[k].j).v += y[k].v;
+    yg[m_row[k].j][m_row[k].i] += y[k];
   }
 }
 
-void ElementMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
+void ElementMap::add_residual_contribution(const Vector2 *y, IceModelVec2V &y_global) const {
+  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
+    if (m_row[k].k == 1) {
+      // skip rows marked as "invalid"
+      continue;
+    }
+    y_global(m_row[k].i, m_row[k].j) += y[k];
+  }
+}
+
+void ElementMap::add_residual_contribution(const double *y, IceModelVec2S &y_global) const {
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     if (m_row[k].k == 1) {
       // skip rows marked as "invalid"
@@ -275,7 +273,7 @@ void ElementMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global)
  *  markRowInvalid() and markColInvalid() are ignored. (Just as they
  *  should be.)
  */
-void ElementMap::addLocalJacobianBlock(const double *K, Mat J) {
+void ElementMap::add_jacobian_contribution(const double *K, Mat J) const {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
                                                    fem::ShapeQ1::Nk, m_row,
                                                    fem::ShapeQ1::Nk, m_col,
@@ -347,24 +345,24 @@ const Germ<double> *Quadrature2x2::testFunctionValues(int q, int k) {
 
 
 /*! @brief Compute the values at the quadrature ponits of a scalar-valued
-  finite-element function with element-local degrees of freedom `x_local`.*/
+  finite-element function with element-local degrees of freedom `x_nodal`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
-void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals) {
+void Quadrature_Scalar::computeTrialFunctionValues(const double *x_nodal, double *vals) {
   for (unsigned int q = 0; q < Nq; q++) {
     const Germ<double> *test = m_germs[q];
     vals[q] = 0;
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      vals[q] += test[k].val * x_local[k];
+      vals[q] += test[k].val * x_nodal[k];
     }
   }
 }
 
 /*! @brief Compute the values and first derivatives at the quadrature
   points of a scalar-valued finite-element function with element-local
-  degrees of freedom `x_local`.*/
+  degrees of freedom `x_nodal`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`,
   and `dy`. */
-void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local,
+void Quadrature_Scalar::computeTrialFunctionValues(const double *x_nodal,
                                                    double *vals, double *dx, double *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
     const Germ<double> *test = m_germs[q];
@@ -372,9 +370,9 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local,
     dx[q] = 0;
     dy[q] = 0;
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      vals[q] += test[k].val * x_local[k];
-      dx[q]   += test[k].dx * x_local[k];
-      dy[q]   += test[k].dy * x_local[k];
+      vals[q] += test[k].val * x_nodal[k];
+      dx[q]   += test[k].dx * x_nodal[k];
+      dy[q]   += test[k].dy * x_nodal[k];
     }
   }
 }
@@ -384,14 +382,14 @@ void Quadrature_Scalar::computeTrialFunctionValues(const double *x_local,
 /*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
 void Quadrature_Scalar::computeTrialFunctionValues(int i, int j, const ElementMap &dof,
                                                    double const*const*x_global, double *vals) {
-  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  dof.nodal_values(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
 
 
 void Quadrature_Scalar::computeTrialFunctionValues(int i, int j, const ElementMap &dof,
                                                    const IceModelVec2S &x_global, double *vals) {
-  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  dof.nodal_values(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
 
@@ -403,7 +401,7 @@ void Quadrature_Scalar::computeTrialFunctionValues(int i, int j, const ElementMa
 void Quadrature_Scalar::computeTrialFunctionValues(int i, int j,
                                                    const ElementMap &dof, double const*const*x_global,
                                                    double *vals, double *dx, double *dy) {
-  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  dof.nodal_values(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, dx, dy);
 }
 
@@ -411,28 +409,28 @@ void Quadrature_Scalar::computeTrialFunctionValues(int i, int j,
                                                    const ElementMap &dof,
                                                    const IceModelVec2S &x_global,
                                                    double *vals, double *dx, double *dy) {
-  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  dof.nodal_values(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, dx, dy);
 }
 
 /*! @brief Compute the values at the quadrature points of a vector-valued
-  finite-element function with element-local degrees of freedom `x_local`.*/
+  finite-element function with element-local degrees of freedom `x_nodal`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
-void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *result) {
+void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_nodal, Vector2 *result) {
   for (unsigned int q = 0; q < Nq; q++) {
     result[q].u = 0;
     result[q].v = 0;
     const Germ<double> *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      result[q].u += test[k].val * x_local[k].u;
-      result[q].v += test[k].val * x_local[k].v;
+      result[q].u += test[k].val * x_nodal[k].u;
+      result[q].v += test[k].val * x_nodal[k].v;
     }
   }
 }
 
 /*! @brief Compute the values and symmetric gradient at the quadrature
  *         points of a vector-valued finite-element function with
- *         element-local degrees of freedom `x_local`.
+ *         element-local degrees of freedom `x_nodal`.
  *
  * There should be room for Quadrature2x2::Nq values in the output
  * vectors `vals` and `Dv`. Each entry of `Dv` is an array of three
@@ -441,7 +439,7 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
  * \frac{du}{dx}, \frac{dv}{dy}, \frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)
  * \right] @f].
  */
-void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *vals, double (*Dv)[3]) {
+void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x, Vector2 *vals, double (*Dv)[3]) {
   for (unsigned int q = 0; q < Nq; q++) {
     vals[q].u = 0;
     vals[q].v = 0;
@@ -451,22 +449,21 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
     Dvq[2] = 0;
     const Germ<double> *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      vals[q].u += test[k].val * x_local[k].u;
-      vals[q].v += test[k].val * x_local[k].v;
-      Dvq[0] += test[k].dx * x_local[k].u;
-      Dvq[1] += test[k].dy * x_local[k].v;
-      Dvq[2] += 0.5*(test[k].dy*x_local[k].u + test[k].dx*x_local[k].v);
+      vals[q] += test[k].val * x[k];
+      Dvq[0]  += test[k].dx * x[k].u;
+      Dvq[1]  += test[k].dy * x[k].v;
+      Dvq[2]  += 0.5*(test[k].dy * x[k].u + test[k].dx * x[k].v);
     }
   }
 }
 
 /*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
-  finite-element function with element-local degrees of freedom `x_local`.*/
+  finite-element function with element-local degrees of freedom `x_nodal`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.
   Each element of `dx` is the derivative of the vector-valued finite-element function in the x direction,
   and similarly for `dy`.
 */
-void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *vals, Vector2 *dx, Vector2 *dy) {
+void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x, Vector2 *vals, Vector2 *dx, Vector2 *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
     vals[q].u = 0;
     vals[q].v = 0;
@@ -476,12 +473,9 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
     dy[q].v   = 0;
     const Germ<double> *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      vals[q].u += test[k].val * x_local[k].u;
-      vals[q].v += test[k].val * x_local[k].v;
-      dx[q].u   += test[k].dx * x_local[k].u;
-      dx[q].v   += test[k].dx * x_local[k].v;
-      dy[q].u   += test[k].dy * x_local[k].u;
-      dy[q].v   += test[k].dy * x_local[k].v;
+      vals[q] += test[k].val * x[k];
+      dx[q]   += test[k].dx * x[k];
+      dy[q]   += test[k].dy * x[k];
     }
   }
 }
@@ -492,14 +486,14 @@ void Quadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vecto
 /*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`. */
 void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const ElementMap &dof,
                                                    Vector2 const*const*x_global, Vector2 *vals) {
-  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  dof.nodal_values(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
 
 void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const ElementMap &dof,
                                                    const IceModelVec2V &x_global,
                                                    Vector2 *vals) {
-  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  dof.nodal_values(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals);
 }
 
@@ -512,14 +506,14 @@ void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const ElementMa
 void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const ElementMap &dof,
                                                    Vector2 const*const* x_global,
                                                    Vector2 *vals, double (*Dv)[3]) {
-  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  dof.nodal_values(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, Dv);
 }
 
 void Quadrature_Vector::computeTrialFunctionValues(int i, int j, const ElementMap &dof,
                                                    const IceModelVec2V &x_global,
                                                    Vector2 *vals, double (*Dv)[3]) {
-  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  dof.nodal_values(i, j, x_global, m_tmp);
   computeTrialFunctionValues(m_tmp, vals, Dv);
 }
 
@@ -574,14 +568,14 @@ void DirichletData::finish(const IceModelVec *values) {
   }
 }
 
-//! @brief Constrain `dofmap`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
-void DirichletData::constrain(ElementMap &dofmap) {
-  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+//! @brief Constrain `element_map`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
+void DirichletData::constrain(ElementMap &element_map) {
+  element_map.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
-      dofmap.markRowInvalid(k);
-      dofmap.markColInvalid(k);
+      element_map.markRowInvalid(k);
+      element_map.markColInvalid(k);
     }
   }
 }
@@ -595,24 +589,24 @@ DirichletData_Scalar::DirichletData_Scalar(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Scalar::update(const ElementMap &dofmap, double* x_nodal) {
+void DirichletData_Scalar::update(const ElementMap &element_map, double* x_nodal) {
   assert(m_values != NULL);
 
-  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+  element_map.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
-      dofmap.localToGlobal(k, &i, &j);
+      element_map.localToGlobal(k, &i, &j);
       x_nodal[k] = (*m_values)(i,j);
     }
   }
 }
 
-void DirichletData_Scalar::update_homogeneous(const ElementMap &dofmap, double* x_local) {
-  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+void DirichletData_Scalar::update_homogeneous(const ElementMap &element_map, double* x_nodal) {
+  element_map.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
-      x_local[k] = 0.;
+      x_nodal[k] = 0.;
     }
   }
 }
@@ -691,26 +685,25 @@ DirichletData_Vector::DirichletData_Vector(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Vector::update(const ElementMap &dofmap, Vector2* x_local) {
+void DirichletData_Vector::update(const ElementMap &element_map, Vector2* x_nodal) {
   assert(m_values != NULL);
 
-  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+  element_map.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
-      dofmap.localToGlobal(k, &i, &j);
-      x_local[k].u = (*m_values)(i, j).u;
-      x_local[k].v = (*m_values)(i, j).v;
+      element_map.localToGlobal(k, &i, &j);
+      x_nodal[k] = (*m_values)(i, j);
     }
   }
 }
 
-void DirichletData_Vector::update_homogeneous(const ElementMap &dofmap, Vector2* x_local) {
-  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+void DirichletData_Vector::update_homogeneous(const ElementMap &element_map, Vector2* x_nodal) {
+  element_map.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
-      x_local[k].u = 0.0;
-      x_local[k].v = 0.0;
+      x_nodal[k].u = 0.0;
+      x_nodal[k].v = 0.0;
     }
   }
 }
@@ -726,8 +719,7 @@ void DirichletData_Vector::fix_residual(Vector2 const *const *const x_global, Ve
 
     if ((*m_indices)(i, j) > 0.5) {
       // Enforce explicit dirichlet data.
-      r_global[j][i].u = m_weight * (x_global[j][i].u - (*m_values)(i, j).u);
-      r_global[j][i].v = m_weight * (x_global[j][i].v - (*m_values)(i, j).v);
+      r_global[j][i] = m_weight * (x_global[j][i] - (*m_values)(i, j));
     }
   }
 }

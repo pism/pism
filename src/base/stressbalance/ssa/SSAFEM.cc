@@ -105,7 +105,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
                         "node types: interior, boundary, exterior", // long name
                         "", ""); // no units or standard name
 
-  // ElementMap::extractLocalDOFs() expects a ghosted IceModelVec2S. Ghosts if this field are never
+  // ElementMap::nodal_values() expects a ghosted IceModelVec2S. Ghosts if this field are never
   // assigned to and not communocated, though.
   m_boundary_integral.create(m_grid, "boundary_integral", WITH_GHOSTS, 1);
   m_boundary_integral.set_attrs("internal", // intent
@@ -377,10 +377,15 @@ void SSAFEM::cache_inputs() {
   }
   loop.check();
 
-  // Note: the call below uses ghosts of m_thickness.
-  compute_node_types(*m_thickness,
-                     m_config->get_double("mask_icefree_thickness_standard"),
-                     m_node_type);
+  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  if (use_cfbc) {
+    // Note: the call below uses ghosts of m_thickness.
+    compute_node_types(*m_thickness,
+                       m_config->get_double("mask_icefree_thickness_standard"),
+                       m_node_type);
+  } else {
+    m_node_type.set(NODE_INTERIOR);
+  }
 
   cache_residual_cfbc();
 }
@@ -491,7 +496,7 @@ void SSAFEM::cache_residual_cfbc() {
         m_element_map.reset(i, j, *m_grid);
 
         int node_type[Nk];
-        m_element_map.extractLocalDOFs(m_node_type, node_type);
+        m_element_map.nodal_values(m_node_type, node_type);
 
         // an element is "interior" if all its nodes are interior or boundary
         const bool interior_element = (node_type[0] < NODE_EXTERIOR and
@@ -504,15 +509,15 @@ void SSAFEM::cache_residual_cfbc() {
 
         if (not interior_element) {
           // not an interior element: the contribution is zero
-          m_element_map.addLocalResidualBlock(&I[0], m_boundary_integral);
+          m_element_map.add_residual_contribution(&I[0], m_boundary_integral);
           continue;
         }
 
         double H_nodal[Nk];
-        m_element_map.extractLocalDOFs(*m_thickness, H_nodal);
+        m_element_map.nodal_values(*m_thickness, H_nodal);
 
         double b_nodal[Nk];
-        m_element_map.extractLocalDOFs(*m_bed, b_nodal);
+        m_element_map.nodal_values(*m_bed, b_nodal);
 
         // nodes corresponding to a given element "side"
         const int nodes[n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
@@ -586,7 +591,7 @@ void SSAFEM::cache_residual_cfbc() {
 
         } // loop over element sides
 
-        m_element_map.addLocalResidualBlock(&I[0], m_boundary_integral);
+        m_element_map.add_residual_contribution(&I[0], m_boundary_integral);
 
       } // i-loop
     } // j-loop
@@ -616,25 +621,14 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
   IceModelVec::AccessList list(m_node_type);
 
+  // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
+  // to set it using ElementMap::add_residual_contribution() because that would lead to
+  // double-counting. Also note that without CFBC m_boundary_integral is exactly zero.
+  list.add(m_boundary_integral);
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-  if (use_cfbc) {
-    // Set the boundary contribution of the residual. This is computed at the nodes, so we don't
-    // want to set it using ElementMap::addLocalResidualBlock() because that would lead to
-    // double-counting.
-    list.add(m_boundary_integral);
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      residual_global[j][i] = m_boundary_integral(i, j);
-    }
-  } else {
-    // Zero out the portion of the function we are responsible for computing.
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      residual_global[j][i].u = 0.0;
-      residual_global[j][i].v = 0.0;
-    }
+    residual_global[j][i] = m_boundary_integral(i, j);
   }
 
   // Start access to Dirichlet data if present.
@@ -666,7 +660,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         m_element_map.reset(i, j, *m_grid);
 
         int node_type[Nk];
-        m_element_map.extractLocalDOFs(m_node_type, node_type);
+        m_element_map.nodal_values(m_node_type, node_type);
 
         // an element is "interior" if all its nodes are interior or boundary
         const bool interior_element = (node_type[0] < NODE_EXTERIOR and
@@ -674,77 +668,78 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                        node_type[2] < NODE_EXTERIOR and
                                        node_type[3] < NODE_EXTERIOR);
 
-        if (interior_element or (not use_cfbc)) {
-          // Note: without CFBC all elements are "interior".
-
-          // Storage for the solution and residuals at element nodes.
-          Vector2 velocity_nodal[Nk];
-          Vector2 residual[Nk];
-
-          // Index into coefficient storage in m_coefficients
-          const int ij = m_element_index.flatten(i, j);
-
-          // Coefficients and weights for this quadrature point.
-          const Coefficients *coefficients = &m_coefficients[ij*Nq];
-
-          // Obtain the value of the solution at the nodes adjacent to the element.
-          m_element_map.extractLocalDOFs(velocity_global, velocity_nodal);
-
-          // These values now need to be adjusted if some nodes in the element have
-          // Dirichlet data.
-          if (dirichlet_data) {
-            // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
-            dirichlet_data.update(m_element_map, velocity_nodal);
-            // mark Dirichlet nodes in m_element_map so that they are not touched by addLocalResidualBlock()
-            // below
-            dirichlet_data.constrain(m_element_map);
-          }
-
-          // Zero out the element-local residual in preparation for updating it.
-          for (unsigned int k = 0; k < Nk; k++) {
-            residual[k].u = 0;
-            residual[k].v = 0;
-          }
-
-          // Compute the solution values and symmetric gradient at the quadrature points.
-          m_quadrature_vector.computeTrialFunctionValues(velocity_nodal, // input
-                                                         u, Du);         // outputs
-
-          // loop over quadrature points on this element:
-          for (unsigned int q = 0; q < Nq; q++) {
-
-            // Symmetric gradient at the quadrature point.
-            const double *Duq = Du[q];
-
-            double eta = 0.0, beta = 0.0;
-            PointwiseNuHAndBeta(coefficients[q], u[q], Duq, // inputs
-                                &eta, NULL, &beta, NULL);              // outputs
-
-            // The next few lines compute the actual residual for the element.
-            const Vector2
-              tau_b = u[q] * (- beta), // basal shear stress
-              tau_d = coefficients[q].driving_stress; // gravitational driving stress
-
-            const double
-              U_x          = Duq[0],
-              V_y          = Duq[1],
-              U_y_plus_V_x = 2.0 * Duq[2];
-
-            // Loop over test functions.
-            for (unsigned int k = 0; k < Nk; k++) {
-              const Germ<double> &psi = test[q][k];
-
-              residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
-                                         - psi.val * (tau_b.u + tau_d.u));
-              residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
-                                         - psi.val * (tau_b.v + tau_d.v));
-            } // k
-          } // q
-
-          m_element_map.addLocalResidualBlock(residual, residual_global);
-        } else {
-          // an exterior element: no contribution, but see the fix_residual_homogeneous() call below.
+        if (use_cfbc and (not interior_element)) {
+          // an exterior element in the CFBC case
+          continue;
         }
+
+        // Note: without CFBC all elements are "interior".
+
+        // Storage for the solution and residuals at element nodes.
+        Vector2 velocity_nodal[Nk];
+        Vector2 residual[Nk];
+
+        // Index into coefficient storage in m_coefficients
+        const int ij = m_element_index.flatten(i, j);
+
+        // Coefficients and weights for this quadrature point.
+        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+
+        // Obtain the value of the solution at the nodes adjacent to the element.
+        m_element_map.nodal_values(velocity_global, velocity_nodal);
+
+        // These values now need to be adjusted if some nodes in the element have
+        // Dirichlet data.
+        if (dirichlet_data) {
+          // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
+          dirichlet_data.update(m_element_map, velocity_nodal);
+          // mark Dirichlet nodes in m_element_map so that they are not touched by add_residual_contribution()
+          // below
+          dirichlet_data.constrain(m_element_map);
+        }
+
+        // Zero out the element-local residual in preparation for updating it.
+        for (unsigned int k = 0; k < Nk; k++) {
+          residual[k].u = 0;
+          residual[k].v = 0;
+        }
+
+        // Compute the solution values and symmetric gradient at the quadrature points.
+        m_quadrature_vector.computeTrialFunctionValues(velocity_nodal, // input
+                                                       u, Du);         // outputs
+
+        // loop over quadrature points on this element:
+        for (unsigned int q = 0; q < Nq; q++) {
+
+          // Symmetric gradient at the quadrature point.
+          const double *Duq = Du[q];
+
+          double eta = 0.0, beta = 0.0;
+          PointwiseNuHAndBeta(coefficients[q], u[q], Duq, // inputs
+                              &eta, NULL, &beta, NULL);              // outputs
+
+          // The next few lines compute the actual residual for the element.
+          const Vector2
+            tau_b = u[q] * (- beta), // basal shear stress
+            tau_d = coefficients[q].driving_stress; // gravitational driving stress
+
+          const double
+            U_x          = Duq[0],
+            V_y          = Duq[1],
+            U_y_plus_V_x = 2.0 * Duq[2];
+
+          // Loop over test functions.
+          for (unsigned int k = 0; k < Nk; k++) {
+            const Germ<double> &psi = test[q][k];
+
+            residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
+                                       - psi.val * (tau_b.u + tau_d.u));
+            residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
+                                       - psi.val * (tau_b.v + tau_d.v));
+          } // k
+        } // q
+
+        m_element_map.add_residual_contribution(residual, residual_global);
       } // j-loop
     } // i-loop
   } catch (...) {
@@ -880,7 +875,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         m_element_map.reset(i, j, *m_grid);
 
         int node_type[Nk];
-        m_element_map.extractLocalDOFs(m_node_type, node_type);
+        m_element_map.nodal_values(m_node_type, node_type);
         // an element is "interior" if all its nodes are interior or boundary
         const bool interior_element = (node_type[0] < NODE_EXTERIOR and
                                        node_type[1] < NODE_EXTERIOR and
@@ -890,7 +885,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         if (interior_element or (not use_cfbc)) {
 
           // Obtain the value of the solution at the adjacent nodes to the element.
-          m_element_map.extractLocalDOFs(velocity_global, velocity_local);
+          m_element_map.nodal_values(velocity_global, velocity_local);
 
           // These values now need to be adjusted if some nodes in the element have
           // Dirichlet data.
@@ -968,7 +963,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
               } // l
             } // k
           } // q
-          m_element_map.addLocalJacobianBlock(&K[0][0], Jac);
+          m_element_map.add_jacobian_contribution(&K[0][0], Jac);
         } else {
           // an exterior element: no contribution
         }

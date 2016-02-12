@@ -52,7 +52,7 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
     for (int i = xs; i < xs + xm; i++) {
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.extractLocalDOFs(i, j, x, x_e);
+      m_element_map.nodal_values(i, j, x, x_e);
       m_quadrature.computeTrialFunctionValues(x_e, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
@@ -154,7 +154,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
           gradient_e[k] += 2*JxW[q]*x_qq*test[q][k].val;
         } // k
       } // q
-      m_element_map.addLocalResidualBlock(gradient_e, gradient);
+      m_element_map.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
 }
@@ -187,7 +187,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
     for (int i = xs; i < xs + xm; i++) {
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.extractLocalDOFs(i, j, x, x_e);
+      m_element_map.nodal_values(i, j, x, x_e);
       m_quadrature_vector.computeTrialFunctionValues(x_e, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
@@ -292,7 +292,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
           gradient_e[k].v += gcommon*x_qq.v;
         } // k
       } // q
-      m_element_map.addLocalResidualBlock(gradient_e, gradient);
+      m_element_map.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
 }

@@ -220,25 +220,25 @@ public:
   ~ElementMap();
 
   // scalar
-  void extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) const;
-  void extractLocalDOFs(const IceModelVec2Int &x_global, int *x_local) const;
-  void extractLocalDOFs(double const*const*x_global, double *x_local) const;
+  void nodal_values(const IceModelVec2S &x_global, double *result) const;
+  void nodal_values(const IceModelVec2Int &x_global, int *result) const;
+  void nodal_values(double const*const*x_global, double *result) const;
 
-  void extractLocalDOFs(int i, int j, const IceModelVec2S &x_global, double *x_local) const;
-  void extractLocalDOFs(int i, int j, double const*const*x_global, double *x_local) const;
+  void nodal_values(int i, int j, const IceModelVec2S &x_global, double *result) const;
+  void nodal_values(int i, int j, double const*const*x_global, double *result) const;
 
-  void addLocalResidualBlock(const double *y, IceModelVec2S &y_global);
-  void addLocalResidualBlock(const double *y, double **yg);
+  void add_residual_contribution(const double *y, IceModelVec2S &y_global) const;
+  void add_residual_contribution(const double *y, double **yg) const;
 
   // vector
-  void extractLocalDOFs(const IceModelVec2V &x_global, Vector2 *x_local) const;
-  void extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) const;
+  void nodal_values(const IceModelVec2V &x_global, Vector2 *x_local) const;
+  void nodal_values(Vector2 const*const*x_global, Vector2 *x_local) const;
 
-  void extractLocalDOFs(int i, int j, const IceModelVec2V &x_global, Vector2 *x_local) const;
-  void extractLocalDOFs(int i, int j, Vector2 const*const*x_global, Vector2 *x_local) const;
+  void nodal_values(int i, int j, const IceModelVec2V &x_global, Vector2 *x_local) const;
+  void nodal_values(int i, int j, Vector2 const*const*x_global, Vector2 *x_local) const;
 
-  void addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global);
-  void addLocalResidualBlock(const Vector2 *y, Vector2 **yg);
+  void add_residual_contribution(const Vector2 *y, IceModelVec2V &y_global) const;
+  void add_residual_contribution(const Vector2 *y, Vector2 **yg) const;
 
   void reset(int i, int j, const IceGrid &g);
 
@@ -247,7 +247,7 @@ public:
 
   void localToGlobal(int k, int *i, int *j) const;
 
-  void addLocalJacobianBlock(const double *K, Mat J);
+  void add_jacobian_contribution(const double *K, Mat J) const;
 
 private:
   void reset(int i, int j);

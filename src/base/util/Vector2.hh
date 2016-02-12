@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -92,6 +92,11 @@ public:
 
   double u, v;
 };
+
+// Multiplication of a vector by a constant is commutative.
+inline Vector2 operator*(const double &a, const Vector2 &v) {
+  return v * a;
+}
 
 } // end of namespace pism
 

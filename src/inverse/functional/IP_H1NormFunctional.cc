@@ -55,7 +55,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.extractLocalDOFs(x, x_e);
+      m_element_map.nodal_values(x, x_e);
       if (dirichletBC) {
         dirichletBC.update_homogeneous(m_element_map, x_e);
       }
@@ -107,13 +107,13 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
       m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.extractLocalDOFs(a, a_e);
+      m_element_map.nodal_values(a, a_e);
       if (dirichletBC) {
         dirichletBC.update_homogeneous(m_element_map, a_e);
       }
       m_quadrature.computeTrialFunctionValues(a_e, a_q, dadx_q, dady_q);
 
-      m_element_map.extractLocalDOFs(b, b_e);
+      m_element_map.nodal_values(b, b_e);
       if (dirichletBC) {
         dirichletBC.update_homogeneous(m_element_map, b_e);
       }
@@ -170,7 +170,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
       m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.extractLocalDOFs(i, j, x, x_e);
+      m_element_map.nodal_values(i, j, x, x_e);
       if (dirichletBC) {
         dirichletBC.constrain(m_element_map);
         dirichletBC.update_homogeneous(m_element_map, x_e);
@@ -190,7 +190,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
             m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
       } // q
-      m_element_map.addLocalResidualBlock(gradient_e, gradient);
+      m_element_map.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
 
@@ -257,7 +257,7 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
             } // l
           } // k
         } // q
-        m_element_map.addLocalJacobianBlock(&K[0][0], form);
+        m_element_map.add_jacobian_contribution(&K[0][0], form);
       } // j
     } // i
   } catch (...) {

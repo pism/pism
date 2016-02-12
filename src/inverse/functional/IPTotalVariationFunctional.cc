@@ -62,7 +62,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.extractLocalDOFs(x, x_e);
+      m_element_map.nodal_values(x, x_e);
       if (dirichletBC) {
         dirichletBC.update_homogeneous(m_element_map, x_e);
       }
@@ -118,7 +118,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
       m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.extractLocalDOFs(i, j, x, x_e);
+      m_element_map.nodal_values(i, j, x, x_e);
       if (dirichletBC) {
         dirichletBC.constrain(m_element_map);
         dirichletBC.update_homogeneous(m_element_map, x_e);
@@ -137,7 +137,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
             *(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy);
         } // k
       } // q
-      m_element_map.addLocalResidualBlock(gradient_e, gradient);
+      m_element_map.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
 

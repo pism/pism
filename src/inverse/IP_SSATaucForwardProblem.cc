@@ -309,7 +309,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
 
-        // Zero out the element - local residual in prep for updating it.
+        // Zero out the element residual in prep for updating it.
         for (unsigned int k = 0; k < Nk; k++) {
           du_e[k].u = 0;
           du_e[k].v = 0;
@@ -323,7 +323,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
         // Obtain the value of the solution at the nodes adjacent to the element,
         // fix dirichlet values, and compute values at quad pts.
-        m_element_map.extractLocalDOFs(i, j, u, u_e);
+        m_element_map.nodal_values(i, j, u, u_e);
         if (dirichletBC) {
           dirichletBC.constrain(m_element_map);
           dirichletBC.update(m_element_map, u_e);
@@ -331,13 +331,13 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
 
         // Compute dzeta at the nodes
-        m_element_map.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
+        m_element_map.nodal_values(i, j, *dzeta_local, dzeta_e);
         if (fixedZeta) {
           fixedZeta.update_homogeneous(m_element_map, dzeta_e);
         }
 
         // Compute the change in tau_c with respect to zeta at the quad points.
-        m_element_map.extractLocalDOFs(i, j, *m_zeta, zeta_e);
+        m_element_map.nodal_values(i, j, *m_zeta, zeta_e);
         for (unsigned int k = 0; k < Nk; k++) {
           m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
           dtauc_e[k] *= dzeta_e[k];
@@ -360,7 +360,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
             du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
           }
         } // q
-        m_element_map.addLocalResidualBlock(du_e, du_a);
+        m_element_map.add_residual_contribution(du_e, du_a);
       } // j
     } // i
   } catch (...) {
@@ -478,13 +478,13 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 
         // Obtain the value of the solution at the nodes adjacent to the element.
         // Compute the solution values and symmetric gradient at the quadrature points.
-        m_element_map.extractLocalDOFs(i, j, *du_local, du_e);
+        m_element_map.nodal_values(i, j, *du_local, du_e);
         if (dirichletBC) {
           dirichletBC.update_homogeneous(m_element_map, du_e);
         }
         m_quadrature_vector.computeTrialFunctionValues(du_e, du_q);
 
-        m_element_map.extractLocalDOFs(i, j, u, u_e);
+        m_element_map.nodal_values(i, j, u, u_e);
         if (dirichletBC) {
           dirichletBC.update(m_element_map, u_e);
         }
@@ -512,7 +512,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
           }
         } // q
 
-        m_element_map.addLocalResidualBlock(dzeta_e, dzeta_a);
+        m_element_map.add_residual_contribution(dzeta_e, dzeta_a);
       } // j
     } // i
   } catch (...) {
