@@ -70,7 +70,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
       if (dirichletBC) {
         dirichletBC.update_homogeneous(m_element_map, x_e);
       }
-      m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
+      m_quadrature.quadrature_point_values(x_e, x_q, dxdx_q, dxdy_q);
 
       for (unsigned int q=0; q<Nq; q++) {
         value += JxW[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
@@ -132,13 +132,13 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
       if (dirichletBC) {
         dirichletBC.update_homogeneous(m_element_map, a_e);
       }
-      m_quadrature.computeTrialFunctionValues(a_e, a_q, dadx_q, dady_q);
+      m_quadrature.quadrature_point_values(a_e, a_q, dadx_q, dady_q);
 
       m_element_map.nodal_values(b, b_e);
       if (dirichletBC) {
         dirichletBC.update_homogeneous(m_element_map, b_e);
       }
-      m_quadrature.computeTrialFunctionValues(b_e, b_q, dbdx_q, dbdy_q);
+      m_quadrature.quadrature_point_values(b_e, b_q, dbdx_q, dbdy_q);
 
       for (unsigned int q=0; q<Nq; q++) {
         value += JxW[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
@@ -205,7 +205,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
         dirichletBC.constrain(m_element_map);
         dirichletBC.update_homogeneous(m_element_map, x_e);
       }
-      m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
+      m_quadrature.quadrature_point_values(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
       for (unsigned int k=0; k<Nk; k++) {

@@ -145,7 +145,7 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_quadrature.computeTrialFunctionValues(i, j, m_element_map, tauc, tauc_q);
+      m_quadrature.quadrature_point_values(i, j, m_element_map, tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[ij*Nq];
       for (unsigned int q = 0; q < Nq; q++) {
@@ -328,7 +328,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           dirichletBC.constrain(m_element_map);
           dirichletBC.update(m_element_map, u_e);
         }
-        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
+        m_quadrature_vector.quadrature_point_values(u_e, u_q);
 
         // Compute dzeta at the nodes
         m_element_map.nodal_values(i, j, *dzeta_local, dzeta_e);
@@ -342,7 +342,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
           dtauc_e[k] *= dzeta_e[k];
         }
-        m_quadrature.computeTrialFunctionValues(dtauc_e, dtauc_q);
+        m_quadrature.quadrature_point_values(dtauc_e, dtauc_q);
 
         for (unsigned int q = 0; q < Nq; q++) {
           Vector2 u_qq = u_q[q];
@@ -482,13 +482,13 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
         if (dirichletBC) {
           dirichletBC.update_homogeneous(m_element_map, du_e);
         }
-        m_quadrature_vector.computeTrialFunctionValues(du_e, du_q);
+        m_quadrature_vector.quadrature_point_values(du_e, du_q);
 
         m_element_map.nodal_values(i, j, u, u_e);
         if (dirichletBC) {
           dirichletBC.update(m_element_map, u_e);
         }
-        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
+        m_quadrature_vector.quadrature_point_values(u_e, u_q);
 
         // Zero out the element-local residual in prep for updating it.
         for (unsigned int k=0; k<Nk; k++) {

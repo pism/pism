@@ -416,17 +416,17 @@ protected:
 class Quadrature_Scalar : public Quadrature2x2 {
 public:
   Quadrature_Scalar(double dx, double dy, double L);
-  void computeTrialFunctionValues(const double *x, double *vals);
-  void computeTrialFunctionValues(const double *x, double *vals, double *dx, double *dy);
+  void quadrature_point_values(const double *x, double *vals);
+  void quadrature_point_values(const double *x, double *vals, double *dx, double *dy);
 
-  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, double const*const*x_global,
+  void quadrature_point_values(int i, int j, const ElementMap &dof, double const*const*x_global,
                                   double *vals);
-  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, double const*const*x_global,
+  void quadrature_point_values(int i, int j, const ElementMap &dof, double const*const*x_global,
                                   double *vals, double *dx, double *dy);
 
-  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, const IceModelVec2S &x_global,
+  void quadrature_point_values(int i, int j, const ElementMap &dof, const IceModelVec2S &x_global,
                                   double *vals);
-  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, const IceModelVec2S &x_global,
+  void quadrature_point_values(int i, int j, const ElementMap &dof, const IceModelVec2S &x_global,
                                   double *vals, double *dx, double *dy);
 private:
   double m_tmp[ShapeQ1::Nk];
@@ -436,18 +436,18 @@ private:
 class Quadrature_Vector : public Quadrature2x2 {
 public:
   Quadrature_Vector(double dx, double dy, double L);
-  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals);
-  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);
-  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);
+  void quadrature_point_values(const Vector2 *x,  Vector2 *vals);
+  void quadrature_point_values(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);
+  void quadrature_point_values(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);
 
-  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, Vector2 const*const*x_global,
+  void quadrature_point_values(int i, int j, const ElementMap &dof, Vector2 const*const*x_global,
                                   Vector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, Vector2 const*const*x_global,
+  void quadrature_point_values(int i, int j, const ElementMap &dof, Vector2 const*const*x_global,
                                   Vector2 *vals, double (*Dv)[3]);
 
-  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, const IceModelVec2V &x_global,
+  void quadrature_point_values(int i, int j, const ElementMap &dof, const IceModelVec2V &x_global,
                                   Vector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const ElementMap &dof, const IceModelVec2V &x_global,
+  void quadrature_point_values(int i, int j, const ElementMap &dof, const IceModelVec2V &x_global,
                                   Vector2 *vals, double (*Dv)[3]);
 private:
   Vector2 m_tmp[ShapeQ1::Nk];

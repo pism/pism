@@ -53,7 +53,7 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
       // Obtain values of x at the quadrature points for the element.
       m_element_map.nodal_values(i, j, x, x_e);
-      m_quadrature.computeTrialFunctionValues(x_e, x_q);
+      m_quadrature.quadrature_point_values(x_e, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         const double x_qq = x_q[q];
@@ -94,8 +94,8 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
     for (int i = xs; i < xs + xm; i++) {
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature.computeTrialFunctionValues(i, j, m_element_map, a, a_q);
-      m_quadrature.computeTrialFunctionValues(i, j, m_element_map, b, b_q);
+      m_quadrature.quadrature_point_values(i, j, m_element_map, a, a_q);
+      m_quadrature.quadrature_point_values(i, j, m_element_map, b, b_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         value += JxW[q]*a_q[q]*b_q[q];
@@ -141,7 +141,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
       m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature.computeTrialFunctionValues(i, j, m_element_map, x, x_q);
+      m_quadrature.quadrature_point_values(i, j, m_element_map, x, x_q);
 
       // Zero out the element-local residual in prep for updating it.
       for (unsigned int k = 0; k < Nk; k++) {
@@ -188,7 +188,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
       // Obtain values of x at the quadrature points for the element.
       m_element_map.nodal_values(i, j, x, x_e);
-      m_quadrature_vector.computeTrialFunctionValues(x_e, x_q);
+      m_quadrature_vector.quadrature_point_values(x_e, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         const Vector2 &x_qq = x_q[q];
@@ -229,8 +229,8 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
     for (int i = xs; i < xs + xm; i++) {
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature_vector.computeTrialFunctionValues(i, j, m_element_map, a, a_q);
-      m_quadrature_vector.computeTrialFunctionValues(i, j, m_element_map, b, b_q);
+      m_quadrature_vector.quadrature_point_values(i, j, m_element_map, a, a_q);
+      m_quadrature_vector.quadrature_point_values(i, j, m_element_map, b, b_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         value += JxW[q]*(a_q[q].u*b_q[q].u + a_q[q].v*b_q[q].v);
@@ -276,7 +276,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
       m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature_vector.computeTrialFunctionValues(i, j, m_element_map, x, x_q);
+      m_quadrature_vector.quadrature_point_values(i, j, m_element_map, x, x_q);
 
       // Zero out the element-local residual in prep for updating it.
       for (unsigned int k = 0; k < Nk; k++) {

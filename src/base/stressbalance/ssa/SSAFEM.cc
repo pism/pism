@@ -305,16 +305,16 @@ void SSAFEM::cache_inputs() {
         double hq[Nq], hxq[Nq], hyq[Nq];
         double ds_xq[Nq], ds_yq[Nq];
         if (driving_stress_explicit) {
-          m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_driving_stress_x, ds_xq);
-          m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_driving_stress_y, ds_yq);
+          m_quadrature.quadrature_point_values(i, j, m_element_map, *m_driving_stress_x, ds_xq);
+          m_quadrature.quadrature_point_values(i, j, m_element_map, *m_driving_stress_y, ds_yq);
         } else {
-          m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_surface, hq, hxq, hyq);
+          m_quadrature.quadrature_point_values(i, j, m_element_map, *m_surface, hq, hxq, hyq);
         }
 
         double Hq[Nq], bq[Nq], taucq[Nq];
-        m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_thickness, Hq);
-        m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_bed, bq);
-        m_quadrature.computeTrialFunctionValues(i, j, m_element_map, *m_tauc, taucq);
+        m_quadrature.quadrature_point_values(i, j, m_element_map, *m_thickness, Hq);
+        m_quadrature.quadrature_point_values(i, j, m_element_map, *m_bed, bq);
+        m_quadrature.quadrature_point_values(i, j, m_element_map, *m_tauc, taucq);
 
         const int ij = m_element_index.flatten(i, j);
         Coefficients *coefficients = &m_coefficients[4*ij];
@@ -705,7 +705,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         }
 
         // Compute the solution values and symmetric gradient at the quadrature points.
-        m_quadrature_vector.computeTrialFunctionValues(velocity_nodal, // input
+        m_quadrature_vector.quadrature_point_values(velocity_nodal, // input
                                                        u, Du);         // outputs
 
         // loop over quadrature points on this element:
@@ -895,7 +895,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           }
 
           // Compute the values of the solution at the quadrature points.
-          m_quadrature_vector.computeTrialFunctionValues(velocity_local, u, Du);
+          m_quadrature_vector.quadrature_point_values(velocity_local, u, Du);
 
           // Build the element-local Jacobian.
           ierr = PetscMemzero(K, sizeof(K));
