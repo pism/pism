@@ -712,7 +712,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         // Compute the solution values and symmetric gradient at the quadrature points.
         m_quadrature_vector.quadrature_point_values(velocity_nodal, // input
-                                                       u, Du);         // outputs
+                                                    u, Du);         // outputs
 
         // loop over quadrature points on this element:
         for (unsigned int q = 0; q < Nq; q++) {

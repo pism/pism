@@ -485,7 +485,7 @@ void DirichletData_Scalar::update(const ElementMap &element_map, double* x_nodal
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i = 0, j = 0;
       element_map.local_to_global(k, i, j);
-      x_nodal[k] = (*m_values)(i,j);
+      x_nodal[k] = (*m_values)(i, j);
     }
   }
 }

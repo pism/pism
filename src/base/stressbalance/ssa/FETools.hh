@@ -208,7 +208,7 @@ private:
   (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element are
   ShapeQ1::Nk (%i.e. four) scalars or vectors, one for each vertex of the element.
 
-  The ElementMap is also (perhaps awkwardly) overloaded to also mediate transfering locally computed
+  The ElementMap is also (perhaps awkwardly) overloaded to mediate transfering locally computed
   contributions to residual and Jacobian matricies to their global counterparts.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
