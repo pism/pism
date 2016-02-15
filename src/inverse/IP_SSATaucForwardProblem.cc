@@ -145,7 +145,9 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_quadrature.quadrature_point_values(i, j, m_element_map, tauc, tauc_q);
+      m_element_map.reset(i, j, *m_grid);
+
+      m_quadrature.quadrature_point_values(m_element_map, tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[ij*Nq];
       for (unsigned int q = 0; q < Nq; q++) {

@@ -304,17 +304,20 @@ void SSAFEM::cache_inputs() {
       for (int i=xs; i<xs+xm; i++) {
         double hq[Nq], hxq[Nq], hyq[Nq];
         double ds_xq[Nq], ds_yq[Nq];
+
+        m_element_map.reset(i, j, *m_grid);
+
         if (driving_stress_explicit) {
-          m_quadrature.quadrature_point_values(i, j, m_element_map, *m_driving_stress_x, ds_xq);
-          m_quadrature.quadrature_point_values(i, j, m_element_map, *m_driving_stress_y, ds_yq);
+          m_quadrature.quadrature_point_values(m_element_map, *m_driving_stress_x, ds_xq);
+          m_quadrature.quadrature_point_values(m_element_map, *m_driving_stress_y, ds_yq);
         } else {
-          m_quadrature.quadrature_point_values(i, j, m_element_map, *m_surface, hq, hxq, hyq);
+          m_quadrature.quadrature_point_values(m_element_map, *m_surface, hq, hxq, hyq);
         }
 
         double Hq[Nq], bq[Nq], taucq[Nq];
-        m_quadrature.quadrature_point_values(i, j, m_element_map, *m_thickness, Hq);
-        m_quadrature.quadrature_point_values(i, j, m_element_map, *m_bed, bq);
-        m_quadrature.quadrature_point_values(i, j, m_element_map, *m_tauc, taucq);
+        m_quadrature.quadrature_point_values(m_element_map, *m_thickness, Hq);
+        m_quadrature.quadrature_point_values(m_element_map, *m_bed, bq);
+        m_quadrature.quadrature_point_values(m_element_map, *m_tauc, taucq);
 
         const int ij = m_element_index.flatten(i, j);
         Coefficients *coefficients = &m_coefficients[4*ij];

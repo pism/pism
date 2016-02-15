@@ -363,7 +363,7 @@ void Quadrature_Scalar::quadrature_point_values(const double *x_nodal, double *v
 /*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`,
   and `dy`. */
 void Quadrature_Scalar::quadrature_point_values(const double *x_nodal,
-                                                   double *vals, double *dx, double *dy) {
+                                                double *vals, double *dx, double *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
     const Germ<double> *test = m_germs[q];
     vals[q] = 0;
@@ -380,16 +380,16 @@ void Quadrature_Scalar::quadrature_point_values(const double *x_nodal,
 /*! @brief Compute the values at the quadrature points on element (`i`,`j`)
   of a scalar-valued finite-element function with global degrees of freedom `x`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
-void Quadrature_Scalar::quadrature_point_values(int i, int j, const ElementMap &dof,
-                                                   double const*const*x_global, double *vals) {
-  dof.nodal_values(i, j, x_global, m_tmp);
+void Quadrature_Scalar::quadrature_point_values(const ElementMap &dof,
+                                                double const*const*x_global, double *vals) {
+  dof.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals);
 }
 
 
-void Quadrature_Scalar::quadrature_point_values(int i, int j, const ElementMap &dof,
-                                                   const IceModelVec2S &x_global, double *vals) {
-  dof.nodal_values(i, j, x_global, m_tmp);
+void Quadrature_Scalar::quadrature_point_values(const ElementMap &dof,
+                                                const IceModelVec2S &x_global, double *vals) {
+  dof.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals);
 }
 
@@ -398,18 +398,16 @@ void Quadrature_Scalar::quadrature_point_values(int i, int j, const ElementMap &
   with global degrees of freedom `x`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output
   vectors `vals`, `dx`, and `dy`. */
-void Quadrature_Scalar::quadrature_point_values(int i, int j,
-                                                   const ElementMap &dof, double const*const*x_global,
-                                                   double *vals, double *dx, double *dy) {
-  dof.nodal_values(i, j, x_global, m_tmp);
+void Quadrature_Scalar::quadrature_point_values(const ElementMap &dof, double const*const*x_global,
+                                                double *vals, double *dx, double *dy) {
+  dof.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals, dx, dy);
 }
 
-void Quadrature_Scalar::quadrature_point_values(int i, int j,
-                                                   const ElementMap &dof,
-                                                   const IceModelVec2S &x_global,
-                                                   double *vals, double *dx, double *dy) {
-  dof.nodal_values(i, j, x_global, m_tmp);
+void Quadrature_Scalar::quadrature_point_values(const ElementMap &dof,
+                                                const IceModelVec2S &x_global,
+                                                double *vals, double *dx, double *dy) {
+  dof.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals, dx, dy);
 }
 
@@ -484,16 +482,16 @@ void Quadrature_Vector::quadrature_point_values(const Vector2 *x, Vector2 *vals,
 /*! @brief Compute the values at the quadrature points of a vector-valued
   finite-element function on element (`i`,`j`) with global degrees of freedom `x_global`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`. */
-void Quadrature_Vector::quadrature_point_values(int i, int j, const ElementMap &dof,
-                                                   Vector2 const*const*x_global, Vector2 *vals) {
-  dof.nodal_values(i, j, x_global, m_tmp);
+void Quadrature_Vector::quadrature_point_values(const ElementMap &dof,
+                                                Vector2 const*const*x_global, Vector2 *vals) {
+  dof.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals);
 }
 
-void Quadrature_Vector::quadrature_point_values(int i, int j, const ElementMap &dof,
-                                                   const IceModelVec2V &x_global,
-                                                   Vector2 *vals) {
-  dof.nodal_values(i, j, x_global, m_tmp);
+void Quadrature_Vector::quadrature_point_values(const ElementMap &dof,
+                                                const IceModelVec2V &x_global,
+                                                Vector2 *vals) {
+  dof.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals);
 }
 
@@ -503,17 +501,17 @@ void Quadrature_Vector::quadrature_point_values(int i, int j, const ElementMap &
   Each entry of `Dv` is an array of three numbers:
   @f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]@f].
 */
-void Quadrature_Vector::quadrature_point_values(int i, int j, const ElementMap &dof,
-                                                   Vector2 const*const* x_global,
-                                                   Vector2 *vals, double (*Dv)[3]) {
-  dof.nodal_values(i, j, x_global, m_tmp);
+void Quadrature_Vector::quadrature_point_values(const ElementMap &dof,
+                                                Vector2 const*const* x_global,
+                                                Vector2 *vals, double (*Dv)[3]) {
+  dof.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals, Dv);
 }
 
-void Quadrature_Vector::quadrature_point_values(int i, int j, const ElementMap &dof,
-                                                   const IceModelVec2V &x_global,
-                                                   Vector2 *vals, double (*Dv)[3]) {
-  dof.nodal_values(i, j, x_global, m_tmp);
+void Quadrature_Vector::quadrature_point_values(const ElementMap &dof,
+                                                const IceModelVec2V &x_global,
+                                                Vector2 *vals, double (*Dv)[3]) {
+  dof.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals, Dv);
 }
 
