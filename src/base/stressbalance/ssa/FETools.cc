@@ -93,43 +93,14 @@ ElementMap::~ElementMap() {
   // empty
 }
 
-
-//! Extract scalar degrees of freedom for the element specified previously with ElementMap::reset
-void ElementMap::nodal_values(double const*const*x_global, double *result) const
-{
-  nodal_values(m_i, m_j, x_global, result);
-}
-
-void ElementMap::nodal_values(const IceModelVec2S &x_global, double *result) const
-{
-  nodal_values(m_i, m_j, x_global, result);
-}
-
 void ElementMap::nodal_values(const IceModelVec2Int &x_global, int *result) const
 {
   for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
     const int
-      ii = m_i + kIOffset[k],
-      jj = m_j + kJOffset[k];
+      ii = m_i + m_i_offset[k],
+      jj = m_j + m_j_offset[k];
     result[k] = x_global.as_int(ii, jj);
   }
-}
-
-void ElementMap::nodal_values(Vector2 const*const*x_global, Vector2 *result) const
-{
-  nodal_values(m_i, m_j, x_global, result);
-}
-
-//! Extract vector degrees of freedom for the element specified previously with ElementMap::reset
-void ElementMap::nodal_values(const IceModelVec2V &x_global, Vector2 *result) const
-{
-  nodal_values(m_i, m_j, x_global, result);
-}
-
-//! Convert a local degree of freedom index `k` to a global degree of freedom index (`i`,`j`).
-void ElementMap::localToGlobal(int k, int *i, int *j) const {
-  *i = m_i + kIOffset[k];
-  *j = m_j + kJOffset[k];
 }
 
 void ElementMap::reset(int i, int j) {
@@ -137,8 +108,8 @@ void ElementMap::reset(int i, int j) {
   m_j = j;
 
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; ++k) {
-    m_col[k].i = i + kIOffset[k];
-    m_col[k].j = j + kJOffset[k];
+    m_col[k].i = i + m_i_offset[k];
+    m_col[k].j = j + m_j_offset[k];
     m_col[k].k = 0;
 
     m_row[k].i = m_col[k].i;
@@ -157,15 +128,15 @@ void ElementMap::reset(int i, int j, const IceGrid &grid) {
     int pism_i = m_row[k].i, pism_j = m_row[k].j;
     if (pism_i < grid.xs() || grid.xs() + grid.xm() - 1 < pism_i ||
         pism_j < grid.ys() || grid.ys() + grid.ym() - 1 < pism_j) {
-      markRowInvalid(k);
+      mark_row_invalid(k);
     }
   }
 }
 
 /*!@brief Mark that the row corresponding to local degree of freedom `k` should not be updated
   when inserting into the global residual or Jacobian arrays. */
-void ElementMap::markRowInvalid(int k) {
-  m_row[k].i = m_row[k].j = kDofInvalid;
+void ElementMap::mark_row_invalid(int k) {
+  m_row[k].i = m_row[k].j = m_invalid_dof;
   // We are solving a 2D system, so MatStencil::k is not used. Here we
   // use it to mark invalid rows.
   m_row[k].k = 1;
@@ -173,54 +144,11 @@ void ElementMap::markRowInvalid(int k) {
 
 /*!@brief Mark that the column corresponding to local degree of freedom `k` should not be updated
   when inserting into the global Jacobian arrays. */
-void ElementMap::markColInvalid(int k) {
-  m_col[k].i = m_col[k].j = kDofInvalid;
+void ElementMap::mark_col_invalid(int k) {
+  m_col[k].i = m_col[k].j = m_invalid_dof;
   // We are solving a 2D system, so MatStencil::k is not used. Here we
   // use it to mark invalid columns.
   m_col[k].k = 1;
-}
-
-/*!@brief Add the values of element-local residual contributions `y` to the global residual
-  vector `yg`. */
-/*! The element-local residual should be an array of Nk values.*/
-void ElementMap::add_residual_contribution(const Vector2 *y, Vector2 **yg) const {
-  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
-    if (m_row[k].k == 1) {
-      // skip rows marked as "invalid"
-      continue;
-    }
-    yg[m_row[k].j][m_row[k].i] += y[k];
-  }
-}
-
-void ElementMap::add_residual_contribution(const double *y, double **yg) const {
-  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
-    if (m_row[k].k == 1) {
-      // skip rows marked as "invalid"
-      continue;
-    }
-    yg[m_row[k].j][m_row[k].i] += y[k];
-  }
-}
-
-void ElementMap::add_residual_contribution(const Vector2 *y, IceModelVec2V &y_global) const {
-  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
-    if (m_row[k].k == 1) {
-      // skip rows marked as "invalid"
-      continue;
-    }
-    y_global(m_row[k].i, m_row[k].j) += y[k];
-  }
-}
-
-void ElementMap::add_residual_contribution(const double *y, IceModelVec2S &y_global) const {
-  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
-    if (m_row[k].k == 1) {
-      // skip rows marked as "invalid"
-      continue;
-    }
-    y_global(m_row[k].i, m_row[k].j) += y[k];
-  }
 }
 
 //! Add the contributions of an element-local Jacobian to the global Jacobian vector.
@@ -230,7 +158,7 @@ void ElementMap::add_residual_contribution(const double *y, IceModelVec2S &y_glo
  *
  *  Note that MatSetValuesBlockedStencil ignores negative indexes, so
  *  values in K corresponding to locations marked using
- *  markRowInvalid() and markColInvalid() are ignored. (Just as they
+ *  mark_row_invalid() and mark_col_invalid() are ignored. (Just as they
  *  should be.)
  */
 void ElementMap::add_jacobian_contribution(const double *K, Mat J) const {
@@ -241,8 +169,8 @@ void ElementMap::add_jacobian_contribution(const double *K, Mat J) const {
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
-const int ElementMap::kIOffset[4] = {0, 1, 1, 0};
-const int ElementMap::kJOffset[4] = {0, 0, 1, 1};
+const int ElementMap::m_i_offset[4] = {0, 1, 1, 0};
+const int ElementMap::m_j_offset[4] = {0, 0, 1, 1};
 
 Quadrature_Scalar::Quadrature_Scalar(double dx, double dy, double L)
   : Quadrature2x2(dx, dy, L) {
@@ -532,8 +460,8 @@ void DirichletData::constrain(ElementMap &element_map) {
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
-      element_map.markRowInvalid(k);
-      element_map.markColInvalid(k);
+      element_map.mark_row_invalid(k);
+      element_map.mark_col_invalid(k);
     }
   }
 }
@@ -553,8 +481,8 @@ void DirichletData_Scalar::update(const ElementMap &element_map, double* x_nodal
   element_map.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
-      int i, j;
-      element_map.localToGlobal(k, &i, &j);
+      int i = 0, j = 0;
+      element_map.local_to_global(k, i, j);
       x_nodal[k] = (*m_values)(i,j);
     }
   }
@@ -649,8 +577,8 @@ void DirichletData_Vector::update(const ElementMap &element_map, Vector2* x_noda
   element_map.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
-      int i, j;
-      element_map.localToGlobal(k, &i, &j);
+      int i = 0, j = 0;
+      element_map.local_to_global(k, i, j);
       x_nodal[k] = (*m_values)(i, j);
     }
   }

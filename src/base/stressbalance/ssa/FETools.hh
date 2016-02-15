@@ -218,55 +218,80 @@ public:
   ElementMap();
   ~ElementMap();
 
-  // scalar
-  void nodal_values(const IceModelVec2S &x_global, double *result) const;
-  void nodal_values(const IceModelVec2Int &x_global, int *result) const;
-  void nodal_values(double const*const*x_global, double *result) const;
-
-  void add_residual_contribution(const double *y, IceModelVec2S &y_global) const;
-  void add_residual_contribution(const double *y, double **yg) const;
-
-  // vector
-  void nodal_values(const IceModelVec2V &x_global, Vector2 *x_local) const;
-  void nodal_values(Vector2 const*const*x_global, Vector2 *x_local) const;
-
-  void add_residual_contribution(const Vector2 *y, IceModelVec2V &y_global) const;
-  void add_residual_contribution(const Vector2 *y, Vector2 **yg) const;
-
-  void reset(int i, int j, const IceGrid &g);
-
-  void markRowInvalid(int k);
-  void markColInvalid(int k);
-
-  void localToGlobal(int k, int *i, int *j) const;
-
-  void add_jacobian_contribution(const double *K, Mat J) const;
-
-private:
-  void reset(int i, int j);
-
   /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
       into the element-local array `result`.
   */
   template<typename T>
-  void nodal_values(int i, int j, T const* const* x_global, T* result) const {
+  void nodal_values(T const* const* x_global, T* result) const {
     for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+      int i = 0, j = 0;
+      local_to_global(k, i, j);
+      result[k] = x_global[j][i];   // note the indexing order
+    }
+  }
+
+  /*! @brief Extract nodal values for the element (`i`,`j`) from global IceModelVec `x_global`
+      into the element-local array `result`.
+  */
+  template<class C, typename T>
+  void nodal_values(const C& x_global, T* result) const {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+      int i = 0, j = 0;
+      local_to_global(k, i, j);
+      result[k] = x_global(i, j);   // note the indexing order
+    }
+  }
+
+  /*! @brief Get nodal values of an integer mask. */
+  void nodal_values(const IceModelVec2Int &x_global, int *result) const;
+
+  /*! @brief Add the values of element-local residual contributions `y` to the global residual
+    vector `y_global`. */
+  /*! The element-local residual should be an array of Nk values.*/
+  template<typename T>
+  void add_residual_contribution(const T *residual, T** y_global) const {
+    for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
+      if (m_row[k].k == 1) {
+        // skip rows marked as "invalid"
+        continue;
+      }
       const int
-        ii = i + kIOffset[k],
-        jj = j + kJOffset[k];
-      result[k] = x_global[jj][ii];
+        i = m_row[k].i,
+        j = m_row[k].j;
+      y_global[j][i] += residual[k];   // note the indexing order
     }
   }
 
   template<class C, typename T>
-  void nodal_values(int i, int j, const C& x_global, T* result) const {
-    for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+  void add_residual_contribution(const T *residual, C& y_global) const {
+    for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
+      if (m_row[k].k == 1) {
+        // skip rows marked as "invalid"
+        continue;
+      }
       const int
-        ii = i + kIOffset[k],
-        jj = j + kJOffset[k];
-      result[k] = x_global(ii, jj);
+        i = m_row[k].i,
+        j = m_row[k].j;
+      y_global(i, j) += residual[k];   // note the indexing order
     }
   }
+
+  void reset(int i, int j, const IceGrid &g);
+
+  void mark_row_invalid(int k);
+  void mark_col_invalid(int k);
+
+  //! Convert a local degree of freedom index `k` to a global degree of freedom index (`i`,`j`).
+  void local_to_global(int k, int &i, int &j) const {
+    i = m_i + m_i_offset[k];
+    j = m_j + m_j_offset[k];
+  }
+
+  void add_jacobian_contribution(const double *K, Mat J) const;
+
+private:
+
+  void reset(int i, int j);
 
   //! Constant for marking invalid row/columns.
   //!
@@ -274,11 +299,11 @@ private:
   //! Seems like it has to be negative and below the smallest allowed index, i.e. -2 and below with
   //! the stencil of width 1 (-1 *is* an allowed index). We use -2^30 and *don't* use PETSC_MIN_INT,
   //! because PETSC_MIN_INT depends on PETSc's configuration flags.
-  static const int kDofInvalid = -1073741824;
-  static const int kIOffset[ShapeQ1::Nk];
-  static const int kJOffset[ShapeQ1::Nk];
+  static const int m_invalid_dof = -1073741824;
+  static const int m_i_offset[ShapeQ1::Nk];
+  static const int m_j_offset[ShapeQ1::Nk];
 
-  //! Indices of the current element (for updating residual/Jacobian).
+  //! Indices of the current element.
   int m_i, m_j;
 
   //! Stencils for updating entries of the Jacobian matrix.
