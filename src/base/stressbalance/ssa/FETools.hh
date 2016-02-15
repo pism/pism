@@ -223,18 +223,12 @@ public:
   void nodal_values(const IceModelVec2Int &x_global, int *result) const;
   void nodal_values(double const*const*x_global, double *result) const;
 
-  void nodal_values(int i, int j, const IceModelVec2S &x_global, double *result) const;
-  void nodal_values(int i, int j, double const*const*x_global, double *result) const;
-
   void add_residual_contribution(const double *y, IceModelVec2S &y_global) const;
   void add_residual_contribution(const double *y, double **yg) const;
 
   // vector
   void nodal_values(const IceModelVec2V &x_global, Vector2 *x_local) const;
   void nodal_values(Vector2 const*const*x_global, Vector2 *x_local) const;
-
-  void nodal_values(int i, int j, const IceModelVec2V &x_global, Vector2 *x_local) const;
-  void nodal_values(int i, int j, Vector2 const*const*x_global, Vector2 *x_local) const;
 
   void add_residual_contribution(const Vector2 *y, IceModelVec2V &y_global) const;
   void add_residual_contribution(const Vector2 *y, Vector2 **yg) const;
@@ -250,6 +244,29 @@ public:
 
 private:
   void reset(int i, int j);
+
+  /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
+      into the element-local array `result`.
+  */
+  template<typename T>
+  void nodal_values(int i, int j, T const* const* x_global, T* result) const {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+      const int
+        ii = i + kIOffset[k],
+        jj = j + kJOffset[k];
+      result[k] = x_global[jj][ii];
+    }
+  }
+
+  template<class C, typename T>
+  void nodal_values(int i, int j, const C& x_global, T* result) const {
+    for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+      const int
+        ii = i + kIOffset[k],
+        jj = j + kJOffset[k];
+      result[k] = x_global(ii, jj);
+    }
+  }
 
   //! Constant for marking invalid row/columns.
   //!

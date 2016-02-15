@@ -94,48 +94,6 @@ ElementMap::~ElementMap() {
 }
 
 
-/*! @brief Extract nodal values for element (`i`,`j`) from the gridded field `x_global` into
-  an array `result` (scalar-valued DOF version). */
-void ElementMap::nodal_values(int i, int j, double const*const*x_global, double *result) const
-{
-  result[0] = x_global[j][i];
-  result[1] = x_global[j][i + 1];
-  result[2] = x_global[j + 1][i + 1];
-  result[3] = x_global[j + 1][i];
-}
-
-void ElementMap::nodal_values(int i, int j,
-                              const IceModelVec2S &x_global, double *result) const
-{
-  result[0] = x_global(i, j);
-  result[1] = x_global(i + 1, j);
-  result[2] = x_global(i + 1, j + 1);
-  result[3] = x_global(i, j + 1);
-}
-
-/*! @brief Extract local degrees of freedom for element (`i`,`j`) from global vector `x_global` to
-  local vector `result` (vector-valued DOF version).
-*/
-void ElementMap::nodal_values(int i, int j, Vector2 const*const*x_global,
-                              Vector2 *result) const
-{
-  result[0] = x_global[j][i];
-  result[1] = x_global[j][i + 1];
-  result[2] = x_global[j + 1][i + 1];
-  result[3] = x_global[j + 1][i];
-}
-
-void ElementMap::nodal_values(int i, int j,
-                              const IceModelVec2V &x_global,
-                              Vector2 *result) const
-{
-  result[0] = x_global(i, j);
-  result[1] = x_global(i + 1, j);
-  result[2] = x_global(i + 1, j + 1);
-  result[3] = x_global(i, j + 1);
-}
-
-
 //! Extract scalar degrees of freedom for the element specified previously with ElementMap::reset
 void ElementMap::nodal_values(double const*const*x_global, double *result) const
 {
@@ -149,10 +107,12 @@ void ElementMap::nodal_values(const IceModelVec2S &x_global, double *result) con
 
 void ElementMap::nodal_values(const IceModelVec2Int &x_global, int *result) const
 {
-  result[0] = x_global.as_int(m_i, m_j);
-  result[1] = x_global.as_int(m_i + 1, m_j);
-  result[2] = x_global.as_int(m_i + 1, m_j + 1);
-  result[3] = x_global.as_int(m_i, m_j + 1);
+  for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+    const int
+      ii = m_i + kIOffset[k],
+      jj = m_j + kJOffset[k];
+    result[k] = x_global.as_int(ii, jj);
+  }
 }
 
 void ElementMap::nodal_values(Vector2 const*const*x_global, Vector2 *result) const
