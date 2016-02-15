@@ -515,7 +515,6 @@ void SSAFEM::cache_residual_cfbc() {
 
         if (not interior_element) {
           // not an interior element: the contribution is zero
-          m_element_map.add_residual_contribution(&I[0], m_boundary_integral);
           continue;
         }
 
