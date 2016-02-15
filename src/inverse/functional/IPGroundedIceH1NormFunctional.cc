@@ -63,12 +63,12 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
         continue;
       }
 
-      m_element_map.reset(i, j);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.nodal_values(x, x_e);
+      m_element.nodal_values(x, x_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_element_map, x_e);
+        dirichletBC.update_homogeneous(m_element, x_e);
       }
       m_quadrature.quadrature_point_values(x_e, x_q, dxdx_q, dxdy_q);
 
@@ -123,18 +123,18 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
         continue;
       }
 
-      m_element_map.reset(i, j);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.nodal_values(a, a_e);
+      m_element.nodal_values(a, a_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_element_map, a_e);
+        dirichletBC.update_homogeneous(m_element, a_e);
       }
       m_quadrature.quadrature_point_values(a_e, a_q, dadx_q, dady_q);
 
-      m_element_map.nodal_values(b, b_e);
+      m_element.nodal_values(b, b_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_element_map, b_e);
+        dirichletBC.update_homogeneous(m_element, b_e);
       }
       m_quadrature.quadrature_point_values(b_e, b_q, dbdx_q, dbdy_q);
 
@@ -193,13 +193,13 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
       }
 
       // Reset the DOF map for this element.
-      m_element_map.reset(i, j);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.nodal_values(x, x_e);
+      m_element.nodal_values(x, x_e);
       if (dirichletBC) {
-        dirichletBC.constrain(m_element_map);
-        dirichletBC.update_homogeneous(m_element_map, x_e);
+        dirichletBC.constrain(m_element);
+        dirichletBC.update_homogeneous(m_element, x_e);
       }
       m_quadrature.quadrature_point_values(x_e, x_q, dxdx_q, dxdy_q);
 
@@ -216,7 +216,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
             m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
       } // q
-      m_element_map.add_residual_contribution(gradient_e, gradient);
+      m_element.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
 }
@@ -268,11 +268,11 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
       double K[Nk][Nk];
 
       // Initialize the map from global to local degrees of freedom for this element.
-      m_element_map.reset(i, j);
+      m_element.reset(i, j);
 
       // Don't update rows/cols where we project to zero.
       if (zeroLocs) {
-        zeroLocs.constrain(m_element_map);
+        zeroLocs.constrain(m_element);
       }
 
       // Build the element-local Jacobian.
@@ -289,7 +289,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
           } // l
         } // k
       } // q
-      m_element_map.add_jacobian_contribution(&K[0][0], form);
+      m_element.add_jacobian_contribution(&K[0][0], form);
     } // j
   } // i
 

@@ -38,7 +38,7 @@ namespace stressbalance {
 SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : SSA(g, e),
     m_element_index(*g),
-    m_element_map(*g),
+    m_element(*g),
     m_quadrature(g->dx(), g->dy(), 1.0),
     m_quadrature_vector(g->dx(), g->dy(), 1.0) {
 
@@ -308,19 +308,19 @@ void SSAFEM::cache_inputs() {
         double hq[Nq], hxq[Nq], hyq[Nq];
         double ds_xq[Nq], ds_yq[Nq];
 
-        m_element_map.reset(i, j);
+        m_element.reset(i, j);
 
         if (driving_stress_explicit) {
-          m_quadrature.quadrature_point_values(m_element_map, *m_driving_stress_x, ds_xq);
-          m_quadrature.quadrature_point_values(m_element_map, *m_driving_stress_y, ds_yq);
+          m_quadrature.quadrature_point_values(m_element, *m_driving_stress_x, ds_xq);
+          m_quadrature.quadrature_point_values(m_element, *m_driving_stress_y, ds_yq);
         } else {
-          m_quadrature.quadrature_point_values(m_element_map, *m_surface, hq, hxq, hyq);
+          m_quadrature.quadrature_point_values(m_element, *m_surface, hq, hxq, hyq);
         }
 
         double Hq[Nq], bq[Nq], taucq[Nq];
-        m_quadrature.quadrature_point_values(m_element_map, *m_thickness, Hq);
-        m_quadrature.quadrature_point_values(m_element_map, *m_bed, bq);
-        m_quadrature.quadrature_point_values(m_element_map, *m_tauc, taucq);
+        m_quadrature.quadrature_point_values(m_element, *m_thickness, Hq);
+        m_quadrature.quadrature_point_values(m_element, *m_bed, bq);
+        m_quadrature.quadrature_point_values(m_element, *m_tauc, taucq);
 
         const int ij = m_element_index.flatten(i, j);
         Coefficients *coefficients = &m_coefficients[4*ij];
@@ -499,10 +499,10 @@ void SSAFEM::cache_residual_cfbc() {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j);
+        m_element.reset(i, j);
 
         int node_type[Nk];
-        m_element_map.nodal_values(m_node_type, node_type);
+        m_element.nodal_values(m_node_type, node_type);
 
         // an element is "interior" if all its nodes are interior or boundary
         const bool interior_element = (node_type[0] < NODE_EXTERIOR and
@@ -520,10 +520,10 @@ void SSAFEM::cache_residual_cfbc() {
         }
 
         double H_nodal[Nk];
-        m_element_map.nodal_values(*m_thickness, H_nodal);
+        m_element.nodal_values(*m_thickness, H_nodal);
 
         double b_nodal[Nk];
-        m_element_map.nodal_values(*m_bed, b_nodal);
+        m_element.nodal_values(*m_bed, b_nodal);
 
         // nodes corresponding to a given element "side"
         const int nodes[n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
@@ -597,7 +597,7 @@ void SSAFEM::cache_residual_cfbc() {
 
         } // loop over element sides
 
-        m_element_map.add_residual_contribution(&I[0], m_boundary_integral);
+        m_element.add_residual_contribution(&I[0], m_boundary_integral);
 
       } // i-loop
     } // j-loop
@@ -663,10 +663,10 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
       for (int i = xs; i < xs + xm; i++) {
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j);
+        m_element.reset(i, j);
 
         int node_type[Nk];
-        m_element_map.nodal_values(m_node_type, node_type);
+        m_element.nodal_values(m_node_type, node_type);
 
         // an element is "interior" if all its nodes are interior or boundary
         const bool interior_element = (node_type[0] < NODE_EXTERIOR and
@@ -692,16 +692,16 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
         // Obtain the value of the solution at the nodes adjacent to the element.
-        m_element_map.nodal_values(velocity_global, velocity_nodal);
+        m_element.nodal_values(velocity_global, velocity_nodal);
 
         // These values now need to be adjusted if some nodes in the element have
         // Dirichlet data.
         if (dirichlet_data) {
           // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
-          dirichlet_data.update(m_element_map, velocity_nodal);
-          // mark Dirichlet nodes in m_element_map so that they are not touched by add_residual_contribution()
+          dirichlet_data.update(m_element, velocity_nodal);
+          // mark Dirichlet nodes in m_element so that they are not touched by add_residual_contribution()
           // below
-          dirichlet_data.constrain(m_element_map);
+          dirichlet_data.constrain(m_element);
         }
 
         // Zero out the element-local residual in preparation for updating it.
@@ -745,7 +745,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           } // k
         } // q
 
-        m_element_map.add_residual_contribution(residual, residual_global);
+        m_element.add_residual_contribution(residual, residual_global);
       } // j-loop
     } // i-loop
   } catch (...) {
@@ -876,10 +876,10 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j);
+        m_element.reset(i, j);
 
         int node_type[Nk];
-        m_element_map.nodal_values(m_node_type, node_type);
+        m_element.nodal_values(m_node_type, node_type);
         // an element is "interior" if all its nodes are interior or boundary
         const bool interior_element = (node_type[0] < NODE_EXTERIOR and
                                        node_type[1] < NODE_EXTERIOR and
@@ -889,13 +889,13 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         if (interior_element or (not use_cfbc)) {
 
           // Obtain the value of the solution at the adjacent nodes to the element.
-          m_element_map.nodal_values(velocity_global, velocity_local);
+          m_element.nodal_values(velocity_global, velocity_local);
 
           // These values now need to be adjusted if some nodes in the element have
           // Dirichlet data.
           if (dirichlet_data) {
-            dirichlet_data.update(m_element_map, velocity_local);
-            dirichlet_data.constrain(m_element_map);
+            dirichlet_data.update(m_element, velocity_local);
+            dirichlet_data.constrain(m_element);
           }
 
           // Compute the values of the solution at the quadrature points.
@@ -967,7 +967,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
               } // l
             } // k
           } // q
-          m_element_map.add_jacobian_contribution(&K[0][0], Jac);
+          m_element.add_jacobian_contribution(&K[0][0], Jac);
         } else {
           // an exterior element: no contribution
         }

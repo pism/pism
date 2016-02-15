@@ -193,7 +193,7 @@ protected:
   IceModelVec2V  m_du_local;
 
   fem::ElementIterator   m_element_index;
-  fem::ElementMap        m_element_map;
+  fem::ElementMap        m_element;
   fem::Quadrature_Scalar m_quadrature;
   fem::Quadrature_Vector m_quadrature_vector;
 

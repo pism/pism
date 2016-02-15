@@ -36,7 +36,7 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g, Enthalpy
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
     m_element_index(*m_grid),
-    m_element_map(*m_grid),
+    m_element(*m_grid),
     m_quadrature(g->dx(), g->dy(), 1.0),
     m_quadrature_vector(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
@@ -146,9 +146,9 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_element_map.reset(i, j);
+      m_element.reset(i, j);
 
-      m_quadrature.quadrature_point_values(m_element_map, tauc, tauc_q);
+      m_quadrature.quadrature_point_values(m_element, tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[ij*Nq];
       for (unsigned int q = 0; q < Nq; q++) {
@@ -322,25 +322,25 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j);
+        m_element.reset(i, j);
 
         // Obtain the value of the solution at the nodes adjacent to the element,
         // fix dirichlet values, and compute values at quad pts.
-        m_element_map.nodal_values(u, u_e);
+        m_element.nodal_values(u, u_e);
         if (dirichletBC) {
-          dirichletBC.constrain(m_element_map);
-          dirichletBC.update(m_element_map, u_e);
+          dirichletBC.constrain(m_element);
+          dirichletBC.update(m_element, u_e);
         }
         m_quadrature_vector.quadrature_point_values(u_e, u_q);
 
         // Compute dzeta at the nodes
-        m_element_map.nodal_values(*dzeta_local, dzeta_e);
+        m_element.nodal_values(*dzeta_local, dzeta_e);
         if (fixedZeta) {
-          fixedZeta.update_homogeneous(m_element_map, dzeta_e);
+          fixedZeta.update_homogeneous(m_element, dzeta_e);
         }
 
         // Compute the change in tau_c with respect to zeta at the quad points.
-        m_element_map.nodal_values(*m_zeta, zeta_e);
+        m_element.nodal_values(*m_zeta, zeta_e);
         for (unsigned int k = 0; k < Nk; k++) {
           m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
           dtauc_e[k] *= dzeta_e[k];
@@ -363,7 +363,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
             du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
           }
         } // q
-        m_element_map.add_residual_contribution(du_e, du_a);
+        m_element.add_residual_contribution(du_e, du_a);
       } // j
     } // i
   } catch (...) {
@@ -474,19 +474,19 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j);
+        m_element.reset(i, j);
 
         // Obtain the value of the solution at the nodes adjacent to the element.
         // Compute the solution values and symmetric gradient at the quadrature points.
-        m_element_map.nodal_values(*du_local, du_e);
+        m_element.nodal_values(*du_local, du_e);
         if (dirichletBC) {
-          dirichletBC.update_homogeneous(m_element_map, du_e);
+          dirichletBC.update_homogeneous(m_element, du_e);
         }
         m_quadrature_vector.quadrature_point_values(du_e, du_q);
 
-        m_element_map.nodal_values(u, u_e);
+        m_element.nodal_values(u, u_e);
         if (dirichletBC) {
-          dirichletBC.update(m_element_map, u_e);
+          dirichletBC.update(m_element, u_e);
         }
         m_quadrature_vector.quadrature_point_values(u_e, u_q);
 
@@ -512,7 +512,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
           }
         } // q
 
-        m_element_map.add_residual_contribution(dzeta_e, dzeta_a);
+        m_element.add_residual_contribution(dzeta_e, dzeta_a);
       } // j
     } // i
   } catch (...) {

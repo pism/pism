@@ -183,7 +183,7 @@ protected:
   IceModelVec2S  m_hardav;
 
   fem::ElementIterator   m_element_index;
-  fem::ElementMap        m_element_map;
+  fem::ElementMap        m_element;
   fem::Quadrature_Scalar m_quadrature;
 
   petsc::KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
