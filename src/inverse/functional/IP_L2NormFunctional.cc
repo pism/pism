@@ -27,13 +27,11 @@ namespace inverse {
 void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // The value of the objective
   double value = 0;
 
-  double x_e[Nk];
   double x_q[Nq];
 
   IceModelVec::AccessList list(x);
@@ -50,10 +48,10 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
+      m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.nodal_values(i, j, x, x_e);
-      m_quadrature.quadrature_point_values(x_e, x_q);
+      m_quadrature.quadrature_point_values(m_element_map, x, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         const double x_qq = x_q[q];
@@ -163,13 +161,11 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
 void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
   using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = Quadrature2x2::Nq;
 
   // The value of the objective
   double value = 0;
 
-  Vector2 x_e[Nk];
   Vector2 x_q[Nq];
 
   IceModelVec::AccessList list(x);
@@ -186,10 +182,10 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
+      m_element_map.reset(i, j, *m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_element_map.nodal_values(i, j, x, x_e);
-      m_quadrature_vector.quadrature_point_values(x_e, x_q);
+      m_quadrature_vector.quadrature_point_values(m_element_map, x, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         const Vector2 &x_qq = x_q[q];
