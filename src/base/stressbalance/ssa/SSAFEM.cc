@@ -356,7 +356,7 @@ void SSAFEM::cache_inputs() {
         // but the way we have just obtained the values at the element vertices
         // using getInternalColumn doesn't make this straightforward.  So we compute the values
         // by hand.
-        const Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+        const Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
         for (unsigned int k = 0; k < m_grid->Mz(); k++) {
           Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
           for (unsigned int q = 0; q < Nq; q++) {
@@ -648,7 +648,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   double Du[Nq][3];
 
   // An Nq by Nk array of test function values.
-  const Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
 
   // Iterate over the elements.
   const int
@@ -848,7 +848,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
 
   // Loop through all the elements.
   int

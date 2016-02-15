@@ -283,7 +283,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double dB_q[Nq];
 
   // An Nq by Nk array of test function values.
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
 
   fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
                                         m_dirichletWeight);
@@ -446,7 +446,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   double dzeta_e[Nk];
 
   // An Nq by Nk array of test function values.
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
 
   // Aliases to help with notation consistency.
   const IceModelVec2Int *m_dirichletLocations = m_bc_mask;

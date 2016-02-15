@@ -427,9 +427,9 @@ public:
   // Germ<double>s
   typedef Germ<double> GermArray[Nq];
 
-  const GermArray* testFunctionValues();
-  const Germ<double>* testFunctionValues(int q);
-  const Germ<double>* testFunctionValues(int q, int k);
+  const GermArray* test_function_values();
+  const Germ<double>* test_function_values(int q);
+  const Germ<double>* test_function_values(int q, int k);
 
   const double* weighted_jacobian();
 
