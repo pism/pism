@@ -765,10 +765,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
     // marked with ones.
     DirichletData_Vector dirichlet_ice_free(&m_node_type, NULL, m_dirichletScale);
     dirichlet_ice_free.fix_residual_homogeneous(residual_global);
-    dirichlet_ice_free.finish();
   }
 
-  dirichlet_data.finish();
 
   monitor_function(velocity_global, residual_global);
 }
@@ -990,15 +988,12 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
     dirichlet_data.fix_jacobian(Jac);
   }
 
-  dirichlet_data.finish();
-
   if (use_cfbc) {
     // Prescribe homogeneous Dirichlet B.C. at ice-free nodes. This uses the fact that m_node_type
     // can be used as a "Dirichlet B.C. mask", i.e. ice-free nodes (and only ice-free nodes) are
     // marked with ones.
     fem::DirichletData_Vector dirichlet_ice_free(&m_node_type, NULL, m_dirichletScale);
     dirichlet_ice_free.fix_jacobian(Jac);
-    dirichlet_ice_free.finish();
   }
 
   ierr = MatAssemblyBegin(Jac, MAT_FINAL_ASSEMBLY);

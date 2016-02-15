@@ -374,9 +374,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);
   }
-
-  dirichletBC.finish();
-  fixedZeta.finish();
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
@@ -523,8 +520,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   }
   loop.check();
 
-  dirichletBC.finish();
-
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -536,7 +531,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   if (m_fixed_tauc_locations) {
     fem::DirichletData_Scalar fixedTauc(m_fixed_tauc_locations, NULL);
     fixedTauc.fix_residual_homogeneous(dzeta_a);
-    fixedTauc.finish();
   }
 }
 
@@ -634,7 +628,6 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
     dirichletBC.fix_residual_homogeneous(du_a);
   }
 
-  dirichletBC.finish();
   m_du_global.end_access();
 
   // call PETSc to solve linear system by iterative method.

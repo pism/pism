@@ -495,13 +495,14 @@ private:
 //* Parts shared by scalar and 2D vector Dirichlet data classes.
 class DirichletData {
 public:
-  DirichletData();
-  ~DirichletData();
   void constrain(ElementMap &dofmap);
   operator bool() {
     return m_indices != NULL;
   }
 protected:
+  DirichletData();
+  ~DirichletData();
+
   void init(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
   void finish(const IceModelVec *values);
 
@@ -512,26 +513,30 @@ protected:
 
 class DirichletData_Scalar : public DirichletData {
 public:
-  DirichletData_Scalar(const IceModelVec2Int *indices, const IceModelVec2S *values, double weight = 1.0);
+  DirichletData_Scalar(const IceModelVec2Int *indices, const IceModelVec2S *values,
+                       double weight = 1.0);
+  ~DirichletData_Scalar();
+
   void update(const ElementMap &dofmap, double* x_e);
   void update_homogeneous(const ElementMap &dofmap, double* x_e);
   void fix_residual(double const *const *const x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
-  void finish();
 protected:
   const IceModelVec2S *m_values;
 };
 
 class DirichletData_Vector : public DirichletData {
 public:
-  DirichletData_Vector(const IceModelVec2Int *indices, const IceModelVec2V *values, double weight);
+  DirichletData_Vector(const IceModelVec2Int *indices, const IceModelVec2V *values,
+                       double weight);
+  ~DirichletData_Vector();
+
   void update(const ElementMap &dofmap, Vector2* x_e);
   void update_homogeneous(const ElementMap &dofmap, Vector2* x_e);
   void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
   void fix_residual_homogeneous(Vector2 **r);
   void fix_jacobian(Mat J);
-  void finish();
 protected:
   const IceModelVec2V *m_values;
 };

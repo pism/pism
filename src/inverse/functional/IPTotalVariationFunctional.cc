@@ -75,8 +75,6 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   } // i
 
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
-
-  dirichletBC.finish();
 }
 
 void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
@@ -140,8 +138,6 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
       m_element_map.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
-
-  dirichletBC.finish();
 }
 
 } // end of namespace inverse

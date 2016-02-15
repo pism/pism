@@ -68,8 +68,6 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   } // i
 
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
-
-  dirichletBC.finish();
 }
 
 void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
@@ -126,8 +124,6 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   } // i
 
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
-
-  dirichletBC.finish();
 }
 
 
@@ -193,8 +189,6 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
       m_element_map.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
-
-  dirichletBC.finish();
 }
 
 void IP_H1NormFunctional2S::assemble_form(Mat form) {
@@ -268,7 +262,6 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
   if (zeroLocs) {
     zeroLocs.fix_jacobian(form);
   }
-  zeroLocs.finish();
 
   ierr = MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY);
   PISM_CHK(ierr, "MatAssemblyBegin");

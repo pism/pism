@@ -417,11 +417,7 @@ DirichletData::DirichletData()
 }
 
 DirichletData::~DirichletData() {
-  if (m_indices != NULL) {
-    m_indices->get_grid()->ctx()->log()->message(1,
-               "Warning: DirichletData destructing with IceModelVecs still accessed."
-               " Looks like DirichletData::finish() was not called.");
-  }
+  finish(NULL);
 }
 
 void DirichletData::init(const IceModelVec2Int *indices,
@@ -441,12 +437,22 @@ void DirichletData::init(const IceModelVec2Int *indices,
 
 void DirichletData::finish(const IceModelVec *values) {
   if (m_indices != NULL) {
-    m_indices->end_access();
-    m_indices = NULL;
+    MPI_Comm com = m_indices->get_grid()->ctx()->com();
+    try {
+      m_indices->end_access();
+      m_indices = NULL;
+    } catch (...) {
+      handle_fatal_errors(com);
+    }
   }
 
   if (values != NULL) {
-    values->end_access();
+    MPI_Comm com = values->get_grid()->ctx()->com();
+    try {
+      values->end_access();
+    } catch (...) {
+      handle_fatal_errors(com);
+    }
   }
 }
 
@@ -553,8 +559,8 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
   loop.check();
 }
 
-void DirichletData_Scalar::finish() {
-  DirichletData::finish(m_values);
+DirichletData_Scalar::~DirichletData_Scalar() {
+  finish(m_values);
   m_values = NULL;
 }
 
@@ -652,8 +658,8 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
   loop.check();
 }
 
-void DirichletData_Vector::finish() {
-  DirichletData::finish(m_values);
+DirichletData_Vector::~DirichletData_Vector() {
+  finish(m_values);
   m_values = NULL;
 }
 
