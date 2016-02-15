@@ -458,14 +458,14 @@ public:
   void quadrature_point_values(const double *x, double *vals);
   void quadrature_point_values(const double *x, double *vals, double *dx, double *dy);
 
-  void quadrature_point_values(const ElementMap &dof, double const*const*x_global,
+  void quadrature_point_values(const ElementMap &element, double const*const*x_global,
                                double *vals);
-  void quadrature_point_values(const ElementMap &dof, double const*const*x_global,
+  void quadrature_point_values(const ElementMap &element, double const*const*x_global,
                                double *vals, double *dx, double *dy);
 
-  void quadrature_point_values(const ElementMap &dof, const IceModelVec2S &x_global,
+  void quadrature_point_values(const ElementMap &element, const IceModelVec2S &x_global,
                                double *vals);
-  void quadrature_point_values(const ElementMap &dof, const IceModelVec2S &x_global,
+  void quadrature_point_values(const ElementMap &element, const IceModelVec2S &x_global,
                                double *vals, double *dx, double *dy);
 private:
   double m_tmp[ShapeQ1::Nk];
@@ -479,14 +479,14 @@ public:
   void quadrature_point_values(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);
   void quadrature_point_values(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);
 
-  void quadrature_point_values(const ElementMap &dof, Vector2 const*const*x_global,
+  void quadrature_point_values(const ElementMap &element, Vector2 const*const*x_global,
                                Vector2 *vals);
-  void quadrature_point_values(const ElementMap &dof, Vector2 const*const*x_global,
+  void quadrature_point_values(const ElementMap &element, Vector2 const*const*x_global,
                                Vector2 *vals, double (*Dv)[3]);
 
-  void quadrature_point_values(const ElementMap &dof, const IceModelVec2V &x_global,
+  void quadrature_point_values(const ElementMap &element, const IceModelVec2V &x_global,
                                Vector2 *vals);
-  void quadrature_point_values(const ElementMap &dof, const IceModelVec2V &x_global,
+  void quadrature_point_values(const ElementMap &element, const IceModelVec2V &x_global,
                                Vector2 *vals, double (*Dv)[3]);
 private:
   Vector2 m_tmp[ShapeQ1::Nk];
@@ -495,7 +495,7 @@ private:
 //* Parts shared by scalar and 2D vector Dirichlet data classes.
 class DirichletData {
 public:
-  void constrain(ElementMap &dofmap);
+  void constrain(ElementMap &element);
   operator bool() {
     return m_indices != NULL;
   }
@@ -517,8 +517,8 @@ public:
                        double weight = 1.0);
   ~DirichletData_Scalar();
 
-  void update(const ElementMap &dofmap, double* x_e);
-  void update_homogeneous(const ElementMap &dofmap, double* x_e);
+  void update(const ElementMap &element, double* x_e);
+  void update_homogeneous(const ElementMap &element, double* x_e);
   void fix_residual(double const *const *const x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
@@ -532,8 +532,8 @@ public:
                        double weight);
   ~DirichletData_Vector();
 
-  void update(const ElementMap &dofmap, Vector2* x_e);
-  void update_homogeneous(const ElementMap &dofmap, Vector2* x_e);
+  void update(const ElementMap &element, Vector2* x_e);
+  void update_homogeneous(const ElementMap &element, Vector2* x_e);
   void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
   void fix_residual_homogeneous(Vector2 **r);
   void fix_jacobian(Mat J);

@@ -264,16 +264,16 @@ void Quadrature_Scalar::quadrature_point_values(const double *x_nodal,
 /*! @brief Compute the values at the quadrature points on element (`i`,`j`)
   of a scalar-valued finite-element function with global degrees of freedom `x`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
-void Quadrature_Scalar::quadrature_point_values(const ElementMap &dof,
+void Quadrature_Scalar::quadrature_point_values(const ElementMap &element,
                                                 double const*const*x_global, double *vals) {
-  dof.nodal_values(x_global, m_tmp);
+  element.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals);
 }
 
 
-void Quadrature_Scalar::quadrature_point_values(const ElementMap &dof,
+void Quadrature_Scalar::quadrature_point_values(const ElementMap &element,
                                                 const IceModelVec2S &x_global, double *vals) {
-  dof.nodal_values(x_global, m_tmp);
+  element.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals);
 }
 
@@ -282,16 +282,16 @@ void Quadrature_Scalar::quadrature_point_values(const ElementMap &dof,
   with global degrees of freedom `x`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output
   vectors `vals`, `dx`, and `dy`. */
-void Quadrature_Scalar::quadrature_point_values(const ElementMap &dof, double const*const*x_global,
+void Quadrature_Scalar::quadrature_point_values(const ElementMap &element, double const*const*x_global,
                                                 double *vals, double *dx, double *dy) {
-  dof.nodal_values(x_global, m_tmp);
+  element.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals, dx, dy);
 }
 
-void Quadrature_Scalar::quadrature_point_values(const ElementMap &dof,
+void Quadrature_Scalar::quadrature_point_values(const ElementMap &element,
                                                 const IceModelVec2S &x_global,
                                                 double *vals, double *dx, double *dy) {
-  dof.nodal_values(x_global, m_tmp);
+  element.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals, dx, dy);
 }
 
@@ -366,16 +366,16 @@ void Quadrature_Vector::quadrature_point_values(const Vector2 *x, Vector2 *vals,
 /*! @brief Compute the values at the quadrature points of a vector-valued
   finite-element function on element (`i`,`j`) with global degrees of freedom `x_global`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`. */
-void Quadrature_Vector::quadrature_point_values(const ElementMap &dof,
+void Quadrature_Vector::quadrature_point_values(const ElementMap &element,
                                                 Vector2 const*const*x_global, Vector2 *vals) {
-  dof.nodal_values(x_global, m_tmp);
+  element.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals);
 }
 
-void Quadrature_Vector::quadrature_point_values(const ElementMap &dof,
+void Quadrature_Vector::quadrature_point_values(const ElementMap &element,
                                                 const IceModelVec2V &x_global,
                                                 Vector2 *vals) {
-  dof.nodal_values(x_global, m_tmp);
+  element.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals);
 }
 
@@ -385,17 +385,17 @@ void Quadrature_Vector::quadrature_point_values(const ElementMap &dof,
   Each entry of `Dv` is an array of three numbers:
   @f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]@f].
 */
-void Quadrature_Vector::quadrature_point_values(const ElementMap &dof,
+void Quadrature_Vector::quadrature_point_values(const ElementMap &element,
                                                 Vector2 const*const* x_global,
                                                 Vector2 *vals, double (*Dv)[3]) {
-  dof.nodal_values(x_global, m_tmp);
+  element.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals, Dv);
 }
 
-void Quadrature_Vector::quadrature_point_values(const ElementMap &dof,
+void Quadrature_Vector::quadrature_point_values(const ElementMap &element,
                                                 const IceModelVec2V &x_global,
                                                 Vector2 *vals, double (*Dv)[3]) {
-  dof.nodal_values(x_global, m_tmp);
+  element.nodal_values(x_global, m_tmp);
   quadrature_point_values(m_tmp, vals, Dv);
 }
 
@@ -456,14 +456,14 @@ void DirichletData::finish(const IceModelVec *values) {
   }
 }
 
-//! @brief Constrain `element_map`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
-void DirichletData::constrain(ElementMap &element_map) {
-  element_map.nodal_values(*m_indices, m_indices_e);
+//! @brief Constrain `element`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
+void DirichletData::constrain(ElementMap &element) {
+  element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
-      element_map.mark_row_invalid(k);
-      element_map.mark_col_invalid(k);
+      element.mark_row_invalid(k);
+      element.mark_col_invalid(k);
     }
   }
 }
@@ -477,21 +477,21 @@ DirichletData_Scalar::DirichletData_Scalar(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Scalar::update(const ElementMap &element_map, double* x_nodal) {
+void DirichletData_Scalar::update(const ElementMap &element, double* x_nodal) {
   assert(m_values != NULL);
 
-  element_map.nodal_values(*m_indices, m_indices_e);
+  element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i = 0, j = 0;
-      element_map.local_to_global(k, i, j);
+      element.local_to_global(k, i, j);
       x_nodal[k] = (*m_values)(i, j);
     }
   }
 }
 
-void DirichletData_Scalar::update_homogeneous(const ElementMap &element_map, double* x_nodal) {
-  element_map.nodal_values(*m_indices, m_indices_e);
+void DirichletData_Scalar::update_homogeneous(const ElementMap &element, double* x_nodal) {
+  element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_nodal[k] = 0.;
@@ -573,21 +573,21 @@ DirichletData_Vector::DirichletData_Vector(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Vector::update(const ElementMap &element_map, Vector2* x_nodal) {
+void DirichletData_Vector::update(const ElementMap &element, Vector2* x_nodal) {
   assert(m_values != NULL);
 
-  element_map.nodal_values(*m_indices, m_indices_e);
+  element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i = 0, j = 0;
-      element_map.local_to_global(k, i, j);
+      element.local_to_global(k, i, j);
       x_nodal[k] = (*m_values)(i, j);
     }
   }
 }
 
-void DirichletData_Vector::update_homogeneous(const ElementMap &element_map, Vector2* x_nodal) {
-  element_map.nodal_values(*m_indices, m_indices_e);
+void DirichletData_Vector::update_homogeneous(const ElementMap &element, Vector2* x_nodal) {
+  element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_nodal[k].u = 0.0;
