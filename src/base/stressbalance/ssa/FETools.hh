@@ -213,8 +213,7 @@ private:
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class ElementMap
-{
+class ElementMap {
 public:
   ElementMap();
   ~ElementMap();
@@ -300,8 +299,7 @@ private:
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class ElementIterator
-{
+class ElementIterator {
 public:
   ElementIterator(const IceGrid &g);
 
@@ -376,8 +374,7 @@ public:
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class Quadrature2x2
-{
+class Quadrature2x2 {
 public:
   Quadrature2x2(double dx, double dy, double L=1.0);
 
