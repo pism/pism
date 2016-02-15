@@ -48,7 +48,7 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_quadrature.quadrature_point_values(m_element_map, x, x_q);
@@ -90,7 +90,7 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_quadrature.quadrature_point_values(m_element_map, a, a_q);
@@ -137,7 +137,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
     for (int i = xs; i < xs + xm; i++) {
 
       // Reset the DOF map for this element.
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_quadrature.quadrature_point_values(m_element_map, x, x_q);
@@ -182,7 +182,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_quadrature_vector.quadrature_point_values(m_element_map, x, x_q);
@@ -224,7 +224,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_quadrature_vector.quadrature_point_values(m_element_map, a, a_q);
@@ -271,7 +271,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
     for (int i = xs; i < xs + xm; i++) {
 
       // Reset the DOF map for this element.
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_quadrature_vector.quadrature_point_values(m_element_map, x, x_q);

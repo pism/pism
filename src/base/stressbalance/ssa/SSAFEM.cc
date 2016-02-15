@@ -36,7 +36,10 @@ namespace stressbalance {
  *
  */
 SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SSA(g, e), m_element_index(*g), m_quadrature(g->dx(), g->dy(), 1.0),
+  : SSA(g, e),
+    m_element_index(*g),
+    m_element_map(*g),
+    m_quadrature(g->dx(), g->dy(), 1.0),
     m_quadrature_vector(g->dx(), g->dy(), 1.0) {
 
   PetscErrorCode ierr;
@@ -305,7 +308,7 @@ void SSAFEM::cache_inputs() {
         double hq[Nq], hxq[Nq], hyq[Nq];
         double ds_xq[Nq], ds_yq[Nq];
 
-        m_element_map.reset(i, j, *m_grid);
+        m_element_map.reset(i, j);
 
         if (driving_stress_explicit) {
           m_quadrature.quadrature_point_values(m_element_map, *m_driving_stress_x, ds_xq);
@@ -496,7 +499,7 @@ void SSAFEM::cache_residual_cfbc() {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j, *m_grid);
+        m_element_map.reset(i, j);
 
         int node_type[Nk];
         m_element_map.nodal_values(m_node_type, node_type);
@@ -660,7 +663,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
       for (int i = xs; i < xs + xm; i++) {
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j, *m_grid);
+        m_element_map.reset(i, j);
 
         int node_type[Nk];
         m_element_map.nodal_values(m_node_type, node_type);
@@ -875,7 +878,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j, *m_grid);
+        m_element_map.reset(i, j);
 
         int node_type[Nk];
         m_element_map.nodal_values(m_node_type, node_type);

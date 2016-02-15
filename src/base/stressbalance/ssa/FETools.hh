@@ -215,7 +215,7 @@ private:
 */
 class ElementMap {
 public:
-  ElementMap();
+  ElementMap(const IceGrid &grid);
   ~ElementMap();
 
   /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
@@ -276,7 +276,7 @@ public:
     }
   }
 
-  void reset(int i, int j, const IceGrid &g);
+  void reset(int i, int j);
 
   void mark_row_invalid(int k);
   void mark_col_invalid(int k);
@@ -290,9 +290,6 @@ public:
   void add_jacobian_contribution(const double *K, Mat J) const;
 
 private:
-
-  void reset(int i, int j);
-
   //! Constant for marking invalid row/columns.
   //!
   //! Has to be negative because MatSetValuesBlockedStencil supposedly ignores negative indexes.
@@ -308,6 +305,9 @@ private:
 
   //! Stencils for updating entries of the Jacobian matrix.
   MatStencil m_row[ShapeQ1::Nk], m_col[ShapeQ1::Nk];
+
+  // the grid (for marking ghost DOFs as "invalid")
+  const IceGrid &m_grid;
 };
 
 //! Manages iterating over element indices.

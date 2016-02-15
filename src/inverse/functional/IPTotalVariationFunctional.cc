@@ -59,7 +59,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_element_map.nodal_values(x, x_e);
@@ -115,7 +115,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
     for (int i = xs; i < xs + xm; i++) {
 
       // Reset the DOF map for this element.
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_element_map.nodal_values(x, x_e);
@@ -125,7 +125,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
       }
       m_quadrature.quadrature_point_values(x_e, x_q, dxdx_q, dxdy_q);
 
-      // Zero out the element - local residual in prep for updating it.
+      // Zero out the element-local residual in preparation for updating it.
       for (unsigned int k = 0; k < Nk; k++) {
         gradient_e[k] = 0;
       }

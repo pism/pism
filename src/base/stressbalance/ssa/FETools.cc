@@ -60,7 +60,7 @@ ElementIterator::ElementIterator(const IceGrid &g) {
     }
     // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
     if (xf > (int)g.Mx() - 2) {
-      xf = g.Mx() - 2;
+      xf  = g.Mx() - 2;
       lxf = g.Mx() - 2;
     }
   }
@@ -72,20 +72,20 @@ ElementIterator::ElementIterator(const IceGrid &g) {
     }
     // Topmost vertex has index g.My - 1, so the topmost element has index g.My - 2
     if (yf > (int)g.My() - 2) {
-      yf = g.My() - 2;
+      yf  = g.My() - 2;
       lyf = g.My() - 2;
     }
   }
 
   // Tally up the number of elements in each direction
-  xm = xf - xs + 1;
-  ym = yf - ys + 1;
+  xm  = xf - xs + 1;
+  ym  = yf - ys + 1;
   lxm = lxf - lxs + 1;
   lym = lyf - lys + 1;
-
 }
 
-ElementMap::ElementMap() {
+ElementMap::ElementMap(const IceGrid &grid)
+  : m_grid(grid) {
   reset(0, 0);
 }
 
@@ -103,6 +103,8 @@ void ElementMap::nodal_values(const IceModelVec2Int &x_global, int *result) cons
   }
 }
 
+/*!@brief Initialize the ElementMap to element (`i`, `j`) for the purposes of inserting into
+  global residual and Jacobian arrays. */
 void ElementMap::reset(int i, int j) {
   m_i = i;
   m_j = j;
@@ -116,18 +118,12 @@ void ElementMap::reset(int i, int j) {
     m_row[k].j = m_col[k].j;
     m_row[k].k = m_col[k].k;
   }
-}
 
-
-/*!@brief Initialize the ElementMap to element (`i`, `j`) for the purposes of inserting into
-  global residual and Jacobian arrays. */
-void ElementMap::reset(int i, int j, const IceGrid &grid) {
-  reset(i, j);
   // We do not ever sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
     int pism_i = m_row[k].i, pism_j = m_row[k].j;
-    if (pism_i < grid.xs() || grid.xs() + grid.xm() - 1 < pism_i ||
-        pism_j < grid.ys() || grid.ys() + grid.ym() - 1 < pism_j) {
+    if (pism_i < m_grid.xs() || m_grid.xs() + m_grid.xm() - 1 < pism_i ||
+        pism_j < m_grid.ys() || m_grid.ys() + m_grid.ym() - 1 < pism_j) {
       mark_row_invalid(k);
     }
   }

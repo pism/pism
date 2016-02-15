@@ -35,8 +35,7 @@ SSA * SSAFEMFactory(IceGrid::ConstPtr , EnthalpyConverter::Ptr);
   Jed's original code is in rev 831: src/base/ssaJed/...
   The SSAFEM duplicates most of the functionality of SSAFD, using the finite element method.
 */
-class SSAFEM : public SSA
-{
+class SSAFEM : public SSA {
 public:
   SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
 
@@ -103,9 +102,9 @@ protected:
   double m_epsilon_ssa;
 
   fem::ElementIterator m_element_index;
+  fem::ElementMap m_element_map;
   fem::Quadrature_Scalar m_quadrature;
   fem::Quadrature_Vector m_quadrature_vector;
-  fem::ElementMap m_element_map;
 
 private:
   void cache_residual_cfbc();

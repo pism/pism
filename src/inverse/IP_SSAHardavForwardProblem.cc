@@ -38,6 +38,7 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g, Enth
     m_fixed_design_locations(NULL),
     m_design_param(tp),
     m_element_index(*m_grid),
+    m_element_map(*m_grid),
     m_quadrature(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
   this->construct();
@@ -124,7 +125,7 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       m_quadrature.quadrature_point_values(m_element_map, m_hardav, hardav_q);
       const int ij = m_element_index.flatten(i, j);
@@ -313,7 +314,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j, *m_grid);
+        m_element_map.reset(i, j);
 
         // Obtain the value of the solution at the nodes adjacent to the element,
         // fix dirichlet values, and compute values at quad pts.
@@ -483,7 +484,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j, *m_grid);
+        m_element_map.reset(i, j);
 
         // Obtain the value of the solution at the nodes adjacent to the element.
         // Compute the solution values and symmetric gradient at the quadrature points.

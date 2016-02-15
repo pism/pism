@@ -182,9 +182,9 @@ protected:
   IceModelVec2V  m_du_local;                 ///< Temporary storage when state vectors need to be used with ghosts.
   IceModelVec2S  m_hardav;
 
-  fem::ElementIterator m_element_index;
+  fem::ElementIterator   m_element_index;
+  fem::ElementMap        m_element_map;
   fem::Quadrature_Scalar m_quadrature;
-  fem::ElementMap     m_element_map;
 
   petsc::KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
   petsc::Mat  m_J_state;                            ///< Mat used in \ref apply_linearization and \ref apply_linearization_transpose

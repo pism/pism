@@ -52,7 +52,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_element_map.nodal_values(x, x_e);
@@ -104,7 +104,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_element_map.nodal_values(a, a_e);
@@ -167,7 +167,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
     for (int i=xs; i<xs+xm; i++) {
 
       // Reset the DOF map for this element.
-      m_element_map.reset(i, j, *m_grid);
+      m_element_map.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
       m_element_map.nodal_values(x, x_e);
@@ -235,7 +235,7 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
         double K[Nk][Nk];
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_element_map.reset(i, j, *m_grid);
+        m_element_map.reset(i, j);
 
         // Don't update rows/cols where we project to zero.
         if (zeroLocs) {
