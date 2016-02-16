@@ -346,15 +346,13 @@ public:
   ElementIterator(const IceGrid &g);
 
   /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
-  int element_count()
-  {
+  int element_count() {
     return xm*ym;
   }
 
   /*!\brief Convert an element index (`i`,`j`) into a flattened (1-d) array index, with the first
     element (`i`, `j`) to be iterated over corresponding to flattened index 0. */
-  int flatten(int i, int j)
-  {
+  int flatten(int i, int j) {
     return (i-xs) + (j-ys)*xm;
   }
 
