@@ -986,19 +986,23 @@ PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
 */
 static void compute_surface_gradient(PetscReal dchi[4][4][2],
                                      const PrmNode parameters[], PetscReal dx, PetscReal dy,
-                                     PetscReal ds[8][2])
-{
+                                     PetscReal ds[8][2]) {
   PetscInt i, q;
 
+  /* loop over quadrature points */
   for (q = 0; q < 4; ++q) {
     ds[q][0] = 0.0;
     ds[q][1] = 0.0;
 
+    /* loop over basis functions */
     for (i = 0; i < 4; ++i) {
-      ds[q][0] += dchi[q][i][0] * (parameters[i].ice_bottom + parameters[i].thickness);
-      ds[q][1] += dchi[q][i][1] * (parameters[i].ice_bottom + parameters[i].thickness);
+      double surface_elevation = parameters[i].ice_bottom + parameters[i].thickness;
+      ds[q][0] += dchi[q][i][0] * surface_elevation;
+      ds[q][1] += dchi[q][i][1] * surface_elevation;
     }
 
+    /* convert derivatives with respect to zeta and eta into
+       derivatives with respect to x and y */
     ds[q][0] *= 2.0/dx;
     ds[q][1] *= 2.0/dy;
 
