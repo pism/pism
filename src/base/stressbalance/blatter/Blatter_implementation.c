@@ -1020,19 +1020,13 @@ static void compute_surface_gradient(PetscReal dchi[4][4][2],
   \param[in]  zm total number of vertical levels
   \param[out] zn z-coordinates of element nodes
 */
-static void compute_nodal_z_coordinates(const PrmNode parameters[], PetscInt k, PetscInt zm, PetscReal zn[])
-{
-  const PetscScalar zm1 = zm - 1,
-    znl[8] = {parameters[0].ice_bottom + parameters[0].thickness*(PetscScalar)k / zm1,
-              parameters[1].ice_bottom + parameters[1].thickness*(PetscScalar)k / zm1,
-              parameters[2].ice_bottom + parameters[2].thickness*(PetscScalar)k / zm1,
-              parameters[3].ice_bottom + parameters[3].thickness*(PetscScalar)k / zm1,
-              parameters[0].ice_bottom + parameters[0].thickness*(PetscScalar)(k + 1) / zm1,
-              parameters[1].ice_bottom + parameters[1].thickness*(PetscScalar)(k + 1) / zm1,
-              parameters[2].ice_bottom + parameters[2].thickness*(PetscScalar)(k + 1) / zm1,
-              parameters[3].ice_bottom + parameters[3].thickness*(PetscScalar)(k + 1) / zm1};
-  PetscInt i;
-  for (i = 0; i < 8; i++) {
-    zn[i] = PetscRealPart(znl[i]);
+static void compute_nodal_z_coordinates(const PrmNode parameters[], PetscInt k, PetscInt zm, PetscReal zn[]) {
+  const double zm1 = zm - 1;
+  const double kk  = k;
+
+  /* loop over quadrature points */
+  for (int i = 0; i < 4; i++) {
+    zn[i]   = parameters[i].ice_bottom + parameters[i].thickness * kk / zm1;
+    zn[i+4] = parameters[i].ice_bottom + parameters[i].thickness * (kk + 1) / zm1;
   }
 }
