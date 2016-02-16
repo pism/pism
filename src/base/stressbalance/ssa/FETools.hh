@@ -517,8 +517,8 @@ public:
                        double weight = 1.0);
   ~DirichletData_Scalar();
 
-  void update(const ElementMap &element, double* x_e);
-  void update_homogeneous(const ElementMap &element, double* x_e);
+  void enforce(const ElementMap &element, double* x_e);
+  void enforce_homogeneous(const ElementMap &element, double* x_e);
   void fix_residual(double const *const *const x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
@@ -532,8 +532,8 @@ public:
                        double weight);
   ~DirichletData_Vector();
 
-  void update(const ElementMap &element, Vector2* x_e);
-  void update_homogeneous(const ElementMap &element, Vector2* x_e);
+  void enforce(const ElementMap &element, Vector2* x_e);
+  void enforce_homogeneous(const ElementMap &element, Vector2* x_e);
   void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
   void fix_residual_homogeneous(Vector2 **r);
   void fix_jacobian(Mat J);

@@ -321,14 +321,14 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         m_element.nodal_values(u, u_e);
         if (dirichletBC) {
           dirichletBC.constrain(m_element);
-          dirichletBC.update(m_element, u_e);
+          dirichletBC.enforce(m_element, u_e);
         }
         m_quadrature_vector.quadrature_point_values(u_e, u_q, Du_q);
 
         // Compute dzeta at the nodes
         m_element.nodal_values(*dzeta_local, dzeta_e);
         if (fixedZeta) {
-          fixedZeta.update_homogeneous(m_element, dzeta_e);
+          fixedZeta.enforce_homogeneous(m_element, dzeta_e);
         }
 
         // Compute the change in hardav with respect to zeta at the quad points.
@@ -486,17 +486,17 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
         // Compute the solution values and symmetric gradient at the quadrature points.
         m_element.nodal_values(du, du_e);
         if (dirichletBC) {
-          dirichletBC.update_homogeneous(m_element, du_e);
+          dirichletBC.enforce_homogeneous(m_element, du_e);
         }
         m_quadrature_vector.quadrature_point_values(du_e, du_q, du_dx_q, du_dy_q);
 
         m_element.nodal_values(u, u_e);
         if (dirichletBC) {
-          dirichletBC.update(m_element, u_e);
+          dirichletBC.enforce(m_element, u_e);
         }
         m_quadrature_vector.quadrature_point_values(u_e, u_q, Du_q);
 
-        // Zero out the element - local residual in prep for updating it.
+        // Zero out the element-local residual in prep for updating it.
         for (unsigned int k = 0; k < Nk; k++) {
           dzeta_e[k] = 0;
         }

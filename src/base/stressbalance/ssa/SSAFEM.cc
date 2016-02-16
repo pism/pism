@@ -697,7 +697,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         // Dirichlet data.
         if (dirichlet_data) {
           // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
-          dirichlet_data.update(m_element, velocity_nodal);
+          dirichlet_data.enforce(m_element, velocity_nodal);
           // mark Dirichlet nodes in m_element so that they are not touched by add_residual_contribution()
           // below
           dirichlet_data.constrain(m_element);
@@ -890,7 +890,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         // These values now need to be adjusted if some nodes in the element have
         // Dirichlet data.
         if (dirichlet_data) {
-          dirichlet_data.update(m_element, velocity_local);
+          dirichlet_data.enforce(m_element, velocity_local);
           dirichlet_data.constrain(m_element);
         }
         // Compute the values of the solution at the quadrature points.

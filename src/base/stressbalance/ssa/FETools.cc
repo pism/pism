@@ -477,7 +477,7 @@ DirichletData_Scalar::DirichletData_Scalar(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Scalar::update(const ElementMap &element, double* x_nodal) {
+void DirichletData_Scalar::enforce(const ElementMap &element, double* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(*m_indices, m_indices_e);
@@ -490,7 +490,7 @@ void DirichletData_Scalar::update(const ElementMap &element, double* x_nodal) {
   }
 }
 
-void DirichletData_Scalar::update_homogeneous(const ElementMap &element, double* x_nodal) {
+void DirichletData_Scalar::enforce_homogeneous(const ElementMap &element, double* x_nodal) {
   element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
@@ -573,7 +573,7 @@ DirichletData_Vector::DirichletData_Vector(const IceModelVec2Int *indices,
   init(indices, m_values, weight);
 }
 
-void DirichletData_Vector::update(const ElementMap &element, Vector2* x_nodal) {
+void DirichletData_Vector::enforce(const ElementMap &element, Vector2* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(*m_indices, m_indices_e);
@@ -586,7 +586,7 @@ void DirichletData_Vector::update(const ElementMap &element, Vector2* x_nodal) {
   }
 }
 
-void DirichletData_Vector::update_homogeneous(const ElementMap &element, Vector2* x_nodal) {
+void DirichletData_Vector::enforce_homogeneous(const ElementMap &element, Vector2* x_nodal) {
   element.nodal_values(*m_indices, m_indices_e);
   for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node

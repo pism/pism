@@ -329,14 +329,14 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         m_element.nodal_values(u, u_e);
         if (dirichletBC) {
           dirichletBC.constrain(m_element);
-          dirichletBC.update(m_element, u_e);
+          dirichletBC.enforce(m_element, u_e);
         }
         m_quadrature_vector.quadrature_point_values(u_e, u_q);
 
         // Compute dzeta at the nodes
         m_element.nodal_values(*dzeta_local, dzeta_e);
         if (fixedZeta) {
-          fixedZeta.update_homogeneous(m_element, dzeta_e);
+          fixedZeta.enforce_homogeneous(m_element, dzeta_e);
         }
 
         // Compute the change in tau_c with respect to zeta at the quad points.
@@ -480,13 +480,13 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
         // Compute the solution values and symmetric gradient at the quadrature points.
         m_element.nodal_values(*du_local, du_e);
         if (dirichletBC) {
-          dirichletBC.update_homogeneous(m_element, du_e);
+          dirichletBC.enforce_homogeneous(m_element, du_e);
         }
         m_quadrature_vector.quadrature_point_values(du_e, du_q);
 
         m_element.nodal_values(u, u_e);
         if (dirichletBC) {
-          dirichletBC.update(m_element, u_e);
+          dirichletBC.enforce(m_element, u_e);
         }
         m_quadrature_vector.quadrature_point_values(u_e, u_q);
 
