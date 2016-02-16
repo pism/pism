@@ -72,7 +72,7 @@ typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat,
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
 
 static void compute_surface_gradient(PetscReal dchi[4][4][2], const PrmNode parameters[],
-                                     PetscReal dx, PetscReal dy, PetscReal ds[4][2]);
+                                     PetscReal dx, PetscReal dy, PetscReal ds[8][2]);
 
 static void compute_nodal_z_coordinates(const PrmNode parameters[], PetscInt k, PetscInt zm, PetscReal zn[]);
 
@@ -571,7 +571,7 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
   for (i = xs; i < xs + xm; i++) {
     for (j = ys; j < ys + ym; j++) {
       PrmNode parameters[4];            /* 4 nodes (in 2D) */
-      PetscReal ds[4][2];       /* 4 quadrature points, 2 dimensions */
+      PetscReal ds[8][2];       /* 8 quadrature points, 2 dimensions */
       get_nodal_values_2d(prm, i, j, parameters);
 
       compute_surface_gradient(ctx->Q12D.dchi, parameters, dx, dy, ds);
@@ -624,8 +624,8 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
 
           for (l = ls; l < 8; l++) { /* test functions */
             const PetscReal *dp = dphi[l];
-            element_residual[l]->u += dp[0]*jw*eta*(4.0*du[0] + 2.0*dv[1]) + dp[1]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*du[2] + phi[l]*jw*ctx->rhog*ds[q % 4][0];
-            element_residual[l]->v += dp[1]*jw*eta*(2.0*du[0] + 4.0*dv[1]) + dp[0]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*dv[2] + phi[l]*jw*ctx->rhog*ds[q % 4][1];
+            element_residual[l]->u += dp[0]*jw*eta*(4.0*du[0] + 2.0*dv[1]) + dp[1]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*du[2] + phi[l]*jw*ctx->rhog*ds[q][0];
+            element_residual[l]->v += dp[1]*jw*eta*(2.0*du[0] + 4.0*dv[1]) + dp[0]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*dv[2] + phi[l]*jw*ctx->rhog*ds[q][1];
           }
         }             /* q-loop */
 
@@ -986,7 +986,7 @@ PetscErrorCode BlatterQ1_create(MPI_Comm com, DM pism_da,
 */
 static void compute_surface_gradient(PetscReal dchi[4][4][2],
                                      const PrmNode parameters[], PetscReal dx, PetscReal dy,
-                                     PetscReal ds[4][2])
+                                     PetscReal ds[8][2])
 {
   PetscInt i, q;
 
@@ -1001,6 +1001,12 @@ static void compute_surface_gradient(PetscReal dchi[4][4][2],
 
     ds[q][0] *= 2.0/dx;
     ds[q][1] *= 2.0/dy;
+
+    /* In the 2x2x2 tensor-product quadrature the other four
+       quadrature points get the same values of ds/dx and ds/dy
+       (because s does not depend on z). */
+    ds[q + 4][0] = ds[q][0];
+    ds[q + 4][1] = ds[1][1];
   }
 }
 
