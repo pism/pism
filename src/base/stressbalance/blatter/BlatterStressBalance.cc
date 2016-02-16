@@ -91,7 +91,7 @@ public:
 
   T& operator()(int i, int j) {
     // NOTE: this indexing order is important!
-    return m_data[j][i];
+    return m_data[i][j];
   }
 };
 
@@ -110,7 +110,7 @@ public:
 
   T& operator()(int i, int j, int k) {
     // NOTE: this indexing order is important!
-    return m_data[j][i][k];
+    return m_data[i][j][k];
   }
 };
 
