@@ -323,7 +323,7 @@ void SSAFEM::cache_inputs() {
         m_quadrature.quadrature_point_values(m_element, *m_tauc, taucq);
 
         const int ij = m_element_index.flatten(i, j);
-        Coefficients *coefficients = &m_coefficients[4*ij];
+        Coefficients *coefficients = &m_coefficients[ij*Nq];
         for (unsigned int q = 0; q < Nq; q++) {
           coefficients[q].H  = Hq[q];
           coefficients[q].tauc = taucq[q];
@@ -765,7 +765,6 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
     DirichletData_Vector dirichlet_ice_free(&m_node_type, NULL, m_dirichletScale);
     dirichlet_ice_free.fix_residual_homogeneous(residual_global);
   }
-
 
   monitor_function(velocity_global, residual_global);
 }

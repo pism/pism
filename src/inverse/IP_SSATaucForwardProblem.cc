@@ -347,14 +347,14 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         }
         m_quadrature.quadrature_point_values(dtauc_e, dtauc_q);
 
+        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+
         for (unsigned int q = 0; q < Nq; q++) {
           Vector2 u_qq = u_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Nq + q];
-
           // Determine "dbeta / dzeta" at the quadrature point
           double dbeta = 0;
-          if (mask::grounded_ice(coefficients->mask)) {
+          if (mask::grounded_ice(coefficients[q].mask)) {
             dbeta = m_basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
           }
 
@@ -495,15 +495,15 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
           dzeta_e[k] = 0;
         }
 
+        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+
         for (unsigned int q=0; q<Nq; q++) {
           Vector2 du_qq = du_q[q];
           Vector2 u_qq = u_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Nq+q];
-
           // Determine "dbeta/dtauc" at the quadrature point
           double dbeta_dtauc = 0;
-          if (mask::grounded_ice(coefficients->mask)) {
+          if (mask::grounded_ice(coefficients[q].mask)) {
             dbeta_dtauc = m_basal_sliding_law->drag(1., u_qq.u, u_qq.v);
           }
 

@@ -339,16 +339,16 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         }
         m_quadrature.quadrature_point_values(dB_e, dB_q);
 
+        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+
         for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
           double *Duqq = Du_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Nq + q];
-
           double d_nuH = 0;
-          if (coefficients->H >= strength_extension->get_min_thickness()) {
+          if (coefficients[q].H >= strength_extension->get_min_thickness()) {
             m_flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
-            d_nuH *= (2*coefficients->H);
+            d_nuH *= (2*coefficients[q].H);
           }
 
           for (unsigned int k = 0; k < Nk; k++) {
@@ -501,17 +501,17 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
           dzeta_e[k] = 0;
         }
 
+        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+
         for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
           double *Duqq = Du_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Nq + q];
-
           // Determine "d_nuH / dB" at the quadrature point
           double d_nuH_dB = 0;
-          if (coefficients->H >= strength_extension->get_min_thickness()) {
+          if (coefficients[q].H >= strength_extension->get_min_thickness()) {
             m_flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
-            d_nuH_dB *= (2*coefficients->H);
+            d_nuH_dB *= (2*coefficients[q].H);
           }
 
           for (unsigned int k = 0; k < Nk; k++) {
