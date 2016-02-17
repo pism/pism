@@ -142,8 +142,6 @@ protected:
   const IceModelVec2S *m_tauc;
   const IceModelVec2S *m_surface;
   const IceModelVec2S *m_bed;
-  const IceModelVec2S *m_driving_stress_x;
-  const IceModelVec2S *m_driving_stress_y;
   IceModelVec2V m_taud;
   const IceModelVec3 *m_enthalpy;
   const IceModelVec2S *m_gl_mask;

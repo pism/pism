@@ -24,6 +24,7 @@
 #include "base/rheology/FlowLaw.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/PISMVars.hh"
 
 #include "node_types.hh"
 
@@ -41,6 +42,9 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
     m_element(*g),
     m_quadrature(g->dx(), g->dy(), 1.0),
     m_quadrature_vector(g->dx(), g->dy(), 1.0) {
+
+  m_driving_stress_x = NULL;
+  m_driving_stress_y = NULL;
 
   PetscErrorCode ierr;
 
@@ -128,6 +132,12 @@ SSAFEM::~SSAFEM() {
 void SSAFEM::init_impl() {
 
   SSA::init_impl();
+
+  // Use explicit driving stress if the surface elevation is not available.
+  if (m_surface == NULL) {
+    m_driving_stress_x = m_grid->variables().get_2d_scalar("ssa_driving_stress_x");
+    m_driving_stress_y = m_grid->variables().get_2d_scalar("ssa_driving_stress_y");
+  }
 
   m_log->message(2,
                  "  [using the SNES-based finite element method implementation]\n");

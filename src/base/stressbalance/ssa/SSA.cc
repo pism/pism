@@ -79,8 +79,6 @@ SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_surface = NULL;
   m_bed = NULL;
   m_enthalpy = NULL;
-  m_driving_stress_x = NULL;
-  m_driving_stress_y = NULL;
   m_gl_mask = NULL;
 
   strength_extension = new SSAStrengthExtension(*m_config);
@@ -144,8 +142,7 @@ void SSA::init_impl() {
   try {
     m_surface = m_grid->variables().get_2d_scalar("surface_altitude");
   } catch (RuntimeError) {
-    m_driving_stress_x = m_grid->variables().get_2d_scalar("ssa_driving_stress_x");
-    m_driving_stress_y = m_grid->variables().get_2d_scalar("ssa_driving_stress_y");
+    m_surface = NULL;
   }
 
   m_bed      = m_grid->variables().get_2d_scalar("bedrock_altitude");

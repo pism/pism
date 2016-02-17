@@ -127,6 +127,11 @@ protected:
   fem::Quadrature_Scalar m_quadrature;
   fem::Quadrature_Vector m_quadrature_vector;
 
+  // Support for direct specification of driving stress to the FEM SSA solver. This helps
+  // with certain test cases where the grid is periodic but the driving stress cannot be the
+  // gradient of a periodic function. (See commit ffb4be16.)
+  const IceModelVec2S *m_driving_stress_x;
+  const IceModelVec2S *m_driving_stress_y;
 private:
   void cache_residual_cfbc();
   void monitor_jacobian(Mat Jac);
