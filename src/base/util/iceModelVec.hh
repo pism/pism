@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -335,6 +335,40 @@ protected:
                                      double default_value = 0.0);
   virtual void write_impl(const PIO &nc) const;
 };
+
+//! A "fat" storage vector for combining related fields (such as SSAFEM coefficients).
+template<typename T>
+class IceModelVec2Fat : public IceModelVec2 {
+public:
+  IceModelVec2Fat() {
+    m_dof = sizeof(T) / sizeof(double);
+    begin_end_access_use_dof = false;
+  }
+
+  void create(IceGrid::ConstPtr grid, const std::string &short_name,
+              IceModelVecKind ghostedp, unsigned int stencil_width = 1) {
+
+    m_name = short_name;
+
+    IceModelVec2::create(grid, short_name, ghostedp, stencil_width, m_dof);
+  }
+
+  inline T& operator()(int i, int j) {
+#if (PISM_DEBUG==1)
+    check_array_indices(i, j, 0);
+#endif
+    return static_cast<T**>(array)[j][i];
+  }
+
+  inline const T& operator()(int i, int j) const {
+#if (PISM_DEBUG==1)
+    check_array_indices(i, j, 0);
+#endif
+    return static_cast<T**>(array)[j][i];
+  }
+
+};
+
 
 class IceModelVec2V;
 
