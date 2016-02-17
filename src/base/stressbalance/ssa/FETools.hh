@@ -455,18 +455,6 @@ public:
   Quadrature_Scalar(double dx, double dy, double L);
   void quadrature_point_values(const double *x, double *vals);
   void quadrature_point_values(const double *x, double *vals, double *dx, double *dy);
-
-  void quadrature_point_values(const ElementMap &element, double const*const*x_global,
-                               double *vals);
-  void quadrature_point_values(const ElementMap &element, double const*const*x_global,
-                               double *vals, double *dx, double *dy);
-
-  void quadrature_point_values(const ElementMap &element, const IceModelVec2S &x_global,
-                               double *vals);
-  void quadrature_point_values(const ElementMap &element, const IceModelVec2S &x_global,
-                               double *vals, double *dx, double *dy);
-private:
-  double m_tmp[ShapeQ1::Nk];
 };
 
 //! This version supports 2D vector fields.
@@ -476,18 +464,6 @@ public:
   void quadrature_point_values(const Vector2 *x,  Vector2 *vals);
   void quadrature_point_values(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);
   void quadrature_point_values(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);
-
-  void quadrature_point_values(const ElementMap &element, Vector2 const*const*x_global,
-                               Vector2 *vals);
-  void quadrature_point_values(const ElementMap &element, Vector2 const*const*x_global,
-                               Vector2 *vals, double (*Dv)[3]);
-
-  void quadrature_point_values(const ElementMap &element, const IceModelVec2V &x_global,
-                               Vector2 *vals);
-  void quadrature_point_values(const ElementMap &element, const IceModelVec2V &x_global,
-                               Vector2 *vals, double (*Dv)[3]);
-private:
-  Vector2 m_tmp[ShapeQ1::Nk];
 };
 
 //* Parts shared by scalar and 2D vector Dirichlet data classes.

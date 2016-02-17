@@ -127,7 +127,9 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
     for (int i = xs; i < xs + xm; i++) {
       m_element.reset(i, j);
 
-      m_quadrature.quadrature_point_values(m_element, m_hardav, hardav_q);
+      double tmp[fem::ShapeQ1::Nk];
+      m_element.nodal_values(m_hardav, tmp);
+      m_quadrature.quadrature_point_values(tmp, hardav_q);
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[ij*Nq];
       for (unsigned int q = 0; q < Nq; q++) {

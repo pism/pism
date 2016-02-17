@@ -170,8 +170,6 @@ const int ElementMap::m_j_offset[4] = {0, 0, 1, 1};
 
 Quadrature_Scalar::Quadrature_Scalar(double dx, double dy, double L)
   : Quadrature2x2(dx, dy, L) {
-  PetscErrorCode ierr = PetscMemzero(m_tmp, ShapeQ1::Nk*sizeof(double));
-  PISM_CHK(ierr, "PetscMemzero");
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
@@ -205,8 +203,6 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
 
 Quadrature_Vector::Quadrature_Vector(double dx, double dy, double L)
   : Quadrature2x2(dx, dy, L) {
-  PetscErrorCode ierr = PetscMemzero(m_tmp, ShapeQ1::Nk*sizeof(Vector2));
-  PISM_CHK(ierr, "PetscMemzero");
 }
 
 //! Return the values at all quadrature points of all shape functions.
@@ -259,40 +255,6 @@ void Quadrature_Scalar::quadrature_point_values(const double *x_nodal,
       dy[q]   += test[k].dy * x_nodal[k];
     }
   }
-}
-
-/*! @brief Compute the values at the quadrature points on element (`i`,`j`)
-  of a scalar-valued finite-element function with global degrees of freedom `x`.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
-void Quadrature_Scalar::quadrature_point_values(const ElementMap &element,
-                                                double const*const*x_global, double *vals) {
-  element.nodal_values(x_global, m_tmp);
-  quadrature_point_values(m_tmp, vals);
-}
-
-
-void Quadrature_Scalar::quadrature_point_values(const ElementMap &element,
-                                                const IceModelVec2S &x_global, double *vals) {
-  element.nodal_values(x_global, m_tmp);
-  quadrature_point_values(m_tmp, vals);
-}
-
-/*! @brief Compute the values and first derivatives at the quadrature
-  points on element (`i`,`j`) of a scalar-valued finite-element function
-  with global degrees of freedom `x`.*/
-/*! There should be room for Quadrature2x2::Nq values in the output
-  vectors `vals`, `dx`, and `dy`. */
-void Quadrature_Scalar::quadrature_point_values(const ElementMap &element, double const*const*x_global,
-                                                double *vals, double *dx, double *dy) {
-  element.nodal_values(x_global, m_tmp);
-  quadrature_point_values(m_tmp, vals, dx, dy);
-}
-
-void Quadrature_Scalar::quadrature_point_values(const ElementMap &element,
-                                                const IceModelVec2S &x_global,
-                                                double *vals, double *dx, double *dy) {
-  element.nodal_values(x_global, m_tmp);
-  quadrature_point_values(m_tmp, vals, dx, dy);
 }
 
 /*! @brief Compute the values at the quadrature points of a vector-valued
@@ -360,43 +322,6 @@ void Quadrature_Vector::quadrature_point_values(const Vector2 *x, Vector2 *vals,
       dy[q]   += test[k].dy * x[k];
     }
   }
-}
-
-
-/*! @brief Compute the values at the quadrature points of a vector-valued
-  finite-element function on element (`i`,`j`) with global degrees of freedom `x_global`.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`. */
-void Quadrature_Vector::quadrature_point_values(const ElementMap &element,
-                                                Vector2 const*const*x_global, Vector2 *vals) {
-  element.nodal_values(x_global, m_tmp);
-  quadrature_point_values(m_tmp, vals);
-}
-
-void Quadrature_Vector::quadrature_point_values(const ElementMap &element,
-                                                const IceModelVec2V &x_global,
-                                                Vector2 *vals) {
-  element.nodal_values(x_global, m_tmp);
-  quadrature_point_values(m_tmp, vals);
-}
-
-/*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
-  finite-element function on element (`i`,`j`) with global degrees of freedom `x_global`.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals` and `Dv`.
-  Each entry of `Dv` is an array of three numbers:
-  @f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]@f].
-*/
-void Quadrature_Vector::quadrature_point_values(const ElementMap &element,
-                                                Vector2 const*const* x_global,
-                                                Vector2 *vals, double (*Dv)[3]) {
-  element.nodal_values(x_global, m_tmp);
-  quadrature_point_values(m_tmp, vals, Dv);
-}
-
-void Quadrature_Vector::quadrature_point_values(const ElementMap &element,
-                                                const IceModelVec2V &x_global,
-                                                Vector2 *vals, double (*Dv)[3]) {
-  element.nodal_values(x_global, m_tmp);
-  quadrature_point_values(m_tmp, vals, Dv);
 }
 
 //! The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
