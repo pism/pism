@@ -107,6 +107,8 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   int nElements = m_element_index.element_count();
   m_coefficients.resize(fem::Quadrature2x2::Nq * nElements);
 
+  m_coeffs.create(m_grid, "ssa_coefficients", WITH_GHOSTS, 1);
+
   m_node_type.create(m_grid, "node_type", WITH_GHOSTS, 1);
   m_node_type.set_attrs("internal", // intent
                         "node types: interior, boundary, exterior", // long name
@@ -160,6 +162,7 @@ void SSAFEM::init_impl() {
 
   // Store coefficient data at the quadrature points.
   cache_inputs();
+  cache_inputs_new();
 }
 
 //! Solve the SSA.  The FEM solver exchanges time for memory by computing
@@ -188,6 +191,7 @@ TerminationReason::Ptr SSAFEM::solve_with_reason() {
 
   // Set up the system to solve (store coefficient data at the quadrature points):
   cache_inputs();
+  cache_inputs_new();
 
   return solve_nocache();
 }
@@ -290,14 +294,12 @@ void SSAFEM::cache_inputs() {
 
   IceModelVec::AccessList list;
   list.add(*m_enthalpy);
-  bool driving_stress_explicit;
-  if ((m_driving_stress_x != NULL) && (m_driving_stress_y != NULL)) {
-    driving_stress_explicit = true;
+  bool explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
+  if (explicit_driving_stress) {
     list.add(*m_driving_stress_x);
     list.add(*m_driving_stress_y);
   } else {
     // The class SSA ensures in this case that 'surface' is available
-    driving_stress_explicit = false;
     list.add(*m_surface);
   }
 
@@ -320,7 +322,7 @@ void SSAFEM::cache_inputs() {
 
         m_element.reset(i, j);
 
-        if (driving_stress_explicit) {
+        if (explicit_driving_stress) {
           m_quadrature.quadrature_point_values(m_element, *m_driving_stress_x, ds_xq);
           m_quadrature.quadrature_point_values(m_element, *m_driving_stress_y, ds_yq);
         } else {
@@ -337,7 +339,7 @@ void SSAFEM::cache_inputs() {
         for (unsigned int q = 0; q < Nq; q++) {
           coefficients[q].thickness  = Hq[q];
           coefficients[q].tauc = taucq[q];
-          if (driving_stress_explicit) {
+          if (explicit_driving_stress) {
             coefficients[q].driving_stress.u = ds_xq[q];
             coefficients[q].driving_stress.v = ds_yq[q];
           } else {
@@ -404,6 +406,71 @@ void SSAFEM::cache_inputs() {
   }
 
   cache_residual_cfbc();
+}
+
+void SSAFEM::cache_inputs_new() {
+  const std::vector<double> &z = m_grid->z();
+
+  IceModelVec::AccessList list;
+  list.add(m_coeffs);
+  list.add(*m_enthalpy);
+  list.add(*m_thickness);
+  list.add(*m_bed);
+  list.add(*m_tauc);
+
+  bool explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
+  if (explicit_driving_stress) {
+    list.add(*m_driving_stress_x);
+    list.add(*m_driving_stress_y);
+  }
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double thickness = (*m_thickness)(i, j);
+
+      Vector2 driving_stress;
+      if (explicit_driving_stress) {
+        driving_stress.u = (*m_driving_stress_x)(i, j);
+        driving_stress.v = (*m_driving_stress_y)(i, j);
+      }
+
+      const double *enthalpy = m_enthalpy->get_column(i, j);
+      double hardness = rheology::averaged_hardness(*m_flow_law, thickness,
+                                                    m_grid->kBelowHeight(thickness),
+                                                    &z[0], enthalpy);
+
+      Coeffs c;
+      c.thickness      = thickness;
+      c.bed            = (*m_bed)(i, j);
+      c.sea_level      = m_sea_level; // FIXME: use a 2D field
+      c.tauc           = (*m_tauc)(i, j);
+      c.hardness       = hardness;
+      c.driving_stress = driving_stress;
+
+      m_coeffs(i, j) = c;
+    } // loop over owned grid points
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  m_coeffs.update_ghosts();
+
+  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  if (use_cfbc) {
+    // Note: the call below uses ghosts of m_thickness.
+    compute_node_types(*m_thickness,
+                       m_config->get_double("mask_icefree_thickness_standard"),
+                       m_node_type);
+  } else {
+    m_node_type.set(NODE_INTERIOR);
+  }
+
+  cache_residual_cfbc();
+
 }
 
 /** @brief Compute the "(regularized effective viscosity) x (ice thickness)" and effective viscous

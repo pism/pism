@@ -44,6 +44,7 @@ public:
 protected:
   virtual void init_impl();
   void cache_inputs();
+  void cache_inputs_new();
 
   //! Storage for SSA coefficients at a quadrature point.
   struct Coefficients {
