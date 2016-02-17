@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,10 +77,10 @@ void IceModelVec3D::allocate(IceGrid::ConstPtr my_grid, const std::string &my_na
   PetscErrorCode ierr;
   m_grid = my_grid;
 
-  zlevels = levels;
+  m_zlevels = levels;
   m_da_stencil_width = stencil_width;
 
-  m_da = m_grid->get_dm(this->zlevels.size(), this->m_da_stencil_width);
+  m_da = m_grid->get_dm(this->m_zlevels.size(), this->m_da_stencil_width);
 
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
 
@@ -95,12 +95,12 @@ void IceModelVec3D::allocate(IceGrid::ConstPtr my_grid, const std::string &my_na
   m_name = my_name;
 
   m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
-                                               my_name, zlevels));
+                                               my_name, m_zlevels));
 }
 
 bool IceModelVec3D::isLegalLevel(double z) const {
-  double z_min = zlevels.front(),
-    z_max = zlevels.back();
+  double z_min = m_zlevels.front(),
+    z_max = m_zlevels.back();
   if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
     return false;
   }
@@ -111,17 +111,17 @@ bool IceModelVec3D::isLegalLevel(double z) const {
 void IceModelVec3D::set_column(int i, int j, double c) {
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
-  assert(array != NULL);
+  assert(m_array != NULL);
   check_array_indices(i, j, 0);
 #endif
 
-  double ***arr = (double***) array;
+  double ***arr = (double***) m_array;
 
   if (c == 0.0) {
-    ierr = PetscMemzero(arr[j][i], zlevels.size() * sizeof(double));
+    ierr = PetscMemzero(arr[j][i], m_zlevels.size() * sizeof(double));
     PISM_CHK(ierr, "PetscMemzero");
   } else {
-    unsigned int nlevels = zlevels.size();
+    unsigned int nlevels = m_zlevels.size();
     for (unsigned int k=0; k < nlevels; k++) {
       arr[j][i][k] = c;
     }
@@ -131,7 +131,7 @@ void IceModelVec3D::set_column(int i, int j, double c) {
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 double IceModelVec3D::getValZ(int i, int j, double z) const {
 #if (PISM_DEBUG==1)
-  assert(array != NULL);
+  assert(m_array != NULL);
   check_array_indices(i, j, 0);
 
   if (not isLegalLevel(z)) {
@@ -140,17 +140,17 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
   }
 #endif
 
-  double ***arr = (double***) array;
-  if (z >= zlevels.back()) {
-    unsigned int nlevels = zlevels.size();
+  double ***arr = (double***) m_array;
+  if (z >= m_zlevels.back()) {
+    unsigned int nlevels = m_zlevels.size();
     return arr[j][i][nlevels - 1];
-  } else if (z <= zlevels.front()) {
+  } else if (z <= m_zlevels.front()) {
     return arr[j][i][0];
   }
 
-  unsigned int mcurr = gsl_interp_accel_find(m_bsearch_accel, &zlevels[0], zlevels.size(), z);
+  unsigned int mcurr = gsl_interp_accel_find(m_bsearch_accel, &m_zlevels[0], m_zlevels.size(), z);
 
-  const double incr = (z - zlevels[mcurr]) / (zlevels[mcurr+1] - zlevels[mcurr]);
+  const double incr = (z - m_zlevels[mcurr]) / (m_zlevels[mcurr+1] - m_zlevels[mcurr]);
   const double valm = arr[j][i][mcurr];
   return valm + incr * (arr[j][i][mcurr+1] - valm);
 }
@@ -225,22 +225,22 @@ double* IceModelVec3D::get_column(int i, int j) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  return ((double***) array)[j][i];
+  return ((double***) m_array)[j][i];
 }
 
 const double* IceModelVec3D::get_column(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  return ((double***) array)[j][i];
+  return ((double***) m_array)[j][i];
 }
 
 void  IceModelVec3D::set_column(int i, int j, double *valsIN) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  double ***arr = (double***) array;
-  PetscErrorCode ierr = PetscMemcpy(arr[j][i], valsIN, zlevels.size()*sizeof(double));
+  double ***arr = (double***) m_array;
+  PetscErrorCode ierr = PetscMemcpy(arr[j][i], valsIN, m_zlevels.size()*sizeof(double));
   PISM_CHK(ierr, "PetscMemcpy");
 }
 

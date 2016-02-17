@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Constantine Khroulev
+// Copyright (C) 2009--2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,7 @@ namespace pism {
 
 IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   m_dof = 2;
-  begin_end_access_use_dof = false;
+  m_begin_end_access_use_dof = false;
 }
 
 IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
@@ -59,7 +59,7 @@ void IceModelVec2V::create(IceGrid::ConstPtr my_grid, const std::string &short_n
 
 Vector2** IceModelVec2V::get_array() {
   begin_access();
-  return static_cast<Vector2**>(array);
+  return static_cast<Vector2**>(m_array);
 }
 
 void IceModelVec2V::add(double alpha, const IceModelVec &x) {

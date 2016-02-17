@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -59,11 +59,11 @@ void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
   m_has_ghosts = false;
   m_grid       = mygrid;
   m_name       = short_name;
-  zlevels      = my_zlevels;
+  m_zlevels      = my_zlevels;
 
   m_da_stencil_width = 1;
 
-  m_da = m_grid->get_dm(this->zlevels.size(), this->m_da_stencil_width);
+  m_da = m_grid->get_dm(this->m_zlevels.size(), this->m_da_stencil_width);
 
   ierr = DMCreateGlobalVector(*m_da, m_v.rawptr());
   PISM_CHK(ierr, "DMCreateGlobalVector");
@@ -71,7 +71,7 @@ void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
   m_dof = 1;
 
   m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
-                                               m_name, zlevels));
+                                               m_name, m_zlevels));
   m_metadata[0].get_z().set_name(z_name);
 
   std::map<std::string, std::string>::const_iterator j = z_attrs.begin();

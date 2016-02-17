@@ -66,13 +66,13 @@ IceModelVec2S::Ptr IceModelVec2S::To2DScalar(IceModelVec::Ptr input) {
 }
 
 IceModelVec2S::IceModelVec2S() {
-  begin_end_access_use_dof = false;
+  m_begin_end_access_use_dof = false;
 }
 
 IceModelVec2Stag::IceModelVec2Stag()
   : IceModelVec2() {
   m_dof = 2;
-  begin_end_access_use_dof = true;
+  m_begin_end_access_use_dof = true;
 }
 
 void  IceModelVec2S::create(IceGrid::ConstPtr my_grid, const std::string &my_name, IceModelVecKind ghostedp, int width) {
@@ -83,7 +83,7 @@ void  IceModelVec2S::create(IceGrid::ConstPtr my_grid, const std::string &my_nam
 
 double** IceModelVec2S::get_array() {
   begin_access();
-  return static_cast<double**>(array);
+  return static_cast<double**>(m_array);
 }
 
 /*! Allocate a copy on processor zero and the scatter needed to move data.
@@ -403,12 +403,12 @@ void IceModelVec2::view(int viewer_size) const {
       glaciological_units = m_metadata[j].get_string("glaciological_units"),
       title               = long_name + " (" + glaciological_units + ")";
 
-    if (not map_viewers[c_name]) {
-      map_viewers[c_name].reset(new petsc::Viewer(m_grid->com, title, viewer_size,
+    if (not m_map_viewers[c_name]) {
+      m_map_viewers[c_name].reset(new petsc::Viewer(m_grid->com, title, viewer_size,
                                            m_grid->Lx(), m_grid->Ly()));
     }
 
-    viewers[j] = map_viewers[c_name];
+    viewers[j] = m_map_viewers[c_name];
   }
 
   view(viewers[0], viewers[1]);

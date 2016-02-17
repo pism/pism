@@ -243,7 +243,8 @@ protected:
   virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
   virtual void write_impl(const PIO &nc) const;
-  std::vector<double> zlevels;
+
+  std::vector<double> m_zlevels;
 
   petsc::Vec  m_v;                       //!< Internal storage
   std::string m_name;
@@ -258,13 +259,13 @@ protected:
   bool m_has_ghosts;            //!< m_has_ghosts == true means "has ghosts"
   petsc::DM::Ptr m_da;          //!< distributed mesh manager (DM)
 
-  bool begin_end_access_use_dof;
+  bool m_begin_end_access_use_dof;
 
   //! It is a map, because a temporary IceModelVec can be used to view
   //! different quantities
-  mutable std::map<std::string,petsc::Viewer::Ptr> map_viewers;
+  mutable std::map<std::string,petsc::Viewer::Ptr> m_map_viewers;
 
-  mutable void *array;  // will be cast to double** or double*** in derived classes
+  mutable void *m_array;  // will be cast to double** or double*** in derived classes
 
   mutable int m_access_counter;           // used in begin_access() and end_access()
   int m_state_counter;            //!< Internal IceModelVec "revision number"
@@ -342,7 +343,7 @@ class IceModelVec2Fat : public IceModelVec2 {
 public:
   IceModelVec2Fat() {
     m_dof = sizeof(T) / sizeof(double);
-    begin_end_access_use_dof = false;
+    m_begin_end_access_use_dof = false;
   }
 
   void create(IceGrid::ConstPtr grid, const std::string &short_name,
@@ -357,14 +358,14 @@ public:
 #if (PISM_DEBUG==1)
     check_array_indices(i, j, 0);
 #endif
-    return static_cast<T**>(array)[j][i];
+    return static_cast<T**>(m_array)[j][i];
   }
 
   inline const T& operator()(int i, int j) const {
 #if (PISM_DEBUG==1)
     check_array_indices(i, j, 0);
 #endif
-    return static_cast<T**>(array)[j][i];
+    return static_cast<T**>(m_array)[j][i];
   }
 
 };
