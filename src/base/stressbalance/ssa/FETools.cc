@@ -173,7 +173,7 @@ Quadrature_Scalar::Quadrature_Scalar(double dx, double dy, double L)
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
-const double* Quadrature2x2::weighted_jacobian() {
+const double* Quadrature2x2::weighted_jacobian() const {
   return m_JxW;
 }
 
@@ -207,22 +207,9 @@ Quadrature_Vector::Quadrature_Vector(double dx, double dy, double L)
 
 //! Return the values at all quadrature points of all shape functions.
 //* The return value is an Nq by Nk array of Germ<double>s. */
-const Quadrature2x2::GermArray* Quadrature2x2::test_function_values()
-{
+const Quadrature2x2::GermArray* Quadrature2x2::test_function_values() const {
   return m_germs;
 }
-
-//! Return the values of all shape functions at quadrature point `q`
-//* The return value is an array of Nk Germ<double>s. */
-const Germ<double> *Quadrature2x2::test_function_values(int q) {
-  return m_germs[q];
-}
-
-//! Return the values at quadrature point `q` of shape function `k`.
-const Germ<double> *Quadrature2x2::test_function_values(int q, int k) {
-  return m_germs[q] + k;
-}
-
 
 /*! @brief Compute the values at the quadrature ponits of a scalar-valued
   finite-element function with element-local degrees of freedom `x_nodal`.*/

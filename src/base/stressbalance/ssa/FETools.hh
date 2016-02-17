@@ -425,11 +425,9 @@ public:
   // Germ<double>s
   typedef Germ<double> GermArray[Nq];
 
-  const GermArray* test_function_values();
-  const Germ<double>* test_function_values(int q);
-  const Germ<double>* test_function_values(int q, int k);
+  const GermArray* test_function_values() const;
 
-  const double* weighted_jacobian();
+  const double* weighted_jacobian() const;
 
 protected:
   //! The coordinates of the quadrature points on the reference element.
