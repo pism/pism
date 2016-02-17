@@ -59,6 +59,27 @@ protected:
     int mask;
   };
 
+  //! All fields must be "double" or structures containing "double"
+  //! for IceModelVec2Fat to work correctly.
+  //
+  // FIXME: this structure should be renamed once the original "Coefficients" is gone.
+  struct Coeffs {
+    //! ice thickness
+    double H;
+    //! bed elevation
+    double bed;
+    //! sea level
+    double sea_level;
+    //! basal yield stress
+    double tauc;
+    //! ice hardness
+    double B;
+    //! prescribed gravitational driving stress
+    Vector2 driving_stress;
+  };
+
+  IceModelVec2Fat<Coeffs> m_coeffs;
+
   void PointwiseNuHAndBeta(const Coefficients &coefficients,
                            const Vector2 &u, const double Du[],
                            double *nuH, double *dnuH,
