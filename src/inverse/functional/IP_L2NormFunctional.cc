@@ -126,7 +126,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
@@ -267,7 +267,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();

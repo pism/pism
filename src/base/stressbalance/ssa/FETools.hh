@@ -155,15 +155,14 @@ namespace fem {
 
 //! Struct for gathering the value and derivative of a function at a point.
 /*! Germ in meant in the mathematical sense, sort of. */
-template <typename T>
 struct Germ
 {
   //! Function value.
-  T val;
+  double val;
   //! Function deriviative with respect to x.
-  T dx;
+  double dx;
   //! Function derivative with respect to y.
-  T dy;
+  double dy;
 };
 
 
@@ -176,8 +175,8 @@ struct Germ
 class ShapeQ1 {
 public:
   //! Compute values and derivatives of the shape function supported at node k.
-  static Germ<double> eval(unsigned int k, double xi, double eta) {
-    Germ<double> result;
+  static Germ eval(unsigned int k, double xi, double eta) {
+    Germ result;
 
     result.val = 0.25 * (1.0 + m_xi[k] * xi) * (1.0 + m_eta[k] * eta);
     result.dx =  0.25 *  m_xi[k] * (1.0 + m_eta[k] * eta);
@@ -421,11 +420,10 @@ public:
   //! Number of quadrature points.
   static const unsigned int Nq = 4;
 
-  // define GermArray, which is an array of Quadrature2x2::Nq
-  // Germ<double>s
-  typedef Germ<double> GermArray[Nq];
+  // define Germs, which is an array of Quadrature2x2::Nk "Germ"s
+  typedef Germ Germs[ShapeQ1::Nk];
 
-  const GermArray* test_function_values() const;
+  const Germs* test_function_values() const;
 
   const double* weighted_jacobian() const;
 
@@ -444,7 +442,7 @@ protected:
   double m_JxW[Nq];
 
   //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
-  Germ<double> m_germs[Nq][ShapeQ1::Nk];
+  Germ m_germs[Nq][ShapeQ1::Nk];
 };
 
 //! This version supports 2D scalar fields.
@@ -524,11 +522,11 @@ public:
 
   inline double weighted_jacobian(unsigned int side) const;
 
-  inline const Germ<double>& germ(unsigned int side,
+  inline const Germ& germ(unsigned int side,
                                   unsigned int func,
                                   unsigned int pt) const;
 private:
-  Germ<double> m_germs[n_sides][Nq][ShapeQ1::Nk];
+  Germ m_germs[n_sides][Nq][ShapeQ1::Nk];
   double m_weighted_jacobian[n_sides];
 };
 
@@ -539,7 +537,7 @@ inline double BoundaryQuadrature2::weighted_jacobian(unsigned int side) const {
 
 //! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
 //! evaluated at the point `pt` on the side `side` of an element.
-inline const Germ<double>& BoundaryQuadrature2::germ(unsigned int side,
+inline const Germ& BoundaryQuadrature2::germ(unsigned int side,
                                                      unsigned int q,
                                                      unsigned int k) const {
   assert(side < n_sides);

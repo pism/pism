@@ -378,7 +378,7 @@ void SSAFEM::cache_inputs() {
         // but the way we have just obtained the values at the element vertices
         // using getInternalColumn doesn't make this straightforward.  So we compute the values
         // by hand.
-        const Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
+        const Germ (*test)[Nk] = m_quadrature.test_function_values();
         for (unsigned int k = 0; k < m_grid->Mz(); k++) {
           Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
           for (unsigned int q = 0; q < Nq; q++) {
@@ -734,7 +734,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   double Du[Nq][3];
 
   // An Nq by Nk array of test function values.
-  const Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
+  const Germ (*test)[Nk] = m_quadrature.test_function_values();
 
   // Iterate over the elements.
   const int
@@ -822,7 +822,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
           // Loop over test functions.
           for (unsigned int k = 0; k < Nk; k++) {
-            const Germ<double> &psi = test[q][k];
+            const Germ &psi = test[q][k];
 
             residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
                                        - psi.val * (tau_b.u + tau_d.u));
@@ -933,7 +933,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
 
   // Loop through all the elements.
   int
@@ -1006,7 +1006,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
 
             // Current trial function and its derivatives:
-            const fem::Germ<double> &phi = test[q][l];
+            const fem::Germ &phi = test[q][l];
 
             // Derivatives of \gamma with respect to u_l and v_l:
             const double
@@ -1029,7 +1029,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
               // Current test function and its derivatives:
 
-              const fem::Germ<double> &psi = test[q][k];
+              const fem::Germ &psi = test[q][k];
 
               if (eta == 0) {
                 ierr = PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);

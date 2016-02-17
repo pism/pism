@@ -206,8 +206,8 @@ Quadrature_Vector::Quadrature_Vector(double dx, double dy, double L)
 }
 
 //! Return the values at all quadrature points of all shape functions.
-//* The return value is an Nq by Nk array of Germ<double>s. */
-const Quadrature2x2::GermArray* Quadrature2x2::test_function_values() const {
+//* The return value is an Nq by Nk array of Germs. */
+const Quadrature2x2::Germs* Quadrature2x2::test_function_values() const {
   return m_germs;
 }
 
@@ -216,7 +216,7 @@ const Quadrature2x2::GermArray* Quadrature2x2::test_function_values() const {
 /*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
 void Quadrature_Scalar::quadrature_point_values(const double *x_nodal, double *vals) {
   for (unsigned int q = 0; q < Nq; q++) {
-    const Germ<double> *test = m_germs[q];
+    const Germ *test = m_germs[q];
     vals[q] = 0;
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q] += test[k].val * x_nodal[k];
@@ -232,7 +232,7 @@ void Quadrature_Scalar::quadrature_point_values(const double *x_nodal, double *v
 void Quadrature_Scalar::quadrature_point_values(const double *x_nodal,
                                                 double *vals, double *dx, double *dy) {
   for (unsigned int q = 0; q < Nq; q++) {
-    const Germ<double> *test = m_germs[q];
+    const Germ *test = m_germs[q];
     vals[q] = 0;
     dx[q] = 0;
     dy[q] = 0;
@@ -251,7 +251,7 @@ void Quadrature_Vector::quadrature_point_values(const Vector2 *x_nodal, Vector2 
   for (unsigned int q = 0; q < Nq; q++) {
     result[q].u = 0;
     result[q].v = 0;
-    const Germ<double> *test = m_germs[q];
+    const Germ *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       result[q].u += test[k].val * x_nodal[k].u;
       result[q].v += test[k].val * x_nodal[k].v;
@@ -278,7 +278,7 @@ void Quadrature_Vector::quadrature_point_values(const Vector2 *x, Vector2 *vals,
     Dvq[0] = 0;
     Dvq[1] = 0;
     Dvq[2] = 0;
-    const Germ<double> *test = m_germs[q];
+    const Germ *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q] += test[k].val * x[k];
       Dvq[0]  += test[k].dx * x[k].u;
@@ -302,7 +302,7 @@ void Quadrature_Vector::quadrature_point_values(const Vector2 *x, Vector2 *vals,
     dx[q].v   = 0;
     dy[q].u   = 0;
     dy[q].v   = 0;
-    const Germ<double> *test = m_germs[q];
+    const Germ *test = m_germs[q];
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       vals[q] += test[k].val * x[k];
       dx[q]   += test[k].dx * x[k];
@@ -599,7 +599,7 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
     {{-1.0,   -C}, {-1.0,    C}}  // West
   };
 
-  memset(m_germs, 0, n_sides*Nq*ShapeQ1::Nk*sizeof(Germ<double>));
+  memset(m_germs, 0, n_sides*Nq*ShapeQ1::Nk*sizeof(Germ));
 
   for (unsigned int side = 0; side < n_sides; ++side) {
     for (unsigned int q = 0; q < Nq; ++q) {
