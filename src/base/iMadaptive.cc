@@ -63,8 +63,6 @@ double IceModel::max_timestep_cfl_3d() {
   list.add(w3);
   list.add(vMask);
 
-  MaskQuery mask(vMask);
-
   // update global max of abs of velocities for CFL; only velocities under surface
   const double
     one_over_dx = 1.0 / m_grid->dx(),
@@ -76,7 +74,7 @@ double IceModel::max_timestep_cfl_3d() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.icy(i, j)) {
+      if (vMask.icy(i, j)) {
         const int ks = m_grid->kBelowHeight(ice_thickness(i, j));
         const double
           *u = u3.get_column(i, j),
@@ -126,8 +124,6 @@ double IceModel::max_timestep_cfl_3d() {
 double IceModel::max_timestep_cfl_2d() {
   double max_dt = m_config->get_double("maximum_time_step_years", "seconds");
 
-  MaskQuery mask(vMask);
-
   const IceModelVec2V &vel = stress_balance->advective_velocity();
 
   const double
@@ -140,7 +136,7 @@ double IceModel::max_timestep_cfl_2d() {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.icy(i, j)) {
+    if (vMask.icy(i, j)) {
       const double denom = fabs(vel(i, j).u) / dx + fabs(vel(i, j).v) / dy;
       if (denom > 0.0) {
         max_dt = std::min(max_dt, 1.0 / denom);

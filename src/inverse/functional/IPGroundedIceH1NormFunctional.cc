@@ -21,6 +21,7 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace inverse {
@@ -46,7 +47,6 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
-  MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all LOCAL elements.
   const int
@@ -57,8 +57,11 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
-        iceQuery.grounded_ice(i, j+1) & iceQuery.grounded_ice(i+1, j+1);
+      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
+                               m_ice_mask.grounded_ice(i+1, j) and
+                               m_ice_mask.grounded_ice(i, j+1) and
+                               m_ice_mask.grounded_ice(i+1, j+1));
+
       if (! all_grounded_ice) {
         continue;
       }
@@ -106,7 +109,6 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
-  MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all LOCAL elements.
   const int
@@ -117,8 +119,11 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
-        iceQuery.grounded_ice(i, j+1) & iceQuery.grounded_ice(i+1, j+1);
+      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
+                               m_ice_mask.grounded_ice(i+1, j) and
+                               m_ice_mask.grounded_ice(i, j+1) and
+                               m_ice_mask.grounded_ice(i+1, j+1));
+
       if (! all_grounded_ice) {
         continue;
       }
@@ -175,7 +180,6 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
-  MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all local and ghosted elements.
   const int
@@ -186,8 +190,11 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
 
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
-        iceQuery.grounded_ice(i, j+1) & iceQuery.grounded_ice(i+1, j+1);
+      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
+                               m_ice_mask.grounded_ice(i+1, j) and
+                               m_ice_mask.grounded_ice(i, j+1) and
+                               m_ice_mask.grounded_ice(i+1, j+1));
+
       if (! all_grounded_ice) {
         continue;
       }
@@ -241,7 +248,6 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   IceModelVec::AccessList list;
   list.add(m_ice_mask);
-  MaskQuery iceQuery(m_ice_mask);
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
@@ -256,8 +262,10 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   for (j=ys; j<ys+ym; j++) {
     for (i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
-         iceQuery.grounded_ice(i, j+1) & iceQuery.grounded_ice(i+1, j+1);
+      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
+                               m_ice_mask.grounded_ice(i+1, j) and
+                               m_ice_mask.grounded_ice(i, j+1) and
+                               m_ice_mask.grounded_ice(i+1, j+1));
       if (! all_grounded_ice) {
         continue;
       }

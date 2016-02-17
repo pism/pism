@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2014, 2015 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -76,10 +76,9 @@ class BasalTillStrength:
 
         Nmin = 1e45
         with PISM.vec.Access(nocomm=[mask, thickness, bwat, bmr, tillphi], comm=tauc):
-            mq = PISM.MaskQuery(mask)
             GHOSTS = int(self.grid.ctx().config().get_double("grid_max_stencil_width"))
             for (i, j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
-                if mq.floating_ice(i, j):
+                if mask.floating_ice(i, j):
                     tauc[i, j] = 0
 
                 H_ij = thickness[i, j]
@@ -109,10 +108,9 @@ class BasalTillStrength:
         if not tillphi_prev is None:
             vars.append(tillphi_prev)
         with PISM.vec.Access(nocomm=vars, comm=tillphi):
-            mq = PISM.MaskQuery(mask)
             GHOSTS = int(self.grid.ctx().config().get_double("grid_max_stencil_width"))
             for (i, j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
-                if mq.floating_ice(i, j):
+                if mask.floating_ice(i, j):
                     if not tillphi_prev is None:
                         tillphi[i, j] = tillphi_prev[i, j]
                     continue

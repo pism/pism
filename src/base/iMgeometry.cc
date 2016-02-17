@@ -82,7 +82,7 @@ void IceModel::updateSurfaceElevationAndMask() {
  */
 void IceModel::update_mask(const IceModelVec2S &bed,
                            const IceModelVec2S &thickness,
-                           IceModelVec2Int &result) {
+                           IceModelVec2CellType &result) {
 
   assert(ocean != NULL);
   double sea_level = ocean->sea_level_elevation();
@@ -595,8 +595,6 @@ void IceModel::massContExplicitStep() {
     list.add(flux_divergence);
   }
 
-  MaskQuery mask(vMask);
-
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -648,10 +646,10 @@ void IceModel::massContExplicitStep() {
 
       // Set source terms
 
-      if (mask.ice_free_ocean(i, j)) {
+      if (vMask.ice_free_ocean(i, j)) {
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
         // parameterization
-        if (do_part_grid && mask.next_to_ice(i, j)) {
+        if (do_part_grid && vMask.next_to_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
           H_to_Href_flux = -(divQ_SSA + divQ_SIA) * dt;
@@ -744,12 +742,12 @@ void IceModel::massContExplicitStep() {
         climatic_mass_balance_cumulative(i, j) += surface_mass_balance * meter_per_s_to_kg_per_m2;
       }
 
-      if (compute_cumulative_grounded_basal_flux && mask.grounded(i, j)) {
+      if (compute_cumulative_grounded_basal_flux && vMask.grounded(i, j)) {
         // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
         grounded_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
       }
 
-      if (compute_cumulative_floating_basal_flux && mask.ocean(i, j)) {
+      if (compute_cumulative_floating_basal_flux && vMask.ocean(i, j)) {
         // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
         floating_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
       }
@@ -757,7 +755,7 @@ void IceModel::massContExplicitStep() {
       // time-series accounting:
       {
         // all these are in units of [kg]
-        if (mask.grounded(i,j)) {
+        if (vMask.grounded(i,j)) {
           proc_grounded_basal_ice_flux += - my_basal_melt_rate * meter_per_s_to_kg;
         } else {
           proc_sub_shelf_ice_flux      += - my_basal_melt_rate * meter_per_s_to_kg;

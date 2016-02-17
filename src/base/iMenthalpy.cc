@@ -278,8 +278,6 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   unsigned int liquifiedCount = 0;
 
-  MaskQuery mask(vMask);
-
   ParallelSection loop(m_grid->com);
   try {
     for (Points pt(*m_grid); pt; pt.next()) {
@@ -314,7 +312,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         *vertSacrCount += 1; // count columns with lambda < 1
       }
 
-      const bool is_floating = mask.ocean(i, j);
+      const bool is_floating = vMask.ocean(i, j);
       bool base_is_warm = system.Enth(0) >= system.Enth_s(0);
       bool above_base_is_warm = system.Enth(1) >= system.Enth_s(1);
 

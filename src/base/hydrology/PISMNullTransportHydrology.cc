@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2015 PISM Authors
+// Copyright (C) 2012-2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "hydrology_diagnostics.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {
@@ -91,17 +92,16 @@ void NullTransport::update_impl(double icet, double icedt) {
                        "This is not allowed.");
   }
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  MaskQuery M(*mask);
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(m_Wtil);
   list.add(m_total_input);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ocean(i,j) || M.ice_free(i,j)) {
+    if (mask.ocean(i,j) || mask.ice_free(i,j)) {
       m_Wtil(i,j) = 0.0;
     } else {
       m_Wtil(i,j) += icedt * (m_total_input(i,j) - C);

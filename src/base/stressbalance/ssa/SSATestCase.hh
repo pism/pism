@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2016 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/IceGrid.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -105,7 +106,8 @@ protected:
   IceModelVec2S  m_surface, m_thickness, m_bed, m_tauc, m_melange_back_pressure;
   IceModelVec3 m_enthalpy;
   IceModelVec2V m_bc_values;
-  IceModelVec2Int m_ice_mask, m_bc_mask;
+  IceModelVec2CellType m_ice_mask;
+  IceModelVec2Int m_bc_mask;
 
   SSA *m_ssa;
 };

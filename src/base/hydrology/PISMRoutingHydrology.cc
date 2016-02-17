@@ -25,6 +25,7 @@
 #include "hydrology_diagnostics.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {
@@ -238,29 +239,27 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
   double fresh_water_density = m_config->get_double("fresh_water_density");
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
 
-  const IceModelVec2S *cellarea = m_grid->variables().get_2d_scalar("cell_area");
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery M(*mask);
+  const IceModelVec2S        &cellarea = *m_grid->variables().get_2d_scalar("cell_area");
+  const IceModelVec2CellType &mask     = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
   list.add(newthk);
-  list.add(*cellarea);
-  list.add(*mask);
+  list.add(cellarea);
+  list.add(mask);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+    const double dmassdz = cellarea(i,j) * fresh_water_density; // kg m-1
     if (newthk(i,j) < 0.0) {
       my_negativegain += -newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
     }
-    if (M.ice_free_land(i,j) && (newthk(i,j) > 0.0)) {
+    if (mask.ice_free_land(i,j) && (newthk(i,j) > 0.0)) {
       my_icefreelost += newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
     }
-    if (M.ocean(i,j) && (newthk(i,j) > 0.0)) {
+    if (mask.ocean(i,j) && (newthk(i,j) > 0.0)) {
       my_oceanlost += newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
     }
@@ -280,7 +279,7 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+    const double dmassdz = cellarea(i,j) * fresh_water_density; // kg m-1
     if (in_null_strip(*m_grid, i, j, m_stripwidth)) {
       my_nullstriplost += newthk(i,j) * dmassdz;
       newthk(i,j) = 0.0;
@@ -313,26 +312,25 @@ void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
   const double
     rg = m_config->get_double("fresh_water_density") * m_config->get_double("standard_gravity");
 
-  const IceModelVec2S *bed = m_grid->variables().get_2d_scalar("bedrock_altitude");
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2S        &bed  = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   subglacial_water_pressure(result);
-  result.add(rg, *bed); // result  <-- P + rhow g b
-  result.add(rg, m_W);      // result  <-- result + rhow g (b + W)
+  result.add(rg, bed); // result  <-- P + rhow g b
+  result.add(rg, m_W); // result  <-- result + rhow g (b + W)
 
   // now mask: psi = P_o if ocean
-  MaskQuery M(*mask);
   overburden_pressure(m_Pover);
 
   IceModelVec::AccessList list;
   list.add(m_Pover);
-  list.add(*mask);
+  list.add(mask);
   list.add(result);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ocean(i,j)) {
+    if (mask.ocean(i,j)) {
       result(i,j) = m_Pover(i,j);
     }
   }
@@ -344,11 +342,10 @@ void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
 either ice-free or floating areas. */
 void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-  MaskQuery M(*mask);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(m_W);
   list.add(result);
 
@@ -356,28 +353,28 @@ void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
     const int i = p.i(), j = p.j();
 
     // east
-    if (M.grounded_ice(i,j)) {
-      if (M.grounded_ice(i+1,j)) {
+    if (mask.grounded_ice(i,j)) {
+      if (mask.grounded_ice(i+1,j)) {
         result(i,j,0) = 0.5 * (m_W(i,j) + m_W(i+1,j));
       } else {
         result(i,j,0) = m_W(i,j);
       }
     } else {
-      if (M.grounded_ice(i+1,j)) {
+      if (mask.grounded_ice(i+1,j)) {
         result(i,j,0) = m_W(i+1,j);
       } else {
         result(i,j,0) = 0.0;
       }
     }
     // north
-    if (M.grounded_ice(i,j)) {
-      if (M.grounded_ice(i,j+1)) {
+    if (mask.grounded_ice(i,j)) {
+      if (mask.grounded_ice(i,j+1)) {
         result(i,j,1) = 0.5 * (m_W(i,j) + m_W(i,j+1));
       } else {
         result(i,j,1) = m_W(i,j);
       }
     } else {
-      if (M.grounded_ice(i,j+1)) {
+      if (mask.grounded_ice(i,j+1)) {
         result(i,j,1) = m_W(i,j+1);
       } else {
         result(i,j,1) = 0.0;
@@ -738,9 +735,6 @@ void Routing::update_impl(double icet, double icedt) {
 
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
-
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-  MaskQuery M(*mask);
 
   double ht = m_t, hdt = 0.0, // hydrology model time and time step
     maxKW = 0.0, maxV = 0.0, maxD = 0.0, dtCFL = 0.0, dtDIFFW = 0.0;

@@ -345,7 +345,7 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
   result->create(m_grid, "hardav", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  MaskQuery mask(model->vMask);
+  IceModelVec2CellType &mask = model->vMask;
 
   IceModelVec::AccessList list;
   list.add(model->vMask);
@@ -440,8 +440,8 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m)
 
 IceModelVec::Ptr IceModel_proc_ice_area::compute_impl() {
 
-  const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2Int *ice_mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "proc_ice_area", WITHOUT_GHOSTS);
@@ -449,11 +449,9 @@ IceModelVec::Ptr IceModel_proc_ice_area::compute_impl() {
 
   int ice_filled_cells = 0;
 
-  MaskQuery mask(*ice_mask);
-
   IceModelVec::AccessList list;
-  list.add(*ice_mask);
-  list.add(*thickness);
+  list.add(mask);
+  list.add(thickness);
   for (Points p(*m_grid); p; p.next()) {
     if (mask.icy(p.i(), p.j())) {
       ice_filled_cells += 1;
@@ -739,8 +737,6 @@ IceModelVec::Ptr IceModel_tempbase::compute_impl() {
   // result contains basal enthalpy; note that it is allocated by
   // IceModel_enthalpybase::compute().
 
-  MaskQuery mask(model->vMask);
-
   IceModelVec::AccessList list;
   list.add(model->vMask);
   list.add(*result);
@@ -753,7 +749,7 @@ IceModelVec::Ptr IceModel_tempbase::compute_impl() {
 
       double depth = (*thickness)(i,j),
         pressure = EC->pressure(depth);
-      if (mask.icy(i, j)) {
+      if (model->vMask.icy(i, j)) {
         (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
       } else {
         (*result)(i,j) = m_grid->ctx()->config()->get_double("fill_value");
@@ -868,8 +864,6 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
 
   double *Enth = NULL;
 
-  MaskQuery mask(model->vMask);
-
   IceModelVec::AccessList list;
   list.add(model->vMask);
   list.add(*result);
@@ -883,7 +877,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.icy(i, j)) {
+      if (model->vMask.icy(i, j)) {
         Enth = model->Enth3.get_column(i,j);
         double temperate_ice_thickness = 0.0;
         double ice_thickness = model->ice_thickness(i,j);
@@ -940,8 +934,6 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   double *Enth = NULL;
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  MaskQuery mask(model->vMask);
-
   const double fill_value = m_grid->ctx()->config()->get_double("fill_value");
 
   IceModelVec::AccessList list;
@@ -959,7 +951,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
 
       // if we have no ice, go on to the next grid point (this cell will be
       // marked as "missing" later)
-      if (mask.ice_free(i, j)) {
+      if (model->vMask.ice_free(i, j)) {
         (*result)(i,j) = fill_value;
         continue;
       }
@@ -1629,8 +1621,6 @@ IceModel_ivolg::IceModel_ivolg(IceModel *m)
 void IceModel_ivolg::update(double a, double b) {
   double volume = 0.0;
 
-  MaskQuery mask(model->vMask);
-
   IceModelVec::AccessList list;
   list.add(model->ice_thickness);
   list.add(model->vMask);
@@ -1639,7 +1629,7 @@ void IceModel_ivolg::update(double a, double b) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.grounded_ice(i,j)) {
+    if (model->vMask.grounded_ice(i,j)) {
       volume += model->cell_area(i,j) * model->ice_thickness(i,j);
     }
   }
@@ -1663,8 +1653,6 @@ IceModel_ivolf::IceModel_ivolf(IceModel *m)
 void IceModel_ivolf::update(double a, double b) {
   double volume = 0.0;
 
-  MaskQuery mask(model->vMask);
-
   IceModelVec::AccessList list;
   list.add(model->ice_thickness);
   list.add(model->vMask);
@@ -1673,7 +1661,7 @@ void IceModel_ivolf::update(double a, double b) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.floating_ice(i,j)) {
+    if (model->vMask.floating_ice(i,j)) {
       volume += model->cell_area(i,j) * model->ice_thickness(i,j);
     }
   }

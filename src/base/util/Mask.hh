@@ -34,7 +34,7 @@ enum MaskValue {
 };
 
 namespace mask {
-  //! \brief An ocean cell (floating ice or ice-free).
+//! \brief An ocean cell (floating ice or ice-free).
   inline bool ocean(int M) {
     return M >= MASK_FLOATING;
   }
@@ -134,80 +134,6 @@ public:
 protected:
   double m_alpha, m_sea_level, m_icefree_thickness, m_is_floating_thickness;
   bool m_is_dry_simulation;
-};
-
-class MaskQuery
-{
-public:
-  MaskQuery(const IceModelVec2Int &m) : mask(m) {}
-  
-  inline bool ocean(int i, int j) {
-    return mask::ocean(mask.as_int(i, j));
-  }
-
-  inline bool grounded(int i, int j) {
-    return not ocean(i, j);
-  }
-
-  inline bool icy(int i, int j) {
-    return mask::icy(mask.as_int(i, j));
-  }
-
-  inline bool grounded_ice(int i, int j) {
-    return mask::grounded_ice(mask.as_int(i, j));
-  }
-
-  inline bool floating_ice(int i, int j) {
-    return mask::floating_ice(mask.as_int(i, j));
-  }
-
-  inline bool ice_free(int i, int j) {
-    return mask::ice_free(mask.as_int(i, j));
-  }
-
-  inline bool ice_free_ocean(int i, int j) {
-    return mask::ice_free_ocean(mask.as_int(i, j));
-  }
-
-  inline bool ice_free_land(int i, int j) {
-    return mask::ice_free_land(mask.as_int(i, j));
-  }
-
-  //! \brief Ice margin (ice-filled with at least one of four neighbors ice-free).
-  inline bool ice_margin(int i, int j)
-  {
-    return icy(i, j) &&
-      (ice_free(i + 1, j) || ice_free(i - 1, j) || ice_free(i, j + 1) || ice_free(i, j - 1));
-  }
-
-  //! \brief Ice-free margin (at least one of four neighbors has ice).
-  inline bool next_to_ice(int i, int j)
-  {
-    return (icy(i + 1, j) || icy(i - 1, j) || icy(i, j + 1) || icy(i, j - 1));
-  }
-
-  inline bool next_to_floating_ice(int i, int j)
-  {
-    return (floating_ice(i + 1, j) || floating_ice(i - 1, j) || floating_ice(i, j + 1) || floating_ice(i, j - 1));
-  }
-
-  inline bool next_to_grounded_ice(int i, int j)
-  {
-    return (grounded_ice(i + 1, j) || grounded_ice(i - 1, j) || grounded_ice(i, j + 1) || grounded_ice(i, j - 1));
-  }
-
-  inline bool next_to_ice_free_land(int i, int j)
-  {
-    return (ice_free_land(i + 1, j) || ice_free_land(i - 1, j) || ice_free_land(i, j + 1) || ice_free_land(i, j - 1));
-  }
-
-  inline bool next_to_ice_free_ocean(int i, int j)
-  {
-    return (ice_free_ocean(i + 1, j) || ice_free_ocean(i - 1, j) || ice_free_ocean(i, j + 1) || ice_free_ocean(i, j - 1));
-  }
-
-protected:
-  const IceModelVec2Int &mask;
 };
 
 } // end of namespace pism

@@ -25,6 +25,7 @@
 #include "base/util/pism_options.hh"
 #include "hydrology_diagnostics.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {
@@ -270,21 +271,21 @@ void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
     list.add(*m_inputtobed);
   }
 
-  const IceModelVec2S   *bmelt = m_grid->variables().get_2d_scalar("bmelt");
-  const IceModelVec2Int *mask  = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2S        &bmelt = *m_grid->variables().get_2d_scalar("bmelt");
+  const IceModelVec2CellType &mask  = *m_grid->variables().get_2d_cell_type("mask");
 
   if (not m_hold_bmelt) {
-    m_bmelt_local.copy_from(*bmelt);
+    m_bmelt_local.copy_from(bmelt);
   }
 
   list.add(m_bmelt_local);
-  list.add(*mask);
+  list.add(mask);
   list.add(result);
-  MaskQuery m(*mask);
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m.icy(i, j)) {
+    if (mask.icy(i, j)) {
       result(i,j) = (use_const) ? const_bmelt : m_bmelt_local(i,j);
       if (m_inputtobed != NULL) {
         result(i,j) += (*m_inputtobed)(i,j);

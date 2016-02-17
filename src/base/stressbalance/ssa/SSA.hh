@@ -137,7 +137,7 @@ protected:
   double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
                                    double rho_ice, double rho_ocean, double g);
 
-  const IceModelVec2Int *m_mask;
+  const IceModelVec2CellType *m_mask;
   const IceModelVec2S *m_thickness;
   const IceModelVec2S *m_tauc;
   const IceModelVec2S *m_surface;

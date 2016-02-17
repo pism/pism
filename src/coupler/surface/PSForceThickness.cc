@@ -28,6 +28,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace surface {
@@ -289,10 +290,8 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
   double ice_density = m_config->get_double("ice_density");
 
-  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2Int &mask = *m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery m(mask);
+  const IceModelVec2S        &H    = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
   list.add(mask);
@@ -304,7 +303,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
+    if (m_ftt_mask(i,j) > 0.5 and mask.grounded(i, j)) {
       if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
         result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - H(i,j));
       } else {

@@ -23,6 +23,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -428,18 +429,16 @@ IceModelVec::Ptr PSB_velsurf::compute_impl() {
   v3.getSurfaceValues(tmp, *thickness);
   result->set_component(1, tmp);
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery M(*mask);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(*result);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ice_free(i, j)) {
+    if (mask.ice_free(i, j)) {
       (*result)(i, j).u = fill_value;
       (*result)(i, j).v = fill_value;
     }
@@ -470,8 +469,8 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) {
   bed    = m_grid->variables().get_2d_scalar("bedrock_altitude");
   uplift = m_grid->variables().get_2d_scalar("tendency_of_bedrock_altitude");
 
-  const IceModelVec2S   *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2Int *mask      = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
 
   const IceModelVec3
     &u3 = model->velocity_u(),
@@ -479,16 +478,14 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) {
     &w3 = model->velocity_w();
 
   IceModelVec::AccessList list;
-  list.add(*thickness);
-  list.add(*mask);
+  list.add(thickness);
+  list.add(mask);
   list.add(*bed);
   list.add(u3);
   list.add(v3);
   list.add(w3);
   list.add(*uplift);
   list.add(*result3);
-
-  MaskQuery M(*mask);
 
   const double ice_density = m_grid->ctx()->config()->get_double("ice_density"),
     sea_water_density = m_grid->ctx()->config()->get_double("sea_water_density"),
@@ -505,10 +502,10 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) {
         *w = w3.get_column(i, j);
       double *result = result3->get_column(i, j);
 
-      int ks = m_grid->kBelowHeight((*thickness)(i,j));
+      int ks = m_grid->kBelowHeight(thickness(i,j));
 
       // in the ice:
-      if (M.grounded(i,j)) {
+      if (mask.grounded(i,j)) {
         const double
           bed_dx = bed->diff_x_p(i,j),
           bed_dy = bed->diff_y_p(i,j),
@@ -519,7 +516,7 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) {
 
       } else {                  // floating
         const double
-          z_sl = R * (*thickness)(i,j),
+          z_sl = R * thickness(i,j),
           w_sl = w3.getValZ(i, j, z_sl);
 
         for (int k = 0; k <= ks ; k++) {
@@ -587,18 +584,16 @@ IceModelVec::Ptr PSB_wvelsurf::compute_impl() {
 
   w3->getSurfaceValues(*result, *thickness);
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery M(*mask);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(*result);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ice_free(i, j)) {
+    if (mask.ice_free(i, j)) {
       (*result)(i, j) = fill_value;
     }
   }
@@ -637,18 +632,16 @@ IceModelVec::Ptr PSB_wvelbase::compute_impl() {
 
   w3->getHorSlice(*result, 0.0);
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery M(*mask);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(*result);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ice_free(i, j)) {
+    if (mask.ice_free(i, j)) {
       (*result)(i, j) = fill_value;
     }
   }
@@ -706,18 +699,16 @@ IceModelVec::Ptr PSB_velbase::compute_impl() {
   v3.getHorSlice(tmp, 0.0);
   result->set_component(1, tmp);
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery M(*mask);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(*result);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ice_free(i, j)) {
+    if (mask.ice_free(i, j)) {
       (*result)(i, j).u = fill_value;
       (*result)(i, j).v = fill_value;
     }
@@ -954,7 +945,7 @@ IceModelVec::Ptr PSB_strain_rates::compute_impl() {
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec2V velbar_with_ghosts;
   velbar_with_ghosts.create(m_grid, "velbar", WITH_GHOSTS);
@@ -962,7 +953,7 @@ IceModelVec::Ptr PSB_strain_rates::compute_impl() {
   // copy_from communicates ghosts
   velbar_with_ghosts.copy_from(*velbar);
 
-  model->compute_2D_principal_strain_rates(velbar_with_ghosts, *mask, *result);
+  model->compute_2D_principal_strain_rates(velbar_with_ghosts, mask, *result);
 
   return result;
 }
@@ -992,7 +983,7 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() {
   result->metadata(1) = m_vars[1];
   result->metadata(2) = m_vars[2];
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec2V velbar_with_ghosts;
   velbar_with_ghosts.create(m_grid, "velbar", WITH_GHOSTS);
@@ -1000,7 +991,7 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() {
   // copy_from communicates ghosts
   velbar_with_ghosts.copy_from(*velbar);
 
-  model->compute_2D_stresses(velbar_with_ghosts, *mask, *result);
+  model->compute_2D_stresses(velbar_with_ghosts, mask, *result);
 
   return result;
 }

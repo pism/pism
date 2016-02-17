@@ -28,6 +28,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMTime.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -228,7 +229,7 @@ void SSAFD::init_impl() {
                        "An explicit driving stress was specified instead and cannot be used.");
   }
 
-  m_log->message(2, 
+  m_log->message(2,
              "  [using the KSP-based finite difference implementation]\n");
 
   // options
@@ -238,7 +239,7 @@ void SSAFD::init_impl() {
   view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
   if (m_config->get_boolean("calving_front_stress_boundary_condition")) {
-    m_log->message(2, 
+    m_log->message(2,
                "  using PISM-PIK calving-front stress boundary condition ...\n");
   }
 
@@ -872,7 +873,7 @@ void SSAFD::solve() {
       } else if (k == 1) {
         // try underrelaxing the iteration
         const double underrelax = m_config->get_double("ssafd_nuH_iter_failure_underrelaxation");
-        m_log->message(1, 
+        m_log->message(1,
                    "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
                    underrelax);
         picard_iteration(m_config->get_double("epsilon_ssa"), underrelax);
@@ -921,7 +922,7 @@ void SSAFD::picard_iteration(double nuH_regularization,
 
       m_default_pc_failure_count += 1;
 
-      m_log->message(1, 
+      m_log->message(1,
                  "  re-trying using the Additive Schwarz preconditioner...\n");
 
       pc_setup_asm();
@@ -1007,7 +1008,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
     if (reason < 0) {
       // KSP diverged
-      m_log->message(1, 
+      m_log->message(1,
                  "PISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
                  reason, KSPConvergedReasons[reason]);
 
@@ -1115,7 +1116,7 @@ void SSAFD::picard_strategy_regularization() {
 
   while (k < max_tries) {
     m_velocity.copy_from(m_velocity_old);
-    m_log->message(1, 
+    m_log->message(1,
                "  re-trying with nuH_regularization multiplied by %8.2f...\n",
                DEFAULT_EPSILON_MULTIPLIER_SSA);
 
@@ -1183,8 +1184,6 @@ void SSAFD::compute_hardav_staggered() {
   list.add(hardness);
   list.add(*m_mask);
 
-  MaskQuery m(*m_mask);
-
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -1195,9 +1194,9 @@ void SSAFD::compute_hardav_staggered() {
         const int oi = 1-o, oj=o;
         double H;
 
-        if (m.icy(i,j) && m.icy(i+oi,j+oj)) {
+        if (m_mask->icy(i,j) && m_mask->icy(i+oi,j+oj)) {
           H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i+oi,j+oj));
-        } else if (m.icy(i,j)) {
+        } else if (m_mask->icy(i,j)) {
           H = (*m_thickness)(i,j);
         }  else {
           H = (*m_thickness)(i+oi,j+oj);
@@ -1433,15 +1432,13 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  MaskQuery m(*m_mask);
-
   IceModelVec::AccessList list;
   list.add(*m_mask);
   list.add(m_work);
   list.add(m_velocity);
 
   assert(m_velocity.get_stencil_width() >= 2);
-  assert(m_mask->get_stencil_width()      >= 2);
+  assert(m_mask->get_stencil_width()    >= 2);
   assert(m_work.get_stencil_width()     >= 1);
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
@@ -1449,7 +1446,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
     // x-derivative, i-offset
     {
-      if (m.icy(i,j) && m.icy(i+1,j)) {
+      if (m_mask->icy(i,j) && m_mask->icy(i+1,j)) {
         m_work(i,j,U_X) = (uv(i+1,j).u - uv(i,j).u) / dx; // u_x
         m_work(i,j,V_X) = (uv(i+1,j).v - uv(i,j).v) / dx; // v_x
         m_work(i,j,W_I) = 1.0;
@@ -1462,7 +1459,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
     // y-derivative, j-offset
     {
-      if (m.icy(i,j) && m.icy(i,j+1)) {
+      if (m_mask->icy(i,j) && m_mask->icy(i,j+1)) {
         m_work(i,j,U_Y) = (uv(i,j+1).u - uv(i,j).u) / dy; // u_y
         m_work(i,j,V_Y) = (uv(i,j+1).v - uv(i,j).v) / dy; // v_y
         m_work(i,j,W_J) = 1.0;
@@ -1484,10 +1481,10 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
     double u_x, u_y, v_x, v_y, H, nu, W;
     // i-offset
     {
-      if (m.icy(i,j) && m.icy(i+1,j)) {
+      if (m_mask->icy(i,j) && m_mask->icy(i+1,j)) {
         H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i+1,j));
       }
-      else if (m.icy(i,j)) {
+      else if (m_mask->icy(i,j)) {
         H = (*m_thickness)(i,j);
       } else {
         H = (*m_thickness)(i+1,j);
@@ -1519,9 +1516,9 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
     // j-offset
     {
-      if (m.icy(i,j) && m.icy(i,j+1)) {
+      if (m_mask->icy(i,j) && m_mask->icy(i,j+1)) {
         H = 0.5 * ((*m_thickness)(i,j) + (*m_thickness)(i,j+1));
-      } else if (m.icy(i,j)) {
+      } else if (m_mask->icy(i,j)) {
         H = (*m_thickness)(i,j);
       } else {
         H = (*m_thickness)(i,j+1);

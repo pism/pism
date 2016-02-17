@@ -754,7 +754,6 @@ def gpbld3_hardness_test():
 
                 regular = gpbld.hardness(E, p)
                 optimized = gpbld3.hardness(E, p)
-                print np.fabs(regular - optimized) / regular
                 assert np.fabs(regular - optimized) / regular < 4e-15
 
 

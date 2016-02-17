@@ -23,14 +23,14 @@
 namespace pism {
 
 class IceModelVec2S;
-class IceModelVec2Int;
+class IceModelVec2CellType;
 
 void compute_grounded_cell_fraction(double ice_density,
                              double ocean_density,
                              double sea_level,
                              const IceModelVec2S &ice_thickness,
                              const IceModelVec2S &bed_topography,
-                             const IceModelVec2Int &mask,
+                             const IceModelVec2CellType &mask,
                              IceModelVec2S &result,
                              IceModelVec2S *result_x,
                              IceModelVec2S *result_y);

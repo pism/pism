@@ -44,6 +44,7 @@
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/PISMTime.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 
@@ -86,6 +87,7 @@ class IceGrid;
 class YieldStress;
 class Diagnostic;
 class TSDiagnostic;
+class IceModelVec2CellType;
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -285,10 +287,12 @@ protected:
   
   IceModelVec2 deviatoric_stresses; //!< components of horizontal stress tensor along axes and shear stress
 
-  IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
-  //!< grounded_ice, floating_ice, ice_free_ocean
-    vBCMask; //!< mask to determine Dirichlet boundary locations
- 
+  //! \brief mask for flow type with values ice_free_bedrock, grounded_ice, floating_ice,
+  //! ice_free_ocean
+  IceModelVec2CellType vMask;
+
+  //! mask to determine Dirichlet boundary locations
+  IceModelVec2Int vBCMask;
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
   
   //! mask to determine grounding line position
@@ -363,7 +367,7 @@ protected:
   virtual void updateSurfaceElevationAndMask();
   virtual void update_mask(const IceModelVec2S &bed,
                            const IceModelVec2S &ice_thickness,
-                           IceModelVec2Int &mask);
+                           IceModelVec2CellType &mask);
   virtual void update_surface_elevation(const IceModelVec2S &bed,
                                         const IceModelVec2S &ice_thickness,
                                         IceModelVec2S &result);

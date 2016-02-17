@@ -213,8 +213,6 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   int maxLowTempCount = static_cast<int>(m_config->get_double("max_low_temp_count"));
   double globalMinAllowedTemp = m_config->get_double("global_min_allowed_temp");
 
-  MaskQuery mask(vMask);
-
   const double thickness_threshold = m_config->get_double("energy_advection_ice_thickness_threshold");
 
   ParallelSection loop(m_grid->com);
@@ -298,7 +296,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
         } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
           const double Tpmp = melting_point_temp - beta_CC_grad * ice_thickness(i,j); // FIXME issue #15
           double Texcess = x[0] - Tpmp; // positive or negative
-          if (mask.ocean(i,j)) {
+          if (vMask.ocean(i,j)) {
             // when floating, only half a segment has had its temperature raised
             // above Tpmp
             excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
@@ -335,7 +333,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
       system.fine_to_coarse(Tnew, i, j, vWork3d);
 
       // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
-      if (mask.ocean(i,j)) {
+      if (vMask.ocean(i,j)) {
         basal_melt_rate(i,j) = 0.0;
       } else {
         // basalMeltRate is rate of change of bwat;  can be negative
