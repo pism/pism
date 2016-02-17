@@ -64,24 +64,22 @@ namespace mask {
   }
 }
 
-class GeometryCalculator
-{
+class GeometryCalculator {
 public:
-  GeometryCalculator(double seaLevel, const Config &config) {
-    m_sea_level = seaLevel;
+  GeometryCalculator(const Config &config) {
     m_alpha = 1 - config.get_double("ice_density") / config.get_double("sea_water_density");
     m_is_dry_simulation = config.get_boolean("is_dry_simulation");
     m_icefree_thickness = config.get_double("mask_icefree_thickness_standard");
     m_is_floating_thickness = config.get_double("mask_is_floating_thickness_standard");
   }
 
-  void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
+  void compute(double sea_level, IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
                IceModelVec2Int &out_mask, IceModelVec2S &out_surface);
 
-  inline void compute(double bed, double thickness,
+  inline void compute(double sea_level, double bed, double thickness,
                       int *out_mask, double *out_surface) {
     const double hgrounded = bed + thickness; // FIXME issue #15
-    const double hfloating = m_sea_level + m_alpha*thickness;
+    const double hfloating = sea_level + m_alpha*thickness;
 
     const bool
       is_floating = (hfloating > hgrounded + m_is_floating_thickness),
@@ -117,22 +115,20 @@ public:
     }
   }
 
-  inline int mask(double bed, double thickness)
-  {
+  inline int mask(double sea_level, double bed, double thickness) {
     int result;
-    compute(bed, thickness, &result, NULL);
+    compute(sea_level, bed, thickness, &result, NULL);
     return result;
   }
 
-  inline double surface(double bed, double thickness)
-  {
+  inline double surface(double sea_level, double bed, double thickness) {
     double result;
-    compute(bed, thickness, NULL, &result);
+    compute(sea_level, bed, thickness, NULL, &result);
     return result;
   }
 
 protected:
-  double m_alpha, m_sea_level, m_icefree_thickness, m_is_floating_thickness;
+  double m_alpha, m_icefree_thickness, m_is_floating_thickness;
   bool m_is_dry_simulation;
 };
 

@@ -87,7 +87,7 @@ void IceModel::update_mask(const IceModelVec2S &bed,
   assert(ocean != NULL);
   double sea_level = ocean->sea_level_elevation();
 
-  GeometryCalculator gc(sea_level, *m_config);
+  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list(result);
   list.add(bed);
@@ -100,7 +100,7 @@ void IceModel::update_mask(const IceModelVec2S &bed,
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j) = gc.mask(bed(i, j), thickness(i, j));
+    result(i, j) = gc.mask(sea_level, bed(i, j), thickness(i, j));
   }
 }
 
@@ -122,7 +122,7 @@ void IceModel::update_surface_elevation(const IceModelVec2S &bed,
   assert(ocean != NULL);
   double sea_level = ocean->sea_level_elevation();
 
-  GeometryCalculator gc(sea_level, *m_config);
+  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list(result);
   list.add(bed);
@@ -142,7 +142,7 @@ void IceModel::update_surface_elevation(const IceModelVec2S &bed,
       if (thickness(i, j) < 0) {
         throw RuntimeError::formatted("Thickness negative at point i=%d, j=%d", i, j);
       }
-      result(i, j) = gc.surface(bed(i, j), thickness(i, j));
+      result(i, j) = gc.surface(sea_level, bed(i, j), thickness(i, j));
     }
   } catch (...) {
     loop.failed();

@@ -276,7 +276,7 @@ void SSAFEM::cache_inputs() {
     Enth_q[q].resize(m_grid->Mz());
   }
 
-  GeometryCalculator gc(m_sea_level, *m_config);
+  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list;
   list.add(*m_enthalpy);
@@ -335,7 +335,7 @@ void SSAFEM::cache_inputs() {
             coefficients[q].driving_stress.v = -rho_g * Hq[q]*hyq[q];
           }
 
-          coefficients[q].mask = gc.mask(bq[q], coefficients[q].thickness);
+          coefficients[q].mask = gc.mask(m_sea_level, bq[q], coefficients[q].thickness);
         }
 
         // In the following, we obtain the averaged hardness value from enthalpy by
@@ -480,7 +480,7 @@ void SSAFEM::cache_residual_cfbc() {
 
   fem::BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy());
 
-  GeometryCalculator gc(m_sea_level, *m_config);
+  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list(m_node_type);
   list.add(*m_thickness);
@@ -560,7 +560,7 @@ void SSAFEM::cache_residual_cfbc() {
               H   = H_nodal[n0] * psi[0] + H_nodal[n1] * psi[1],
               bed = b_nodal[n0] * psi[0] + b_nodal[n1] * psi[1];
 
-            const bool floating = ocean(gc.mask(bed, H));
+            const bool floating = ocean(gc.mask(m_sea_level, bed, H));
 
             // ocean pressure difference at a quadrature point
             const double dP = ocean_pressure_difference(floating, is_dry_simulation,

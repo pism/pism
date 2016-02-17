@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2014, 2015 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -75,8 +75,8 @@ for v in [vecs.thk, vecs.topg, vecs.enthalpy]:
 
 # variables mask and surface are computed from the geometry previously read
 sea_level = 0  # FIXME setFromOption?
-gc = PISM.GeometryCalculator(sea_level, config)
-gc.compute(vecs.topg, vecs.thk, vecs.mask, vecs.surface_altitude)
+gc = PISM.GeometryCalculator(config)
+gc.compute(sea_level, vecs.topg, vecs.thk, vecs.mask, vecs.surface_altitude)
 
 # If running in regional mode, load in regional variables
 if is_regional:

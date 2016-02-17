@@ -41,8 +41,8 @@ def allocate_storage(grid):
     return ice_thickness, bed_topography, surface, mask, gl_mask, gl_mask_x, gl_mask_y
 
 def compute_mask(sea_level, bed_topography, ice_thickness, mask, surface):
-    gc = PISM.GeometryCalculator(sea_level, ctx.config)
-    gc.compute(bed_topography, ice_thickness, mask, surface)
+    gc = PISM.GeometryCalculator(ctx.config)
+    gc.compute(sea_level, bed_topography, ice_thickness, mask, surface)
 
 def print_vec(vec):
     v0 = vec.allocate_proc0_copy()

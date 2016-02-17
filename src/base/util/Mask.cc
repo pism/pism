@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2014, 2015, 2016 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 
 namespace pism {
 
-void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
+void GeometryCalculator::compute(double sea_level, IceModelVec2S &bed, IceModelVec2S &thickness,
                                  IceModelVec2Int &out_mask, IceModelVec2S &out_surface)
 {
   IceModelVec::AccessList list;
@@ -42,7 +42,7 @@ void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
     const int i = p.i(), j = p.j();
 
     int mask_value;
-    compute(bed(i,j),thickness(i,j),&mask_value,&out_surface(i,j));
+    compute(sea_level, bed(i,j),thickness(i,j),&mask_value,&out_surface(i,j));
     out_mask(i,j) = mask_value;
   }
   
