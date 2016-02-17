@@ -392,22 +392,22 @@ void IceModelVec::reset_attrs(unsigned int N) {
   appropriate spot, it is possible tp leave long_name, units or pism_intent
   unmodified.
 
-  If my_units != "", this also resets glaciological_units, so that they match
+  If units != "", this also resets glaciological_units, so that they match
   internal units.
  */
-void IceModelVec::set_attrs(const std::string &my_pism_intent,
-                            const std::string &my_long_name,
-                            const std::string &my_units,
-                            const std::string &my_standard_name,
+void IceModelVec::set_attrs(const std::string &pism_intent,
+                            const std::string &long_name,
+                            const std::string &units,
+                            const std::string &standard_name,
                             int N) {
 
-  metadata(N).set_string("long_name", my_long_name);
+  metadata(N).set_string("long_name", long_name);
 
-  metadata(N).set_string("units", my_units);
+  metadata(N).set_string("units", units);
 
-  metadata(N).set_string("pism_intent", my_pism_intent);
+  metadata(N).set_string("pism_intent", pism_intent);
 
-  metadata(N).set_string("standard_name", my_standard_name);
+  metadata(N).set_string("standard_name", standard_name);
 }
 
 //! Gets an IceModelVec from a file `nc`, interpolating onto the current grid.

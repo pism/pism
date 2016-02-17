@@ -71,11 +71,11 @@ IceModelVec3::Ptr IceModelVec3::To3DScalar(IceModelVec::Ptr input) {
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.
-void IceModelVec3D::allocate(IceGrid::ConstPtr my_grid, const std::string &my_name,
+void IceModelVec3D::allocate(IceGrid::ConstPtr grid, const std::string &name,
                              IceModelVecKind ghostedp, const std::vector<double> &levels,
                              unsigned int stencil_width) {
   PetscErrorCode ierr;
-  m_grid = my_grid;
+  m_grid = grid;
 
   m_zlevels = levels;
   m_da_stencil_width = stencil_width;
@@ -92,10 +92,10 @@ void IceModelVec3D::allocate(IceGrid::ConstPtr my_grid, const std::string &my_na
     PISM_CHK(ierr, "DMCreateGlobalVector");
   }
 
-  m_name = my_name;
+  m_name = name;
 
   m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
-                                               my_name, m_zlevels));
+                                               name, m_zlevels));
 }
 
 bool IceModelVec3D::isLegalLevel(double z) const {
@@ -244,12 +244,12 @@ void  IceModelVec3D::set_column(int i, int j, double *valsIN) {
   PISM_CHK(ierr, "PetscMemcpy");
 }
 
-void  IceModelVec3::create(IceGrid::ConstPtr my_grid, const std::string &my_name,
+void  IceModelVec3::create(IceGrid::ConstPtr grid, const std::string &name,
                            IceModelVecKind ghostedp,
                            unsigned int stencil_width) {
 
-  IceModelVec3D::allocate(my_grid, my_name, ghostedp,
-                          my_grid->z(), stencil_width);
+  IceModelVec3D::allocate(grid, name, ghostedp,
+                          grid->z(), stencil_width);
 }
 
 } // end of namespace pism

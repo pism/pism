@@ -42,7 +42,7 @@ IceModelVec3Custom::~IceModelVec3Custom()
  * @param mygrid grid to use
  * @param short_name name of the NetCDF variable
  * @param z_name name of the NetCDF dimension and variable corresponding to the third dimension
- * @param my_zlevels "vertical" levels (values of z)
+ * @param zlevels "vertical" levels (values of z)
  * @param z_attrs attributes of the "z" coordinate variable
  *
  * @return 0 on success
@@ -51,7 +51,7 @@ IceModelVec3Custom::~IceModelVec3Custom()
 void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
                                 const std::string &short_name,
                                 const std::string &z_name,
-                                const std::vector<double> &my_zlevels,
+                                const std::vector<double> &zlevels,
                                 const std::map<std::string, std::string> &z_attrs) {
   PetscErrorCode ierr;
   assert(m_v == NULL);
@@ -59,7 +59,7 @@ void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
   m_has_ghosts = false;
   m_grid       = mygrid;
   m_name       = short_name;
-  m_zlevels      = my_zlevels;
+  m_zlevels    = zlevels;
 
   m_da_stencil_width = 1;
 

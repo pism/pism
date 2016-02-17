@@ -42,11 +42,11 @@ IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
   return result;
 }
 
-void IceModelVec2V::create(IceGrid::ConstPtr my_grid, const std::string &short_name,
+void IceModelVec2V::create(IceGrid::ConstPtr grid, const std::string &short_name,
                            IceModelVecKind ghostedp,
                            unsigned int stencil_width) {
 
-  IceModelVec2::create(my_grid, short_name, ghostedp,
+  IceModelVec2::create(grid, short_name, ghostedp,
                        stencil_width, m_dof);
 
   units::System::Ptr sys = m_grid->ctx()->unit_system();

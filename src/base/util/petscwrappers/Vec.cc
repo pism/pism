@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,14 +57,14 @@ double* VecArray::get() {
 
 // Wrapper around VecGetArray2d / VecRestoreArray2d
 
-VecArray2D::VecArray2D(::Vec vec, int my_Mx, int my_My)
-    : m_Mx(my_Mx), m_My(my_My), m_i_offset(0), m_j_offset(0), m_v(vec) {
+VecArray2D::VecArray2D(::Vec vec, int Mx, int My)
+    : m_Mx(Mx), m_My(My), m_i_offset(0), m_j_offset(0), m_v(vec) {
   PetscErrorCode ierr = VecGetArray2d(m_v, m_My, m_Mx, 0, 0, &m_array);
   PISM_CHK(ierr, "VecGetArray2d");
 }
 
-VecArray2D::VecArray2D(::Vec vec, int my_Mx, int my_My, int i0, int j0)
-  : m_Mx(my_Mx), m_My(my_My), m_i_offset(i0), m_j_offset(j0), m_v(vec) {
+VecArray2D::VecArray2D(::Vec vec, int Mx, int My, int i0, int j0)
+  : m_Mx(Mx), m_My(My), m_i_offset(i0), m_j_offset(j0), m_v(vec) {
   PetscErrorCode ierr = VecGetArray2d(m_v, m_My, m_Mx, 0, 0, &m_array);
   PISM_CHK(ierr, "VecGetArray2d");
 }

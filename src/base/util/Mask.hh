@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -67,13 +67,12 @@ namespace mask {
 class GeometryCalculator
 {
 public:
-  GeometryCalculator(double seaLevel, const Config &config)
-  {
-    sea_level = seaLevel;
-    alpha = 1 - config.get_double("ice_density") / config.get_double("sea_water_density");
-    is_dry_simulation = config.get_boolean("is_dry_simulation");
-    icefree_thickness = config.get_double("mask_icefree_thickness_standard");
-    is_floating_thickness = config.get_double("mask_is_floating_thickness_standard");
+  GeometryCalculator(double seaLevel, const Config &config) {
+    m_sea_level = seaLevel;
+    m_alpha = 1 - config.get_double("ice_density") / config.get_double("sea_water_density");
+    m_is_dry_simulation = config.get_boolean("is_dry_simulation");
+    m_icefree_thickness = config.get_double("mask_icefree_thickness_standard");
+    m_is_floating_thickness = config.get_double("mask_is_floating_thickness_standard");
   }
 
   void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
@@ -81,16 +80,17 @@ public:
 
   inline void compute(double bed, double thickness,
                       int *out_mask, double *out_surface) {
-    const double  hgrounded = bed + thickness; // FIXME issue #15
-    const double  hfloating = sea_level + alpha*thickness;
+    const double hgrounded = bed + thickness; // FIXME issue #15
+    const double hfloating = m_sea_level + m_alpha*thickness;
 
-    const bool is_floating = (hfloating > hgrounded + is_floating_thickness),
-      ice_free    = (thickness < icefree_thickness);
+    const bool
+      is_floating = (hfloating > hgrounded + m_is_floating_thickness),
+      ice_free    = (thickness < m_icefree_thickness);
 
     int mask_result;
     double surface_result;
 
-    if (is_floating && (not is_dry_simulation)) {
+    if (is_floating && (not m_is_dry_simulation)) {
       surface_result = hfloating;
 
       if (ice_free) {
@@ -132,8 +132,8 @@ public:
   }
 
 protected:
-  double alpha, sea_level, icefree_thickness, is_floating_thickness;
-  bool is_dry_simulation;
+  double m_alpha, m_sea_level, m_icefree_thickness, m_is_floating_thickness;
+  bool m_is_dry_simulation;
 };
 
 class MaskQuery
