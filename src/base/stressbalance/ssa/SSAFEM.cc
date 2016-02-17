@@ -325,7 +325,7 @@ void SSAFEM::cache_inputs() {
         const int ij = m_element_index.flatten(i, j);
         Coefficients *coefficients = &m_coefficients[ij*Nq];
         for (unsigned int q = 0; q < Nq; q++) {
-          coefficients[q].H  = Hq[q];
+          coefficients[q].thickness  = Hq[q];
           coefficients[q].tauc = taucq[q];
           if (driving_stress_explicit) {
             coefficients[q].driving_stress.u = ds_xq[q];
@@ -335,7 +335,7 @@ void SSAFEM::cache_inputs() {
             coefficients[q].driving_stress.v = -rho_g * Hq[q]*hyq[q];
           }
 
-          coefficients[q].mask = gc.mask(bq[q], coefficients[q].H);
+          coefficients[q].mask = gc.mask(bq[q], coefficients[q].thickness);
         }
 
         // In the following, we obtain the averaged hardness value from enthalpy by
@@ -369,11 +369,11 @@ void SSAFEM::cache_inputs() {
         // Now, for each column over a quadrature point, find the averaged_hardness.
         for (unsigned int q = 0; q < Nq; q++) {
           // Evaluate column integrals in flow law at every quadrature point's column
-          coefficients[q].B = rheology::averaged_hardness(*m_flow_law,
-                                                          coefficients[q].H,
-                                                          m_grid->kBelowHeight(coefficients[q].H),
-                                                          &(m_grid->z()[0]),
-                                                          &(Enth_q[q])[0]);
+          coefficients[q].hardness = rheology::averaged_hardness(*m_flow_law,
+                                                                 coefficients[q].thickness,
+                                                                 m_grid->kBelowHeight(coefficients[q].thickness),
+                                                                 &(m_grid->z()[0]),
+                                                                 &(Enth_q[q])[0]);
         }
 
       } // j-loop
@@ -411,33 +411,33 @@ void SSAFEM::cache_inputs() {
  *                   second invariant @f$ \gamma @f$. Set to NULL if
  *                   not desired.
  */
-void SSAFEM::PointwiseNuHAndBeta(const Coefficients &coefficients,
+void SSAFEM::PointwiseNuHAndBeta(const Coefficients &c,
                                  const Vector2 &u, const double Du[],
                                  double *nuH, double *dnuH,
                                  double *beta, double *dbeta) {
 
-  if (coefficients.H < strength_extension->get_min_thickness()) {
+  if (c.thickness < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
     if (dnuH) {
       *dnuH = 0;
     }
   } else {
-    m_flow_law->effective_viscosity(coefficients.B, secondInvariantDu_2D(Du),
+    m_flow_law->effective_viscosity(c.hardness, secondInvariantDu_2D(Du),
                                     nuH, dnuH);
 
-    *nuH  = m_epsilon_ssa + *nuH * coefficients.H;
+    *nuH  = m_epsilon_ssa + *nuH * c.thickness;
 
     if (dnuH) {
-      *dnuH *= coefficients.H;
+      *dnuH *= c.thickness;
     }
   }
 
-  if (mask::grounded_ice(coefficients.mask)) {
-    m_basal_sliding_law->drag_with_derivative(coefficients.tauc, u.u, u.v, beta, dbeta);
+  if (mask::grounded_ice(c.mask)) {
+    m_basal_sliding_law->drag_with_derivative(c.tauc, u.u, u.v, beta, dbeta);
   } else {
     *beta = 0;
 
-    if (mask::ice_free_land(coefficients.mask)) {
+    if (mask::ice_free_land(c.mask)) {
       *beta = m_beta_ice_free_bedrock;
     }
 

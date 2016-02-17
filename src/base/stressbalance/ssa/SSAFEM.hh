@@ -48,11 +48,11 @@ protected:
   //! Storage for SSA coefficients at a quadrature point.
   struct Coefficients {
     //! ice thickness
-    double H;
+    double thickness;
     //! basal yield stress
     double tauc;
     //! ice hardness
-    double B;
+    double hardness;
     //! prescribed gravitational driving stress
     Vector2 driving_stress;
     //! mask used to choose basal conditions
@@ -65,7 +65,7 @@ protected:
   // FIXME: this structure should be renamed once the original "Coefficients" is gone.
   struct Coeffs {
     //! ice thickness
-    double H;
+    double thickness;
     //! bed elevation
     double bed;
     //! sea level
@@ -73,7 +73,7 @@ protected:
     //! basal yield stress
     double tauc;
     //! ice hardness
-    double B;
+    double hardness;
     //! prescribed gravitational driving stress
     Vector2 driving_stress;
   };
