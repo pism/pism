@@ -32,7 +32,7 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   // The value of the objective
   double value = 0;
 
-  double x_q[Nq];
+  double x_q[fem::MAX_QUADRATURE_SIZE];
 
   IceModelVec::AccessList list(x);
 
@@ -73,9 +73,9 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   // The value of the objective
   double value = 0;
 
-  double a_q[Nq];
+  double a_q[fem::MAX_QUADRATURE_SIZE];
 
-  double b_q[Nq];
+  double b_q[fem::MAX_QUADRATURE_SIZE];
 
   IceModelVec::AccessList list(a);
   list.add(b);
@@ -119,7 +119,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
-  double x_q[Nq];
+  double x_q[fem::MAX_QUADRATURE_SIZE];
   double gradient_e[Nk];
 
   IceModelVec::AccessList list(x);
@@ -173,7 +173,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
   // The value of the objective
   double value = 0;
 
-  Vector2 x_q[Nq];
+  Vector2 x_q[fem::MAX_QUADRATURE_SIZE];
 
   IceModelVec::AccessList list(x);
 
@@ -214,9 +214,9 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
   // The value of the objective
   double value = 0;
 
-  Vector2 a_q[Nq];
+  Vector2 a_q[fem::MAX_QUADRATURE_SIZE];
 
-  Vector2 b_q[Nq];
+  Vector2 b_q[fem::MAX_QUADRATURE_SIZE];
 
   IceModelVec::AccessList list(a);
   list.add(b);
@@ -260,7 +260,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
-  Vector2 x_q[Nq];
+  Vector2 x_q[fem::MAX_QUADRATURE_SIZE];
   Vector2 gradient_e[Nk];
 
   IceModelVec::AccessList list(x);

@@ -41,7 +41,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   double value = 0;
 
   double x_e[Nk];
-  double x_q[Nq], dxdx_q[Nq], dxdy_q[Nq];
+  double x_q[fem::MAX_QUADRATURE_SIZE], dxdx_q[fem::MAX_QUADRATURE_SIZE], dxdy_q[fem::MAX_QUADRATURE_SIZE];
 
   IceModelVec::AccessList list(x);
 
@@ -87,7 +87,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   gradient.set(0);
 
   double x_e[Nk];
-  double x_q[Nq], dxdx_q[Nq], dxdy_q[Nq];
+  double x_q[fem::MAX_QUADRATURE_SIZE], dxdx_q[fem::MAX_QUADRATURE_SIZE], dxdy_q[fem::MAX_QUADRATURE_SIZE];
 
   double gradient_e[Nk];
 

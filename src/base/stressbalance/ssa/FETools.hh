@@ -34,6 +34,11 @@ class IceModelVec2Int;
 class IceModelVec2V;
 class IceGrid;
 namespace fem {
+
+//! Hard-wired maximum number of points a quadrature can use. This is used as the size of arrays
+//! storing quadrature point values. Some of the entries in such an array may not be used.
+static const unsigned int MAX_QUADRATURE_SIZE = 9;
+
 //! \file
 //! \brief Classes for implementing the Finite Element Method on an IceGrid.
 /*! \file We assume that the reader has a basic understanding of the finite element method. The
@@ -439,7 +444,7 @@ protected:
 };
 
 /*! @brief Compute the values at the quadrature points of a finite-element function.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vector `result`. */
+/*! There should be room for Q.N() values in the output vector `result`. */
 template <typename T>
 void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *result) {
   const Germs *test = Q.test_function_values();
@@ -454,7 +459,7 @@ void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *result) {
 
 /*! @brief Compute the values and partial derivatives at the quadrature points of a finite-element
   function.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.
+/*! There should be room for Q.N() values in the output vectors `vals`, `dx`, and `dy`.
   Each element of `dx` is the derivative of the vector-valued finite-element function in the x
   direction, and similarly for `dy`.
 */

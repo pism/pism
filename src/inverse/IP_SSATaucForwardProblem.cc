@@ -134,7 +134,7 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
   m_tauc_param.convertToDesignVariable(*m_zeta, tauc);
 
   // Cache tauc at the quadrature points in m_coefficients.
-  double tauc_q[Nq];
+  double tauc_q[fem::MAX_QUADRATURE_SIZE];
   IceModelVec::AccessList list(tauc);
 
   const int
@@ -280,7 +280,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double                 m_dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[Nk];
-  Vector2 u_q[Nq];
+  Vector2 u_q[fem::MAX_QUADRATURE_SIZE];
 
   Vector2 du_e[Nk];
 
@@ -289,7 +289,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double zeta_e[Nk];
 
   double dtauc_e[Nk];
-  double dtauc_q[Nq];
+  double dtauc_q[fem::MAX_QUADRATURE_SIZE];
 
   // An Nq by Nk array of test function values.
   const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
@@ -433,10 +433,10 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   list.add(*du_local);
 
   Vector2 u_e[Nk];
-  Vector2 u_q[Nq];
+  Vector2 u_q[fem::MAX_QUADRATURE_SIZE];
 
   Vector2 du_e[Nk];
-  Vector2 du_q[Nq];
+  Vector2 du_q[fem::MAX_QUADRATURE_SIZE];
 
   double dzeta_e[Nk];
 

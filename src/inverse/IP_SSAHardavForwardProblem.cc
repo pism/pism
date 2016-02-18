@@ -114,7 +114,7 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
   m_design_param.convertToDesignVariable(*m_zeta, m_hardav);
 
   // Cache hardav at the quadrature points in m_coefficients.
-  double hardav_q[Nq];
+  double hardav_q[fem::MAX_QUADRATURE_SIZE];
   IceModelVec::AccessList list(m_hardav);
 
   const int
@@ -272,7 +272,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double           m_dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[Nk];
-  Vector2 U[Nq], U_x[Nq], U_y[Nq];
+  Vector2 U[fem::MAX_QUADRATURE_SIZE], U_x[fem::MAX_QUADRATURE_SIZE], U_y[fem::MAX_QUADRATURE_SIZE];
 
   Vector2 du_e[Nk];
 
@@ -281,7 +281,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double zeta_e[Nk];
 
   double dB_e[Nk];
-  double dB_q[Nq];
+  double dB_q[fem::MAX_QUADRATURE_SIZE];
 
   // An Nq by Nk array of test function values.
   const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
@@ -438,12 +438,12 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   list.add(*du_local);
 
   Vector2 u_e[Nk];
-  Vector2 U[Nq], U_x[Nq], U_y[Nq];
+  Vector2 U[fem::MAX_QUADRATURE_SIZE], U_x[fem::MAX_QUADRATURE_SIZE], U_y[fem::MAX_QUADRATURE_SIZE];
 
   Vector2 du_e[Nk];
-  Vector2 du_q[Nq];
-  Vector2 du_dx_q[Nq];
-  Vector2 du_dy_q[Nq];
+  Vector2 du_q[fem::MAX_QUADRATURE_SIZE];
+  Vector2 du_dx_q[fem::MAX_QUADRATURE_SIZE];
+  Vector2 du_dy_q[fem::MAX_QUADRATURE_SIZE];
 
   double dzeta_e[Nk];
 

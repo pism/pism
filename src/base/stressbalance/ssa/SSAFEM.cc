@@ -732,7 +732,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   const double* JxW = m_quadrature.weighted_jacobian();
 
   // Storage for the current solution and its derivatives at quadrature points.
-  Vector2 U[Nq], U_x[Nq], U_y[Nq];
+  Vector2 U[fem::MAX_QUADRATURE_SIZE], U_x[fem::MAX_QUADRATURE_SIZE], U_y[fem::MAX_QUADRATURE_SIZE];
 
   // An Nq by Nk array of test function values.
   const Germ (*test)[Nk] = m_quadrature.test_function_values();
@@ -926,7 +926,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   const double* JxW = m_quadrature.weighted_jacobian();
 
   // Storage for the current solution at quadrature points.
-  Vector2 U[Nq], U_x[Nq], U_y[Nq];
+  Vector2 U[fem::MAX_QUADRATURE_SIZE], U_x[fem::MAX_QUADRATURE_SIZE], U_y[fem::MAX_QUADRATURE_SIZE];
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).

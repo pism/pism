@@ -35,7 +35,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   double value = 0;
 
   double x_e[Nk];
-  double x_q[Nq], dxdx_q[Nq], dxdy_q[Nq];
+  double x_q[fem::MAX_QUADRATURE_SIZE], dxdx_q[fem::MAX_QUADRATURE_SIZE], dxdy_q[fem::MAX_QUADRATURE_SIZE];
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
@@ -80,10 +80,10 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   double value = 0;
 
   double a_e[Nk];
-  double a_q[Nq], dadx_q[Nq], dady_q[Nq];
+  double a_q[fem::MAX_QUADRATURE_SIZE], dadx_q[fem::MAX_QUADRATURE_SIZE], dady_q[fem::MAX_QUADRATURE_SIZE];
 
   double b_e[Nk];
-  double b_q[Nq], dbdx_q[Nq], dbdy_q[Nq];
+  double b_q[fem::MAX_QUADRATURE_SIZE], dbdx_q[fem::MAX_QUADRATURE_SIZE], dbdy_q[fem::MAX_QUADRATURE_SIZE];
 
   IceModelVec::AccessList list(a);
   list.add(b);
@@ -137,7 +137,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   gradient.set(0);
 
   double x_e[Nk];
-  double x_q[Nq], dxdx_q[Nq], dxdy_q[Nq];
+  double x_q[fem::MAX_QUADRATURE_SIZE], dxdx_q[fem::MAX_QUADRATURE_SIZE], dxdy_q[fem::MAX_QUADRATURE_SIZE];
 
   double gradient_e[Nk];
 
