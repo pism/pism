@@ -17,15 +17,18 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // Utility functions used by the SSAFEM code.
-#include <cassert>
-#include <cstring>
+
+#include <cassert>              // assert
+#include <cstring>              // memset
+#include <cstdlib>              // malloc, free
 
 #include "FETools.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/iceModelVec.hh"
-#include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/Logger.hh"
+
+#include "base/util/error_handling.hh"
 
 namespace pism {
 
@@ -168,23 +171,41 @@ void ElementMap::add_jacobian_contribution(const double *K, Mat J) const {
 const int ElementMap::m_i_offset[4] = {0, 1, 1, 0};
 const int ElementMap::m_j_offset[4] = {0, 0, 1, 1};
 
-//! Obtain the weights @f$ w_q @f$ for quadrature.
-const double* Quadrature2x2::weighted_jacobian() const {
-  return m_JxW;
+Quadrature::Quadrature(unsigned int N)
+  : m_Nq(N) {
+  // empty
+  m_JxW = (double*) malloc(m_Nq * sizeof(double));
+  if (m_JxW == NULL) {
+    throw std::runtime_error("Failed to allocate a Quadrature instance");
+  }
+  m_germs = (Germs*) malloc(m_Nq * ShapeQ1::Nk * sizeof(Germ));
+  if (m_germs == NULL) {
+    free(m_JxW);
+    throw std::runtime_error("Failed to allocate a Quadrature instance");
+  }
+}
+
+Quadrature::~Quadrature() {
+  free(m_JxW);
+  m_JxW = NULL;
+
+  free(m_germs);
+  m_germs = NULL;
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
-Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
+Quadrature2x2::Quadrature2x2(double dx, double dy, double L)
+  : Quadrature(m_N) {
 
   // The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
-  static const double quadPoints[Nq][2] =
+  static const double quadPoints[m_N][2] =
     {{-0.57735026918962573, -0.57735026918962573},
      { 0.57735026918962573, -0.57735026918962573},
      { 0.57735026918962573,  0.57735026918962573},
      {-0.57735026918962573,  0.57735026918962573}};
 
   // The weights w_i for Gaussian quadrature on the reference element with these quadrature points
-  static const double quadWeights[Nq]  = {1.0, 1.0, 1.0, 1.0};
+  static const double quadWeights[m_N]  = {1.0, 1.0, 1.0, 1.0};
 
   // Since we use uniform cartesian coordinates, the Jacobian is
   // constant and diagonal on every element.
@@ -196,7 +217,7 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
     jacobian_y = 0.5*dy / L,
     jacobian_det = jacobian_x*jacobian_y;
 
-  for (unsigned int q = 0; q < Nq; q++) {
+  for (unsigned int q = 0; q < m_Nq; q++) {
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
       m_germs[q][k] = ShapeQ1::eval(k, quadPoints[q][0], quadPoints[q][1]);
       m_germs[q][k].dx /= jacobian_x;
@@ -204,15 +225,9 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
     }
   }
 
-  for (unsigned int q = 0; q < Nq; q++) {
+  for (unsigned int q = 0; q < m_Nq; q++) {
     m_JxW[q] = jacobian_det * quadWeights[q];
   }
-}
-
-//! Return the values at all quadrature points of all shape functions.
-//* The return value is an Nq by Nk array of Germs. */
-const Germs* Quadrature2x2::test_function_values() const {
-  return m_germs;
 }
 
 DirichletData::DirichletData()

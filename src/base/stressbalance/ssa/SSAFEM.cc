@@ -272,9 +272,9 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
 void SSAFEM::cache_inputs() {
 
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = fem::Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
-  std::vector<double> Enth_q[Nq];
+  std::vector<double> Enth_q[fem::MAX_QUADRATURE_SIZE];
   const double *Enth_e[4];
 
   const double
@@ -313,8 +313,8 @@ void SSAFEM::cache_inputs() {
   try {
     for (int j=ys; j<ys+ym; j++) {
       for (int i=xs; i<xs+xm; i++) {
-        double hq[Nq], hxq[Nq], hyq[Nq];
-        double ds_xq[Nq], ds_yq[Nq];
+        double hq[fem::MAX_QUADRATURE_SIZE], hxq[fem::MAX_QUADRATURE_SIZE], hyq[fem::MAX_QUADRATURE_SIZE];
+        double ds_xq[fem::MAX_QUADRATURE_SIZE], ds_yq[fem::MAX_QUADRATURE_SIZE];
         double tmp[Nk];
 
         m_element.reset(i, j);
@@ -330,13 +330,15 @@ void SSAFEM::cache_inputs() {
           quadrature_point_values(m_quadrature, tmp, hq, hxq, hyq);
         }
 
-        double Hq[Nq], bq[Nq], taucq[Nq];
+        double Hq[fem::MAX_QUADRATURE_SIZE];
         m_element.nodal_values(*m_thickness, tmp);
         quadrature_point_values(m_quadrature, tmp, Hq);
 
+        double bq[fem::MAX_QUADRATURE_SIZE];
         m_element.nodal_values(*m_bed, tmp);
         quadrature_point_values(m_quadrature, tmp, bq);
 
+        double taucq[fem::MAX_QUADRATURE_SIZE];
         m_element.nodal_values(*m_tauc, tmp);
         quadrature_point_values(m_quadrature, tmp, taucq);
 

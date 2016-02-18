@@ -105,7 +105,7 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
   \int_E f dx \approx \sum_{q} f(x_q) w_q
   \f]
 
-  for certain points \f$x_q\f$ and weights \f$j_q\f$ (specific details are found in Quadrature2x2).
+  for certain points \f$x_q\f$ and weights \f$j_q\f$ (specific details are found in Quadrature).
 
   The unknown \f$w_h\f$ is represented by an IceVec, \f$w_h=\sum_{ij} c_{ij} \psi_{ij}\f$ where
   \f$c_{ij}\f$ are the coefficients of the vector. The solution of the finite element problem
@@ -129,12 +129,12 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
     freedom \f$d\f$ defining \f$\hat w_h\f$. (ElementMap)
 
   - Evaluate the local trial function \f$w_h\f$ (values and derivatives as needed) at the quadrature
-    points \f$x_q\f$ (Quadrature2x2)
+    points \f$x_q\f$ (Quadrature)
 
   - Evaluate the local test functions (again values and derivatives) at the quadrature points.
-    (Quadrature2x2)
+    (Quadrature)
 
-  - Obtain the quadrature weights $j_q$ for the element (Quadrature2x2)
+  - Obtain the quadrature weights $j_q$ for the element (Quadrature)
 
   - Compute the values of the integrand \f$g(\hat w_h,\psi_k)\f$ at each quadrature point (call
     these \f$g_{qk}\f$) and form the weighted sums \f$y_k=\sum_{q} j_q g_{qk}\f$.
@@ -151,7 +151,7 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
 
   - Ghost elements (as well as periodic boundary conditions): ElementIterator
   - Dirichlet data: ElementMap
-  - Vector valued functions: (ElementMap, Quadrature2x2)
+  - Vector valued functions: (ElementMap, Quadrature)
 
   The classes in this module are not intended to be a fancy finite element package. Their purpose is
   to clarify the steps that occur in the computation of residuals and Jacobians in SSAFEM, and to
@@ -382,6 +382,36 @@ public:
   int lym;
 };
 
+class Quadrature {
+public:
+  Quadrature(unsigned int N);
+  virtual ~Quadrature();
+
+  //! Quadrature size (the number of points).
+  unsigned int n() const {
+    return m_Nq;
+  }
+
+  //! Vaues of `ShapeQ1::Nk` trial functions and their derivatives with respect to `x` and `y`, for
+  //! each of `n()` quadrature points.
+  const Germs* test_function_values() const {
+    return m_germs;
+  }
+
+  //! Determinant of the Jacobian of the map from the reference element to the physical element,
+  //! evaluated at quadrature points and multiplied by corresponding quadrature weights.
+  const double* weighted_jacobian() const {
+    return m_JxW;
+  }
+protected:
+  //! Number of quadrature points.
+  const unsigned int m_Nq;
+
+  double *m_JxW;
+
+  Germs* m_germs;
+};
+
 //! Numerical integration of finite element functions.
 /*! The core of the finite element method is the computation of integrals over elements.
   For nonlinear problems, or problems with non-constant coefficients (%i.e. any real problem)
@@ -389,7 +419,7 @@ public:
   \f[
   \int_E f(x)\; dx \approx \sum_q f(x_q) w_q
   \f]
-  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  An Quadrature2x2 is used
+  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  An Quadrature is used
   to evaluate finite element functions at quadrature points, and to compute weights \f$w_q\f$
   for a given element.
 
@@ -413,40 +443,23 @@ public:
   functions on the interval.
 
   Integration on a physical element can be thought of as being done by change of variables. The
-  quadrature weights need to be modified, and the Quadrature2x2 takes care of this for you. Because
+  quadrature weights need to be modified, and the Quadrature takes care of this for you. Because
   all elements in an IceGrid are congruent, the quadrature weights are the same for each element,
   and are computed upon initialization with an IceGrid.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class Quadrature2x2 {
+class Quadrature2x2 : public Quadrature {
 public:
   Quadrature2x2(double dx, double dy, double L=1.0);
-
-  //! Number of quadrature points.
-  static const unsigned int Nq = 4;
-
-  unsigned int n() const {
-    return Nq;
-  }
-
-  const Germs* test_function_values() const;
-
-  const double* weighted_jacobian() const;
-
-protected:
-  //! Determinant of the Jacobian of the map from the reference element to the physical element,
-  //! evaluated at quadrature points and multiplied by corresponding quadrature weights.
-  double m_JxW[Nq];
-
-  //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
-  Germ m_germs[Nq][ShapeQ1::Nk];
+private:
+  static const unsigned int m_N = 4;
 };
 
 /*! @brief Compute the values at the quadrature points of a finite-element function.*/
 /*! There should be room for Q.N() values in the output vector `result`. */
 template <typename T>
-void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *result) {
+void quadrature_point_values(Quadrature &Q, const T *x, T *result) {
   const Germs *test = Q.test_function_values();
   const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
@@ -464,7 +477,7 @@ void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *result) {
   direction, and similarly for `dy`.
 */
 template <typename T>
-void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *vals, T *dx, T *dy) {
+void quadrature_point_values(Quadrature &Q, const T *x, T *vals, T *dx, T *dy) {
   const Germs *test = Q.test_function_values();
   const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
