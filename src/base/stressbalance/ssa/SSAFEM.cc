@@ -324,24 +324,24 @@ void SSAFEM::cache_inputs() {
 
         if (explicit_driving_stress) {
           m_element.nodal_values(*m_driving_stress_x, tmp);
-          m_quadrature.quadrature_point_values(tmp, ds_xq);
+          quadrature_point_values(m_quadrature, tmp, ds_xq);
 
           m_element.nodal_values(*m_driving_stress_y, tmp);
-          m_quadrature.quadrature_point_values(tmp, ds_yq);
+          quadrature_point_values(m_quadrature, tmp, ds_yq);
         } else {
           m_element.nodal_values(*m_surface, tmp);
-          m_quadrature.quadrature_point_values(tmp, hq, hxq, hyq);
+          quadrature_point_values(m_quadrature, tmp, hq, hxq, hyq);
         }
 
         double Hq[Nq], bq[Nq], taucq[Nq];
         m_element.nodal_values(*m_thickness, tmp);
-        m_quadrature.quadrature_point_values(tmp, Hq);
+        quadrature_point_values(m_quadrature, tmp, Hq);
 
         m_element.nodal_values(*m_bed, tmp);
-        m_quadrature.quadrature_point_values(tmp, bq);
+        quadrature_point_values(m_quadrature, tmp, bq);
 
         m_element.nodal_values(*m_tauc, tmp);
-        m_quadrature.quadrature_point_values(tmp, taucq);
+        quadrature_point_values(m_quadrature, tmp, taucq);
 
         const int ij = m_element_index.flatten(i, j);
         Coefficients *coefficients = &m_coefficients[ij*Nq];
@@ -798,7 +798,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         }
 
         // Compute the solution values and symmetric gradient at the quadrature points.
-        m_quadrature.quadrature_point_values(velocity_nodal, // input
+        quadrature_point_values(m_quadrature, velocity_nodal, // input
                                              U, U_x, U_y);   // outputs
 
         // loop over quadrature points on this element:
@@ -977,7 +977,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           dirichlet_data.constrain(m_element);
         }
         // Compute the values of the solution at the quadrature points.
-        m_quadrature.quadrature_point_values(velocity_local, U, U_x, U_y);
+        quadrature_point_values(m_quadrature, velocity_local, U, U_x, U_y);
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees
         // of freedom per element, for a total of (2*Nk)*(2*Nk) = 16

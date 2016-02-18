@@ -149,7 +149,7 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
       double tmp[fem::ShapeQ1::Nk];
 
       m_element.nodal_values(tauc, tmp);
-      m_quadrature.quadrature_point_values(tmp, tauc_q);
+      quadrature_point_values(m_quadrature, tmp, tauc_q);
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[ij*Nq];
       for (unsigned int q = 0; q < Nq; q++) {
@@ -332,7 +332,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           dirichletBC.constrain(m_element);
           dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature.quadrature_point_values(u_e, u_q);
+        quadrature_point_values(m_quadrature, u_e, u_q);
 
         // Compute dzeta at the nodes
         m_element.nodal_values(*dzeta_local, dzeta_e);
@@ -346,7 +346,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
           dtauc_e[k] *= dzeta_e[k];
         }
-        m_quadrature.quadrature_point_values(dtauc_e, dtauc_q);
+        quadrature_point_values(m_quadrature, dtauc_e, dtauc_q);
 
         const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
@@ -483,13 +483,13 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
         if (dirichletBC) {
           dirichletBC.enforce_homogeneous(m_element, du_e);
         }
-        m_quadrature.quadrature_point_values(du_e, du_q);
+        quadrature_point_values(m_quadrature, du_e, du_q);
 
         m_element.nodal_values(u, u_e);
         if (dirichletBC) {
           dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature.quadrature_point_values(u_e, u_q);
+        quadrature_point_values(m_quadrature, u_e, u_q);
 
         // Zero out the element-local residual in prep for updating it.
         for (unsigned int k=0; k<Nk; k++) {

@@ -211,7 +211,7 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
 
 //! Return the values at all quadrature points of all shape functions.
 //* The return value is an Nq by Nk array of Germs. */
-const Quadrature2x2::Germs* Quadrature2x2::test_function_values() const {
+const Germs* Quadrature2x2::test_function_values() const {
   return m_germs;
 }
 

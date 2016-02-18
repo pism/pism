@@ -66,7 +66,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       if (dirichletBC) {
         dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      m_quadrature.quadrature_point_values(x_e, x_q, dxdx_q, dxdy_q);
+      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         value += m_c*JxW[q]*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2);
@@ -121,7 +121,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
         dirichletBC.constrain(m_element);
         dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      m_quadrature.quadrature_point_values(x_e, x_q, dxdx_q, dxdy_q);
+      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in preparation for updating it.
       for (unsigned int k = 0; k < Nk; k++) {

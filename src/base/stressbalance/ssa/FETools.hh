@@ -165,7 +165,6 @@ struct Germ
   double dy;
 };
 
-
 //! Computation of Q1 shape function values.
 /*! The Q1 shape functions are bilinear functions. On a rectangular element, there are four (Nk)
   basis functions, each equal to 1 at one vertex and equal to zero at the remainder.
@@ -194,6 +193,8 @@ private:
   static const double m_eta[Nk];
 };
 
+// define Germs, which is an array of ShapeQ1::Nk "Germ"s
+typedef Germ Germs[ShapeQ1::Nk];
 
 //! The mapping from global to local degrees of freedom.
 /*! Computations of residual and Jacobian entries in the finite element method are done by iterating
@@ -424,49 +425,9 @@ public:
     return Nq;
   }
 
-  // define Germs, which is an array of Quadrature2x2::Nk "Germ"s
-  typedef Germ Germs[ShapeQ1::Nk];
-
   const Germs* test_function_values() const;
 
   const double* weighted_jacobian() const;
-
-  /*! @brief Compute the values at the quadrature points of a finite-element function.*/
-  /*! There should be room for Quadrature2x2::Nq values in the output vector `result`. */
-  template <typename T>
-  void quadrature_point_values(const T *x, T *result) const {
-    const Germs *test = test_function_values();
-    const unsigned int n = N();
-    for (unsigned int q = 0; q < n; q++) {
-      result[q] = 0.0;
-      for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-        result[q] += test[q][k].val * x[k];
-      }
-    }
-  }
-
-/*! @brief Compute the values and partial derivatives at the quadrature points of a finite-element
-  function.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.
-  Each element of `dx` is the derivative of the vector-valued finite-element function in the x
-  direction, and similarly for `dy`.
-*/
-  template <typename T>
-  void quadrature_point_values(const T *x, T *vals, T *dx, T *dy) {
-    const Germs *test = test_function_values();
-    const unsigned int n = N();
-    for (unsigned int q = 0; q < n; q++) {
-      vals[q] = 0.0;
-      dx[q]   = 0.0;
-      dy[q]   = 0.0;
-      for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-        const Germ &psi = test[q][k];
-        vals[q] += psi.val * x[k];
-        dx[q]   += psi.dx  * x[k];
-        dy[q]   += psi.dy  * x[k];
-      }
-    }
-  }
 
 protected:
   //! Determinant of the Jacobian of the map from the reference element to the physical element,
@@ -476,6 +437,43 @@ protected:
   //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
   Germ m_germs[Nq][ShapeQ1::Nk];
 };
+
+/*! @brief Compute the values at the quadrature points of a finite-element function.*/
+/*! There should be room for Quadrature2x2::Nq values in the output vector `result`. */
+template <typename T>
+void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *result) {
+  const Germs *test = Q.test_function_values();
+  const unsigned int n = Q.N();
+  for (unsigned int q = 0; q < n; q++) {
+    result[q] = 0.0;
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+      result[q] += test[q][k].val * x[k];
+    }
+  }
+}
+
+/*! @brief Compute the values and partial derivatives at the quadrature points of a finite-element
+  function.*/
+/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.
+  Each element of `dx` is the derivative of the vector-valued finite-element function in the x
+  direction, and similarly for `dy`.
+*/
+template <typename T>
+void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *vals, T *dx, T *dy) {
+  const Germs *test = Q.test_function_values();
+  const unsigned int n = Q.N();
+  for (unsigned int q = 0; q < n; q++) {
+    vals[q] = 0.0;
+    dx[q]   = 0.0;
+    dy[q]   = 0.0;
+    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+      const Germ &psi = test[q][k];
+      vals[q] += psi.val * x[k];
+      dx[q]   += psi.dx  * x[k];
+      dy[q]   += psi.dy  * x[k];
+    }
+  }
+}
 
 //* Parts shared by scalar and 2D vector Dirichlet data classes.
 class DirichletData {

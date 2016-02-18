@@ -129,7 +129,7 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
       double tmp[fem::ShapeQ1::Nk];
       m_element.nodal_values(m_hardav, tmp);
-      m_quadrature.quadrature_point_values(tmp, hardav_q);
+      quadrature_point_values(m_quadrature, tmp, hardav_q);
       const int ij = m_element_index.flatten(i, j);
       Coefficients *coefficients = &m_coefficients[ij*Nq];
       for (unsigned int q = 0; q < Nq; q++) {
@@ -324,7 +324,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           dirichletBC.constrain(m_element);
           dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature.quadrature_point_values(u_e, U, U_x, U_y);
+        quadrature_point_values(m_quadrature, u_e, U, U_x, U_y);
 
         // Compute dzeta at the nodes
         m_element.nodal_values(*dzeta_local, dzeta_e);
@@ -338,7 +338,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           m_design_param.toDesignVariable(zeta_e[k], NULL, dB_e + k);
           dB_e[k]*=dzeta_e[k];
         }
-        m_quadrature.quadrature_point_values(dB_e, dB_q);
+        quadrature_point_values(m_quadrature, dB_e, dB_q);
 
         const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
@@ -490,13 +490,13 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
         if (dirichletBC) {
           dirichletBC.enforce_homogeneous(m_element, du_e);
         }
-        m_quadrature.quadrature_point_values(du_e, du_q, du_dx_q, du_dy_q);
+        quadrature_point_values(m_quadrature, du_e, du_q, du_dx_q, du_dy_q);
 
         m_element.nodal_values(u, u_e);
         if (dirichletBC) {
           dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature.quadrature_point_values(u_e, U, U_x, U_y);
+        quadrature_point_values(m_quadrature, u_e, U, U_x, U_y);
 
         // Zero out the element-local residual in prep for updating it.
         for (unsigned int k = 0; k < Nk; k++) {
