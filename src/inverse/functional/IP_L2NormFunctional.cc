@@ -194,7 +194,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
       // Obtain values of x at the quadrature points for the element.
       Vector2 tmp[fem::ShapeQ1::Nk];
       m_element.nodal_values(x, tmp);
-      m_quadrature_vector.quadrature_point_values(tmp, x_q);
+      m_quadrature.quadrature_point_values(tmp, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         const Vector2 &x_qq = x_q[q];
@@ -238,9 +238,9 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
       // Obtain values of x at the quadrature points for the element.
       Vector2 tmp[fem::ShapeQ1::Nk];
       m_element.nodal_values(a, tmp);
-      m_quadrature_vector.quadrature_point_values(tmp, a_q);
+      m_quadrature.quadrature_point_values(tmp, a_q);
       m_element.nodal_values(b, tmp);
-      m_quadrature_vector.quadrature_point_values(tmp, b_q);
+      m_quadrature.quadrature_point_values(tmp, b_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         value += JxW[q]*(a_q[q].u*b_q[q].u + a_q[q].v*b_q[q].v);
@@ -288,7 +288,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
       // Obtain values of x at the quadrature points for the element.
       Vector2 tmp[Nk];
       m_element.nodal_values(x, tmp);
-      m_quadrature_vector.quadrature_point_values(tmp, x_q);
+      m_quadrature.quadrature_point_values(tmp, x_q);
 
       // Zero out the element-local residual in prep for updating it.
       for (unsigned int k = 0; k < Nk; k++) {

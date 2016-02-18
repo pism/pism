@@ -38,7 +38,6 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g, Enthalpy
     m_element_index(*m_grid),
     m_element(*m_grid),
     m_quadrature(g->dx(), g->dy(), 1.0),
-    m_quadrature_vector(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
   this->construct();
 }
@@ -333,7 +332,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           dirichletBC.constrain(m_element);
           dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature_vector.quadrature_point_values(u_e, u_q);
+        m_quadrature.quadrature_point_values(u_e, u_q);
 
         // Compute dzeta at the nodes
         m_element.nodal_values(*dzeta_local, dzeta_e);
@@ -484,13 +483,13 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
         if (dirichletBC) {
           dirichletBC.enforce_homogeneous(m_element, du_e);
         }
-        m_quadrature_vector.quadrature_point_values(du_e, du_q);
+        m_quadrature.quadrature_point_values(du_e, du_q);
 
         m_element.nodal_values(u, u_e);
         if (dirichletBC) {
           dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature_vector.quadrature_point_values(u_e, u_q);
+        m_quadrature.quadrature_point_values(u_e, u_q);
 
         // Zero out the element-local residual in prep for updating it.
         for (unsigned int k=0; k<Nk; k++) {

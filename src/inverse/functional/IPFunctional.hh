@@ -44,8 +44,7 @@ public:
     : m_grid(grid),
       m_element_index(*m_grid),
       m_element(*m_grid),
-      m_quadrature(grid->dx(), grid->dy(), 1.0),
-      m_quadrature_vector(grid->dx(), grid->dy(), 1.0)
+      m_quadrature(grid->dx(), grid->dy(), 1.0)
   {
   }
 
@@ -70,10 +69,9 @@ public:
 protected:
   IceGrid::ConstPtr m_grid;
 
-  fem::ElementIterator   m_element_index;
-  fem::ElementMap        m_element;
-  fem::Quadrature_Scalar m_quadrature;
-  fem::Quadrature_Vector m_quadrature_vector;
+  fem::ElementIterator m_element_index;
+  fem::ElementMap      m_element;
+  fem::Quadrature2x2   m_quadrature;
 
 private:
   // Hide copy/assignment operations

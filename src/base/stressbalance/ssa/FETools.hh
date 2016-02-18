@@ -427,6 +427,41 @@ public:
 
   const double* weighted_jacobian() const;
 
+  /*! @brief Compute the values at the quadrature points of a vector-valued
+    finite-element function with element-local degrees of freedom `x_nodal`.*/
+  /*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
+  template <typename T>
+  void quadrature_point_values(const T *x, T *result) const {
+    for (unsigned int q = 0; q < Nq; q++) {
+      result[q] = 0.0;
+      const Germ *test = m_germs[q];
+      for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+        result[q] += test[k].val * x[k];
+      }
+    }
+  }
+
+/*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
+  finite-element function with element-local degrees of freedom `x_nodal`.*/
+/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.
+  Each element of `dx` is the derivative of the vector-valued finite-element function in the x direction,
+  and similarly for `dy`.
+*/
+  template <typename T>
+  void quadrature_point_values(const T *x, T *vals, T *dx, T *dy) {
+    for (unsigned int q = 0; q < Nq; q++) {
+      vals[q] = 0.0;
+      dx[q]   = 0.0;
+      dy[q]   = 0.0;
+      const Germ *test = m_germs[q];
+      for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+        vals[q] += test[k].val * x[k];
+        dx[q]   += test[k].dx * x[k];
+        dy[q]   += test[k].dy * x[k];
+      }
+    }
+  }
+
 protected:
   //! The coordinates of the quadrature points on the reference element.
   static const double quadPoints[Nq][2];
@@ -443,22 +478,6 @@ protected:
 
   //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
   Germ m_germs[Nq][ShapeQ1::Nk];
-};
-
-//! This version supports 2D scalar fields.
-class Quadrature_Scalar : public Quadrature2x2 {
-public:
-  Quadrature_Scalar(double dx, double dy, double L);
-  void quadrature_point_values(const double *x, double *vals);
-  void quadrature_point_values(const double *x, double *vals, double *dx, double *dy);
-};
-
-//! This version supports 2D vector fields.
-class Quadrature_Vector : public Quadrature2x2 {
-public:
-  Quadrature_Vector(double dx, double dy, double L);
-  void quadrature_point_values(const Vector2 *x,  Vector2 *vals);
-  void quadrature_point_values(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);
 };
 
 //* Parts shared by scalar and 2D vector Dirichlet data classes.

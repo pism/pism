@@ -168,10 +168,6 @@ void ElementMap::add_jacobian_contribution(const double *K, Mat J) const {
 const int ElementMap::m_i_offset[4] = {0, 1, 1, 0};
 const int ElementMap::m_j_offset[4] = {0, 0, 1, 1};
 
-Quadrature_Scalar::Quadrature_Scalar(double dx, double dy, double L)
-  : Quadrature2x2(dx, dy, L) {
-}
-
 //! Obtain the weights @f$ w_q @f$ for quadrature.
 const double* Quadrature2x2::weighted_jacobian() const {
   return m_JxW;
@@ -201,85 +197,10 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
   }
 }
 
-Quadrature_Vector::Quadrature_Vector(double dx, double dy, double L)
-  : Quadrature2x2(dx, dy, L) {
-}
-
 //! Return the values at all quadrature points of all shape functions.
 //* The return value is an Nq by Nk array of Germs. */
 const Quadrature2x2::Germs* Quadrature2x2::test_function_values() const {
   return m_germs;
-}
-
-/*! @brief Compute the values at the quadrature ponits of a scalar-valued
-  finite-element function with element-local degrees of freedom `x_nodal`.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
-void Quadrature_Scalar::quadrature_point_values(const double *x_nodal, double *vals) {
-  for (unsigned int q = 0; q < Nq; q++) {
-    const Germ *test = m_germs[q];
-    vals[q] = 0;
-    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      vals[q] += test[k].val * x_nodal[k];
-    }
-  }
-}
-
-/*! @brief Compute the values and first derivatives at the quadrature
-  points of a scalar-valued finite-element function with element-local
-  degrees of freedom `x_nodal`.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`,
-  and `dy`. */
-void Quadrature_Scalar::quadrature_point_values(const double *x_nodal,
-                                                double *vals, double *dx, double *dy) {
-  for (unsigned int q = 0; q < Nq; q++) {
-    const Germ *test = m_germs[q];
-    vals[q] = 0;
-    dx[q] = 0;
-    dy[q] = 0;
-    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      vals[q] += test[k].val * x_nodal[k];
-      dx[q]   += test[k].dx * x_nodal[k];
-      dy[q]   += test[k].dy * x_nodal[k];
-    }
-  }
-}
-
-/*! @brief Compute the values at the quadrature points of a vector-valued
-  finite-element function with element-local degrees of freedom `x_nodal`.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
-void Quadrature_Vector::quadrature_point_values(const Vector2 *x_nodal, Vector2 *result) {
-  for (unsigned int q = 0; q < Nq; q++) {
-    result[q].u = 0;
-    result[q].v = 0;
-    const Germ *test = m_germs[q];
-    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      result[q].u += test[k].val * x_nodal[k].u;
-      result[q].v += test[k].val * x_nodal[k].v;
-    }
-  }
-}
-
-/*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
-  finite-element function with element-local degrees of freedom `x_nodal`.*/
-/*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.
-  Each element of `dx` is the derivative of the vector-valued finite-element function in the x direction,
-  and similarly for `dy`.
-*/
-void Quadrature_Vector::quadrature_point_values(const Vector2 *x, Vector2 *vals, Vector2 *dx, Vector2 *dy) {
-  for (unsigned int q = 0; q < Nq; q++) {
-    vals[q].u = 0;
-    vals[q].v = 0;
-    dx[q].u   = 0;
-    dx[q].v   = 0;
-    dy[q].u   = 0;
-    dy[q].v   = 0;
-    const Germ *test = m_germs[q];
-    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      vals[q] += test[k].val * x[k];
-      dx[q]   += test[k].dx * x[k];
-      dy[q]   += test[k].dy * x[k];
-    }
-  }
 }
 
 //! The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.

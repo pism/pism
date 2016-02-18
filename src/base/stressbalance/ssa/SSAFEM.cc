@@ -40,8 +40,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : SSA(g, e),
     m_element_index(*g),
     m_element(*g),
-    m_quadrature(g->dx(), g->dy(), 1.0),
-    m_quadrature_vector(g->dx(), g->dy(), 1.0) {
+    m_quadrature(g->dx(), g->dy(), 1.0) {
 
   m_driving_stress_x = NULL;
   m_driving_stress_y = NULL;
@@ -799,8 +798,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         }
 
         // Compute the solution values and symmetric gradient at the quadrature points.
-        m_quadrature_vector.quadrature_point_values(velocity_nodal, // input
-                                                    U, U_x, U_y);         // outputs
+        m_quadrature.quadrature_point_values(velocity_nodal, // input
+                                             U, U_x, U_y);   // outputs
 
         // loop over quadrature points on this element:
         for (unsigned int q = 0; q < Nq; q++) {
@@ -978,7 +977,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           dirichlet_data.constrain(m_element);
         }
         // Compute the values of the solution at the quadrature points.
-        m_quadrature_vector.quadrature_point_values(velocity_local, U, U_x, U_y);
+        m_quadrature.quadrature_point_values(velocity_local, U, U_x, U_y);
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees
         // of freedom per element, for a total of (2*Nk)*(2*Nk) = 16

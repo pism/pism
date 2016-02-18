@@ -127,8 +127,7 @@ protected:
 
   fem::ElementIterator m_element_index;
   fem::ElementMap m_element;
-  fem::Quadrature_Scalar m_quadrature;
-  fem::Quadrature_Vector m_quadrature_vector;
+  fem::Quadrature2x2 m_quadrature;
 
   // Support for direct specification of driving stress to the FEM SSA solver. This helps
   // with certain test cases where the grid is periodic but the driving stress cannot be the
