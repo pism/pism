@@ -427,9 +427,8 @@ public:
 
   const double* weighted_jacobian() const;
 
-  /*! @brief Compute the values at the quadrature points of a vector-valued
-    finite-element function with element-local degrees of freedom `x_nodal`.*/
-  /*! There should be room for Quadrature2x2::Nq values in the output vector `vals`. */
+  /*! @brief Compute the values at the quadrature points of a finite-element function.*/
+  /*! There should be room for Quadrature2x2::Nq values in the output vector `result`. */
   template <typename T>
   void quadrature_point_values(const T *x, T *result) const {
     for (unsigned int q = 0; q < Nq; q++) {
@@ -441,11 +440,11 @@ public:
     }
   }
 
-/*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
-  finite-element function with element-local degrees of freedom `x_nodal`.*/
+/*! @brief Compute the values and partial derivatives at the quadrature points of a finite-element
+  function.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.
-  Each element of `dx` is the derivative of the vector-valued finite-element function in the x direction,
-  and similarly for `dy`.
+  Each element of `dx` is the derivative of the vector-valued finite-element function in the x
+  direction, and similarly for `dy`.
 */
   template <typename T>
   void quadrature_point_values(const T *x, T *vals, T *dx, T *dy) {
