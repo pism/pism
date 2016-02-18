@@ -1382,9 +1382,10 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
         v_y = (uv(i,j+1).v - uv(i,j).v) / dy;
       }
 
-      double nu;
+      double nu = 0.0;
       m_flow_law->effective_viscosity(hardness(i,j,o),
-                                      secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                      secondInvariant_2D(Vector2(u_x, v_x),
+                                                         Vector2(u_y, v_y)),
                                       &nu, NULL);
 
       result(i,j,o) = nu * H;
@@ -1506,7 +1507,8 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
         }
 
         m_flow_law->effective_viscosity(hardness(i,j,0),
-                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                        secondInvariant_2D(Vector2(u_x, v_x),
+                                                           Vector2(u_y, v_y)),
                                         &nu, NULL);
         result(i,j,0) = nu * H;
       } else {
@@ -1540,7 +1542,8 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
         }
 
         m_flow_law->effective_viscosity(hardness(i,j,1),
-                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                        secondInvariant_2D(Vector2(u_x, v_x),
+                                                           Vector2(u_y, v_y)),
                                         &nu, NULL);
         result(i,j,1) = nu * H;
       } else {

@@ -487,8 +487,9 @@ void SSAFEM::cache_inputs_new() {
  *  bed strength from the current solution, at a single quadrature point.
  *
  * @param[in] coefficients SSA coefficients at the current quadrature point
- * @param[in] u the value of the solution
- * @param[in] Du the value of the symmetric gradient of the solution
+ * @param[in] U the value of the solution
+ * @param[in] U_x x-derivatives of velocity components
+ * @param[in] U_y y-derivatives of velocity components
  * @param[out] nuH product of the ice viscosity and thickness @f$ \nu H @f$
  * @param[out] dnuH derivative of @f$ \nu H @f$ with respect to the
  *                  second invariant @f$ \gamma @f$. Set to NULL if
@@ -499,7 +500,9 @@ void SSAFEM::cache_inputs_new() {
  *                   not desired.
  */
 void SSAFEM::PointwiseNuHAndBeta(const Coefficients &c,
-                                 const Vector2 &u, const double Du[],
+                                 const Vector2 &U,
+                                 const Vector2 &U_x,
+                                 const Vector2 &U_y,
                                  double *nuH, double *dnuH,
                                  double *beta, double *dbeta) {
 
@@ -509,7 +512,7 @@ void SSAFEM::PointwiseNuHAndBeta(const Coefficients &c,
       *dnuH = 0;
     }
   } else {
-    m_flow_law->effective_viscosity(c.hardness, secondInvariantDu_2D(Du),
+    m_flow_law->effective_viscosity(c.hardness, secondInvariant_2D(U_x, U_y),
                                     nuH, dnuH);
 
     *nuH  = m_epsilon_ssa + *nuH * c.thickness;
@@ -520,7 +523,7 @@ void SSAFEM::PointwiseNuHAndBeta(const Coefficients &c,
   }
 
   if (mask::grounded_ice(c.mask)) {
-    m_basal_sliding_law->drag_with_derivative(c.tauc, u.u, u.v, beta, dbeta);
+    m_basal_sliding_law->drag_with_derivative(c.tauc, U.u, U.v, beta, dbeta);
   } else {
     *beta = 0;
 
@@ -730,8 +733,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   const double* JxW = m_quadrature.weighted_jacobian();
 
   // Storage for the current solution and its derivatives at quadrature points.
-  Vector2 u[Nq];
-  double Du[Nq][3];
+  Vector2 U[Nq], U_x[Nq], U_y[Nq];
 
   // An Nq by Nk array of test function values.
   const Germ (*test)[Nk] = m_quadrature.test_function_values();
@@ -798,35 +800,32 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         // Compute the solution values and symmetric gradient at the quadrature points.
         m_quadrature_vector.quadrature_point_values(velocity_nodal, // input
-                                                    u, Du);         // outputs
+                                                    U, U_x, U_y);         // outputs
 
         // loop over quadrature points on this element:
         for (unsigned int q = 0; q < Nq; q++) {
 
-          // Symmetric gradient at the quadrature point.
-          const double *Duq = Du[q];
-
           double eta = 0.0, beta = 0.0;
-          PointwiseNuHAndBeta(coefficients[q], u[q], Duq, // inputs
+          PointwiseNuHAndBeta(coefficients[q], U[q], U_x[q], U_y[q], // inputs
                               &eta, NULL, &beta, NULL);              // outputs
 
           // The next few lines compute the actual residual for the element.
           const Vector2
-            tau_b = u[q] * (- beta), // basal shear stress
+            tau_b = U[q] * (- beta), // basal shear stress
             tau_d = coefficients[q].driving_stress; // gravitational driving stress
 
           const double
-            U_x          = Duq[0],
-            V_y          = Duq[1],
-            U_y_plus_V_x = 2.0 * Duq[2];
+            u_x          = U_x[q].u,
+            v_y          = U_y[q].v,
+            u_y_plus_v_x = U_y[q].u + U_x[q].v;
 
           // Loop over test functions.
           for (unsigned int k = 0; k < Nk; k++) {
             const Germ &psi = test[q][k];
 
-            residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
+            residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
                                        - psi.val * (tau_b.u + tau_d.u));
-            residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
+            residual[k].v += JxW[q] * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
                                        - psi.val * (tau_b.v + tau_d.v));
           } // k
         } // q
@@ -928,8 +927,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   const double* JxW = m_quadrature.weighted_jacobian();
 
   // Storage for the current solution at quadrature points.
-  Vector2 u[Nq];
-  double Du[Nq][3];
+  Vector2 U[Nq], U_x[Nq], U_y[Nq];
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
@@ -980,7 +978,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           dirichlet_data.constrain(m_element);
         }
         // Compute the values of the solution at the quadrature points.
-        m_quadrature_vector.quadrature_point_values(velocity_local, u, Du);
+        m_quadrature_vector.quadrature_point_values(velocity_local, U, U_x, U_y);
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees
         // of freedom per element, for a total of (2*Nk)*(2*Nk) = 16
@@ -993,14 +991,14 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         for (unsigned int q = 0; q < Nq; q++) {
           const double
             jw           = JxW[q],
-            U            = u[q].u,
-            V            = u[q].v,
-            U_x          = Du[q][0],
-            V_y          = Du[q][1],
-            U_y_plus_V_x = 2.0 * Du[q][2]; // u_y + v_x is twice the symmetric gradient
+            u            = U[q].u,
+            v            = U[q].v,
+            u_x          = U_x[q].u,
+            v_y          = U_y[q].v,
+            u_y_plus_v_x = U_y[q].u + U_x[q].v;
 
           double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
-          PointwiseNuHAndBeta(coefficients[q], u[q], Du[q],
+          PointwiseNuHAndBeta(coefficients[q], U[q], U_x[q], U_y[q],
                               &eta, &deta, &beta, &dbeta);
 
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
@@ -1010,8 +1008,8 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
             // Derivatives of \gamma with respect to u_l and v_l:
             const double
-              gamma_u = (2.0 * U_x + V_y) * phi.dx + Du[q][2] * phi.dy,
-              gamma_v = Du[q][2] * phi.dx + (U_x + 2.0 * V_y) * phi.dy;
+              gamma_u = (2.0 * u_x + v_y) * phi.dx + 0.5 * u_y_plus_v_x * phi.dy,
+              gamma_v = 0.5 * u_y_plus_v_x * phi.dx + (u_x + 2.0 * v_y) * phi.dy;
 
             // Derivatives of \eta = \nu*H with respect to u_l and v_l:
             const double
@@ -1020,10 +1018,10 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
             // Derivatives of the basal shear stress term (\tau_b):
             const double
-              taub_xu = -dbeta * U * U * phi.val - beta * phi.val,  // x-component, derivative with respect to u_l
-              taub_xv = -dbeta * U * V * phi.val,              // x-component, derivative with respect to u_l
-              taub_yu = -dbeta * V * U * phi.val,              // y-component, derivative with respect to v_l
-              taub_yv = -dbeta * V * V * phi.val - beta * phi.val;  // y-component, derivative with respect to v_l
+              taub_xu = -dbeta * u * u * phi.val - beta * phi.val,  // x-component, derivative with respect to u_l
+              taub_xv = -dbeta * u * v * phi.val,                   // x-component, derivative with respect to u_l
+              taub_yu = -dbeta * v * u * phi.val,                   // y-component, derivative with respect to v_l
+              taub_yv = -dbeta * v * v * phi.val - beta * phi.val;  // y-component, derivative with respect to v_l
 
             for (unsigned int k = 0; k < Nk; k++) {   // Test functions
 
@@ -1037,16 +1035,16 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
               }
 
               // u-u coupling
-              K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi.dx * (4 * U_x + 2 * V_y) + psi.dy * U_y_plus_V_x)
+              K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
                                            + eta * (4 * psi.dx * phi.dx + psi.dy * phi.dy) - psi.val * taub_xu);
               // u-v coupling
-              K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi.dx * (4 * U_x + 2 * V_y) + psi.dy * U_y_plus_V_x)
+              K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
                                            + eta * (2 * psi.dx * phi.dy + psi.dy * phi.dx) - psi.val * taub_xv);
               // v-u coupling
-              K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi.dx * U_y_plus_V_x + psi.dy * (2 * U_x + 4 * V_y))
+              K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
                                            + eta * (psi.dx * phi.dy + 2 * psi.dy * phi.dx) - psi.val * taub_yu);
               // v-v coupling
-              K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi.dx * U_y_plus_V_x + psi.dy * (2 * U_x + 4 * V_y))
+              K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
                                            + eta * (psi.dx * phi.dx + 4 * psi.dy * phi.dy) - psi.val * taub_yv);
 
             } // l

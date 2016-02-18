@@ -81,8 +81,10 @@ protected:
 
   IceModelVec2Fat<Coeffs> m_coeffs;
 
-  void PointwiseNuHAndBeta(const Coefficients &coefficients,
-                           const Vector2 &u, const double Du[],
+  void PointwiseNuHAndBeta(const Coefficients &c,
+                           const Vector2 &U,
+                           const Vector2 &U_x,
+                           const Vector2 &U_y,
                            double *nuH, double *dnuH,
                            double *beta, double *dbeta);
 

@@ -272,8 +272,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double           m_dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[Nk];
-  Vector2 u_q[Nq];
-  double Du_q[Nq][3];
+  Vector2 U[Nq], U_x[Nq], U_y[Nq];
 
   Vector2 du_e[Nk];
 
@@ -325,7 +324,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           dirichletBC.constrain(m_element);
           dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature_vector.quadrature_point_values(u_e, u_q, Du_q);
+        m_quadrature_vector.quadrature_point_values(u_e, U, U_x, U_y);
 
         // Compute dzeta at the nodes
         m_element.nodal_values(*dzeta_local, dzeta_e);
@@ -345,11 +344,13 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
         for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
-          double *Duqq = Du_q[q];
+          double Duqq[3] = {U_x[q].u, U_y[q].v, 0.5 * (U_y[q].u + U_x[q].v)};
 
           double d_nuH = 0;
           if (coefficients[q].thickness >= strength_extension->get_min_thickness()) {
-            m_flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
+            m_flow_law->effective_viscosity(dB_q[q],
+                                            secondInvariant_2D(U_x[q], U_y[q]),
+                                            &d_nuH, NULL);
             d_nuH *= (2*coefficients[q].thickness);
           }
 
@@ -437,8 +438,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   list.add(*du_local);
 
   Vector2 u_e[Nk];
-  Vector2 u_q[Nq];
-  double Du_q[Nq][3];
+  Vector2 U[Nq], U_x[Nq], U_y[Nq];
 
   Vector2 du_e[Nk];
   Vector2 du_q[Nq];
@@ -496,7 +496,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
         if (dirichletBC) {
           dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature_vector.quadrature_point_values(u_e, u_q, Du_q);
+        m_quadrature_vector.quadrature_point_values(u_e, U, U_x, U_y);
 
         // Zero out the element-local residual in prep for updating it.
         for (unsigned int k = 0; k < Nk; k++) {
@@ -507,12 +507,14 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
         for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
-          double *Duqq = Du_q[q];
+          double Duqq[3] = {U_x[q].u, U_y[q].v, 0.5 * (U_y[q].u + U_x[q].v)};
 
           // Determine "d_nuH / dB" at the quadrature point
           double d_nuH_dB = 0;
           if (coefficients[q].thickness >= strength_extension->get_min_thickness()) {
-            m_flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
+            m_flow_law->effective_viscosity(1.0,
+                                            secondInvariant_2D(U_x[q], U_y[q]),
+                                            &d_nuH_dB, NULL);
             d_nuH_dB *= (2*coefficients[q].thickness);
           }
 

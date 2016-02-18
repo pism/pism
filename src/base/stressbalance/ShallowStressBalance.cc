@@ -379,9 +379,9 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
       v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
     }
 
-    double nu;
+    double nu = 0.0;
     m_flow_law->effective_viscosity(hardness,
-                                    secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                    secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
                                     &nu, NULL);
 
     //get deviatoric stresses

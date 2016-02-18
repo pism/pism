@@ -259,35 +259,6 @@ void Quadrature_Vector::quadrature_point_values(const Vector2 *x_nodal, Vector2 
   }
 }
 
-/*! @brief Compute the values and symmetric gradient at the quadrature
- *         points of a vector-valued finite-element function with
- *         element-local degrees of freedom `x_nodal`.
- *
- * There should be room for Quadrature2x2::Nq values in the output
- * vectors `vals` and `Dv`. Each entry of `Dv` is an array of three
- * numbers:
- * @f[ \left[
- * \frac{du}{dx}, \frac{dv}{dy}, \frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)
- * \right] @f].
- */
-void Quadrature_Vector::quadrature_point_values(const Vector2 *x, Vector2 *vals, double (*Dv)[3]) {
-  for (unsigned int q = 0; q < Nq; q++) {
-    vals[q].u = 0;
-    vals[q].v = 0;
-    double *Dvq = Dv[q];
-    Dvq[0] = 0;
-    Dvq[1] = 0;
-    Dvq[2] = 0;
-    const Germ *test = m_germs[q];
-    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      vals[q] += test[k].val * x[k];
-      Dvq[0]  += test[k].dx * x[k].u;
-      Dvq[1]  += test[k].dy * x[k].v;
-      Dvq[2]  += 0.5*(test[k].dy * x[k].u + test[k].dx * x[k].v);
-    }
-  }
-}
-
 /*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
   finite-element function with element-local degrees of freedom `x_nodal`.*/
 /*! There should be room for Quadrature2x2::Nq values in the output vectors `vals`, `dx`, and `dy`.

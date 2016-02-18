@@ -458,7 +458,6 @@ class Quadrature_Vector : public Quadrature2x2 {
 public:
   Quadrature_Vector(double dx, double dy, double L);
   void quadrature_point_values(const Vector2 *x,  Vector2 *vals);
-  void quadrature_point_values(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);
   void quadrature_point_values(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);
 };
 
