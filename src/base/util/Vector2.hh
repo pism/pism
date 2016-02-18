@@ -48,6 +48,13 @@ public:
     return *this;
   }
 
+  //! Set both components to the same number.
+  inline Vector2& operator=(const double &a) {
+    u = a;
+    v = a;
+    return *this;
+  }
+
   inline Vector2& operator+=(const Vector2 &other) {
     u += other.u;
     v += other.v;
