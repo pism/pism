@@ -20,6 +20,8 @@
 #ifndef _VECTOR2_H_
 #define _VECTOR2_H_
 
+#include <cmath>
+
 namespace pism {
 
 //! @brief This class represents a 2D vector field (such as ice
