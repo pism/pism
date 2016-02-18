@@ -27,9 +27,8 @@ namespace inverse {
 
 void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  using fem::Quadrature2x2;
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   // The value of the objective
   double value = 0;
@@ -72,9 +71,8 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
-  using fem::Quadrature2x2;
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   // The value of the objective
   double value = 0;
@@ -129,9 +127,8 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
 void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  using fem::Quadrature2x2;
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);
@@ -145,7 +142,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
@@ -193,9 +190,8 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
 
 void IP_H1NormFunctional2S::assemble_form(Mat form) {
 
-  using fem::Quadrature2x2;
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   PetscErrorCode ierr;
 
@@ -210,7 +206,7 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Loop through all the elements.
   const int
@@ -242,8 +238,8 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
 
         for (unsigned int q=0; q<Nq; q++) {
           for (unsigned int k = 0; k < Nk; k++) {   // Test functions
+            const fem::Germ &test_qk=test[q][k];
             for (unsigned int l = 0; l < Nk; l++) { // Trial functions
-              const fem::Germ &test_qk=test[q][k];
               const fem::Germ &test_ql=test[q][l];
               K[k][l] += JxW[q]*(m_cL2*test_qk.val*test_ql.val +
                                  m_cH1*(test_qk.dx*test_ql.dx +

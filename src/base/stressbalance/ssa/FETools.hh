@@ -426,7 +426,7 @@ public:
   //! Number of quadrature points.
   static const unsigned int Nq = 4;
 
-  unsigned int N() const {
+  unsigned int n() const {
     return Nq;
   }
 
@@ -448,7 +448,7 @@ protected:
 template <typename T>
 void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *result) {
   const Germs *test = Q.test_function_values();
-  const unsigned int n = Q.N();
+  const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
     result[q] = 0.0;
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
@@ -466,7 +466,7 @@ void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *result) {
 template <typename T>
 void quadrature_point_values(Quadrature2x2 &Q, const T *x, T *vals, T *dx, T *dy) {
   const Germs *test = Q.test_function_values();
-  const unsigned int n = Q.N();
+  const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
     vals[q] = 0.0;
     dx[q]   = 0.0;

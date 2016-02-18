@@ -33,9 +33,8 @@ IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid::ConstPtr gri
 
 void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  using fem::Quadrature2x2;
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   // The value of the objective
   double value = 0;
@@ -79,9 +78,8 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  using fem::Quadrature2x2;
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   // Clear the gradient before doing anything with it.
   gradient.set(0);
@@ -95,7 +93,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();

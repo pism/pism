@@ -102,9 +102,9 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
   // Allocate m_coefficients, which contains coefficient data at the
   // quadrature points of all the elements. There are nElement
-  // elements, and Quadrature2x2::Nq quadrature points.
+  // elements, and m_quadrature.N() quadrature points.
   int nElements = m_element_index.element_count();
-  m_coefficients.resize(fem::Quadrature2x2::Nq * nElements);
+  m_coefficients.resize(m_quadrature.n() * nElements);
 
   m_coeffs.create(m_grid, "ssa_coefficients", WITH_GHOSTS, 1);
 
@@ -271,11 +271,8 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
 */
 void SSAFEM::cache_inputs() {
 
-  using fem::Quadrature2x2;
-  using fem::Germ;
-
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = fem::Quadrature2x2::Nq;
 
   std::vector<double> Enth_q[Nq];
   const double *Enth_e[4];
@@ -377,7 +374,7 @@ void SSAFEM::cache_inputs() {
         // but the way we have just obtained the values at the element vertices
         // using getInternalColumn doesn't make this straightforward.  So we compute the values
         // by hand.
-        const Germ (*test)[Nk] = m_quadrature.test_function_values();
+        const fem::Germs *test = m_quadrature.test_function_values();
         for (unsigned int k = 0; k < m_grid->Mz(); k++) {
           Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
           for (unsigned int q = 0; q < Nq; q++) {
@@ -706,12 +703,11 @@ void SSAFEM::cache_residual_cfbc() {
  */
 void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                     Vector2 **residual_global) {
-  using namespace fem;
 
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
-  const unsigned int Nk = ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nk = fem::ShapeQ1::Nk;
+  const unsigned int Nq = m_quadrature.n();
 
   IceModelVec::AccessList list(m_node_type);
 
@@ -726,7 +722,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   }
 
   // Start access to Dirichlet data if present.
-  DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
+  fem::DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.weighted_jacobian();
@@ -735,7 +731,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   Vector2 U[fem::MAX_QUADRATURE_SIZE], U_x[fem::MAX_QUADRATURE_SIZE], U_y[fem::MAX_QUADRATURE_SIZE];
 
   // An Nq by Nk array of test function values.
-  const Germ (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Iterate over the elements.
   const int
@@ -820,7 +816,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
           // Loop over test functions.
           for (unsigned int k = 0; k < Nk; k++) {
-            const Germ &psi = test[q][k];
+            const fem::Germ &psi = test[q][k];
 
             residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
                                        - psi.val * (tau_b.u + tau_d.u));
@@ -847,7 +843,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
     // Prescribe homogeneous Dirichlet B.C. at ice-free nodes. This uses the fact that m_node_type
     // can be used as a "Dirichlet B.C. mask", i.e. ice-free nodes (and only ice-free nodes) are
     // marked with ones.
-    DirichletData_Vector dirichlet_ice_free(&m_node_type, NULL, m_dirichletScale);
+    fem::DirichletData_Vector dirichlet_ice_free(&m_node_type, NULL, m_dirichletScale);
     dirichlet_ice_free.fix_residual_homogeneous(residual_global);
   }
 
@@ -905,9 +901,8 @@ void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
 */
 void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global, Mat Jac) {
 
-  using fem::Quadrature2x2;
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
@@ -930,7 +925,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Loop through all the elements.
   int

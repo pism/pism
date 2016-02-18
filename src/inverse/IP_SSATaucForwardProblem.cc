@@ -123,8 +123,7 @@ kept.
 */
 void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   IceModelVec2S &tauc = m_tauc_copy;
 
@@ -249,9 +248,8 @@ to this method.
 void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                      IceModelVec2S &dzeta,
                                                      Vector2 **du_a) {
-  using fem::Quadrature2x2;
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -292,7 +290,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double dtauc_q[fem::MAX_QUADRATURE_SIZE];
 
   // An Nq by Nk array of test function values.
-  const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
                                         m_dirichletWeight);
@@ -415,9 +413,8 @@ to this method.
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                double **dzeta_a) {
-  using fem::Quadrature2x2;
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq = m_quadrature.n();
 
   IceModelVec::AccessList list;
   list.add(*m_zeta);
@@ -441,7 +438,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   double dzeta_e[Nk];
 
   // An Nq by Nk array of test function values.
-  const fem::Germ (*test)[Nk] = m_quadrature.test_function_values();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Aliases to help with notation consistency.
   const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
