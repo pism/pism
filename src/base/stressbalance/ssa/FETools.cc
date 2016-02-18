@@ -180,9 +180,10 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
   //
   // Note that the reference element is @f$ [-1,1]^2 @f$ hence the
   // extra factor of 1/2.
-  double jacobian_x = 0.5*dx / L;
-  double jacobian_y = 0.5*dy / L;
-  m_jacobianDet = jacobian_x*jacobian_y;
+  const double
+    jacobian_x = 0.5*dx / L,
+    jacobian_y = 0.5*dy / L,
+    jacobian_det = jacobian_x*jacobian_y;
 
   for (unsigned int q = 0; q < Nq; q++) {
     for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
@@ -193,7 +194,7 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
   }
 
   for (unsigned int q = 0; q < Nq; q++) {
-    m_JxW[q] = m_jacobianDet * quadWeights[q];
+    m_JxW[q] = jacobian_det * quadWeights[q];
   }
 }
 

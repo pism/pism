@@ -469,9 +469,6 @@ protected:
   //! The weights for quadrature on the reference element.
   static const double quadWeights[Nq];
 
-  //! The determinant of the Jacobian of the map from the reference element to the physical element.
-  double m_jacobianDet;
-
   //! Determinant of the Jacobian of the map from the reference element to the physical element,
   //! evaluated at quadrature points and multiplied by corresponding quadrature weights.
   double m_JxW[Nq];
