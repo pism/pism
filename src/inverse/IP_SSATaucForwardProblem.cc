@@ -132,7 +132,7 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
   // Convert zeta to tauc.
   m_tauc_param.convertToDesignVariable(*m_zeta, tauc);
 
-  // Cache tauc at the quadrature points in m_coefficients.
+  // Cache tauc at the quadrature points.
   double tauc_q[fem::MAX_QUADRATURE_SIZE];
   IceModelVec::AccessList list(tauc);
 
@@ -317,7 +317,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           du_e[k].v = 0;
         }
 
-        // Index into coefficient storage in m_coefficients
+        // Index into coefficient storage
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
@@ -468,7 +468,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   try {
     for (int j=ys; j<ys+ym; j++) {
       for (int i=xs; i<xs+xm; i++) {
-        // Index into coefficient storage in m_coefficients
+        // Index into coefficient storage
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.

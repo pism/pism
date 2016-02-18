@@ -102,7 +102,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
   // Allocate m_coefficients, which contains coefficient data at the
   // quadrature points of all the elements. There are nElement
-  // elements, and m_quadrature.N() quadrature points.
+  // elements, and m_quadrature.n() quadrature points.
   int nElements = m_element_index.element_count();
   m_coefficients.resize(m_quadrature.n() * nElements);
 
@@ -770,7 +770,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         Vector2 velocity_nodal[Nk];
         Vector2 residual[Nk];
 
-        // Index into coefficient storage in m_coefficients
+        // Index into coefficient storage.
         const int ij = m_element_index.flatten(i, j);
 
         // Coefficients and weights for this quadrature point.
@@ -779,13 +779,12 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         // Obtain the value of the solution at the nodes adjacent to the element.
         m_element.nodal_values(velocity_global, velocity_nodal);
 
-        // These values now need to be adjusted if some nodes in the element have
-        // Dirichlet data.
+        // These values now need to be adjusted if some nodes in the element have Dirichlet data.
         if (dirichlet_data) {
           // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
           dirichlet_data.enforce(m_element, velocity_nodal);
-          // mark Dirichlet nodes in m_element so that they are not touched by add_residual_contribution()
-          // below
+          // mark Dirichlet nodes in m_element so that they are not touched by
+          // add_residual_contribution() below
           dirichlet_data.constrain(m_element);
         }
 
@@ -797,7 +796,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         // Compute the solution values and symmetric gradient at the quadrature points.
         quadrature_point_values(m_quadrature, velocity_nodal, // input
-                                             U, U_x, U_y);   // outputs
+                                U, U_x, U_y);   // outputs
 
         // loop over quadrature points on this element:
         for (unsigned int q = 0; q < Nq; q++) {
@@ -824,8 +823,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                        - psi.val * (tau_b.u + tau_d.u));
             residual[k].v += JxW[q] * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
                                        - psi.val * (tau_b.v + tau_d.v));
-          } // k
-        } // q
+          } // k (test functions)
+        }   // q (quadrature points)
 
         m_element.add_residual_contribution(residual, residual_global);
       } // j-loop

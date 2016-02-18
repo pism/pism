@@ -112,7 +112,7 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
   // Convert zeta to hardav.
   m_design_param.convertToDesignVariable(*m_zeta, m_hardav);
 
-  // Cache hardav at the quadrature points in m_coefficients.
+  // Cache hardav at the quadrature points.
   double hardav_q[fem::MAX_QUADRATURE_SIZE];
   IceModelVec::AccessList list(m_hardav);
 
@@ -309,7 +309,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           du_e[k].v = 0;
         }
 
-        // Index into coefficient storage in m_coefficients
+        // Index into coefficient storage.
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
@@ -475,7 +475,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   try {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
-        // Index into coefficient storage in m_coefficients
+        // Index into coefficient storage.
         const int ij = m_element_index.flatten(i, j);
 
         // Initialize the map from global to local degrees of freedom for this element.
