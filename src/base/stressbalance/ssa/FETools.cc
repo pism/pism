@@ -175,6 +175,17 @@ const double* Quadrature2x2::weighted_jacobian() const {
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
 Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
+
+  // The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
+  static const double quadPoints[Nq][2] =
+    {{-0.57735026918962573, -0.57735026918962573},
+     { 0.57735026918962573, -0.57735026918962573},
+     { 0.57735026918962573,  0.57735026918962573},
+     {-0.57735026918962573,  0.57735026918962573}};
+
+  // The weights w_i for Gaussian quadrature on the reference element with these quadrature points
+  static const double quadWeights[Nq]  = {1.0, 1.0, 1.0, 1.0};
+
   // Since we use uniform cartesian coordinates, the Jacobian is
   // constant and diagonal on every element.
   //
@@ -203,16 +214,6 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L) {
 const Quadrature2x2::Germs* Quadrature2x2::test_function_values() const {
   return m_germs;
 }
-
-//! The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
-const double Quadrature2x2::quadPoints[Quadrature2x2::Nq][2] =
-  {{-0.57735026918962573, -0.57735026918962573},
-   { 0.57735026918962573, -0.57735026918962573},
-   { 0.57735026918962573,  0.57735026918962573},
-   {-0.57735026918962573,  0.57735026918962573}};
-
-//! The weights w_i for gaussian quadrature on the reference element with these quadrature points
-const double Quadrature2x2::quadWeights[Quadrature2x2::Nq]  = {1.0, 1.0, 1.0, 1.0};
 
 DirichletData::DirichletData()
   : m_indices(NULL), m_weight(1.0) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown nd Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -420,6 +420,10 @@ public:
   //! Number of quadrature points.
   static const unsigned int Nq = 4;
 
+  unsigned int N() const {
+    return Nq;
+  }
+
   // define Germs, which is an array of Quadrature2x2::Nk "Germ"s
   typedef Germ Germs[ShapeQ1::Nk];
 
@@ -431,11 +435,12 @@ public:
   /*! There should be room for Quadrature2x2::Nq values in the output vector `result`. */
   template <typename T>
   void quadrature_point_values(const T *x, T *result) const {
-    for (unsigned int q = 0; q < Nq; q++) {
+    const Germs *test = test_function_values();
+    const unsigned int n = N();
+    for (unsigned int q = 0; q < n; q++) {
       result[q] = 0.0;
-      const Germ *test = m_germs[q];
       for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-        result[q] += test[k].val * x[k];
+        result[q] += test[q][k].val * x[k];
       }
     }
   }
@@ -448,26 +453,22 @@ public:
 */
   template <typename T>
   void quadrature_point_values(const T *x, T *vals, T *dx, T *dy) {
-    for (unsigned int q = 0; q < Nq; q++) {
+    const Germs *test = test_function_values();
+    const unsigned int n = N();
+    for (unsigned int q = 0; q < n; q++) {
       vals[q] = 0.0;
       dx[q]   = 0.0;
       dy[q]   = 0.0;
-      const Germ *test = m_germs[q];
       for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-        vals[q] += test[k].val * x[k];
-        dx[q]   += test[k].dx * x[k];
-        dy[q]   += test[k].dy * x[k];
+        const Germ &psi = test[q][k];
+        vals[q] += psi.val * x[k];
+        dx[q]   += psi.dx  * x[k];
+        dy[q]   += psi.dy  * x[k];
       }
     }
   }
 
 protected:
-  //! The coordinates of the quadrature points on the reference element.
-  static const double quadPoints[Nq][2];
-
-  //! The weights for quadrature on the reference element.
-  static const double quadWeights[Nq];
-
   //! Determinant of the Jacobian of the map from the reference element to the physical element,
   //! evaluated at quadrature points and multiplied by corresponding quadrature weights.
   double m_JxW[Nq];
@@ -537,8 +538,8 @@ public:
   inline double weighted_jacobian(unsigned int side) const;
 
   inline const Germ& germ(unsigned int side,
-                                  unsigned int func,
-                                  unsigned int pt) const;
+                          unsigned int func,
+                          unsigned int pt) const;
 private:
   Germ m_germs[n_sides][Nq][ShapeQ1::Nk];
   double m_weighted_jacobian[n_sides];
@@ -552,8 +553,8 @@ inline double BoundaryQuadrature2::weighted_jacobian(unsigned int side) const {
 //! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
 //! evaluated at the point `pt` on the side `side` of an element.
 inline const Germ& BoundaryQuadrature2::germ(unsigned int side,
-                                                     unsigned int q,
-                                                     unsigned int k) const {
+                                             unsigned int q,
+                                             unsigned int k) const {
   assert(side < n_sides);
   assert(k < ShapeQ1::Nk);
   assert(q < 2);
