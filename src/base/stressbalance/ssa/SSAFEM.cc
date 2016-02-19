@@ -497,35 +497,38 @@ void SSAFEM::cache_inputs_new() {
  *                   second invariant @f$ \gamma @f$. Set to NULL if
  *                   not desired.
  */
-void SSAFEM::PointwiseNuHAndBeta(const Coefficients &c,
+void SSAFEM::PointwiseNuHAndBeta(double thickness,
+                                 double hardness,
+                                 int mask,
+                                 double tauc,
                                  const Vector2 &U,
                                  const Vector2 &U_x,
                                  const Vector2 &U_y,
                                  double *nuH, double *dnuH,
                                  double *beta, double *dbeta) {
 
-  if (c.thickness < strength_extension->get_min_thickness()) {
+  if (thickness < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
     if (dnuH) {
       *dnuH = 0;
     }
   } else {
-    m_flow_law->effective_viscosity(c.hardness, secondInvariant_2D(U_x, U_y),
+    m_flow_law->effective_viscosity(hardness, secondInvariant_2D(U_x, U_y),
                                     nuH, dnuH);
 
-    *nuH  = m_epsilon_ssa + *nuH * c.thickness;
+    *nuH  = m_epsilon_ssa + *nuH * thickness;
 
     if (dnuH) {
-      *dnuH *= c.thickness;
+      *dnuH *= thickness;
     }
   }
 
-  if (mask::grounded_ice(c.mask)) {
-    m_basal_sliding_law->drag_with_derivative(c.tauc, U.u, U.v, beta, dbeta);
+  if (mask::grounded_ice(mask)) {
+    m_basal_sliding_law->drag_with_derivative(tauc, U.u, U.v, beta, dbeta);
   } else {
     *beta = 0;
 
-    if (mask::ice_free_land(c.mask)) {
+    if (mask::ice_free_land(mask)) {
       *beta = m_beta_ice_free_bedrock;
     }
 
@@ -802,7 +805,11 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         for (unsigned int q = 0; q < Nq; q++) {
 
           double eta = 0.0, beta = 0.0;
-          PointwiseNuHAndBeta(coefficients[q], U[q], U_x[q], U_y[q], // inputs
+          PointwiseNuHAndBeta(coefficients[q].thickness,
+                              coefficients[q].hardness,
+                              coefficients[q].mask,
+                              coefficients[q].tauc,
+                              U[q], U_x[q], U_y[q], // inputs
                               &eta, NULL, &beta, NULL);              // outputs
 
           // The next few lines compute the actual residual for the element.
@@ -993,7 +1000,11 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
             u_y_plus_v_x = U_y[q].u + U_x[q].v;
 
           double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
-          PointwiseNuHAndBeta(coefficients[q], U[q], U_x[q], U_y[q],
+          PointwiseNuHAndBeta(coefficients[q].thickness,
+                              coefficients[q].hardness,
+                              coefficients[q].mask,
+                              coefficients[q].tauc,
+                              U[q], U_x[q], U_y[q],
                               &eta, &deta, &beta, &dbeta);
 
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
