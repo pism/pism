@@ -950,18 +950,23 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         // loop over quadrature points on this element:
         for (unsigned int q = 0; q < Nq; q++) {
 
+          const double
+            thickness = coefficients[q].thickness,
+            hardness  = coefficients[q].hardness,
+            tauc      = coefficients[q].tauc;
+          const Vector2
+            driving_stress = coefficients[q].driving_stress;
+          const int mask = coefficients[q].mask;
+
           double eta = 0.0, beta = 0.0;
-          PointwiseNuHAndBeta(coefficients[q].thickness,
-                              coefficients[q].hardness,
-                              coefficients[q].mask,
-                              coefficients[q].tauc,
+          PointwiseNuHAndBeta(thickness, hardness, mask, tauc,
                               U[q], U_x[q], U_y[q], // inputs
                               &eta, NULL, &beta, NULL);              // outputs
 
           // The next few lines compute the actual residual for the element.
           const Vector2
             tau_b = U[q] * (- beta), // basal shear stress
-            tau_d = coefficients[q].driving_stress; // gravitational driving stress
+            tau_d = driving_stress; // gravitational driving stress
 
           const double
             u_x          = U_x[q].u,
@@ -1145,11 +1150,14 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
             v_y          = U_y[q].v,
             u_y_plus_v_x = U_y[q].u + U_x[q].v;
 
+          const double
+            thickness = coefficients[q].thickness,
+            hardness  = coefficients[q].hardness,
+            tauc      = coefficients[q].tauc;
+          const int mask = coefficients[q].mask;
+
           double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
-          PointwiseNuHAndBeta(coefficients[q].thickness,
-                              coefficients[q].hardness,
-                              coefficients[q].mask,
-                              coefficients[q].tauc,
+          PointwiseNuHAndBeta(thickness, hardness, mask, tauc,
                               U[q], U_x[q], U_y[q],
                               &eta, &deta, &beta, &dbeta);
 
