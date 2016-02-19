@@ -24,8 +24,7 @@
 namespace pism {
 
 void GeometryCalculator::compute(double sea_level, IceModelVec2S &bed, IceModelVec2S &thickness,
-                                 IceModelVec2Int &out_mask, IceModelVec2S &out_surface)
-{
+                                 IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const {
   IceModelVec::AccessList list;
   list.add(bed);
   list.add(thickness);

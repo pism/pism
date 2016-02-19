@@ -74,10 +74,10 @@ public:
   }
 
   void compute(double sea_level, IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
-               IceModelVec2Int &out_mask, IceModelVec2S &out_surface);
+               IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
 
   inline void compute(double sea_level, double bed, double thickness,
-                      int *out_mask, double *out_surface) {
+                      int *out_mask, double *out_surface) const {
     const double hgrounded = bed + thickness; // FIXME issue #15
     const double hfloating = sea_level + m_alpha*thickness;
 
@@ -115,13 +115,13 @@ public:
     }
   }
 
-  inline int mask(double sea_level, double bed, double thickness) {
+  inline int mask(double sea_level, double bed, double thickness) const {
     int result;
     compute(sea_level, bed, thickness, &result, NULL);
     return result;
   }
 
-  inline double surface(double sea_level, double bed, double thickness) {
+  inline double surface(double sea_level, double bed, double thickness) const {
     double result;
     compute(sea_level, bed, thickness, NULL, &result);
     return result;
