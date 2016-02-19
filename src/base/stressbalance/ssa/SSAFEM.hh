@@ -81,6 +81,16 @@ protected:
 
   IceModelVec2Fat<Coeffs> m_coeffs;
 
+  void quad_point_values(const fem::Quadrature &Q,
+                         const Coeffs *x,
+                         bool explicit_driving_stress,
+                         double *thickness,
+                         double *bed,
+                         double *sea_level,
+                         double *tauc,
+                         double *hardness,
+                         Vector2 *driving_stress) const;
+
   void PointwiseNuHAndBeta(double thickness,
                            double hardness,
                            int mask,

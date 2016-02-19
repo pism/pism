@@ -481,6 +481,84 @@ void SSAFEM::cache_inputs_new() {
 
 }
 
+/**
+  The surface elevation @f$ h @f$ is defined by
+  @f{equation}{
+    h =
+    \begin{cases}
+      b + H, & \mathrm{grounded},\\
+      z_{sl} + \alpha H, & \mathrm{shelf},
+    \end{cases}
+  @f}
+  where @f$ b @f$ is the bed elevation, @f$ H @f$ is the ice thickness, and @f$ z_{sl} @f$ is the sea level.
+
+  Note that if @f$ b @f$, @f$ H @f$, and @f$ z_{sl} @f$ are bilinear (or @f$ C^{1} @f$ in
+  general), @f$ h @f$ is continuous but not continuously differentiable. In
+  other words, the gradient of @f$ h @f$ is not continuous, so near the
+  grounding line we cannot compute the gravitational driving stress
+  @f$ \tau_{d} = \rho g H \nabla h @f$ using the @f$ Q_1 @f$ or @f$ P_1 @f$ FE basis
+  expansion of @f$ h @f$.
+
+  We differentiate the equation above instead, getting
+  @f{equation}{
+    \nabla h =
+    \begin{cases}
+      \nabla b + \nabla H, & \mathrm{grounded},\\
+      \nabla z_{sl} + \alpha \nabla H, & \mathrm{shelf}.
+    \end{cases}
+  @f}
+
+  and use basis expansions of @f$ \nabla b @f$ and @f$ \nabla H @f$.
+
+  Overall, we have
+
+  @f{align*}{
+    \tau_{d} &= \rho g H \nabla h\\
+             &=
+               \rho g H
+               \begin{cases}
+                 \nabla b + \nabla H, & \mathrm{grounded},\\
+                 \alpha \nabla H, & \mathrm{shelf},
+               \end{cases}
+  @f}
+
+  because @f$ z = z_{sl} @f$ defines the geoid surface and so *its gradient
+  does not contribute to the driving stress*.
+ */
+
+//! Compute quadrature point values of various coefficients given a quadrature and nodal values.
+void SSAFEM::quad_point_values(const fem::Quadrature &Q,
+                               const Coeffs *x,
+                               double *thickness,
+                               double *bed,
+                               double *sea_level,
+                               double *tauc,
+                               double *hardness,
+                               Vector2 *driving_stress) const {
+  const fem::Germs *test = Q.test_function_values();
+  const unsigned int n = Q.n();
+
+  for (unsigned int q = 0; q < n; q++) {
+    thickness[q]      = 0.0;
+    bed[q]            = 0.0;
+    sea_level[q]      = 0.0;
+    tauc[q]           = 0.0;
+    hardness[q]       = 0.0;
+    driving_stress[q] = 0.0;
+
+    for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
+      const fem::Germ &psi  = test[q][k];
+      thickness[q]       += psi.val * x[k].thickness;
+      bed[q]             += psi.val * x[k].bed;
+      sea_level[q]       += psi.val * x[k].sea_level;
+      tauc[q]            += psi.val * x[k].tauc;
+      hardness[q]        += psi.val * x[k].hardness;
+      driving_stress[q]  += psi.val * x[k].driving_stress;
+    }
+  }
+}
+
+
 /** @brief Compute the "(regularized effective viscosity) x (ice thickness)" and effective viscous
  *  bed strength from the current solution, at a single quadrature point.
  *
