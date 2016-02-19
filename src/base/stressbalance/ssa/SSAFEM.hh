@@ -25,6 +25,9 @@
 #include "base/util/TerminationReason.hh"
 
 namespace pism {
+
+class GeometryCalculator;
+
 namespace stressbalance {
 
 //! Factory function for constructing a new SSAFEM.
@@ -81,15 +84,24 @@ protected:
 
   IceModelVec2Fat<Coeffs> m_coeffs;
 
-  void quad_point_values(const fem::Quadrature &Q,
+  void quad_point_values(const GeometryCalculator &gc,
+                         const fem::Quadrature &Q,
                          const Coeffs *x,
-                         bool explicit_driving_stress,
+                         int *mask,
                          double *thickness,
-                         double *bed,
-                         double *sea_level,
                          double *tauc,
-                         double *hardness,
-                         Vector2 *driving_stress) const;
+                         double *hardness) const;
+
+  void explicit_driving_stress(const fem::Quadrature &Q,
+                               const Coeffs *x,
+                               Vector2 *driving_stress) const;
+
+  void driving_stress(const GeometryCalculator &gc,
+                      double rho_g,
+                      double alpha,
+                      const fem::Quadrature &Q,
+                      const Coeffs *x,
+                      Vector2 *driving_stress) const;
 
   void PointwiseNuHAndBeta(double thickness,
                            double hardness,
