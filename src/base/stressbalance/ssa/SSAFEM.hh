@@ -23,10 +23,9 @@
 #include "FETools.hh"
 #include "base/util/petscwrappers/SNES.hh"
 #include "base/util/TerminationReason.hh"
+#include "base/util/Mask.hh"
 
 namespace pism {
-
-class GeometryCalculator;
 
 namespace stressbalance {
 
@@ -82,10 +81,13 @@ protected:
     Vector2 driving_stress;
   };
 
+  GeometryCalculator m_gc;
+  double m_alpha;
+  double m_rho_g;
+
   IceModelVec2Fat<Coeffs> m_coeffs;
 
-  void quad_point_values(const GeometryCalculator &gc,
-                         const fem::Quadrature &Q,
+  void quad_point_values(const fem::Quadrature &Q,
                          const Coeffs *x,
                          int *mask,
                          double *thickness,
@@ -96,10 +98,7 @@ protected:
                                const Coeffs *x,
                                Vector2 *driving_stress) const;
 
-  void driving_stress(const GeometryCalculator &gc,
-                      double rho_g,
-                      double alpha,
-                      const fem::Quadrature &Q,
+  void driving_stress(const fem::Quadrature &Q,
                       const Coeffs *x,
                       Vector2 *driving_stress) const;
 

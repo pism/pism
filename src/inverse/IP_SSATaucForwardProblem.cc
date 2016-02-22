@@ -234,8 +234,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  GeometryCalculator gc(*m_config);
-
   IceModelVec::AccessList list;
   list.add(m_coeffs);
   list.add(*m_zeta);
@@ -264,7 +262,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double                 m_dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[Nk];
-  Vector2 u_q[fem::MAX_QUADRATURE_SIZE];
+  Vector2 u_q[Nq_max];
 
   Vector2 du_e[Nk];
 
@@ -273,7 +271,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double zeta_e[Nk];
 
   double dtauc_e[Nk];
-  double dtauc_q[fem::MAX_QUADRATURE_SIZE];
+  double dtauc_q[Nq_max];
 
   // An Nq by Nk array of test function values.
   const fem::Germs *test = m_quadrature.test_function_values();
@@ -338,7 +336,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           Coeffs coeffs[Nk];
           m_element.nodal_values(m_coeffs, coeffs);
 
-          quad_point_values(gc, m_quadrature, coeffs,
+          quad_point_values(m_quadrature, coeffs,
                             mask, thickness, tauc, hardness);
         }
 
@@ -411,8 +409,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   const unsigned int Nq = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  GeometryCalculator gc(*m_config);
-
   IceModelVec::AccessList list;
   list.add(m_coeffs);
   list.add(*m_zeta);
@@ -428,10 +424,10 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   list.add(*du_local);
 
   Vector2 u_e[Nk];
-  Vector2 u_q[fem::MAX_QUADRATURE_SIZE];
+  Vector2 u_q[Nq_max];
 
   Vector2 du_e[Nk];
-  Vector2 du_q[fem::MAX_QUADRATURE_SIZE];
+  Vector2 du_q[Nq_max];
 
   double dzeta_e[Nk];
 
@@ -497,7 +493,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
           Coeffs coeffs[Nk];
           m_element.nodal_values(m_coeffs, coeffs);
 
-          quad_point_values(gc, m_quadrature, coeffs,
+          quad_point_values(m_quadrature, coeffs,
                             mask, thickness, tauc, hardness);
         }
 

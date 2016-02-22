@@ -27,14 +27,15 @@ namespace inverse {
 
 void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
   double x_e[Nk];
-  double x_q[fem::MAX_QUADRATURE_SIZE], dxdx_q[fem::MAX_QUADRATURE_SIZE], dxdy_q[fem::MAX_QUADRATURE_SIZE];
+  double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
@@ -71,17 +72,18 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
   double a_e[Nk];
-  double a_q[fem::MAX_QUADRATURE_SIZE], dadx_q[fem::MAX_QUADRATURE_SIZE], dady_q[fem::MAX_QUADRATURE_SIZE];
+  double a_q[Nq_max], dadx_q[Nq_max], dady_q[Nq_max];
 
   double b_e[Nk];
-  double b_q[fem::MAX_QUADRATURE_SIZE], dbdx_q[fem::MAX_QUADRATURE_SIZE], dbdy_q[fem::MAX_QUADRATURE_SIZE];
+  double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
 
   IceModelVec::AccessList list(a);
   list.add(b);
@@ -127,14 +129,15 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
 void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
   double x_e[Nk];
-  double x_q[fem::MAX_QUADRATURE_SIZE], dxdx_q[fem::MAX_QUADRATURE_SIZE], dxdy_q[fem::MAX_QUADRATURE_SIZE];
+  double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
   double gradient_e[Nk];
 

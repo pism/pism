@@ -38,9 +38,15 @@ namespace stressbalance {
  */
 SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : SSA(g, e),
+    m_gc(*m_config),
     m_element_index(*g),
     m_element(*g),
     m_quadrature(g->dx(), g->dy(), 1.0) {
+
+
+  const double ice_density = m_config->get_double("ice_density");
+  m_alpha = 1 - ice_density / m_config->get_double("sea_water_density");
+  m_rho_g = ice_density * m_config->get_double("standard_gravity");
 
   m_driving_stress_x = NULL;
   m_driving_stress_y = NULL;
@@ -271,8 +277,9 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
 */
 void SSAFEM::cache_inputs() {
 
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   std::vector<double> Enth_q[fem::MAX_QUADRATURE_SIZE];
   const double *Enth_e[4];
@@ -285,8 +292,6 @@ void SSAFEM::cache_inputs() {
   for (unsigned int q=0; q<Nq; q++) {
     Enth_q[q].resize(m_grid->Mz());
   }
-
-  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list;
   list.add(*m_enthalpy);
@@ -313,8 +318,8 @@ void SSAFEM::cache_inputs() {
   try {
     for (int j=ys; j<ys+ym; j++) {
       for (int i=xs; i<xs+xm; i++) {
-        double hq[fem::MAX_QUADRATURE_SIZE], hxq[fem::MAX_QUADRATURE_SIZE], hyq[fem::MAX_QUADRATURE_SIZE];
-        double ds_xq[fem::MAX_QUADRATURE_SIZE], ds_yq[fem::MAX_QUADRATURE_SIZE];
+        double hq[Nq_max], hxq[Nq_max], hyq[Nq_max];
+        double ds_xq[Nq_max], ds_yq[Nq_max];
         double tmp[Nk];
 
         m_element.reset(i, j);
@@ -330,15 +335,15 @@ void SSAFEM::cache_inputs() {
           quadrature_point_values(m_quadrature, tmp, hq, hxq, hyq);
         }
 
-        double Hq[fem::MAX_QUADRATURE_SIZE];
+        double Hq[Nq_max];
         m_element.nodal_values(*m_thickness, tmp);
         quadrature_point_values(m_quadrature, tmp, Hq);
 
-        double bq[fem::MAX_QUADRATURE_SIZE];
+        double bq[Nq_max];
         m_element.nodal_values(*m_bed, tmp);
         quadrature_point_values(m_quadrature, tmp, bq);
 
-        double taucq[fem::MAX_QUADRATURE_SIZE];
+        double taucq[Nq_max];
         m_element.nodal_values(*m_tauc, tmp);
         quadrature_point_values(m_quadrature, tmp, taucq);
 
@@ -355,7 +360,7 @@ void SSAFEM::cache_inputs() {
             coefficients[q].driving_stress.v = -rho_g * Hq[q]*hyq[q];
           }
 
-          coefficients[q].mask = gc.mask(m_sea_level, bq[q], coefficients[q].thickness);
+          coefficients[q].mask = m_gc.mask(m_sea_level, bq[q], coefficients[q].thickness);
         }
 
         // In the following, we obtain the averaged hardness value from enthalpy by
@@ -482,8 +487,7 @@ void SSAFEM::cache_inputs_new() {
 }
 
 //! Compute quadrature point values of various coefficients given a quadrature and nodal values.
-void SSAFEM::quad_point_values(const GeometryCalculator &gc,
-                               const fem::Quadrature &Q,
+void SSAFEM::quad_point_values(const fem::Quadrature &Q,
                                const Coeffs *x,
                                int *mask,
                                double *thickness,
@@ -511,7 +515,7 @@ void SSAFEM::quad_point_values(const GeometryCalculator &gc,
       hardness[q]  += psi.val * x[k].hardness;
     }
 
-    mask[q] = gc.mask(sea_level, bed, thickness[q]);
+    mask[q] = m_gc.mask(sea_level, bed, thickness[q]);
   }
 }
 
@@ -578,10 +582,7 @@ void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
    because @f$ z = z_{sl} @f$ defines the geoid surface and so *its gradient
    does not contribute to the driving stress*.
 */
-void SSAFEM::driving_stress(const GeometryCalculator &gc,
-                            double rho_g,
-                            double alpha,
-                            const fem::Quadrature &Q,
+void SSAFEM::driving_stress(const fem::Quadrature &Q,
                             const Coeffs *x,
                             Vector2 *driving_stress) const {
   const fem::Germs *test = Q.test_function_values();
@@ -613,13 +614,13 @@ void SSAFEM::driving_stress(const GeometryCalculator &gc,
       sea_level += psi.val * x[k].sea_level;
     }
 
-    const int M = gc.mask(sea_level, b, H);
+    const int M = m_gc.mask(sea_level, b, H);
     const bool grounded = mask::grounded(M);
 
     const double
-      pressure = rho_g * H,
-      h_x = grounded ? b_x + H_x : alpha * H_x,
-      h_y = grounded ? b_y + H_y : alpha * H_y;
+      pressure = m_rho_g * H,
+      h_x = grounded ? b_x + H_x : m_alpha * H_x,
+      h_y = grounded ? b_y + H_y : m_alpha * H_y;
 
     driving_stress[q].u = - pressure * h_x;
     driving_stress[q].v = - pressure * h_y;
@@ -717,8 +718,6 @@ void SSAFEM::cache_residual_cfbc() {
 
   fem::BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy());
 
-  GeometryCalculator gc(*m_config);
-
   IceModelVec::AccessList list(m_node_type);
   list.add(*m_thickness);
   list.add(*m_bed);
@@ -797,7 +796,7 @@ void SSAFEM::cache_residual_cfbc() {
               H   = H_nodal[n0] * psi[0] + H_nodal[n1] * psi[1],
               bed = b_nodal[n0] * psi[0] + b_nodal[n1] * psi[1];
 
-            const bool floating = ocean(gc.mask(m_sea_level, bed, H));
+            const bool floating = ocean(m_gc.mask(m_sea_level, bed, H));
 
             // ocean pressure difference at a quadrature point
             const double dP = ocean_pressure_difference(floating, is_dry_simulation,
@@ -855,12 +854,7 @@ void SSAFEM::cache_residual_cfbc() {
 void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                     Vector2 **residual_global) {
 
-  GeometryCalculator gc(*m_config);
   const bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
-
-  const double ice_density = m_config->get_double("ice_density");
-  const double alpha = 1 - ice_density / m_config->get_double("sea_water_density");
-  const double rho_g = ice_density * m_config->get_double("standard_gravity");
 
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
@@ -943,15 +937,14 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           Coeffs coeffs[Nk];
           m_element.nodal_values(m_coeffs, coeffs);
 
-          quad_point_values(gc, m_quadrature, coeffs,
+          quad_point_values(m_quadrature, coeffs,
                             mask, thickness, tauc, hardness);
 
           if (use_explicit_driving_stress) {
             explicit_driving_stress(m_quadrature, coeffs,
                                     tau_d);
           } else {
-            driving_stress(gc, rho_g, alpha, m_quadrature, coeffs,
-                           tau_d);
+            driving_stress(m_quadrature, coeffs, tau_d);
           }
         }
 
@@ -1095,8 +1088,6 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
-  GeometryCalculator gc(*m_config);
-
   // Zero out the Jacobian in preparation for updating it.
   PetscErrorCode ierr = MatZeroEntries(Jac);
   PISM_CHK(ierr, "MatZeroEntries");
@@ -1153,7 +1144,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           Coeffs coeffs[Nk];
           m_element.nodal_values(m_coeffs, coeffs);
 
-          quad_point_values(gc, m_quadrature, coeffs,
+          quad_point_values(m_quadrature, coeffs,
                             mask, thickness, tauc, hardness);
         }
 

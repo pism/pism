@@ -33,14 +33,15 @@ IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid::ConstPtr gri
 
 void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
   double x_e[Nk];
-  double x_q[fem::MAX_QUADRATURE_SIZE], dxdx_q[fem::MAX_QUADRATURE_SIZE], dxdy_q[fem::MAX_QUADRATURE_SIZE];
+  double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
   IceModelVec::AccessList list(x);
 
@@ -78,14 +79,15 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // Clear the gradient before doing anything with it.
   gradient.set(0);
 
   double x_e[Nk];
-  double x_q[fem::MAX_QUADRATURE_SIZE], dxdx_q[fem::MAX_QUADRATURE_SIZE], dxdy_q[fem::MAX_QUADRATURE_SIZE];
+  double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
   double gradient_e[Nk];
 
