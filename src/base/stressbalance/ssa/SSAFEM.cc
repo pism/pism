@@ -922,11 +922,6 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         Vector2 velocity_nodal[Nk];
         Vector2 residual[Nk];
 
-        // Index into coefficient storage.
-        const int ij = m_element_index.flatten(i, j);
-        // Coefficients and weights for this quadrature point.
-        const Coefficients *coefficients = &m_coefficients[ij*Nq];
-
         int    mask[Nq_max];
         double thickness[Nq_max];
         double tauc[Nq_max];
@@ -941,8 +936,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                             mask, thickness, tauc, hardness);
 
           if (use_explicit_driving_stress) {
-            explicit_driving_stress(m_quadrature, coeffs,
-                                    tau_d);
+            explicit_driving_stress(m_quadrature, coeffs, tau_d);
           } else {
             driving_stress(m_quadrature, coeffs, tau_d);
           }
@@ -976,12 +970,6 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         // loop over quadrature points on this element:
         for (unsigned int q = 0; q < Nq; q++) {
 
-          assert(thickness[q] == coefficients[q].thickness);
-          assert(mask[q] == coefficients[q].mask);
-
-          // Vector2 taud_q = tau_d[q];
-          Vector2 taud_q = coefficients[q].driving_stress;
-
           double eta = 0.0, beta = 0.0;
           PointwiseNuHAndBeta(thickness[q], hardness[q], mask[q], tauc[q],
                               U[q], U_x[q], U_y[q], // inputs
@@ -1000,9 +988,9 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
             const fem::Germ &psi = test[q][k];
 
             residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
-                                       - psi.val * (tau_b.u + taud_q.u));
+                                       - psi.val * (tau_b.u + tau_d[q].u));
             residual[k].v += JxW[q] * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
-                                       - psi.val * (tau_b.v + taud_q.v));
+                                       - psi.val * (tau_b.v + tau_d[q].v));
           } // k (test functions)
         }   // q (quadrature points)
 
