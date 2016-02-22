@@ -78,7 +78,7 @@ void SSATestCaseJ::initializeSSAModel() {
 
 void SSATestCaseJ::initializeSSACoefficients() {
   m_tauc.set(0.0);    // irrelevant for test J
-  m_bed.set(0.0); // assures shelf is floating
+  m_bed.set(-1000.0); // assures shelf is floating (maximum ice thickness is 770 m)
   m_ice_mask.set(MASK_FLOATING);
 
   double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
