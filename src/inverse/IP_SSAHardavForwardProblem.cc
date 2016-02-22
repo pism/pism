@@ -105,36 +105,18 @@ kept.
 */
 void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
-  const unsigned int Nq = m_quadrature.n();
-
   m_zeta = &new_zeta;
 
   // Convert zeta to hardav.
   m_design_param.convertToDesignVariable(*m_zeta, m_hardav);
 
   // Cache hardav at the quadrature points.
-  double hardav_q[fem::MAX_QUADRATURE_SIZE];
   IceModelVec::AccessList list(m_hardav);
+  list.add(m_coeffs);
 
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
-
-  for (int j = ys; j < ys + ym; j++) {
-    for (int i = xs; i < xs + xm; i++) {
-      m_element.reset(i, j);
-
-      double tmp[fem::ShapeQ1::Nk];
-      m_element.nodal_values(m_hardav, tmp);
-      quadrature_point_values(m_quadrature, tmp, hardav_q);
-      const int ij = m_element_index.flatten(i, j);
-      Coefficients *coefficients = &m_coefficients[ij*Nq];
-      for (unsigned int q = 0; q < Nq; q++) {
-        coefficients[q].hardness = hardav_q[q];
-      }
-    }
+  for (PointsWithGhosts p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    m_coeffs(i, j).hardness = m_hardav(i, j);
   }
 
   // Flag the state jacobian as needing rebuilding.
@@ -240,10 +222,15 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                        IceModelVec2S &dzeta,
                                                        Vector2 **du_a) {
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
+
+  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list;
+  list.add(m_coeffs);
   list.add(*m_zeta);
   list.add(u);
 
@@ -309,9 +296,6 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           du_e[k].v = 0;
         }
 
-        // Index into coefficient storage.
-        const int ij = m_element_index.flatten(i, j);
-
         // Initialize the map from global to local degrees of freedom for this element.
         m_element.reset(i, j);
 
@@ -338,20 +322,29 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         }
         quadrature_point_values(m_quadrature, dB_e, dB_q);
 
-        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+        int    mask[Nq_max];
+        double thickness[Nq_max];
+        double tauc[Nq_max];
+        double hardness[Nq_max];
+
+        {
+          Coeffs coeffs[Nk];
+          m_element.nodal_values(m_coeffs, coeffs);
+
+          quad_point_values(gc, m_quadrature, coeffs,
+                            mask, thickness, tauc, hardness);
+        }
 
         for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
           double Duqq[3] = {U_x[q].u, U_y[q].v, 0.5 * (U_y[q].u + U_x[q].v)};
 
-          const double thickness = coefficients[q].thickness;
-
           double d_nuH = 0;
-          if (thickness >= strength_extension->get_min_thickness()) {
+          if (thickness[q] >= strength_extension->get_min_thickness()) {
             m_flow_law->effective_viscosity(dB_q[q],
                                             secondInvariant_2D(U_x[q], U_y[q]),
                                             &d_nuH, NULL);
-            d_nuH *= (2.0 * thickness);
+            d_nuH *= (2.0 * thickness[q]);
           }
 
           for (unsigned int k = 0; k < Nk; k++) {
@@ -420,10 +413,15 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                  IceModelVec2V &du,
                                                                  double **dzeta_a) {
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
+
+  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list;
+  list.add(m_coeffs);
   list.add(*m_zeta);
   list.add(u);
 
@@ -477,9 +475,6 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   try {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
-        // Index into coefficient storage.
-        const int ij = m_element_index.flatten(i, j);
-
         // Initialize the map from global to local degrees of freedom for this element.
         m_element.reset(i, j);
 
@@ -502,21 +497,30 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
           dzeta_e[k] = 0;
         }
 
-        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+        int    mask[Nq_max];
+        double thickness[Nq_max];
+        double tauc[Nq_max];
+        double hardness[Nq_max];
+
+        {
+          Coeffs coeffs[Nk];
+          m_element.nodal_values(m_coeffs, coeffs);
+
+          quad_point_values(gc, m_quadrature, coeffs,
+                            mask, thickness, tauc, hardness);
+        }
 
         for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
           double Duqq[3] = {U_x[q].u, U_y[q].v, 0.5 * (U_y[q].u + U_x[q].v)};
 
-          const double thickness = coefficients[q].thickness;
-
           // Determine "d_nuH / dB" at the quadrature point
           double d_nuH_dB = 0;
-          if (thickness >= strength_extension->get_min_thickness()) {
+          if (thickness[q] >= strength_extension->get_min_thickness()) {
             m_flow_law->effective_viscosity(1.0,
                                             secondInvariant_2D(U_x[q], U_y[q]),
                                             &d_nuH_dB, NULL);
-            d_nuH_dB *= (2.0 * thickness);
+            d_nuH_dB *= (2.0 * thickness[q]);
           }
 
           for (unsigned int k = 0; k < Nk; k++) {

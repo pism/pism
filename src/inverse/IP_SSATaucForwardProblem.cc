@@ -123,8 +123,6 @@ kept.
 */
 void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
-  const unsigned int Nq = m_quadrature.n();
-
   IceModelVec2S &tauc = m_tauc_copy;
 
   m_zeta = &new_zeta;
@@ -133,28 +131,12 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
   m_tauc_param.convertToDesignVariable(*m_zeta, tauc);
 
   // Cache tauc at the quadrature points.
-  double tauc_q[fem::MAX_QUADRATURE_SIZE];
   IceModelVec::AccessList list(tauc);
+  list.add(m_coeffs);
 
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
-
-  for (int j = ys; j < ys + ym; j++) {
-    for (int i = xs; i < xs + xm; i++) {
-      m_element.reset(i, j);
-      double tmp[fem::ShapeQ1::Nk];
-
-      m_element.nodal_values(tauc, tmp);
-      quadrature_point_values(m_quadrature, tmp, tauc_q);
-      const int ij = m_element_index.flatten(i, j);
-      Coefficients *coefficients = &m_coefficients[ij*Nq];
-      for (unsigned int q = 0; q < Nq; q++) {
-        coefficients[q].tauc = tauc_q[q];
-      }
-    }
+  for (PointsWithGhosts p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    m_coeffs(i, j).tauc = tauc(i, j);
   }
 
   // Flag the state jacobian as needing rebuilding.
@@ -248,10 +230,14 @@ to this method.
 void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                      IceModelVec2S &dzeta,
                                                      Vector2 **du_a) {
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
+
+  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list;
+  list.add(m_coeffs);
   list.add(*m_zeta);
   list.add(u);
 
@@ -317,9 +303,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           du_e[k].v = 0;
         }
 
-        // Index into coefficient storage
-        const int ij = m_element_index.flatten(i, j);
-
         // Initialize the map from global to local degrees of freedom for this element.
         m_element.reset(i, j);
 
@@ -346,16 +329,25 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         }
         quadrature_point_values(m_quadrature, dtauc_e, dtauc_q);
 
-        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+        int    mask[Nq_max];
+        double thickness[Nq_max];
+        double tauc[Nq_max];
+        double hardness[Nq_max];
+
+        {
+          Coeffs coeffs[Nk];
+          m_element.nodal_values(m_coeffs, coeffs);
+
+          quad_point_values(gc, m_quadrature, coeffs,
+                            mask, thickness, tauc, hardness);
+        }
 
         for (unsigned int q = 0; q < Nq; q++) {
           Vector2 u_qq = u_q[q];
 
-          const int mask = coefficients[q].mask;
-
           // Determine "dbeta / dzeta" at the quadrature point
           double dbeta = 0;
-          if (mask::grounded_ice(mask)) {
+          if (mask::grounded_ice(mask[q])) {
             dbeta = m_basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
           }
 
@@ -417,8 +409,12 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                double **dzeta_a) {
   const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
+
+  GeometryCalculator gc(*m_config);
 
   IceModelVec::AccessList list;
+  list.add(m_coeffs);
   list.add(*m_zeta);
   list.add(u);
 
@@ -470,9 +466,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   try {
     for (int j=ys; j<ys+ym; j++) {
       for (int i=xs; i<xs+xm; i++) {
-        // Index into coefficient storage
-        const int ij = m_element_index.flatten(i, j);
-
         // Initialize the map from global to local degrees of freedom for this element.
         m_element.reset(i, j);
 
@@ -495,17 +488,26 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
           dzeta_e[k] = 0;
         }
 
-        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+        int    mask[Nq_max];
+        double thickness[Nq_max];
+        double tauc[Nq_max];
+        double hardness[Nq_max];
+
+        {
+          Coeffs coeffs[Nk];
+          m_element.nodal_values(m_coeffs, coeffs);
+
+          quad_point_values(gc, m_quadrature, coeffs,
+                            mask, thickness, tauc, hardness);
+        }
 
         for (unsigned int q=0; q<Nq; q++) {
           Vector2 du_qq = du_q[q];
           Vector2 u_qq = u_q[q];
 
-          const int mask = coefficients[q].mask;
-
           // Determine "dbeta/dtauc" at the quadrature point
           double dbeta_dtauc = 0;
-          if (mask::grounded_ice(mask)) {
+          if (mask::grounded_ice(mask[q])) {
             dbeta_dtauc = m_basal_sliding_law->drag(1., u_qq.u, u_qq.v);
           }
 

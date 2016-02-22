@@ -855,12 +855,21 @@ void SSAFEM::cache_residual_cfbc() {
 void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                     Vector2 **residual_global) {
 
+  GeometryCalculator gc(*m_config);
+  const bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
+
+  const double ice_density = m_config->get_double("ice_density");
+  const double alpha = 1 - ice_density / m_config->get_double("sea_water_density");
+  const double rho_g = ice_density * m_config->get_double("standard_gravity");
+
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
   const unsigned int Nk = fem::ShapeQ1::Nk;
   const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   IceModelVec::AccessList list(m_node_type);
+  list.add(m_coeffs);
 
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
   // to set it using ElementMap::add_residual_contribution() because that would lead to
@@ -879,7 +888,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   const double* JxW = m_quadrature.weighted_jacobian();
 
   // Storage for the current solution and its derivatives at quadrature points.
-  Vector2 U[fem::MAX_QUADRATURE_SIZE], U_x[fem::MAX_QUADRATURE_SIZE], U_y[fem::MAX_QUADRATURE_SIZE];
+  Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
 
   // An Nq by Nk array of test function values.
   const fem::Germs *test = m_quadrature.test_function_values();
@@ -921,20 +930,48 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         // Index into coefficient storage.
         const int ij = m_element_index.flatten(i, j);
-
         // Coefficients and weights for this quadrature point.
         const Coefficients *coefficients = &m_coefficients[ij*Nq];
 
-        // Obtain the value of the solution at the nodes adjacent to the element.
-        m_element.nodal_values(velocity_global, velocity_nodal);
+        int    mask[Nq_max];
+        double thickness[Nq_max];
+        double tauc[Nq_max];
+        double hardness[Nq_max];
+        Vector2 tau_d[Nq_max];
 
-        // These values now need to be adjusted if some nodes in the element have Dirichlet data.
-        if (dirichlet_data) {
-          // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed values.
-          dirichlet_data.enforce(m_element, velocity_nodal);
-          // mark Dirichlet nodes in m_element so that they are not touched by
-          // add_residual_contribution() below
-          dirichlet_data.constrain(m_element);
+        {
+          Coeffs coeffs[Nk];
+          m_element.nodal_values(m_coeffs, coeffs);
+
+          quad_point_values(gc, m_quadrature, coeffs,
+                            mask, thickness, tauc, hardness);
+
+          if (use_explicit_driving_stress) {
+            explicit_driving_stress(m_quadrature, coeffs,
+                                    tau_d);
+          } else {
+            driving_stress(gc, rho_g, alpha, m_quadrature, coeffs,
+                           tau_d);
+          }
+        }
+
+        {
+          // Obtain the value of the solution at the nodes adjacent to the element.
+          m_element.nodal_values(velocity_global, velocity_nodal);
+
+          // These values now need to be adjusted if some nodes in the element have Dirichlet data.
+          if (dirichlet_data) {
+            // Set elements of velocity_nodal that correspond to Dirichlet nodes to prescribed
+            // values.
+            dirichlet_data.enforce(m_element, velocity_nodal);
+            // mark Dirichlet nodes in m_element so that they are not touched by
+            // add_residual_contribution() below
+            dirichlet_data.constrain(m_element);
+          }
+
+          // Compute the solution values and its gradient at the quadrature points.
+          quadrature_point_values(m_quadrature, velocity_nodal, // input
+                                  U, U_x, U_y);   // outputs
         }
 
         // Zero out the element-local residual in preparation for updating it.
@@ -943,30 +980,22 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           residual[k].v = 0;
         }
 
-        // Compute the solution values and symmetric gradient at the quadrature points.
-        quadrature_point_values(m_quadrature, velocity_nodal, // input
-                                U, U_x, U_y);   // outputs
-
         // loop over quadrature points on this element:
         for (unsigned int q = 0; q < Nq; q++) {
 
-          const double
-            thickness = coefficients[q].thickness,
-            hardness  = coefficients[q].hardness,
-            tauc      = coefficients[q].tauc;
-          const Vector2
-            driving_stress = coefficients[q].driving_stress;
-          const int mask = coefficients[q].mask;
+          assert(thickness[q] == coefficients[q].thickness);
+          assert(mask[q] == coefficients[q].mask);
+
+          // Vector2 taud_q = tau_d[q];
+          Vector2 taud_q = coefficients[q].driving_stress;
 
           double eta = 0.0, beta = 0.0;
-          PointwiseNuHAndBeta(thickness, hardness, mask, tauc,
+          PointwiseNuHAndBeta(thickness[q], hardness[q], mask[q], tauc[q],
                               U[q], U_x[q], U_y[q], // inputs
                               &eta, NULL, &beta, NULL);              // outputs
 
           // The next few lines compute the actual residual for the element.
-          const Vector2
-            tau_b = U[q] * (- beta), // basal shear stress
-            tau_d = driving_stress; // gravitational driving stress
+          const Vector2 tau_b = U[q] * (- beta); // basal shear stress
 
           const double
             u_x          = U_x[q].u,
@@ -978,9 +1007,9 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
             const fem::Germ &psi = test[q][k];
 
             residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
-                                       - psi.val * (tau_b.u + tau_d.u));
+                                       - psi.val * (tau_b.u + taud_q.u));
             residual[k].v += JxW[q] * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
-                                       - psi.val * (tau_b.v + tau_d.v));
+                                       - psi.val * (tau_b.v + taud_q.v));
           } // k (test functions)
         }   // q (quadrature points)
 
@@ -1060,18 +1089,20 @@ void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
 */
 void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global, Mat Jac) {
 
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
-  PetscErrorCode ierr;
+  GeometryCalculator gc(*m_config);
 
   // Zero out the Jacobian in preparation for updating it.
-  ierr = MatZeroEntries(Jac);
+  PetscErrorCode ierr = MatZeroEntries(Jac);
   PISM_CHK(ierr, "MatZeroEntries");
 
   IceModelVec::AccessList list(m_node_type);
+  list.add(m_coeffs);
 
   // Start access to Dirichlet data if present.
   fem::DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
@@ -1080,7 +1111,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   const double* JxW = m_quadrature.weighted_jacobian();
 
   // Storage for the current solution at quadrature points.
-  Vector2 U[fem::MAX_QUADRATURE_SIZE], U_x[fem::MAX_QUADRATURE_SIZE], U_y[fem::MAX_QUADRATURE_SIZE];
+  Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
@@ -1113,11 +1144,18 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           continue;
         }
 
-        // Index into the coefficient storage array.
-        const int ij = m_element_index.flatten(i, j);
+        int    mask[Nq_max];
+        double thickness[Nq_max];
+        double tauc[Nq_max];
+        double hardness[Nq_max];
 
-        // Coefficients at quadrature points in the current element:
-        const Coefficients *coefficients = &m_coefficients[ij*Nq];
+        {
+          Coeffs coeffs[Nk];
+          m_element.nodal_values(m_coeffs, coeffs);
+
+          quad_point_values(gc, m_quadrature, coeffs,
+                            mask, thickness, tauc, hardness);
+        }
 
         // Values of the solution at the nodes of the current element.
         Vector2 velocity_local[Nk];
@@ -1150,14 +1188,8 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
             v_y          = U_y[q].v,
             u_y_plus_v_x = U_y[q].u + U_x[q].v;
 
-          const double
-            thickness = coefficients[q].thickness,
-            hardness  = coefficients[q].hardness,
-            tauc      = coefficients[q].tauc;
-          const int mask = coefficients[q].mask;
-
           double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
-          PointwiseNuHAndBeta(thickness, hardness, mask, tauc,
+          PointwiseNuHAndBeta(thickness[q], hardness[q], mask[q], tauc[q],
                               U[q], U_x[q], U_y[q],
                               &eta, &deta, &beta, &dbeta);
 
