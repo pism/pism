@@ -456,7 +456,7 @@ private:
 };
 
 /*! @brief Compute the values at the quadrature points of a finite-element function.*/
-/*! There should be room for Q.N() values in the output vector `result`. */
+/*! There should be room for Q.N() values in the output array `result`. */
 template <typename T>
 void quadrature_point_values(Quadrature &Q, const T *x, T *result) {
   const Germs *test = Q.test_function_values();
