@@ -106,13 +106,8 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   ierr = SNESSetFromOptions(m_snes);
   PISM_CHK(ierr, "SNESSetFromOptions");
 
-  // Allocate m_coefficients, which contains coefficient data at the
-  // quadrature points of all the elements. There are nElement
-  // elements, and m_quadrature.n() quadrature points.
-  int nElements = m_element_index.element_count();
-  m_coefficients.resize(m_quadrature.n() * nElements);
-
-  m_coeffs.create(m_grid, "ssa_coefficients", WITH_GHOSTS, 1);
+  // Allocate m_coefficients, which contains coefficient data at the nodes of all the elements.
+  m_coefficients.create(m_grid, "ssa_coefficients", WITH_GHOSTS, 1);
 
   m_node_type.create(m_grid, "node_type", WITH_GHOSTS, 1);
   m_node_type.set_attrs("internal", // intent
@@ -167,7 +162,6 @@ void SSAFEM::init_impl() {
 
   // Store coefficient data at the quadrature points.
   cache_inputs();
-  cache_inputs_new();
 }
 
 //! Solve the SSA.  The FEM solver exchanges time for memory by computing
@@ -196,7 +190,6 @@ TerminationReason::Ptr SSAFEM::solve_with_reason() {
 
   // Set up the system to solve (store coefficient data at the quadrature points):
   cache_inputs();
-  cache_inputs_new();
 
   return solve_nocache();
 }
@@ -268,164 +261,20 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
 //! Initialize stored data from the coefficients in the SSA.  Called by SSAFEM::solve.
 /**
    This method is should be called after SSAFEM::init and whenever any geometry or temperature
-   related coefficients have changed. The method stores the values of the coefficients at quadrature
-   points of each element so that these interpolated values do not need to be computed during each
-   outer iteration of the nonlinear solve.
+   related coefficients have changed. The method stores the values of the coefficients the nodes of
+   each element so that these are available to the residual and Jacobian evaluation methods.
+
+   We store the vertical average of the ice hardness to avoid re-doing this computation every
+   iteration.
 
    In addition to coefficients at quadrature points we store "node types" used to identify interior
    elements, exterior elements, and boundary faces.
 */
 void SSAFEM::cache_inputs() {
-
-  const unsigned int Nk     = fem::ShapeQ1::Nk;
-  const unsigned int Nq     = m_quadrature.n();
-  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
-
-  std::vector<double> Enth_q[fem::MAX_QUADRATURE_SIZE];
-  const double *Enth_e[4];
-
-  const double
-    ice_density      = m_config->get_double("ice_density"),
-    standard_gravity = m_config->get_double("standard_gravity"),
-    rho_g = ice_density * standard_gravity;
-
-  for (unsigned int q=0; q<Nq; q++) {
-    Enth_q[q].resize(m_grid->Mz());
-  }
-
-  IceModelVec::AccessList list;
-  list.add(*m_enthalpy);
-  bool explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
-  if (explicit_driving_stress) {
-    list.add(*m_driving_stress_x);
-    list.add(*m_driving_stress_y);
-  } else {
-    // The class SSA ensures in this case that 'surface' is available
-    list.add(*m_surface);
-  }
-
-  list.add(*m_thickness);
-  list.add(*m_bed);
-  list.add(*m_tauc);
-
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (int j=ys; j<ys+ym; j++) {
-      for (int i=xs; i<xs+xm; i++) {
-        double hq[Nq_max], hxq[Nq_max], hyq[Nq_max];
-        double ds_xq[Nq_max], ds_yq[Nq_max];
-        double tmp[Nk];
-
-        m_element.reset(i, j);
-
-        if (explicit_driving_stress) {
-          m_element.nodal_values(*m_driving_stress_x, tmp);
-          quadrature_point_values(m_quadrature, tmp, ds_xq);
-
-          m_element.nodal_values(*m_driving_stress_y, tmp);
-          quadrature_point_values(m_quadrature, tmp, ds_yq);
-        } else {
-          m_element.nodal_values(*m_surface, tmp);
-          quadrature_point_values(m_quadrature, tmp, hq, hxq, hyq);
-        }
-
-        double Hq[Nq_max];
-        m_element.nodal_values(*m_thickness, tmp);
-        quadrature_point_values(m_quadrature, tmp, Hq);
-
-        double bq[Nq_max];
-        m_element.nodal_values(*m_bed, tmp);
-        quadrature_point_values(m_quadrature, tmp, bq);
-
-        double taucq[Nq_max];
-        m_element.nodal_values(*m_tauc, tmp);
-        quadrature_point_values(m_quadrature, tmp, taucq);
-
-        const int ij = m_element_index.flatten(i, j);
-        Coefficients *coefficients = &m_coefficients[ij*Nq];
-        for (unsigned int q = 0; q < Nq; q++) {
-          coefficients[q].thickness  = Hq[q];
-          coefficients[q].tauc = taucq[q];
-          if (explicit_driving_stress) {
-            coefficients[q].driving_stress.u = ds_xq[q];
-            coefficients[q].driving_stress.v = ds_yq[q];
-          } else {
-            coefficients[q].driving_stress.u = -rho_g * Hq[q]*hxq[q];
-            coefficients[q].driving_stress.v = -rho_g * Hq[q]*hyq[q];
-          }
-
-          coefficients[q].mask = m_gc.mask(m_sea_level, bq[q], coefficients[q].thickness);
-        }
-
-        // In the following, we obtain the averaged hardness value from enthalpy by
-        // interpolating enthalpy in each column over a quadrature point and then
-        // taking the average over the column.  A faster approach would be to take
-        // the column average over each element nodes and then interpolate to the
-        // quadrature points. Does this make a difference?
-
-        // Obtain the values of enthalpy at each vertical level at each of the vertices
-        // of the current element.
-        Enth_e[0] = m_enthalpy->get_column(i, j);
-        Enth_e[1] = m_enthalpy->get_column(i+1, j);
-        Enth_e[2] = m_enthalpy->get_column(i+1, j+1);
-        Enth_e[3] = m_enthalpy->get_column(i, j+1);
-
-        // We now want to interpolate to the quadrature points at each of the
-        // vertical levels.  It would be nice to use quadrature::computeTestFunctionValues,
-        // but the way we have just obtained the values at the element vertices
-        // using getInternalColumn doesn't make this straightforward.  So we compute the values
-        // by hand.
-        const fem::Germs *test = m_quadrature.test_function_values();
-        for (unsigned int k = 0; k < m_grid->Mz(); k++) {
-          Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
-          for (unsigned int q = 0; q < Nq; q++) {
-            for (unsigned int p = 0; p < Nk; p++) {
-              Enth_q[q][k] += test[q][p].val * Enth_e[p][k];
-            }
-          }
-        }
-
-        // Now, for each column over a quadrature point, find the averaged_hardness.
-        for (unsigned int q = 0; q < Nq; q++) {
-          // Evaluate column integrals in flow law at every quadrature point's column
-          coefficients[q].hardness = rheology::averaged_hardness(*m_flow_law,
-                                                                 coefficients[q].thickness,
-                                                                 m_grid->kBelowHeight(coefficients[q].thickness),
-                                                                 &(m_grid->z()[0]),
-                                                                 &(Enth_q[q])[0]);
-        }
-
-      } // j-loop
-    } // i-loop
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
-  if (use_cfbc) {
-    // Note: the call below uses ghosts of m_thickness.
-    compute_node_types(*m_thickness,
-                       m_config->get_double("mask_icefree_thickness_standard"),
-                       m_node_type);
-  } else {
-    m_node_type.set(NODE_INTERIOR);
-  }
-
-  cache_residual_cfbc();
-}
-
-void SSAFEM::cache_inputs_new() {
   const std::vector<double> &z = m_grid->z();
 
   IceModelVec::AccessList list;
-  list.add(m_coeffs);
+  list.add(m_coefficients);
   list.add(*m_enthalpy);
   list.add(*m_thickness);
   list.add(*m_bed);
@@ -455,7 +304,7 @@ void SSAFEM::cache_inputs_new() {
                                                     m_grid->kBelowHeight(thickness),
                                                     &z[0], enthalpy);
 
-      Coeffs c;
+      Coefficients c;
       c.thickness      = thickness;
       c.bed            = (*m_bed)(i, j);
       c.sea_level      = m_sea_level; // FIXME: use a 2D field
@@ -463,14 +312,14 @@ void SSAFEM::cache_inputs_new() {
       c.hardness       = hardness;
       c.driving_stress = driving_stress;
 
-      m_coeffs(i, j) = c;
+      m_coefficients(i, j) = c;
     } // loop over owned grid points
   } catch (...) {
     loop.failed();
   }
   loop.check();
 
-  m_coeffs.update_ghosts();
+  m_coefficients.update_ghosts();
 
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
   if (use_cfbc) {
@@ -488,7 +337,7 @@ void SSAFEM::cache_inputs_new() {
 
 //! Compute quadrature point values of various coefficients given a quadrature and nodal values.
 void SSAFEM::quad_point_values(const fem::Quadrature &Q,
-                               const Coeffs *x,
+                               const Coefficients *x,
                                int *mask,
                                double *thickness,
                                double *tauc,
@@ -522,7 +371,7 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
 //! Compute gravitational driving stress at quadrature points.
 //! Uses explicitly-provided nodal values.
 void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
-                                     const Coeffs *x,
+                                     const Coefficients *x,
                                      Vector2 *driving_stress) const {
   const fem::Germs *test = Q.test_function_values();
   const unsigned int n = Q.n();
@@ -583,7 +432,7 @@ void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
    does not contribute to the driving stress*.
 */
 void SSAFEM::driving_stress(const fem::Quadrature &Q,
-                            const Coeffs *x,
+                            const Coefficients *x,
                             Vector2 *driving_stress) const {
   const fem::Germs *test = Q.test_function_values();
   const unsigned int n = Q.n();
@@ -863,7 +712,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   IceModelVec::AccessList list(m_node_type);
-  list.add(m_coeffs);
+  list.add(m_coefficients);
 
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
   // to set it using ElementMap::add_residual_contribution() because that would lead to
@@ -929,8 +778,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         Vector2 tau_d[Nq_max];
 
         {
-          Coeffs coeffs[Nk];
-          m_element.nodal_values(m_coeffs, coeffs);
+          Coefficients coeffs[Nk];
+          m_element.nodal_values(m_coefficients, coeffs);
 
           quad_point_values(m_quadrature, coeffs,
                             mask, thickness, tauc, hardness);
@@ -1081,7 +930,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   PISM_CHK(ierr, "MatZeroEntries");
 
   IceModelVec::AccessList list(m_node_type);
-  list.add(m_coeffs);
+  list.add(m_coefficients);
 
   // Start access to Dirichlet data if present.
   fem::DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
@@ -1129,8 +978,8 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         double hardness[Nq_max];
 
         {
-          Coeffs coeffs[Nk];
-          m_element.nodal_values(m_coeffs, coeffs);
+          Coefficients coeffs[Nk];
+          m_element.nodal_values(m_coefficients, coeffs);
 
           quad_point_values(m_quadrature, coeffs,
                             mask, thickness, tauc, hardness);

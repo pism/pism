@@ -46,27 +46,12 @@ public:
 protected:
   virtual void init_impl();
   void cache_inputs();
-  void cache_inputs_new();
 
-  //! Storage for SSA coefficients at a quadrature point.
-  struct Coefficients {
-    //! ice thickness
-    double thickness;
-    //! basal yield stress
-    double tauc;
-    //! ice hardness
-    double hardness;
-    //! prescribed gravitational driving stress
-    Vector2 driving_stress;
-    //! mask used to choose basal conditions
-    int mask;
-  };
-
+  //! Storage for SSA coefficients at element nodes.
+  //!
   //! All fields must be "double" or structures containing "double"
   //! for IceModelVec2Fat to work correctly.
-  //
-  // FIXME: this structure should be renamed once the original "Coefficients" is gone.
-  struct Coeffs {
+  struct Coefficients {
     //! ice thickness
     double thickness;
     //! bed elevation
@@ -85,21 +70,21 @@ protected:
   double m_alpha;
   double m_rho_g;
 
-  IceModelVec2Fat<Coeffs> m_coeffs;
+  IceModelVec2Fat<Coefficients> m_coefficients;
 
   void quad_point_values(const fem::Quadrature &Q,
-                         const Coeffs *x,
+                         const Coefficients *x,
                          int *mask,
                          double *thickness,
                          double *tauc,
                          double *hardness) const;
 
   void explicit_driving_stress(const fem::Quadrature &Q,
-                               const Coeffs *x,
+                               const Coefficients *x,
                                Vector2 *driving_stress) const;
 
   void driving_stress(const fem::Quadrature &Q,
-                      const Coeffs *x,
+                      const Coefficients *x,
                       Vector2 *driving_stress) const;
 
   void PointwiseNuHAndBeta(double thickness,
@@ -138,7 +123,6 @@ protected:
   CallbackData m_callback_data;
 
   petsc::SNES m_snes;
-  std::vector<Coefficients> m_coefficients;
 
   //! Storage for node types (interior, boundary, exterior).
   IceModelVec2Int m_node_type;

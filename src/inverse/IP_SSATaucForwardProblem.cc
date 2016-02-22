@@ -132,11 +132,11 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
   // Cache tauc at the quadrature points.
   IceModelVec::AccessList list(tauc);
-  list.add(m_coeffs);
+  list.add(m_coefficients);
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    m_coeffs(i, j).tauc = tauc(i, j);
+    m_coefficients(i, j).tauc = tauc(i, j);
   }
 
   // Flag the state jacobian as needing rebuilding.
@@ -235,7 +235,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   IceModelVec::AccessList list;
-  list.add(m_coeffs);
+  list.add(m_coefficients);
   list.add(*m_zeta);
   list.add(u);
 
@@ -327,14 +327,14 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         }
         quadrature_point_values(m_quadrature, dtauc_e, dtauc_q);
 
-        int    mask[Nq_max];
-        double thickness[Nq_max];
-        double tauc[Nq_max];
-        double hardness[Nq_max];
-
+        int mask[Nq_max];
         {
-          Coeffs coeffs[Nk];
-          m_element.nodal_values(m_coeffs, coeffs);
+          Coefficients coeffs[Nk];
+          double thickness[Nq_max];
+          double tauc[Nq_max];
+          double hardness[Nq_max];
+
+          m_element.nodal_values(m_coefficients, coeffs);
 
           quad_point_values(m_quadrature, coeffs,
                             mask, thickness, tauc, hardness);
@@ -410,7 +410,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   IceModelVec::AccessList list;
-  list.add(m_coeffs);
+  list.add(m_coefficients);
   list.add(*m_zeta);
   list.add(u);
 
@@ -484,14 +484,14 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
           dzeta_e[k] = 0;
         }
 
-        int    mask[Nq_max];
-        double thickness[Nq_max];
-        double tauc[Nq_max];
-        double hardness[Nq_max];
-
+        int mask[Nq_max];
         {
-          Coeffs coeffs[Nk];
-          m_element.nodal_values(m_coeffs, coeffs);
+          Coefficients coeffs[Nk];
+          double thickness[Nq_max];
+          double tauc[Nq_max];
+          double hardness[Nq_max];
+
+          m_element.nodal_values(m_coefficients, coeffs);
 
           quad_point_values(m_quadrature, coeffs,
                             mask, thickness, tauc, hardness);
