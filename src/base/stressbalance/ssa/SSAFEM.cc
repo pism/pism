@@ -708,7 +708,6 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
   const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   IceModelVec::AccessList list(m_node_type);
@@ -727,14 +726,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   // Start access to Dirichlet data if present.
   fem::DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
 
-  // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
-
   // Storage for the current solution and its derivatives at quadrature points.
   Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
-
-  // An Nq by Nk array of test function values.
-  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Iterate over the elements.
   const int
@@ -747,10 +740,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   try {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
-
         // Initialize the map from global to local degrees of freedom for this element.
         m_element.reset(i, j);
-
         int node_type[Nk];
         m_element.nodal_values(m_node_type, node_type);
 
@@ -767,6 +758,17 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         // Note: without CFBC all elements are "interior".
 
+        fem::Quadrature &Q = m_quadrature;
+
+        // Number of quadrature points.
+        const unsigned int Nq = Q.n();
+
+        // An Nq by Nk array of test function values.
+        const fem::Germs *test = Q.test_function_values();
+
+        // Jacobian times weights for quadrature.
+        const double* JxW = Q.weighted_jacobian();
+
         // Storage for the solution and residuals at element nodes.
         Vector2 velocity_nodal[Nk];
         Vector2 residual[Nk];
@@ -781,13 +783,12 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           Coefficients coeffs[Nk];
           m_element.nodal_values(m_coefficients, coeffs);
 
-          quad_point_values(m_quadrature, coeffs,
-                            mask, thickness, tauc, hardness);
+          quad_point_values(Q, coeffs, mask, thickness, tauc, hardness);
 
           if (use_explicit_driving_stress) {
-            explicit_driving_stress(m_quadrature, coeffs, tau_d);
+            explicit_driving_stress(Q, coeffs, tau_d);
           } else {
-            driving_stress(m_quadrature, coeffs, tau_d);
+            driving_stress(Q, coeffs, tau_d);
           }
         }
 
@@ -806,7 +807,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           }
 
           // Compute the solution values and its gradient at the quadrature points.
-          quadrature_point_values(m_quadrature, velocity_nodal, // input
+          quadrature_point_values(Q, velocity_nodal, // input
                                   U, U_x, U_y);   // outputs
         }
 
@@ -920,7 +921,6 @@ void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
 void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global, Mat Jac) {
 
   const unsigned int Nk     = fem::ShapeQ1::Nk;
-  const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
@@ -935,15 +935,8 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   // Start access to Dirichlet data if present.
   fem::DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);
 
-  // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
-
   // Storage for the current solution at quadrature points.
   Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
-
-  // Values of the finite element test functions at the quadrature points.
-  // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Loop through all the elements.
   int
@@ -972,6 +965,18 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           continue;
         }
 
+        fem::Quadrature &Q = m_quadrature;
+
+        // Number of quadrature points.
+        const unsigned int Nq = Q.n();
+
+        // Jacobian times weights for quadrature.
+        const double* JxW = Q.weighted_jacobian();
+
+        // Values of the finite element test functions at the quadrature points.
+        // This is an Nq by Nk array of function germs
+        const fem::Germs *test = Q.test_function_values();
+
         int    mask[Nq_max];
         double thickness[Nq_max];
         double tauc[Nq_max];
@@ -981,7 +986,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           Coefficients coeffs[Nk];
           m_element.nodal_values(m_coefficients, coeffs);
 
-          quad_point_values(m_quadrature, coeffs,
+          quad_point_values(Q, coeffs,
                             mask, thickness, tauc, hardness);
         }
 
@@ -997,7 +1002,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
           dirichlet_data.constrain(m_element);
         }
         // Compute the values of the solution at the quadrature points.
-        quadrature_point_values(m_quadrature, velocity_local, U, U_x, U_y);
+        quadrature_point_values(Q, velocity_local, U, U_x, U_y);
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees
         // of freedom per element, for a total of (2*Nk)*(2*Nk) = 16
