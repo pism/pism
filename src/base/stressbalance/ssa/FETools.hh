@@ -169,28 +169,16 @@ struct Germ
   double dy;
 };
 
-//! Computation of Q1 shape function values.
-/*! The Q1 shape functions are bilinear functions. On a rectangular element, there are four (Nk)
-  basis functions, each equal to 1 at one vertex and equal to zero at the remainder.
+//! Q1 element information.
+namespace q1 {
+//! Number of shape functions on a Q1 element.
+const int Nk = 4;
+//! Evaluate a Q1 shape function and its derivatives with respect to xi and eta.
+Germ chi(unsigned int k, double xi, double eta);
+}
 
-  This class consolidates the computation of the values and derivatives of these basis functions.
-*/
-class ShapeQ1 {
-public:
-  //! Compute values and derivatives of the shape function supported at node k.
-  static Germ eval(unsigned int k, double xi, double eta);
-
-  //! The number of basis shape functions.
-  static const int Nk = 4;
-private:
-  //! Coordinates of the reference element.
-  static const double m_xi[Nk];
-  //! Coordinates of the reference element.
-  static const double m_eta[Nk];
-};
-
-// define Germs, which is an array of ShapeQ1::Nk "Germ"s
-typedef Germ Germs[ShapeQ1::Nk];
+// define Germs, which is an array of q1::Nk "Germ"s
+typedef Germ Germs[q1::Nk];
 
 //! The mapping from global to local degrees of freedom.
 /*! Computations of residual and Jacobian entries in the finite element method are done by iterating
@@ -202,7 +190,7 @@ typedef Germ Germs[ShapeQ1::Nk];
   An ElementMap mediates the transfer between element-local and global degrees of freedom. In this very
   concrete implementation, the global degrees of freedom are either scalars (double's) or vectors
   (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element are
-  ShapeQ1::Nk (%i.e. four) scalars or vectors, one for each vertex of the element.
+  q1::Nk (%i.e. four) scalars or vectors, one for each vertex of the element.
 
   The ElementMap is also (perhaps awkwardly) overloaded to mediate transfering locally computed
   contributions to residual and Jacobian matricies to their global counterparts.
@@ -219,7 +207,7 @@ public:
   */
   template<typename T>
   void nodal_values(T const* const* x_global, T* result) const {
-    for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+    for (unsigned int k = 0; k < q1::Nk; ++k) {
       int i = 0, j = 0;
       local_to_global(k, i, j);
       result[k] = x_global[j][i];   // note the indexing order
@@ -231,7 +219,7 @@ public:
   */
   template<class C, typename T>
   void nodal_values(const C& x_global, T* result) const {
-    for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+    for (unsigned int k = 0; k < q1::Nk; ++k) {
       int i = 0, j = 0;
       local_to_global(k, i, j);
       result[k] = x_global(i, j);   // note the indexing order
@@ -246,7 +234,7 @@ public:
   /*! The element-local residual should be an array of Nk values.*/
   template<typename T>
   void add_residual_contribution(const T *residual, T** y_global) const {
-    for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
+    for (unsigned int k = 0; k < fem::q1::Nk; k++) {
       if (m_row[k].k == 1) {
         // skip rows marked as "invalid"
         continue;
@@ -260,7 +248,7 @@ public:
 
   template<class C, typename T>
   void add_residual_contribution(const T *residual, C& y_global) const {
-    for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
+    for (unsigned int k = 0; k < fem::q1::Nk; k++) {
       if (m_row[k].k == 1) {
         // skip rows marked as "invalid"
         continue;
@@ -293,14 +281,14 @@ private:
   //! the stencil of width 1 (-1 *is* an allowed index). We use -2^30 and *don't* use PETSC_MIN_INT,
   //! because PETSC_MIN_INT depends on PETSc's configuration flags.
   static const int m_invalid_dof = -1073741824;
-  static const int m_i_offset[ShapeQ1::Nk];
-  static const int m_j_offset[ShapeQ1::Nk];
+  static const int m_i_offset[q1::Nk];
+  static const int m_j_offset[q1::Nk];
 
   //! Indices of the current element.
   int m_i, m_j;
 
   //! Stencils for updating entries of the Jacobian matrix.
-  MatStencil m_row[ShapeQ1::Nk], m_col[ShapeQ1::Nk];
+  MatStencil m_row[q1::Nk], m_col[q1::Nk];
 
   // the grid (for marking ghost DOFs as "invalid")
   const IceGrid &m_grid;
@@ -383,7 +371,7 @@ public:
     return m_Nq;
   }
 
-  //! Vaues of `ShapeQ1::Nk` trial functions and their derivatives with respect to `x` and `y`, for
+  //! Vaues of `q1::Nk` trial functions and their derivatives with respect to `x` and `y`, for
   //! each of `n()` quadrature points.
   const Germs* test_function_values() const {
     return m_germs;
@@ -455,7 +443,7 @@ void quadrature_point_values(Quadrature &Q, const T *x, T *result) {
   const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
     result[q] = 0.0;
-    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+    for (unsigned int k = 0; k < q1::Nk; k++) {
       result[q] += test[q][k].val * x[k];
     }
   }
@@ -475,7 +463,7 @@ void quadrature_point_values(Quadrature &Q, const T *x, T *vals, T *dx, T *dy) {
     vals[q] = 0.0;
     dx[q]   = 0.0;
     dy[q]   = 0.0;
-    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+    for (unsigned int k = 0; k < q1::Nk; k++) {
       const Germ &psi = test[q][k];
       vals[q] += psi.val * x[k];
       dx[q]   += psi.dx  * x[k];
@@ -499,7 +487,7 @@ protected:
   void finish(const IceModelVec *values);
 
   const IceModelVec2Int *m_indices;
-  double m_indices_e[ShapeQ1::Nk];
+  double m_indices_e[q1::Nk];
   double m_weight;
 };
 
@@ -538,7 +526,7 @@ class BoundaryQuadrature2 {
 public:
   BoundaryQuadrature2(double dx, double dy);
   //! Number of sides per element.
-  static const unsigned int n_sides = ShapeQ1::Nk;
+  static const unsigned int n_sides = q1::Nk;
   //! Number of quadrature points per side.
   static const unsigned int Nq = 2;
 
@@ -548,7 +536,7 @@ public:
                           unsigned int func,
                           unsigned int pt) const;
 private:
-  Germ m_germs[n_sides][Nq][ShapeQ1::Nk];
+  Germ m_germs[n_sides][Nq][q1::Nk];
   double m_weighted_jacobian[n_sides];
 };
 
@@ -563,7 +551,7 @@ inline const Germ& BoundaryQuadrature2::germ(unsigned int side,
                                              unsigned int q,
                                              unsigned int k) const {
   assert(side < n_sides);
-  assert(k < ShapeQ1::Nk);
+  assert(k < q1::Nk);
   assert(q < 2);
 
   return m_germs[side][q][k];

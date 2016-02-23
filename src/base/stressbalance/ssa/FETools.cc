@@ -35,18 +35,24 @@ namespace pism {
 //! FEM (Finite Element Method) utilities
 namespace fem {
 
-const double ShapeQ1::m_xi[]  = {-1.0,  1.0,  1.0, -1.0};
-const double ShapeQ1::m_eta[] = {-1.0, -1.0,  1.0,  1.0};
+namespace q1 {
 
-Germ ShapeQ1::eval(unsigned int k, double xi, double eta) {
+const double xi[] = {-1.0,  1.0,  1.0, -1.0};
+const double eta[] = {-1.0, -1.0,  1.0,  1.0};
+
+Germ chi(unsigned int k, double xi0, double eta0) {
   Germ result;
 
-  result.val = 0.25 * (1.0 + m_xi[k] * xi) * (1.0 + m_eta[k] * eta);
-  result.dx =  0.25 *  m_xi[k] * (1.0 + m_eta[k] * eta);
-  result.dy =  0.25 * m_eta[k] * (1.0 +  m_xi[k] * xi);
+  result.val = 0.25 * (1.0 + xi[k] * xi0) * (1.0 + eta[k] * eta0);
+  result.dx  = 0.25 * xi[k] * (1.0 + eta[k] * eta0);
+  result.dy  = 0.25 * eta[k] * (1.0 +  xi[k] * xi0);
 
   return result;
 }
+
+} // end of namespace q1
+
+
 ElementIterator::ElementIterator(const IceGrid &g) {
   // Start by assuming ghost elements exist in all directions.
   // Elements are indexed by their lower left vertex.  If there is a ghost
@@ -107,7 +113,7 @@ ElementMap::~ElementMap() {
 
 void ElementMap::nodal_values(const IceModelVec2Int &x_global, int *result) const
 {
-  for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+  for (unsigned int k = 0; k < q1::Nk; ++k) {
     const int
       ii = m_i + m_i_offset[k],
       jj = m_j + m_j_offset[k];
@@ -121,7 +127,7 @@ void ElementMap::reset(int i, int j) {
   m_i = i;
   m_j = j;
 
-  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; ++k) {
+  for (unsigned int k = 0; k < fem::q1::Nk; ++k) {
     m_col[k].i = i + m_i_offset[k];
     m_col[k].j = j + m_j_offset[k];
     m_col[k].k = 0;
@@ -132,7 +138,7 @@ void ElementMap::reset(int i, int j) {
   }
 
   // We do not ever sum into rows that are not owned by the local rank.
-  for (unsigned int k = 0; k < fem::ShapeQ1::Nk; k++) {
+  for (unsigned int k = 0; k < fem::q1::Nk; k++) {
     int pism_i = m_row[k].i, pism_j = m_row[k].j;
     if (pism_i < m_grid.xs() || m_grid.xs() + m_grid.xm() - 1 < pism_i ||
         pism_j < m_grid.ys() || m_grid.ys() + m_grid.ym() - 1 < pism_j) {
@@ -171,8 +177,8 @@ void ElementMap::mark_col_invalid(int k) {
  */
 void ElementMap::add_jacobian_contribution(const double *K, Mat J) const {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
-                                                   fem::ShapeQ1::Nk, m_row,
-                                                   fem::ShapeQ1::Nk, m_col,
+                                                   fem::q1::Nk, m_row,
+                                                   fem::q1::Nk, m_col,
                                                    K, ADD_VALUES);
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
@@ -187,7 +193,7 @@ Quadrature::Quadrature(unsigned int N)
   if (m_JxW == NULL) {
     throw std::runtime_error("Failed to allocate a Quadrature instance");
   }
-  m_germs = (Germs*) malloc(m_Nq * ShapeQ1::Nk * sizeof(Germ));
+  m_germs = (Germs*) malloc(m_Nq * q1::Nk * sizeof(Germ));
   if (m_germs == NULL) {
     free(m_JxW);
     throw std::runtime_error("Failed to allocate a Quadrature instance");
@@ -227,8 +233,8 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L)
     jacobian_det = jacobian_x*jacobian_y;
 
   for (unsigned int q = 0; q < m_Nq; q++) {
-    for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
-      m_germs[q][k] = ShapeQ1::eval(k, quadPoints[q][0], quadPoints[q][1]);
+    for (unsigned int k = 0; k < q1::Nk; k++) {
+      m_germs[q][k] = q1::chi(k, quadPoints[q][0], quadPoints[q][1]);
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;
     }
@@ -241,7 +247,7 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L)
 
 DirichletData::DirichletData()
   : m_indices(NULL), m_weight(1.0) {
-  for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
+  for (unsigned int k = 0; k < q1::Nk; ++k) {
     m_indices_e[k] = 0;
   }
 }
@@ -289,7 +295,7 @@ void DirichletData::finish(const IceModelVec *values) {
 //! @brief Constrain `element`, i.e. ensure that quadratures do not contribute to Dirichlet nodes by marking corresponding rows and columns as "invalid".
 void DirichletData::constrain(ElementMap &element) {
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+  for (unsigned int k = 0; k < q1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
       element.mark_row_invalid(k);
@@ -311,7 +317,7 @@ void DirichletData_Scalar::enforce(const ElementMap &element, double* x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+  for (unsigned int k = 0; k < q1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i = 0, j = 0;
       element.local_to_global(k, i, j);
@@ -322,7 +328,7 @@ void DirichletData_Scalar::enforce(const ElementMap &element, double* x_nodal) {
 
 void DirichletData_Scalar::enforce_homogeneous(const ElementMap &element, double* x_nodal) {
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+  for (unsigned int k = 0; k < q1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_nodal[k] = 0.;
     }
@@ -407,7 +413,7 @@ void DirichletData_Vector::enforce(const ElementMap &element, Vector2* x_nodal) 
   assert(m_values != NULL);
 
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+  for (unsigned int k = 0; k < q1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i = 0, j = 0;
       element.local_to_global(k, i, j);
@@ -418,7 +424,7 @@ void DirichletData_Vector::enforce(const ElementMap &element, Vector2* x_nodal) 
 
 void DirichletData_Vector::enforce_homogeneous(const ElementMap &element, Vector2* x_nodal) {
   element.nodal_values(*m_indices, m_indices_e);
-  for (unsigned int k = 0; k < ShapeQ1::Nk; k++) {
+  for (unsigned int k = 0; k < q1::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_nodal[k].u = 0.0;
       x_nodal[k].v = 0.0;
@@ -517,14 +523,14 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy) {
     {{-1.0,   -C}, {-1.0,    C}}  // West
   };
 
-  memset(m_germs, 0, n_sides*Nq*ShapeQ1::Nk*sizeof(Germ));
+  memset(m_germs, 0, n_sides*Nq*q1::Nk*sizeof(Germ));
 
   for (unsigned int side = 0; side < n_sides; ++side) {
     for (unsigned int q = 0; q < Nq; ++q) {
       const double xi = pts[side][q][0];
       const double eta = pts[side][q][1];
-      for (unsigned int k = 0; k < ShapeQ1::Nk; ++k) {
-        m_germs[side][q][k] = ShapeQ1::eval(k, xi, eta);
+      for (unsigned int k = 0; k < q1::Nk; ++k) {
+        m_germs[side][q][k] = q1::chi(k, xi, eta);
         // convert from derivatives with respect to xi and eta to derivatives with respect to x and
         // y
         m_germs[side][q][k].dx /= jacobian_x;

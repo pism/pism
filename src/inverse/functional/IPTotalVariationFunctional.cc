@@ -33,7 +33,7 @@ IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid::ConstPtr gri
 
 void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nk     = fem::q1::Nk;
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
@@ -79,7 +79,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  const unsigned int Nk     = fem::ShapeQ1::Nk;
+  const unsigned int Nk     = fem::q1::Nk;
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
