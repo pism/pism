@@ -276,11 +276,24 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L)
   const double J_inv[2][2] = {{1.0 / J[0][0], 0.0},
                               {0.0, 1.0 / J[1][1]}};
 
+  initialize(q1::chi, q1::N_chi, points, weights, J, J_inv);
+}
+
+//! Initialize shape function values and weights of a 2D quadrature.
+/** Assumes that the Jacobian does not depend on coordinates of the current quadrature point.
+ */
+void Quadrature::initialize(ShapeFunction2 f,
+                            unsigned int n_chi,
+                            const double (*points)[2],
+                            const double *weights,
+                            const double J[2][2],
+                            const double J_inv[2][2]) {
+
   for (unsigned int q = 0; q < m_Nq; q++) {
     const double xi = points[q][0];
     const double eta = points[q][1];
-    for (unsigned int k = 0; k < q1::N_chi; k++) {
-      Germ phi = q1::chi(k, xi, eta);;
+    for (unsigned int k = 0; k < n_chi; k++) {
+      Germ phi = f(k, xi, eta);;
 
       m_germs[q][k] = apply_jacobian_inverse(J_inv, phi);
     }
@@ -291,6 +304,7 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L)
     m_JxW[q] = J_det * weights[q];
   }
 }
+
 
 DirichletData::DirichletData()
   : m_indices(NULL), m_weight(1.0) {

@@ -399,6 +399,16 @@ protected:
   double *m_JxW;
 
   Germs* m_germs;
+
+  // pointer to a 2D shape function
+  typedef Germ (*ShapeFunction2)(unsigned int k, double xi, double eta);
+
+  void initialize(ShapeFunction2 f,
+                  unsigned int n_chi,
+                  const double (*points)[2],
+                  const double *weights,
+                  const double J[2][2],
+                  const double J_inv[2][2]);
 };
 
 //! Numerical integration of finite element functions.
