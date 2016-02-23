@@ -265,6 +265,9 @@
 
 %include "base/util/projection.hh"
 
+
+%rename(q1_chi) pism::fem::q1::chi;
+%rename(p1_chi) pism::fem::p1::chi;
 %include "base/stressbalance/ssa/FETools.hh"
 
 %include pism_inverse.i

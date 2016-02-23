@@ -52,6 +52,38 @@ Germ chi(unsigned int k, double xi0, double eta0) {
 
 } // end of namespace q1
 
+namespace p1 {
+
+//! P1 basis functions on the reference element with nodes (0,0), (1,0), (0,1).
+Germ chi(unsigned int k, double xi, double eta) {
+  assert(k < q1::Nk);
+  Germ result;
+
+  switch (k) {
+  case 0:
+    result.val = 1.0 - xi - eta;
+    result.dx  = -1.0;
+    result.dy  = -1.0;
+    break;
+  case 1:
+    result.val = xi;
+    result.dx  = 1.0;
+    result.dy  = 0.0;
+    break;
+  case 2:
+    result.val = 0.0;
+    result.dx  = 0.0;
+    result.dy  = 0.0;
+    break;
+  case 3:
+    result.val = eta;
+    result.dx  = 0.0;
+    result.dy  = 1.0;
+  }
+  return result;
+}
+} // end of namespace p1
+
 
 ElementIterator::ElementIterator(const IceGrid &g) {
   // Start by assuming ghost elements exist in all directions.

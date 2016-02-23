@@ -177,6 +177,14 @@ const int Nk = 4;
 Germ chi(unsigned int k, double xi, double eta);
 }
 
+//! @brief P1 element embedded into a Q1 element (uses nodes 0, 1, 3 and an identically zero basis
+//! function at node 2).
+namespace p1 {
+//! Evaluate a P1 shape function and its derivatives with respect to xi and eta.
+Germ chi(unsigned int k, double xi, double eta);
+} // end of namespace p1
+
+
 // define Germs, which is an array of q1::Nk "Germ"s
 typedef Germ Germs[q1::Nk];
 
