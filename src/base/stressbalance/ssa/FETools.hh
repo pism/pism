@@ -172,7 +172,9 @@ struct Germ
 //! Q1 element information.
 namespace q1 {
 //! Number of shape functions on a Q1 element.
-const int Nk = 4;
+const int N_chi = 4;
+//! Number of sides per element.
+const int N_sides = 4;
 //! Evaluate a Q1 shape function and its derivatives with respect to xi and eta.
 Germ chi(unsigned int k, double xi, double eta);
 }
@@ -185,8 +187,8 @@ Germ chi(unsigned int k, double xi, double eta);
 } // end of namespace p1
 
 
-// define Germs, which is an array of q1::Nk "Germ"s
-typedef Germ Germs[q1::Nk];
+// define Germs, which is an array of q1::N_chi "Germ"s
+typedef Germ Germs[q1::N_chi];
 
 //! The mapping from global to local degrees of freedom.
 /*! Computations of residual and Jacobian entries in the finite element method are done by iterating
@@ -198,7 +200,7 @@ typedef Germ Germs[q1::Nk];
   An ElementMap mediates the transfer between element-local and global degrees of freedom. In this very
   concrete implementation, the global degrees of freedom are either scalars (double's) or vectors
   (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element are
-  q1::Nk (%i.e. four) scalars or vectors, one for each vertex of the element.
+  q1::N_chi (%i.e. four) scalars or vectors, one for each vertex of the element.
 
   The ElementMap is also (perhaps awkwardly) overloaded to mediate transfering locally computed
   contributions to residual and Jacobian matricies to their global counterparts.
@@ -215,7 +217,7 @@ public:
   */
   template<typename T>
   void nodal_values(T const* const* x_global, T* result) const {
-    for (unsigned int k = 0; k < q1::Nk; ++k) {
+    for (unsigned int k = 0; k < q1::N_chi; ++k) {
       int i = 0, j = 0;
       local_to_global(k, i, j);
       result[k] = x_global[j][i];   // note the indexing order
@@ -227,7 +229,7 @@ public:
   */
   template<class C, typename T>
   void nodal_values(const C& x_global, T* result) const {
-    for (unsigned int k = 0; k < q1::Nk; ++k) {
+    for (unsigned int k = 0; k < q1::N_chi; ++k) {
       int i = 0, j = 0;
       local_to_global(k, i, j);
       result[k] = x_global(i, j);   // note the indexing order
@@ -242,7 +244,7 @@ public:
   /*! The element-local residual should be an array of Nk values.*/
   template<typename T>
   void add_residual_contribution(const T *residual, T** y_global) const {
-    for (unsigned int k = 0; k < fem::q1::Nk; k++) {
+    for (unsigned int k = 0; k < fem::q1::N_chi; k++) {
       if (m_row[k].k == 1) {
         // skip rows marked as "invalid"
         continue;
@@ -256,7 +258,7 @@ public:
 
   template<class C, typename T>
   void add_residual_contribution(const T *residual, C& y_global) const {
-    for (unsigned int k = 0; k < fem::q1::Nk; k++) {
+    for (unsigned int k = 0; k < fem::q1::N_chi; k++) {
       if (m_row[k].k == 1) {
         // skip rows marked as "invalid"
         continue;
@@ -289,14 +291,14 @@ private:
   //! the stencil of width 1 (-1 *is* an allowed index). We use -2^30 and *don't* use PETSC_MIN_INT,
   //! because PETSC_MIN_INT depends on PETSc's configuration flags.
   static const int m_invalid_dof = -1073741824;
-  static const int m_i_offset[q1::Nk];
-  static const int m_j_offset[q1::Nk];
+  static const int m_i_offset[q1::N_chi];
+  static const int m_j_offset[q1::N_chi];
 
   //! Indices of the current element.
   int m_i, m_j;
 
   //! Stencils for updating entries of the Jacobian matrix.
-  MatStencil m_row[q1::Nk], m_col[q1::Nk];
+  MatStencil m_row[q1::N_chi], m_col[q1::N_chi];
 
   // the grid (for marking ghost DOFs as "invalid")
   const IceGrid &m_grid;
@@ -379,7 +381,7 @@ public:
     return m_Nq;
   }
 
-  //! Vaues of `q1::Nk` trial functions and their derivatives with respect to `x` and `y`, for
+  //! Vaues of `q1::N_chi` trial functions and their derivatives with respect to `x` and `y`, for
   //! each of `n()` quadrature points.
   const Germs* test_function_values() const {
     return m_germs;
@@ -451,7 +453,7 @@ void quadrature_point_values(Quadrature &Q, const T *x, T *result) {
   const unsigned int n = Q.n();
   for (unsigned int q = 0; q < n; q++) {
     result[q] = 0.0;
-    for (unsigned int k = 0; k < q1::Nk; k++) {
+    for (unsigned int k = 0; k < q1::N_chi; k++) {
       result[q] += test[q][k].val * x[k];
     }
   }
@@ -471,7 +473,7 @@ void quadrature_point_values(Quadrature &Q, const T *x, T *vals, T *dx, T *dy) {
     vals[q] = 0.0;
     dx[q]   = 0.0;
     dy[q]   = 0.0;
-    for (unsigned int k = 0; k < q1::Nk; k++) {
+    for (unsigned int k = 0; k < q1::N_chi; k++) {
       const Germ &psi = test[q][k];
       vals[q] += psi.val * x[k];
       dx[q]   += psi.dx  * x[k];
@@ -495,7 +497,7 @@ protected:
   void finish(const IceModelVec *values);
 
   const IceModelVec2Int *m_indices;
-  double m_indices_e[q1::Nk];
+  double m_indices_e[q1::N_chi];
   double m_weight;
 };
 
@@ -532,11 +534,9 @@ protected:
 //! 2-point quadrature for sides of Q1 quadrilateral elements.
 class BoundaryQuadrature2 {
 public:
-  BoundaryQuadrature2(double dx, double dy);
-  //! Number of sides per element.
-  static const unsigned int n_sides = q1::Nk;
-  //! Number of quadrature points per side.
-  static const unsigned int Nq = 2;
+  BoundaryQuadrature2(double dx, double dy, double L);
+
+  inline unsigned int n() const;
 
   inline double weighted_jacobian(unsigned int side) const;
 
@@ -544,13 +544,19 @@ public:
                           unsigned int func,
                           unsigned int pt) const;
 private:
-  Germ m_germs[n_sides][Nq][q1::Nk];
-  double m_weighted_jacobian[n_sides];
+  //! Number of quadrature points per side.
+  static const unsigned int m_Nq = 2;
+  Germ m_germs[q1::N_sides][m_Nq][q1::N_chi];
+  double m_JxW[q1::N_sides];
 };
 
+inline unsigned int BoundaryQuadrature2::n() const {
+  return m_Nq;
+}
+
 inline double BoundaryQuadrature2::weighted_jacobian(unsigned int side) const {
-  assert(side < n_sides);
-  return m_weighted_jacobian[side];
+  assert(side < q1::N_sides);
+  return m_JxW[side];
 }
 
 //! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
@@ -558,8 +564,8 @@ inline double BoundaryQuadrature2::weighted_jacobian(unsigned int side) const {
 inline const Germ& BoundaryQuadrature2::germ(unsigned int side,
                                              unsigned int q,
                                              unsigned int k) const {
-  assert(side < n_sides);
-  assert(k < q1::Nk);
+  assert(side < q1::N_sides);
+  assert(k < q1::N_chi);
   assert(q < 2);
 
   return m_germs[side][q][k];

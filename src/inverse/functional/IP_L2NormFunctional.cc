@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -51,7 +51,7 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      double tmp[fem::q1::Nk];
+      double tmp[fem::q1::N_chi];
       m_element.nodal_values(x, tmp);
       quadrature_point_values(m_quadrature, tmp, x_q);
 
@@ -94,7 +94,7 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
     for (int i = xs; i < xs + xm; i++) {
       m_element.reset(i, j);
 
-      double tmp[fem::q1::Nk];
+      double tmp[fem::q1::N_chi];
       m_element.nodal_values(a, tmp);
       quadrature_point_values(m_quadrature, tmp, a_q);
 
@@ -112,7 +112,7 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
 void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  const unsigned int Nk     = fem::q1::Nk;
+  const unsigned int Nk     = fem::q1::N_chi;
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
@@ -192,7 +192,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      Vector2 tmp[fem::q1::Nk];
+      Vector2 tmp[fem::q1::N_chi];
       m_element.nodal_values(x, tmp);
       quadrature_point_values(m_quadrature, tmp, x_q);
 
@@ -236,7 +236,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      Vector2 tmp[fem::q1::Nk];
+      Vector2 tmp[fem::q1::N_chi];
       m_element.nodal_values(a, tmp);
       quadrature_point_values(m_quadrature, tmp, a_q);
       m_element.nodal_values(b, tmp);
@@ -253,7 +253,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
 
 void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient) {
 
-  const unsigned int Nk     = fem::q1::Nk;
+  const unsigned int Nk     = fem::q1::N_chi;
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
