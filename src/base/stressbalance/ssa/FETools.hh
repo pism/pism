@@ -400,15 +400,28 @@ protected:
 
   Germs* m_germs;
 
+  //! Jacobian of the map from the reference element to a physical element.
+  double m_J[2][2];
+
+  //! Inverse of the Jacobian of the map from the reference element to a physical element.
+  double m_J_inv[2][2];
+
+  //! Quadrature setup. This is purely virtual so that only concrete quadrature instances can be
+  //! created.
+  virtual void setup() = 0;
+
   // pointer to a 2D shape function
   typedef Germ (*ShapeFunction2)(unsigned int k, double xi, double eta);
 
   void initialize(ShapeFunction2 f,
                   unsigned int n_chi,
                   const double (*points)[2],
-                  const double *weights,
-                  const double J[2][2],
-                  const double J_inv[2][2]);
+                  const double *weights);
+};
+
+class Q1Quadrature : public Quadrature {
+public:
+  Q1Quadrature(unsigned int size, double dx, double dy, double L);
 };
 
 //! Numerical integration of finite element functions.
@@ -448,10 +461,11 @@ protected:
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class Quadrature2x2 : public Quadrature {
+class Quadrature2x2 : public Q1Quadrature {
 public:
   Quadrature2x2(double dx, double dy, double L=1.0);
 private:
+  void setup();
   static const unsigned int m_N = 4;
 };
 

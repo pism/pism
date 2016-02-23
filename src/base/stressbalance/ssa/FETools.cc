@@ -217,7 +217,6 @@ const int ElementMap::m_j_offset[4] = {0, 0, 1, 1};
 
 Quadrature::Quadrature(unsigned int N)
   : m_Nq(N) {
-  // empty
   m_JxW = (double*) malloc(m_Nq * sizeof(double));
   if (m_JxW == NULL) {
     throw std::runtime_error("Failed to allocate a Quadrature instance");
@@ -227,6 +226,24 @@ Quadrature::Quadrature(unsigned int N)
     free(m_JxW);
     throw std::runtime_error("Failed to allocate a Quadrature instance");
   }
+}
+
+Q1Quadrature::Q1Quadrature(unsigned int size, double dx, double dy, double scaling)
+  : Quadrature(size) {
+  // We use uniform Cartesian coordinates, so the Jacobian is constant and diagonal on every
+  // element.
+  //
+  // Note that the reference element is [-1,1]^2, hence the extra factor of 1/2.
+  m_J[0][0] = 0.5 * dx / scaling;
+  m_J[0][1] = 0.0;
+  m_J[1][0] = 0.0;
+  m_J[1][1] = 0.5 * dy / scaling;
+
+  // The inverse of the Jacobian.
+  m_J_inv[0][0] = 1.0 / m_J[0][0];
+  m_J_inv[0][1] = 0.0;
+  m_J_inv[1][0] = 0.0;
+  m_J_inv[1][1] = 1.0 / m_J[1][1];
 }
 
 Quadrature::~Quadrature() {
@@ -253,7 +270,11 @@ static Germ apply_jacobian_inverse(const double J_inv[2][2], const Germ &f) {
 
 //! Two-by-two Gaussian quadrature on a rectangle.
 Quadrature2x2::Quadrature2x2(double dx, double dy, double L)
-  : Quadrature(m_N) {
+  : Q1Quadrature(m_N, dx, dy, L) {
+  setup();
+}
+
+void Quadrature2x2::setup() {
 
   const double C = 1.0 / sqrt(3.0);
   // The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
@@ -263,20 +284,9 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L)
                                  {-C,  C}};
 
   // The weights w_i for Gaussian quadrature on the reference element with these quadrature points
-  const double weights[m_N]  = {1.0, 1.0, 1.0, 1.0};
+  const double weights[m_N] = {1.0, 1.0, 1.0, 1.0};
 
-  // We use uniform Cartesian coordinates, so the Jacobian is constant and diagonal on every
-  // element.
-  //
-  // Note that the reference element is [-1,1]^2, hence the extra factor of 1/2.
-  const double J[2][2] = {{0.5 * dx / L, 0.0},
-                          {0.0, 0.5 * dy / L}};
-
-  // The inverse of the Jacobian.
-  const double J_inv[2][2] = {{1.0 / J[0][0], 0.0},
-                              {0.0, 1.0 / J[1][1]}};
-
-  initialize(q1::chi, q1::N_chi, points, weights, J, J_inv);
+  initialize(q1::chi, q1::N_chi, points, weights);
 }
 
 //! Initialize shape function values and weights of a 2D quadrature.
@@ -285,21 +295,17 @@ Quadrature2x2::Quadrature2x2(double dx, double dy, double L)
 void Quadrature::initialize(ShapeFunction2 f,
                             unsigned int n_chi,
                             const double (*points)[2],
-                            const double *weights,
-                            const double J[2][2],
-                            const double J_inv[2][2]) {
+                            const double *weights) {
 
   for (unsigned int q = 0; q < m_Nq; q++) {
     const double xi = points[q][0];
     const double eta = points[q][1];
     for (unsigned int k = 0; k < n_chi; k++) {
-      Germ phi = f(k, xi, eta);;
-
-      m_germs[q][k] = apply_jacobian_inverse(J_inv, phi);
+      m_germs[q][k] = apply_jacobian_inverse(m_J_inv, f(k, xi, eta));
     }
   }
 
-  const double J_det = determinant(J);
+  const double J_det = determinant(m_J);
   for (unsigned int q = 0; q < m_Nq; q++) {
     m_JxW[q] = J_det * weights[q];
   }
@@ -320,7 +326,7 @@ DirichletData::~DirichletData() {
 void DirichletData::init(const IceModelVec2Int *indices,
                          const IceModelVec *values,
                          double weight) {
-  m_weight  = weight;
+  m_weight = weight;
 
   if (indices != NULL) {
     indices->begin_access();
@@ -595,7 +601,7 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L) {
       const double xi = points[side][q][0];
       const double eta = points[side][q][1];
       for (unsigned int k = 0; k < q1::N_chi; ++k) {
-        Germ phi = q1::chi(k, xi, eta);;
+        Germ phi = q1::chi(k, xi, eta);
 
         m_germs[side][q][k] = apply_jacobian_inverse(J_inv, phi);
       }
