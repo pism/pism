@@ -160,21 +160,24 @@ void SSAFEM::init_impl() {
 
   m_velocity_global.copy_from(m_velocity);
 
-  // Store coefficient data at the quadrature points.
+  // Store coefficient data at the element nodes.
   cache_inputs();
 }
 
-//! Solve the SSA.  The FEM solver exchanges time for memory by computing
-//! the value of the various coefficients at each of the quadrature points
-//! only once.  When running in an ice-model context, at each time step,
-//! SSA::update is called, which calls SSAFEM::solve.  Since coefficients
-//! have generally changed between timesteps, we need to recompute coefficeints
-//! at the quad points. On the other hand, in the context of inversion,
-//! coefficients will not change between iteration and there is no need to
-//! recompute the values at the quad points.  So there are two different solve
-//! methods, SSAFEM::solve() and SSAFEM::solve_nocache().  The only difference
-//! is that SSAFEM::solve() recomputes the cached values of the coefficients at
-//! quadrature points before calling SSAFEM::solve_nocache().
+/**  Solve the SSA system of equations.
+
+ The FEM solver computes values of the various coefficients (most notably: the vertically-averaged
+ ice hardness) at each of the element nodes *only once*.
+
+ When running in an ice-model context, at each time step, SSA::update() is called, which calls
+ SSAFEM::solve(). Since coefficients have generally changed between time steps, we need to recompute
+ coefficients. On the other hand, in the context of inversion, coefficients will not change between
+ iteration and there is no need to recompute their values.
+
+ So there are two different solve methods, SSAFEM::solve() and SSAFEM::solve_nocache(). The only
+ difference is that SSAFEM::solve() recomputes the cached values of the coefficients before calling
+ SSAFEM::solve_nocache().
+ */
 void SSAFEM::solve() {
 
   TerminationReason::Ptr reason = solve_with_reason();
@@ -188,7 +191,7 @@ void SSAFEM::solve() {
 
 TerminationReason::Ptr SSAFEM::solve_with_reason() {
 
-  // Set up the system to solve (store coefficient data at the quadrature points):
+  // Set up the system to solve.
   cache_inputs();
 
   return solve_nocache();
@@ -267,7 +270,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
    We store the vertical average of the ice hardness to avoid re-doing this computation every
    iteration.
 
-   In addition to coefficients at quadrature points we store "node types" used to identify interior
+   In addition to coefficients at element nodes we store "node types" used to identify interior
    elements, exterior elements, and boundary faces.
 */
 void SSAFEM::cache_inputs() {
@@ -335,7 +338,7 @@ void SSAFEM::cache_inputs() {
 
 }
 
-//! Compute quadrature point values of various coefficients given a quadrature and nodal values.
+//! Compute quadrature point values of various coefficients given a quadrature `Q` and nodal values.
 void SSAFEM::quad_point_values(const fem::Quadrature &Q,
                                const Coefficients *x,
                                int *mask,
@@ -480,7 +483,10 @@ void SSAFEM::driving_stress(const fem::Quadrature &Q,
 /** @brief Compute the "(regularized effective viscosity) x (ice thickness)" and effective viscous
  *  bed strength from the current solution, at a single quadrature point.
  *
- * @param[in] coefficients SSA coefficients at the current quadrature point
+ * @param[in] thickness ice thickness
+ * @param[in] hardness ice hardness
+ * @param[in] mask cell type mask
+ * @param[in] tauc basal yield stress
  * @param[in] U the value of the solution
  * @param[in] U_x x-derivatives of velocity components
  * @param[in] U_y y-derivatives of velocity components
@@ -583,7 +589,7 @@ void SSAFEM::cache_residual_cfbc() {
   try {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
-        // Initialize the map from global to local degrees of freedom for this element.
+        // Initialize the map from global to element degrees of freedom.
         m_element.reset(i, j);
 
         int node_type[Nk];
@@ -692,7 +698,7 @@ void SSAFEM::cache_residual_cfbc() {
 }
 
 
-//! Implements the callback for computing the SNES local function.
+//! Implements the callback for computing the residual.
 /*!
  * Compute the residual \f[r_{ij}= G(x, \psi_{ij}) \f] where \f$G\f$
  * is the weak form of the SSA, \f$x\f$ is the current approximate
@@ -740,7 +746,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   try {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
-        // Initialize the map from global to local degrees of freedom for this element.
+        // Initialize the map from global to element degrees of freedom.
         m_element.reset(i, j);
         int node_type[Nk];
         m_element.nodal_values(m_node_type, node_type);
@@ -770,7 +776,6 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         const double* JxW = Q.weighted_jacobian();
 
         // Storage for the solution and residuals at element nodes.
-        Vector2 velocity_nodal[Nk];
         Vector2 residual[Nk];
 
         int    mask[Nq_max];
@@ -794,6 +799,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
         {
           // Obtain the value of the solution at the nodes adjacent to the element.
+          Vector2 velocity_nodal[Nk];
           m_element.nodal_values(velocity_global, velocity_nodal);
 
           // These values now need to be adjusted if some nodes in the element have Dirichlet data.
@@ -817,7 +823,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           residual[k].v = 0;
         }
 
-        // loop over quadrature points on this element:
+        // loop over quadrature points:
         for (unsigned int q = 0; q < Nq; q++) {
 
           double eta = 0.0, beta = 0.0;
@@ -908,7 +914,7 @@ void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
 }
 
 
-//! Implements the callback for computing the SNES local Jacobian.
+//! Implements the callback for computing the Jacobian.
 /*!
   Compute the Jacobian
 
@@ -949,7 +955,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   try {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
-        // Initialize the map from global to local degrees of freedom for this element.
+        // Initialize the map from global to element degrees of freedom.
         m_element.reset(i, j);
 
         int node_type[Nk];
@@ -990,19 +996,21 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
                             mask, thickness, tauc, hardness);
         }
 
-        // Values of the solution at the nodes of the current element.
-        Vector2 velocity_local[Nk];
-        // Obtain the value of the solution at the adjacent nodes to the element.
-        m_element.nodal_values(velocity_global, velocity_local);
+        {
+          // Values of the solution at the nodes of the current element.
+          Vector2 velocity_nodal[Nk];
+          // Obtain the value of the solution at the adjacent nodes to the element.
+          m_element.nodal_values(velocity_global, velocity_nodal);
 
-        // These values now need to be adjusted if some nodes in the element have
-        // Dirichlet data.
-        if (dirichlet_data) {
-          dirichlet_data.enforce(m_element, velocity_local);
-          dirichlet_data.constrain(m_element);
+          // These values now need to be adjusted if some nodes in the element have
+          // Dirichlet data.
+          if (dirichlet_data) {
+            dirichlet_data.enforce(m_element, velocity_nodal);
+            dirichlet_data.constrain(m_element);
+          }
+          // Compute the values of the solution at the quadrature points.
+          quadrature_point_values(Q, velocity_nodal, U, U_x, U_y);
         }
-        // Compute the values of the solution at the quadrature points.
-        quadrature_point_values(Q, velocity_local, U, U_x, U_y);
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees
         // of freedom per element, for a total of (2*Nk)*(2*Nk) = 16
