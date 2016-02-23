@@ -38,6 +38,15 @@ namespace fem {
 const double ShapeQ1::m_xi[]  = {-1.0,  1.0,  1.0, -1.0};
 const double ShapeQ1::m_eta[] = {-1.0, -1.0,  1.0,  1.0};
 
+Germ ShapeQ1::eval(unsigned int k, double xi, double eta) {
+  Germ result;
+
+  result.val = 0.25 * (1.0 + m_xi[k] * xi) * (1.0 + m_eta[k] * eta);
+  result.dx =  0.25 *  m_xi[k] * (1.0 + m_eta[k] * eta);
+  result.dy =  0.25 * m_eta[k] * (1.0 +  m_xi[k] * xi);
+
+  return result;
+}
 ElementIterator::ElementIterator(const IceGrid &g) {
   // Start by assuming ghost elements exist in all directions.
   // Elements are indexed by their lower left vertex.  If there is a ghost

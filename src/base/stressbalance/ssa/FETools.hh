@@ -178,15 +178,7 @@ struct Germ
 class ShapeQ1 {
 public:
   //! Compute values and derivatives of the shape function supported at node k.
-  static Germ eval(unsigned int k, double xi, double eta) {
-    Germ result;
-
-    result.val = 0.25 * (1.0 + m_xi[k] * xi) * (1.0 + m_eta[k] * eta);
-    result.dx =  0.25 *  m_xi[k] * (1.0 + m_eta[k] * eta);
-    result.dy =  0.25 * m_eta[k] * (1.0 +  m_xi[k] * xi);
-
-    return result;
-  }
+  static Germ eval(unsigned int k, double xi, double eta);
 
   //! The number of basis shape functions.
   static const int Nk = 4;
