@@ -458,6 +458,47 @@ P1Quadrature::P1Quadrature(unsigned int size, unsigned int N,
   }
 }
 
+//! Permute shape functions stored in `f` *in place*.
+static void permute(const unsigned int p[q1::N_chi], Germ f[q1::N_chi]) {
+  Germ tmp[q1::N_chi];
+
+  // store permuted values to avoid overwriting f too soon
+  for (unsigned int k = 0; k < q1::N_chi; ++k) {
+    tmp[k] = f[p[k]];
+  }
+
+  // copy back into f
+  for (unsigned int k = 0; k < q1::N_chi; ++k) {
+    f[k] = tmp[k];
+  }
+}
+
+P1Quadrature3::P1Quadrature3(unsigned int N,
+                             double dx, double dy, double L)
+  : P1Quadrature(m_size, N, dx, dy, L) {
+
+  const double
+    one_over_six   = 1.0 / 6.0,
+    two_over_three = 2.0 / 3.0;
+
+  const QuadPoint points[3] = {{two_over_three, one_over_six},
+                               {one_over_six,   two_over_three},
+                               {one_over_six,   one_over_six}};
+
+  const double weights[3] = {one_over_six, one_over_six, one_over_six};
+
+  // Note that we use q1::N_chi here.
+  initialize(p1::chi, q1::N_chi, points, weights);
+
+  // Permute shape function values according to N, the index of this triangle in the Q1 element.
+  const unsigned int
+    X       = 3,                // index of the dummy shape function
+    p[4][4] = {{0, 1, X, 2},
+               {2, 0, 1, X},
+               {X, 2, 0, 1},
+               {1, X, 2, 0}};
+  for (unsigned int q = 0; q < m_size; ++q) {
+    permute(p[N], m_germs[q]);
   }
 }
 

@@ -497,6 +497,13 @@ protected:
                double dx, double dy, double L);
 };
 
+class P1Quadrature3 : public P1Quadrature {
+public:
+  P1Quadrature3(unsigned int N, double dx, double dy, double L);
+private:
+  static const unsigned int m_size = 3;
+};
+
 /*! @brief Compute the values at the quadrature points of a finite-element function.*/
 /*! There should be room for Q.N() values in the output array `result`. */
 template <typename T>
