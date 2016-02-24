@@ -762,8 +762,8 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L) {
                           {0.0, 0.5 * dy / L}};
 
   // The inverse of the Jacobian.
-  const double J_inv[2][2] = {{1.0 / J[0][0], 0.0},
-                              {0.0, 1.0 / J[1][1]}};
+  double J_inv[2][2];
+  invert(J, J_inv);
 
   // Note that all quadrature weights are 1.0 (and so they are implicitly included below).
   //
