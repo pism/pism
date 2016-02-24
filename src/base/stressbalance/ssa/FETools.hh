@@ -186,7 +186,7 @@ const int N_sides = 4;
 Germ chi(unsigned int k, const QuadPoint &p);
 }
 
-//! @brief P1 element embedded into a Q1 element (uses nodes 0, 1, 3 and an identically zero basis
+//! @brief P1 element embedded in a Q1 element.
 //! function at node 2).
 namespace p1 {
 //! Evaluate a P1 shape function and its derivatives with respect to xi and eta.
