@@ -37,7 +37,7 @@ namespace fem {
 
 namespace q1 {
 
-Germ chi(unsigned int k, double xi0, double eta0) {
+Germ chi(unsigned int k, const QuadPoint &pt) {
   assert(k < q1::N_chi);
 
   const double xi[] = {-1.0,  1.0,  1.0, -1.0};
@@ -45,9 +45,9 @@ Germ chi(unsigned int k, double xi0, double eta0) {
 
   Germ result;
 
-  result.val = 0.25 * (1.0 + xi[k] * xi0) * (1.0 + eta[k] * eta0);
-  result.dx  = 0.25 * xi[k] * (1.0 + eta[k] * eta0);
-  result.dy  = 0.25 * eta[k] * (1.0 +  xi[k] * xi0);
+  result.val = 0.25 * (1.0 + xi[k] * pt.xi) * (1.0 + eta[k] * pt.eta);
+  result.dx  = 0.25 * xi[k] * (1.0 + eta[k] * pt.eta);
+  result.dy  = 0.25 * eta[k] * (1.0 + xi[k] * pt.xi);
 
   return result;
 }
@@ -57,23 +57,23 @@ Germ chi(unsigned int k, double xi0, double eta0) {
 namespace p1 {
 
 //! P1 basis functions on the reference element with nodes (0,0), (1,0), (0,1).
-Germ chi(unsigned int k, double xi, double eta) {
+Germ chi(unsigned int k, const QuadPoint &pt) {
   assert(k < 3);
   Germ result;
 
   switch (k) {
   case 0:
-    result.val = 1.0 - xi - eta;
+    result.val = 1.0 - pt.xi - pt.eta;
     result.dx  = -1.0;
     result.dy  = -1.0;
     break;
   case 1:
-    result.val = xi;
+    result.val = pt.xi;
     result.dx  = 1.0;
     result.dy  = 0.0;
     break;
   case 2:
-    result.val = eta;
+    result.val = pt.eta;
     result.dx  = 0.0;
     result.dy  = 1.0;
   }
@@ -217,10 +217,14 @@ const int ElementMap::m_j_offset[4] = {0, 0, 1, 1};
 
 Quadrature::Quadrature(unsigned int N)
   : m_Nq(N) {
+
+  assert(N <= fem::MAX_QUADRATURE_SIZE);
+
   m_JxW = (double*) malloc(m_Nq * sizeof(double));
   if (m_JxW == NULL) {
     throw std::runtime_error("Failed to allocate a Quadrature instance");
   }
+
   m_germs = (Germs*) malloc(m_Nq * q1::N_chi * sizeof(Germ));
   if (m_germs == NULL) {
     free(m_JxW);
@@ -254,6 +258,33 @@ Quadrature::~Quadrature() {
   m_germs = NULL;
 }
 
+//! Build quadrature points and weights for a tensor product quadrature based on a 1D quadrature
+//! rule. Uses the same 1D quadrature in both directions.
+/**
+   @param[in] n 1D quadrature size (the resulting quadrature has size n*n)
+   @param[in] points1 1D quadrature points
+   @param[in] weights1 1D quadrature weights
+   @param[out] points resulting 2D quadrature points
+   @param[out] weights resulting 2D quadrature weights
+ */
+static void tensor_product_quadrature(unsigned int n,
+                                      const double *points1,
+                                      const double *weights1,
+                                      QuadPoint *points,
+                                      double *weights) {
+  unsigned int q = 0;
+  for (unsigned int j = 0; j < n; ++j) {
+    for (unsigned int i = 0; i < n; ++i) {
+      points[q].xi = points1[i];
+      points[q].eta = points1[j];
+
+      weights[q] = weights1[i] * weights1[j];
+
+      q++;
+    }
+  }
+}
+
 //! Determinant of a square matrix of size 2.
 static double determinant(const double J[2][2]) {
   return J[0][0] * J[1][1] - J[1][0] * J[0][1];
@@ -269,22 +300,63 @@ static Germ apply_jacobian_inverse(const double J_inv[2][2], const Germ &f) {
 }
 
 //! Two-by-two Gaussian quadrature on a rectangle.
-Quadrature2x2::Quadrature2x2(double dx, double dy, double L)
+Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
   : Q1Quadrature(m_N, dx, dy, L) {
-  setup();
+
+  // coordinates and weights of the 2-point 1D Gaussian quadrature
+  const double
+    C           = 1.0 / sqrt(3.0),
+    points2[2]  = {-C, C},
+    weights2[2] = {1.0, 1.0};
+
+  QuadPoint points[m_N];
+  double weights[m_N];
+
+  tensor_product_quadrature(2, points2, weights2, points, weights);
+
+  initialize(q1::chi, q1::N_chi, points, weights);
 }
 
-void Quadrature2x2::setup() {
-
-  const double C = 1.0 / sqrt(3.0);
+Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
+  : Q1Quadrature(m_N, dx, dy, L) {
   // The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
-  const double points[m_N][2] = {{-C, -C},
-                                 { C, -C},
-                                 { C,  C},
-                                 {-C,  C}};
+
+  const double
+    A         = 0.0,
+    B         = sqrt(0.6),
+    points3[3] = {-B, A, B};
+
+  const double
+    w1         = 5.0 / 9.0,
+    w2         = 8.0 / 9.0,
+    weights3[3] = {w1, w2, w1};
+
+  QuadPoint points[m_N];
+  double weights[m_N];
+
+  tensor_product_quadrature(3, points3, weights3, points, weights);
+
+  initialize(q1::chi, q1::N_chi, points, weights);
+}
+
+Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
+  : Q1Quadrature(m_N, dx, dy, L) {
+  // The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
+  const double
+    A          = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
+    B          = sqrt(3.0 / 7.0 + (2.0 / 7.0) * sqrt(6.0 / 5.0)), // larger magnitude
+    points4[4] = {-B, -A, A, B};
 
   // The weights w_i for Gaussian quadrature on the reference element with these quadrature points
-  const double weights[m_N] = {1.0, 1.0, 1.0, 1.0};
+  const double
+    w1          = (18.0 + sqrt(30.0)) / 36.0, // larger
+    w2          = (18.0 - sqrt(30.0)) / 36.0, // smaller
+    weights4[4] = {w2, w1, w1, w2};
+
+  QuadPoint points[m_N];
+  double weights[m_N];
+
+  tensor_product_quadrature(4, points4, weights4, points, weights);
 
   initialize(q1::chi, q1::N_chi, points, weights);
 }
@@ -294,14 +366,12 @@ void Quadrature2x2::setup() {
  */
 void Quadrature::initialize(ShapeFunction2 f,
                             unsigned int n_chi,
-                            const double (*points)[2],
+                            const QuadPoint *points,
                             const double *weights) {
 
   for (unsigned int q = 0; q < m_Nq; q++) {
-    const double xi = points[q][0];
-    const double eta = points[q][1];
     for (unsigned int k = 0; k < n_chi; k++) {
-      m_germs[q][k] = apply_jacobian_inverse(m_J_inv, f(k, xi, eta));
+      m_germs[q][k] = apply_jacobian_inverse(m_J_inv, f(k, points[q]));
     }
   }
 
@@ -587,7 +657,7 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L) {
   m_JxW[3] = J[1][1];
 
   const double C = 1.0 / sqrt(3);
-  const double points[q1::N_sides][m_Nq][2] = {
+  const QuadPoint points[q1::N_sides][m_Nq] = {
     {{  -C, -1.0}, {   C, -1.0}}, // South
     {{ 1.0,   -C}, { 1.0,    C}}, // East
     {{  -C,  1.0}, {   C,  1.0}}, // North
@@ -598,10 +668,8 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L) {
 
   for (unsigned int side = 0; side < q1::N_sides; ++side) {
     for (unsigned int q = 0; q < m_Nq; ++q) {
-      const double xi = points[side][q][0];
-      const double eta = points[side][q][1];
       for (unsigned int k = 0; k < q1::N_chi; ++k) {
-        Germ phi = q1::chi(k, xi, eta);
+        Germ phi = q1::chi(k, points[side][q]);
 
         m_germs[side][q][k] = apply_jacobian_inverse(J_inv, phi);
       }

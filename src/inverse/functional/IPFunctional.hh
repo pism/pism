@@ -71,7 +71,7 @@ protected:
 
   fem::ElementIterator m_element_index;
   fem::ElementMap      m_element;
-  fem::Quadrature2x2   m_quadrature;
+  fem::Q1Quadrature4   m_quadrature;
 
 private:
   // Hide copy/assignment operations

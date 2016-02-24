@@ -169,6 +169,13 @@ struct Germ
   double dy;
 };
 
+//! Coordinates of a quadrature point, in the (xi, eta) coordinate space (i.e. on the reference
+//! element).
+struct QuadPoint {
+  double xi;
+  double eta;
+};
+
 //! Q1 element information.
 namespace q1 {
 //! Number of shape functions on a Q1 element.
@@ -176,14 +183,14 @@ const int N_chi = 4;
 //! Number of sides per element.
 const int N_sides = 4;
 //! Evaluate a Q1 shape function and its derivatives with respect to xi and eta.
-Germ chi(unsigned int k, double xi, double eta);
+Germ chi(unsigned int k, const QuadPoint &p);
 }
 
 //! @brief P1 element embedded into a Q1 element (uses nodes 0, 1, 3 and an identically zero basis
 //! function at node 2).
 namespace p1 {
 //! Evaluate a P1 shape function and its derivatives with respect to xi and eta.
-Germ chi(unsigned int k, double xi, double eta);
+Germ chi(unsigned int k, const QuadPoint &p);
 } // end of namespace p1
 
 
@@ -406,21 +413,23 @@ protected:
   //! Inverse of the Jacobian of the map from the reference element to a physical element.
   double m_J_inv[2][2];
 
-  //! Quadrature setup. This is purely virtual so that only concrete quadrature instances can be
-  //! created.
-  virtual void setup() = 0;
-
   // pointer to a 2D shape function
-  typedef Germ (*ShapeFunction2)(unsigned int k, double xi, double eta);
+  typedef Germ (*ShapeFunction2)(unsigned int k, const QuadPoint &p);
 
   void initialize(ShapeFunction2 f,
                   unsigned int n_chi,
-                  const double (*points)[2],
+                  const QuadPoint *points,
                   const double *weights);
 };
 
+//! Quadratures on a Q1 element with sides aligned along coordinate axes.
+/**
+  This code isolates the computation of the Jacobian of the map from the reference element to the
+  physical element and its inverse, which are used to convert partial derivatives with respect to
+  xi, eta to partial derivatives with respect to x and y.
+ */
 class Q1Quadrature : public Quadrature {
-public:
+protected:
   Q1Quadrature(unsigned int size, double dx, double dy, double L);
 };
 
@@ -431,7 +440,7 @@ public:
   \f[
   \int_E f(x)\; dx \approx \sum_q f(x_q) w_q
   \f]
-  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  An Quadrature is used
+  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  A quadrature is used
   to evaluate finite element functions at quadrature points, and to compute weights \f$w_q\f$
   for a given element.
 
@@ -450,23 +459,38 @@ public:
   0 o------------------o  1
   ~~~
 
-  So there are four quad points per element, which occur at \f$x,y=\pm 1/\sqrt{3}\f$. This
-  corresponds to the tensor product of Gaussian integration on an interval that is exact for cubic
-  functions on the interval.
+  There are four quad points per element, which occur at \f$x,y=\pm 1/\sqrt{3}\f$. This corresponds
+  to the tensor product of Gaussian integration on an interval that is exact for cubic functions on
+  the interval.
 
   Integration on a physical element can be thought of as being done by change of variables. The
-  quadrature weights need to be modified, and the Quadrature takes care of this for you. Because
-  all elements in an IceGrid are congruent, the quadrature weights are the same for each element,
-  and are computed upon initialization with an IceGrid.
+  quadrature weights need to be modified, and the Quadrature takes care of this. Because all
+  elements in an IceGrid are congruent, the quadrature weights are the same for each element, and
+  are computed upon initialization.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class Quadrature2x2 : public Q1Quadrature {
+class Q1Quadrature4 : public Q1Quadrature {
 public:
-  Quadrature2x2(double dx, double dy, double L=1.0);
+  Q1Quadrature4(double dx, double dy, double L=1.0);
 private:
-  void setup();
   static const unsigned int m_N = 4;
+};
+
+//! The 9-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
+class Q1Quadrature9 : public Q1Quadrature {
+public:
+  Q1Quadrature9(double dx, double dy, double L=1.0);
+private:
+  static const unsigned int m_N = 9;
+};
+
+//! The 16-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
+class Q1Quadrature16 : public Q1Quadrature {
+public:
+  Q1Quadrature16(double dx, double dy, double L=1.0);
+private:
+  static const unsigned int m_N = 16;
 };
 
 /*! @brief Compute the values at the quadrature points of a finite-element function.*/

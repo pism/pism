@@ -184,7 +184,7 @@ protected:
 
   fem::ElementIterator m_element_index;
   fem::ElementMap      m_element;
-  fem::Quadrature2x2   m_quadrature;
+  fem::Q1Quadrature4   m_quadrature;
 
   petsc::KSP  m_ksp;                                ///< KSP used in \ref apply_linearization and \ref apply_linearization_transpose  
   petsc::Mat  m_J_state;                            ///< Mat used in \ref apply_linearization and \ref apply_linearization_transpose
