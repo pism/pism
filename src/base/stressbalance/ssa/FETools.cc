@@ -310,7 +310,7 @@ static Germ apply_jacobian_inverse(const double J_inv[2][2], const Germ &f) {
 
 //! Two-by-two Gaussian quadrature on a rectangle.
 Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
-  : Q1Quadrature(m_N, dx, dy, L) {
+  : Q1Quadrature(m_size, dx, dy, L) {
 
   // coordinates and weights of the 2-point 1D Gaussian quadrature
   const double
@@ -318,8 +318,8 @@ Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
     points2[2]  = {-A, A},
     weights2[2] = {1.0, 1.0};
 
-  QuadPoint points[m_N];
-  double weights[m_N];
+  QuadPoint points[m_size];
+  double weights[m_size];
 
   tensor_product_quadrature(2, points2, weights2, points, weights);
 
@@ -327,7 +327,7 @@ Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
 }
 
 Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
-  : Q1Quadrature(m_N, dx, dy, L) {
+  : Q1Quadrature(m_size, dx, dy, L) {
   // The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
 
   const double
@@ -340,8 +340,8 @@ Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
     w2         = 8.0 / 9.0,
     weights3[3] = {w1, w2, w1};
 
-  QuadPoint points[m_N];
-  double weights[m_N];
+  QuadPoint points[m_size];
+  double weights[m_size];
 
   tensor_product_quadrature(3, points3, weights3, points, weights);
 
@@ -349,7 +349,7 @@ Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
 }
 
 Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
-  : Q1Quadrature(m_N, dx, dy, L) {
+  : Q1Quadrature(m_size, dx, dy, L) {
   // The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
   const double
     A          = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
@@ -362,8 +362,8 @@ Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
     w2          = (18.0 - sqrt(30.0)) / 36.0, // smaller
     weights4[4] = {w2, w1, w1, w2};
 
-  QuadPoint points[m_N];
-  double weights[m_N];
+  QuadPoint points[m_size];
+  double weights[m_size];
 
   tensor_product_quadrature(4, points4, weights4, points, weights);
 

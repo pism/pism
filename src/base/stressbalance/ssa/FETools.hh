@@ -471,7 +471,7 @@ class Q1Quadrature4 : public Q1Quadrature {
 public:
   Q1Quadrature4(double dx, double dy, double L=1.0);
 private:
-  static const unsigned int m_N = 4;
+  static const unsigned int m_size = 4;
 };
 
 //! The 9-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
@@ -479,7 +479,7 @@ class Q1Quadrature9 : public Q1Quadrature {
 public:
   Q1Quadrature9(double dx, double dy, double L=1.0);
 private:
-  static const unsigned int m_N = 9;
+  static const unsigned int m_size = 9;
 };
 
 //! The 16-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
@@ -487,7 +487,7 @@ class Q1Quadrature16 : public Q1Quadrature {
 public:
   Q1Quadrature16(double dx, double dy, double L=1.0);
 private:
-  static const unsigned int m_N = 16;
+  static const unsigned int m_size = 16;
 };
 
 //! Quadratures on a P1 element.
