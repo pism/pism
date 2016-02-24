@@ -37,6 +37,7 @@ namespace fem {
 
 namespace q1 {
 
+//! Q1 basis functions on the reference element with nodes (-1,-1), (1,-1), (1,1), (-1,1).
 Germ chi(unsigned int k, const QuadPoint &pt) {
   assert(k < q1::N_chi);
 
@@ -51,14 +52,13 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
 
   return result;
 }
-
 } // end of namespace q1
 
 namespace p1 {
 
 //! P1 basis functions on the reference element with nodes (0,0), (1,0), (0,1).
 Germ chi(unsigned int k, const QuadPoint &pt) {
-  assert(k < 3);
+  assert(k < q1::N_chi);
   Germ result;
 
   switch (k) {
@@ -76,6 +76,10 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
     result.val = pt.eta;
     result.dx  = 0.0;
     result.dy  = 1.0;
+  default:                      // the fourth (dummy) basis function
+    result.val = 0.0;
+    result.dx  = 0.0;
+    result.dy  = 0.0;
   }
   return result;
 }
@@ -140,8 +144,7 @@ ElementMap::~ElementMap() {
   // empty
 }
 
-void ElementMap::nodal_values(const IceModelVec2Int &x_global, int *result) const
-{
+void ElementMap::nodal_values(const IceModelVec2Int &x_global, int *result) const {
   for (unsigned int k = 0; k < q1::N_chi; ++k) {
     const int
       ii = m_i + m_i_offset[k],
@@ -242,12 +245,6 @@ Q1Quadrature::Q1Quadrature(unsigned int size, double dx, double dy, double scali
   m_J[0][1] = 0.0;
   m_J[1][0] = 0.0;
   m_J[1][1] = 0.5 * dy / scaling;
-
-  // The inverse of the Jacobian.
-  m_J_inv[0][0] = 1.0 / m_J[0][0];
-  m_J_inv[0][1] = 0.0;
-  m_J_inv[1][0] = 0.0;
-  m_J_inv[1][1] = 1.0 / m_J[1][1];
 }
 
 Quadrature::~Quadrature() {
@@ -280,7 +277,7 @@ static void tensor_product_quadrature(unsigned int n,
 
       weights[q] = weights1[i] * weights1[j];
 
-      q++;
+      ++q;
     }
   }
 }
@@ -288,6 +285,18 @@ static void tensor_product_quadrature(unsigned int n,
 //! Determinant of a square matrix of size 2.
 static double determinant(const double J[2][2]) {
   return J[0][0] * J[1][1] - J[1][0] * J[0][1];
+}
+
+//! Compute the inverse of a two by two matrix.
+static void invert(const double A[2][2], double A_inv[2][2]) {
+  const double det_A = determinant(A);
+
+  assert(det_A != 0.0);
+
+  A_inv[0][0] =  A[1][1] / det_A;
+  A_inv[0][1] = -A[0][1] / det_A;
+  A_inv[1][0] = -A[1][0] / det_A;
+  A_inv[1][1] =  A[0][0] / det_A;
 }
 
 //! Compute derivatives with respect to x,y using J^{-1} and derivatives with respect to xi, eta.
@@ -305,8 +314,8 @@ Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
 
   // coordinates and weights of the 2-point 1D Gaussian quadrature
   const double
-    C           = 1.0 / sqrt(3.0),
-    points2[2]  = {-C, C},
+    A           = 1.0 / sqrt(3.0),
+    points2[2]  = {-A, A},
     weights2[2] = {1.0, 1.0};
 
   QuadPoint points[m_N];
@@ -369,9 +378,12 @@ void Quadrature::initialize(ShapeFunction2 f,
                             const QuadPoint *points,
                             const double *weights) {
 
+  double J_inv[2][2];
+  invert(m_J, J_inv);
+
   for (unsigned int q = 0; q < m_Nq; q++) {
     for (unsigned int k = 0; k < n_chi; k++) {
-      m_germs[q][k] = apply_jacobian_inverse(m_J_inv, f(k, points[q]));
+      m_germs[q][k] = apply_jacobian_inverse(J_inv, f(k, points[q]));
     }
   }
 
@@ -381,6 +393,44 @@ void Quadrature::initialize(ShapeFunction2 f,
   }
 }
 
+/** Create a quadrature on a P1 element aligned with coordinate axes and embedded in a Q1 element.
+
+    There are four possible P1 elements in a Q1 element. The argument `N` specifies which one,
+    numbering them by the node at the right angle in the "reference" element (0,0) -- (1,0) --
+    (0,1).
+ */
+P1Quadrature::P1Quadrature(unsigned int size, unsigned int N,
+                           double dx, double dy, double L)
+  : Quadrature(size) {
+
+  // Jacobian
+  switch (N) {
+  case 0:
+    m_J[0][0] = 0.0;
+    m_J[0][1] = -dy / L;
+    m_J[1][0] =  dx / L;
+    m_J[1][1] = -dy / L;
+    break;
+  case 1:
+    m_J[0][0] =  dx / L;
+    m_J[0][1] = 0.0;
+    m_J[1][0] =  dx / L;
+    m_J[1][1] =  dy / L;
+    break;
+  case 2:
+    m_J[0][0] = 0.0;
+    m_J[0][1] =  dy / L;
+    m_J[1][0] = -dx / L;
+    m_J[1][1] =  dy / L;
+    break;
+  case 3:
+    m_J[0][0] = -dx / L;
+    m_J[0][1] = 0.0;
+    m_J[1][0] = -dx / L;
+    m_J[1][1] = -dy / L;
+    break;
+  }
+}
 
 DirichletData::DirichletData()
   : m_indices(NULL), m_weight(1.0) {

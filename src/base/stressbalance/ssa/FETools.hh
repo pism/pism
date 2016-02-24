@@ -410,9 +410,6 @@ protected:
   //! Jacobian of the map from the reference element to a physical element.
   double m_J[2][2];
 
-  //! Inverse of the Jacobian of the map from the reference element to a physical element.
-  double m_J_inv[2][2];
-
   // pointer to a 2D shape function
   typedef Germ (*ShapeFunction2)(unsigned int k, const QuadPoint &p);
 
@@ -491,6 +488,13 @@ public:
   Q1Quadrature16(double dx, double dy, double L=1.0);
 private:
   static const unsigned int m_N = 16;
+};
+
+//! Quadratures on a P1 element.
+class P1Quadrature : public Quadrature {
+protected:
+  P1Quadrature(unsigned int size, unsigned int N,
+               double dx, double dy, double L);
 };
 
 /*! @brief Compute the values at the quadrature points of a finite-element function.*/
