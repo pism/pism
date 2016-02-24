@@ -19,10 +19,10 @@ D : pts[4]$
 
 /* Four triangles embedded in a rectangular element */
 tris : [
-  [D, A, B],
-  [A, B, C],
-  [B, C, D],
-  [C, D, A]
+  [A, B, D],
+  [B, C, A],
+  [C, D, B],
+  [D, A, C]
 ]$
 
 /* P1 shape functions, using the reference element defined above */

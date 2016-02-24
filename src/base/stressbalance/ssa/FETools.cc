@@ -403,32 +403,61 @@ P1Quadrature::P1Quadrature(unsigned int size, unsigned int N,
                            double dx, double dy, double L)
   : Quadrature(size) {
 
-  // Jacobian
+  // Compute the Jacobian. The nodes of the selected triangle are
+  // numbered, the unused node is marked with an "X". In all triangles
+  // nodes are numbered in the counter-clockwise direction.
   switch (N) {
   case 0:
-    m_J[0][0] = 0.0;
-    m_J[0][1] = -dy / L;
-    m_J[1][0] =  dx / L;
-    m_J[1][1] = -dy / L;
+    /*
+    2------X
+    |      |
+    |      |
+    0------1
+    */
+    m_J[0][0] = dx / L;
+    m_J[0][1] = 0.0;
+    m_J[1][0] = 0.0;
+    m_J[1][1] = dy / L;
     break;
   case 1:
-    m_J[0][0] =  dx / L;
-    m_J[0][1] = 0.0;
-    m_J[1][0] =  dx / L;
-    m_J[1][1] =  dy / L;
+    /*
+    X------1
+    |      |
+    |      |
+    2------0
+    */
+    m_J[0][0] = 0.0;
+    m_J[0][1] = dy / L;
+    m_J[1][0] = -dx / L;
+    m_J[1][1] = 0.0;
     break;
   case 2:
-    m_J[0][0] = 0.0;
-    m_J[0][1] =  dy / L;
-    m_J[1][0] = -dx / L;
-    m_J[1][1] =  dy / L;
-    break;
-  case 3:
+    /*
+    1------0
+    |      |
+    |      |
+    X------2
+    */
     m_J[0][0] = -dx / L;
     m_J[0][1] = 0.0;
-    m_J[1][0] = -dx / L;
+    m_J[1][0] = 0.0;
     m_J[1][1] = -dy / L;
     break;
+  case 3:
+    /*
+    0------2
+    |      |
+    |      |
+    1------X
+    */
+    m_J[0][0] = 0.0;
+    m_J[0][1] = -dy / L;
+    m_J[1][0] = dx / L;
+    m_J[1][1] = 0.0;
+    break;
+  }
+}
+
   }
 }
 
