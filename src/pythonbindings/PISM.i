@@ -266,8 +266,13 @@
 %include "base/util/projection.hh"
 
 
-%rename(q1_chi) pism::fem::q1::chi;
-%rename(p1_chi) pism::fem::p1::chi;
+%ignore pism::fem::q1::chi;
+%ignore pism::fem::q1::n_chi;
+%ignore pism::fem::q1::n_sides;
+%ignore pism::fem::q1::incident_nodes;
+%ignore pism::fem::p1::chi;
+%ignore pism::fem::p1::n_sides;
+%ignore pism::fem::p1::incident_nodes;
 %include "base/stressbalance/ssa/FETools.hh"
 
 %include pism_inverse.i

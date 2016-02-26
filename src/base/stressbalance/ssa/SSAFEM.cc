@@ -357,7 +357,7 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
     tauc[q]      = 0.0;
     hardness[q]  = 0.0;
 
-    for (unsigned int k = 0; k < fem::q1::N_chi; k++) {
+    for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
       const fem::Germ &psi  = test[q][k];
 
       thickness[q] += psi.val * x[k].thickness;
@@ -382,7 +382,7 @@ void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
   for (unsigned int q = 0; q < n; q++) {
     driving_stress[q] = 0.0;
 
-    for (unsigned int k = 0; k < fem::q1::N_chi; k++) {
+    for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
       const fem::Germ &psi  = test[q][k];
       driving_stress[q]  += psi.val * x[k].driving_stress;
     }
@@ -452,7 +452,7 @@ void SSAFEM::driving_stress(const fem::Quadrature &Q,
 
     driving_stress[q] = 0.0;
 
-    for (unsigned int k = 0; k < fem::q1::N_chi; k++) {
+    for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
       const fem::Germ &psi  = test[q][k];
 
       b   += psi.val * x[k].bed;
@@ -551,10 +551,12 @@ void SSAFEM::cache_residual_cfbc() {
 
   fem::BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy(), 1.0);
 
-  const unsigned int Nk = fem::q1::N_chi;
+  const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq = bq.n();
-  const unsigned int n_sides = fem::q1::N_sides;
+  const unsigned int n_sides = fem::q1::n_sides;
   using mask::ocean;
+
+  const Vector2 *outward_normal = fem::q1::outward_normals();
 
   const bool
     use_cfbc          = m_config->get_boolean("calving_front_stress_boundary_condition"),
@@ -584,12 +586,6 @@ void SSAFEM::cache_residual_cfbc() {
     xm = m_element_index.xm,
     ys = m_element_index.ys,
     ym = m_element_index.ym;
-
-  // Outward-pointing normal vectors to sides of a Q1 element aligned with the x and y axes.
-  Vector2 outward_normal[n_sides] = {Vector2( 0.0, -1.0),  // south
-                                     Vector2( 1.0,  0.0),  // east
-                                     Vector2( 0.0,  1.0),  // north
-                                     Vector2(-1.0,  0.0)}; // west
 
   ParallelSection loop(m_grid->com);
   try {
@@ -621,8 +617,6 @@ void SSAFEM::cache_residual_cfbc() {
         double b_nodal[Nk];
         m_element.nodal_values(*m_bed, b_nodal);
 
-        // nodes corresponding to a given element "side"
-        const int nodes[n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
         // storage for test function values psi[0] for the first "end" of a side, psi[1] for the
         // second
         double psi[2] = {0.0, 0.0};
@@ -632,8 +626,8 @@ void SSAFEM::cache_residual_cfbc() {
 
           // nodes incident to the current side
           const int
-            n0 = nodes[side][0],
-            n1 = nodes[side][1];
+            n0 = fem::q1::incident_nodes[side][0],
+            n1 = fem::q1::incident_nodes[side][1];
 
           if (not (node_type[n0] == NODE_BOUNDARY and node_type[n1] == NODE_BOUNDARY)) {
             // not a boundary side; skip it
@@ -700,7 +694,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
-  const unsigned int Nk = fem::q1::N_chi;
+  const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   IceModelVec::AccessList list(m_node_type);
@@ -913,7 +907,7 @@ void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
 */
 void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global, Mat Jac) {
 
-  const unsigned int Nk     = fem::q1::N_chi;
+  const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");

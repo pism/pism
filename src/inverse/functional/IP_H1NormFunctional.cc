@@ -27,7 +27,7 @@ namespace inverse {
 
 void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  const unsigned int Nk     = fem::q1::N_chi;
+  const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
@@ -72,7 +72,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
-  const unsigned int Nk     = fem::q1::N_chi;
+  const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
@@ -129,7 +129,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
 void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  const unsigned int Nk     = fem::q1::N_chi;
+  const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
@@ -193,7 +193,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
 
 void IP_H1NormFunctional2S::assemble_form(Mat form) {
 
-  const unsigned int Nk = fem::q1::N_chi;
+  const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq = m_quadrature.n();
 
   PetscErrorCode ierr;
