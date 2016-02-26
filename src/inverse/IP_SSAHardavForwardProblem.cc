@@ -274,7 +274,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   fem::DirichletData_Scalar fixedZeta(m_fixed_design_locations, NULL);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all elements.
   const int
@@ -347,8 +347,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
           for (unsigned int k = 0; k < Nk; k++) {
             const fem::Germ &testqk = test[q][k];
-            du_e[k].u += JxW[q]*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
-            du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
+            du_e[k].u += W[q]*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
+            du_e[k].v += W[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
           }
         } // q
         m_element.add_residual_contribution(du_e, du_a);
@@ -452,7 +452,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
                                         m_dirichletWeight);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {
@@ -520,10 +520,10 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
           }
 
           for (unsigned int k = 0; k < Nk; k++) {
-            dzeta_e[k] += JxW[q]*d_nuH_dB*test[q][k].val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
-                                                           du_dy_q[q].u*Duqq[2]) +
-                                                          (du_dy_q[q].v*(2*Duqq[1] + Duqq[0]) +
-                                                           du_dx_q[q].v*Duqq[2]));
+            dzeta_e[k] += W[q]*d_nuH_dB*test[q][k].val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
+                                                         du_dy_q[q].u*Duqq[2]) +
+                                                        (du_dy_q[q].v*(2*Duqq[1] + Duqq[0]) +
+                                                         du_dx_q[q].v*Duqq[2]));
           }
         } // q
 

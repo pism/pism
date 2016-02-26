@@ -416,14 +416,14 @@ public:
 
   //! Determinant of the Jacobian of the map from the reference element to the physical element,
   //! evaluated at quadrature points and multiplied by corresponding quadrature weights.
-  const double* weighted_jacobian() const {
-    return m_JxW;
+  const double* weights() const {
+    return m_W;
   }
 protected:
   //! Number of quadrature points.
   const unsigned int m_Nq;
 
-  double *m_JxW;
+  double *m_W;
 
   Germs* m_germs;
 
@@ -617,7 +617,7 @@ public:
 
   inline unsigned int n() const;
 
-  inline double weighted_jacobian(unsigned int side) const;
+  inline double weights(unsigned int side) const;
 
   inline const Germ& germ(unsigned int side,
                           unsigned int func,
@@ -626,16 +626,16 @@ private:
   //! Number of quadrature points per side.
   static const unsigned int m_Nq = 2;
   Germ m_germs[q1::n_sides][m_Nq][q1::n_chi];
-  double m_JxW[q1::n_sides];
+  double m_W[q1::n_sides];
 };
 
 inline unsigned int BoundaryQuadrature2::n() const {
   return m_Nq;
 }
 
-inline double BoundaryQuadrature2::weighted_jacobian(unsigned int side) const {
+inline double BoundaryQuadrature2::weights(unsigned int side) const {
   assert(side < q1::n_sides);
-  return m_JxW[side];
+  return m_W[side];
 }
 
 //! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$

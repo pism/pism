@@ -37,7 +37,7 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all LOCAL elements.
   const int
@@ -57,7 +57,7 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
       for (unsigned int q = 0; q < Nq; q++) {
         const double x_qq = x_q[q];
-        value += JxW[q]*x_qq*x_qq;
+        value += W[q]*x_qq*x_qq;
       } // q
     } // j
   } // i
@@ -81,7 +81,7 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all LOCAL elements.
   const int
@@ -102,7 +102,7 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
       quadrature_point_values(m_quadrature, tmp, b_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
-        value += JxW[q]*a_q[q]*b_q[q];
+        value += W[q]*a_q[q]*b_q[q];
       } // q
     } // j
   } // i
@@ -129,7 +129,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   const fem::Germs *test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all local and ghosted elements.
   const int
@@ -157,7 +157,7 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
       for (unsigned int q = 0; q < Nq; q++) {
         const double x_qq = x_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          gradient_e[k] += 2*JxW[q]*x_qq*test[q][k].val;
+          gradient_e[k] += 2*W[q]*x_qq*test[q][k].val;
         } // k
       } // q
       m_element.add_residual_contribution(gradient_e, gradient);
@@ -178,7 +178,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all local and ghosted elements.
   const int
@@ -198,7 +198,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
       for (unsigned int q = 0; q < Nq; q++) {
         const Vector2 &x_qq = x_q[q];
-        value += JxW[q]*(x_qq.u*x_qq.u + x_qq.v*x_qq.v);
+        value += W[q]*(x_qq.u*x_qq.u + x_qq.v*x_qq.v);
       } // q
     } // j
   } // i
@@ -222,7 +222,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all LOCAL elements.
   const int
@@ -243,7 +243,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
       quadrature_point_values(m_quadrature, tmp, b_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
-        value += JxW[q]*(a_q[q].u*b_q[q].u + a_q[q].v*b_q[q].v);
+        value += W[q]*(a_q[q].u*b_q[q].u + a_q[q].v*b_q[q].v);
       } // q
     } // j
   } // i
@@ -270,7 +270,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   const fem::Germs *test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all local and ghosted elements.
   const int
@@ -299,7 +299,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
       for (unsigned int q = 0; q < Nq; q++) {
         const Vector2 &x_qq = x_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          double gcommon = 2*JxW[q]*test[q][k].val;
+          double gcommon = 2*W[q]*test[q][k].val;
           gradient_e[k].u += gcommon*x_qq.u;
           gradient_e[k].v += gcommon*x_qq.v;
         } // k

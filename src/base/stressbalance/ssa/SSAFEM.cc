@@ -634,9 +634,9 @@ void SSAFEM::cache_residual_cfbc() {
             continue;
           }
 
-          // in our case (i.e. uniform spacing in x and y directions) JxW is the same at all
+          // in our case (i.e. uniform spacing in x and y directions) W is the same at all
           // quadrature points along a side.
-          const double JxW = bq.weighted_jacobian(side);
+          const double W = bq.weights(side);
 
           for (unsigned int q = 0; q < Nq; ++q) {
 
@@ -662,8 +662,8 @@ void SSAFEM::cache_residual_cfbc() {
             // This integral contributes to the residual at 2 nodes (the ones incident to the
             // current side). This is is written in a way that allows *adding* (... += ...) the
             // boundary contribution in the residual computation.
-            I[n0] += JxW * (- psi[0] * dP) * outward_normal[side];
-            I[n1] += JxW * (- psi[1] * dP) * outward_normal[side];
+            I[n0] += W * (- psi[0] * dP) * outward_normal[side];
+            I[n1] += W * (- psi[1] * dP) * outward_normal[side];
           } // q-loop
 
         } // loop over element sides
@@ -754,7 +754,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         const fem::Germs *test = Q.test_function_values();
 
         // Jacobian times weights for quadrature.
-        const double* JxW = Q.weighted_jacobian();
+        const double* W = Q.weights();
 
         // Storage for the solution and residuals at element nodes.
         Vector2 residual[Nk];
@@ -816,6 +816,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           const Vector2 tau_b = U[q] * (- beta); // basal shear stress
 
           const double
+            jw           = W[q],
             u_x          = U_x[q].u,
             v_y          = U_y[q].v,
             u_y_plus_v_x = U_y[q].u + U_x[q].v;
@@ -824,10 +825,10 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           for (unsigned int k = 0; k < Nk; k++) {
             const fem::Germ &psi = test[q][k];
 
-            residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
-                                       - psi.val * (tau_b.u + tau_d[q].u));
-            residual[k].v += JxW[q] * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
-                                       - psi.val * (tau_b.v + tau_d[q].v));
+            residual[k].u += jw * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
+                                   - psi.val * (tau_b.u + tau_d[q].u));
+            residual[k].v += jw * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
+                                   - psi.val * (tau_b.v + tau_d[q].v));
           } // k (test functions)
         }   // q (quadrature points)
 
@@ -958,7 +959,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         const unsigned int Nq = Q.n();
 
         // Jacobian times weights for quadrature.
-        const double* JxW = Q.weighted_jacobian();
+        const double* W = Q.weights();
 
         // Values of the finite element test functions at the quadrature points.
         // This is an Nq by Nk array of function germs
@@ -1003,7 +1004,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
 
         for (unsigned int q = 0; q < Nq; q++) {
           const double
-            jw           = JxW[q],
+            jw           = W[q],
             u            = U[q].u,
             v            = U[q].v,
             u_x          = U_x[q].u,

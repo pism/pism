@@ -281,7 +281,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   fem::DirichletData_Scalar fixedZeta(m_fixed_tauc_locations, NULL);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all elements.
   const int
@@ -350,8 +350,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           }
 
           for (unsigned int k = 0; k < Nk; k++) {
-            du_e[k].u += JxW[q]*dbeta*u_qq.u*test[q][k].val;
-            du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
+            du_e[k].u += W[q]*dbeta*u_qq.u*test[q][k].val;
+            du_e[k].v += W[q]*dbeta*u_qq.v*test[q][k].val;
           }
         } // q
         m_element.add_residual_contribution(du_e, du_a);
@@ -443,7 +443,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                         m_dirichletWeight);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {
@@ -508,7 +508,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
           }
 
           for (unsigned int k=0; k<Nk; k++) {
-            dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
+            dzeta_e[k] += W[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
           }
         } // q
 

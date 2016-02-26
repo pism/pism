@@ -39,7 +39,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -62,7 +62,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
       quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
 
       for (unsigned int q=0; q<Nq; q++) {
-        value += JxW[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
+        value += W[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
       } // q
     } // j
   } // i
@@ -89,7 +89,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -118,7 +118,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
       quadrature_point_values(m_quadrature, b_e, b_q, dbdx_q, dbdy_q);
 
       for (unsigned int q=0; q<Nq; q++) {
-        value += JxW[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
+        value += W[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
       } // q
     } // j
   } // i
@@ -148,7 +148,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
   const fem::Germs *test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -182,8 +182,8 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
         const double &x_qq=x_q[q];
         const double &dxdx_qq=dxdx_q[q], &dxdy_qq=dxdy_q[q];
         for (unsigned int k=0; k<Nk; k++) {
-          gradient_e[k] += 2*JxW[q]*(m_cL2*x_qq*test[q][k].val +
-            m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
+          gradient_e[k] += 2*W[q]*(m_cL2*x_qq*test[q][k].val +
+                                   m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
       } // q
       m_element.add_residual_contribution(gradient_e, gradient);
@@ -203,7 +203,7 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
   PISM_CHK(ierr, "MatZeroEntries");
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar zeroLocs(m_dirichletIndices, NULL);
 
@@ -244,9 +244,9 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
             const fem::Germ &test_qk=test[q][k];
             for (unsigned int l = 0; l < Nk; l++) { // Trial functions
               const fem::Germ &test_ql=test[q][l];
-              K[k][l] += JxW[q]*(m_cL2*test_qk.val*test_ql.val +
-                                 m_cH1*(test_qk.dx*test_ql.dx +
-                                        test_qk.dy*test_ql.dy));
+              K[k][l] += W[q]*(m_cL2*test_qk.val*test_ql.val +
+                               m_cH1*(test_qk.dx*test_ql.dx +
+                                      test_qk.dy*test_ql.dy));
             } // l
           } // k
         } // q

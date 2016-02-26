@@ -232,14 +232,14 @@ Quadrature::Quadrature(unsigned int N)
 
   assert(N <= fem::MAX_QUADRATURE_SIZE);
 
-  m_JxW = (double*) malloc(m_Nq * sizeof(double));
-  if (m_JxW == NULL) {
+  m_W = (double*) malloc(m_Nq * sizeof(double));
+  if (m_W == NULL) {
     throw std::runtime_error("Failed to allocate a Quadrature instance");
   }
 
   m_germs = (Germs*) malloc(m_Nq * q1::n_chi * sizeof(Germ));
   if (m_germs == NULL) {
-    free(m_JxW);
+    free(m_W);
     throw std::runtime_error("Failed to allocate a Quadrature instance");
   }
 }
@@ -257,8 +257,8 @@ Q1Quadrature::Q1Quadrature(unsigned int size, double dx, double dy, double scali
 }
 
 Quadrature::~Quadrature() {
-  free(m_JxW);
-  m_JxW = NULL;
+  free(m_W);
+  m_W = NULL;
 
   free(m_germs);
   m_germs = NULL;
@@ -398,7 +398,7 @@ void Quadrature::initialize(ShapeFunction2 f,
 
   const double J_det = determinant(m_J);
   for (unsigned int q = 0; q < m_Nq; q++) {
-    m_JxW[q] = J_det * weights[q];
+    m_W[q] = J_det * weights[q];
   }
 }
 
@@ -777,13 +777,13 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L) {
   // Note that all quadrature weights are 1.0 (and so they are implicitly included below).
   //
   // bottom
-  m_JxW[0] = J[0][0];
+  m_W[0] = J[0][0];
   // right
-  m_JxW[1] = J[1][1];
+  m_W[1] = J[1][1];
   // top
-  m_JxW[2] = J[0][0];
+  m_W[2] = J[0][0];
   // left
-  m_JxW[3] = J[1][1];
+  m_W[3] = J[1][1];
 
   const double C = 1.0 / sqrt(3);
   const QuadPoint points[q1::n_sides][m_Nq] = {

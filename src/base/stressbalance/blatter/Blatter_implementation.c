@@ -694,8 +694,7 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
  * FIXME: I need to document this.
  */
 static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velocity, Mat A, Mat B,
-                                               BlatterQ1Ctx *ctx)
-{
+                                               BlatterQ1Ctx *ctx) {
   PetscInt       xs, ys, xm, ym, zm, i, j, k, q, l, ll;
   PetscReal      dx, dy;
   PrmNode        **prm;
