@@ -55,11 +55,11 @@ macro(pism_set_revision_tag_git)
         WORKING_DIRECTORY ${Pism_SOURCE_DIR}
         OUTPUT_VARIABLE Pism_VERSION
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-      execute_process (COMMAND ${GIT_EXECUTABLE} --no-pager log -1 "--pretty=format: committed by %an on %ci"
+      execute_process (COMMAND ${GIT_EXECUTABLE} --no-pager log -1 "--pretty=format:committed by %an on %ci"
         WORKING_DIRECTORY ${Pism_SOURCE_DIR}
         OUTPUT_VARIABLE Pism_COMMIT_INFO
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-      string(CONCAT Pism_VERSION ${Pism_VERSION} ${Pism_COMMIT_INFO})
+      set(Pism_VERSION "${Pism_VERSION} ${Pism_COMMIT_INFO}")
     endif (EXISTS ${Pism_SOURCE_DIR}/.git)
   endif(NOT Pism_VERSION)
 endmacro(pism_set_revision_tag_git)
