@@ -320,7 +320,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
       // set boundary conditions and update enthalpy
       {
-        system.set_surface_dirichlet(Enth_ks);
+        system.set_surface_dirichlet_bc(Enth_ks);
 
         // determine lowest-level equation at bottom of ice; see
         // decision chart in the source code browser and page
@@ -331,7 +331,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
           double Enth0 = EC->enthalpy_permissive(shelfbtemp(i, j), 0.0,
                                                EC->pressure(ice_thickness(i, j)));
 
-          system.set_basal_dirichlet(Enth0);
+          system.set_basal_dirichlet_bc(Enth0);
         } else {
           // grounded ice warm and wet 
           if (base_is_warm && (till_water_thickness(i, j) > 0.0)) {
@@ -341,7 +341,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
             } else {
               // only the base is warm: E = E_s(p) (Dirichlet)
               // ( Assumes ice has zero liquid fraction. Is this a valid assumption here?
-              system.set_basal_dirichlet(system.Enth_s(0));
+              system.set_basal_dirichlet_bc(system.Enth_s(0));
             }
           } else {
             // (Neumann) case:  q . n = q_lith . n + F_b

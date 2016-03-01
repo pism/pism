@@ -172,7 +172,7 @@ double enthSystemCtx::compute_lambda() {
 }
 
 
-void enthSystemCtx::set_surface_dirichlet(double E_surface) {
+void enthSystemCtx::set_surface_dirichlet_bc(double E_surface) {
 #if (PISM_DEBUG==1)
   if ((m_nu < 0.0) || (m_R_cold < 0.0) || (m_R_temp < 0.0)) {
     throw RuntimeError("setDirichletSurface() should only be called after\n"
@@ -189,6 +189,10 @@ static inline double upwind(double u, double E_m, double E, double E_p, double d
   return u * delta_inverse * (u < 0 ? (E_p -  E) : (E  - E_m));
 }
 
+
+//! Set the top surface heat flux *into* the ice.
+/** @param[in] heat_flux prescribed heat flux (positive means flux into the ice)
+ */
 void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
   // extract K from R[ks], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
@@ -196,14 +200,14 @@ void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
     K = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
     G = heat_flux / K;
 
-  this->set_surface_enthalpy_flux(G);
+  this->set_surface_neumann_bc(G);
 }
 
 //! Set enthalpy flux at the surface.
 /*! This method should probably be used for debugging only. Its purpose is to allow setting the
     enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
  */
-void enthSystemCtx::set_surface_enthalpy_flux(double G) {
+void enthSystemCtx::set_surface_neumann_bc(double G) {
   const double
     Rminus = 0.5 * (m_R[m_ks - 1] + m_R[m_ks]), // R_{ks-1/2}
     Rplus  = m_R[m_ks],                         // R_{ks+1/2}
@@ -247,7 +251,7 @@ void enthSystemCtx::checkReadyToSolve() {
 This method should only be called if everything but the basal boundary condition
 is already set.
  */
-void enthSystemCtx::set_basal_dirichlet(double Y) {
+void enthSystemCtx::set_basal_dirichlet_bc(double Y) {
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
@@ -293,22 +297,24 @@ The error in the pure conductive and smooth conductivity case is @f$ O(\dz^2) @f
 This method should only be called if everything but the basal boundary condition
 is already set.
 
+@param[in] heat_flux prescribed heat flux (positive means flux into the ice)
+
  */
 void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
   // extract K from R[0], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
     K = (m_ice_density * PetscSqr(m_dz) * m_R[0]) / m_dt,
-    G = heat_flux / K;
+    G = - heat_flux / K;
 
-  this->set_basal_enthalpy_flux(G);
+  this->set_basal_neumann_bc(G);
 }
 
 //! Set enthalpy flux at the base.
 /*! This method should probably be used for debugging only. Its purpose is to allow setting the
     enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
  */
-void enthSystemCtx::set_basal_enthalpy_flux(double G) {
+void enthSystemCtx::set_basal_neumann_bc(double G) {
   const double
     Rminus = m_R[0],                  // R_{-1/2}
     Rplus  = 0.5 * (m_R[0] + m_R[1]), // R_{+1/2}

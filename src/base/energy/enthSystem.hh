@@ -56,12 +56,12 @@ public:
   double k_from_T(double T) const;
 
   void set_surface_heat_flux(double hf);
-  void set_surface_enthalpy_flux(double dE);
-  void set_surface_dirichlet(double E_surface);
+  void set_surface_neumann_bc(double dE);
+  void set_surface_dirichlet_bc(double E_surface);
 
-  void set_basal_dirichlet(double E_basal);
+  void set_basal_dirichlet_bc(double E_basal);
   void set_basal_heat_flux(double hf);
-  void set_basal_enthalpy_flux(double dE);
+  void set_basal_neumann_bc(double dE);
 
   virtual void save_system(std::ostream &output, unsigned int M) const;
 

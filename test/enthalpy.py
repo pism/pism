@@ -1,5 +1,5 @@
 """Simple verification/regression tests for the PISM's enthalpy
-solver. Work in progress.
+solver.
 """
 
 import PISM
@@ -109,7 +109,6 @@ def diffusion_convergence_rate_time(title, error_func):
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
-        plt.show()
 
     return p_max[0], p_avg[0]
 
@@ -141,7 +140,6 @@ def diffusion_convergence_rate_space(title, error_func):
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
-        plt.show()
 
     return p_max[0], p_avg[0]
 
@@ -187,7 +185,7 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
             column.init_column()
 
             column.sys.set_surface_heat_flux(K * Q_surface)
-            column.sys.set_basal_dirichlet(E_base)
+            column.sys.set_basal_dirichlet_bc(E_base)
 
             x = column.sys.solve()
 
@@ -213,7 +211,6 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
         plt.step(z, x, label="T={} years".format(t_years), color="red")
 
         plt.legend(loc="best")
-        plt.show()
 
     errors = E_exact(z, t) - x
 
@@ -265,7 +262,7 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
             column.init_column()
 
             column.sys.set_basal_heat_flux(K * Q_base)
-            column.sys.set_surface_dirichlet(E_surface)
+            column.sys.set_surface_dirichlet_bc(E_surface)
 
             x = column.sys.solve()
 
@@ -291,7 +288,6 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
         plt.step(z, x, label="T={} years".format(t_years), color="red")
 
         plt.legend(loc="best")
-        plt.show()
 
     errors = E_exact(z, t) - x
 
@@ -339,8 +335,8 @@ def errors_advection_up(plot_results=True, T_final=1000.0, dt=100, Mz=101):
         while t < T_final:
             column.init_column()
 
-            column.sys.set_basal_enthalpy_flux(dE_exact(0, t+dt))
-            column.sys.set_surface_dirichlet(E_exact(Lz, t+dt))
+            column.sys.set_basal_neumann_bc(dE_exact(0, t+dt))
+            column.sys.set_surface_dirichlet_bc(E_exact(Lz, t+dt))
 
             x = column.sys.solve()
 
@@ -360,7 +356,6 @@ def errors_advection_up(plot_results=True, T_final=1000.0, dt=100, Mz=101):
         plt.step(z, x, label="T={} seconds".format(t), color="red")
 
         plt.legend(loc="best")
-        plt.show()
 
     errors = E_exact(z, t) - x
 
@@ -399,8 +394,8 @@ def errors_advection_down(plot_results=True, T_final=1000.0, dt=100, Mz=101):
         while t < T_final:
             column.init_column()
 
-            column.sys.set_basal_dirichlet(E_exact(0, t+dt))
-            column.sys.set_surface_enthalpy_flux(dE_exact(Lz, t+dt))
+            column.sys.set_basal_dirichlet_bc(E_exact(0, t+dt))
+            column.sys.set_surface_neumann_bc(dE_exact(Lz, t+dt))
 
             x = column.sys.solve()
 
@@ -420,7 +415,6 @@ def errors_advection_down(plot_results=True, T_final=1000.0, dt=100, Mz=101):
         plt.step(z, x, label="T={} seconds".format(t), color="red")
 
         plt.legend(loc="best")
-        plt.show()
 
     errors = E_exact(z, t) - x
 
@@ -457,7 +451,6 @@ def advection_convergence_rate_time(title, error_func):
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
-        plt.show()
 
     return p_max[0], p_avg[0]
 
@@ -491,7 +484,6 @@ def advection_convergence_rate_space(title, error_func):
         plt.axis('tight')
         plt.grid(True)
         plt.legend(loc="best")
-        plt.show()
 
     return p_max[0], p_avg[0]
 
@@ -506,3 +498,5 @@ advection_convergence_rate_space("Advection: Upward flow", errors_advection_up)
 
 advection_convergence_rate_time("Advection: Downward flow", errors_advection_down)
 advection_convergence_rate_space("Advection: Downward flow", errors_advection_down)
+
+plt.show()
