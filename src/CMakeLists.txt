@@ -58,6 +58,11 @@ set(PISMUTIL_SRC
   base/util/projection.cc
   )
 
+# PISM Revision string
+list(APPEND PISMUTIL_SRC base/pism_revision.cc)
+set_source_files_properties (base/pism_revision.cc
+  PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
+
 if(Pism_USE_TAO)
   list(APPEND PISMUTIL_SRC base/util/petscwrappers/Tao.cc)
 endif()
@@ -95,17 +100,12 @@ set_source_files_properties (base/util/io/PIO.cc
 add_library (pismutil ${PISMUTIL_SRC})
 target_link_libraries (pismutil pismcalcalcs ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)
+add_dependencies (pismutil touch_pism_revision)
 
 add_custom_target (touch_pism_revision
   COMMAND ${CMAKE_COMMAND} -E touch pism_revision.cc
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/base
   VERBATIM)
-
-# PISM Revision string
-set_source_files_properties (base/pism_revision.cc
-  PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
-add_library (pismrevision STATIC base/pism_revision.cc)
-add_dependencies (pismrevision touch_pism_revision)
 
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
@@ -151,7 +151,7 @@ add_library (pismbase
   base/calving/PISMOceanKill.cc
   base/calving/PISMEigenCalving.cc
 )
-target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
+target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance)
 
 # Bed deformation models.
 set(PISMEARTH_SRC
@@ -212,7 +212,7 @@ add_executable (pismmerge
   pismmerge/variables.cc
   pismmerge/util.cc
   base/util/io/PISMNC4_Serial.cc)
-target_link_libraries (pismmerge pismutil pismrevision)
+target_link_libraries (pismmerge pismutil)
 
 find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
 mark_as_advanced(NCGEN_PROGRAM)
@@ -260,11 +260,11 @@ if (Pism_BUILD_EXTRA_EXECS)
   endforeach (EXEC)
 
   add_executable (tryLCbd earth/tryLCbd.cc)
-  target_link_libraries (tryLCbd pismearth pismrevision)
+  target_link_libraries (tryLCbd pismearth)
   list (APPEND EXTRA_EXECS tryLCbd)
 
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
-  target_link_libraries (btutest pismutil pismrevision)
+  target_link_libraries (btutest pismutil)
   list (APPEND EXTRA_EXECS btutest)
 
   install (TARGETS

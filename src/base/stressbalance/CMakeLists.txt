@@ -16,8 +16,7 @@ add_library (pismstressbalance
 )
 target_link_libraries (pismstressbalance
   pismutil
-  pismflowlaws
-  pismrevision)
+  pismflowlaws)
 
 if (${BUILD_SHARED_LIBS})
   install (TARGETS pismstressbalance DESTINATION ${Pism_LIB_DIR})
