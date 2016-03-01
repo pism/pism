@@ -53,7 +53,7 @@ public:
 
   void init(int i, int j, bool my_ismarginal, double ice_thickness);
 
-  double k_from_T(double T);
+  double k_from_T(double T) const;
 
   void set_surface_heat_flux(double hf);
   void set_surface_enthalpy_flux(double dE);
@@ -67,15 +67,15 @@ public:
 
   void solve(std::vector<double> &result);
 
-  double lambda() {
+  double lambda() const {
     return m_lambda;
   }
 
-  double Enth(size_t i) {
+  double Enth(size_t i) const {
     return m_Enth[i];
   }
 
-  double Enth_s(size_t i) {
+  double Enth_s(size_t i) const {
     return m_Enth_s[i];
   }
 protected:

@@ -96,7 +96,7 @@ enthSystemCtx::~enthSystemCtx() {
 /*!
   In this implementation \f$k\f$ does not depend on temperature.
  */
-double enthSystemCtx::k_from_T(double T) {
+double enthSystemCtx::k_from_T(double T) const {
 
   if (m_k_depends_on_T) {
     return 9.828 * exp(-0.0057 * T);
