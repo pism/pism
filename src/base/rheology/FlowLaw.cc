@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,7 +56,7 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_Q_warm = config.get_double("Paterson_Budd_Q_warm");
   m_crit_temp = config.get_double("Paterson_Budd_critical_temperature");
   m_schoofLen = config.get_double("Schoof_regularizing_length", "m"); // convert to meters
-  m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m/s"); // convert to m/s
+  m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m second-1"); // convert to m second-1
   m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);
 }
 

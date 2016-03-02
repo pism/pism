@@ -136,7 +136,7 @@ void IceModel::dumpToFile(const std::string &filename) {
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
 void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_input,
-                                         IO_Type nctype) {
+                               IO_Type nctype) {
   std::set<std::string> vars = vars_input;
   const IceModelVec *v;
 

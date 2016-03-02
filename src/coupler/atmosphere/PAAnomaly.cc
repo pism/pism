@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -64,8 +64,8 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
 
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  precipitation.set_string("units", "m / s");
-  precipitation.set_string("glaciological_units", "m / year");
+  precipitation.set_string("units", "m second-1");
+  precipitation.set_string("glaciological_units", "m year-1");
 }
 
 Anomaly::~Anomaly()

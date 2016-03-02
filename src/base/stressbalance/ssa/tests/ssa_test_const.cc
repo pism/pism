@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -154,7 +154,7 @@ void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
                                      double *u, double *v) {
   double earth_grav = m_config->get_double("standard_gravity"),
     tauc_threshold_velocity = m_config->get_double("pseudo_plastic_uthreshold",
-                                                   "m/second"),
+                                                   "m second-1"),
     ice_rho = m_config->get_double("ice_density");
 
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;

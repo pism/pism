@@ -136,7 +136,7 @@ void IceModel::energyStep() {
  * ice-equivalent).
  *
  * The sub shelf mass flux provided by an ocean model is in [kg m-2
- * s-1], so we divide by the ice density to convert to [m/s].
+ * s-1], so we divide by the ice density to convert to [m second-1].
  */
 void IceModel::combine_basal_melt_rate() {
 

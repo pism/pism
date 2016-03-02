@@ -28,7 +28,7 @@
 int exactA(const double r, double *H, double *M) {
   /* NOTE: t is in seconds */
   const double L = 750000.0;       /* m; distance of margin from center */
-  const double M0 = 0.3 / SperA;   /* 30 cm/year constant accumulation */
+  const double M0 = 0.3 / SperA;   /* 30 cm year-1 constant accumulation */
   const double g = 9.81;           /* m/s^2; accel of gravity */
   const double rho = 910.0;        /* kg/m^3; density */
   const double n = 3.0;            /* Glen exponent */

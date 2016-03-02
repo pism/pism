@@ -646,7 +646,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         {
           double
             H0 = 600.0,
-            v0 = units::convert(m_sys, 300.0, "m/year", "m/second"),
+            v0 = units::convert(m_sys, 300.0, "m year-1", "m second-1"),
             Q0 = H0 * v0,
             B0 = stress_balance->get_stressbalance()->flow_law()->hardness(0, 0),
             C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
@@ -974,7 +974,7 @@ void IceCompModel::reportErrors() {
     }
   }
 
-  // surface velocity errors if exact values are available; reported in m/year
+  // surface velocity errors if exact values are available; reported in m year-1
   if ((testname == 'F') || (testname == 'G')) {
     double maxUerr, avUerr, maxWerr, avWerr;
     computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr);
@@ -982,17 +982,17 @@ void IceCompModel::reportErrors() {
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
     m_log->message(1,
                "           %12.6f%12.6f%12.6f%12.6f\n",
-               units::convert(m_sys, maxUerr, "m/second", "m/year"),
-               units::convert(m_sys, avUerr, "m/second", "m/year"),
-               units::convert(m_sys, maxWerr, "m/second", "m/year"),
-               units::convert(m_sys, avWerr, "m/second", "m/year"));
+               units::convert(m_sys, maxUerr, "m second-1", "m year-1"),
+               units::convert(m_sys, avUerr, "m second-1", "m year-1"),
+               units::convert(m_sys, maxWerr, "m second-1", "m year-1"),
+               units::convert(m_sys, avWerr, "m second-1", "m year-1"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_surface_velocity");
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
-      err.set_string("units", "m/s");
-      err.set_string("glaciological_units", "meters/year");
+      err.set_string("units", "m second-1");
+      err.set_string("glaciological_units", "meters year-1");
       io::write_timeseries(nc, err, (size_t)start, maxUerr);
 
       err.set_name("average_surface_velocity");
@@ -1009,7 +1009,7 @@ void IceCompModel::reportErrors() {
     }
   }
 
-  // basal melt rate errors if appropriate; reported in m/year
+  // basal melt rate errors if appropriate; reported in m year-1
   if (testname == 'O') {
     double maxbmelterr, minbmelterr;
     computeBasalMeltRateErrors(maxbmelterr, minbmelterr);
@@ -1017,19 +1017,19 @@ void IceCompModel::reportErrors() {
       m_log->message(1,
                  "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
                  "  are different: maxbmelterr = %f, minbmelterr = %f\n",
-                 units::convert(m_sys, maxbmelterr, "m/second", "m/year"),
-                 units::convert(m_sys, minbmelterr, "m/second", "m/year"));
+                 units::convert(m_sys, maxbmelterr, "m second-1", "m year-1"),
+                 units::convert(m_sys, minbmelterr, "m second-1", "m year-1"));
     }
     m_log->message(1,
                "basal melt:  max\n");
     m_log->message(1, "           %11.5f\n",
-               units::convert(m_sys, maxbmelterr, "m/second", "m/year"));
+               units::convert(m_sys, maxbmelterr, "m second-1", "m year-1"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_basal_melt_rate");
-      err.set_string("units", "m/s");
-      err.set_string("glaciological_units", "meters/year");
+      err.set_string("units", "m second-1");
+      err.set_string("glaciological_units", "meters year-1");
       io::write_timeseries(nc, err, (size_t)start, maxbmelterr);
     }
   }
@@ -1080,7 +1080,7 @@ void IceCompModel::test_V_init() {
   }
 
   // set SSA boundary conditions:
-  double upstream_velocity = units::convert(m_sys, 300.0, "m/year", "m/second"),
+  double upstream_velocity = units::convert(m_sys, 300.0, "m year-1", "m second-1"),
     upstream_thk = 600.0;
 
   IceModelVec::AccessList list;

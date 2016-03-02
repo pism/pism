@@ -1558,10 +1558,10 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m)
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
-  m_vars[0].set_double("valid_min",  units::convert(m_sys, -1e6, "m/year", "m/s"));
-  m_vars[0].set_double("valid_max",  units::convert(m_sys,  1e6, "m/year", "m/s"));
+  m_vars[0].set_double("valid_min",  units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_double("valid_max",  units::convert(m_sys,  1e6, "m year-1", "m second-1"));
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_string("cell_methods", "time: mean");
 
@@ -1581,7 +1581,7 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
   result->write_in_glaciological_units = true;
 
   if (gsl_isnan(last_report_time)) {
-    result->set(units::convert(m_sys, 2e6, "m/year", "m/s"));
+    result->set(units::convert(m_sys, 2e6, "m year-1", "m second-1"));
   } else {
     IceModelVec::AccessList list;
     list.add(*result);
@@ -1700,8 +1700,8 @@ IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m)
   // set metadata:
   m_ts = new DiagnosticTimeseries(*m_grid, "max_hor_vel", m_time_dimension_name);
 
-  m_ts->metadata().set_string("units", "m/second");
-  m_ts->metadata().set_string("glaciological_units", "m/year");
+  m_ts->metadata().set_string("units", "m second-1");
+  m_ts->metadata().set_string("glaciological_units", "m year-1");
   m_ts->dimension_metadata().set_string("units", m_time_units);
   m_ts->metadata().set_string("long_name",
                                 "maximum abs component of horizontal ice velocity"

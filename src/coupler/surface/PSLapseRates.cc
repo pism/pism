@@ -63,20 +63,20 @@ void LapseRates::init_impl() {
 
   m_smb_lapse_rate = options::Real("-smb_lapse_rate",
                                    "Elevation lapse rate for the surface mass balance,"
-                                   " in m/year per km",
+                                   " in m year-1 per km",
                                    m_smb_lapse_rate);
 
   m_log->message(2,
              "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
-             "   ice-equivalent surface mass balance lapse rate: %3.3f m/year per km\n",
+             "   ice-equivalent surface mass balance lapse rate: %3.3f m year-1 per km\n",
              m_temp_lapse_rate, m_smb_lapse_rate);
 
   m_temp_lapse_rate = units::convert(m_sys, m_temp_lapse_rate, "K/km", "K/m");
 
-  // convert from [m/year / km] to [kg m-2 / year / km]
+  // convert from [m year-1 / km] to [kg m-2 year-1 / km]
   m_smb_lapse_rate *= m_config->get_double("ice_density");
   m_smb_lapse_rate = units::convert(m_sys, m_smb_lapse_rate,
-                                    "(kg m-2) / year / km", "(kg m-2) / s / m");
+                                    "(kg m-2) year-1 / km", "(kg m-2) second-1 / m");
 }
 
 void LapseRates::ice_surface_mass_flux_impl(IceModelVec2S &result) {

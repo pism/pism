@@ -120,10 +120,10 @@ void Elevation::init_impl() {
   m_log->message(3,
              "     temperature at %.0f m a.s.l. = %.2f deg C\n"
              "     temperature at %.0f m a.s.l. = %.2f deg C\n"
-             "     mass balance below %.0f m a.s.l. = %.2f m/year\n"
-             "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
-             "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
-             "     mass balance above %.0f m a.s.l. = %.2f m/year\n"
+             "     mass balance below %.0f m a.s.l. = %.2f m year-1\n"
+             "     mass balance at  %.0f m a.s.l. = %.2f m year-1\n"
+             "     mass balance at  %.0f m a.s.l. = %.2f m year-1\n"
+             "     mass balance above %.0f m a.s.l. = %.2f m year-1\n"
              "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
              m_z_T_min, m_T_min, m_z_T_max, m_T_max, m_z_M_min,
              units::convert(m_sys, m_M_limit_min, "m s-1", "m year-1"),
@@ -171,10 +171,10 @@ void Elevation::init_impl() {
   m_log->message(2,
              "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
              "        of surface altitue (usurf):\n"
-             "                  /  %5.2f m/year                       for          usurf < %3.f m\n"
+             "                  /  %5.2f m year-1                       for          usurf < %3.f m\n"
              "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
              "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
-             "                   \\ %5.2f m/year                       for %3.f m < usurf\n",
+             "                   \\ %5.2f m year-1                       for %3.f m < usurf\n",
              units::convert(m_sys, m_M_limit_min, "m s-1", "m year-1"), m_z_M_min,
              units::convert(m_sys, -m_M_min, "m s-1", "m year-1")/(m_z_ELA - m_z_M_min), m_z_ELA, m_z_M_min, m_z_ELA,
              units::convert(m_sys, m_M_max, "m s-1", "m year-1")/(m_z_M_max - m_z_ELA), m_z_ELA, m_z_ELA, m_z_M_max,
@@ -240,7 +240,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   }
   loop.check();
 
-  // convert from m/s ice equivalent to kg m-2 s-1:
+  // convert from m second-1 ice equivalent to kg m-2 s-1:
   result.scale(m_config->get_double("ice_density"));
 }
 

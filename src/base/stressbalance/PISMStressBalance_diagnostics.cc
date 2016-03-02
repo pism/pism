@@ -120,7 +120,7 @@ PSB_velbar_mag::PSB_velbar_mag(StressBalance *m)
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m s-1", "m year-1", 0);
   m_vars[0].set_double("_FillValue", units::convert(m_sys, m_grid->ctx()->config()->get_double("fill_value"),
-                                         "m/year", "m/s"));
+                                         "m year-1", "m second-1"));
   m_vars[0].set_double("valid_min", 0.0);
 }
 
@@ -141,7 +141,7 @@ IceModelVec::Ptr PSB_velbar_mag::compute_impl() {
   // mask out ice-free areas:
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
   result->mask_by(*thickness, fill_value);
 
   return result;
@@ -249,7 +249,7 @@ PSB_flux_mag::PSB_flux_mag(StressBalance *m)
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m2/year", "m2/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m2 year-1", "m2 second-1");
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_double("valid_min", 0.0);
 }
@@ -273,7 +273,7 @@ IceModelVec::Ptr PSB_flux_mag::compute_impl() {
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
   result->mask_by(*thickness, fill_value);
 
   result->metadata() = m_vars[0];
@@ -292,7 +292,7 @@ PSB_velbase_mag::PSB_velbase_mag(StressBalance *m)
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_double("valid_min", 0.0);
@@ -322,7 +322,7 @@ IceModelVec::Ptr PSB_velbase_mag::compute_impl() {
   // mask out ice-free areas
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
   result->mask_by(*thickness, fill_value);
 
   return result;
@@ -338,7 +338,7 @@ PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m)
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_double("valid_min",  0.0);
@@ -369,7 +369,7 @@ IceModelVec::Ptr PSB_velsurf_mag::compute_impl() {
   // mask out ice-free areas
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
   result->mask_by(*thickness, fill_value);
 
   return result;
@@ -392,21 +392,21 @@ PSB_velsurf::PSB_velsurf(StressBalance *m)
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
-  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m year-1", "m second-1"));
   m_vars[0].set_double("_FillValue", fill_value);
 
-  m_vars[1].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_vars[1].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
+  m_vars[1].set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[1].set_double("valid_max", units::convert(m_sys, 1e6, "m year-1", "m second-1"));
   m_vars[1].set_double("_FillValue", fill_value);
 }
 
 IceModelVec::Ptr PSB_velsurf::compute_impl() {
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "surf", WITHOUT_GHOSTS);
@@ -457,8 +457,8 @@ PSB_wvel::PSB_wvel(StressBalance *m)
 
   set_attrs("vertical velocity of ice, relative to geoid", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m year-1", "m second-1"));
 }
 
 IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) {
@@ -562,19 +562,19 @@ PSB_wvelsurf::PSB_wvelsurf(StressBalance *m)
 
   set_attrs("vertical velocity of ice at ice surface, relative to the geoid", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m year-1", "m second-1"));
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
   m_vars[0].set_double("_FillValue", fill_value);
 }
 
 IceModelVec::Ptr PSB_wvelsurf::compute_impl() {
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "wvelsurf", WITHOUT_GHOSTS);
@@ -614,19 +614,19 @@ PSB_wvelbase::PSB_wvelbase(StressBalance *m)
 
   set_attrs("vertical velocity of ice at the base of ice, relative to the geoid", "",
             "m s-1", "m year-1", 0);
-  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m year-1", "m second-1"));
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
   m_vars[0].set_double("_FillValue", fill_value);
 }
 
 IceModelVec::Ptr PSB_wvelbase::compute_impl() {
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "wvelbase", WITHOUT_GHOSTS);
@@ -672,21 +672,21 @@ PSB_velbase::PSB_velbase(StressBalance *m)
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
-  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
+  m_vars[0].set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[0].set_double("valid_max", units::convert(m_sys, 1e6, "m year-1", "m second-1"));
   m_vars[0].set_double("_FillValue", fill_value);
 
-  m_vars[1].set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_vars[1].set_double("valid_max", units::convert(m_sys, 1e6, "m/year", "m/second"));
+  m_vars[1].set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_vars[1].set_double("valid_max", units::convert(m_sys, 1e6, "m year-1", "m second-1"));
   m_vars[1].set_double("_FillValue", fill_value);
 }
 
 IceModelVec::Ptr PSB_velbase::compute_impl() {
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "base", WITHOUT_GHOSTS);

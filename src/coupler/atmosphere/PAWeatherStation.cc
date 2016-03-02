@@ -43,7 +43,7 @@ WeatherStation::WeatherStation(IceGrid::ConstPtr g)
     m_air_temp_metadata(m_sys, "air_temp")
 {
   m_precipitation.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-  m_precipitation.metadata().set_string("units", "m / second");
+  m_precipitation.metadata().set_string("units", "m second-1");
   m_precipitation.metadata().set_string("long_name",
                                             "ice-equivalent precipitation rate");
 
@@ -58,8 +58,8 @@ WeatherStation::WeatherStation(IceGrid::ConstPtr g)
 
   m_precip_metadata.set_string("pism_intent", "diagnostic");
   m_precip_metadata.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  m_precip_metadata.set_string("units", "m / s");
-  m_precip_metadata.set_string("glaciological_units", "m / year");
+  m_precip_metadata.set_string("units", "m second-1");
+  m_precip_metadata.set_string("glaciological_units", "m year-1");
 }
 
 WeatherStation::~WeatherStation() {

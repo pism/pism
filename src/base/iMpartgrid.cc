@@ -90,10 +90,10 @@ double IceModel::get_threshold_thickness(StarStencil<int> M,
     if (reduce_frontal_thickness) {
       // FIXME: Magic numbers without references to the literature are bad.
       // for declining front C / Q0 according to analytical flowline profile in
-      //   vandeveen with v0 = 300m / yr and H0 = 600m
+      //   vandeveen with v0 = 300m year-1 and H0 = 600m
       const double
         H0 = 600.0,                   // 600 m
-        V0 = 300.0 / 3.15569259747e7, // 300 m/year (hard-wired for efficiency)
+        V0 = 300.0 / 3.15569259747e7, // 300 m year-1 (hard-wired for efficiency)
         mslope = 2.4511e-18 * m_grid->dx() / (H0 * V0);
       H_threshold -= 0.8*mslope*pow(H_average, 5);
     }

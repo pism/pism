@@ -358,12 +358,12 @@ void IceModel::createVecs() {
     strain_rates.metadata(0).set_name("eigen1");
     strain_rates.set_attrs("internal",
                            "major principal component of horizontal strain-rate",
-                           "1/s", "", 0);
+                           "second-1", "", 0);
 
     strain_rates.metadata(1).set_name("eigen2");
     strain_rates.set_attrs("internal",
                            "minor principal component of horizontal strain-rate",
-                           "1/s", "", 1);
+                           "second-1", "", 1);
   }
 
   if (m_config->get_boolean("do_fracture_density") == true) {
@@ -403,7 +403,7 @@ void IceModel::createVecs() {
 
     Config::ConstPtr config = m_grid->ctx()->config();
     units::System::Ptr sys = m_grid->ctx()->unit_system();
-    double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+    double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
     // vel_bc
     vBCvel.create(m_grid, "_ssa_bc", WITH_GHOSTS, WIDE_STENCIL); // u_ssa_bc and v_ssa_bc
     vBCvel.set_attrs("model_state",
@@ -414,8 +414,8 @@ void IceModel::createVecs() {
                      "m s-1", "", 1);
     for (int j = 0; j < 2; ++j) {
       vBCvel.metadata(j).set_string("glaciological_units", "m year-1");
-      vBCvel.metadata(j).set_double("valid_min",  units::convert(m_sys, -1e6, "m/year", "m/second"));
-      vBCvel.metadata(j).set_double("valid_max",  units::convert(m_sys,  1e6, "m/year", "m/second"));
+      vBCvel.metadata(j).set_double("valid_min",  units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+      vBCvel.metadata(j).set_double("valid_max",  units::convert(m_sys,  1e6, "m year-1", "m second-1"));
       vBCvel.metadata(j).set_double("_FillValue", fill_value);
     }
     //just for diagnostics...
@@ -432,12 +432,12 @@ void IceModel::createVecs() {
 
     if (m_config->get_boolean("write_fd_fields")) {
       vFG.create(m_grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
-      vFG.set_attrs("model_state", "fracture growth rate",       "1/s", "");
+      vFG.set_attrs("model_state", "fracture growth rate",       "second-1", "");
       vFG.metadata().set_double("valid_min", 0.0);
       m_grid->variables().add(vFG);
 
       vFH.create(m_grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
-      vFH.set_attrs("model_state", "fracture healing rate",      "1/s", "");
+      vFH.set_attrs("model_state", "fracture healing rate",      "second-1", "");
       m_grid->variables().add(vFH);
 
       vFE.create(m_grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
@@ -498,7 +498,7 @@ void IceModel::createVecs() {
   shelfbmassflux.set_attrs("climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                            "m s-1", "");
   // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
-  // rescales from m/s to m/year when writing to NetCDF and std out:
+  // rescales from m second-1 to m year-1 when writing to NetCDF and std out:
   shelfbmassflux.write_in_glaciological_units = true;
   shelfbmassflux.metadata().set_string("glaciological_units", "m year-1");
   // do not add; boundary models are in charge here

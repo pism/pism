@@ -278,9 +278,9 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
         if (Tnew[k] < globalMinAllowedTemp) {
           ierr = PetscPrintf(PETSC_COMM_SELF,
                              "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
-                             " proc %d; mask=%d; w=%f m/year]]\n",
+                             " proc %d; mask=%d; w=%f m year-1]]\n",
                              Tnew[k], i, j, k, m_grid->rank(), vMask.as_int(i, j),
-                             units::convert(m_sys, system.w(k), "m/s", "m/year"));
+                             units::convert(m_sys, system.w(k), "m second-1", "m year-1"));
           PISM_CHK(ierr, "PetscPrintf");
 
           myLowTempCount++;
@@ -315,7 +315,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
                              "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                              " proc %d; mask=%d; w=%f]]\n",
                              Tnew[0],i,j,m_grid->rank(),vMask.as_int(i,j),
-                             units::convert(m_sys, system.w(0), "m/s", "m/year"));
+                             units::convert(m_sys, system.w(0), "m second-1", "m year-1"));
           PISM_CHK(ierr, "PetscPrintf");
 
           myLowTempCount++;

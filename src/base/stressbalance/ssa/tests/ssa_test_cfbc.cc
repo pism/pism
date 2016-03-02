@@ -57,7 +57,7 @@ class SSATestCaseCFBC: public SSATestCase {
 public:
   SSATestCaseCFBC(Context::Ptr ctx)
     : SSATestCase(ctx) {
-    V0 = units::convert(ctx->unit_system(), 300.0, "m/year", "m/second");
+    V0 = units::convert(ctx->unit_system(), 300.0, "m year-1", "m second-1");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;
   }

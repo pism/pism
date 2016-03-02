@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2016 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -315,7 +315,7 @@ void IceModel::putTempAtDepth() {
     surface->ice_surface_temperature(ice_surface_temp);
     if (usesmb == true) {
       surface->ice_surface_mass_flux(climatic_mass_balance);
-      // convert from [kg m-2 s-1] to [m / s]
+      // convert from [kg m-2 s-1] to [m second-1]
       climatic_mass_balance.scale(1.0 / m_config->get_double("ice_density"));
     }
   }

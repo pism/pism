@@ -39,7 +39,7 @@
 namespace pism {
 namespace surface {
 
-const double Verification::ablationRateOutside = 0.02; // m/year
+const double Verification::ablationRateOutside = 0.02; // m year-1
 const double Verification::secpera = 3.15569259747e7;
 
 const double Verification::ST = 1.67e-5;
@@ -100,7 +100,7 @@ void Verification::update_L() {
 
   const double
     ice_density = m_config->get_double("ice_density"),
-    a0          = units::convert(m_sys, 0.3, "m/year", "m/s"),
+    a0          = units::convert(m_sys, 0.3, "m year-1", "m second-1"),
     L           = 750e3,
     Lsqr        = L * L;
 
@@ -157,7 +157,7 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
     throw RuntimeError::formatted("Test %c is not implemented.", m_testname);
   }
 
-  // convert from [m/s] to [kg m-2 s-1]
+  // convert from [m second-1] to [kg m-2 s-1]
   m_climatic_mass_balance.scale(m_config->get_double("ice_density"));
 }
 

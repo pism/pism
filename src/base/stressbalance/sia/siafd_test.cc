@@ -272,7 +272,7 @@ static void reportErrors(const IceGrid &grid,
   log->message(1, "           %12.6f%12.6f\n",
                max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6);
 
-  // surface velocity errors if exact values are available; reported in m/year
+  // surface velocity errors if exact values are available; reported in m year-1
   double maxUerr, avUerr, maxWerr, avWerr;
   computeSurfaceVelocityErrors(grid, thickness,
                                u_sia,
@@ -284,10 +284,10 @@ static void reportErrors(const IceGrid &grid,
   log->message(1,
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
   log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
-               units::convert(unit_system, maxUerr, "m/s", "m/year"),
-               units::convert(unit_system, avUerr,  "m/s", "m/year"),
-               units::convert(unit_system, maxWerr, "m/s", "m/year"),
-               units::convert(unit_system, avWerr,  "m/s", "m/year"));
+               units::convert(unit_system, maxUerr, "m second-1", "m year-1"),
+               units::convert(unit_system, avUerr,  "m second-1", "m year-1"),
+               units::convert(unit_system, maxWerr, "m second-1", "m year-1"),
+               units::convert(unit_system, avWerr,  "m second-1", "m year-1"));
 }
 
 } // end of namespace pism

@@ -309,7 +309,7 @@ void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, d
 
   m_log->message(4,
              "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
-             units::convert(m_sys, maxV_result, "m/second", "m/year"),
+             units::convert(m_sys, maxV_result, "m second-1", "m year-1"),
              units::convert(m_sys, dtCFL,       "seconds",  "years"),
              units::convert(m_sys, dtDIFFW,     "seconds",  "years"),
              units::convert(m_sys, dtDIFFP,     "seconds",  "years"),
@@ -501,7 +501,7 @@ Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(Distributed *m)
   m_vars.push_back(SpatialVariableMetadata(m_sys,
                                      "hydrovelbase_mag"));
   set_attrs("the version of velbase_mag seen by the 'distributed' hydrology model",
-            "", "m s-1", "m/year", 0);
+            "", "m s-1", "m year-1", 0);
 }
 
 

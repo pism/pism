@@ -80,16 +80,16 @@ void SSATestCase::buildSSACoefficients()
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
   m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_bc_values.metadata(0).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
+  m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_bc_values.metadata(0).set_double("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
   m_bc_values.metadata(0).set_double("_FillValue", fill_value);
 
   m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(1).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
+  m_bc_values.metadata(1).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
   m_bc_values.metadata(1).set_double("_FillValue", fill_value);
 
   m_bc_values.write_in_glaciological_units = true;
@@ -234,22 +234,22 @@ void SSATestCase::report(const std::string &testname) {
                         "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
   m_ctx->log()->message(1,
                         "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n",
-                        units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
+                        units::convert(m_sys, gmaxvecerr, "m second-1", "m year-1"),
                         (gavvecerr/gexactvelmax)*100.0,
-                        units::convert(m_sys, gmaxuerr, "m/second", "m/year"),
-                        units::convert(m_sys, gmaxverr, "m/second", "m/year"),
-                        units::convert(m_sys, gavuerr, "m/second", "m/year"),
-                        units::convert(m_sys, gavverr, "m/second", "m/year"));
+                        units::convert(m_sys, gmaxuerr, "m second-1", "m year-1"),
+                        units::convert(m_sys, gmaxverr, "m second-1", "m year-1"),
+                        units::convert(m_sys, gavuerr, "m second-1", "m year-1"),
+                        units::convert(m_sys, gavverr, "m second-1", "m year-1"));
 
   m_ctx->log()->message(1, "NUM ERRORS DONE\n");
 
   report_netcdf(testname,
-                units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
+                units::convert(m_sys, gmaxvecerr, "m second-1", "m year-1"),
                 (gavvecerr/gexactvelmax)*100.0,
-                units::convert(m_sys, gmaxuerr, "m/second", "m/year"),
-                units::convert(m_sys, gmaxverr, "m/second", "m/year"),
-                units::convert(m_sys, gavuerr, "m/second", "m/year"),
-                units::convert(m_sys, gavverr, "m/second", "m/year"));
+                units::convert(m_sys, gmaxuerr, "m second-1", "m year-1"),
+                units::convert(m_sys, gmaxverr, "m second-1", "m year-1"),
+                units::convert(m_sys, gavuerr, "m second-1", "m year-1"),
+                units::convert(m_sys, gavverr, "m second-1", "m year-1"));
 }
 
 void SSATestCase::report_netcdf(const std::string &testname,
@@ -306,7 +306,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("max_velocity");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum ice velocity magnitude error");
   io::write_timeseries(nc, err, (size_t)start, max_vector);
 
@@ -318,25 +318,25 @@ void SSATestCase::report_netcdf(const std::string &testname,
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_u");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
   io::write_timeseries(nc, err, (size_t)start, max_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_v");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
   io::write_timeseries(nc, err, (size_t)start, max_v);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_u");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "average error in the X-component of the ice velocity");
   io::write_timeseries(nc, err, (size_t)start, avg_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_v");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
   io::write_timeseries(nc, err, (size_t)start, avg_v);
 

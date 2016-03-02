@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -61,7 +61,7 @@ GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &prefix,
   //--- diffusional flow ---
   m_diff_crit_temp = 258.0;     // when to use enhancement factor
   m_diff_V_m       = 1.97e-5;   // Molar volume (m^3/mol)
-  m_diff_D_0v      = 9.10e-4;   // Preexponential volume diffusion (m^2/s)
+  m_diff_D_0v      = 9.10e-4;   // Preexponential volume diffusion (m^2 second-1)
   m_diff_Q_v       = 59.4e3;    // activation energy, vol. diff. (J/mol)
   m_diff_D_0b      = 5.8e-4;    // preexponential grain boundary coeff.
   m_diff_Q_b       = 49.e3;     // activation energy, g.b. (J/mol)

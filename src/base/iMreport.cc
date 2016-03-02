@@ -292,7 +292,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     }
 
     snprintf(velunitstr,90, "m/%s", tunitstr.c_str());
-    const double maxvel = units::convert(m_sys, gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", velunitstr);
+    const double maxvel = units::convert(m_sys, gmaxu > gmaxv ? gmaxu : gmaxv, "m second-1", velunitstr);
 
     m_log->message(2,
                "S %s:   %8.5f  %9.5f     %12.5f %12.5f\n",

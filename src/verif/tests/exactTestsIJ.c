@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2008, 2011, 2014, 2015 Ed Bueler and Constantine Khroulev
+   Copyright (C) 2007-2008, 2011, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -84,7 +84,7 @@ struct TestJParameters exactJ(const double x, const double y) {
 
   const double L = 300.0e3;      /* 300 km half-width */
   const double H0 = 500.0;       /* 500 m typical thickness */
-  /* use Ritz et al (2001) value of 30 MPa yr for typical 
+  /* use Ritz et al (2001) value of 30 MPa year for typical
      vertically-averaged viscosity */
   const double nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
   const double rho_ice = 910.0;  /* kg/m^3 */

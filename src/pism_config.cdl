@@ -374,7 +374,7 @@ netcdf pism_config {
     pism_config:epsilon_ssa_units = "Pascal second meter";
     pism_config:epsilon_ssa_type = "scalar";
     pism_config:epsilon_ssa = 1.0e13;
-    pism_config:epsilon_ssa_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa yr, the value in [@ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
+    pism_config:epsilon_ssa_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa year, the value in [@ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
 
     pism_config:min_thickness_strength_extension_ssa_units = "meters";
     pism_config:min_thickness_strength_extension_ssa_type = "scalar";
@@ -384,7 +384,7 @@ netcdf pism_config {
     pism_config:constant_nu_strength_extension_ssa_units = "Pascal second";
     pism_config:constant_nu_strength_extension_ssa_type = "scalar";
     pism_config:constant_nu_strength_extension_ssa = 9.48680701906572e+14;
-    pism_config:constant_nu_strength_extension_ssa_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa yr in [@ref Ritzetal2001].";
+    pism_config:constant_nu_strength_extension_ssa_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa year in [@ref Ritzetal2001].";
 
     pism_config:energy_advection_ice_thickness_threshold_units = "meters";
     pism_config:energy_advection_ice_thickness_threshold_type = "scalar";
