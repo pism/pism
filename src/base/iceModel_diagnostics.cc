@@ -38,6 +38,9 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/pism_utilities.hh"
 
+#include "base/grounded_cell_fraction.hh"
+
+
 namespace pism {
 
 void IceModel::init_diagnostics() {
@@ -1974,5 +1977,149 @@ IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
 #else  // PISM_USE_PROJ4 is not set
 #error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif
+
+// Horrendous names used by InitMIP (and ISMIP6, and CMIP5). Ugh.
+static const char* land_ice_area_fraction_name           = "sftgif";
+static const char* grounded_ice_sheet_area_fraction_name = "sftgrf";
+static const char* floating_ice_sheet_area_fraction_name = "sftflf";
+
+IceModel_land_ice_area_fraction::IceModel_land_ice_area_fraction(IceModel *m)
+  : Diag<IceModel>(m) {
+  // sftgif is the horrible name used by InitMIP (and ISMIP6, for example)
+  m_vars.push_back(SpatialVariableMetadata(m_sys, land_ice_area_fraction_name));
+  set_attrs("fraction of a grid cell covered by ice (grounded or floating)",
+            "1", "1", 0);
+}
+
+IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, land_ice_area_fraction_name, WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+
+  const Vars &variables = m_grid->variables();
+
+  const IceModelVec2S
+    &thickness         = *variables.get_2d_scalar("land_ice_thickness"),
+    &surface_elevation = *variables.get_2d_scalar("surface_altitude"),
+    &bed_topography    = *variables.get_2d_scalar("bedrock_altitude");
+  const IceModelVec2Int &mask = *variables.get_2d_mask("mask");
+
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(surface_elevation);
+  list.add(bed_topography);
+  list.add(mask);
+
+  const bool do_part_grid = m_grid->ctx()->config()->get_boolean("part_grid");
+  const IceModelVec2S *Href = NULL;
+  if (do_part_grid) {
+    Href = variables.get_2d_scalar("Href");
+    list.add(*Href);
+  }
+
+  MaskQuery M(mask);
+
+  const bool reduce_frontal_thickness = false;
+  const double dx = m_grid->dx();
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (M.icy(i, j)) {
+        // an "icy" cell: the area fraction is one
+        (*result)(i, j) = 1.0;
+      } else if (M.ice_free_ocean(i, j)) {
+        // an ice-free ocean cell may be "partially-filled", in which case we need to compute its
+        // ice area fraction by dividing Href by the threshold thickness.
+
+        double H_reference = do_part_grid ? (*Href)(i, j) : 0.0;
+
+        if (H_reference > 0.0) {
+          const double H_threshold = part_grid_threshold_thickness(mask.int_star(i, j),
+                                                                   thickness.star(i, j),
+                                                                   surface_elevation.star(i, j),
+                                                                   bed_topography(i,j),
+                                                                   dx,
+                                                                   reduce_frontal_thickness);
+          // protect from a division by zero
+          if (H_threshold > 0.0) {
+            (*result)(i, j) = H_reference / H_threshold;
+          } else {
+            (*result)(i, j) = 1.0;
+          }
+        } else {
+          // H_reference is zero
+          (*result)(i, j) = 0.0;
+        }
+      } else {
+        // an ice-free-ground cell: the area fraction is zero
+        (*result)(i, j) = 0.0;
+      }
+    } // end of the loop over grid points
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
+
+IceModel_grounded_ice_sheet_area_fraction::IceModel_grounded_ice_sheet_area_fraction(IceModel *m)
+  : Diag<IceModel>(m) {
+  m_vars.push_back(SpatialVariableMetadata(m_sys, grounded_ice_sheet_area_fraction_name));
+  set_attrs("fraction of a grid cell covered by grounded ice", "1", "1", 0);
+}
+
+IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+
+  Config::ConstPtr config = m_grid->ctx()->config();
+
+  const double sea_level = model->ocean->sea_level_elevation();
+
+  const double
+    ice_density   = config->get_double("ice_density"),
+    ocean_density = config->get_double("sea_water_density");
+
+  const Vars &variables = m_grid->variables();
+  const IceModelVec2S
+    &ice_thickness         = *variables.get_2d_scalar("land_ice_thickness"),
+    &bed_topography    = *variables.get_2d_scalar("bedrock_altitude");
+  const IceModelVec2Int &mask = *variables.get_2d_mask("mask");
+
+  compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
+                                 ice_thickness, bed_topography, mask,
+                                 *result, NULL, NULL);
+
+  return result;
+}
+
+IceModel_floating_ice_sheet_area_fraction::IceModel_floating_ice_sheet_area_fraction(IceModel *m)
+  : Diag<IceModel>(m) {
+  m_vars.push_back(SpatialVariableMetadata(m_sys, floating_ice_sheet_area_fraction_name));
+  set_attrs("fraction of a grid cell covered by floating ice", "1", "1", 0);
+}
+
+IceModelVec::Ptr IceModel_floating_ice_sheet_area_fraction::compute_impl() {
+
+  IceModel_land_ice_area_fraction land_ice_area_fraction(model);
+  IceModelVec::Ptr ice_area_fraction = land_ice_area_fraction.compute();
+
+  IceModel_grounded_ice_sheet_area_fraction grounded_ice_sheet_area_fraction(model);
+  IceModelVec::Ptr grounded_area_fraction = grounded_ice_sheet_area_fraction.compute();
+
+  IceModelVec::Ptr result = ice_area_fraction;
+  result->metadata() = m_vars[0];
+
+  // Floating area fraction is total area fraction minus grounded area fraction.
+  result->add(-1.0, *grounded_area_fraction);
+
+  return result;
+}
 
 } // end of namespace pism

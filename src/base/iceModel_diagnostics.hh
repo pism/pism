@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,30 @@ class IceModel_hardav : public Diag<IceModel>
 {
 public:
   IceModel_hardav(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
+class IceModel_land_ice_area_fraction : public Diag<IceModel>
+{
+public:
+  IceModel_land_ice_area_fraction(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
+class IceModel_grounded_ice_sheet_area_fraction : public Diag<IceModel>
+{
+public:
+  IceModel_grounded_ice_sheet_area_fraction(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
+class IceModel_floating_ice_sheet_area_fraction : public Diag<IceModel>
+{
+public:
+  IceModel_floating_ice_sheet_area_fraction(IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };

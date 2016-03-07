@@ -666,11 +666,12 @@ void IceModel::massContExplicitStep() {
             vHref(i, j) = 0;
           }
 
-          double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
-                                                       ice_thickness.star(i, j),
-                                                       ice_surface_elevation.star(i, j),
-                                                       bed_topography(i,j),
-                                                       reduce_frontal_thickness);
+          double H_threshold = part_grid_threshold_thickness(vMask.int_star(i, j),
+                                                             ice_thickness.star(i, j),
+                                                             ice_surface_elevation.star(i, j),
+                                                             bed_topography(i,j),
+                                                             dx,
+                                                             reduce_frontal_thickness);
           double coverage_ratio = 1.0;
           if (H_threshold > 0.0) {
             coverage_ratio = vHref(i, j) / H_threshold;

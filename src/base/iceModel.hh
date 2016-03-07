@@ -87,6 +87,14 @@ class YieldStress;
 class Diagnostic;
 class TSDiagnostic;
 
+double part_grid_threshold_thickness(StarStencil<int> Mask,
+                                     StarStencil<double> thickness,
+                                     StarStencil<double> surface_elevation,
+                                     double bed_elevation,
+                                     double dx,
+                                     bool reduce_frontal_thickness);
+
+
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
   // The following classes implement various diagnostic computations.
@@ -105,6 +113,7 @@ class IceModel {
   friend class IceModel_climatic_mass_balance_cumulative;
   friend class IceModel_dHdt;
   friend class IceModel_flux_divergence;
+  friend class IceModel_grounded_ice_sheet_area_fraction;
   // scalar:
   friend class IceModel_ivol;
   friend class IceModel_slvol;
@@ -398,11 +407,6 @@ protected:
   virtual void calculateFractureDensity();
 
   // see iMpartgrid.cc
-  double get_threshold_thickness(StarStencil<int> Mask,
-                                 StarStencil<double> thickness,
-                                 StarStencil<double> surface_elevation,
-                                 double bed_elevation,
-                                 bool reduce_frontal_thickness);
   virtual void residual_redistribution(IceModelVec2S &residual);
   virtual void residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
