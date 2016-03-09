@@ -167,6 +167,10 @@ void IceModel::init_diagnostics() {
   if (subglacial_hydrology != NULL) {
     subglacial_hydrology->get_diagnostics(diagnostics, ts_diagnostics);
   }
+
+  if (btu != NULL) {
+    btu->get_diagnostics(diagnostics, ts_diagnostics);
+  }
 }
 
 void IceModel::list_diagnostics() {
