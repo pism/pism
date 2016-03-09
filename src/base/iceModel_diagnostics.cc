@@ -2115,7 +2115,7 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      if (M.ice_free_land(i, j)) {
+      if (M.ice_free(i, j)) {
         (*result)(i, j) = 0.0;
       }
     }
