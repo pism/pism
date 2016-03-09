@@ -22,6 +22,8 @@
 #include "base/util/PISMComponent.hh"
 #include "base/util/iceModelVec3Custom.hh"
 
+#include "base/util/PISMDiagnostic.hh"
+
 namespace pism {
 
 class Vars;
@@ -109,6 +111,8 @@ protected:
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);  
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &ts_dict);
 protected:
   IceModelVec3Custom m_temp;
   IceModelVec2S m_upward_flux;
@@ -129,6 +133,11 @@ protected:
   void update_upward_geothermal_flux();
 };
 
+class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
+public:
+  BTU_geothermal_flux_at_ground_level(BedThermalUnit *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace energy

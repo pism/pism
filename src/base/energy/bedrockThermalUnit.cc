@@ -225,6 +225,12 @@ void BedThermalUnit::write_variables_impl(const std::set<std::string> &vars, con
   }
 }
 
+void BedThermalUnit::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
+                                          std::map<std::string, TSDiagnostic*> &ts_dict) {
+  dict["hfgeoubed"] = new BTU_geothermal_flux_at_ground_level(this);
+  (void)ts_dict;
+}
+
 
 /*! Because the grid for the bedrock thermal layer is equally-spaced, and because
 the heat equation being solved in the bedrock is time-invariant (%e.g. no advection
@@ -436,6 +442,23 @@ void BedThermalUnit::bootstrap() {
   m_temp.inc_state_counter();     // mark as modified
 }
 
+BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(BedThermalUnit *m)
+  : Diag<BedThermalUnit>(m) {
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "hfgeoubed"));
+  set_attrs("upward geothermal flux at ground (top of the bedrock) level",
+            "",                 // no standard name
+            "W m-2", "W m-2", 0);
+}
+
+IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "hfgeoubed", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+
+  result->copy_from(model->upward_geothermal_flux());
+
+  return result;
+}
 
 } // end of namespace energy
 } // end of namespace pism
