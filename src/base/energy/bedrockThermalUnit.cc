@@ -190,7 +190,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
  * Special case: returns 0 if the bedrock thermal layer has thickness
  * zero.
  */
-double BedThermalUnit::vertical_spacing() {
+double BedThermalUnit::vertical_spacing() const {
   if (m_temp.was_created() == true) {
     return m_Lbz / (m_Mbz - 1.0);
   } else {
@@ -198,7 +198,7 @@ double BedThermalUnit::vertical_spacing() {
   }
 }
 
-unsigned int BedThermalUnit::Mbz() {
+unsigned int BedThermalUnit::Mbz() const {
   return m_Mbz;
 }
 
@@ -347,8 +347,9 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
     m_temp.set_column(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
   }
-}
 
+  update_upward_geothermal_flux();
+}
 
 /*! Computes the heat flux from the bedrock thermal layer upward into the
 ice/bedrock interface:
@@ -361,10 +362,11 @@ The above expression only makes sense when `Mbz` = `temp.n_levels` >= 3.
 When `Mbz` = 2 we use first-order differencing.  When temp was not created,
 the `Mbz` <= 1 cases, we return the stored geothermal flux.
  */
-const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
+void BedThermalUnit::update_upward_geothermal_flux() {
 
   if (not m_temp.was_created()) {
-    return *m_grid->variables().get_2d_scalar("bheatflx");
+    m_upward_flux.copy_from(*m_grid->variables().get_2d_scalar("bheatflx"));
+    return;
   }
 
   double dzb = this->vertical_spacing();
@@ -379,7 +381,7 @@ const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *Tb = m_temp.get_column(i,j);
+      const double *Tb = m_temp.get_column(i,j);
       m_upward_flux(i,j) = - m_bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
     }
 
@@ -388,12 +390,14 @@ const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *Tb = m_temp.get_column(i,j);
+      const double *Tb = m_temp.get_column(i,j);
       m_upward_flux(i,j) = - m_bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
     }
 
   }
+}
 
+const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() const {
   return m_upward_flux;
 }
 

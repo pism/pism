@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -94,13 +94,13 @@ public:
 
   virtual void init(bool &bootstrapping_needed);
 
-  virtual const IceModelVec2S& upward_geothermal_flux();
+  virtual const IceModelVec2S& upward_geothermal_flux() const;
 
   virtual void bootstrap();
 
-  double vertical_spacing();
+  double vertical_spacing() const;
 
-  unsigned int Mbz();
+  unsigned int Mbz() const;
 protected:
   virtual MaxTimestep max_timestep_impl(double my_t);
 
@@ -125,6 +125,10 @@ protected:
   unsigned int m_Mbz;             //!< number of vertical levels within the bedrock
   double m_Lbz;                   //!< thickness of the bedrock layer, in meters
   std::string m_input_file;             //!< non-empty if "-i" was set
+
+  void update_upward_geothermal_flux();
+};
+
 };
 
 } // end of namespace energy
