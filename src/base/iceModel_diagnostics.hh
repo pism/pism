@@ -503,6 +503,17 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
+//! \brief Reports the 2D cumulative discharge (calving) flux.
+class IceModel_discharge_flux_2D : public Diag<IceModel>
+{
+public:
+  IceModel_discharge_flux_2D(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+  IceModelVec2S m_last_cumulative_discharge;
+  double m_last_report_time;
+};
+
 } // end of namespace pism
 
 #if (PISM_USE_PROJ4==1)

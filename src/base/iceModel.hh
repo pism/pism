@@ -114,6 +114,11 @@ class IceModel {
   friend class IceModel_dHdt;
   friend class IceModel_flux_divergence;
   friend class IceModel_grounded_ice_sheet_area_fraction;
+  friend class IceModel_nonneg_flux_2D_cumulative;
+  friend class IceModel_grounded_basal_flux_2D_cumulative;
+  friend class IceModel_floating_basal_flux_2D_cumulative;
+  friend class IceModel_discharge_flux_2D_cumulative;
+  friend class IceModel_discharge_flux_2D;
   // scalar:
   friend class IceModel_dt;
   friend class IceModel_max_diffusivity;
@@ -127,10 +132,6 @@ class IceModel {
   friend class IceModel_nonneg_flux_cumulative;
   friend class IceModel_discharge_flux;
   friend class IceModel_discharge_flux_cumulative;
-  friend class IceModel_nonneg_flux_2D_cumulative;
-  friend class IceModel_grounded_basal_flux_2D_cumulative;
-  friend class IceModel_floating_basal_flux_2D_cumulative;
-  friend class IceModel_discharge_flux_2D_cumulative;
   friend class IceModel_max_hor_vel;
   friend class IceModel_sum_divQ_flux;
   friend class IceModel_H_to_Href_flux;

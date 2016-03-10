@@ -93,6 +93,7 @@ void IceModel::init_diagnostics() {
 
   if (discharge_flux_2D_cumulative.was_created()) {
     diagnostics["discharge_flux_cumulative"] = new IceModel_discharge_flux_2D_cumulative(this);
+    diagnostics["discharge_flux"] = new IceModel_discharge_flux_2D(this);
   }
 
 #if (PISM_USE_PROJ4==1)
@@ -1920,6 +1921,51 @@ IceModelVec::Ptr IceModel_discharge_flux_2D_cumulative::compute_impl() {
   result->write_in_glaciological_units = true;
 
   result->copy_from(model->discharge_flux_2D_cumulative);
+
+  return result;
+}
+
+IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "discharge_flux"));
+
+  set_attrs("average ice discharge (calving) flux over reporting interval",
+            "",                 // no standard name
+            "kg second-1", "Gt year-1", 0);
+  m_vars[0].set_string("comment", "positive means ice gain");
+}
+
+IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "discharge_flux", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+  result->write_in_glaciological_units = true;
+
+  const IceModelVec2S &cumulative_discharge = model->discharge_flux_2D_cumulative;
+  const double current_time = m_grid->ctx()->time()->current();
+
+  if (gsl_isnan(m_last_report_time)) {
+    result->set(units::convert(m_sys, 2e6, "kg year-1", "kg second-1"));
+  } else {
+    IceModelVec::AccessList list;
+    list.add(*result);
+    list.add(m_last_cumulative_discharge);
+    list.add(cumulative_discharge);
+
+    double dt = current_time - m_last_report_time;
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      (*result)(i, j) = (cumulative_discharge(i, j) - m_last_cumulative_discharge(i, j)) / dt;
+    }
+  }
+
+  // Save the cumulative discharge and the corresponding time:
+  m_last_cumulative_discharge.copy_from(cumulative_discharge);
+  m_last_report_time = current_time;
 
   return result;
 }
