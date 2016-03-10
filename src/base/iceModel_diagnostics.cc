@@ -2000,23 +2000,23 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
     m_vars[0].set_double("valid_max", 90);
   }
 
-  lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
-  if (lonlat == NULL) {
+  m_lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
+  if (m_lonlat == NULL) {
     throw RuntimeError("projection initialization failed\n"
                        "('+proj=latlong +datum=WGS84 +ellps=WGS84').\n");
   }
 
-  pism = pj_init_plus(proj_string.c_str());
-  if (pism == NULL) {
+  m_pism = pj_init_plus(proj_string.c_str());
+  if (m_pism == NULL) {
     // if we got here, then lonlat was allocated already
-    pj_free(lonlat);
+    pj_free(m_lonlat);
     throw RuntimeError::formatted("proj.4 string '%s' is invalid.", proj_string.c_str());
   }
 }
 
 IceModel_lat_lon_bounds::~IceModel_lat_lon_bounds() {
-  pj_free(pism);
-  pj_free(lonlat);
+  pj_free(m_pism);
+  pj_free(m_lonlat);
 }
 
 IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
@@ -2054,7 +2054,7 @@ IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
         y = y0 + y_offsets[k];
 
       // compute lon,lat coordinates:
-      pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
+      pj_transform(m_pism, m_lonlat, 1, 1, &x, &y, NULL);
 
       // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
 

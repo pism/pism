@@ -534,7 +534,7 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 protected:
   std::string m_var_name;
-  projPJ pism, lonlat;
+  projPJ m_pism, m_lonlat;
 };
 
 } // end of namespace pism
