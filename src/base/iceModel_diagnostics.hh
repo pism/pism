@@ -426,8 +426,8 @@ public:
 protected:
   virtual IceModelVec::Ptr compute_impl();
 protected:
-  IceModelVec2S last_ice_thickness;
-  double last_report_time;
+  IceModelVec2S m_last_ice_thickness;
+  double m_last_report_time;
 };
 
 //! \brief Reports the maximum horizontal absolute velocity component over the grid.

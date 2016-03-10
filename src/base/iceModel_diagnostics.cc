@@ -1581,12 +1581,12 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m)
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_string("cell_methods", "time: mean");
 
-  last_ice_thickness.create(m_grid, "last_ice_thickness", WITHOUT_GHOSTS);
-  last_ice_thickness.set_attrs("internal",
+  m_last_ice_thickness.create(m_grid, "last_ice_thickness", WITHOUT_GHOSTS);
+  m_last_ice_thickness.set_attrs("internal",
                                "ice thickness at the time of the last report of dHdt",
                                "m", "land_ice_thickness");
 
-  last_report_time = GSL_NAN;
+  m_last_report_time = GSL_NAN;
 }
 
 IceModelVec::Ptr IceModel_dHdt::compute_impl() {
@@ -1596,19 +1596,19 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  if (gsl_isnan(last_report_time)) {
+  if (gsl_isnan(m_last_report_time)) {
     result->set(units::convert(m_sys, 2e6, "m year-1", "m second-1"));
   } else {
     IceModelVec::AccessList list;
     list.add(*result);
-    list.add(last_ice_thickness);
+    list.add(m_last_ice_thickness);
     list.add(model->ice_thickness);
 
-    double dt = m_grid->ctx()->time()->current() - last_report_time;
+    double dt = m_grid->ctx()->time()->current() - m_last_report_time;
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      (*result)(i, j) = (model->ice_thickness(i, j) - last_ice_thickness(i, j)) / dt;
+      (*result)(i, j) = (model->ice_thickness(i, j) - m_last_ice_thickness(i, j)) / dt;
     }
   }
 
@@ -1621,14 +1621,14 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
 void IceModel_dHdt::update_cumulative() {
   IceModelVec::AccessList list;
   list.add(model->ice_thickness);
-  list.add(last_ice_thickness);
+  list.add(m_last_ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    last_ice_thickness(i, j) = model->ice_thickness(i, j);
+    m_last_ice_thickness(i, j) = model->ice_thickness(i, j);
   }
 
-  last_report_time = m_grid->ctx()->time()->current();
+  m_last_report_time = m_grid->ctx()->time()->current();
 }
 
 IceModel_ivolg::IceModel_ivolg(IceModel *m)
