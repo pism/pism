@@ -222,6 +222,14 @@ public:
   virtual void update(double a, double b);
 };
 
+//! \brief Computes the total mass of the ice not displacing sea water.
+class IceModel_limnsw : public TSDiag<IceModel>
+{
+public:
+  IceModel_limnsw(IceModel *m);
+  virtual void update(double a, double b);
+};
+
 //! \brief Computes the rate of change of the total ice mass.
 class IceModel_dimassdt : public TSDiag<IceModel>
 {

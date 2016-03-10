@@ -361,10 +361,10 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
   result->create(m_grid, "hardav", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  MaskQuery mask(model->vMask);
+  MaskQuery mask(model->m_cell_type);
 
   IceModelVec::AccessList list;
-  list.add(model->vMask);
+  list.add(model->m_cell_type);
   list.add(model->Enth3);
   list.add(model->ice_thickness);
   list.add(*result);
@@ -755,10 +755,10 @@ IceModelVec::Ptr IceModel_tempbase::compute_impl() {
   // result contains basal enthalpy; note that it is allocated by
   // IceModel_enthalpybase::compute().
 
-  MaskQuery mask(model->vMask);
+  MaskQuery mask(model->m_cell_type);
 
   IceModelVec::AccessList list;
-  list.add(model->vMask);
+  list.add(model->m_cell_type);
   list.add(*result);
   list.add(*thickness);
 
@@ -884,10 +884,10 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
 
   double *Enth = NULL;
 
-  MaskQuery mask(model->vMask);
+  MaskQuery mask(model->m_cell_type);
 
   IceModelVec::AccessList list;
-  list.add(model->vMask);
+  list.add(model->m_cell_type);
   list.add(*result);
   list.add(model->Enth3);
   list.add(model->ice_thickness);
@@ -956,12 +956,12 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   double *Enth = NULL;
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  MaskQuery mask(model->vMask);
+  MaskQuery mask(model->m_cell_type);
 
   const double fill_value = m_grid->ctx()->config()->get_double("fill_value");
 
   IceModelVec::AccessList list;
-  list.add(model->vMask);
+  list.add(model->m_cell_type);
   list.add(*result);
   list.add(model->ice_thickness);
   list.add(model->Enth3);
@@ -1098,7 +1098,7 @@ IceModel_ivol::IceModel_ivol(IceModel *m)
 
 void IceModel_ivol::update(double a, double b) {
 
-  double value = model->compute_ice_volume();
+  double value = model->ice_volume();
 
   m_ts->append(value, a, b);
 }
@@ -1118,7 +1118,7 @@ IceModel_slvol::IceModel_slvol(IceModel *m)
 
 void IceModel_slvol::update(double a, double b) {
 
-  double value = model->compute_sealevel_volume();
+  double value = model->sealevel_volume();
 
   m_ts->append(value, a, b);
 }
@@ -1138,7 +1138,7 @@ IceModel_divoldt::IceModel_divoldt(IceModel *m)
 
 void IceModel_divoldt::update(double a, double b) {
 
-  double value = model->compute_ice_volume();
+  double value = model->ice_volume();
 
   // note that "value" below *should* be the ice volume
   m_ts->append(value, a, b);
@@ -1159,7 +1159,7 @@ IceModel_iarea::IceModel_iarea(IceModel *m)
 
 void IceModel_iarea::update(double a, double b) {
 
-  double value = model->compute_ice_area();
+  double value = model->ice_area();
 
   m_ts->append(value, a, b);
 }
@@ -1178,7 +1178,7 @@ IceModel_imass::IceModel_imass(IceModel *m)
 
 void IceModel_imass::update(double a, double b) {
 
-  double value = model->compute_ice_volume();
+  double value = model->ice_volume();
 
   m_ts->append(value * m_grid->ctx()->config()->get_double("ice_density"), a, b);
 }
@@ -1199,7 +1199,7 @@ IceModel_dimassdt::IceModel_dimassdt(IceModel *m)
 
 void IceModel_dimassdt::update(double a, double b) {
 
-  double value = model->compute_ice_volume();
+  double value = model->ice_volume();
 
   m_ts->append(value * m_grid->ctx()->config()->get_double("ice_density"), a, b);
 }
@@ -1219,7 +1219,7 @@ IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m)
 
 void IceModel_ivoltemp::update(double a, double b) {
 
-  double value = model->compute_ice_volume_temperate();
+  double value = model->ice_volume_temperate();
 
   m_ts->append(value, a, b);
 }
@@ -1239,7 +1239,7 @@ IceModel_ivolcold::IceModel_ivolcold(IceModel *m)
 
 void IceModel_ivolcold::update(double a, double b) {
 
-  double value = model->compute_ice_volume_cold();
+  double value = model->ice_volume_cold();
 
   m_ts->append(value, a, b);
 }
@@ -1258,7 +1258,7 @@ IceModel_iareatemp::IceModel_iareatemp(IceModel *m)
 
 void IceModel_iareatemp::update(double a, double b) {
 
-  double value = model->compute_ice_area_temperate();
+  double value = model->ice_area_temperate();
 
   m_ts->append(value, a, b);
 }
@@ -1277,7 +1277,7 @@ IceModel_iareacold::IceModel_iareacold(IceModel *m)
 
 void IceModel_iareacold::update(double a, double b) {
 
-  double value = model->compute_ice_area_cold();
+  double value = model->ice_area_cold();
 
   m_ts->append(value, a, b);
 }
@@ -1296,7 +1296,7 @@ IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m)
 
 void IceModel_ienthalpy::update(double a, double b) {
 
-  double value = model->compute_ice_enthalpy();
+  double value = model->ice_enthalpy();
 
   m_ts->append(value, a, b);
 }
@@ -1314,7 +1314,7 @@ IceModel_iareag::IceModel_iareag(IceModel *m)
 
 void IceModel_iareag::update(double a, double b) {
 
-  double value = model->compute_ice_area_grounded();
+  double value = model->ice_area_grounded();
 
   m_ts->append(value, a, b);
 }
@@ -1332,7 +1332,7 @@ IceModel_iareaf::IceModel_iareaf(IceModel *m)
 
 void IceModel_iareaf::update(double a, double b) {
 
-  double value = model->compute_ice_area_floating();
+  double value = model->ice_area_floating();
 
   m_ts->append(value, a, b);
 }
@@ -1645,18 +1645,24 @@ IceModel_ivolg::IceModel_ivolg(IceModel *m)
 void IceModel_ivolg::update(double a, double b) {
   double volume = 0.0;
 
-  MaskQuery mask(model->vMask);
+  const IceModelVec2Int &cell_type = model->cell_type_mask();
+
+  const IceModelVec2S
+    &cell_area     = model->cell_area(),
+    &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+  MaskQuery mask(cell_type);
 
   IceModelVec::AccessList list;
-  list.add(model->ice_thickness);
-  list.add(model->vMask);
-  list.add(model->cell_area);
+  list.add(ice_thickness);
+  list.add(cell_type);
+  list.add(cell_area);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded_ice(i,j)) {
-      volume += model->cell_area(i,j) * model->ice_thickness(i,j);
+      volume += cell_area(i,j) * ice_thickness(i,j);
     }
   }
 
@@ -1679,18 +1685,24 @@ IceModel_ivolf::IceModel_ivolf(IceModel *m)
 void IceModel_ivolf::update(double a, double b) {
   double volume = 0.0;
 
-  MaskQuery mask(model->vMask);
+  const IceModelVec2Int &cell_type = model->cell_type_mask();
+
+  const IceModelVec2S
+    &cell_area     = model->cell_area(),
+    &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+  MaskQuery mask(cell_type);
 
   IceModelVec::AccessList list;
-  list.add(model->ice_thickness);
-  list.add(model->vMask);
-  list.add(model->cell_area);
+  list.add(ice_thickness);
+  list.add(cell_type);
+  list.add(cell_area);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.floating_ice(i,j)) {
-      volume += model->cell_area(i,j) * model->ice_thickness(i,j);
+      volume += cell_area(i,j) * ice_thickness(i,j);
     }
   }
 
@@ -1785,6 +1797,31 @@ void IceModel_sum_divQ_flux::update(double a, double b) {
   m_ts->append(model->sum_divQ_SIA_cumulative + model->sum_divQ_SSA_cumulative,
              a, b);
 }
+
+IceModel_limnsw::IceModel_limnsw(IceModel *m)
+  : TSDiag<IceModel>(m) {
+
+  // set metadata:
+  m_ts = new DiagnosticTimeseries(*m_grid, "limnsw", m_time_dimension_name);
+
+  m_ts->metadata().set_string("units", "kg");
+  m_ts->dimension_metadata().set_string("units", m_time_units);
+  m_ts->metadata().set_string("long_name", "total mass of the ice not displacing sea water");
+  m_ts->metadata().set_double("valid_min", 0.0);
+}
+
+void IceModel_limnsw::update(double a, double b) {
+
+  Config::ConstPtr config = m_grid->ctx()->config();
+
+  const double
+    ice_density = config->get_double("ice_density"),
+    ice_volume  = model->ice_volume_not_displacing_seawater(),
+    ice_mass    = ice_volume * ice_density;
+
+  m_ts->append(ice_mass, a, b);
+}
+
 
 
 IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel *m)
@@ -1993,7 +2030,6 @@ IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
 
 IceModel_land_ice_area_fraction::IceModel_land_ice_area_fraction(IceModel *m)
   : Diag<IceModel>(m) {
-  // sftgif is the horrible name used by InitMIP (and ISMIP6, for example)
   m_vars.push_back(SpatialVariableMetadata(m_sys, land_ice_area_fraction_name));
   set_attrs("fraction of a grid cell covered by ice (grounded or floating)",
             "",                 // no standard name

@@ -59,11 +59,11 @@ using namespace mask;
 void IceModel::updateSurfaceElevationAndMask() {
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
-  update_mask(bed_topography, ice_thickness, vMask);
+  update_mask(bed_topography, ice_thickness, m_cell_type);
   update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
 
   if (m_config->get_boolean("kill_icebergs") && iceberg_remover != NULL) {
-    iceberg_remover->update(vMask, ice_thickness);
+    iceberg_remover->update(m_cell_type, ice_thickness);
     // the call above modifies ice thickness and updates the mask
     // accordingly
     update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
@@ -315,7 +315,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
                                      StarStencil<double> &out_SSA_velocity,
                                      StarStencil<double> &out_SIA_flux) {
 
-  StarStencil<int> mask = vMask.int_star(i,j);
+  StarStencil<int> mask = m_cell_type.int_star(i,j);
   Direction dirs[4] = {North, East, South, West};
 
   StarStencil<int> bc_mask;
@@ -545,7 +545,7 @@ void IceModel::massContExplicitStep() {
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   IceModelVec::AccessList list;
-  list.add(cell_area);
+  list.add(m_cell_area);
   list.add(ice_thickness);
   list.add(ice_surface_elevation);
   list.add(bed_topography);
@@ -553,7 +553,7 @@ void IceModel::massContExplicitStep() {
   list.add(Qdiff);
   list.add(vel_advective);
   list.add(climatic_mass_balance);
-  list.add(vMask);
+  list.add(m_cell_type);
   list.add(vHnew);
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
@@ -595,7 +595,7 @@ void IceModel::massContExplicitStep() {
     list.add(flux_divergence);
   }
 
-  MaskQuery mask(vMask);
+  MaskQuery mask(m_cell_type);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -606,7 +606,7 @@ void IceModel::massContExplicitStep() {
       // thicknesses and thickening rates to kg, for accounting of
       // fluxes during the current time-step.
       const double
-        meter_to_kg       = cell_area(i,j) * ice_density,
+        meter_to_kg       = m_cell_area(i,j) * ice_density,
         meter_per_s_to_kg = meter_to_kg * dt;
 
       // Divergence terms:
@@ -666,7 +666,7 @@ void IceModel::massContExplicitStep() {
             vHref(i, j) = 0;
           }
 
-          double H_threshold = part_grid_threshold_thickness(vMask.int_star(i, j),
+          double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
                                                              ice_thickness.star(i, j),
                                                              ice_surface_elevation.star(i, j),
                                                              bed_topography(i,j),
@@ -840,7 +840,7 @@ void IceModel::update_grounded_cell_fraction() {
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
-                          ice_thickness, bed_topography, vMask,
+                          ice_thickness, bed_topography, m_cell_type,
                           gl_mask, NULL, NULL);
 }
 

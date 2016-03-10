@@ -346,7 +346,7 @@ int main(int argc, char *argv[]) {
     rheology::PatersonBuddCold ice("sia_", *config, EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
-    IceModelVec2Int vMask;
+    IceModelVec2Int cell_type;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
     const int WIDE_STENCIL = config->get_double("grid_max_stencil_width");
@@ -386,18 +386,18 @@ int main(int argc, char *argv[]) {
     vars.add(enthalpy);
 
     // grounded_dragging_floating integer mask
-    vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
-    vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
+    cell_type.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
+    cell_type.set_attrs("model_state", "grounded_dragging_floating integer mask",
                     "", "");
     std::vector<double> mask_values(4);
     mask_values[0] = MASK_ICE_FREE_BEDROCK;
     mask_values[1] = MASK_GROUNDED;
     mask_values[2] = MASK_FLOATING;
     mask_values[3] = MASK_ICE_FREE_OCEAN;
-    vMask.metadata().set_doubles("flag_values", mask_values);
-    vMask.metadata().set_string("flag_meanings",
+    cell_type.metadata().set_doubles("flag_values", mask_values);
+    cell_type.metadata().set_string("flag_meanings",
                                 "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-    vars.add(vMask);
+    vars.add(cell_type);
 
     // Create the SIA solver object:
 
@@ -411,7 +411,7 @@ int main(int argc, char *argv[]) {
 
     // fill the fields:
     setInitStateF(*grid, *EC,
-                  &bed_topography, &vMask, &ice_surface_elevation, &ice_thickness,
+                  &bed_topography, &cell_type, &ice_surface_elevation, &ice_thickness,
                   &enthalpy);
 
     // Allocate the SIA solver:
@@ -451,7 +451,7 @@ int main(int argc, char *argv[]) {
 
     ice_surface_elevation.write(output_file);
     ice_thickness.write(output_file);
-    vMask.write(output_file);
+    cell_type.write(output_file);
     bed_topography.write(output_file);
     
     u3.write(output_file);

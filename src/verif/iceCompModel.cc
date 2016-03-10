@@ -304,7 +304,7 @@ void IceCompModel::initTestABCDH() {
 
   T3.set(T0);
   geothermal_flux.set(Ggeo);
-  vMask.set(MASK_GROUNDED);
+  m_cell_type.set(MASK_GROUNDED);
 
   IceModelVec::AccessList list(ice_thickness);
 

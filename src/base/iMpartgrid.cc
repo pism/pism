@@ -140,12 +140,12 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
 
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
-  update_mask(bed_topography, ice_thickness, vMask);
+  update_mask(bed_topography, ice_thickness, m_cell_type);
 
   // First step: distribute residual ice thickness
   {
     IceModelVec::AccessList list; // will be destroyed at the end of the block
-    list.add(vMask);
+    list.add(m_cell_type);
     list.add(ice_thickness);
     list.add(vHref);
     list.add(H_residual);
@@ -156,7 +156,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         continue;
       }
 
-      StarStencil<int> m = vMask.int_star(i,j);
+      StarStencil<int> m = m_cell_type.int_star(i,j);
       int N = 0; // number of empty or partially filled neighbors
       StarStencil<bool> neighbors;
       neighbors.set(false);
@@ -209,7 +209,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
   ice_thickness.update_ghosts();
 
   // The loop above updated ice_thickness, so we need to re-calculate the mask:
-  update_mask(bed_topography, ice_thickness, vMask);
+  update_mask(bed_topography, ice_thickness, m_cell_type);
   // and the surface elevation:
   update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
 
@@ -225,7 +225,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
     list.add(ice_thickness);
     list.add(ice_surface_elevation);
     list.add(bed_topography);
-    list.add(vMask);
+    list.add(m_cell_type);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -233,7 +233,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         continue;
       }
 
-      double H_threshold = part_grid_threshold_thickness(vMask.int_star(i, j),
+      double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
                                                          ice_thickness.star(i, j),
                                                          ice_surface_elevation.star(i, j),
                                                          bed_topography(i,j),

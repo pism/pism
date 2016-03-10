@@ -266,7 +266,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   list.add(Rb);
   list.add(basal_heat_flux);
   list.add(till_water_thickness);
-  list.add(vMask);
+  list.add(m_cell_type);
 
   // these are accessed a column at a time
   list.add(u3);
@@ -278,7 +278,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   unsigned int liquifiedCount = 0;
 
-  MaskQuery mask(vMask);
+  MaskQuery mask(m_cell_type);
 
   ParallelSection loop(m_grid->com);
   try {

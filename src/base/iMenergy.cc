@@ -152,11 +152,11 @@ void IceModel::combine_basal_melt_rate() {
     list.add(gl_mask);
   }
 
-  MaskQuery mask(vMask);
+  MaskQuery mask(m_cell_type);
 
   double ice_density = m_config->get_double("ice_density");
 
-  list.add(vMask);
+  list.add(m_cell_type);
   list.add(basal_melt_rate);
   list.add(shelfbmassflux);
 
@@ -198,7 +198,7 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
   Enth3.getHorSlice(result, 0.0);
 
-  MaskQuery mask(vMask);
+  MaskQuery mask(m_cell_type);
 
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
@@ -208,7 +208,7 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   list.add(bed_topography);
   list.add(result);
   list.add(ice_thickness);
-  list.add(vMask);
+  list.add(m_cell_type);
   list.add(ice_surface_temp);
   ParallelSection loop(m_grid->com);
   try {

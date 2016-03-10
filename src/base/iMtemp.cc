@@ -175,7 +175,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   list.add(ice_thickness);
   list.add(basal_melt_rate);
-  list.add(vMask);
+  list.add(m_cell_type);
   list.add(G0);
   list.add(bwatcurr);
 
@@ -213,7 +213,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   int maxLowTempCount = static_cast<int>(m_config->get_double("max_low_temp_count"));
   double globalMinAllowedTemp = m_config->get_double("global_min_allowed_temp");
 
-  MaskQuery mask(vMask);
+  MaskQuery mask(m_cell_type);
 
   const double thickness_threshold = m_config->get_double("energy_advection_ice_thickness_threshold");
 
@@ -225,7 +225,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
       // if isMarginal then only do vertical conduction for ice; ignore advection
       //   and strain heating if isMarginal
       const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
-      MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
+      MaskValue mask_value = static_cast<MaskValue>(m_cell_type.as_int(i,j));
 
       system.initThisColumn(i, j, isMarginal, mask_value, ice_thickness(i,j));
 
@@ -279,7 +279,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
           ierr = PetscPrintf(PETSC_COMM_SELF,
                              "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
                              " proc %d; mask=%d; w=%f m year-1]]\n",
-                             Tnew[k], i, j, k, m_grid->rank(), vMask.as_int(i, j),
+                             Tnew[k], i, j, k, m_grid->rank(), m_cell_type.as_int(i, j),
                              units::convert(m_sys, system.w(k), "m second-1", "m year-1"));
           PISM_CHK(ierr, "PetscPrintf");
 
@@ -314,7 +314,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
           ierr = PetscPrintf(PETSC_COMM_SELF,
                              "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                              " proc %d; mask=%d; w=%f]]\n",
-                             Tnew[0],i,j,m_grid->rank(),vMask.as_int(i,j),
+                             Tnew[0],i,j,m_grid->rank(),m_cell_type.as_int(i,j),
                              units::convert(m_sys, system.w(0), "m second-1", "m year-1"));
           PISM_CHK(ierr, "PetscPrintf");
 

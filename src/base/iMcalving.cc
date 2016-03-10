@@ -54,19 +54,19 @@ void IceModel::do_calving() {
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
   if (eigen_calving != NULL) {
-    eigen_calving->update(dt, vMask, vHref, ice_thickness);
+    eigen_calving->update(dt, m_cell_type, vHref, ice_thickness);
   }
 
   if (ocean_kill_calving != NULL) {
-    ocean_kill_calving->update(vMask, ice_thickness);
+    ocean_kill_calving->update(m_cell_type, ice_thickness);
   }
 
   if (float_kill_calving != NULL) {
-    float_kill_calving->update(vMask, ice_thickness);
+    float_kill_calving->update(m_cell_type, ice_thickness);
   }
 
   if (thickness_threshold_calving != NULL) {
-    thickness_threshold_calving->update(vMask, ice_thickness);
+    thickness_threshold_calving->update(m_cell_type, ice_thickness);
   }
 
   // This call removes icebergs, too.
@@ -88,12 +88,12 @@ void IceModel::Href_cleanup() {
     return;
   }
 
-  MaskQuery mask(vMask);
+  MaskQuery mask(m_cell_type);
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
   list.add(vHref);
-  list.add(vMask);
+  list.add(m_cell_type);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -126,7 +126,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
                                            const IceModelVec2S &Href,
                                            const IceModelVec2S &Href_old) {
 
-  MaskQuery mask(vMask);
+  MaskQuery mask(m_cell_type);
 
   const double ice_density = m_config->get_double("ice_density");
   const bool
@@ -137,8 +137,8 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
   IceModelVec::AccessList list;
   list.add(thickness);
   list.add(thickness_old);
-  list.add(vMask);
-  list.add(cell_area);
+  list.add(m_cell_type);
+  list.add(m_cell_area);
 
   if (update_2d_discharge) {
     list.add(discharge_flux_2D_cumulative);
@@ -171,7 +171,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
         delta_Href = 0.0;
       }
 
-      discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
+      discharge = (delta_H + delta_Href) * m_cell_area(i,j) * ice_density;
 
       if (update_2d_discharge) {
         discharge_flux_2D_cumulative(i,j) += discharge;
