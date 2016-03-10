@@ -571,7 +571,8 @@ void IceModel::createVecs() {
     nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
-  if (set_contains(extras, "discharge_flux_cumulative")) {
+  if (set_contains(extras, "discharge_flux_cumulative") or
+      set_contains(extras, "discharge_flux")) {
     discharge_flux_2D_cumulative.create(m_grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
     discharge_flux_2D_cumulative.set_attrs("diagnostic",
                                            "cumulative discharge (calving) flux (positive means ice loss)",

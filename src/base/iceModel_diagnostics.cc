@@ -1574,8 +1574,8 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m)
             "m s-1", "m year-1", 0);
 
   Config::ConstPtr config = m_grid->ctx()->config();
-  units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
+  double fill_value = units::convert(m_sys, config->get_double("fill_value"),
+                                     "m year-1", "m second-1");
 
   m_vars[0].set_double("valid_min",  units::convert(m_sys, -1e6, "m year-1", "m second-1"));
   m_vars[0].set_double("valid_max",  units::convert(m_sys,  1e6, "m year-1", "m second-1"));
@@ -1935,6 +1935,19 @@ IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(IceModel *m)
             "",                 // no standard name
             "kg second-1", "Gt year-1", 0);
   m_vars[0].set_string("comment", "positive means ice gain");
+
+  Config::ConstPtr config = m_grid->ctx()->config();
+  double fill_value = units::convert(m_sys, config->get_double("fill_value"),
+                                     "Gt year-1", "kg second-1");
+  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_string("cell_methods", "time: mean");
+
+  m_last_cumulative_discharge.create(m_grid, "last_cumulative_discharge", WITHOUT_GHOSTS);
+  m_last_cumulative_discharge.set_attrs("internal",
+                                        "cumulative discharge at the time of the last report of discharge_flux",
+                                        "kg", "");
+
+  m_last_report_time = GSL_NAN;
 }
 
 IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
@@ -1948,7 +1961,10 @@ IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
   const double current_time = m_grid->ctx()->time()->current();
 
   if (gsl_isnan(m_last_report_time)) {
-    result->set(units::convert(m_sys, 2e6, "kg year-1", "kg second-1"));
+    Config::ConstPtr config = m_grid->ctx()->config();
+    const double fill_value = units::convert(m_sys, config->get_double("fill_value"),
+                                             "Gt year-1", "kg second-1");
+    result->set(fill_value);
   } else {
     IceModelVec::AccessList list;
     list.add(*result);
