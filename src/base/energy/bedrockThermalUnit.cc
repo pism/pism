@@ -277,6 +277,7 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
   if (not m_temp.was_created()) {
+    update_upward_geothermal_flux();
     return;  // in this case we are up to date
   }
 
@@ -290,7 +291,8 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (my_dt < 0) {
      throw RuntimeError("BedThermalUnit::update() does not allow negative timesteps");
- }
+  }
+
   // CHECK: is desired time-interval equal to [my_t,my_t+my_dt] where my_t = t + dt?
   if ((!gsl_isnan(m_t)) && (!gsl_isnan(m_dt))) { // this check should not fire on first use
     bool contiguous = true;
@@ -311,6 +313,7 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
                                     "  desired: my_t = %f s, my_dt = %f s",
                                     m_t,m_dt,my_t,my_dt); }
   }
+
   // CHECK: is desired time-step too long?
   MaxTimestep my_max_dt = max_timestep(my_t);
   if (my_max_dt.is_finite() and my_max_dt.value() < my_dt) {
