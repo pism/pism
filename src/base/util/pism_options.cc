@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -70,7 +70,7 @@ void show_usage(const Logger &log, const std::string &execname, const std::strin
              "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
              "For more help with PISM:\n"
              "  1. download PDF User's Manual:\n"
-             "       http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf\n"
+             "       http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=pism_manual.pdf\n"
              "  2. read browser for technical details:\n"
              "       http://www.pism-docs.org/doxy/html/index.html\n"
              "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"

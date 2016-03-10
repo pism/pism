@@ -8,7 +8,7 @@ configure_file (../ice-bib.bib ice-bib.bib COPYONLY)
 
 # The list of all the source files for the User's Manual, with section number:
 set (latex_sources
-  manual.tex                   # preamble and structure
+  pism_manual.tex              # preamble and structure
   getting-started.tex          # 2
   highlevelview.tex            # 3
   init-boot.tex                # 4
@@ -32,4 +32,4 @@ foreach (format jpg png pdf)
 endforeach()
 set (figures ${jpg} ${png} ${pdf})
 
-pism_latex_document(manual "${latex_sources}" "${figures}" "YES")
+pism_latex_document(pism_manual "${latex_sources}" "${figures}" "YES")

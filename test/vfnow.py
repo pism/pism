@@ -5,7 +5,7 @@
 # \brief A script for verification of numerical schemes in PISM.
 # \details It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
 # pismv accordingly.
-# Copyright (C) 2007--2013, 2015 Ed Bueler and Constantine Khroulev
+# Copyright (C) 2007--2013, 2015, 2016 Ed Bueler and Constantine Khroulev
 ##
 # Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in the user manual.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 ##
@@ -265,7 +265,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     K.Mx = [8] * len(K.Mz)
     K.My = K.Mx
     K.opts = "-y 130000.0 -Lbz 1000"
-    tests['K_userman'] = K
+    tests['K_manual'] = K
 
     # test B (for a figure in the User's Manual)
     B = PISMVerificationTest()
@@ -277,7 +277,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     B.Mz = [31] * len(B.Mx)
     B.Mbz = [1] * len(B.Mx)
     B.opts = "-ys 422.45 -y 25000.0"
-    tests['B_userman'] = B
+    tests['B_manual'] = B
 
     # test G (for a figure in the User's Manual)
     G = PISMVerificationTest()
@@ -288,7 +288,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     G.My = G.Mx
     G.Mz = G.Mx
     G.opts = "-y 25000.0"
-    tests['G_userman'] = G
+    tests['G_manual'] = G
 
     # test I (for a figure in the User's Manual)
     I = PISMVerificationTest()
@@ -299,7 +299,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     I.My = [51, 101, 151, 201, 401, 601, 801, 1001, 1501, 2001, 2501, 3073]
     I.Mx = [5] * len(I.My)
     I.opts = "-ssa_method fd -ssa_rtol %1.e -ssafd_ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
-    tests['I_userman'] = I
+    tests['I_manual'] = I
 
     return tests
 
@@ -325,7 +325,7 @@ parser.add_argument("-u", dest="unequal", action="store_true",
                     help="use quadratic vertical grid spacing")
 parser.add_argument("--debug", dest="debug", action="store_true",
                     help="just print commands in sequence (do not run pismv)")
-parser.add_argument("--userman", dest="userman", action="store_true",
+parser.add_argument("--manual", dest="manual", action="store_true",
                     help="run tests necessary to produce figures in the User's Manual")
 
 options = parser.parse_args()
@@ -350,11 +350,11 @@ KSPRTOL = 1e-12  # for tests I, J, M
 SSARTOL = 5e-7  # ditto
 tests = define_refinement_paths(KSPRTOL, SSARTOL)
 
-userman_tests = ["B_userman", "G_userman", "K_userman", "I_userman"]
-if options.userman:
-    print "# VFNOW.PY: test(s) %s, using '%s...'\n" % (userman_tests, exec_prefix) + \
+manual_tests = ["B_manual", "G_manual", "K_manual", "I_manual"]
+if options.manual:
+    print "# VFNOW.PY: test(s) %s, using '%s...'\n" % (manual_tests, exec_prefix) + \
           "#           and ignoring options -t and -l"
-    for test in userman_tests:
+    for test in manual_tests:
         N = len(tests[test].Mx)
         for j in range(1, N + 1):
             run_test(exec_prefix, test, j, extra_options,

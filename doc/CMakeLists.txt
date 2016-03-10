@@ -77,7 +77,7 @@ if (PDFLATEX_COMPILER)
   add_subdirectory(installation)
 
   # User's Manual:
-  add_subdirectory(userman)
+  add_subdirectory(manual)
 
   # Climate forcing components manual:
   add_subdirectory(forcing)
@@ -90,9 +90,9 @@ if (PDFLATEX_COMPILER)
 
   if (Pism_BUILD_PDFS AND Pism_DOC_DIR)
     install (FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/userman/manual.pdf"
-      "${CMAKE_CURRENT_BINARY_DIR}/forcing/forcing.pdf"
-      "${CMAKE_CURRENT_BINARY_DIR}/installation/installation.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/manual/pism_manual.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/forcing/pism_forcing.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/installation/pism_installation.pdf"
       DESTINATION ${Pism_DOC_DIR})
 
   endif ()                      # if Pism_BUILD_PDFS
