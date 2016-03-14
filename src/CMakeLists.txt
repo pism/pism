@@ -274,6 +274,13 @@ if (Pism_BUILD_EXTRA_EXECS)
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
 endif (Pism_BUILD_EXTRA_EXECS)
 
+
+# ------------ Header Files
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/ DESTINATION include
+          FILES_MATCHING PATTERN "*.hh")
+
+
+
 add_subdirectory (calcalcs)
 add_subdirectory (base/rheology)
 add_subdirectory (coupler)
