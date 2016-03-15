@@ -287,6 +287,10 @@ add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (regional)
 
+if (Pism_BUILD_ICEBIN)
+  add_subdirectory (icebin)
+endif()
+
 if (Pism_DEBUG OR Pism_BUILD_PYTHON_BINDINGS)
   add_subdirectory (pythonbindings)
   # Right now the inverse library is not very useful without Python
