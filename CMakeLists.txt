@@ -47,6 +47,13 @@ option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
 option (Pism_USE_TR1 "If 'ON', #include <tr1/memory>, otherwise #include <memory>." OFF)
+option (Pism_CXX11 "Set compilers to C++11 mode.  Required to build IceBin" OFF)
+
+if (Pism_CXX11)
+  set(CMAKE_CXX_STANDARD 11)
+  add_definitions (-DPISM_CXX11=1)
+endif()
+
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 pism_use_rpath()
