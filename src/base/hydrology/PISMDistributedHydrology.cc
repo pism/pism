@@ -379,14 +379,14 @@ void Distributed::update_impl(double icet, double icedt) {
     water_thickness_staggered(m_Wstag);
     m_Wstag.update_ghosts();
 
-    conductivity_staggered(m_Kstag,maxKW);
-    m_Kstag.update_ghosts();
+    conductivity_staggered(m_K,maxKW);
+    m_K.update_ghosts();
 
     velocity_staggered(m_V);
 
     // to get Qstag, W needs valid ghosts
-    advective_fluxes(m_Qstag);
-    m_Qstag.update_ghosts();
+    advective_fluxes(m_Q);
+    m_Q.update_ghosts();
 
     adaptive_for_WandP_evolution(ht, m_t+m_dt, maxKW, hdt, maxV, maxD, PtoCFLratio);
     cumratio += PtoCFLratio;
@@ -408,8 +408,7 @@ void Distributed::update_impl(double icet, double icedt) {
     const double  CC = (rg * hdt) / phi0,
                      wux  = 1.0 / (m_dx * m_dx),
                      wuy  = 1.0 / (m_dy * m_dy);
-    double  Open, Close, divflux, ZZ,
-               divadflux, diffW;
+    double Open, Close, divflux, ZZ, diffW;
     overburden_pressure(m_Pover);
 
     const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
@@ -423,8 +422,8 @@ void Distributed::update_impl(double icet, double icedt) {
     list.add(m_Wtilnew);
     list.add(m_velbase_mag);
     list.add(m_Wstag);
-    list.add(m_Kstag);
-    list.add(m_Qstag);
+    list.add(m_K);
+    list.add(m_Q);
     list.add(m_total_input);
     list.add(*mask);
     list.add(m_Pover);
@@ -445,12 +444,14 @@ void Distributed::update_impl(double icet, double icedt) {
         Close = c2 * Aglen * pow(m_Pover(i,j) - m_P(i,j),nglen) * m_W(i,j);
 
         // compute the flux divergence the same way as in raw_update_W()
-        divadflux =   (m_Qstag(i,j,0) - m_Qstag(i-1,j  ,0)) / m_dx
-          + (m_Qstag(i,j,1) - m_Qstag(i,  j-1,1)) / m_dy;
-        const double  De = rg * m_Kstag(i,  j,0) * m_Wstag(i,  j,0),
-          Dw = rg * m_Kstag(i-1,j,0) * m_Wstag(i-1,j,0),
-          Dn = rg * m_Kstag(i,j  ,1) * m_Wstag(i,j  ,1),
-          Ds = rg * m_Kstag(i,j-1,1) * m_Wstag(i,j-1,1);
+        const double divadflux =
+          (m_Q(i,j,0) - m_Q(i-1,j  ,0)) / m_dx +
+          (m_Q(i,j,1) - m_Q(i,  j-1,1)) / m_dy;
+        const double
+          De = rg * m_K(i,  j,0) * m_Wstag(i,  j,0),
+          Dw = rg * m_K(i-1,j,0) * m_Wstag(i-1,j,0),
+          Dn = rg * m_K(i,j  ,1) * m_Wstag(i,j  ,1),
+          Ds = rg * m_K(i,j-1,1) * m_Wstag(i,j-1,1);
         diffW =   wux * (De * (m_W(i+1,j) - m_W(i,j)) - Dw * (m_W(i,j) - m_W(i-1,j)))
           + wuy * (Dn * (m_W(i,j+1) - m_W(i,j)) - Ds * (m_W(i,j) - m_W(i,j-1)));
         divflux = - divadflux + diffW;
