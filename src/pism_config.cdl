@@ -41,7 +41,7 @@ netcdf pism_config {
     pism_config:stress_balance_model_type = "keyword";
     pism_config:stress_balance_model_option = "stress_balance";
     pism_config:stress_balance_model_choices = "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia";
-    pism_config:stress_balance_model = "sia_only";
+    pism_config:stress_balance_model = "sia";
     pism_config:stress_balance_model_doc = "stress balance model; choose from 'none', 'sia', 'ssa', 'ssa+sia', 'prescribed_sliding', 'prescribed_sliding+sia'";
 
     pism_config:do_skip_type = "boolean";
@@ -139,11 +139,6 @@ netcdf pism_config {
     pism_config:is_dry_simulation_option = "dry";
     pism_config:is_dry_simulation = "no";
     pism_config:is_dry_simulation_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
-
-    pism_config:stress_balance_model_type = "keyword";
-    pism_config:stress_balance_model_choices = "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia";    
-    pism_config:stress_balance_model = "sia";
-    pism_config:stress_balance_model_doc = "the stress balance model";
 
     pism_config:write_ssa_system_to_matlab_type = "boolean";
     pism_config:write_ssa_system_to_matlab = "no";
