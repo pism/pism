@@ -44,6 +44,12 @@ netcdf pism_config {
     pism_config:stress_balance_model = "sia";
     pism_config:stress_balance_model_doc = "stress balance model; choose from 'none', 'sia', 'ssa', 'ssa+sia', 'prescribed_sliding', 'prescribed_sliding+sia'";
 
+    pism_config:stress_balance_vertical_velocity_approximation_type = "keyword";
+    pism_config:stress_balance_vertical_velocity_approximation_option = "vertical_velocity_approximation";
+    pism_config:stress_balance_vertical_velocity_approximation_choices = "centered,upstream";
+    pism_config:stress_balance_vertical_velocity_approximation = "centered";
+    pism_config:stress_balance_vertical_velocity_approximation_doc = "Vertical velocity FD approximation: 'centered' or 'upstream'. \"Upstream\" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.";
+
     pism_config:do_skip_type = "boolean";
     pism_config:do_skip_option = "skip";
     pism_config:do_skip = "no";
