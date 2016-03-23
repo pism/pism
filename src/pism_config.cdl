@@ -491,6 +491,20 @@ netcdf pism_config {
     pism_config:hydrology_maximum_time_step_years = 1.0;
     pism_config:hydrology_maximum_time_step_years_doc = "maximum allowed time step length used by PISMRoutingHydrology and PISMDistributedHydrology";
 
+    pism_config:hydrology_null_diffuse_till_water_type = "boolean";
+    pism_config:hydrology_null_diffuse_till_water = "no";
+    pism_config:hydrology_null_diffuse_till_water_doc = "Diffuse stored till water laterally. See equation (11) of [@ref BBssasliding]"; 
+
+    pism_config:hydrology_null_diffusion_time_units = "years";
+    pism_config:hydrology_null_diffusion_time_type = "scalar";
+    pism_config:hydrology_null_diffusion_time = 1000.0;
+    pism_config:hydrology_null_diffusion_time_doc = "diffusion time for till water thickness; see equation (11) in [@ref BBssasliding]; only active if hydrology_null_diffuse_till_water is set";
+
+    pism_config:hydrology_null_diffusion_distance_units = "meters";
+    pism_config:hydrology_null_diffusion_distance_type = "scalar";
+    pism_config:hydrology_null_diffusion_distance = 2e4;
+    pism_config:hydrology_null_diffusion_distance_doc = "diffusion distance for till water thickness; see equation (11) in [@ref BBssasliding]; only active if hydrology_null_diffuse_till_water is set";
+
     pism_config:hydrology_null_strip_width_units = "meters";
     pism_config:hydrology_null_strip_width_type = "scalar";
     pism_config:hydrology_null_strip_width = -1.0;

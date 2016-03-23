@@ -178,6 +178,17 @@ protected:
   virtual MaxTimestep max_timestep_impl(double t);
   //! Solves an implicit step of a highly-simplified ODE.
   virtual void update_impl(double icet, double icedt);
+
+  void diffuse_till_water(double dt);
+
+private:
+  double m_diffuse_tillwat;
+  double m_diffusion_time;
+  double m_diffusion_distance;
+  double m_tillwat_max;
+  double m_tillwat_decay_rate;
+
+  IceModelVec2S m_Wtil_old;
 };
 
 
