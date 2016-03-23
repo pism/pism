@@ -23,8 +23,10 @@
 #include "FETools.hh"
 #include "base/util/petscwrappers/SNES.hh"
 #include "base/util/TerminationReason.hh"
+#include "base/util/Mask.hh"
 
 namespace pism {
+
 namespace stressbalance {
 
 //! Factory function for constructing a new SSAFEM.
@@ -35,8 +37,7 @@ SSA * SSAFEMFactory(IceGrid::ConstPtr , EnthalpyConverter::Ptr);
   Jed's original code is in rev 831: src/base/ssaJed/...
   The SSAFEM duplicates most of the functionality of SSAFD, using the finite element method.
 */
-class SSAFEM : public SSA
-{
+class SSAFEM : public SSA {
 public:
   SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
 
@@ -46,22 +47,53 @@ protected:
   virtual void init_impl();
   void cache_inputs();
 
-  //! Storage for SSA coefficients at a quadrature point.
+  //! Storage for SSA coefficients at element nodes.
+  //!
+  //! All fields must be "double" or structures containing "double"
+  //! for IceModelVec2Fat to work correctly.
   struct Coefficients {
     //! ice thickness
-    double H;
+    double thickness;
+    //! bed elevation
+    double bed;
+    //! sea level
+    double sea_level;
     //! basal yield stress
     double tauc;
     //! ice hardness
-    double B;
+    double hardness;
     //! prescribed gravitational driving stress
     Vector2 driving_stress;
-    //! mask used to choose basal conditions
-    int mask;
   };
 
-  void PointwiseNuHAndBeta(const Coefficients &coefficients,
-                           const Vector2 &u, const double Du[],
+  GeometryCalculator m_gc;
+  double m_alpha;
+  double m_rho_g;
+
+  IceModelVec2Fat<Coefficients> m_coefficients;
+
+  void quad_point_values(const fem::Quadrature &Q,
+                         const Coefficients *x,
+                         int *mask,
+                         double *thickness,
+                         double *tauc,
+                         double *hardness) const;
+
+  void explicit_driving_stress(const fem::Quadrature &Q,
+                               const Coefficients *x,
+                               Vector2 *driving_stress) const;
+
+  void driving_stress(const fem::Quadrature &Q,
+                      const Coefficients *x,
+                      Vector2 *driving_stress) const;
+
+  void PointwiseNuHAndBeta(double thickness,
+                           double hardness,
+                           int mask,
+                           double tauc,
+                           const Vector2 &U,
+                           const Vector2 &U_x,
+                           const Vector2 &U_y,
                            double *nuH, double *dnuH,
                            double *beta, double *dbeta);
 
@@ -91,7 +123,6 @@ protected:
   CallbackData m_callback_data;
 
   petsc::SNES m_snes;
-  std::vector<Coefficients> m_coefficients;
 
   //! Storage for node types (interior, boundary, exterior).
   IceModelVec2Int m_node_type;
@@ -102,11 +133,15 @@ protected:
   double m_beta_ice_free_bedrock;
   double m_epsilon_ssa;
 
-  fem::ElementMap m_element_index;
-  fem::Quadrature_Scalar m_quadrature;
-  fem::Quadrature_Vector m_quadrature_vector;
-  fem::DOFMap m_dofmap;
+  fem::ElementIterator m_element_index;
+  fem::ElementMap m_element;
+  fem::Q1Quadrature4 m_quadrature;
 
+  // Support for direct specification of driving stress to the FEM SSA solver. This helps
+  // with certain test cases where the grid is periodic but the driving stress cannot be the
+  // gradient of a periodic function. (See commit ffb4be16.)
+  const IceModelVec2S *m_driving_stress_x;
+  const IceModelVec2S *m_driving_stress_y;
 private:
   void cache_residual_cfbc();
   void monitor_jacobian(Mat Jac);

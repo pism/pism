@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -56,9 +56,8 @@ void CalvingAtThickness::init() {
  *
  * @return 0 on success
  */
-void CalvingAtThickness::update(IceModelVec2Int &pism_mask,
+void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
                                 IceModelVec2S &ice_thickness) {
-  MaskQuery M(m_old_mask);
 
   // this call fills ghosts of m_old_mask
   m_old_mask.copy_from(pism_mask);
@@ -71,8 +70,8 @@ void CalvingAtThickness::update(IceModelVec2Int &pism_mask,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.floating_ice(i, j)           &&
-        M.next_to_ice_free_ocean(i, j) &&
+    if (m_old_mask.floating_ice(i, j)           &&
+        m_old_mask.next_to_ice_free_ocean(i, j) &&
         ice_thickness(i, j) < m_calving_threshold) {
       ice_thickness(i, j) = 0.0;
       pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;

@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -199,8 +199,8 @@ public:
   petsc::DM::Ptr get_dm() const;
   virtual void  set_name(const std::string &name);
   const std::string& get_name() const;
-  virtual void  set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
-                          const std::string &my_units, const std::string &my_standard_name,
+  virtual void  set_attrs(const std::string &pism_intent, const std::string &long_name,
+                          const std::string &units, const std::string &standard_name,
                           int component = 0);
   virtual void  read_attributes(const std::string &filename, int component = 0);
   virtual void  define(const PIO &nc, IO_Type output_datatype = PISM_DOUBLE) const;
@@ -243,7 +243,8 @@ protected:
   virtual void regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
   virtual void write_impl(const PIO &nc) const;
-  std::vector<double> zlevels;
+
+  std::vector<double> m_zlevels;
 
   petsc::Vec  m_v;                       //!< Internal storage
   std::string m_name;
@@ -258,13 +259,13 @@ protected:
   bool m_has_ghosts;            //!< m_has_ghosts == true means "has ghosts"
   petsc::DM::Ptr m_da;          //!< distributed mesh manager (DM)
 
-  bool begin_end_access_use_dof;
+  bool m_begin_end_access_use_dof;
 
   //! It is a map, because a temporary IceModelVec can be used to view
   //! different quantities
-  mutable std::map<std::string,petsc::Viewer::Ptr> map_viewers;
+  mutable std::map<std::string,petsc::Viewer::Ptr> m_map_viewers;
 
-  mutable void *array;  // will be cast to double** or double*** in derived classes
+  mutable void *m_array;  // will be cast to double** or double*** in derived classes
 
   mutable int m_access_counter;           // used in begin_access() and end_access()
   int m_state_counter;            //!< Internal IceModelVec "revision number"
@@ -327,7 +328,7 @@ public:
   virtual void set_component(unsigned int n, const IceModelVec2S &source);
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
-  void create(IceGrid::ConstPtr my_grid, const std::string &my_short_name,
+  void create(IceGrid::ConstPtr grid, const std::string &short_name,
               IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
   virtual void read_impl(const PIO &nc, const unsigned int time);
@@ -335,6 +336,40 @@ protected:
                                      double default_value = 0.0);
   virtual void write_impl(const PIO &nc) const;
 };
+
+//! A "fat" storage vector for combining related fields (such as SSAFEM coefficients).
+template<typename T>
+class IceModelVec2Fat : public IceModelVec2 {
+public:
+  IceModelVec2Fat() {
+    m_dof = sizeof(T) / sizeof(double);
+    m_begin_end_access_use_dof = false;
+  }
+
+  void create(IceGrid::ConstPtr grid, const std::string &short_name,
+              IceModelVecKind ghostedp, unsigned int stencil_width = 1) {
+
+    m_name = short_name;
+
+    IceModelVec2::create(grid, short_name, ghostedp, stencil_width, m_dof);
+  }
+
+  inline T& operator()(int i, int j) {
+#if (PISM_DEBUG==1)
+    check_array_indices(i, j, 0);
+#endif
+    return static_cast<T**>(m_array)[j][i];
+  }
+
+  inline const T& operator()(int i, int j) const {
+#if (PISM_DEBUG==1)
+    check_array_indices(i, j, 0);
+#endif
+    return static_cast<T**>(m_array)[j][i];
+  }
+
+};
+
 
 class IceModelVec2V;
 
@@ -353,7 +388,7 @@ public:
 
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
-  void create(IceGrid::ConstPtr my_grid, const std::string &my_name,
+  void create(IceGrid::ConstPtr grid, const std::string &name,
               IceModelVecKind ghostedp, int width = 1);
   petsc::Vec::Ptr allocate_proc0_copy() const;
   void put_on_proc0(Vec onp0) const;
@@ -416,7 +451,7 @@ public:
 
   static Ptr ToVector(IceModelVec::Ptr input);
 
-  void create(IceGrid::ConstPtr my_grid, const std::string &my_short_name,
+  void create(IceGrid::ConstPtr grid, const std::string &short_name,
               IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void copy_from(const IceModelVec &source);
   virtual void add(double alpha, const IceModelVec &x);
@@ -441,7 +476,7 @@ public:
 
   static Ptr ToStaggered(IceModelVec::Ptr input);
 
-  void create(IceGrid::ConstPtr my_grid, const std::string &my_short_name,
+  void create(IceGrid::ConstPtr grid, const std::string &short_name,
               IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual void staggered_to_regular(IceModelVec2S &result) const;
   virtual void staggered_to_regular(IceModelVec2V &result) const;
@@ -472,7 +507,7 @@ public:
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
 protected:
-  void allocate(IceGrid::ConstPtr mygrid, const std::string &my_short_name,
+  void allocate(IceGrid::ConstPtr mygrid, const std::string &short_name,
                 IceModelVecKind ghostedp, const std::vector<double> &levels,
                 unsigned int stencil_width = 1);
 private:
@@ -491,7 +526,7 @@ public:
 
   static Ptr To3DScalar(IceModelVec::Ptr input);
 
-  void create(IceGrid::ConstPtr mygrid, const std::string &my_short_name,
+  void create(IceGrid::ConstPtr mygrid, const std::string &short_name,
               IceModelVecKind ghostedp,
               unsigned int stencil_width = 1);
 

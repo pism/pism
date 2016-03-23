@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,6 +28,7 @@ namespace pism {
 
 class IceGrid;
 class Config;
+class IceModelVec2CellType;
 
 namespace stressbalance {
 
@@ -88,7 +89,7 @@ public:
 
   virtual void get_smoothed_thk(const IceModelVec2S &usurf,
                                 const IceModelVec2S &thk,
-                                const IceModelVec2Int &mask,
+                                const IceModelVec2CellType &mask,
                                 IceModelVec2S &thksmooth);
   virtual void get_theta(const IceModelVec2S &usurf,
                          IceModelVec2S &result);

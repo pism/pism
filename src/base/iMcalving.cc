@@ -88,8 +88,6 @@ void IceModel::Href_cleanup() {
     return;
   }
 
-  MaskQuery mask(vMask);
-
   IceModelVec::AccessList list;
   list.add(ice_thickness);
   list.add(vHref);
@@ -103,7 +101,7 @@ void IceModel::Href_cleanup() {
       vHref(i, j) = 0.0;
     }
 
-    if (vHref(i, j) > 0.0 && not mask.next_to_ice(i, j)) {
+    if (vHref(i, j) > 0.0 && not vMask.next_to_ice(i, j)) {
       vHref(i, j) = 0.0;
     }
   }
@@ -125,8 +123,6 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
                                            const IceModelVec2S &thickness_old,
                                            const IceModelVec2S &Href,
                                            const IceModelVec2S &Href_old) {
-
-  MaskQuery mask(vMask);
 
   const double ice_density = m_config->get_double("ice_density");
   const bool
@@ -152,7 +148,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.ice_free_ocean(i,j)) {
+    if (vMask.ice_free_ocean(i,j)) {
       double
         delta_H    = thickness(i,j) - thickness_old(i,j),
         delta_Href = 0.0,

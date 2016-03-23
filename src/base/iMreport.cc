@@ -53,8 +53,6 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
   // use Enth3 to get stats
   Enth3.getHorSlice(Enthbase, 0.0);  // z=0 slice
 
-  MaskQuery mask(vMask);
-
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(ice_thickness);
@@ -64,7 +62,7 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.icy(i, j)) {
+      if (vMask.icy(i, j)) {
         // accumulate area of base which is at melt point
         if (EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
           meltarea += a;
@@ -107,8 +105,6 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
   const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3, // area unit (km^2)
     currtime = m_time->current(); // seconds
 
-  MaskQuery mask(vMask);
-
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(ice_thickness);
@@ -123,7 +119,7 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.icy(i, j)) {
+      if (vMask.icy(i, j)) {
         // accumulate volume of ice which is original
         double *age = age3.get_column(i, j);
         const int  ks = m_grid->kBelowHeight(ice_thickness(i,j));
@@ -342,7 +338,6 @@ double IceModel::compute_ice_volume() {
 //! Computes the ice volume, which is relevant for sea-level rise in m^3 in SEA-WATER EQUIVALENT.
 double IceModel::compute_sealevel_volume() {
   double volume = 0.0;
-  MaskQuery mask(vMask);
   double ocean_rho = m_config->get_double("sea_water_density");
   double ice_rho = m_config->get_double("ice_density");
 
@@ -360,7 +355,7 @@ double IceModel::compute_sealevel_volume() {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.grounded(i,j)) {
+    if (vMask.grounded(i,j)) {
       // count all ice, including cells which have so little they
       // are considered "ice-free"
       if (ice_thickness(i,j) > 0) {
@@ -470,8 +465,6 @@ double IceModel::compute_ice_volume_cold() {
 double IceModel::compute_ice_area() {
   double area = 0.0;
 
-  MaskQuery mask(vMask);
-
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(ice_thickness);
@@ -479,7 +472,7 @@ double IceModel::compute_ice_area() {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.icy(i, j)) {
+    if (vMask.icy(i, j)) {
       area += cell_area(i,j);
     }
   }
@@ -497,8 +490,6 @@ double IceModel::compute_ice_area_temperate() {
 
   Enth3.getHorSlice(Enthbase, 0.0);  // z=0 slice
 
-  MaskQuery mask(vMask);
-
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(Enthbase);
@@ -509,7 +500,7 @@ double IceModel::compute_ice_area_temperate() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.icy(i, j) and
+      if (vMask.icy(i, j) and
           EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
         area += cell_area(i,j);
       }
@@ -533,8 +524,6 @@ double IceModel::compute_ice_area_cold() {
 
   Enth3.getHorSlice(Enthbase, 0.0);  // z=0 slice
 
-  MaskQuery mask(vMask);
-
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(Enthbase);
@@ -545,7 +534,7 @@ double IceModel::compute_ice_area_cold() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.icy(i, j) and
+      if (vMask.icy(i, j) and
           not EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
         area += cell_area(i,j);
       }
@@ -563,15 +552,13 @@ double IceModel::compute_ice_area_cold() {
 double IceModel::compute_ice_area_grounded() {
   double area = 0.0;
 
-  MaskQuery mask(vMask);
-
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(cell_area);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.grounded_ice(i,j)) {
+    if (vMask.grounded_ice(i,j)) {
       area += cell_area(i,j);
     }
   }
@@ -583,15 +570,13 @@ double IceModel::compute_ice_area_grounded() {
 double IceModel::compute_ice_area_floating() {
   double area = 0.0;
 
-  MaskQuery mask(vMask);
-
   IceModelVec::AccessList list;
   list.add(vMask);
   list.add(cell_area);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.floating_ice(i,j)) {
+    if (vMask.floating_ice(i,j)) {
       area += cell_area(i,j);
     }
   }

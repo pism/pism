@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -183,6 +183,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
+    verbosityLevelFromOptions();
     Context::Ptr ctx = context_from_options(com, "ssa_test_plug");
     Config::Ptr config = ctx->config();
 

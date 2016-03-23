@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,20 +26,18 @@ namespace inverse {
 
 void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
-  double x_e[Nk];
-  double x_q[Nq];
+  double x_q[Nq_max];
 
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all LOCAL elements.
   const int
@@ -50,14 +48,16 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(i, j, x, x_e);
-      m_quadrature.computeTrialFunctionValues(x_e, x_q);
+      double tmp[fem::q1::n_chi];
+      m_element.nodal_values(x, tmp);
+      quadrature_point_values(m_quadrature, tmp, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         const double x_qq = x_q[q];
-        value += JxW[q]*x_qq*x_qq;
+        value += W[q]*x_qq*x_qq;
       } // q
     } // j
   } // i
@@ -67,21 +67,21 @@ void IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
 void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
-  double a_q[Nq];
+  double a_q[Nq_max];
 
-  double b_q[Nq];
+  double b_q[Nq_max];
 
   IceModelVec::AccessList list(a);
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all LOCAL elements.
   const int
@@ -92,13 +92,17 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
+      m_element.reset(i, j);
 
-      // Obtain values of x at the quadrature points for the element.
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, a, a_q);
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, b, b_q);
+      double tmp[fem::q1::n_chi];
+      m_element.nodal_values(a, tmp);
+      quadrature_point_values(m_quadrature, tmp, a_q);
+
+      m_element.nodal_values(b, tmp);
+      quadrature_point_values(m_quadrature, tmp, b_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
-        value += JxW[q]*a_q[q]*b_q[q];
+        value += W[q]*a_q[q]*b_q[q];
       } // q
     } // j
   } // i
@@ -108,36 +112,42 @@ void IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 
 void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
-  double x_q[Nq];
+  double x_q[Nq_max];
   double gradient_e[Nk];
 
   IceModelVec::AccessList list(x);
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 
       // Reset the DOF map for this element.
-      m_dofmap.reset(i, j, *m_grid);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, x, x_q);
+      double tmp[Nk];
+      m_element.nodal_values(x, tmp);
+      quadrature_point_values(m_quadrature, tmp, x_q);
 
       // Zero out the element-local residual in prep for updating it.
       for (unsigned int k = 0; k < Nk; k++) {
@@ -147,30 +157,28 @@ void IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
       for (unsigned int q = 0; q < Nq; q++) {
         const double x_qq = x_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          gradient_e[k] += 2*JxW[q]*x_qq*test[q][k].val;
+          gradient_e[k] += 2*W[q]*x_qq*test[q][k].val;
         } // k
       } // q
-      m_dofmap.addLocalResidualBlock(gradient_e, gradient);
+      m_element.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
 }
 
 void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
-  Vector2 x_e[Nk];
-  Vector2 x_q[Nq];
+  Vector2 x_q[Nq_max];
 
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all local and ghosted elements.
   const int
@@ -181,14 +189,16 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(i, j, x, x_e);
-      m_quadrature_vector.computeTrialFunctionValues(x_e, x_q);
+      Vector2 tmp[fem::q1::n_chi];
+      m_element.nodal_values(x, tmp);
+      quadrature_point_values(m_quadrature, tmp, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         const Vector2 &x_qq = x_q[q];
-        value += JxW[q]*(x_qq.u*x_qq.u + x_qq.v*x_qq.v);
+        value += W[q]*(x_qq.u*x_qq.u + x_qq.v*x_qq.v);
       } // q
     } // j
   } // i
@@ -198,21 +208,21 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
 void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
-  Vector2 a_q[Nq];
+  Vector2 a_q[Nq_max];
 
-  Vector2 b_q[Nq];
+  Vector2 b_q[Nq_max];
 
   IceModelVec::AccessList list(a);
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all LOCAL elements.
   const int
@@ -223,13 +233,17 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature_vector.computeTrialFunctionValues(i, j, m_dofmap, a, a_q);
-      m_quadrature_vector.computeTrialFunctionValues(i, j, m_dofmap, b, b_q);
+      Vector2 tmp[fem::q1::n_chi];
+      m_element.nodal_values(a, tmp);
+      quadrature_point_values(m_quadrature, tmp, a_q);
+      m_element.nodal_values(b, tmp);
+      quadrature_point_values(m_quadrature, tmp, b_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
-        value += JxW[q]*(a_q[q].u*b_q[q].u + a_q[q].v*b_q[q].v);
+        value += W[q]*(a_q[q].u*b_q[q].u + a_q[q].v*b_q[q].v);
       } // q
     } // j
   } // i
@@ -239,36 +253,42 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
 
 void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
-  Vector2 x_q[Nq];
+  Vector2 x_q[Nq_max];
   Vector2 gradient_e[Nk];
 
   IceModelVec::AccessList list(x);
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
 
       // Reset the DOF map for this element.
-      m_dofmap.reset(i, j, *m_grid);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature_vector.computeTrialFunctionValues(i, j, m_dofmap, x, x_q);
+      Vector2 tmp[Nk];
+      m_element.nodal_values(x, tmp);
+      quadrature_point_values(m_quadrature, tmp, x_q);
 
       // Zero out the element-local residual in prep for updating it.
       for (unsigned int k = 0; k < Nk; k++) {
@@ -279,12 +299,12 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
       for (unsigned int q = 0; q < Nq; q++) {
         const Vector2 &x_qq = x_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          double gcommon = 2*JxW[q]*test[q][k].val;
+          double gcommon = 2*W[q]*test[q][k].val;
           gradient_e[k].u += gcommon*x_qq.u;
           gradient_e[k].v += gcommon*x_qq.v;
         } // k
       } // q
-      m_dofmap.addLocalResidualBlock(gradient_e, gradient);
+      m_element.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
 }

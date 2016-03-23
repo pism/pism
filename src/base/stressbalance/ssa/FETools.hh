@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown nd Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -34,9 +34,13 @@ class IceModelVec2Int;
 class IceModelVec2V;
 class IceGrid;
 namespace fem {
-//! \file
+
+//! Hard-wired maximum number of points a quadrature can use. This is used as the size of arrays
+//! storing quadrature point values. Some of the entries in such an array may not be used.
+static const unsigned int MAX_QUADRATURE_SIZE = 9;
+
 //! \brief Classes for implementing the Finite Element Method on an IceGrid.
-/*! \file We assume that the reader has a basic understanding of the finite element method. The
+/*! \file FETools.hh We assume that the reader has a basic understanding of the finite element method. The
   following is a reminder of the method that also gives the background for the how to implement it
   on an IceGrid with the tools in this module.
 
@@ -100,7 +104,7 @@ namespace fem {
   \int_E f dx \approx \sum_{q} f(x_q) w_q
   \f]
 
-  for certain points \f$x_q\f$ and weights \f$j_q\f$ (specific details are found in Quadrature2x2).
+  for certain points \f$x_q\f$ and weights \f$j_q\f$ (specific details are found in Quadrature).
 
   The unknown \f$w_h\f$ is represented by an IceVec, \f$w_h=\sum_{ij} c_{ij} \psi_{ij}\f$ where
   \f$c_{ij}\f$ are the coefficients of the vector. The solution of the finite element problem
@@ -113,7 +117,7 @@ namespace fem {
   \f]
 
   Computations of these 'integrals' are done by adding up the contributions from each element (an
-  ElementMap helps with iterating over the elements). For a fixed element, there is a locally
+  ElementIterator helps with iterating over the elements). For a fixed element, there is a locally
   defined trial function \f$\hat w_h\f$ (with 4 degrees of freedom in the scalar case) and 4 local
   test functions \f$\hat\psi_k\f$, one for each vertex.
 
@@ -121,22 +125,22 @@ namespace fem {
   in the case of computing the residual):
 
   - Extract from the global degrees of freedom \f$c\f$ defining \f$w_h\f$ the local degrees of
-    freedom \f$d\f$ defining \f$\hat w_h\f$. (DOFMap)
+    freedom \f$d\f$ defining \f$\hat w_h\f$. (ElementMap)
 
   - Evaluate the local trial function \f$w_h\f$ (values and derivatives as needed) at the quadrature
-    points \f$x_q\f$ (Quadrature2x2)
+    points \f$x_q\f$ (Quadrature)
 
   - Evaluate the local test functions (again values and derivatives) at the quadrature points.
-    (Quadrature2x2)
+    (Quadrature)
 
-  - Obtain the quadrature weights $j_q$ for the element (Quadrature2x2)
+  - Obtain the quadrature weights $j_q$ for the element (Quadrature)
 
   - Compute the values of the integrand \f$g(\hat w_h,\psi_k)\f$ at each quadrature point (call
     these \f$g_{qk}\f$) and form the weighted sums \f$y_k=\sum_{q} j_q g_{qk}\f$.
 
   - Each sum \f$y_k\f$ is the contribution of the current element to a residual entry \f$r_{ij}\f$,
     where local degree of freedom \f$k\f$ corresponds with global degree of freedom \f$(i,j)\f$. The
-    local contibutions now need to be added to the global residual vector (DOFMap).
+    local contibutions now need to be added to the global residual vector (ElementMap).
 
   Computation of the Jacobian is similar, except that there are now multiple integrals per element
   (one for each local degree of freedom of \f$\hat w_h\f$).
@@ -144,9 +148,9 @@ namespace fem {
   All of the above is a simplified description of what happens in practice. The complications below
   treated by the following classes, and discussed in their documentation:
 
-  - Ghost elements (as well as periodic boundary conditions): ElementMap
-  - Dirichlet data: DOFMap
-  - Vector valued functions: (DOFMap, Quadrature2x2)
+  - Ghost elements (as well as periodic boundary conditions): ElementIterator
+  - Dirichlet data: ElementMap
+  - Vector valued functions: (ElementMap, Quadrature)
 
   The classes in this module are not intended to be a fancy finite element package. Their purpose is
   to clarify the steps that occur in the computation of residuals and Jacobians in SSAFEM, and to
@@ -155,46 +159,63 @@ namespace fem {
 
 //! Struct for gathering the value and derivative of a function at a point.
 /*! Germ in meant in the mathematical sense, sort of. */
-template <typename T>
 struct Germ
 {
   //! Function value.
-  T val;
+  double val;
   //! Function deriviative with respect to x.
-  T dx;
+  double dx;
   //! Function derivative with respect to y.
-  T dy;
+  double dy;
 };
 
-
-//! Computation of Q1 shape function values.
-/*! The Q1 shape functions are bilinear functions. On a rectangular element, there are four (Nk)
-  basis functions, each equal to 1 at one vertex and equal to zero at the remainder.
-
-  This class consolidates the computation of the values and derivatives of these basis functions.
-*/
-class ShapeQ1 {
-public:
-  //! Compute values and derivatives of the shape function supported at node k.
-  static Germ<double> eval(unsigned int k, double xi, double eta) {
-    Germ<double> result;
-
-    result.val = 0.25 * (1.0 + m_xi[k] * xi) * (1.0 + m_eta[k] * eta);
-    result.dx =  0.25 *  m_xi[k] * (1.0 + m_eta[k] * eta);
-    result.dy =  0.25 * m_eta[k] * (1.0 +  m_xi[k] * xi);
-
-    return result;
-  }
-
-  //! The number of basis shape functions.
-  static const int Nk = 4;
-private:
-  //! Coordinates of the reference element.
-  static const double m_xi[Nk];
-  //! Coordinates of the reference element.
-  static const double m_eta[Nk];
+//! Coordinates of a quadrature point, in the (xi, eta) coordinate space (i.e. on the reference
+//! element).
+struct QuadPoint {
+  double xi;
+  double eta;
 };
 
+//! Q1 element information.
+namespace q1 {
+//! Number of shape functions on a Q1 element.
+const int n_chi = 4;
+//! Number of sides per element.
+const int n_sides = 4;
+//! Evaluate a Q1 shape function and its derivatives with respect to xi and eta.
+Germ chi(unsigned int k, const QuadPoint &p);
+
+//! Nodes incident to a side. Used to extract nodal values and add contributions.
+const unsigned int incident_nodes[n_sides][2] = {
+  {0, 1}, {1, 2}, {2, 3}, {3, 0}
+};
+
+//! Outward-pointing normal vectors to sides of a Q1 element aligned with the x and y axes.
+const Vector2* outward_normals();
+
+}
+
+//! @brief P1 element embedded in a Q1 element.
+//! function at node 2).
+namespace p1 {
+//! Evaluate a P1 shape function and its derivatives with respect to xi and eta.
+Germ chi(unsigned int k, const QuadPoint &p);
+
+//! Number of sides per element.
+const int n_sides = 3;
+
+//! Nodes incident to a side. Used to extract nodal values and add contributions.
+const unsigned int incident_nodes[q1::n_chi][n_sides][2] = {
+  {{0, 1}, {1, 3}, {3, 0}},
+  {{0, 1}, {1, 2}, {2, 0}},
+  {{1, 2}, {2, 3}, {3, 1}},
+  {{2, 3}, {3, 0}, {0, 2}}
+};
+} // end of namespace p1
+
+
+// define Germs, which is an array of q1::n_chi "Germ"s
+typedef Germ Germs[q1::n_chi];
 
 //! The mapping from global to local degrees of freedom.
 /*! Computations of residual and Jacobian entries in the finite element method are done by iterating
@@ -203,70 +224,111 @@ private:
   for the purposes of local computation, (and the results added back again to the global residual
   and Jacobian arrays).
 
-  An DOFMap mediates the transfer between element-local and global degrees of freedom. In this very
+  An ElementMap mediates the transfer between element-local and global degrees of freedom. In this very
   concrete implementation, the global degrees of freedom are either scalars (double's) or vectors
   (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element are
-  ShapeQ1::Nk (%i.e. four) scalars or vectors, one for each vertex of the element.
+  q1::n_chi (%i.e. four) scalars or vectors, one for each vertex of the element.
 
-  The DOFMap is also (perhaps awkwardly) overloaded to also mediate transfering locally computed
+  The ElementMap is also (perhaps awkwardly) overloaded to mediate transfering locally computed
   contributions to residual and Jacobian matricies to their global counterparts.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class DOFMap
-{
+class ElementMap {
 public:
-  DOFMap();
-  ~DOFMap();
+  ElementMap(const IceGrid &grid);
+  ~ElementMap();
 
-  // scalar
-  void extractLocalDOFs(const IceModelVec2S &x_global, double *x_local) const;
-  void extractLocalDOFs(const IceModelVec2Int &x_global, int *x_local) const;
-  void extractLocalDOFs(double const*const*x_global, double *x_local) const;
+  /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
+      into the element-local array `result`.
+  */
+  template<typename T>
+  void nodal_values(T const* const* x_global, T* result) const {
+    for (unsigned int k = 0; k < q1::n_chi; ++k) {
+      int i = 0, j = 0;
+      local_to_global(k, i, j);
+      result[k] = x_global[j][i];   // note the indexing order
+    }
+  }
 
-  void extractLocalDOFs(int i, int j, const IceModelVec2S &x_global, double *x_local) const;
-  void extractLocalDOFs(int i, int j, double const*const*x_global, double *x_local) const;
+  /*! @brief Extract nodal values for the element (`i`,`j`) from global IceModelVec `x_global`
+      into the element-local array `result`.
+  */
+  template<class C, typename T>
+  void nodal_values(const C& x_global, T* result) const {
+    for (unsigned int k = 0; k < q1::n_chi; ++k) {
+      int i = 0, j = 0;
+      local_to_global(k, i, j);
+      result[k] = x_global(i, j);   // note the indexing order
+    }
+  }
 
-  void addLocalResidualBlock(const double *y, IceModelVec2S &y_global);
-  void addLocalResidualBlock(const double *y, double **yg);
+  /*! @brief Get nodal values of an integer mask. */
+  void nodal_values(const IceModelVec2Int &x_global, int *result) const;
 
-  // vector
-  void extractLocalDOFs(const IceModelVec2V &x_global, Vector2 *x_local) const;
-  void extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) const;
+  /*! @brief Add the values of element-local residual contributions `y` to the global residual
+    vector `y_global`. */
+  /*! The element-local residual should be an array of Nk values.*/
+  template<typename T>
+  void add_residual_contribution(const T *residual, T** y_global) const {
+    for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
+      if (m_row[k].k == 1) {
+        // skip rows marked as "invalid"
+        continue;
+      }
+      const int
+        i = m_row[k].i,
+        j = m_row[k].j;
+      y_global[j][i] += residual[k];   // note the indexing order
+    }
+  }
 
-  void extractLocalDOFs(int i, int j, const IceModelVec2V &x_global, Vector2 *x_local) const;
-  void extractLocalDOFs(int i, int j, Vector2 const*const*x_global, Vector2 *x_local) const;
+  template<class C, typename T>
+  void add_residual_contribution(const T *residual, C& y_global) const {
+    for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
+      if (m_row[k].k == 1) {
+        // skip rows marked as "invalid"
+        continue;
+      }
+      const int
+        i = m_row[k].i,
+        j = m_row[k].j;
+      y_global(i, j) += residual[k];   // note the indexing order
+    }
+  }
 
-  void addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global);
-  void addLocalResidualBlock(const Vector2 *y, Vector2 **yg);
-
-  void reset(int i, int j, const IceGrid &g);
-
-  void markRowInvalid(int k);
-  void markColInvalid(int k);
-
-  void localToGlobal(int k, int *i, int *j) const;
-
-  void addLocalJacobianBlock(const double *K, Mat J);
-
-private:
   void reset(int i, int j);
 
+  void mark_row_invalid(int k);
+  void mark_col_invalid(int k);
+
+  //! Convert a local degree of freedom index `k` to a global degree of freedom index (`i`,`j`).
+  void local_to_global(int k, int &i, int &j) const {
+    i = m_i + m_i_offset[k];
+    j = m_j + m_j_offset[k];
+  }
+
+  void add_jacobian_contribution(const double *K, Mat J) const;
+
+private:
   //! Constant for marking invalid row/columns.
   //!
   //! Has to be negative because MatSetValuesBlockedStencil supposedly ignores negative indexes.
   //! Seems like it has to be negative and below the smallest allowed index, i.e. -2 and below with
   //! the stencil of width 1 (-1 *is* an allowed index). We use -2^30 and *don't* use PETSC_MIN_INT,
   //! because PETSC_MIN_INT depends on PETSc's configuration flags.
-  static const int kDofInvalid = -1073741824;
-  static const int kIOffset[ShapeQ1::Nk];
-  static const int kJOffset[ShapeQ1::Nk];
+  static const int m_invalid_dof = -1073741824;
+  static const int m_i_offset[q1::n_chi];
+  static const int m_j_offset[q1::n_chi];
 
-  //! Indices of the current element (for updating residual/Jacobian).
+  //! Indices of the current element.
   int m_i, m_j;
 
   //! Stencils for updating entries of the Jacobian matrix.
-  MatStencil m_row[ShapeQ1::Nk], m_col[ShapeQ1::Nk];
+  MatStencil m_row[q1::n_chi], m_col[q1::n_chi];
+
+  // the grid (for marking ghost DOFs as "invalid")
+  const IceGrid &m_grid;
 };
 
 //! Manages iterating over element indices.
@@ -295,26 +357,23 @@ private:
   vertex.
 
   The calculation of what elements to index over needs to account for ghosts and the
-  presence or absense of periodic boundary conditions in the IceGrid.  The ElementMap performs
-  that computation for you (see ElementMap::xs and friends).
+  presence or absense of periodic boundary conditions in the IceGrid.  The ElementIterator performs
+  that computation for you (see ElementIterator::xs and friends).
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class ElementMap
-{
+class ElementIterator {
 public:
-  ElementMap(const IceGrid &g);
+  ElementIterator(const IceGrid &g);
 
   /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
-  int element_count()
-  {
+  int element_count() {
     return xm*ym;
   }
 
   /*!\brief Convert an element index (`i`,`j`) into a flattened (1-d) array index, with the first
     element (`i`, `j`) to be iterated over corresponding to flattened index 0. */
-  int flatten(int i, int j)
-  {
+  int flatten(int i, int j) {
     return (i-xs) + (j-ys)*xm;
   }
 
@@ -339,6 +398,58 @@ public:
   int lym;
 };
 
+class Quadrature {
+public:
+  Quadrature(unsigned int N);
+  virtual ~Quadrature();
+
+  //! Quadrature size (the number of points).
+  unsigned int n() const {
+    return m_Nq;
+  }
+
+  //! Vaues of `q1::n_chi` trial functions and their derivatives with respect to `x` and `y`, for
+  //! each of `n()` quadrature points.
+  const Germs* test_function_values() const {
+    return m_germs;
+  }
+
+  //! Determinant of the Jacobian of the map from the reference element to the physical element,
+  //! evaluated at quadrature points and multiplied by corresponding quadrature weights.
+  const double* weights() const {
+    return m_W;
+  }
+protected:
+  //! Number of quadrature points.
+  const unsigned int m_Nq;
+
+  double *m_W;
+
+  Germs* m_germs;
+
+  //! Jacobian of the map from the reference element to a physical element.
+  double m_J[2][2];
+
+  // pointer to a 2D shape function
+  typedef Germ (*ShapeFunction2)(unsigned int k, const QuadPoint &p);
+
+  void initialize(ShapeFunction2 f,
+                  unsigned int n_chi,
+                  const QuadPoint *points,
+                  const double *weights);
+};
+
+//! Quadratures on a Q1 element with sides aligned along coordinate axes.
+/**
+  This code isolates the computation of the Jacobian of the map from the reference element to the
+  physical element and its inverse, which are used to convert partial derivatives with respect to
+  xi, eta to partial derivatives with respect to x and y.
+ */
+class Q1Quadrature : public Quadrature {
+protected:
+  Q1Quadrature(unsigned int size, double dx, double dy, double L);
+};
+
 //! Numerical integration of finite element functions.
 /*! The core of the finite element method is the computation of integrals over elements.
   For nonlinear problems, or problems with non-constant coefficients (%i.e. any real problem)
@@ -346,7 +457,7 @@ public:
   \f[
   \int_E f(x)\; dx \approx \sum_q f(x_q) w_q
   \f]
-  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  An Quadrature2x2 is used
+  for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  A quadrature is used
   to evaluate finite element functions at quadrature points, and to compute weights \f$w_q\f$
   for a given element.
 
@@ -365,134 +476,136 @@ public:
   0 o------------------o  1
   ~~~
 
-  So there are four quad points per element, which occur at \f$x,y=\pm 1/\sqrt{3}\f$. This
-  corresponds to the tensor product of Gaussian integration on an interval that is exact for cubic
-  functions on the interval.
+  There are four quad points per element, which occur at \f$x,y=\pm 1/\sqrt{3}\f$. This corresponds
+  to the tensor product of Gaussian integration on an interval that is exact for cubic functions on
+  the interval.
 
   Integration on a physical element can be thought of as being done by change of variables. The
-  quadrature weights need to be modified, and the Quadrature2x2 takes care of this for you. Because
-  all elements in an IceGrid are congruent, the quadrature weights are the same for each element,
-  and are computed upon initialization with an IceGrid.
+  quadrature weights need to be modified, and the Quadrature takes care of this. Because all
+  elements in an IceGrid are congruent, the quadrature weights are the same for each element, and
+  are computed upon initialization.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class Quadrature2x2
-{
+class Q1Quadrature4 : public Q1Quadrature {
 public:
-  Quadrature2x2(double dx, double dy, double L=1.0); // FIXME Allow a length scale to be specified.
+  Q1Quadrature4(double dx, double dy, double L=1.0);
+private:
+  static const unsigned int m_size = 4;
+};
 
-  //! Number of quadrature points.
-  static const unsigned int Nq = 4;
+//! The 9-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
+class Q1Quadrature9 : public Q1Quadrature {
+public:
+  Q1Quadrature9(double dx, double dy, double L=1.0);
+private:
+  static const unsigned int m_size = 9;
+};
 
-  // define GermArray, which is an array of Quadrature2x2::Nq
-  // Germ<double>s
-  typedef Germ<double> GermArray[Nq];
+//! The 16-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
+class Q1Quadrature16 : public Q1Quadrature {
+public:
+  Q1Quadrature16(double dx, double dy, double L=1.0);
+private:
+  static const unsigned int m_size = 16;
+};
 
-  const GermArray* testFunctionValues();
-  const Germ<double>* testFunctionValues(int q);
-  const Germ<double>* testFunctionValues(int q, int k);
-
-  const double* weighted_jacobian();
-
+//! Quadratures on a P1 element.
+class P1Quadrature : public Quadrature {
 protected:
-  //! The coordinates of the quadrature points on the reference element.
-  static const double quadPoints[Nq][2];
-
-  //! The weights for quadrature on the reference element.
-  static const double quadWeights[Nq];
-
-  //! The determinant of the Jacobian of the map from the reference element to the physical element.
-  double m_jacobianDet;
-
-  //! Determinant of the Jacobian of the map from the reference element to the physical element,
-  //! evaluated at quadrature points and multiplied by corresponding quadrature weights.
-  double m_JxW[Nq];
-
-  //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
-  Germ<double> m_germs[Nq][ShapeQ1::Nk];
+  P1Quadrature(unsigned int size, unsigned int N,
+               double dx, double dy, double L);
 };
 
-//! This version supports 2D scalar fields.
-class Quadrature_Scalar : public Quadrature2x2 {
+class P1Quadrature3 : public P1Quadrature {
 public:
-  Quadrature_Scalar(double dx, double dy, double L);
-  void computeTrialFunctionValues(const double *x, double *vals);
-  void computeTrialFunctionValues(const double *x, double *vals, double *dx, double *dy);
-
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, double const*const*x_global,
-                                  double *vals);
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, double const*const*x_global,
-                                  double *vals, double *dx, double *dy);
-
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2S &x_global,
-                                  double *vals);
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2S &x_global,
-                                  double *vals, double *dx, double *dy);
+  P1Quadrature3(unsigned int N, double dx, double dy, double L);
 private:
-  double m_tmp[ShapeQ1::Nk];
+  static const unsigned int m_size = 3;
 };
 
-//! This version supports 2D vector fields.
-class Quadrature_Vector : public Quadrature2x2 {
-public:
-  Quadrature_Vector(double dx, double dy, double L);
-  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals);
-  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);
-  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);
+/*! @brief Compute the values at the quadrature points of a finite-element function.*/
+/*! There should be room for Q.N() values in the output array `result`. */
+template <typename T>
+void quadrature_point_values(Quadrature &Q, const T *x, T *result) {
+  const Germs *test = Q.test_function_values();
+  const unsigned int n = Q.n();
+  for (unsigned int q = 0; q < n; q++) {
+    result[q] = 0.0;
+    for (unsigned int k = 0; k < q1::n_chi; k++) {
+      result[q] += test[q][k].val * x[k];
+    }
+  }
+}
 
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, Vector2 const*const*x_global,
-                                  Vector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, Vector2 const*const*x_global,
-                                  Vector2 *vals, double (*Dv)[3]);
-
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2V &x_global,
-                                  Vector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const DOFMap &dof, const IceModelVec2V &x_global,
-                                  Vector2 *vals, double (*Dv)[3]);
-private:
-  Vector2 m_tmp[ShapeQ1::Nk];
-};
+/*! @brief Compute the values and partial derivatives at the quadrature points of a finite-element
+  function.*/
+/*! There should be room for Q.N() values in the output vectors `vals`, `dx`, and `dy`.
+  Each element of `dx` is the derivative of the vector-valued finite-element function in the x
+  direction, and similarly for `dy`.
+*/
+template <typename T>
+void quadrature_point_values(Quadrature &Q, const T *x, T *vals, T *dx, T *dy) {
+  const Germs *test = Q.test_function_values();
+  const unsigned int n = Q.n();
+  for (unsigned int q = 0; q < n; q++) {
+    vals[q] = 0.0;
+    dx[q]   = 0.0;
+    dy[q]   = 0.0;
+    for (unsigned int k = 0; k < q1::n_chi; k++) {
+      const Germ &psi = test[q][k];
+      vals[q] += psi.val * x[k];
+      dx[q]   += psi.dx  * x[k];
+      dy[q]   += psi.dy  * x[k];
+    }
+  }
+}
 
 //* Parts shared by scalar and 2D vector Dirichlet data classes.
 class DirichletData {
 public:
-  DirichletData();
-  ~DirichletData();
-  void constrain(DOFMap &dofmap);
+  void constrain(ElementMap &element);
   operator bool() {
     return m_indices != NULL;
   }
 protected:
+  DirichletData();
+  ~DirichletData();
+
   void init(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
   void finish(const IceModelVec *values);
 
   const IceModelVec2Int *m_indices;
-  double m_indices_e[ShapeQ1::Nk];
+  double m_indices_e[q1::n_chi];
   double m_weight;
 };
 
 class DirichletData_Scalar : public DirichletData {
 public:
-  DirichletData_Scalar(const IceModelVec2Int *indices, const IceModelVec2S *values, double weight = 1.0);
-  void update(const DOFMap &dofmap, double* x_e);
-  void update_homogeneous(const DOFMap &dofmap, double* x_e);
+  DirichletData_Scalar(const IceModelVec2Int *indices, const IceModelVec2S *values,
+                       double weight = 1.0);
+  ~DirichletData_Scalar();
+
+  void enforce(const ElementMap &element, double* x_e);
+  void enforce_homogeneous(const ElementMap &element, double* x_e);
   void fix_residual(double const *const *const x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
-  void finish();
 protected:
   const IceModelVec2S *m_values;
 };
 
 class DirichletData_Vector : public DirichletData {
 public:
-  DirichletData_Vector(const IceModelVec2Int *indices, const IceModelVec2V *values, double weight);
-  void update(const DOFMap &dofmap, Vector2* x_e);
-  void update_homogeneous(const DOFMap &dofmap, Vector2* x_e);
+  DirichletData_Vector(const IceModelVec2Int *indices, const IceModelVec2V *values,
+                       double weight);
+  ~DirichletData_Vector();
+
+  void enforce(const ElementMap &element, Vector2* x_e);
+  void enforce_homogeneous(const ElementMap &element, Vector2* x_e);
   void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
   void fix_residual_homogeneous(Vector2 **r);
   void fix_jacobian(Mat J);
-  void finish();
 protected:
   const IceModelVec2V *m_values;
 };
@@ -500,34 +613,38 @@ protected:
 //! 2-point quadrature for sides of Q1 quadrilateral elements.
 class BoundaryQuadrature2 {
 public:
-  BoundaryQuadrature2(double dx, double dy);
-  //! Number of sides per element.
-  static const unsigned int n_sides = ShapeQ1::Nk;
-  //! Number of quadrature points per side.
-  static const unsigned int Nq = 2;
+  BoundaryQuadrature2(double dx, double dy, double L);
 
-  inline double weighted_jacobian(unsigned int side) const;
+  inline unsigned int n() const;
 
-  inline const Germ<double>& germ(unsigned int side,
-                                  unsigned int func,
-                                  unsigned int pt) const;
+  inline double weights(unsigned int side) const;
+
+  inline const Germ& germ(unsigned int side,
+                          unsigned int func,
+                          unsigned int pt) const;
 private:
-  Germ<double> m_germs[n_sides][Nq][ShapeQ1::Nk];
-  double m_weighted_jacobian[n_sides];
+  //! Number of quadrature points per side.
+  static const unsigned int m_Nq = 2;
+  Germ m_germs[q1::n_sides][m_Nq][q1::n_chi];
+  double m_W[q1::n_sides];
 };
 
-inline double BoundaryQuadrature2::weighted_jacobian(unsigned int side) const {
-  assert(side < n_sides);
-  return m_weighted_jacobian[side];
+inline unsigned int BoundaryQuadrature2::n() const {
+  return m_Nq;
+}
+
+inline double BoundaryQuadrature2::weights(unsigned int side) const {
+  assert(side < q1::n_sides);
+  return m_W[side];
 }
 
 //! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
 //! evaluated at the point `pt` on the side `side` of an element.
-inline const Germ<double>& BoundaryQuadrature2::germ(unsigned int side,
-                                                     unsigned int q,
-                                                     unsigned int k) const {
-  assert(side < n_sides);
-  assert(k < ShapeQ1::Nk);
+inline const Germ& BoundaryQuadrature2::germ(unsigned int side,
+                                             unsigned int q,
+                                             unsigned int k) const {
+  assert(side < q1::n_sides);
+  assert(k < q1::n_chi);
   assert(q < 2);
 
   return m_germs[side][q][k];

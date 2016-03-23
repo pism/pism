@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include <string>
 
 #include "base/enthalpyConverter.hh"
+#include "base/util/Vector2.hh"
 
 namespace pism {
 
@@ -32,14 +33,13 @@ class Config;
 
 // This uses the definition of squared second invariant from Hutter and several others, namely the output is
 // \f$ D^2 = \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
-static inline double secondInvariant_2D(double u_x, double u_y,
-                                        double v_x, double v_y) {
+static inline double secondInvariant_2D(const Vector2 &U_x, const Vector2 &U_y) {
+  const double
+    u_x = U_x.u,
+    u_y = U_y.u,
+    v_x = U_x.v,
+    v_y = U_y.v;
   return 0.5 * (u_x * u_x + v_y * v_y + (u_x + v_y)*(u_x + v_y) + 0.5*(u_y + v_x)*(u_y + v_x));
-}
-
-// The squared second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
-static inline double secondInvariantDu_2D(const double Du[]) {
-  return 0.5 * (Du[0] * Du[0] + Du[1] * Du[1] + (Du[0] + Du[1]) * (Du[0] + Du[1]) + 2.0 * Du[2] * Du[2]);
 }
 
 //! Ice flow laws.

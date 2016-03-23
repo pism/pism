@@ -22,6 +22,7 @@
 #include "hydrology_diagnostics.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {
@@ -114,17 +115,16 @@ void NullTransport::update_impl(double t, double dt) {
 
   get_input_rate(t, dt, m_total_input);
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  MaskQuery M(*mask);
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(m_Wtil);
   list.add(m_total_input);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ocean(i, j) or M.ice_free(i, j)) {
+    if (mask.ocean(i,j) || mask.ice_free(i,j)) {
       m_Wtil(i, j) = 0.0;
     } else {
       m_Wtil(i, j) += dt * (m_total_input(i, j) - m_tillwat_decay_rate);
@@ -150,11 +150,10 @@ void NullTransport::diffuse_till_water(double dt) {
     Rx = K * dt / (dx * dx),
     Ry = K * dt / (dy * dy);
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  MaskQuery M(*mask);
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(m_Wtil);
   list.add(m_Wtil_old);
   for (Points p(*m_grid); p; p.next()) {
@@ -169,7 +168,7 @@ void NullTransport::diffuse_till_water(double dt) {
     m_Wtil(i, j) = std::min(std::max(0.0, m_Wtil(i, j)), m_tillwat_max);
 
     // set to zero in
-    if (M.ocean(i, j) or M.ice_free(i, j)) {
+    if (mask.ocean(i, j) or mask.ice_free(i, j)) {
       m_Wtil(i, j) = 0.0;
     }
   }

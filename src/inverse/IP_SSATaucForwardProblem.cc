@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,8 +36,8 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g, Enthalpy
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
     m_element_index(*m_grid),
+    m_element(*m_grid),
     m_quadrature(g->dx(), g->dy(), 1.0),
-    m_quadrature_vector(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
   this->construct();
 }
@@ -123,9 +123,6 @@ kept.
 */
 void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nq = Quadrature2x2::Nq;
-
   IceModelVec2S &tauc = m_tauc_copy;
 
   m_zeta = &new_zeta;
@@ -133,24 +130,13 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
   // Convert zeta to tauc.
   m_tauc_param.convertToDesignVariable(*m_zeta, tauc);
 
-  // Cache tauc at the quadrature points in m_coefficients.
-  double tauc_q[Nq];
+  // Cache tauc at the quadrature points.
   IceModelVec::AccessList list(tauc);
+  list.add(m_coefficients);
 
-  int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
-  for (int j = ys; j < ys + ym; j++) {
-    for (int i = xs; i < xs + xm; i++) {
-      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, tauc, tauc_q);
-      const int ij = m_element_index.flatten(i, j);
-      Coefficients *coefficients = &m_coefficients[ij*Nq];
-      for (unsigned int q = 0; q < Nq; q++) {
-        coefficients[q].tauc = tauc_q[q];
-      }
-    }
+  for (PointsWithGhosts p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    m_coefficients(i, j).tauc = tauc(i, j);
   }
 
   // Flag the state jacobian as needing rebuilding.
@@ -244,11 +230,12 @@ to this method.
 void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                      IceModelVec2S &dzeta,
                                                      Vector2 **du_a) {
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   IceModelVec::AccessList list;
+  list.add(m_coefficients);
   list.add(*m_zeta);
   list.add(u);
 
@@ -272,10 +259,10 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // Aliases to help with notation consistency below.
   const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
   const IceModelVec2V   *m_dirichletValues    = m_bc_values;
-  double           m_dirichletWeight    = m_dirichletScale;
+  double                 m_dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[Nk];
-  Vector2 u_q[Nq];
+  Vector2 u_q[Nq_max];
 
   Vector2 du_e[Nk];
 
@@ -284,78 +271,90 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   double zeta_e[Nk];
 
   double dtauc_e[Nk];
-  double dtauc_q[Nq];
+  double dtauc_q[Nq_max];
 
   // An Nq by Nk array of test function values.
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
                                         m_dirichletWeight);
   fem::DirichletData_Scalar fixedZeta(m_fixed_tauc_locations, NULL);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Loop through all elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   ParallelSection loop(m_grid->com);
   try {
     for (int j = ys; j < ys + ym; j++) {
       for (int i = xs; i < xs + xm; i++) {
 
-        // Zero out the element - local residual in prep for updating it.
+        // Zero out the element residual in prep for updating it.
         for (unsigned int k = 0; k < Nk; k++) {
           du_e[k].u = 0;
           du_e[k].v = 0;
         }
 
-        // Index into coefficient storage in m_coefficients
-        const int ij = m_element_index.flatten(i, j);
-
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, *m_grid);
+        m_element.reset(i, j);
 
         // Obtain the value of the solution at the nodes adjacent to the element,
         // fix dirichlet values, and compute values at quad pts.
-        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        m_element.nodal_values(u, u_e);
         if (dirichletBC) {
-          dirichletBC.constrain(m_dofmap);
-          dirichletBC.update(m_dofmap, u_e);
+          dirichletBC.constrain(m_element);
+          dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
+        quadrature_point_values(m_quadrature, u_e, u_q);
 
         // Compute dzeta at the nodes
-        m_dofmap.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
+        m_element.nodal_values(*dzeta_local, dzeta_e);
         if (fixedZeta) {
-          fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
+          fixedZeta.enforce_homogeneous(m_element, dzeta_e);
         }
 
         // Compute the change in tau_c with respect to zeta at the quad points.
-        m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
+        m_element.nodal_values(*m_zeta, zeta_e);
         for (unsigned int k = 0; k < Nk; k++) {
           m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
           dtauc_e[k] *= dzeta_e[k];
         }
-        m_quadrature.computeTrialFunctionValues(dtauc_e, dtauc_q);
+        quadrature_point_values(m_quadrature, dtauc_e, dtauc_q);
+
+        int mask[Nq_max];
+        {
+          Coefficients coeffs[Nk];
+          double thickness[Nq_max];
+          double tauc[Nq_max];
+          double hardness[Nq_max];
+
+          m_element.nodal_values(m_coefficients, coeffs);
+
+          quad_point_values(m_quadrature, coeffs,
+                            mask, thickness, tauc, hardness);
+        }
 
         for (unsigned int q = 0; q < Nq; q++) {
           Vector2 u_qq = u_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Nq + q];
-
           // Determine "dbeta / dzeta" at the quadrature point
           double dbeta = 0;
-          if (mask::grounded_ice(coefficients->mask)) {
+          if (mask::grounded_ice(mask[q])) {
             dbeta = m_basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
           }
 
           for (unsigned int k = 0; k < Nk; k++) {
-            du_e[k].u += JxW[q]*dbeta*u_qq.u*test[q][k].val;
-            du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
+            du_e[k].u += W[q]*dbeta*u_qq.u*test[q][k].val;
+            du_e[k].v += W[q]*dbeta*u_qq.v*test[q][k].val;
           }
         } // q
-        m_dofmap.addLocalResidualBlock(du_e, du_a);
+        m_element.add_residual_contribution(du_e, du_a);
       } // j
     } // i
   } catch (...) {
@@ -366,9 +365,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);
   }
-
-  dirichletBC.finish();
-  fixedZeta.finish();
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
@@ -409,11 +405,12 @@ to this method.
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                double **dzeta_a) {
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nk = fem::q1::n_chi;
+  const unsigned int Nq = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   IceModelVec::AccessList list;
+  list.add(m_coefficients);
   list.add(*m_zeta);
   list.add(u);
 
@@ -427,15 +424,15 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   list.add(*du_local);
 
   Vector2 u_e[Nk];
-  Vector2 u_q[Nq];
+  Vector2 u_q[Nq_max];
 
   Vector2 du_e[Nk];
-  Vector2 du_q[Nq];
+  Vector2 du_q[Nq_max];
 
   double dzeta_e[Nk];
 
   // An Nq by Nk array of test function values.
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Aliases to help with notation consistency.
   const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
@@ -446,7 +443,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                         m_dirichletWeight);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(*m_grid); p; p.next()) {
@@ -455,63 +452,73 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
     dzeta_a[j][i] = 0;
   }
 
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   ParallelSection loop(m_grid->com);
   try {
     for (int j=ys; j<ys+ym; j++) {
       for (int i=xs; i<xs+xm; i++) {
-        // Index into coefficient storage in m_coefficients
-        const int ij = m_element_index.flatten(i, j);
-
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, *m_grid);
+        m_element.reset(i, j);
 
         // Obtain the value of the solution at the nodes adjacent to the element.
         // Compute the solution values and symmetric gradient at the quadrature points.
-        m_dofmap.extractLocalDOFs(i, j, *du_local, du_e);
+        m_element.nodal_values(*du_local, du_e);
         if (dirichletBC) {
-          dirichletBC.update_homogeneous(m_dofmap, du_e);
+          dirichletBC.enforce_homogeneous(m_element, du_e);
         }
-        m_quadrature_vector.computeTrialFunctionValues(du_e, du_q);
+        quadrature_point_values(m_quadrature, du_e, du_q);
 
-        m_dofmap.extractLocalDOFs(i, j, u, u_e);
+        m_element.nodal_values(u, u_e);
         if (dirichletBC) {
-          dirichletBC.update(m_dofmap, u_e);
+          dirichletBC.enforce(m_element, u_e);
         }
-        m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
+        quadrature_point_values(m_quadrature, u_e, u_q);
 
         // Zero out the element-local residual in prep for updating it.
         for (unsigned int k=0; k<Nk; k++) {
           dzeta_e[k] = 0;
         }
 
+        int mask[Nq_max];
+        {
+          Coefficients coeffs[Nk];
+          double thickness[Nq_max];
+          double tauc[Nq_max];
+          double hardness[Nq_max];
+
+          m_element.nodal_values(m_coefficients, coeffs);
+
+          quad_point_values(m_quadrature, coeffs,
+                            mask, thickness, tauc, hardness);
+        }
+
         for (unsigned int q=0; q<Nq; q++) {
           Vector2 du_qq = du_q[q];
           Vector2 u_qq = u_q[q];
 
-          const Coefficients *coefficients = &m_coefficients[ij*Nq+q];
-
           // Determine "dbeta/dtauc" at the quadrature point
           double dbeta_dtauc = 0;
-          if (mask::grounded_ice(coefficients->mask)) {
+          if (mask::grounded_ice(mask[q])) {
             dbeta_dtauc = m_basal_sliding_law->drag(1., u_qq.u, u_qq.v);
           }
 
           for (unsigned int k=0; k<Nk; k++) {
-            dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
+            dzeta_e[k] += W[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
           }
         } // q
 
-        m_dofmap.addLocalResidualBlock(dzeta_e, dzeta_a);
+        m_element.add_residual_contribution(dzeta_e, dzeta_a);
       } // j
     } // i
   } catch (...) {
     loop.failed();
   }
   loop.check();
-
-  dirichletBC.finish();
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -524,7 +531,6 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   if (m_fixed_tauc_locations) {
     fem::DirichletData_Scalar fixedTauc(m_fixed_tauc_locations, NULL);
     fixedTauc.fix_residual_homogeneous(dzeta_a);
-    fixedTauc.finish();
   }
 }
 
@@ -622,7 +628,6 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
     dirichletBC.fix_residual_homogeneous(du_a);
   }
 
-  dirichletBC.finish();
   m_du_global.end_access();
 
   // call PETSc to solve linear system by iterative method.

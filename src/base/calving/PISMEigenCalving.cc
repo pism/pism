@@ -26,6 +26,7 @@
 #include "base/util/pism_const.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace calving {
@@ -79,7 +80,7 @@ void EigenCalving::init() {
   See equation (26) in [\ref Winkelmannetal2011].
 */
 void EigenCalving::update(double dt,
-                          IceModelVec2Int &pism_mask,
+                          IceModelVec2CellType &mask,
                           IceModelVec2S &Href,
                           IceModelVec2S &ice_thickness) {
 
@@ -90,11 +91,9 @@ void EigenCalving::update(double dt,
 
   update_strain_rates();
 
-  MaskQuery mask(pism_mask);
-
   IceModelVec::AccessList list;
   list.add(ice_thickness);
-  list.add(pism_mask);
+  list.add(mask);
   list.add(Href);
   list.add(m_strain_rates);
   list.add(m_thk_loss);
@@ -226,16 +225,16 @@ void EigenCalving::update(double dt,
       Href(i, j) = std::max(ice_thickness(i, j) - thk_loss_ij, 0.0); // in m
 
       ice_thickness(i, j) = 0.0;
-      pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
+      mask(i, j) = MASK_ICE_FREE_OCEAN;
     }
   }
 
-  pism_mask.update_ghosts();
+  mask.update_ghosts();
 
-  remove_narrow_tongues(pism_mask, ice_thickness);
+  remove_narrow_tongues(mask, ice_thickness);
 
   ice_thickness.update_ghosts();
-  pism_mask.update_ghosts();
+  mask.update_ghosts();
 }
 
 
@@ -266,9 +265,7 @@ MaxTimestep EigenCalving::max_timestep() {
     my_calving_rate_mean    = 0.0,
     my_calving_rate_counter = 0.0;
 
-  const IceModelVec2Int &mask = *m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery m(mask);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   update_strain_rates();
 
@@ -286,8 +283,7 @@ MaxTimestep EigenCalving::max_timestep() {
 
     // find partially filled or empty grid boxes on the ice-free
     // ocean which have floating ice neighbors
-    if ((m.ice_free_ocean(i, j) &&
-         not m.next_to_floating_ice(i, j))) {
+    if ((mask.ice_free_ocean(i, j) and not mask.next_to_floating_ice(i, j))) {
       continue;
     }
 
@@ -297,8 +293,7 @@ MaxTimestep EigenCalving::max_timestep() {
 
     for (int p = -1; p < 2; p += 2) {
       int i_offset = p * offset;
-      if (m.floating_ice(i + i_offset, j) &&
-          not m.ice_margin(i + i_offset, j)) {
+      if (mask.floating_ice(i + i_offset, j) and not mask.ice_margin(i + i_offset, j)) {
         eigen1 += m_strain_rates(i + i_offset, j, 0);
         eigen2 += m_strain_rates(i + i_offset, j, 1);
         M += 1;
@@ -307,8 +302,7 @@ MaxTimestep EigenCalving::max_timestep() {
 
     for (int q = -1; q < 2; q += 2) {
       int j_offset = q * offset;
-      if (m.floating_ice(i, j + j_offset) &&
-          not m.ice_margin(i,   j + j_offset)) {
+      if (mask.floating_ice(i, j + j_offset) and not mask.ice_margin(i,   j + j_offset)) {
         eigen1 += m_strain_rates(i, j + j_offset, 0);
         eigen2 += m_strain_rates(i, j + j_offset, 1);
         M += 1;
@@ -379,8 +373,8 @@ void EigenCalving::write_variables_impl(const std::set<std::string> &/*vars*/, c
  * @return 0 on success
  */
 void EigenCalving::update_strain_rates() {
-  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
-  const IceModelVec2Int &mask = *m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2V        &ssa_velocity = m_stress_balance->advective_velocity();
+  const IceModelVec2CellType &mask         = *m_grid->variables().get_2d_cell_type("mask");
   m_stress_balance->compute_2D_principal_strain_rates(ssa_velocity, mask, m_strain_rates);
 }
 
@@ -417,12 +411,11 @@ void EigenCalving::update_strain_rates() {
  *
  * @return 0 on success
  */
-void EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
+void EigenCalving::remove_narrow_tongues(IceModelVec2CellType &mask,
                                          IceModelVec2S &ice_thickness) {
-  MaskQuery mask(pism_mask);
 
   IceModelVec::AccessList list;
-  list.add(pism_mask);
+  list.add(mask);
   list.add(ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
@@ -487,7 +480,7 @@ void EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
          ice_free_W          &&
          ice_free_E          &&
          ice_free_N)) {
-      pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
+      mask(i, j)          = MASK_ICE_FREE_OCEAN;
       ice_thickness(i, j) = 0.0;
     }
   }

@@ -1,9 +1,4 @@
 %{
-  using pism::IceModelVec;
-  using pism::IceModelVec2S;
-  using pism::IceModelVec2Int;
-  using pism::IceModelVec2V;
-  using pism::IceModelVec3;
   #include "base/util/PISMVars.hh"
 %}
 
@@ -14,6 +9,7 @@
 %ignore pism::Vars::get_2d_scalar;
 %ignore pism::Vars::get_2d_vector;
 %ignore pism::Vars::get_2d_mask;
+%ignore pism::Vars::get_2d_cell_type;
 %ignore pism::Vars::get_3d_scalar;
 %ignore pism::Vars::keys;
 
@@ -24,6 +20,7 @@
 %rename(get_2d_scalar) pism::Vars::get_2d_scalar_shared;
 %rename(get_2d_vector) pism::Vars::get_2d_vector_shared;
 %rename(get_2d_mask) pism::Vars::get_2d_mask_shared;
+%rename(get_2d_cell_type) pism::Vars::get_2d_cell_type_shared;
 %rename(get_3d_scalar) pism::Vars::get_3d_scalar_shared;
 %rename(keys) pism::Vars::keys_shared;
 
@@ -33,8 +30,12 @@
 %extend pism::Vars {
   %pythoncode %{
 def get(self, key):
-    # try this first (a mask is a scalar, so having this second would
-    # make it impossible to get() a mask)
+    # try this first (a cell type mask is a mask, which is a scalar)
+    try:
+        return self.get_2d_cell_type(key)
+    except:
+        pass
+
     try:
         return self.get_2d_mask(key)
     except:

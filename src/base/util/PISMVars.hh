@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,6 +31,7 @@ class IceModelVec;
 class IceModelVec2S;
 class IceModelVec2V;
 class IceModelVec2Int;
+class IceModelVec2CellType;
 class IceModelVec3;
 
 //! \brief A class for passing PISM variables from the core to other parts of
@@ -47,6 +48,7 @@ public:
   const IceModelVec2S* get_2d_scalar(const std::string &name) const;
   const IceModelVec2V* get_2d_vector(const std::string &name) const;
   const IceModelVec2Int* get_2d_mask(const std::string &name) const;
+  const IceModelVec2CellType* get_2d_cell_type(const std::string &name) const;
   const IceModelVec3* get_3d_scalar(const std::string &name) const;
 
   std::set<std::string> keys() const;
@@ -55,6 +57,7 @@ public:
   typedef PISM_SHARED_PTR(IceModelVec2S) Vec2SPtr;
   typedef PISM_SHARED_PTR(IceModelVec2V) Vec2VPtr;
   typedef PISM_SHARED_PTR(IceModelVec2Int) Vec2IntPtr;
+  typedef PISM_SHARED_PTR(IceModelVec2CellType) Vec2CellTypePtr;
   typedef PISM_SHARED_PTR(IceModelVec3) Vec3Ptr;
 
   void add_shared(VecPtr);
@@ -66,6 +69,7 @@ public:
   Vec2SPtr get_2d_scalar_shared(const std::string &name) const;
   Vec2VPtr get_2d_vector_shared(const std::string &name) const;
   Vec2IntPtr get_2d_mask_shared(const std::string &name) const;
+  Vec2CellTypePtr get_2d_cell_type_shared(const std::string &name) const;
   Vec3Ptr get_3d_scalar_shared(const std::string &name) const;
 
   std::set<std::string> keys_shared() const;

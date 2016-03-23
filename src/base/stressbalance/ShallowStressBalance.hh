@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -32,6 +32,7 @@ class IceGrid;
 class IceBasalResistancePlasticLaw;
 class Diagnostic;
 class TSDiagnostic;
+class IceModelVec2CellType;
 
 namespace stressbalance {
 
@@ -60,16 +61,16 @@ public:
   const IceModelVec2S& basal_frictional_heating();
 
   void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
-                                         const IceModelVec2Int &mask,
+                                         const IceModelVec2CellType &mask,
                                          IceModelVec2 &result);
 
   void compute_2D_stresses(const IceModelVec2V &velocity,
-                           const IceModelVec2Int &mask,
+                           const IceModelVec2CellType &mask,
                            IceModelVec2 &result);
 
   void compute_basal_frictional_heating(const IceModelVec2V &velocity,
                                         const IceModelVec2S &tauc,
-                                        const IceModelVec2Int &mask,
+                                        const IceModelVec2CellType &mask,
                                         IceModelVec2S &result);
   // helpers:
 

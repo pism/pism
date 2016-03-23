@@ -20,6 +20,7 @@
 #include "base/util/iceModelVec.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/Mask.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 
@@ -139,7 +140,7 @@ void compute_grounded_cell_fraction(double ice_density,
                              double sea_level,
                              const IceModelVec2S &ice_thickness,
                              const IceModelVec2S &bed_topography,
-                             const IceModelVec2Int &mask,
+                             const IceModelVec2CellType &mask,
                              IceModelVec2S &result,
                              IceModelVec2S *result_x,
                              IceModelVec2S *result_y) {

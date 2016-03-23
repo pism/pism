@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2016  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -43,8 +43,8 @@ public:
   IPFunctional(IceGrid::ConstPtr grid)
     : m_grid(grid),
       m_element_index(*m_grid),
-      m_quadrature(grid->dx(), grid->dy(), 1.0),
-      m_quadrature_vector(grid->dx(), grid->dy(), 1.0)
+      m_element(*m_grid),
+      m_quadrature(grid->dx(), grid->dy(), 1.0)
   {
   }
 
@@ -69,10 +69,9 @@ public:
 protected:
   IceGrid::ConstPtr m_grid;
 
-  fem::ElementMap m_element_index;
-  fem::Quadrature_Scalar m_quadrature;
-  fem::Quadrature_Vector m_quadrature_vector;
-  fem::DOFMap     m_dofmap;
+  fem::ElementIterator m_element_index;
+  fem::ElementMap      m_element;
+  fem::Q1Quadrature4   m_quadrature;
 
 private:
   // Hide copy/assignment operations

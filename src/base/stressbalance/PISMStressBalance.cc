@@ -28,6 +28,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/Profiling.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -148,13 +149,13 @@ const IceModelVec3& StressBalance::volumetric_strain_heating() {
 }
 
 void StressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
-                                                      const IceModelVec2Int &mask,
+                                                      const IceModelVec2CellType &mask,
                                                       IceModelVec2 &result) {
   m_shallow_stress_balance->compute_2D_principal_strain_rates(velocity, mask, result);
 }
 
 void StressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
-                                        const IceModelVec2Int &mask,
+                                        const IceModelVec2CellType &mask,
                                         IceModelVec2 &result) {
   m_shallow_stress_balance->compute_2D_stresses(velocity, mask, result);
 }
@@ -193,8 +194,8 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
                                               const IceModelVec3 &v,
                                               const IceModelVec2S *basal_melt_rate,
                                               IceModelVec3 &result) {
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-  MaskQuery m(*mask);
+
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   Config::ConstPtr config = m_grid->ctx()->config();
 
@@ -204,7 +205,7 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
   list.add(u);
   list.add(v);
   list.add(result);
-  list.add(*mask);
+  list.add(mask);
 
   if (basal_melt_rate) {
     list.add(*basal_melt_rate);
@@ -266,10 +267,10 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
         }
       }
 
-      if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j))) {
+      if ((mask.icy(i,j) and mask.ice_free(i+1,j)) or (mask.ice_free(i,j) and mask.icy(i+1,j))) {
         east = 0;
       }
-      if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j))) {
+      if ((mask.icy(i,j) and mask.ice_free(i-1,j)) or (mask.ice_free(i,j) and mask.icy(i-1,j))) {
         west = 0;
       }
 
@@ -301,10 +302,10 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
         }
       }
 
-      if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1))) {
+      if ((mask.icy(i,j) and mask.ice_free(i,j+1)) or (mask.ice_free(i,j) and mask.icy(i,j+1))) {
         north = 0;
       }
-      if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1))) {
+      if ((mask.icy(i,j) and mask.ice_free(i,j-1)) or (mask.ice_free(i,j) and mask.icy(i,j-1))) {
         south = 0;
       }
 
@@ -433,8 +434,7 @@ void StressBalance::compute_volumetric_strain_heating() {
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3  *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-  MaskQuery m(*mask);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   double
     enhancement_factor = flow_law->enhancement_factor(),
@@ -443,7 +443,7 @@ void StressBalance::compute_volumetric_strain_heating() {
     e_to_a_power = pow(enhancement_factor,-1.0/n);
 
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(*enthalpy);
   list.add(m_strain_heating);
   list.add(*thickness);
@@ -473,10 +473,10 @@ void StressBalance::compute_volumetric_strain_heating() {
 
       // x-derivative
       {
-        if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j))) {
+        if ((mask.icy(i,j) and mask.ice_free(i+1,j)) or (mask.ice_free(i,j) and mask.icy(i+1,j))) {
           east = 0;
         }
-        if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j))) {
+        if ((mask.icy(i,j) and mask.ice_free(i-1,j)) or (mask.ice_free(i,j) and mask.icy(i-1,j))) {
           west = 0;
         }
 
@@ -489,10 +489,10 @@ void StressBalance::compute_volumetric_strain_heating() {
 
       // y-derivative
       {
-        if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1))) {
+        if ((mask.icy(i,j) and mask.ice_free(i,j+1)) or (mask.ice_free(i,j) and mask.icy(i,j+1))) {
           north = 0;
         }
-        if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1))) {
+        if ((mask.icy(i,j) and mask.ice_free(i,j-1)) or (mask.ice_free(i,j) and mask.icy(i,j-1))) {
           south = 0;
         }
 

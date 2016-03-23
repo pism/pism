@@ -21,32 +21,32 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace inverse {
 
 void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
   double x_e[Nk];
-  double x_q[Nq], dxdx_q[Nq], dxdy_q[Nq];
+  double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
   IceModelVec::AccessList list;
   list.add(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
-  MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all LOCAL elements.
   const int
@@ -57,58 +57,58 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
-        iceQuery.grounded_ice(i, j+1) & iceQuery.grounded_ice(i+1, j+1);
+      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
+                               m_ice_mask.grounded_ice(i+1, j) and
+                               m_ice_mask.grounded_ice(i, j+1) and
+                               m_ice_mask.grounded_ice(i+1, j+1));
+
       if (! all_grounded_ice) {
         continue;
       }
 
-      m_dofmap.reset(i, j, *m_grid);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(x, x_e);
+      m_element.nodal_values(x, x_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_dofmap, x_e);
+        dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
+      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
 
       for (unsigned int q=0; q<Nq; q++) {
-        value += JxW[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
+        value += W[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
       } // q
     } // j
   } // i
 
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
-
-  dirichletBC.finish();
 }
 
 void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
   double a_e[Nk];
-  double a_q[Nq], dadx_q[Nq], dady_q[Nq];
+  double a_q[Nq_max], dadx_q[Nq_max], dady_q[Nq_max];
 
   IceModelVec::AccessList list;
   list.add(a);
 
   double b_e[Nk];
-  double b_q[Nq], dbdx_q[Nq], dbdy_q[Nq];
+  double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
-  MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all LOCAL elements.
   const int
@@ -119,50 +119,51 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
-        iceQuery.grounded_ice(i, j+1) & iceQuery.grounded_ice(i+1, j+1);
+      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
+                               m_ice_mask.grounded_ice(i+1, j) and
+                               m_ice_mask.grounded_ice(i, j+1) and
+                               m_ice_mask.grounded_ice(i+1, j+1));
+
       if (! all_grounded_ice) {
         continue;
       }
 
-      m_dofmap.reset(i, j, *m_grid);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(a, a_e);
+      m_element.nodal_values(a, a_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_dofmap, a_e);
+        dirichletBC.enforce_homogeneous(m_element, a_e);
       }
-      m_quadrature.computeTrialFunctionValues(a_e, a_q, dadx_q, dady_q);
+      quadrature_point_values(m_quadrature, a_e, a_q, dadx_q, dady_q);
 
-      m_dofmap.extractLocalDOFs(b, b_e);
+      m_element.nodal_values(b, b_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_dofmap, b_e);
+        dirichletBC.enforce_homogeneous(m_element, b_e);
       }
-      m_quadrature.computeTrialFunctionValues(b_e, b_q, dbdx_q, dbdy_q);
+      quadrature_point_values(m_quadrature, b_e, b_q, dbdx_q, dbdy_q);
 
       for (unsigned int q=0; q<Nq; q++) {
-        value += JxW[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
+        value += W[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
       } // q
     } // j
   } // i
 
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
-
-  dirichletBC.finish();
 }
 
 
 void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
   double x_e[Nk];
-  double x_q[Nq], dxdx_q[Nq], dxdy_q[Nq];
+  double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
   IceModelVec::AccessList list;
   list.add(x);
@@ -171,37 +172,43 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   list.add(m_ice_mask);
-  MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
-        iceQuery.grounded_ice(i, j+1) & iceQuery.grounded_ice(i+1, j+1);
+      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
+                               m_ice_mask.grounded_ice(i+1, j) and
+                               m_ice_mask.grounded_ice(i, j+1) and
+                               m_ice_mask.grounded_ice(i+1, j+1));
+
       if (! all_grounded_ice) {
         continue;
       }
 
       // Reset the DOF map for this element.
-      m_dofmap.reset(i, j, *m_grid);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(i, j, x, x_e);
+      m_element.nodal_values(x, x_e);
       if (dirichletBC) {
-        dirichletBC.constrain(m_dofmap);
-        dirichletBC.update_homogeneous(m_dofmap, x_e);
+        dirichletBC.constrain(m_element);
+        dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
+      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
       for (unsigned int k=0; k<Nk; k++) {
@@ -212,22 +219,19 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
         const double &x_qq=x_q[q];
         const double &dxdx_qq=dxdx_q[q], &dxdy_qq=dxdy_q[q];
         for (unsigned int k=0; k<Nk; k++) {
-          gradient_e[k] += 2*JxW[q]*(m_cL2*x_qq*test[q][k].val +
-            m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
+          gradient_e[k] += 2*W[q]*(m_cL2*x_qq*test[q][k].val +
+                                   m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
       } // q
-      m_dofmap.addLocalResidualBlock(gradient_e, gradient);
+      m_element.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
-
-  dirichletBC.finish();
 }
 
 void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
-  using fem::Quadrature2x2;
-  const unsigned int Nk = fem::ShapeQ1::Nk;
-  const unsigned int Nq = Quadrature2x2::Nq;
+  const unsigned int Nk = fem::q1::n_chi;
+  const unsigned int Nq = m_quadrature.n();
 
   PetscErrorCode ierr;
   int         i, j;
@@ -237,25 +241,30 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   PISM_CHK(ierr, "MatZeroEntries");
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.weighted_jacobian();
+  const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar zeroLocs(m_dirichletIndices, NULL);
 
   IceModelVec::AccessList list;
   list.add(m_ice_mask);
-  MaskQuery iceQuery(m_ice_mask);
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::Germ<double> (*test)[Nk] = m_quadrature.testFunctionValues();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Loop through all the elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (j=ys; j<ys+ym; j++) {
     for (i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = iceQuery.grounded_ice(i, j) & iceQuery.grounded_ice(i+1, j) &
-         iceQuery.grounded_ice(i, j+1) & iceQuery.grounded_ice(i+1, j+1);
+      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
+                               m_ice_mask.grounded_ice(i+1, j) and
+                               m_ice_mask.grounded_ice(i, j+1) and
+                               m_ice_mask.grounded_ice(i+1, j+1));
       if (! all_grounded_ice) {
         continue;
       }
@@ -266,11 +275,11 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
       double K[Nk][Nk];
 
       // Initialize the map from global to local degrees of freedom for this element.
-      m_dofmap.reset(i, j, *m_grid);
+      m_element.reset(i, j);
 
       // Don't update rows/cols where we project to zero.
       if (zeroLocs) {
-        zeroLocs.constrain(m_dofmap);
+        zeroLocs.constrain(m_element);
       }
 
       // Build the element-local Jacobian.
@@ -279,23 +288,21 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
       for (unsigned int q=0; q<Nq; q++) {
         for (unsigned int k = 0; k < Nk; k++) {   // Test functions
+          const fem::Germ &test_qk=test[q][k];
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
-            const fem::Germ<double> &test_qk=test[q][k];
-            const fem::Germ<double> &test_ql=test[q][l];
-            K[k][l]     += JxW[q]*(m_cL2*test_qk.val*test_ql.val
+            const fem::Germ &test_ql=test[q][l];
+            K[k][l]     += W[q]*(m_cL2*test_qk.val*test_ql.val
               +  m_cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy));
           } // l
         } // k
       } // q
-      m_dofmap.addLocalJacobianBlock(&K[0][0], form);
+      m_element.add_jacobian_contribution(&K[0][0], form);
     } // j
   } // i
 
   if (zeroLocs) {
     zeroLocs.fix_jacobian(form);
   }
-  zeroLocs.finish();
-
 
   ierr = MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY);
   PISM_CHK(ierr, "MatAssemblyBegin");

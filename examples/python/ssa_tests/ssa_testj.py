@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -49,7 +49,8 @@ class testj(PISM.ssa.SSAExactTestCase):
         vecs = self.modeldata.vecs
 
         vecs.tauc.set(0.0)  # irrelevant for test J
-        vecs.bedrock_altitude.set(0.0)
+        # ensures that the ice is floating (max. thickness if 770 m)
+        vecs.bedrock_altitude.set(-1000.0)
         vecs.mask.set(PISM.MASK_FLOATING)
         vecs.bc_mask.set(0)  # No dirichlet data.
 

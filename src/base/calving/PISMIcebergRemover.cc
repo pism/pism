@@ -23,6 +23,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/IceGrid.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace calving {
@@ -47,12 +48,11 @@ void IcebergRemover::init() {
  * @param[in,out] pism_mask PISM's ice cover mask
  * @param[in,out] ice_thickness ice thickness
  */
-void IcebergRemover::update(IceModelVec2Int &pism_mask,
+void IcebergRemover::update(IceModelVec2CellType &mask,
                             IceModelVec2S &ice_thickness) {
   const int
     mask_grounded_ice = 1,
     mask_floating_ice = 2;
-  MaskQuery M(pism_mask);
 
   // prepare the mask that will be handed to the connected component
   // labeling code:
@@ -60,15 +60,15 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
     m_iceberg_mask.set(0.0);
 
     IceModelVec::AccessList list;
-    list.add(pism_mask);
+    list.add(mask);
     list.add(m_iceberg_mask);
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (M.grounded_ice(i,j) == true) {
+      if (mask.grounded_ice(i,j) == true) {
         m_iceberg_mask(i,j) = mask_grounded_ice;
-      } else if (M.floating_ice(i,j) == true) {
+      } else if (mask.floating_ice(i,j) == true) {
         m_iceberg_mask(i,j) = mask_floating_ice;
       }
     }
@@ -82,7 +82,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        if (bc_mask(i,j) > 0.5 and M.icy(i,j)) {
+        if (bc_mask(i,j) > 0.5 and mask.icy(i,j)) {
           m_iceberg_mask(i,j) = mask_grounded_ice;
         }
       }
@@ -96,8 +96,8 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
     ParallelSection rank0(m_grid->com);
     try {
       if (m_grid->rank() == 0) {
-        petsc::VecArray mask(*m_mask_p0);
-        cc(mask.get(), m_grid->My(), m_grid->Mx(), true, mask_grounded_ice);
+        petsc::VecArray mask_p0(*m_mask_p0);
+        cc(mask_p0.get(), m_grid->My(), m_grid->Mx(), true, mask_grounded_ice);
       }
     } catch (...) {
       rank0.failed();
@@ -112,7 +112,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
   {
     IceModelVec::AccessList list;
     list.add(ice_thickness);
-    list.add(pism_mask);
+    list.add(mask);
     list.add(m_iceberg_mask);
 
     if (m_grid->variables().is_available("bc_mask")) {
@@ -126,7 +126,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
 
         if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {
           ice_thickness(i,j) = 0.0;
-          pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
+          mask(i,j)     = MASK_ICE_FREE_OCEAN;
         }
       }
     } else {
@@ -136,7 +136,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
 
         if (m_iceberg_mask(i,j) > 0.5) {
           ice_thickness(i,j) = 0.0;
-          pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
+          mask(i,j)     = MASK_ICE_FREE_OCEAN;
         }
       }
     }
@@ -144,7 +144,7 @@ void IcebergRemover::update(IceModelVec2Int &pism_mask,
 
   // update ghosts of the mask and the ice thickness (then surface
   // elevation can be updated redundantly)
-  pism_mask.update_ghosts();
+  mask.update_ghosts();
   ice_thickness.update_ghosts();
 }
 

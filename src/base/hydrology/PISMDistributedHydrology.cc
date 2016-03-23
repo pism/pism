@@ -25,6 +25,7 @@
 #include "base/util/pism_options.hh"
 #include "hydrology_diagnostics.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {
@@ -411,9 +412,7 @@ void Distributed::update_impl(double icet, double icedt) {
     double Open, Close, divflux, ZZ, diffW;
     overburden_pressure(m_Pover);
 
-    const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-
-    MaskQuery M(*mask);
+    const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
     IceModelVec::AccessList list;
     list.add(m_P);
@@ -425,16 +424,16 @@ void Distributed::update_impl(double icet, double icedt) {
     list.add(m_K);
     list.add(m_Q);
     list.add(m_total_input);
-    list.add(*mask);
+    list.add(mask);
     list.add(m_Pover);
     list.add(m_Pnew);
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (M.ice_free_land(i,j)) {
+      if (mask.ice_free_land(i,j)) {
         m_Pnew(i,j) = 0.0;
-      } else if (M.ocean(i,j)) {
+      } else if (mask.ocean(i,j)) {
         m_Pnew(i,j) = m_Pover(i,j);
       } else if (m_W(i,j) <= 0.0) {
         m_Pnew(i,j) = m_Pover(i,j);

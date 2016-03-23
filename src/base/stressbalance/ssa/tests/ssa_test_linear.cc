@@ -165,6 +165,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
+    verbosityLevelFromOptions();
     Context::Ptr ctx = context_from_options(com, "ssa_test_linear");
     Config::Ptr config = ctx->config();
 

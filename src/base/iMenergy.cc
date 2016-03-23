@@ -152,8 +152,6 @@ void IceModel::combine_basal_melt_rate() {
     list.add(gl_mask);
   }
 
-  MaskQuery mask(vMask);
-
   double ice_density = m_config->get_double("ice_density");
 
   list.add(vMask);
@@ -173,7 +171,7 @@ void IceModel::combine_basal_melt_rate() {
     // rate near the grounding line:
     if (sub_gl) {
       lambda = gl_mask(i,j);
-    } else if (mask.ocean(i,j)) {
+    } else if (vMask.ocean(i,j)) {
       lambda = 0.0;
     }
     basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
@@ -198,8 +196,6 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
   Enth3.getHorSlice(result, 0.0);
 
-  MaskQuery mask(vMask);
-
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
@@ -215,8 +211,8 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.grounded(i,j)) {
-        if (mask.ice_free(i,j)) { // no ice: sees air temp
+      if (vMask.grounded(i,j)) {
+        if (vMask.ice_free(i,j)) { // no ice: sees air temp
           result(i,j) = ice_surface_temp(i,j);
         } else { // ice: sees temp of base of ice
           const double pressure = EC->pressure(ice_thickness(i,j));

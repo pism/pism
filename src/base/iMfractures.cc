@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2015 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2016 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -74,7 +74,6 @@ void IceModel::calculateFractureDensity() {
     list.add(vFAnew);
   }
 
-  MaskQuery M(vMask);
   double tempFD;
 
   //options

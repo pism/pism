@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 
 #include "base/util/PISMComponent.hh"
 #include "base/util/iceModelVec.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace calving {
@@ -35,7 +36,7 @@ public:
   virtual ~CalvingAtThickness();
 
   virtual void init();
-  void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
+  void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
 
 protected:
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
@@ -44,7 +45,7 @@ protected:
                                      IO_Type nctype);
 protected:
   double m_calving_threshold;
-  IceModelVec2Int m_old_mask;
+  IceModelVec2CellType m_old_mask;
 };
 
 } // end of namespace calving

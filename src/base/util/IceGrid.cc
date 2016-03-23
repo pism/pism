@@ -742,16 +742,8 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
   return result;
 }
 
-// Computes the key corresponding to the DM with given dof and stencil_width.
-static int grid_dm_key(int da_dof, int stencil_width) {
-  return 10000 * da_dof + stencil_width;
-}
-
-//! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
-//! freedom per grid point) and stencil width.
-petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
-  petsc::DM::Ptr result;
-
+// Computes the hash corresponding to the DM with given dof and stencil_width.
+static int dm_hash(int da_dof, int stencil_width) {
   if (da_dof < 0 or da_dof > 10000) {
     throw RuntimeError::formatted("Invalid da_dof argument: %d", da_dof);
   }
@@ -760,7 +752,15 @@ petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
     throw RuntimeError::formatted("Invalid stencil_width argument: %d", stencil_width);
   }
 
-  int j = grid_dm_key(da_dof, stencil_width);
+  return 10000 * da_dof + stencil_width;
+}
+
+//! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
+//! freedom per grid point) and stencil width.
+petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
+  petsc::DM::Ptr result;
+
+  int j = dm_hash(da_dof, stencil_width);
 
   if (m_impl->dms[j].expired()) {
     result = this->create_dm(da_dof, stencil_width);
