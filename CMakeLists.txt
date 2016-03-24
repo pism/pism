@@ -75,8 +75,13 @@ else()
   add_definitions (-DPISM_DEBUG=0)
 endif ()
 
-# Add -fPIC to CXX flags; note that this will not show up in CMakeCache.txt
+# Add -fPIC to C and CXX flags.
 if (Pism_ADD_FPIC)
+  if (NOT CMAKE_C_FLAGS MATCHES "-fPIC")
+    message (STATUS "Adding -fPIC to C compiler flags.")
+    set (CMAKE_C_FLAGS "-fPIC ${CMAKE_C_FLAGS}" CACHE STRING "C compiler flags" FORCE)
+  endif()
+
   if (NOT CMAKE_CXX_FLAGS MATCHES "-fPIC")
     message (STATUS "Adding -fPIC to C++ compiler flags.")
     set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
