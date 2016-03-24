@@ -113,7 +113,7 @@ def diffusion_convergence_rate_time(title, error_func):
     return p_max[0], p_avg[0]
 
 def diffusion_convergence_rate_space(title, error_func):
-    "Compute the convergence rate with refinement in time."
+    "Compute the convergence rate with refinement in space."
     Mz = 2.0**np.arange(3,10)
     dzs = 1000.0 / Mz
 
