@@ -12,10 +12,10 @@ namespace pism {
 namespace icebin {
 
 VecBundleWriter::VecBundleWriter(
-	pism::IceGrid::ConstPtr _grid,
+	pism::IceGrid::Ptr _grid,
 	std::string const &_fname,
-	std::vector<pism::IceModelVec *> &&_vecs)
-: m_grid(_grid), fname(_fname), vecs(std::move(_vecs))
+	std::vector<pism::IceModelVec const *> &_vecs)
+: m_grid(_grid), fname(_fname), vecs(_vecs)
 {}
 
 void VecBundleWriter::init()
@@ -28,7 +28,7 @@ void VecBundleWriter::init()
 		m_grid->ctx()->time()->CF_units_string(),
         m_grid->ctx()->unit_system());
 
-	for (pism::IceModelVec *vec : vecs) {
+	for (pism::IceModelVec const *vec : vecs) {
 		vec->define(nc, PISM_DOUBLE);
 	}
 
@@ -44,7 +44,7 @@ void VecBundleWriter::write(double time_s)
 	nc.open(fname.c_str(), PISM_READWRITE); // append to file
 	io::append_time(nc, m_grid->ctx()->config()->get_string("time_dimension_name"), time_s);
 
-	for (pism::IceModelVec *vec : vecs) {
+	for (pism::IceModelVec const *vec : vecs) {
 		vec->write(nc);
 	}
 	nc.close();

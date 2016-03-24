@@ -56,8 +56,8 @@ public:
   // Inputs from IceBin
   pism::IceModelVec2S icebin_wflux;
   pism::IceModelVec2S icebin_deltah;
-  pism::IceModelVec2S icebin_massxfer;
-  pism::IceModelVec2S icebin_enthxfer;
+  pism::IceModelVec2S icebin_massxfer;    // [kg m-2 s-1]
+  pism::IceModelVec2S icebin_enthxfer;    // [J m-2 s-1]
   // Calculated
   pism::IceModelVec2S surface_temp;
 };
