@@ -230,7 +230,7 @@ void enthSystemCtx::set_surface_neumann_bc(double G) {
   // treat horizontal velocity using first-order upwinding:
   if (not m_ismarginal) {
     const double UpEnthu = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], 1.0 / m_dx);
-    const double UpEnthv = upwind(m_u[m_ks], m_E_s[m_ks], m_Enth[m_ks], m_E_n[m_ks], 1.0 / m_dy);
+    const double UpEnthv = upwind(m_v[m_ks], m_E_s[m_ks], m_Enth[m_ks], m_E_n[m_ks], 1.0 / m_dy);
 
     m_B_ks += m_dt * ((m_strain_heating[m_ks] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[m_ks]
   }
@@ -334,7 +334,7 @@ void enthSystemCtx::set_basal_neumann_bc(double G) {
   // treat horizontal velocity using first-order upwinding:
   if (not m_ismarginal) {
     const double UpEnthu = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], 1.0 / m_dx);
-    const double UpEnthv = upwind(m_u[0], m_E_s[0], m_Enth[0], m_E_n[0], 1.0 / m_dy);
+    const double UpEnthv = upwind(m_v[0], m_E_s[0], m_Enth[0], m_E_n[0], 1.0 / m_dy);
 
     m_B0 += m_dt * ((m_strain_heating[0] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[0]
   }
@@ -485,7 +485,7 @@ void enthSystemCtx::solve(std::vector<double> &x) {
     if (not m_ismarginal) {
       const double
         UpEnthu = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], Dx),
-        UpEnthv = upwind(m_u[k], m_E_s[k], m_Enth[k], m_E_n[k], Dy);
+        UpEnthv = upwind(m_v[k], m_E_s[k], m_Enth[k], m_E_n[k], Dy);
 
       S.RHS(k) += m_dt * (one_over_rho * m_strain_heating[k] - UpEnthu - UpEnthv);
     }
