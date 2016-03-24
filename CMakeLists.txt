@@ -1,5 +1,5 @@
 project (Pism)
-cmake_minimum_required (VERSION 2.8.0) # 2.8.0 is almost 3 years old, so this should be OK
+cmake_minimum_required (VERSION 2.8.8) # 2.8.8 was released on April 19, 2012
 if (NOT ${CMAKE_VERSION} VERSION_LESS 3.0.0)
   message(STATUS "CMAKE_VERSION >= 3.0.0. Setting policy 0026 behavior to 'old'...")
   # This has to do with the way we compute dependencies of PISM's
@@ -24,7 +24,7 @@ pism_set_install_prefix()
 
 # Set Pism_DEFAULT_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
 pism_check_build_dir_location()
-set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc" CACHE STRING "" FORCE)
+set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_SHARE_DIR}/pism_config.nc" CACHE STRING "" FORCE)
 mark_as_advanced (Pism_DEFAULT_CONFIG_FILE)
 file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 

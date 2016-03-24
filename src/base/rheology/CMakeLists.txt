@@ -1,5 +1,5 @@
 # Flow laws.
-add_library (pismflowlaws
+add_library (pismflowlaws OBJECT
   FlowLaw.cc
   FlowLawFactory.cc
   GPBLD.cc
@@ -12,12 +12,3 @@ add_library (pismflowlaws
   GPBLD3.cc
   approximate/gpbld.cc
   )
-target_link_libraries (pismflowlaws pismutil ${Pism_EXTERNAL_LIBS})
-
-# Install libraries only if BUILD_SHARED_LIBS is ON.
-if (${BUILD_SHARED_LIBS})
-  install (TARGETS
-    pismflowlaws
-    LIBRARY DESTINATION ${Pism_LIB_DIR}
-    ARCHIVE DESTINATION ${Pism_LIB_DIR})
-endif ()
