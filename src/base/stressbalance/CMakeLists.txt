@@ -25,12 +25,4 @@ if (Pism_BUILD_EXTRA_EXECS)
     DESTINATION ${Pism_BIN_DIR})
 endif ()
 
-if (Pism_BUILD_EXTRA_EXECS)
-  add_executable(blatter_test
-    blatter/Blatter_implementation.c
-    blatter/BlatterStressBalance.cc
-    blatter/blatter_test.cc)
-  target_link_libraries (blatter_test pism)
-endif()
-
 add_subdirectory (ssa/tests)

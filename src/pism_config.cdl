@@ -1058,11 +1058,6 @@ netcdf pism_config {
     pism_config:ssa_Glen_exponent = 3.0;
     pism_config:ssa_Glen_exponent_doc = "Glen exponent in ice flow law for SSA";
 
-    pism_config:blatter_Glen_exponent_units = "pure number";
-    pism_config:blatter_Glen_exponent_type = "scalar";
-    pism_config:blatter_Glen_exponent = 3.0;
-    pism_config:blatter_Glen_exponent_doc = "; Glen exponent in ice flow law for the Blatter stress balance solver";
-
     pism_config:ice_softness_units = "Pascal-3 second-1";
     pism_config:ice_softness_type = "scalar";
     pism_config:ice_softness = 3.1689e-24;
@@ -1147,23 +1142,6 @@ netcdf pism_config {
     pism_config:ssa_flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb,gpbld3";
     pism_config:ssa_flow_law = "gpbld";
     pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
-
-    pism_config:blatter_flow_law_type = "keyword";
-    pism_config:blatter_flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
-    pism_config:blatter_flow_law = "gpbld";
-    pism_config:blatter_flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model.";
-
-    pism_config:blatter_enhancement_factor_option = "blatter_e";
-    pism_config:blatter_enhancement_factor_units = "1";
-    pism_config:blatter_enhancement_factor_type = "scalar";
-    pism_config:blatter_enhancement_factor = 1.0;
-    pism_config:blatter_enhancement_factor_doc = "; Flow enhancement factor for the Blatter stress balance flow law";
-
-    pism_config:blatter_enhancement_factor_interglacial_option = "blatter_e_interglacial";
-    pism_config:blatter_enhancement_factor_interglacial_units = "1";
-    pism_config:blatter_enhancement_factor_interglacial_type = "scalar";
-    pism_config:blatter_enhancement_factor_interglacial = 1.0;
-    pism_config:blatter_enhancement_factor_interglacial_doc = "Flow enhancement factor for Blatter stress balance solver; used for ice accumulated during interglacial periods.";
 
     pism_config:enthalpy_cold_bulge_max_units = "Joule / kg";
     pism_config:enthalpy_cold_bulge_max_type = "scalar";
@@ -1301,10 +1279,6 @@ netcdf pism_config {
     pism_config:viewer_size = 320;
     pism_config:viewer_size_doc = "default diagnostic viewer size (number of pixels of the longer side)";
 
-    pism_config:blatter_Mz_units = "count";
-    pism_config:blatter_Mz_type = "integer";
-    pism_config:blatter_Mz = 5;
-    pism_config:blatter_Mz_doc = "; Number of vertical grid levels in the ice (in the Blatter solver).";
 // Strings:
 
     pism_config:time_dimension_name_type = "string";
