@@ -236,7 +236,7 @@ install (TARGETS
 
 install (FILES
   "${PROJECT_BINARY_DIR}/pism_config.nc"
-  DESTINATION ${Pism_LIB_DIR})
+  DESTINATION ${Pism_SHARE_DIR})
 
 # miscellaneous executables needed by software tests
 add_executable (flowlaw_test software_tests/flowlaw_test.cc)
