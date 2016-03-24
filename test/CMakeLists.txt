@@ -12,5 +12,5 @@ if (Pism_BUILD_PYTHON_BINDINGS AND NOSE_EXECUTABLE)
   add_test(NAME "Python:nose:misc"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/nosetests.py)
   add_test(NAME "Python:nose:EnthalpyConverter"
-    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/enthalpy_converter.py)
+    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/enthalpy/converter.py)
 endif()

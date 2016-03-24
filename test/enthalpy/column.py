@@ -1,5 +1,6 @@
-"""Simple verification/regression tests for the PISM's enthalpy
-solver.
+"""Simple verification/regression tests for vertical diffusion and
+advection of enthalpy in the column. Tests PISM's enthalpy solver.
+
 """
 
 import PISM
