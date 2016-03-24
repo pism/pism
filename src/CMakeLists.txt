@@ -56,10 +56,10 @@ set(PISMUTIL_SRC
   base/util/TerminationReason.cc
   base/util/PISMUnits.cc
   base/util/projection.cc
+  base/pism_revision.cc
   )
 
 # PISM Revision string
-list(APPEND PISMUTIL_SRC base/pism_revision.cc)
 set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
 
@@ -91,16 +91,12 @@ else()
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_HDF5=0")
 endif()
 
-
 # The list of headers included in PIO.cc depends on parallel I/O settings.
 # These flags determine which headers are included.
 set_source_files_properties (base/util/io/PIO.cc
   PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
 
-add_library (pismutil ${PISMUTIL_SRC})
-target_link_libraries (pismutil pismcalcalcs ${Pism_EXTERNAL_LIBS})
-add_dependencies (pismutil pism_config)
-add_dependencies (pismutil touch_pism_revision)
+add_library (pismutil OBJECT ${PISMUTIL_SRC})
 
 add_custom_target (touch_pism_revision
   COMMAND ${CMAKE_COMMAND} -E touch pism_revision.cc
@@ -109,7 +105,7 @@ add_custom_target (touch_pism_revision
 
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
-add_library (pismbase
+add_library (pism
   base/pism_signal.c
   base/columnSystem.cc
   base/energy/bedrockThermalUnit.cc
@@ -150,11 +146,22 @@ add_library (pismbase
   base/calving/PISMFloatKill.cc
   base/calving/PISMOceanKill.cc
   base/calving/PISMEigenCalving.cc
+  $<TARGET_OBJECTS:pismflowlaws>
+  $<TARGET_OBJECTS:pismstressbalance>
+  $<TARGET_OBJECTS:pismcalcalcs>
+  $<TARGET_OBJECTS:pismutil>
+  $<TARGET_OBJECTS:pismearth>
+  $<TARGET_OBJECTS:pismverif>
+  $<TARGET_OBJECTS:pismboundary>
+  $<TARGET_OBJECTS:pisminverse>
+  $<TARGET_OBJECTS:pismregional>
 )
-target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance)
+target_link_libraries (pism ${Pism_EXTERNAL_LIBS})
+add_dependencies (pism pism_config)
+add_dependencies (pism touch_pism_revision)
 
 # Bed deformation models.
-set(PISMEARTH_SRC
+add_library(pismearth OBJECT
   earth/PBPointwiseIsostasy.cc
   earth/PISMBedDef.cc
   earth/PBLingleClark.cc
@@ -165,9 +172,6 @@ set(PISMEARTH_SRC
   earth/matlablike.cc
   )
 
-add_library(pismearth ${PISMEARTH_SRC})
-target_link_libraries (pismearth pismutil)
-
 # Disable compiler warnings for cubature.c (source file not by PISM authors)
 set_source_files_properties (earth/cubature.c
   PROPERTIES COMPILE_FLAGS "-w")
@@ -176,7 +180,7 @@ set_source_files_properties (base/util/pism_default_config.cc
   PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
 
 # Verification tests.
-add_library (pismverif
+add_library (pismverif OBJECT
   verif/iCMthermo.cc
   verif/iceCompModel.cc
   verif/PSVerification.cc
@@ -188,23 +192,19 @@ add_library (pismverif
   verif/tests/exactTestsFG.c
   verif/tests/exactTestsIJ.c
 )
-target_link_libraries (pismverif pismbase pismstressbalance)
 
 # Main executables:
 add_executable (pismr pismr.cc)
+target_link_libraries (pismr pism)
 
 # Simplified geometry
 add_executable (pisms pisms.cc
   eismint/iceEISModel.cc)
-
-# All of the following are linked against pismbase
-foreach (EXEC pismr pisms)
-  target_link_libraries (${EXEC} pismbase)
-endforeach (EXEC)
+target_link_libraries (pisms pism)
 
 # Verification mode "driver".
 add_executable (pismv pismv.cc)
-target_link_libraries (pismv pismverif pismbase)
+target_link_libraries (pismv pism)
 
 add_executable (pismmerge
   pismmerge/pismmerge.cc
@@ -212,7 +212,7 @@ add_executable (pismmerge
   pismmerge/variables.cc
   pismmerge/util.cc
   base/util/io/PISMNC4_Serial.cc)
-target_link_libraries (pismmerge pismutil)
+target_link_libraries (pismmerge pism)
 
 find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
 mark_as_advanced(NCGEN_PROGRAM)
@@ -223,15 +223,13 @@ add_custom_command (OUTPUT pism_config.nc
 )
 add_custom_target (pism_config DEPENDS pism_config.nc)
 
-# Install libraries only if BUILD_SHARED_LIBS is ON.
-if (${BUILD_SHARED_LIBS})
-  install (TARGETS
-    pismutil pismverif pismbase pismearth # libraries
-    LIBRARY DESTINATION ${Pism_LIB_DIR}
-    ARCHIVE DESTINATION ${Pism_LIB_DIR})
-endif ()
+# Install the library
+install (
+  TARGETS pism
+  LIBRARY DESTINATION ${Pism_LIB_DIR}
+  ARCHIVE DESTINATION ${Pism_LIB_DIR})
 
-# Always install executables.
+# Install executables.
 install (TARGETS
   pismr pisms pismv pismmerge ## executables
   RUNTIME DESTINATION ${Pism_BIN_DIR})
@@ -241,30 +239,27 @@ install (FILES
   DESTINATION ${Pism_LIB_DIR})
 
 # miscellaneous executables needed by software tests
-add_executable (flowlaw_test
-  software_tests/flowlaw_test.cc)
-target_link_libraries (flowlaw_test pismutil pismflowlaws)
+add_executable (flowlaw_test software_tests/flowlaw_test.cc)
+target_link_libraries (flowlaw_test pism)
 install (TARGETS flowlaw_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 
-add_executable (bedrough_test
-  software_tests/bedrough_test.cc
-  base/stressbalance/sia/PISMBedSmoother.cc)
-target_link_libraries (bedrough_test pismutil)
+add_executable (bedrough_test software_tests/bedrough_test.cc)
+target_link_libraries (bedrough_test pism)
 install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 if (Pism_BUILD_EXTRA_EXECS)
   set (EXTRA_EXECS simpleABCD simpleFG simpleH simpleI simpleJ simpleL)
   foreach (EXEC ${EXTRA_EXECS})
     add_executable (${EXEC} verif/tests/${EXEC}.c)
-    target_link_libraries (${EXEC} pismverif)
+    target_link_libraries (${EXEC} pism)
   endforeach (EXEC)
 
   add_executable (tryLCbd earth/tryLCbd.cc)
-  target_link_libraries (tryLCbd pismearth)
+  target_link_libraries (tryLCbd pism)
   list (APPEND EXTRA_EXECS tryLCbd)
 
-  add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
-  target_link_libraries (btutest pismutil)
+  add_executable (btutest base/energy/btutest.cc)
+  target_link_libraries (btutest pism)
   list (APPEND EXTRA_EXECS btutest)
 
   install (TARGETS
@@ -286,4 +281,7 @@ if (Pism_DEBUG OR Pism_BUILD_PYTHON_BINDINGS)
   # bindings. We can go back to building it unconditionally if someone
   # uses it in C++ code (please let us know).
   add_subdirectory (inverse)
+else()
+  # create dummy pisminverse library
+  add_library(pisminverse OBJECT)
 endif()

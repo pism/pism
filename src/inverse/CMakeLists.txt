@@ -25,9 +25,4 @@ if(Pism_USE_TAO)
     )
 endif()
 
-add_library (pisminverse ${PISM_INVERSE_SOURCES})
-target_link_libraries (pisminverse pismbase pismutil)
-
-if (${BUILD_SHARED_LIBS})
-  install (TARGETS pisminverse DESTINATION ${Pism_LIB_DIR})
-endif()
+add_library (pisminverse OBJECT ${PISM_INVERSE_SOURCES})
