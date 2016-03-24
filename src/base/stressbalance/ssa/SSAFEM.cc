@@ -283,8 +283,8 @@ void SSAFEM::cache_inputs() {
   list.add(*m_bed);
   list.add(*m_tauc);
 
-  bool explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
-  if (explicit_driving_stress) {
+  bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
+  if (use_explicit_driving_stress) {
     list.add(*m_driving_stress_x);
     list.add(*m_driving_stress_y);
   }
@@ -296,10 +296,13 @@ void SSAFEM::cache_inputs() {
 
       double thickness = (*m_thickness)(i, j);
 
-      Vector2 driving_stress;
-      if (explicit_driving_stress) {
-        driving_stress.u = (*m_driving_stress_x)(i, j);
-        driving_stress.v = (*m_driving_stress_y)(i, j);
+      Vector2 tau_d;
+      if (use_explicit_driving_stress) {
+        tau_d.u = (*m_driving_stress_x)(i, j);
+        tau_d.v = (*m_driving_stress_y)(i, j);
+      } else {
+	// tau_d above is set to zero by the Vector2
+	// constructor, but is not used
       }
 
       const double *enthalpy = m_enthalpy->get_column(i, j);
@@ -313,7 +316,7 @@ void SSAFEM::cache_inputs() {
       c.sea_level      = m_sea_level; // FIXME: use a 2D field
       c.tauc           = (*m_tauc)(i, j);
       c.hardness       = hardness;
-      c.driving_stress = driving_stress;
+      c.driving_stress = tau_d;
 
       m_coefficients(i, j) = c;
     } // loop over owned grid points
@@ -375,16 +378,16 @@ void SSAFEM::quad_point_values(const fem::Quadrature &Q,
 //! Uses explicitly-provided nodal values.
 void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
                                      const Coefficients *x,
-                                     Vector2 *driving_stress) const {
+                                     Vector2 *result) const {
   const fem::Germs *test = Q.test_function_values();
   const unsigned int n = Q.n();
 
   for (unsigned int q = 0; q < n; q++) {
-    driving_stress[q] = 0.0;
+    result[q] = 0.0;
 
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
       const fem::Germ &psi  = test[q][k];
-      driving_stress[q]  += psi.val * x[k].driving_stress;
+      result[q]  += psi.val * x[k].driving_stress;
     }
   }
 }
@@ -436,7 +439,7 @@ void SSAFEM::explicit_driving_stress(const fem::Quadrature &Q,
 */
 void SSAFEM::driving_stress(const fem::Quadrature &Q,
                             const Coefficients *x,
-                            Vector2 *driving_stress) const {
+                            Vector2 *result) const {
   const fem::Germs *test = Q.test_function_values();
   const unsigned int n = Q.n();
 
@@ -450,7 +453,7 @@ void SSAFEM::driving_stress(const fem::Quadrature &Q,
       H_x       = 0.0,
       H_y       = 0.0;
 
-    driving_stress[q] = 0.0;
+    result[q] = 0.0;
 
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
       const fem::Germ &psi  = test[q][k];
@@ -474,8 +477,8 @@ void SSAFEM::driving_stress(const fem::Quadrature &Q,
       h_x = grounded ? b_x + H_x : m_alpha * H_x,
       h_y = grounded ? b_y + H_y : m_alpha * H_y;
 
-    driving_stress[q].u = - pressure * h_x;
-    driving_stress[q].v = - pressure * h_y;
+    result[q].u = - pressure * h_x;
+    result[q].v = - pressure * h_y;
   }
 }
 

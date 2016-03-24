@@ -328,11 +328,11 @@ Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
     weights2[2] = {1.0, 1.0};
 
   QuadPoint points[m_size];
-  double weights[m_size];
+  double W[m_size];
 
-  tensor_product_quadrature(2, points2, weights2, points, weights);
+  tensor_product_quadrature(2, points2, weights2, points, W);
 
-  initialize(q1::chi, q1::n_chi, points, weights);
+  initialize(q1::chi, q1::n_chi, points, W);
 }
 
 Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
@@ -350,11 +350,11 @@ Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
     weights3[3] = {w1, w2, w1};
 
   QuadPoint points[m_size];
-  double weights[m_size];
+  double W[m_size];
 
-  tensor_product_quadrature(3, points3, weights3, points, weights);
+  tensor_product_quadrature(3, points3, weights3, points, W);
 
-  initialize(q1::chi, q1::n_chi, points, weights);
+  initialize(q1::chi, q1::n_chi, points, W);
 }
 
 Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
@@ -372,11 +372,11 @@ Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
     weights4[4] = {w2, w1, w1, w2};
 
   QuadPoint points[m_size];
-  double weights[m_size];
+  double W[m_size];
 
-  tensor_product_quadrature(4, points4, weights4, points, weights);
+  tensor_product_quadrature(4, points4, weights4, points, W);
 
-  initialize(q1::chi, q1::n_chi, points, weights);
+  initialize(q1::chi, q1::n_chi, points, W);
 }
 
 //! Initialize shape function values and weights of a 2D quadrature.
@@ -385,7 +385,7 @@ Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
 void Quadrature::initialize(ShapeFunction2 f,
                             unsigned int n_chi,
                             const QuadPoint *points,
-                            const double *weights) {
+                            const double *W) {
 
   double J_inv[2][2];
   invert(m_J, J_inv);
@@ -398,7 +398,7 @@ void Quadrature::initialize(ShapeFunction2 f,
 
   const double J_det = determinant(m_J);
   for (unsigned int q = 0; q < m_Nq; q++) {
-    m_W[q] = J_det * weights[q];
+    m_W[q] = J_det * W[q];
   }
 }
 
@@ -494,10 +494,10 @@ P1Quadrature3::P1Quadrature3(unsigned int N,
                                {one_over_six,   two_over_three},
                                {one_over_six,   one_over_six}};
 
-  const double weights[3] = {one_over_six, one_over_six, one_over_six};
+  const double W[3] = {one_over_six, one_over_six, one_over_six};
 
   // Note that we use q1::n_chi here.
-  initialize(p1::chi, q1::n_chi, points, weights);
+  initialize(p1::chi, q1::n_chi, points, W);
 
   // Permute shape function values according to N, the index of this triangle in the Q1 element.
   const unsigned int

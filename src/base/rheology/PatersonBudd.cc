@@ -28,8 +28,8 @@ namespace rheology {
 
 PatersonBudd::PatersonBudd(const std::string &prefix,
                            const Config &config,
-                           EnthalpyConverter::Ptr EC)
-  : FlowLaw(prefix, config, EC) {
+                           EnthalpyConverter::Ptr ec)
+  : FlowLaw(prefix, config, ec) {
   m_name = "Paterson-Budd";
 }
 

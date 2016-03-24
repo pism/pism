@@ -27,8 +27,8 @@ MaxTimestep::MaxTimestep()
   // empty
 }
 
-MaxTimestep::MaxTimestep(double value)
-  : m_is_finite(true), m_value(value) {
+MaxTimestep::MaxTimestep(double v)
+  : m_is_finite(true), m_value(v) {
   // empty
 }
 

@@ -69,8 +69,8 @@ static void check_enthalpy_converter(EnthalpyConverter::Ptr EC,
   }
 }
 
-GPBLD3::GPBLD3(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr EC)
-  : GPBLD(prefix, config, EC) {
+GPBLD3::GPBLD3(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr ec)
+  : GPBLD(prefix, config, ec) {
   m_name = "Glen-Paterson-Budd-Lliboutry-Duval (using a polynomial approximation, optimized for n == 3)";
 
   if (this->exponent() != 3.0) {
@@ -125,7 +125,7 @@ GPBLD3::GPBLD3(const std::string &prefix, const Config &config, EnthalpyConverte
                                   c.water_frac_observed_limit, m_water_frac_observed_limit);
   }
 
-  check_enthalpy_converter(EC, config);
+  check_enthalpy_converter(ec, config);
 
 }
 

@@ -25,8 +25,8 @@ namespace pism {
 namespace rheology {
 
 PatersonBuddWarm::PatersonBuddWarm(const std::string &prefix,
-                   const Config &config, EnthalpyConverter::Ptr EC)
-  : PatersonBudd(prefix, config, EC) {
+                   const Config &config, EnthalpyConverter::Ptr ec)
+  : PatersonBudd(prefix, config, ec) {
   m_name = "Paterson-Budd (warm case)";
 }
 
