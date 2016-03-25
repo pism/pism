@@ -493,16 +493,33 @@ def advection_convergence_rate_space(title, error_func):
 
     return p_max[0], p_avg[0]
 
-diffusion_convergence_rate_time("Diffusion: Dirichlet at the base, Neumann at the surface", errors_DN)
-diffusion_convergence_rate_space("Diffusion: Dirichlet at the base, Neumann at the surface", errors_DN)
+def diffusion_DN_test():
+    assert diffusion_convergence_rate_time("Diffusion: Dirichlet at the base, Neumann at the surface",
+                                           errors_DN)[1] > 0.93
+    assert diffusion_convergence_rate_space("Diffusion: Dirichlet at the base, Neumann at the surface",
+                                            errors_DN)[1] > 2.0
 
-diffusion_convergence_rate_time("Diffusion: Neumann at the base, Dirichlet at the surface", errors_ND)
-diffusion_convergence_rate_space("Diffusion: Neumann at the base, Dirichlet at the surface", errors_ND)
+def diffusion_ND_test():
+    assert diffusion_convergence_rate_time("Diffusion: Neumann at the base, Dirichlet at the surface",
+                                           errors_ND)[1] > 0.93
+    assert diffusion_convergence_rate_space("Diffusion: Neumann at the base, Dirichlet at the surface",
+                                            errors_ND)[1] > 2.0
 
-advection_convergence_rate_time("Advection: Upward flow", errors_advection_up)
-advection_convergence_rate_space("Advection: Upward flow", errors_advection_up)
+def advection_up_test():
+    assert advection_convergence_rate_time("Advection: Upward flow",
+                                           errors_advection_up)[1] > 0.87
+    assert advection_convergence_rate_space("Advection: Upward flow",
+                                            errors_advection_up)[1] > 0.96
 
-advection_convergence_rate_time("Advection: Downward flow", errors_advection_down)
-advection_convergence_rate_space("Advection: Downward flow", errors_advection_down)
+def advection_down_test():
+    assert advection_convergence_rate_time("Advection: Downward flow",
+                                           errors_advection_down)[1] > 0.87
+    assert advection_convergence_rate_space("Advection: Downward flow",
+                                            errors_advection_down)[1] > 0.96
 
-plt.show()
+if __name__ == "__main__":
+    diffusion_ND_test()
+    diffusion_DN_test()
+    advection_up_test()
+    advection_down_test()
+    plt.show()
