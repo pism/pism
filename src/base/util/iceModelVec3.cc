@@ -254,39 +254,40 @@ void  IceModelVec3::create(IceGrid::ConstPtr my_grid, const std::string &my_name
 
 /** Sum a 3-D vector in the Z direction to create a 2-D vector.
 
-<p>Note that this sums up all the values in a column, including ones
+Note that this sums up all the values in a column, including ones
 above the ice. This may or may not be what you need. Also, take a look
-at IceModel::compute_ice_enthalpy(PetscScalar &result) in iMreport.cc.</p>
+at IceModel::compute_ice_enthalpy(PetscScalar &result) in iMreport.cc.
 
-<p>As for the difference between IceModelVec2 and IceModelVec2S, the
+As for the difference between IceModelVec2 and IceModelVec2S, the
 former can store fields with more than 1 "degree of freedom" per grid
 point (such as 2D fields on the "staggered" grid, with the first
 degree of freedom corresponding to the i-offset and second to
-j-offset).</p>
+j-offset).
 
-<p>IceModelVec2S is just IceModelVec2 with "dof == 1", and
+IceModelVec2S is just IceModelVec2 with "dof == 1", and
 IceModelVec2V is IceModelVec2 with "dof == 2". (Plus some extra
-methods, of course.)</p>
+methods, of course.)
 
-<p>Either one of IceModelVec2 and IceModelVec2S would work in this
-case.</p>
+Either one of IceModelVec2 and IceModelVec2S would work in this
+case.
 
 Computes output = A*output + B*sum_columns(input) + C
 
 @see https://github.com/pism/pism/issues/229 */
-void IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B) const
-{
-  IceModelVec3 const &input(*this);
+void IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B) const {
+  const unsigned int Mz = m_grid->Mz();
 
-  AccessList access({&input, &output});
-  for (auto i = m_grid->xs(); i < m_grid->xs()+m_grid->xm(); ++i) {
-    for (auto j = m_grid->ys(); j < m_grid->ys()+m_grid->ym(); ++j) {
-      double const *column = input.get_column(i,j);
+  AccessList access({this, &output});
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      PetscScalar scalar_sum = 0;
-      for (unsigned int k = 0; k < m_grid->Mz(); ++k) scalar_sum += column[k];
-      output(i,j) = A*output(i,j) + B*scalar_sum;
+    const double *column = this->get_column(i,j);
+
+    double scalar_sum = 0.0;
+    for (unsigned int k = 0; k < Mz; ++k) {
+      scalar_sum += column[k];
     }
+    output(i,j) = A * output(i,j) + B * scalar_sum;
   }
 }
 
