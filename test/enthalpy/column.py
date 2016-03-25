@@ -169,10 +169,13 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     z = np.array(column.sys.z())
 
     E_base = EC.enthalpy(230.0, 0.0, EC.pressure(Lz))
-    Q_surface = (EC.enthalpy(270.0, 0.0, 0.0) - 25*Lz - E_base) / Lz
-    E_exact = exact_DN(Lz, E_base, Q_surface)
+    E_surface = EC.enthalpy(270.0, 0.0, 0.0) - 25*Lz
+    dE_surface = (E_surface - E_base) / Lz
 
-    E_steady = E_base + Q_surface * z
+    E_steady = E_base + dE_surface * z
+    Q_surface = K * dE_surface
+
+    E_exact = exact_DN(Lz, E_base, dE_surface)
 
     with PISM.vec.Access(nocomm=[column.enthalpy,
                                  column.u, column.v, column.w,
@@ -185,7 +188,7 @@ def errors_DN(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
         while t < T_final:
             column.init_column()
 
-            column.sys.set_surface_heat_flux(K * Q_surface)
+            column.sys.set_surface_heat_flux(Q_surface)
             column.sys.set_basal_dirichlet_bc(E_base)
 
             x = column.sys.solve()
@@ -244,12 +247,14 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
     Lz = column.Lz
     z = np.array(column.sys.z())
 
-    E_surface = EC.enthalpy(260.0, 0.0, 0.0)
     E_base = EC.enthalpy(240.0, 0.0, EC.pressure(Lz))
-    Q_base = (E_surface  - E_base) / Lz
-    E_exact = exact_ND(Lz, Q_base, E_surface)
+    E_surface = EC.enthalpy(260.0, 0.0, 0.0)
+    dE_base = (E_surface  - E_base) / Lz
 
-    E_steady = E_surface + Q_base * (z - Lz)
+    E_steady = E_surface + dE_base * (z - Lz)
+    Q_base = - K * dE_base
+
+    E_exact = exact_ND(Lz, dE_base, E_surface)
 
     with PISM.vec.Access(nocomm=[column.enthalpy,
                                  column.u, column.v, column.w,
@@ -262,7 +267,7 @@ def errors_ND(plot_results=True, T_final_years=1000.0, dt_years=100, Mz=101):
         while t < T_final:
             column.init_column()
 
-            column.sys.set_basal_heat_flux(K * Q_base)
+            column.sys.set_basal_heat_flux(Q_base)
             column.sys.set_surface_dirichlet_bc(E_surface)
 
             x = column.sys.solve()
