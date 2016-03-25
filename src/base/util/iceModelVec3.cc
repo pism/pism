@@ -277,7 +277,9 @@ Computes output = A*output + B*sum_columns(input) + C
 void IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B) const {
   const unsigned int Mz = m_grid->Mz();
 
-  AccessList access({this, &output});
+  AccessList access(*this);
+  access.add(output);
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -290,6 +292,5 @@ void IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B) const {
     output(i,j) = A * output(i,j) + B * scalar_sum;
   }
 }
-
 
 } // end of namespace pism
