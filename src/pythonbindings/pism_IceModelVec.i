@@ -14,6 +14,7 @@ using pism::Vector2;
 using pism::StarStencil;
 %}
 
+%shared_ptr(pism::PetscAccessible)
 %shared_ptr(pism::IceModelVec)
 %shared_ptr(pism::IceModelVec2)
 %shared_ptr(pism::IceModelVec2S)

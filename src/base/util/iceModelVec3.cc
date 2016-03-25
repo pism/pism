@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -277,8 +277,6 @@ Computes output = A*output + B*sum_columns(input) + C
 void IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B) const
 {
   IceModelVec3 const &input(*this);
-  PetscScalar *column = NULL;
-  IceGrid const &grid(*input.get_grid());
 
   AccessList access({&input, &output});
   for (auto i = m_grid->xs(); i < m_grid->xs()+m_grid->xm(); ++i) {
