@@ -89,6 +89,14 @@ class Diagnostic;
 class TSDiagnostic;
 class IceModelVec2CellType;
 
+double part_grid_threshold_thickness(StarStencil<int> Mask,
+                                     StarStencil<double> thickness,
+                                     StarStencil<double> surface_elevation,
+                                     double bed_elevation,
+                                     double dx,
+                                     bool reduce_frontal_thickness);
+
+
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
   // The following classes implement various diagnostic computations.
@@ -107,22 +115,13 @@ class IceModel {
   friend class IceModel_climatic_mass_balance_cumulative;
   friend class IceModel_dHdt;
   friend class IceModel_flux_divergence;
+  friend class IceModel_grounded_ice_sheet_area_fraction;
+  friend class IceModel_nonneg_flux_2D_cumulative;
+  friend class IceModel_grounded_basal_flux_2D_cumulative;
+  friend class IceModel_floating_basal_flux_2D_cumulative;
+  friend class IceModel_discharge_flux_2D_cumulative;
+  friend class IceModel_discharge_flux_2D;
   // scalar:
-  friend class IceModel_ivol;
-  friend class IceModel_slvol;
-  friend class IceModel_divoldt;
-  friend class IceModel_iarea;
-  friend class IceModel_imass;
-  friend class IceModel_dimassdt;
-  friend class IceModel_ivoltemp;
-  friend class IceModel_ivolcold;
-  friend class IceModel_ivolg;
-  friend class IceModel_ivolf;
-  friend class IceModel_iareatemp;
-  friend class IceModel_iareacold;
-  friend class IceModel_ienthalpy;
-  friend class IceModel_iareag;
-  friend class IceModel_iareaf;
   friend class IceModel_dt;
   friend class IceModel_max_diffusivity;
   friend class IceModel_surface_flux;
@@ -135,10 +134,6 @@ class IceModel {
   friend class IceModel_nonneg_flux_cumulative;
   friend class IceModel_discharge_flux;
   friend class IceModel_discharge_flux_cumulative;
-  friend class IceModel_nonneg_flux_2D_cumulative;
-  friend class IceModel_grounded_basal_flux_2D_cumulative;
-  friend class IceModel_floating_basal_flux_2D_cumulative;
-  friend class IceModel_discharge_flux_2D_cumulative;
   friend class IceModel_max_hor_vel;
   friend class IceModel_sum_divQ_flux;
   friend class IceModel_H_to_Href_flux;
@@ -275,7 +270,7 @@ protected:
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,         //!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,     //!< ice mass flux into the ocean at the shelf base; no ghosts
-    cell_area,          //!< cell areas (computed using the WGS84 datum)
+    m_cell_area,          //!< cell areas (computed using the WGS84 datum)
     flux_divergence;    //!< flux divergence
 
 public:
@@ -289,7 +284,7 @@ protected:
 
   //! \brief mask for flow type with values ice_free_bedrock, grounded_ice, floating_ice,
   //! ice_free_ocean
-  IceModelVec2CellType vMask;
+  IceModelVec2CellType m_cell_type;
 
   //! mask to determine Dirichlet boundary locations
   IceModelVec2Int vBCMask;
@@ -402,11 +397,6 @@ protected:
   virtual void calculateFractureDensity();
 
   // see iMpartgrid.cc
-  double get_threshold_thickness(StarStencil<int> Mask,
-                                 StarStencil<double> thickness,
-                                 StarStencil<double> surface_elevation,
-                                 double bed_elevation,
-                                 bool reduce_frontal_thickness);
   virtual void residual_redistribution(IceModelVec2S &residual);
   virtual void residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
@@ -419,19 +409,26 @@ protected:
                                 double volume, double area,
                                 double meltfrac, double max_diffusivity);
 
+public:
+  const IceModelVec2S &cell_area();
+  const IceModelVec2CellType &cell_type_mask();
+
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
-  virtual double compute_ice_volume();
-  virtual double compute_sealevel_volume();
-  virtual double compute_ice_volume_temperate();
-  virtual double compute_ice_volume_cold();
-  virtual double compute_ice_area();
-  virtual double compute_ice_area_temperate();
-  virtual double compute_ice_area_cold();
-  virtual double compute_ice_area_grounded();
-  virtual double compute_ice_area_floating();
-  virtual double compute_ice_enthalpy();
+  double ice_volume() const;
+  double ice_volume_not_displacing_seawater() const;
+  double sealevel_volume() const;
+  double ice_volume_temperate() const;
+  double ice_volume_cold() const;
+  double ice_area() const;
+  double ice_area_grounded() const;
+  double ice_area_floating() const;
+  double ice_enthalpy() const;
+  // these are not "const" because they use temporary storage vWork2d
+  double ice_area_temperate();
+  double ice_area_cold();
 
+protected:
   // see iMtemp.cc
   virtual void excessToFromBasalMeltLayer(double rho, double c, double L,
                                           double z, double dz,

@@ -175,7 +175,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   list.add(ice_thickness);
   list.add(basal_melt_rate);
-  list.add(vMask);
+  list.add(m_cell_type);
   list.add(G0);
   list.add(bwatcurr);
 
@@ -223,7 +223,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
       // if isMarginal then only do vertical conduction for ice; ignore advection
       //   and strain heating if isMarginal
       const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
-      MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
+      MaskValue mask_value = static_cast<MaskValue>(m_cell_type.as_int(i,j));
 
       system.initThisColumn(i, j, isMarginal, mask_value, ice_thickness(i,j));
 
@@ -277,7 +277,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
           ierr = PetscPrintf(PETSC_COMM_SELF,
                              "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
                              " proc %d; mask=%d; w=%f m year-1]]\n",
-                             Tnew[k], i, j, k, m_grid->rank(), vMask.as_int(i, j),
+                             Tnew[k], i, j, k, m_grid->rank(), m_cell_type.as_int(i, j),
                              units::convert(m_sys, system.w(k), "m second-1", "m year-1"));
           PISM_CHK(ierr, "PetscPrintf");
 
@@ -296,7 +296,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
         } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
           const double Tpmp = melting_point_temp - beta_CC_grad * ice_thickness(i,j); // FIXME issue #15
           double Texcess = x[0] - Tpmp; // positive or negative
-          if (vMask.ocean(i,j)) {
+          if (m_cell_type.ocean(i,j)) {
             // when floating, only half a segment has had its temperature raised
             // above Tpmp
             excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
@@ -312,7 +312,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
           ierr = PetscPrintf(PETSC_COMM_SELF,
                              "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                              " proc %d; mask=%d; w=%f]]\n",
-                             Tnew[0],i,j,m_grid->rank(),vMask.as_int(i,j),
+                             Tnew[0],i,j,m_grid->rank(),m_cell_type.as_int(i,j),
                              units::convert(m_sys, system.w(0), "m second-1", "m year-1"));
           PISM_CHK(ierr, "PetscPrintf");
 
@@ -333,7 +333,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
       system.fine_to_coarse(Tnew, i, j, vWork3d);
 
       // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
-      if (vMask.ocean(i,j)) {
+      if (m_cell_type.ocean(i,j)) {
         basal_melt_rate(i,j) = 0.0;
       } else {
         // basalMeltRate is rate of change of bwat;  can be negative

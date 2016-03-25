@@ -59,11 +59,11 @@ using namespace mask;
 void IceModel::updateSurfaceElevationAndMask() {
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
-  update_mask(bed_topography, ice_thickness, vMask);
+  update_mask(bed_topography, ice_thickness, m_cell_type);
   update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
 
   if (m_config->get_boolean("kill_icebergs") && iceberg_remover != NULL) {
-    iceberg_remover->update(vMask, ice_thickness);
+    iceberg_remover->update(m_cell_type, ice_thickness);
     // the call above modifies ice thickness and updates the mask
     // accordingly
     update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
@@ -315,7 +315,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
                                      StarStencil<double> &out_SSA_velocity,
                                      StarStencil<double> &out_SIA_flux) {
 
-  StarStencil<int> mask = vMask.int_star(i,j);
+  StarStencil<int> mask = m_cell_type.int_star(i,j);
   Direction dirs[4] = {North, East, South, West};
 
   StarStencil<int> bc_mask;
@@ -545,7 +545,7 @@ void IceModel::massContExplicitStep() {
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   IceModelVec::AccessList list;
-  list.add(cell_area);
+  list.add(m_cell_area);
   list.add(ice_thickness);
   list.add(ice_surface_elevation);
   list.add(bed_topography);
@@ -553,7 +553,7 @@ void IceModel::massContExplicitStep() {
   list.add(Qdiff);
   list.add(vel_advective);
   list.add(climatic_mass_balance);
-  list.add(vMask);
+  list.add(m_cell_type);
   list.add(vHnew);
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
@@ -604,7 +604,7 @@ void IceModel::massContExplicitStep() {
       // thicknesses and thickening rates to kg, for accounting of
       // fluxes during the current time-step.
       const double
-        meter_to_kg       = cell_area(i,j) * ice_density,
+        meter_to_kg       = m_cell_area(i,j) * ice_density,
         meter_per_s_to_kg = meter_to_kg * dt;
 
       // Divergence terms:
@@ -646,10 +646,10 @@ void IceModel::massContExplicitStep() {
 
       // Set source terms
 
-      if (vMask.ice_free_ocean(i, j)) {
+      if (m_cell_type.ice_free_ocean(i, j)) {
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
         // parameterization
-        if (do_part_grid && vMask.next_to_ice(i, j)) {
+        if (do_part_grid && m_cell_type.next_to_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
           H_to_Href_flux = -(divQ_SSA + divQ_SIA) * dt;
@@ -664,11 +664,12 @@ void IceModel::massContExplicitStep() {
             vHref(i, j) = 0;
           }
 
-          double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
-                                                       ice_thickness.star(i, j),
-                                                       ice_surface_elevation.star(i, j),
-                                                       bed_topography(i,j),
-                                                       reduce_frontal_thickness);
+          double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
+                                                             ice_thickness.star(i, j),
+                                                             ice_surface_elevation.star(i, j),
+                                                             bed_topography(i,j),
+                                                             dx,
+                                                             reduce_frontal_thickness);
           double coverage_ratio = 1.0;
           if (H_threshold > 0.0) {
             coverage_ratio = vHref(i, j) / H_threshold;
@@ -742,12 +743,12 @@ void IceModel::massContExplicitStep() {
         climatic_mass_balance_cumulative(i, j) += surface_mass_balance * meter_per_s_to_kg_per_m2;
       }
 
-      if (compute_cumulative_grounded_basal_flux && vMask.grounded(i, j)) {
+      if (compute_cumulative_grounded_basal_flux && m_cell_type.grounded(i, j)) {
         // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
         grounded_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
       }
 
-      if (compute_cumulative_floating_basal_flux && vMask.ocean(i, j)) {
+      if (compute_cumulative_floating_basal_flux && m_cell_type.ocean(i, j)) {
         // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
         floating_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
       }
@@ -755,7 +756,7 @@ void IceModel::massContExplicitStep() {
       // time-series accounting:
       {
         // all these are in units of [kg]
-        if (vMask.grounded(i,j)) {
+        if (m_cell_type.grounded(i,j)) {
           proc_grounded_basal_ice_flux += - my_basal_melt_rate * meter_per_s_to_kg;
         } else {
           proc_sub_shelf_ice_flux      += - my_basal_melt_rate * meter_per_s_to_kg;
@@ -837,7 +838,7 @@ void IceModel::update_grounded_cell_fraction() {
   const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
-                          ice_thickness, bed_topography, vMask,
+                          ice_thickness, bed_topography, m_cell_type,
                           gl_mask, NULL, NULL);
 }
 

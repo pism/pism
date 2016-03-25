@@ -21,7 +21,7 @@ cfbc_kill_icebergs: flood.nc
 	mpiexec -n 4 pismr ${options} -cfbc -kill_icebergs -o $@.nc -extra_file ex_$@.nc
 
 flood.nc: generate_input.py
-	python generate_input.py -o $@
+	python generate_input.py -M 1001 -o $@
 
 clean:
 	rm -f *.nc *.nc~

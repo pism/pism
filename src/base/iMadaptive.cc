@@ -61,7 +61,7 @@ double IceModel::max_timestep_cfl_3d() {
   list.add(u3);
   list.add(v3);
   list.add(w3);
-  list.add(vMask);
+  list.add(m_cell_type);
 
   // update global max of abs of velocities for CFL; only velocities under surface
   const double
@@ -74,7 +74,7 @@ double IceModel::max_timestep_cfl_3d() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (vMask.icy(i, j)) {
+      if (m_cell_type.icy(i, j)) {
         const int ks = m_grid->kBelowHeight(ice_thickness(i, j));
         const double
           *u = u3.get_column(i, j),
@@ -132,11 +132,11 @@ double IceModel::max_timestep_cfl_2d() {
 
   IceModelVec::AccessList list;
   list.add(vel);
-  list.add(vMask);
+  list.add(m_cell_type);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (vMask.icy(i, j)) {
+    if (m_cell_type.icy(i, j)) {
       const double denom = fabs(vel(i, j).u) / dx + fabs(vel(i, j).v) / dy;
       if (denom > 0.0) {
         max_dt = std::min(max_dt, 1.0 / denom);

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ void IceModel::compute_cell_areas() {
   if (not m_config->get_boolean("correct_cell_areas") ||
       not global_attributes.has_attribute("proj4")) {
 
-    cell_area.set(m_grid->dx() * m_grid->dy());
+    m_cell_area.set(m_grid->dx() * m_grid->dy());
 
     return;
   }
@@ -95,7 +95,7 @@ void IceModel::compute_cell_areas() {
   IceModelVec::AccessList list;
   list.add(vLatitude);
   list.add(vLongitude);
-  list.add(cell_area);
+  list.add(m_cell_area);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -122,7 +122,7 @@ void IceModel::compute_cell_areas() {
     pj_transform(pism, geocent, 1, 1, &x_sw, &y_sw, &Z);
     double sw[3] = {x_sw, y_sw, Z};
 
-    cell_area(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
+    m_cell_area(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
 
     // compute lon,lat coordinates:
     pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
@@ -140,7 +140,7 @@ void IceModel::compute_cell_areas() {
 
 void IceModel::compute_cell_areas() {
   // proj.4 was not found; use uncorrected areas.
-  cell_area.set(m_grid->dx() * m_grid->dy());
+  m_cell_area.set(m_grid->dx() * m_grid->dy());
 }
 
 #else  // PISM_USE_PROJ4 is not set

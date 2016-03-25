@@ -154,7 +154,7 @@ void IceModel::combine_basal_melt_rate() {
 
   double ice_density = m_config->get_double("ice_density");
 
-  list.add(vMask);
+  list.add(m_cell_type);
   list.add(basal_melt_rate);
   list.add(shelfbmassflux);
 
@@ -171,7 +171,7 @@ void IceModel::combine_basal_melt_rate() {
     // rate near the grounding line:
     if (sub_gl) {
       lambda = gl_mask(i,j);
-    } else if (vMask.ocean(i,j)) {
+    } else if (m_cell_type.ocean(i,j)) {
       lambda = 0.0;
     }
     basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
@@ -204,15 +204,15 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   list.add(bed_topography);
   list.add(result);
   list.add(ice_thickness);
-  list.add(vMask);
+  list.add(m_cell_type);
   list.add(ice_surface_temp);
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (vMask.grounded(i,j)) {
-        if (vMask.ice_free(i,j)) { // no ice: sees air temp
+      if (m_cell_type.grounded(i,j)) {
+        if (m_cell_type.ice_free(i,j)) { // no ice: sees air temp
           result(i,j) = ice_surface_temp(i,j);
         } else { // ice: sees temp of base of ice
           const double pressure = EC->pressure(ice_thickness(i,j));

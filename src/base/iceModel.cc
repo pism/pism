@@ -268,18 +268,18 @@ void IceModel::createVecs() {
   }
 
   // grounded_dragging_floating integer mask
-  vMask.create(m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
-  vMask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
+  m_cell_type.create(m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
+  m_cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                   "", "");
   std::vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
   mask_values[2] = MASK_FLOATING;
   mask_values[3] = MASK_ICE_FREE_OCEAN;
-  vMask.metadata().set_doubles("flag_values", mask_values);
-  vMask.metadata().set_string("flag_meanings",
+  m_cell_type.metadata().set_doubles("flag_values", mask_values);
+  m_cell_type.metadata().set_string("flag_meanings",
                               "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  m_grid->variables().add(vMask);
+  m_grid->variables().add(m_cell_type);
 
   // upward geothermal flux at bedrock surface
   geothermal_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
@@ -455,16 +455,16 @@ void IceModel::createVecs() {
   }
 
   // cell areas
-  cell_area.create(m_grid, "cell_area", WITHOUT_GHOSTS);
-  cell_area.set_attrs("diagnostic", "cell areas", "m2", "");
-  cell_area.metadata().set_string("comment",
+  m_cell_area.create(m_grid, "cell_area", WITHOUT_GHOSTS);
+  m_cell_area.set_attrs("diagnostic", "cell areas", "m2", "");
+  m_cell_area.metadata().set_string("comment",
                                   "values are equal to dx*dy "
                                   "if projection parameters are not available; "
                                   "otherwise WGS84 ellipsoid is used");
-  cell_area.set_time_independent(true);
-  cell_area.metadata().set_string("glaciological_units", "km2");
-  cell_area.write_in_glaciological_units = true;
-  m_grid->variables().add(cell_area);
+  m_cell_area.set_time_independent(true);
+  m_cell_area.metadata().set_string("glaciological_units", "km2");
+  m_cell_area.write_in_glaciological_units = true;
+  m_grid->variables().add(m_cell_area);
 
   // fields owned by IceModel but filled by SurfaceModel *surface:
   // mean annual net ice equivalent surface mass balance rate
@@ -571,7 +571,8 @@ void IceModel::createVecs() {
     nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
-  if (set_contains(extras, "discharge_flux_cumulative")) {
+  if (set_contains(extras, "discharge_flux_cumulative") or
+      set_contains(extras, "discharge_flux")) {
     discharge_flux_2D_cumulative.create(m_grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
     discharge_flux_2D_cumulative.set_attrs("diagnostic",
                                            "cumulative discharge (calving) flux (positive means ice loss)",

@@ -43,8 +43,8 @@ void IceModel::calculateFractureDensity() {
 
   // get SSA velocities and related strain rates and stresses
   const IceModelVec2V &ssa_velocity = stress_balance->advective_velocity();
-  stress_balance->compute_2D_principal_strain_rates(ssa_velocity, vMask, strain_rates);
-  stress_balance->compute_2D_stresses(ssa_velocity, vMask, deviatoric_stresses);
+  stress_balance->compute_2D_principal_strain_rates(ssa_velocity, m_cell_type, strain_rates);
+  stress_balance->compute_2D_stresses(ssa_velocity, m_cell_type, deviatoric_stresses);
 
   IceModelVec::AccessList list;
   list.add(ssa_velocity);
@@ -55,7 +55,7 @@ void IceModel::calculateFractureDensity() {
   list.add(vFD);
   vFDnew.copy_from(vFD);
   list.add(vFDnew);
-  list.add(vMask);
+  list.add(m_cell_type);
 
   const bool dirichlet_bc = m_config->get_boolean("ssa_dirichlet_bc");
   if (dirichlet_bc) {

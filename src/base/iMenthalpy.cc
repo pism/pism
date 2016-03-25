@@ -266,7 +266,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   list.add(Rb);
   list.add(basal_heat_flux);
   list.add(till_water_thickness);
-  list.add(vMask);
+  list.add(m_cell_type);
 
   // these are accessed a column at a time
   list.add(u3);
@@ -312,7 +312,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         *vertSacrCount += 1; // count columns with lambda < 1
       }
 
-      const bool is_floating = vMask.ocean(i, j);
+      const bool is_floating = m_cell_type.ocean(i, j);
       bool base_is_warm = system.Enth(0) >= system.Enth_s(0);
       bool above_base_is_warm = system.Enth(1) >= system.Enth_s(1);
 
