@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,10 @@
 
 #include <petscvec.h>
 #include <gsl/gsl_interp.h>
+
+#ifdef PISM_CXX11
+#include <initializer_list>
+#endif
 
 #include "pism_memory.hh"
 #include "VariableMetadata.hh"
@@ -46,8 +50,8 @@ struct Range {
 class PetscAccessible {
 public:
   virtual ~PetscAccessible() {}
-  virtual void  begin_access() const = 0;
-  virtual void  end_access() const = 0;
+  virtual void begin_access() const = 0;
+  virtual void end_access() const = 0;
 };
 
 //! Makes sure that we call begin_access() and end_access() for all accessed IceModelVecs.
@@ -55,7 +59,7 @@ class AccessList {
 public:
   AccessList();
 #ifdef PISM_CXX11
-  AccessList(std::vector<PetscAccessible const *> &&vecs);
+  AccessList(std::initializer_list<const PetscAccessible *> vecs);
 #endif
   AccessList(const PetscAccessible &v);
   ~AccessList();

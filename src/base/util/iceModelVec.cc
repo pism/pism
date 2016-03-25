@@ -940,11 +940,9 @@ AccessList::~AccessList() {
 }
 
 #ifdef PISM_CXX11
-AccessList::AccessList(std::vector<PetscAccessible const *> &&vecs)
-{
-  m_vecs = std::move(vecs);
-  for (auto ii=m_vecs.begin(); ii != m_vecs.end(); ++ii) {
-    (*ii)->begin_access();
+AccessList::AccessList(std::initializer_list<const PetscAccessible *> vecs) {
+  for (auto j : vecs) {
+    add(*j);
   }
 }
 #endif
