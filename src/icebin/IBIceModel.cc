@@ -12,62 +12,20 @@
 namespace pism {
 namespace icebin {
 
-// /** Sum a 3-D vector in the Z direction to create a 2-D vector.
-// 
-// <p>Note that this sums up all the values in a column, including ones
-// above the ice. This may or may not be what you need. Also, take a look
-// at IceModel::compute_ice_enthalpy(PetscScalar &result) in iMreport.cc.</p>
-// 
-// <p>As for the difference between IceModelVec2 and IceModelVec2S, the
-// former can store fields with more than 1 "degree of freedom" per grid
-// point (such as 2D fields on the "staggered" grid, with the first
-// degree of freedom corresponding to the i-offset and second to
-// j-offset).</p>
-// 
-// <p>IceModelVec2S is just IceModelVec2 with "dof == 1", and
-// IceModelVec2V is IceModelVec2 with "dof == 2". (Plus some extra
-// methods, of course.)</p>
-// 
-// <p>Either one of IceModelVec2 and IceModelVec2S would work in this
-// case.</p>
-// 
-// @see https://github.com/pism/pism/issues/229 */
-// static void sum_columns(IceModelVec3 &input, IceModelVec2S &output)
-// {
-//   PetscScalar *column = NULL;
-//   IceGrid &grid = *input.get_grid();
-//   int 0;
-// 
-//   input.begin_access();
-//   output.begin_access();
-//   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-//     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-//       input.getInternalColumn(i, j, &column);
-// 
-//       output(i,j) = 0.0;
-//       for (unsigned int k = 0; k < grid.Mz; ++k)
-//         output(i,j) += column[k];
-//     }
-//   }
-//   output.end_access();
-//   input.end_access();
-// 
-//   return 0;
-// }
-// 
-
 // ================================
 
 IBIceModel::IBIceModel(IceGrid::Ptr g, Context::Ptr context, IBIceModel::Params const &_params) :
     pism::IceModel(g, context),
-    params(_params)
-{}
+    params(_params) {
+  // empty
+}
 
-IBIceModel::~IBIceModel() {} // must be virtual merely because some members are virtual
+IBIceModel::~IBIceModel() {
+  // empty
+}
 
 
-void IBIceModel::allocate_subglacial_hydrology()
-{
+void IBIceModel::allocate_subglacial_hydrology() {
     printf("BEGIN IBIceModel::allocate_subglacial_hydrology()\n");
     if (pism::IceModel::subglacial_hydrology) return; // indicates it has already been allocated
     subglacial_hydrology = new pism::icebin::NullTransportHydrology(m_grid);
@@ -104,10 +62,7 @@ void IBIceModel::allocate_couplers() {
 }
 
 
-
-
-void IBIceModel::createVecs()
-{
+void IBIceModel::createVecs() {
     super::createVecs();
 
     printf("BEGIN IBIceModel::createVecs()\n");
@@ -127,8 +82,7 @@ void IBIceModel::createVecs()
     cur.print_formulas(std::cout);
 }
 
-void IBIceModel::massContPreHook()
-{
+void IBIceModel::massContPreHook() {
 #if 0   // Avoid warnings until we put something in this method
 
     // Enthalpy and mass continuity are stepped with different timesteps.
@@ -139,8 +93,7 @@ void IBIceModel::massContPreHook()
 }
 
 
-void IBIceModel::massContPostHook()
-{
+void IBIceModel::massContPostHook() {
 #if 0   // Avoid warnings until we put something in this method
 
     // Enthalpy and mass continuity are stepped with different timesteps.
@@ -151,8 +104,7 @@ void IBIceModel::massContPostHook()
 }
 
 
-void IBIceModel::energyStep()
-{
+void IBIceModel::energyStep() {
 
     printf("BEGIN IBIceModel::energyStep(t=%f, dt=%f)\n", t_TempAge, dt_TempAge);
 
@@ -209,11 +161,12 @@ void IBIceModel::massContExplicitStep() {
     // =========== The Mass Continuity Step Itself
     // This will call through to accumulateFluxes_massContExplicitStep()
     // in the inner loop
-    {AccessList access({&cur.pism_smb, &cur.melt_grounded,
-        &cur.melt_floating, &cur.internal_advection, &cur.href_to_h,
-        &cur.nonneg_rule});
+    {
+      AccessList access{&cur.pism_smb, &cur.melt_grounded,
+          &cur.melt_floating, &cur.internal_advection, &cur.href_to_h,
+          &cur.nonneg_rule};
 
-        super::massContExplicitStep();
+      super::massContExplicitStep();
     }
 
     // =========== AFTER the Mass Continuity Step
@@ -223,19 +176,20 @@ void IBIceModel::massContExplicitStep() {
     IBSurfaceModel *surface = ib_surface_model();
 
 
-    {AccessList access({
-	    &surface->icebin_massxfer,
-	    &surface->icebin_enthxfer,
-	    &surface->icebin_deltah,
-	    &cur.icebin_xfer,
-	    &cur.icebin_deltah});
+    {
+      AccessList access{&surface->icebin_massxfer,
+          &surface->icebin_enthxfer,
+          &surface->icebin_deltah,
+          &cur.icebin_xfer,
+          &cur.icebin_deltah};
 
-	    for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
-	    for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
-	        cur.icebin_xfer.mass(i,j) += dt * surface->icebin_massxfer(i,j);
-	        cur.icebin_xfer.enth(i,j) += dt * surface->icebin_enthxfer(i,j);
-	        cur.icebin_deltah(i,j) += dt * surface->icebin_deltah(i,j);
-	    }}
+      for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
+        for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
+          cur.icebin_xfer.mass(i,j) += dt * surface->icebin_massxfer(i,j);
+          cur.icebin_xfer.enth(i,j) += dt * surface->icebin_enthxfer(i,j);
+          cur.icebin_deltah(i,j) += dt * surface->icebin_deltah(i,j);
+        }
+      }
     }
 
     printf("END IBIceModel::MassContExplicitStep()\n");
@@ -299,8 +253,7 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(
 
 
 
-void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<PIO> &nc)
-{
+void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<PIO> &nc) {
 
 //    nc.reset(new PIO(m_grid->com, m_grid->ctx()->config()->get_string("output_format")));
 
@@ -320,8 +273,7 @@ void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<PIO> &nc)
 }
 
 /** @param t0 Time of last time we coupled. */
-void IBIceModel::set_rate(double dt)
-{
+void IBIceModel::set_rate(double dt) {
 
     printf("BEGIN IBIceModel::set_rate(dt=%f)\n", dt);
 
@@ -335,22 +287,24 @@ void IBIceModel::set_rate(double dt)
     auto cur_ii(cur.all_vecs.begin());
     auto rate_ii(rate.all_vecs.begin());
     for (; base_ii != base.all_vecs.end(); ++base_ii, ++cur_ii, ++rate_ii) {
-        IceModelVec2S &vbase(base_ii->vec);
-        IceModelVec2S &vcur(cur_ii->vec);
-        IceModelVec2S &vrate(rate_ii->vec);
+      IceModelVec2S &vbase(base_ii->vec);
+      IceModelVec2S &vcur(cur_ii->vec);
+      IceModelVec2S &vrate(rate_ii->vec);
 
-        {AccessList access({&vbase, &vcur, &vrate});
-	        for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
-	        for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
-	            // rate = cur - base: Just for DELTA and EPISLON flagged vectors
-	            if (base_ii->flags & (MassEnergyBudget::DELTA | MassEnergyBudget::EPSILON)) {
-	                vrate(i,j) = (vcur(i,j) - vbase(i,j)) * by_dt;
-	            } else {
-	                // Or else just copy the to rate
-	                vrate(i,j) = vcur(i,j);
-	            }
-	        }}
+      {
+        AccessList access{&vbase, &vcur, &vrate};
+        for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
+          for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
+            // rate = cur - base: Just for DELTA and EPISLON flagged vectors
+            if (base_ii->flags & (MassEnergyBudget::DELTA | MassEnergyBudget::EPSILON)) {
+              vrate(i,j) = (vcur(i,j) - vbase(i,j)) * by_dt;
+            } else {
+              // Or else just copy the to rate
+              vrate(i,j) = vcur(i,j);
+            }
+          }
         }
+      }
     }
 
     printf("END IBIceModel::set_rate()\n");
@@ -367,7 +321,7 @@ void IBIceModel::reset_rate()
 
         // This cannot go in the loop above with PETSc because
         // vbase is needed on the RHS of the equations above.
-        AccessList access({&vbase, &vcur});
+        AccessList access{&vbase, &vcur};
         for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
         for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
             // base = cur: For ALL vectors
@@ -429,9 +383,9 @@ void IBIceModel::prepare_initial_outputs()
     double ice_density = m_config->get_double("ice_density"); // [kg m-3]
 
     // --------- ice_surface_enth from Enth3
-    AccessList access({&Enth3, &M1, &M2, &H1, &H2, &V1, &V2, &ice_thickness});
+    AccessList access{&Enth3, &M1, &M2, &H1, &H2, &V1, &V2, &ice_thickness};
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
-    for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
+      for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
         double const *Enth = Enth3.get_column(i,j);
 
         // Top Layer
@@ -443,16 +397,17 @@ void IBIceModel::prepare_initial_outputs()
         // Second layer
         int const ks2 = ks - 1;
         if (ks2 >= 0) {
-            V2(i,j) = m_grid->z(ks) - m_grid->z(ks2);
-            M2(i,j) = V2(i,j) * ice_density;
-            H2(i,j) = Enth[ks2] * M2(i,j);
+          V2(i,j) = m_grid->z(ks) - m_grid->z(ks2);
+          M2(i,j) = V2(i,j) * ice_density;
+          H2(i,j) = Enth[ks2] * M2(i,j);
         } else {
-            // There is no second layer
-            V2(i,j) = 0;
-            M2(i,j) = 0;
-            H2(i,j) = 0;
+          // There is no second layer
+          V2(i,j) = 0;
+          M2(i,j) = 0;
+          H2(i,j) = 0;
         }
-    }}
+      }
+    }
 
     // ====================== Write to the post_energy.nc file (OPTIONAL)
 }
@@ -526,7 +481,7 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
 {
     //   getInternalColumn() is allocated already
     double ice_density = m_config->get_double("ice_density");
-    AccessList access({&ice_thickness, &Enth3, &enth2, &mass2});
+    AccessList access{&ice_thickness, &Enth3, &enth2, &mass2};
     for (int i=m_grid->xs(); i<m_grid->xs() +m_grid->xm(); ++i) {
         for (int j=m_grid->ys(); j<m_grid->ys() + m_grid->ym(); ++j) {
             enth2(i,j) = 0;
@@ -569,46 +524,45 @@ void IBIceModel::construct_surface_temp(
     pism::IceModelVec2S &surface_temp)  // OUT: Temperature @ top of ice sheet (to use for Dirichlet B.C.)
 
 {
-    printf("BEGIN IBIceModel::merge_surface_temp default_val=%g\n", default_val);
-    EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
+  printf("BEGIN IBIceModel::merge_surface_temp default_val=%g\n", default_val);
+  EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
 
-    IBSurfaceModel *surface = ib_surface_model();
+  double ice_density = m_config->get_double("ice_density");
 
-    double ice_density = m_config->get_double("ice_density");
+  {
+    AccessList access{&Enth3, &deltah, &ice_thickness, &surface_temp};
 
-    {AccessList access({&Enth3, &deltah, &ice_thickness, &surface_temp});
+    // First time around, set effective_surface_temp to top temperature
+    for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
+      for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
+        double &surface_temp_ij(surface_temp(i,j));
+        double const &deltah_ij(deltah(i,j));
 
-	    // First time around, set effective_surface_temp to top temperature
-	    for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
-	    for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
-	        double &surface_temp_ij(surface_temp(i,j));
-	        double const &deltah_ij(deltah(i,j));
+        double const *Enth = Enth3.get_column(i,j);
 
-	        double const *Enth = Enth3.get_column(i,j);
+        // Enthalpy at top of ice sheet
+        const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
+        double spec_enth3 = Enth[ks];       // Specific enthalpy [J kg-1]
 
-	        // Enthalpy at top of ice sheet
-	        const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
-	        double spec_enth3 = Enth[ks];       // Specific enthalpy [J kg-1]
+        if (deltah_ij != default_val) {
+          // Adjust enthalpy @top by deltah
+          double toplayer_dz = ice_thickness(i,j) - m_grid->z(ks);     // [m]
 
-	        if (deltah_ij != default_val) {
-	            // Adjust enthalpy @top by deltah
-	            double toplayer_dz = ice_thickness(i,j) - m_grid->z(ks);     // [m]
-
-	            // [J kg-1] = [J kg-1]
-	            //     + [J m-2 s-1] * [m^2 m-3] * [m^3 kg-1] * [s]
-	            spec_enth3 = spec_enth3
-	                + deltah_ij / (toplayer_dz * ice_density) * timestep_s;
-	        }
+          // [J kg-1] = [J kg-1]
+          //     + [J m-2 s-1] * [m^2 m-3] * [m^3 kg-1] * [s]
+          spec_enth3 = spec_enth3
+            + deltah_ij / (toplayer_dz * ice_density) * timestep_s;
+        }
 
 
-	        // Convert specific enthalpy value to surface temperature
-	        double tg3;     // Temperature at top of ice sheet
-	        const double p = 0.0;       // Pressure at top of ice sheet
-	        surface_temp_ij = EC->temperature(spec_enth3, p);    // [K]
-	    }}
+        // Convert specific enthalpy value to surface temperature
+        const double p = 0.0;       // Pressure at top of ice sheet
+        surface_temp_ij = EC->temperature(spec_enth3, p);    // [K]
+      }
     }
+  }
 
-    printf("END IBIceModel::merge_surface_temp\n");
+  printf("END IBIceModel::merge_surface_temp\n");
 }
 
 

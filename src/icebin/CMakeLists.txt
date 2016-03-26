@@ -1,4 +1,9 @@
-# Boundary models (surface, atmosphere, ocean).
+# PISM-side code used by IceBin (https://github.com/citibeth/icebin).
+
+if (NOT Pism_CXX11)
+  message(FATAL_ERROR "IceBin requires Pism_CXX11")
+endif(NOT Pism_CXX11)
+
 add_library (pismicebin
   IBIceModel.cc
   IBSurfaceModel.cc
@@ -6,8 +11,6 @@ add_library (pismicebin
   NullTransportHydrology.cc
   VecBundleWriter.cc
   )
-target_link_libraries (pismicebin pismutil)
+target_link_libraries (pismicebin pism)
 
-if (${BUILD_SHARED_LIBS})
-  install (TARGETS pismicebin DESTINATION ${Pism_LIB_DIR})
-endif()
+install (TARGETS pismicebin DESTINATION ${Pism_LIB_DIR})

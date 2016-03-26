@@ -7,8 +7,8 @@
 #include <base/util/iceModelVec.hh>
 // --------------------------------
 
-namespace pism{
-namespace icebin{
+namespace pism {
+namespace icebin {
 
 /** Encapsulates mass and enthalpy together.  Used to tabulate total
 enthalpy of a bunch of advected H2O based on its mass and specific
@@ -180,4 +180,5 @@ public:
     void set_epsilon(pism::IceGrid::ConstPtr grid);
 };
 
-}}
+} // end of namespace icebin
+} // end of namespace pism

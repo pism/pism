@@ -14,7 +14,6 @@
 
 #include <base/util/PISMTime.hh>
 // --------------------------------
-#include <boost/filesystem.hpp>
 #include <icebin/IBSurfaceModel.hh>
 #include <icebin/NullTransportHydrology.hh>
 #include <icebin/MassEnergyBudget.hh>
