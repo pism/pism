@@ -55,7 +55,7 @@ if (Pism_CXX11)
 
   # Old CMake versions don't know about C++ standards.
   if (${CMAKE_VERSION} VERSION_LESS 3.0.0)
-    if (NOT CMAKE_CXX_FLAGS MATCHES "-std=c++11")
+    if (NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
       message (STATUS "Adding -std=c++11 to C++ compiler flags.")
       set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
     endif()
