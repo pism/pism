@@ -22,6 +22,10 @@
 #include <petscvec.h>
 #include <gsl/gsl_interp.h>
 
+#ifdef PISM_CXX11
+#include <initializer_list>
+#endif
+
 #include "pism_memory.hh"
 #include "VariableMetadata.hh"
 #include "base/util/petscwrappers/Viewer.hh"
@@ -41,6 +45,27 @@ enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
 
 struct Range {
   double min, max;
+};
+
+class PetscAccessible {
+public:
+  virtual ~PetscAccessible() {}
+  virtual void begin_access() const = 0;
+  virtual void end_access() const = 0;
+};
+
+//! Makes sure that we call begin_access() and end_access() for all accessed IceModelVecs.
+class AccessList {
+public:
+  AccessList();
+#ifdef PISM_CXX11
+  AccessList(std::initializer_list<const PetscAccessible *> vecs);
+#endif
+  AccessList(const PetscAccessible &v);
+  ~AccessList();
+  void add(const PetscAccessible &v);
+private:
+  std::vector<const PetscAccessible*> m_vecs;
 };
 
 //! \brief Abstract class for reading, writing, allocating, and accessing a
@@ -166,7 +191,7 @@ struct Range {
   to work, a bed deformation model has to call inc_state_counter() after an
   update.
 */
-class IceModelVec {
+class IceModelVec : public PetscAccessible {
 public:
   IceModelVec();
   virtual ~IceModelVec();
@@ -291,18 +316,7 @@ public:
   //! Uses const char[] to make it easier to call it from gdb.
   void dump(const char filename[]) const;
 
-public:
-
-  //! Makes sure that we call begin_access() and end_access() for all accessed IceModelVecs.
-  class AccessList {
-  public:
-    AccessList();
-    AccessList(const IceModelVec &v);
-    ~AccessList();
-    void add(const IceModelVec &v);
-  private:
-    std::vector<const IceModelVec*> m_vecs;
-  };
+  typedef pism::AccessList AccessList;
 };
 
 class IceModelVec2S;
@@ -533,6 +547,8 @@ public:
   void  getHorSlice(Vec &gslice, double z) const; // used in iMmatlab.cc
   void  getHorSlice(IceModelVec2S &gslice, double z) const;
   void  getSurfaceValues(IceModelVec2S &gsurf, const IceModelVec2S &myH) const;
+
+  void sumColumns(IceModelVec2S &output, double A, double B) const;
 };
 
 /** 

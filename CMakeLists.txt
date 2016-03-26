@@ -32,6 +32,7 @@ file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_c
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
+option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
@@ -46,6 +47,13 @@ option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
 option (Pism_USE_TR1 "If 'ON', #include <tr1/memory>, otherwise #include <memory>." OFF)
+option (Pism_CXX11 "Set compilers to C++11 mode.  Required to build IceBin" OFF)
+
+if (Pism_CXX11)
+  set(CMAKE_CXX_STANDARD 11)
+  add_definitions (-DPISM_CXX11=1)
+endif()
+
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 pism_use_rpath()

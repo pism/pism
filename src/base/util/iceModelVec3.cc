@@ -252,4 +252,49 @@ void  IceModelVec3::create(IceGrid::ConstPtr grid, const std::string &name,
                           grid->z(), stencil_width);
 }
 
+/** Sum a 3-D vector in the Z direction to create a 2-D vector.
+
+Note that this sums up all the values in a column, including ones
+above the ice. This may or may not be what you need. Also, take a look
+at IceModel::compute_ice_enthalpy(PetscScalar &result) in iMreport.cc.
+
+As for the difference between IceModelVec2 and IceModelVec2S, the
+former can store fields with more than 1 "degree of freedom" per grid
+point (such as 2D fields on the "staggered" grid, with the first
+degree of freedom corresponding to the i-offset and second to
+j-offset).
+
+IceModelVec2S is just IceModelVec2 with "dof == 1", and
+IceModelVec2V is IceModelVec2 with "dof == 2". (Plus some extra
+methods, of course.)
+
+Either one of IceModelVec2 and IceModelVec2S would work in this
+case.
+
+Computes output = A*output + B*sum_columns(input) + C
+
+@see https://github.com/pism/pism/issues/229 */
+void IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B) const {
+  const unsigned int Mz = m_grid->Mz();
+
+#ifdef PISM_CXX11
+  AccessList access{this, &output};
+#else
+  AccessList access(*this);
+  access.add(output);
+#endif
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double *column = this->get_column(i,j);
+
+    double scalar_sum = 0.0;
+    for (unsigned int k = 0; k < Mz; ++k) {
+      scalar_sum += column[k];
+    }
+    output(i,j) = A * output(i,j) + B * scalar_sum;
+  }
+}
+
 } // end of namespace pism

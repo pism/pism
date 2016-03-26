@@ -924,11 +924,11 @@ void IceModelVec::write(const PIO &nc) const {
   }
 }
 
-IceModelVec::AccessList::AccessList() {
+AccessList::AccessList() {
   // empty
 }
 
-IceModelVec::AccessList::~AccessList() {
+AccessList::~AccessList() {
   while (not m_vecs.empty()) {
     try {
       m_vecs.back()->end_access();
@@ -939,11 +939,19 @@ IceModelVec::AccessList::~AccessList() {
   }
 }
 
-IceModelVec::AccessList::AccessList(const IceModelVec &vec) {
+#ifdef PISM_CXX11
+AccessList::AccessList(std::initializer_list<const PetscAccessible *> vecs) {
+  for (auto j : vecs) {
+    add(*j);
+  }
+}
+#endif
+
+AccessList::AccessList(const PetscAccessible &vec) {
   add(vec);
 }
 
-void IceModelVec::AccessList::add(const IceModelVec &vec) {
+void AccessList::add(const PetscAccessible &vec) {
   vec.begin_access();
   m_vecs.push_back(&vec);
 }

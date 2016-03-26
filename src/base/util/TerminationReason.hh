@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -60,7 +60,7 @@ public:
   }
 
   virtual bool has_root_cause() {
-    return m_root_cause;
+    return (bool)m_root_cause;
   };
 
   TerminationReason::Ptr root_cause() {

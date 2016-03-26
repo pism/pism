@@ -2,6 +2,7 @@
 project(PISM_Documentation "NONE")
 cmake_minimum_required (VERSION 2.8.0)
 
+if (Pism_BUILD_PDFS)
 find_package(LATEX)
 find_package(Doxygen)
 
@@ -88,12 +89,13 @@ if (PDFLATEX_COMPILER)
   # PISM's Python bindings docs:
   add_subdirectory (pismpython EXCLUDE_FROM_ALL)
 
-  if (Pism_BUILD_PDFS AND Pism_DOC_DIR)
+  if (Pism_DOC_DIR)
     install (FILES
       "${CMAKE_CURRENT_BINARY_DIR}/manual/pism_manual.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/forcing/pism_forcing.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/installation/pism_installation.pdf"
       DESTINATION ${Pism_DOC_DIR})
 
-  endif ()                      # if Pism_BUILD_PDFS
+  endif ()                      # if Pism_DOC_DIR
 endif ()                        # if PDFLATEX_COMPILER
+endif()                      # if Pism_BUILD_PDFS

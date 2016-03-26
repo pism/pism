@@ -269,6 +269,11 @@ if (Pism_BUILD_EXTRA_EXECS)
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
 endif (Pism_BUILD_EXTRA_EXECS)
 
+
+# ------------ Header Files
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/ DESTINATION include
+          FILES_MATCHING PATTERN "*.hh")
+
 add_subdirectory (calcalcs)
 add_subdirectory (base/rheology)
 add_subdirectory (coupler)
@@ -278,6 +283,10 @@ add_subdirectory (regional)
 # Right now the inverse library is not very useful without Python
 # bindings, but it's easier to build it unconditionally.
 add_subdirectory (inverse)
+
+if (Pism_BUILD_ICEBIN)
+  add_subdirectory (icebin)
+endif()
 
 if (Pism_DEBUG OR Pism_BUILD_PYTHON_BINDINGS)
   add_subdirectory (pythonbindings)

@@ -125,15 +125,18 @@ endmacro(pism_set_pedantic_flags)
 # Make sure that we don't create .petscrc in $HOME, because this would affect
 # all PISM runs by the current user.
 macro(pism_check_build_dir_location)
-  file (TO_CMAKE_PATH $ENV{HOME} home_dir)
-  file (TO_CMAKE_PATH ${PROJECT_BINARY_DIR} build_dir)
+  if (DEFINED ENV{HOME})
+    # Don't assume that HOME env var is set.
+    file (TO_CMAKE_PATH $ENV{HOME} home_dir)
+    file (TO_CMAKE_PATH ${PROJECT_BINARY_DIR} build_dir)
 
-  if (${home_dir} STREQUAL ${build_dir})
-    message (FATAL_ERROR
-      "\n"
-      "The build directory is the same as your $HOME!\n"
-      "Buiding PISM here would result in a big mess. "
-      "Please create a special build directory and run cmake from there.\n")
+    if (${home_dir} STREQUAL ${build_dir})
+      message (FATAL_ERROR
+        "\n"
+        "The build directory is the same as your $HOME!\n"
+        "Buiding PISM here would result in a big mess. "
+        "Please create a special build directory and run cmake from there.\n")
+    endif()
   endif()
 endmacro()
 
@@ -186,10 +189,16 @@ macro(pism_find_prerequisites)
   find_package (NetCDF REQUIRED)
 
   # Optional libraries
-  find_package (PNetCDF)
-  find_package (HDF5 COMPONENTS C HL)
-  find_package (FFTW REQUIRED)
-  find_package (PROJ4)
+  if (Pism_USE_PNETCDF)
+    find_package (PNetCDF)
+  endif()
+  if (Pism_USE_PARALLEL_HDF5)
+    find_package (HDF5 COMPONENTS C HL)
+  endif()
+  find_package (FFTW REQUIRED)    # NOT optional?
+  if (Pism_USE_PROJ4)
+    find_package (PROJ4)
+  endif()
 
   # Use TAO included in PETSc 3.5.
   if (Pism_PETSC_VERSION VERSION_LESS "3.5")

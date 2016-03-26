@@ -26,6 +26,8 @@
 
 namespace pism {
 
+typedef enum {WARNING=1, DEBUG2=2, DEBUG3=3, TRACE=4} LoggerLevel;
+
 //! A basic logging class.
 /**
  * The default implementation (message_impl()) just prints to `stdout` on rank 0 of the

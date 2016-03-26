@@ -15,6 +15,7 @@ using pism::StarStencil;
 #include "base/util/IceModelVec2CellType.hh"
 %}
 
+%shared_ptr(pism::PetscAccessible)
 %shared_ptr(pism::IceModelVec)
 %shared_ptr(pism::IceModelVec2)
 %shared_ptr(pism::IceModelVec2S)
