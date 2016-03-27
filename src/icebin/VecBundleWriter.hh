@@ -19,14 +19,14 @@ namespace icebin {
 class VecBundleWriter {
     pism::IceGrid::ConstPtr m_grid;
     std::string const fname;            // Name of the file to write
-    std::vector<pism::IceModelVec *> vecs;  // The vectors we will write
+    std::vector<pism::IceModelVec const *> vecs;  // The vectors we will write
 
 public:
 
     VecBundleWriter(
-        pism::IceGrid::ConstPtr grid,
+        pism::IceGrid::Ptr grid,
         std::string const &_fname,
-        std::vector<pism::IceModelVec *> &&_vecs);
+        std::vector<pism::IceModelVec const *> &_vecs);
 
     void init();
 
