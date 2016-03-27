@@ -155,7 +155,7 @@ void IBIceModel::massContExplicitStep() {
     printf("BEGIN IBIceModel::MassContExplicitStep()\n");
 
     _ice_density = m_config->get_double("ice_density");
-    _meter_per_s_to_kg_per_m2 = dt * _ice_density;
+    _meter_per_s_to_kg_per_m2 = m_dt * _ice_density;
 
 
     // =========== The Mass Continuity Step Itself
@@ -173,21 +173,21 @@ void IBIceModel::massContExplicitStep() {
 
     // ----------- SMB: Pass inputs through to outputs.
     // They are needed to participate in mass/energy budget
-    IBSurfaceModel *surface = ib_surface_model();
+    IBSurfaceModel *ib_surface = ib_surface_model();
 
 
     {
-      AccessList access{&surface->icebin_massxfer,
-          &surface->icebin_enthxfer,
-          &surface->icebin_deltah,
+      AccessList access{&ib_surface->icebin_massxfer,
+          &ib_surface->icebin_enthxfer,
+          &ib_surface->icebin_deltah,
           &cur.icebin_xfer,
           &cur.icebin_deltah};
 
       for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
         for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
-          cur.icebin_xfer.mass(i,j) += dt * surface->icebin_massxfer(i,j);
-          cur.icebin_xfer.enth(i,j) += dt * surface->icebin_enthxfer(i,j);
-          cur.icebin_deltah(i,j) += dt * surface->icebin_deltah(i,j);
+          cur.icebin_xfer.mass(i,j) += m_dt * ib_surface->icebin_massxfer(i,j);
+          cur.icebin_xfer.enth(i,j) += m_dt * ib_surface->icebin_enthxfer(i,j);
+          cur.icebin_deltah(i,j) += m_dt * ib_surface->icebin_deltah(i,j);
         }
       }
     }

@@ -54,7 +54,7 @@ void IceModel::do_calving() {
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
   if (eigen_calving != NULL) {
-    eigen_calving->update(dt, m_cell_type, vHref, ice_thickness);
+    eigen_calving->update(m_dt, m_cell_type, vHref, ice_thickness);
   }
 
   if (ocean_kill_calving != NULL) {

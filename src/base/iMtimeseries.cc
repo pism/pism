@@ -176,7 +176,7 @@ void IceModel::write_timeseries() {
     TSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {
-      diag->update(m_time->current() - dt, m_time->current());
+      diag->update(m_time->current() - m_dt, m_time->current());
     }
   }
 

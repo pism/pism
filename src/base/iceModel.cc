@@ -127,7 +127,7 @@ void IceModel::reset_counters() {
   gmaxw = 0.0;
 
   maxdt_temporary = 0.0;
-  dt              = 0.0;
+  m_dt              = 0.0;
   skipCountDown   = 0;
 
   timestep_hit_multiples_last_time = m_time->current();
@@ -614,7 +614,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth && basal_yield_stress_model) {
     profiling.begin("basal yield stress");
-    basal_yield_stress_model->update(current_time, dt);
+    basal_yield_stress_model->update(current_time, m_dt);
     profiling.end("basal yield stress");
     basal_yield_stress.copy_from(basal_yield_stress_model->basal_material_yield_stress());
     stdout_flags += "y";
@@ -660,18 +660,18 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li determine the time step according to a variety of stability criteria;
   //!  see determineTimeStep()
-  max_timestep(dt, skipCountDown);
+  max_timestep(m_dt, skipCountDown);
 
   //! \li Update surface and ocean models.
   profiling.begin("surface");
-  surface->update(current_time, dt);
+  surface->update(current_time, m_dt);
   profiling.end("surface");
 
   profiling.begin("ocean");
-  ocean->update(current_time,   dt);
+  ocean->update(current_time, m_dt);
   profiling.end("ocean");
 
-  dt_TempAge += dt;
+  dt_TempAge += m_dt;
   // IceModel::dt,dtTempAge are now set correctly according to
   // mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and
   // other criteria from derived class additionalAtStartTimestep(), and from
@@ -706,7 +706,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   profiling.begin("basal hydrology");
-  subglacial_hydrology->update(current_time, dt);
+  subglacial_hydrology->update(current_time, m_dt);
   profiling.end("basal hydrology");
 
   //! \li update the fracture density field; see calculateFractureDensity()
@@ -757,7 +757,7 @@ void IceModel::step(bool do_mass_continuity,
     int topg_state_counter = bed_topography.get_state_counter();
 
     profiling.begin("bed deformation");
-    beddef->update(current_time, dt);
+    beddef->update(current_time, m_dt);
     profiling.end("bed deformation");
 
     if (bed_topography.get_state_counter() != topg_state_counter) {
@@ -772,7 +772,7 @@ void IceModel::step(bool do_mass_continuity,
   additionalAtEndTimestep();
 
   // Done with the step; now adopt the new time.
-  m_time->step(dt);
+  m_time->step(m_dt);
 
   if (do_energy_step) {
     t_TempAge = m_time->current();

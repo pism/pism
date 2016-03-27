@@ -175,7 +175,7 @@ void IceModel::calculateFractureDensity() {
       tempFD += vvel * (vvel<0 ? vFD(i,j+1)-vFD(i,j):vFD(i,j)-vFD(i,j-1))/dy;
     }
 
-    vFDnew(i,j)-= tempFD * dt;
+    vFDnew(i,j)-= tempFD * m_dt;
 
     //sources /////////////////////////////////////////////////////////////////
     ///von mises criterion
@@ -248,7 +248,7 @@ void IceModel::calculateFractureDensity() {
     //fracture density
     double fdnew = gamma*(strain_rates(i,j,0)-0.0)*(1-vFDnew(i,j));
     if (sigmat > initThreshold) {
-      vFDnew(i,j)+= fdnew*dt;
+      vFDnew(i,j)+= fdnew*m_dt;
     }
 
     //healing
@@ -257,16 +257,16 @@ void IceModel::calculateFractureDensity() {
       if (constant_healing) {
         fdheal = gammaheal*(-healThreshold);
         if (fracture_weighted_healing) {
-          vFDnew(i,j)+= fdheal*dt*(1-vFD(i,j));
+          vFDnew(i,j)+= fdheal*m_dt*(1-vFD(i,j));
         } else {
-          vFDnew(i,j)+= fdheal*dt;
+          vFDnew(i,j)+= fdheal*m_dt;
         }
       }
       else if (strain_rates(i,j,0) < healThreshold) {
         if (fracture_weighted_healing) {
-          vFDnew(i,j)+= fdheal*dt*(1-vFD(i,j));
+          vFDnew(i,j)+= fdheal*m_dt*(1-vFD(i,j));
         } else {
-          vFDnew(i,j)+= fdheal*dt;
+          vFDnew(i,j)+= fdheal*m_dt;
         }
       }
     }
@@ -309,9 +309,9 @@ void IceModel::calculateFractureDensity() {
       }
 
       //fracture age since fracturing occured
-      vFAnew(i,j) -= dt * uvel * (uvel<0 ? vFA(i+1,j)-vFA(i, j):vFA(i, j)-vFA(i-1, j))/dx;
-      vFAnew(i,j) -= dt * vvel * (vvel<0 ? vFA(i,j+1)-vFA(i, j):vFA(i, j)-vFA(i, j-1))/dy;
-      vFAnew(i,j)+= dt / one_year;
+      vFAnew(i,j) -= m_dt * uvel * (uvel<0 ? vFA(i+1,j)-vFA(i, j):vFA(i, j)-vFA(i-1, j))/dx;
+      vFAnew(i,j) -= m_dt * vvel * (vvel<0 ? vFA(i,j+1)-vFA(i, j):vFA(i, j)-vFA(i, j-1))/dy;
+      vFAnew(i,j)+= m_dt / one_year;
       if (sigmat > initThreshold) {
         vFAnew(i,j) = 0.0;
       }

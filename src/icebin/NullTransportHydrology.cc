@@ -29,14 +29,14 @@ namespace pism {
 namespace icebin {
 
 
-NullTransportHydrology::NullTransportHydrology(pism::IceGrid::ConstPtr grid)
-    : pism::hydrology::NullTransport(grid)
+NullTransportHydrology::NullTransportHydrology(pism::IceGrid::ConstPtr g)
+    : pism::hydrology::NullTransport(g)
 {
 
   printf("BEGIN NullTransportHydrology::NullTransportHydrology()\n");
 
   // *all* PISMHydrology classes have layer of water stored in till
-  basal_runoff_sum.create(grid, "basal_runoff", WITHOUT_GHOSTS);
+  basal_runoff_sum.create(m_grid, "basal_runoff", WITHOUT_GHOSTS);
   basal_runoff_sum.set_attrs("excess water",
     "Effective thickness of subglacial water expelled from till "
     "(thickness of water, not ice)",

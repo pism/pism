@@ -50,7 +50,7 @@ const IceModelVec2CellType & IceModel::cell_type_mask() {
 
   FIXME: energyStats should use cell_area(i,j).
  */
-double IceModel::compute_temperate_base_fraction(double ice_area) {
+double IceModel::compute_temperate_base_fraction(double total_ice_area) {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
@@ -87,8 +87,8 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
   result = GlobalSum(m_grid->com, meltarea);
 
   // normalize fraction correctly
-  if (ice_area > 0.0) {
-    result = result / ice_area;
+  if (total_ice_area > 0.0) {
+    result = result / total_ice_area;
   } else {
     result = 0.0;
   }
@@ -102,7 +102,7 @@ double IceModel::compute_temperate_base_fraction(double ice_area) {
 
   FIXME: ageStats should use cell_area(i,j).
  */
-double IceModel::compute_original_ice_fraction(double ice_volume) {
+double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
   double result = -1.0;  // result value if not do_age
 
@@ -149,8 +149,8 @@ double IceModel::compute_original_ice_fraction(double ice_volume) {
   result = GlobalSum(m_grid->com, original_ice_volume);
 
   // normalize fraction correctly
-  if (ice_volume > 0.0) {
-    result = result / ice_volume;
+  if (total_ice_volume > 0.0) {
+    result = result / total_ice_volume;
   } else {
     result = 0.0;
   }
@@ -187,7 +187,7 @@ void IceModel::summary(bool tempAndAge) {
   }
 
   // main report: 'S' line
-  summaryPrintLine(false, tempAndAge, dt,
+  summaryPrintLine(false, tempAndAge, m_dt,
                    volume, area, meltfrac, max_diffusivity);
 }
 
@@ -373,12 +373,12 @@ double IceModel::ice_volume_not_displacing_seawater() const {
       // count all ice, including cells which have so little they
       // are considered "ice-free"
       if (thickness > 0.0) {
-        const double ice_volume = thickness * m_cell_area(i,j);
+        const double cell_ice_volume = thickness * m_cell_area(i,j);
         if (bed > sea_level) {
-          volume += ice_volume;
+          volume += cell_ice_volume;
         } else {
           const double max_floating_volume = (sea_level - bed) * (sea_water_density / ice_density);
-          volume += ice_volume - max_floating_volume;
+          volume += cell_ice_volume - max_floating_volume;
         }
       }
     }
@@ -395,8 +395,8 @@ double IceModel::sealevel_volume() const {
 
   const double
     ocean_area = 3.61e14, // units: meter^2
-    ice_volume = ice_volume_not_displacing_seawater(),
-    sea_water_volume = (ice_density / sea_water_density) * ice_volume, // corresponding sea water volume
+    volume = ice_volume_not_displacing_seawater(),
+    sea_water_volume = (ice_density / sea_water_density) * volume, // corresponding sea water volume
     sea_level_change = sea_water_volume / ocean_area;
 
   return sea_level_change;

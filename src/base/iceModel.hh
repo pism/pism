@@ -299,7 +299,7 @@ protected:
     age3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
 
   // parameters
-  double   dt,     //!< mass continuity time step, s
+  double   m_dt,     //!< mass continuity time step, s
     t_TempAge,  //!< time of last update for enthalpy/temperature
     dt_TempAge,  //!< enthalpy/temperature and age time-steps
     maxdt_temporary,

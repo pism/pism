@@ -1350,7 +1350,7 @@ IceModel_dt::IceModel_dt(IceModel *m)
 
 void IceModel_dt::update(double a, double b) {
 
-  m_ts->append(model->dt, a, b);
+  m_ts->append(model->m_dt, a, b);
 }
 
 IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m)

@@ -34,7 +34,7 @@ void MassEnergyBudget::create(pism::IceGrid::ConstPtr grid, std::string const &p
 {
 	if (all_vecs.size() != 0) throw RuntimeError(
         "MassEnergyBudget::create() cannot be called twice, fix your code!");
-    printf("MassEnergyBudget(%p)::create()\n", this);
+	printf("MassEnergyBudget(%p)::create()\n", (void*)this);
 
 	// ----------- Mass and Enthalpy State of the Ice Sheet
 	total.create(grid, prefix+"total",
@@ -162,7 +162,7 @@ std::ostream &MassEnergyBudget::print_formulas(std::ostream &out)
 	for (auto ii=all_vecs.begin(); ii != all_vecs.end(); ++ii) {
 		if ((ii->flags & (DELTA | MASS)) != (DELTA | MASS)) continue;
 		char str[20];
-		sprintf(str, "%p", &ii->vec);
+		sprintf(str, "%p", (void*)&ii->vec);
 		out << ii->vec.get_name() << " + ";
 	}
 	out << ")" << std::endl;
@@ -173,7 +173,7 @@ std::ostream &MassEnergyBudget::print_formulas(std::ostream &out)
 	for (auto ii=all_vecs.begin(); ii != all_vecs.end(); ++ii) {
 		if ((ii->flags & (DELTA | ENTH)) != (DELTA | ENTH)) continue;
 		char str[20];
-		sprintf(str, "%p", &ii->vec);
+		sprintf(str, "%p", (void*)&ii->vec);
 		out << ii->vec.get_name() << " + ";
 	}
 	out << ")" << std::endl;

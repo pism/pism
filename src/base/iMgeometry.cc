@@ -528,7 +528,7 @@ void IceModel::massContExplicitStep() {
     compute_flux_divergence = flux_divergence.was_created();
 
   double ice_density = m_config->get_double("ice_density"),
-    meter_per_s_to_kg_per_m2 = dt * ice_density;
+    meter_per_s_to_kg_per_m2 = m_dt * ice_density;
 
   assert(surface != NULL);
   surface->ice_surface_mass_flux(climatic_mass_balance);
@@ -605,7 +605,7 @@ void IceModel::massContExplicitStep() {
       // fluxes during the current time-step.
       const double
         meter_to_kg       = m_cell_area(i,j) * ice_density,
-        meter_per_s_to_kg = meter_to_kg * dt;
+        meter_per_s_to_kg = meter_to_kg * m_dt;
 
       // Divergence terms:
       double
@@ -652,7 +652,7 @@ void IceModel::massContExplicitStep() {
         if (do_part_grid && m_cell_type.next_to_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
-          H_to_Href_flux = -(divQ_SSA + divQ_SIA) * dt;
+          H_to_Href_flux = -(divQ_SSA + divQ_SIA) * m_dt;
           vHref(i, j) += H_to_Href_flux;
           if (vHref(i, j) < 0) {
             m_log->message(3,
@@ -719,7 +719,7 @@ void IceModel::massContExplicitStep() {
         flux_divergence(i, j) = divQ_SIA + divQ_SSA;
       }
 
-      vHnew(i, j) += (dt * (surface_mass_balance // accumulation/ablation
+      vHnew(i, j) += (m_dt * (surface_mass_balance // accumulation/ablation
                             - my_basal_melt_rate // basal melt rate (grounded or floating)
                             - (divQ_SIA + divQ_SSA)) // flux divergence
                       + Href_to_H_flux); // corresponds to a cell becoming "full"
