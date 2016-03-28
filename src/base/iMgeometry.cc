@@ -57,16 +57,21 @@ using namespace mask;
   solver problems associated to not-attached-to-grounded ice.
 */
 void IceModel::updateSurfaceElevationAndMask() {
+  const double thickness_threshold = m_config->get_double("mask_icefree_thickness_standard");
+
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
-  update_mask(bed_topography, m_ice_thickness, m_cell_type);
-  update_surface_elevation(bed_topography, m_ice_thickness, m_ice_surface_elevation);
+  update_mask(bed_topography, m_ice_thickness, thickness_threshold,
+              m_cell_type);
+  update_surface_elevation(bed_topography, m_ice_thickness, thickness_threshold,
+                           m_ice_surface_elevation);
 
   if (m_config->get_boolean("kill_icebergs") && iceberg_remover != NULL) {
     iceberg_remover->update(m_cell_type, m_ice_thickness);
     // the call above modifies ice thickness and updates the mask
     // accordingly
-    update_surface_elevation(bed_topography, m_ice_thickness, m_ice_surface_elevation);
+    update_surface_elevation(bed_topography, m_ice_thickness, thickness_threshold,
+                             m_ice_surface_elevation);
   }
 }
 
@@ -76,18 +81,23 @@ void IceModel::updateSurfaceElevationAndMask() {
  *
  * @param[in]  bed bedrock surface elevation
  * @param[in]  thickness ice thicnness
+ * @param[in] icefree_thickness_threshold ice thickness threshold, meters (cells with less than this
+ *                                        many meters of ice are considered ice-free)
  * @param[out] result cell type mask
  *
  * @return 0 on success.
  */
 void IceModel::update_mask(const IceModelVec2S &bed,
                            const IceModelVec2S &thickness,
+                           double icefree_thickness_threshold,
                            IceModelVec2CellType &result) {
 
   assert(m_ocean != NULL);
   double sea_level = m_ocean->sea_level_elevation();
 
   GeometryCalculator gc(*m_config);
+
+  gc.set_icefree_thickness(icefree_thickness_threshold);
 
   IceModelVec::AccessList list(result);
   list.add(bed);
@@ -113,16 +123,20 @@ void IceModel::update_mask(const IceModelVec2S &bed,
  *
  * @param[in] bed bedrock surface elevation
  * @param[in] thickness ice thickness
+ * @param[in] icefree_thickness_threshold ice thickness threshold, meters
  * @param[out] result computed surface elevation
  *
  */
 void IceModel::update_surface_elevation(const IceModelVec2S &bed,
                                         const IceModelVec2S &thickness,
+                                        double thickness_threshold,
                                         IceModelVec2S &result) {
   assert(m_ocean != NULL);
   double sea_level = m_ocean->sea_level_elevation();
 
   GeometryCalculator gc(*m_config);
+
+  gc.set_icefree_thickness(thickness_threshold);
 
   IceModelVec::AccessList list(result);
   list.add(bed);

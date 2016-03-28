@@ -137,10 +137,11 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
 void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool &done) {
 
   bool reduce_frontal_thickness = m_config->get_boolean("part_grid_reduce_frontal_thickness");
+  const double thickness_threshold = m_config->get_double("mask_icefree_thickness_standard");
 
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
-  update_mask(bed_topography, m_ice_thickness, m_cell_type);
+  update_mask(bed_topography, m_ice_thickness, thickness_threshold, m_cell_type);
 
   // First step: distribute residual ice thickness
   {
@@ -209,9 +210,9 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
   m_ice_thickness.update_ghosts();
 
   // The loop above updated ice_thickness, so we need to re-calculate the mask:
-  update_mask(bed_topography, m_ice_thickness, m_cell_type);
+  update_mask(bed_topography, m_ice_thickness, thickness_threshold, m_cell_type);
   // and the surface elevation:
-  update_surface_elevation(bed_topography, m_ice_thickness, m_ice_surface_elevation);
+  update_surface_elevation(bed_topography, m_ice_thickness, thickness_threshold, m_ice_surface_elevation);
 
   double
     remaining_residual_thickness        = 0.0,

@@ -368,9 +368,11 @@ protected:
   virtual void updateSurfaceElevationAndMask();
   virtual void update_mask(const IceModelVec2S &bed,
                            const IceModelVec2S &ice_thickness,
+                           double icefree_thickness_threshold,
                            IceModelVec2CellType &mask);
   virtual void update_surface_elevation(const IceModelVec2S &bed,
                                         const IceModelVec2S &ice_thickness,
+                                        double icefree_thickness_threshold,
                                         IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
