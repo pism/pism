@@ -112,8 +112,8 @@ void  IceModel::stampHistoryCommand() {
            "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid->size());
   stampHistory(std::string(startstr));
 
-  global_attributes.set_string("history",
-                               pism_args_string() + global_attributes.get_string("history"));
+  m_output_global_attributes.set_string("history",
+                               pism_args_string() + m_output_global_attributes.get_string("history"));
 }
 
 void IceModel::update_run_stats() {
@@ -185,8 +185,8 @@ void  IceModel::stampHistory(const std::string &str) {
 
   std::string history = pism_username_prefix(m_grid->com) + (str + "\n");
 
-  global_attributes.set_string("history",
-                               history + global_attributes.get_string("history"));
+  m_output_global_attributes.set_string("history",
+                               history + m_output_global_attributes.get_string("history"));
 
 }
 

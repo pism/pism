@@ -566,7 +566,7 @@ void IceModel::allocate_internal_objects() {
 void IceModel::get_projection_info(const PIO &input_file) {
   std::string proj4_string = input_file.get_att_text("PISM_GLOBAL", "proj4");
   if (not proj4_string.empty()) {
-    global_attributes.set_string("proj4", proj4_string);
+    m_output_global_attributes.set_string("proj4", proj4_string);
   }
 
   bool input_has_mapping = input_file.inq_var(mapping.get_name());

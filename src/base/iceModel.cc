@@ -58,7 +58,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_sys(context->unit_system()),
     m_log(context->log()),
     m_time(context->time()),
-    global_attributes("PISM_GLOBAL", m_sys),
+    m_output_global_attributes("PISM_GLOBAL", m_sys),
     mapping("mapping", m_sys),
     run_stats("run_stats", m_sys),
     m_extra_bounds("time_bounds", m_config->get_string("time_dimension_name"), m_sys),
@@ -103,8 +103,8 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_id = (m_grid->Mx() - 1)/2;
   m_jd = (m_grid->My() - 1)/2;
 
-  global_attributes.set_string("Conventions", "CF-1.5");
-  global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
+  m_output_global_attributes.set_string("Conventions", "CF-1.5");
+  m_output_global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
   // Do not save snapshots by default:
   m_save_snapshots = false;

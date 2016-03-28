@@ -224,9 +224,14 @@ protected:
   //! Time manager
   const Time::Ptr m_time;
 
-  VariableMetadata global_attributes, //!< stores global attributes saved in a PISM output file
-    mapping,                    //!< grid projection (mapping) parameters
-    run_stats;                  //!< run statistics
+  //! stores global attributes saved in a PISM output file
+  VariableMetadata m_output_global_attributes;
+
+  //! grid projection (mapping) parameters
+  VariableMetadata  mapping;
+
+  //! run statistics
+  VariableMetadata run_stats;
 
   hydrology::Hydrology   *subglacial_hydrology;
   YieldStress *basal_yield_stress_model;

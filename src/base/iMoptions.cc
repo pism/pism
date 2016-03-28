@@ -51,9 +51,9 @@ void IceModel::setFromOptions() {
   m_jd = options::Integer("-jd", "Specifies the sounding column", m_jd);
 
   // Set global attributes using the config database:
-  global_attributes.set_string("title", m_config->get_string("run_title"));
-  global_attributes.set_string("institution", m_config->get_string("institution"));
-  global_attributes.set_string("command", pism_args_string());
+  m_output_global_attributes.set_string("title", m_config->get_string("run_title"));
+  m_output_global_attributes.set_string("institution", m_config->get_string("institution"));
+  m_output_global_attributes.set_string("command", pism_args_string());
 
   // warn about some option combinations
 

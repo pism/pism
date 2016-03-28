@@ -48,7 +48,7 @@ void IceModel::compute_cell_areas() {
   projPJ pism, lonlat, geocent;
 
   if (not m_config->get_boolean("correct_cell_areas") ||
-      not global_attributes.has_attribute("proj4")) {
+      not m_output_global_attributes.has_attribute("proj4")) {
 
     m_log->message(2,
                    "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
@@ -59,7 +59,7 @@ void IceModel::compute_cell_areas() {
     return;
   }
 
-  std::string proj_string = global_attributes.get_string("proj4");
+  std::string proj_string = m_output_global_attributes.get_string("proj4");
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (lonlat == NULL) {

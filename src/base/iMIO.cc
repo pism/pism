@@ -99,7 +99,7 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
     io::write_attributes(nc, run_stats, PISM_DOUBLE, false);
   }
 
-  io::write_global_attributes(nc, global_attributes);
+  io::write_global_attributes(nc, m_output_global_attributes);
 
   // write configuration parameters to the file:
   m_config->write(nc);
@@ -318,7 +318,7 @@ void IceModel::write_model_state(const PIO &nc) {
   std::string o_size = get_output_size("-o_size");
 
 #if (PISM_USE_PROJ4==1)
-  if (global_attributes.has_attribute("proj4")) {
+  if (m_output_global_attributes.has_attribute("proj4")) {
     m_output_vars.insert("lon_bnds");
     m_output_vars.insert("lat_bnds");
     vLatitude.metadata().set_string("bounds", "lat_bnds");
@@ -423,8 +423,8 @@ void IceModel::initFromFile(const std::string &filename) {
   init_enthalpy(filename, false, last_record);
 
   std::string history = nc.get_att_text("PISM_GLOBAL", "history");
-  global_attributes.set_string("history",
-                               history + global_attributes.get_string("history"));
+  m_output_global_attributes.set_string("history",
+                               history + m_output_global_attributes.get_string("history"));
 
   nc.close();
 }

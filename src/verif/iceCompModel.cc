@@ -833,7 +833,7 @@ void IceCompModel::reportErrors() {
     nc.open(report_file, mode);
     start = nc.inq_dimlen("N");
 
-    io::write_global_attributes(nc, global_attributes);
+    io::write_global_attributes(nc, m_output_global_attributes);
 
     // Write the dimension variable:
     io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);

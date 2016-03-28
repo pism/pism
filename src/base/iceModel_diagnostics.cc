@@ -97,8 +97,8 @@ void IceModel::init_diagnostics() {
   }
 
 #if (PISM_USE_PROJ4==1)
-  if (global_attributes.has_attribute("proj4")) {
-    std::string proj4 = global_attributes.get_string("proj4");
+  if (m_output_global_attributes.has_attribute("proj4")) {
+    std::string proj4 = m_output_global_attributes.get_string("proj4");
     m_diagnostics["lat_bnds"] = new IceModel_lat_lon_bounds(this, "lat", proj4);
     m_diagnostics["lon_bnds"] = new IceModel_lat_lon_bounds(this, "lon", proj4);
   }
