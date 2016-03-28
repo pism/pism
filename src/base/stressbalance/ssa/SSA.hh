@@ -143,7 +143,7 @@ protected:
   const IceModelVec2S *m_surface;
   const IceModelVec2S *m_bed;
   IceModelVec2V m_taud;
-  const IceModelVec3 *m_enthalpy;
+  const IceModelVec3 *m_ice_enthalpy;
   const IceModelVec2S *m_gl_mask;
 
   std::string m_stdout_ssa;

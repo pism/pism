@@ -58,12 +58,12 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
   const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3; // area unit (km^2)
 
   IceModelVec2S &Enthbase = vWork2d[0];
-  // use Enth3 to get stats
-  Enth3.getHorSlice(Enthbase, 0.0);  // z=0 slice
+  // use m_ice_enthalpy to get stats
+  m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(Enthbase);
   ParallelSection loop(m_grid->com);
   try {
@@ -72,7 +72,7 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
 
       if (m_cell_type.icy(i, j)) {
         // accumulate area of base which is at melt point
-        if (EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+        if (EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
           meltarea += a;
         }
       }
@@ -115,8 +115,8 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
-  list.add(ice_thickness);
-  list.add(age3);
+  list.add(m_ice_thickness);
+  list.add(m_ice_age);
 
   const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
   double original_ice_volume = 0.0;
@@ -129,8 +129,8 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
       if (m_cell_type.icy(i, j)) {
         // accumulate volume of ice which is original
-        double *age = age3.get_column(i, j);
-        const int  ks = m_grid->kBelowHeight(ice_thickness(i,j));
+        double *age = m_ice_age.get_column(i, j);
+        const int  ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
         for (int k = 1; k <= ks; k++) {
           // ice in segment is original if it is as old as one year less than current time
           if (0.5 * (age[k - 1] + age[k]) > currtime - one_year) {
@@ -176,7 +176,7 @@ void IceModel::summary(bool tempAndAge) {
   }
 
   // get maximum diffusivity
-  double max_diffusivity = stress_balance->max_diffusivity();
+  double max_diffusivity = m_stress_balance->max_diffusivity();
   // get volumes in m^3 and areas in m^2
   double volume = ice_volume();
   double area = ice_area();
@@ -296,7 +296,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     }
 
     snprintf(velunitstr,90, "m/%s", tunitstr.c_str());
-    const double maxvel = units::convert(m_sys, gmaxu > gmaxv ? gmaxu : gmaxv, "m second-1", velunitstr);
+    const double maxvel = units::convert(m_sys, m_max_u_speed > m_max_v_speed ? m_max_u_speed : m_max_v_speed, "m second-1", velunitstr);
 
     m_log->message(2,
                "S %s:   %8.5f  %9.5f     %12.5f %12.5f\n",
@@ -318,14 +318,14 @@ double IceModel::ice_volume() const {
   double volume = 0.0;
 
   {
-    list.add(ice_thickness);
+    list.add(m_ice_thickness);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // count all ice, including cells which have so little they
       // are considered "ice-free"
-      if (ice_thickness(i,j) > 0.0) {
-        volume += ice_thickness(i,j) * m_cell_area(i,j);
+      if (m_ice_thickness(i,j) > 0.0) {
+        volume += m_ice_thickness(i,j) * m_cell_area(i,j);
       }
     }
   }
@@ -348,15 +348,15 @@ double IceModel::ice_volume_not_displacing_seawater() const {
     sea_water_density = m_config->get_double("sea_water_density"),
     ice_density       = m_config->get_double("ice_density");
 
-  assert(ocean != NULL);
-  double sea_level = ocean->sea_level_elevation();
+  assert(m_ocean != NULL);
+  double sea_level = m_ocean->sea_level_elevation();
 
-  assert(beddef != NULL);
-  const IceModelVec2S &bed_topography = beddef->bed_elevation();
+  assert(m_beddef != NULL);
+  const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(bed_topography);
   list.add(m_cell_area);
 
@@ -367,7 +367,7 @@ double IceModel::ice_volume_not_displacing_seawater() const {
 
     const double
       bed       = bed_topography(i, j),
-      thickness = ice_thickness(i, j);
+      thickness = m_ice_thickness(i, j);
 
     if (m_cell_type.grounded(i, j)) {
       // count all ice, including cells which have so little they
@@ -410,8 +410,8 @@ double  IceModel::ice_volume_temperate() const {
   double volume = 0.0;
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(Enth3);
+  list.add(m_ice_thickness);
+  list.add(m_ice_enthalpy);
   list.add(m_cell_area);
 
   ParallelSection loop(m_grid->com);
@@ -421,19 +421,19 @@ double  IceModel::ice_volume_temperate() const {
 
       // count all ice, including cells which have so little they are
       // considered "ice-free"
-      if (ice_thickness(i,j) > 0) {
-        const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
-        const double *Enth = Enth3.get_column(i,j);
+      if (m_ice_thickness(i,j) > 0) {
+        const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
+        const double *Enth = m_ice_enthalpy.get_column(i,j);
         const double A = m_cell_area(i, j);
 
         for (int k = 0; k < ks; ++k) {
-          if (EC->is_temperate_relaxed(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+          if (EC->is_temperate_relaxed(Enth[k],EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
             volume += (m_grid->z(k + 1) - m_grid->z(k)) * A;
           }
         }
 
-        if (EC->is_temperate_relaxed(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (ice_thickness(i,j) - m_grid->z(ks)) * A;
+        if (EC->is_temperate_relaxed(Enth[ks],EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
+          volume += (m_ice_thickness(i,j) - m_grid->z(ks)) * A;
         }
       }
     }
@@ -454,8 +454,8 @@ double IceModel::ice_volume_cold() const {
   double volume = 0.0;
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(Enth3);
+  list.add(m_ice_thickness);
+  list.add(m_ice_enthalpy);
   list.add(m_cell_area);
 
   ParallelSection loop(m_grid->com);
@@ -465,19 +465,19 @@ double IceModel::ice_volume_cold() const {
 
       // count all ice, including cells which have so little they
       // are considered "ice-free"
-      if (ice_thickness(i,j) > 0) {
-        const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
-        const double *Enth = Enth3.get_column(i,j);
+      if (m_ice_thickness(i,j) > 0) {
+        const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
+        const double *Enth = m_ice_enthalpy.get_column(i,j);
         const double A = m_cell_area(i, j);
 
         for (int k=0; k<ks; ++k) {
-          if (not EC->is_temperate_relaxed(Enth[k],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+          if (not EC->is_temperate_relaxed(Enth[k],EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
             volume += (m_grid->z(k+1) - m_grid->z(k)) * A;
           }
         }
 
-        if (not EC->is_temperate_relaxed(Enth[ks],EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (ice_thickness(i,j) - m_grid->z(ks)) * A;
+        if (not EC->is_temperate_relaxed(Enth[ks],EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
+          volume += (m_ice_thickness(i,j) - m_grid->z(ks)) * A;
         }
       }
     }
@@ -496,7 +496,7 @@ double IceModel::ice_area() const {
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(m_cell_area);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -517,12 +517,12 @@ double IceModel::ice_area_temperate() {
   double area = 0.0;
   IceModelVec2S &Enthbase = vWork2d[0];
 
-  Enth3.getHorSlice(Enthbase, 0.0);  // z=0 slice
+  m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
   list.add(Enthbase);
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(m_cell_area);
   ParallelSection loop(m_grid->com);
   try {
@@ -530,7 +530,7 @@ double IceModel::ice_area_temperate() {
       const int i = p.i(), j = p.j();
 
       if (m_cell_type.icy(i, j) and
-          EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+          EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
         area += m_cell_area(i,j);
       }
     }
@@ -551,12 +551,12 @@ double IceModel::ice_area_cold() {
   double area = 0.0;
   IceModelVec2S &Enthbase = vWork2d[0];
 
-  Enth3.getHorSlice(Enthbase, 0.0);  // z=0 slice
+  m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
   list.add(Enthbase);
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(m_cell_area);
   ParallelSection loop(m_grid->com);
   try {
@@ -564,7 +564,7 @@ double IceModel::ice_area_cold() {
       const int i = p.i(), j = p.j();
 
       if (m_cell_type.icy(i, j) and
-          not EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(ice_thickness(i,j)))) { // FIXME issue #15
+          not EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
         area += m_cell_area(i,j);
       }
     }
@@ -616,7 +616,7 @@ double IceModel::ice_area_floating() const {
 
 //! Computes the total ice enthalpy in J.
 /*!
-  Units of the specific enthalpy field \f$E=\f$(IceModelVec3::Enth3) are J kg-1.  We integrate
+  Units of the specific enthalpy field \f$E=\f$(IceModelVec3::m_ice_enthalpy) are J kg-1.  We integrate
   \f$E(t,x,y,z)\f$ over the entire ice fluid region \f$\Omega(t)\f$, multiplying
   by the density to get units of energy:
   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
@@ -625,8 +625,8 @@ double IceModel::ice_enthalpy() const {
   double enthalpy_sum = 0.0;
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(Enth3);
+  list.add(m_ice_thickness);
+  list.add(m_ice_enthalpy);
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -634,14 +634,14 @@ double IceModel::ice_enthalpy() const {
 
       // count all ice, including cells which have so little they
       // are considered "ice-free"
-      if (ice_thickness(i,j) > 0) {
-        const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
-        const double *Enth = Enth3.get_column(i,j);
+      if (m_ice_thickness(i,j) > 0) {
+        const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
+        const double *Enth = m_ice_enthalpy.get_column(i,j);
 
         for (int k=0; k<ks; ++k) {
           enthalpy_sum += Enth[k] * (m_grid->z(k+1) - m_grid->z(k));
         }
-        enthalpy_sum += Enth[ks] * (ice_thickness(i,j) - m_grid->z(ks));
+        enthalpy_sum += Enth[ks] * (m_ice_thickness(i,j) - m_grid->z(ks));
       }
     }
   } catch (...) {

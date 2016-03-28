@@ -62,11 +62,11 @@ void SSATestCase::buildSSACoefficients()
   m_grid->variables().add(m_tauc);
 
   // enthalpy
-  m_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
-  m_enthalpy.set_attrs("model_state",
+  m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
+  m_ice_enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
                        "J kg-1", "");
-  m_grid->variables().add(m_enthalpy);
+  m_grid->variables().add(m_ice_enthalpy);
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
@@ -366,7 +366,7 @@ void SSATestCase::write(const std::string &filename) {
   m_bc_mask.write(pio);
   m_tauc.write(pio);
   m_bed.write(pio);
-  m_enthalpy.write(pio);
+  m_ice_enthalpy.write(pio);
   m_bc_values.write(pio);
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();

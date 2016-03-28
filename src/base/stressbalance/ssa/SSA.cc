@@ -78,7 +78,7 @@ SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_tauc = NULL;
   m_surface = NULL;
   m_bed = NULL;
-  m_enthalpy = NULL;
+  m_ice_enthalpy = NULL;
   m_gl_mask = NULL;
 
   strength_extension = new SSAStrengthExtension(*m_config);
@@ -146,7 +146,7 @@ void SSA::init_impl() {
   }
 
   m_bed      = m_grid->variables().get_2d_scalar("bedrock_altitude");
-  m_enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+  m_ice_enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
 
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).

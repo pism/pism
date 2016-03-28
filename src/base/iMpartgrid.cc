@@ -138,15 +138,15 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
 
   bool reduce_frontal_thickness = m_config->get_boolean("part_grid_reduce_frontal_thickness");
 
-  const IceModelVec2S &bed_topography = beddef->bed_elevation();
+  const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
-  update_mask(bed_topography, ice_thickness, m_cell_type);
+  update_mask(bed_topography, m_ice_thickness, m_cell_type);
 
   // First step: distribute residual ice thickness
   {
     IceModelVec::AccessList list; // will be destroyed at the end of the block
     list.add(m_cell_type);
-    list.add(ice_thickness);
+    list.add(m_ice_thickness);
     list.add(vHref);
     list.add(H_residual);
     for (Points p(*m_grid); p; p.next()) {
@@ -199,19 +199,19 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
       } else {
         // Conserve mass, but (possibly) create a "ridge" at the shelf
         // front
-        ice_thickness(i, j) += H_residual(i, j);
+        m_ice_thickness(i, j) += H_residual(i, j);
         H_residual(i, j) = 0.0;
       }
 
     }
   }
 
-  ice_thickness.update_ghosts();
+  m_ice_thickness.update_ghosts();
 
   // The loop above updated ice_thickness, so we need to re-calculate the mask:
-  update_mask(bed_topography, ice_thickness, m_cell_type);
+  update_mask(bed_topography, m_ice_thickness, m_cell_type);
   // and the surface elevation:
-  update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
+  update_surface_elevation(bed_topography, m_ice_thickness, m_ice_surface_elevation);
 
   double
     remaining_residual_thickness        = 0.0,
@@ -222,8 +222,8 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
   // neighbors which gained redistributed ice also become full.
   {
     IceModelVec::AccessList list;   // will be destroyed at the end of the block
-    list.add(ice_thickness);
-    list.add(ice_surface_elevation);
+    list.add(m_ice_thickness);
+    list.add(m_ice_surface_elevation);
     list.add(bed_topography);
     list.add(m_cell_type);
     for (Points p(*m_grid); p; p.next()) {
@@ -234,8 +234,8 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
       }
 
       double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
-                                                         ice_thickness.star(i, j),
-                                                         ice_surface_elevation.star(i, j),
+                                                         m_ice_thickness.star(i, j),
+                                                         m_ice_surface_elevation.star(i, j),
                                                          bed_topography(i,j),
                                                          dx,
                                                          reduce_frontal_thickness);
@@ -248,10 +248,10 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         // The current partially filled grid cell is considered to be full
         H_residual(i, j) = vHref(i, j) - H_threshold;
         remaining_residual_thickness += H_residual(i, j);
-        ice_thickness(i, j) += H_threshold;
+        m_ice_thickness(i, j) += H_threshold;
         vHref(i, j) = 0.0;
       }
-      if (ice_thickness(i, j)<0) {
+      if (m_ice_thickness(i, j)<0) {
         m_log->message(1,
                    "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
                    "  H_threshold: %f\n"
@@ -259,7 +259,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
                    "  vHref: %f\n"
                    "  H_residual: %f\n"
                    "  ice_thickness: %f\n", i, j, H_threshold, coverage_ratio,
-                   vHref(i, j), H_residual(i, j), ice_thickness(i, j));
+                   vHref(i, j), H_residual(i, j), m_ice_thickness(i, j));
       }
 
     }
@@ -274,7 +274,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
     done = true;
   }
 
-  ice_thickness.update_ghosts();
+  m_ice_thickness.update_ghosts();
 }
 
 } // end of namespace pism

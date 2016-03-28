@@ -114,7 +114,7 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
 
 
   double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
-  m_enthalpy.set(enth0);
+  m_ice_enthalpy.set(enth0);
 
   IceModelVec::AccessList list;
   list.add(m_thickness);

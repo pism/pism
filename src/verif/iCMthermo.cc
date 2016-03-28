@@ -47,7 +47,7 @@ void IceCompModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bu
   if ((testname == 'F') || (testname == 'G')) {
     // FIXME: This code messes with the strain heating field owned by
     // stress_balance. This is BAD.
-    IceModelVec3 &strain_heating3 = const_cast<IceModelVec3&>(stress_balance->volumetric_strain_heating());
+    IceModelVec3 &strain_heating3 = const_cast<IceModelVec3&>(m_stress_balance->volumetric_strain_heating());
 
     strain_heating3.add(1.0, strain_heating3_comp);      // strain_heating = strain_heating + strain_heating_c
     IceModel::temperatureStep(vertSacrCount, bulgeCount);
@@ -70,15 +70,15 @@ void IceCompModel::initTestFG() {
   IceModelVec2S bed_topography;
   bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
   bed_topography.set(0);
-  beddef->set_elevation(bed_topography);
+  m_beddef->set_elevation(bed_topography);
 
-  geothermal_flux.set(Ggeo);
+  m_geothermal_flux.set(Ggeo);
 
   std::vector<double> T(m_grid->Mz());
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(T3);
+  list.add(m_ice_thickness);
+  list.add(m_ice_temperature);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -86,7 +86,7 @@ void IceCompModel::initTestFG() {
     double r = radius(*m_grid, i, j);
 
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
-      ice_thickness(i, j) = 0.0;
+      m_ice_thickness(i, j) = 0.0;
       for (int k = 0; k < Mz; k++) {
         T[k] = Tmin + ST * r;
       }
@@ -95,23 +95,23 @@ void IceCompModel::initTestFG() {
       if (testname == 'F') {
         bothexact(0.0, r, &(m_grid->z()[0]), Mz, 0.0,
                   &H, &accum, &T[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
-        ice_thickness(i, j) = H;
+        m_ice_thickness(i, j) = H;
 
       } else {
         bothexact(m_time->current(), r, &(m_grid->z()[0]), Mz, ApforG,
                   &H, &accum, &T[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
-        ice_thickness(i, j) = H;
+        m_ice_thickness(i, j) = H;
 
       }
     }
-    T3.set_column(i, j, &T[0]);
+    m_ice_temperature.set_column(i, j, &T[0]);
   }
 
-  ice_thickness.update_ghosts();
+  m_ice_thickness.update_ghosts();
 
-  T3.update_ghosts();
+  m_ice_temperature.update_ghosts();
 
-  ice_surface_elevation.copy_from(ice_thickness);
+  m_ice_surface_elevation.copy_from(m_ice_thickness);
 }
 
 
@@ -162,17 +162,17 @@ void IceCompModel::getCompSourcesTestFG() {
 
 
 void IceCompModel::fillSolnTestFG() {
-  // fills Vecs ice_thickness, ice_surface_elevation, vAccum, T3, u3, v3, w3, strain_heating3, v_strain_heating_Comp
+  // fills Vecs ice_thickness, ice_surface_elevation, vAccum, m_ice_temperature, u3, v3, w3, strain_heating3, v_strain_heating_Comp
   double     H, accum;
   double     Ts;
 
   // FIXME: This code messes with the fields owned by stress_balance.
   // This is BAD.
   IceModelVec3
-    &strain_heating3 = const_cast<IceModelVec3&>(stress_balance->volumetric_strain_heating()),
-    &u3 = const_cast<IceModelVec3&>(stress_balance->velocity_u()),
-    &v3 = const_cast<IceModelVec3&>(stress_balance->velocity_v()),
-    &w3 = const_cast<IceModelVec3&>(stress_balance->velocity_w());
+    &strain_heating3 = const_cast<IceModelVec3&>(m_stress_balance->volumetric_strain_heating()),
+    &u3 = const_cast<IceModelVec3&>(m_stress_balance->velocity_u()),
+    &v3 = const_cast<IceModelVec3&>(m_stress_balance->velocity_v()),
+    &w3 = const_cast<IceModelVec3&>(m_stress_balance->velocity_w());
 
   std::vector<double> Uradial(m_grid->Mz());
 
@@ -188,8 +188,8 @@ void IceCompModel::fillSolnTestFG() {
     ice_c     = m_config->get_double("ice_specific_heat_capacity");
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(T3);
+  list.add(m_ice_thickness);
+  list.add(m_ice_temperature);
   list.add(u3);
   list.add(v3);
   list.add(w3);
@@ -202,9 +202,9 @@ void IceCompModel::fillSolnTestFG() {
     double xx = m_grid->x(i), yy = m_grid->y(j), r = radius(*m_grid, i, j);
     if (r > LforFG - 1.0) {  // outside of sheet
 
-      ice_thickness(i, j) = 0.0;
+      m_ice_thickness(i, j) = 0.0;
       Ts = Tmin + ST * r;
-      T3.set_column(i, j, Ts);
+      m_ice_temperature.set_column(i, j, Ts);
       u3.set_column(i, j, 0.0);
       v3.set_column(i, j, 0.0);
       w3.set_column(i, j, 0.0);
@@ -215,12 +215,12 @@ void IceCompModel::fillSolnTestFG() {
       if (testname == 'F') {
         bothexact(0.0, r, &(m_grid->z()[0]), m_grid->Mz(), 0.0,
                   &H, &accum, &T[0], &Uradial[0], &w[0], &strain_heating[0], &strain_heating_C[0]);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
 
       } else {
         bothexact(m_time->current(), r, &(m_grid->z()[0]), m_grid->Mz(), ApforG,
                   &H, &accum, &T[0], &Uradial[0], &w[0], &strain_heating[0], &strain_heating_C[0]);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
 
       }
       for (unsigned int k = 0; k < m_grid->Mz(); k++) {
@@ -229,7 +229,7 @@ void IceCompModel::fillSolnTestFG() {
         strain_heating[k] = strain_heating[k] * ice_rho * ice_c; // scale strain_heating to J/(s m^3)
         strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c; // scale strain_heating_C to J/(s m^3)
       }
-      T3.set_column(i, j, &T[0]);
+      m_ice_temperature.set_column(i, j, &T[0]);
       u3.set_column(i, j, &u[0]);
       v3.set_column(i, j, &v[0]);
       w3.set_column(i, j, &w[0]);
@@ -238,10 +238,10 @@ void IceCompModel::fillSolnTestFG() {
     }
   }
 
-  ice_thickness.update_ghosts();
-  ice_surface_elevation.copy_from(ice_thickness);
+  m_ice_thickness.update_ghosts();
+  m_ice_surface_elevation.copy_from(m_ice_thickness);
 
-  T3.update_ghosts();
+  m_ice_temperature.update_ghosts();
 
   u3.update_ghosts();
 
@@ -261,8 +261,8 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   std::vector<double> dummy4(m_grid->Mz());
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(T3);
+  list.add(m_ice_thickness);
+  list.add(m_ice_temperature);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -271,7 +271,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
 
       double r = radius(*m_grid, i, j);
       double *T;
-      T = T3.get_column(i, j);
+      T = m_ice_temperature.get_column(i, j);
       if ((r >= 1.0) and (r <= LforFG - 1.0)) {
         // only evaluate error if inside sheet and not at central
         // singularity
@@ -287,7 +287,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
         default:
           throw RuntimeError("temperature errors only computable for tests F and G");
         }
-        const int ks = m_grid->kBelowHeight(ice_thickness(i, j));
+        const int ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
         for (int k = 0; k < ks; k++) {  // only eval error if below num surface
           const double Terr = fabs(T[k] - Tex[k]);
           maxTerr = std::max(maxTerr, Terr);
@@ -357,7 +357,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   }
 
   IceModelVec::AccessList list;
-  list.add(T3);
+  list.add(m_ice_temperature);
   list.add(*bedrock_temp);
 
   for (Points p(*m_grid); p; p.next()) {
@@ -370,7 +370,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       avbcount += 1.0;
       avTberr += Tberr;
     }
-    T = T3.get_column(i, j);
+    T = m_ice_temperature.get_column(i, j);
     for (unsigned int k = 0; k < m_grid->Mz(); k++) {
       const double Terr = fabs(T[k] - Tex[k]);
       maxTerr = std::max(maxTerr, Terr);
@@ -398,7 +398,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
 
   double     dummy, z, Texact, dummy1, dummy2, dummy3, dummy4, dummy5;
 
-  IceModelVec::AccessList list(T3);
+  IceModelVec::AccessList list(m_ice_temperature);
 
   domeT=0; domeTexact = 0; Terr=0; avTerr=0;
 
@@ -433,7 +433,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
         throw RuntimeError("temperature errors only computable for tests F and G");
       }
 
-      const double Tbase = T3.get_column(i,j)[0];
+      const double Tbase = m_ice_temperature.get_column(i,j)[0];
       if (i == ((int)m_grid->Mx() - 1) / 2 and
           j == ((int)m_grid->My() - 1) / 2) {
         domeT = Tbase;
@@ -476,10 +476,10 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
     ice_c     = m_config->get_double("ice_specific_heat_capacity");
 
   const double *strain_heating;
-  const IceModelVec3 &strain_heating3 = stress_balance->volumetric_strain_heating();
+  const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(strain_heating3);
 
   ParallelSection loop(m_grid->com);
@@ -506,7 +506,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
           // scale exact strain_heating to J/(s m^3)
           strain_heating_exact[k] *= ice_rho * ice_c;
         }
-        const unsigned int ks = m_grid->kBelowHeight(ice_thickness(i, j));
+        const unsigned int ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
         strain_heating = strain_heating3.get_column(i, j);
         for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
           const double strain_heating_err = fabs(strain_heating[k] - strain_heating_exact[k]);
@@ -534,12 +534,12 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
   double    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
 
   const IceModelVec3
-    &u3 = stress_balance->velocity_u(),
-    &v3 = stress_balance->velocity_v(),
-    &w3 = stress_balance->velocity_w();
+    &u3 = m_stress_balance->velocity_u(),
+    &v3 = m_stress_balance->velocity_v(),
+    &w3 = m_stress_balance->velocity_w();
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(u3);
   list.add(v3);
   list.add(w3);
@@ -556,11 +556,11 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
         double dummy0, dummy1, dummy2, dummy3, dummy4;
         switch (testname) {
         case 'F':
-          bothexact(0.0, r, &ice_thickness(i, j), 1, 0.0,
+          bothexact(0.0, r, &m_ice_thickness(i, j), 1, 0.0,
                     &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
           break;
         case 'G':
-          bothexact(m_time->current(), r, &ice_thickness(i, j), 1, ApforG,
+          bothexact(m_time->current(), r, &m_ice_thickness(i, j), 1, ApforG,
                     &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
           break;
         default:
@@ -570,11 +570,11 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
         const double vex = (yy/r) * radialUex;
         // note that because getValZ does linear interpolation and H(i, j) is not exactly at
         // a grid point, this causes nonzero errors even with option -eo
-        const double Uerr = sqrt(PetscSqr(u3.getValZ(i, j, ice_thickness(i, j)) - uex)
-                                 + PetscSqr(v3.getValZ(i, j, ice_thickness(i, j)) - vex));
+        const double Uerr = sqrt(PetscSqr(u3.getValZ(i, j, m_ice_thickness(i, j)) - uex)
+                                 + PetscSqr(v3.getValZ(i, j, m_ice_thickness(i, j)) - vex));
         maxUerr = std::max(maxUerr, Uerr);
         avUerr += Uerr;
-        const double Werr = fabs(w3.getValZ(i, j, ice_thickness(i, j)) - wex);
+        const double Werr = fabs(w3.getValZ(i, j, m_ice_thickness(i, j)) - wex);
         maxWerr = std::max(maxWerr, Werr);
         avWerr += Werr;
       }
@@ -604,12 +604,12 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
   // we just need one constant from exact solution:
   exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt);
 
-  IceModelVec::AccessList list(basal_melt_rate);
+  IceModelVec::AccessList list(m_basal_melt_rate);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    err = fabs(basal_melt_rate(i, j) - bmelt);
+    err = fabs(m_basal_melt_rate(i, j) - bmelt);
     maxbmelterr = std::max(maxbmelterr, err);
     minbmelterr = std::min(minbmelterr, err);
   }
@@ -643,14 +643,14 @@ void IceCompModel::fillTemperatureSolnTestsKO() {
   }
 
   // copy column values into 3D arrays
-  IceModelVec::AccessList list(T3);
+  IceModelVec::AccessList list(m_ice_temperature);
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      T3.set_column(i, j, &Tcol[0]);
+      m_ice_temperature.set_column(i, j, &Tcol[0]);
     }
   } catch (...) {
     loop.failed();
@@ -658,7 +658,7 @@ void IceCompModel::fillTemperatureSolnTestsKO() {
   loop.check();
 
   // communicate T
-  T3.update_ghosts();
+  m_ice_temperature.update_ghosts();
 }
 
 
@@ -671,7 +671,7 @@ void IceCompModel::fillBasalMeltRateSolnTestO() {
   // we just need one constant from exact solution:
   exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt);
 
-  basal_melt_rate.set(bmelt);
+  m_basal_melt_rate.set(bmelt);
 }
 
 
@@ -684,11 +684,11 @@ void IceCompModel::initTestsKO() {
   IceModelVec2S bed_topography;
   bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
   bed_topography.set(0);
-  beddef->set_elevation(bed_topography);
+  m_beddef->set_elevation(bed_topography);
 
-  geothermal_flux.set(0.042);
-  ice_thickness.set(3000.0);
-  ice_surface_elevation.copy_from(ice_thickness);
+  m_geothermal_flux.set(0.042);
+  m_ice_thickness.set(3000.0);
+  m_ice_surface_elevation.copy_from(m_ice_thickness);
 
   fillTemperatureSolnTestsKO();
 }

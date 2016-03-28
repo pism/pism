@@ -116,7 +116,7 @@ public:
 
     /** @return Our instance of IBSurfaceModel */
     pism::icebin::IBSurfaceModel *ib_surface_model()
-        { return dynamic_cast<IBSurfaceModel *>(surface); }
+        { return dynamic_cast<IBSurfaceModel *>(m_surface); }
     pism::icebin::NullTransportHydrology *null_hydrology()
         { return dynamic_cast<NullTransportHydrology *>(pism::IceModel::subglacial_hydrology); }
 
@@ -138,7 +138,7 @@ public:
     the first coupling timestep (eg, ice surface enthalpy) */
     void prepare_initial_outputs();
 
-    /** Merges surface temperature derived from Enth3 into any NaN values
+    /** Merges surface temperature derived from m_ice_enthalpy into any NaN values
     in the vector provided.
     @param deltah IN: Input from Icebin (change in enthalpy of each grid
         cell over the timestep) [W m-2].

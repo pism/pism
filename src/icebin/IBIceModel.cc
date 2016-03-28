@@ -40,24 +40,24 @@ void IBIceModel::allocate_couplers() {
   ocean::Factory po(m_grid);
   atmosphere::AtmosphereModel *atmosphere;
 
-  if (surface == NULL) {
+  if (m_surface == NULL) {
 
     m_log->message(2,
              "# Allocating a surface process model or coupler...\n");
 
-    surface = new IBSurfaceModel(m_grid);
-    external_surface_model = false;
+    m_surface = new IBSurfaceModel(m_grid);
+    m_external_surface_model = false;
 
     atmosphere = pa.create();
-    surface->attach_atmosphere_model(atmosphere);
+    m_surface->attach_atmosphere_model(atmosphere);
   }
 
-  if (ocean == NULL) {
+  if (m_ocean == NULL) {
     m_log->message(2,
              "# Allocating an ocean model or coupler...\n");
 
-    ocean = po.create();
-    external_ocean_model = false;
+    m_ocean = po.create();
+    m_external_ocean_model = false;
   }
 }
 
@@ -133,17 +133,17 @@ void IBIceModel::energyStep() {
     }
 
     // ----------- Geothermal Flux
-    cur.geothermal_flux.add(my_dt, geothermal_flux);
+    cur.geothermal_flux.add(my_dt, m_geothermal_flux);
 
     // ---------- Basal Frictional Heating (see iMenthalpy.cc l. 220)
-    IceModelVec2S const &Rb(stress_balance->basal_frictional_heating());
+    IceModelVec2S const &Rb(m_stress_balance->basal_frictional_heating());
     cur.basal_frictional_heating.add(my_dt, Rb);
 
     // NOTE: strain_heating is inf at the coastlines.
     // See: https://github.com/pism/pism/issues/292
     // ------------ Volumetric Strain Heating
     // strain_heating_sum += my_dt * sum_columns(strainheating3p)
-    const IceModelVec3 &strain_heating3(stress_balance->volumetric_strain_heating());
+    const IceModelVec3 &strain_heating3(m_stress_balance->volumetric_strain_heating());
     // cur.strain_heating = cur.strain_heating * 1.0 + my_dt * sum_columns(strain_heating3p)
     strain_heating3.sumColumns(cur.strain_heating, 1.0, my_dt);
 
@@ -213,7 +213,7 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(
     EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
 
     // -------------- Melting
-    double p_basal = EC->pressure(ice_thickness(i,j));
+    double p_basal = EC->pressure(m_ice_thickness(i,j));
     double T = EC->melting_temperature(p_basal);
     double specific_enth_basal = EC->enthalpy_permissive(T, 1.0, p_basal);
     double mass;
@@ -230,8 +230,8 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(
 
 
     // -------------- internal_advection
-    const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
-    double *Enth = Enth3.get_column(i,j);
+    const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
+    double *Enth = m_ice_enthalpy.get_column(i,j);
     double specific_enth_top = Enth[ks];        // Approximate, we will use the enthalpy of the top layer...
 
     mass = -(divQ_SIA + divQ_SSA) * _meter_per_s_to_kg_per_m2;
@@ -364,7 +364,7 @@ void IBIceModel::prepare_outputs(double t0)
     PIO nc(m_grid, m_grid->m_config.get_string("output_format"));
     nc.open((params.output_dir / "post_energy.nc").c_str(), PISM_READWRITE);    // append to file
     nc.append_time(m_config.get_string("time_dimension_name"), t1);
-    Enth3.write(nc, PISM_DOUBLE);
+    m_ice_enthalpy.write(nc, PISM_DOUBLE);
     ice_thickness.write(nc, PISM_DOUBLE);
     ice_surface_temp.write(nc, PISM_DOUBLE);
     PSConstantICEBIN *surface = ps_constant_icebin();
@@ -382,15 +382,15 @@ void IBIceModel::prepare_initial_outputs()
 {
     double ice_density = m_config->get_double("ice_density"); // [kg m-3]
 
-    // --------- ice_surface_enth from Enth3
-    AccessList access{&Enth3, &M1, &M2, &H1, &H2, &V1, &V2, &ice_thickness};
+    // --------- ice_surface_enth from m_ice_enthalpy
+    AccessList access{&m_ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_ice_thickness};
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
       for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
-        double const *Enth = Enth3.get_column(i,j);
+        double const *Enth = m_ice_enthalpy.get_column(i,j);
 
         // Top Layer
-        int const ks = m_grid->kBelowHeight(ice_thickness(i,j));
-        V1(i,j) = ice_thickness(i,j) - m_grid->z(ks);    // [m^3 m-2]
+        int const ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
+        V1(i,j) = m_ice_thickness(i,j) - m_grid->z(ks);    // [m^3 m-2]
         M1(i,j) = V1(i,j) * ice_density;    // [kg m-2] = [m^3 m-2] [kg m-3]
         H1(i,j) = Enth[ks] * M1(i,j);       // [J m-2] = [J kg-1] [kg m-2]
 
@@ -453,7 +453,7 @@ void IBIceModel::misc_setup()
     prepare_nc(ofname, nc);
 
     // -------- Define MethEnth structres in netCDF file
-    Enth3.define(*nc, PISM_DOUBLE);
+    m_ice_enthalpy.define(*nc, PISM_DOUBLE);
     ice_thickness.define(*nc, PISM_DOUBLE);
     ice_surface_temp.define(*nc, PISM_DOUBLE);
     PSConstantICEBIN *surface = ps_constant_icebin();
@@ -481,7 +481,7 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
 {
     //   getInternalColumn() is allocated already
     double ice_density = m_config->get_double("ice_density");
-    AccessList access{&ice_thickness, &Enth3, &enth2, &mass2};
+    AccessList access{&m_ice_thickness, &m_ice_enthalpy, &enth2, &mass2};
     for (int i=m_grid->xs(); i<m_grid->xs() +m_grid->xm(); ++i) {
         for (int j=m_grid->ys(); j<m_grid->ys() + m_grid->ym(); ++j) {
             enth2(i,j) = 0;
@@ -489,26 +489,26 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
 
             // count all ice, including cells that have so little they
             // are considered "ice-free"
-            if (ice_thickness(i,j) > 0) {
-                const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
-                double const *Enth = Enth3.get_column(i,j); // do NOT delete this pointer: space returned by
+            if (m_ice_thickness(i,j) > 0) {
+                const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
+                double const *Enth = m_ice_enthalpy.get_column(i,j); // do NOT delete this pointer: space returned by
                 for (int k=0; k<ks; ++k) {
                     double dz = (m_grid->z(k+1) - m_grid->z(k));
                     enth2(i,j) += Enth[k] * dz;     // m J / kg
                 }
 
                 // Do the last layer a bit differently
-                double dz = (ice_thickness(i,j) - m_grid->z(ks));
+                double dz = (m_ice_thickness(i,j) - m_grid->z(ks));
                 enth2(i,j) += Enth[ks] * dz;
                 enth2(i,j) *= ice_density;      // --> J/m^2
-                mass2(i,j) = ice_thickness(i,j) * ice_density;      // --> kg/m^2
+                mass2(i,j) = m_ice_thickness(i,j) * ice_density;      // --> kg/m^2
             }
         }
     }
 }
 
 
-/** Merges surface temperature derived from Enth3 into any NaN values
+/** Merges surface temperature derived from m_ice_enthalpy into any NaN values
 in the vector provided.
 @param deltah IN: Input from Icebin (change in enthalpy of each m_grid
     cell over the timestep) [W m-2].
@@ -530,7 +530,7 @@ void IBIceModel::construct_surface_temp(
   double ice_density = m_config->get_double("ice_density");
 
   {
-    AccessList access{&Enth3, &deltah, &ice_thickness, &surface_temp};
+    AccessList access{&m_ice_enthalpy, &deltah, &m_ice_thickness, &surface_temp};
 
     // First time around, set effective_surface_temp to top temperature
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
@@ -538,15 +538,15 @@ void IBIceModel::construct_surface_temp(
         double &surface_temp_ij(surface_temp(i,j));
         double const &deltah_ij(deltah(i,j));
 
-        double const *Enth = Enth3.get_column(i,j);
+        double const *Enth = m_ice_enthalpy.get_column(i,j);
 
         // Enthalpy at top of ice sheet
-        const int ks = m_grid->kBelowHeight(ice_thickness(i,j));
+        const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
         double spec_enth3 = Enth[ks];       // Specific enthalpy [J kg-1]
 
         if (deltah_ij != default_val) {
           // Adjust enthalpy @top by deltah
-          double toplayer_dz = ice_thickness(i,j) - m_grid->z(ks);     // [m]
+          double toplayer_dz = m_ice_thickness(i,j) - m_grid->z(ks);     // [m]
 
           // [J kg-1] = [J kg-1]
           //     + [J m-2 s-1] * [m^2 m-3] * [m^3 kg-1] * [s]

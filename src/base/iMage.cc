@@ -204,20 +204,20 @@ void IceModel::ageStep() {
                                      "save column system information to file");
 
   const IceModelVec3
-    &u3 = stress_balance->velocity_u(),
-    &v3 = stress_balance->velocity_v(),
-    &w3 = stress_balance->velocity_w();
+    &u3 = m_stress_balance->velocity_u(),
+    &v3 = m_stress_balance->velocity_v(),
+    &w3 = m_stress_balance->velocity_w();
 
   ageSystemCtx system(m_grid->z(), "age",
                       m_grid->dx(), m_grid->dy(), dt_TempAge,
-                      age3, u3, v3, w3); // linear system to solve in each column
+                      m_ice_age, u3, v3, w3); // linear system to solve in each column
 
   size_t Mz_fine = system.z().size();
   std::vector<double> x(Mz_fine);   // space for solution
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(age3);
+  list.add(m_ice_thickness);
+  list.add(m_ice_age);
   list.add(u3);
   list.add(v3);
   list.add(w3);
@@ -228,7 +228,7 @@ void IceModel::ageStep() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      system.initThisColumn(i, j, ice_thickness(i, j));
+      system.initThisColumn(i, j, m_ice_thickness(i, j));
 
       if (system.ks() == 0) {
         // if no ice, set the entire column to zero age
@@ -239,7 +239,7 @@ void IceModel::ageStep() {
         // solve the system for this column; call checks that params set
         system.solveThisColumn(x);
 
-        if (viewOneColumn && (i == id && j == jd)) {
+        if (viewOneColumn && (i == m_id && j == m_jd)) {
           ierr = PetscPrintf(PETSC_COMM_SELF,
                              "\n"
                              "in ageStep(): saving ageSystemCtx at (i,j)=(%d,%d) to m-file... \n",
@@ -269,7 +269,7 @@ void IceModel::ageStep() {
   }
   loop.check();
 
-  vWork3d.update_ghosts(age3);
+  vWork3d.update_ghosts(m_ice_age);
 }
 
 

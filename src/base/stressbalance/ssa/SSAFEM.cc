@@ -278,7 +278,7 @@ void SSAFEM::cache_inputs() {
 
   IceModelVec::AccessList list;
   list.add(m_coefficients);
-  list.add(*m_enthalpy);
+  list.add(*m_ice_enthalpy);
   list.add(*m_thickness);
   list.add(*m_bed);
   list.add(*m_tauc);
@@ -305,7 +305,7 @@ void SSAFEM::cache_inputs() {
 	// constructor, but is not used
       }
 
-      const double *enthalpy = m_enthalpy->get_column(i, j);
+      const double *enthalpy = m_ice_enthalpy->get_column(i, j);
       double hardness = rheology::averaged_hardness(*m_flow_law, thickness,
                                                     m_grid->kBelowHeight(thickness),
                                                     &z[0], enthalpy);

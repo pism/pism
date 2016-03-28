@@ -42,16 +42,16 @@ void IceModel::calculateFractureDensity() {
     &vFAnew = vWork2d[1];
 
   // get SSA velocities and related strain rates and stresses
-  const IceModelVec2V &ssa_velocity = stress_balance->advective_velocity();
-  stress_balance->compute_2D_principal_strain_rates(ssa_velocity, m_cell_type, strain_rates);
-  stress_balance->compute_2D_stresses(ssa_velocity, m_cell_type, deviatoric_stresses);
+  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
+  m_stress_balance->compute_2D_principal_strain_rates(ssa_velocity, m_cell_type, m_strain_rates);
+  m_stress_balance->compute_2D_stresses(ssa_velocity, m_cell_type, m_deviatoric_stresses);
 
   IceModelVec::AccessList list;
   list.add(ssa_velocity);
-  list.add(strain_rates);
-  list.add(deviatoric_stresses);
+  list.add(m_strain_rates);
+  list.add(m_deviatoric_stresses);
 
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(vFD);
   vFDnew.copy_from(vFD);
   list.add(vFDnew);
@@ -59,8 +59,8 @@ void IceModel::calculateFractureDensity() {
 
   const bool dirichlet_bc = m_config->get_boolean("ssa_dirichlet_bc");
   if (dirichlet_bc) {
-    list.add(vBCMask);
-    list.add(vBCvel);
+    list.add(m_ssa_dirichlet_bc_mask);
+    list.add(m_ssa_dirichlet_bc_values);
   }
 
   const bool write_fd = m_config->get_boolean("write_fd_fields");
@@ -179,9 +179,9 @@ void IceModel::calculateFractureDensity() {
 
     //sources /////////////////////////////////////////////////////////////////
     ///von mises criterion
-    double txx = deviatoric_stresses(i , j, 0),
-      tyy = deviatoric_stresses(i , j, 1),
-      txy = deviatoric_stresses(i , j, 2),
+    double txx = m_deviatoric_stresses(i , j, 0),
+      tyy = m_deviatoric_stresses(i , j, 1),
+      txy = m_deviatoric_stresses(i , j, 2),
 
       T1 = 0.5*(txx+tyy)+sqrt(0.25*PetscSqr(txx-tyy)+PetscSqr(txy)),//Pa
       T2 = 0.5*(txx+tyy)-sqrt(0.25*PetscSqr(txx-tyy)+PetscSqr(txy)),//Pa
@@ -246,14 +246,14 @@ void IceModel::calculateFractureDensity() {
     //////////////////////////////////////////////////////////////////////////////
 
     //fracture density
-    double fdnew = gamma*(strain_rates(i,j,0)-0.0)*(1-vFDnew(i,j));
+    double fdnew = gamma*(m_strain_rates(i,j,0)-0.0)*(1-vFDnew(i,j));
     if (sigmat > initThreshold) {
       vFDnew(i,j)+= fdnew*m_dt;
     }
 
     //healing
-    double fdheal = gammaheal*(strain_rates(i,j,0)-healThreshold);
-    if (ice_thickness(i,j)>0.0) {
+    double fdheal = gammaheal*(m_strain_rates(i,j,0)-healThreshold);
+    if (m_ice_thickness(i,j)>0.0) {
       if (constant_healing) {
         fdheal = gammaheal*(-healThreshold);
         if (fracture_weighted_healing) {
@@ -262,7 +262,7 @@ void IceModel::calculateFractureDensity() {
           vFDnew(i,j)+= fdheal*m_dt;
         }
       }
-      else if (strain_rates(i,j,0) < healThreshold) {
+      else if (m_strain_rates(i,j,0) < healThreshold) {
         if (fracture_weighted_healing) {
           vFDnew(i,j)+= fdheal*m_dt*(1-vFD(i,j));
         } else {
@@ -283,7 +283,7 @@ void IceModel::calculateFractureDensity() {
     //################################################################################
     // write related fracture quantities to nc-file
     // if option -write_fd_fields is set
-    if (write_fd && ice_thickness(i,j)>0.0) {
+    if (write_fd && m_ice_thickness(i,j)>0.0) {
       //fracture toughness
       vFT(i,j)=sigmat;
 
@@ -296,8 +296,8 @@ void IceModel::calculateFractureDensity() {
       }
 
       // fracture healing rate
-      if (ice_thickness(i,j)>0.0) {
-        if (constant_healing || (strain_rates(i,j,0) < healThreshold)) {
+      if (m_ice_thickness(i,j)>0.0) {
+        if (constant_healing || (m_strain_rates(i,j,0) < healThreshold)) {
           if (fracture_weighted_healing) {
             vFH(i,j)=fdheal*(1-vFD(i,j));
           } else {
@@ -319,7 +319,7 @@ void IceModel::calculateFractureDensity() {
       // additional flow enhancement due to fracture softening
       double phi_exp=3.0;//flow_law->exponent();
       double softening = pow((1.0-(1.0-soft_residual)*vFDnew(i,j)),-phi_exp);
-      if (ice_thickness(i,j)>0.0) {
+      if (m_ice_thickness(i,j)>0.0) {
         vFE(i,j)=1.0/pow(softening,1/3.0);
       } else {
         vFE(i,j)=1.0;
@@ -328,8 +328,8 @@ void IceModel::calculateFractureDensity() {
 
     //boundary condition
     if (dirichlet_bc && !do_fracground) {
-      if (vBCMask.as_int(i,j) == 1) {
-        if (vBCvel(i,j).u != 0.0 || vBCvel(i,j).v != 0.0) {
+      if (m_ssa_dirichlet_bc_mask.as_int(i,j) == 1) {
+        if (m_ssa_dirichlet_bc_values(i,j).u != 0.0 || m_ssa_dirichlet_bc_values(i,j).v != 0.0) {
           vFDnew(i,j)=fdBoundaryValue;
         }
 
@@ -343,7 +343,7 @@ void IceModel::calculateFractureDensity() {
       }
     }
     // ice free regions and boundary of computational domain
-    if (ice_thickness(i,j)==0.0 || i==0 || j==0 || i==Mx-1 || j==My-1) {
+    if (m_ice_thickness(i,j)==0.0 || i==0 || j==0 || i==Mx-1 || j==My-1) {
       vFDnew(i,j)=0.0;
       if (write_fd) {
         vFAnew(i,j)=0.0;

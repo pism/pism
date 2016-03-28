@@ -122,7 +122,7 @@ void IceModel::update_run_stats() {
   // timing stats
   // MYPPH stands for "model years per processor hour"
   double
-    wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time),
+    wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time),
     proc_hours       = m_grid->size() * wall_clock_hours,
     mypph            = units::convert(m_sys,
                                       m_time->current() - m_time->start(),
@@ -195,7 +195,7 @@ void  IceModel::stampHistory(const std::string &str) {
   Extends the grid such that the new one has 2 (two) levels above the ice.
  */
 void IceModel::check_maximum_thickness() {
-Range thk_range = ice_thickness.range();
+Range thk_range = m_ice_thickness.range();
   if (m_grid->Lz() >= thk_range.max) {
     return;
   }
