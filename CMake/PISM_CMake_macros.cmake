@@ -16,7 +16,7 @@ macro(pism_use_rpath)
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
   # Mac OS X install_name fix:
-  set(CMAKE_MACOSX_RPATH 1)
+  set (CMAKE_MACOSX_RPATH 1)
   set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
 endmacro(pism_use_rpath)
 
@@ -35,8 +35,8 @@ macro(pism_strictly_static)
 
   set (BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared Pism libraries" FORCE)
 
-  SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "") # get rid of -rdynamic
-  SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "") # ditto
+  set (CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "") # get rid of -rdynamic
+  set (CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "") # ditto
 
   set_property(GLOBAL PROPERTY LINK_SEARCH_END_STATIC 1)
   set(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)       # remove -Wl,-Bdynamic
