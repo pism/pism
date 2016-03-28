@@ -661,6 +661,12 @@ void IceModel::misc_setup() {
     nc.open(input_file, PISM_READONLY);
 
     get_projection_info(nc);
+    std::string proj4_string = m_output_global_attributes.get_string("proj4");
+    if (not proj4_string.empty()) {
+      m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".",
+                     proj4_string.c_str(), nc.inq_filename().c_str());
+    }
+
 
     std::string source = nc.get_att_text("PISM_GLOBAL", "source");
     nc.close();
