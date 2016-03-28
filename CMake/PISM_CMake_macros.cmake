@@ -152,20 +152,8 @@ macro(pism_find_prerequisites)
 
   # MPI
   # Use the PETSc compiler as a hint when looking for an MPI compiler
-  # FindMPI.cmake changed between 2.8.4 and 2.8.5, so we try to support both...
-  if (${CMAKE_VERSION} VERSION_LESS "2.8.5")
-    set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
-    find_package (MPI REQUIRED)
-
-    set (MPI_C_INCLUDE_PATH "${MPI_INCLUDE_PATH}" CACHE STRING "MPI include directories (semicolon-separated list)")
-    set (MPI_C_LIBRARIES "${MPI_LIBRARY};${MPI_EXTRA_LIBRARY}" CACHE STRING "MPI libraries (semicolon-separated list)")
-    mark_as_advanced(MPI_C_INCLUDE_PATH MPI_C_LIBRARIES)
-    message (STATUS
-      "Note: Please upgrade CMake to version 2.8.5 or later if the build fails with undefined symbols related to MPI.")
-  else ()
-    set (MPI_C_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
-    find_package (MPI REQUIRED)
-  endif()
+  set (MPI_C_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
+  find_package (MPI REQUIRED)
 
   # Other required libraries
   find_package (UDUNITS2 REQUIRED)
