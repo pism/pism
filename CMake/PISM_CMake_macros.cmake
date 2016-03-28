@@ -80,7 +80,7 @@ macro(pism_set_revision_tag)
 endmacro(pism_set_revision_tag)
 
 macro(pism_set_install_prefix)
-  # Allow setting a custom install prefix using the PISM_PREFIX environment variable.
+  # Allow setting a custom install prefix using the PISM_INSRALL_PREFIX environment variable.
   string (LENGTH "$ENV{PISM_INSTALL_PREFIX}" INSTALL_PREFIX_LENGTH)
   if (INSTALL_PREFIX_LENGTH)
     set (CMAKE_INSTALL_PREFIX $ENV{PISM_INSTALL_PREFIX} CACHE PATH "PISM install prefix" FORCE)
@@ -128,27 +128,29 @@ macro(pism_find_prerequisites)
   # PETSc
   find_package (PETSc)
   if (DEFINED PETSC_VERSION)
+
     # FindPETSc.cmake does not put PETSC_VERSION into the CMake cache,
     # so we save it here.
     set(Pism_PETSC_VERSION ${PETSC_VERSION} CACHE STRING "PETSc version")
     mark_as_advanced(Pism_PETSC_VERSION)
-  endif()
 
-  if ((DEFINED PETSC_VERSION) AND (PETSC_VERSION VERSION_LESS 3.3))
-    # Force PISM to look for PETSc again if the version we just found
-    # is too old:
-    set(PETSC_CURRENT "OFF" CACHE BOOL "" FORCE)
-    # Stop with an error message.
-    message(FATAL_ERROR "\nPISM requires PETSc version 3.3 or newer (found ${PETSC_VERSION}).\n\n")
-  endif()
+    if (PETSC_VERSION VERSION_LESS 3.3)
+      # Force PISM to look for PETSc again if the version we just found
+      # is too old:
+      set(PETSC_CURRENT "OFF" CACHE BOOL "" FORCE)
+      # Stop with an error message.
+      message(FATAL_ERROR "PISM requires PETSc version 3.3 or newer (found ${PETSC_VERSION}).")
+    endif()
 
-  if ((DEFINED PETSC_VERSION) AND (PETSC_VERSION VERSION_EQUAL 3.6.0))
-    # Force PISM to look for PETSc again if the version we just found
-    # is not supported
-    set(PETSC_CURRENT "OFF" CACHE BOOL "" FORCE)
-    # Stop with an error message.
-    message(FATAL_ERROR "\nPISM does not support PETSc ${PETSC_VERSION}. Please install PETSc <= 3.5.4 or PETSc > 3.6.0.\n\n")
-  endif()
+    if (PETSC_VERSION VERSION_EQUAL 3.6.0)
+      # Force PISM to look for PETSc again if the version we just found
+      # is not supported
+      set(PETSC_CURRENT "OFF" CACHE BOOL "" FORCE)
+      # Stop with an error message.
+      message(FATAL_ERROR "PISM does not support PETSc ${PETSC_VERSION}. Please install PETSc <= 3.5.4 or PETSc > 3.6.0.")
+    endif()
+
+  endif (DEFINED PETSC_VERSION)
 
   # MPI
   # Use the PETSc compiler as a hint when looking for an MPI compiler
@@ -159,15 +161,23 @@ macro(pism_find_prerequisites)
   find_package (UDUNITS2 REQUIRED)
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
+  find_package (FFTW REQUIRED)
 
   # Optional libraries
   if (Pism_USE_PNETCDF)
     find_package (PNetCDF)
   endif()
+
   if (Pism_USE_PARALLEL_HDF5)
     find_package (HDF5 COMPONENTS C HL)
+
+    if(NOT HDF5_IS_PARALLEL)
+      set (Pism_USE_PARALLEL_HDF5 OFF CACHE BOOL "Enables parallel HDF5 I/O." FORCE)
+      message(FATAL_ERROR
+        "Selected HDF-5 library (include: ${HDF5_INCLUDE_DIR}, lib: ${HDF5_LIBRARIES}) does not support parallel I/O.")
+    endif()
   endif()
-  find_package (FFTW REQUIRED)    # NOT optional
+
   if (Pism_USE_PROJ4)
     find_package (PROJ4)
   endif()
@@ -175,39 +185,21 @@ macro(pism_find_prerequisites)
   # Use TAO included in PETSc 3.5.
   if (Pism_PETSC_VERSION VERSION_LESS "3.5")
     message(STATUS "Disabling TAO-based inversion tools. Install PETSc 3.5 or later to use them.")
+    set (Pism_USE_TAO OFF CACHE BOOL "Use TAO in inverse solvers." FORCE)
   else()
-    set (Pism_USE_TAO ON CACHE BOOL "Use TAO in inverse solvers.")
-    if (Pism_USE_TAO)
-      message(STATUS "PETSc 3.5 and later includes TAO; using it...")
-    else()
-      message(STATUS "Pism_USE_TAO is OFF. Inverse solvers using the TAO library will not be built.")
+    message(STATUS "Building TAO-based inversion tools.")
+  endif()
+
+  if (Pism_USE_PARALLEL_NETCDF4)
+    # Try to find netcdf_par.h. We assume that NetCDF was compiled with
+    # parallel I/O if this header is present.
+    find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
+
+    # Set default values for build options
+    if (NOT NETCDF_PAR_H)
+      message(FATAL_ERROR
+        "Selected NetCDF library (include: ${NETCDF_INCLUDES}, lib: ${NETCDF_LIBRARIES}) does not support parallel I/O.")
     endif()
-  endif()
-
-  # Try to find netcdf_par.h. We assume that NetCDF was compiled with
-  # parallel I/O if this header is present.
-  find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
-
-  # Set default values for build options
-  if (NOT NETCDF_PAR_H)
-    set (Pism_USE_PARALLEL_NETCDF4 OFF CACHE BOOL "Enables parallel NetCDF-4 I/O." FORCE)
-    message(STATUS "Selected NetCDF library does not support parallel I/O.")
-  endif()
-
-  if (NOT PNETCDF_FOUND)
-    set (Pism_USE_PNETCDF OFF CACHE BOOL "Enables parallel NetCDF-3 I/O using PnetCDF." FORCE)
-  endif()
-
-  if (NOT HDF5_FOUND)
-    set (Pism_USE_PARALLEL_HDF5 OFF CACHE BOOL "Enables parallel HDF5 I/O." FORCE)
-  elseif(NOT HDF5_IS_PARALLEL)
-    set (Pism_USE_PARALLEL_HDF5 OFF CACHE BOOL "Enables parallel HDF5 I/O." FORCE)
-    message (STATUS "Selected HDF5 library does not support parallel I/O.")
-  endif()
-
-  if (PROJ4_FOUND)
-    set (Pism_USE_PROJ4 ON CACHE BOOL
-      "Use Proj.4 to compute cell areas, longitude, and latitude.")
   endif()
 
 endmacro()
@@ -217,7 +209,6 @@ macro(pism_set_dependencies)
   # Set include and library directories for *required* libraries.
   include_directories (
     ${PETSC_INCLUDES}
-    ${FFTW_INCLUDE_DIRS}
     ${FFTW_INCLUDES}
     ${GSL_INCLUDES}
     ${UDUNITS2_INCLUDES}
@@ -281,4 +272,6 @@ int main(int argc, char **argv) {
   else()
     set(Pism_USE_TR1 ON CACHE BOOL "If 'ON', #include <tr1/memory>, otherwise #include <memory>." FORCE)
   endif()
+  mark_as_advanced(Pism_USE_TR1)
+
 endmacro()
