@@ -1268,6 +1268,16 @@ netcdf pism_config {
     pism_config:mask_icefree_thickness_standard = 0.01;
     pism_config:mask_icefree_thickness_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.";
 
+    pism_config:mask_icefree_thickness_reporting_standard_units = "meters";
+    pism_config:mask_icefree_thickness_reporting_standard_type = "scalar";
+    pism_config:mask_icefree_thickness_reporting_standard = 10.0;
+    pism_config:mask_icefree_thickness_reporting_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN for purposes of reporting glacierized area, volume, etc.";
+
+    pism_config:mask_icefree_thickness_stress_balance_standard_units = "meters";
+    pism_config:mask_icefree_thickness_stress_balance_standard_type = "scalar";
+    pism_config:mask_icefree_thickness_stress_balance_standard = 10.0;
+    pism_config:mask_icefree_thickness_stress_balance_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN for purposes of computing ice velocity distribution.";
+
     pism_config:mask_is_floating_thickness_standard_units = "meters";
     pism_config:mask_is_floating_thickness_standard_type = "scalar";
     pism_config:mask_is_floating_thickness_standard = 1.0;
