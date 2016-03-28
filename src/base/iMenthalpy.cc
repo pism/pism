@@ -282,8 +282,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
     for (Points pt(*m_grid); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
-      // false means "don't ignore horizontal advection and strain heating near margins"
-      system.init(i, j, false, m_ice_thickness(i, j));
+      system.init(i, j, m_ice_thickness(i, j));
 
       // enthalpy and pressures at top of ice
       const double
@@ -291,7 +290,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         p_ks     = EC->pressure(depth_ks); // FIXME issue #15
 
       double Enth_ks = EC->enthalpy_permissive(m_ice_surface_temp(i, j), m_liqfrac_surface(i, j),
-                                             p_ks);
+                                               p_ks);
 
       const bool ice_free_column = (system.ks() == 0);
 

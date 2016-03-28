@@ -51,7 +51,7 @@ public:
                 EnthalpyConverter::Ptr EC);
   ~enthSystemCtx();
 
-  void init(int i, int j, bool my_ismarginal, double ice_thickness);
+  void init(int i, int j, double ice_thickness);
 
   double k_from_T(double T) const;
 
