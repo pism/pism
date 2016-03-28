@@ -345,8 +345,6 @@ protected:
   // see iMenergy.cc
   virtual void energyStep();
   virtual void get_bed_top_temp(IceModelVec2S &result);
-  virtual bool checkThinNeigh(const IceModelVec2S &thickness,
-                              int i, int j, double threshold);
 
   virtual void combine_basal_melt_rate();
 

@@ -228,23 +228,4 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   loop.check();
 }
 
-
-//! \brief Is one of my neighbors below a critical thickness to apply advection
-//! in enthalpy or temperature equation?
-bool IceModel::checkThinNeigh(const IceModelVec2S &thickness,
-                              int i, int j, double threshold) {
-  const double
-    N  = thickness(i, j + 1),
-    E  = thickness(i + 1, j),
-    S  = thickness(i, j - 1),
-    W  = thickness(i - 1, j),
-    NW = thickness(i - 1, j + 1),
-    SW = thickness(i - 1, j - 1),
-    NE = thickness(i + 1, j + 1),
-    SE = thickness(i + 1, j - 1);
-
-  return ((E < threshold) || (NE < threshold) || (N < threshold) || (NW < threshold) ||
-          (W < threshold) || (SW < threshold) || (S < threshold) || (SE < threshold));
-}
-
 } // end of namespace pism

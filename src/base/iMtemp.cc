@@ -213,19 +213,15 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   int maxLowTempCount = static_cast<int>(m_config->get_double("max_low_temp_count"));
   double globalMinAllowedTemp = m_config->get_double("global_min_allowed_temp");
 
-  const double thickness_threshold = m_config->get_double("energy_advection_ice_thickness_threshold");
-
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // if isMarginal then only do vertical conduction for ice; ignore advection
-      //   and strain heating if isMarginal
-      const bool isMarginal = checkThinNeigh(m_ice_thickness, i, j, thickness_threshold);
       MaskValue mask_value = static_cast<MaskValue>(m_cell_type.as_int(i,j));
 
-      system.initThisColumn(i, j, isMarginal, mask_value, m_ice_thickness(i,j));
+      // false means "don't ignore horizontal advection and strain heating near margins"
+      system.initThisColumn(i, j, false, mask_value, m_ice_thickness(i,j));
 
       const int ks = system.ks();
 
