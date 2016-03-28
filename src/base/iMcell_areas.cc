@@ -50,6 +50,10 @@ void IceModel::compute_cell_areas() {
   if (not m_config->get_boolean("correct_cell_areas") ||
       not global_attributes.has_attribute("proj4")) {
 
+    m_log->message(2,
+                   "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
+                   m_grid->dx(), m_grid->dy());
+
     m_cell_area.set(m_grid->dx() * m_grid->dy());
 
     return;
@@ -76,8 +80,9 @@ void IceModel::compute_cell_areas() {
   }
 
   m_log->message(2,
-             "* Computing cell areas, latitude and longitude\n"
-             "  using projection parameters...\n");
+                 "* Computing cell areas, latitude and longitude\n"
+                 "  using projection parameters (%s)...\n",
+                 proj_string.c_str());
 
 // Cell layout:
 // (nw)        (ne)
