@@ -249,7 +249,23 @@ void IceModel::model_state_setup() {
     }
   }
 
-  compute_cell_areas();
+  // get projection information and compute cell areas
+  {
+    if (input_file.is_set()) {
+      PIO nc(m_grid->com, "guess_mode");
+      nc.open(input_file, PISM_READONLY); // closed at the end of scope
+
+      get_projection_info(nc);
+
+      std::string proj4_string = m_output_global_attributes.get_string("proj4");
+      if (not proj4_string.empty()) {
+        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".",
+                       proj4_string.c_str(), nc.inq_filename().c_str());
+      }
+    }
+
+    compute_cell_areas();
+  }
 
   // a report on whether PISM-PIK modifications of IceModel are in use
   const bool pg   = m_config->get_boolean("part_grid"),
