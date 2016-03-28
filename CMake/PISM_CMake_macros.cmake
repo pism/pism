@@ -64,26 +64,10 @@ macro(pism_set_revision_tag_git)
   endif(NOT Pism_VERSION)
 endmacro(pism_set_revision_tag_git)
 
-# Set the revision tag if PISM was checked out using Subversion.
-macro(pism_set_revision_tag_svn)
-  if (NOT Pism_VERSION)
-    if (EXISTS ${Pism_SOURCE_DIR}/.svn)
-      find_package(Subversion)
-      if (SUBVERSION_FOUND)
-        Subversion_WC_INFO(${Pism_SOURCE_DIR}/src "Pism")
-        set(Pism_VERSION "${Pism_WC_LAST_CHANGED_DATE}")
-      endif(SUBVERSION_FOUND)
-    endif(EXISTS ${Pism_SOURCE_DIR}/.svn)
-  endif(NOT Pism_VERSION)
-endmacro(pism_set_revision_tag_svn)
-
 # Set the PISM revision tag
 macro(pism_set_revision_tag)
   # Git
   pism_set_revision_tag_git()
-
-  # Subversion
-  pism_set_revision_tag_svn()
 
   # Otherwise...
   if (NOT Pism_VERSION)
