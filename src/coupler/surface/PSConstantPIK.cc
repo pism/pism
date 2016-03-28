@@ -115,8 +115,8 @@ void PIK::update_impl(double my_t, double my_dt)
   }
 }
 
-void PIK::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
-                                    std::map<std::string, TSDiagnostic*> &/*ts_dict*/)
+void PIK::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &/*dict*/,
+                                    std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/)
 {
   // empty (does not have an atmosphere model)
 }

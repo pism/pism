@@ -146,18 +146,6 @@ void IceModel::reset_counters() {
 
 IceModel::~IceModel() {
 
-  // de-allocate time-series diagnostics
-  std::map<std::string,TSDiagnostic*>::iterator i = m_ts_diagnostics.begin();
-  while (i != m_ts_diagnostics.end()) {
-    delete (i++)->second;
-  }
-
-  // de-allocate diagnostics
-  std::map<std::string,Diagnostic*>::iterator j = m_diagnostics.begin();
-  while (j != m_diagnostics.end()) {
-    delete (j++)->second;
-  }
-
   delete m_stress_balance;
 
   if (not m_external_ocean_model) {

@@ -51,56 +51,56 @@ static const char* floating_ice_sheet_area_fraction_name = "sftflf";
 void IceModel::init_diagnostics() {
 
   // Add IceModel diagnostics:
-  m_diagnostics["cts"]              = new IceModel_cts(this);
-  m_diagnostics["enthalpybase"]     = new IceModel_enthalpybase(this);
-  m_diagnostics["enthalpysurf"]     = new IceModel_enthalpysurf(this);
-  m_diagnostics["hardav"]           = new IceModel_hardav(this);
-  m_diagnostics["liqfrac"]          = new IceModel_liqfrac(this);
-  m_diagnostics["proc_ice_area"]    = new IceModel_proc_ice_area(this);
-  m_diagnostics["rank"]             = new IceModel_rank(this);
-  m_diagnostics["temp"]             = new IceModel_temp(this);
-  m_diagnostics["temp_pa"]          = new IceModel_temp_pa(this);
-  m_diagnostics["tempbase"]         = new IceModel_tempbase(this);
-  m_diagnostics["tempicethk"]       = new IceModel_tempicethk(this);
-  m_diagnostics["tempicethk_basal"] = new IceModel_tempicethk_basal(this);
-  m_diagnostics["temppabase"]       = new IceModel_temppabase(this);
-  m_diagnostics["tempsurf"]         = new IceModel_tempsurf(this);
-  m_diagnostics["dHdt"]             = new IceModel_dHdt(this);
+  m_diagnostics["cts"]              = Diagnostic::Ptr(new IceModel_cts(this));
+  m_diagnostics["enthalpybase"]     = Diagnostic::Ptr(new IceModel_enthalpybase(this));
+  m_diagnostics["enthalpysurf"]     = Diagnostic::Ptr(new IceModel_enthalpysurf(this));
+  m_diagnostics["hardav"]           = Diagnostic::Ptr(new IceModel_hardav(this));
+  m_diagnostics["liqfrac"]          = Diagnostic::Ptr(new IceModel_liqfrac(this));
+  m_diagnostics["proc_ice_area"]    = Diagnostic::Ptr(new IceModel_proc_ice_area(this));
+  m_diagnostics["rank"]             = Diagnostic::Ptr(new IceModel_rank(this));
+  m_diagnostics["temp"]             = Diagnostic::Ptr(new IceModel_temp(this));
+  m_diagnostics["temp_pa"]          = Diagnostic::Ptr(new IceModel_temp_pa(this));
+  m_diagnostics["tempbase"]         = Diagnostic::Ptr(new IceModel_tempbase(this));
+  m_diagnostics["tempicethk"]       = Diagnostic::Ptr(new IceModel_tempicethk(this));
+  m_diagnostics["tempicethk_basal"] = Diagnostic::Ptr(new IceModel_tempicethk_basal(this));
+  m_diagnostics["temppabase"]       = Diagnostic::Ptr(new IceModel_temppabase(this));
+  m_diagnostics["tempsurf"]         = Diagnostic::Ptr(new IceModel_tempsurf(this));
+  m_diagnostics["dHdt"]             = Diagnostic::Ptr(new IceModel_dHdt(this));
 
-  m_diagnostics[land_ice_area_fraction_name]           = new IceModel_land_ice_area_fraction(this);
-  m_diagnostics[grounded_ice_sheet_area_fraction_name] = new IceModel_grounded_ice_sheet_area_fraction(this);
-  m_diagnostics[floating_ice_sheet_area_fraction_name] = new IceModel_floating_ice_sheet_area_fraction(this);
+  m_diagnostics[land_ice_area_fraction_name]           = Diagnostic::Ptr(new IceModel_land_ice_area_fraction(this));
+  m_diagnostics[grounded_ice_sheet_area_fraction_name] = Diagnostic::Ptr(new IceModel_grounded_ice_sheet_area_fraction(this));
+  m_diagnostics[floating_ice_sheet_area_fraction_name] = Diagnostic::Ptr(new IceModel_floating_ice_sheet_area_fraction(this));
 
   if (m_flux_divergence.was_created()) {
-    m_diagnostics["flux_divergence"] = new IceModel_flux_divergence(this);
+    m_diagnostics["flux_divergence"] = Diagnostic::Ptr(new IceModel_flux_divergence(this));
   }
 
   if (m_climatic_mass_balance_cumulative.was_created()) {
-    m_diagnostics["climatic_mass_balance_cumulative"] = new IceModel_climatic_mass_balance_cumulative(this);
+    m_diagnostics["climatic_mass_balance_cumulative"] = Diagnostic::Ptr(new IceModel_climatic_mass_balance_cumulative(this));
   }
 
   if (m_nonneg_flux_2D_cumulative.was_created()) {
-    m_diagnostics["nonneg_flux_cumulative"] = new IceModel_nonneg_flux_2D_cumulative(this);
+    m_diagnostics["nonneg_flux_cumulative"] = Diagnostic::Ptr(new IceModel_nonneg_flux_2D_cumulative(this));
   }
 
   if (m_grounded_basal_flux_2D_cumulative.was_created()) {
-    m_diagnostics["grounded_basal_flux_cumulative"] = new IceModel_grounded_basal_flux_2D_cumulative(this);
+    m_diagnostics["grounded_basal_flux_cumulative"] = Diagnostic::Ptr(new IceModel_grounded_basal_flux_2D_cumulative(this));
   }
 
   if (m_floating_basal_flux_2D_cumulative.was_created()) {
-    m_diagnostics["floating_basal_flux_cumulative"] = new IceModel_floating_basal_flux_2D_cumulative(this);
+    m_diagnostics["floating_basal_flux_cumulative"] = Diagnostic::Ptr(new IceModel_floating_basal_flux_2D_cumulative(this));
   }
 
   if (m_discharge_flux_2D_cumulative.was_created()) {
-    m_diagnostics["discharge_flux_cumulative"] = new IceModel_discharge_flux_2D_cumulative(this);
-    m_diagnostics["discharge_flux"] = new IceModel_discharge_flux_2D(this);
+    m_diagnostics["discharge_flux_cumulative"] = Diagnostic::Ptr(new IceModel_discharge_flux_2D_cumulative(this));
+    m_diagnostics["discharge_flux"] = Diagnostic::Ptr(new IceModel_discharge_flux_2D(this));
   }
 
 #if (PISM_USE_PROJ4==1)
   if (m_output_global_attributes.has_attribute("proj4")) {
     std::string proj4 = m_output_global_attributes.get_string("proj4");
-    m_diagnostics["lat_bnds"] = new IceModel_lat_lon_bounds(this, "lat", proj4);
-    m_diagnostics["lon_bnds"] = new IceModel_lat_lon_bounds(this, "lon", proj4);
+    m_diagnostics["lat_bnds"] = Diagnostic::Ptr(new IceModel_lat_lon_bounds(this, "lat", proj4));
+    m_diagnostics["lon_bnds"] = Diagnostic::Ptr(new IceModel_lat_lon_bounds(this, "lon", proj4));
   }
 #elif (PISM_USE_PROJ4==0)
   // do nothing
@@ -108,38 +108,38 @@ void IceModel::init_diagnostics() {
 #error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif
 
-  m_ts_diagnostics["ivol"]          = new IceModel_ivol(this);
-  m_ts_diagnostics["slvol"]         = new IceModel_slvol(this);
-  m_ts_diagnostics["divoldt"]       = new IceModel_divoldt(this);
-  m_ts_diagnostics["iarea"]         = new IceModel_iarea(this);
-  m_ts_diagnostics["imass"]         = new IceModel_imass(this);
-  m_ts_diagnostics["dimassdt"]      = new IceModel_dimassdt(this);
-  m_ts_diagnostics["ivoltemp"]      = new IceModel_ivoltemp(this);
-  m_ts_diagnostics["ivolcold"]      = new IceModel_ivolcold(this);
-  m_ts_diagnostics["ivolg"]         = new IceModel_ivolg(this);
-  m_ts_diagnostics["ivolf"]         = new IceModel_ivolf(this);
-  m_ts_diagnostics["iareatemp"]     = new IceModel_iareatemp(this);
-  m_ts_diagnostics["iareacold"]     = new IceModel_iareacold(this);
-  m_ts_diagnostics["iareag"]        = new IceModel_iareag(this);
-  m_ts_diagnostics["iareaf"]        = new IceModel_iareaf(this);
-  m_ts_diagnostics["dt"]            = new IceModel_dt(this);
-  m_ts_diagnostics["max_diffusivity"] = new IceModel_max_diffusivity(this);
-  m_ts_diagnostics["ienthalpy"]     = new IceModel_ienthalpy(this);
-  m_ts_diagnostics["max_hor_vel"]   = new IceModel_max_hor_vel(this);
+  m_ts_diagnostics["ivol"]          = TSDiagnostic::Ptr(new IceModel_ivol(this));
+  m_ts_diagnostics["slvol"]         = TSDiagnostic::Ptr(new IceModel_slvol(this));
+  m_ts_diagnostics["divoldt"]       = TSDiagnostic::Ptr(new IceModel_divoldt(this));
+  m_ts_diagnostics["iarea"]         = TSDiagnostic::Ptr(new IceModel_iarea(this));
+  m_ts_diagnostics["imass"]         = TSDiagnostic::Ptr(new IceModel_imass(this));
+  m_ts_diagnostics["dimassdt"]      = TSDiagnostic::Ptr(new IceModel_dimassdt(this));
+  m_ts_diagnostics["ivoltemp"]      = TSDiagnostic::Ptr(new IceModel_ivoltemp(this));
+  m_ts_diagnostics["ivolcold"]      = TSDiagnostic::Ptr(new IceModel_ivolcold(this));
+  m_ts_diagnostics["ivolg"]         = TSDiagnostic::Ptr(new IceModel_ivolg(this));
+  m_ts_diagnostics["ivolf"]         = TSDiagnostic::Ptr(new IceModel_ivolf(this));
+  m_ts_diagnostics["iareatemp"]     = TSDiagnostic::Ptr(new IceModel_iareatemp(this));
+  m_ts_diagnostics["iareacold"]     = TSDiagnostic::Ptr(new IceModel_iareacold(this));
+  m_ts_diagnostics["iareag"]        = TSDiagnostic::Ptr(new IceModel_iareag(this));
+  m_ts_diagnostics["iareaf"]        = TSDiagnostic::Ptr(new IceModel_iareaf(this));
+  m_ts_diagnostics["dt"]            = TSDiagnostic::Ptr(new IceModel_dt(this));
+  m_ts_diagnostics["max_diffusivity"] = TSDiagnostic::Ptr(new IceModel_max_diffusivity(this));
+  m_ts_diagnostics["ienthalpy"]     = TSDiagnostic::Ptr(new IceModel_ienthalpy(this));
+  m_ts_diagnostics["max_hor_vel"]   = TSDiagnostic::Ptr(new IceModel_max_hor_vel(this));
 
-  m_ts_diagnostics["surface_ice_flux"]   = new IceModel_surface_flux(this);
-  m_ts_diagnostics["surface_ice_flux_cumulative"]   = new IceModel_surface_flux_cumulative(this);
-  m_ts_diagnostics["grounded_basal_ice_flux"]     = new IceModel_grounded_basal_flux(this);
-  m_ts_diagnostics["grounded_basal_ice_flux_cumulative"]     = new IceModel_grounded_basal_flux_cumulative(this);
-  m_ts_diagnostics["sub_shelf_ice_flux"] = new IceModel_sub_shelf_flux(this);
-  m_ts_diagnostics["sub_shelf_ice_flux_cumulative"] = new IceModel_sub_shelf_flux_cumulative(this);
-  m_ts_diagnostics["nonneg_rule_flux"]   = new IceModel_nonneg_flux(this);
-  m_ts_diagnostics["nonneg_rule_flux_cumulative"]   = new IceModel_nonneg_flux_cumulative(this);
-  m_ts_diagnostics["discharge_flux"]    = new IceModel_discharge_flux(this);
-  m_ts_diagnostics["discharge_flux_cumulative"]    = new IceModel_discharge_flux_cumulative(this);
-  m_ts_diagnostics["H_to_Href_flux"] = new IceModel_H_to_Href_flux(this);
-  m_ts_diagnostics["Href_to_H_flux"] = new IceModel_Href_to_H_flux(this);
-  m_ts_diagnostics["sum_divQ_flux"]  = new IceModel_sum_divQ_flux(this);
+  m_ts_diagnostics["surface_ice_flux"]   = TSDiagnostic::Ptr(new IceModel_surface_flux(this));
+  m_ts_diagnostics["surface_ice_flux_cumulative"]   = TSDiagnostic::Ptr(new IceModel_surface_flux_cumulative(this));
+  m_ts_diagnostics["grounded_basal_ice_flux"]     = TSDiagnostic::Ptr(new IceModel_grounded_basal_flux(this));
+  m_ts_diagnostics["grounded_basal_ice_flux_cumulative"]     = TSDiagnostic::Ptr(new IceModel_grounded_basal_flux_cumulative(this));
+  m_ts_diagnostics["sub_shelf_ice_flux"] = TSDiagnostic::Ptr(new IceModel_sub_shelf_flux(this));
+  m_ts_diagnostics["sub_shelf_ice_flux_cumulative"] = TSDiagnostic::Ptr(new IceModel_sub_shelf_flux_cumulative(this));
+  m_ts_diagnostics["nonneg_rule_flux"]   = TSDiagnostic::Ptr(new IceModel_nonneg_flux(this));
+  m_ts_diagnostics["nonneg_rule_flux_cumulative"]   = TSDiagnostic::Ptr(new IceModel_nonneg_flux_cumulative(this));
+  m_ts_diagnostics["discharge_flux"]    = TSDiagnostic::Ptr(new IceModel_discharge_flux(this));
+  m_ts_diagnostics["discharge_flux_cumulative"]    = TSDiagnostic::Ptr(new IceModel_discharge_flux_cumulative(this));
+  m_ts_diagnostics["H_to_Href_flux"] = TSDiagnostic::Ptr(new IceModel_H_to_Href_flux(this));
+  m_ts_diagnostics["Href_to_H_flux"] = TSDiagnostic::Ptr(new IceModel_Href_to_H_flux(this));
+  m_ts_diagnostics["sum_divQ_flux"]  = TSDiagnostic::Ptr(new IceModel_sum_divQ_flux(this));
 
   // Get diagnostics supported by the stress balance object:
   if (m_stress_balance != NULL) {
@@ -265,11 +265,12 @@ void IceModel::list_diagnostics() {
                        d);
     PISM_CHK(ierr, "PetscPrintf");
 
-    std::map<std::string, Diagnostic*>::iterator j = m_diagnostics.begin();
+    std::map<std::string, Diagnostic::Ptr>::iterator j = m_diagnostics.begin();
     while (j != m_diagnostics.end()) {
-      Diagnostic *diag = j->second;
+      Diagnostic::Ptr diag = j->second;
 
-      std::string name           = j->first,
+      std::string
+        name                = j->first,
         units               = diag->get_metadata().get_string("units"),
         glaciological_units = diag->get_metadata().get_string("glaciological_units");
 
@@ -303,9 +304,9 @@ void IceModel::list_diagnostics() {
   ierr = PetscPrintf(m_grid->com, "======== Available time-series ========\n");
   PISM_CHK(ierr, "PetscPrintf");
 
-  std::map<std::string, TSDiagnostic*>::iterator j = m_ts_diagnostics.begin();
+  std::map<std::string, TSDiagnostic::Ptr>::iterator j = m_ts_diagnostics.begin();
   while (j != m_ts_diagnostics.end()) {
-    TSDiagnostic *diag = j->second;
+    TSDiagnostic::Ptr diag = j->second;
 
     std::string name = j->first,
       long_name = diag->get_string("long_name"),

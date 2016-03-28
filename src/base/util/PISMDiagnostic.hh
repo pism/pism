@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -55,6 +55,8 @@ public:
   Diagnostic(IceGrid::ConstPtr g);
   virtual ~Diagnostic();
 
+  typedef PISM_SHARED_PTR(Diagnostic) Ptr;
+
   virtual void update_cumulative();
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated
@@ -102,6 +104,8 @@ protected:
 //! @brief PISM's scalar time-series diagnostics.
 class TSDiagnostic {
 public:
+  typedef PISM_SHARED_PTR(TSDiagnostic) Ptr;
+
   TSDiagnostic(IceGrid::ConstPtr g)
     : m_grid(g), m_sys(g->ctx()->unit_system()), m_ts(NULL) {
   }

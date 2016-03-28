@@ -155,9 +155,9 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
         }
       } else {
         // It might be a diagnostic quantity
-        Diagnostic *diag = m_diagnostics[*i];
+        Diagnostic::Ptr diag = m_diagnostics[*i];
 
-        if (diag != NULL) {
+        if (diag) {
           diag->define(nc);
         }
       }
@@ -285,7 +285,7 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
 
   // All the remaining names in vars must be of diagnostic quantities.
   for (i = vars.begin(); i != vars.end();) {
-    Diagnostic *diag = m_diagnostics[*i];
+    Diagnostic::Ptr diag = m_diagnostics[*i];
 
     if (diag == NULL) {
       ++i;

@@ -155,15 +155,15 @@ void Hydrology::init() {
 }
 
 
-void Hydrology::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                     std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["bwat"]       = new Hydrology_bwat(this);
-  dict["bwp"]        = new Hydrology_bwp(this);
-  dict["bwprel"]     = new Hydrology_bwprel(this);
-  dict["effbwp"]     = new Hydrology_effbwp(this);
-  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this);
-  dict["hydroinput"] = new Hydrology_hydroinput(this);
-  dict["wallmelt"]   = new Hydrology_wallmelt(this);
+void Hydrology::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                     std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
+  dict["bwat"]       = Diagnostic::Ptr(new Hydrology_bwat(this));
+  dict["bwp"]        = Diagnostic::Ptr(new Hydrology_bwp(this));
+  dict["bwprel"]     = Diagnostic::Ptr(new Hydrology_bwprel(this));
+  dict["effbwp"]     = Diagnostic::Ptr(new Hydrology_effbwp(this));
+  dict["hydrobmelt"] = Diagnostic::Ptr(new Hydrology_hydrobmelt(this));
+  dict["hydroinput"] = Diagnostic::Ptr(new Hydrology_hydroinput(this));
+  dict["wallmelt"]   = Diagnostic::Ptr(new Hydrology_wallmelt(this));
 }
 
 

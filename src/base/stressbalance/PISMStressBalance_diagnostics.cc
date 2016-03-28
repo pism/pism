@@ -28,36 +28,36 @@
 namespace pism {
 namespace stressbalance {
 
-void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                        std::map<std::string, TSDiagnostic*> &ts_dict) {
+void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                        std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
 
-  dict["bfrict"]   = new PSB_bfrict(this);
+  dict["bfrict"]   = Diagnostic::Ptr(new PSB_bfrict(this));
 
-  dict["velbar_mag"]     = new PSB_velbar_mag(this);
-  dict["flux"]           = new PSB_flux(this);
-  dict["flux_mag"]       = new PSB_flux_mag(this);
-  dict["velbase_mag"]    = new PSB_velbase_mag(this);
-  dict["velsurf_mag"]    = new PSB_velsurf_mag(this);
+  dict["velbar_mag"]     = Diagnostic::Ptr(new PSB_velbar_mag(this));
+  dict["flux"]           = Diagnostic::Ptr(new PSB_flux(this));
+  dict["flux_mag"]       = Diagnostic::Ptr(new PSB_flux_mag(this));
+  dict["velbase_mag"]    = Diagnostic::Ptr(new PSB_velbase_mag(this));
+  dict["velsurf_mag"]    = Diagnostic::Ptr(new PSB_velsurf_mag(this));
 
-  dict["uvel"]     = new PSB_uvel(this);
-  dict["vvel"]     = new PSB_vvel(this);
+  dict["uvel"]     = Diagnostic::Ptr(new PSB_uvel(this));
+  dict["vvel"]     = Diagnostic::Ptr(new PSB_vvel(this));
 
-  dict["strainheat"] = new PSB_strainheat(this);
+  dict["strainheat"] = Diagnostic::Ptr(new PSB_strainheat(this));
 
-  dict["velbar"]   = new PSB_velbar(this);
-  dict["velbase"]  = new PSB_velbase(this);
-  dict["velsurf"]  = new PSB_velsurf(this);
+  dict["velbar"]   = Diagnostic::Ptr(new PSB_velbar(this));
+  dict["velbase"]  = Diagnostic::Ptr(new PSB_velbase(this));
+  dict["velsurf"]  = Diagnostic::Ptr(new PSB_velsurf(this));
 
-  dict["wvel"]     = new PSB_wvel(this);
-  dict["wvelbase"] = new PSB_wvelbase(this);
-  dict["wvelsurf"] = new PSB_wvelsurf(this);
-  dict["wvel_rel"] = new PSB_wvel_rel(this);
-  dict["strain_rates"] = new PSB_strain_rates(this);
-  dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this);
+  dict["wvel"]     = Diagnostic::Ptr(new PSB_wvel(this));
+  dict["wvelbase"] = Diagnostic::Ptr(new PSB_wvelbase(this));
+  dict["wvelsurf"] = Diagnostic::Ptr(new PSB_wvelsurf(this));
+  dict["wvel_rel"] = Diagnostic::Ptr(new PSB_wvel_rel(this));
+  dict["strain_rates"] = Diagnostic::Ptr(new PSB_strain_rates(this));
+  dict["deviatoric_stresses"] = Diagnostic::Ptr(new PSB_deviatoric_stresses(this));
 
-  dict["pressure"] = new PSB_pressure(this);
-  dict["tauxz"] = new PSB_tauxz(this);
-  dict["tauyz"] = new PSB_tauyz(this);
+  dict["pressure"] = Diagnostic::Ptr(new PSB_pressure(this));
+  dict["tauxz"] = Diagnostic::Ptr(new PSB_tauxz(this));
+  dict["tauyz"] = Diagnostic::Ptr(new PSB_tauyz(this));
 
   m_shallow_stress_balance->get_diagnostics(dict, ts_dict);
   m_modifier->get_diagnostics(dict, ts_dict);

@@ -91,7 +91,7 @@ void IceModel::init_timeseries() {
     m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
     m_ts_vars = vars;
   } else {
-    std::map<std::string,TSDiagnostic*>::iterator j = m_ts_diagnostics.begin();
+    std::map<std::string,TSDiagnostic::Ptr>::iterator j = m_ts_diagnostics.begin();
     while (j != m_ts_diagnostics.end()) {
       m_ts_vars.insert(j->first);
       ++j;
@@ -128,7 +128,7 @@ void IceModel::init_timeseries() {
 
 
   // set the output file:
-  std::map<std::string,TSDiagnostic*>::iterator j = m_ts_diagnostics.begin();
+  std::map<std::string,TSDiagnostic::Ptr>::iterator j = m_ts_diagnostics.begin();
   while (j != m_ts_diagnostics.end()) {
     (j->second)->init(ts_file);
     ++j;
@@ -173,9 +173,9 @@ void IceModel::write_timeseries() {
   }
 
   for (std::set<std::string>::iterator j = m_ts_vars.begin(); j != m_ts_vars.end(); ++j) {
-    TSDiagnostic *diag = m_ts_diagnostics[*j];
+    TSDiagnostic::Ptr diag = m_ts_diagnostics[*j];
 
-    if (diag != NULL) {
+    if (diag) {
       diag->update(m_time->current() - m_dt, m_time->current());
     }
   }
@@ -191,9 +191,9 @@ void IceModel::write_timeseries() {
     }
 
     for (std::set<std::string>::iterator j = m_ts_vars.begin(); j != m_ts_vars.end(); ++j) {
-      TSDiagnostic *diag = m_ts_diagnostics[*j];
+      TSDiagnostic::Ptr diag = m_ts_diagnostics[*j];
 
-      if (diag != NULL) {
+      if (diag) {
         diag->save(m_ts_times[m_current_ts - 1], m_ts_times[m_current_ts]);
       }
     }
@@ -379,9 +379,9 @@ void IceModel::write_extras() {
 
     std::set<std::string>::iterator j = m_extra_vars.begin();
     while(j != m_extra_vars.end()) {
-      Diagnostic *diag = m_diagnostics[*j];
+      Diagnostic::Ptr diag = m_diagnostics[*j];
 
-      if (diag != NULL) {
+      if (diag) {
         diag->update_cumulative();
       }
       ++j;
@@ -555,9 +555,9 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
 void IceModel::flush_timeseries() {
   // flush all the time-series buffers:
   for (std::set<std::string>::iterator j = m_ts_vars.begin(); j != m_ts_vars.end(); ++j) {
-    TSDiagnostic *diag = m_ts_diagnostics[*j];
+    TSDiagnostic::Ptr diag = m_ts_diagnostics[*j];
 
-    if (diag != NULL) {
+    if (diag) {
       diag->flush();
     }
   }

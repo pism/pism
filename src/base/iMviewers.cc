@@ -96,9 +96,9 @@ void IceModel::update_viewers() {
       this->view_field(m_grid->variables().get(*i));
     } else {
       // if not found, try to compute:
-      Diagnostic *diag = m_diagnostics[*i];
+      Diagnostic::Ptr diag = m_diagnostics[*i];
 
-      if (diag != NULL) {
+      if (diag) {
         this->view_field(diag->compute().get());
       }
     }

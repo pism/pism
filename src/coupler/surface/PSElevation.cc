@@ -191,8 +191,8 @@ void Elevation::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)
   delete input;
 }
 
-void Elevation::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
-                                  std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
+void Elevation::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &/*dict*/,
+                                  std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
   // empty
 }
 

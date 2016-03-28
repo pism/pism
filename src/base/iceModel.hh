@@ -45,6 +45,7 @@
 #include "base/util/Logger.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/IceModelVec2CellType.hh"
+#include "base/util/PISMDiagnostic.hh"
 
 namespace pism {
 
@@ -85,8 +86,6 @@ class BedDef;
 // forward declarations
 class IceGrid;
 class YieldStress;
-class Diagnostic;
-class TSDiagnostic;
 class IceModelVec2CellType;
 
 double part_grid_threshold_thickness(StarStencil<int> Mask,
@@ -465,8 +464,8 @@ public:
   stressbalance::StressBalance* get_stress_balance();
 protected:
 
-  std::map<std::string,Diagnostic*> m_diagnostics;
-  std::map<std::string,TSDiagnostic*> m_ts_diagnostics;
+  std::map<std::string,Diagnostic::Ptr> m_diagnostics;
+  std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
 
   // Set of variables to put in the output file:
   std::set<std::string> m_output_vars;

@@ -1801,11 +1801,11 @@ IceModelVec::Ptr SSAFD_nuH::compute_impl() {
   return result;
 }
 
-void SSAFD::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                            std::map<std::string, TSDiagnostic*> &ts_dict) {
+void SSAFD::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
   SSA::get_diagnostics_impl(dict, ts_dict);
 
-  dict["nuH"] = new SSAFD_nuH(this);
+  dict["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
 }
 
 } // end of namespace stressbalance

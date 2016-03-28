@@ -380,20 +380,14 @@ void SSA::write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
   }
 }
 
-void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                          std::map<std::string, TSDiagnostic*> &ts_dict) {
+void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
 
   ShallowStressBalance::get_diagnostics_impl(dict, ts_dict);
 
-  if (dict["taud"] != NULL) {
-    delete dict["taud"];
-  }
-  dict["taud"] = new SSA_taud(this);
-
-  if (dict["taud_mag"] != NULL) {
-    delete dict["taud_mag"];
-  }
-  dict["taud_mag"] = new SSA_taud_mag(this);
+  // replace these diagnostics
+  dict["taud"] = Diagnostic::Ptr(new SSA_taud(this));
+  dict["taud_mag"] = Diagnostic::Ptr(new SSA_taud_mag(this));
 }
 
 SSA_taud::SSA_taud(SSA *m)

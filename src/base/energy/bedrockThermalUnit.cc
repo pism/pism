@@ -225,9 +225,9 @@ void BedThermalUnit::write_variables_impl(const std::set<std::string> &vars, con
   }
 }
 
-void BedThermalUnit::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                          std::map<std::string, TSDiagnostic*> &ts_dict) {
-  dict["hfgeoubed"] = new BTU_geothermal_flux_at_ground_level(this);
+void BedThermalUnit::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+  dict["hfgeoubed"] = Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this));
   (void)ts_dict;
 }
 

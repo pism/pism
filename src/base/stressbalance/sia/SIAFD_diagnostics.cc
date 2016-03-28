@@ -23,15 +23,15 @@
 namespace pism {
 namespace stressbalance {
 
-void SIAFD::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["diffusivity"] = new SIAFD_diffusivity(this);
-  dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this);
-  dict["schoofs_theta"] = new SIAFD_schoofs_theta(this);
-  dict["thksmooth"] = new SIAFD_thksmooth(this);
-  dict["topgsmooth"] = new SIAFD_topgsmooth(this);
-  dict["h_x"] = new SIAFD_h_x(this);
-  dict["h_y"] = new SIAFD_h_y(this);
+void SIAFD::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                 std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
+  dict["diffusivity"]           = Diagnostic::Ptr(new SIAFD_diffusivity(this));
+  dict["diffusivity_staggered"] = Diagnostic::Ptr(new SIAFD_diffusivity_staggered(this));
+  dict["schoofs_theta"]         = Diagnostic::Ptr(new SIAFD_schoofs_theta(this));
+  dict["thksmooth"]             = Diagnostic::Ptr(new SIAFD_thksmooth(this));
+  dict["topgsmooth"]            = Diagnostic::Ptr(new SIAFD_topgsmooth(this));
+  dict["h_x"]                   = Diagnostic::Ptr(new SIAFD_h_x(this));
+  dict["h_y"]                   = Diagnostic::Ptr(new SIAFD_h_y(this));
 }
 
 SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m)
