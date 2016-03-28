@@ -167,7 +167,7 @@ macro(pism_find_prerequisites)
   if (Pism_USE_PARALLEL_HDF5)
     find_package (HDF5 COMPONENTS C HL)
   endif()
-  find_package (FFTW REQUIRED)    # NOT optional?
+  find_package (FFTW REQUIRED)    # NOT optional
   if (Pism_USE_PROJ4)
     find_package (PROJ4)
   endif()
