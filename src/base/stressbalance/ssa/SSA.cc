@@ -184,7 +184,9 @@ void SSA::init_impl() {
 }
 
 //! \brief Update the SSA solution.
-void SSA::update(bool fast, const IceModelVec2S &melange_back_pressure) {
+void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure) {
+
+  m_sea_level = sea_level;
   (void) melange_back_pressure;
 
   if (not fast) {

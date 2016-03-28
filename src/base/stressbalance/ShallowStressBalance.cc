@@ -106,12 +106,6 @@ void ShallowStressBalance::set_boundary_conditions(const IceModelVec2Int &locati
   m_bc_mask = &locations;
 }
 
-//! \brief Set the sea level used to check for floatation. (Units: meters,
-//! relative to the geoid.)
-void ShallowStressBalance::set_sea_level_elevation(double new_sea_level) {
-  m_sea_level = new_sea_level;
-}
-
 //! \brief Get the thickness-advective 2D velocity.
 const IceModelVec2V& ShallowStressBalance::velocity() {
   return m_velocity;
@@ -159,7 +153,8 @@ void ZeroSliding::write_variables_impl(const std::set<std::string> &/*vars*/, co
 
 
 //! \brief Update the trivial shallow stress balance object.
-void ZeroSliding::update(bool fast, const IceModelVec2S &melange_back_pressure) {
+void ZeroSliding::update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure) {
+  (void) sea_level;
   (void) melange_back_pressure;
 
   if (not fast) {
@@ -573,7 +568,9 @@ PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 
-void PrescribedSliding::update(bool fast, const IceModelVec2S &melange_back_pressure) {
+void PrescribedSliding::update(bool fast, double sea_level,
+                               const IceModelVec2S &melange_back_pressure) {
+  (void) sea_level;
   (void) melange_back_pressure;
   if (not fast) {
     m_basal_frictional_heating.set(0.0);

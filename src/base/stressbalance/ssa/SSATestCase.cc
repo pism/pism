@@ -142,10 +142,9 @@ SSATestCase::~SSATestCase()
 }
 
 //! Initialize the test case at the start of a run
-void SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
-{
+void SSATestCase::init(int Mx, int My, SSAFactory ssafactory) {
   // Subclass builds grid->
-  initializeGrid(Mx,My);
+  initializeGrid(Mx, My);
 
   // Subclass builds ice flow law, basal resistance, etc.
   initializeSSAModel();
@@ -164,10 +163,11 @@ void SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 //! Solve the SSA
 void SSATestCase::run() {
   // Solve (fast==true means "no update"):
-  m_ctx->log()->message(2,"* Solving the SSA stress balance ...\n");
+  m_ctx->log()->message(2, "* Solving the SSA stress balance ...\n");
 
   bool fast = false;
-  m_ssa->update(fast, m_melange_back_pressure);
+  double sea_level = 0.0;
+  m_ssa->update(fast, sea_level, m_melange_back_pressure);
 }
 
 //! Report on the generated solution
@@ -175,10 +175,20 @@ void SSATestCase::report(const std::string &testname) {
 
   m_ctx->log()->message(3, m_ssa->stdout_report());
 
-  double maxvecerr = 0.0, avvecerr = 0.0,
-    avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
-  double gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
-    gmaxuerr = 0.0, gmaxverr = 0.0;
+  double
+    maxvecerr  = 0.0,
+    avvecerr   = 0.0,
+    avuerr     = 0.0,
+    avverr     = 0.0,
+    maxuerr    = 0.0,
+    maxverr    = 0.0;
+  double
+    gmaxvecerr = 0.0,
+    gavvecerr  = 0.0,
+    gavuerr    = 0.0,
+    gavverr    = 0.0,
+    gmaxuerr   = 0.0,
+    gmaxverr   = 0.0;
 
   if (m_config->get_boolean("do_pseudo_plastic_till") &&
       m_config->get_double("pseudo_plastic_q") != 1.0) {
@@ -187,7 +197,6 @@ void SSATestCase::report(const std::string &testname) {
   }
   m_ctx->log()->message(1,
                         "NUMERICAL ERRORS in velocity relative to exact solution:\n");
-
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
 
@@ -219,37 +228,40 @@ void SSATestCase::report(const std::string &testname) {
   }
 
   unsigned int N = (m_grid->Mx()*m_grid->My());
+
   gexactvelmax = GlobalMax(m_grid->com, exactvelmax);
-  gmaxuerr = GlobalMax(m_grid->com, maxuerr);
-  gmaxverr = GlobalMax(m_grid->com, maxverr);
-  gavuerr = GlobalSum(m_grid->com, avuerr);
-  gavuerr = gavuerr / N;
-  gavverr = GlobalSum(m_grid->com, avverr);
-  gavverr = gavverr / N;
-  gmaxvecerr = GlobalMax(m_grid->com, maxvecerr);
-  gavvecerr = GlobalSum(m_grid->com, avvecerr);
-  gavvecerr = gavvecerr / N;
+  gmaxuerr     = GlobalMax(m_grid->com, maxuerr);
+  gmaxverr     = GlobalMax(m_grid->com, maxverr);
+  gavuerr      = GlobalSum(m_grid->com, avuerr);
+  gavuerr      = gavuerr / N;
+  gavverr      = GlobalSum(m_grid->com, avverr);
+  gavverr      = gavverr / N;
+  gmaxvecerr   = GlobalMax(m_grid->com, maxvecerr);
+  gavvecerr    = GlobalSum(m_grid->com, avvecerr);
+  gavvecerr    = gavvecerr / N;
+
+  using pism::units::convert;
 
   m_ctx->log()->message(1,
                         "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
   m_ctx->log()->message(1,
                         "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n",
-                        units::convert(m_sys, gmaxvecerr, "m second-1", "m year-1"),
+                        convert(m_sys, gmaxvecerr, "m second-1", "m year-1"),
                         (gavvecerr/gexactvelmax)*100.0,
-                        units::convert(m_sys, gmaxuerr, "m second-1", "m year-1"),
-                        units::convert(m_sys, gmaxverr, "m second-1", "m year-1"),
-                        units::convert(m_sys, gavuerr, "m second-1", "m year-1"),
-                        units::convert(m_sys, gavverr, "m second-1", "m year-1"));
+                        convert(m_sys, gmaxuerr, "m second-1", "m year-1"),
+                        convert(m_sys, gmaxverr, "m second-1", "m year-1"),
+                        convert(m_sys, gavuerr, "m second-1", "m year-1"),
+                        convert(m_sys, gavverr, "m second-1", "m year-1"));
 
   m_ctx->log()->message(1, "NUM ERRORS DONE\n");
 
   report_netcdf(testname,
-                units::convert(m_sys, gmaxvecerr, "m second-1", "m year-1"),
+                convert(m_sys, gmaxvecerr, "m second-1", "m year-1"),
                 (gavvecerr/gexactvelmax)*100.0,
-                units::convert(m_sys, gmaxuerr, "m second-1", "m year-1"),
-                units::convert(m_sys, gmaxverr, "m second-1", "m year-1"),
-                units::convert(m_sys, gavuerr, "m second-1", "m year-1"),
-                units::convert(m_sys, gavverr, "m second-1", "m year-1"));
+                convert(m_sys, gmaxuerr, "m second-1", "m year-1"),
+                convert(m_sys, gmaxverr, "m second-1", "m year-1"),
+                convert(m_sys, gavuerr, "m second-1", "m year-1"),
+                convert(m_sys, gavverr, "m second-1", "m year-1"));
 }
 
 void SSATestCase::report_netcdf(const std::string &testname,

@@ -81,14 +81,11 @@ void StressBalance::set_basal_melt_rate(const IceModelVec2S &bmr_input) {
 void StressBalance::update(bool fast, double sea_level,
                            const IceModelVec2S &melange_back_pressure) {
 
-  // Tell the ShallowStressBalance object about the current sea level:
-  m_shallow_stress_balance->set_sea_level_elevation(sea_level);
-
   const Profiling &profiling = m_grid->ctx()->profiling();
 
   try {
     profiling.begin("SSB");
-    m_shallow_stress_balance->update(fast, melange_back_pressure);
+    m_shallow_stress_balance->update(fast, sea_level, melange_back_pressure);
     profiling.end("SSB");
 
     profiling.begin("SB modifier");

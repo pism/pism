@@ -37,7 +37,7 @@ public:
   SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~SSAFD();
 
-  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
 
 protected:
   virtual void init_impl();

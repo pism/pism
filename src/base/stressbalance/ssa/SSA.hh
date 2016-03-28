@@ -114,7 +114,7 @@ public:
 
   SSAStrengthExtension *strength_extension;
 
-  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
 
   void set_initial_guess(const IceModelVec2V &guess);
 
