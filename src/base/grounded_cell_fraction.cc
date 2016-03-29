@@ -125,15 +125,15 @@ static inline double gl_position(double mu,
    FIXME: sometimes alpha<0 (slightly below flotation) even though the
    mask says grounded
 
-   @param ice_density ice density, kg/m3
-   @param ocean_density ocean (sea water) density, kg/m3
-   @param sea_level sea level elevation, m
-   @param ice_thickness ice thickness (a 2D field)
-   @param bed_topography bed topography (a 2D field)
-   @param mask cell type mask (a 2D field)
-   @param result resulting grounded fraction
-   @param result_x grounding line position in the x direction (1D parameterization, for debugging)
-   @param result_y grounding line position in the y direction (1D parameterization, for debugging) 
+   @param[in] ice_density ice density, kg/m3
+   @param[in] ocean_density ocean (sea water) density, kg/m3
+   @param[in] sea_level sea level elevation, m
+   @param[in] ice_thickness ice thickness (a 2D field)
+   @param[in] bed_topography bed topography (a 2D field)
+   @param[in] mask cell type mask (a 2D field)
+   @param[out] result resulting grounded fraction
+   @param[out] result_x grounding line position in the x direction (1D parameterization, for debugging)
+   @param[out] result_y grounding line position in the y direction (1D parameterization, for debugging)
  */
 void compute_grounded_cell_fraction(double ice_density,
                              double ocean_density,
