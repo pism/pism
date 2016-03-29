@@ -81,8 +81,14 @@ public:
     m_icefree_thickness = threshold;
   }
 
-  void compute(double sea_level, IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
+  void compute(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
                IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
+
+  void compute_mask(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
+                    IceModelVec2Int &result) const;
+
+  void compute_surface(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
+                       IceModelVec2S &result) const;
 
   inline void compute(double sea_level, double bed, double thickness,
                       int *out_mask, double *out_surface) const {

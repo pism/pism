@@ -366,14 +366,6 @@ protected:
 
   // see iMgeometry.cc
   virtual void updateSurfaceElevationAndMask();
-  virtual void update_mask(const IceModelVec2S &bed,
-                           const IceModelVec2S &ice_thickness,
-                           double icefree_thickness_threshold,
-                           IceModelVec2CellType &mask);
-  virtual void update_surface_elevation(const IceModelVec2S &bed,
-                                        const IceModelVec2S &ice_thickness,
-                                        double icefree_thickness_threshold,
-                                        IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      StarStencil<Vector2> input_velocity,
@@ -449,8 +441,8 @@ protected:
   virtual void stampHistoryEnd();
   virtual void stampHistory(const std::string &);
   virtual void update_run_stats();
-  virtual void check_maximum_thickness();
-  virtual void check_maximum_thickness_hook(const int old_Mz);
+  virtual void check_minimum_ice_thickness() const;
+  virtual void check_maximum_ice_thickness() const;
 
 protected:
   // working space (a convenience)

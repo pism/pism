@@ -190,26 +190,49 @@ void  IceModel::stampHistory(const std::string &str) {
 
 }
 
+void IceModel::check_minimum_ice_thickness() const {
+
+  IceModelVec::AccessList list(m_ice_thickness);
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_ice_thickness(i, j) < 0.0) {
+        throw RuntimeError::formatted("Thickness is negative at point i=%d, j=%d", i, j);
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
 //! Check if the thickness of the ice is too large and extend the grid if necessary.
 /*!
   Extends the grid such that the new one has 2 (two) levels above the ice.
  */
-void IceModel::check_maximum_thickness() {
-Range thk_range = m_ice_thickness.range();
-  if (m_grid->Lz() >= thk_range.max) {
-    return;
+void IceModel::check_maximum_ice_thickness() const {
+  const double Lz = m_grid->Lz();
+
+  IceModelVec::AccessList list(m_ice_thickness);
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_ice_thickness(i, j) > Lz) {
+        throw RuntimeError::formatted("Ice thickness (%7.4f m) exceeds the height"
+                                      " of the computational box (%7.4f m) at i=%d, j=%d.",
+                                      m_ice_thickness(i, j), Lz, i, j);
+      }
+    }
+  } catch (...) {
+    loop.failed();
   }
-
-  throw RuntimeError::formatted("Max ice thickness (%7.4f m) exceeds the height"
-                                " of the computational box (%7.4f m).",
-                                thk_range.max, m_grid->Lz());
-}
-
-
-//! Allows derived classes to extend their own IceModelVec3's in vertical.
-/*! Base class version does absolutely nothing. */
-void IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
-  // empty
+  loop.check();
 }
 
 //! Return the grid used by this model.

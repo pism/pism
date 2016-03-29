@@ -59,109 +59,25 @@ using namespace mask;
 void IceModel::updateSurfaceElevationAndMask() {
   const double thickness_threshold = m_config->get_double("mask_icefree_thickness_standard");
 
+  assert(m_ocean != NULL);
+  const double sea_level = m_ocean->sea_level_elevation();
+
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
-  update_mask(bed_topography, m_ice_thickness, thickness_threshold,
-              m_cell_type);
-  update_surface_elevation(bed_topography, m_ice_thickness, thickness_threshold,
-                           m_ice_surface_elevation);
+  GeometryCalculator gc(*m_config);
+  gc.set_icefree_thickness(thickness_threshold);
+
+  gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
+  gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
 
   if (m_config->get_boolean("kill_icebergs") && iceberg_remover != NULL) {
     iceberg_remover->update(m_cell_type, m_ice_thickness);
     // the call above modifies ice thickness and updates the mask
     // accordingly
-    update_surface_elevation(bed_topography, m_ice_thickness, thickness_threshold,
-                             m_ice_surface_elevation);
+    gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
   }
-}
 
-/**
- * Update ice cover mask using the floatation criterion, sea level
- * elevation, ice thickness, and bed topography.
- *
- * @param[in]  bed bedrock surface elevation
- * @param[in]  thickness ice thicnness
- * @param[in] icefree_thickness_threshold ice thickness threshold, meters (cells with less than this
- *                                        many meters of ice are considered ice-free)
- * @param[out] result cell type mask
- *
- * @return 0 on success.
- */
-void IceModel::update_mask(const IceModelVec2S &bed,
-                           const IceModelVec2S &thickness,
-                           double icefree_thickness_threshold,
-                           IceModelVec2CellType &result) {
-
-  assert(m_ocean != NULL);
-  double sea_level = m_ocean->sea_level_elevation();
-
-  GeometryCalculator gc(*m_config);
-
-  gc.set_icefree_thickness(icefree_thickness_threshold);
-
-  IceModelVec::AccessList list(result);
-  list.add(bed);
-  list.add(thickness);
-
-  unsigned int GHOSTS = result.get_stencil_width();
-  assert(bed.get_stencil_width() >= result.get_stencil_width());
-  assert(thickness.get_stencil_width() >= result.get_stencil_width());
-
-  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    result(i, j) = gc.mask(sea_level, bed(i, j), thickness(i, j));
-  }
-}
-
-/**
- * Update ice surface elevation using the floatation criterion, sea
- * level elevation, ice thickness, and bed topography.
- *
- * Uses ghosts of `bed_topography`, `ice_thickness`. Updates ghosts of
- * the `result`.
- *
- * @param[in] bed bedrock surface elevation
- * @param[in] thickness ice thickness
- * @param[in] icefree_thickness_threshold ice thickness threshold, meters
- * @param[out] result computed surface elevation
- *
- */
-void IceModel::update_surface_elevation(const IceModelVec2S &bed,
-                                        const IceModelVec2S &thickness,
-                                        double thickness_threshold,
-                                        IceModelVec2S &result) {
-  assert(m_ocean != NULL);
-  double sea_level = m_ocean->sea_level_elevation();
-
-  GeometryCalculator gc(*m_config);
-
-  gc.set_icefree_thickness(thickness_threshold);
-
-  IceModelVec::AccessList list(result);
-  list.add(bed);
-  list.add(thickness);
-
-  unsigned int GHOSTS = result.get_stencil_width();
-
-  assert(bed.get_stencil_width() >= result.get_stencil_width());
-  assert(thickness.get_stencil_width() >= result.get_stencil_width());
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      // take this opportunity to check that thickness(i, j) >= 0
-      if (thickness(i, j) < 0) {
-        throw RuntimeError::formatted("Thickness negative at point i=%d, j=%d", i, j);
-      }
-      result(i, j) = gc.surface(sea_level, bed(i, j), thickness(i, j));
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
+  check_minimum_ice_thickness();
 }
 
 //! \brief Adjust ice flow through interfaces of the cell i,j.
@@ -831,9 +747,8 @@ void IceModel::massContExplicitStep() {
     residual_redistribution(H_residual);
   }
 
-  // Check if the ice thickness exceeded the height of the computational box
-  // and extend the grid if necessary:
-  check_maximum_thickness();
+  // Check if the ice thickness exceeded the height of the computational box and stop if it did.
+  check_maximum_ice_thickness();
 }
 
 /**
