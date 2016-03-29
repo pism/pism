@@ -30,8 +30,6 @@ class FlowLaw;
 
 class IceGrid;
 class IceBasalResistancePlasticLaw;
-class Diagnostic;
-class TSDiagnostic;
 class IceModelVec2CellType;
 
 namespace stressbalance {

@@ -46,6 +46,8 @@ Elevation::Elevation(IceGrid::ConstPtr g)
 void Elevation::init_impl() {
   bool m_limits_set = false;
 
+  using units::convert;
+
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
@@ -56,8 +58,8 @@ void Elevation::init_impl() {
     // ice surface temperature
     {
       // set defaults:
-      m_T_min   = units::convert(m_sys, -5.0, "Celsius", "Kelvin");
-      m_T_max   = units::convert(m_sys, 0.0, "Celsius", "Kelvin");
+      m_T_min   = convert(m_sys, -5.0, "Celsius", "Kelvin");
+      m_T_max   = convert(m_sys, 0.0, "Celsius", "Kelvin");
       m_z_T_min = 1325.0;
       m_z_T_max = 1350.0;
 
@@ -67,8 +69,8 @@ void Elevation::init_impl() {
           throw RuntimeError("option -ice_surface_temp requires an argument"
                              " (comma-separated list of 4 numbers)");
         }
-        m_T_min   = units::convert(m_sys, IST[0], "Celsius", "Kelvin");
-        m_T_max   = units::convert(m_sys, IST[1], "Celsius", "Kelvin");
+        m_T_min   = convert(m_sys, IST[0], "Celsius", "Kelvin");
+        m_T_max   = convert(m_sys, IST[1], "Celsius", "Kelvin");
         m_z_T_min = IST[2];
         m_z_T_max = IST[3];
       }
@@ -77,8 +79,8 @@ void Elevation::init_impl() {
     // climatic mass balance
     {
       // set defaults:
-      m_M_min   = units::convert(m_sys, -3.0, "m year-1", "m s-1");
-      m_M_max   = units::convert(m_sys, 4.0, "m year-1", "m s-1");
+      m_M_min   = convert(m_sys, -3.0, "m year-1", "m s-1");
+      m_M_max   = convert(m_sys, 4.0, "m year-1", "m s-1");
       m_z_M_min = 1100.0;
       m_z_ELA   = 1450.0;
       m_z_M_max = 1700.0;
@@ -90,8 +92,8 @@ void Elevation::init_impl() {
           throw RuntimeError("-climatic_mass_balance requires an argument"
                              " (comma-separated list of 5 numbers)");
         }
-        m_M_min   = units::convert(m_sys, CMB[0], "m year-1", "m s-1");
-        m_M_max   = units::convert(m_sys, CMB[1], "m year-1", "m s-1");
+        m_M_min   = convert(m_sys, CMB[0], "m year-1", "m s-1");
+        m_M_max   = convert(m_sys, CMB[1], "m year-1", "m s-1");
         m_z_M_min = CMB[2];
         m_z_ELA   = CMB[3];
         m_z_M_max = CMB[4];
@@ -108,8 +110,8 @@ void Elevation::init_impl() {
           throw RuntimeError("-climatic_mass_balance_limits requires an argument"
                              " (a comma-separated list of 2 numbers)");
         }
-        m_M_limit_min = units::convert(m_sys, m_limits[0], "m year-1", "m s-1");
-        m_M_limit_max = units::convert(m_sys, m_limits[1], "m year-1", "m s-1");
+        m_M_limit_min = convert(m_sys, m_limits[0], "m year-1", "m s-1");
+        m_M_limit_max = convert(m_sys, m_limits[1], "m year-1", "m s-1");
       } else {
         m_M_limit_min = m_M_min;
         m_M_limit_max = m_M_max;
@@ -126,11 +128,11 @@ void Elevation::init_impl() {
              "     mass balance above %.0f m a.s.l. = %.2f m year-1\n"
              "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
              m_z_T_min, m_T_min, m_z_T_max, m_T_max, m_z_M_min,
-             units::convert(m_sys, m_M_limit_min, "m s-1", "m year-1"),
+             convert(m_sys, m_M_limit_min, "m s-1", "m year-1"),
              m_z_M_min, m_M_min, m_z_M_max,
-             units::convert(m_sys, m_M_max, "m s-1", "m year-1"),
+             convert(m_sys, m_M_max, "m s-1", "m year-1"),
              m_z_M_max,
-             units::convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_ELA);
+             convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_ELA);
 
   // SpatialVariableMetadatas storing temperature and surface mass balance metadata
 
@@ -175,10 +177,10 @@ void Elevation::init_impl() {
              "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
              "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
              "                   \\ %5.2f m year-1                       for %3.f m < usurf\n",
-             units::convert(m_sys, m_M_limit_min, "m s-1", "m year-1"), m_z_M_min,
-             units::convert(m_sys, -m_M_min, "m s-1", "m year-1")/(m_z_ELA - m_z_M_min), m_z_ELA, m_z_M_min, m_z_ELA,
-             units::convert(m_sys, m_M_max, "m s-1", "m year-1")/(m_z_M_max - m_z_ELA), m_z_ELA, m_z_ELA, m_z_M_max,
-             units::convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_M_max);
+             convert(m_sys, m_M_limit_min, "m s-1", "m year-1"), m_z_M_min,
+             convert(m_sys, -m_M_min, "m s-1", "m year-1")/(m_z_ELA - m_z_M_min), m_z_ELA, m_z_M_min, m_z_ELA,
+             convert(m_sys, m_M_max, "m s-1", "m year-1")/(m_z_M_max - m_z_ELA), m_z_ELA, m_z_ELA, m_z_M_max,
+             convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_M_max);
 }
 
 MaxTimestep Elevation::max_timestep_impl(double t) {

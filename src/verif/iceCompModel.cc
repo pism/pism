@@ -53,6 +53,8 @@ namespace pism {
 
 const double IceCompModel::secpera = 3.15569259747e7;
 
+using units::convert;
+
 IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   : IceModel(g, context) {
 
@@ -552,10 +554,10 @@ void IceCompModel::fillSolnTestL() {
 
 
 void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
-                                                   double &gdomeHexact, double &volerr,
-                                                   double &areaerr, double &gmaxHerr,
-                                                   double &gavHerr, double &gmaxetaerr,
-                                                   double &centerHerr) {
+                                         double &gdomeHexact, double &volerr,
+                                         double &areaerr, double &gmaxHerr,
+                                         double &gavHerr, double &gmaxetaerr,
+                                         double &centerHerr) {
   // compute errors in thickness, eta=thickness^{(2n+2)/n}, volume, area
 
   const double time = m_time->current();
@@ -646,7 +648,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         {
           double
             H0 = 600.0,
-            v0 = units::convert(m_sys, 300.0, "m year-1", "m second-1"),
+            v0 = convert(m_sys, 300.0, "m year-1", "m second-1"),
             Q0 = H0 * v0,
             B0 = m_stress_balance->get_stressbalance()->flow_law()->hardness(0, 0),
             C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
@@ -979,10 +981,10 @@ void IceCompModel::reportErrors() {
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
     m_log->message(1,
                "           %12.6f%12.6f%12.6f%12.6f\n",
-               units::convert(m_sys, maxUerr, "m second-1", "m year-1"),
-               units::convert(m_sys, avUerr, "m second-1", "m year-1"),
-               units::convert(m_sys, maxWerr, "m second-1", "m year-1"),
-               units::convert(m_sys, avWerr, "m second-1", "m year-1"));
+               convert(m_sys, maxUerr, "m second-1", "m year-1"),
+               convert(m_sys, avUerr, "m second-1", "m year-1"),
+               convert(m_sys, maxWerr, "m second-1", "m year-1"),
+               convert(m_sys, avWerr, "m second-1", "m year-1"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1014,13 +1016,13 @@ void IceCompModel::reportErrors() {
       m_log->message(1,
                  "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
                  "  are different: maxbmelterr = %f, minbmelterr = %f\n",
-                 units::convert(m_sys, maxbmelterr, "m second-1", "m year-1"),
-                 units::convert(m_sys, minbmelterr, "m second-1", "m year-1"));
+                 convert(m_sys, maxbmelterr, "m second-1", "m year-1"),
+                 convert(m_sys, minbmelterr, "m second-1", "m year-1"));
     }
     m_log->message(1,
                "basal melt:  max\n");
     m_log->message(1, "           %11.5f\n",
-               units::convert(m_sys, maxbmelterr, "m second-1", "m year-1"));
+               convert(m_sys, maxbmelterr, "m second-1", "m year-1"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
@@ -1077,7 +1079,7 @@ void IceCompModel::test_V_init() {
   }
 
   // set SSA boundary conditions:
-  double upstream_velocity = units::convert(m_sys, 300.0, "m year-1", "m second-1"),
+  double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"),
     upstream_thk = 600.0;
 
   IceModelVec::AccessList list;

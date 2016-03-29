@@ -23,9 +23,6 @@
 
 namespace pism {
 
-class Diagnostic;
-class TSDiagnostic;
-
 namespace stressbalance {
 
 //! Gives an extension coefficient to maintain ellipticity of SSA where ice is thin.

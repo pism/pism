@@ -23,9 +23,6 @@
 
 namespace pism {
 
-class Diagnostic;
-class TSDiagnostic;
-
 namespace stressbalance {
 
 class BedSmoother;

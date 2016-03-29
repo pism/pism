@@ -23,7 +23,7 @@
 #include "base/util/iceModelVec.hh"
 
 namespace pism {
-class Diagnostic;
+
 class IceModelVec2CellType;
 
 //! Stress balance models and related diagnostics.

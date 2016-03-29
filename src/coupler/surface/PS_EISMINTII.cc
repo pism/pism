@@ -39,17 +39,19 @@ EISMINTII::~EISMINTII() {
 
 void EISMINTII::init_impl() {
 
+  using units::convert;
+
   m_log->message(2,
              "setting parameters for surface mass balance"
              " and temperature in EISMINT II experiment %c ... \n",
              m_experiment);
 
   // EISMINT II specified values for parameters
-  m_S_b = units::convert(m_sys, 1.0e-2 * 1e-3, "year-1", "second-1"); // Grad of accum rate change
+  m_S_b = convert(m_sys, 1.0e-2 * 1e-3, "year-1", "second-1"); // Grad of accum rate change
   m_S_T = 1.67e-2 * 1e-3;       // K/m  Temp gradient
 
   // these are for A,E,G,H,I,K:
-  m_M_max = units::convert(m_sys, 0.5, "m year-1", "m second-1"); // Max accumulation
+  m_M_max = convert(m_sys, 0.5, "m year-1", "m second-1"); // Max accumulation
   m_R_el  = 450.0e3;            // Distance to equil line (SMB=0)
   m_T_min = 238.15;
 
@@ -61,7 +63,7 @@ void EISMINTII::init_impl() {
   case 'J':
   case 'L':                     // supposed to start from end of experiment A (for C;
     //   resp I and K for J and L) and:
-    m_M_max = units::convert(m_sys, 0.25, "m year-1", "m second-1");
+    m_M_max = convert(m_sys, 0.25, "m year-1", "m second-1");
     m_R_el  = 425.0e3;
     break;
   case 'D':                     // supposed to start from end of experiment A and:
@@ -76,27 +78,27 @@ void EISMINTII::init_impl() {
   m_T_min = options::Real("-Tmin", "T min, Kelvin", m_T_min);
 
   options::Real Mmax("-Mmax", "Maximum accumulation, m year-1",
-                     units::convert(m_sys, m_M_max, "m second-1", "m year-1"));
+                     convert(m_sys, m_M_max, "m second-1", "m year-1"));
   if (Mmax.is_set()) {
-    m_M_max = units::convert(m_sys, Mmax, "m year-1", "m second-1");
+    m_M_max = convert(m_sys, Mmax, "m year-1", "m second-1");
   }
 
   options::Real Sb("-Sb", "radial gradient of accumulation rate, (m year-1)/km",
-                   units::convert(m_sys, m_S_b,   "m second-1/m", "m year-1/km"));
+                   convert(m_sys, m_S_b,   "m second-1/m", "m year-1/km"));
   if (Sb.is_set()) {
-    m_S_b = units::convert(m_sys, Sb, "m year-1/km", "m second-1/m");
+    m_S_b = convert(m_sys, Sb, "m year-1/km", "m second-1/m");
   }
 
   options::Real ST("-ST", "radial gradient of surface temperature, K/km",
-                   units::convert(m_sys, m_S_T, "K/m", "K/km"));
+                   convert(m_sys, m_S_T, "K/m", "K/km"));
   if (ST.is_set()) {
-    m_S_T = units::convert(m_sys, ST, "K/km", "K/m");
+    m_S_T = convert(m_sys, ST, "K/km", "K/m");
   }
 
   options::Real Rel("-Rel", "radial distance to equilibrium line, km",
-                    units::convert(m_sys, m_R_el, "m", "km"));
+                    convert(m_sys, m_R_el, "m", "km"));
   if (Rel.is_set()) {
-    m_R_el = units::convert(m_sys, Rel, "km", "m");
+    m_R_el = convert(m_sys, Rel, "km", "m");
   }
 
   initialize_using_formulas();
