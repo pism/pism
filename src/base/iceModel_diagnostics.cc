@@ -108,38 +108,38 @@ void IceModel::init_diagnostics() {
 #error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif
 
-  m_ts_diagnostics["ivol"]          = TSDiagnostic::Ptr(new IceModel_ivol(this));
-  m_ts_diagnostics["slvol"]         = TSDiagnostic::Ptr(new IceModel_slvol(this));
-  m_ts_diagnostics["divoldt"]       = TSDiagnostic::Ptr(new IceModel_divoldt(this));
-  m_ts_diagnostics["iarea"]         = TSDiagnostic::Ptr(new IceModel_iarea(this));
-  m_ts_diagnostics["imass"]         = TSDiagnostic::Ptr(new IceModel_imass(this));
-  m_ts_diagnostics["dimassdt"]      = TSDiagnostic::Ptr(new IceModel_dimassdt(this));
-  m_ts_diagnostics["ivoltemp"]      = TSDiagnostic::Ptr(new IceModel_ivoltemp(this));
-  m_ts_diagnostics["ivolcold"]      = TSDiagnostic::Ptr(new IceModel_ivolcold(this));
-  m_ts_diagnostics["ivolg"]         = TSDiagnostic::Ptr(new IceModel_ivolg(this));
-  m_ts_diagnostics["ivolf"]         = TSDiagnostic::Ptr(new IceModel_ivolf(this));
-  m_ts_diagnostics["iareatemp"]     = TSDiagnostic::Ptr(new IceModel_iareatemp(this));
-  m_ts_diagnostics["iareacold"]     = TSDiagnostic::Ptr(new IceModel_iareacold(this));
-  m_ts_diagnostics["iareag"]        = TSDiagnostic::Ptr(new IceModel_iareag(this));
-  m_ts_diagnostics["iareaf"]        = TSDiagnostic::Ptr(new IceModel_iareaf(this));
-  m_ts_diagnostics["dt"]            = TSDiagnostic::Ptr(new IceModel_dt(this));
+  m_ts_diagnostics["ivol"]            = TSDiagnostic::Ptr(new IceModel_ivol(this));
+  m_ts_diagnostics["slvol"]           = TSDiagnostic::Ptr(new IceModel_slvol(this));
+  m_ts_diagnostics["divoldt"]         = TSDiagnostic::Ptr(new IceModel_divoldt(this));
+  m_ts_diagnostics["iarea"]           = TSDiagnostic::Ptr(new IceModel_iarea(this));
+  m_ts_diagnostics["imass"]           = TSDiagnostic::Ptr(new IceModel_imass(this));
+  m_ts_diagnostics["dimassdt"]        = TSDiagnostic::Ptr(new IceModel_dimassdt(this));
+  m_ts_diagnostics["ivoltemp"]        = TSDiagnostic::Ptr(new IceModel_ivoltemp(this));
+  m_ts_diagnostics["ivolcold"]        = TSDiagnostic::Ptr(new IceModel_ivolcold(this));
+  m_ts_diagnostics["ivolg"]           = TSDiagnostic::Ptr(new IceModel_ivolg(this));
+  m_ts_diagnostics["ivolf"]           = TSDiagnostic::Ptr(new IceModel_ivolf(this));
+  m_ts_diagnostics["iareatemp"]       = TSDiagnostic::Ptr(new IceModel_iareatemp(this));
+  m_ts_diagnostics["iareacold"]       = TSDiagnostic::Ptr(new IceModel_iareacold(this));
+  m_ts_diagnostics["iareag"]          = TSDiagnostic::Ptr(new IceModel_iareag(this));
+  m_ts_diagnostics["iareaf"]          = TSDiagnostic::Ptr(new IceModel_iareaf(this));
+  m_ts_diagnostics["dt"]              = TSDiagnostic::Ptr(new IceModel_dt(this));
   m_ts_diagnostics["max_diffusivity"] = TSDiagnostic::Ptr(new IceModel_max_diffusivity(this));
-  m_ts_diagnostics["ienthalpy"]     = TSDiagnostic::Ptr(new IceModel_ienthalpy(this));
-  m_ts_diagnostics["max_hor_vel"]   = TSDiagnostic::Ptr(new IceModel_max_hor_vel(this));
+  m_ts_diagnostics["ienthalpy"]       = TSDiagnostic::Ptr(new IceModel_ienthalpy(this));
+  m_ts_diagnostics["max_hor_vel"]     = TSDiagnostic::Ptr(new IceModel_max_hor_vel(this));
 
-  m_ts_diagnostics["surface_ice_flux"]   = TSDiagnostic::Ptr(new IceModel_surface_flux(this));
-  m_ts_diagnostics["surface_ice_flux_cumulative"]   = TSDiagnostic::Ptr(new IceModel_surface_flux_cumulative(this));
-  m_ts_diagnostics["grounded_basal_ice_flux"]     = TSDiagnostic::Ptr(new IceModel_grounded_basal_flux(this));
-  m_ts_diagnostics["grounded_basal_ice_flux_cumulative"]     = TSDiagnostic::Ptr(new IceModel_grounded_basal_flux_cumulative(this));
-  m_ts_diagnostics["sub_shelf_ice_flux"] = TSDiagnostic::Ptr(new IceModel_sub_shelf_flux(this));
-  m_ts_diagnostics["sub_shelf_ice_flux_cumulative"] = TSDiagnostic::Ptr(new IceModel_sub_shelf_flux_cumulative(this));
-  m_ts_diagnostics["nonneg_rule_flux"]   = TSDiagnostic::Ptr(new IceModel_nonneg_flux(this));
-  m_ts_diagnostics["nonneg_rule_flux_cumulative"]   = TSDiagnostic::Ptr(new IceModel_nonneg_flux_cumulative(this));
-  m_ts_diagnostics["discharge_flux"]    = TSDiagnostic::Ptr(new IceModel_discharge_flux(this));
-  m_ts_diagnostics["discharge_flux_cumulative"]    = TSDiagnostic::Ptr(new IceModel_discharge_flux_cumulative(this));
-  m_ts_diagnostics["H_to_Href_flux"] = TSDiagnostic::Ptr(new IceModel_H_to_Href_flux(this));
-  m_ts_diagnostics["Href_to_H_flux"] = TSDiagnostic::Ptr(new IceModel_Href_to_H_flux(this));
-  m_ts_diagnostics["sum_divQ_flux"]  = TSDiagnostic::Ptr(new IceModel_sum_divQ_flux(this));
+  m_ts_diagnostics["surface_ice_flux"]                   = TSDiagnostic::Ptr(new IceModel_surface_flux(this));
+  m_ts_diagnostics["surface_ice_flux_cumulative"]        = TSDiagnostic::Ptr(new IceModel_surface_flux_cumulative(this));
+  m_ts_diagnostics["grounded_basal_ice_flux"]            = TSDiagnostic::Ptr(new IceModel_grounded_basal_flux(this));
+  m_ts_diagnostics["grounded_basal_ice_flux_cumulative"] = TSDiagnostic::Ptr(new IceModel_grounded_basal_flux_cumulative(this));
+  m_ts_diagnostics["sub_shelf_ice_flux"]                 = TSDiagnostic::Ptr(new IceModel_sub_shelf_flux(this));
+  m_ts_diagnostics["sub_shelf_ice_flux_cumulative"]      = TSDiagnostic::Ptr(new IceModel_sub_shelf_flux_cumulative(this));
+  m_ts_diagnostics["nonneg_rule_flux"]                   = TSDiagnostic::Ptr(new IceModel_nonneg_flux(this));
+  m_ts_diagnostics["nonneg_rule_flux_cumulative"]        = TSDiagnostic::Ptr(new IceModel_nonneg_flux_cumulative(this));
+  m_ts_diagnostics["discharge_flux"]                     = TSDiagnostic::Ptr(new IceModel_discharge_flux(this));
+  m_ts_diagnostics["discharge_flux_cumulative"]          = TSDiagnostic::Ptr(new IceModel_discharge_flux_cumulative(this));
+  m_ts_diagnostics["H_to_Href_flux"]                     = TSDiagnostic::Ptr(new IceModel_H_to_Href_flux(this));
+  m_ts_diagnostics["Href_to_H_flux"]                     = TSDiagnostic::Ptr(new IceModel_Href_to_H_flux(this));
+  m_ts_diagnostics["sum_divQ_flux"]                      = TSDiagnostic::Ptr(new IceModel_sum_divQ_flux(this));
 
   // Get diagnostics supported by the stress balance object:
   if (m_stress_balance != NULL) {
@@ -175,10 +175,8 @@ void IceModel::init_diagnostics() {
 }
 
 void IceModel::list_diagnostics() {
-  PetscErrorCode ierr;
 
-  ierr = PetscPrintf(m_grid->com, "\n");
-  PISM_CHK(ierr, "PetscPrintf");
+  m_log->message(1, "\n");
 
   // quantities with dedicated storage
   {
@@ -221,10 +219,9 @@ void IceModel::list_diagnostics() {
 
     for (unsigned int d = 3; d > 1; --d) {
 
-      ierr = PetscPrintf(m_grid->com,
-                         "======== Available %dD quantities with dedicated storage ========\n",
-                         d);
-      PISM_CHK(ierr, "PetscPrintf");
+      m_log->message(1,
+                     "======== Available %dD quantities with dedicated storage ========\n",
+                     d);
 
       std::set<std::string>::iterator j;
       for (j = list.begin(); j != list.end(); ++j) {
@@ -247,10 +244,9 @@ void IceModel::list_diagnostics() {
             units = glaciological_units;
           }
 
-          ierr = PetscPrintf(m_grid->com,
-                             "   Name: %s [%s]\n"
-                             "       - %s\n\n", name.c_str(), units.c_str(), long_name.c_str());
-          PISM_CHK(ierr, "PetscPrintf");
+          m_log->message(1,
+                         "   Name: %s [%s]\n"
+                         "       - %s\n\n", name.c_str(), units.c_str(), long_name.c_str());
         }
       }
     }
@@ -260,10 +256,9 @@ void IceModel::list_diagnostics() {
   // 2D and 3D diagnostics
   for (unsigned int d = 3; d > 1; --d) {
 
-    ierr = PetscPrintf(m_grid->com,
-                       "======== Available %dD diagnostic quantities ========\n",
-                       d);
-    PISM_CHK(ierr, "PetscPrintf");
+    m_log->message(1,
+                   "======== Available %dD diagnostic quantities ========\n",
+                   d);
 
     std::map<std::string, Diagnostic::Ptr>::iterator j = m_diagnostics.begin();
     while (j != m_diagnostics.end()) {
@@ -280,20 +275,17 @@ void IceModel::list_diagnostics() {
 
       if (diag->get_metadata().get_n_spatial_dimensions() == d) {
 
-        ierr = PetscPrintf(m_grid->com, "   Name: %s [%s]\n", name.c_str(), units.c_str());
-        PISM_CHK(ierr, "PetscPrintf");
+        m_log->message(1, "   Name: %s [%s]\n", name.c_str(), units.c_str());
 
         for (int k = 0; k < diag->get_nvars(); ++k) {
           SpatialVariableMetadata var = diag->get_metadata(k);
 
           std::string long_name = var.get_string("long_name");
 
-          ierr = PetscPrintf(m_grid->com, "      -  %s\n", long_name.c_str());
-          PISM_CHK(ierr, "PetscPrintf");
+          m_log->message(1, "      -  %s\n", long_name.c_str());
         }
 
-        ierr = PetscPrintf(m_grid->com, "\n");
-        PISM_CHK(ierr, "PetscPrintf");
+        m_log->message(1, "\n");
       }
 
       ++j;
@@ -301,8 +293,7 @@ void IceModel::list_diagnostics() {
   }
 
   // scalar time-series
-  ierr = PetscPrintf(m_grid->com, "======== Available time-series ========\n");
-  PISM_CHK(ierr, "PetscPrintf");
+  m_log->message(1, "======== Available time-series ========\n");
 
   std::map<std::string, TSDiagnostic::Ptr>::iterator j = m_ts_diagnostics.begin();
   while (j != m_ts_diagnostics.end()) {
@@ -317,11 +308,10 @@ void IceModel::list_diagnostics() {
       units = glaciological_units;
     }
 
-    ierr = PetscPrintf(m_grid->com,
-                       "   Name: %s [%s]\n"
-                       "      -  %s\n\n",
-                       name.c_str(), units.c_str(), long_name.c_str());
-    PISM_CHK(ierr, "PetscPrintf");
+    m_log->message(1,
+                   "   Name: %s [%s]\n"
+                   "      -  %s\n\n",
+                   name.c_str(), units.c_str(), long_name.c_str());
 
     ++j;
   }
@@ -335,7 +325,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m)
   m_vars.push_back(SpatialVariableMetadata(m_sys, "hardav"));
 
   // choice to use SSA power; see #285
-  const double power = 1.0 / m_grid->ctx()->config()->get_double("ssa_Glen_exponent");
+  const double power = 1.0 / m_config->get_double("ssa_Glen_exponent");
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
 
@@ -343,12 +333,12 @@ IceModel_hardav::IceModel_hardav(IceModel *m)
             unitstr, unitstr, 0);
 
   m_vars[0].set_double("valid_min", 0);
-  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
 }
 
 //! \brief Computes vertically-averaged ice hardness.
 IceModelVec::Ptr IceModel_hardav::compute_impl() {
-  const double fillval = m_grid->ctx()->config()->get_double("fill_value");
+  const double fillval = m_config->get_double("fill_value");
   double *Eij; // columns of enthalpy values
 
   const rheology::FlowLaw *flow_law = model->get_stress_balance()->get_stressbalance()->flow_law();
@@ -549,8 +539,8 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m)
 }
 
 IceModelVec::Ptr IceModel_temp_pa::compute_impl() {
-  bool cold_mode = m_grid->ctx()->config()->get_boolean("do_cold_ice_methods");
-  double melting_point_temp = m_grid->ctx()->config()->get_double("water_melting_point_temperature");
+  bool cold_mode = m_config->get_boolean("do_cold_ice_methods");
+  double melting_point_temp = m_config->get_double("water_melting_point_temperature");
 
   // update vertical levels (in case the m_grid was extended
   m_vars[0].set_levels(m_grid->z());
@@ -615,8 +605,8 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m)
 
 IceModelVec::Ptr IceModel_temppabase::compute_impl() {
 
-  bool cold_mode = m_grid->ctx()->config()->get_boolean("do_cold_ice_methods");
-  double melting_point_temp = m_grid->ctx()->config()->get_double("water_melting_point_temperature");
+  bool cold_mode = m_config->get_boolean("do_cold_ice_methods");
+  double melting_point_temp = m_config->get_double("water_melting_point_temperature");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "temp_pa_base", WITHOUT_GHOSTS);
@@ -670,7 +660,7 @@ IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m)
 
   set_attrs("ice enthalpy at 1m below the ice surface", "",
             "J kg-1", "J kg-1", 0);
-  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
@@ -679,7 +669,7 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
   result->create(m_grid, "enthalpysurf", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  double fill_value = m_grid->ctx()->config()->get_double("fill_value");
+  double fill_value = m_config->get_double("fill_value");
 
   // compute levels corresponding to 1 m below the ice surface:
 
@@ -714,7 +704,7 @@ IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m)
 
   set_attrs("ice enthalpy at the base of ice", "",
             "J kg-1", "J kg-1", 0);
-  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
@@ -725,7 +715,7 @@ IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
 
   model->m_ice_enthalpy.getHorSlice(*result, 0.0);  // z=0 slice
 
-  result->mask_by(model->m_ice_thickness, m_grid->ctx()->config()->get_double("fill_value"));
+  result->mask_by(model->m_ice_thickness, m_config->get_double("fill_value"));
 
   return result;
 }
@@ -739,7 +729,7 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m)
 
   set_attrs("ice temperature at the base of ice", "",
             "K", "K", 0);
-  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_tempbase::compute_impl() {
@@ -772,7 +762,7 @@ IceModelVec::Ptr IceModel_tempbase::compute_impl() {
       if (cell_type.icy(i, j)) {
         (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
       } else {
-        (*result)(i,j) = m_grid->ctx()->config()->get_double("fill_value");
+        (*result)(i,j) = m_config->get_double("fill_value");
       }
     }
   } catch (...) {
@@ -792,7 +782,7 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m)
 
   set_attrs("ice temperature at 1m below the ice surface", "",
             "K", "K", 0);
-  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_tempsurf::compute_impl() {
@@ -821,7 +811,7 @@ IceModelVec::Ptr IceModel_tempsurf::compute_impl() {
       if ((*thickness)(i,j) > 1) {
         (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
       } else {
-        (*result)(i,j) = m_grid->ctx()->config()->get_double("fill_value");
+        (*result)(i,j) = m_config->get_double("fill_value");
       }
     }
   } catch (...) {
@@ -853,7 +843,7 @@ IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
   result->create(m_grid, "liqfrac", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  bool cold_mode = m_grid->ctx()->config()->get_boolean("do_cold_ice_methods");
+  bool cold_mode = m_config->get_boolean("do_cold_ice_methods");
 
   if (cold_mode) {
     result->set(0.0);
@@ -873,7 +863,7 @@ IceModel_tempicethk::IceModel_tempicethk(IceModel *m)
 
   set_attrs("temperate ice thickness (total column content)", "",
             "m", "m", 0);
-  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
 }
 
 IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
@@ -921,7 +911,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
         (*result)(i,j) = temperate_ice_thickness;
       } else {
         // ice-free
-        (*result)(i,j) = m_grid->ctx()->config()->get_double("fill_value");
+        (*result)(i,j) = m_config->get_double("fill_value");
       }
     }
   } catch (...) {
@@ -941,7 +931,7 @@ IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m)
 
   set_attrs("thickness of the basal layer of temperate ice", "",
             "m", "m", 0);
-  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
 }
 
 /*!
@@ -956,7 +946,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   double *Enth = NULL;
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  const double fill_value = m_grid->ctx()->config()->get_double("fill_value");
+  const double fill_value = m_config->get_double("fill_value");
 
   const IceModelVec2CellType &cell_type = model->cell_type_mask();
 
@@ -1572,8 +1562,7 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m)
   set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
             "m s-1", "m year-1", 0);
 
-  Config::ConstPtr config = m_grid->ctx()->config();
-  double fill_value = units::convert(m_sys, config->get_double("fill_value"),
+  double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
                                      "m year-1", "m second-1");
 
   m_vars[0].set_double("valid_min",  units::convert(m_sys, -1e6, "m year-1", "m second-1"));
@@ -1931,8 +1920,7 @@ IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(IceModel *m)
             "kg second-1", "Gt year-1", 0);
   m_vars[0].set_string("comment", "positive means ice gain");
 
-  Config::ConstPtr config = m_grid->ctx()->config();
-  double fill_value = units::convert(m_sys, config->get_double("fill_value"),
+  double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
                                      "Gt year-1", "kg second-1");
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_string("cell_methods", "time: mean");
@@ -1956,8 +1944,7 @@ IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
   const double current_time = m_grid->ctx()->time()->current();
 
   if (gsl_isnan(m_last_report_time)) {
-    Config::ConstPtr config = m_grid->ctx()->config();
-    const double fill_value = units::convert(m_sys, config->get_double("fill_value"),
+    const double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
                                              "Gt year-1", "kg second-1");
     result->set(fill_value);
   } else {
@@ -2115,7 +2102,7 @@ IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
   list.add(cell_type);
   list.add(*result);
 
-  const bool do_part_grid = m_grid->ctx()->config()->get_boolean("part_grid");
+  const bool do_part_grid = m_config->get_boolean("part_grid");
   const IceModelVec2S *Href = NULL;
   if (do_part_grid) {
     Href = variables.get_2d_scalar("Href");
@@ -2182,13 +2169,11 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
   result->create(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  Config::ConstPtr config = m_grid->ctx()->config();
-
   const double sea_level = model->m_ocean->sea_level_elevation();
 
   const double
-    ice_density   = config->get_double("ice_density"),
-    ocean_density = config->get_double("sea_water_density");
+    ice_density   = m_config->get_double("ice_density"),
+    ocean_density = m_config->get_double("sea_water_density");
 
   const Vars &variables = m_grid->variables();
 

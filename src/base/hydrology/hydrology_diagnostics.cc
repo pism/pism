@@ -59,12 +59,12 @@ Hydrology_bwprel::Hydrology_bwprel(Hydrology *m)
   m_vars.push_back(SpatialVariableMetadata(m_sys, "bwprel"));
   set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
             "", "", 0);
-  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
 }
 
 
 IceModelVec::Ptr Hydrology_bwprel::compute_impl() {
-  double fill_value = m_grid->ctx()->config()->get_double("fill_value");
+  double fill_value = m_config->get_double("fill_value");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "bwprel", WITHOUT_GHOSTS);

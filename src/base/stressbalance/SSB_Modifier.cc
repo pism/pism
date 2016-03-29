@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -100,7 +100,7 @@ void ConstantInColumn::init() {
 ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : SSB_Modifier(g, e)
 {
-  rheology::FlowLawFactory ice_factory("sia_", m_grid->ctx()->config(), m_EC);
+  rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);
 
   m_flow_law = ice_factory.create();
 }

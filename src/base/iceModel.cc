@@ -388,10 +388,8 @@ void IceModel::createVecs() {
     m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
     m_grid->variables().add(m_ssa_dirichlet_bc_mask);
 
-
-    Config::ConstPtr config = m_grid->ctx()->config();
-    units::System::Ptr sys = m_grid->ctx()->unit_system();
-    double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
+    double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+                                       "m year-1", "m second-1");
     // vel_bc
     m_ssa_dirichlet_bc_values.create(m_grid, "_ssa_bc", WITH_GHOSTS, WIDE_STENCIL); // u_ssa_bc and v_ssa_bc
     m_ssa_dirichlet_bc_values.set_attrs("model_state",

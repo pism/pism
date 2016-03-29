@@ -26,7 +26,7 @@
 namespace pism {
 
 Diagnostic::Diagnostic(IceGrid::ConstPtr g)
-  : m_grid(g), m_sys(g->ctx()->unit_system()) {
+  : m_grid(g), m_sys(g->ctx()->unit_system()), m_config(g->ctx()->config()) {
   m_output_datatype = PISM_FLOAT;
   m_dof = 1;
 }

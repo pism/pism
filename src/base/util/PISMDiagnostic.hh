@@ -83,6 +83,8 @@ protected:
   IceGrid::ConstPtr m_grid;
   //! the unit system
   const units::System::Ptr m_sys;
+  //! Configuration flags and parameters
+  const Config::ConstPtr m_config;
   //! number of degrees of freedom; 1 for scalar fields, 2 for vector fields
   int m_dof;
   //! data type to use in the file

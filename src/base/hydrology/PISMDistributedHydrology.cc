@@ -308,14 +308,15 @@ void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, d
     PtoCFLratio = 1.0;
   }
 
+  using units::convert;
   m_log->message(4,
-             "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
-             units::convert(m_sys, maxV_result, "m second-1", "m year-1"),
-             units::convert(m_sys, dtCFL,       "seconds",  "years"),
-             units::convert(m_sys, dtDIFFW,     "seconds",  "years"),
-             units::convert(m_sys, dtDIFFP,     "seconds",  "years"),
-             units::convert(m_sys, dt_result,   "seconds",  "years"),
-             units::convert(m_sys, t_current,   "seconds",  "years"));
+                 "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
+                 convert(m_sys, maxV_result, "m second-1", "m year-1"),
+                 convert(m_sys, dtCFL,       "seconds",  "years"),
+                 convert(m_sys, dtDIFFW,     "seconds",  "years"),
+                 convert(m_sys, dtDIFFP,     "seconds",  "years"),
+                 convert(m_sys, dt_result,   "seconds",  "years"),
+                 convert(m_sys, t_current,   "seconds",  "years"));
 }
 
 

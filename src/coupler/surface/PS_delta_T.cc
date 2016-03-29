@@ -92,7 +92,7 @@ void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::
 }
 
 void Delta_T::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+  std::string order = m_config->get_string("output_variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
     io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
