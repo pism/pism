@@ -331,7 +331,7 @@ void SSAFEM::cache_inputs() {
   if (use_cfbc) {
     // Note: the call below uses ghosts of m_thickness.
     compute_node_types(*m_thickness,
-                       m_config->get_double("mask_icefree_thickness_standard"),
+                       m_config->get_double("mask_icefree_thickness_stress_balance_standard"),
                        m_node_type);
   } else {
     m_node_type.set(NODE_INTERIOR);
