@@ -93,9 +93,10 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
 
     if relative:
         denom = max(abs(var1).max(), abs(var2).max())
-        print "Variable %s, delta = %e, denom = %e" % (name, delta, denom)
+        print "Variable %s: difference = %e, denominator = %e" % (name, delta, denom)
         if denom > 0:
             delta = delta / denom
+            print "  Relative difference = %e" % (delta)
 
     # The actual check:
     #
