@@ -215,7 +215,7 @@ void IceModel::createVecs() {
     m_ice_temperature.metadata().set_double("valid_min", 0.0);
     m_grid->variables().add(m_ice_temperature);
 
-    if (m_config->get_boolean("do_energy") == true) {
+    if (m_config->get_boolean("do_energy")) {
       m_ice_enthalpy.metadata().set_string("pism_intent", "diagnostic");
     } else {
       m_ice_temperature.metadata().set_string("pism_intent", "diagnostic");
@@ -328,7 +328,7 @@ void IceModel::createVecs() {
   vLatitude.metadata().set_double("valid_max",  90.0);
   m_grid->variables().add(vLatitude);
 
-  if (m_config->get_boolean("part_grid") == true) {
+  if (m_config->get_boolean("part_grid")) {
     // Href
     vHref.create(m_grid, "Href", WITH_GHOSTS);
     vHref.set_attrs("model_state", "temporary ice thickness at calving front boundary",
@@ -336,8 +336,8 @@ void IceModel::createVecs() {
     m_grid->variables().add(vHref);
   }
 
-  if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos ||
-      m_config->get_boolean("do_fracture_density") == true) {
+  if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos or
+      m_config->get_boolean("do_fracture_density")) {
 
     m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,
                         2, // stencil width, has to match or exceed the "offset" in eigenCalving
@@ -354,7 +354,7 @@ void IceModel::createVecs() {
                            "second-1", "", 1);
   }
 
-  if (m_config->get_boolean("do_fracture_density") == true) {
+  if (m_config->get_boolean("do_fracture_density")) {
 
     m_deviatoric_stresses.create(m_grid, "sigma", WITH_GHOSTS,
                                2, // stencil width
@@ -376,7 +376,7 @@ void IceModel::createVecs() {
                                   "Pa", "", 2);
   }
 
-  if (m_config->get_boolean("ssa_dirichlet_bc") == true) {
+  if (m_config->get_boolean("ssa_dirichlet_bc")) {
     // bc_locations
     m_ssa_dirichlet_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
     m_ssa_dirichlet_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",
@@ -498,71 +498,61 @@ void IceModel::createVecs() {
   // do not add; boundary models are in charge here
   // grid.variables().add(shelfbtemp);
 
-  // take care of 2D cumulative fluxes: we need to allocate special storage if
-  // the user asked for climatic_mass_balance_cumulative or some others (below).
-
-  options::StringSet extras("-extra_vars",
-                            "list of spatially-variable diagnostics to save",
-                            ""); // don't save anything by default
-
-  if (set_contains(extras, "climatic_mass_balance_cumulative")) {
+  {
     m_climatic_mass_balance_cumulative.create(m_grid,
-                                            "climatic_mass_balance_cumulative",
-                                            WITHOUT_GHOSTS);
+                                              "climatic_mass_balance_cumulative",
+                                              WITHOUT_GHOSTS);
     m_climatic_mass_balance_cumulative.set_attrs("diagnostic",
-                                               "cumulative surface mass balance",
-                                               "kg m-2", "");
+                                                 "cumulative surface mass balance",
+                                                 "kg m-2", "");
   }
 
-  std::string o_size = get_output_size("-o_size");
-
-  if (set_contains(extras, "flux_divergence") || o_size == "big") {
+  {
     m_flux_divergence.create(m_grid, "flux_divergence", WITHOUT_GHOSTS);
     m_flux_divergence.set_attrs("diagnostic",
-                              "flux divergence",
-                              "m s-1", "");
+                                "flux divergence",
+                                "m s-1", "");
     m_flux_divergence.metadata().set_string("glaciological_units", "m year-1");
     m_flux_divergence.write_in_glaciological_units = true;
   }
 
-  if (set_contains(extras, "grounded_basal_flux_cumulative")) {
+  {
     m_grounded_basal_flux_2D_cumulative.create(m_grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS);
     m_grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
-                                                "cumulative basal flux into the ice "
-                                                "in grounded areas (positive means ice gain)",
-                                                "kg m-2", "");
+                                                  "cumulative basal flux into the ice "
+                                                  "in grounded areas (positive means ice gain)",
+                                                  "kg m-2", "");
     m_grounded_basal_flux_2D_cumulative.set_time_independent(false);
     m_grounded_basal_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
     m_grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
-  if (set_contains(extras, "floating_basal_flux_cumulative")) {
+  {
     m_floating_basal_flux_2D_cumulative.create(m_grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS);
     m_floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
-                                                "cumulative basal flux into the ice "
-                                                "in floating areas (positive means ice gain)",
-                                                "kg m-2", "");
+                                                  "cumulative basal flux into the ice "
+                                                  "in floating areas (positive means ice gain)",
+                                                  "kg m-2", "");
     m_floating_basal_flux_2D_cumulative.set_time_independent(false);
     m_floating_basal_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
     m_floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
-  if (set_contains(extras, "nonneg_flux_cumulative")) {
+  {
     m_nonneg_flux_2D_cumulative.create(m_grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS);
     m_nonneg_flux_2D_cumulative.set_attrs("diagnostic",
-                                        "cumulative nonnegative rule flux (positive means ice gain)",
-                                        "kg m-2", "");
+                                          "cumulative nonnegative rule flux (positive means ice gain)",
+                                          "kg m-2", "");
     m_nonneg_flux_2D_cumulative.set_time_independent(false);
     m_nonneg_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
     m_nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
-  if (set_contains(extras, "discharge_flux_cumulative") or
-      set_contains(extras, "discharge_flux")) {
+  {
     m_discharge_flux_2D_cumulative.create(m_grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
     m_discharge_flux_2D_cumulative.set_attrs("diagnostic",
-                                           "cumulative discharge (calving) flux (positive means ice loss)",
-                                           "kg m-2", "");
+                                             "cumulative discharge (calving) flux (positive means ice loss)",
+                                             "kg m-2", "");
     m_discharge_flux_2D_cumulative.set_time_independent(false);
     m_discharge_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
     m_discharge_flux_2D_cumulative.write_in_glaciological_units = true;
@@ -595,10 +585,10 @@ void IceModel::step(bool do_mass_continuity,
   // SSA (and temp/age)
 
   bool updateAtDepth = (skipCountDown == 0),
-    do_energy_step = updateAtDepth && do_energy;
+    do_energy_step = updateAtDepth and do_energy;
 
   //! \li update the yield stress for the plastic till model (if appropriate)
-  if (updateAtDepth && basal_yield_stress_model) {
+  if (updateAtDepth and basal_yield_stress_model) {
     profiling.begin("basal yield stress");
     basal_yield_stress_model->update(current_time, m_dt);
     profiling.end("basal yield stress");
@@ -664,7 +654,7 @@ void IceModel::step(bool do_mass_continuity,
   // "-skip" mechanism
 
   //! \li update the age of the ice (if appropriate)
-  if (do_age && updateAtDepth) {
+  if (do_age and updateAtDepth) {
     profiling.begin("age");
     ageStep();
     profiling.end("age");
@@ -721,8 +711,8 @@ void IceModel::step(bool do_mass_continuity,
     // disabled, making "skipping" unnecessary.
 
     // This is why the following two lines appear here and are executed only
-    // if do_mass_continuity == true.
-    if (do_skip == true && skipCountDown > 0) {
+    // if do_mass_continuity is true.
+    if (do_skip and skipCountDown > 0) {
       skipCountDown--;
     }
     stdout_flags += "h";
@@ -835,9 +825,9 @@ void IceModel::run() {
 
     // report a summary for major steps or the last one
     bool updateAtDepth = skipCountDown == 0;
-    bool tempAgeStep = updateAtDepth && (do_energy || do_age);
+    bool tempAgeStep = updateAtDepth and (do_energy or do_age);
 
-    const bool show_step = tempAgeStep || m_adaptive_timestep_reason == "end of the run";
+    const bool show_step = tempAgeStep or m_adaptive_timestep_reason == "end of the run";
     summary(show_step);
 
     // writing these fields here ensures that we do it after the last time-step
