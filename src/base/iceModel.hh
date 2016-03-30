@@ -120,6 +120,8 @@ class IceModel {
   friend class IceModel_floating_basal_flux_2D_cumulative;
   friend class IceModel_discharge_flux_2D_cumulative;
   friend class IceModel_discharge_flux_2D;
+  friend class IceModel_surface_mass_balance_average;
+  friend class IceModel_basal_mass_balance_average;
   // scalar:
   friend class IceModel_dt;
   friend class IceModel_max_diffusivity;

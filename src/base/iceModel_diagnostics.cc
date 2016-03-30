@@ -79,6 +79,9 @@ void IceModel::init_diagnostics() {
   m_diagnostics["discharge_flux_cumulative"]        = Diagnostic::Ptr(new IceModel_discharge_flux_2D_cumulative(this));
   m_diagnostics["discharge_flux"]                   = Diagnostic::Ptr(new IceModel_discharge_flux_2D(this));
 
+  m_diagnostics["surface_mass_balance_average"] = Diagnostic::Ptr(new IceModel_surface_mass_balance_average(this));
+  m_diagnostics["basal_mass_balance_average"]   = Diagnostic::Ptr(new IceModel_basal_mass_balance_average(this));
+
 #if (PISM_USE_PROJ4==1)
   if (m_output_global_attributes.has_attribute("proj4")) {
     std::string proj4 = m_output_global_attributes.get_string("proj4");
@@ -2211,6 +2214,124 @@ IceModelVec::Ptr IceModel_floating_ice_sheet_area_fraction::compute_impl() {
 
   // Floating area fraction is total area fraction minus grounded area fraction.
   result->add(-1.0, *grounded_area_fraction);
+
+  return result;
+}
+
+IceModel_surface_mass_balance_average::IceModel_surface_mass_balance_average(IceModel *m)
+  : Diag<IceModel>(m) {
+  // set metadata:
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "surface_mass_balance_average"));
+
+  set_attrs("average surface mass flux over reporting interval",
+            "",                 // no standard name
+            "kg m-2 second-1", "kg m-2 year-1", 0);
+  m_vars[0].set_string("comment", "positive means ice gain");
+
+  double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+                                     "kg year-1", "kg second-1");
+  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_string("cell_methods", "time: mean");
+
+  m_last_cumulative_SMB.create(m_grid, "last_cumulative_SMB", WITHOUT_GHOSTS);
+  m_last_cumulative_SMB.set_attrs("internal",
+                                  "cumulative SMB at the time of the last report of surface_mass_balance_average",
+                                  "kg m-2", "");
+
+  m_last_report_time = GSL_NAN;
+}
+
+IceModelVec::Ptr IceModel_surface_mass_balance_average::compute_impl() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "surface_mass_balance_average", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+  result->write_in_glaciological_units = true;
+
+  const IceModelVec2S &cumulative_SMB = model->m_climatic_mass_balance_cumulative;
+  const double current_time = m_grid->ctx()->time()->current();
+
+  if (gsl_isnan(m_last_report_time)) {
+    const double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+                                             "kg year-1", "kg second-1");
+    result->set(fill_value);
+  } else {
+    IceModelVec::AccessList list;
+    list.add(*result);
+    list.add(m_last_cumulative_SMB);
+    list.add(cumulative_SMB);
+
+    double dt = current_time - m_last_report_time;
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      (*result)(i, j) = (cumulative_SMB(i, j) - m_last_cumulative_SMB(i, j)) / dt;
+    }
+  }
+
+  // Save the cumulative SMB and the corresponding time:
+  m_last_cumulative_SMB.copy_from(cumulative_SMB);
+  m_last_report_time = current_time;
+
+  return result;
+}
+
+IceModel_basal_mass_balance_average::IceModel_basal_mass_balance_average(IceModel *m)
+  : Diag<IceModel>(m) {
+  // set metadata:
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "basal_mass_balance_average"));
+
+  set_attrs("average basal mass flux over reporting interval",
+            "",                 // no standard name
+            "kg m-2 second-1", "kg m-2 year-1", 0);
+  m_vars[0].set_string("comment", "positive means ice gain");
+
+  double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+                                     "kg year-1", "kg second-1");
+  m_vars[0].set_double("_FillValue", fill_value);
+  m_vars[0].set_string("cell_methods", "time: mean");
+
+  m_last_cumulative_BMB.create(m_grid, "last_cumulative_basal_mass_balance", WITHOUT_GHOSTS);
+  m_last_cumulative_BMB.set_attrs("internal",
+                                  "cumulative basal mass balance at the time of the last report of basal_mass_balance_average",
+                                  "kg m-2", "");
+
+  m_last_report_time = GSL_NAN;
+}
+
+IceModelVec::Ptr IceModel_basal_mass_balance_average::compute_impl() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "basal_mass_balance_average", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+  result->write_in_glaciological_units = true;
+
+  const IceModelVec2S &cumulative_grounded_BMB = model->m_grounded_basal_flux_2D_cumulative;
+  const IceModelVec2S &cumulative_floating_BMB = model->m_floating_basal_flux_2D_cumulative;
+  const double current_time = m_grid->ctx()->time()->current();
+
+  if (gsl_isnan(m_last_report_time)) {
+    const double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+                                             "kg year-1", "kg second-1");
+    result->set(fill_value);
+  } else {
+    IceModelVec::AccessList list;
+    list.add(*result);
+    list.add(m_last_cumulative_BMB);
+    list.add(cumulative_grounded_BMB);
+    list.add(cumulative_floating_BMB);
+
+    double dt = current_time - m_last_report_time;
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      (*result)(i, j) = (cumulative_grounded_BMB(i, j) +
+                         cumulative_floating_BMB(i, j) -
+                         m_last_cumulative_BMB(i, j)) / dt;
+    }
+  }
+
+  // Save the cumulative BMB and the corresponding time:
+  cumulative_grounded_BMB.add(1.0, cumulative_floating_BMB, m_last_cumulative_BMB);
+  m_last_report_time = current_time;
 
   return result;
 }

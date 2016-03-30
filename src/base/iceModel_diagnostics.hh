@@ -514,6 +514,28 @@ protected:
   double m_last_report_time;
 };
 
+//! \brief Reports surface mass balance flux (average over reporting interval).
+class IceModel_surface_mass_balance_average : public Diag<IceModel>
+{
+public:
+  IceModel_surface_mass_balance_average(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+  IceModelVec2S m_last_cumulative_SMB;
+  double m_last_report_time;
+};
+
+//! \brief Reports the 2D cumulative discharge (calving) flux.
+class IceModel_basal_mass_balance_average : public Diag<IceModel>
+{
+public:
+  IceModel_basal_mass_balance_average(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+  IceModelVec2S m_last_cumulative_BMB;
+  double m_last_report_time;
+};
+
 } // end of namespace pism
 
 #if (PISM_USE_PROJ4==1)
