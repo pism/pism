@@ -113,21 +113,11 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
   }
 
   // add cumulative quantities to ensure continuity after restarting
-  if (m_climatic_mass_balance_cumulative.was_created()) {
-    result.insert("climatic_mass_balance_cumulative");
-  }
-  if (m_grounded_basal_flux_2D_cumulative.was_created()) {
-    result.insert("grounded_basal_flux_cumulative");
-  }
-  if (m_floating_basal_flux_2D_cumulative.was_created()) {
-    result.insert("floating_basal_flux_cumulative");
-  }
-  if (m_nonneg_flux_2D_cumulative.was_created()) {
-    result.insert("nonneg_flux_cumulative");
-  }
-  if (m_discharge_flux_2D_cumulative.was_created()) {
-    result.insert("discharge_flux_cumulative");
-  }
+  result.insert("climatic_mass_balance_cumulative");
+  result.insert("grounded_basal_flux_cumulative");
+  result.insert("floating_basal_flux_cumulative");
+  result.insert("nonneg_flux_cumulative");
+  result.insert("discharge_flux_cumulative");
 
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):

@@ -38,12 +38,12 @@
 namespace pism {
 
 void IceModel::do_calving() {
-  bool compute_cumulative_discharge = m_discharge_flux_2D_cumulative.was_created();
+
   IceModelVec2S
     &old_H    = vWork2d[0],
     &old_Href = vWork2d[1];
 
-  if (compute_cumulative_discharge) {
+  {
     old_H.copy_from(m_ice_thickness);
     if (vHref.was_created()) {
       old_Href.copy_from(vHref);
@@ -126,7 +126,6 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
 
   const double ice_density = m_config->get_double("ice_density");
   const bool
-    update_2d_discharge = m_discharge_flux_2D_cumulative.was_created(),
     use_Href = Href.was_created() && Href_old.was_created();
   double my_total_discharge = 0.0, total_discharge;
 
@@ -136,9 +135,8 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
   list.add(m_cell_type);
   list.add(m_cell_area);
 
-  if (update_2d_discharge) {
-    list.add(m_discharge_flux_2D_cumulative);
-  }
+
+  list.add(m_discharge_flux_2D_cumulative);
 
   if (use_Href) {
     list.add(Href);
@@ -169,9 +167,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
 
       discharge = (delta_H + delta_Href) * m_cell_area(i,j) * ice_density;
 
-      if (update_2d_discharge) {
-        m_discharge_flux_2D_cumulative(i,j) += discharge;
-      }
+      m_discharge_flux_2D_cumulative(i,j) += discharge;
 
       my_total_discharge += discharge;
     }

@@ -448,16 +448,13 @@ void IceModel::massContExplicitStep() {
     total_sum_divQ_SSA            = 0,
     total_surface_ice_flux        = 0;
 
-  const double dx = m_grid->dx(), dy = m_grid->dy();
-  bool
-    include_bmr_in_continuity = m_config->get_boolean("include_bmr_in_continuity"),
-    compute_cumulative_climatic_mass_balance = m_climatic_mass_balance_cumulative.was_created(),
-    compute_cumulative_nonneg_flux = m_nonneg_flux_2D_cumulative.was_created(),
-    compute_cumulative_grounded_basal_flux = m_grounded_basal_flux_2D_cumulative.was_created(),
-    compute_cumulative_floating_basal_flux = m_floating_basal_flux_2D_cumulative.was_created(),
-    compute_flux_divergence = m_flux_divergence.was_created();
+  const bool
+    include_bmr_in_continuity = m_config->get_boolean("include_bmr_in_continuity");
 
-  double ice_density = m_config->get_double("ice_density"),
+  const double
+    dx                       = m_grid->dx(),
+    dy                       = m_grid->dy(),
+    ice_density              = m_config->get_double("ice_density"),
     meter_per_s_to_kg_per_m2 = m_dt * ice_density;
 
   assert(m_surface != NULL);
@@ -505,25 +502,11 @@ void IceModel::massContExplicitStep() {
     list.add(m_ssa_dirichlet_bc_values);
   }
 
-  if (compute_cumulative_climatic_mass_balance) {
-    list.add(m_climatic_mass_balance_cumulative);
-  }
-
-  if (compute_cumulative_nonneg_flux) {
-    list.add(m_nonneg_flux_2D_cumulative);
-  }
-
-  if (compute_cumulative_grounded_basal_flux) {
-    list.add(m_grounded_basal_flux_2D_cumulative);
-  }
-
-  if (compute_cumulative_floating_basal_flux) {
-    list.add(m_floating_basal_flux_2D_cumulative);
-  }
-
-  if (compute_flux_divergence) {
-    list.add(m_flux_divergence);
-  }
+  list.add(m_climatic_mass_balance_cumulative);
+  list.add(m_nonneg_flux_2D_cumulative);
+  list.add(m_grounded_basal_flux_2D_cumulative);
+  list.add(m_floating_basal_flux_2D_cumulative);
+  list.add(m_flux_divergence);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -645,9 +628,7 @@ void IceModel::massContExplicitStep() {
         divQ_SSA             = 0.0;
       }
 
-      if (compute_flux_divergence == true) {
-        m_flux_divergence(i, j) = divQ_SIA + divQ_SSA;
-      }
+      m_flux_divergence(i, j) = divQ_SIA + divQ_SSA;
 
       vHnew(i, j) += (m_dt * (surface_mass_balance // accumulation/ablation
                             - my_basal_melt_rate // basal melt rate (grounded or floating)
@@ -657,10 +638,8 @@ void IceModel::massContExplicitStep() {
       if (vHnew(i, j) < 0.0) {
         nonneg_rule_flux += -vHnew(i, j);
 
-        if (compute_cumulative_nonneg_flux) {
-          // convert from [m] to [kg m-2]:
-          m_nonneg_flux_2D_cumulative(i, j) += nonneg_rule_flux * ice_density; // units: [kg m-2]
-        }
+        // convert from [m] to [kg m-2]:
+        m_nonneg_flux_2D_cumulative(i, j) += nonneg_rule_flux * ice_density; // units: [kg m-2]
 
         // this has to go *after* accounting above!
         vHnew(i, j) = 0.0;
@@ -668,20 +647,15 @@ void IceModel::massContExplicitStep() {
 
       // Track cumulative surface mass balance. Note that this keeps track of
       // cumulative climatic_mass_balance at all the grid cells (including ice-free cells).
-      if (compute_cumulative_climatic_mass_balance) {
-        // surface_mass_balance has the units of [m s-1]; convert to [kg m-2]
-        m_climatic_mass_balance_cumulative(i, j) += surface_mass_balance * meter_per_s_to_kg_per_m2;
-      }
 
-      if (compute_cumulative_grounded_basal_flux && m_cell_type.grounded(i, j)) {
-        // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
-        m_grounded_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
-      }
+      // surface_mass_balance has the units of [m s-1]; convert to [kg m-2]
+      m_climatic_mass_balance_cumulative(i, j) += surface_mass_balance * meter_per_s_to_kg_per_m2;
 
-      if (compute_cumulative_floating_basal_flux && m_cell_type.ocean(i, j)) {
-        // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
-        m_floating_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
-      }
+      // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
+      m_grounded_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
+
+      // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
+      m_floating_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
 
       // time-series accounting:
       {

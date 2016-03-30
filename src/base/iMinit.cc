@@ -158,7 +158,7 @@ void IceModel::model_state_setup() {
     basal_yield_stress_model->init();
   }
 
-  if (m_climatic_mass_balance_cumulative.was_created()) {
+  {
     if (input_file.is_set()) {
       m_log->message(2,
                  "* Trying to read cumulative climatic mass balance from '%s'...\n",
@@ -169,7 +169,7 @@ void IceModel::model_state_setup() {
     }
   }
 
-  if (m_grounded_basal_flux_2D_cumulative.was_created()) {
+  {
     if (input_file.is_set()) {
       m_log->message(2,
                  "* Trying to read cumulative grounded basal flux from '%s'...\n",
@@ -180,7 +180,7 @@ void IceModel::model_state_setup() {
     }
   }
 
-  if (m_floating_basal_flux_2D_cumulative.was_created()) {
+  {
     if (input_file.is_set()) {
       m_log->message(2,
                  "* Trying to read cumulative floating basal flux from '%s'...\n",
@@ -191,7 +191,7 @@ void IceModel::model_state_setup() {
     }
   }
 
-  if (m_nonneg_flux_2D_cumulative.was_created()) {
+  {
     if (input_file.is_set()) {
       m_log->message(2,
                  "* Trying to read cumulative nonneg flux from '%s'...\n",

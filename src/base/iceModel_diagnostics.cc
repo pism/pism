@@ -71,30 +71,13 @@ void IceModel::init_diagnostics() {
   m_diagnostics[grounded_ice_sheet_area_fraction_name] = Diagnostic::Ptr(new IceModel_grounded_ice_sheet_area_fraction(this));
   m_diagnostics[floating_ice_sheet_area_fraction_name] = Diagnostic::Ptr(new IceModel_floating_ice_sheet_area_fraction(this));
 
-  if (m_flux_divergence.was_created()) {
-    m_diagnostics["flux_divergence"] = Diagnostic::Ptr(new IceModel_flux_divergence(this));
-  }
-
-  if (m_climatic_mass_balance_cumulative.was_created()) {
-    m_diagnostics["climatic_mass_balance_cumulative"] = Diagnostic::Ptr(new IceModel_climatic_mass_balance_cumulative(this));
-  }
-
-  if (m_nonneg_flux_2D_cumulative.was_created()) {
-    m_diagnostics["nonneg_flux_cumulative"] = Diagnostic::Ptr(new IceModel_nonneg_flux_2D_cumulative(this));
-  }
-
-  if (m_grounded_basal_flux_2D_cumulative.was_created()) {
-    m_diagnostics["grounded_basal_flux_cumulative"] = Diagnostic::Ptr(new IceModel_grounded_basal_flux_2D_cumulative(this));
-  }
-
-  if (m_floating_basal_flux_2D_cumulative.was_created()) {
-    m_diagnostics["floating_basal_flux_cumulative"] = Diagnostic::Ptr(new IceModel_floating_basal_flux_2D_cumulative(this));
-  }
-
-  if (m_discharge_flux_2D_cumulative.was_created()) {
-    m_diagnostics["discharge_flux_cumulative"] = Diagnostic::Ptr(new IceModel_discharge_flux_2D_cumulative(this));
-    m_diagnostics["discharge_flux"] = Diagnostic::Ptr(new IceModel_discharge_flux_2D(this));
-  }
+  m_diagnostics["flux_divergence"]                  = Diagnostic::Ptr(new IceModel_flux_divergence(this));
+  m_diagnostics["climatic_mass_balance_cumulative"] = Diagnostic::Ptr(new IceModel_climatic_mass_balance_cumulative(this));
+  m_diagnostics["nonneg_flux_cumulative"]           = Diagnostic::Ptr(new IceModel_nonneg_flux_2D_cumulative(this));
+  m_diagnostics["grounded_basal_flux_cumulative"]   = Diagnostic::Ptr(new IceModel_grounded_basal_flux_2D_cumulative(this));
+  m_diagnostics["floating_basal_flux_cumulative"]   = Diagnostic::Ptr(new IceModel_floating_basal_flux_2D_cumulative(this));
+  m_diagnostics["discharge_flux_cumulative"]        = Diagnostic::Ptr(new IceModel_discharge_flux_2D_cumulative(this));
+  m_diagnostics["discharge_flux"]                   = Diagnostic::Ptr(new IceModel_discharge_flux_2D(this));
 
 #if (PISM_USE_PROJ4==1)
   if (m_output_global_attributes.has_attribute("proj4")) {
