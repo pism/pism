@@ -57,7 +57,6 @@ using namespace mask;
   solver problems associated to not-attached-to-grounded ice.
 */
 void IceModel::updateSurfaceElevationAndMask() {
-  const double thickness_threshold = m_config->get_double("mask_icefree_thickness_standard");
 
   assert(m_ocean != NULL);
   const double sea_level = m_ocean->sea_level_elevation();
@@ -65,17 +64,22 @@ void IceModel::updateSurfaceElevationAndMask() {
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
   GeometryCalculator gc(*m_config);
-  gc.set_icefree_thickness(thickness_threshold);
-
-  gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
-  gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
 
   if (m_config->get_boolean("kill_icebergs") && iceberg_remover != NULL) {
+    // the iceberg remover has to use the same mask as the stress balance code, hence the
+    // stress-balance-related threshold here
+    gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_stress_balance_standard"));
+
+    gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
+
     iceberg_remover->update(m_cell_type, m_ice_thickness);
-    // the call above modifies ice thickness and updates the mask
-    // accordingly
-    gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
+    // the call above modifies ice thickness and updates the mask accordingly, but we re-compute the
+    // mask (we need to use the different threshold)
   }
+
+  gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_standard"));
+  gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
+  gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
 
   check_minimum_ice_thickness();
 }
