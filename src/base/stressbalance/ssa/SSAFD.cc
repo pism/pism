@@ -485,6 +485,9 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   const double   beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
+  const bool replace_zero_diagonal_entries =
+    m_config->get_boolean("ssafd_replace_zero_diagonal_entries");
+
   // FIXME: bedrock_boundary is a misleading name
   const bool bedrock_boundary = m_config->get_boolean("ssa_dirichlet_bc");
 
@@ -750,14 +753,22 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // check diagonal entries:
       const double eps = 1e-16;
       if (fabs(eq1[4]) < eps) {
-        throw RuntimeError::formatted("first  (X) equation in the SSAFD system:"
-                                      " zero diagonal entry at a regular (not Dirichlet B.C.)"
-                                      " location: i = %d, j = %d\n", i, j);
+        if (replace_zero_diagonal_entries) {
+          eq1[4] = beta_ice_free_bedrock;
+        } else {
+          throw RuntimeError::formatted("first  (X) equation in the SSAFD system:"
+                                        " zero diagonal entry at a regular (not Dirichlet B.C.)"
+                                        " location: i = %d, j = %d\n", i, j);
+        }
       }
       if (fabs(eq2[13]) < eps) {
-        throw RuntimeError::formatted("second (Y) equation in the SSAFD system:"
-                                      " zero diagonal entry at a regular (not Dirichlet B.C.)"
-                                      " location: i = %d, j = %d\n", i, j);
+        if (replace_zero_diagonal_entries) {
+          eq2[13] = beta_ice_free_bedrock;
+        } else {
+          throw RuntimeError::formatted("second (Y) equation in the SSAFD system:"
+                                        " zero diagonal entry at a regular (not Dirichlet B.C.)"
+                                        " location: i = %d, j = %d\n", i, j);
+        }
       }
 
       row.i = i;

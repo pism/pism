@@ -604,6 +604,10 @@ netcdf pism_config {
     pism_config:max_iterations_ssafd = 300;
     pism_config:max_iterations_ssafd_doc = "Maximum number of iterations for the ice viscosity computation, in the SSAFD object";
 
+    pism_config:ssafd_replace_zero_diagonal_entries_type = "boolean";
+    pism_config:ssafd_replace_zero_diagonal_entries = "yes";
+    pism_config:ssafd_replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the SSAFD matrix with beta_ice_free_bedrock to avoid solver failures.";
+
     pism_config:global_min_allowed_temp_option = "low_temp";
     pism_config:global_min_allowed_temp_units = "Kelvin";
     pism_config:global_min_allowed_temp_type = "scalar";
