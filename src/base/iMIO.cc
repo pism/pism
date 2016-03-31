@@ -18,11 +18,12 @@
 
 #include <cstring>
 #include <cstdio>
-#include <petscdmda.h>
-#include "iceModel.hh"
+
 #include <algorithm>
 #include <sstream>
 #include <set>
+
+#include "iceModel.hh"
 
 #include "base/basalstrength/PISMYieldStress.hh"
 #include "base/calving/PISMCalvingAtThickness.hh"
@@ -76,7 +77,7 @@ void  IceModel::writeFiles(const std::string &default_filename) {
 
 //! \brief Write metadata (global attributes, overrides and mapping parameters) to a file.
 void IceModel::write_metadata(const PIO &nc, bool write_mapping,
-                                        bool write_run_stats) {
+                              bool write_run_stats) {
 
   if (write_mapping) {
     bool mapping_exists = nc.inq_var(mapping.get_name());
