@@ -2,7 +2,6 @@
 project(PISM_Documentation "NONE")
 cmake_minimum_required (VERSION 2.8.0)
 
-if (Pism_BUILD_PDFS)
 find_package(LATEX)
 find_package(Doxygen)
 
@@ -71,9 +70,6 @@ macro(pism_latex_document name src figs run_bibtex)
 endmacro()
 
 if (PDFLATEX_COMPILER)
-  # Only offer to build docs if LaTeX is found.
-  option (Pism_BUILD_PDFS "Build PISM PDF documentation" OFF)
-
   # Installation manual:
   add_subdirectory(installation)
 
@@ -98,4 +94,3 @@ if (PDFLATEX_COMPILER)
 
   endif ()                      # if Pism_DOC_DIR
 endif ()                        # if PDFLATEX_COMPILER
-endif()                      # if Pism_BUILD_PDFS
