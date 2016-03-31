@@ -729,13 +729,14 @@ void IceModel::write_snapshot() {
                 m_time->CF_units_string(),
                 m_sys);
 
-    write_metadata(nc, true, true);
-
     m_snapshots_file_is_ready = true;
   } else {
     // In this case the snapshot file is should be present.
     nc.open(filename, PISM_READWRITE);
   }
+
+  // write metadata to the file *every time* we update it
+  write_metadata(nc, true, true);
 
   io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
 

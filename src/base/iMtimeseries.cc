@@ -447,17 +447,17 @@ void IceModel::write_extras() {
     nc.put_att_text(m_config->get_string("time_dimension_name"),
                     "bounds", "time_bounds");
 
-    write_metadata(nc, true, true);
-
     m_extra_file_is_ready = true;
   } else {
     // In this case the extra file should be present.
     nc.open(filename, PISM_READWRITE);
   }
 
+  // write metadata to the file *every time* we update it
+  write_metadata(nc, true, true);
+
   double      current_time = m_time->current();
   std::string time_name    = m_config->get_string("time_dimension_name");
-
 
   unsigned int time_length = nc.inq_dimlen(time_name);
   size_t time_start = static_cast<size_t>(time_length);
@@ -561,6 +561,18 @@ void IceModel::flush_timeseries() {
       diag->flush();
     }
   }
+
+  // update metadata in the time series output file
+  if (m_save_ts) {
+    PIO nc(m_grid->com, "netcdf3");
+    nc.open(m_ts_filename, PISM_READWRITE);
+    write_metadata(nc,
+                   false,       // write_mapping == false
+                   true);       // write_run_stats == true
+
+    nc.close();
+  }
+
 }
 
 } // end of namespace pism
