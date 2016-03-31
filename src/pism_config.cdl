@@ -598,11 +598,11 @@ netcdf pism_config {
     pism_config:bed_smoother_range = 5.0e3;
     pism_config:bed_smoother_range_doc = "half-width of smoothing domain for PISMBedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
 
-    pism_config:max_iterations_ssafd_option = "ssa_maxi";
-    pism_config:max_iterations_ssafd_units = "count";
-    pism_config:max_iterations_ssafd_type = "integer";
-    pism_config:max_iterations_ssafd = 300;
-    pism_config:max_iterations_ssafd_doc = "Maximum number of iterations for the ice viscosity computation, in the SSAFD object";
+    pism_config:ssafd_max_iterations_option = "ssa_maxi";
+    pism_config:ssafd_max_iterations_units = "count";
+    pism_config:ssafd_max_iterations_type = "integer";
+    pism_config:ssafd_max_iterations = 300;
+    pism_config:ssafd_max_iterations_doc = "Maximum number of iterations for the ice viscosity computation, in the SSAFD object";
 
     pism_config:ssafd_replace_zero_diagonal_entries_type = "boolean";
     pism_config:ssafd_replace_zero_diagonal_entries = "yes";

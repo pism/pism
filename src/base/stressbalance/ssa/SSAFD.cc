@@ -963,7 +963,7 @@ void SSAFD::picard_manager(double nuH_regularization,
   PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
-  unsigned int max_iterations = static_cast<int>(m_config->get_double("max_iterations_ssafd"));
+  unsigned int max_iterations = static_cast<int>(m_config->get_double("ssafd_max_iterations"));
   double ssa_relative_tolerance = m_config->get_double("ssafd_relative_convergence");
   char tempstr[100] = "";
   bool verbose = getVerbosityLevel() >= 2,
