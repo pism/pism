@@ -287,7 +287,7 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   for (i = vars.begin(); i != vars.end();) {
     Diagnostic::Ptr diag = m_diagnostics[*i];
 
-    if (diag == NULL) {
+    if (not diag) {
       ++i;
     } else {
       IceModelVec::Ptr v_diagnostic = diag->compute();
