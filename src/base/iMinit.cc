@@ -259,7 +259,7 @@ void IceModel::model_state_setup() {
 
       std::string proj4_string = m_output_global_attributes.get_string("proj4");
       if (not proj4_string.empty()) {
-        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".",
+        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
                        proj4_string.c_str(), nc.inq_filename().c_str());
       }
     }
@@ -675,14 +675,6 @@ void IceModel::misc_setup() {
     PIO nc(m_grid->com, "guess_mode");
 
     nc.open(input_file, PISM_READONLY);
-
-    get_projection_info(nc);
-    std::string proj4_string = m_output_global_attributes.get_string("proj4");
-    if (not proj4_string.empty()) {
-      m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".",
-                     proj4_string.c_str(), nc.inq_filename().c_str());
-    }
-
 
     std::string source = nc.get_att_text("PISM_GLOBAL", "source");
     nc.close();
