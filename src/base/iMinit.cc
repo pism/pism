@@ -55,6 +55,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/projection.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -135,7 +136,7 @@ void IceModel::model_state_setup() {
     bool bootstrapping_needed = false;
     btu->init(bootstrapping_needed);
 
-    if (bootstrapping_needed == true) {
+    if (bootstrapping_needed) {
       // update surface and ocean models so that we can get the
       // temperature at the top of the bedrock
       m_log->message(2,
@@ -268,24 +269,21 @@ void IceModel::model_state_setup() {
   }
 
   // a report on whether PISM-PIK modifications of IceModel are in use
-  const bool pg   = m_config->get_boolean("part_grid"),
-    pr   = m_config->get_boolean("part_redist"),
-    ki   = m_config->get_boolean("kill_icebergs");
-  if (pg || pr || ki) {
+  std::vector<std::string> pik_methods;
+  if (m_config->get_boolean("part_grid")) {
+    pik_methods.push_back("part_grid");
+  }
+  if (m_config->get_boolean("part_redist")) {
+    pik_methods.push_back("part_redist");
+  }
+  if (m_config->get_boolean("kill_icebergs")) {
+    pik_methods.push_back("kill_icebergs");
+  }
+
+  if (not pik_methods.empty()) {
     m_log->message(2,
-               "* PISM-PIK mass/geometry methods are in use:  ");
-
-    if (pg)   {
-      m_log->message(2, "part_grid,");
-    }
-    if (pr)   {
-      m_log->message(2, "part_redist,");
-    }
-    if (ki)   {
-      m_log->message(2, "kill_icebergs");
-    }
-
-    m_log->message(2, "\n");
+                   "* PISM-PIK mass/geometry methods are in use: %s\n",
+                   join(pik_methods, ", ").c_str());
   }
 
   stampHistoryCommand();
@@ -821,7 +819,7 @@ void IceModel::allocate_bed_deformation() {
   }
 
   m_log->message(2,
-             "# Allocating a bed deformation model...\n");
+                 "# Allocating a bed deformation model...\n");
 
   if (model == "none") {
     m_beddef = new bed::PBNull(m_grid);

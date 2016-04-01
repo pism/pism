@@ -181,8 +181,8 @@ void IceModel::combine_basal_melt_rate() {
 //! \brief Extract from enthalpy field (m_ice_enthalpy) the temperature which the top of
 //! the bedrock thermal layer will see.
 void IceModel::get_bed_top_temp(IceModelVec2S &result) {
-  double sea_level = 0,
-    T0 = m_config->get_double("water_melting_point_temperature"),
+  double
+    T0                     = m_config->get_double("water_melting_point_temperature"),
     beta_CC_grad_sea_water = (m_config->get_double("beta_CC") * m_config->get_double("sea_water_density") *
                               m_config->get_double("standard_gravity")); // K m-1
 
@@ -191,9 +191,9 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   m_surface->ice_surface_temperature(m_ice_surface_temp);
 
   assert(m_ocean != NULL);
-  sea_level = m_ocean->sea_level_elevation();
+  double sea_level = m_ocean->sea_level_elevation();
 
-  // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
+  // start by grabbing 2D enthalpy field at z=0; converted to temperature if needed, below
   m_ice_enthalpy.getHorSlice(result, 0.0);
 
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
