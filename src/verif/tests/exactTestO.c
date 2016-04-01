@@ -20,21 +20,16 @@
 
 #include "exactTestO.h"
 
-#define beta_CC        7.9e-8       /* K Pa-1; Clausius-Clapeyron constant [@ref Luethi2002] */
-#define T_triple       273.15       /* K; triple point of pure water */
-#define L              3.34e5       /* J kg-1; latent heat of fusion for water [@ref AschwandenBlatter] */
-#define grav           9.81         /* m/s^2; accel of gravity */
-
-#define rho_ICE        910.0        /* kg/(m^3)  density of ice */
-#define k_ICE          2.10         /* J/(m K s) = W/(m K)  thermal conductivity of ice */
-
-#define k_BEDROCK      3.0          /* J/(m K s) = W/(m K)  thermal conductivity of bedrock */
-
-#define H0             3000.0       /* m */
-#define B0             1000.0       /* m */
-#define Ts             223.15       /* K */
-#define G              0.042        /* W/(m^2) = J m-2 s-1 */
-
+static const double beta_CC   = 7.9e-8; /* K Pa-1; Clausius-Clapeyron constant [@ref Luethi2002] */
+static const double T_triple  = 273.15; /* K; triple point of pure water */
+static const double L         = 3.34e5; /* J kg-1; latent heat of fusion for water [@ref AschwandenBlatter] */
+static const double grav      = 9.81;   /* m/s^2; accel of gravity */
+static const double rho_ICE   = 910.0;  /* kg/(m^3)  density of ice */
+static const double k_ICE     = 2.10;   /* J/(m K s) = W/(m K)  thermal conductivity of ice */
+static const double k_BEDROCK = 3.0;    /* J/(m K s) = W/(m K)  thermal conductivity of bedrock */
+static const double H0        = 3000.0; /* m */
+static const double Ts        = 223.15; /* K */
+static const double G         = 0.042;  /* W/(m^2) = J m-2 s-1 */
 
 /*! \brief Implements an exact solution for basal melt rate.  Utterly straightforward arithmetic. */
 /*!
