@@ -1984,6 +1984,7 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
     m_vars[0].set_double("valid_min", -90);
     m_vars[0].set_double("valid_max", 90);
   }
+  m_vars[0].set_string("coordinates", "");
 
   m_lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (m_lonlat == NULL) {
