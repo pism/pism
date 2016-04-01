@@ -38,7 +38,6 @@ int bothexact(double t, double r, const double *z, int Mz, double Cp,
 	      double *Ureturn, double *wreturn, 
               double *Sigreturn, double *Sigc) {
 
-  const double pi = 3.14159265358979;
   const double SperA = 31556926.0;  /* seconds per year; 365.2422 days */
 
   /* parameters describing extent of sheet: */
@@ -119,10 +118,10 @@ int bothexact(double t, double r, const double *z, int Mz, double Cp,
   s = r/L;
   lamhat = (1+1/n)*s - (1/n) + pow(1-s,1+1/n) - pow(s,1+1/n);
   if ((r>0.3*L) && (r<0.9*L))
-    f = pow(cos(pi*(r-0.6*L)/(0.6*L)) ,2.0);
+    f = pow(cos(M_PI*(r-0.6*L)/(0.6*L)) ,2.0);
   else
     f = 0.0;
-  goft = Cp*sin(2.0*pi*t/Tp);
+  goft = Cp*sin(2.0*M_PI*t/Tp);
   H = Hconst*pow(lamhat,power) + goft*f;
 
   /* compute TT = temperature */
@@ -141,7 +140,7 @@ int bothexact(double t, double r, const double *z, int Mz, double Cp,
   /* compute surface slope and horizontal velocity */
   lamhatr = ((1+1/n)/L)*(1 - pow(1-s,1/n) - pow(s,1/n));
   if ((r>0.3*L) && (r<0.9*L))
-    fr = -(pi/(0.6*L)) * sin(2.0*pi*(r-0.6*L)/(0.6*L));
+    fr = -(M_PI/(0.6*L)) * sin(2.0*M_PI*(r-0.6*L)/(0.6*L));
   else
     fr = 0.0;
   Hr = Hconst * power * pow(lamhat,power-1) * lamhatr + goft*fr;   /* chain rule */
@@ -180,7 +179,7 @@ int bothexact(double t, double r, const double *z, int Mz, double Cp,
   /* compute vertical velocity */
   lamhatrr = ((1+1/n) / (n*L*L)) * (pow(1-s,(1/n)-1) - pow(s,(1/n)-1));
   if ((r>0.3*L) && (r<0.9*L))
-    frr = -(2.0*pi*pi/(0.36*L*L)) * cos(2.0*pi*(r-0.6*L)/(0.6*L));
+    frr = -(2.0*M_PI*M_PI/(0.36*L*L)) * cos(2.0*M_PI*(r-0.6*L)/(0.6*L));
   else
     frr = 0.0;
   Hrr = Hconst*power*(power-1)*pow(lamhat,power-2.0) * pow(lamhatr,2.0)  +
@@ -199,7 +198,7 @@ int bothexact(double t, double r, const double *z, int Mz, double Cp,
   /* compute compensatory accumulation M */
   I4H = p4(mu*H) * exp(mu*H) - 24.0;
   divQ = - omega * (mur/mu - phi) * I4H / mu + omega * gam * H;
-  Ht = (Cp*2.0*pi/Tp) * cos(2.0*pi*t/Tp) * f;
+  Ht = (Cp*2.0*M_PI/Tp) * cos(2.0*M_PI*t/Tp) * f;
   *M = Ht + divQ;
 
   /* compute compensatory heating */
