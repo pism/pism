@@ -112,6 +112,7 @@ void IceModel::init_diagnostics() {
   m_ts_diagnostics["max_diffusivity"] = TSDiagnostic::Ptr(new IceModel_max_diffusivity(this));
   m_ts_diagnostics["ienthalpy"]       = TSDiagnostic::Ptr(new IceModel_ienthalpy(this));
   m_ts_diagnostics["max_hor_vel"]     = TSDiagnostic::Ptr(new IceModel_max_hor_vel(this));
+  m_ts_diagnostics["limnsw"]          = TSDiagnostic::Ptr(new IceModel_limnsw(this));
 
   m_ts_diagnostics["surface_ice_flux"]                   = TSDiagnostic::Ptr(new IceModel_surface_flux(this));
   m_ts_diagnostics["surface_ice_flux_cumulative"]        = TSDiagnostic::Ptr(new IceModel_surface_flux_cumulative(this));
