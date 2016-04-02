@@ -157,6 +157,12 @@ void StressBalance::compute_2D_stresses(const IceModelVec2V &velocity,
   m_shallow_stress_balance->compute_2D_stresses(velocity, mask, result);
 }
 
+void StressBalance::compute_effective_viscosity(const IceModelVec2V &velocity,
+                                        const IceModelVec2CellType &mask,
+                                        IceModelVec2S &result) {
+  m_shallow_stress_balance->compute_effective_viscosity(velocity, mask, result);
+}
+
 //! Compute vertical velocity using incompressibility of the ice.
 /*!
 The vertical velocity \f$w(x,y,z,t)\f$ is the velocity *relative to the

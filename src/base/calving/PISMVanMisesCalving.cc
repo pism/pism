@@ -52,6 +52,11 @@ VanMisesCalving::VanMisesCalving(IceGrid::ConstPtr g,
                            "minor principal component of horizontal strain-rate",
                            "second-1", "", 1);
 
+  m_effective_viscosity.create(m_grid, "effective_viscosity", WITH_GHOSTS, 1);
+  m_effective_viscosity.set_attrs("internal",
+                           "effective viscosity",
+                           "Pa second", "", 1);
+
   m_sigma_max = m_config->get_double("vanmises_calving_sigma_max");
   m_restrict_timestep = m_config->get_boolean("cfl_vanmises_calving");
 }
@@ -73,6 +78,7 @@ void VanMisesCalving::init() {
   }
 
   m_strain_rates.set(0.0);
+  m_effective_viscosity.set(0.0);
 
 }
 
@@ -94,6 +100,7 @@ void VanMisesCalving::update(double dt,
 
   // Is this the right place to get the SSA velocities?
   const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
+  m_stress_balance->compute_effective_viscosity(ssa_velocity, mask, m_effective_viscosity);
   
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -101,6 +108,7 @@ void VanMisesCalving::update(double dt,
   list.add(Href);
   list.add(ssa_velocity);
   list.add(m_strain_rates);
+  list.add(m_effective_viscosity);
   list.add(m_thk_loss);
 
   for (Points pt(*m_grid); pt; pt.next()) {
@@ -175,14 +183,10 @@ void VanMisesCalving::update(double dt,
       double
         calving_rate_horizontal = 0.0,
         effective_tensile_strain_rate = 0.0,
+        nu = m_effective_viscosity(i, j),
         sigma_tilde = 0.0,
-        ssa_n = m_config->get_double("ssa_n"),
+        ssa_n = m_config->get_double("ssa_Glen_exponent"),
         velocity_magnitude = ssa_velocity(i,j).magnitude();
-
-      double nu = 0.0;
-      // m_flow_law->effective_viscosity(hardness,
-      //                                 secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
-      //                                 &nu, NULL);
 
       // Calving law
       //

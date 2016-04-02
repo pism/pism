@@ -64,6 +64,10 @@ public:
                            const IceModelVec2CellType &mask,
                            IceModelVec2 &result);
 
+  void compute_effective_viscosity(const IceModelVec2V &velocity,
+                           const IceModelVec2CellType &mask,
+                           IceModelVec2S &result);
+
   void compute_basal_frictional_heating(const IceModelVec2V &velocity,
                                         const IceModelVec2S &tauc,
                                         const IceModelVec2CellType &mask,

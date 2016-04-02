@@ -297,6 +297,91 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V
   }
 }
 
+//! \brief Compute 2D effective viscosity.
+/*! Note: IceModelVec2 result has to have dof == 3. */
+void ShallowStressBalance::compute_effective_viscosity(const IceModelVec2V &V,
+                                               const IceModelVec2CellType &mask,
+                                               IceModelVec2S &result) {
+  double    dx = m_grid->dx(), dy = m_grid->dy();
+
+  if (result.get_ndof() != 1) {
+    throw RuntimeError("result.get_dof() == 1 is required");
+  }
+
+  // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
+  double hardness = pow(m_config->get_double("ice_softness"),-1.0/m_config->get_double("ssa_Glen_exponent"));
+
+  IceModelVec::AccessList list;
+  list.add(V);
+  list.add(result);
+  list.add(mask);
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (ice_free(mask.as_int(i,j))) {
+      result(i,j) = 0.0;
+      continue;
+    }
+
+    StarStencil<int> m = mask.int_star(i,j);
+    StarStencil<Vector2> U = V.star(i,j);
+
+    // strain in units s-1
+    double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
+      east = 1, west = 1, south = 1, north = 1;
+
+    // Computes u_x using second-order centered finite differences written as
+    // weighted sums of first-order one-sided finite differences.
+    //
+    // Given the cell layout
+    // *----n----*
+    // |         |
+    // |         |
+    // w         e
+    // |         |
+    // |         |
+    // *----s----*
+    // east == 0 if the east neighbor of the current cell is ice-free. In
+    // this case we use the left- (west-) sided difference.
+    //
+    // If both neighbors in the east-west (x) direction are ice-free the
+    // x-derivative is set to zero (see u_x, v_x initialization above).
+    //
+    // Similarly in y-direction.
+    if (ice_free(m.e)) {
+      east = 0;
+    }
+    if (ice_free(m.w)) {
+      west = 0;
+    }
+    if (ice_free(m.n)) {
+      north = 0;
+    }
+    if (ice_free(m.s)) {
+      south = 0;
+    }
+
+    if (west + east > 0) {
+      u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
+      v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
+    }
+
+    if (south + north > 0) {
+      u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
+      v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
+    }
+
+    double nu = 0.0;
+    m_flow_law->effective_viscosity(hardness,
+                                    secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
+                                    &nu, NULL);
+
+    //get effective viscosity
+    result(i,j) = nu;
+  }
+}
+
 //! \brief Compute 2D deviatoric stresses.
 /*! Note: IceModelVec2 result has to have dof == 3. */
 void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
