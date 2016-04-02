@@ -18,6 +18,7 @@
  */
 
 #include "PISMVanMisesCalving.hh"
+#include "base/rheology/FlowLawFactory.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
@@ -174,9 +175,14 @@ void VanMisesCalving::update(double dt,
       double
         calving_rate_horizontal = 0.0,
         effective_tensile_strain_rate = 0.0,
-        nu = 0.0,
         sigma_tilde = 0.0,
+        ssa_n = m_config->get_double("ssa_n"),
         velocity_magnitude = ssa_velocity(i,j).magnitude();
+
+      double nu = 0.0;
+      // m_flow_law->effective_viscosity(hardness,
+      //                                 secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
+      //                                 &nu, NULL);
 
       // Calving law
       //
@@ -184,8 +190,9 @@ void VanMisesCalving::update(double dt,
       effective_tensile_strain_rate = sqrt(0.5*(std::max(0., PetscSqr(eigen1)) + std::max(0., PetscSqr(eigen2))));
 
       // [\ref Morlighem2016] equation 7
-      // Replace 3 with Glen exponent and get viscosity
-      sigma_tilde = sqrt(3) * nu * pow(effective_tensile_strain_rate, 1./3.);
+      // this should be more general for the Blatter model
+      // get viscosity
+      sigma_tilde = sqrt(3.0) * nu * pow(effective_tensile_strain_rate, 1./ssa_n);
       calving_rate_horizontal = velocity_magnitude * effective_tensile_strain_rate / m_sigma_max;
 
       // calculate mass loss with respect to the associated ice thickness and the grid size:
