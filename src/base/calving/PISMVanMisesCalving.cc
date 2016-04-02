@@ -91,10 +91,14 @@ void VanMisesCalving::update(double dt,
 
   update_strain_rates();
 
+  // Is this the right place to get the SSA velocities?
+  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
+  
   IceModelVec::AccessList list;
   list.add(ice_thickness);
   list.add(mask);
   list.add(Href);
+  list.add(ssa_velocity);
   list.add(m_strain_rates);
   list.add(m_thk_loss);
 
@@ -170,23 +174,19 @@ void VanMisesCalving::update(double dt,
       double
         calving_rate_horizontal = 0.0,
         effective_tensile_strain_rate = 0.0,
-        sigma_tilde = 0.0;
+        nu = 0.0,
+        sigma_tilde = 0.0,
+        velocity_magnitude = ssa_velocity(i,j).magnitude();
 
       // Calving law
       //
       // [\ref Morlighem2016] equation 6
       effective_tensile_strain_rate = sqrt(0.5*(std::max(0., PetscSqr(eigen1)) + std::max(0., PetscSqr(eigen2))));
 
-      // const IceModelVec3
-      //   &u3 = model->velocity_u(),
-      //   &v3 = model->velocity_v();
-
-
-      // u3.getSurfaceValues(*result, *thickness);
-      // v3.getSurfaceValues(tmp, *thickness);
-      
-      sigma_tilde = sqrt(3);
-      calving_rate_horizontal = effective_tensile_strain_rate / m_sigma_max;
+      // [\ref Morlighem2016] equation 7
+      // Replace 3 with Glen exponent and get viscosity
+      sigma_tilde = sqrt(3) * nu * pow(effective_tensile_strain_rate, 1./3.);
+      calving_rate_horizontal = velocity_magnitude * effective_tensile_strain_rate / m_sigma_max;
 
       // calculate mass loss with respect to the associated ice thickness and the grid size:
       double calving_rate = calving_rate_horizontal * H_average / m_grid->dx(); // in m/s
