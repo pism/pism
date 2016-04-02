@@ -32,6 +32,7 @@
 #include "base/calving/PISMFloatKill.hh"
 #include "base/calving/PISMIcebergRemover.hh"
 #include "base/calving/PISMOceanKill.hh"
+#include "base/calving/PISMVanMisesCalving.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -786,6 +787,16 @@ void IceModel::init_calving() {
 
     eigen_calving->init();
     methods.erase("eigen_calving");
+
+  
+  if (methods.find("vanmises_calving") != methods.end()) {
+
+    if (vanmises_calving == NULL) {
+      vanmises_calving = new calving::VanMisesCalving(m_grid, m_stress_balance);
+    }
+
+    vanmises_calving->init();
+    methods.erase("vanmises_calving");
   }
 
   if (methods.find("float_kill") != methods.end()) {

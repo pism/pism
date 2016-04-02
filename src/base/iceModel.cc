@@ -31,6 +31,7 @@
 #include "base/calving/PISMFloatKill.hh"
 #include "base/calving/PISMIcebergRemover.hh"
 #include "base/calving/PISMOceanKill.hh"
+#include "base/calving/PISMVanMisesCalving.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -93,6 +94,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   float_kill_calving          = NULL;
   thickness_threshold_calving = NULL;
   eigen_calving               = NULL;
+  vanmises_calving            = NULL;
 
   // initialize maximum |u|,|v|,|w| in ice
   m_max_u_speed = 0;
@@ -167,6 +169,7 @@ IceModel::~IceModel() {
   delete float_kill_calving;
   delete thickness_threshold_calving;
   delete eigen_calving;
+  delete vanmises_calving
 }
 
 
@@ -336,7 +339,7 @@ void IceModel::createVecs() {
     m_grid->variables().add(vHref);
   }
 
-  if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos or
+  if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos or m_config->get_string("calving_methods").find("vanmises_calving") != std::string::npos or
       m_config->get_boolean("do_fracture_density")) {
 
     m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,

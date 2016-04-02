@@ -112,7 +112,7 @@ netcdf pism_config {
     pism_config:calving_methods_type = "string";
     pism_config:calving_methods_option = "calving";
     pism_config:calving_methods = "";
-    pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
+    pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'vanmises_calving', 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
 
     pism_config:do_fracture_density_type = "boolean";
     pism_config:do_fracture_density_option = "fractures";

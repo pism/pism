@@ -22,6 +22,7 @@
 
 #include "iceModel.hh"
 #include "base/calving/PISMEigenCalving.hh"
+#include "base/calving/PISMVanMisesCalving.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
