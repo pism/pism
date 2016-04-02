@@ -787,7 +787,7 @@ void IceModel::init_calving() {
 
     eigen_calving->init();
     methods.erase("eigen_calving");
-
+  }
   
   if (methods.find("vanmises_calving") != methods.end()) {
 

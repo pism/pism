@@ -169,7 +169,7 @@ IceModel::~IceModel() {
   delete float_kill_calving;
   delete thickness_threshold_calving;
   delete eigen_calving;
-  delete vanmises_calving
+  delete vanmises_calving;
 }
 
 

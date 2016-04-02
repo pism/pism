@@ -16,8 +16,8 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#ifndef _PISMEIGENCALVING_H_
-#define _PISMEIGENCALVING_H_
+#ifndef _PISMVANMISESCALVING_H_
+#define _PISMVANMISESCALVING_H_
 
 #include "base/util/iceModelVec.hh"
 #include "base/util/PISMComponent.hh"
@@ -31,11 +31,11 @@ class IceModelVec2CellType;
 
 namespace calving {
 
-class EigenCalving : public Component
+class VanMisesCalving : public Component
 {
 public:
-  EigenCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
-  virtual ~EigenCalving();
+  VanMisesCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
+  virtual ~VanMisesCalving();
 
   virtual void init();
   void update(double dt,
@@ -58,11 +58,11 @@ protected:
   IceModelVec2S m_thk_loss;
   const int m_stencil_width;
   stressbalance::StressBalance *m_stress_balance;
-  double m_K;
+  double m_sigma_max;
   bool m_restrict_timestep;
 };
 
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* _PISMEIGENCALVING_H_ */
+#endif /* _PISMVANMISESCALVING_H_ */

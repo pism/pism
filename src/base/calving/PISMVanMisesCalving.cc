@@ -51,8 +51,8 @@ VanMisesCalving::VanMisesCalving(IceGrid::ConstPtr g,
                            "minor principal component of horizontal strain-rate",
                            "second-1", "", 1);
 
-  m_K = m_config->get_double("eigen_calving_K");
-  m_restrict_timestep = m_config->get_boolean("cfl_eigen_calving");
+  m_sigma_max = m_config->get_double("vanmises_calving_sigma_max");
+  m_restrict_timestep = m_config->get_boolean("cfl_vanmises_calving");
 }
 
 VanMisesCalving::~VanMisesCalving() {
@@ -75,9 +75,9 @@ void VanMisesCalving::init() {
 
 }
 
-//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
+//! \brief Uses principal strain rates to apply "vanmisescalving" with constant maximum stress.
 /*!
-  See equation (26) in [\ref Winkelmannetal2011].
+  See equation (4) in [\ref Morlighem2016].
 */
 void VanMisesCalving::update(double dt,
                           IceModelVec2CellType &mask,
@@ -169,18 +169,24 @@ void VanMisesCalving::update(double dt,
 
       double
         calving_rate_horizontal = 0.0,
-        eigenCalvOffset         = 0.0;
-      // eigenCalvOffset allows adjusting the transition from
-      // compressive to extensive flow regime
+        effective_tensile_strain_rate = 0.0,
+        sigma_tilde = 0.0;
 
       // Calving law
       //
-      // eigen1 * eigen2 has units [s^-2] and calving_rate_horizontal
-      // [m*s^1] hence, eigen_calving_K has units [m*s]
-      if (eigen2 > eigenCalvOffset and eigen1 > 0.0) {
-        // spreading in all directions
-        calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
-      }
+      // [\ref Morlighem2016] equation 6
+      effective_tensile_strain_rate = sqrt(0.5*(std::max(0., PetscSqr(eigen1)) + std::max(0., PetscSqr(eigen2))));
+
+      // const IceModelVec3
+      //   &u3 = model->velocity_u(),
+      //   &v3 = model->velocity_v();
+
+
+      // u3.getSurfaceValues(*result, *thickness);
+      // v3.getSurfaceValues(tmp, *thickness);
+      
+      sigma_tilde = sqrt(3);
+      calving_rate_horizontal = effective_tensile_strain_rate / m_sigma_max;
 
       // calculate mass loss with respect to the associated ice thickness and the grid size:
       double calving_rate = calving_rate_horizontal * H_average / m_grid->dx(); // in m/s
@@ -288,8 +294,7 @@ MaxTimestep VanMisesCalving::max_timestep() {
     }
 
     double
-      calving_rate_horizontal = 0.0,
-      eigenCalvOffset = 0.0;
+      calving_rate_horizontal = 0.0;
 
     for (int p = -1; p < 2; p += 2) {
       int i_offset = p * offset;
@@ -315,12 +320,11 @@ MaxTimestep VanMisesCalving::max_timestep() {
     }
 
     // calving law
-    if (eigen2 > eigenCalvOffset && eigen1 > 0.0) { // if spreading in all directions
-      calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
-      my_calving_rate_counter += 1.0;
-      my_calving_rate_mean += calving_rate_horizontal;
-      my_calving_rate_max = std::max(my_calving_rate_max, calving_rate_horizontal);
-    }
+    // Implement Calving here
+    calving_rate_horizontal = eigen1;
+    my_calving_rate_counter += 1.0;
+    my_calving_rate_mean += calving_rate_horizontal;
+    my_calving_rate_max = std::max(my_calving_rate_max, calving_rate_horizontal);
   }
 
   double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
@@ -340,7 +344,7 @@ MaxTimestep VanMisesCalving::max_timestep() {
   double dt = 1.0 / (denom + epsilon);
 
   m_log->message(3,
-             "  eigencalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
+             "  vanmisescalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
              units::convert(m_sys, calving_rate_max, "m second-1", "m year-1"),
              units::convert(m_sys, dt, "seconds", "years"),
              units::convert(m_sys, calving_rate_mean, "m second-1", "m year-1"),

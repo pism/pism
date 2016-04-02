@@ -295,6 +295,13 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       }
     }
 
+    if (vanmises_calving != NULL) {
+      MaxTimestep vanmisescalving_dt = vanmises_calving->max_timestep();
+      if (vanmisescalving_dt.is_finite()) {
+        dt_restrictions["vanmisescalving"] = vanmisescalving_dt.value();
+      }
+    }
+
     if (m_config->get_boolean("do_energy")) {
       if (update_3d) {
         CFLmaxdt = max_timestep_cfl_3d();
