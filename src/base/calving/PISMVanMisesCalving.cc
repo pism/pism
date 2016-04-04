@@ -285,7 +285,8 @@ MaxTimestep VanMisesCalving::max_timestep() {
 
   update_strain_rates();
 
-  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
+  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();  
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
 
   IceModelVec::AccessList list;
@@ -338,26 +339,22 @@ MaxTimestep VanMisesCalving::max_timestep() {
     const std::vector<double>& z = m_grid->z();
     const rheology::FlowLaw* flow_law = m_stress_balance->get_stressbalance()->flow_law();
     double
-      calving_rate_horizontal = 0.0,
       effective_tensile_strain_rate = 0.0,
       hardness = averaged_hardness(*flow_law, ice_thickness(i,j), kBelowHeight, &z[0], enthalpy->get_column(i,j)),
       sigma_tilde = 0.0,
       ssa_n = m_config->get_double("ssa_Glen_exponent"),
       velocity_magnitude = ssa_velocity(i,j).magnitude();
 
-      // Calving law
-      //
-      // [\ref Morlighem2016] equation 6
-      effective_tensile_strain_rate = sqrt(0.5*(std::max(0., PetscSqr(eigen1)) + std::max(0., PetscSqr(eigen2))));
+    // Calving law
+    //
+    // [\ref Morlighem2016] equation 6
+    effective_tensile_strain_rate = sqrt(0.5*(std::max(0., PetscSqr(eigen1)) + std::max(0., PetscSqr(eigen2))));
 
-      // [\ref Morlighem2016] equation 7
-      // this should be more general for the Blatter model
-      // get viscosity
-      sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate, 1./ssa_n);
-      calving_rate_horizontal = velocity_magnitude * effective_tensile_strain_rate / m_sigma_max;
-
-      // calculate mass loss with respect to the associated ice thickness and the grid size:
-      double calving_rate = calving_rate_horizontal * H_average / m_grid->dx(); // in m/s
+    // [\ref Morlighem2016] equation 7
+    // this should be more general for the Blatter model
+    // get viscosity
+    sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate, 1./ssa_n);
+    calving_rate_horizontal = velocity_magnitude * effective_tensile_strain_rate / m_sigma_max;
 
     my_calving_rate_counter += 1.0;
     my_calving_rate_mean += calving_rate_horizontal;
