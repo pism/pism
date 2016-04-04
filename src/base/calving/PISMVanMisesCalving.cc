@@ -19,7 +19,9 @@
 
 #include "PISMVanMisesCalving.hh"
 #include "base/rheology/FlowLawFactory.hh"
+#include "base/rheology/FlowLaw.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
+#include "base/stressbalance/ShallowStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMVars.hh"
@@ -51,11 +53,6 @@ VanMisesCalving::VanMisesCalving(IceGrid::ConstPtr g,
   m_strain_rates.set_attrs("internal",
                            "minor principal component of horizontal strain-rate",
                            "second-1", "", 1);
-
-  m_effective_viscosity.create(m_grid, "effective_viscosity", WITH_GHOSTS, 1);
-  m_effective_viscosity.set_attrs("internal",
-                           "effective viscosity",
-                           "Pa second", "", 1);
 
   m_sigma_max = m_config->get_double("vanmises_calving_sigma_max");
   m_restrict_timestep = m_config->get_boolean("cfl_vanmises_calving");
@@ -100,7 +97,7 @@ void VanMisesCalving::update(double dt,
 
   // Is this the right place to get the SSA velocities?
   const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
-  m_stress_balance->compute_effective_viscosity(ssa_velocity, mask, m_effective_viscosity);
+  // m_stress_balance->compute_effective_viscosity(ssa_velocity, mask, m_effective_viscosity);
   
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -108,7 +105,6 @@ void VanMisesCalving::update(double dt,
   list.add(Href);
   list.add(ssa_velocity);
   list.add(m_strain_rates);
-  list.add(m_effective_viscosity);
   list.add(m_thk_loss);
 
   for (Points pt(*m_grid); pt; pt.next()) {
@@ -180,10 +176,15 @@ void VanMisesCalving::update(double dt,
         eigen2 /= M;
       }
 
+      unsigned int kBelowHeight = m_grid->kBelowHeight(ice_thickness(i,j));
+      const std::vector<double>& z = m_grid->z();
+      const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+      const rheology::FlowLaw*
+        flow_law = m_stress_balance->get_stressbalance()->flow_law();
       double
         calving_rate_horizontal = 0.0,
         effective_tensile_strain_rate = 0.0,
-        nu = m_effective_viscosity(i, j),
+        hardness = averaged_hardness(*flow_law, ice_thickness(i,j), kBelowHeight, &z[0], enthalpy->get_column(i,j)),
         sigma_tilde = 0.0,
         ssa_n = m_config->get_double("ssa_Glen_exponent"),
         velocity_magnitude = ssa_velocity(i,j).magnitude();
@@ -196,7 +197,7 @@ void VanMisesCalving::update(double dt,
       // [\ref Morlighem2016] equation 7
       // this should be more general for the Blatter model
       // get viscosity
-      sigma_tilde = sqrt(3.0) * nu * pow(effective_tensile_strain_rate, 1./ssa_n);
+      sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate, 1./ssa_n);
       calving_rate_horizontal = velocity_magnitude * effective_tensile_strain_rate / m_sigma_max;
 
       // calculate mass loss with respect to the associated ice thickness and the grid size:

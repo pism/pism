@@ -99,11 +99,6 @@ public:
                            const IceModelVec2CellType &mask,
                            IceModelVec2 &result);
 
-  //! \brief Get the effective viscosity.
-  void compute_effective_viscosity(const IceModelVec2V &velocity,
-                           const IceModelVec2CellType &mask,
-                           IceModelVec2S &result);
-
   //! \brief Produce a report string for the standard output.
   std::string stdout_report();
 
