@@ -94,10 +94,7 @@ void VanMisesCalving::update(double dt,
 
   update_strain_rates();
 
-  // Is this the right place to get the SSA velocities?
-  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
-  // m_stress_balance->compute_effective_viscosity(ssa_velocity, mask, m_effective_viscosity);
-  
+  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();  
   const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
 
   IceModelVec::AccessList list;
@@ -288,14 +285,19 @@ MaxTimestep VanMisesCalving::max_timestep() {
 
   update_strain_rates();
 
+  const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
+  const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+
   IceModelVec::AccessList list;
+  list.add(*enthalpy);
+  list.add(ice_thickness);
   list.add(mask);
   list.add(m_strain_rates);
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
     // Average of strain-rate eigenvalues in adjacent floating grid cells to
-    // be used for eigencalving
+    // be used for vanmisescalving
     double eigen1 = 0.0, eigen2 = 0.0;
     // Number of cells used in computing eigen1 and eigen2:
     int M = 0;
@@ -332,9 +334,31 @@ MaxTimestep VanMisesCalving::max_timestep() {
       eigen2 /= M;
     }
 
-    // calving law
-    // Implement Calving here
-    calving_rate_horizontal = eigen1;
+    unsigned int kBelowHeight = m_grid->kBelowHeight(ice_thickness(i,j));
+    const std::vector<double>& z = m_grid->z();
+    const rheology::FlowLaw* flow_law = m_stress_balance->get_stressbalance()->flow_law();
+    double
+      calving_rate_horizontal = 0.0,
+      effective_tensile_strain_rate = 0.0,
+      hardness = averaged_hardness(*flow_law, ice_thickness(i,j), kBelowHeight, &z[0], enthalpy->get_column(i,j)),
+      sigma_tilde = 0.0,
+      ssa_n = m_config->get_double("ssa_Glen_exponent"),
+      velocity_magnitude = ssa_velocity(i,j).magnitude();
+
+      // Calving law
+      //
+      // [\ref Morlighem2016] equation 6
+      effective_tensile_strain_rate = sqrt(0.5*(std::max(0., PetscSqr(eigen1)) + std::max(0., PetscSqr(eigen2))));
+
+      // [\ref Morlighem2016] equation 7
+      // this should be more general for the Blatter model
+      // get viscosity
+      sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate, 1./ssa_n);
+      calving_rate_horizontal = velocity_magnitude * effective_tensile_strain_rate / m_sigma_max;
+
+      // calculate mass loss with respect to the associated ice thickness and the grid size:
+      double calving_rate = calving_rate_horizontal * H_average / m_grid->dx(); // in m/s
+
     my_calving_rate_counter += 1.0;
     my_calving_rate_mean += calving_rate_horizontal;
     my_calving_rate_max = std::max(my_calving_rate_max, calving_rate_horizontal);
