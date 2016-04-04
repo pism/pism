@@ -75,7 +75,6 @@ void VanMisesCalving::init() {
   }
 
   m_strain_rates.set(0.0);
-  m_effective_viscosity.set(0.0);
 
 }
 
@@ -99,7 +98,10 @@ void VanMisesCalving::update(double dt,
   const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
   // m_stress_balance->compute_effective_viscosity(ssa_velocity, mask, m_effective_viscosity);
   
+  const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+
   IceModelVec::AccessList list;
+  list.add(*enthalpy);
   list.add(ice_thickness);
   list.add(mask);
   list.add(Href);
@@ -178,7 +180,6 @@ void VanMisesCalving::update(double dt,
 
       unsigned int kBelowHeight = m_grid->kBelowHeight(ice_thickness(i,j));
       const std::vector<double>& z = m_grid->z();
-      const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
       const rheology::FlowLaw*
         flow_law = m_stress_balance->get_stressbalance()->flow_law();
       double
