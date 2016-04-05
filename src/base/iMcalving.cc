@@ -27,7 +27,7 @@
 #include "base/calving/PISMFloatKill.hh"
 #include "base/calving/PISMIcebergRemover.hh"
 #include "base/calving/PISMOceanKill.hh"
-#include "base/calving/PISMVanMisesCalving.hh"
+#include "base/calving/PISMStressCalving.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
@@ -58,8 +58,8 @@ void IceModel::do_calving() {
     eigen_calving->update(m_dt, m_cell_type, vHref, m_ice_thickness);
   }
 
-  if (vanmises_calving != NULL) {
-    vanmises_calving->update(m_dt, m_cell_type, vHref, m_ice_thickness);
+  if (stress_calving != NULL) {
+    stress_calving->update(m_dt, m_cell_type, vHref, m_ice_thickness);
   }
 
   if (ocean_kill_calving != NULL) {

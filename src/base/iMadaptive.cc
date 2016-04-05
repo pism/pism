@@ -22,7 +22,7 @@
 
 #include "iceModel.hh"
 #include "base/calving/PISMEigenCalving.hh"
-#include "base/calving/PISMVanMisesCalving.hh"
+#include "base/calving/PISMStressCalving.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -295,10 +295,10 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       }
     }
 
-    if (vanmises_calving != NULL) {
-      MaxTimestep vanmisescalving_dt = vanmises_calving->max_timestep();
-      if (vanmisescalving_dt.is_finite()) {
-        dt_restrictions["vanmisescalving"] = vanmisescalving_dt.value();
+    if (stress_calving != NULL) {
+      MaxTimestep stresscalving_dt = stress_calving->max_timestep();
+      if (stresscalving_dt.is_finite()) {
+        dt_restrictions["stresscalving"] = stresscalving_dt.value();
       }
     }
 

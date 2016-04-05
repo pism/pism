@@ -146,7 +146,7 @@ add_library (pism
   base/calving/PISMFloatKill.cc
   base/calving/PISMOceanKill.cc
   base/calving/PISMEigenCalving.cc
-  base/calving/PISMVanMisesCalving.cc
+  base/calving/PISMStressCalving.cc
   $<TARGET_OBJECTS:pismflowlaws>
   $<TARGET_OBJECTS:pismstressbalance>
   $<TARGET_OBJECTS:pismcalcalcs>

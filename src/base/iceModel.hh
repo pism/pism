@@ -71,7 +71,7 @@ namespace calving {
 class EigenCalving;
 class OceanKill;
 class FloatKill;
-class VanMisesCalving;
+class StressCalving;
 class CalvingAtThickness;
 class IcebergRemover;
 }
@@ -245,7 +245,7 @@ protected:
   calving::FloatKill          *float_kill_calving;
   calving::CalvingAtThickness *thickness_threshold_calving;
   calving::EigenCalving       *eigen_calving;
-  calving::VanMisesCalving    *vanmises_calving; 
+  calving::StressCalving    *stress_calving; 
 
   surface::SurfaceModel *m_surface;
   ocean::OceanModel   *m_ocean;

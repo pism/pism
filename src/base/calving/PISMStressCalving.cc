@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "PISMVanMisesCalving.hh"
+#include "PISMStressCalving.hh"
 #include "base/rheology/FlowLawFactory.hh"
 #include "base/rheology/FlowLaw.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -34,7 +34,7 @@
 namespace pism {
 namespace calving {
 
-VanMisesCalving::VanMisesCalving(IceGrid::ConstPtr g,
+StressCalving::StressCalving(IceGrid::ConstPtr g,
                            stressbalance::StressBalance *stress_balance)
   : Component(g), m_stencil_width(2),
     m_stress_balance(stress_balance) {
@@ -54,21 +54,21 @@ VanMisesCalving::VanMisesCalving(IceGrid::ConstPtr g,
                            "minor principal component of horizontal strain-rate",
                            "second-1", "", 1);
 
-  m_sigma_max = m_config->get_double("vanmises_calving_sigma_max");
-  m_restrict_timestep = m_config->get_boolean("cfl_vanmises_calving");
+  m_sigma_max = m_config->get_double("stress_calving_sigma_max");
+  m_restrict_timestep = m_config->get_boolean("cfl_stress_calving");
 }
 
-VanMisesCalving::~VanMisesCalving() {
+StressCalving::~StressCalving() {
   // empty
 }
 
-void VanMisesCalving::init() {
+void StressCalving::init() {
 
   m_log->message(2,
-             "* Initializing the 'vanmises-calving' mechanism...\n");
+             "* Initializing the 'stress-calving' mechanism...\n");
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted("-calving vanmises_calving using a non-square grid cell is not implemented (yet);\n"
+    throw RuntimeError::formatted("-calving stress_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
                                   m_grid->dx(), m_grid->dy(),
                                   fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
@@ -78,11 +78,11 @@ void VanMisesCalving::init() {
 
 }
 
-//! \brief Uses principal strain rates to apply "vanmisescalving" with constant maximum stress.
+//! \brief Uses principal strain rates to apply "stresscalving" with constant maximum stress.
 /*!
   See equation (4) in [\ref Morlighem2016].
 */
-void VanMisesCalving::update(double dt,
+void StressCalving::update(double dt,
                           IceModelVec2CellType &mask,
                           IceModelVec2S &Href,
                           IceModelVec2S &ice_thickness) {
@@ -265,7 +265,7 @@ void VanMisesCalving::update(double dt,
  *
  * @return 0 on success
  */
-MaxTimestep VanMisesCalving::max_timestep() {
+MaxTimestep StressCalving::max_timestep() {
 
   if (not m_restrict_timestep) {
     return MaxTimestep();
@@ -298,7 +298,7 @@ MaxTimestep VanMisesCalving::max_timestep() {
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
     // Average of strain-rate eigenvalues in adjacent floating grid cells to
-    // be used for vanmisescalving
+    // be used for stresscalving
     double eigen1 = 0.0, eigen2 = 0.0;
     // Number of cells used in computing eigen1 and eigen2:
     int M = 0;
@@ -378,7 +378,7 @@ MaxTimestep VanMisesCalving::max_timestep() {
   double dt = 1.0 / (denom + epsilon);
 
   m_log->message(3,
-             "  vanmisescalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
+             "  stresscalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
              units::convert(m_sys, calving_rate_max, "m second-1", "m year-1"),
              units::convert(m_sys, dt, "seconds", "years"),
              units::convert(m_sys, calving_rate_mean, "m second-1", "m year-1"),
@@ -387,16 +387,16 @@ MaxTimestep VanMisesCalving::max_timestep() {
   return MaxTimestep(std::max(dt, dt_min));
 }
 
-void VanMisesCalving::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
+void StressCalving::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
   // empty
 }
 
-void VanMisesCalving::define_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+void StressCalving::define_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
                                                   IO_Type /*nctype*/) {
   // empty
 }
 
-void VanMisesCalving::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
+void StressCalving::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
   // empty
 }
 
@@ -410,7 +410,7 @@ void VanMisesCalving::write_variables_impl(const std::set<std::string> &/*vars*/
  *
  * @return 0 on success
  */
-void VanMisesCalving::update_strain_rates() {
+void StressCalving::update_strain_rates() {
   const IceModelVec2V        &ssa_velocity = m_stress_balance->advective_velocity();
   const IceModelVec2CellType &mask         = *m_grid->variables().get_2d_cell_type("mask");
   m_stress_balance->compute_2D_principal_strain_rates(ssa_velocity, mask, m_strain_rates);
@@ -449,7 +449,7 @@ void VanMisesCalving::update_strain_rates() {
  *
  * @return 0 on success
  */
-void VanMisesCalving::remove_narrow_tongues(IceModelVec2CellType &mask,
+void StressCalving::remove_narrow_tongues(IceModelVec2CellType &mask,
                                          IceModelVec2S &ice_thickness) {
 
   IceModelVec::AccessList list;

@@ -30,7 +30,7 @@
 #include "base/calving/PISMEigenCalving.hh"
 #include "base/calving/PISMFloatKill.hh"
 #include "base/calving/PISMOceanKill.hh"
-#include "base/calving/PISMVanMisesCalving.hh"
+#include "base/calving/PISMStressCalving.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -215,8 +215,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       eigen_calving->define_variables(vars, nc, nctype);
     }
 
-    if (vanmises_calving != NULL) {
-      vanmises_calving->define_variables(vars, nc, nctype);
+    if (stress_calving != NULL) {
+      stress_calving->define_variables(vars, nc, nctype);
     }
 
   }
@@ -289,8 +289,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     eigen_calving->write_variables(vars, nc);
   }
 
-  if (vanmises_calving != NULL) {
-    vanmises_calving->write_variables(vars, nc);
+  if (stress_calving != NULL) {
+    stress_calving->write_variables(vars, nc);
   }
 
   // All the remaining names in vars must be of diagnostic quantities.
