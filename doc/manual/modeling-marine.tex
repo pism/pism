@@ -137,7 +137,7 @@ The partially-filled grid cell formulation (subsection \ref{subsec:part-grid}) p
 \subsubsection{Von Mises stress calving}
 \label{subsec:stress-calving}
 
-\emph{WARNING:} This code is experimental and has not yet been thoroughly tested, use at your own risk. While eigen-calving (subsection \ref{subsec:eigen-calving}) is appropriate for Antartic ice shelves, it does not work will for outlet glaciers that flow in narrow  fjords. Along valleys with nearly parallel walls, the transverse component of the velocity is close to zero, and the transversal strain rate is therefore also close to zero and noisy. Instead \cite{Morlighem2016} proposes a calving law where the calving rate $c$ is a function related to tensile stresses:
+\emph{WARNING:} This code is experimental and has not yet been thoroughly tested, use at your own risk. While eigen-calving (subsection \ref{subsec:eigen-calving}) is appropriate for Antartic ice shelves, it does not work for outlet glaciers that flow in narrow  fjords. Along valleys with nearly parallel walls, the transverse component of the velocity is close to zero, and the transversal strain rate is therefore also close to zero and noisy. Instead of the product of the eigen strain rates, \cite{Morlighem2016} proposes a calving law where the calving rate $c$ is a functionally related to tensile stresses:
 \begin{equation}
 \label{eq: calv3}
 c = |\mathbf{u}| \frac{\tilde{\sigma}}{\sigma_{max}},
@@ -147,7 +147,7 @@ where $\tilde{\sigma}$ is the tensile von Mises stress and $\sigma_{max}$ is a t
 \label{eq: calv4}
 \tilde{\dot{\epsilon}}_e = \left(\frac{1}{2}\left(\max(0,\dot{\epsilon}_{_+})^2 + \max(0,\dot{\epsilon}_{_-})^2\right)\right)^{1/2}.
 \end{equation}
-Followng \cite{Morlighem2016} $\tilde{\sigma}$ is given by
+Following \cite{Morlighem2016} $\tilde{\sigma}$ is given by
 \begin{equation}
 \label{eq: calv5}
 \tilde{\sigma} = \sqrt{3} B \tilde{\dot{{\epsilon}}}_e^{1/n},
@@ -179,7 +179,10 @@ To select several calving mechanisms, use a comma-separated list of keywords men
     \midrule
     \intextoption{calving eigen_calving} & Physically-based calving parameterization \cite{Levermannetal2012,Winkelmannetal2011}.  Whereever the product of principal strain rates is positive, the calving rate is proportional to this product.  \\
     \intextoption{cfl_eigen_calving} & Apply CFL-type criterion to reduce (limit) PISM's time step, according to for eigen-calving rate.  \\
-    \txtopt{eigen_calving_K}{($K$)} & Sets the proportionality parameter $K$ in $\text{m}\,\text{s}$. \\ \midrule
+    \txtopt{eigen_calving_K}{($m s$)} & Sets the proportionality parameter $K$ in $\text{m}\,\text{s}$. \\ \midrule
+    \intextoption{calving stress_calving} & Physically-based calving parameterization \cite{Morlighem2016} that uses the tensile von Mises stresses.  \\
+    \intextoption{cfl_stress_calving} & Apply CFL-type criterion to reduce (limit) PISM's time step, according to for stress-calving rate.  \\
+    \txtopt{stress_calving_sigma_max}{($Pa$)} & Sets the maximum tensile stress $\tilde{\sigma}$ in $\text{Pa}$. \\ \midrule
     \intextoption{calving thickness_calving} & Calve all near-terminus ice which is thinner than ice threshold thickness $H_{\textrm{cr}}$. \\
     \txtopt{thickness_calving_threshold}{(m)} & Sets the thickness threshold $H_{\textrm{cr}}$ in meters. \\ \midrule
     \intextoption{calving float_kill} & All floating ice is calved off immediately.\\ \midrule
