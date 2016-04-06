@@ -193,8 +193,6 @@ void StressCalving::update(double dt,
       effective_tensile_strain_rate = sqrt(0.5*(std::max(0., PetscSqr(eigen1)) + std::max(0., PetscSqr(eigen2))));
 
       // [\ref Morlighem2016] equation 7
-      // this should be more general for the Blatter model
-      // get viscosity
       sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate, 1./ssa_n);
       calving_rate_horizontal = velocity_magnitude * effective_tensile_strain_rate / m_sigma_max;
 
@@ -351,8 +349,6 @@ MaxTimestep StressCalving::max_timestep() {
     effective_tensile_strain_rate = sqrt(0.5*(std::max(0., PetscSqr(eigen1)) + std::max(0., PetscSqr(eigen2))));
 
     // [\ref Morlighem2016] equation 7
-    // this should be more general for the Blatter model
-    // get viscosity
     sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate, 1./ssa_n);
     calving_rate_horizontal = velocity_magnitude * effective_tensile_strain_rate / m_sigma_max;
 
