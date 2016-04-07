@@ -11,6 +11,7 @@
 
 #include "cubature.h"
 #include <math.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 
 int count = 0;
 int which_integrand = 0;

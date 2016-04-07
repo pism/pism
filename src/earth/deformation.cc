@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include <cmath>
 #include <fftw3.h>
 #include <cassert>
+#include <gsl/gsl_math.h>       // M_PI
 
 #include "base/util/pism_const.hh"
 #include "matlablike.hh"

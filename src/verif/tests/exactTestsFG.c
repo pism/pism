@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2008, 2014, 2015 Ed Bueler and Jed Brown and Constantine Khroulev
+   Copyright (C) 2004-2008, 2014, 2015, 2016 Ed Bueler and Jed Brown and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 #include "exactTestsFG.h"
 
 static double p3(double x) {

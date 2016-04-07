@@ -19,6 +19,7 @@
 
 #include <cmath>                // for erf() in method 1 in putTempAtDepth()
 #include <cassert>
+#include <gsl/gsl_math.h>       // M_PI
 
 #include "iceModel.hh"
 #include "base/util/IceGrid.hh"

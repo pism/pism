@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2015 PISM Authors
+// Copyright (C) 2010--2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@ static char help[] = "\nBEDROUGH_TEST\n"
 
 #include "base/util/Context.hh"
 #include <cmath>
+#include <gsl/gsl_math.h>       // M_PI
 #include <cstdio>
 #include "base/util/pism_options.hh"
 #include "base/util/IceGrid.hh"

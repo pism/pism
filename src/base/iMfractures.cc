@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <petscsys.h>
+#include <gsl/gsl_math.h>       // M_PI
 
 #include "iceModel.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
