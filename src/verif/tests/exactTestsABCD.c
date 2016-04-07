@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 #include "exactTestsABCD.h"
 
 #define SperA 31556926.0  /* seconds per year; 365.2422 days */

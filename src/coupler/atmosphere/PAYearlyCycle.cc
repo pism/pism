@@ -20,7 +20,7 @@
 // Implementation of the atmosphere model using constant-in-time precipitation
 // and a cosine yearly cycle for near-surface air temperatures.
 
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       // M_PI, GSL_NAN
 
 #include "PAYearlyCycle.hh"
 #include "base/util/PISMTime.hh"

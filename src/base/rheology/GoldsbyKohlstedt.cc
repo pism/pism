@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <gsl/gsl_math.h>       // M_PI
 
 #include "GoldsbyKohlstedt.hh"
 

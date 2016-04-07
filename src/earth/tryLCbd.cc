@@ -38,6 +38,7 @@ static char help[] =
 
 
 #include <cmath>
+#include <gsl/gsl_math.h>       // M_PI
 #include <cstdio>
 #include <petscvec.h>
 #include <petscdmda.h>

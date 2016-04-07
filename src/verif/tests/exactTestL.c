@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007--2012, 2015 Ed Bueler and Constantine Khroulev
+   Copyright (C) 2007--2012, 2015, 2016 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -25,6 +25,7 @@
 #include <math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 
 #include <gsl/gsl_version.h>
 #if (defined GSL_MAJOR_VERSION) && (defined GSL_MINOR_VERSION) && \

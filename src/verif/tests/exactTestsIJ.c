@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 #include "exactTestsIJ.h"
 
 #define secpera 31556926.0        /* seconds per year; 365.2422 days */

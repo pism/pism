@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2014, 2015 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #include <ctime>  // for time(), used to initialize random number gen
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_math.h>       // M_PI
 
 #include "base/util/pism_const.hh"
 #include "localMassBalance_old.hh"

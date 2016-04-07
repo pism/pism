@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_errno.h>
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 #include <gsl/gsl_roots.h>
 #include "exactTestK.h"
 
