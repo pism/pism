@@ -153,8 +153,6 @@ macro(pism_find_prerequisites)
   endif (DEFINED PETSC_VERSION)
 
   # MPI
-  # Use the PETSc compiler as a hint when looking for an MPI compiler
-  set (MPI_C_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
   find_package (MPI REQUIRED)
 
   # Other required libraries

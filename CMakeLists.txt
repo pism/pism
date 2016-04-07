@@ -1,5 +1,6 @@
-project (Pism)
 cmake_minimum_required (VERSION 2.8.8) # 2.8.8 was released on April 19, 2012
+project (Pism C CXX)
+
 if (NOT ${CMAKE_VERSION} VERSION_LESS 3.0.0)
   message(STATUS "CMAKE_VERSION >= 3.0.0. Setting policy 0026 behavior to 'old'...")
   # This has to do with the way we compute dependencies of PISM's
