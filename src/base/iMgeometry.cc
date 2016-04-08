@@ -23,7 +23,7 @@
 #include <algorithm>
 
 #include "iceModel.hh"
-#include "base/calving/PISMIcebergRemover.hh"
+#include "base/calving/IcebergRemover.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"

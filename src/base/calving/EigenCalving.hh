@@ -55,7 +55,7 @@ protected:
   void remove_narrow_tongues(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
 protected:
   IceModelVec2 m_strain_rates;
-  IceModelVec2S m_thk_loss;
+  IceModelVec2S m_thk_loss, m_horizontal_calving_rate;
   const int m_stencil_width;
   stressbalance::StressBalance *m_stress_balance;
   double m_K;

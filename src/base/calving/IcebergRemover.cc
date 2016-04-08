@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "PISMIcebergRemover.hh"
+#include "IcebergRemover.hh"
 #include "connected_components.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMVars.hh"
