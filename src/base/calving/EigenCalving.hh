@@ -39,7 +39,9 @@ public:
 
   virtual void init();
   void update(double dt,
-              IceModelVec2CellType &pism_mask,
+              double sea_level,
+              const IceModelVec2S &bed_topography,
+              IceModelVec2CellType &mask,
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
 
@@ -52,7 +54,6 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
   void update_strain_rates();
-  void remove_narrow_tongues(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
 protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss, m_horizontal_calving_rate;
@@ -61,6 +62,8 @@ protected:
   double m_K;
   bool m_restrict_timestep;
 };
+
+void remove_narrow_tongues(const IceModelVec2CellType &mask, IceModelVec2S &ice_thickness);
 
 } // end of namespace calving
 } // end of namespace pism

@@ -80,12 +80,16 @@ void EigenCalving::init() {
   See equation (26) in [\ref Winkelmannetal2011].
 */
 void EigenCalving::update(double dt,
+                          double sea_level,
+                          const IceModelVec2S &bed_topography,
                           IceModelVec2CellType &mask,
                           IceModelVec2S &Href,
                           IceModelVec2S &ice_thickness) {
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
+
+  const double dx = m_grid->dx();
 
   m_thk_loss.set(0.0);
 
@@ -98,73 +102,65 @@ void EigenCalving::update(double dt,
   list.add(m_strain_rates);
   list.add(m_thk_loss);
 
+  // Prepare to loop over neighbors: directions
+  const Direction dirs[] = {North, East, South, West};
+
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
-    // Average of strain-rate eigenvalues in adjacent floating grid
-    // cells to be used for eigen-calving:
-    double
-      eigen1    = 0.0,
-      eigen2    = 0.0;
-    // Neighbor-averaged ice thickness:
-    double
-      H_average = 0.0;
-
-    int N_floating_neighbors = 0, M = 0;
-    // M is the number of cells used to compute averages of strain
-    // rate components.
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (mask.ice_free_ocean(i, j) &&
-        mask.next_to_floating_ice(i, j)) {
+    if (mask.ice_free_ocean(i, j) and mask.next_to_floating_ice(i, j)) {
 
-      if (mask.floating_ice(i + 1, j)) {
-        N_floating_neighbors += 1;
-        H_average += ice_thickness(i + 1, j);
-      }
+      // Neighbor-averaged ice thickness:
+      double H_average = 0.0;
+      int N_floating_neighbors = 0;
+      {
+        StarStencil<int> M_star = mask.int_star(i, j);
+        StarStencil<double> H_star = ice_thickness.star(i, j);
 
-      if (mask.floating_ice(i - 1, j)) {
-        N_floating_neighbors += 1;
-        H_average += ice_thickness(i - 1, j);
-      }
+        for (int n = 0; n < 4; ++n) {
+          Direction direction = dirs[n];
+          if (mask::floating_ice(M_star[direction])) {
+            H_average += H_star[direction];
+            N_floating_neighbors += 1;
+          }
+        }
 
-      if (mask.floating_ice(i, j + 1)) {
-        N_floating_neighbors += 1;
-        H_average += ice_thickness(i, j + 1);
-      }
-
-      if (mask.floating_ice(i, j - 1)) {
-        N_floating_neighbors += 1;
-        H_average += ice_thickness(i, j - 1);
-      }
-
-      if (N_floating_neighbors > 0) {
-        H_average /= N_floating_neighbors;
-      }
-
-      for (int p = -1; p < 2; p += 2) {
-        int i_offset = p * offset;
-        if (mask.floating_ice(i + i_offset, j) &&
-            not mask.ice_margin(i + i_offset, j)) {
-          eigen1 += m_strain_rates(i + i_offset, j, 0);
-          eigen2 += m_strain_rates(i + i_offset, j, 1);
-          M += 1;
+        if (N_floating_neighbors > 0) {
+          H_average /= N_floating_neighbors;
         }
       }
 
-      for (int q = -1; q < 2; q += 2) {
-        int j_offset = q * offset;
-        if (mask.floating_ice(i, j + j_offset) &&
-            not mask.ice_margin(i , j + j_offset)) {
-          eigen1 += m_strain_rates(i, j + j_offset, 0);
-          eigen2 += m_strain_rates(i, j + j_offset, 1);
-          M += 1;
+      // Average of strain-rate eigenvalues in adjacent floating grid
+      // cells to be used for eigen-calving:
+      double
+        eigen1 = 0.0,
+        eigen2 = 0.0;
+      {
+        int N = 0;
+        for (int p = -1; p < 2; p += 2) {
+          const int I = i + p * offset;
+          if (mask.floating_ice(I, j) and not mask.ice_margin(I, j)) {
+            eigen1 += m_strain_rates(I, j, 0);
+            eigen2 += m_strain_rates(I, j, 1);
+            N += 1;
+          }
         }
-      }
 
-      if (M > 0) {
-        eigen1 /= M;
-        eigen2 /= M;
+        for (int q = -1; q < 2; q += 2) {
+          const int J = j + q * offset;
+          if (mask.floating_ice(i, J) and not mask.ice_margin(i, J)) {
+            eigen1 += m_strain_rates(i, J, 0);
+            eigen2 += m_strain_rates(i, J, 1);
+            N += 1;
+          }
+        }
+
+        if (N > 0) {
+          eigen1 /= N;
+          eigen2 /= N;
+        }
       }
 
       double
@@ -183,7 +179,7 @@ void EigenCalving::update(double dt,
       }
 
       // calculate mass loss with respect to the associated ice thickness and the grid size:
-      double calving_rate = calving_rate_horizontal * H_average / m_grid->dx(); // in m/s
+      double calving_rate = calving_rate_horizontal * H_average / dx; // in m/s
 
       // apply calving rate at partially filled or empty grid cells
       if (calving_rate > 0.0) {
@@ -203,7 +199,7 @@ void EigenCalving::update(double dt,
         }
       }
 
-    } // end of "if (ice_free_ocean && next_to_floating)"
+    } // end of "if (ice_free_ocean and next_to_floating)"
   }
 
   m_thk_loss.update_ghosts();
@@ -212,9 +208,9 @@ void EigenCalving::update(double dt,
     const int i = p.i(), j = p.j();
     double thk_loss_ij = 0.0;
 
-    if (mask.floating_ice(i, j) &&
-        (m_thk_loss(i + 1, j) > 0.0 || m_thk_loss(i - 1, j) > 0.0 ||
-         m_thk_loss(i, j + 1) > 0.0 || m_thk_loss(i, j - 1) > 0.0)) {
+    if (mask.floating_ice(i, j) and
+        (m_thk_loss(i + 1, j) > 0.0 or m_thk_loss(i - 1, j) > 0.0 or
+         m_thk_loss(i, j + 1) > 0.0 or m_thk_loss(i, j - 1) > 0.0)) {
 
       thk_loss_ij = (m_thk_loss(i + 1, j) + m_thk_loss(i - 1, j) +
                      m_thk_loss(i, j + 1) + m_thk_loss(i, j - 1));     // in m/s
@@ -225,16 +221,22 @@ void EigenCalving::update(double dt,
       Href(i, j) = std::max(ice_thickness(i, j) - thk_loss_ij, 0.0); // in m
 
       ice_thickness(i, j) = 0.0;
-      mask(i, j) = MASK_ICE_FREE_OCEAN;
     }
   }
 
-  mask.update_ghosts();
+  // need to update ghosts of thickness to compute mask in place
+  ice_thickness.update_ghosts();
 
+  // update mask
+  GeometryCalculator gc(*m_config);
+  gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_standard"));
+  gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
+
+  // remove narrow ice tongues
   remove_narrow_tongues(mask, ice_thickness);
 
-  ice_thickness.update_ghosts();
-  mask.update_ghosts();
+  // update mask again
+  gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
 }
 
 
@@ -315,7 +317,7 @@ MaxTimestep EigenCalving::max_timestep() {
     }
 
     // calving law
-    if (eigen2 > eigenCalvOffset && eigen1 > 0.0) { // if spreading in all directions
+    if (eigen2 > eigenCalvOffset and eigen1 > 0.0) { // if spreading in all directions
       calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
       my_calving_rate_counter += 1.0;
       my_calving_rate_mean += calving_rate_horizontal;
@@ -378,7 +380,7 @@ void EigenCalving::update_strain_rates() {
   m_stress_balance->compute_2D_principal_strain_rates(ssa_velocity, mask, m_strain_rates);
 }
 
-/** Remove tips of one-cell-wide ice tongues ("noses").  Changes ice thickness.
+/** Remove tips of one-cell-wide ice tongues ("noses")..
  *
  * The center icy cell in ice tongues like this one (and equivalent)
  *
@@ -411,24 +413,27 @@ void EigenCalving::update_strain_rates() {
  *
  * @return 0 on success
  */
-void EigenCalving::remove_narrow_tongues(IceModelVec2CellType &mask,
-                                         IceModelVec2S &ice_thickness) {
+void remove_narrow_tongues(const IceModelVec2CellType &mask,
+                           IceModelVec2S &ice_thickness) {
+
+  IceGrid::ConstPtr grid = mask.get_grid();
 
   IceModelVec::AccessList list;
   list.add(mask);
   list.add(ice_thickness);
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     if (mask.ice_free(i, j)) {
       // FIXME: it might be better to have access to bedrock elevation b(i,j)
       // and sea level SL so that the predicate can be
-      //   mask.ice_free(i,j) || (mask.grounded_ice(i,j) && (b(i,j) >= SL)))
+      //   mask.ice_free(i,j) or (mask.grounded_ice(i,j) and (b(i,j) >= SL)))
       continue;
     }
 
-    bool ice_free_N = false,  ice_free_E = false,
-      ice_free_S = false, ice_free_W = false,
+    bool
+      ice_free_N  = false, ice_free_E  = false,
+      ice_free_S  = false, ice_free_W  = false,
       ice_free_NE = false, ice_free_NW = false,
       ice_free_SE = false, ice_free_SW = false;
 
@@ -456,31 +461,30 @@ void EigenCalving::remove_narrow_tongues(IceModelVec2CellType &mask,
       ice_free_SW = mask.ice_free(i - 1, j - 1);
     }
 
-    if ((not ice_free_W &&
-         ice_free_NW         &&
-         ice_free_SW         &&
-         ice_free_N          &&
-         ice_free_S          &&
-         ice_free_E)         ||
-        (not ice_free_N &&
-         ice_free_NW         &&
-         ice_free_NE         &&
-         ice_free_W          &&
-         ice_free_E          &&
-         ice_free_S)         ||
-        (not ice_free_E &&
-         ice_free_NE         &&
-         ice_free_SE         &&
-         ice_free_W          &&
-         ice_free_S          &&
-         ice_free_N)         ||
-        (not ice_free_S &&
-         ice_free_SW         &&
-         ice_free_SE         &&
-         ice_free_W          &&
-         ice_free_E          &&
+    if ((not ice_free_W and
+         ice_free_NW    and
+         ice_free_SW    and
+         ice_free_N     and
+         ice_free_S     and
+         ice_free_E)    or
+        (not ice_free_N and
+         ice_free_NW    and
+         ice_free_NE    and
+         ice_free_W     and
+         ice_free_E     and
+         ice_free_S)    or
+        (not ice_free_E and
+         ice_free_NE    and
+         ice_free_SE    and
+         ice_free_W     and
+         ice_free_S     and
+         ice_free_N)    or
+        (not ice_free_S and
+         ice_free_SW    and
+         ice_free_SE    and
+         ice_free_W     and
+         ice_free_E     and
          ice_free_N)) {
-      mask(i, j)          = MASK_ICE_FREE_OCEAN;
       ice_thickness(i, j) = 0.0;
     }
   }
