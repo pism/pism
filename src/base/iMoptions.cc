@@ -162,8 +162,8 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     result.insert("age");
   }
 
-  if (ocean_kill_calving != NULL) {
-    ocean_kill_calving->add_vars_to_output(keyword, result);
+  if (m_ocean_kill_calving != NULL) {
+    m_ocean_kill_calving->add_vars_to_output(keyword, result);
   }
 
   if (m_beddef != NULL) {

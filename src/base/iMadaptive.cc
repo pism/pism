@@ -287,8 +287,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       }
     }
 
-    if (eigen_calving != NULL) {
-      MaxTimestep eigencalving_dt = eigen_calving->max_timestep();
+    if (m_eigen_calving != NULL) {
+      MaxTimestep eigencalving_dt = m_eigen_calving->max_timestep();
       if (eigencalving_dt.is_finite()) {
         dt_restrictions["eigencalving"] = eigencalving_dt.value();
       }

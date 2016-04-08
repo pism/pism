@@ -198,20 +198,20 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       throw RuntimeError("PISM ERROR: ocean == NULL");
     }
 
-    if (ocean_kill_calving != NULL) {
-      ocean_kill_calving->define_variables(vars, nc, nctype);
+    if (m_ocean_kill_calving != NULL) {
+      m_ocean_kill_calving->define_variables(vars, nc, nctype);
     }
 
-    if (float_kill_calving != NULL) {
-      float_kill_calving->define_variables(vars, nc, nctype);
+    if (m_float_kill_calving != NULL) {
+      m_float_kill_calving->define_variables(vars, nc, nctype);
     }
 
-    if (thickness_threshold_calving != NULL) {
-      thickness_threshold_calving->define_variables(vars, nc, nctype);
+    if (m_thickness_threshold_calving != NULL) {
+      m_thickness_threshold_calving->define_variables(vars, nc, nctype);
     }
 
-    if (eigen_calving != NULL) {
-      eigen_calving->define_variables(vars, nc, nctype);
+    if (m_eigen_calving != NULL) {
+      m_eigen_calving->define_variables(vars, nc, nctype);
     }
 
   }
@@ -268,20 +268,20 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     throw RuntimeError("PISM ERROR: ocean == NULL");
   }
 
-  if (ocean_kill_calving != NULL) {
-    ocean_kill_calving->write_variables(vars, nc);
+  if (m_ocean_kill_calving != NULL) {
+    m_ocean_kill_calving->write_variables(vars, nc);
   }
 
-  if (float_kill_calving != NULL) {
-    float_kill_calving->write_variables(vars, nc);
+  if (m_float_kill_calving != NULL) {
+    m_float_kill_calving->write_variables(vars, nc);
   }
 
-  if (thickness_threshold_calving != NULL) {
-    thickness_threshold_calving->write_variables(vars, nc);
+  if (m_thickness_threshold_calving != NULL) {
+    m_thickness_threshold_calving->write_variables(vars, nc);
   }
 
-  if (eigen_calving != NULL) {
-    eigen_calving->write_variables(vars, nc);
+  if (m_eigen_calving != NULL) {
+    m_eigen_calving->write_variables(vars, nc);
   }
 
   // All the remaining names in vars must be of diagnostic quantities.

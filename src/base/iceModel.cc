@@ -88,11 +88,11 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
 
   btu = NULL;
 
-  iceberg_remover             = NULL;
-  ocean_kill_calving          = NULL;
-  float_kill_calving          = NULL;
-  thickness_threshold_calving = NULL;
-  eigen_calving               = NULL;
+  m_iceberg_remover             = NULL;
+  m_ocean_kill_calving          = NULL;
+  m_float_kill_calving          = NULL;
+  m_thickness_threshold_calving = NULL;
+  m_eigen_calving               = NULL;
 
   // initialize maximum |u|,|v|,|w| in ice
   m_max_u_speed = 0;
@@ -162,11 +162,11 @@ IceModel::~IceModel() {
   delete basal_yield_stress_model;
   delete btu;
 
-  delete iceberg_remover;
-  delete ocean_kill_calving;
-  delete float_kill_calving;
-  delete thickness_threshold_calving;
-  delete eigen_calving;
+  delete m_iceberg_remover;
+  delete m_ocean_kill_calving;
+  delete m_float_kill_calving;
+  delete m_thickness_threshold_calving;
+  delete m_eigen_calving;
 }
 
 

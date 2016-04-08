@@ -65,14 +65,14 @@ void IceModel::updateSurfaceElevationAndMask() {
 
   GeometryCalculator gc(*m_config);
 
-  if (m_config->get_boolean("kill_icebergs") && iceberg_remover != NULL) {
+  if (m_config->get_boolean("kill_icebergs") && m_iceberg_remover != NULL) {
     // the iceberg remover has to use the same mask as the stress balance code, hence the
     // stress-balance-related threshold here
     gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_stress_balance_standard"));
 
     gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
 
-    iceberg_remover->update(m_cell_type, m_ice_thickness);
+    m_iceberg_remover->update(m_cell_type, m_ice_thickness);
     // the call above modifies ice thickness and updates the mask accordingly, but we re-compute the
     // mask (we need to use the different threshold)
   }

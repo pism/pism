@@ -53,20 +53,20 @@ void IceModel::do_calving() {
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
-  if (eigen_calving != NULL) {
-    eigen_calving->update(m_dt, m_cell_type, vHref, m_ice_thickness);
+  if (m_eigen_calving != NULL) {
+    m_eigen_calving->update(m_dt, m_cell_type, vHref, m_ice_thickness);
   }
 
-  if (ocean_kill_calving != NULL) {
-    ocean_kill_calving->update(m_cell_type, m_ice_thickness);
+  if (m_ocean_kill_calving != NULL) {
+    m_ocean_kill_calving->update(m_cell_type, m_ice_thickness);
   }
 
-  if (float_kill_calving != NULL) {
-    float_kill_calving->update(m_cell_type, m_ice_thickness);
+  if (m_float_kill_calving != NULL) {
+    m_float_kill_calving->update(m_cell_type, m_ice_thickness);
   }
 
-  if (thickness_threshold_calving != NULL) {
-    thickness_threshold_calving->update(m_cell_type, m_ice_thickness);
+  if (m_thickness_threshold_calving != NULL) {
+    m_thickness_threshold_calving->update(m_cell_type, m_ice_thickness);
   }
 
   // This call removes icebergs, too.

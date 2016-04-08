@@ -239,11 +239,11 @@ protected:
 
   energy::BedThermalUnit *btu;
 
-  calving::IcebergRemover     *iceberg_remover;
-  calving::OceanKill          *ocean_kill_calving;
-  calving::FloatKill          *float_kill_calving;
-  calving::CalvingAtThickness *thickness_threshold_calving;
-  calving::EigenCalving       *eigen_calving;
+  calving::IcebergRemover     *m_iceberg_remover;
+  calving::OceanKill          *m_ocean_kill_calving;
+  calving::FloatKill          *m_float_kill_calving;
+  calving::CalvingAtThickness *m_thickness_threshold_calving;
+  calving::EigenCalving       *m_eigen_calving;
 
   surface::SurfaceModel *m_surface;
   ocean::OceanModel   *m_ocean;
