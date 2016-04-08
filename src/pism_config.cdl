@@ -119,6 +119,10 @@ pism_config:calving_methods_type = "string";
     pism_config:calving_methods = "";
     pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'stress_calving', 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
 
+    pism_config:float_kill_margin_only_type = "boolean";
+    pism_config:float_kill_margin_only = "no";
+    pism_config:float_kill_margin_only_doc = "Apply float_kill at ice margin cells only.";
+
     pism_config:do_fracture_density_type = "boolean";
     pism_config:do_fracture_density_option = "fractures";
     pism_config:do_fracture_density = "no";

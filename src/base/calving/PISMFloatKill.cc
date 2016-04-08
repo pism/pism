@@ -29,7 +29,7 @@ namespace calving {
 
 FloatKill::FloatKill(IceGrid::ConstPtr g)
   : Component(g) {
-  // empty
+  m_margin_only = m_config->get_boolean("float_kill_margin_only");
 }
 
 FloatKill::~FloatKill() {
@@ -38,7 +38,12 @@ FloatKill::~FloatKill() {
 
 void FloatKill::init() {
   m_log->message(2,
-             "* Initializing the 'calving at the grounding line' mechanism...\n");
+                 "* Initializing calving using the floatation criterion (float_kill)...\n");
+
+  if (m_margin_only) {
+    m_log->message(2,
+                   "  [only cells at the ice margin are calved during a given time step]\n");
+  }
 }
 
 /**
@@ -58,7 +63,11 @@ void FloatKill::update(IceModelVec2CellType &mask, IceModelVec2S &ice_thickness)
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
+
     if (mask.floating_ice(i, j)) {
+      if (m_margin_only and not mask.next_to_ice_free_ocean(i, j)) {
+        continue;
+      }
       ice_thickness(i, j) = 0.0;
       mask(i, j)          = MASK_ICE_FREE_OCEAN;
     }
