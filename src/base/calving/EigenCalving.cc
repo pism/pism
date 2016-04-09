@@ -260,7 +260,7 @@ void EigenCalving::update(double dt,
 
   // update mask
   GeometryCalculator gc(*m_config);
-  gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_standard"));
+  gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_stress_balance_standard"));
   gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
 
   // remove narrow ice tongues
