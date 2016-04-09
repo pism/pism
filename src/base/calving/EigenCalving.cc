@@ -41,6 +41,12 @@ EigenCalving::EigenCalving(IceGrid::ConstPtr g,
 
   m_thk_loss.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
 
+  m_horizontal_calving_rate.create(m_grid, "m_horizontal_calving_rate", WITHOUT_GHOSTS);
+  m_horizontal_calving_rate.set_attrs("diagnostic", "calving rate", "m second-1", "");
+  m_horizontal_calving_rate.set_time_independent(false);
+  m_horizontal_calving_rate.metadata().set_string("glaciological_units", "m year-1");
+  m_horizontal_calving_rate.write_in_glaciological_units = true;
+
   m_strain_rates.metadata(0).set_name("eigen1");
   m_strain_rates.set_attrs("internal",
                            "major principal component of horizontal strain-rate",
@@ -89,6 +95,10 @@ void EigenCalving::update(double dt,
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
 
+  // eigenCalvOffset allows adjusting the transition from
+  // compressive to extensive flow regime
+  const double eigenCalvOffset = 0.0;
+
   const double dx = m_grid->dx();
 
   m_thk_loss.set(0.0);
@@ -101,10 +111,12 @@ void EigenCalving::update(double dt,
   list.add(Href);
   list.add(m_strain_rates);
   list.add(m_thk_loss);
+  list.add(m_horizontal_calving_rate);
 
   // Prepare to loop over neighbors: directions
   const Direction dirs[] = {North, East, South, West};
 
+  // Compute the horizontal calving rate
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
@@ -112,28 +124,8 @@ void EigenCalving::update(double dt,
     // have floating ice neighbors after the mass continuity step
     if (mask.ice_free_ocean(i, j) and mask.next_to_floating_ice(i, j)) {
 
-      // Neighbor-averaged ice thickness:
-      double H_average = 0.0;
-      int N_floating_neighbors = 0;
-      {
-        StarStencil<int> M_star = mask.int_star(i, j);
-        StarStencil<double> H_star = ice_thickness.star(i, j);
-
-        for (int n = 0; n < 4; ++n) {
-          Direction direction = dirs[n];
-          if (mask::floating_ice(M_star[direction])) {
-            H_average += H_star[direction];
-            N_floating_neighbors += 1;
-          }
-        }
-
-        if (N_floating_neighbors > 0) {
-          H_average /= N_floating_neighbors;
-        }
-      }
-
-      // Average of strain-rate eigenvalues in adjacent floating grid
-      // cells to be used for eigen-calving:
+      // Average of strain-rate eigenvalues in adjacent floating grid cells to be used for
+      // eigen-calving:
       double
         eigen1 = 0.0,
         eigen2 = 0.0;
@@ -163,25 +155,54 @@ void EigenCalving::update(double dt,
         }
       }
 
-      double
-        calving_rate_horizontal = 0.0,
-        eigenCalvOffset         = 0.0;
-      // eigenCalvOffset allows adjusting the transition from
-      // compressive to extensive flow regime
-
       // Calving law
       //
       // eigen1 * eigen2 has units [s^-2] and calving_rate_horizontal
       // [m*s^1] hence, eigen_calving_K has units [m*s]
       if (eigen2 > eigenCalvOffset and eigen1 > 0.0) {
         // spreading in all directions
-        calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
+        m_horizontal_calving_rate(i, j) = m_K * eigen1 * (eigen2 - eigenCalvOffset);
+      } else {
+        m_horizontal_calving_rate(i, j) = 0.0;
       }
 
-      // calculate mass loss with respect to the associated ice thickness and the grid size:
-      double calving_rate = calving_rate_horizontal * H_average / dx; // in m/s
+    } else { // end of "if (ice_free_ocean and next_to_floating)"
+      m_horizontal_calving_rate(i, j) = 0.0;
+    }
+  }
 
-      // apply calving rate at partially filled or empty grid cells
+  // Apply the computed horizontal calving rate:
+  for (Points pt(*m_grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
+
+    // Find partially filled or empty grid boxes on the icefree ocean, which
+    // have floating ice neighbors after the mass continuity step
+    if (mask.ice_free_ocean(i, j) and mask.next_to_floating_ice(i, j)) {
+
+      // Compute the number of floating neighbors and the neighbor-averaged ice thickness:
+      double H_average = 0.0;
+      int N_floating_neighbors = 0;
+      {
+        StarStencil<int> M_star = mask.int_star(i, j);
+        StarStencil<double> H_star = ice_thickness.star(i, j);
+
+        for (int n = 0; n < 4; ++n) {
+          Direction direction = dirs[n];
+          if (mask::floating_ice(M_star[direction])) {
+            H_average += H_star[direction];
+            N_floating_neighbors += 1;
+          }
+        }
+
+        if (N_floating_neighbors > 0) {
+          H_average /= N_floating_neighbors;
+        }
+      }
+
+      // Calculate mass loss with respect to the associated ice thickness and the grid size:
+      double calving_rate = m_horizontal_calving_rate(i, j) * H_average / dx; // in m/s
+
+      // Apply calving rate at partially filled or empty grid cells
       if (calving_rate > 0.0) {
         Href(i, j) -= calving_rate * dt; // in m
 
