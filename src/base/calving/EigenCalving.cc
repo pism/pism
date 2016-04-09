@@ -291,93 +291,54 @@ MaxTimestep EigenCalving::max_timestep() {
   // About 9 hours which corresponds to 10000 km year-1 on a 10 km grid
   double dt_min = units::convert(m_sys, 0.001, "years", "seconds");
 
-  // Distance (grid cells) from calving front where strain rate is evaluated
-  int offset = m_stencil_width;
   double
-    my_calving_rate_max     = 0.0,
-    my_calving_rate_mean    = 0.0,
-    my_calving_rate_counter = 0.0;
+    calving_rate_max  = 0.0,
+    calving_rate_mean = 0.0;
+  int N_calving_cells = 0;
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  update_strain_rates();
+  compute_calving_rate(mask);
 
   IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(m_strain_rates);
+  list.add(m_horizontal_calving_rate);
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
-    // Average of strain-rate eigenvalues in adjacent floating grid cells to
-    // be used for eigencalving
-    double eigen1 = 0.0, eigen2 = 0.0;
-    // Number of cells used in computing eigen1 and eigen2:
-    int M = 0;
 
-    // find partially filled or empty grid boxes on the ice-free
-    // ocean which have floating ice neighbors
-    if ((mask.ice_free_ocean(i, j) and not mask.next_to_floating_ice(i, j))) {
-      continue;
-    }
+    const double C = m_horizontal_calving_rate(i, j);
 
-    double
-      calving_rate_horizontal = 0.0,
-      eigenCalvOffset = 0.0;
-
-    for (int p = -1; p < 2; p += 2) {
-      int i_offset = p * offset;
-      if (mask.floating_ice(i + i_offset, j) and not mask.ice_margin(i + i_offset, j)) {
-        eigen1 += m_strain_rates(i + i_offset, j, 0);
-        eigen2 += m_strain_rates(i + i_offset, j, 1);
-        M += 1;
-      }
-    }
-
-    for (int q = -1; q < 2; q += 2) {
-      int j_offset = q * offset;
-      if (mask.floating_ice(i, j + j_offset) and not mask.ice_margin(i,   j + j_offset)) {
-        eigen1 += m_strain_rates(i, j + j_offset, 0);
-        eigen2 += m_strain_rates(i, j + j_offset, 1);
-        M += 1;
-      }
-    }
-
-    if (M > 0) {
-      eigen1 /= M;
-      eigen2 /= M;
-    }
-
-    // calving law
-    if (eigen2 > eigenCalvOffset and eigen1 > 0.0) { // if spreading in all directions
-      calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
-      my_calving_rate_counter += 1.0;
-      my_calving_rate_mean += calving_rate_horizontal;
-      my_calving_rate_max = std::max(my_calving_rate_max, calving_rate_horizontal);
+    if (C > 0.0) {
+      N_calving_cells   += 1;
+      calving_rate_mean += C;
+      calving_rate_max   = std::max(C, calving_rate_max);
     }
   }
 
-  double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
-  calving_rate_mean    = GlobalSum(m_grid->com, my_calving_rate_mean);
-  calving_rate_counter = GlobalSum(m_grid->com, my_calving_rate_counter);
-  calving_rate_max     = GlobalMax(m_grid->com, my_calving_rate_max);
+  N_calving_cells   = GlobalSum(m_grid->com, N_calving_cells);
+  calving_rate_mean = GlobalSum(m_grid->com, calving_rate_mean);
+  calving_rate_max  = GlobalMax(m_grid->com, calving_rate_max);
 
-  if (calving_rate_counter > 0.0) {
-    calving_rate_mean /= calving_rate_counter;
+  if (N_calving_cells > 0.0) {
+    calving_rate_mean /= N_calving_cells;
   } else {
     calving_rate_mean = 0.0;
   }
 
+  using units::convert;
+
   double denom = calving_rate_max / m_grid->dx();
-  const double epsilon = units::convert(m_sys, 0.001 / (m_grid->dx() + m_grid->dy()), "seconds", "years");
+  const double epsilon = convert(m_sys, 0.001 / (m_grid->dx() + m_grid->dy()), "seconds", "years");
 
   double dt = 1.0 / (denom + epsilon);
 
   m_log->message(3,
-             "  eigencalving: max c_rate = %.2f m/a ... gives dt=%.5f a; mean c_rate = %.2f m/a over %d cells\n",
-             units::convert(m_sys, calving_rate_max, "m second-1", "m year-1"),
-             units::convert(m_sys, dt, "seconds", "years"),
-             units::convert(m_sys, calving_rate_mean, "m second-1", "m year-1"),
-             (int)calving_rate_counter);
+                 "  eigencalving: maximum rate = %.2f m/year gives dt=%.5f years\n"
+                 "                mean rate    = %.2f m/year over %d cells\n",
+                 convert(m_sys, calving_rate_max, "m second-1", "m year-1"),
+                 convert(m_sys, dt, "seconds", "years"),
+                 convert(m_sys, calving_rate_mean, "m second-1", "m year-1"),
+                 N_calving_cells);
 
   return MaxTimestep(std::max(dt, dt_min));
 }
