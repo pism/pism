@@ -81,16 +81,7 @@ void EigenCalving::init() {
 
 }
 
-//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
-/*!
-  See equation (26) in [\ref Winkelmannetal2011].
-*/
-void EigenCalving::update(double dt,
-                          double sea_level,
-                          const IceModelVec2S &bed_topography,
-                          IceModelVec2CellType &mask,
-                          IceModelVec2S &Href,
-                          IceModelVec2S &ice_thickness) {
+void EigenCalving::compute_calving_rate(IceModelVec2CellType &mask) {
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -99,22 +90,12 @@ void EigenCalving::update(double dt,
   // compressive to extensive flow regime
   const double eigenCalvOffset = 0.0;
 
-  const double dx = m_grid->dx();
-
-  m_thk_loss.set(0.0);
-
   update_strain_rates();
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
   list.add(mask);
-  list.add(Href);
-  list.add(m_strain_rates);
-  list.add(m_thk_loss);
   list.add(m_horizontal_calving_rate);
-
-  // Prepare to loop over neighbors: directions
-  const Direction dirs[] = {North, East, South, West};
+  list.add(m_strain_rates);
 
   // Compute the horizontal calving rate
   for (Points pt(*m_grid); pt; pt.next()) {
@@ -169,7 +150,36 @@ void EigenCalving::update(double dt,
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       m_horizontal_calving_rate(i, j) = 0.0;
     }
-  }
+  } // end of the loop over grid points
+
+}
+
+//! \brief Uses principal strain rates to apply "eigencalving" with constant K.
+/*!
+  See equation (26) in [\ref Winkelmannetal2011].
+*/
+void EigenCalving::update(double dt,
+                          double sea_level,
+                          const IceModelVec2S &bed_topography,
+                          IceModelVec2CellType &mask,
+                          IceModelVec2S &Href,
+                          IceModelVec2S &ice_thickness) {
+
+  compute_calving_rate(mask);
+
+  const double dx = m_grid->dx();
+
+  m_thk_loss.set(0.0);
+
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(mask);
+  list.add(Href);
+  list.add(m_thk_loss);
+  list.add(m_horizontal_calving_rate);
+
+  // Prepare to loop over neighbors: directions
+  const Direction dirs[] = {North, East, South, West};
 
   // Apply the computed horizontal calving rate:
   for (Points pt(*m_grid); pt; pt.next()) {

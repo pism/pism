@@ -53,7 +53,9 @@ protected:
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
+  void compute_calving_rate(IceModelVec2CellType &mask);
   void update_strain_rates();
+
 protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss, m_horizontal_calving_rate;
