@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,9 +20,9 @@
 #ifndef _CONFIGJSON_H_
 #define _CONFIGJSON_H_
 
-#include "Config.hh"
 #include <jansson.h>
-#include <vector>
+
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -31,19 +31,32 @@ namespace pism {
  */
 class ConfigJSON : public Config {
 public:
-  ConfigJSON();
+  ConfigJSON(units::System::Ptr unit_system);
   virtual ~ConfigJSON();
+
   int init_from_file(const std::string &filename);
   int init_from_string(const std::string &string);
   std::string dump() const;
+
 private:
+  virtual void read_impl(const PIO &nc);
+  virtual void write_impl(const PIO &nc) const;
+
+  virtual bool is_set_impl(const std::string &name) const;
+
+  virtual Doubles all_doubles_impl() const;
+  virtual double get_double_impl(const std::string &name) const;
   virtual void set_double_impl(const std::string &name, double value);
-  virtual void set_boolean_impl(const std::string &name, bool value);
+
+  virtual Strings all_strings_impl() const;
+  virtual std::string get_string_impl(const std::string &name) const;
   virtual void set_string_impl(const std::string &name, const std::string &value);
 
-  virtual double get_double_impl(const std::string &name) const;
-  virtual std::string get_string_impl(const std::string &name) const;
-  virtual bool get_boolean_impl(const std::string &name) const;
+  virtual Booleans all_booleans_impl() const;
+
+  virtual bool get_boolean_impl(const std::string& name) const;
+  virtual void set_boolean_impl(const std::string& name, bool value);
+private:
   json_t *m_data;
 };
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 PISM Authors
+/* Copyright (C) 2014, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -162,6 +162,53 @@ std::string ConfigJSON::dump() const {
   return result;
 }
 
+void ConfigJSON::read_impl(const PIO &nc) {
+
+}
+
+void ConfigJSON::write_impl(const PIO &nc) {
+
+}
+
+bool ConfigJSON::is_set_impl(const std::string &name) {
+
+}
+
+Doubles ConfigJSON::all_doubles_impl() {
+
+}
+
+double ConfigJSON::get_double_impl(const std::string &name) {
+
+}
+
+void ConfigJSON::set_double_impl(const std::string &name, double value) {
+
+}
+
+Strings ConfigJSON::all_strings_impl() {
+
+}
+
+void ConfigJSON::set_string_impl(const std::string &name, const std::string &value) {
+
+}
+
+Booleans ConfigJSON::all_booleans_impl() {
+
+}
+
+bool ConfigJSON::get_boolean_impl(const std::string& name) {
+
+}
+
+void ConfigJSON::set_boolean_impl(const std::string& name, bool value) {
+
+}
+
+
+
+#if 0
 /*! Store a 'value' corresponding to the key 'name' in the database.
  *
  * If a name refers to an object "alice.bob", the object "alice" must
@@ -329,5 +376,5 @@ bool ConfigJSON::get_boolean_impl(const std::string &name) const {
     return false;
   }
 }
-
+#endif
 } // end of namespace pism
