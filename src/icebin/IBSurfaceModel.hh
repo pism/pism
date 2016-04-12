@@ -19,9 +19,9 @@
 #ifndef _IBSURFACEMODEL_H_
 #define _IBSURFACEMODEL_H_
 
-#include "coupler/PISMSurface.hh"
 #include "base/util/iceModelVec.hh"
 #include "coupler/PISMAtmosphere.hh"
+#include "coupler/PISMSurface.hh"
 
 namespace pism {
 namespace icebin {
@@ -36,6 +36,7 @@ namespace icebin {
 class IBSurfaceModel : public pism::surface::SurfaceModel {
 public:
   IBSurfaceModel(IceGrid::ConstPtr g);
+
 protected:
   virtual void init_impl();
   virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
@@ -47,17 +48,18 @@ protected:
                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype);
+  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+
 protected:
   bool _initialized;
   std::string m_input_file;
+
 public:
   // Inputs from IceBin
   pism::IceModelVec2S icebin_wflux;
   pism::IceModelVec2S icebin_deltah;
-  pism::IceModelVec2S icebin_massxfer;    // [kg m-2 s-1]
-  pism::IceModelVec2S icebin_enthxfer;    // [J m-2 s-1]
+  pism::IceModelVec2S icebin_massxfer; // [kg m-2 s-1]
+  pism::IceModelVec2S icebin_enthxfer; // [J m-2 s-1]
   // Calculated
   pism::IceModelVec2S surface_temp;
 };
