@@ -223,7 +223,9 @@ void define_dimension(const PIO &nc, unsigned long int length,
     std::vector<std::string> dims(1, name);
     nc.def_var(name, PISM_DOUBLE, dims);
 
+    // false means "don't use glaciological_units"
     write_attributes(nc, metadata, PISM_DOUBLE, false);
+
   } catch (RuntimeError &e) {
     e.add_context("defining dimension '%s' in '%s'", name.c_str(), nc.inq_filename().c_str());
     throw;
@@ -269,15 +271,17 @@ static void define_dimensions(const SpatialVariableMetadata& var,
                               const IceGrid& grid, const PIO &nc) {
 
   // x
-  if (not nc.inq_dim(var.get_x().get_name())) {
+  std::string x_name = var.get_x().get_name();
+  if (not nc.inq_dim(x_name)) {
     define_dimension(nc, grid.Mx(), var.get_x());
-    nc.put_1d_var(var.get_x().get_name(), 0, grid.x().size(), grid.x());
+    nc.put_1d_var(x_name, 0, grid.x().size(), grid.x());
   }
 
   // y
-  if (not nc.inq_dim(var.get_y().get_name())) {
+  std::string y_name = var.get_y().get_name();
+  if (not nc.inq_dim(y_name)) {
     define_dimension(nc, grid.My(), var.get_y());
-    nc.put_1d_var(var.get_y().get_name(), 0, grid.y().size(), grid.y());
+    nc.put_1d_var(y_name, 0, grid.y().size(), grid.y());
   }
 
   // z
@@ -292,7 +296,6 @@ static void define_dimensions(const SpatialVariableMetadata& var,
     }
   }
 }
-
 
 /**
  * Check if the storage order of a variable in the current file
