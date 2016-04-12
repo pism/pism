@@ -20,15 +20,15 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 #include "exactTestsABCD.h"
 
-#define pi 3.14159265358979
 #define SperA 31556926.0  /* seconds per year; 365.2422 days */
 
 int exactA(const double r, double *H, double *M) {
   /* NOTE: t is in seconds */
   const double L = 750000.0;       /* m; distance of margin from center */
-  const double M0 = 0.3 / SperA;   /* 30 cm/year constant accumulation */
+  const double M0 = 0.3 / SperA;   /* 30 cm year-1 constant accumulation */
   const double g = 9.81;           /* m/s^2; accel of gravity */
   const double rho = 910.0;        /* kg/m^3; density */
   const double n = 3.0;            /* Glen exponent */
@@ -142,10 +142,10 @@ int exactD(const double t, const double rin, double *H, double *M) {
 
 	  /* compute H from analytical steady state Hs plus perturbation */
 	  lamhat = (1+1/n)*s - (1/n) + pow(1-s,1+1/n) - pow(s,1+1/n);
-	  if ((r>0.3*L) && (r<0.9*L))    f = pow(cos(pi*(r-0.6*L)/(0.6*L)) ,2.0);
+          if ((r>0.3*L) && (r<0.9*L))    f = pow(cos(M_PI*(r-0.6*L)/(0.6*L)) ,2.0);
 	  else                           f = 0.0;
 	  Hs = (H0 / pow(1-1/n,power)) * pow(lamhat,power);
-	  *H = Hs + Cp * sin(2.0*pi*t/Tp) * f;
+          *H = Hs + Cp * sin(2.0*M_PI*t/Tp) * f;
 
 	  /* compute steady part of accumulation */
 	  temp = pow(s,1/n) + pow(1-s,1/n) - 1;
@@ -155,8 +155,8 @@ int exactD(const double t, const double rin, double *H, double *M) {
 
 	  /* derivs of H */
 	  if ((r>0.3*L) && (r<0.9*L)) {
-	    df = -(pi/(0.6*L)) * sin(pi*(r-0.6*L)/(0.3*L));
-	    ddf = -(pi*pi/(0.18*L*L)) * cos(pi*(r-0.6*L)/(0.3*L));
+            df = -(M_PI/(0.6*L)) * sin(M_PI*(r-0.6*L)/(0.3*L));
+            ddf = -(M_PI*M_PI/(0.18*L*L)) * cos(M_PI*(r-0.6*L)/(0.3*L));
 	    chi = (4.0/3.0)*s - 1.0/3.0 + pow(1-s,4.0/3.0) - pow(s,4.0/3.0);
 	    dchi = -(4.0/(3.0*L)) * (pow(s,1.0/3.0) + pow(1-s,1.0/3.0) - 1);
 	    ddchi = -(4.0/(9.0*L*L)) * (pow(s,-2.0/3.0) - pow(1-s,-2.0/3.0));
@@ -164,11 +164,11 @@ int exactD(const double t, const double rin, double *H, double *M) {
 	    dHs = c1 * pow(chi,-5.0/8.0) * dchi;
 	    ddHs = c1 * ((-5.0/8.0) * pow(chi,-13.0/8.0) * dchi * dchi
 	                   + pow(chi,-5.0/8.0) * ddchi);
-	    dH = dHs + Cp * sin(2.0*pi*t/Tp) * df;
-	    ddH = ddHs + Cp * sin(2.0*pi*t/Tp) * ddf;
+            dH = dHs + Cp * sin(2.0*M_PI*t/Tp) * df;
+            ddH = ddHs + Cp * sin(2.0*M_PI*t/Tp) * ddf;
 	    divterms = Gamma * pow(*H,4.) * dH * dH
 	         * ((1.0/r) * (*H) * dH + 5.0 * dH * dH + 3.0 * (*H) * ddH);
-	    Mc = (2.0*pi*Cp/Tp) * cos(2.0*pi*t/Tp) * f - Ms - divterms;
+            Mc = (2.0*M_PI*Cp/Tp) * cos(2.0*M_PI*t/Tp) * f - Ms - divterms;
 	  } else {
 	    Mc = 0.0;
 	  }

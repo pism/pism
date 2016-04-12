@@ -66,24 +66,24 @@ IceModelVec2S::Ptr IceModelVec2S::To2DScalar(IceModelVec::Ptr input) {
 }
 
 IceModelVec2S::IceModelVec2S() {
-  begin_end_access_use_dof = false;
+  m_begin_end_access_use_dof = false;
 }
 
 IceModelVec2Stag::IceModelVec2Stag()
   : IceModelVec2() {
   m_dof = 2;
-  begin_end_access_use_dof = true;
+  m_begin_end_access_use_dof = true;
 }
 
-void  IceModelVec2S::create(IceGrid::ConstPtr my_grid, const std::string &my_name, IceModelVecKind ghostedp, int width) {
+void  IceModelVec2S::create(IceGrid::ConstPtr grid, const std::string &name, IceModelVecKind ghostedp, int width) {
   assert(m_v == NULL);
-  IceModelVec2::create(my_grid, my_name, ghostedp, width, m_dof);
+  IceModelVec2::create(grid, name, ghostedp, width, m_dof);
 }
 
 
 double** IceModelVec2S::get_array() {
   begin_access();
-  return static_cast<double**>(array);
+  return static_cast<double**>(m_array);
 }
 
 /*! Allocate a copy on processor zero and the scatter needed to move data.
@@ -403,12 +403,12 @@ void IceModelVec2::view(int viewer_size) const {
       glaciological_units = m_metadata[j].get_string("glaciological_units"),
       title               = long_name + " (" + glaciological_units + ")";
 
-    if (not map_viewers[c_name]) {
-      map_viewers[c_name].reset(new petsc::Viewer(m_grid->com, title, viewer_size,
+    if (not m_map_viewers[c_name]) {
+      m_map_viewers[c_name].reset(new petsc::Viewer(m_grid->com, title, viewer_size,
                                            m_grid->Lx(), m_grid->Ly()));
     }
 
-    viewers[j] = map_viewers[c_name];
+    viewers[j] = m_map_viewers[c_name];
   }
 
   view(viewers[0], viewers[1]);
@@ -534,17 +534,17 @@ double IceModelVec2S::diff_y_p(int i, int j) const {
 /*! Avoids copying to a "global" vector.
  */
 double IceModelVec2S::sum() const {
-  double my_result = 0;
+  double result = 0;
 
   IceModelVec::AccessList list(*this);
   
   // sum up the local part:
   for (Points p(*m_grid); p; p.next()) {
-    my_result += (*this)(p.i(), p.j());
+    result += (*this)(p.i(), p.j());
   }
 
   // find the global sum:
-  return GlobalSum(m_grid->com, my_result);
+  return GlobalSum(m_grid->com, result);
 }
 
 
@@ -552,12 +552,12 @@ double IceModelVec2S::sum() const {
 double IceModelVec2S::max() const {
   IceModelVec::AccessList list(*this);
 
-  double my_result = (*this)(m_grid->xs(),m_grid->ys());
+  double result = (*this)(m_grid->xs(),m_grid->ys());
   for (Points p(*m_grid); p; p.next()) {
-    my_result = std::max(my_result,(*this)(p.i(), p.j()));
+    result = std::max(result,(*this)(p.i(), p.j()));
   }
 
-  return GlobalMax(m_grid->com, my_result);
+  return GlobalMax(m_grid->com, result);
 }
 
 
@@ -565,12 +565,12 @@ double IceModelVec2S::max() const {
 double IceModelVec2S::absmax() const {
 
   IceModelVec::AccessList list(*this);
-  double my_result = 0.0;
+  double result = 0.0;
   for (Points p(*m_grid); p; p.next()) {
-    my_result = std::max(my_result,fabs((*this)(p.i(), p.j())));
+    result = std::max(result,fabs((*this)(p.i(), p.j())));
   }
 
-  return GlobalMax(m_grid->com, my_result);
+  return GlobalMax(m_grid->com, result);
 }
 
 
@@ -578,12 +578,12 @@ double IceModelVec2S::absmax() const {
 double IceModelVec2S::min() const {
   IceModelVec::AccessList list(*this);
 
-  double my_result = (*this)(m_grid->xs(),m_grid->ys());
+  double result = (*this)(m_grid->xs(),m_grid->ys());
   for (Points p(*m_grid); p; p.next()) {
-    my_result = std::min(my_result,(*this)(p.i(), p.j()));
+    result = std::min(result,(*this)(p.i(), p.j()));
   }
 
-  return GlobalMin(m_grid->com, my_result);
+  return GlobalMin(m_grid->com, result);
 }
 
 
@@ -599,14 +599,14 @@ void IceModelVec2::set_component(unsigned int n, const IceModelVec2S &source) {
   IceModelVec2::set_dof(source.get_dm(), source.m_v, n);
 }
 
-void IceModelVec2::create(IceGrid::ConstPtr my_grid, const std::string & my_name,
+void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,
                            IceModelVecKind ghostedp,
-                           unsigned int stencil_width, int my_dof) {
+                           unsigned int stencil_width, int dof) {
   PetscErrorCode ierr;
   assert(m_v == NULL);
 
-  m_dof  = my_dof;
-  m_grid = my_grid;
+  m_dof  = dof;
+  m_grid = grid;
 
   if ((m_dof != 1) || (stencil_width > m_grid->ctx()->config()->get_double("grid_max_stencil_width"))) {
     m_da_stencil_width = stencil_width;
@@ -626,11 +626,11 @@ void IceModelVec2::create(IceGrid::ConstPtr my_grid, const std::string & my_name
   }
 
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
-  m_name       = my_name;
+  m_name       = name;
 
   if (m_dof == 1) {
     m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
-                                                 my_name));
+                                                 name));
   } else {
 
     for (unsigned int j = 0; j < m_dof; ++j) {
@@ -667,10 +667,10 @@ IceModelVec2Stag::Ptr IceModelVec2Stag::ToStaggered(IceModelVec::Ptr input) {
 }
 
 
-void IceModelVec2Stag::create(IceGrid::ConstPtr my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
+void IceModelVec2Stag::create(IceGrid::ConstPtr grid, const std::string &short_name, IceModelVecKind ghostedp,
                                         unsigned int stencil_width) {
 
-  IceModelVec2::create(my_grid, my_short_name, ghostedp, stencil_width, m_dof);
+  IceModelVec2::create(grid, short_name, ghostedp, stencil_width, m_dof);
 }
 
 //! Averages staggered grid values of a scalar field and puts them on a regular grid.

@@ -103,8 +103,8 @@ if __name__ == '__main__':
             thickness[i, j] = t
 
     # Compute mask and surface elevation from geometry variables.
-    gc = PISM.GeometryCalculator(sea_level, grid.ctx().config())
-    gc.compute(bed, thickness, vecs.mask, vecs.surface_altitude)
+    gc = PISM.GeometryCalculator(grid.ctx().config())
+    gc.compute(sea_level, bed, thickness, vecs.mask, vecs.surface_altitude)
 
     tauc = vecs.tauc
     mask = vecs.mask

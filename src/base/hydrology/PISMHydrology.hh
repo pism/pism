@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2015 PISM Authors
+// Copyright (C) 2012-2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -123,8 +123,8 @@ public:
 
 protected:
   virtual void update_impl(double icet, double icedt) = 0;
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
   // in the base class these only add/define/write tillwat
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
@@ -178,6 +178,17 @@ protected:
   virtual MaxTimestep max_timestep_impl(double t);
   //! Solves an implicit step of a highly-simplified ODE.
   virtual void update_impl(double icet, double icedt);
+
+  void diffuse_till_water(double dt);
+
+private:
+  double m_diffuse_tillwat;
+  double m_diffusion_time;
+  double m_diffusion_distance;
+  double m_tillwat_max;
+  double m_tillwat_decay_rate;
+
+  IceModelVec2S m_Wtil_old;
 };
 
 
@@ -259,8 +270,8 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double icet, double icedt);
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
@@ -273,8 +284,8 @@ protected:
   //   V(i,j,0) = u(i,j) = east-edge  centered x-component of water velocity
   //   V(i,j,1) = v(i,j) = north-edge centered y-component of water velocity
     m_Wstag,// edge-centered (staggered) W values (averaged from regular)
-    m_Kstag,// edge-centered (staggered) values of nonlinear conductivity
-    m_Qstag;// edge-centered (staggered) advection fluxes
+    m_K,// edge-centered (staggered) values of nonlinear conductivity
+    m_Q;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
   IceModelVec2S m_Wnew, m_Wtilnew, m_Pover, m_R;
 
@@ -343,8 +354,8 @@ public:
 
 protected:
   virtual void update_impl(double icet, double icedt);
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
 

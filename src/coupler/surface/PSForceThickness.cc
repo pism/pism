@@ -28,6 +28,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace surface {
@@ -99,7 +100,7 @@ void ForceThickness::init_impl() {
 
   options::Real ftt_alpha("-force_to_thickness_alpha",
                           "Specifies the value of force-to-thickness alpha in per-year units",
-                          units::convert(m_sys, m_alpha, "s-1", "yr-1"));
+                          units::convert(m_sys, m_alpha, "s-1", "year-1"));
 
   m_alpha_ice_free_factor = options::Real("-force_to_thickness_ice_free_alpha_factor",
                                           "Set the multiplicative factor for alpha to use in ice-free areas",
@@ -114,14 +115,14 @@ void ForceThickness::init_impl() {
   // is given in a^{-1}
   if (ftt_alpha.is_set()) {
     m_log->message(3, "    option -force_to_thickness_alpha seen\n");
-    m_alpha = units::convert(m_sys, ftt_alpha, "yr-1", "s-1");
+    m_alpha = units::convert(m_sys, ftt_alpha, "year-1", "s-1");
   }
 
   m_log->message(2,
              "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
              "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
-             units::convert(m_sys, m_alpha, "s-1", "yr-1"),
-             m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "yr-1"),
+             units::convert(m_sys, m_alpha, "s-1", "year-1"),
+             m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "year-1"),
              m_ice_free_thickness_threshold);
 
   // m_input_file now contains name of -force_to_thickness file; now check
@@ -289,10 +290,8 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
   double ice_density = m_config->get_double("ice_density");
 
-  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2Int &mask = *m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery m(mask);
+  const IceModelVec2S        &H    = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
   list.add(mask);
@@ -304,7 +303,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
+    if (m_ftt_mask(i,j) > 0.5 and mask.grounded(i, j)) {
       if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
         result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - H(i,j));
       } else {
@@ -355,7 +354,7 @@ void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::se
 }
 
 void ForceThickness::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+  std::string order = m_config->get_string("output_variable_order");
 
   if (set_contains(vars, "ftt_mask")) {
     m_ftt_mask.define(nc, nctype);

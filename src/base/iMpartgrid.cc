@@ -36,11 +36,12 @@ namespace pism {
 
 //! @brief Compute threshold thickness used when deciding if a
 //! partially-filled cell should be considered 'full'.
-double IceModel::get_threshold_thickness(StarStencil<int> M,
-                                            StarStencil<double> H,
-                                            StarStencil<double> h,
-                                            double bed_elevation,
-                                            bool reduce_frontal_thickness) {
+double part_grid_threshold_thickness(StarStencil<int> M,
+                                     StarStencil<double> H,
+                                     StarStencil<double> h,
+                                     double bed_elevation,
+                                     double dx,
+                                     bool reduce_frontal_thickness) {
   // get mean ice thickness and surface elevation over adjacent
   // icy cells
   double
@@ -90,11 +91,11 @@ double IceModel::get_threshold_thickness(StarStencil<int> M,
     if (reduce_frontal_thickness) {
       // FIXME: Magic numbers without references to the literature are bad.
       // for declining front C / Q0 according to analytical flowline profile in
-      //   vandeveen with v0 = 300m / yr and H0 = 600m
+      //   vandeveen with v0 = 300m year-1 and H0 = 600m
       const double
-        H0 = 600.0,                   // 600 m
-        V0 = 300.0 / 3.15569259747e7, // 300 m/year (hard-wired for efficiency)
-        mslope = 2.4511e-18 * m_grid->dx() / (H0 * V0);
+        H0         = 600.0,     // 600 m
+        V0         = 300.0 / 3.15569259747e7, // 300 m year-1 (hard-wired for efficiency)
+        mslope     = 2.4511e-18 * dx / (H0 * V0);
       H_threshold -= 0.8*mslope*pow(H_average, 5);
     }
   }
@@ -136,16 +137,21 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
 void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool &done) {
 
   bool reduce_frontal_thickness = m_config->get_boolean("part_grid_reduce_frontal_thickness");
+  const double thickness_threshold = m_config->get_double("mask_icefree_thickness_standard");
+  const double sea_level = m_ocean->sea_level_elevation();
 
-  const IceModelVec2S &bed_topography = beddef->bed_elevation();
+  const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
-  update_mask(bed_topography, ice_thickness, vMask);
+  GeometryCalculator gc(*m_config);
+  gc.set_icefree_thickness(thickness_threshold);
+
+  gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
 
   // First step: distribute residual ice thickness
   {
     IceModelVec::AccessList list; // will be destroyed at the end of the block
-    list.add(vMask);
-    list.add(ice_thickness);
+    list.add(m_cell_type);
+    list.add(m_ice_thickness);
     list.add(vHref);
     list.add(H_residual);
     for (Points p(*m_grid); p; p.next()) {
@@ -155,7 +161,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         continue;
       }
 
-      StarStencil<int> m = vMask.int_star(i,j);
+      StarStencil<int> m = m_cell_type.int_star(i,j);
       int N = 0; // number of empty or partially filled neighbors
       StarStencil<bool> neighbors;
       neighbors.set(false);
@@ -198,31 +204,33 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
       } else {
         // Conserve mass, but (possibly) create a "ridge" at the shelf
         // front
-        ice_thickness(i, j) += H_residual(i, j);
+        m_ice_thickness(i, j) += H_residual(i, j);
         H_residual(i, j) = 0.0;
       }
 
     }
   }
 
-  ice_thickness.update_ghosts();
+  m_ice_thickness.update_ghosts();
 
   // The loop above updated ice_thickness, so we need to re-calculate the mask:
-  update_mask(bed_topography, ice_thickness, vMask);
+  gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
   // and the surface elevation:
-  update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
+  gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
 
-  double remaining_residual_thickness = 0.0,
-    remaining_residual_thickness_global    = 0.0;
+  double
+    remaining_residual_thickness        = 0.0,
+    remaining_residual_thickness_global = 0.0,
+    dx = m_grid->dx();
 
   // Second step: we need to redistribute residual ice volume if
   // neighbors which gained redistributed ice also become full.
   {
     IceModelVec::AccessList list;   // will be destroyed at the end of the block
-    list.add(ice_thickness);
-    list.add(ice_surface_elevation);
+    list.add(m_ice_thickness);
+    list.add(m_ice_surface_elevation);
     list.add(bed_topography);
-    list.add(vMask);
+    list.add(m_cell_type);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -230,11 +238,12 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         continue;
       }
 
-      double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
-                                                   ice_thickness.star(i, j),
-                                                   ice_surface_elevation.star(i, j),
-                                                   bed_topography(i,j),
-                                                   reduce_frontal_thickness);
+      double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
+                                                         m_ice_thickness.star(i, j),
+                                                         m_ice_surface_elevation.star(i, j),
+                                                         bed_topography(i,j),
+                                                         dx,
+                                                         reduce_frontal_thickness);
 
       double coverage_ratio = 1.0;
       if (H_threshold > 0.0) {
@@ -244,10 +253,10 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         // The current partially filled grid cell is considered to be full
         H_residual(i, j) = vHref(i, j) - H_threshold;
         remaining_residual_thickness += H_residual(i, j);
-        ice_thickness(i, j) += H_threshold;
+        m_ice_thickness(i, j) += H_threshold;
         vHref(i, j) = 0.0;
       }
-      if (ice_thickness(i, j)<0) {
+      if (m_ice_thickness(i, j)<0) {
         m_log->message(1,
                    "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
                    "  H_threshold: %f\n"
@@ -255,7 +264,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
                    "  vHref: %f\n"
                    "  H_residual: %f\n"
                    "  ice_thickness: %f\n", i, j, H_threshold, coverage_ratio,
-                   vHref(i, j), H_residual(i, j), ice_thickness(i, j));
+                   vHref(i, j), H_residual(i, j), m_ice_thickness(i, j));
       }
 
     }
@@ -270,7 +279,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
     done = true;
   }
 
-  ice_thickness.update_ghosts();
+  m_ice_thickness.update_ghosts();
 }
 
 } // end of namespace pism

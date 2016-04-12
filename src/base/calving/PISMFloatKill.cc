@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,13 +22,14 @@
 #include "base/util/iceModelVec.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_const.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace calving {
 
 FloatKill::FloatKill(IceGrid::ConstPtr g)
   : Component(g) {
-  // empty
+  m_margin_only = m_config->get_boolean("float_kill_margin_only");
 }
 
 FloatKill::~FloatKill() {
@@ -37,7 +38,12 @@ FloatKill::~FloatKill() {
 
 void FloatKill::init() {
   m_log->message(2,
-             "* Initializing the 'calving at the grounding line' mechanism...\n");
+                 "* Initializing calving using the floatation criterion (float_kill)...\n");
+
+  if (m_margin_only) {
+    m_log->message(2,
+                   "  [only cells at the ice margin are calved during a given time step]\n");
+  }
 }
 
 /**
@@ -49,22 +55,25 @@ void FloatKill::init() {
  *
  * @return 0 on success
  */
-void FloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
-  MaskQuery M(pism_mask);
+void FloatKill::update(IceModelVec2CellType &mask, IceModelVec2S &ice_thickness) {
 
   IceModelVec::AccessList list;
-  list.add(pism_mask);
+  list.add(mask);
   list.add(ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (M.floating_ice(i, j)) {
+
+    if (mask.floating_ice(i, j)) {
+      if (m_margin_only and not mask.next_to_ice_free_ocean(i, j)) {
+        continue;
+      }
       ice_thickness(i, j) = 0.0;
-      pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
+      mask(i, j)          = MASK_ICE_FREE_OCEAN;
     }
   }
 
-  pism_mask.update_ghosts();
+  mask.update_ghosts();
   ice_thickness.update_ghosts();
 }
 

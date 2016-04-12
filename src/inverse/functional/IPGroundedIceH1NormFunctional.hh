@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,9 @@
 #include "base/util/Mask.hh"
 
 namespace pism {
+
+class IceModelVec2CellType;
+
 namespace inverse {
 
 //! Implements a functional corresponding to (the square of) an \f$H^1\f$ norm of a scalar valued function over a region with only grounded ice.
@@ -41,9 +44,13 @@ namespace inverse {
 class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
   IPGroundedIceH1NormFunctional2S(IceGrid::ConstPtr grid, double cL2, 
-                                  double cH1, IceModelVec2Int &ice_mask, IceModelVec2Int *dirichletLocations=NULL) :
-    IPInnerProductFunctional<IceModelVec2S>(grid),
-    m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations),  m_ice_mask(ice_mask) {};
+                                  double cH1, IceModelVec2CellType &ice_mask,
+                                  IceModelVec2Int *dirichletLocations=NULL)
+    : IPInnerProductFunctional<IceModelVec2S>(grid),
+    m_cL2(cL2),
+    m_cH1(cH1),
+    m_dirichletIndices(dirichletLocations),
+    m_ice_mask(ice_mask) {};
   virtual ~IPGroundedIceH1NormFunctional2S() {};
   
   virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
@@ -56,7 +63,7 @@ protected:
 
   double m_cL2, m_cH1;
   IceModelVec2Int *m_dirichletIndices;
-  IceModelVec2Int &m_ice_mask;
+  IceModelVec2CellType &m_ice_mask;
 
 private:
   IPGroundedIceH1NormFunctional2S(IPGroundedIceH1NormFunctional2S const &);

@@ -1,5 +1,5 @@
 # Boundary models (surface, atmosphere, ocean).
-add_library (pismboundary
+add_library (pismboundary OBJECT
   ./atmosphere/PAConstantPIK.cc
   ./atmosphere/PASeariseGreenland.cc
   ./atmosphere/PAYearlyCycle.cc
@@ -43,8 +43,3 @@ add_library (pismboundary
   ./surface/PSFormulas.cc
   ./surface/PS_EISMINTII.cc
   )
-target_link_libraries (pismboundary pismutil)
-
-if (${BUILD_SHARED_LIBS})
-  install (TARGETS pismboundary DESTINATION ${Pism_LIB_DIR})
-endif()

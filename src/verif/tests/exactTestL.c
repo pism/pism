@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007--2012, 2015 Ed Bueler and Constantine Khroulev
+   Copyright (C) 2007--2012, 2015, 2016 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -25,6 +25,7 @@
 #include <math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 
 #include <gsl/gsl_version.h>
 #if (defined GSL_MAJOR_VERSION) && (defined GSL_MINOR_VERSION) && \
@@ -35,7 +36,6 @@
 
 #include "exactTestL.h"
 
-#define pi       3.1415926535897931
 #define SperA    31556926.0    /* seconds per year; 365.2422 days */
 
 #define L        750.0e3       /* m;    i.e. 750 km */
@@ -63,7 +63,7 @@ int funcL(double r, const double u[], double f[], void *params) {
   if (params == NULL) {} /* quash warning "unused parameters" */
 
   if ((r >= 0.0) && (r <= L)) {
-    const double freq = z0 * pi / L;
+    const double freq = z0 * M_PI / L;
     const double bprime = b0 * freq * sin(freq * r);
     f[0] =  - (8.0/3.0) * bprime * pow(u[0], 5.0/8.0)
             - pow(C * r * (Lsqr - r * r), 1.0/3.0);
@@ -157,7 +157,7 @@ int exactL(double r, double *H, double *b, double *a,
 
   getU(&r,1,u,EPS_ABS,EPS_REL,ode_method);
   *H = pow(u[0],3.0/8.0);
-  *b = - b0 * cos(z0 * pi * r / L);
+  *b = - b0 * cos(z0 * M_PI * r / L);
   *a = a0 * (1.0 - (2.0 * r * r / Lsqr));
   return 0;
 }
@@ -184,7 +184,7 @@ int exactL_list(double *r, int N, double *H, double *b, double *a) {
   
   for (i = 0; i < N; i++) {
     H[i] = pow(u[i],3.0/8.0);
-    b[i] = - b0 * cos(z0 * pi * r[i] / L);
+    b[i] = - b0 * cos(z0 * M_PI * r[i] / L);
     a[i] = a0 * (1.0 - (2.0 * r[i] * r[i] / Lsqr));
   }
 

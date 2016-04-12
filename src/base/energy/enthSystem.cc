@@ -96,7 +96,7 @@ enthSystemCtx::~enthSystemCtx() {
 /*!
   In this implementation \f$k\f$ does not depend on temperature.
  */
-double enthSystemCtx::k_from_T(double T) {
+double enthSystemCtx::k_from_T(double T) const {
 
   if (m_k_depends_on_T) {
     return 9.828 * exp(-0.0057 * T);
@@ -105,9 +105,8 @@ double enthSystemCtx::k_from_T(double T) {
   return m_ice_k;
 }
 
-void enthSystemCtx::init(int i, int j, bool ismarginal, double ice_thickness) {
+void enthSystemCtx::init(int i, int j, double ice_thickness) {
   m_ice_thickness = ice_thickness;
-  m_ismarginal    = ismarginal;
 
   init_column(i, j, m_ice_thickness);
 
@@ -172,7 +171,7 @@ double enthSystemCtx::compute_lambda() {
 }
 
 
-void enthSystemCtx::set_surface_dirichlet(double E_surface) {
+void enthSystemCtx::set_surface_dirichlet_bc(double E_surface) {
 #if (PISM_DEBUG==1)
   if ((m_nu < 0.0) || (m_R_cold < 0.0) || (m_R_temp < 0.0)) {
     throw RuntimeError("setDirichletSurface() should only be called after\n"
@@ -189,6 +188,10 @@ static inline double upwind(double u, double E_m, double E, double E_p, double d
   return u * delta_inverse * (u < 0 ? (E_p -  E) : (E  - E_m));
 }
 
+
+//! Set the top surface heat flux *into* the ice.
+/** @param[in] heat_flux prescribed heat flux (positive means flux into the ice)
+ */
 void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
   // extract K from R[ks], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
@@ -196,14 +199,14 @@ void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
     K = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
     G = heat_flux / K;
 
-  this->set_surface_enthalpy_flux(G);
+  this->set_surface_neumann_bc(G);
 }
 
 //! Set enthalpy flux at the surface.
 /*! This method should probably be used for debugging only. Its purpose is to allow setting the
     enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
  */
-void enthSystemCtx::set_surface_enthalpy_flux(double G) {
+void enthSystemCtx::set_surface_neumann_bc(double G) {
   const double
     Rminus = 0.5 * (m_R[m_ks - 1] + m_R[m_ks]), // R_{ks-1/2}
     Rplus  = m_R[m_ks],                         // R_{ks+1/2}
@@ -223,13 +226,12 @@ void enthSystemCtx::set_surface_enthalpy_flux(double G) {
   // the modification of the right-hand side implementing the Neumann B.C. (similar to
   // set_basal_heat_flux(); see that method for details)
   m_B_ks = m_Enth[m_ks] + 2.0 * G * m_dz * (Rplus + mu_w * A_b);
-  // treat horizontal velocity using first-order upwinding:
-  if (not m_ismarginal) {
-    const double UpEnthu = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], 1.0 / m_dx);
-    const double UpEnthv = upwind(m_u[m_ks], m_E_s[m_ks], m_Enth[m_ks], m_E_n[m_ks], 1.0 / m_dy);
 
-    m_B_ks += m_dt * ((m_strain_heating[m_ks] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[m_ks]
-  }
+  // treat horizontal velocity using first-order upwinding:
+  const double UpEnthu = upwind(m_u[m_ks], m_E_w[m_ks], m_Enth[m_ks], m_E_e[m_ks], 1.0 / m_dx);
+  const double UpEnthv = upwind(m_v[m_ks], m_E_s[m_ks], m_Enth[m_ks], m_E_n[m_ks], 1.0 / m_dy);
+
+  m_B_ks += m_dt * ((m_strain_heating[m_ks] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[m_ks]
 }
 
 void enthSystemCtx::checkReadyToSolve() {
@@ -247,7 +249,7 @@ void enthSystemCtx::checkReadyToSolve() {
 This method should only be called if everything but the basal boundary condition
 is already set.
  */
-void enthSystemCtx::set_basal_dirichlet(double Y) {
+void enthSystemCtx::set_basal_dirichlet_bc(double Y) {
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
@@ -293,22 +295,24 @@ The error in the pure conductive and smooth conductivity case is @f$ O(\dz^2) @f
 This method should only be called if everything but the basal boundary condition
 is already set.
 
+@param[in] heat_flux prescribed heat flux (positive means flux into the ice)
+
  */
 void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
   // extract K from R[0], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
     K = (m_ice_density * PetscSqr(m_dz) * m_R[0]) / m_dt,
-    G = heat_flux / K;
+    G = - heat_flux / K;
 
-  this->set_basal_enthalpy_flux(G);
+  this->set_basal_neumann_bc(G);
 }
 
 //! Set enthalpy flux at the base.
 /*! This method should probably be used for debugging only. Its purpose is to allow setting the
     enthalpy flux even if K == 0, i.e. in a "pure advection" setup.
  */
-void enthSystemCtx::set_basal_enthalpy_flux(double G) {
+void enthSystemCtx::set_basal_neumann_bc(double G) {
   const double
     Rminus = m_R[0],                  // R_{-1/2}
     Rplus  = 0.5 * (m_R[0] + m_R[1]), // R_{+1/2}
@@ -326,12 +330,10 @@ void enthSystemCtx::set_basal_enthalpy_flux(double G) {
   m_B0 = m_Enth[0] + 2.0 * G * m_dz * (-Rminus + mu_w * A_b);
 
   // treat horizontal velocity using first-order upwinding:
-  if (not m_ismarginal) {
-    const double UpEnthu = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], 1.0 / m_dx);
-    const double UpEnthv = upwind(m_u[0], m_E_s[0], m_Enth[0], m_E_n[0], 1.0 / m_dy);
+  const double UpEnthu = upwind(m_u[0], m_E_w[0], m_Enth[0], m_E_e[0], 1.0 / m_dx);
+  const double UpEnthv = upwind(m_v[0], m_E_s[0], m_Enth[0], m_E_n[0], 1.0 / m_dy);
 
-    m_B0 += m_dt * ((m_strain_heating[0] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[0]
-  }
+  m_B0 += m_dt * ((m_strain_heating[0] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[0]
 }
 
 
@@ -476,13 +478,11 @@ void enthSystemCtx::solve(std::vector<double> &x) {
     S.U(k) = - Rplus + nu_w * A_u;
 
     S.RHS(k) = m_Enth[k];
-    if (not m_ismarginal) {
-      const double
-        UpEnthu = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], Dx),
-        UpEnthv = upwind(m_u[k], m_E_s[k], m_Enth[k], m_E_n[k], Dy);
+    const double
+      UpEnthu = upwind(m_u[k], m_E_w[k], m_Enth[k], m_E_e[k], Dx),
+      UpEnthv = upwind(m_v[k], m_E_s[k], m_Enth[k], m_E_n[k], Dy);
 
-      S.RHS(k) += m_dt * (one_over_rho * m_strain_heating[k] - UpEnthu - UpEnthv);
-    }
+    S.RHS(k) += m_dt * (one_over_rho * m_strain_heating[k] - UpEnthu - UpEnthv);
   }
 
   // Assemble the top surface equation. Values m_{L,D,U,B}_ks are set using set_surface_dirichlet()

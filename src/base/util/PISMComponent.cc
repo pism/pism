@@ -57,13 +57,13 @@ void Component::write_variables(const std::set<std::string> &vars, const PIO& nc
   this->write_variables_impl(vars, nc);
 }
 
-void Component::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                                std::map<std::string, TSDiagnostic*> &ts_dict) {
+void Component::get_diagnostics(std::map<std::string, Diagnostic::Ptr> &dict,
+                                std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
   this->get_diagnostics_impl(dict, ts_dict);
 }
 
-void Component::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                     std::map<std::string, TSDiagnostic*> &ts_dict) {
+void Component::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
   (void)dict;
   (void)ts_dict;
 }

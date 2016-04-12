@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,13 +28,12 @@
 #include "base/util/PISMUnits.hh"
 #include "base/util/Logger.hh"
 #include "base/util/IceGrid.hh"
+#include "base/util/PISMDiagnostic.hh"
 
 namespace pism {
 
 class MaxTimestep;
 class PIO;
-class Diagnostic;
-class TSDiagnostic;
 class IceModelVec;
 
 //! \brief A class defining a common interface for most PISM sub-models.
@@ -111,14 +110,14 @@ public:
   void write_variables(const std::set<std::string> &vars, const PIO& nc);
 
   //! Add pointers to available diagnostic quantities to a dictionary.
-  void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
-                       std::map<std::string, TSDiagnostic*> &ts_dict);
+  void get_diagnostics(std::map<std::string, Diagnostic::Ptr> &dict,
+                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
 
   IceGrid::ConstPtr grid() const;
 
 protected:
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
   virtual void add_vars_to_output_impl(const std::string &keyword,
                                        std::set<std::string> &result) = 0;
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

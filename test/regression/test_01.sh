@@ -22,7 +22,7 @@ $PISM_PATH/pisms -i joe-01.nc $OPTS -y 5 -o bar-01.nc
 set +e
 
 # Compare output files at year 10:
-$PISM_PATH/nccmp.py foo-01.nc bar-01.nc
+$PISM_PATH/nccmp.py -v bmelt,dbdt,enthalpy,thk,topg,topg_initial,tillwat foo-01.nc bar-01.nc
 if [ $? != 0 ];
 then
     exit 1

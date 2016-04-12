@@ -35,12 +35,12 @@ namespace pism {
 
 IceModelVec::IceModelVec() {
   m_access_counter = 0;
-  array = NULL;
+  m_array = NULL;
 
   m_da.reset();
   m_da_stencil_width = 1;
   m_dof = 1;                    // default
-  begin_end_access_use_dof = true;
+  m_begin_end_access_use_dof = true;
 
   m_has_ghosts = true;
 
@@ -53,8 +53,8 @@ IceModelVec::IceModelVec() {
 
   m_state_counter = 0;
 
-  zlevels.resize(1);
-  zlevels[0] = 0.0;
+  m_zlevels.resize(1);
+  m_zlevels[0] = 0.0;
 }
 
 //! \brief Get the object state counter.
@@ -81,7 +81,7 @@ unsigned int IceModelVec::get_ndof() const {
 }
 
 std::vector<double> IceModelVec::get_levels() const {
-  return zlevels;
+  return m_zlevels;
 }
 
 
@@ -107,7 +107,7 @@ bool IceModelVec::was_created() const {
 
 //! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
 unsigned int IceModelVec::get_ndims() const {
-  if (zlevels.size() > 1) {
+  if (m_zlevels.size() > 1) {
     return 3;
   }
 
@@ -242,7 +242,7 @@ void  IceModelVec::copy_to_vec(petsc::DM::Ptr destination_da, Vec destination) c
   // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
   // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
   // DM object. So we want the bigger of the two numbers here.
-  unsigned int N = std::max((size_t)m_dof, zlevels.size());
+  unsigned int N = std::max((size_t)m_dof, m_zlevels.size());
 
   this->get_dof(destination_da, destination, 0, N);
 }
@@ -392,22 +392,22 @@ void IceModelVec::reset_attrs(unsigned int N) {
   appropriate spot, it is possible tp leave long_name, units or pism_intent
   unmodified.
 
-  If my_units != "", this also resets glaciological_units, so that they match
+  If units != "", this also resets glaciological_units, so that they match
   internal units.
  */
-void IceModelVec::set_attrs(const std::string &my_pism_intent,
-                            const std::string &my_long_name,
-                            const std::string &my_units,
-                            const std::string &my_standard_name,
+void IceModelVec::set_attrs(const std::string &pism_intent,
+                            const std::string &long_name,
+                            const std::string &units,
+                            const std::string &standard_name,
                             int N) {
 
-  metadata(N).set_string("long_name", my_long_name);
+  metadata(N).set_string("long_name", long_name);
 
-  metadata(N).set_string("units", my_units);
+  metadata(N).set_string("units", units);
 
-  metadata(N).set_string("pism_intent", my_pism_intent);
+  metadata(N).set_string("pism_intent", pism_intent);
 
-  metadata(N).set_string("standard_name", my_standard_name);
+  metadata(N).set_string("standard_name", standard_name);
 }
 
 //! Gets an IceModelVec from a file `nc`, interpolating onto the current grid.
@@ -570,11 +570,11 @@ void  IceModelVec::begin_access() const {
 
   if (m_access_counter == 0) {
     PetscErrorCode ierr;
-    if (begin_end_access_use_dof == true) {
-      ierr = DMDAVecGetArrayDOF(*m_da, m_v, &array);
+    if (m_begin_end_access_use_dof == true) {
+      ierr = DMDAVecGetArrayDOF(*m_da, m_v, &m_array);
       PISM_CHK(ierr, "DMDAVecGetArrayDOF");
     } else {
-      ierr = DMDAVecGetArray(*m_da, m_v, &array);
+      ierr = DMDAVecGetArray(*m_da, m_v, &m_array);
       PISM_CHK(ierr, "DMDAVecGetArray");
     }
   }
@@ -587,7 +587,7 @@ void  IceModelVec::end_access() const {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
-  if (array == NULL) {
+  if (m_array == NULL) {
     throw RuntimeError("IceModelVec::end_access(): a == NULL (looks like begin_acces() was not called)");
   }
 
@@ -598,14 +598,14 @@ void  IceModelVec::end_access() const {
 
   m_access_counter--;
   if (m_access_counter == 0) {
-    if (begin_end_access_use_dof == true) {
-      ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &array);
+    if (m_begin_end_access_use_dof == true) {
+      ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &m_array);
       PISM_CHK(ierr, "DMDAVecRestoreArrayDOF");
     } else {
-      ierr = DMDAVecRestoreArray(*m_da, m_v, &array);
+      ierr = DMDAVecRestoreArray(*m_da, m_v, &m_array);
       PISM_CHK(ierr, "DMDAVecRestoreArray");
     }
-    array = NULL;
+    m_array = NULL;
   }
 }
 
@@ -696,7 +696,7 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
   // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
   // DM object. So we want the bigger of the two numbers here.
-  unsigned int N = std::max((size_t)m_dof, zlevels.size());
+  unsigned int N = std::max((size_t)m_dof, m_zlevels.size());
 
   bool out_of_range = (i < m_grid->xs() - ghost_width) ||
     (i > m_grid->xs() + m_grid->xm() + ghost_width) ||
@@ -709,7 +709,7 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
                                   m_name.c_str(), i, j, k);
   }
 
-  if (array == NULL) {
+  if (m_array == NULL) {
     throw RuntimeError::formatted("%s: begin_access() was not called", m_name.c_str());
   }
 }
@@ -924,11 +924,11 @@ void IceModelVec::write(const PIO &nc) const {
   }
 }
 
-IceModelVec::AccessList::AccessList() {
+AccessList::AccessList() {
   // empty
 }
 
-IceModelVec::AccessList::~AccessList() {
+AccessList::~AccessList() {
   while (not m_vecs.empty()) {
     try {
       m_vecs.back()->end_access();
@@ -939,11 +939,19 @@ IceModelVec::AccessList::~AccessList() {
   }
 }
 
-IceModelVec::AccessList::AccessList(const IceModelVec &vec) {
+#ifdef PISM_CXX11
+AccessList::AccessList(std::initializer_list<const PetscAccessible *> vecs) {
+  for (auto j : vecs) {
+    add(*j);
+  }
+}
+#endif
+
+AccessList::AccessList(const PetscAccessible &vec) {
   add(vec);
 }
 
-void IceModelVec::AccessList::add(const IceModelVec &vec) {
+void AccessList::add(const PetscAccessible &vec) {
   vec.begin_access();
   m_vecs.push_back(&vec);
 }
@@ -958,7 +966,7 @@ size_t IceModelVec::size() const {
   size_t
     Mx = m_grid->Mx(),
     My = m_grid->My(),
-    Mz = zlevels.size(),
+    Mz = m_zlevels.size(),
     dof = m_dof;
 
   return Mx * My * Mz * dof;

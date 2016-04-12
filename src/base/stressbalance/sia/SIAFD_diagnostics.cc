@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,15 +23,15 @@
 namespace pism {
 namespace stressbalance {
 
-void SIAFD::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["diffusivity"] = new SIAFD_diffusivity(this);
-  dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this);
-  dict["schoofs_theta"] = new SIAFD_schoofs_theta(this);
-  dict["thksmooth"] = new SIAFD_thksmooth(this);
-  dict["topgsmooth"] = new SIAFD_topgsmooth(this);
-  dict["h_x"] = new SIAFD_h_x(this);
-  dict["h_y"] = new SIAFD_h_y(this);
+void SIAFD::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                 std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
+  dict["diffusivity"]           = Diagnostic::Ptr(new SIAFD_diffusivity(this));
+  dict["diffusivity_staggered"] = Diagnostic::Ptr(new SIAFD_diffusivity_staggered(this));
+  dict["schoofs_theta"]         = Diagnostic::Ptr(new SIAFD_schoofs_theta(this));
+  dict["thksmooth"]             = Diagnostic::Ptr(new SIAFD_thksmooth(this));
+  dict["topgsmooth"]            = Diagnostic::Ptr(new SIAFD_topgsmooth(this));
+  dict["h_x"]                   = Diagnostic::Ptr(new SIAFD_h_x(this));
+  dict["h_y"]                   = Diagnostic::Ptr(new SIAFD_h_y(this));
 }
 
 SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m)
@@ -89,18 +89,16 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m)
 }
 
 IceModelVec::Ptr SIAFD_thksmooth::compute_impl() {
-  const IceModelVec2S *surface, *thickness;
-  const IceModelVec2Int *mask;
 
-  surface   = m_grid->variables().get_2d_scalar("surface_altitude");
-  thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  mask      = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2S        &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
+  const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "thksmooth", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  model->m_bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
+  model->m_bed_smoother->get_smoothed_thk(surface, thickness, mask,
                                           *result);
   return result;
 }

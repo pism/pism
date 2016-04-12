@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //

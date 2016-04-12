@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -47,13 +47,13 @@ void IceModel::setFromOptions() {
 
   set_config_from_options(*m_config);
 
-  id = options::Integer("-id", "Specifies the sounding row", id);
-  jd = options::Integer("-jd", "Specifies the sounding column", jd);
+  m_id = options::Integer("-id", "Specifies the sounding row", m_id);
+  m_jd = options::Integer("-jd", "Specifies the sounding column", m_jd);
 
   // Set global attributes using the config database:
-  global_attributes.set_string("title", m_config->get_string("run_title"));
-  global_attributes.set_string("institution", m_config->get_string("institution"));
-  global_attributes.set_string("command", pism_args_string());
+  m_output_global_attributes.set_string("title", m_config->get_string("run_title"));
+  m_output_global_attributes.set_string("institution", m_config->get_string("institution"));
+  m_output_global_attributes.set_string("command", pism_args_string());
 
   // warn about some option combinations
 
@@ -113,21 +113,11 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
   }
 
   // add cumulative quantities to ensure continuity after restarting
-  if (climatic_mass_balance_cumulative.was_created()) {
-    result.insert("climatic_mass_balance_cumulative");
-  }
-  if (grounded_basal_flux_2D_cumulative.was_created()) {
-    result.insert("grounded_basal_flux_2D_cumulative");
-  }
-  if (floating_basal_flux_2D_cumulative.was_created()) {
-    result.insert("floating_basal_flux_2D_cumulative");
-  }
-  if (nonneg_flux_2D_cumulative.was_created()) {
-    result.insert("nonneg_flux_2D_cumulative");
-  }
-  if (discharge_flux_2D_cumulative.was_created()) {
-    result.insert("discharge_flux_cumulative");
-  }
+  result.insert("climatic_mass_balance_cumulative");
+  result.insert("grounded_basal_flux_cumulative");
+  result.insert("floating_basal_flux_cumulative");
+  result.insert("nonneg_flux_cumulative");
+  result.insert("discharge_flux_cumulative");
 
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):
@@ -176,8 +166,8 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     ocean_kill_calving->add_vars_to_output(keyword, result);
   }
 
-  if (beddef != NULL) {
-    beddef->add_vars_to_output(keyword, result);
+  if (m_beddef != NULL) {
+    m_beddef->add_vars_to_output(keyword, result);
   }
 
   if (btu != NULL) {
@@ -189,8 +179,8 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
   }
 
   // Ask the stress balance module to add more variables:
-  if (stress_balance != NULL) {
-    stress_balance->add_vars_to_output(keyword, result);
+  if (m_stress_balance != NULL) {
+    m_stress_balance->add_vars_to_output(keyword, result);
   }
 
   if (subglacial_hydrology != NULL) {
@@ -198,12 +188,12 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
   }
 
   // Ask ocean and surface models to add more variables to the list:
-  if (ocean != NULL) {
-    ocean->add_vars_to_output(keyword, result);
+  if (m_ocean != NULL) {
+    m_ocean->add_vars_to_output(keyword, result);
   }
 
-  if (surface != NULL) {
-    surface->add_vars_to_output(keyword, result);
+  if (m_surface != NULL) {
+    m_surface->add_vars_to_output(keyword, result);
   }
   return result;
 }

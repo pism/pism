@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #include "base/util/Mask.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/petscwrappers/Vec.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
@@ -286,9 +287,8 @@ Call preprocess_bed() first.
  */
 void BedSmoother::get_smoothed_thk(const IceModelVec2S &usurf,
                                    const IceModelVec2S &thk,
-                                   const IceModelVec2Int &mask,
+                                   const IceModelVec2CellType &mask,
                                    IceModelVec2S &result) {
-  MaskQuery M(mask);
 
   IceModelVec::AccessList list;
   list.add(mask);
@@ -318,7 +318,7 @@ void BedSmoother::get_smoothed_thk(const IceModelVec2S &usurf,
       } else if (maxtl(i, j) >= thk(i, j)) {
         result(i, j) = thk(i, j);
       } else {
-        if (M.grounded(i, j)) {
+        if (mask.grounded(i, j)) {
           // if grounded, compute smoothed thickness as the difference of ice
           // surface elevation and smoothed bed elevation
           const double thks_try = usurf(i, j) - topgsmooth(i, j);

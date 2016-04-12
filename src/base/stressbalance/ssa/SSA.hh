@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,11 +20,9 @@
 #define _SSA_H_
 
 #include "base/stressbalance/ShallowStressBalance.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
-
-class Diagnostic;
-class TSDiagnostic;
 
 namespace stressbalance {
 
@@ -114,7 +112,7 @@ public:
 
   SSAStrengthExtension *strength_extension;
 
-  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
 
   void set_initial_guess(const IceModelVec2V &guess);
 
@@ -125,8 +123,8 @@ public:
 protected:
   virtual void init_impl();
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars,
@@ -134,15 +132,16 @@ protected:
 
   virtual void solve() = 0;
 
-  const IceModelVec2Int *m_mask;
+  double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
+                                   double rho_ice, double rho_ocean, double g);
+
+  IceModelVec2CellType m_mask;
   const IceModelVec2S *m_thickness;
   const IceModelVec2S *m_tauc;
   const IceModelVec2S *m_surface;
   const IceModelVec2S *m_bed;
-  const IceModelVec2S *m_driving_stress_x;
-  const IceModelVec2S *m_driving_stress_y;
   IceModelVec2V m_taud;
-  const IceModelVec3 *m_enthalpy;
+  const IceModelVec3 *m_ice_enthalpy;
   const IceModelVec2S *m_gl_mask;
 
   std::string m_stdout_ssa;
@@ -159,4 +158,3 @@ protected:
 } // end of namespace pism
 
 #endif /* _SSA_H_ */
-

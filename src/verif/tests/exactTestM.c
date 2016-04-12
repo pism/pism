@@ -30,7 +30,6 @@
 #define MAX(a, b) (a > b ? a : b)
 #define MIN(a, b) (a > b ? b : a)
 
-#define pi       3.1415926535897931
 #define SperA    31556926.0    /* seconds per year; 365.2422 days */
 #define g        9.81
 #define rho      910.0         /* ice density; kg/m^3 */

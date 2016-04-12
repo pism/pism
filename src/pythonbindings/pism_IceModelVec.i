@@ -12,13 +12,16 @@ using pism::units::Unit;
 using pism::units::System;
 using pism::Vector2;
 using pism::StarStencil;
+#include "base/util/IceModelVec2CellType.hh"
 %}
 
+%shared_ptr(pism::PetscAccessible)
 %shared_ptr(pism::IceModelVec)
 %shared_ptr(pism::IceModelVec2)
 %shared_ptr(pism::IceModelVec2S)
 %shared_ptr(pism::IceModelVec2V)
 %shared_ptr(pism::IceModelVec2Int)
+%shared_ptr(pism::IceModelVec2CellType)
 %shared_ptr(pism::IceModelVec2Stag)
 %shared_ptr(pism::IceModelVec3D)
 %shared_ptr(pism::IceModelVec3)
@@ -154,4 +157,5 @@ using pism::StarStencil;
 
 %ignore pism::StarStencil::operator[];
 %include "base/util/iceModelVec.hh"
+%include "base/util/IceModelVec2CellType.hh"
 %include "base/util/Vector2.hh"

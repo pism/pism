@@ -16,6 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>       // M_PI
+
 #include "base/iceModel.hh"
 #include "iceEISModel.hh"
 
@@ -73,7 +75,7 @@ void IceEISModel::allocate_stressbalance() {
 
   using namespace pism::stressbalance;
 
-  if (stress_balance != NULL) {
+  if (m_stress_balance != NULL) {
     return;
   }
 
@@ -83,19 +85,19 @@ void IceEISModel::allocate_stressbalance() {
   SSB_Modifier *modifier = new SIAFD(m_grid, EC);
 
   // ~StressBalance() will de-allocate my_stress_balance and modifier.
-  stress_balance = new StressBalance(m_grid, my_stress_balance, modifier);
+  m_stress_balance = new StressBalance(m_grid, my_stress_balance, modifier);
 
 }
 
 void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
-  if (surface == NULL) {
-    surface = new surface::EISMINTII(m_grid, m_experiment);
+  if (m_surface == NULL) {
+    m_surface = new surface::EISMINTII(m_grid, m_experiment);
   }
 
-  if (ocean == NULL) {
-    ocean = new ocean::Constant(m_grid);
+  if (m_ocean == NULL) {
+    m_ocean = new ocean::Constant(m_grid);
   }
 }
 
@@ -162,18 +164,18 @@ void IceEISModel::set_vars_from_options() {
       tmp.set(0.0);
     }
 
-    beddef->set_elevation(tmp);
+    m_beddef->set_elevation(tmp);
   }
 
   // set bed uplift; no experiments have uplift at start
   {
     tmp.set(0.0);
-    beddef->set_uplift(tmp);
+    m_beddef->set_uplift(tmp);
   }
 
-  basal_melt_rate.set(0.0);
-  geothermal_flux.set(0.042); // EISMINT II value; J m-2 s-1
-  ice_thickness.set(0.0); // start with zero ice
+  m_basal_melt_rate.set(0.0);
+  m_geothermal_flux.set(0.042); // EISMINT II value; J m-2 s-1
+  m_ice_thickness.set(0.0); // start with zero ice
 
   // regrid 2D variables
   regrid(2);

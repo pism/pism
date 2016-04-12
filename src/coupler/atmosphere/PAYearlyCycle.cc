@@ -20,7 +20,7 @@
 // Implementation of the atmosphere model using constant-in-time precipitation
 // and a cosine yearly cycle for near-surface air temperatures.
 
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       // M_PI, GSL_NAN
 
 #include "PAYearlyCycle.hh"
 #include "base/util/PISMTime.hh"
@@ -112,7 +112,7 @@ void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<s
 void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "air_temp_snapshot")) {
-    std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+    std::string order = m_config->get_string("output_variable_order");
     io::define_spatial_variable(m_air_temp_snapshot, *m_grid, nc, nctype, order, false);
   }
 

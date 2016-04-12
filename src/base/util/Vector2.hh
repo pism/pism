@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,8 @@
 
 #ifndef _VECTOR2_H_
 #define _VECTOR2_H_
+
+#include <cmath>                // sqrt
 
 namespace pism {
 
@@ -43,6 +45,13 @@ public:
     // (de-)allocation here.
     u = other.u;
     v = other.v;
+    return *this;
+  }
+
+  //! Set both components to the same number.
+  inline Vector2& operator=(const double &a) {
+    u = a;
+    v = a;
     return *this;
   }
 
@@ -92,6 +101,11 @@ public:
 
   double u, v;
 };
+
+// Multiplication of a vector by a constant is commutative.
+inline Vector2 operator*(const double &a, const Vector2 &v) {
+  return v * a;
+}
 
 } // end of namespace pism
 

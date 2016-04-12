@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 // the following three includes are needed here because of inlined code
 #include "iceModelVec.hh"
 #include "PISMConfigInterface.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -34,7 +35,7 @@ enum MaskValue {
 };
 
 namespace mask {
-  //! \brief An ocean cell (floating ice or ice-free).
+//! \brief An ocean cell (floating ice or ice-free).
   inline bool ocean(int M) {
     return M >= MASK_FLOATING;
   }
@@ -64,33 +65,44 @@ namespace mask {
   }
 }
 
-class GeometryCalculator
-{
+class GeometryCalculator {
 public:
-  GeometryCalculator(double seaLevel, const Config &config)
-  {
-    sea_level = seaLevel;
-    alpha = 1 - config.get_double("ice_density") / config.get_double("sea_water_density");
-    is_dry_simulation = config.get_boolean("is_dry_simulation");
-    icefree_thickness = config.get_double("mask_icefree_thickness_standard");
-    is_floating_thickness = config.get_double("mask_is_floating_thickness_standard");
+  GeometryCalculator(const Config &config) {
+    m_alpha = 1 - config.get_double("ice_density") / config.get_double("sea_water_density");
+    m_is_dry_simulation = config.get_boolean("is_dry_simulation");
+    m_icefree_thickness = config.get_double("mask_icefree_thickness_standard");
+    m_is_floating_thickness = config.get_double("mask_is_floating_thickness_standard");
   }
 
-  void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
-               IceModelVec2Int &out_mask, IceModelVec2S &out_surface);
+  void set_icefree_thickness(double threshold) {
+    if (threshold < 0.0) {
+      throw RuntimeError::formatted("invalid ice-free thickness threshold: %f", threshold);
+    }
+    m_icefree_thickness = threshold;
+  }
 
-  inline void compute(double bed, double thickness,
-                      int *out_mask, double *out_surface) {
-    const double  hgrounded = bed + thickness; // FIXME issue #15
-    const double  hfloating = sea_level + alpha*thickness;
+  void compute(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
+               IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
 
-    const bool is_floating = (hfloating > hgrounded + is_floating_thickness),
-      ice_free    = (thickness < icefree_thickness);
+  void compute_mask(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
+                    IceModelVec2Int &result) const;
+
+  void compute_surface(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
+                       IceModelVec2S &result) const;
+
+  inline void compute(double sea_level, double bed, double thickness,
+                      int *out_mask, double *out_surface) const {
+    const double hgrounded = bed + thickness; // FIXME issue #15
+    const double hfloating = sea_level + m_alpha*thickness;
+
+    const bool
+      is_floating = (hfloating > hgrounded + m_is_floating_thickness),
+      ice_free    = (thickness < m_icefree_thickness);
 
     int mask_result;
     double surface_result;
 
-    if (is_floating && (not is_dry_simulation)) {
+    if (is_floating && (not m_is_dry_simulation)) {
       surface_result = hfloating;
 
       if (ice_free) {
@@ -117,97 +129,21 @@ public:
     }
   }
 
-  inline int mask(double bed, double thickness)
-  {
+  inline int mask(double sea_level, double bed, double thickness) const {
     int result;
-    compute(bed, thickness, &result, NULL);
+    compute(sea_level, bed, thickness, &result, NULL);
     return result;
   }
 
-  inline double surface(double bed, double thickness)
-  {
+  inline double surface(double sea_level, double bed, double thickness) const {
     double result;
-    compute(bed, thickness, NULL, &result);
+    compute(sea_level, bed, thickness, NULL, &result);
     return result;
   }
 
 protected:
-  double alpha, sea_level, icefree_thickness, is_floating_thickness;
-  bool is_dry_simulation;
-};
-
-class MaskQuery
-{
-public:
-  MaskQuery(const IceModelVec2Int &m) : mask(m) {}
-  
-  inline bool ocean(int i, int j) {
-    return mask::ocean(mask.as_int(i, j));
-  }
-
-  inline bool grounded(int i, int j) {
-    return not ocean(i, j);
-  }
-
-  inline bool icy(int i, int j) {
-    return mask::icy(mask.as_int(i, j));
-  }
-
-  inline bool grounded_ice(int i, int j) {
-    return mask::grounded_ice(mask.as_int(i, j));
-  }
-
-  inline bool floating_ice(int i, int j) {
-    return mask::floating_ice(mask.as_int(i, j));
-  }
-
-  inline bool ice_free(int i, int j) {
-    return mask::ice_free(mask.as_int(i, j));
-  }
-
-  inline bool ice_free_ocean(int i, int j) {
-    return mask::ice_free_ocean(mask.as_int(i, j));
-  }
-
-  inline bool ice_free_land(int i, int j) {
-    return mask::ice_free_land(mask.as_int(i, j));
-  }
-
-  //! \brief Ice margin (ice-filled with at least one of four neighbors ice-free).
-  inline bool ice_margin(int i, int j)
-  {
-    return icy(i, j) &&
-      (ice_free(i + 1, j) || ice_free(i - 1, j) || ice_free(i, j + 1) || ice_free(i, j - 1));
-  }
-
-  //! \brief Ice-free margin (at least one of four neighbors has ice).
-  inline bool next_to_ice(int i, int j)
-  {
-    return (icy(i + 1, j) || icy(i - 1, j) || icy(i, j + 1) || icy(i, j - 1));
-  }
-
-  inline bool next_to_floating_ice(int i, int j)
-  {
-    return (floating_ice(i + 1, j) || floating_ice(i - 1, j) || floating_ice(i, j + 1) || floating_ice(i, j - 1));
-  }
-
-  inline bool next_to_grounded_ice(int i, int j)
-  {
-    return (grounded_ice(i + 1, j) || grounded_ice(i - 1, j) || grounded_ice(i, j + 1) || grounded_ice(i, j - 1));
-  }
-
-  inline bool next_to_ice_free_land(int i, int j)
-  {
-    return (ice_free_land(i + 1, j) || ice_free_land(i - 1, j) || ice_free_land(i, j + 1) || ice_free_land(i, j - 1));
-  }
-
-  inline bool next_to_ice_free_ocean(int i, int j)
-  {
-    return (ice_free_ocean(i + 1, j) || ice_free_ocean(i - 1, j) || ice_free_ocean(i, j + 1) || ice_free_ocean(i, j - 1));
-  }
-
-protected:
-  const IceModelVec2Int &mask;
+  double m_alpha, m_icefree_thickness, m_is_floating_thickness;
+  bool m_is_dry_simulation;
 };
 
 } // end of namespace pism

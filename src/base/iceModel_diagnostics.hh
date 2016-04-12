@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,30 @@ class IceModel_hardav : public Diag<IceModel>
 {
 public:
   IceModel_hardav(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
+class IceModel_land_ice_area_fraction : public Diag<IceModel>
+{
+public:
+  IceModel_land_ice_area_fraction(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
+class IceModel_grounded_ice_sheet_area_fraction : public Diag<IceModel>
+{
+public:
+  IceModel_grounded_ice_sheet_area_fraction(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
+class IceModel_floating_ice_sheet_area_fraction : public Diag<IceModel>
+{
+public:
+  IceModel_floating_ice_sheet_area_fraction(IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -195,6 +219,14 @@ class IceModel_imass : public TSDiag<IceModel>
 {
 public:
   IceModel_imass(IceModel *m);
+  virtual void update(double a, double b);
+};
+
+//! \brief Computes the total mass of the ice not displacing sea water.
+class IceModel_limnsw : public TSDiag<IceModel>
+{
+public:
+  IceModel_limnsw(IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -394,8 +426,8 @@ public:
 protected:
   virtual IceModelVec::Ptr compute_impl();
 protected:
-  IceModelVec2S last_ice_thickness;
-  double last_report_time;
+  IceModelVec2S m_last_ice_thickness;
+  double m_last_report_time;
 };
 
 //! \brief Reports the maximum horizontal absolute velocity component over the grid.
@@ -471,6 +503,39 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
+//! \brief Reports the 2D cumulative discharge (calving) flux.
+class IceModel_discharge_flux_2D : public Diag<IceModel>
+{
+public:
+  IceModel_discharge_flux_2D(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+  IceModelVec2S m_last_cumulative_discharge;
+  double m_last_report_time;
+};
+
+//! \brief Reports surface mass balance flux (average over reporting interval).
+class IceModel_surface_mass_balance_average : public Diag<IceModel>
+{
+public:
+  IceModel_surface_mass_balance_average(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+  IceModelVec2S m_last_cumulative_SMB;
+  double m_last_report_time;
+};
+
+//! \brief Reports the 2D cumulative discharge (calving) flux.
+class IceModel_basal_mass_balance_average : public Diag<IceModel>
+{
+public:
+  IceModel_basal_mass_balance_average(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+  IceModelVec2S m_last_cumulative_BMB;
+  double m_last_report_time;
+};
+
 } // end of namespace pism
 
 #if (PISM_USE_PROJ4==1)
@@ -491,7 +556,7 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 protected:
   std::string m_var_name;
-  projPJ pism, lonlat;
+  projPJ m_pism, m_lonlat;
 };
 
 } // end of namespace pism

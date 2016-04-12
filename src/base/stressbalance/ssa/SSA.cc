@@ -26,6 +26,7 @@
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 #include "SSA_diagnostics.hh"
 
@@ -72,17 +73,29 @@ double SSAStrengthExtension::get_min_thickness() const {
 SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e)
 {
-  m_mask = NULL;
   m_thickness = NULL;
   m_tauc = NULL;
   m_surface = NULL;
   m_bed = NULL;
-  m_enthalpy = NULL;
-  m_driving_stress_x = NULL;
-  m_driving_stress_y = NULL;
+  m_ice_enthalpy = NULL;
   m_gl_mask = NULL;
 
   strength_extension = new SSAStrengthExtension(*m_config);
+
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+
+  // grounded_dragging_floating integer mask
+  m_mask.create(m_grid, "ssa_mask", WITH_GHOSTS, WIDE_STENCIL);
+  m_mask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
+                  "", "");
+  std::vector<double> mask_values(4);
+  mask_values[0] = MASK_ICE_FREE_BEDROCK;
+  mask_values[1] = MASK_GROUNDED;
+  mask_values[2] = MASK_FLOATING;
+  mask_values[3] = MASK_ICE_FREE_OCEAN;
+  m_mask.metadata().set_doubles("flag_values", mask_values);
+  m_mask.metadata().set_string("flag_meanings",
+                              "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
 
   m_taud.create(m_grid, "taud", WITHOUT_GHOSTS);
   m_taud.set_attrs("diagnostic",
@@ -136,19 +149,17 @@ void SSA::init_impl() {
     m_gl_mask = m_grid->variables().get_2d_scalar("gl_mask");
   }
 
-  m_mask      = m_grid->variables().get_2d_mask("mask");
   m_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   m_tauc      = m_grid->variables().get_2d_scalar("tauc");
 
   try {
     m_surface = m_grid->variables().get_2d_scalar("surface_altitude");
   } catch (RuntimeError) {
-    m_driving_stress_x = m_grid->variables().get_2d_scalar("ssa_driving_stress_x");
-    m_driving_stress_y = m_grid->variables().get_2d_scalar("ssa_driving_stress_y");
+    m_surface = NULL;
   }
 
   m_bed      = m_grid->variables().get_2d_scalar("bedrock_altitude");
-  m_enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+  m_ice_enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
 
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
@@ -186,12 +197,24 @@ void SSA::init_impl() {
 }
 
 //! \brief Update the SSA solution.
-void SSA::update(bool fast, const IceModelVec2S &melange_back_pressure) {
+void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure) {
+
+  m_sea_level = sea_level;
   (void) melange_back_pressure;
+
+  // update the cell type mask using the ice-free thickness threshold for stress balance
+  // computations
+  {
+    const double H_threshold = m_config->get_double("mask_icefree_thickness_stress_balance_standard");
+    GeometryCalculator gc(*m_config);
+    gc.set_icefree_thickness(H_threshold);
+
+    gc.compute_mask(sea_level, *m_bed, *m_thickness, m_mask);
+  }
 
   if (not fast) {
     solve();
-    compute_basal_frictional_heating(m_velocity, *m_tauc, *m_mask,
+    compute_basal_frictional_heating(m_velocity, *m_tauc, m_mask,
                                      m_basal_frictional_heating);
   }
 }
@@ -223,12 +246,10 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   bool compute_surf_grad_inward_ssa = m_config->get_boolean("compute_surf_grad_inward_ssa");
   bool use_eta = (m_config->get_string("surface_gradient_method") == "eta");
 
-  MaskQuery m(*m_mask);
-
   IceModelVec::AccessList list;
   list.add(*m_surface);
   list.add(*m_bed);
-  list.add(*m_mask);
+  list.add(m_mask);
   list.add(thk);
   list.add(result);
 
@@ -242,7 +263,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
     } else {
       double h_x = 0.0, h_y = 0.0;
       // FIXME: we need to handle grid periodicity correctly.
-      if (m.grounded(i,j) && (use_eta == true)) {
+      if (m_mask.grounded(i,j) && (use_eta == true)) {
         // in grounded case, differentiate eta = H^{8/3} by chain rule
         if (thk(i,j) > 0.0) {
           const double myH = (thk(i,j) < minThickEtaTransform ?
@@ -280,24 +301,24 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
           // x-derivative
           {
             double west = 1, east = 1;
-            if ((m.grounded(i,j) && m.floating_ice(i+1,j)) ||
-                (m.floating_ice(i,j) && m.grounded(i+1,j)) ||
-                (m.floating_ice(i,j) && m.ice_free_ocean(i+1,j))) {
+            if ((m_mask.grounded(i,j) && m_mask.floating_ice(i+1,j)) ||
+                (m_mask.floating_ice(i,j) && m_mask.grounded(i+1,j)) ||
+                (m_mask.floating_ice(i,j) && m_mask.ice_free_ocean(i+1,j))) {
               east = 0;
             }
-            if ((m.grounded(i,j) && m.floating_ice(i-1,j)) ||
-                (m.floating_ice(i,j) && m.grounded(i-1,j)) ||
-                (m.floating_ice(i,j) && m.ice_free_ocean(i-1,j))) {
+            if ((m_mask.grounded(i,j) && m_mask.floating_ice(i-1,j)) ||
+                (m_mask.floating_ice(i,j) && m_mask.grounded(i-1,j)) ||
+                (m_mask.floating_ice(i,j) && m_mask.ice_free_ocean(i-1,j))) {
               west = 0;
             }
 
             // This driving stress computation has to match the calving front
             // stress boundary condition in SSAFD::assemble_rhs().
             if (cfbc) {
-              if (m.icy(i,j) && m.ice_free(i+1,j)) {
+              if (m_mask.icy(i,j) && m_mask.ice_free(i+1,j)) {
                 east = 0;
               }
-              if (m.icy(i,j) && m.ice_free(i-1,j)) {
+              if (m_mask.icy(i,j) && m_mask.ice_free(i-1,j)) {
                 west = 0;
               }
             }
@@ -313,24 +334,24 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
           // y-derivative
           {
             double south = 1, north = 1;
-            if ((m.grounded(i,j) && m.floating_ice(i,j+1)) ||
-                (m.floating_ice(i,j) && m.grounded(i,j+1)) ||
-                (m.floating_ice(i,j) && m.ice_free_ocean(i,j+1))) {
+            if ((m_mask.grounded(i,j) && m_mask.floating_ice(i,j+1)) ||
+                (m_mask.floating_ice(i,j) && m_mask.grounded(i,j+1)) ||
+                (m_mask.floating_ice(i,j) && m_mask.ice_free_ocean(i,j+1))) {
               north = 0;
             }
-            if ((m.grounded(i,j) && m.floating_ice(i,j-1)) ||
-                (m.floating_ice(i,j) && m.grounded(i,j-1)) ||
-                (m.floating_ice(i,j) && m.ice_free_ocean(i,j-1))) {
+            if ((m_mask.grounded(i,j) && m_mask.floating_ice(i,j-1)) ||
+                (m_mask.floating_ice(i,j) && m_mask.grounded(i,j-1)) ||
+                (m_mask.floating_ice(i,j) && m_mask.ice_free_ocean(i,j-1))) {
               south = 0;
             }
 
             // This driving stress computation has to match the calving front
             // stress boundary condition in SSAFD::assemble_rhs().
             if (cfbc) {
-              if (m.icy(i,j) && m.ice_free(i,j+1)) {
+              if (m_mask.icy(i,j) && m_mask.ice_free(i,j+1)) {
                 north = 0;
               }
-              if (m.icy(i,j) && m.ice_free(i,j-1)) {
+              if (m_mask.icy(i,j) && m_mask.ice_free(i,j-1)) {
                 south = 0;
               }
             }
@@ -384,20 +405,14 @@ void SSA::write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
   }
 }
 
-void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                          std::map<std::string, TSDiagnostic*> &ts_dict) {
+void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
 
   ShallowStressBalance::get_diagnostics_impl(dict, ts_dict);
 
-  if (dict["taud"] != NULL) {
-    delete dict["taud"];
-  }
-  dict["taud"] = new SSA_taud(this);
-
-  if (dict["taud_mag"] != NULL) {
-    delete dict["taud_mag"];
-  }
-  dict["taud_mag"] = new SSA_taud_mag(this);
+  // replace these diagnostics
+  dict["taud"] = Diagnostic::Ptr(new SSA_taud(this));
+  dict["taud_mag"] = Diagnostic::Ptr(new SSA_taud_mag(this));
 }
 
 SSA_taud::SSA_taud(SSA *m)
@@ -459,6 +474,22 @@ IceModelVec::Ptr SSA_taud_mag::compute_impl() {
   return result;
 }
 
+//! Evaluate the ocean pressure difference term in the calving-front BC.
+double SSA::ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
+                                      double sea_level, double rho_ice, double rho_ocean,
+                                      double g) {
+  if (shelf) {
+    // floating shelf
+    return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;
+  } else {
+    // grounded terminus
+    if (bed >= sea_level or dry_mode) {
+      return 0.5 * rho_ice * g * H * H;
+    } else {
+      return 0.5 * rho_ice * g * (H * H - (rho_ocean / rho_ice) * pow(sea_level - bed, 2.0));
+    }
+  }
+}
 
 } // end of namespace stressbalance
 } // end of namespace pism

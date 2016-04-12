@@ -22,7 +22,7 @@
 
 $ ./simpleABCD
 Enter  t  and  r  separated by space (or newline)
-    (in yrs and km, resp.; e.g. 15000 500):
+    (in years and km, resp.; e.g. 15000 500):
 15000 500
 Results:
     Test A              Test B              Test C              Test D
@@ -43,7 +43,7 @@ int main() {
   int    scanret;
   
   printf("Enter  t  and  r  separated by space (or newline)\n");
-  printf("    (in yrs and km, resp.; e.g. 15000 500):\n");
+  printf("    (in years and km, resp.; e.g. 15000 500):\n");
   scanret = scanf("%lf",&year);
   if (scanret != 1) {
     printf("... input error; exiting\n"); 

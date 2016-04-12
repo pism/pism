@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,8 +27,8 @@ MaxTimestep::MaxTimestep()
   // empty
 }
 
-MaxTimestep::MaxTimestep(double my_value)
-  : m_is_finite(true), m_value(my_value) {
+MaxTimestep::MaxTimestep(double v)
+  : m_is_finite(true), m_value(v) {
   // empty
 }
 

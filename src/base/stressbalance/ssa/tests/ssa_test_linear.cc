@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -141,8 +141,8 @@ void SSATestCaseExp::initializeSSACoefficients() {
 void SSATestCaseExp::exactSolution(int /*i*/, int /*j*/, double x, double /*y*/,
                                    double *u, double *v) {
   double tauc_threshold_velocity = m_config->get_double("pseudo_plastic_uthreshold",
-                                                        "m/second");
-  double v0 = units::convert(m_sys, 100.0, "m/year", "m/second");
+                                                        "m second-1");
+  double v0 = units::convert(m_sys, 100.0, "m year-1", "m second-1");
   // double alpha=log(2.)/(2*L);
   double alpha = sqrt((tauc0/tauc_threshold_velocity) / (4*nu0*H0));
   *u = v0*exp(-alpha*(x-L));
@@ -165,6 +165,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
+    verbosityLevelFromOptions();
     Context::Ptr ctx = context_from_options(com, "ssa_test_linear");
     Config::Ptr config = ctx->config();
 

@@ -1,5 +1,6 @@
-project (Pism)
-cmake_minimum_required (VERSION 2.8.0) # 2.8.0 is almost 3 years old, so this should be OK
+cmake_minimum_required (VERSION 2.8.8) # 2.8.8 was released on April 19, 2012
+project (Pism C CXX)
+
 if (NOT ${CMAKE_VERSION} VERSION_LESS 3.0.0)
   message(STATUS "CMAKE_VERSION >= 3.0.0. Setting policy 0026 behavior to 'old'...")
   # This has to do with the way we compute dependencies of PISM's
@@ -24,19 +25,21 @@ pism_set_install_prefix()
 
 # Set Pism_DEFAULT_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
 pism_check_build_dir_location()
-set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc" CACHE STRING "" FORCE)
+set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_SHARE_DIR}/pism_config.nc" CACHE STRING "" FORCE)
 mark_as_advanced (Pism_DEFAULT_CONFIG_FILE)
 file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 # The default options cache
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
-option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
+option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
+option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
+option (Pism_BUILD_PDFS "Build PISM's PDF documentation with 'make all'." OFF)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." OFF)
-option (Pism_USE_TAO "Use TAO in inverse solvers." OFF)
+option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
@@ -46,6 +49,20 @@ option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
 option (Pism_USE_TR1 "If 'ON', #include <tr1/memory>, otherwise #include <memory>." OFF)
+option (Pism_CXX11 "Set compilers to C++11 mode.  Required to build IceBin." OFF)
+
+if (Pism_CXX11)
+  set(CMAKE_CXX_STANDARD 11)
+  add_definitions (-DPISM_CXX11=1)
+
+  # Old CMake versions don't know about C++ standards.
+  if (${CMAKE_VERSION} VERSION_LESS 3.0.0)
+    if (NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+      message (STATUS "Adding -std=c++11 to C++ compiler flags.")
+      set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
+    endif()
+  endif()
+endif()
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 pism_use_rpath()
@@ -75,8 +92,13 @@ else()
   add_definitions (-DPISM_DEBUG=0)
 endif ()
 
-# Add -fPIC to CXX flags; note that this will not show up in CMakeCache.txt
+# Add -fPIC to C and CXX flags.
 if (Pism_ADD_FPIC)
+  if (NOT CMAKE_C_FLAGS MATCHES "-fPIC")
+    message (STATUS "Adding -fPIC to C compiler flags.")
+    set (CMAKE_C_FLAGS "-fPIC ${CMAKE_C_FLAGS}" CACHE STRING "C compiler flags" FORCE)
+  endif()
+
   if (NOT CMAKE_CXX_FLAGS MATCHES "-fPIC")
     message (STATUS "Adding -fPIC to C++ compiler flags.")
     set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)

@@ -26,7 +26,7 @@
 namespace pism {
 
 Diagnostic::Diagnostic(IceGrid::ConstPtr g)
-  : m_grid(g), m_sys(g->ctx()->unit_system()) {
+  : m_grid(g), m_sys(g->ctx()->unit_system()), m_config(g->ctx()->config()) {
   m_output_datatype = PISM_FLOAT;
   m_dof = 1;
 }
@@ -76,10 +76,10 @@ void Diagnostic::define(const PIO &nc) {
 }
 
 //! \brief A method for setting common variable attributes.
-void Diagnostic::set_attrs(const std::string &my_long_name,
-                           const std::string &my_standard_name,
-                           const std::string &my_units,
-                           const std::string &my_glaciological_units,
+void Diagnostic::set_attrs(const std::string &long_name,
+                           const std::string &standard_name,
+                           const std::string &units,
+                           const std::string &glaciological_units,
                            int N) {
   if (N >= m_dof) {
     throw RuntimeError::formatted("N (%d) >= m_dof (%d)", N, m_dof);
@@ -87,14 +87,14 @@ void Diagnostic::set_attrs(const std::string &my_long_name,
 
   m_vars[N].set_string("pism_intent", "diagnostic");
 
-  m_vars[N].set_string("long_name", my_long_name);
+  m_vars[N].set_string("long_name", long_name);
 
-  m_vars[N].set_string("standard_name", my_standard_name);
+  m_vars[N].set_string("standard_name", standard_name);
 
-  m_vars[N].set_string("units", my_units);
+  m_vars[N].set_string("units", units);
 
-  if (not my_glaciological_units.empty()) {
-    m_vars[N].set_string("glaciological_units", my_glaciological_units);
+  if (not glaciological_units.empty()) {
+    m_vars[N].set_string("glaciological_units", glaciological_units);
   }
 }
 

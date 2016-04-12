@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,8 @@
 #include "base/util/iceModelVec.hh"
 
 namespace pism {
-class Diagnostic;
+
+class IceModelVec2CellType;
 
 //! Stress balance models and related diagnostics.
 namespace stressbalance {
@@ -90,12 +91,12 @@ public:
 
   //! \brief Get the largest and smallest eigenvalues of the strain rate tensor.
   void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
-                                         const IceModelVec2Int &mask,
+                                         const IceModelVec2CellType &mask,
                                          IceModelVec2 &result);
 
   //! \brief Get the components of the 2D deviatoric stress tensor.
   void compute_2D_stresses(const IceModelVec2V &velocity,
-                           const IceModelVec2Int &mask,
+                           const IceModelVec2CellType &mask,
                            IceModelVec2 &result);
 
   //! \brief Produce a report string for the standard output.
@@ -107,8 +108,8 @@ public:
   //! \brief Returns a pointer to a stress balance modifier implementation.
   SSB_Modifier* get_ssb_modifier();
 protected:
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
 
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);

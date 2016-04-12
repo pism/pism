@@ -38,13 +38,13 @@
 namespace pism {
 
 void IceModel::do_calving() {
-  bool compute_cumulative_discharge = discharge_flux_2D_cumulative.was_created();
+
   IceModelVec2S
     &old_H    = vWork2d[0],
     &old_Href = vWork2d[1];
 
-  if (compute_cumulative_discharge) {
-    old_H.copy_from(ice_thickness);
+  {
+    old_H.copy_from(m_ice_thickness);
     if (vHref.was_created()) {
       old_Href.copy_from(vHref);
     }
@@ -54,19 +54,19 @@ void IceModel::do_calving() {
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
   if (eigen_calving != NULL) {
-    eigen_calving->update(dt, vMask, vHref, ice_thickness);
+    eigen_calving->update(m_dt, m_cell_type, vHref, m_ice_thickness);
   }
 
   if (ocean_kill_calving != NULL) {
-    ocean_kill_calving->update(vMask, ice_thickness);
+    ocean_kill_calving->update(m_cell_type, m_ice_thickness);
   }
 
   if (float_kill_calving != NULL) {
-    float_kill_calving->update(vMask, ice_thickness);
+    float_kill_calving->update(m_cell_type, m_ice_thickness);
   }
 
   if (thickness_threshold_calving != NULL) {
-    thickness_threshold_calving->update(vMask, ice_thickness);
+    thickness_threshold_calving->update(m_cell_type, m_ice_thickness);
   }
 
   // This call removes icebergs, too.
@@ -74,7 +74,7 @@ void IceModel::do_calving() {
 
   Href_cleanup();
 
-  update_cumulative_discharge(ice_thickness, old_H, vHref, old_Href);
+  update_cumulative_discharge(m_ice_thickness, old_H, vHref, old_Href);
 }
 
 /**
@@ -88,22 +88,20 @@ void IceModel::Href_cleanup() {
     return;
   }
 
-  MaskQuery mask(vMask);
-
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(vHref);
-  list.add(vMask);
+  list.add(m_cell_type);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
-      ice_thickness(i, j) += vHref(i, j);
+    if (m_ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
+      m_ice_thickness(i, j) += vHref(i, j);
       vHref(i, j) = 0.0;
     }
 
-    if (vHref(i, j) > 0.0 && not mask.next_to_ice(i, j)) {
+    if (vHref(i, j) > 0.0 && not m_cell_type.next_to_ice(i, j)) {
       vHref(i, j) = 0.0;
     }
   }
@@ -126,23 +124,19 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
                                            const IceModelVec2S &Href,
                                            const IceModelVec2S &Href_old) {
 
-  MaskQuery mask(vMask);
-
   const double ice_density = m_config->get_double("ice_density");
   const bool
-    update_2d_discharge = discharge_flux_2D_cumulative.was_created(),
     use_Href = Href.was_created() && Href_old.was_created();
   double my_total_discharge = 0.0, total_discharge;
 
   IceModelVec::AccessList list;
   list.add(thickness);
   list.add(thickness_old);
-  list.add(vMask);
-  list.add(cell_area);
+  list.add(m_cell_type);
+  list.add(m_cell_area);
 
-  if (update_2d_discharge) {
-    list.add(discharge_flux_2D_cumulative);
-  }
+
+  list.add(m_discharge_flux_2D_cumulative);
 
   if (use_Href) {
     list.add(Href);
@@ -152,7 +146,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.ice_free_ocean(i,j)) {
+    if (m_cell_type.ice_free_ocean(i,j)) {
       double
         delta_H    = thickness(i,j) - thickness_old(i,j),
         delta_Href = 0.0,
@@ -171,11 +165,9 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
         delta_Href = 0.0;
       }
 
-      discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
+      discharge = (delta_H + delta_Href) * m_cell_area(i,j) * ice_density;
 
-      if (update_2d_discharge) {
-        discharge_flux_2D_cumulative(i,j) += discharge;
-      }
+      m_discharge_flux_2D_cumulative(i,j) += discharge;
 
       my_total_discharge += discharge;
     }

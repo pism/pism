@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2015 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -78,13 +78,13 @@ void SSATestCaseJ::initializeSSAModel() {
 
 void SSATestCaseJ::initializeSSACoefficients() {
   m_tauc.set(0.0);    // irrelevant for test J
-  m_bed.set(0.0); // assures shelf is floating
+  m_bed.set(-1000.0); // assures shelf is floating (maximum ice thickness is 770 m)
   m_ice_mask.set(MASK_FLOATING);
 
   double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
-  m_enthalpy.set(enth0);
+  m_ice_enthalpy.set(enth0);
 
-  /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
+  /* use Ritz et al (2001) value of 30 MPa year for typical vertically-averaged viscosity */
   double ocean_rho = m_config->get_double("sea_water_density"),
     ice_rho = m_config->get_double("ice_density");
   const double nu0 = units::convert(m_sys, 30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
@@ -156,6 +156,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
+    verbosityLevelFromOptions();
     Context::Ptr ctx = context_from_options(com, "ssa_testj");
     Config::Ptr config = ctx->config();
 

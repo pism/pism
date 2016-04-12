@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -118,7 +118,7 @@ void IceRegionalModel::model_state_setup() {
   IceModel::model_state_setup();
 
   // Now save the basal melt rate at the beginning of the run.
-  m_bmr_stored.copy_from(basal_melt_rate);
+  m_bmr_stored.copy_from(m_basal_melt_rate);
 
   bool zgwnm = options::Bool("-zero_grad_where_no_model",
                              "set zero surface gradient in no model strip");
@@ -151,7 +151,7 @@ void IceRegionalModel::allocate_stressbalance() {
 
   using namespace pism::stressbalance;
 
-  if (stress_balance != NULL) {
+  if (m_stress_balance != NULL) {
     return;
   }
 
@@ -182,7 +182,7 @@ void IceRegionalModel::allocate_stressbalance() {
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
-  stress_balance = new StressBalance(m_grid, sliding, modifier);
+  m_stress_balance = new StressBalance(m_grid, sliding, modifier);
 }
 
 
@@ -250,13 +250,13 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
     nc.close();
 
     if (! (u_ssa_exists && v_ssa_exists)) {
-      vBCvel.metadata().set_string("pism_intent", "internal");
+      m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "internal");
       m_log->message(2, 
                  "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
                  "              This may be overridden by the -regrid_file option.\n",
                  filename.c_str());
 
-      vBCvel.set(0.0);
+      m_ssa_dirichlet_bc_values.set(0.0);
     }
   }
 
@@ -270,7 +270,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
   IceModel::initFromFile(filename);
 
   if (m_config->get_boolean("ssa_dirichlet_bc")) {
-      vBCvel.metadata().set_string("pism_intent", "model_state");
+      m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "model_state");
   }
 
   if (zgwnm) {
@@ -337,7 +337,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   IceModelVec::AccessList list;
   list.add(m_no_model_mask);
   list.add(vWork3d);
-  list.add(Enth3);
+  list.add(m_ice_enthalpy);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -347,7 +347,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
     }
 
     double *new_enthalpy = vWork3d.get_column(i, j);
-    double *old_enthalpy = Enth3.get_column(i, j);
+    double *old_enthalpy = m_ice_enthalpy.get_column(i, j);
 
     for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
       new_enthalpy[k] = old_enthalpy[k];
@@ -355,7 +355,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   }
 
   // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
-  list.add(basal_melt_rate);
+  list.add(m_basal_melt_rate);
   list.add(m_bmr_stored);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -364,7 +364,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       continue;
     }
 
-    basal_melt_rate(i, j) = m_bmr_stored(i, j);
+    m_basal_melt_rate(i, j) = m_bmr_stored(i, j);
   }
 }
 

@@ -45,8 +45,8 @@ PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in)
 
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  precipitation.set_string("units", "m / s");
-  precipitation.set_string("glaciological_units", "m / year");
+  precipitation.set_string("units", "m second-1");
+  precipitation.set_string("glaciological_units", "m year-1");
 
   m_precipexpfactor = m_config->get_double("precip_exponential_factor_for_temperature");
 }
@@ -111,7 +111,7 @@ void PaleoPrecip::add_vars_to_output_impl(const std::string &keyword, std::set<s
 void PaleoPrecip::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+  std::string order = m_config->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
     io::define_spatial_variable(air_temp, *m_grid, nc, nctype, order, false);

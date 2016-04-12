@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -90,15 +90,15 @@ void IceModel::update_viewers() {
 
   // map-plane viewers
   std::set<std::string>::iterator i;
-  for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
+  for (i = m_map_viewers.begin(); i != m_map_viewers.end(); ++i) {
 
     if (m_grid->variables().is_available(*i)) {
       this->view_field(m_grid->variables().get(*i));
     } else {
       // if not found, try to compute:
-      Diagnostic *diag = diagnostics[*i];
+      Diagnostic::Ptr diag = m_diagnostics[*i];
 
-      if (diag != NULL) {
+      if (diag) {
         this->view_field(diag->compute().get());
       }
     }
@@ -109,9 +109,9 @@ void IceModel::update_viewers() {
 void IceModel::init_viewers() {
 
   // map-plane (and surface) viewers:
-  map_viewers = options::StringSet("-view_map", 
-                                   "specifies the comma-separated list of map-plane viewers",
-                                   "");
+  m_map_viewers = options::StringSet("-view_map",
+                                     "specifies the comma-separated list of map-plane viewers",
+                                     "");
 }
 
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,8 @@
 
 #include "base/util/PISMComponent.hh"
 #include "base/util/iceModelVec3Custom.hh"
+
+#include "base/util/PISMDiagnostic.hh"
 
 namespace pism {
 
@@ -94,13 +96,13 @@ public:
 
   virtual void init(bool &bootstrapping_needed);
 
-  virtual const IceModelVec2S& upward_geothermal_flux();
+  virtual const IceModelVec2S& upward_geothermal_flux() const;
 
   virtual void bootstrap();
 
-  double vertical_spacing();
+  double vertical_spacing() const;
 
-  unsigned int Mbz();
+  unsigned int Mbz() const;
 protected:
   virtual MaxTimestep max_timestep_impl(double my_t);
 
@@ -109,6 +111,8 @@ protected:
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);  
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
 protected:
   IceModelVec3Custom m_temp;
   IceModelVec2S m_upward_flux;
@@ -125,6 +129,15 @@ protected:
   unsigned int m_Mbz;             //!< number of vertical levels within the bedrock
   double m_Lbz;                   //!< thickness of the bedrock layer, in meters
   std::string m_input_file;             //!< non-empty if "-i" was set
+
+  void update_upward_geothermal_flux();
+};
+
+class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
+public:
+  BTU_geothermal_flux_at_ground_level(BedThermalUnit *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace energy

@@ -350,7 +350,7 @@ void TemperatureIndex_Old::define_variables_impl(const std::set<std::string> &va
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, temperature_name)) {
-    std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+    std::string order = m_config->get_string("output_variable_order");
     io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 

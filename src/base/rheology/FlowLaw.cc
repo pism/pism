@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,8 +31,8 @@ namespace pism {
 namespace rheology {
 
 FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
-                 EnthalpyConverter::Ptr EC)
-  : m_EC(EC), m_e(1) {
+                 EnthalpyConverter::Ptr ec)
+  : m_EC(ec), m_e(1) {
 
   if (not m_EC) {
     throw RuntimeError("EC is NULL in FlowLaw::FlowLaw()");
@@ -56,7 +56,7 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_Q_warm = config.get_double("Paterson_Budd_Q_warm");
   m_crit_temp = config.get_double("Paterson_Budd_critical_temperature");
   m_schoofLen = config.get_double("Schoof_regularizing_length", "m"); // convert to meters
-  m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m/s"); // convert to m/s
+  m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m second-1"); // convert to m second-1
   m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);
 }
 
@@ -163,15 +163,15 @@ double FlowLaw::hardness_impl(double E, double p) const {
  *
  * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
  *
- * \param[in] hardness ice hardness
+ * \param[in] B ice hardness
  * \param[in] gamma the second invariant
  * \param[out] nu effective viscosity
  * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
  */
-void FlowLaw::effective_viscosity(double hardness, double gamma,
+void FlowLaw::effective_viscosity(double B, double gamma,
                                   double *nu, double *dnu) const {
   const double
-    my_nu = 0.5 * hardness * pow(m_schoofReg + gamma, m_viscosity_power);
+    my_nu = 0.5 * B * pow(m_schoofReg + gamma, m_viscosity_power);
 
   if (PetscLikely(nu != NULL)) {
     *nu = my_nu;

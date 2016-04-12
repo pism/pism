@@ -28,8 +28,8 @@ namespace rheology {
 // Hooke
 
 Hooke::Hooke(const std::string &prefix,
-             const Config &config, EnthalpyConverter::Ptr EC)
-  : PatersonBudd(prefix, config, EC) {
+             const Config &config, EnthalpyConverter::Ptr ec)
+  : PatersonBudd(prefix, config, ec) {
   m_name = "Hooke";
 
   m_Q_Hooke  = config.get_double("Hooke_Q");

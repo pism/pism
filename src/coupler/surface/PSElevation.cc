@@ -46,6 +46,8 @@ Elevation::Elevation(IceGrid::ConstPtr g)
 void Elevation::init_impl() {
   bool m_limits_set = false;
 
+  using units::convert;
+
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
@@ -56,8 +58,8 @@ void Elevation::init_impl() {
     // ice surface temperature
     {
       // set defaults:
-      m_T_min   = units::convert(m_sys, -5.0, "Celsius", "Kelvin");
-      m_T_max   = units::convert(m_sys, 0.0, "Celsius", "Kelvin");
+      m_T_min   = convert(m_sys, -5.0, "Celsius", "Kelvin");
+      m_T_max   = convert(m_sys, 0.0, "Celsius", "Kelvin");
       m_z_T_min = 1325.0;
       m_z_T_max = 1350.0;
 
@@ -67,8 +69,8 @@ void Elevation::init_impl() {
           throw RuntimeError("option -ice_surface_temp requires an argument"
                              " (comma-separated list of 4 numbers)");
         }
-        m_T_min   = units::convert(m_sys, IST[0], "Celsius", "Kelvin");
-        m_T_max   = units::convert(m_sys, IST[1], "Celsius", "Kelvin");
+        m_T_min   = convert(m_sys, IST[0], "Celsius", "Kelvin");
+        m_T_max   = convert(m_sys, IST[1], "Celsius", "Kelvin");
         m_z_T_min = IST[2];
         m_z_T_max = IST[3];
       }
@@ -77,8 +79,8 @@ void Elevation::init_impl() {
     // climatic mass balance
     {
       // set defaults:
-      m_M_min   = units::convert(m_sys, -3.0, "m year-1", "m s-1");
-      m_M_max   = units::convert(m_sys, 4.0, "m year-1", "m s-1");
+      m_M_min   = convert(m_sys, -3.0, "m year-1", "m s-1");
+      m_M_max   = convert(m_sys, 4.0, "m year-1", "m s-1");
       m_z_M_min = 1100.0;
       m_z_ELA   = 1450.0;
       m_z_M_max = 1700.0;
@@ -90,8 +92,8 @@ void Elevation::init_impl() {
           throw RuntimeError("-climatic_mass_balance requires an argument"
                              " (comma-separated list of 5 numbers)");
         }
-        m_M_min   = units::convert(m_sys, CMB[0], "m year-1", "m s-1");
-        m_M_max   = units::convert(m_sys, CMB[1], "m year-1", "m s-1");
+        m_M_min   = convert(m_sys, CMB[0], "m year-1", "m s-1");
+        m_M_max   = convert(m_sys, CMB[1], "m year-1", "m s-1");
         m_z_M_min = CMB[2];
         m_z_ELA   = CMB[3];
         m_z_M_max = CMB[4];
@@ -108,8 +110,8 @@ void Elevation::init_impl() {
           throw RuntimeError("-climatic_mass_balance_limits requires an argument"
                              " (a comma-separated list of 2 numbers)");
         }
-        m_M_limit_min = units::convert(m_sys, m_limits[0], "m year-1", "m s-1");
-        m_M_limit_max = units::convert(m_sys, m_limits[1], "m year-1", "m s-1");
+        m_M_limit_min = convert(m_sys, m_limits[0], "m year-1", "m s-1");
+        m_M_limit_max = convert(m_sys, m_limits[1], "m year-1", "m s-1");
       } else {
         m_M_limit_min = m_M_min;
         m_M_limit_max = m_M_max;
@@ -120,17 +122,17 @@ void Elevation::init_impl() {
   m_log->message(3,
              "     temperature at %.0f m a.s.l. = %.2f deg C\n"
              "     temperature at %.0f m a.s.l. = %.2f deg C\n"
-             "     mass balance below %.0f m a.s.l. = %.2f m/year\n"
-             "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
-             "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
-             "     mass balance above %.0f m a.s.l. = %.2f m/year\n"
+             "     mass balance below %.0f m a.s.l. = %.2f m year-1\n"
+             "     mass balance at  %.0f m a.s.l. = %.2f m year-1\n"
+             "     mass balance at  %.0f m a.s.l. = %.2f m year-1\n"
+             "     mass balance above %.0f m a.s.l. = %.2f m year-1\n"
              "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
              m_z_T_min, m_T_min, m_z_T_max, m_T_max, m_z_M_min,
-             units::convert(m_sys, m_M_limit_min, "m s-1", "m year-1"),
+             convert(m_sys, m_M_limit_min, "m s-1", "m year-1"),
              m_z_M_min, m_M_min, m_z_M_max,
-             units::convert(m_sys, m_M_max, "m s-1", "m year-1"),
+             convert(m_sys, m_M_max, "m s-1", "m year-1"),
              m_z_M_max,
-             units::convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_ELA);
+             convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_ELA);
 
   // SpatialVariableMetadatas storing temperature and surface mass balance metadata
 
@@ -171,14 +173,14 @@ void Elevation::init_impl() {
   m_log->message(2,
              "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
              "        of surface altitue (usurf):\n"
-             "                  /  %5.2f m/year                       for          usurf < %3.f m\n"
+             "                  /  %5.2f m year-1                       for          usurf < %3.f m\n"
              "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
              "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
-             "                   \\ %5.2f m/year                       for %3.f m < usurf\n",
-             units::convert(m_sys, m_M_limit_min, "m s-1", "m year-1"), m_z_M_min,
-             units::convert(m_sys, -m_M_min, "m s-1", "m year-1")/(m_z_ELA - m_z_M_min), m_z_ELA, m_z_M_min, m_z_ELA,
-             units::convert(m_sys, m_M_max, "m s-1", "m year-1")/(m_z_M_max - m_z_ELA), m_z_ELA, m_z_ELA, m_z_M_max,
-             units::convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_M_max);
+             "                   \\ %5.2f m year-1                       for %3.f m < usurf\n",
+             convert(m_sys, m_M_limit_min, "m s-1", "m year-1"), m_z_M_min,
+             convert(m_sys, -m_M_min, "m s-1", "m year-1")/(m_z_ELA - m_z_M_min), m_z_ELA, m_z_M_min, m_z_ELA,
+             convert(m_sys, m_M_max, "m s-1", "m year-1")/(m_z_M_max - m_z_ELA), m_z_ELA, m_z_ELA, m_z_M_max,
+             convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_M_max);
 }
 
 MaxTimestep Elevation::max_timestep_impl(double t) {
@@ -191,8 +193,8 @@ void Elevation::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)
   delete input;
 }
 
-void Elevation::get_diagnostics_impl(std::map<std::string, Diagnostic*> &/*dict*/,
-                                  std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
+void Elevation::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &/*dict*/,
+                                  std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
   // empty
 }
 
@@ -240,7 +242,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   }
   loop.check();
 
-  // convert from m/s ice equivalent to kg m-2 s-1:
+  // convert from m second-1 ice equivalent to kg m-2 s-1:
   result.scale(m_config->get_double("ice_density"));
 }
 
@@ -285,7 +287,7 @@ void Elevation::add_vars_to_output_impl(const std::string &keyword, std::set<std
 }
 
 void Elevation::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+  std::string order = m_config->get_string("output_variable_order");
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {

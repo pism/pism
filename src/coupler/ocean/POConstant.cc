@@ -48,19 +48,19 @@ Constant::Constant(IceGrid::ConstPtr g)
 
     // check the command-line option
     options::Real meltrate("-shelf_base_melt_rate",
-                           "Specifies a sub shelf ice-equivalent melt rate in meters/year",
-                           units::convert(m_sys, m_meltrate, "m / second", "m / year"));
+                           "Specifies a sub shelf ice-equivalent melt rate in meters year-1",
+                           units::convert(m_sys, m_meltrate, "m second-1", "m year-1"));
 
     // tell the user that we're using it
     if (meltrate.is_set()) {
       m_log->message(2,
                      "    - option '-shelf_base_melt_rate' seen, "
-                     "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
+                     "setting basal sub shelf basal melt rate to %.2f m year-1 ... \n",
                      (double)meltrate);
     }
 
     // here meltrate was set using the command-line option OR the default provided above
-    m_meltrate = units::convert(m_sys, meltrate, "m / year", "m / second");
+    m_meltrate = units::convert(m_sys, meltrate, "m year-1", "m second-1");
 
     // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
     m_meltrate = m_meltrate * ice_density;
@@ -138,7 +138,7 @@ void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string>
 
 void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype) {
-  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+  std::string order = m_config->get_string("output_variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
     io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);

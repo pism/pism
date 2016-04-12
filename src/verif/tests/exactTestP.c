@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2012-2015 Ed Bueler and Constantine Khroulev
+   Copyright (C) 2012-2016 Ed Bueler and Constantine Khroulev
 
    This file is part of PISM.
 
@@ -50,7 +50,7 @@
 #define c2       0.040         /* [pure] */
 
 /* specific to exact solution */
-#define m0       ((0.20/SperA)*rhow)  /* kg m-2 s-1; = 20 cm/year */
+#define m0       ((0.20/SperA)*rhow)  /* kg m-2 s-1; = 20 cm year-1 */
 #define h0       500.0         /* m */
 #define v0       (100.0/SperA) /* m s-1 */
 #define R1       5000.0        /* m */

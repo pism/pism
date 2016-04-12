@@ -33,6 +33,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace surface {
@@ -288,11 +289,13 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
     m_air_temp_sd.init_interpolation(ts);
   }
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-  const IceModelVec2S *surface_altitude = NULL, *latitude = NULL, *longitude = NULL;
-  MaskQuery m(*mask);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec2S
+    *surface_altitude = NULL,
+    *latitude         = NULL,
+    *longitude        = NULL;
 
-  IceModelVec::AccessList list(*mask);
+  IceModelVec::AccessList list(mask);
 
   if (m_faustogreve != NULL) {
     surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
@@ -365,7 +368,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
       }
 
       // apply standard deviation param over ice if in use
-      if (m_sd_use_param && m.icy(i,j)) {
+      if (m_sd_use_param && mask.icy(i,j)) {
         for (int k = 0; k < Nseries; ++k) {
           S[k] = m_sd_param_a * (T[k] - 273.15) + m_sd_param_b;
           if (S[k] < 0.0) {
@@ -416,7 +419,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
         m_climatic_mass_balance(i,j) *= (ice_density/m_dt);
       }
 
-      if (m.ocean(i,j)) {
+      if (mask.ocean(i,j)) {
         m_snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
       }
     }
@@ -463,7 +466,7 @@ void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::
 void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
-    std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+    std::string order = m_config->get_string("output_variable_order");
     io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 

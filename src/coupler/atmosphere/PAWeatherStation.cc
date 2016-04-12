@@ -37,13 +37,13 @@ namespace atmosphere {
 
 WeatherStation::WeatherStation(IceGrid::ConstPtr g)
   : AtmosphereModel(g),
-    m_precipitation(*g, "precipitation", g->ctx()->config()->get_string("time_dimension_name")),
-    m_air_temperature(*g, "air_temp", g->ctx()->config()->get_string("time_dimension_name")),
+    m_precipitation(*g, "precipitation", m_config->get_string("time_dimension_name")),
+    m_air_temperature(*g, "air_temp", m_config->get_string("time_dimension_name")),
     m_precip_metadata(m_sys, "precipitation"),
     m_air_temp_metadata(m_sys, "air_temp")
 {
   m_precipitation.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-  m_precipitation.metadata().set_string("units", "m / second");
+  m_precipitation.metadata().set_string("units", "m second-1");
   m_precipitation.metadata().set_string("long_name",
                                             "ice-equivalent precipitation rate");
 
@@ -58,8 +58,8 @@ WeatherStation::WeatherStation(IceGrid::ConstPtr g)
 
   m_precip_metadata.set_string("pism_intent", "diagnostic");
   m_precip_metadata.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  m_precip_metadata.set_string("units", "m / s");
-  m_precip_metadata.set_string("glaciological_units", "m / year");
+  m_precip_metadata.set_string("units", "m second-1");
+  m_precip_metadata.set_string("glaciological_units", "m year-1");
 }
 
 WeatherStation::~WeatherStation() {
@@ -174,7 +174,7 @@ void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
 
 void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
                                                   const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+  std::string order = m_config->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
     // don't write using glaciological units

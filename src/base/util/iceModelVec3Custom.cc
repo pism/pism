@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,7 +42,7 @@ IceModelVec3Custom::~IceModelVec3Custom()
  * @param mygrid grid to use
  * @param short_name name of the NetCDF variable
  * @param z_name name of the NetCDF dimension and variable corresponding to the third dimension
- * @param my_zlevels "vertical" levels (values of z)
+ * @param zlevels "vertical" levels (values of z)
  * @param z_attrs attributes of the "z" coordinate variable
  *
  * @return 0 on success
@@ -51,7 +51,7 @@ IceModelVec3Custom::~IceModelVec3Custom()
 void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
                                 const std::string &short_name,
                                 const std::string &z_name,
-                                const std::vector<double> &my_zlevels,
+                                const std::vector<double> &zlevels,
                                 const std::map<std::string, std::string> &z_attrs) {
   PetscErrorCode ierr;
   assert(m_v == NULL);
@@ -59,11 +59,11 @@ void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
   m_has_ghosts = false;
   m_grid       = mygrid;
   m_name       = short_name;
-  zlevels      = my_zlevels;
+  m_zlevels    = zlevels;
 
   m_da_stencil_width = 1;
 
-  m_da = m_grid->get_dm(this->zlevels.size(), this->m_da_stencil_width);
+  m_da = m_grid->get_dm(this->m_zlevels.size(), this->m_da_stencil_width);
 
   ierr = DMCreateGlobalVector(*m_da, m_v.rawptr());
   PISM_CHK(ierr, "DMCreateGlobalVector");
@@ -71,7 +71,7 @@ void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
   m_dof = 1;
 
   m_metadata.push_back(SpatialVariableMetadata(m_grid->ctx()->unit_system(),
-                                               m_name, zlevels));
+                                               m_name, m_zlevels));
   m_metadata[0].get_z().set_name(z_name);
 
   std::map<std::string, std::string>::const_iterator j = z_attrs.begin();

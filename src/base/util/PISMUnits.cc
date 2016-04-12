@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -59,7 +59,7 @@ System::System(const std::string &path) {
 
 //! \brief Convert a quantity from unit1 to unit2.
 /*!
- * Example: convert(1, "m/year", "m/s").
+ * Example: convert(1, "m year-1", "m second-1").
  *
  * Please avoid using in computationally-intensive code.
  */

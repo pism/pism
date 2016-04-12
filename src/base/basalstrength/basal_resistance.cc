@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@ namespace pism {
 /* Purely plastic */
 
 IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config) {
-  m_plastic_regularize = config.get_double("plastic_regularization", "m/second");
+  m_plastic_regularize = config.get_double("plastic_regularization", "m second-1");
 }
 
 IceBasalResistancePlasticLaw::~IceBasalResistancePlasticLaw() {
@@ -37,8 +37,8 @@ IceBasalResistancePlasticLaw::~IceBasalResistancePlasticLaw() {
 void IceBasalResistancePlasticLaw::print_info(const Logger &log,
                                               int threshold,
                                               units::System::Ptr system) const {
-  log.message(threshold, "Using purely plastic till with eps = %10.5e m/year.\n",
-               units::convert(system, m_plastic_regularize, "m/s", "m/year"));
+  log.message(threshold, "Using purely plastic till with eps = %10.5e m year-1.\n",
+               units::convert(system, m_plastic_regularize, "m second-1", "m year-1"));
 }
 
 
@@ -72,7 +72,7 @@ void IceBasalResistancePlasticLaw::drag_with_derivative(double tauc, double vx, 
 IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const Config &config)
   : IceBasalResistancePlasticLaw(config) {
   m_pseudo_q = config.get_double("pseudo_plastic_q");
-  m_pseudo_u_threshold = config.get_double("pseudo_plastic_uthreshold", "m/second");
+  m_pseudo_u_threshold = config.get_double("pseudo_plastic_uthreshold", "m second-1");
   m_sliding_scale_factor_reduces_tauc = config.get_double("sliding_scale_factor_reduces_tauc");
 }
 
@@ -86,15 +86,15 @@ void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
 
   if (m_pseudo_q == 1.0) {
     log.message(threshold,
-                 "Using linearly viscous till with u_threshold = %.2f m/year.\n", 
-                 units::convert(system, m_pseudo_u_threshold, "m/s", "m/year"));
+                 "Using linearly viscous till with u_threshold = %.2f m year-1.\n",
+                 units::convert(system, m_pseudo_u_threshold, "m second-1", "m year-1"));
   } else {
     log.message(threshold,
-                 "Using pseudo-plastic till with eps = %10.5e m/year, q = %.4f,"
-                 " and u_threshold = %.2f m/year.\n", 
-                 units::convert(system, m_plastic_regularize, "m/s", "m/year"),
+                 "Using pseudo-plastic till with eps = %10.5e m year-1, q = %.4f,"
+                 " and u_threshold = %.2f m year-1.\n",
+                 units::convert(system, m_plastic_regularize, "m second-1", "m year-1"),
                  m_pseudo_q,
-                 units::convert(system, m_pseudo_u_threshold, "m/s", "m/year"));
+                 units::convert(system, m_pseudo_u_threshold, "m second-1", "m year-1"));
   }
 }
 
@@ -110,7 +110,7 @@ void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
   where  @f$ \tau_b=(\tau_{(b)x},\tau_{(b)y}) @f$ ,  @f$ U=(u,v) @f$ ,
    @f$ q= @f$  `pseudo_q`, and  @f$ U_{\mathtt{th}}= @f$ 
   `pseudo_u_threshold`. Typical values for the constants are
-   @f$ q=0.25 @f$  and  @f$ U_{\mathtt{th}} = 100 @f$  m/year.
+   @f$ q=0.25 @f$  and  @f$ U_{\mathtt{th}} = 100 @f$  m year-1.
 
   The linearly-viscous till case pseudo_q = 1.0 is allowed, in which
   case  @f$ \beta = \tau_c/U_{\mathtt{th}} @f$ . The purely-plastic till

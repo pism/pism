@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <gsl/gsl_math.h>       // M_PI
 
 #include "GoldsbyKohlstedt.hh"
 
@@ -28,8 +29,8 @@ namespace rheology {
 // Goldsby-Kohlstedt (forward) ice flow law
 
 GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &prefix,
-                                   const Config &config, EnthalpyConverter::Ptr EC)
-  : FlowLaw(prefix, config, EC) {
+                                   const Config &config, EnthalpyConverter::Ptr ec)
+  : FlowLaw(prefix, config, ec) {
   m_name = "Goldsby-Kohlstedt / Paterson-Budd (hybrid)";
 
   m_V_act_vol      = -13.e-6;   // m^3/mol
@@ -61,7 +62,7 @@ GoldsbyKohlstedt::GoldsbyKohlstedt(const std::string &prefix,
   //--- diffusional flow ---
   m_diff_crit_temp = 258.0;     // when to use enhancement factor
   m_diff_V_m       = 1.97e-5;   // Molar volume (m^3/mol)
-  m_diff_D_0v      = 9.10e-4;   // Preexponential volume diffusion (m^2/s)
+  m_diff_D_0v      = 9.10e-4;   // Preexponential volume diffusion (m^2 second-1)
   m_diff_Q_v       = 59.4e3;    // activation energy, vol. diff. (J/mol)
   m_diff_D_0b      = 5.8e-4;    // preexponential grain boundary coeff.
   m_diff_Q_b       = 49.e3;     // activation energy, g.b. (J/mol)
@@ -92,9 +93,9 @@ double GoldsbyKohlstedt::hardness_impl(double enthalpy, double pressure) const {
   // SIAFD::compute_volumetric_strain_heating().
   double
     T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure),
-    softness = softness_paterson_budd(T_pa);
+    A = softness_paterson_budd(T_pa);
 
-  return pow(softness, m_hardness_power);
+  return pow(A, m_hardness_power);
 }
 
 double GoldsbyKohlstedt::softness_impl(double , double) const {
@@ -201,8 +202,8 @@ GKparts GoldsbyKohlstedt::flowParts(double stress, double temp, double pressure)
 
 GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(const std::string &prefix,
                                                    const Config &config,
-                                                   EnthalpyConverter::Ptr EC)
-  : GoldsbyKohlstedt(prefix, config, EC) {
+                                                   EnthalpyConverter::Ptr ec)
+  : GoldsbyKohlstedt(prefix, config, ec) {
   m_name = "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";
 
   m_d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)

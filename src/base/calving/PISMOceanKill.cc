@@ -83,12 +83,15 @@ void OceanKill::init() {
   list.add(thickness);
   list.add(bed);
 
-  GeometryCalculator gc(0.0, *m_config);
+  GeometryCalculator gc(*m_config);
+
+  // FIXME: assumes zero sea level elevation.
+  const double sea_level = 0.0;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int M = gc.mask(bed(i, j), thickness(i, j));
+    int M = gc.mask(sea_level, bed(i, j), thickness(i, j));
 
     if (thickness(i, j) > 0 or mask::grounded(M)) {
       m_ocean_kill_mask(i, j) = 0;

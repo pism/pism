@@ -52,18 +52,16 @@ double IceModel::max_timestep_cfl_3d() {
   double max_dt = m_config->get_double("maximum_time_step_years", "seconds");
 
   const IceModelVec3
-    &u3 = stress_balance->velocity_u(),
-    &v3 = stress_balance->velocity_v(),
-    &w3 = stress_balance->velocity_w();
+    &u3 = m_stress_balance->velocity_u(),
+    &v3 = m_stress_balance->velocity_v(),
+    &w3 = m_stress_balance->velocity_w();
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(u3);
   list.add(v3);
   list.add(w3);
-  list.add(vMask);
-
-  MaskQuery mask(vMask);
+  list.add(m_cell_type);
 
   // update global max of abs of velocities for CFL; only velocities under surface
   const double
@@ -76,8 +74,8 @@ double IceModel::max_timestep_cfl_3d() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.icy(i, j)) {
-        const int ks = m_grid->kBelowHeight(ice_thickness(i, j));
+      if (m_cell_type.icy(i, j)) {
+        const int ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
         const double
           *u = u3.get_column(i, j),
           *v = v3.get_column(i, j),
@@ -105,9 +103,9 @@ double IceModel::max_timestep_cfl_3d() {
   }
   loop.check();
 
-  gmaxu = GlobalMax(m_grid->com, max_u);
-  gmaxv = GlobalMax(m_grid->com, max_v);
-  gmaxw = GlobalMax(m_grid->com, max_w);
+  m_max_u_speed = GlobalMax(m_grid->com, max_u);
+  m_max_v_speed = GlobalMax(m_grid->com, max_v);
+  m_max_w_speed = GlobalMax(m_grid->com, max_w);
 
   return GlobalMin(m_grid->com, max_dt);
 }
@@ -126,9 +124,7 @@ double IceModel::max_timestep_cfl_3d() {
 double IceModel::max_timestep_cfl_2d() {
   double max_dt = m_config->get_double("maximum_time_step_years", "seconds");
 
-  MaskQuery mask(vMask);
-
-  const IceModelVec2V &vel = stress_balance->advective_velocity();
+  const IceModelVec2V &vel = m_stress_balance->advective_velocity();
 
   const double
     dx = m_grid->dx(),
@@ -136,11 +132,11 @@ double IceModel::max_timestep_cfl_2d() {
 
   IceModelVec::AccessList list;
   list.add(vel);
-  list.add(vMask);
+  list.add(m_cell_type);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.icy(i, j)) {
+    if (m_cell_type.icy(i, j)) {
       const double denom = fabs(vel(i, j).u) / dx + fabs(vel(i, j).v) / dy;
       if (denom > 0.0) {
         max_dt = std::min(max_dt, 1.0 / denom);
@@ -163,7 +159,7 @@ dx^2/maxD (if dx=dy).
 Reference: [\ref MortonMayers] pp 62--63.
  */
 double IceModel::max_timestep_diffusivity() {
-  double D_max = stress_balance->max_diffusivity();
+  double D_max = m_stress_balance->max_diffusivity();
 
   if (D_max > 0.0) {
     const double
@@ -269,12 +265,12 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   {
     // Query sub-models, which might add time-step restrictions.
 
-    MaxTimestep surface_dt = surface->max_timestep(current_time);
+    MaxTimestep surface_dt = m_surface->max_timestep(current_time);
     if (surface_dt.is_finite())  {
       dt_restrictions["surface"] = surface_dt.value();
     }
 
-    MaxTimestep ocean_dt = ocean->max_timestep(current_time);
+    MaxTimestep ocean_dt = m_ocean->max_timestep(current_time);
     if (ocean_dt.is_finite()) {
       dt_restrictions["ocean"] = ocean_dt.value();
     }
@@ -339,7 +335,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     if (timestep_hit_multiples > 0) {
       const double epsilon = 1.0; // 1 second tolerance
       double
-        next_time = timestep_hit_multiples_last_time;
+        next_time = m_timestep_hit_multiples_last_time;
 
       while (m_time->increment_date(next_time, timestep_hit_multiples) <= current_time + dt_result + epsilon) {
         next_time = m_time->increment_date(next_time, timestep_hit_multiples);
@@ -347,7 +343,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
       if (next_time > current_time && next_time <= current_time + dt_result + epsilon) {
         dt_result = next_time - current_time;
-        timestep_hit_multiples_last_time = next_time;
+        m_timestep_hit_multiples_last_time = next_time;
 
         std::stringstream str;
         str << "(hit multiples of " << timestep_hit_multiples << " years; overrides " << m_adaptive_timestep_reason << ")";
@@ -412,11 +408,11 @@ unsigned int IceModel::countCFLViolations() {
     CFL_y = m_grid->dy() / dt_TempAge;
 
   const IceModelVec3
-    &u3 = stress_balance->velocity_u(),
-    &v3 = stress_balance->velocity_v();
+    &u3 = m_stress_balance->velocity_u(),
+    &v3 = m_stress_balance->velocity_v();
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
   list.add(u3);
   list.add(v3);
 
@@ -426,7 +422,7 @@ unsigned int IceModel::countCFLViolations() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const int fks = m_grid->kBelowHeight(ice_thickness(i,j));
+      const int fks = m_grid->kBelowHeight(m_ice_thickness(i,j));
 
       const double
         *u = u3.get_column(i, j),

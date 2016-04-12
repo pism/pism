@@ -190,7 +190,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
  * Special case: returns 0 if the bedrock thermal layer has thickness
  * zero.
  */
-double BedThermalUnit::vertical_spacing() {
+double BedThermalUnit::vertical_spacing() const {
   if (m_temp.was_created() == true) {
     return m_Lbz / (m_Mbz - 1.0);
   } else {
@@ -198,7 +198,7 @@ double BedThermalUnit::vertical_spacing() {
   }
 }
 
-unsigned int BedThermalUnit::Mbz() {
+unsigned int BedThermalUnit::Mbz() const {
   return m_Mbz;
 }
 
@@ -223,6 +223,12 @@ void BedThermalUnit::write_variables_impl(const std::set<std::string> &vars, con
       m_temp.write(nc);
     }
   }
+}
+
+void BedThermalUnit::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+  dict["hfgeoubed"] = Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this));
+  (void)ts_dict;
 }
 
 
@@ -271,6 +277,7 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
   if (not m_temp.was_created()) {
+    update_upward_geothermal_flux();
     return;  // in this case we are up to date
   }
 
@@ -284,7 +291,8 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (my_dt < 0) {
      throw RuntimeError("BedThermalUnit::update() does not allow negative timesteps");
- }
+  }
+
   // CHECK: is desired time-interval equal to [my_t,my_t+my_dt] where my_t = t + dt?
   if ((!gsl_isnan(m_t)) && (!gsl_isnan(m_dt))) { // this check should not fire on first use
     bool contiguous = true;
@@ -305,6 +313,7 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
                                     "  desired: my_t = %f s, my_dt = %f s",
                                     m_t,m_dt,my_t,my_dt); }
   }
+
   // CHECK: is desired time-step too long?
   MaxTimestep my_max_dt = max_timestep(my_t);
   if (my_max_dt.is_finite() and my_max_dt.value() < my_dt) {
@@ -347,8 +356,9 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
     m_temp.set_column(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
   }
-}
 
+  update_upward_geothermal_flux();
+}
 
 /*! Computes the heat flux from the bedrock thermal layer upward into the
 ice/bedrock interface:
@@ -361,10 +371,11 @@ The above expression only makes sense when `Mbz` = `temp.n_levels` >= 3.
 When `Mbz` = 2 we use first-order differencing.  When temp was not created,
 the `Mbz` <= 1 cases, we return the stored geothermal flux.
  */
-const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
+void BedThermalUnit::update_upward_geothermal_flux() {
 
   if (not m_temp.was_created()) {
-    return *m_grid->variables().get_2d_scalar("bheatflx");
+    m_upward_flux.copy_from(*m_grid->variables().get_2d_scalar("bheatflx"));
+    return;
   }
 
   double dzb = this->vertical_spacing();
@@ -379,7 +390,7 @@ const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *Tb = m_temp.get_column(i,j);
+      const double *Tb = m_temp.get_column(i,j);
       m_upward_flux(i,j) = - m_bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
     }
 
@@ -388,12 +399,14 @@ const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *Tb = m_temp.get_column(i,j);
+      const double *Tb = m_temp.get_column(i,j);
       m_upward_flux(i,j) = - m_bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
     }
 
   }
+}
 
+const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() const {
   return m_upward_flux;
 }
 
@@ -432,6 +445,23 @@ void BedThermalUnit::bootstrap() {
   m_temp.inc_state_counter();     // mark as modified
 }
 
+BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(BedThermalUnit *m)
+  : Diag<BedThermalUnit>(m) {
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "hfgeoubed"));
+  set_attrs("upward geothermal flux at ground (top of the bedrock) level",
+            "",                 // no standard name
+            "W m-2", "W m-2", 0);
+}
+
+IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "hfgeoubed", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+
+  result->copy_from(model->upward_geothermal_flux());
+
+  return result;
+}
 
 } // end of namespace energy
 } // end of namespace pism

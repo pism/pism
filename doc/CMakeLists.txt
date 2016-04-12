@@ -70,14 +70,11 @@ macro(pism_latex_document name src figs run_bibtex)
 endmacro()
 
 if (PDFLATEX_COMPILER)
-  # Only offer to build docs if LaTeX is found.
-  option (Pism_BUILD_PDFS "Build PISM PDF documentation" OFF)
-
   # Installation manual:
   add_subdirectory(installation)
 
   # User's Manual:
-  add_subdirectory(userman)
+  add_subdirectory(manual)
 
   # Climate forcing components manual:
   add_subdirectory(forcing)
@@ -88,12 +85,12 @@ if (PDFLATEX_COMPILER)
   # PISM's Python bindings docs:
   add_subdirectory (pismpython EXCLUDE_FROM_ALL)
 
-  if (Pism_BUILD_PDFS AND Pism_DOC_DIR)
+  if (Pism_DOC_DIR)
     install (FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/userman/manual.pdf"
-      "${CMAKE_CURRENT_BINARY_DIR}/forcing/forcing.pdf"
-      "${CMAKE_CURRENT_BINARY_DIR}/installation/installation.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/manual/pism_manual.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/forcing/pism_forcing.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/installation/pism_installation.pdf"
       DESTINATION ${Pism_DOC_DIR})
 
-  endif ()                      # if Pism_BUILD_PDFS
+  endif ()                      # if Pism_DOC_DIR
 endif ()                        # if PDFLATEX_COMPILER

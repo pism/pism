@@ -62,11 +62,11 @@ void SSATestCase::buildSSACoefficients()
   m_grid->variables().add(m_tauc);
 
   // enthalpy
-  m_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
-  m_enthalpy.set_attrs("model_state",
+  m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
+  m_ice_enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
                        "J kg-1", "");
-  m_grid->variables().add(m_enthalpy);
+  m_grid->variables().add(m_ice_enthalpy);
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
@@ -80,16 +80,16 @@ void SSATestCase::buildSSACoefficients()
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m/year", "m/s");
+  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
 
   m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_bc_values.metadata(0).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
+  m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_bc_values.metadata(0).set_double("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
   m_bc_values.metadata(0).set_double("_FillValue", fill_value);
 
   m_bc_values.metadata(1).set_string("glaciological_units", "m year-1");
-  m_bc_values.metadata(1).set_double("valid_min", units::convert(m_sys, -1e6, "m/year", "m/second"));
-  m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m/year", "m/second"));
+  m_bc_values.metadata(1).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
+  m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
   m_bc_values.metadata(1).set_double("_FillValue", fill_value);
 
   m_bc_values.write_in_glaciological_units = true;
@@ -142,10 +142,9 @@ SSATestCase::~SSATestCase()
 }
 
 //! Initialize the test case at the start of a run
-void SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
-{
+void SSATestCase::init(int Mx, int My, SSAFactory ssafactory) {
   // Subclass builds grid->
-  initializeGrid(Mx,My);
+  initializeGrid(Mx, My);
 
   // Subclass builds ice flow law, basal resistance, etc.
   initializeSSAModel();
@@ -164,10 +163,11 @@ void SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 //! Solve the SSA
 void SSATestCase::run() {
   // Solve (fast==true means "no update"):
-  m_ctx->log()->message(2,"* Solving the SSA stress balance ...\n");
+  m_ctx->log()->message(2, "* Solving the SSA stress balance ...\n");
 
   bool fast = false;
-  m_ssa->update(fast, m_melange_back_pressure);
+  double sea_level = 0.0;
+  m_ssa->update(fast, sea_level, m_melange_back_pressure);
 }
 
 //! Report on the generated solution
@@ -175,10 +175,20 @@ void SSATestCase::report(const std::string &testname) {
 
   m_ctx->log()->message(3, m_ssa->stdout_report());
 
-  double maxvecerr = 0.0, avvecerr = 0.0,
-    avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
-  double gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
-    gmaxuerr = 0.0, gmaxverr = 0.0;
+  double
+    maxvecerr  = 0.0,
+    avvecerr   = 0.0,
+    avuerr     = 0.0,
+    avverr     = 0.0,
+    maxuerr    = 0.0,
+    maxverr    = 0.0;
+  double
+    gmaxvecerr = 0.0,
+    gavvecerr  = 0.0,
+    gavuerr    = 0.0,
+    gavverr    = 0.0,
+    gmaxuerr   = 0.0,
+    gmaxverr   = 0.0;
 
   if (m_config->get_boolean("do_pseudo_plastic_till") &&
       m_config->get_double("pseudo_plastic_q") != 1.0) {
@@ -187,7 +197,6 @@ void SSATestCase::report(const std::string &testname) {
   }
   m_ctx->log()->message(1,
                         "NUMERICAL ERRORS in velocity relative to exact solution:\n");
-
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
 
@@ -219,37 +228,40 @@ void SSATestCase::report(const std::string &testname) {
   }
 
   unsigned int N = (m_grid->Mx()*m_grid->My());
+
   gexactvelmax = GlobalMax(m_grid->com, exactvelmax);
-  gmaxuerr = GlobalMax(m_grid->com, maxuerr);
-  gmaxverr = GlobalMax(m_grid->com, maxverr);
-  gavuerr = GlobalSum(m_grid->com, avuerr);
-  gavuerr = gavuerr / N;
-  gavverr = GlobalSum(m_grid->com, avverr);
-  gavverr = gavverr / N;
-  gmaxvecerr = GlobalMax(m_grid->com, maxvecerr);
-  gavvecerr = GlobalSum(m_grid->com, avvecerr);
-  gavvecerr = gavvecerr / N;
+  gmaxuerr     = GlobalMax(m_grid->com, maxuerr);
+  gmaxverr     = GlobalMax(m_grid->com, maxverr);
+  gavuerr      = GlobalSum(m_grid->com, avuerr);
+  gavuerr      = gavuerr / N;
+  gavverr      = GlobalSum(m_grid->com, avverr);
+  gavverr      = gavverr / N;
+  gmaxvecerr   = GlobalMax(m_grid->com, maxvecerr);
+  gavvecerr    = GlobalSum(m_grid->com, avvecerr);
+  gavvecerr    = gavvecerr / N;
+
+  using pism::units::convert;
 
   m_ctx->log()->message(1,
                         "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
   m_ctx->log()->message(1,
                         "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n",
-                        units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
+                        convert(m_sys, gmaxvecerr, "m second-1", "m year-1"),
                         (gavvecerr/gexactvelmax)*100.0,
-                        units::convert(m_sys, gmaxuerr, "m/second", "m/year"),
-                        units::convert(m_sys, gmaxverr, "m/second", "m/year"),
-                        units::convert(m_sys, gavuerr, "m/second", "m/year"),
-                        units::convert(m_sys, gavverr, "m/second", "m/year"));
+                        convert(m_sys, gmaxuerr, "m second-1", "m year-1"),
+                        convert(m_sys, gmaxverr, "m second-1", "m year-1"),
+                        convert(m_sys, gavuerr, "m second-1", "m year-1"),
+                        convert(m_sys, gavverr, "m second-1", "m year-1"));
 
   m_ctx->log()->message(1, "NUM ERRORS DONE\n");
 
   report_netcdf(testname,
-                units::convert(m_sys, gmaxvecerr, "m/second", "m/year"),
+                convert(m_sys, gmaxvecerr, "m second-1", "m year-1"),
                 (gavvecerr/gexactvelmax)*100.0,
-                units::convert(m_sys, gmaxuerr, "m/second", "m/year"),
-                units::convert(m_sys, gmaxverr, "m/second", "m/year"),
-                units::convert(m_sys, gavuerr, "m/second", "m/year"),
-                units::convert(m_sys, gavverr, "m/second", "m/year"));
+                convert(m_sys, gmaxuerr, "m second-1", "m year-1"),
+                convert(m_sys, gmaxverr, "m second-1", "m year-1"),
+                convert(m_sys, gavuerr, "m second-1", "m year-1"),
+                convert(m_sys, gavverr, "m second-1", "m year-1"));
 }
 
 void SSATestCase::report_netcdf(const std::string &testname,
@@ -306,7 +318,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("max_velocity");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum ice velocity magnitude error");
   io::write_timeseries(nc, err, (size_t)start, max_vector);
 
@@ -318,25 +330,25 @@ void SSATestCase::report_netcdf(const std::string &testname,
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_u");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
   io::write_timeseries(nc, err, (size_t)start, max_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("maximum_v");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
   io::write_timeseries(nc, err, (size_t)start, max_v);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_u");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "average error in the X-component of the ice velocity");
   io::write_timeseries(nc, err, (size_t)start, avg_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
   err.set_name("average_v");
-  err.set_string("units", "m/year");
+  err.set_string("units", "m year-1");
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
   io::write_timeseries(nc, err, (size_t)start, avg_v);
 
@@ -366,7 +378,7 @@ void SSATestCase::write(const std::string &filename) {
   m_bc_mask.write(pio);
   m_tauc.write(pio);
   m_bed.write(pio);
-  m_enthalpy.write(pio);
+  m_ice_enthalpy.write(pio);
   m_bc_values.write(pio);
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();

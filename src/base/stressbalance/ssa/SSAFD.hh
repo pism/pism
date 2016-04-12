@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,13 +37,13 @@ public:
   SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~SSAFD();
 
-  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
 
 protected:
   virtual void init_impl();
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
 
   virtual void pc_setup_bjacobi();
 

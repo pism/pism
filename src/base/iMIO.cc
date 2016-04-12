@@ -18,11 +18,12 @@
 
 #include <cstring>
 #include <cstdio>
-#include <petscdmda.h>
-#include "iceModel.hh"
+
 #include <algorithm>
 #include <sstream>
 #include <set>
+
+#include "iceModel.hh"
 
 #include "base/basalstrength/PISMYieldStress.hh"
 #include "base/calving/PISMCalvingAtThickness.hh"
@@ -76,7 +77,7 @@ void  IceModel::writeFiles(const std::string &default_filename) {
 
 //! \brief Write metadata (global attributes, overrides and mapping parameters) to a file.
 void IceModel::write_metadata(const PIO &nc, bool write_mapping,
-                                        bool write_run_stats) {
+                              bool write_run_stats) {
 
   if (write_mapping) {
     bool mapping_exists = nc.inq_var(mapping.get_name());
@@ -99,7 +100,7 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
     io::write_attributes(nc, run_stats, PISM_DOUBLE, false);
   }
 
-  io::write_global_attributes(nc, global_attributes);
+  io::write_global_attributes(nc, m_output_global_attributes);
 
   // write configuration parameters to the file:
   m_config->write(nc);
@@ -136,7 +137,7 @@ void IceModel::dumpToFile(const std::string &filename) {
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
 void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_input,
-                                         IO_Type nctype) {
+                               IO_Type nctype) {
   std::set<std::string> vars = vars_input;
   const IceModelVec *v;
 
@@ -155,16 +156,16 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
         }
       } else {
         // It might be a diagnostic quantity
-        Diagnostic *diag = diagnostics[*i];
+        Diagnostic::Ptr diag = m_diagnostics[*i];
 
-        if (diag != NULL) {
+        if (diag) {
           diag->define(nc);
         }
       }
     }
 
-    if (beddef != NULL) {
-      beddef->define_variables(vars, nc, nctype);
+    if (m_beddef != NULL) {
+      m_beddef->define_variables(vars, nc, nctype);
     }
 
     if (btu != NULL) {
@@ -175,8 +176,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       basal_yield_stress_model->define_variables(vars, nc, nctype);
     }
 
-    if (stress_balance != NULL) {
-      stress_balance->define_variables(vars, nc, nctype);
+    if (m_stress_balance != NULL) {
+      m_stress_balance->define_variables(vars, nc, nctype);
     } else {
       throw RuntimeError("PISM ERROR: stress_balance == NULL");
     }
@@ -185,14 +186,14 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       subglacial_hydrology->define_variables(vars, nc, nctype);
     }
 
-    if (surface != NULL) {
-      surface->define_variables(vars, nc, nctype);
+    if (m_surface != NULL) {
+      m_surface->define_variables(vars, nc, nctype);
     } else {
       throw RuntimeError("PISM ERROR: surface == NULL");
     }
 
-    if (ocean != NULL) {
-      ocean->define_variables(vars, nc, nctype);
+    if (m_ocean != NULL) {
+      m_ocean->define_variables(vars, nc, nctype);
     } else {
       throw RuntimeError("PISM ERROR: ocean == NULL");
     }
@@ -231,8 +232,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   vars = vars_copy;
 
   // Write bed-deformation-related variables:
-  if (beddef != NULL) {
-    beddef->write_variables(vars, nc);
+  if (m_beddef != NULL) {
+    m_beddef->write_variables(vars, nc);
   }
 
   // Write BedThermalUnit variables:
@@ -245,8 +246,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   }
 
   // Write stress balance-related variables:
-  if (stress_balance != NULL) {
-    stress_balance->write_variables(vars, nc);
+  if (m_stress_balance != NULL) {
+    m_stress_balance->write_variables(vars, nc);
   } else {
     throw RuntimeError("PISM ERROR: stress_balance == NULL");
   }
@@ -256,13 +257,13 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   }
 
   // Ask boundary models to write their variables:
-  if (surface != NULL) {
-    surface->write_variables(vars, nc);
+  if (m_surface != NULL) {
+    m_surface->write_variables(vars, nc);
   } else {
     throw RuntimeError("PISM ERROR: surface == NULL");
   }
-  if (ocean != NULL) {
-    ocean->write_variables(vars, nc);
+  if (m_ocean != NULL) {
+    m_ocean->write_variables(vars, nc);
   } else {
     throw RuntimeError("PISM ERROR: ocean == NULL");
   }
@@ -285,9 +286,9 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
 
   // All the remaining names in vars must be of diagnostic quantities.
   for (i = vars.begin(); i != vars.end();) {
-    Diagnostic *diag = diagnostics[*i];
+    Diagnostic::Ptr diag = m_diagnostics[*i];
 
-    if (diag == NULL) {
+    if (not diag) {
       ++i;
     } else {
       IceModelVec::Ptr v_diagnostic = diag->compute();
@@ -318,9 +319,9 @@ void IceModel::write_model_state(const PIO &nc) {
   std::string o_size = get_output_size("-o_size");
 
 #if (PISM_USE_PROJ4==1)
-  if (global_attributes.has_attribute("proj4")) {
-    output_vars.insert("lon_bnds");
-    output_vars.insert("lat_bnds");
+  if (m_output_global_attributes.has_attribute("proj4")) {
+    m_output_vars.insert("lon_bnds");
+    m_output_vars.insert("lat_bnds");
     vLatitude.metadata().set_string("bounds", "lat_bnds");
     vLongitude.metadata().set_string("bounds", "lon_bnds");
   }
@@ -330,7 +331,7 @@ void IceModel::write_model_state(const PIO &nc) {
 #error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif
 
-  write_variables(nc, output_vars, PISM_DOUBLE);
+  write_variables(nc, m_output_vars, PISM_DOUBLE);
 }
 
 
@@ -384,7 +385,7 @@ void IceModel::initFromFile(const std::string &filename) {
   if (m_config->get_boolean("do_energy") && m_config->get_boolean("do_cold_ice_methods")) {
     m_log->message(3,
                "  setting enthalpy from temperature...\n");
-    compute_enthalpy_cold(T3, Enth3);
+    compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
   }
 
   // check if the input file has Href; set to 0 if it is not present
@@ -406,13 +407,13 @@ void IceModel::initFromFile(const std::string &filename) {
     bool age_exists = nc.inq_var("age");
 
     if (age_exists) {
-      age3.read(filename, last_record);
+      m_ice_age.read(filename, last_record);
     } else {
       m_log->message(2,
                  "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
                  "  Setting it to zero...\n",
                  filename.c_str());
-      age3.set(0.0);
+      m_ice_age.set(0.0);
     }
   }
 
@@ -423,8 +424,8 @@ void IceModel::initFromFile(const std::string &filename) {
   init_enthalpy(filename, false, last_record);
 
   std::string history = nc.get_att_text("PISM_GLOBAL", "history");
-  global_attributes.set_string("history",
-                               history + global_attributes.get_string("history"));
+  m_output_global_attributes.set_string("history",
+                               history + m_output_global_attributes.get_string("history"));
 
   nc.close();
 }
@@ -435,7 +436,7 @@ void IceModel::initFromFile(const std::string &filename) {
   the NetCDF file specified by `-regrid_file`.
 
   The default, if `-regrid_vars` is not given, is to regrid the 3
-  dimensional quantities `age3`, `Tb3` and either `T3` or `Enth3`. This is
+  dimensional quantities `m_ice_age`, `Tb3` and either `m_ice_temperature` or `m_ice_enthalpy`. This is
   consistent with one standard purpose of regridding, which is to stick with
   current geometry through the downscaling procedure. Most of the time the user
   should carefully specify which variables to regrid.
@@ -527,8 +528,8 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
     // Check if the current variable is the same as
     // IceModel::ice_thickess, then check the range of the ice
     // thickness
-    if (v == &this->ice_thickness) {
-      Range thk_range = ice_thickness.range();
+    if (v == &this->m_ice_thickness) {
+      Range thk_range = m_ice_thickness.range();
 
       if (thk_range.max >= m_grid->Lz() + 1e-6) {
         throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
@@ -566,15 +567,15 @@ void IceModel::init_enthalpy(const std::string &filename,
 
   if (enthalpy_exists == true) {
     if (do_regrid) {
-      Enth3.regrid(filename, CRITICAL);
+      m_ice_enthalpy.regrid(filename, CRITICAL);
     } else {
-      Enth3.read(filename, last_record);
+      m_ice_enthalpy.read(filename, last_record);
     }
   } else if (temp_exists == true) {
     IceModelVec3 &temp = vWork3d,
-      &liqfrac         = Enth3;
+      &liqfrac         = m_ice_enthalpy;
 
-    SpatialVariableMetadata enthalpy_metadata = Enth3.metadata();
+    SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
     temp.set_name("temp");
     temp.metadata(0).set_name("temp");
     temp.set_attrs("temporary", "ice temperature", "Kelvin",
@@ -601,14 +602,14 @@ void IceModel::init_enthalpy(const std::string &filename,
       m_log->message(2,
                  "* Computing enthalpy using ice temperature,"
                  "  liquid water fraction and thickness...\n");
-      compute_enthalpy(temp, liqfrac, Enth3);
+      compute_enthalpy(temp, liqfrac, m_ice_enthalpy);
     } else {
       m_log->message(2,
                  "* Computing enthalpy using ice temperature and thickness...\n");
-      compute_enthalpy_cold(temp, Enth3);
+      compute_enthalpy_cold(temp, m_ice_enthalpy);
     }
 
-    Enth3.metadata() = enthalpy_metadata;
+    m_ice_enthalpy.metadata() = enthalpy_metadata;
   } else {
     throw RuntimeError::formatted("neither enthalpy nor temperature was found in '%s'.\n",
                                   filename.c_str());
@@ -617,18 +618,18 @@ void IceModel::init_enthalpy(const std::string &filename,
 
 //! Initializes the snapshot-saving mechanism.
 void IceModel::init_snapshots() {
-  current_snapshot = 0;
+  m_current_snapshot = 0;
 
   options::String save_file("-save_file", "Specifies a snapshot filename",
-                            snapshots_filename);
-  snapshots_filename = save_file;
+                            m_snapshots_filename);
+  m_snapshots_filename = save_file;
 
   options::String save_times("-save_times",
                              "Gives a list or a MATLAB-style range of times to save snapshots at");
 
   bool split = options::Bool("-save_split", "Specifies whether to save snapshots to separate files");
 
-  snapshot_vars = output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
+  m_snapshot_vars = output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
                                           "small");
 
 
@@ -637,38 +638,38 @@ void IceModel::init_snapshots() {
   }
 
   if (!save_file.is_set() && !save_times.is_set()) {
-    save_snapshots = false;
+    m_save_snapshots = false;
     return;
   }
 
   try {
-    m_time->parse_times(save_times, snapshot_times);
+    m_time->parse_times(save_times, m_snapshot_times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -save_times argument");
     throw;
   }
 
-  if (snapshot_times.size() == 0) {
+  if (m_snapshot_times.size() == 0) {
     throw RuntimeError("no argument for -save_times option.");
   }
 
-  save_snapshots = true;
-  snapshots_file_is_ready = false;
-  split_snapshots = false;
+  m_save_snapshots = true;
+  m_snapshots_file_is_ready = false;
+  m_split_snapshots = false;
 
   if (split) {
-    split_snapshots = true;
-  } else if (!ends_with(snapshots_filename, ".nc")) {
+    m_split_snapshots = true;
+  } else if (!ends_with(m_snapshots_filename, ".nc")) {
     m_log->message(2,
                "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
   }
 
   if (split) {
     m_log->message(2, "saving snapshots to '%s+year.nc'; ",
-               snapshots_filename.c_str());
+               m_snapshots_filename.c_str());
   } else {
     m_log->message(2, "saving snapshots to '%s'; ",
-               snapshots_filename.c_str());
+               m_snapshots_filename.c_str());
   }
 
   m_log->message(2, "times requested: %s\n", save_times->c_str());
@@ -684,18 +685,18 @@ void IceModel::write_snapshot() {
   char filename[PETSC_MAX_PATH_LEN];
 
   // determine if the user set the -save_times and -save_file options
-  if (!save_snapshots) {
+  if (!m_save_snapshots) {
     return;
   }
 
   // do we need to save *now*?
-  if ((m_time->current() >= snapshot_times[current_snapshot]) and
-      (current_snapshot < snapshot_times.size())) {
-    saving_after = snapshot_times[current_snapshot];
+  if ((m_time->current() >= m_snapshot_times[m_current_snapshot]) and
+      (m_current_snapshot < m_snapshot_times.size())) {
+    saving_after = m_snapshot_times[m_current_snapshot];
 
-    while ((current_snapshot < snapshot_times.size()) and
-           (snapshot_times[current_snapshot] <= m_time->current())) {
-      current_snapshot++;
+    while ((m_current_snapshot < m_snapshot_times.size()) and
+           (m_snapshot_times[m_current_snapshot] <= m_time->current())) {
+      m_current_snapshot++;
     }
   } else {
     // we don't need to save now, so just return
@@ -705,12 +706,12 @@ void IceModel::write_snapshot() {
   // flush time-series buffers
   flush_timeseries();
 
-  if (split_snapshots) {
-    snapshots_file_is_ready = false;    // each snapshot is written to a separate file
+  if (m_split_snapshots) {
+    m_snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-             snapshots_filename.c_str(), m_time->date(saving_after).c_str());
+             m_snapshots_filename.c_str(), m_time->date(saving_after).c_str());
   } else {
-    strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+    strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
   m_log->message(2,
@@ -720,7 +721,7 @@ void IceModel::write_snapshot() {
 
   PIO nc(m_grid->com, m_config->get_string("output_format"));
 
-  if (not snapshots_file_is_ready) {
+  if (not m_snapshots_file_is_ready) {
     // Prepare the snapshots file:
     nc.open(filename, PISM_READWRITE_MOVE);
     io::define_time(nc, m_config->get_string("time_dimension_name"),
@@ -728,21 +729,22 @@ void IceModel::write_snapshot() {
                 m_time->CF_units_string(),
                 m_sys);
 
-    write_metadata(nc, true, true);
-
-    snapshots_file_is_ready = true;
+    m_snapshots_file_is_ready = true;
   } else {
     // In this case the snapshot file is should be present.
     nc.open(filename, PISM_READWRITE);
   }
 
+  // write metadata to the file *every time* we update it
+  write_metadata(nc, true, true);
+
   io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
 
-  write_variables(nc, snapshot_vars, PISM_DOUBLE);
+  write_variables(nc, m_snapshot_vars, PISM_DOUBLE);
 
   {
     // find out how much time passed since the beginning of the run
-    double wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time);
+    double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
 
     // Get time length now, i.e. after writing variables. This forces PISM to call PIO::enddef(), so
     // that the length of the time dimension is up to date.
@@ -756,7 +758,7 @@ void IceModel::write_snapshot() {
       time_start = 0;
     }
 
-    io::write_timeseries(nc, timestamp, time_start, wall_clock_hours);
+    io::write_timeseries(nc, m_timestamp, time_start, wall_clock_hours);
   }
 
   nc.close();
@@ -765,36 +767,36 @@ void IceModel::write_snapshot() {
 //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
 void IceModel::init_backups() {
 
-  backup_interval = m_config->get_double("backup_interval");
+  m_backup_interval = m_config->get_double("backup_interval");
 
   options::String backup_file("-o", "Output file name");
   if (backup_file.is_set()) {
-    backup_filename = pism_filename_add_suffix(backup_file, "_backup", "");
+    m_backup_filename = pism_filename_add_suffix(backup_file, "_backup", "");
   } else {
-    backup_filename = "pism_backup.nc";
+    m_backup_filename = "pism_backup.nc";
   }
 
-  backup_interval = options::Real("-backup_interval",
-                                  "Automatic backup interval, hours", backup_interval);
+  m_backup_interval = options::Real("-backup_interval",
+                                  "Automatic backup interval, hours", m_backup_interval);
 
-  backup_vars = output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
+  m_backup_vars = output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
                                         "small");
 
-  last_backup_time = 0.0;
+  m_last_backup_time = 0.0;
 }
 
   //! Write a backup (i.e. an intermediate result of a run).
 void IceModel::write_backup() {
-  double wall_clock_hours = pism::wall_clock_hours(m_grid->com, start_time);
+  double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
 
-  if (wall_clock_hours - last_backup_time < backup_interval) {
+  if (wall_clock_hours - m_last_backup_time < m_backup_interval) {
     return;
   }
 
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("backup");
 
-  last_backup_time = wall_clock_hours;
+  m_last_backup_time = wall_clock_hours;
 
   // create a history string:
   std::string date_str = pism_timestamp(m_grid->com);
@@ -807,14 +809,14 @@ void IceModel::write_backup() {
 
   m_log->message(2,
                  "  [%s] Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
-                 pism_timestamp(m_grid->com).c_str(), backup_filename.c_str(), wall_clock_hours);
+                 pism_timestamp(m_grid->com).c_str(), m_backup_filename.c_str(), wall_clock_hours);
 
   stampHistory(tmp);
 
   PIO nc(m_grid->com, m_config->get_string("output_format"));
 
   // write metadata:
-  nc.open(backup_filename, PISM_READWRITE_MOVE);
+  nc.open(m_backup_filename, PISM_READWRITE_MOVE);
   io::define_time(nc, m_config->get_string("time_dimension_name"),
               m_time->calendar(),
               m_time->CF_units_string(),
@@ -824,7 +826,7 @@ void IceModel::write_backup() {
   // Write metadata *before* variables:
   write_metadata(nc, true, true);
 
-  write_variables(nc, backup_vars, PISM_DOUBLE);
+  write_variables(nc, m_backup_vars, PISM_DOUBLE);
 
   nc.close();
 

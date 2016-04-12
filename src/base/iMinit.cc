@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -55,6 +55,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/projection.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -117,17 +118,17 @@ void IceModel::model_state_setup() {
   // Initialize a bed deformation model (if needed); this should go
   // after the regrid(0) call but before other init() calls that need
   // bed elevation and uplift.
-  if (beddef) {
-    beddef->init();
-    m_grid->variables().add(beddef->bed_elevation());
-    m_grid->variables().add(beddef->uplift());
+  if (m_beddef) {
+    m_beddef->init();
+    m_grid->variables().add(m_beddef->bed_elevation());
+    m_grid->variables().add(m_beddef->uplift());
   }
 
-  if (stress_balance) {
-    stress_balance->init();
+  if (m_stress_balance) {
+    m_stress_balance->init();
 
     if (m_config->get_boolean("include_bmr_in_continuity")) {
-      stress_balance->set_basal_melt_rate(basal_melt_rate);
+      m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
     }
   }
 
@@ -135,14 +136,14 @@ void IceModel::model_state_setup() {
     bool bootstrapping_needed = false;
     btu->init(bootstrapping_needed);
 
-    if (bootstrapping_needed == true) {
+    if (bootstrapping_needed) {
       // update surface and ocean models so that we can get the
       // temperature at the top of the bedrock
       m_log->message(2,
                  "getting surface B.C. from couplers...\n");
       init_step_couplers();
 
-      get_bed_top_temp(bedtoptemp);
+      get_bed_top_temp(m_bedtoptemp);
 
       btu->bootstrap();
     }
@@ -158,47 +159,47 @@ void IceModel::model_state_setup() {
     basal_yield_stress_model->init();
   }
 
-  if (climatic_mass_balance_cumulative.was_created()) {
+  {
     if (input_file.is_set()) {
       m_log->message(2,
                  "* Trying to read cumulative climatic mass balance from '%s'...\n",
                  input_file->c_str());
-      climatic_mass_balance_cumulative.regrid(input_file, OPTIONAL, 0.0);
+      m_climatic_mass_balance_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
-      climatic_mass_balance_cumulative.set(0.0);
+      m_climatic_mass_balance_cumulative.set(0.0);
     }
   }
 
-  if (grounded_basal_flux_2D_cumulative.was_created()) {
+  {
     if (input_file.is_set()) {
       m_log->message(2,
                  "* Trying to read cumulative grounded basal flux from '%s'...\n",
                  input_file->c_str());
-      grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
+      m_grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
-      grounded_basal_flux_2D_cumulative.set(0.0);
+      m_grounded_basal_flux_2D_cumulative.set(0.0);
     }
   }
 
-  if (floating_basal_flux_2D_cumulative.was_created()) {
+  {
     if (input_file.is_set()) {
       m_log->message(2,
                  "* Trying to read cumulative floating basal flux from '%s'...\n",
                  input_file->c_str());
-      floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
+      m_floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
-      floating_basal_flux_2D_cumulative.set(0.0);
+      m_floating_basal_flux_2D_cumulative.set(0.0);
     }
   }
 
-  if (nonneg_flux_2D_cumulative.was_created()) {
+  {
     if (input_file.is_set()) {
       m_log->message(2,
                  "* Trying to read cumulative nonneg flux from '%s'...\n",
                  input_file->c_str());
-      nonneg_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
+      m_nonneg_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
-      nonneg_flux_2D_cumulative.set(0.0);
+      m_nonneg_flux_2D_cumulative.set(0.0);
     }
   }
 
@@ -249,27 +250,40 @@ void IceModel::model_state_setup() {
     }
   }
 
-  compute_cell_areas();
+  // get projection information and compute cell areas
+  {
+    if (input_file.is_set()) {
+      PIO nc(m_grid->com, "guess_mode");
+      nc.open(input_file, PISM_READONLY); // closed at the end of scope
+
+      get_projection_info(nc);
+
+      std::string proj4_string = m_output_global_attributes.get_string("proj4");
+      if (not proj4_string.empty()) {
+        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
+                       proj4_string.c_str(), nc.inq_filename().c_str());
+      }
+    }
+
+    compute_cell_areas();
+  }
 
   // a report on whether PISM-PIK modifications of IceModel are in use
-  const bool pg   = m_config->get_boolean("part_grid"),
-    pr   = m_config->get_boolean("part_redist"),
-    ki   = m_config->get_boolean("kill_icebergs");
-  if (pg || pr || ki) {
+  std::vector<std::string> pik_methods;
+  if (m_config->get_boolean("part_grid")) {
+    pik_methods.push_back("part_grid");
+  }
+  if (m_config->get_boolean("part_redist")) {
+    pik_methods.push_back("part_redist");
+  }
+  if (m_config->get_boolean("kill_icebergs")) {
+    pik_methods.push_back("kill_icebergs");
+  }
+
+  if (not pik_methods.empty()) {
     m_log->message(2,
-               "* PISM-PIK mass/geometry methods are in use:  ");
-
-    if (pg)   {
-      m_log->message(2, "part_grid,");
-    }
-    if (pr)   {
-      m_log->message(2, "part_redist,");
-    }
-    if (ki)   {
-      m_log->message(2, "kill_icebergs");
-    }
-
-    m_log->message(2, "\n");
+                   "* PISM-PIK mass/geometry methods are in use: %s\n",
+                   join(pik_methods, ", ").c_str());
   }
 
   stampHistoryCommand();
@@ -304,7 +318,7 @@ void IceModel::allocate_stressbalance() {
 
   using namespace pism::stressbalance;
 
-  if (stress_balance != NULL) {
+  if (m_stress_balance != NULL) {
     return;
   }
 
@@ -343,7 +357,7 @@ void IceModel::allocate_stressbalance() {
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
-  stress_balance = new StressBalance(m_grid, sliding, modifier);
+  m_stress_balance = new StressBalance(m_grid, sliding, modifier);
 }
 
 void IceModel::allocate_iceberg_remover() {
@@ -398,7 +412,7 @@ void IceModel::allocate_subglacial_hydrology() {
   } else if (hydrology_model == "routing") {
     subglacial_hydrology = new Routing(m_grid);
   } else if (hydrology_model == "distributed") {
-    subglacial_hydrology = new Distributed(m_grid, stress_balance);
+    subglacial_hydrology = new Distributed(m_grid, m_stress_balance);
   } else {
     throw RuntimeError::formatted("unknown value for configuration string 'hydrology_model':\n"
                                   "has value '%s'", hydrology_model.c_str());
@@ -476,24 +490,24 @@ void IceModel::allocate_couplers() {
   ocean::Factory po(m_grid);
   atmosphere::AtmosphereModel *atmosphere;
 
-  if (surface == NULL) {
+  if (m_surface == NULL) {
 
     m_log->message(2,
              "# Allocating a surface process model or coupler...\n");
 
-    surface = ps.create();
-    external_surface_model = false;
+    m_surface = ps.create();
+    m_external_surface_model = false;
 
     atmosphere = pa.create();
-    surface->attach_atmosphere_model(atmosphere);
+    m_surface->attach_atmosphere_model(atmosphere);
   }
 
-  if (ocean == NULL) {
+  if (m_ocean == NULL) {
     m_log->message(2,
              "# Allocating an ocean model or coupler...\n");
 
-    ocean = po.create();
-    external_ocean_model = false;
+    m_ocean = po.create();
+    m_external_ocean_model = false;
   }
 }
 
@@ -503,11 +517,11 @@ void IceModel::init_couplers() {
   m_log->message(3,
              "Initializing boundary models...\n");
 
-  assert(surface != NULL);
-  surface->init();
+  assert(m_surface != NULL);
+  m_surface->init();
 
-  assert(ocean != NULL);
-  ocean->init();
+  assert(m_ocean != NULL);
+  m_ocean->init();
 }
 
 
@@ -523,11 +537,11 @@ void IceModel::init_step_couplers() {
   // Take a one year long step if we can.
   MaxTimestep max_dt(one_year_from_now - now);
 
-  assert(surface != NULL);
-  max_dt = std::min(max_dt, surface->max_timestep(now));
+  assert(m_surface != NULL);
+  max_dt = std::min(max_dt, m_surface->max_timestep(now));
 
-  assert(ocean != NULL);
-  max_dt = std::min(max_dt, ocean->max_timestep(now));
+  assert(m_ocean != NULL);
+  max_dt = std::min(max_dt, m_ocean->max_timestep(now));
 
   // Do not take time-steps shorter than 1 second
   if (max_dt.value() < 1.0) {
@@ -536,8 +550,8 @@ void IceModel::init_step_couplers() {
 
   assert(max_dt.is_finite() == true);
 
-  surface->update(now, max_dt.value());
-  ocean->update(now, max_dt.value());
+  m_surface->update(now, max_dt.value());
+  m_ocean->update(now, max_dt.value());
 }
 
 
@@ -566,7 +580,7 @@ void IceModel::allocate_internal_objects() {
 void IceModel::get_projection_info(const PIO &input_file) {
   std::string proj4_string = input_file.get_att_text("PISM_GLOBAL", "proj4");
   if (not proj4_string.empty()) {
-    global_attributes.set_string("proj4", proj4_string);
+    m_output_global_attributes.set_string("proj4", proj4_string);
   }
 
   bool input_has_mapping = input_file.inq_var(mapping.get_name());
@@ -660,8 +674,6 @@ void IceModel::misc_setup() {
 
     nc.open(input_file, PISM_READONLY);
 
-    get_projection_info(nc);
-
     std::string source = nc.get_att_text("PISM_GLOBAL", "source");
     nc.close();
 
@@ -705,7 +717,7 @@ void IceModel::misc_setup() {
     }
   }
 
-  output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
+  m_output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
                                         "medium");
 
   // Quietly re-initialize couplers (they might have done one
@@ -769,7 +781,7 @@ void IceModel::init_calving() {
   if (methods.find("eigen_calving") != methods.end()) {
 
     if (eigen_calving == NULL) {
-      eigen_calving = new calving::EigenCalving(m_grid, stress_balance);
+      eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance);
     }
 
     eigen_calving->init();
@@ -802,25 +814,25 @@ void IceModel::init_calving() {
 void IceModel::allocate_bed_deformation() {
   std::string model = m_config->get_string("bed_deformation_model");
 
-  if (beddef != NULL) {
+  if (m_beddef != NULL) {
     return;
   }
 
   m_log->message(2,
-             "# Allocating a bed deformation model...\n");
+                 "# Allocating a bed deformation model...\n");
 
   if (model == "none") {
-    beddef = new bed::PBNull(m_grid);
+    m_beddef = new bed::PBNull(m_grid);
     return;
   }
 
   if (model == "iso") {
-    beddef = new bed::PBPointwiseIsostasy(m_grid);
+    m_beddef = new bed::PBPointwiseIsostasy(m_grid);
     return;
   }
 
   if (model == "lc") {
-    beddef = new bed::PBLingleClark(m_grid);
+    m_beddef = new bed::PBLingleClark(m_grid);
     return;
   }
 }

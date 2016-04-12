@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -48,8 +48,8 @@ void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) {
   this->ice_surface_mass_flux_impl(result);
 }
 
-void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                       std::map<std::string, TSDiagnostic*> &ts_dict) {
+void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
   if (m_atmosphere) {
     m_atmosphere->get_diagnostics(dict, ts_dict);
   }

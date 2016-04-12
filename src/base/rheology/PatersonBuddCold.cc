@@ -26,8 +26,8 @@ namespace rheology {
 
 PatersonBuddCold::PatersonBuddCold(const std::string &prefix,
                                    const Config &config,
-                                   EnthalpyConverter::Ptr EC)
-  : PatersonBudd(prefix, config, EC) {
+                                   EnthalpyConverter::Ptr ec)
+  : PatersonBudd(prefix, config, ec) {
   m_name = "Paterson-Budd (cold case)";
 }
 

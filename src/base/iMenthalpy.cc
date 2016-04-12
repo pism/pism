@@ -36,7 +36,7 @@ namespace pism {
 //! \file iMenthalpy.cc Methods of IceModel which implement the enthalpy formulation of conservation of energy.
 
 
-//! Compute Enth3 from temperature T3 by assuming the ice has zero liquid fraction.
+//! Compute m_ice_enthalpy from temperature m_ice_temperature by assuming the ice has zero liquid fraction.
 /*!
 First this method makes sure the temperatures is at most the pressure-melting
 value, before computing the enthalpy for that temperature, using zero liquid
@@ -47,7 +47,7 @@ content in the air is set to the value that ice would have if it a chunk of it
 occupied the air; the atmosphere actually has much lower energy content.  It is
 done this way for regularity (i.e. dEnth/dz computations).
 
-Because Enth3 gets set, does ghost communication to finish.
+Because m_ice_enthalpy gets set, does ghost communication to finish.
  */
 void IceModel::compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVec3 &result) {
 
@@ -56,7 +56,7 @@ void IceModel::compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVe
   IceModelVec::AccessList list;
   list.add(temperature);
   list.add(result);
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -65,7 +65,7 @@ void IceModel::compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVe
     double *Enthij = result.get_column(i,j);
 
     for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
-      const double depth = ice_thickness(i, j) - m_grid->z(k); // FIXME issue #15
+      const double depth = m_ice_thickness(i, j) - m_grid->z(k); // FIXME issue #15
       Enthij[k] = EC->enthalpy_permissive(Tij[k], 0.0, EC->pressure(depth));
     }
   }
@@ -76,9 +76,9 @@ void IceModel::compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVe
 }
 
 
-//! Compute Enth3 from temperature T3 and liquid fraction.
+//! Compute m_ice_enthalpy from temperature m_ice_temperature and liquid fraction.
 /*!
-Because Enth3 gets set, does ghost communication to finish.
+Because m_ice_enthalpy gets set, does ghost communication to finish.
  */
 void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
                                 const IceModelVec3 &liquid_water_fraction,
@@ -90,7 +90,7 @@ void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
   list.add(temperature);
   list.add(liquid_water_fraction);
   list.add(result);
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -100,7 +100,7 @@ void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
     double *Enthij = result.get_column(i,j);
 
     for (unsigned int k=0; k<m_grid->Mz(); ++k) {
-      const double depth = ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
+      const double depth = m_ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
       Enthij[k] = EC->enthalpy_permissive(Tij[k], Liqfracij[k],
                                         EC->pressure(depth));
     }
@@ -111,7 +111,7 @@ void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
   result.inc_state_counter();
 }
 
-//! Compute the liquid fraction corresponding to Enth3, and put in a global IceModelVec3 provided by user.
+//! Compute the liquid fraction corresponding to m_ice_enthalpy, and put in a global IceModelVec3 provided by user.
 /*!
 Does not communicate ghosts for IceModelVec3 result
  */
@@ -129,7 +129,7 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
   IceModelVec::AccessList list;
   list.add(result);
   list.add(enthalpy);
-  list.add(ice_thickness);
+  list.add(m_ice_thickness);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -140,7 +140,7 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
       double *omegaij = result.get_column(i,j);
 
       for (unsigned int k=0; k<m_grid->Mz(); ++k) {
-        const double depth = ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
+        const double depth = m_ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
         omegaij[k] = EC->water_fraction(Enthij[k],EC->pressure(depth));
       }
     }
@@ -152,7 +152,7 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
   result.inc_state_counter();
 }
 
-//! @brief Compute the CTS field, CTS = E/E_s(p), from Enth3, and put
+//! @brief Compute the CTS field, CTS = E/E_s(p), from m_ice_enthalpy, and put
 //! in a global IceModelVec3 provided by user.
 /*!
  * The actual cold-temperate transition surface (CTS) is the level set CTS = 1.
@@ -171,17 +171,17 @@ void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
 
   IceModelVec::AccessList list;
   list.add(result);
-  list.add(Enth3);
-  list.add(ice_thickness);
+  list.add(m_ice_enthalpy);
+  list.add(m_ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *CTS  = result.get_column(i,j);
-    const double *enthalpy = Enth3.get_column(i,j);
+    const double *enthalpy = m_ice_enthalpy.get_column(i,j);
 
     for (unsigned int k=0; k<m_grid->Mz(); ++k) {
-      const double depth = ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
+      const double depth = m_ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
       CTS[k] = enthalpy[k] / EC->enthalpy_cts(EC->pressure(depth));
     }
   }
@@ -213,24 +213,23 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   const double
     ice_density = m_config->get_double("ice_density"),              // kg m-3
     // constants controlling the numerical method:
-    bulgeEnthMax = m_config->get_double("enthalpy_cold_bulge_max"), // J kg-1
-    thickness_threshold = m_config->get_double("energy_advection_ice_thickness_threshold");
+    bulgeEnthMax = m_config->get_double("enthalpy_cold_bulge_max"); // J kg-1
 
   bool viewOneColumn = options::Bool("-view_sys",
                                      "save column system information to a file");
 
   energy::DrainageCalculator dc(*m_config);
 
-  const IceModelVec2S &Rb = stress_balance->basal_frictional_heating();
+  const IceModelVec2S &Rb = m_stress_balance->basal_frictional_heating();
   const IceModelVec3
-    &u3 = stress_balance->velocity_u(),
-    &v3 = stress_balance->velocity_v(),
-    &w3 = stress_balance->velocity_w();
+    &u3 = m_stress_balance->velocity_u(),
+    &v3 = m_stress_balance->velocity_v(),
+    &w3 = m_stress_balance->velocity_w();
 
-  const IceModelVec3 &strain_heating3 = stress_balance->volumetric_strain_heating();
+  const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 
   energy::enthSystemCtx system(m_grid->z(), "enth", m_grid->dx(), m_grid->dy(), dt_TempAge,
-                               *m_config, Enth3, u3, v3, w3, strain_heating3, EC);
+                               *m_config, m_ice_enthalpy, u3, v3, w3, strain_heating3, EC);
 
   size_t Mz_fine = system.z().size();
   double dz = system.dz();
@@ -238,12 +237,12 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   // Now get map-plane coupler fields: Dirichlet upper surface
   // boundary and mass balance lower boundary under shelves
-  assert(surface != NULL);
-  surface->ice_surface_temperature(ice_surface_temp);
-  surface->ice_surface_liquid_water_fraction(liqfrac_surface);
+  assert(m_surface != NULL);
+  m_surface->ice_surface_temperature(m_ice_surface_temp);
+  m_surface->ice_surface_liquid_water_fraction(m_liqfrac_surface);
 
-  assert(ocean != NULL);
-  ocean->shelf_base_temperature(shelfbtemp);
+  assert(m_ocean != NULL);
+  m_ocean->shelf_base_temperature(m_shelfbtemp);
 
   assert(btu != NULL);
   const IceModelVec2S &basal_heat_flux = btu->upward_geothermal_flux();
@@ -255,48 +254,43 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   subglacial_hydrology->till_water_thickness(till_water_thickness);
 
   IceModelVec::AccessList list;
-  list.add(ice_surface_temp);
+  list.add(m_ice_surface_temp);
 
-  list.add(shelfbtemp);
+  list.add(m_shelfbtemp);
 
   // get other map-plane fields
-  list.add(liqfrac_surface);
-  list.add(ice_thickness);
-  list.add(basal_melt_rate);
+  list.add(m_liqfrac_surface);
+  list.add(m_ice_thickness);
+  list.add(m_basal_melt_rate);
   list.add(Rb);
   list.add(basal_heat_flux);
   list.add(till_water_thickness);
-  list.add(vMask);
+  list.add(m_cell_type);
 
   // these are accessed a column at a time
   list.add(u3);
   list.add(v3);
   list.add(w3);
   list.add(strain_heating3);
-  list.add(Enth3);
+  list.add(m_ice_enthalpy);
   list.add(vWork3d);
 
   unsigned int liquifiedCount = 0;
-
-  MaskQuery mask(vMask);
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points pt(*m_grid); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
-      // ignore advection and strain heating in ice if isMarginal
-      const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
-
-      system.init(i, j, isMarginal, ice_thickness(i, j));
+      system.init(i, j, m_ice_thickness(i, j));
 
       // enthalpy and pressures at top of ice
       const double
-        depth_ks = ice_thickness(i, j) - system.ks() * dz,
+        depth_ks = m_ice_thickness(i, j) - system.ks() * dz,
         p_ks     = EC->pressure(depth_ks); // FIXME issue #15
 
-      double Enth_ks = EC->enthalpy_permissive(ice_surface_temp(i, j), liqfrac_surface(i, j),
-                                             p_ks);
+      double Enth_ks = EC->enthalpy_permissive(m_ice_surface_temp(i, j), m_liqfrac_surface(i, j),
+                                               p_ks);
 
       const bool ice_free_column = (system.ks() == 0);
 
@@ -306,7 +300,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         // The floating basal melt rate will be set later; cover this
         // case and set to zero for now. Also, there is no basal melt
         // rate on ice free land and ice free ocean
-        basal_melt_rate(i, j) = 0.0;
+        m_basal_melt_rate(i, j) = 0.0;
         continue;
       } // end of if (ice_free_column)
 
@@ -314,13 +308,13 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         *vertSacrCount += 1; // count columns with lambda < 1
       }
 
-      const bool is_floating = mask.ocean(i, j);
+      const bool is_floating = m_cell_type.ocean(i, j);
       bool base_is_warm = system.Enth(0) >= system.Enth_s(0);
       bool above_base_is_warm = system.Enth(1) >= system.Enth_s(1);
 
       // set boundary conditions and update enthalpy
       {
-        system.set_surface_dirichlet(Enth_ks);
+        system.set_surface_dirichlet_bc(Enth_ks);
 
         // determine lowest-level equation at bottom of ice; see
         // decision chart in the source code browser and page
@@ -328,10 +322,10 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         if (is_floating) {
           // floating base: Dirichlet application of known temperature from ocean
           //   coupler; assumes base of ice shelf has zero liquid fraction
-          double Enth0 = EC->enthalpy_permissive(shelfbtemp(i, j), 0.0,
-                                               EC->pressure(ice_thickness(i, j)));
+          double Enth0 = EC->enthalpy_permissive(m_shelfbtemp(i, j), 0.0,
+                                               EC->pressure(m_ice_thickness(i, j)));
 
-          system.set_basal_dirichlet(Enth0);
+          system.set_basal_dirichlet_bc(Enth0);
         } else {
           // grounded ice warm and wet 
           if (base_is_warm && (till_water_thickness(i, j) > 0.0)) {
@@ -341,7 +335,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
             } else {
               // only the base is warm: E = E_s(p) (Dirichlet)
               // ( Assumes ice has zero liquid fraction. Is this a valid assumption here?
-              system.set_basal_dirichlet(system.Enth_s(0));
+              system.set_basal_dirichlet_bc(system.Enth_s(0));
             }
           } else {
             // (Neumann) case:  q . n = q_lith . n + F_b
@@ -354,7 +348,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         // solve the system
         system.solve(Enthnew);
 
-        if (viewOneColumn && (i == id && j == jd)) {
+        if (viewOneColumn && (i == m_id && j == m_jd)) {
           system.save_to_file(Enthnew);
         }
       }
@@ -369,7 +363,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
           if (Enthnew[k] > system.Enth_s(k)) { // avoid doing any more work if cold
 
             const double
-              depth = ice_thickness(i, j) - k * dz,
+              depth = m_ice_thickness(i, j) - k * dz,
               p     = EC->pressure(depth), // FIXME issue #15
               T_m   = EC->melting_temperature(p),
               L     = EC->L(T_m),
@@ -406,7 +400,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
           if (Enthnew[0] < system.Enth_s(0) && till_water_thickness(i,j) > 0.0) {
             const double E_difference = system.Enth_s(0) - Enthnew[0];
 
-            const double depth = ice_thickness(i, j),
+            const double depth = m_ice_thickness(i, j),
               pressure         = EC->pressure(depth),
               T_m              = EC->melting_temperature(pressure);
 
@@ -454,14 +448,14 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
           // this case and set to zero for now. Note that
           // Hdrainedtotal is discarded (the ocean model determines
           // the basal melt).
-          basal_melt_rate(i, j) = 0.0;
+          m_basal_melt_rate(i, j) = 0.0;
         } else {
           if (base_is_cold) {
-            basal_melt_rate(i, j) = 0.0;  // zero melt rate if cold base
+            m_basal_melt_rate(i, j) = 0.0;  // zero melt rate if cold base
           } else {
             const double
-              p_0 = EC->pressure(ice_thickness(i, j)),
-              p_1 = EC->pressure(ice_thickness(i, j) - dz), // FIXME issue #15
+              p_0 = EC->pressure(m_ice_thickness(i, j)),
+              p_1 = EC->pressure(m_ice_thickness(i, j) - dz), // FIXME issue #15
               Tpmp_0 = EC->melting_temperature(p_0);
 
             const bool k1_istemperate = EC->is_temperate(Enthnew[1], p_1); // level  z = + \Delta z
@@ -484,15 +478,15 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
             //
             // after we compute it we make sure there is no refreeze if
             // there is no available basal water
-            basal_melt_rate(i, j) = (Rb(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * EC->L(Tpmp_0));
+            m_basal_melt_rate(i, j) = (Rb(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * EC->L(Tpmp_0));
 
-            if (till_water_thickness(i, j) <= 0 && basal_melt_rate(i, j) < 0) {
-              basal_melt_rate(i, j) = 0.0;
+            if (till_water_thickness(i, j) <= 0 && m_basal_melt_rate(i, j) < 0) {
+              m_basal_melt_rate(i, j) = 0.0;
             }
           }
 
           // Add drained water from the column to basal melt rate.
-          basal_melt_rate(i, j) += (Hdrainedtotal - Hfrozen) / dt_TempAge;
+          m_basal_melt_rate(i, j) += (Hdrainedtotal - Hfrozen) / dt_TempAge;
         } // end of the grounded case
       } // end of the basal melt rate computation
 

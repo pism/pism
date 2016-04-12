@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2016 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -22,7 +22,7 @@
 
 $ ./simpleH
 Enter  f,  t,  and  r  separated by spaces (or newline)
-    (in pure, yrs, and km, resp.;  note  f = rho_ice/rho_bedrock;
+    (in pure, years, and km, resp.;  note  f = rho_ice/rho_bedrock;
      e.g. input 0.28 40000 500):
 0.28 40000 500
 Results for Test H:
@@ -41,7 +41,7 @@ int main() {
   int    scanret;
   
   printf("Enter  f,  t,  and  r  separated by spaces (or newline)\n");
-  printf("    (in pure, yrs, and km, resp.;  note  f = rho_ice/rho_bedrock;\n");
+  printf("    (in pure, years, and km, resp.;  note  f = rho_ice/rho_bedrock;\n");
   printf("     e.g. input 0.28 40000 500):\n");
   scanret = scanf("%lf",&f);
   if (scanret != 1) {

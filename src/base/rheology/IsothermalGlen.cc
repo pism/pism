@@ -26,8 +26,8 @@ namespace pism {
 namespace rheology {
 
 IsothermalGlen::IsothermalGlen(const std::string &prefix,
-                               const Config &config, EnthalpyConverter::Ptr EC)
-  : PatersonBudd(prefix, config, EC) {
+                               const Config &config, EnthalpyConverter::Ptr ec)
+  : PatersonBudd(prefix, config, ec) {
   m_name = "isothermal Glen";
   
   m_softness_A = config.get_double("ice_softness");

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2015 PISM Authors
+// Copyright (C) 2012-2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,12 +22,27 @@
 #include "hydrology_diagnostics.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {
 
 NullTransport::NullTransport(IceGrid::ConstPtr g)
   : Hydrology(g) {
+  m_diffuse_tillwat    = m_config->get_boolean("hydrology_null_diffuse_till_water");
+  m_diffusion_time     = m_config->get_double("hydrology_null_diffusion_time", "seconds");
+  m_diffusion_distance = m_config->get_double("hydrology_null_diffusion_distance", "meters");
+  m_tillwat_max        = m_config->get_double("hydrology_tillwat_max", "meters");
+  m_tillwat_decay_rate = m_config->get_double("hydrology_tillwat_decay_rate");
+
+  if (m_tillwat_max < 0.0) {
+    throw RuntimeError("hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
+                       "This is not allowed.");
+  }
+
+  if (m_diffuse_tillwat) {
+    m_Wtil_old.create(m_grid, "Wtil_old", WITH_GHOSTS);
+  }
 }
 
 NullTransport::~NullTransport() {
@@ -36,12 +51,29 @@ NullTransport::~NullTransport() {
 void NullTransport::init() {
   m_log->message(2,
              "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
+
+  if (m_diffuse_tillwat) {
+    m_log->message(2,
+                   "  [using lateral diffusion of stored till water as in Bueler and Brown, 2009]\n");
+  }
+
   Hydrology::init();
 }
 
 MaxTimestep NullTransport::max_timestep_impl(double t) {
   (void) t;
-  return MaxTimestep();
+  if (m_diffuse_tillwat) {
+    const double
+      dx2 = m_grid->dx() * m_grid->dx(),
+      dy2 = m_grid->dy() * m_grid->dy(),
+      L   = m_diffusion_distance,
+      T   = m_diffusion_time,
+      K   = L * L / (2.0 * T);
+
+    return MaxTimestep(dx2 * dy2 / (2.0 * K * (dx2 + dy2)));
+  } else {
+    return MaxTimestep();
+  }
 }
 
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
@@ -64,7 +96,7 @@ where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
 \f$0 \le W_{til} \le W_{til}^{max}\f$ where the upper bound is
 `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
-Uses the current mass-continuity timestep `icedt`.  (Compare
+Uses the current mass-continuity timestep `dt`.  (Compare
 hydrology::Routing::raw_update_Wtil() which will generally be taking time steps
 determined by the evolving transportable water layer in that model.)
 
@@ -73,43 +105,75 @@ hydrology::NullTransport model does not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-void NullTransport::update_impl(double icet, double icedt) {
+void NullTransport::update_impl(double t, double dt) {
   // if asked for the identical time interval as last time, then do nothing
-  if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6)) {
+  if ((fabs(t - m_t) < 1e-6) and (fabs(dt - m_dt) < 1e-6)) {
     return;
   }
-  m_t = icet;
-  m_dt = icedt;
+  m_t = t;
+  m_dt = dt;
 
-  get_input_rate(icet,icedt,m_total_input);
+  get_input_rate(t, dt, m_total_input);
 
-  const double tillwat_max = m_config->get_double("hydrology_tillwat_max"),
-               C           = m_config->get_double("hydrology_tillwat_decay_rate");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  if (tillwat_max < 0.0) {
-    throw RuntimeError("hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
-                       "This is not allowed.");
-  }
-
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery M(*mask);
   IceModelVec::AccessList list;
-  list.add(*mask);
+  list.add(mask);
   list.add(m_Wtil);
   list.add(m_total_input);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ocean(i,j) || M.ice_free(i,j)) {
-      m_Wtil(i,j) = 0.0;
+    if (mask.ocean(i,j) || mask.ice_free(i,j)) {
+      m_Wtil(i, j) = 0.0;
     } else {
-      m_Wtil(i,j) += icedt * (m_total_input(i,j) - C);
-      m_Wtil(i,j) = std::min(std::max(0.0, m_Wtil(i,j)), tillwat_max);
+      m_Wtil(i, j) += dt * (m_total_input(i, j) - m_tillwat_decay_rate);
+      m_Wtil(i, j) = std::min(std::max(0.0, m_Wtil(i, j)), m_tillwat_max);
     }
+  }
+
+  if (m_diffuse_tillwat) {
+    diffuse_till_water(dt);
   }
 }
 
+void NullTransport::diffuse_till_water(double dt) {
+  // note: this call updates ghosts of m_Wtil_old
+  m_Wtil_old.copy_from(m_Wtil);
+
+  const double
+    dx = m_grid->dx(),
+    dy = m_grid->dy(),
+    L  = m_diffusion_distance,
+    T  = m_diffusion_time,
+    K  = L * L / (2.0 * T),
+    Rx = K * dt / (dx * dx),
+    Ry = K * dt / (dy * dy);
+
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+
+  IceModelVec::AccessList list;
+  list.add(mask);
+  list.add(m_Wtil);
+  list.add(m_Wtil_old);
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const StarStencil<double> W = m_Wtil_old.star(i, j);
+
+    // diffuse Wtil
+    m_Wtil(i, j) = ((1.0 - 2.0 * Rx - 2.0 * Ry) * W.ij + Rx * (W.w + W.e) + Ry * (W.s + W.n));
+
+    // enforce bounds
+    m_Wtil(i, j) = std::min(std::max(0.0, m_Wtil(i, j)), m_tillwat_max);
+
+    // set to zero in
+    if (mask.ocean(i, j) or mask.ice_free(i, j)) {
+      m_Wtil(i, j) = 0.0;
+    }
+  }
+
+}
 
 } // end of namespace hydrology
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2016 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -19,6 +19,7 @@
 
 #include <cmath>                // for erf() in method 1 in putTempAtDepth()
 #include <cassert>
+#include <gsl/gsl_math.h>       // M_PI
 
 #include "iceModel.hh"
 #include "base/util/IceGrid.hh"
@@ -53,9 +54,9 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
   // save age, temperature, and enthalpy "revision numbers". If they
   // changed, then the corresponding field was initialized using
   // regridding.
-  int age_revision = age3.get_state_counter(),
-    temperature_revision = T3.get_state_counter(),
-    enthalpy_revision = Enth3.get_state_counter();
+  int age_revision = m_ice_age.get_state_counter(),
+    temperature_revision = m_ice_temperature.get_state_counter(),
+    enthalpy_revision = m_ice_enthalpy.get_state_counter();
 
   regrid(3);
 
@@ -66,11 +67,11 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
   {
     // set the initial age of the ice if appropriate
     if (m_config->get_boolean("do_age")) {
-      if (age_revision == age3.get_state_counter()) {
+      if (age_revision == m_ice_age.get_state_counter()) {
         m_log->message(2,
                    " - setting initial age to %.4f years\n",
                    m_config->get_double("initial_age_of_ice_years"));
-        age3.set(m_config->get_double("initial_age_of_ice_years", "seconds"));
+        m_ice_age.set(m_config->get_double("initial_age_of_ice_years", "seconds"));
 
       } else {
         m_log->message(2,
@@ -79,7 +80,7 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
     }
 
     if (m_config->get_boolean("do_cold_ice_methods") == true) {
-      if (temperature_revision == T3.get_state_counter()) {
+      if (temperature_revision == m_ice_temperature.get_state_counter()) {
         m_log->message(2,
                    "getting surface B.C. from couplers...\n");
         init_step_couplers();
@@ -92,13 +93,13 @@ void IceModel::bootstrapFromFile(const std::string &filename) {
       }
 
       // make sure that enthalpy gets initialized:
-      compute_enthalpy_cold(T3, Enth3);
+      compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
       m_log->message(2,
                  " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
 
     } else {
       // enthalpy mode
-      if (enthalpy_revision == Enth3.get_state_counter()) {
+      if (enthalpy_revision == m_ice_enthalpy.get_state_counter()) {
         m_log->message(2,
                    "getting surface B.C. from couplers...\n");
         init_step_couplers();
@@ -174,16 +175,16 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     vLatitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  basal_melt_rate.regrid(filename, OPTIONAL,
+  m_basal_melt_rate.regrid(filename, OPTIONAL,
                          m_config->get_double("bootstrapping_bmelt_value_no_var"));
-  geothermal_flux.regrid(filename, OPTIONAL,
+  m_geothermal_flux.regrid(filename, OPTIONAL,
                          m_config->get_double("bootstrapping_geothermal_flux_value_no_var"));
 
-  ice_thickness.regrid(filename, OPTIONAL,
+  m_ice_thickness.regrid(filename, OPTIONAL,
                        m_config->get_double("bootstrapping_H_value_no_var"));
   // check the range of the ice thickness
   {
-    Range thk_range = ice_thickness.range();
+    Range thk_range = m_ice_thickness.range();
 
     if (thk_range.max >= m_grid->Lz() + 1e-6) {
       throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
@@ -205,19 +206,19 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   }
 
   if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos) {
-    strain_rates.set(0.0);
+    m_strain_rates.set(0.0);
   }
 
   if (m_config->get_boolean("ssa_dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
-    vBCMask.regrid(filename, OPTIONAL, 0.0);
+    m_ssa_dirichlet_bc_mask.regrid(filename, OPTIONAL, 0.0);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that
     // makes sense is the zero Dirichlet B.C.
-    vBCvel.regrid(filename, OPTIONAL,  0.0);
+    m_ssa_dirichlet_bc_values.regrid(filename, OPTIONAL,  0.0);
   }
 
   // check if Lz is valid
-  Range thk_range = ice_thickness.range();
+  Range thk_range = m_ice_thickness.range();
 
   if (thk_range.max > m_grid->Lz()) {
     throw RuntimeError::formatted("Max. ice thickness (%3.3f m)\n"
@@ -308,30 +309,30 @@ void IceModel::putTempAtDepth() {
     beta_CC_grad = m_config->get_double("beta_CC") * ice_density * m_config->get_double("standard_gravity"),
     KK = ice_k / (ice_density * m_config->get_double("ice_specific_heat_capacity"));
 
-  assert(surface != NULL);
+  assert(m_surface != NULL);
 
   // Note that surface->update was called in bootstrapFromFile()
   {
-    surface->ice_surface_temperature(ice_surface_temp);
+    m_surface->ice_surface_temperature(m_ice_surface_temp);
     if (usesmb == true) {
-      surface->ice_surface_mass_flux(climatic_mass_balance);
-      // convert from [kg m-2 s-1] to [m / s]
-      climatic_mass_balance.scale(1.0 / m_config->get_double("ice_density"));
+      m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
+      // convert from [kg m-2 s-1] to [m second-1]
+      m_climatic_mass_balance.scale(1.0 / m_config->get_double("ice_density"));
     }
   }
 
   IceModelVec3 *result;
   if (do_cold) {
-    result = &T3;
+    result = &m_ice_temperature;
   } else {
-    result = &Enth3;
+    result = &m_ice_enthalpy;
   }
 
   IceModelVec::AccessList list;
-  list.add(ice_surface_temp);
-  list.add(climatic_mass_balance);
-  list.add(ice_thickness);
-  list.add(geothermal_flux);
+  list.add(m_ice_surface_temp);
+  list.add(m_climatic_mass_balance);
+  list.add(m_ice_thickness);
+  list.add(m_geothermal_flux);
   list.add(*result);
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
@@ -341,16 +342,16 @@ void IceModel::putTempAtDepth() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double HH = ice_thickness(i,j),
-        Ts = ice_surface_temp(i,j),
-        gg = geothermal_flux(i,j);
+      const double HH = m_ice_thickness(i,j),
+        Ts = m_ice_surface_temp(i,j),
+        gg = m_geothermal_flux(i,j);
       const unsigned int ks = m_grid->kBelowHeight(HH);
 
       double *T = result->get_column(i, j);
 
       // within ice
       if (usesmb == true) { // method 1:  includes surface mass balance in estimate
-        const double mm = climatic_mass_balance(i,j);
+        const double mm = m_climatic_mass_balance(i,j);
         if (mm <= 0.0) { // negative or zero surface mass balance case: linear
           for (unsigned int k = 0; k < ks; k++) {
             const double z = m_grid->z(k),

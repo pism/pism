@@ -41,8 +41,14 @@ netcdf pism_config {
     pism_config:stress_balance_model_type = "keyword";
     pism_config:stress_balance_model_option = "stress_balance";
     pism_config:stress_balance_model_choices = "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia";
-    pism_config:stress_balance_model = "sia_only";
+    pism_config:stress_balance_model = "sia";
     pism_config:stress_balance_model_doc = "stress balance model; choose from 'none', 'sia', 'ssa', 'ssa+sia', 'prescribed_sliding', 'prescribed_sliding+sia'";
+
+    pism_config:stress_balance_vertical_velocity_approximation_type = "keyword";
+    pism_config:stress_balance_vertical_velocity_approximation_option = "vertical_velocity_approximation";
+    pism_config:stress_balance_vertical_velocity_approximation_choices = "centered,upstream";
+    pism_config:stress_balance_vertical_velocity_approximation = "centered";
+    pism_config:stress_balance_vertical_velocity_approximation_doc = "Vertical velocity FD approximation: 'centered' or 'upstream'. \"Upstream\" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.";
 
     pism_config:do_skip_type = "boolean";
     pism_config:do_skip_option = "skip";
@@ -108,6 +114,10 @@ netcdf pism_config {
     pism_config:calving_methods = "";
     pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
 
+    pism_config:float_kill_margin_only_type = "boolean";
+    pism_config:float_kill_margin_only = "no";
+    pism_config:float_kill_margin_only_doc = "Apply float_kill at ice margin cells only.";
+
     pism_config:do_fracture_density_type = "boolean";
     pism_config:do_fracture_density_option = "fractures";
     pism_config:do_fracture_density = "no";
@@ -139,11 +149,6 @@ netcdf pism_config {
     pism_config:is_dry_simulation_option = "dry";
     pism_config:is_dry_simulation = "no";
     pism_config:is_dry_simulation_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
-
-    pism_config:stress_balance_model_type = "keyword";
-    pism_config:stress_balance_model_choices = "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia";    
-    pism_config:stress_balance_model = "sia";
-    pism_config:stress_balance_model_doc = "the stress balance model";
 
     pism_config:write_ssa_system_to_matlab_type = "boolean";
     pism_config:write_ssa_system_to_matlab = "no";
@@ -374,7 +379,7 @@ netcdf pism_config {
     pism_config:epsilon_ssa_units = "Pascal second meter";
     pism_config:epsilon_ssa_type = "scalar";
     pism_config:epsilon_ssa = 1.0e13;
-    pism_config:epsilon_ssa_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa yr, the value in [@ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
+    pism_config:epsilon_ssa_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa year, the value in [@ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
 
     pism_config:min_thickness_strength_extension_ssa_units = "meters";
     pism_config:min_thickness_strength_extension_ssa_type = "scalar";
@@ -384,7 +389,7 @@ netcdf pism_config {
     pism_config:constant_nu_strength_extension_ssa_units = "Pascal second";
     pism_config:constant_nu_strength_extension_ssa_type = "scalar";
     pism_config:constant_nu_strength_extension_ssa = 9.48680701906572e+14;
-    pism_config:constant_nu_strength_extension_ssa_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa yr in [@ref Ritzetal2001].";
+    pism_config:constant_nu_strength_extension_ssa_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa year in [@ref Ritzetal2001].";
 
     pism_config:energy_advection_ice_thickness_threshold_units = "meters";
     pism_config:energy_advection_ice_thickness_threshold_type = "scalar";
@@ -490,6 +495,20 @@ netcdf pism_config {
     pism_config:hydrology_maximum_time_step_years = 1.0;
     pism_config:hydrology_maximum_time_step_years_doc = "maximum allowed time step length used by PISMRoutingHydrology and PISMDistributedHydrology";
 
+    pism_config:hydrology_null_diffuse_till_water_type = "boolean";
+    pism_config:hydrology_null_diffuse_till_water = "no";
+    pism_config:hydrology_null_diffuse_till_water_doc = "Diffuse stored till water laterally. See equation (11) of [@ref BBssasliding]"; 
+
+    pism_config:hydrology_null_diffusion_time_units = "years";
+    pism_config:hydrology_null_diffusion_time_type = "scalar";
+    pism_config:hydrology_null_diffusion_time = 1000.0;
+    pism_config:hydrology_null_diffusion_time_doc = "diffusion time for till water thickness; see equation (11) in [@ref BBssasliding]; only active if hydrology_null_diffuse_till_water is set";
+
+    pism_config:hydrology_null_diffusion_distance_units = "meters";
+    pism_config:hydrology_null_diffusion_distance_type = "scalar";
+    pism_config:hydrology_null_diffusion_distance = 2e4;
+    pism_config:hydrology_null_diffusion_distance_doc = "diffusion distance for till water thickness; see equation (11) in [@ref BBssasliding]; only active if hydrology_null_diffuse_till_water is set";
+
     pism_config:hydrology_null_strip_width_units = "meters";
     pism_config:hydrology_null_strip_width_type = "scalar";
     pism_config:hydrology_null_strip_width = -1.0;
@@ -583,11 +602,15 @@ netcdf pism_config {
     pism_config:bed_smoother_range = 5.0e3;
     pism_config:bed_smoother_range_doc = "half-width of smoothing domain for PISMBedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
 
-    pism_config:max_iterations_ssafd_option = "ssa_maxi";
-    pism_config:max_iterations_ssafd_units = "count";
-    pism_config:max_iterations_ssafd_type = "integer";
-    pism_config:max_iterations_ssafd = 300;
-    pism_config:max_iterations_ssafd_doc = "Maximum number of iterations for the ice viscosity computation, in the SSAFD object";
+    pism_config:ssafd_max_iterations_option = "ssa_maxi";
+    pism_config:ssafd_max_iterations_units = "count";
+    pism_config:ssafd_max_iterations_type = "integer";
+    pism_config:ssafd_max_iterations = 300;
+    pism_config:ssafd_max_iterations_doc = "Maximum number of iterations for the ice viscosity computation, in the SSAFD object";
+
+    pism_config:ssafd_replace_zero_diagonal_entries_type = "boolean";
+    pism_config:ssafd_replace_zero_diagonal_entries = "yes";
+    pism_config:ssafd_replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the SSAFD matrix with beta_ice_free_bedrock to avoid solver failures.";
 
     pism_config:global_min_allowed_temp_option = "low_temp";
     pism_config:global_min_allowed_temp_units = "Kelvin";
@@ -1253,6 +1276,16 @@ netcdf pism_config {
     pism_config:mask_icefree_thickness_standard = 0.01;
     pism_config:mask_icefree_thickness_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.";
 
+    pism_config:mask_icefree_thickness_reporting_standard_units = "meters";
+    pism_config:mask_icefree_thickness_reporting_standard_type = "scalar";
+    pism_config:mask_icefree_thickness_reporting_standard = 10.0;
+    pism_config:mask_icefree_thickness_reporting_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN for purposes of reporting glacierized area, volume, etc.";
+
+    pism_config:mask_icefree_thickness_stress_balance_standard_units = "meters";
+    pism_config:mask_icefree_thickness_stress_balance_standard_type = "scalar";
+    pism_config:mask_icefree_thickness_stress_balance_standard = 10.0;
+    pism_config:mask_icefree_thickness_stress_balance_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN for purposes of computing ice velocity distribution.";
+
     pism_config:mask_is_floating_thickness_standard_units = "meters";
     pism_config:mask_is_floating_thickness_standard_type = "scalar";
     pism_config:mask_is_floating_thickness_standard = 1.0;
@@ -1390,15 +1423,15 @@ netcdf pism_config {
     pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 
     pism_config:output_medium_type = "string";
-    pism_config:output_medium = "IcebergMask bwat bwatvel velbar_mag velbase_mag flux flux_mag climatic_mass_balance velsurf_mag diffusivity edot_1 edot_2 enthalpy ice_surface_temp liqfrac mask schoofs_theta tauc taub_mag taud_mag temp_pa tillwat topgsmooth usurf velsurf wvelsurf";
+    pism_config:output_medium = "IcebergMask bwat bwatvel velbar_mag velbase_mag flux flux_mag climatic_mass_balance velsurf_mag diffusivity strain_rates enthalpy ice_surface_temp liqfrac mask schoofs_theta tauc taub_mag taud_mag temp_pa tillwat topgsmooth usurf velsurf wvelsurf";
     pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by boundary models.";
 
     pism_config:output_big_type = "string";
-    pism_config:output_big = "IcebergMask age bfrict bheatflx bmelt bwat bwatvel bwp bwprel velbar_mag velbase_mag cell_area flux_mag climatic_mass_balance velsurf_mag cts dbdt diffusivity edot_1 edot_2 effbwp enthalpy enthalpybase enthalpysurf flux_divergence hardav hydroinput ice_surface_temp lat liqfrac litho_temp lon mask nuH ocean_kill_mask rank schoofs_theta tauc taub_mag taud_mag temp temp_pa tempbase tempicethk tempicethk_basal temppabase tempsurf thk thksmooth tillphi tillwat topg topgsmooth usurf uvel velbar velbase velsurf vvel wallmelt wvel wvel_rel wvelbase wvelsurf";
+    pism_config:output_big = "IcebergMask age bfrict bheatflx bmelt bwat bwatvel bwp bwprel velbar_mag velbase_mag cell_area flux_mag climatic_mass_balance velsurf_mag cts dbdt diffusivity strain_rates effbwp enthalpy enthalpybase enthalpysurf flux_divergence hardav hydroinput ice_surface_temp lat liqfrac litho_temp lon mask nuH ocean_kill_mask rank schoofs_theta tauc taub_mag taud_mag temp temp_pa tempbase tempicethk tempicethk_basal temppabase tempsurf thk thksmooth tillphi tillwat topg topgsmooth usurf uvel velbar velbase velsurf vvel wallmelt wvel wvel_rel wvelbase wvelsurf";
     pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 
     pism_config:output_2dbig_type = "string";
-    pism_config:output_2dbig = "IcebergMask age bfrict bheatflx bmelt bwat bwatvel bwp bwprel velbar_mag velbase_mag cell_area flux_mag climatic_mass_balance velsurf_mag  dbdt diffusivity edot_1 edot_2 effbwp enthalpy enthalpybase enthalpysurf flux_divergence hardav hydroinput ice_surface_temp lat litho_temp lon mask nuH ocean_kill_mask rank schoofs_theta tauc taub_mag taud_mag tempbase tempicethk tempicethk_basal temppabase tempsurf thk thksmooth tillphi tillwat topg topgsmooth usurf velbar velbase velsurf wallmelt wvelbase wvelsurf";
+    pism_config:output_2dbig = "IcebergMask age bfrict bheatflx bmelt bwat bwatvel bwp bwprel velbar_mag velbase_mag cell_area flux_mag climatic_mass_balance velsurf_mag  dbdt diffusivity strain_rates effbwp enthalpy enthalpybase enthalpysurf flux_divergence hardav hydroinput ice_surface_temp lat litho_temp lon mask nuH ocean_kill_mask rank schoofs_theta tauc taub_mag taud_mag tempbase tempicethk tempicethk_basal temppabase tempsurf thk thksmooth tillphi tillwat topg topgsmooth usurf velbar velbase velsurf wallmelt wvelbase wvelsurf";
     pism_config:output_2dbig_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if '2dbig' output size is selected. Does not include fields written by boundary models.";
 
     pism_config:backup_interval_units = "hours";

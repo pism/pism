@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@ extern "C" {
 struct gpbld_constants {
   /* Ideal gas constant, Joule / (mol Kelvin) */
   double ideal_gas_constant;
-  /* Paterson-Budd cold case activation energy, Pascal-3 / second */
+  /* Paterson-Budd cold case activation energy, Pascal-3 second-1 */
   double A_cold;
   /* A_cold^(-1/3) */
   double A_cold_inv_cuberoot;
@@ -36,7 +36,7 @@ struct gpbld_constants {
   double Q_cold;
   /* Paterson-Budd critical temperature, Kelvin */
   double T_critical;
-  /* Paterson-Budd warm case activation energy, Pascal-3 / second */
+  /* Paterson-Budd warm case activation energy, Pascal-3 second-1 */
   double A_warm;
   /* A_warm^(-1/3) */
   double A_warm_inv_cuberoot;

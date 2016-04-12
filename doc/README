@@ -4,9 +4,9 @@ an HTML browser giving class structure and additional documentation of various
 kinds.
 
     
-  PISM User's Manual (PDF)          [doc/manual.pdf]
+  PISM User's Manual (PDF)          [doc/pism_manual.pdf]
   
-      This manual is hand-generated; doc/userman/*.tex are the LaTeX sources.
+      This manual is hand-generated; doc/manual/*.tex are the LaTeX sources.
       Thus it can easily get out-of-date relative to the source files for PISM,
       but the goal is to keep it up to date.
 
@@ -20,9 +20,9 @@ kinds.
       User's Manual should be presumed to be unstable (in the software sense!).
 
 
-  PISM Installation Manual (PDF)    [doc/installation.pdf]
+  PISM Installation Manual (PDF)    [doc/pism_installation.pdf]
   
-      This manual is hand-generated; doc/installation.tex is the LaTeX source.
+      This manual is hand-generated; doc/pism_installation.tex is the LaTeX source.
 
   PISM Browser (HTML)               [doc/doxy/html/index.html]
                         

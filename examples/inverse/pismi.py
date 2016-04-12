@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -235,11 +235,10 @@ def adjustTauc(mask, tauc):
     high_tauc = grid.ctx().config().get_double("high_tauc")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
-        mq = PISM.MaskQuery(mask)
         for (i, j) in grid.points():
-            if mq.ocean(i, j):
+            if mask.ocean(i, j):
                 tauc[i, j] = 0
-            elif mq.ice_free(i, j):
+            elif mask.ice_free(i, j):
                 tauc[i, j] = high_tauc
 
 
@@ -380,9 +379,8 @@ def run():
                 zeta_fixed_mask.set(1)
                 mask = vecs.mask
                 with PISM.vec.Access(comm=zeta_fixed_mask, nocomm=mask):
-                    mq = PISM.MaskQuery(mask)
                     for (i, j) in grid.points():
-                        if mq.grounded_ice(i, j):
+                        if mask.grounded_ice(i, j):
                             zeta_fixed_mask[i, j] = 0
                 vecs.add(zeta_fixed_mask)
 

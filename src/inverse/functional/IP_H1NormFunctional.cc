@@ -27,164 +27,174 @@ namespace inverse {
 
 void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
-  using fem::Quadrature;
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
-  double x_e[Quadrature::Nk];
-  double x_q[Quadrature::Nq], dxdx_q[Quadrature::Nq], dxdy_q[Quadrature::Nq];
+  double x_e[Nk];
+  double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
   IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* W = m_quadrature.weights();
 
-  fem::DirichletData_Scalar dirichletBC;
-  dirichletBC.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      m_dofmap.reset(i, j, *m_grid);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(x, x_e);
+      m_element.nodal_values(x, x_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_dofmap, x_e);
+        dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
+      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
 
-      for (unsigned int q=0; q<Quadrature::Nq; q++) {
-        value += JxW[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
+      for (unsigned int q=0; q<Nq; q++) {
+        value += W[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
       } // q
     } // j
   } // i
 
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
-
-  dirichletBC.finish();
 }
 
 void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
-  using fem::Quadrature;
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // The value of the objective
   double value = 0;
 
-  double a_e[Quadrature::Nk];
-  double a_q[Quadrature::Nq], dadx_q[Quadrature::Nq], dady_q[Quadrature::Nq];
+  double a_e[Nk];
+  double a_q[Nq_max], dadx_q[Nq_max], dady_q[Nq_max];
 
-  double b_e[Quadrature::Nk];
-  double b_q[Quadrature::Nq], dbdx_q[Quadrature::Nq], dbdy_q[Quadrature::Nq];
+  double b_e[Nk];
+  double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
 
   IceModelVec::AccessList list(a);
   list.add(b);
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* W = m_quadrature.weights();
 
-  fem::DirichletData_Scalar dirichletBC;
-  dirichletBC.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
-  int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+  const int
+    xs = m_element_index.lxs,
+    xm = m_element_index.lxm,
+    ys = m_element_index.lys,
+    ym = m_element_index.lym;
+
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
-      m_dofmap.reset(i, j, *m_grid);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(a, a_e);
+      m_element.nodal_values(a, a_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_dofmap, a_e);
+        dirichletBC.enforce_homogeneous(m_element, a_e);
       }
-      m_quadrature.computeTrialFunctionValues(a_e, a_q, dadx_q, dady_q);
+      quadrature_point_values(m_quadrature, a_e, a_q, dadx_q, dady_q);
 
-      m_dofmap.extractLocalDOFs(b, b_e);
+      m_element.nodal_values(b, b_e);
       if (dirichletBC) {
-        dirichletBC.update_homogeneous(m_dofmap, b_e);
+        dirichletBC.enforce_homogeneous(m_element, b_e);
       }
-      m_quadrature.computeTrialFunctionValues(b_e, b_q, dbdx_q, dbdy_q);
+      quadrature_point_values(m_quadrature, b_e, b_q, dbdx_q, dbdy_q);
 
-      for (unsigned int q=0; q<Quadrature::Nq; q++) {
-        value += JxW[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
+      for (unsigned int q=0; q<Nq; q++) {
+        value += W[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
       } // q
     } // j
   } // i
 
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
-
-  dirichletBC.finish();
 }
 
 
 void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
 
-  using fem::Quadrature;
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_quadrature.n();
+  const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
-  double x_e[Quadrature::Nk];
-  double x_q[Quadrature::Nq], dxdx_q[Quadrature::Nq], dxdy_q[Quadrature::Nq];
+  double x_e[Nk];
+  double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
-  double gradient_e[Quadrature::Nk];
+  double gradient_e[Nk];
 
   IceModelVec::AccessList list(x);
   list.add(gradient);
 
   // An Nq by Nk array of test function values.
-  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* W = m_quadrature.weights();
 
-  fem::DirichletData_Scalar dirichletBC;
-  dirichletBC.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all local and ghosted elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
+
   for (int j=ys; j<ys+ym; j++) {
     for (int i=xs; i<xs+xm; i++) {
 
       // Reset the DOF map for this element.
-      m_dofmap.reset(i, j, *m_grid);
+      m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(i, j, x, x_e);
+      m_element.nodal_values(x, x_e);
       if (dirichletBC) {
-        dirichletBC.constrain(m_dofmap);
-        dirichletBC.update_homogeneous(m_dofmap, x_e);
+        dirichletBC.constrain(m_element);
+        dirichletBC.enforce_homogeneous(m_element, x_e);
       }
-      m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
+      quadrature_point_values(m_quadrature, x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for (unsigned int k=0; k<Quadrature::Nk; k++) {
+      for (unsigned int k=0; k<Nk; k++) {
         gradient_e[k] = 0;
       }
 
-      for (unsigned int q=0; q<Quadrature::Nq; q++) {
+      for (unsigned int q=0; q<Nq; q++) {
         const double &x_qq=x_q[q];
         const double &dxdx_qq=dxdx_q[q], &dxdy_qq=dxdy_q[q];
-        for (unsigned int k=0; k<Quadrature::Nk; k++) {
-          gradient_e[k] += 2*JxW[q]*(m_cL2*x_qq*test[q][k].val +
-            m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
+        for (unsigned int k=0; k<Nk; k++) {
+          gradient_e[k] += 2*W[q]*(m_cL2*x_qq*test[q][k].val +
+                                   m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
       } // q
-      m_dofmap.addLocalResidualBlock(gradient_e, gradient);
+      m_element.add_residual_contribution(gradient_e, gradient);
     } // j
   } // i
-
-  dirichletBC.finish();
 }
 
 void IP_H1NormFunctional2S::assemble_form(Mat form) {
 
-  using fem::Quadrature;
+  const unsigned int Nk = fem::q1::n_chi;
+  const unsigned int Nq = m_quadrature.n();
 
   PetscErrorCode ierr;
 
@@ -193,54 +203,54 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
   PISM_CHK(ierr, "MatZeroEntries");
 
   // Jacobian times weights for quadrature.
-  const double* JxW = m_quadrature.getWeightedJacobian();
+  const double* W = m_quadrature.weights();
 
-  fem::DirichletData_Scalar zeroLocs;
-  zeroLocs.init(m_dirichletIndices, NULL);
+  fem::DirichletData_Scalar zeroLocs(m_dirichletIndices, NULL);
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
-  const fem::FunctionGerm (*test)[Quadrature::Nk] = m_quadrature.testFunctionValues();
+  const fem::Germs *test = m_quadrature.test_function_values();
 
   // Loop through all the elements.
-  int xs = m_element_index.xs,
-    xm   = m_element_index.xm,
-    ys   = m_element_index.ys,
-    ym   = m_element_index.ym;
+  const int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {
     for (int j=ys; j<ys+ym; j++) {
       for (int i=xs; i<xs+xm; i++) {
-        // Element-local Jacobian matrix (there are Quadrature::Nk vector valued degrees
-        // of freedom per elment, for a total of (2*Quadrature::Nk)*(2*Quadrature::Nk) = 16
+        // Element-local Jacobian matrix (there are Nk vector valued degrees
+        // of freedom per elment, for a total of (2*Nk)*(2*Nk) = 16
         // entries in the local Jacobian.
-        double K[Quadrature::Nk][Quadrature::Nk];
+        double K[Nk][Nk];
 
         // Initialize the map from global to local degrees of freedom for this element.
-        m_dofmap.reset(i, j, *m_grid);
+        m_element.reset(i, j);
 
         // Don't update rows/cols where we project to zero.
         if (zeroLocs) {
-          zeroLocs.constrain(m_dofmap);
+          zeroLocs.constrain(m_element);
         }
 
         // Build the element-local Jacobian.
         ierr = PetscMemzero(K, sizeof(K));
         PISM_CHK(ierr, "PetscMemzero");
 
-        for (unsigned int q=0; q<Quadrature::Nq; q++) {
-          for (unsigned int k = 0; k < Quadrature::Nk; k++) {   // Test functions
-            for (unsigned int l = 0; l < Quadrature::Nk; l++) { // Trial functions
-              const fem::FunctionGerm &test_qk=test[q][k];
-              const fem::FunctionGerm &test_ql=test[q][l];
-              K[k][l] += JxW[q]*(m_cL2*test_qk.val*test_ql.val +
-                                 m_cH1*(test_qk.dx*test_ql.dx +
-                                        test_qk.dy*test_ql.dy));
+        for (unsigned int q=0; q<Nq; q++) {
+          for (unsigned int k = 0; k < Nk; k++) {   // Test functions
+            const fem::Germ &test_qk=test[q][k];
+            for (unsigned int l = 0; l < Nk; l++) { // Trial functions
+              const fem::Germ &test_ql=test[q][l];
+              K[k][l] += W[q]*(m_cL2*test_qk.val*test_ql.val +
+                               m_cH1*(test_qk.dx*test_ql.dx +
+                                      test_qk.dy*test_ql.dy));
             } // l
           } // k
         } // q
-        m_dofmap.addLocalJacobianBlock(&K[0][0], form);
+        m_element.add_jacobian_contribution(&K[0][0], form);
       } // j
     } // i
   } catch (...) {
@@ -251,7 +261,6 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
   if (zeroLocs) {
     zeroLocs.fix_jacobian(form);
   }
-  zeroLocs.finish();
 
   ierr = MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY);
   PISM_CHK(ierr, "MatAssemblyBegin");

@@ -68,9 +68,9 @@ See also the special page on [installing PISM on systems with unusual PETSc inst
 To generate PDF documentation:
 
     cd 'your build directory'
-    make manual              # builds manual.pdf
-    make installation        # builds installation.pdf
-    make forcing             # builds forcing.pdf
+    make pism_manual              # builds pism_manual.pdf
+    make pism_installation        # builds pism_installation.pdf
+    make pism_forcing             # builds pism_forcing.pdf
 
 To generate Doxygen source code documentation:
 

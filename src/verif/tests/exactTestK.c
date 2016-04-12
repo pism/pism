@@ -21,11 +21,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_errno.h>
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 #include <gsl/gsl_roots.h>
 #include "exactTestK.h"
 
-#define pi             3.1415926535897931
 #define SperA          31556926.0   /* seconds per year; 365.2422 days */
 
 #define c_p_ICE        2009.0       /* J/(kg K)  specific heat capacity of ice */
@@ -69,7 +68,7 @@ int exactK(const double t, const double z, double *TT, double *FF, const int bed
     rho_BR = rho_ICE;
     k_BR = k_ICE;
     for (k = 0; k < Nsum; k++) { /* overwrite alpha_k with ice-meets-ice values; see preprint */
-      alf[k] = (2.0 * k + 1.0) * pi / (2.0 * (H0 + B0));
+      alf[k] = (2.0 * k + 1.0) * M_PI / (2.0 * (H0 + B0));
     }
   } else {
     c_p_BR = c_p_BRdefault;

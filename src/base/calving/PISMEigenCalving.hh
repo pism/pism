@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,6 +27,8 @@ namespace stressbalance {
 class StressBalance;
 }
 
+class IceModelVec2CellType;
+
 namespace calving {
 
 class EigenCalving : public Component
@@ -37,7 +39,7 @@ public:
 
   virtual void init();
   void update(double dt,
-              IceModelVec2Int &pism_mask,
+              IceModelVec2CellType &pism_mask,
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
 
@@ -50,7 +52,7 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
   void update_strain_rates();
-  void remove_narrow_tongues(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
+  void remove_narrow_tongues(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
 protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss;

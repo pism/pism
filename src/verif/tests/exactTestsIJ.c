@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2008, 2011, 2014, 2015 Ed Bueler and Constantine Khroulev
+   Copyright (C) 2007-2008, 2011, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -21,9 +21,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <gsl/gsl_math.h>       /* M_PI */
 #include "exactTestsIJ.h"
 
-#define pi      3.14159265358979
 #define secpera 31556926.0        /* seconds per year; 365.2422 days */
 
 struct TestIParameters exactI(const double m, const double x, const double y) {
@@ -84,7 +84,7 @@ struct TestJParameters exactJ(const double x, const double y) {
 
   const double L = 300.0e3;      /* 300 km half-width */
   const double H0 = 500.0;       /* 500 m typical thickness */
-  /* use Ritz et al (2001) value of 30 MPa yr for typical 
+  /* use Ritz et al (2001) value of 30 MPa year for typical
      vertically-averaged viscosity */
   const double nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
   const double rho_ice = 910.0;  /* kg/m^3 */
@@ -94,18 +94,18 @@ struct TestJParameters exactJ(const double x, const double y) {
   const double my_gamma[3][3] = {{1.0854, 0.108, 0.0027},
                               {0.402 , 0.04 , 0.001 },
                               {0.0402, 0.004, 0.0001}};
-  const double A = L / (4.0 * pi);
+  const double A = L / (4.0 * M_PI);
   double       uu = 0.0, vv = 0.0, denom, trig, kx, ly, B;
   int          k,l;
  
-  result.H = H0 * (1.0 + 0.4 * cos(pi * x / L)) * (1.0 + 0.1 * cos(pi * y / L));
+  result.H = H0 * (1.0 + 0.4 * cos(M_PI * x / L)) * (1.0 + 0.1 * cos(M_PI * y / L));
   result.nu = (nu0 * H0) / result.H;     /* so \nu(x,y) H(x,y) = \nu_0 H_0 */
   for (k=-2; k<=2; k++) {
     for (l=-2; l<=2; l++) {
       if ((k != 0) || (l != 0)) {  /* note alpha_00 = beta_00 = 0 */
         denom = (double)(k * k + l * l);
-        kx = (double)(k) * pi * x / L;
-        ly = (double)(l) * pi * y / L;
+        kx = (double)(k) * M_PI * x / L;
+        ly = (double)(l) * M_PI * y / L;
         trig = cos(kx) * sin(ly) + sin(kx) * cos(ly);
         B = (A / denom) * (C * my_gamma[abs(k)][abs(l)]) * trig;
         uu += B * (double)(k);

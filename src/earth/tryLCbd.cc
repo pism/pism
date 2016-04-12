@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,6 +38,7 @@ static char help[] =
 
 
 #include <cmath>
+#include <gsl/gsl_math.h>       // M_PI
 #include <cstdio>
 #include <petscvec.h>
 #include <petscdmda.h>
@@ -208,7 +209,7 @@ int main(int argc, char *argv[]) {
       ierr = VecSet(bedstart, 0.0);
       PISM_CHK(ierr, "VecSet");
 
-      const double peak_up = units::convert(ctx->unit_system(), 10, "mm/year", "m/s");  // 10 mm/year
+      const double peak_up = units::convert(ctx->unit_system(), 10, "mm year-1", "m second-1");  // 10 mm year-1
       // initialize uplift
       if (do_uplift == true) {
         petsc::VecArray2D upl(uplift, Mx, My);
@@ -270,7 +271,7 @@ int main(int argc, char *argv[]) {
         const double dbdt0 = (b0new - b0old) / (dtyears);
 
         ierr = PetscPrintf(PETSC_COMM_SELF,
-                  "   t=%8.0f (a)   b(0,0)=%11.5f (m)  dbdt(0,0)=%11.7f (m/year)\n",
+                  "   t=%8.0f (a)   b(0,0)=%11.5f (m)  dbdt(0,0)=%11.7f (m year-1)\n",
                            tyears, b0new, dbdt0);
         PISM_CHK(ierr, "PetscPrintf");
 

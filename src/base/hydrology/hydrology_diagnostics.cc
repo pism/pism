@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2015 PISM Authors
+// Copyright (C) 2012-2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,12 +59,12 @@ Hydrology_bwprel::Hydrology_bwprel(Hydrology *m)
   m_vars.push_back(SpatialVariableMetadata(m_sys, "bwprel"));
   set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
             "", "", 0);
-  m_vars[0].set_double("_FillValue", m_grid->ctx()->config()->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
 }
 
 
 IceModelVec::Ptr Hydrology_bwprel::compute_impl() {
-  double fill_value = m_grid->ctx()->config()->get_double("fill_value");
+  double fill_value = m_config->get_double("fill_value");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "bwprel", WITHOUT_GHOSTS);
@@ -122,7 +122,7 @@ Hydrology_hydrobmelt::Hydrology_hydrobmelt(Hydrology *m)
   : Diag<Hydrology>(m) {
   m_vars.push_back(SpatialVariableMetadata(m_sys, "hydrobmelt"));
   set_attrs("the version of bmelt seen by the hydrology model",
-            "", "m s-1", "m/year", 0);
+            "", "m s-1", "m year-1", 0);
 }
 
 
@@ -143,7 +143,7 @@ Hydrology_hydroinput::Hydrology_hydroinput(Hydrology *m)
   : Diag<Hydrology>(m) {
   m_vars.push_back(SpatialVariableMetadata(m_sys, "hydroinput"));
   set_attrs("total water input into subglacial hydrology layer",
-            "", "m s-1", "m/year", 0);
+            "", "m s-1", "m year-1", 0);
 }
 
 
@@ -164,7 +164,7 @@ Hydrology_wallmelt::Hydrology_wallmelt(Hydrology *m)
   : Diag<Hydrology>(m) {
   m_vars.push_back(SpatialVariableMetadata(m_sys, "wallmelt"));
   set_attrs("wall melt into subglacial hydrology layer from (turbulent) dissipation of energy in transportable water",
-            "", "m s-1", "m/year", 0);
+            "", "m s-1", "m year-1", 0);
 }
 
 

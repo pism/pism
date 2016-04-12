@@ -25,6 +25,7 @@
 #include "base/util/pism_options.hh"
 #include "hydrology_diagnostics.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {
@@ -159,27 +160,27 @@ void Distributed::write_variables_impl(const std::set<std::string> &vars,
 }
 
 
-void Distributed::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                                std::map<std::string, TSDiagnostic*> &ts_dict) {
+void Distributed::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                                std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
   // bwat is state
   // bwp is state
-  dict["bwprel"]           = new Hydrology_bwprel(this);
-  dict["effbwp"]           = new Hydrology_effbwp(this);
-  dict["hydrobmelt"]       = new Hydrology_hydrobmelt(this);
-  dict["hydroinput"]       = new Hydrology_hydroinput(this);
-  dict["wallmelt"]         = new Hydrology_wallmelt(this);
-  dict["bwatvel"]          = new Routing_bwatvel(this);
-  dict["hydrovelbase_mag"] = new Distributed_hydrovelbase_mag(this);
+  dict["bwprel"]           = Diagnostic::Ptr(new Hydrology_bwprel(this));
+  dict["effbwp"]           = Diagnostic::Ptr(new Hydrology_effbwp(this));
+  dict["hydrobmelt"]       = Diagnostic::Ptr(new Hydrology_hydrobmelt(this));
+  dict["hydroinput"]       = Diagnostic::Ptr(new Hydrology_hydroinput(this));
+  dict["wallmelt"]         = Diagnostic::Ptr(new Hydrology_wallmelt(this));
+  dict["bwatvel"]          = Diagnostic::Ptr(new Routing_bwatvel(this));
+  dict["hydrovelbase_mag"] = Diagnostic::Ptr(new Distributed_hydrovelbase_mag(this));
 
   // add mass-conservation time-series diagnostics
-  ts_dict["hydro_ice_free_land_loss_cumulative"]      = new MCHydrology_ice_free_land_loss_cumulative(this);
-  ts_dict["hydro_ice_free_land_loss"]                 = new MCHydrology_ice_free_land_loss(this);
-  ts_dict["hydro_ocean_loss_cumulative"]              = new MCHydrology_ocean_loss_cumulative(this);
-  ts_dict["hydro_ocean_loss"]                         = new MCHydrology_ocean_loss(this);
-  ts_dict["hydro_negative_thickness_gain_cumulative"] = new MCHydrology_negative_thickness_gain_cumulative(this);
-  ts_dict["hydro_negative_thickness_gain"]            = new MCHydrology_negative_thickness_gain(this);
-  ts_dict["hydro_null_strip_loss_cumulative"]         = new MCHydrology_null_strip_loss_cumulative(this);
-  ts_dict["hydro_null_strip_loss"]                    = new MCHydrology_null_strip_loss(this);
+  ts_dict["hydro_ice_free_land_loss_cumulative"]      = TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss_cumulative(this));
+  ts_dict["hydro_ice_free_land_loss"]                 = TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this));
+  ts_dict["hydro_ocean_loss_cumulative"]              = TSDiagnostic::Ptr(new MCHydrology_ocean_loss_cumulative(this));
+  ts_dict["hydro_ocean_loss"]                         = TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this));
+  ts_dict["hydro_negative_thickness_gain_cumulative"] = TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain_cumulative(this));
+  ts_dict["hydro_negative_thickness_gain"]            = TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this));
+  ts_dict["hydro_null_strip_loss_cumulative"]         = TSDiagnostic::Ptr(new MCHydrology_null_strip_loss_cumulative(this));
+  ts_dict["hydro_null_strip_loss"]                    = TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this));
 }
 
 
@@ -307,14 +308,15 @@ void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, d
     PtoCFLratio = 1.0;
   }
 
+  using units::convert;
   m_log->message(4,
-             "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
-             units::convert(m_sys, maxV_result, "m/second", "m/year"),
-             units::convert(m_sys, dtCFL,       "seconds",  "years"),
-             units::convert(m_sys, dtDIFFW,     "seconds",  "years"),
-             units::convert(m_sys, dtDIFFP,     "seconds",  "years"),
-             units::convert(m_sys, dt_result,   "seconds",  "years"),
-             units::convert(m_sys, t_current,   "seconds",  "years"));
+                 "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
+                 convert(m_sys, maxV_result, "m second-1", "m year-1"),
+                 convert(m_sys, dtCFL,       "seconds",  "years"),
+                 convert(m_sys, dtDIFFW,     "seconds",  "years"),
+                 convert(m_sys, dtDIFFP,     "seconds",  "years"),
+                 convert(m_sys, dt_result,   "seconds",  "years"),
+                 convert(m_sys, t_current,   "seconds",  "years"));
 }
 
 
@@ -379,14 +381,14 @@ void Distributed::update_impl(double icet, double icedt) {
     water_thickness_staggered(m_Wstag);
     m_Wstag.update_ghosts();
 
-    conductivity_staggered(m_Kstag,maxKW);
-    m_Kstag.update_ghosts();
+    conductivity_staggered(m_K,maxKW);
+    m_K.update_ghosts();
 
     velocity_staggered(m_V);
 
     // to get Qstag, W needs valid ghosts
-    advective_fluxes(m_Qstag);
-    m_Qstag.update_ghosts();
+    advective_fluxes(m_Q);
+    m_Q.update_ghosts();
 
     adaptive_for_WandP_evolution(ht, m_t+m_dt, maxKW, hdt, maxV, maxD, PtoCFLratio);
     cumratio += PtoCFLratio;
@@ -408,13 +410,10 @@ void Distributed::update_impl(double icet, double icedt) {
     const double  CC = (rg * hdt) / phi0,
                      wux  = 1.0 / (m_dx * m_dx),
                      wuy  = 1.0 / (m_dy * m_dy);
-    double  Open, Close, divflux, ZZ,
-               divadflux, diffW;
+    double Open, Close, divflux, ZZ, diffW;
     overburden_pressure(m_Pover);
 
-    const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-
-    MaskQuery M(*mask);
+    const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
     IceModelVec::AccessList list;
     list.add(m_P);
@@ -423,19 +422,19 @@ void Distributed::update_impl(double icet, double icedt) {
     list.add(m_Wtilnew);
     list.add(m_velbase_mag);
     list.add(m_Wstag);
-    list.add(m_Kstag);
-    list.add(m_Qstag);
+    list.add(m_K);
+    list.add(m_Q);
     list.add(m_total_input);
-    list.add(*mask);
+    list.add(mask);
     list.add(m_Pover);
     list.add(m_Pnew);
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (M.ice_free_land(i,j)) {
+      if (mask.ice_free_land(i,j)) {
         m_Pnew(i,j) = 0.0;
-      } else if (M.ocean(i,j)) {
+      } else if (mask.ocean(i,j)) {
         m_Pnew(i,j) = m_Pover(i,j);
       } else if (m_W(i,j) <= 0.0) {
         m_Pnew(i,j) = m_Pover(i,j);
@@ -445,12 +444,14 @@ void Distributed::update_impl(double icet, double icedt) {
         Close = c2 * Aglen * pow(m_Pover(i,j) - m_P(i,j),nglen) * m_W(i,j);
 
         // compute the flux divergence the same way as in raw_update_W()
-        divadflux =   (m_Qstag(i,j,0) - m_Qstag(i-1,j  ,0)) / m_dx
-          + (m_Qstag(i,j,1) - m_Qstag(i,  j-1,1)) / m_dy;
-        const double  De = rg * m_Kstag(i,  j,0) * m_Wstag(i,  j,0),
-          Dw = rg * m_Kstag(i-1,j,0) * m_Wstag(i-1,j,0),
-          Dn = rg * m_Kstag(i,j  ,1) * m_Wstag(i,j  ,1),
-          Ds = rg * m_Kstag(i,j-1,1) * m_Wstag(i,j-1,1);
+        const double divadflux =
+          (m_Q(i,j,0) - m_Q(i-1,j  ,0)) / m_dx +
+          (m_Q(i,j,1) - m_Q(i,  j-1,1)) / m_dy;
+        const double
+          De = rg * m_K(i,  j,0) * m_Wstag(i,  j,0),
+          Dw = rg * m_K(i-1,j,0) * m_Wstag(i-1,j,0),
+          Dn = rg * m_K(i,j  ,1) * m_Wstag(i,j  ,1),
+          Ds = rg * m_K(i,j-1,1) * m_Wstag(i,j-1,1);
         diffW =   wux * (De * (m_W(i+1,j) - m_W(i,j)) - Dw * (m_W(i,j) - m_W(i-1,j)))
           + wuy * (Dn * (m_W(i,j+1) - m_W(i,j)) - Ds * (m_W(i,j) - m_W(i,j-1)));
         divflux = - divadflux + diffW;
@@ -501,7 +502,7 @@ Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(Distributed *m)
   m_vars.push_back(SpatialVariableMetadata(m_sys,
                                      "hydrovelbase_mag"));
   set_attrs("the version of velbase_mag seen by the 'distributed' hydrology model",
-            "", "m s-1", "m/year", 0);
+            "", "m s-1", "m year-1", 0);
 }
 
 

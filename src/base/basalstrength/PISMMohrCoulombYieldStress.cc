@@ -30,6 +30,7 @@
 #include "base/util/pism_options.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 
@@ -371,8 +372,8 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
     }
   }
 
-  const IceModelVec2Int &mask           = *m_grid->variables().get_2d_mask("mask");
-  const IceModelVec2S   &bed_topography = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2CellType &mask           = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec2S        &bed_topography = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   IceModelVec::AccessList list;
   if (addtransportable == true) {
@@ -385,14 +386,12 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
   list.add(bed_topography);
   list.add(m_Po);
 
-  MaskQuery m(mask);
-
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m.ocean(i, j)) {
+    if (mask.ocean(i, j)) {
       m_tauc(i, j) = 0.0;
-    } else if (m.ice_free(i, j)) {
+    } else if (mask.ice_free(i, j)) {
       m_tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
@@ -400,7 +399,7 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
       double water = m_tillwat(i,j); // usual case
       if (slipperygl == true &&
           bed_topography(i,j) <= sea_level &&
-          (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j))) {
+          (mask.next_to_floating_ice(i,j) || mask.next_to_ice_free_ocean(i,j))) {
         water = tillwat_max;
       } else if (addtransportable == true) {
         water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
@@ -503,7 +502,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
   m_hydrology->till_water_thickness(m_tillwat);
   m_hydrology->overburden_pressure(m_Po);
 
-  const IceModelVec2Int &mask = *m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
   list.add(mask);
@@ -511,8 +510,6 @@ void MohrCoulombYieldStress::tauc_to_phi() {
   list.add(m_tillwat);
   list.add(m_Po);
   list.add(m_till_phi);
-
-  MaskQuery m(mask);
 
   // make sure that we have enough ghosts:
   unsigned int GHOSTS = m_till_phi.get_stencil_width();
@@ -524,9 +521,9 @@ void MohrCoulombYieldStress::tauc_to_phi() {
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m.ocean(i, j)) {
+    if (mask.ocean(i, j)) {
       // no change
-    } else if (m.ice_free(i, j)) {
+    } else if (mask.ice_free(i, j)) {
       // no change
     } else { // grounded and there is some ice
       double s    = m_tillwat(i,j) / tillwat_max,

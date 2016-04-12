@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006, 2015 Jed Brown and Ed Bueler and Constantine Khroulev
+   Copyright (C) 2004-2006, 2015, 2016 Jed Brown and Ed Bueler and Constantine Khroulev
   
    This file is part of Pism.
   
@@ -21,7 +21,7 @@
 /*  STANDARD DIALOG:
 user@home:~/pism$ obj/simpleFG
 Enter  t  and  r  separated by space (or newline)
-       (in yrs and km, resp.; e.g. 500 500):
+       (in years and km, resp.; e.g. 500 500):
 500 500
 Enter  z  values sep by space (in m); '-1' to end; e.g. 0 100 500 1500 -1:
 0 100 500 1500 -1
@@ -73,7 +73,7 @@ int main() {
   int j, Mz, scanret;
 
   printf("Enter  t  and  r  separated by space (or newline)\n");
-  printf("       (in yrs and km, resp.; e.g. 500 500):\n");
+  printf("       (in years and km, resp.; e.g. 500 500):\n");
   scanret = scanf("%lf",&year);
   if (scanret != 1) {
     printf("... input error; exiting\n");

@@ -53,6 +53,8 @@ namespace pism {
 
 const double IceCompModel::secpera = 3.15569259747e7;
 
+using units::convert;
+
 IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   : IceModel(g, context) {
 
@@ -193,7 +195,7 @@ void IceCompModel::allocate_stressbalance() {
 
   using namespace pism::stressbalance;
 
-  if (stress_balance != NULL) {
+  if (m_stress_balance != NULL) {
     return;
   }
 
@@ -206,7 +208,7 @@ void IceCompModel::allocate_stressbalance() {
     // FlowLaw for verification (we need to have the right flow law for
     // errors to make sense)
 
-    rheology::FlowLaw *ice = stress_balance->get_ssb_modifier()->flow_law();
+    rheology::FlowLaw *ice = m_stress_balance->get_ssb_modifier()->flow_law();
 
     if (not FlowLawIsPatersonBuddCold(ice, *m_config, EC)) {
       m_log->message(1,
@@ -234,8 +236,8 @@ void IceCompModel::allocate_couplers() {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   // Climate will always come from verification test formulas.
-  surface = new surface::Verification(m_grid, EC, testname);
-  ocean   = new ocean::Constant(m_grid);
+  m_surface = new surface::Verification(m_grid, EC, testname);
+  m_ocean   = new ocean::Constant(m_grid);
 }
 
 void IceCompModel::set_vars_from_options() {
@@ -252,11 +254,11 @@ void IceCompModel::set_vars_from_options() {
   IceModelVec2S bed_uplift;
   bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
   bed_uplift.set(0);
-  beddef->set_uplift(bed_uplift);
+  m_beddef->set_uplift(bed_uplift);
 
   // this is the correct initialization for Test O (and every other
   // test; they all generate zero basal melt rate)
-  basal_melt_rate.set(0.0);
+  m_basal_melt_rate.set(0.0);
 
   // Test-specific initialization:
   switch (testname) {
@@ -285,7 +287,7 @@ void IceCompModel::set_vars_from_options() {
     throw RuntimeError("Desired test not implemented by IceCompModel.");
   }
 
-  compute_enthalpy_cold(T3, Enth3);
+  compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
 }
 
 void IceCompModel::initTestABCDH() {
@@ -302,11 +304,11 @@ void IceCompModel::initTestABCDH() {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  T3.set(T0);
-  geothermal_flux.set(Ggeo);
-  vMask.set(MASK_GROUNDED);
+  m_ice_temperature.set(T0);
+  m_geothermal_flux.set(Ggeo);
+  m_cell_type.set(MASK_GROUNDED);
 
-  IceModelVec::AccessList list(ice_thickness);
+  IceModelVec::AccessList list(m_ice_thickness);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -317,23 +319,23 @@ void IceCompModel::initTestABCDH() {
       switch (testname) {
       case 'A':
         exactA(r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       case 'B':
         exactB(time, r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       case 'C':
         exactC(time, r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       case 'D':
         exactD(time, r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       case 'H':
         exactH(f, time, r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       default:
         throw RuntimeError("test must be A, B, C, D, or H");
@@ -344,19 +346,19 @@ void IceCompModel::initTestABCDH() {
   }
   loop.check();
 
-  ice_thickness.update_ghosts();
+  m_ice_thickness.update_ghosts();
 
   {
     IceModelVec2S bed_topography;
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
 
     if (testname == 'H') {
-      bed_topography.copy_from(ice_thickness);
+      bed_topography.copy_from(m_ice_thickness);
       bed_topography.scale(-f);
     } else {  // flat bed case otherwise
       bed_topography.set(0.0);
     }
-    beddef->set_elevation(bed_topography);
+    m_beddef->set_elevation(bed_topography);
   }
 }
 
@@ -389,8 +391,8 @@ void IceCompModel::initTestL() {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  T3.set(T0);
-  geothermal_flux.set(Ggeo);
+  m_ice_temperature.set(T0);
+  m_geothermal_flux.set(Ggeo);
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order
@@ -447,37 +449,37 @@ void IceCompModel::initTestL() {
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
 
     IceModelVec::AccessList list;
-    list.add(ice_thickness);
+    list.add(m_ice_thickness);
     list.add(bed_topography);
 
     for (k = 0; k < MM; k++) {
-      ice_thickness(rrv[k].i, rrv[k].j)  = HH[k];
+      m_ice_thickness(rrv[k].i, rrv[k].j)  = HH[k];
       bed_topography(rrv[k].i, rrv[k].j) = bb[k];
     }
 
-    ice_thickness.update_ghosts();
-    beddef->set_elevation(bed_topography);
+    m_ice_thickness.update_ghosts();
+    m_beddef->set_elevation(bed_topography);
   }
 
   // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
-  vHexactL.copy_from(ice_thickness);
+  vHexactL.copy_from(m_ice_thickness);
 }
 
 //! \brief Tests A and E have a thickness B.C. (ice_thickness == 0 outside a circle of radius 750km).
 void IceCompModel::reset_thickness_test_A() {
   const double LforAE = 750e3; // m
 
-  IceModelVec::AccessList list(ice_thickness);
+  IceModelVec::AccessList list(m_ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (radius(*m_grid, i, j) > LforAE) {
-      ice_thickness(i, j) = 0;
+      m_ice_thickness(i, j) = 0;
     }
   }
 
-  ice_thickness.update_ghosts();
+  m_ice_thickness.update_ghosts();
 }
 
 
@@ -487,7 +489,7 @@ void IceCompModel::fillSolnTestABCDH() {
 
   const double time = m_time->current();
 
-  IceModelVec::AccessList list(ice_thickness);
+  IceModelVec::AccessList list(m_ice_thickness);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -498,23 +500,23 @@ void IceCompModel::fillSolnTestABCDH() {
       switch (testname) {
       case 'A':
         exactA(r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       case 'B':
         exactB(time, r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       case 'C':
         exactC(time, r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       case 'D':
         exactD(time, r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       case 'H':
         exactH(f, time, r, &H, &accum);
-        ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j)   = H;
         break;
       default:
         throw RuntimeError("test must be A, B, C, D, or H");
@@ -525,19 +527,19 @@ void IceCompModel::fillSolnTestABCDH() {
   }
   loop.check();
 
-  ice_thickness.update_ghosts();
+  m_ice_thickness.update_ghosts();
 
   {
     IceModelVec2S bed_topography;
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
 
     if (testname == 'H') {
-      bed_topography.copy_from(ice_thickness);
+      bed_topography.copy_from(m_ice_thickness);
       bed_topography.scale(-f);
     } else {
       bed_topography.set(0.0);
     }
-    beddef->set_elevation(bed_topography);
+    m_beddef->set_elevation(bed_topography);
   }
 }
 
@@ -545,17 +547,17 @@ void IceCompModel::fillSolnTestABCDH() {
 void IceCompModel::fillSolnTestL() {
 
   vHexactL.update_ghosts();
-  ice_thickness.copy_from(vHexactL);
+  m_ice_thickness.copy_from(vHexactL);
 
   // note bed was filled at initialization and hasn't changed
 }
 
 
 void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
-                                                   double &gdomeHexact, double &volerr,
-                                                   double &areaerr, double &gmaxHerr,
-                                                   double &gavHerr, double &gmaxetaerr,
-                                                   double &centerHerr) {
+                                         double &gdomeHexact, double &volerr,
+                                         double &areaerr, double &gmaxHerr,
+                                         double &gavHerr, double &gmaxetaerr,
+                                         double &centerHerr) {
   // compute errors in thickness, eta=thickness^{(2n+2)/n}, volume, area
 
   const double time = m_time->current();
@@ -574,7 +576,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
 
   double     dummy, z, dummy1, dummy2, dummy3, dummy4, dummy5;
 
-  IceModelVec::AccessList list(ice_thickness);
+  IceModelVec::AccessList list(m_ice_thickness);
   if (testname == 'L') {
     list.add(vHexactL);
   }
@@ -594,9 +596,9 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (ice_thickness(i,j) > 0) {
+      if (m_ice_thickness(i,j) > 0) {
         area += a;
-        vol += a * ice_thickness(i,j) * 1e-3;
+        vol += a * m_ice_thickness(i,j) * 1e-3;
       }
       double xx = m_grid->x(i), r = radius(*m_grid, i,j);
       switch (testname) {
@@ -646,9 +648,9 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         {
           double
             H0 = 600.0,
-            v0 = units::convert(m_sys, 300.0, "m/year", "m/second"),
+            v0 = convert(m_sys, 300.0, "m year-1", "m second-1"),
             Q0 = H0 * v0,
-            B0 = stress_balance->get_stressbalance()->flow_law()->hardness(0, 0),
+            B0 = m_stress_balance->get_stressbalance()->flow_law()->hardness(0, 0),
             C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
 
           Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
@@ -664,14 +666,14 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
       }
       if (i == ((int)m_grid->Mx() - 1)/2 and
           j == ((int)m_grid->My() - 1)/2) {
-        domeH = ice_thickness(i,j);
+        domeH = m_ice_thickness(i,j);
         domeHexact = Hexact;
       }
       // compute maximum errors
-      Herr = std::max(Herr,fabs(ice_thickness(i,j) - Hexact));
-      etaerr = std::max(etaerr,fabs(pow(ice_thickness(i,j),m) - pow(Hexact,m)));
+      Herr = std::max(Herr,fabs(m_ice_thickness(i,j) - Hexact));
+      etaerr = std::max(etaerr,fabs(pow(m_ice_thickness(i,j),m) - pow(Hexact,m)));
       // add to sums for average errors
-      avHerr += fabs(ice_thickness(i,j) - Hexact);
+      avHerr += fabs(m_ice_thickness(i,j) - Hexact);
     }
   } catch (...) {
     loop.failed();
@@ -793,15 +795,15 @@ void IceCompModel::reportErrors() {
   //    -- max |<ub,vb> - <ubexact,vbexact>| error
   //    -- av |<ub,vb> - <ubexact,vbexact>| error
 
-  bool dont_report = options::Bool("-no_report", "Don't report numerical errors");
+  bool no_report = options::Bool("-no_report", "Don't report numerical errors");
 
-  if (dont_report) {
+  if (no_report) {
     return;
   }
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  rheology::FlowLaw* flow_law = stress_balance->get_ssb_modifier()->flow_law();
+  rheology::FlowLaw* flow_law = m_stress_balance->get_ssb_modifier()->flow_law();
   if ((testname == 'F' or testname == 'G') and
       testname != 'V' and
       not FlowLawIsPatersonBuddCold(flow_law, *m_config, EC)) {
@@ -824,10 +826,7 @@ void IceCompModel::reportErrors() {
   options::String report_file("-report_file", "NetCDF error report file");
   bool append = options::Bool("-append", "Append the NetCDF error report");
 
-  IO_Mode mode = PISM_READWRITE;
-  if (not append) {
-    mode = PISM_READWRITE_MOVE;
-  }
+  IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
   if (report_file.is_set()) {
     m_log->message(2, "Also writing errors to '%s'...\n", report_file->c_str());
@@ -836,7 +835,7 @@ void IceCompModel::reportErrors() {
     nc.open(report_file, mode);
     start = nc.inq_dimlen("N");
 
-    io::write_global_attributes(nc, global_attributes);
+    io::write_global_attributes(nc, m_output_global_attributes);
 
     // Write the dimension variable:
     io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);
@@ -974,7 +973,7 @@ void IceCompModel::reportErrors() {
     }
   }
 
-  // surface velocity errors if exact values are available; reported in m/year
+  // surface velocity errors if exact values are available; reported in m year-1
   if ((testname == 'F') || (testname == 'G')) {
     double maxUerr, avUerr, maxWerr, avWerr;
     computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr);
@@ -982,17 +981,17 @@ void IceCompModel::reportErrors() {
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
     m_log->message(1,
                "           %12.6f%12.6f%12.6f%12.6f\n",
-               units::convert(m_sys, maxUerr, "m/second", "m/year"),
-               units::convert(m_sys, avUerr, "m/second", "m/year"),
-               units::convert(m_sys, maxWerr, "m/second", "m/year"),
-               units::convert(m_sys, avWerr, "m/second", "m/year"));
+               convert(m_sys, maxUerr, "m second-1", "m year-1"),
+               convert(m_sys, avUerr, "m second-1", "m year-1"),
+               convert(m_sys, maxWerr, "m second-1", "m year-1"),
+               convert(m_sys, avWerr, "m second-1", "m year-1"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_surface_velocity");
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
-      err.set_string("units", "m/s");
-      err.set_string("glaciological_units", "meters/year");
+      err.set_string("units", "m second-1");
+      err.set_string("glaciological_units", "meters year-1");
       io::write_timeseries(nc, err, (size_t)start, maxUerr);
 
       err.set_name("average_surface_velocity");
@@ -1009,7 +1008,7 @@ void IceCompModel::reportErrors() {
     }
   }
 
-  // basal melt rate errors if appropriate; reported in m/year
+  // basal melt rate errors if appropriate; reported in m year-1
   if (testname == 'O') {
     double maxbmelterr, minbmelterr;
     computeBasalMeltRateErrors(maxbmelterr, minbmelterr);
@@ -1017,19 +1016,19 @@ void IceCompModel::reportErrors() {
       m_log->message(1,
                  "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
                  "  are different: maxbmelterr = %f, minbmelterr = %f\n",
-                 units::convert(m_sys, maxbmelterr, "m/second", "m/year"),
-                 units::convert(m_sys, minbmelterr, "m/second", "m/year"));
+                 convert(m_sys, maxbmelterr, "m second-1", "m year-1"),
+                 convert(m_sys, minbmelterr, "m second-1", "m year-1"));
     }
     m_log->message(1,
                "basal melt:  max\n");
     m_log->message(1, "           %11.5f\n",
-               units::convert(m_sys, maxbmelterr, "m/second", "m/year"));
+               convert(m_sys, maxbmelterr, "m second-1", "m year-1"));
 
     if (report_file.is_set()) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_basal_melt_rate");
-      err.set_string("units", "m/s");
-      err.set_string("glaciological_units", "meters/year");
+      err.set_string("units", "m second-1");
+      err.set_string("glaciological_units", "meters year-1");
       io::write_timeseries(nc, err, (size_t)start, maxbmelterr);
     }
   }
@@ -1076,37 +1075,37 @@ void IceCompModel::test_V_init() {
     IceModelVec2S bed_topography;
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
     bed_topography.set(-1000);
-    beddef->set_elevation(bed_topography);
+    m_beddef->set_elevation(bed_topography);
   }
 
   // set SSA boundary conditions:
-  double upstream_velocity = units::convert(m_sys, 300.0, "m/year", "m/second"),
+  double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"),
     upstream_thk = 600.0;
 
   IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(vBCMask);
-  list.add(vBCvel);
+  list.add(m_ice_thickness);
+  list.add(m_ssa_dirichlet_bc_mask);
+  list.add(m_ssa_dirichlet_bc_values);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (i <= 2) {
-      vBCMask(i,j) = 1;
-      vBCvel(i,j)  = Vector2(upstream_velocity, 0.0);
-      ice_thickness(i, j) = upstream_thk;
+      m_ssa_dirichlet_bc_mask(i,j) = 1;
+      m_ssa_dirichlet_bc_values(i,j)  = Vector2(upstream_velocity, 0.0);
+      m_ice_thickness(i, j) = upstream_thk;
     } else {
-      vBCMask(i,j) = 0;
-      vBCvel(i,j)  = Vector2(0.0, 0.0);
-      ice_thickness(i, j) = 0;
+      m_ssa_dirichlet_bc_mask(i,j) = 0;
+      m_ssa_dirichlet_bc_values(i,j)  = Vector2(0.0, 0.0);
+      m_ice_thickness(i, j) = 0;
     }
   }
 
-  vBCMask.update_ghosts();
+  m_ssa_dirichlet_bc_mask.update_ghosts();
 
-  vBCvel.update_ghosts();
+  m_ssa_dirichlet_bc_values.update_ghosts();
 
-  ice_thickness.update_ghosts();
+  m_ice_thickness.update_ghosts();
 }
 
 } // end of namespace pism

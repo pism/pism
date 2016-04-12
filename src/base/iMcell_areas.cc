@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -48,14 +48,18 @@ void IceModel::compute_cell_areas() {
   projPJ pism, lonlat, geocent;
 
   if (not m_config->get_boolean("correct_cell_areas") ||
-      not global_attributes.has_attribute("proj4")) {
+      not m_output_global_attributes.has_attribute("proj4")) {
 
-    cell_area.set(m_grid->dx() * m_grid->dy());
+    m_log->message(2,
+                   "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
+                   m_grid->dx(), m_grid->dy());
+
+    m_cell_area.set(m_grid->dx() * m_grid->dy());
 
     return;
   }
 
-  std::string proj_string = global_attributes.get_string("proj4");
+  std::string proj_string = m_output_global_attributes.get_string("proj4");
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (lonlat == NULL) {
@@ -76,8 +80,9 @@ void IceModel::compute_cell_areas() {
   }
 
   m_log->message(2,
-             "* Computing cell areas, latitude and longitude\n"
-             "  using projection parameters...\n");
+                 "* Computing cell areas, latitude and longitude\n"
+                 "  using projection parameters (%s)...\n",
+                 proj_string.c_str());
 
 // Cell layout:
 // (nw)        (ne)
@@ -95,7 +100,7 @@ void IceModel::compute_cell_areas() {
   IceModelVec::AccessList list;
   list.add(vLatitude);
   list.add(vLongitude);
-  list.add(cell_area);
+  list.add(m_cell_area);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -122,7 +127,7 @@ void IceModel::compute_cell_areas() {
     pj_transform(pism, geocent, 1, 1, &x_sw, &y_sw, &Z);
     double sw[3] = {x_sw, y_sw, Z};
 
-    cell_area(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
+    m_cell_area(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
 
     // compute lon,lat coordinates:
     pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
@@ -140,7 +145,7 @@ void IceModel::compute_cell_areas() {
 
 void IceModel::compute_cell_areas() {
   // proj.4 was not found; use uncorrected areas.
-  cell_area.set(m_grid->dx() * m_grid->dy());
+  m_cell_area.set(m_grid->dx() * m_grid->dy());
 }
 
 #else  // PISM_USE_PROJ4 is not set

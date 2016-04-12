@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,28 +29,28 @@ inline double& IceModelVec2::operator() (int i, int j, int k) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
-  return static_cast<double***>(array)[j][i][k];
+  return static_cast<double***>(m_array)[j][i][k];
 }
 
 inline const double& IceModelVec2::operator() (int i, int j, int k) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
-  return static_cast<double***>(array)[j][i][k];
+  return static_cast<double***>(m_array)[j][i][k];
 }
 
 inline double& IceModelVec2S::operator() (int i, int j) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  return static_cast<double**>(array)[j][i];
+  return static_cast<double**>(m_array)[j][i];
 }
 
 inline const double& IceModelVec2S::operator()(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  return static_cast<double**>(array)[j][i];
+  return static_cast<double**>(m_array)[j][i];
 }
 
 inline StarStencil<double> IceModelVec2S::star(int i, int j) const {
@@ -61,13 +61,15 @@ inline StarStencil<double> IceModelVec2S::star(int i, int j) const {
   check_array_indices(i, j+1, 0);
   check_array_indices(i, j-1, 0);
 #endif
-  StarStencil<double> result;
 
-  result.ij = operator()(i,j);
-  result.e =  operator()(i+1,j);
-  result.w =  operator()(i-1,j);
-  result.n =  operator()(i,j+1);
-  result.s =  operator()(i,j-1);
+  const IceModelVec2S &self = *this;
+
+  StarStencil<double> result;
+  result.ij = self(i,j);
+  result.e =  self(i+1,j);
+  result.w =  self(i-1,j);
+  result.n =  self(i,j+1);
+  result.s =  self(i,j-1);
 
   return result;
 }
@@ -80,13 +82,15 @@ inline StarStencil<double> IceModelVec2Stag::star(int i, int j) const {
   check_array_indices(i, j+1, 0);
   check_array_indices(i, j-1, 0);
 #endif
+  const IceModelVec2Stag &self = *this;
+
   StarStencil<double> result;
 
   result.ij = 0.0;             // has no meaning in this context
-  result.e =  operator()(i, j, 0);
-  result.w =  operator()(i-1, j, 0);
-  result.n =  operator()(i, j, 1);
-  result.s =  operator()(i, j-1, 1);
+  result.e =  self(i, j, 0);
+  result.w =  self(i-1, j, 0);
+  result.n =  self(i, j, 1);
+  result.s =  self(i, j-1, 1);
 
   return result;
 }
@@ -95,7 +99,7 @@ inline int IceModelVec2Int::as_int(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  const double **a = (const double**) array;
+  const double **a = (const double**) m_array;
   return static_cast<int>(floor(a[j][i] + 0.5));
 }
 
@@ -123,14 +127,14 @@ inline Vector2& IceModelVec2V::operator()(int i, int j) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  return static_cast<Vector2**>(array)[j][i];
+  return static_cast<Vector2**>(m_array)[j][i];
 }
 
 inline const Vector2& IceModelVec2V::operator()(int i, int j) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
-  return static_cast<Vector2**>(array)[j][i];
+  return static_cast<Vector2**>(m_array)[j][i];
 }
 
 inline StarStencil<Vector2> IceModelVec2V::star(int i, int j) const {
@@ -141,13 +145,15 @@ inline StarStencil<Vector2> IceModelVec2V::star(int i, int j) const {
   check_array_indices(i, j+1, 0);
   check_array_indices(i, j-1, 0);
 #endif
+  const IceModelVec2V &self = *this;
+
   StarStencil<Vector2> result;
 
-  result.ij = operator()(i,j);
-  result.e =  operator()(i+1,j);
-  result.w =  operator()(i-1,j);
-  result.n =  operator()(i,j+1);
-  result.s =  operator()(i,j-1);
+  result.ij = self(i,j);
+  result.e =  self(i+1,j);
+  result.w =  self(i-1,j);
+  result.n =  self(i,j+1);
+  result.s =  self(i,j-1);
 
   return result;
 }
@@ -156,14 +162,14 @@ inline double& IceModelVec3D::operator() (int i, int j, int k) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
-  return static_cast<double***>(array)[j][i][k];
+  return static_cast<double***>(m_array)[j][i][k];
 }
 
 inline const double& IceModelVec3D::operator() (int i, int j, int k) const {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
-  return static_cast<double***>(array)[j][i][k];
+  return static_cast<double***>(m_array)[j][i][k];
 }
 
 } // end of namespace pism

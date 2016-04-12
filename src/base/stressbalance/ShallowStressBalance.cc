@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 #include "SSB_diagnostics.hh"
 
@@ -35,18 +36,18 @@ namespace stressbalance {
 using pism::mask::ice_free;
 
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : Component(g), basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
+  : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
 
   m_bc_values = NULL;
   m_bc_mask = NULL;
-  sea_level = 0;
+  m_sea_level = 0.0;
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
 
   if (m_config->get_boolean("do_pseudo_plastic_till") == true) {
-    basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
+    m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
   } else {
-    basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
+    m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
   }
 
   m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
@@ -71,7 +72,7 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g, EnthalpyConverte
 }
 
 ShallowStressBalance::~ShallowStressBalance() {
-  delete basal_sliding_law;
+  delete m_basal_sliding_law;
 }
 
 void ShallowStressBalance::init() {
@@ -95,7 +96,7 @@ EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() {
 }
 
 const IceBasalResistancePlasticLaw* ShallowStressBalance::sliding_law() {
-  return basal_sliding_law;
+  return m_basal_sliding_law;
 }
 
 
@@ -103,12 +104,6 @@ void ShallowStressBalance::set_boundary_conditions(const IceModelVec2Int &locati
                                                    const IceModelVec2V &velocities) {
   m_bc_values = &velocities;
   m_bc_mask = &locations;
-}
-
-//! \brief Set the sea level used to check for floatation. (Units: meters,
-//! relative to the geoid.)
-void ShallowStressBalance::set_sea_level_elevation(double new_sea_level) {
-  sea_level = new_sea_level;
 }
 
 //! \brief Get the thickness-advective 2D velocity.
@@ -122,13 +117,13 @@ const IceModelVec2S& ShallowStressBalance::basal_frictional_heating() {
 }
 
 
-void ShallowStressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                           std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
-  dict["beta"]     = new SSB_beta(this);
-  dict["taub"]     = new SSB_taub(this);
-  dict["taub_mag"] = new SSB_taub_mag(this);
-  dict["taud"]     = new SSB_taud(this);
-  dict["taud_mag"] = new SSB_taud_mag(this);
+void ShallowStressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                           std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
+  dict["beta"]     = Diagnostic::Ptr(new SSB_beta(this));
+  dict["taub"]     = Diagnostic::Ptr(new SSB_taub(this));
+  dict["taub_mag"] = Diagnostic::Ptr(new SSB_taub_mag(this));
+  dict["taud"]     = Diagnostic::Ptr(new SSB_taud(this));
+  dict["taud_mag"] = Diagnostic::Ptr(new SSB_taud_mag(this));
 }
 
 
@@ -158,7 +153,8 @@ void ZeroSliding::write_variables_impl(const std::set<std::string> &/*vars*/, co
 
 
 //! \brief Update the trivial shallow stress balance object.
-void ZeroSliding::update(bool fast, const IceModelVec2S &melange_back_pressure) {
+void ZeroSliding::update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure) {
+  (void) sea_level;
   (void) melange_back_pressure;
 
   if (not fast) {
@@ -178,9 +174,8 @@ void ZeroSliding::update(bool fast, const IceModelVec2S &melange_back_pressure) 
  */
 void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V &V,
                                                             const IceModelVec2S &tauc,
-                                                            const IceModelVec2Int &mask,
+                                                            const IceModelVec2CellType &mask,
                                                             IceModelVec2S &result) {
-  MaskQuery m(mask);
 
   IceModelVec::AccessList list;
   list.add(V);
@@ -191,11 +186,11 @@ void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m.ocean(i,j)) {
+    if (mask.ocean(i,j)) {
       result(i,j) = 0.0;
     } else {
       const double
-        C = basal_sliding_law->drag(tauc(i,j), V(i,j).u, V(i,j).v),
+        C = m_basal_sliding_law->drag(tauc(i,j), V(i,j).u, V(i,j).v),
         basal_stress_x = - C * V(i,j).u,
         basal_stress_y = - C * V(i,j).v;
       result(i,j) = - basal_stress_x * V(i,j).u - basal_stress_y * V(i,j).v;
@@ -222,7 +217,7 @@ necessary. Both implementations (SSAFD and SSAFEM) call
 update_ghosts() to ensure that ghost values are up to date.
  */
 void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &V,
-                                                             const IceModelVec2Int &mask,
+                                                             const IceModelVec2CellType &mask,
                                                              IceModelVec2 &result) {
   double    dx = m_grid->dx(), dy = m_grid->dy();
 
@@ -238,7 +233,7 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (ice_free(mask.as_int(i,j))) {
+    if (mask.ice_free(i,j)) {
       result(i,j,0) = 0.0;
       result(i,j,1) = 0.0;
       continue;
@@ -305,7 +300,7 @@ void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V
 //! \brief Compute 2D deviatoric stresses.
 /*! Note: IceModelVec2 result has to have dof == 3. */
 void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
-                                               const IceModelVec2Int &mask,
+                                               const IceModelVec2CellType &mask,
                                                IceModelVec2 &result) {
   double    dx = m_grid->dx(), dy = m_grid->dy();
 
@@ -379,9 +374,9 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
       v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
     }
 
-    double nu;
+    double nu = 0.0;
     m_flow_law->effective_viscosity(hardness,
-                                    secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                    secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
                                     &nu, NULL);
 
     //get deviatoric stresses
@@ -426,8 +421,8 @@ IceModelVec::Ptr SSB_taud::compute_impl() {
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  double standard_gravity = m_grid->ctx()->config()->get_double("standard_gravity"),
-    ice_density = m_grid->ctx()->config()->get_double("ice_density");
+  double standard_gravity = m_config->get_double("standard_gravity"),
+    ice_density = m_config->get_double("ice_density");
 
   IceModelVec::AccessList list;
   list.add(*result);
@@ -504,23 +499,21 @@ IceModelVec::Ptr SSB_taub::compute_impl() {
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  const IceModelVec2V &velocity = model->velocity();
-  const IceModelVec2S   *tauc = m_grid->variables().get_2d_scalar("tauc");
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2V        &velocity = model->velocity();
+  const IceModelVec2S        *tauc     = m_grid->variables().get_2d_scalar("tauc");
+  const IceModelVec2CellType &mask     = *m_grid->variables().get_2d_cell_type("mask");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
-
-  MaskQuery m(*mask);
 
   IceModelVec::AccessList list;
   list.add(*result);
   list.add(*tauc);
   list.add(velocity);
-  list.add(*mask);
+  list.add(mask);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m.grounded_ice(i,j)) {
+    if (mask.grounded_ice(i,j)) {
       double beta = basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);
       (*result)(i,j).u = - beta * velocity(i,j).u;
       (*result)(i,j).v = - beta * velocity(i,j).v;
@@ -575,7 +568,9 @@ PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 
-void PrescribedSliding::update(bool fast, const IceModelVec2S &melange_back_pressure) {
+void PrescribedSliding::update(bool fast, double sea_level,
+                               const IceModelVec2S &melange_back_pressure) {
+  (void) sea_level;
   (void) melange_back_pressure;
   if (not fast) {
     m_basal_frictional_heating.set(0.0);

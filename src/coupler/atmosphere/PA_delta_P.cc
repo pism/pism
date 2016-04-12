@@ -36,8 +36,8 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
   option_prefix = "-atmosphere_delta_P";
   offset_name = "delta_P";
   offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
-  offset->metadata().set_string("units", "m / second");
-  offset->metadata().set_string("glaciological_units", "m / year");
+  offset->metadata().set_string("units", "m second-1");
+  offset->metadata().set_string("glaciological_units", "m year-1");
   offset->metadata().set_string("long_name",
                                     "precipitation offsets, units of ice-equivalent thickness");
   offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
@@ -49,8 +49,8 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
 
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  precipitation.set_string("units", "m / s");
-  precipitation.set_string("glaciological_units", "m / year");
+  precipitation.set_string("units", "m second-1");
+  precipitation.set_string("glaciological_units", "m year-1");
 }
 
 Delta_P::~Delta_P()
@@ -112,7 +112,7 @@ void Delta_P::add_vars_to_output_impl(const std::string &keyword, std::set<std::
 void Delta_P::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+  std::string order = m_config->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
     io::define_spatial_variable(air_temp, *m_grid, nc, nctype, order, false);

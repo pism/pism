@@ -28,6 +28,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/Profiling.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 #include "base/util/PISMTime.hh"
 #include "base/util/pism_utilities.hh"
@@ -416,9 +417,7 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
     &w_i = m_work_2d[0],
     &w_j = m_work_2d[1]; // averaging weights
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
-
-  MaskQuery m(*mask);
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list;
   list.add(h_x);
@@ -427,29 +426,29 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
   list.add(w_j);
 
   list.add(h);
-  list.add(*mask);
+  list.add(mask);
   list.add(b);
 
-  assert(b.get_stencil_width()     >= 2);
-  assert(mask->get_stencil_width() >= 2);
-  assert(h.get_stencil_width()     >= 2);
-  assert(h_x.get_stencil_width()   >= 1);
-  assert(h_y.get_stencil_width()   >= 1);
-  assert(w_i.get_stencil_width()   >= 1);
-  assert(w_j.get_stencil_width()   >= 1);
+  assert(b.get_stencil_width()    >= 2);
+  assert(mask.get_stencil_width() >= 2);
+  assert(h.get_stencil_width()    >= 2);
+  assert(h_x.get_stencil_width()  >= 1);
+  assert(h_y.get_stencil_width()  >= 1);
+  assert(w_i.get_stencil_width()  >= 1);
+  assert(w_j.get_stencil_width()  >= 1);
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, i-offset
     {
-      if ((m.floating_ice(i,j) && m.ice_free_ocean(i+1,j)) ||
-          (m.ice_free_ocean(i,j) && m.floating_ice(i+1,j))) {
+      if ((mask.floating_ice(i,j) && mask.ice_free_ocean(i+1,j)) ||
+          (mask.ice_free_ocean(i,j) && mask.floating_ice(i+1,j))) {
         // marine margin
         h_x(i,j,0) = 0;
         w_i(i,j)   = 0;
-      } else if ((m.icy(i,j) && m.ice_free(i+1,j) && b(i+1,j) > h(i,j)) ||
-                 (m.ice_free(i,j) && m.icy(i+1,j) && b(i,j) > h(i+1,j))) {
+      } else if ((mask.icy(i,j) && mask.ice_free(i+1,j) && b(i+1,j) > h(i,j)) ||
+                 (mask.ice_free(i,j) && mask.icy(i+1,j) && b(i,j) > h(i+1,j))) {
         // ice next to a "cliff"
         h_x(i,j,0) = 0.0;
         w_i(i,j)   = 0;
@@ -462,13 +461,13 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
 
     // y-derivative, j-offset
     {
-      if ((m.floating_ice(i,j) && m.ice_free_ocean(i,j+1)) ||
-          (m.ice_free_ocean(i,j) && m.floating_ice(i,j+1))) {
+      if ((mask.floating_ice(i,j) && mask.ice_free_ocean(i,j+1)) ||
+          (mask.ice_free_ocean(i,j) && mask.floating_ice(i,j+1))) {
         // marine margin
         h_y(i,j,1) = 0.0;
         w_j(i,j)   = 0.0;
-      } else if ((m.icy(i,j) && m.ice_free(i,j+1) && b(i,j+1) > h(i,j)) ||
-                 (m.ice_free(i,j) && m.icy(i,j+1) && b(i,j) > h(i,j+1))) {
+      } else if ((mask.icy(i,j) && mask.ice_free(i,j+1) && b(i,j+1) > h(i,j)) ||
+                 (mask.ice_free(i,j) && mask.icy(i,j+1) && b(i,j) > h(i,j+1))) {
         // ice next to a "cliff"
         h_y(i,j,1) = 0.0;
         w_j(i,j)   = 0.0;
@@ -493,7 +492,7 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
           h_x(i,j,1) = 0.0;
         }
       } else {
-        if (m.icy(i,j)) {
+        if (mask.icy(i,j)) {
           double W = w_i(i,j) + w_i(i-1,j);
           if (W > 0) {
             h_x(i,j,1) = 1.0/W * (h_x(i,j,0) + h_x(i-1,j,0));
@@ -521,7 +520,7 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
           h_y(i,j,0) = 0.0;
         }
       } else {
-        if (m.icy(i,j)) {
+        if (mask.icy(i,j)) {
           double W = w_j(i,j) + w_j(i,j-1);
           if (W > 0) {
             h_y(i,j,0) = 1.0/W * (h_y(i,j,1) + h_y(i,j-1,1));
@@ -595,7 +594,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
     &h = *m_grid->variables().get_2d_scalar("surface_altitude"),
     &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   bool full_update = (not fast);
 
@@ -616,7 +615,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   // have stencil width WIDE_GHOSTS for this too work
   m_bed_smoother->get_theta(h, theta);
 
-  m_bed_smoother->get_smoothed_thk(h, H, *mask, thk_smooth);
+  m_bed_smoother->get_smoothed_thk(h, H, mask, thk_smooth);
 
   IceModelVec::AccessList list;
   list.add(theta);
@@ -829,10 +828,11 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   const IceModelVec2S
     &h = *m_grid->variables().get_2d_scalar("surface_altitude"),
     &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec2S &thk_smooth = m_work_2d[0];
-  m_bed_smoother->get_smoothed_thk(h, H, *mask, thk_smooth);
+  m_bed_smoother->get_smoothed_thk(h, H, mask, thk_smooth);
 
   const std::vector<double> &z = m_grid->z();
 
@@ -904,9 +904,9 @@ void SIAFD::compute_I() {
     &h = *m_grid->variables().get_2d_scalar("surface_altitude"),
     &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  const IceModelVec2Int *mask = m_grid->variables().get_2d_mask("mask");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  m_bed_smoother->get_smoothed_thk(h, H, *mask, thk_smooth);
+  m_bed_smoother->get_smoothed_thk(h, H, mask, thk_smooth);
 
   IceModelVec::AccessList list;
   list.add(m_delta[0]);

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,8 @@
 #include "PISMVars.hh"
 #include "VariableMetadata.hh"
 #include "iceModelVec.hh"
+#include "IceModelVec2CellType.hh"
+
 
 #include "error_handling.hh"
 
@@ -175,6 +177,14 @@ const IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
   return tmp;
 }
 
+const IceModelVec2CellType* Vars::get_2d_cell_type(const std::string &name) const {
+  const IceModelVec2CellType *tmp = dynamic_cast<const IceModelVec2CellType*>(this->get_internal(name));
+  if (tmp == NULL) {
+    throw RuntimeError::formatted("2D cell type variable '%s' is not available", name.c_str());
+  }
+  return tmp;
+}
+
 const IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
   const IceModelVec3* tmp = dynamic_cast<const IceModelVec3*>(this->get_internal(name));
   if (tmp == NULL) {
@@ -295,6 +305,14 @@ IceModelVec2V::Ptr Vars::get_2d_vector_shared(const std::string &name) const {
 
 IceModelVec2Int::Ptr Vars::get_2d_mask_shared(const std::string &name) const {
   IceModelVec2Int::Ptr tmp = dynamic_pointer_cast<IceModelVec2Int,IceModelVec>(this->get_internal_shared(name));
+  if (not (bool)tmp) {
+    throw RuntimeError::formatted("shared 2D mask variable '%s' is not available", name.c_str());
+  }
+  return tmp;
+}
+
+IceModelVec2CellType::Ptr Vars::get_2d_cell_type_shared(const std::string &name) const {
+  IceModelVec2CellType::Ptr tmp = dynamic_pointer_cast<IceModelVec2CellType,IceModelVec>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted("shared 2D mask variable '%s' is not available", name.c_str());
   }

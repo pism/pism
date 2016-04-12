@@ -57,97 +57,31 @@ using namespace mask;
   solver problems associated to not-attached-to-grounded ice.
 */
 void IceModel::updateSurfaceElevationAndMask() {
-  const IceModelVec2S &bed_topography = beddef->bed_elevation();
 
-  update_mask(bed_topography, ice_thickness, vMask);
-  update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
+  assert(m_ocean != NULL);
+  const double sea_level = m_ocean->sea_level_elevation();
+
+  const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
+
+  GeometryCalculator gc(*m_config);
 
   if (m_config->get_boolean("kill_icebergs") && iceberg_remover != NULL) {
-    iceberg_remover->update(vMask, ice_thickness);
-    // the call above modifies ice thickness and updates the mask
-    // accordingly
-    update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
+    // the iceberg remover has to use the same mask as the stress balance code, hence the
+    // stress-balance-related threshold here
+    gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_stress_balance_standard"));
+
+    gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
+
+    iceberg_remover->update(m_cell_type, m_ice_thickness);
+    // the call above modifies ice thickness and updates the mask accordingly, but we re-compute the
+    // mask (we need to use the different threshold)
   }
-}
 
-/**
- * Update ice cover mask using the floatation criterion, sea level
- * elevation, ice thickness, and bed topography.
- *
- * @param[in]  bed bedrock surface elevation
- * @param[in]  thickness ice thicnness
- * @param[out] result cell type mask
- *
- * @return 0 on success.
- */
-void IceModel::update_mask(const IceModelVec2S &bed,
-                           const IceModelVec2S &thickness,
-                           IceModelVec2Int &result) {
+  gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_standard"));
+  gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
+  gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
 
-  assert(ocean != NULL);
-  double sea_level = ocean->sea_level_elevation();
-
-  GeometryCalculator gc(sea_level, *m_config);
-
-  IceModelVec::AccessList list(result);
-  list.add(bed);
-  list.add(thickness);
-
-  unsigned int GHOSTS = result.get_stencil_width();
-  assert(bed.get_stencil_width() >= result.get_stencil_width());
-  assert(thickness.get_stencil_width() >= result.get_stencil_width());
-
-  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    result(i, j) = gc.mask(bed(i, j), thickness(i, j));
-  }
-}
-
-/**
- * Update ice surface elevation using the floatation criterion, sea
- * level elevation, ice thickness, and bed topography.
- *
- * Uses ghosts of `bed_topography`, `ice_thickness`. Updates ghosts of
- * the `result`.
- *
- * @param[in] bed bedrock surface elevation
- * @param[in] thickness ice thickness
- * @param[out] result computed surface elevation
- *
- */
-void IceModel::update_surface_elevation(const IceModelVec2S &bed,
-                                        const IceModelVec2S &thickness,
-                                        IceModelVec2S &result) {
-  assert(ocean != NULL);
-  double sea_level = ocean->sea_level_elevation();
-
-  GeometryCalculator gc(sea_level, *m_config);
-
-  IceModelVec::AccessList list(result);
-  list.add(bed);
-  list.add(thickness);
-
-  unsigned int GHOSTS = result.get_stencil_width();
-
-  assert(bed.get_stencil_width() >= result.get_stencil_width());
-  assert(thickness.get_stencil_width() >= result.get_stencil_width());
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      // take this opportunity to check that thickness(i, j) >= 0
-      if (thickness(i, j) < 0) {
-        throw RuntimeError::formatted("Thickness negative at point i=%d, j=%d", i, j);
-      }
-      result(i, j) = gc.surface(bed(i, j), thickness(i, j));
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
+  check_minimum_ice_thickness();
 }
 
 //! \brief Adjust ice flow through interfaces of the cell i,j.
@@ -315,14 +249,14 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
                                      StarStencil<double> &out_SSA_velocity,
                                      StarStencil<double> &out_SIA_flux) {
 
-  StarStencil<int> mask = vMask.int_star(i,j);
+  StarStencil<int> mask = m_cell_type.int_star(i,j);
   Direction dirs[4] = {North, East, South, West};
 
   StarStencil<int> bc_mask;
   StarStencil<Vector2> bc_velocity;
   if (dirichlet_bc) {
-    bc_mask = vBCMask.int_star(i,j);
-    bc_velocity = vBCvel.star(i,j);
+    bc_mask = m_ssa_dirichlet_bc_mask.int_star(i,j);
+    bc_velocity = m_ssa_dirichlet_bc_values.star(i,j);
   }
 
   out_SSA_velocity.ij = 0.0;
@@ -518,43 +452,40 @@ void IceModel::massContExplicitStep() {
     total_sum_divQ_SSA            = 0,
     total_surface_ice_flux        = 0;
 
-  const double dx = m_grid->dx(), dy = m_grid->dy();
-  bool
-    include_bmr_in_continuity = m_config->get_boolean("include_bmr_in_continuity"),
-    compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),
-    compute_cumulative_nonneg_flux = nonneg_flux_2D_cumulative.was_created(),
-    compute_cumulative_grounded_basal_flux = grounded_basal_flux_2D_cumulative.was_created(),
-    compute_cumulative_floating_basal_flux = floating_basal_flux_2D_cumulative.was_created(),
-    compute_flux_divergence = flux_divergence.was_created();
+  const bool
+    include_bmr_in_continuity = m_config->get_boolean("include_bmr_in_continuity");
 
-  double ice_density = m_config->get_double("ice_density"),
-    meter_per_s_to_kg_per_m2 = dt * ice_density;
+  const double
+    dx                       = m_grid->dx(),
+    dy                       = m_grid->dy(),
+    ice_density              = m_config->get_double("ice_density"),
+    meter_per_s_to_kg_per_m2 = m_dt * ice_density;
 
-  assert(surface != NULL);
-  surface->ice_surface_mass_flux(climatic_mass_balance);
+  assert(m_surface != NULL);
+  m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
 
-  IceModelVec2S &vHnew = vWork2d[0];
-  vHnew.copy_from(ice_thickness);
+  IceModelVec2S &H_new = vWork2d[0];
+  H_new.copy_from(m_ice_thickness);
 
   IceModelVec2S &H_residual = vWork2d[1];
 
-  const IceModelVec2Stag &Qdiff = stress_balance->diffusive_flux();
+  const IceModelVec2Stag &Qdiff = m_stress_balance->diffusive_flux();
 
-  const IceModelVec2V &vel_advective = stress_balance->advective_velocity();
+  const IceModelVec2V &vel_advective = m_stress_balance->advective_velocity();
 
-  const IceModelVec2S &bed_topography = beddef->bed_elevation();
+  const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
   IceModelVec::AccessList list;
-  list.add(cell_area);
-  list.add(ice_thickness);
-  list.add(ice_surface_elevation);
+  list.add(m_cell_area);
+  list.add(m_ice_thickness);
+  list.add(m_ice_surface_elevation);
   list.add(bed_topography);
-  list.add(basal_melt_rate);
+  list.add(m_basal_melt_rate);
   list.add(Qdiff);
   list.add(vel_advective);
-  list.add(climatic_mass_balance);
-  list.add(vMask);
-  list.add(vHnew);
+  list.add(m_climatic_mass_balance);
+  list.add(m_cell_type);
+  list.add(H_new);
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool do_part_grid = m_config->get_boolean("part_grid"),
@@ -571,31 +502,15 @@ void IceModel::massContExplicitStep() {
   }
   const bool dirichlet_bc = m_config->get_boolean("ssa_dirichlet_bc");
   if (dirichlet_bc) {
-    list.add(vBCMask);
-    list.add(vBCvel);
+    list.add(m_ssa_dirichlet_bc_mask);
+    list.add(m_ssa_dirichlet_bc_values);
   }
 
-  if (compute_cumulative_climatic_mass_balance) {
-    list.add(climatic_mass_balance_cumulative);
-  }
-
-  if (compute_cumulative_nonneg_flux) {
-    list.add(nonneg_flux_2D_cumulative);
-  }
-
-  if (compute_cumulative_grounded_basal_flux) {
-    list.add(grounded_basal_flux_2D_cumulative);
-  }
-
-  if (compute_cumulative_floating_basal_flux) {
-    list.add(floating_basal_flux_2D_cumulative);
-  }
-
-  if (compute_flux_divergence) {
-    list.add(flux_divergence);
-  }
-
-  MaskQuery mask(vMask);
+  list.add(m_climatic_mass_balance_cumulative);
+  list.add(m_nonneg_flux_2D_cumulative);
+  list.add(m_grounded_basal_flux_2D_cumulative);
+  list.add(m_floating_basal_flux_2D_cumulative);
+  list.add(m_flux_divergence);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -606,8 +521,8 @@ void IceModel::massContExplicitStep() {
       // thicknesses and thickening rates to kg, for accounting of
       // fluxes during the current time-step.
       const double
-        meter_to_kg       = cell_area(i,j) * ice_density,
-        meter_per_s_to_kg = meter_to_kg * dt;
+        meter_to_kg       = m_cell_area(i,j) * ice_density,
+        meter_per_s_to_kg = meter_to_kg * m_dt;
 
       // Divergence terms:
       double
@@ -617,14 +532,14 @@ void IceModel::massContExplicitStep() {
       // Source terms:
       // Note: here we convert surface mass balance from [kg m-2 s-1] to [m s-1]:
       double
-        surface_mass_balance = climatic_mass_balance(i, j) / ice_density, // units: [m s-1]
-        my_basal_melt_rate   = 0.0, // units: [m s-1]
+        surface_mass_balance = m_climatic_mass_balance(i, j) / ice_density, // units: [m s-1]
+        basal_melt_rate      = 0.0, // units: [m s-1]
         H_to_Href_flux       = 0.0, // units: [m]
         Href_to_H_flux       = 0.0, // units: [m]
         nonneg_rule_flux     = 0.0; // units: [m]
 
       if (include_bmr_in_continuity) {
-        my_basal_melt_rate = basal_melt_rate(i, j);
+        basal_melt_rate = m_basal_melt_rate(i, j);
       }
 
       StarStencil<double> Q, v;
@@ -640,24 +555,25 @@ void IceModel::massContExplicitStep() {
 
         // Plug flow part (i.e. basal sliding; from SSA): upwind by staggered grid
         // PIK method;  this is   \nabla \cdot [(u, v) H]
-        divQ_SSA += (v.e * (v.e > 0 ? ice_thickness(i, j) : ice_thickness(i + 1, j))
-                     - v.w * (v.w > 0 ? ice_thickness(i - 1, j) : ice_thickness(i, j))) / dx;
-        divQ_SSA += (v.n * (v.n > 0 ? ice_thickness(i, j) : ice_thickness(i, j + 1))
-                     - v.s * (v.s > 0 ? ice_thickness(i, j - 1) : ice_thickness(i, j))) / dy;
+        divQ_SSA += (v.e * (v.e > 0 ? m_ice_thickness(i, j) : m_ice_thickness(i + 1, j))
+                     - v.w * (v.w > 0 ? m_ice_thickness(i - 1, j) : m_ice_thickness(i, j))) / dx;
+        divQ_SSA += (v.n * (v.n > 0 ? m_ice_thickness(i, j) : m_ice_thickness(i, j + 1))
+                     - v.s * (v.s > 0 ? m_ice_thickness(i, j - 1) : m_ice_thickness(i, j))) / dy;
       }
 
       // Set source terms
 
-      if (mask.ice_free_ocean(i, j)) {
+      if (m_cell_type.ice_free_ocean(i, j)) {
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
         // parameterization
-        if (do_part_grid && mask.next_to_ice(i, j)) {
+        if (do_part_grid && m_cell_type.next_to_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
-          H_to_Href_flux = -(divQ_SSA + divQ_SIA) * dt;
-          vHref(i, j) += H_to_Href_flux;
+          H_to_Href_flux  = -(divQ_SSA + divQ_SIA) * m_dt;
+          vHref(i, j)    += H_to_Href_flux;
+
           if (vHref(i, j) < 0) {
-            m_log->message(3,
+            m_log->message(2,
                        "PISM WARNING: negative Href at (%d,%d)\n",
                        i, j);
 
@@ -666,11 +582,12 @@ void IceModel::massContExplicitStep() {
             vHref(i, j) = 0;
           }
 
-          double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
-                                                       ice_thickness.star(i, j),
-                                                       ice_surface_elevation.star(i, j),
-                                                       bed_topography(i,j),
-                                                       reduce_frontal_thickness);
+          double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
+                                                             m_ice_thickness.star(i, j),
+                                                             m_ice_surface_elevation.star(i, j),
+                                                             bed_topography(i,j),
+                                                             dx,
+                                                             reduce_frontal_thickness);
           double coverage_ratio = 1.0;
           if (H_threshold > 0.0) {
             coverage_ratio = vHref(i, j) / H_threshold;
@@ -682,15 +599,14 @@ void IceModel::massContExplicitStep() {
               H_residual(i, j) = vHref(i, j) - H_threshold; // residual ice thickness
             }
 
-            vHref(i, j) = 0.0;
-
+            vHref(i, j)    = 0.0;
             Href_to_H_flux = H_threshold;
 
             // A cell that became "full" experiences both SMB and basal melt.
           } else {
             // A not-full partially-filled cell experiences neither.
             surface_mass_balance = 0.0;
-            my_basal_melt_rate   = 0.0;
+            basal_melt_rate      = 0.0;
           }
 
           // In this case the SSA flux goes into the Href variable and does not
@@ -703,64 +619,72 @@ void IceModel::massContExplicitStep() {
 
           // Standard ice-free ocean case:
           surface_mass_balance = 0.0;
-          my_basal_melt_rate   = 0.0;
+          basal_melt_rate      = 0.0;
         }
       } // end of "if (ice_free_ocean)"
 
       // Dirichlet BC case (should go last to override previous settings):
-      if (dirichlet_bc && vBCMask.as_int(i,j) == 1) {
+      if (dirichlet_bc && m_ssa_dirichlet_bc_mask.as_int(i,j) == 1) {
         surface_mass_balance = 0.0;
-        my_basal_melt_rate   = 0.0;
+        basal_melt_rate      = 0.0;
         Href_to_H_flux       = 0.0;
         divQ_SIA             = 0.0;
         divQ_SSA             = 0.0;
       }
 
-      if (compute_flux_divergence == true) {
-        flux_divergence(i, j) = divQ_SIA + divQ_SSA;
-      }
+      m_flux_divergence(i, j) = divQ_SIA + divQ_SSA;
 
-      vHnew(i, j) += (dt * (surface_mass_balance // accumulation/ablation
-                            - my_basal_melt_rate // basal melt rate (grounded or floating)
-                            - (divQ_SIA + divQ_SSA)) // flux divergence
-                      + Href_to_H_flux); // corresponds to a cell becoming "full"
+      // mass transport
+      H_new(i, j) += - m_dt * (divQ_SIA + divQ_SSA) + Href_to_H_flux;
 
-      if (vHnew(i, j) < 0.0) {
-        nonneg_rule_flux += -vHnew(i, j);
+      if (H_new(i, j) < 0.0) {
+        nonneg_rule_flux += -H_new(i, j);
 
-        if (compute_cumulative_nonneg_flux) {
-          // convert from [m] to [kg m-2]:
-          nonneg_flux_2D_cumulative(i, j) += nonneg_rule_flux * ice_density; // units: [kg m-2]
-        }
+        // convert from [m] to [kg m-2]:
+        m_nonneg_flux_2D_cumulative(i, j) += nonneg_rule_flux * ice_density; // units: [kg m-2]
 
         // this has to go *after* accounting above!
-        vHnew(i, j) = 0.0;
+        H_new(i, j) = 0.0;
       }
 
-      // Track cumulative surface mass balance. Note that this keeps track of
-      // cumulative climatic_mass_balance at all the grid cells (including ice-free cells).
-      if (compute_cumulative_climatic_mass_balance) {
-        // surface_mass_balance has the units of [m s-1]; convert to [kg m-2]
-        climatic_mass_balance_cumulative(i, j) += surface_mass_balance * meter_per_s_to_kg_per_m2;
+      // surface mass balance
+      if (H_new(i, j) + m_dt * surface_mass_balance < 0.0) {
+        // applying the surface mass balance results in negative thickness
+        //
+        // modify the surface mass balance so that the resulting thickness is zero
+        surface_mass_balance = - H_new(i, j) / m_dt;
+        H_new(i, j)          = 0.0;
+      } else {
+        H_new(i, j) += m_dt * surface_mass_balance;
       }
 
-      if (compute_cumulative_grounded_basal_flux && mask.grounded(i, j)) {
-        // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
-        grounded_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
+      // basal mass balance
+      if (H_new(i, j) - m_dt * basal_melt_rate < 0.0) {
+        // applying the basal melt rate results in negative thickness
+        //
+        // modify the basal melt rate so that the resulting thickness is zero
+        basal_melt_rate = H_new(i, j) / m_dt;
+        H_new(i, j)     = 0.0;
+      } else {
+        H_new(i, j) += - m_dt * basal_melt_rate;
       }
 
-      if (compute_cumulative_floating_basal_flux && mask.ocean(i, j)) {
-        // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
-        floating_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
-      }
+      // surface_mass_balance has the units of [m s-1]; convert to [kg m-2]
+      m_climatic_mass_balance_cumulative(i, j) += surface_mass_balance * meter_per_s_to_kg_per_m2;
+
+      // basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
+      m_grounded_basal_flux_2D_cumulative(i, j) += -basal_melt_rate * meter_per_s_to_kg_per_m2;
+
+      // basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
+      m_floating_basal_flux_2D_cumulative(i, j) += -basal_melt_rate * meter_per_s_to_kg_per_m2;
 
       // time-series accounting:
       {
         // all these are in units of [kg]
-        if (mask.grounded(i,j)) {
-          proc_grounded_basal_ice_flux += - my_basal_melt_rate * meter_per_s_to_kg;
+        if (m_cell_type.grounded(i,j)) {
+          proc_grounded_basal_ice_flux += - basal_melt_rate * meter_per_s_to_kg;
         } else {
-          proc_sub_shelf_ice_flux      += - my_basal_melt_rate * meter_per_s_to_kg;
+          proc_sub_shelf_ice_flux      += - basal_melt_rate * meter_per_s_to_kg;
         }
 
         proc_surface_ice_flux        +=   surface_mass_balance * meter_per_s_to_kg;
@@ -810,17 +734,16 @@ void IceModel::massContExplicitStep() {
     H_to_Href_flux_cumulative          += total_H_to_Href_flux;
   }
 
-  // finally copy vHnew into ice_thickness and communicate ghosted values
-  vHnew.update_ghosts(ice_thickness);
+  // finally copy H_new into ice_thickness and communicate ghosted values
+  H_new.update_ghosts(m_ice_thickness);
 
   // distribute residual ice mass if desired
   if (do_redist) {
     residual_redistribution(H_residual);
   }
 
-  // Check if the ice thickness exceeded the height of the computational box
-  // and extend the grid if necessary:
-  check_maximum_thickness();
+  // Check if the ice thickness exceeded the height of the computational box and stop if it did.
+  check_maximum_ice_thickness();
 }
 
 /**
@@ -832,15 +755,15 @@ void IceModel::update_grounded_cell_fraction() {
     ice_density   = m_config->get_double("ice_density"),
     ocean_density = m_config->get_double("sea_water_density");
 
-  assert(ocean != NULL);
-  const double sea_level = ocean->sea_level_elevation();
+  assert(m_ocean != NULL);
+  const double sea_level = m_ocean->sea_level_elevation();
 
-  assert(beddef != NULL);
-  const IceModelVec2S &bed_topography = beddef->bed_elevation();
+  assert(m_beddef != NULL);
+  const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
-                          ice_thickness, bed_topography, vMask,
-                          gl_mask, NULL, NULL);
+                          m_ice_thickness, bed_topography, m_cell_type,
+                          m_gl_mask, NULL, NULL);
 }
 
 } // end of namespace pism

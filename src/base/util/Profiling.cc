@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,7 +33,11 @@ Profiling::Profiling() {
 
 //! Enable PETSc logging.
 void Profiling::start() const {
+#if PETSC_VERSION_LE(3,6,3)
   PetscErrorCode ierr = PetscLogBegin(); PISM_CHK(ierr, "PetscLogBegin");
+#else
+  PetscErrorCode ierr = PetscLogAllBegin(); PISM_CHK(ierr, "PetscLogAllBegin");
+#endif
 }
 
 //! Save detailed profiling data to a Python script.
@@ -50,14 +54,17 @@ void Profiling::report(const std::string &filename) const {
   ierr = PetscViewerFileSetName(log_viewer, filename.c_str());
   PISM_CHK(ierr, "PetscViewerFileSetName");
 
-  ierr = PetscViewerSetFormat(log_viewer, PETSC_VIEWER_ASCII_INFO_DETAIL);
-  PISM_CHK(ierr, "PetscViewerSetFormat");
+  ierr = PetscViewerPushFormat(log_viewer, PETSC_VIEWER_ASCII_INFO_DETAIL);
+  PISM_CHK(ierr, "PetscViewerPushFormat");
 
   ierr = PetscViewerSetUp(log_viewer);
   PISM_CHK(ierr, "PetscViewerSetUp");
 
   ierr = PetscLogView(log_viewer);
   PISM_CHK(ierr, "PetscLogView"); PISM_CHK(ierr, "PetscLogView");
+
+  ierr = PetscViewerPopFormat(log_viewer);
+  PISM_CHK(ierr, "PetscViewerPopFormat");
 
   ierr = PetscViewerDestroy(&log_viewer);
   PISM_CHK(ierr, "PetscViewerDestroy");

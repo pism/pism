@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -30,8 +30,7 @@ class FlowLaw;
 
 class IceGrid;
 class IceBasalResistancePlasticLaw;
-class Diagnostic;
-class TSDiagnostic;
+class IceModelVec2CellType;
 
 namespace stressbalance {
 
@@ -47,11 +46,9 @@ public:
   void set_boundary_conditions(const IceModelVec2Int &locations,
                                const IceModelVec2V &velocities);
 
-  //! \brief Set the sea level used to check for floatation. (Units: meters,
-  //! relative to the geoid.)
-  void set_sea_level_elevation(double new_sea_level);
-
-  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure) = 0;
+  virtual void update(bool fast,
+                      double sea_level,
+                      const IceModelVec2S &melange_back_pressure) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
   const IceModelVec2V& velocity();
@@ -60,16 +57,16 @@ public:
   const IceModelVec2S& basal_frictional_heating();
 
   void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
-                                         const IceModelVec2Int &mask,
+                                         const IceModelVec2CellType &mask,
                                          IceModelVec2 &result);
 
   void compute_2D_stresses(const IceModelVec2V &velocity,
-                           const IceModelVec2Int &mask,
+                           const IceModelVec2CellType &mask,
                            IceModelVec2 &result);
 
   void compute_basal_frictional_heating(const IceModelVec2V &velocity,
                                         const IceModelVec2S &tauc,
-                                        const IceModelVec2Int &mask,
+                                        const IceModelVec2CellType &mask,
                                         IceModelVec2S &result);
   // helpers:
 
@@ -84,11 +81,11 @@ public:
 protected:
   virtual void init_impl();
   
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic*> &dict,
-                                    std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
 
-  double sea_level;
-  IceBasalResistancePlasticLaw *basal_sliding_law;
+  double m_sea_level;
+  IceBasalResistancePlasticLaw *m_basal_sliding_law;
   rheology::FlowLaw *m_flow_law;
   EnthalpyConverter::Ptr m_EC;
 
@@ -109,7 +106,7 @@ public:
   ZeroSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~ZeroSliding();
   
-  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
@@ -125,7 +122,7 @@ class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
   virtual ~PrescribedSliding();
-  virtual void update(bool fast, const IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
   virtual void init();
 };
 

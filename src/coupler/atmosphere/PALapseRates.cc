@@ -64,17 +64,17 @@ void LapseRates::init() {
 
   m_precip_lapse_rate = options::Real("-precip_lapse_rate",
                                     "Elevation lapse rate for the surface mass balance,"
-                                    " in m/year per km",
+                                    " in m year-1 per km",
                                     m_precip_lapse_rate);
 
   m_log->message(2,
              "   air temperature lapse rate: %3.3f K per km\n"
-             "   precipitation lapse rate:   %3.3f m/year per km\n",
+             "   precipitation lapse rate:   %3.3f m year-1 per km\n",
              m_temp_lapse_rate, m_precip_lapse_rate);
 
   m_temp_lapse_rate = units::convert(m_sys, m_temp_lapse_rate, "K/km", "K/m");
 
-  m_precip_lapse_rate = units::convert(m_sys, m_precip_lapse_rate, "m/year / km", "m/s / m");
+  m_precip_lapse_rate = units::convert(m_sys, m_precip_lapse_rate, "m year-1 / km", "m second-1 / m");
 }
 
 void LapseRates::mean_precipitation(IceModelVec2S &result) {
@@ -148,7 +148,7 @@ void LapseRates::temp_snapshot(IceModelVec2S &result) {
 
 void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
-  std::string order = m_grid->ctx()->config()->get_string("output_variable_order");
+  std::string order = m_config->get_string("output_variable_order");
 
   if (set_contains(vars, "air_temp")) {
     io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, true);

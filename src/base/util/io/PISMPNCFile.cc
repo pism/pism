@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,12 +22,12 @@
 
 #include "PISMPNCFile.hh"
 
+#include "pism_type_conversion.hh" // has to go after pnetcdf.h
+
 #include "base/util/error_handling.hh"
 
 namespace pism {
 namespace io {
-
-#include "pism_type_conversion.hh" // has to go after pnetcdf.h
 
 PNCFile::PNCFile(MPI_Comm c)
   : NCFile(c) {
