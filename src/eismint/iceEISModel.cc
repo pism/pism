@@ -50,7 +50,7 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   m_config->set_boolean("is_dry_simulation", true);
 
   // purely SIA, and E=1
-  m_config->set_double("sia_enhancement_factor", 1.0);
+  m_config->set_double("sia.enhancement_factor", 1.0);
 
   // none use bed smoothing & bed roughness parameterization
   m_config->set_double("bed_smoother_range", 0.0);

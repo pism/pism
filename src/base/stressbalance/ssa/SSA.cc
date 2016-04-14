@@ -34,8 +34,8 @@ namespace pism {
 namespace stressbalance {
 
 SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
-  m_min_thickness = config.get_double("min_thickness_strength_extension_ssa");
-  m_constant_nu = config.get_double("constant_nu_strength_extension_ssa");
+  m_min_thickness = config.get_double("ssa.strength_extension.min_thickness");
+  m_constant_nu = config.get_double("ssa.strength_extension.constant_nu");
 }
 
 //! Set strength = (viscosity times thickness).
@@ -118,7 +118,7 @@ SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_da = m_velocity_global.get_dm();
 
   {
-    rheology::FlowLawFactory ice_factory("ssa_", m_config, m_EC);
+    rheology::FlowLawFactory ice_factory("ssa.", m_config, m_EC);
     ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
     m_flow_law = ice_factory.create();
   }
@@ -190,7 +190,7 @@ void SSA::init_impl() {
     m_velocity.set(0.0); // default initial guess
   }
 
-  if (m_config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa.dirichlet_bc")) {
     m_bc_mask = m_grid->variables().get_2d_mask("bc_mask");
     m_bc_values = m_grid->variables().get_2d_vector("vel_ssa_bc");
   }
@@ -243,7 +243,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   const double dx=m_grid->dx(), dy=m_grid->dy();
 
   bool cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
-  bool compute_surf_grad_inward_ssa = m_config->get_boolean("compute_surf_grad_inward_ssa");
+  bool compute_surf_grad_inward_ssa = m_config->get_boolean("ssa.compute_surface_gradient_inward");
   bool use_eta = (m_config->get_string("surface_gradient_method") == "eta");
 
   IceModelVec::AccessList list;

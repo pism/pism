@@ -105,7 +105,7 @@ void IceRegionalModel::createVecs() {
                        "time-independent basal melt rate in the no-model-strip",
                        "m s-1", "");
 
-  if (m_config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa.dirichlet_bc")) {
     // remove the bc_mask variable from the dictionary
     m_grid->variables().remove("bc_mask");
 
@@ -241,7 +241,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
   // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
   // The user is probably using -regrid_file to bring in SSA B.C. data.
-  if (m_config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa.dirichlet_bc")) {
     bool u_ssa_exists, v_ssa_exists;
 
     nc.open(filename, PISM_READONLY);
@@ -269,7 +269,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
 
   IceModel::initFromFile(filename);
 
-  if (m_config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa.dirichlet_bc")) {
       m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "model_state");
   }
 

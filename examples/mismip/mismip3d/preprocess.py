@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012, 2014 Moritz Huetten and Torsten Albrecht
+# Copyright (C) 2012, 2014, 2016 Moritz Huetten and Torsten Albrecht
 
 # create MISMIP config override file
 
@@ -20,7 +20,7 @@ var = nc.createVariable("pism_overrides", 'i')
 
 attrs = {"is_dry_simulation": "no",
          "include_bmr_in_continuity": "no",
-         "compute_surf_grad_inward_ssa": "no",
+         "ssa.compute_surface_gradient_inward": "no",
          "ice_softness": 1.0e-25,
          "ice_density": 900.,
          "sea_water_density": 1000.,

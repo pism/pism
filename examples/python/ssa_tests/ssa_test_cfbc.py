@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -69,15 +69,15 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("compute_surf_grad_inward_ssa", True)
+        config.set_boolean("ssa.compute_surface_gradient_inward", True)
         config.set_boolean("calving_front_stress_boundary_condition", True)
 
         config.set_boolean("do_pseudo_plastic_till", False)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
-        config.set_double("ice_softness", pow(1.9e8, -config.get_double("ssa_Glen_exponent")))
+        config.set_string("ssa.flow_law", "isothermal_glen")
+        config.set_double("ice_softness", pow(1.9e8, -config.get_double("ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 

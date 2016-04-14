@@ -149,7 +149,7 @@ class Experiment:
 
         attrs = {"is_dry_simulation": "no",
                  "include_bmr_in_continuity": "no",
-                 "compute_surf_grad_inward_ssa": "no",
+                 "ssa.compute_surface_gradient_inward": "no",
                  "ice_softness": MISMIP.A(self.experiment, step),
                  "ice_density": MISMIP.rho_i(),
                  "sea_water_density": MISMIP.rho_w(),

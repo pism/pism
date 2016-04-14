@@ -73,7 +73,7 @@ void SSATestCaseJ::initializeSSAModel() {
   m_config->set_boolean("do_pseudo_plastic_till", false);
 
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-  m_config->set_string("ssa_flow_law", "isothermal_glen");
+  m_config->set_string("ssa.flow_law", "isothermal_glen");
 }
 
 void SSATestCaseJ::initializeSSACoefficients() {

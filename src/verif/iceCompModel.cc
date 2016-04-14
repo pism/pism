@@ -66,7 +66,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   bedrock_is_ice_forK = false;
 
   // Override some defaults from parent class
-  m_config->set_double("sia_enhancement_factor", 1.0);
+  m_config->set_double("sia.enhancement_factor", 1.0);
   // none use bed smoothing & bed roughness parameterization
   m_config->set_double("bed_smoother_range", 0.0);
 
@@ -75,11 +75,11 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   m_config->set_boolean("include_bmr_in_continuity", false);
 
   if (testname == 'V') {
-    m_config->set_string("ssa_flow_law", "isothermal_glen");
-    m_config->set_double("ice_softness", pow(1.9e8, -m_config->get_double("sia_Glen_exponent")));
+    m_config->set_string("ssa.flow_law", "isothermal_glen");
+    m_config->set_double("ice_softness", pow(1.9e8, -m_config->get_double("sia.Glen_exponent")));
   } else {
     // Set the default for IceCompModel:
-    m_config->set_string("sia_flow_law", "arr");
+    m_config->set_string("sia.flow_law", "arr");
   }
 }
 
@@ -148,7 +148,7 @@ void IceCompModel::setFromOptions() {
     // this certainly is not a "dry simulation"
     m_config->set_boolean("is_dry_simulation", false);
 
-    m_config->set_boolean("ssa_dirichlet_bc", true);
+    m_config->set_boolean("ssa.dirichlet_bc", true);
   }
 
   m_config->set_boolean("do_cold_ice_methods", true);
@@ -295,7 +295,7 @@ void IceCompModel::initTestABCDH() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  rheology::PatersonBuddCold tgaIce("sia_", *m_config, EC);
+  rheology::PatersonBuddCold tgaIce("sia.", *m_config, EC);
 
   const double time = m_time->current();
 
@@ -384,7 +384,7 @@ void IceCompModel::initTestL() {
 
   assert(testname == 'L');
 
-  rheology::PatersonBuddCold tgaIce("sia_", *m_config, EC);
+  rheology::PatersonBuddCold tgaIce("sia.", *m_config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -584,7 +584,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   double
     seawater_density = m_config->get_double("sea_water_density"),
     ice_density      = m_config->get_double("ice_density"),
-    Glen_n           = m_config->get_double("sia_Glen_exponent"),
+    Glen_n           = m_config->get_double("sia.Glen_exponent"),
     standard_gravity = m_config->get_double("standard_gravity");
 
   // area of grid square in square km:

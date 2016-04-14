@@ -98,10 +98,10 @@ void SSATestCaseCFBC::initializeGrid(int Mx, int My) {
 
 void SSATestCaseCFBC::initializeSSAModel() {
 
-  m_config->set_double("ice_softness", pow(1.9e8, -m_config->get_double("ssa_Glen_exponent")));
-  m_config->set_boolean("compute_surf_grad_inward_ssa", false);
+  m_config->set_double("ice_softness", pow(1.9e8, -m_config->get_double("ssa.Glen_exponent")));
+  m_config->set_boolean("ssa.compute_surface_gradient_inward", false);
   m_config->set_boolean("calving_front_stress_boundary_condition", true);
-  m_config->set_string("ssa_flow_law", "isothermal_glen");
+  m_config->set_string("ssa.flow_law", "isothermal_glen");
   m_config->set_string("output_variable_order", "zyx");
 
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));

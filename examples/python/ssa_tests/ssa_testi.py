@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -49,8 +49,8 @@ class testi(PISM.ssa.SSAExactTestCase):
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
-        config.set_double("ice_softness", pow(B_schoof, -config.get_double("ssa_Glen_exponent")))
+        config.set_string("ssa.flow_law", "isothermal_glen")
+        config.set_double("ice_softness", pow(B_schoof, -config.get_double("ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -65,8 +65,8 @@ class testi(PISM.ssa.SSAExactTestCase):
 
         # The finite difference code uses the following flag to treat
         # the non-periodic grid correctly.
-        self.config.set_boolean("compute_surf_grad_inward_ssa", True)
-        self.config.set_double("epsilon_ssa", 0.0)  # don't use this lower bound
+        self.config.set_boolean("ssa.compute_surface_gradient_inward", True)
+        self.config.set_double("ssa.epsilon", 0.0)  # don't use this lower bound
 
         standard_gravity = self.config.get_double("standard_gravity")
         ice_rho = self.config.get_double("ice_density")

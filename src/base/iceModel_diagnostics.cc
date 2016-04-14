@@ -312,7 +312,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m)
   m_vars.push_back(SpatialVariableMetadata(m_sys, "hardav"));
 
   // choice to use SSA power; see #285
-  const double power = 1.0 / m_config->get_double("ssa_Glen_exponent");
+  const double power = 1.0 / m_config->get_double("ssa.Glen_exponent");
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
 

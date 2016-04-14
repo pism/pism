@@ -89,7 +89,7 @@ void Verification::update_KO() {
 void Verification::update_L() {
   double     A0, T0;
 
-  rheology::PatersonBuddCold tgaIce("sia_", *m_config, m_EC);
+  rheology::PatersonBuddCold tgaIce("sia.", *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -170,7 +170,7 @@ void Verification::update_ABCDH(double time) {
 
   double f = m_config->get_double("ice_density") / m_config->get_double("lithosphere_density");
 
-  rheology::PatersonBuddCold tgaIce("sia_", *m_config, m_EC);
+  rheology::PatersonBuddCold tgaIce("sia.", *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant

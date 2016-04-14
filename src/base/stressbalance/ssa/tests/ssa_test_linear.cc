@@ -100,7 +100,7 @@ void SSATestCaseExp::initializeSSACoefficients() {
   m_ssa->strength_extension->set_min_thickness(4000*10);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
+  m_config->set_boolean("ssa.compute_surface_gradient_inward", true);
 
   // Set constants for most coefficients.
   m_thickness.set(H0);

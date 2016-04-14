@@ -64,11 +64,11 @@ netcdf pism_config {
     pism_config:summary_time_use_calendar = "yes";
     pism_config:summary_time_use_calendar_doc = "Whether to use the current calendar when printing model time in summary to stdout.";
 
-    pism_config:ssa_method_type = "keyword";
-    pism_config:ssa_method_option = "ssa_method";
-    pism_config:ssa_method_choices = "fd,fem";
-    pism_config:ssa_method = "fd";
-    pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
+    pism_config:ssa.method_type = "keyword";
+    pism_config:ssa.method_option = "ssa_method";
+    pism_config:ssa.method_choices = "fd,fem";
+    pism_config:ssa.method = "fd";
+    pism_config:ssa.method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
 
     pism_config:do_pseudo_plastic_till_type = "boolean";
     pism_config:do_pseudo_plastic_till_option = "pseudo_plastic";
@@ -150,27 +150,27 @@ netcdf pism_config {
     pism_config:is_dry_simulation = "no";
     pism_config:is_dry_simulation_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
 
-    pism_config:write_ssa_system_to_matlab_type = "boolean";
-    pism_config:write_ssa_system_to_matlab = "no";
-    pism_config:write_ssa_system_to_matlab_doc = "Specifies whether to write the SSA system to a matlab file";
+    pism_config:ssa.write_system_to_matlab_type = "boolean";
+    pism_config:ssa.write_system_to_matlab = "no";
+    pism_config:ssa.write_system_to_matlab_doc = "Specifies whether to write the SSA system to a matlab file";
 
     pism_config:include_bmr_in_continuity_type = "boolean";
     pism_config:include_bmr_in_continuity_option = "bmr_in_cont";
     pism_config:include_bmr_in_continuity = "yes";
     pism_config:include_bmr_in_continuity_doc = "Include basal melt rate in the continuity equation";
 
-    pism_config:use_constant_nuh_for_ssa_type = "boolean";
-    pism_config:use_constant_nuh_for_ssa = "no";
-    pism_config:use_constant_nuh_for_ssa_doc = "Compute velocities in ice shelves and streams with a constant value for the product of viscosity @f$\\nu@f$ and thickness @f$H@f$, obtained from the shelf extension";
+    pism_config:ssa.use_constant_nuh_type = "boolean";
+    pism_config:ssa.use_constant_nuh = "no";
+    pism_config:ssa.use_constant_nuh_doc = "Compute velocities in ice shelves and streams with a constant value for the product of viscosity @f$\\nu@f$ and thickness @f$H@f$, obtained from the shelf extension";
 
-    pism_config:compute_surf_grad_inward_ssa_type = "boolean";
-    pism_config:compute_surf_grad_inward_ssa = "no";
-    pism_config:compute_surf_grad_inward_ssa_doc = "If yes then use inward first-order differencing in computing surface gradient in the SSA objects.";
+    pism_config:ssa.compute_surface_gradient_inward_type = "boolean";
+    pism_config:ssa.compute_surface_gradient_inward = "no";
+    pism_config:ssa.compute_surface_gradient_inward_doc = "If yes then use inward first-order differencing in computing surface gradient in the SSA objects.";
 
-    pism_config:ssa_dirichlet_bc_type = "boolean";
-    pism_config:ssa_dirichlet_bc_option = "ssa_dirichlet_bc";
-    pism_config:ssa_dirichlet_bc = "no";
-    pism_config:ssa_dirichlet_bc_doc = "apply SSA velocity Dirichlet boundary condition";
+    pism_config:ssa.dirichlet_bc_type = "boolean";
+    pism_config:ssa.dirichlet_bc_option = "ssa_dirichlet_bc";
+    pism_config:ssa.dirichlet_bc = "no";
+    pism_config:ssa.dirichlet_bc_doc = "apply SSA velocity Dirichlet boundary condition";
 
     pism_config:hydrology_model_type = "keyword";
     pism_config:hydrology_model_option = "hydrology";
@@ -276,29 +276,29 @@ netcdf pism_config {
     pism_config:bootstrapping_temperature_heuristic = "smb";
     pism_config:bootstrapping_temperature_heuristic_doc = "The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.";
 
-    pism_config:sia_enhancement_factor_option = "sia_e";
-    pism_config:sia_enhancement_factor_units = "1";
-    pism_config:sia_enhancement_factor_type = "scalar";
-    pism_config:sia_enhancement_factor = 1.0;
-    pism_config:sia_enhancement_factor_doc = "Flow enhancement factor for SIA";
+    pism_config:sia.enhancement_factor_option = "sia_e";
+    pism_config:sia.enhancement_factor_units = "1";
+    pism_config:sia.enhancement_factor_type = "scalar";
+    pism_config:sia.enhancement_factor = 1.0;
+    pism_config:sia.enhancement_factor_doc = "Flow enhancement factor for SIA";
 
-    pism_config:sia_enhancement_factor_interglacial_option = "sia_e_interglacial";
-    pism_config:sia_enhancement_factor_interglacial_units = "1";
-    pism_config:sia_enhancement_factor_interglacial_type = "scalar";
-    pism_config:sia_enhancement_factor_interglacial = 1.0;
-    pism_config:sia_enhancement_factor_interglacial_doc = "Flow enhancement factor for SIA; used for ice accumulated during interglacial periods.";
+    pism_config:sia.enhancement_factor_interglacial_option = "sia_e_interglacial";
+    pism_config:sia.enhancement_factor_interglacial_units = "1";
+    pism_config:sia.enhancement_factor_interglacial_type = "scalar";
+    pism_config:sia.enhancement_factor_interglacial = 1.0;
+    pism_config:sia.enhancement_factor_interglacial_doc = "Flow enhancement factor for SIA; used for ice accumulated during interglacial periods.";
 
-    pism_config:ssa_enhancement_factor_option = "ssa_e";
-    pism_config:ssa_enhancement_factor_units = "1";
-    pism_config:ssa_enhancement_factor_type = "scalar";
-    pism_config:ssa_enhancement_factor = 1.0;
-    pism_config:ssa_enhancement_factor_doc = "Flow enhancement factor for SSA";
+    pism_config:ssa.enhancement_factor_option = "ssa_e";
+    pism_config:ssa.enhancement_factor_units = "1";
+    pism_config:ssa.enhancement_factor_type = "scalar";
+    pism_config:ssa.enhancement_factor = 1.0;
+    pism_config:ssa.enhancement_factor_doc = "Flow enhancement factor for SSA";
 
-    pism_config:ssa_enhancement_factor_interglacial_option = "ssa_e_interglacial";
-    pism_config:ssa_enhancement_factor_interglacial_units = "1";
-    pism_config:ssa_enhancement_factor_interglacial_type = "scalar";
-    pism_config:ssa_enhancement_factor_interglacial = 1.0;
-    pism_config:ssa_enhancement_factor_interglacial_doc = "Flow enhancement factor for SSA; used for ice accumulated during interglacial periods.";
+    pism_config:ssa.enhancement_factor_interglacial_option = "ssa_e_interglacial";
+    pism_config:ssa.enhancement_factor_interglacial_units = "1";
+    pism_config:ssa.enhancement_factor_interglacial_type = "scalar";
+    pism_config:ssa.enhancement_factor_interglacial = 1.0;
+    pism_config:ssa.enhancement_factor_interglacial_doc = "Flow enhancement factor for SSA; used for ice accumulated during interglacial periods.";
 
     pism_config:brutal_sliding_type = "boolean";
     pism_config:brutal_sliding_option = "brutal_sliding";
@@ -375,21 +375,21 @@ netcdf pism_config {
     pism_config:timestep_hit_multiples = 0.0;
     pism_config:timestep_hit_multiples_doc = "Hit every X years, where X is specified using this parameter. Use 0 to disable";
 
-    pism_config:epsilon_ssa_option = "ssa_eps";
-    pism_config:epsilon_ssa_units = "Pascal second meter";
-    pism_config:epsilon_ssa_type = "scalar";
-    pism_config:epsilon_ssa = 1.0e13;
-    pism_config:epsilon_ssa_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa year, the value in [@ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
+    pism_config:ssa.epsilon_option = "ssa_eps";
+    pism_config:ssa.epsilon_units = "Pascal second meter";
+    pism_config:ssa.epsilon_type = "scalar";
+    pism_config:ssa.epsilon = 1.0e13;
+    pism_config:ssa.epsilon_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa year, the value in [@ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
 
-    pism_config:min_thickness_strength_extension_ssa_units = "meters";
-    pism_config:min_thickness_strength_extension_ssa_type = "scalar";
-    pism_config:min_thickness_strength_extension_ssa = 50.0;
-    pism_config:min_thickness_strength_extension_ssa_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  At ice thicknesses below this value the product nu*H switches from the normal vertical integral to a constant value.  The geometry itself is not affected by this value.";
+    pism_config:ssa.strength_extension.min_thickness_units = "meters";
+    pism_config:ssa.strength_extension.min_thickness_type = "scalar";
+    pism_config:ssa.strength_extension.min_thickness = 50.0;
+    pism_config:ssa.strength_extension.min_thickness_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  At ice thicknesses below this value the product nu*H switches from the normal vertical integral to a constant value.  The geometry itself is not affected by this value.";
 
-    pism_config:constant_nu_strength_extension_ssa_units = "Pascal second";
-    pism_config:constant_nu_strength_extension_ssa_type = "scalar";
-    pism_config:constant_nu_strength_extension_ssa = 9.48680701906572e+14;
-    pism_config:constant_nu_strength_extension_ssa_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa year in [@ref Ritzetal2001].";
+    pism_config:ssa.strength_extension.constant_nu_units = "Pascal second";
+    pism_config:ssa.strength_extension.constant_nu_type = "scalar";
+    pism_config:ssa.strength_extension.constant_nu = 9.48680701906572e+14;
+    pism_config:ssa.strength_extension.constant_nu_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa year in [@ref Ritzetal2001].";
 
     pism_config:energy_advection_ice_thickness_threshold_units = "meters";
     pism_config:energy_advection_ice_thickness_threshold_type = "scalar";
@@ -1054,17 +1054,17 @@ netcdf pism_config {
     pism_config:ice_specific_heat_capacity = 2009.0;
     pism_config:ice_specific_heat_capacity_doc = "specific heat capacity of pure ice at melting point T_0";
 
-    pism_config:sia_Glen_exponent_option = "sia_n";
-    pism_config:sia_Glen_exponent_units = "pure number";
-    pism_config:sia_Glen_exponent_type = "scalar";
-    pism_config:sia_Glen_exponent = 3.0;
-    pism_config:sia_Glen_exponent_doc = "Glen exponent in ice flow law for SIA";
+    pism_config:sia.Glen_exponent_option = "sia_n";
+    pism_config:sia.Glen_exponent_units = "pure number";
+    pism_config:sia.Glen_exponent_type = "scalar";
+    pism_config:sia.Glen_exponent = 3.0;
+    pism_config:sia.Glen_exponent_doc = "Glen exponent in ice flow law for SIA";
 
-    pism_config:ssa_Glen_exponent_option = "ssa_n";
-    pism_config:ssa_Glen_exponent_units = "pure number";
-    pism_config:ssa_Glen_exponent_type = "scalar";
-    pism_config:ssa_Glen_exponent = 3.0;
-    pism_config:ssa_Glen_exponent_doc = "Glen exponent in ice flow law for SSA";
+    pism_config:ssa.Glen_exponent_option = "ssa_n";
+    pism_config:ssa.Glen_exponent_units = "pure number";
+    pism_config:ssa.Glen_exponent_type = "scalar";
+    pism_config:ssa.Glen_exponent = 3.0;
+    pism_config:ssa.Glen_exponent_doc = "Glen exponent in ice flow law for SSA";
 
     pism_config:ice_softness_units = "Pascal-3 second-1";
     pism_config:ice_softness_type = "scalar";
@@ -1131,25 +1131,21 @@ netcdf pism_config {
     pism_config:Paterson_Budd_critical_temperature = 263.15;
     pism_config:Paterson_Budd_critical_temperature_doc = "Paterson-Budd critical temperature, see [@ref PatersonBudd]";
 
-    pism_config:sia_sliding_verification_mode_type = "boolean";
-    pism_config:sia_sliding_verification_mode = "no";
-    pism_config:sia_sliding_verification_mode_doc = "Enable 'verification mode' of the SIA sliding code.";
-
     pism_config:temperature_allow_above_melting_type = "boolean";
     pism_config:temperature_allow_above_melting = "no";
     pism_config:temperature_allow_above_melting_doc = "If set to 'yes', allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.";
 
-    pism_config:sia_flow_law_type = "keyword";
-    pism_config:sia_flow_law_option = "sia_flow_law";
-    pism_config:sia_flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb,gpbld3";
-    pism_config:sia_flow_law = "gpbld";
-    pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+    pism_config:sia.flow_law_type = "keyword";
+    pism_config:sia.flow_law_option = "sia_flow_law";
+    pism_config:sia.flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb,gpbld3";
+    pism_config:sia.flow_law = "gpbld";
+    pism_config:sia.flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
-    pism_config:ssa_flow_law_type = "keyword";
-    pism_config:ssa_flow_law_option = "ssa_flow_law";
-    pism_config:ssa_flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb,gpbld3";
-    pism_config:ssa_flow_law = "gpbld";
-    pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+    pism_config:ssa.flow_law_type = "keyword";
+    pism_config:ssa.flow_law_option = "ssa_flow_law";
+    pism_config:ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb,gpbld3";
+    pism_config:ssa.flow_law = "gpbld";
+    pism_config:ssa.flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
     pism_config:enthalpy_cold_bulge_max_units = "Joule / kg";
     pism_config:enthalpy_cold_bulge_max_type = "scalar";

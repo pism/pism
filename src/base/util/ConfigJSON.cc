@@ -45,9 +45,9 @@ static json_t* find_json_value(json_t *root, const std::string &name) {
   std::vector<std::string> path = split(name, '.');
 
   json_t *object = root;
-  for (int j = 0; j < path.size(); ++j) {
+  for (size_t j = 0; j < path.size(); ++j) {
 
-    object = json_object_get(object, path[j]->c_str());
+    object = json_object_get(object, path[j].c_str());
 
     if (object == NULL) {
       break;

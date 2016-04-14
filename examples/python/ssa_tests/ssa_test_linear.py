@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -45,7 +45,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
+        config.set_string("ssa.flow_law", "isothermal_glen")
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -83,7 +83,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         se.set_min_thickness(4000 * 10)
 
         # For the benefit of SSAFD on a non-periodic grid
-        self.config.set_boolean("compute_surf_grad_inward_ssa", True)
+        self.config.set_boolean("ssa.compute_surface_gradient_inward", True)
 
     def exactSolution(self, i, j, x, y):
         tauc_threshold_velocity = self.config.get_double("pseudo_plastic_uthreshold",

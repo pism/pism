@@ -38,7 +38,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
+        config.set_string("ssa.flow_law", "isothermal_glen")
 
         self.modeldata.setPhysics(enthalpyconverter)
 

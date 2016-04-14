@@ -58,7 +58,7 @@ void IceModel::calculateFractureDensity() {
   list.add(vFDnew);
   list.add(m_cell_type);
 
-  const bool dirichlet_bc = m_config->get_boolean("ssa_dirichlet_bc");
+  const bool dirichlet_bc = m_config->get_boolean("ssa.dirichlet_bc");
   if (dirichlet_bc) {
     list.add(m_ssa_dirichlet_bc_mask);
     list.add(m_ssa_dirichlet_bc_values);

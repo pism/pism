@@ -202,7 +202,7 @@ TerminationReason::Ptr SSAFEM::solve_with_reason() {
 TerminationReason::Ptr SSAFEM::solve_nocache() {
   PetscErrorCode ierr;
 
-  m_epsilon_ssa = m_config->get_double("epsilon_ssa");
+  m_epsilon_ssa = m_config->get_double("ssa.epsilon");
 
   options::String filename("-ssa_view", "");
   if (filename.is_set()) {

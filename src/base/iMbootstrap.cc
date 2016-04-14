@@ -209,7 +209,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     m_strain_rates.set(0.0);
   }
 
-  if (m_config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa.dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
     m_ssa_dirichlet_bc_mask.regrid(filename, OPTIONAL, 0.0);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that

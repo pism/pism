@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2011, 2013, 2014 Torsten Albrecht and Moritz Huetten
+# Copyright (C) 2011, 2013, 2014, 2016 Torsten Albrecht and Moritz Huetten
 
 # ./createSetup_flowline.py -a 0.0 -r 10.0
 
@@ -58,7 +58,7 @@ nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
 var = nc.createVariable("pism_overrides", 'i')
 attrs = {"is_dry_simulation": "no",
          "include_bmr_in_continuity": "no",
-         "compute_surf_grad_inward_ssa": "no",
+         "ssa.compute_surface_gradient_inward": "no",
          "ice_softness": (B0) ** -3,
          "ice_density": rho_ice,
          "sea_water_density": rho_ocean,

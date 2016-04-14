@@ -73,7 +73,7 @@ SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_second_to_kiloyear = units::convert(m_sys, 1, "second", "1000 years");
 
   {
-    rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);
+    rheology::FlowLawFactory ice_factory("sia.", m_config, m_EC);
     m_flow_law = ice_factory.create();
   }
 

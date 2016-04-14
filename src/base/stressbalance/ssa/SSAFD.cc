@@ -292,7 +292,7 @@ void SSAFD::assemble_rhs() {
   const bool is_dry_simulation = m_config->get_boolean("is_dry_simulation");
 
   // FIXME: bedrock_boundary is a misleading name
-  bool bedrock_boundary = m_config->get_boolean("ssa_dirichlet_bc");
+  bool bedrock_boundary = m_config->get_boolean("ssa.dirichlet_bc");
 
   m_b.set(0.0);
 
@@ -489,7 +489,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     m_config->get_boolean("ssafd_replace_zero_diagonal_entries");
 
   // FIXME: bedrock_boundary is a misleading name
-  const bool bedrock_boundary = m_config->get_boolean("ssa_dirichlet_bc");
+  const bool bedrock_boundary = m_config->get_boolean("ssa.dirichlet_bc");
 
   // shortcut:
   IceModelVec2V &vel = m_velocity;
@@ -878,7 +878,7 @@ void SSAFD::solve() {
     try {
       if (k == 0) {
         // default strategy
-        picard_iteration(m_config->get_double("epsilon_ssa"), 1.0);
+        picard_iteration(m_config->get_double("ssa.epsilon"), 1.0);
 
         break;
       } else if (k == 1) {
@@ -887,7 +887,7 @@ void SSAFD::solve() {
         m_log->message(1,
                    "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
                    underrelax);
-        picard_iteration(m_config->get_double("epsilon_ssa"), underrelax);
+        picard_iteration(m_config->get_double("ssa.epsilon"), underrelax);
 
         break;
       } else if (k == 2) {
@@ -1117,7 +1117,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 void SSAFD::picard_strategy_regularization() {
   // this has no units; epsilon goes up by this ratio when previous value failed
   const double DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
-  double nuH_regularization = m_config->get_double("epsilon_ssa");
+  double nuH_regularization = m_config->get_double("ssa.epsilon");
   unsigned int k = 0, max_tries = 5;
 
   if (nuH_regularization <= 0.0) {

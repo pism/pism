@@ -131,7 +131,7 @@ ZeroSliding::ZeroSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
-  rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);
+  rheology::FlowLawFactory ice_factory("sia.", m_config, m_EC);
   m_flow_law = ice_factory.create();
 }
 
@@ -309,7 +309,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
   }
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
-  double hardness = pow(m_config->get_double("ice_softness"),-1.0/m_config->get_double("ssa_Glen_exponent"));
+  double hardness = pow(m_config->get_double("ice_softness"),-1.0/m_config->get_double("ssa.Glen_exponent"));
 
   IceModelVec::AccessList list;
   list.add(V);

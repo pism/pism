@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
     setVerbosityLevel(5);
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
-    rheology::PatersonBuddCold ice("sia_", *config, EC);
+    rheology::PatersonBuddCold ice("sia.", *config, EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
     IceModelVec2Int cell_type;

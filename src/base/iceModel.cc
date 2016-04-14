@@ -376,7 +376,7 @@ void IceModel::createVecs() {
                                   "Pa", "", 2);
   }
 
-  if (m_config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("ssa.dirichlet_bc")) {
     // bc_locations
     m_ssa_dirichlet_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
     m_ssa_dirichlet_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",

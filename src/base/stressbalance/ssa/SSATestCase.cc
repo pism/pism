@@ -120,7 +120,7 @@ void SSATestCase::buildSSACoefficients()
   mask_values[1] = 1;
   m_bc_mask.metadata().set_doubles("flag_values", mask_values);
   m_bc_mask.metadata().set_string("flag_meanings",
-                                  "no_data ssa_dirichlet_bc_location");
+                                  "no_data ssa.dirichlet_bc_location");
   m_grid->variables().add(m_bc_mask);
 
   m_melange_back_pressure.create(m_grid, "melange_back_pressure_fraction",

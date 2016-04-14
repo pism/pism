@@ -333,7 +333,7 @@ void IceModel::allocate_stressbalance() {
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
     sliding = new PrescribedSliding(m_grid, EC);
   } else if (model == "ssa" || model == "ssa+sia") {
-    std::string method = m_config->get_string("ssa_method");
+    std::string method = m_config->get_string("ssa.method");
 
     if (method == "fem") {
       sliding = new SSAFEM(m_grid, EC);

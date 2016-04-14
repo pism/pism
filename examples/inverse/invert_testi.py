@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2014, 2015 David Maxwell
+# Copyright (C) 2011, 2012, 2014, 2015, 2016 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -150,7 +150,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
+        config.set_string("ssa.flow_law", "isothermal_glen")
         config.set_double("ice_softness", pow(3.7e8, -config.get_double("Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
