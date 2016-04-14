@@ -46,6 +46,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/PISMConfig.hh"
+#include "base/util/ConfigJSON.hh"
 
 #include "base/util/MaxTimestep.hh"
 #include "base/util/Context.hh"
@@ -195,8 +196,10 @@
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
 %shared_ptr(pism::DefaultConfig);
+%shared_ptr(pism::ConfigJSON);
 %include "base/util/PISMConfigInterface.hh"
 %include "base/util/PISMConfig.hh"
+%include "base/util/ConfigJSON.hh"
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::EnthalpyConverter);
