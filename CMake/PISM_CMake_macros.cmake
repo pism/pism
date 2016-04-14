@@ -200,6 +200,31 @@ macro(pism_find_prerequisites)
     endif()
   endif()
 
+  find_package(Jansson)
+
+  if (NOT JANSSON_FOUND)
+    set(pism_jansson_dir ${Pism_BINARY_DIR}/jansson)
+    include(ExternalProject)
+    ExternalProject_Add(pism_jansson
+      GIT_REPOSITORY https://github.com/akheron/jansson.git
+      GIT_TAG 2.7
+      TIMEOUT 10
+      PREFIX ${Pism_BINARY_DIR} # install with PISM
+      INSTALL_DIR ${pism_jansson_dir}
+      CMAKE_ARGS -DJANSSON_BUILD_DOCS=OFF -DCMAKE_INSTALL_PREFIX=${pism_jansson_dir}
+      LOG_DOWNLOAD ON
+      LOG_BUILD ON
+      LOG_CONFIGURE ON
+      )
+    set(JANSSON_INCLUDE_DIRS ${pism_jansson_dir}/include CACHE STRING "Jansson include directory" OFRCE)
+    set(JANSSON_LIBRARIES "-L${pism_jansson_dir}/lib -ljansson" CACHE STRING "Jansson library" FORCE)
+    set(Pism_BUILD_JANSSON ON CACHE BOOL "ON if we are using our own Jansson build." FORCE)
+    message(WARNING "
+Jansson was not found.
+We will try to download and build it automatically. If it does not work, please install it manually and try again.
+")
+  endif()
+
 endmacro()
 
 macro(pism_set_dependencies)
@@ -211,7 +236,8 @@ macro(pism_set_dependencies)
     ${GSL_INCLUDES}
     ${UDUNITS2_INCLUDES}
     ${NETCDF_INCLUDES}
-    ${MPI_C_INCLUDE_PATH})
+    ${MPI_C_INCLUDE_PATH}
+    ${JANSSON_INCLUDE_DIRS})
 
   # Use option values to set compiler and linker flags
   set (Pism_EXTERNAL_LIBS "")
@@ -223,7 +249,8 @@ macro(pism_set_dependencies)
     ${FFTW_LIBRARIES}
     ${GSL_LIBRARIES}
     ${NETCDF_LIBRARIES}
-    ${MPI_C_LIBRARIES})
+    ${MPI_C_LIBRARIES}
+    ${JANSSON_LIBRARIES})
 
   # optional libraries
   if (Pism_USE_PROJ4)
