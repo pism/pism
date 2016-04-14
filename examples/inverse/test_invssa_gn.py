@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     # Convert tauc_prior -> zeta_prior
     zeta = PISM.IceModelVec2S()
-    WIDE_STENCIL = int(grid.ctx().config().get_double("grid_max_stencil_width"))
+    WIDE_STENCIL = int(grid.ctx().config().get_double("grid.max_stencil_width"))
     zeta.create(grid, "", PISM.WITH_GHOSTS, WIDE_STENCIL)
     ssarun.tauc_param.convertFromDesignVariable(tauc_prior, zeta)
     ssarun.ssa.linearize_at(zeta)

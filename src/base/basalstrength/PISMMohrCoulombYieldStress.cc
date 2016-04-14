@@ -66,7 +66,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
 
   m_hydrology = hydro;
 
-  unsigned int stencil_width = m_config->get_double("grid_max_stencil_width");
+  unsigned int stencil_width = m_config->get_double("grid.max_stencil_width");
 
   m_till_phi.create(m_grid, "tillphi", WITH_GHOSTS, stencil_width);
   m_till_phi.set_attrs("model_state",

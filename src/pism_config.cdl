@@ -1329,67 +1329,67 @@ netcdf pism_config {
     pism_config:surface_gradient_method = "haseloff";
     pism_config:surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points; possible values are 'mahaffy', 'eta', 'haseloff' (lowercase)";
 
-    pism_config:grid_max_stencil_width_units = "count";
-    pism_config:grid_max_stencil_width_type = "integer";
-    pism_config:grid_max_stencil_width = 2;
-    pism_config:grid_max_stencil_width_doc = "Maximum width of the finite-difference stencil used in PISM.";
+    pism_config:grid.max_stencil_width_units = "count";
+    pism_config:grid.max_stencil_width_type = "integer";
+    pism_config:grid.max_stencil_width = 2;
+    pism_config:grid.max_stencil_width_doc = "Maximum width of the finite-difference stencil used in PISM.";
 
-    pism_config:grid_periodicity = "xy";
-    pism_config:grid_periodicity_option = "periodicity";
-    pism_config:grid_periodicity_type = "keyword";
-    pism_config:grid_periodicity_choices = "none,x,y,xy";
-    pism_config:grid_periodicity_doc = "PISM grid periodicity; possible values are 'none', 'x', 'y', 'xy' (lowercase).";
+    pism_config:grid.periodicity = "xy";
+    pism_config:grid.periodicity_option = "periodicity";
+    pism_config:grid.periodicity_type = "keyword";
+    pism_config:grid.periodicity_choices = "none,x,y,xy";
+    pism_config:grid.periodicity_doc = "PISM grid periodicity; possible values are 'none', 'x', 'y', 'xy' (lowercase).";
 
-    pism_config:grid_ice_vertical_spacing_type = "keyword";
-    pism_config:grid_ice_vertical_spacing_option = "z_spacing";
-    pism_config:grid_ice_vertical_spacing_choices = "quadratic,equal";
-    pism_config:grid_ice_vertical_spacing = "quadratic";
-    pism_config:grid_ice_vertical_spacing_doc = "Default vertical spacing in the ice. Possible values: 'quadratic' and 'equal'.";
+    pism_config:grid.ice_vertical_spacing_type = "keyword";
+    pism_config:grid.ice_vertical_spacing_option = "z_spacing";
+    pism_config:grid.ice_vertical_spacing_choices = "quadratic,equal";
+    pism_config:grid.ice_vertical_spacing = "quadratic";
+    pism_config:grid.ice_vertical_spacing_doc = "Default vertical spacing in the ice. Possible values: 'quadratic' and 'equal'.";
 
-    pism_config:grid_Mx_units = "count";
-    pism_config:grid_Mx_type = "integer";
-    pism_config:grid_Mx = 61;
-    pism_config:grid_Mx_doc = "Number of grid points in the x direction.";
+    pism_config:grid.Mx_units = "count";
+    pism_config:grid.Mx_type = "integer";
+    pism_config:grid.Mx = 61;
+    pism_config:grid.Mx_doc = "Number of grid points in the x direction.";
 
-    pism_config:grid_My_units = "count";
-    pism_config:grid_My_type = "integer";
-    pism_config:grid_My = 61;
-    pism_config:grid_My_doc = "Number of grid points in the y direction.";
+    pism_config:grid.My_units = "count";
+    pism_config:grid.My_type = "integer";
+    pism_config:grid.My = 61;
+    pism_config:grid.My_doc = "Number of grid points in the y direction.";
 
-    pism_config:grid_Mz_units = "count";
-    pism_config:grid_Mz_type = "integer";
-    pism_config:grid_Mz = 31;
-    pism_config:grid_Mz_doc = "Number of vertical grid levels in the ice.";
+    pism_config:grid.Mz_units = "count";
+    pism_config:grid.Mz_type = "integer";
+    pism_config:grid.Mz = 31;
+    pism_config:grid.Mz_doc = "Number of vertical grid levels in the ice.";
 
-    pism_config:grid_Mbz_units = "count";
-    pism_config:grid_Mbz_type = "integer";
-    pism_config:grid_Mbz = 1;
-    pism_config:grid_Mbz_doc = "Number of thermal bedrock layers; 1 level corresponds to no bedrock.";
+    pism_config:grid.Mbz_units = "count";
+    pism_config:grid.Mbz_type = "integer";
+    pism_config:grid.Mbz = 1;
+    pism_config:grid.Mbz_doc = "Number of thermal bedrock layers; 1 level corresponds to no bedrock.";
 
-    pism_config:grid_Lx_units = "meters";
-    pism_config:grid_Lx_type = "scalar";
-    pism_config:grid_Lx = 1500e3;
-    pism_config:grid_Lx_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
+    pism_config:grid.Lx_units = "meters";
+    pism_config:grid.Lx_type = "scalar";
+    pism_config:grid.Lx = 1500e3;
+    pism_config:grid.Lx_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
 
-    pism_config:grid_Ly_units = "meters";
-    pism_config:grid_Ly_type = "scalar";
-    pism_config:grid_Ly = 1500e3;
-    pism_config:grid_Ly_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
+    pism_config:grid.Ly_units = "meters";
+    pism_config:grid.Ly_type = "scalar";
+    pism_config:grid.Ly = 1500e3;
+    pism_config:grid.Ly_doc = "Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
 
-    pism_config:grid_Lz_units = "meters";
-    pism_config:grid_Lz_type = "scalar";
-    pism_config:grid_Lz = 4000;
-    pism_config:grid_Lz_doc = "Height of the computational domain.";
+    pism_config:grid.Lz_units = "meters";
+    pism_config:grid.Lz_type = "scalar";
+    pism_config:grid.Lz = 4000;
+    pism_config:grid.Lz_doc = "Height of the computational domain.";
 
-    pism_config:grid_Lbz_units = "meters";
-    pism_config:grid_Lbz_type = "scalar";
-    pism_config:grid_Lbz = 0;
-    pism_config:grid_Lbz_doc = "Thickness of the thermal bedrock layer.";
+    pism_config:grid.Lbz_units = "meters";
+    pism_config:grid.Lbz_type = "scalar";
+    pism_config:grid.Lbz = 0;
+    pism_config:grid.Lbz_doc = "Thickness of the thermal bedrock layer.";
 
-    pism_config:grid_lambda_units = "pure number";
-    pism_config:grid_lambda_type = "scalar";
-    pism_config:grid_lambda = 4.0;
-    pism_config:grid_lambda_doc = "Vertical grid spacing parameter. Roughly equal to the factor by which the grid is coarser at an end away from the ice-bedrock interface.";
+    pism_config:grid.lambda_units = "pure number";
+    pism_config:grid.lambda_type = "scalar";
+    pism_config:grid.lambda = 4.0;
+    pism_config:grid.lambda_doc = "Vertical grid spacing parameter. Roughly equal to the factor by which the grid is coarser at an end away from the ice-bedrock interface.";
 
     pism_config:regional_no_model_strip = 5.0;
     pism_config:regional_no_model_strip_units = "km";

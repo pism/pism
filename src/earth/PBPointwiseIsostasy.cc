@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace bed {
 
 PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid::ConstPtr g)
   : BedDef(g) {
-  m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
+  m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
 }
 
 PBPointwiseIsostasy::~PBPointwiseIsostasy() {

@@ -82,7 +82,7 @@ SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
   strength_extension = new SSAStrengthExtension(*m_config);
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   // grounded_dragging_floating integer mask
   m_mask.create(m_grid, "ssa_mask", WITH_GHOSTS, WIDE_STENCIL);

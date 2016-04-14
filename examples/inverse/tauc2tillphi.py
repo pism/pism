@@ -76,7 +76,7 @@ class BasalTillStrength:
 
         Nmin = 1e45
         with PISM.vec.Access(nocomm=[mask, thickness, bwat, bmr, tillphi], comm=tauc):
-            GHOSTS = int(self.grid.ctx().config().get_double("grid_max_stencil_width"))
+            GHOSTS = int(self.grid.ctx().config().get_double("grid.max_stencil_width"))
             for (i, j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
                 if mask.floating_ice(i, j):
                     tauc[i, j] = 0
@@ -108,7 +108,7 @@ class BasalTillStrength:
         if not tillphi_prev is None:
             vars.append(tillphi_prev)
         with PISM.vec.Access(nocomm=vars, comm=tillphi):
-            GHOSTS = int(self.grid.ctx().config().get_double("grid_max_stencil_width"))
+            GHOSTS = int(self.grid.ctx().config().get_double("grid.max_stencil_width"))
             for (i, j) in self.grid.points_with_ghosts(nGhosts=GHOSTS):
                 if mask.floating_ice(i, j):
                     if not tillphi_prev is None:

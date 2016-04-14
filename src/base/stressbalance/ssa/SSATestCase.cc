@@ -34,7 +34,7 @@ namespace stressbalance {
 void SSATestCase::buildSSACoefficients()
 {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   // ice surface elevation
   m_surface.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);

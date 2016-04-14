@@ -181,7 +181,7 @@ IceModel::~IceModel() {
 */
 void IceModel::createVecs() {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   m_log->message(3,
                  "Allocating memory...\n");

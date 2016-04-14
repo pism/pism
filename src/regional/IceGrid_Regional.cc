@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -81,7 +81,7 @@ static void subset_extent(const std::string& axis,
  */
 IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
 
-  const Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
+  const Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
 
   const options::String input_file("-i", "Specifies a PISM input file");
   const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");

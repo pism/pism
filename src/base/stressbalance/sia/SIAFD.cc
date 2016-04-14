@@ -39,7 +39,7 @@ namespace stressbalance {
 SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : SSB_Modifier(g, e) {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   // 2D temporary storage:
   for (int i = 0; i < 2; ++i) {

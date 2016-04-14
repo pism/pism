@@ -162,7 +162,7 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
  */
 void  IceModelVec3::getHorSlice(Vec &gslice, double z) const {
 
-  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_grid->ctx()->config()->get_double("grid_max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_grid->ctx()->config()->get_double("grid.max_stencil_width"));
 
   IceModelVec::AccessList list(*this);
   petsc::DMDAVecArray slice(da2, gslice);

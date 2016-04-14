@@ -571,7 +571,7 @@ void set_config_from_options(Config &config) {
   if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {
     config.set_boolean("part_grid", true, Config::USER);
     // eigen-calving requires a wider stencil:
-    config.set_double("grid_max_stencil_width", 3);
+    config.set_double("grid.max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal

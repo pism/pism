@@ -34,7 +34,7 @@ OceanKill::OceanKill(IceGrid::ConstPtr g)
   : Component(g) {
 
   m_ocean_kill_mask.create(m_grid, "ocean_kill_mask", WITH_GHOSTS,
-                           m_config->get_double("grid_max_stencil_width"));
+                           m_config->get_double("grid.max_stencil_width"));
 
   m_ocean_kill_mask.set_attrs("internal",
                               "mask specifying fixed calving front locations",

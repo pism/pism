@@ -383,7 +383,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
                                                                  IceModelVec2V &du,
                                                                  Vec dzeta) {
 
-  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid_max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid.max_stencil_width"));
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }

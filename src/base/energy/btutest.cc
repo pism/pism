@@ -152,12 +152,12 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
-    config->set_double("grid_Mbz", 11);
-    config->set_double("grid_Lbz", 1000);
+    config->set_double("grid.Mbz", 11);
+    config->set_double("grid.Lbz", 1000);
 
     // Set default vertical grid parameters.
-    config->set_double("grid_Mz", 41);
-    config->set_double("grid_Lz", 4000);
+    config->set_double("grid.Mz", 41);
+    config->set_double("grid.Lz", 4000);
 
     log->message(2,
                  "  initializing IceGrid from options ...\n");

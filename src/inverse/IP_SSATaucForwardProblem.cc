@@ -60,7 +60,7 @@ void IP_SSATaucForwardProblem::construct() {
   m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width);
   m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width);
 
-  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
+  m_tauc_copy.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
   m_tauc_copy.set_attrs("diagnostic",
                         "yield stress for basal till (plastic or pseudo-plastic model)",
                         "Pa", "");
@@ -385,7 +385,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                Vec dzeta) {
-  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid_max_stencil_width"));
+  petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_double("grid.max_stencil_width"));
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
   this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
 }

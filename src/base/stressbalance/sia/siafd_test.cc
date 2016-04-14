@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
     IceModelVec2Int cell_type;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
-    const int WIDE_STENCIL = config->get_double("grid_max_stencil_width");
+    const int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
 
     Vars &vars = grid->variables();
 

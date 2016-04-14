@@ -50,8 +50,8 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
   m_bed_k   = m_config->get_double("bedrock_thermal_conductivity");
   m_bed_D   = m_bed_k / (m_bed_rho * m_bed_c);
 
-  m_Mbz = (int)m_config->get_double("grid_Mbz");
-  m_Lbz = (int)m_config->get_double("grid_Lbz");
+  m_Mbz = (int)m_config->get_double("grid.Mbz");
+  m_Lbz = (int)m_config->get_double("grid.Lbz");
   m_input_file.clear();
 
   // FIXME: Move the code processing command-line options elsewhere,

@@ -20,7 +20,7 @@ ctx = PISM.Context()
 unit_system = ctx.unit_system
 config = ctx.config
 
-config.set_string("grid_ice_vertical_spacing_type", "equal")
+config.set_string("grid.ice_vertical_spacing", "equal")
 
 k = config.get_double("ice_thermal_conductivity")
 c = config.get_double("ice_specific_heat_capacity")

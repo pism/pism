@@ -151,7 +151,7 @@ void PBLingleClark::correct_topg() {
              input_file->c_str(), regrid_file->c_str());
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
   topg_tmp.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
                      "m", "bedrock_altitude");
