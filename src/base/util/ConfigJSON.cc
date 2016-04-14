@@ -37,35 +37,109 @@ namespace pism {
  * the root, and this function returns the pointer to the node if
  * found, and NULL otherwise.
  */
-static json_t* find_value(json_t *object,
-                          const std::string &path) {
-  if (object == NULL) {
+static json_t* find_json_value(json_t *root, const std::string &name) {
+  if (root == NULL) {
     return NULL;
   }
 
-  std::vector<std::string> split_path = split(path, '.');
-  std::vector<std::string>::const_iterator j = split_path.begin();
-  json_t *current_object = object;
-  std::string current_path = *j;
+  std::vector<std::string> path = split(name, '.');
 
-  while (j != split_path.end()) {
-    if (j != split_path.begin()) {
-      current_path += "." + (*j);
-    }
+  json_t *object = root;
+  for (int j = 0; j < path.size(); ++j) {
 
-    current_object = json_object_get(current_object, j->c_str());
-    if (current_object == NULL) {
-      throw RuntimeError::formatted("ERROR: cannot find %s", current_path.c_str());
+    object = json_object_get(object, path[j]->c_str());
+
+    if (object == NULL) {
+      break;
     }
-    ++j;
   }
 
-  return current_object;
+  return object;
 }
+
+
+template<typename PISMType, typename TMPType>
+static void get_all_values(json_t *root, const std::string &path,
+                           int type, const char *fmt, std::map<std::string,PISMType> &accum) {
+  const char *key;
+  json_t *value;
+
+  json_object_foreach(root, key, value) {
+    std::string parameter = path + key;
+    int value_type = json_typeof(value);
+    if (value_type == type) {
+      TMPType tmp;
+      if (json_unpack(value, fmt, &tmp) == 0) {
+        accum[parameter] = tmp;
+      } else {
+        throw RuntimeError::formatted("failed to json_unpack %s using format %s",
+                                      parameter.c_str(), fmt);
+      }
+    } else if (value_type == JSON_OBJECT) {
+      get_all_values<PISMType, TMPType>(value, parameter + ".", type, fmt, accum);
+    }
+  }
+}
+
+
+template<typename PISMType, typename TMPType>
+static PISMType get_value(json_t *object, const std::string &name,
+                          const char *fmt, const char *type_name) {
+  json_t *value = find_json_value(object, name);
+  if (value == NULL) {
+    throw RuntimeError::formatted("%s was not found", name.c_str());
+  }
+
+  TMPType tmp;
+  if (json_unpack(value, fmt, &tmp) == 0) {
+    return tmp;
+  } else {
+    throw RuntimeError::formatted("failed to convert %s to a %s", name.c_str(), type_name);
+  }
+}
+
+/*! Store a 'value' corresponding to the key 'name' in the database 'data'.
+ *
+ * If a name refers to an object "alice.bob", the object "alice" must
+ * exist in the tree already, but "bob" may not exist before this call
+ * and will be created. In other words, this method allows adding new
+ * leaves only.
+ */
+static void set_value(json_t *data, const std::string &name, json_t *value) {
+  std::vector<std::string> path = split(name, '.');
+  if (path.size() == 0) {
+    // stop if 'name' is empty
+    return;
+  }
+
+  std::string key = path.back();
+  path.pop_back();
+
+  json_t *object = NULL;
+  if (path.empty()) {
+    object = data;
+  } else {
+    object = find_json_value(data, join(path, "."));
+  }
+
+  if (object != NULL) {
+    if (json_is_object(object)) {
+      json_object_set_new(object, key.c_str(), value);
+    } else {
+      throw RuntimeError::formatted("cannot set %s: %s is not an object",
+                                    name.c_str(), join(path, ".").c_str());
+    }
+  } else {
+    throw RuntimeError::formatted("cannot set %s: %s is not found",
+                                  name.c_str(), join(path, ".").c_str());
+  }
+}
+
 
 ConfigJSON::ConfigJSON(units::System::Ptr unit_system)
   : Config(unit_system) {
   m_data = NULL;
+  init_from_string("{}");
 }
 
 ConfigJSON::~ConfigJSON() {
@@ -112,17 +186,58 @@ void ConfigJSON::init_from_string(const std::string &string) {
 /*! Return the JSON string representation of the configuration database.
  */
 std::string ConfigJSON::dump() const {
-  if (m_data == NULL) {
-    return "";
-  }
+  std::string result;
 
   char *tmp = json_dumps(m_data, JSON_INDENT(2) | JSON_ENSURE_ASCII | JSON_SORT_KEYS);
-  std::string result;
   if (tmp != NULL) {
     result = tmp;
     free(tmp);
   }
+
   return result;
+}
+
+Config::Doubles ConfigJSON::all_doubles_impl() const {
+  Config::Doubles result;
+  get_all_values<double, double>(m_data, "", JSON_REAL, "F", result);
+  return result;
+}
+
+Config::Strings ConfigJSON::all_strings_impl() const {
+  Config::Strings result;
+  get_all_values<std::string, const char*>(m_data, "", JSON_STRING, "s", result);
+  return result;
+}
+
+Config::Booleans ConfigJSON::all_booleans_impl() const {
+  Config::Booleans result;
+  get_all_values<bool, int>(m_data, "", JSON_TRUE, "b", result);
+  get_all_values<bool, int>(m_data, "", JSON_FALSE, "b", result);
+  return result;
+}
+
+void ConfigJSON::set_double_impl(const std::string &name, double value) {
+  set_value(m_data, name, json_pack("f", value));
+}
+
+void ConfigJSON::set_boolean_impl(const std::string &name, bool value) {
+  set_value(m_data, name, json_pack("b", value));
+}
+
+void ConfigJSON::set_string_impl(const std::string &name, const std::string &value) {
+  set_value(m_data, name, json_pack("s", value.c_str()));
+}
+
+double ConfigJSON::get_double_impl(const std::string &name) const {
+  return get_value<double, double>(m_data, name, "F", "double");
+}
+
+std::string ConfigJSON::get_string_impl(const std::string &name) const {
+  return get_value<std::string, const char *>(m_data, name, "s", "string");
+}
+
+bool ConfigJSON::get_boolean_impl(const std::string &name) const {
+  return get_value<bool, int>(m_data, name, "b", "boolean");
 }
 
 void ConfigJSON::read_impl(const PIO &nc) {
@@ -131,183 +246,15 @@ void ConfigJSON::read_impl(const PIO &nc) {
 }
 
 void ConfigJSON::write_impl(const PIO &nc) const {
-  std::string config_string = this->dump();
-
-  nc.put_att_text("PISM_GLOBAL", "pism_config", config_string);
+  nc.put_att_text("PISM_GLOBAL", "pism_config", this->dump());
 }
 
 bool ConfigJSON::is_set_impl(const std::string &name) const {
-
-}
-
-Config::Doubles ConfigJSON::all_doubles_impl() const {
-
-}
-
-Config::Strings ConfigJSON::all_strings_impl() const {
-
-}
-
-Config::Booleans ConfigJSON::all_booleans_impl() const {
-
-}
-
-/*! Store a 'value' corresponding to the key 'name' in the database.
- *
- * If a name refers to an object "alice.bob", the object "alice" must
- * exist in the tree already, but "bob" may not exist before this call
- * and will be created. In other words, this method allows adding new
- * leaves only.
- */
-void ConfigJSON::set_double_impl(const std::string &name, double value) {
-  if (m_data == NULL) {
-    return;
-  }
-
-  std::vector<std::string> path = split(name, '.');
-  if (path.size() == 0) {
-    // stop if 'name' is empty
-    return;
-  }
-
-  std::string key = path.back();
-  path.pop_back();
-
-  json_t *object = NULL;
-  if (path.empty() == true) {
-    object = m_data;
-  } else {
-    object = find_value(m_data, join(path, "."));
-  }
-
-  if (object != NULL) {
-    json_object_set_new(object, key.c_str(), json_pack("f", value));
-  }
-}
-
-/*! Store a 'value' corresponding to the key 'name' in the database.
- *
- * If a name refers to an object "alice.bob", the object "alice" must
- * exist in the tree already, but "bob" may not exist before this call
- * and will be created. In other words, this method allows adding new
- * leaves only.
- */
-void ConfigJSON::set_boolean_impl(const std::string &name, bool value) {
-  if (m_data == NULL) {
-    return;
-  }
-
-  std::vector<std::string> path = split(name, '.');
-  if (path.size() == 0) {
-    // stop if 'name' is empty
-    return;
-  }
-
-  std::string key = path.back();
-  path.pop_back();
-
-  json_t *object = NULL;
-  if (path.empty() == true) {
-    object = m_data;
-  } else {
-    object = find_value(m_data, join(path, "."));
-  }
-
-  if (object != NULL) {
-    json_object_set_new(object, key.c_str(), json_pack("b", value));
-  }
-}
-
-/*! Store a 'value' corresponding to the key 'name' in the database.
- *
- * If a name refers to an object "alice.bob", the object "alice" must
- * exist in the tree already, but "bob" may not exist before this call
- * and will be created. In other words, this method allows adding new
- * leaves only.
- */
-void ConfigJSON::set_string_impl(const std::string &name, const std::string &value) {
-  if (m_data == NULL) {
-    return;
-  }
-
-  std::vector<std::string> path = split(name, '.');
-  if (path.size() == 0) {
-    // stop if 'name' is empty
-    return;
-  }
-
-  std::string key = path.back();
-  path.pop_back();
-
-  json_t *object = NULL;
-  if (path.empty() == true) {
-    object = m_data;
-  } else {
-    object = find_value(m_data, join(path, "."));
-  }
-
-  if (object != NULL) {
-    json_object_set_new(object, key.c_str(), json_pack("s", value.c_str()));
-  }
-}
-
-/*! Get the real number corresponding to the key 'name'.
- */
-double ConfigJSON::get_double_impl(const std::string &name) const {
-  json_t *value = find_value(m_data, name);
+  json_t *value = find_json_value(m_data, name);
   if (value == NULL) {
-    throw RuntimeError::formatted("%s was not found", name.c_str());
-  }
-
-  if (json_is_number(value) != 0) {
-    double number = 0.0;
-    if (json_unpack(value, "F", &number) == 0) {
-      return number;
-    } else {
-      throw RuntimeError::formatted("failed to convert %s to double", name.c_str());
-    }
+    return false;
   } else {
-    throw RuntimeError::formatted("%s is not a number", name.c_str());
-  }
-}
-
-/*! Get the string corresponding to the key 'name'.
- */
-std::string ConfigJSON::get_string_impl(const std::string &name) const {
-  json_t *value = find_value(m_data, name);
-  if (value == NULL) {
-    throw RuntimeError::formatted("%s was not found", name.c_str());
-  }
-
-  if (json_is_string(value) != 0) {
-    const char *tmp_string = "";
-    if (json_unpack(value, "s", &tmp_string) == 0) {
-      return std::string(tmp_string);
-    } else {
-      throw RuntimeError::formatted("failed to convert %s to string", name.c_str());
-    }
-  } else {
-    throw RuntimeError::formatted("%s is not a string", name.c_str());
-  }
-}
-
-/*! Get the Boolean corresponding to the key 'name'.
- */
-bool ConfigJSON::get_boolean_impl(const std::string &name) const {
-  json_t *value = find_value(m_data, name);
-  if (value == NULL) {
-    throw RuntimeError::formatted("%s was not found", name.c_str());
-  }
-
-  if (json_is_boolean(value) != 0) {
-    bool boolean = false;
-    if (json_unpack(value, "b", &boolean) == 0) {
-      return boolean;
-    } else {
-      throw RuntimeError::formatted("failed to convert %s to bool", name.c_str());
-    }
-  } else {
-    throw RuntimeError::formatted("%s is not a boolean", name.c_str());
+    return true;
   }
 }
 
