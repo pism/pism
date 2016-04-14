@@ -34,8 +34,8 @@ public:
   ConfigJSON(units::System::Ptr unit_system);
   virtual ~ConfigJSON();
 
-  int init_from_file(const std::string &filename);
-  int init_from_string(const std::string &string);
+  void init_from_file(const std::string &filename);
+  void init_from_string(const std::string &string);
   std::string dump() const;
 
 private:

@@ -29,6 +29,7 @@ set(PISMUTIL_SRC
   base/util/Mask.cc
   base/util/VariableMetadata.cc
   base/util/PISMConfig.cc
+  base/util/ConfigJSON.cc
   base/util/PISMConfigInterface.cc
   base/util/PISMComponent.cc
   base/util/PISMTime.cc

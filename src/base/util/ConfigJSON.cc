@@ -17,50 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "ConfigJSON.hh"
-
 #include <iostream>             // FIXME: this is just for error messages.
-#include <sstream>
 #include <vector>
 #include <cassert>              // assert
 #include <cstdlib>              // free
 
+#include "ConfigJSON.hh"
+#include "error_handling.hh"
+#include "pism_utilities.hh"
+#include "io/PIO.hh"
+
 namespace pism {
-
-/*! Split a 'string' into sub-strings, separated by 'separator'.
- */
-static std::vector<std::string> split_string(const std::string &string,
-                                             char separator) {
-  std::vector<std::string> result;
-  std::string part;
-
-  std::istringstream stream(string);
-  while (getline(stream, part, separator)) {
-    result.push_back(part);
-  }
-
-  return result;
-}
-
-/*! @brief Concatenate a vector of strings 'input', putting
- * 'separator' between sub-strings.
- */
-static std::string concatenate_strings(const std::vector<std::string> &input,
-                                       const std::string &separator) {
-  if (input.size() == 0) {
-    return "";
-  }
-
-  std::vector<std::string>::const_iterator j = input.begin();
-  std::string result = *j;
-  while (j != input.end()) {
-    if (j != input.begin()) {
-      result += separator + (*j);
-    }
-    ++j;
-  }
-  return result;
-}
 
 /*! Given a 'path' "alice.bob.charlie", look for the JSON object 'bob'
  * containing a key 'charlie' in the object 'alice'. Use the 'object'
@@ -76,7 +43,7 @@ static json_t* find_value(json_t *object,
     return NULL;
   }
 
-  std::vector<std::string> split_path = split_string(path, '.');
+  std::vector<std::string> split_path = split(path, '.');
   std::vector<std::string>::const_iterator j = split_path.begin();
   json_t *current_object = object;
   std::string current_path = *j;
@@ -88,8 +55,7 @@ static json_t* find_value(json_t *object,
 
     current_object = json_object_get(current_object, j->c_str());
     if (current_object == NULL) {
-      std::cout << "ERROR: cannot find " << current_path << std::endl;
-      return NULL;
+      throw RuntimeError::formatted("ERROR: cannot find %s", current_path.c_str());
     }
     ++j;
   }
@@ -97,7 +63,8 @@ static json_t* find_value(json_t *object,
   return current_object;
 }
 
-ConfigJSON::ConfigJSON() {
+ConfigJSON::ConfigJSON(units::System::Ptr unit_system)
+  : Config(unit_system) {
   m_data = NULL;
 }
 
@@ -107,7 +74,7 @@ ConfigJSON::~ConfigJSON() {
 
 /*! Initialize the database by reading from a file 'filename'.
  */
-int ConfigJSON::init_from_file(const std::string &filename) {
+void ConfigJSON::init_from_file(const std::string &filename) {
 
   // free existing data if present
   if (m_data != NULL) {
@@ -118,17 +85,15 @@ int ConfigJSON::init_from_file(const std::string &filename) {
   m_data = json_load_file(filename.c_str(), JSON_DECODE_INT_AS_REAL, &error);
 
   if (m_data == NULL) {
-    std::cout << "Error loading config from '" << filename << "'" << std::endl;
-    std::cout << "  at line " << error.line << ", column " << error.column << std::endl;
-    return 1;
+    throw RuntimeError::formatted("Error loading config from '%s'"
+                                  " at line %d, column %d.",
+                                  filename.c_str(), error.line, error.column);
   }
-
-  return 0;
 }
 
 /*! Initialize the database using a string 'string'.
  */
-int ConfigJSON::init_from_string(const std::string &string) {
+void ConfigJSON::init_from_string(const std::string &string) {
   // free existing data if present
   if (m_data != NULL) {
     json_decref(m_data);
@@ -138,12 +103,10 @@ int ConfigJSON::init_from_string(const std::string &string) {
   m_data = json_loads(string.c_str(), JSON_DECODE_INT_AS_REAL, &error);
 
   if (m_data == NULL) {
-    std::cout << "Error loading config from '" << string << "'" << std::endl;
-    std::cout << "  at line " << error.line << ", column " << error.column << std::endl;
-    return 1;
+    throw RuntimeError::formatted("Error loading config from '%s'"
+                                  " at line %d, column %d.",
+                                  string.c_str(), error.line, error.column);
   }
-
-  return 0;
 }
 
 /*! Return the JSON string representation of the configuration database.
@@ -163,52 +126,32 @@ std::string ConfigJSON::dump() const {
 }
 
 void ConfigJSON::read_impl(const PIO &nc) {
+  std::string config_string = nc.get_att_text("PISM_GLOBAL", "pism_config");
+  this->init_from_string(config_string);
+}
+
+void ConfigJSON::write_impl(const PIO &nc) const {
+  std::string config_string = this->dump();
+
+  nc.put_att_text("PISM_GLOBAL", "pism_config", config_string);
+}
+
+bool ConfigJSON::is_set_impl(const std::string &name) const {
 
 }
 
-void ConfigJSON::write_impl(const PIO &nc) {
+Config::Doubles ConfigJSON::all_doubles_impl() const {
 
 }
 
-bool ConfigJSON::is_set_impl(const std::string &name) {
+Config::Strings ConfigJSON::all_strings_impl() const {
 
 }
 
-Doubles ConfigJSON::all_doubles_impl() {
+Config::Booleans ConfigJSON::all_booleans_impl() const {
 
 }
 
-double ConfigJSON::get_double_impl(const std::string &name) {
-
-}
-
-void ConfigJSON::set_double_impl(const std::string &name, double value) {
-
-}
-
-Strings ConfigJSON::all_strings_impl() {
-
-}
-
-void ConfigJSON::set_string_impl(const std::string &name, const std::string &value) {
-
-}
-
-Booleans ConfigJSON::all_booleans_impl() {
-
-}
-
-bool ConfigJSON::get_boolean_impl(const std::string& name) {
-
-}
-
-void ConfigJSON::set_boolean_impl(const std::string& name, bool value) {
-
-}
-
-
-
-#if 0
 /*! Store a 'value' corresponding to the key 'name' in the database.
  *
  * If a name refers to an object "alice.bob", the object "alice" must
@@ -221,7 +164,7 @@ void ConfigJSON::set_double_impl(const std::string &name, double value) {
     return;
   }
 
-  std::vector<std::string> path = split_string(name, '.');
+  std::vector<std::string> path = split(name, '.');
   if (path.size() == 0) {
     // stop if 'name' is empty
     return;
@@ -234,7 +177,7 @@ void ConfigJSON::set_double_impl(const std::string &name, double value) {
   if (path.empty() == true) {
     object = m_data;
   } else {
-    object = find_value(m_data, concatenate_strings(path, "."));
+    object = find_value(m_data, join(path, "."));
   }
 
   if (object != NULL) {
@@ -254,7 +197,7 @@ void ConfigJSON::set_boolean_impl(const std::string &name, bool value) {
     return;
   }
 
-  std::vector<std::string> path = split_string(name, '.');
+  std::vector<std::string> path = split(name, '.');
   if (path.size() == 0) {
     // stop if 'name' is empty
     return;
@@ -267,7 +210,7 @@ void ConfigJSON::set_boolean_impl(const std::string &name, bool value) {
   if (path.empty() == true) {
     object = m_data;
   } else {
-    object = find_value(m_data, concatenate_strings(path, "."));
+    object = find_value(m_data, join(path, "."));
   }
 
   if (object != NULL) {
@@ -287,7 +230,7 @@ void ConfigJSON::set_string_impl(const std::string &name, const std::string &val
     return;
   }
 
-  std::vector<std::string> path = split_string(name, '.');
+  std::vector<std::string> path = split(name, '.');
   if (path.size() == 0) {
     // stop if 'name' is empty
     return;
@@ -300,7 +243,7 @@ void ConfigJSON::set_string_impl(const std::string &name, const std::string &val
   if (path.empty() == true) {
     object = m_data;
   } else {
-    object = find_value(m_data, concatenate_strings(path, "."));
+    object = find_value(m_data, join(path, "."));
   }
 
   if (object != NULL) {
@@ -313,21 +256,18 @@ void ConfigJSON::set_string_impl(const std::string &name, const std::string &val
 double ConfigJSON::get_double_impl(const std::string &name) const {
   json_t *value = find_value(m_data, name);
   if (value == NULL) {
-    std::cout << name << " was not found" << std::endl;
-    return false;                  // could not find the value
+    throw RuntimeError::formatted("%s was not found", name.c_str());
   }
 
   if (json_is_number(value) != 0) {
-    double number = false;
+    double number = 0.0;
     if (json_unpack(value, "F", &number) == 0) {
       return number;
     } else {
-      std::cout << "failed to convert " << name << " to double" << std::endl;
-      return false;                // could not unpack a number
+      throw RuntimeError::formatted("failed to convert %s to double", name.c_str());
     }
   } else {
-    std::cout << name << " is not a number" << std::endl;
-    return false;
+    throw RuntimeError::formatted("%s is not a number", name.c_str());
   }
 }
 
@@ -336,8 +276,7 @@ double ConfigJSON::get_double_impl(const std::string &name) const {
 std::string ConfigJSON::get_string_impl(const std::string &name) const {
   json_t *value = find_value(m_data, name);
   if (value == NULL) {
-    std::cout << name << " was not found" << std::endl;
-    return "";                  // could not find the value
+    throw RuntimeError::formatted("%s was not found", name.c_str());
   }
 
   if (json_is_string(value) != 0) {
@@ -345,12 +284,10 @@ std::string ConfigJSON::get_string_impl(const std::string &name) const {
     if (json_unpack(value, "s", &tmp_string) == 0) {
       return std::string(tmp_string);
     } else {
-      std::cout << "failed to convert " << name << " to string" << std::endl;
-      return "";                // could not unpack a string
+      throw RuntimeError::formatted("failed to convert %s to string", name.c_str());
     }
   } else {
-    std::cout << name << " is not a string" << std::endl;
-    return "";                // could not unpack a string
+    throw RuntimeError::formatted("%s is not a string", name.c_str());
   }
 }
 
@@ -359,8 +296,7 @@ std::string ConfigJSON::get_string_impl(const std::string &name) const {
 bool ConfigJSON::get_boolean_impl(const std::string &name) const {
   json_t *value = find_value(m_data, name);
   if (value == NULL) {
-    std::cout << name << " was not found" << std::endl;
-    return false;                  // could not find the value
+    throw RuntimeError::formatted("%s was not found", name.c_str());
   }
 
   if (json_is_boolean(value) != 0) {
@@ -368,13 +304,11 @@ bool ConfigJSON::get_boolean_impl(const std::string &name) const {
     if (json_unpack(value, "b", &boolean) == 0) {
       return boolean;
     } else {
-      std::cout << "failed to convert " << name << " to bool" << std::endl;
-      return false;                // could not unpack a boolean
+      throw RuntimeError::formatted("failed to convert %s to bool", name.c_str());
     }
   } else {
-    std::cout << name << " is not a boolean" << std::endl;
-    return false;
+    throw RuntimeError::formatted("%s is not a boolean", name.c_str());
   }
 }
-#endif
+
 } // end of namespace pism
