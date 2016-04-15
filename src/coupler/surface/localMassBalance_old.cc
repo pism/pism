@@ -46,7 +46,7 @@ PDDMassBalance_Old::PDDMassBalance_Old(Config::ConstPtr  myconfig) : LocalMassBa
 */
 void PDDMassBalance_Old::getNForTemperatureSeries(double /* t */,
                                                   double dt, int &N) {
-  int    NperYear = static_cast<int>(config->get_double("pdd_max_evals_per_year"));
+  int    NperYear = static_cast<int>(config->get_double("surface.pdd.max_evals_per_year"));
   double dt_years = dt / secpera;
   N = (int) ceil((NperYear - 1) * (dt_years) + 1);
   if (N < 3) {
@@ -314,17 +314,17 @@ double PDDrandMassBalance_Old::getPDDSumFromTemperatureTimeSeries(double pddStdD
 FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(IceGrid::ConstPtr g)
   : grid(g), config(g->ctx()->config()) {
 
-  beta_ice_w = config->get_double("pdd_fausto_beta_ice_w");
-  beta_snow_w = config->get_double("pdd_fausto_beta_snow_w");
+  beta_ice_w = config->get_double("surface.pdd.fausto_beta_ice_w");
+  beta_snow_w = config->get_double("surface.pdd.fausto_beta_snow_w");
 
-  T_c = config->get_double("pdd_fausto_T_c");
-  T_w = config->get_double("pdd_fausto_T_w");
-  beta_ice_c = config->get_double("pdd_fausto_beta_ice_c");
-  beta_snow_c = config->get_double("pdd_fausto_beta_snow_c");
+  T_c = config->get_double("surface.pdd.fausto_T_c");
+  T_w = config->get_double("surface.pdd.fausto_T_w");
+  beta_ice_c = config->get_double("surface.pdd.fausto_beta_ice_c");
+  beta_snow_c = config->get_double("surface.pdd.fausto_beta_snow_c");
 
   fresh_water_density = config->get_double("fresh_water.density");
   ice_density = config->get_double("ice.density");
-  pdd_fausto_latitude_beta_w = config->get_double("pdd_fausto_latitude_beta_w");
+  pdd_fausto_latitude_beta_w = config->get_double("surface.pdd.fausto_latitude_beta_w");
 
   temp_mj.create(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   temp_mj.set_attrs("internal",

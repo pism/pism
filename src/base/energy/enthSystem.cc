@@ -61,7 +61,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_p_air   = config.get_double("surface_pressure");
 
   m_ice_K  = m_ice_k / m_ice_c;
-  m_ice_K0 = m_ice_K * config.get_double("enthalpy_temperate_conductivity_ratio");
+  m_ice_K0 = m_ice_K * config.get_double("energy.temperate_ice_enthalpy_conductivity_ratio");
 
   size_t Mz = m_z.size();
   m_Enth.resize(Mz);

@@ -119,8 +119,8 @@ void IceCompModel::setFromOptions() {
     m_config->set_boolean("do_energy", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
-    m_config->set_double("global_min_allowed_temp", 0.0);
-    m_config->set_double("max_low_temp_count", 1000000);
+    m_config->set_double("energy.minimum_allowed_temperature", 0.0);
+    m_config->set_double("energy.max_low_temperature_count", 1000000);
   } else {
     m_config->set_boolean("do_energy", false);
   }

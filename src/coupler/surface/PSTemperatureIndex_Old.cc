@@ -39,11 +39,11 @@ TemperatureIndex_Old::TemperatureIndex_Old(IceGrid::ConstPtr g)
     ice_surface_temp(m_sys, temperature_name) {
   mbscheme = NULL;
   faustogreve = NULL;
-  base_ddf.snow = m_config->get_double("pdd_factor_snow");
-  base_ddf.ice  = m_config->get_double("pdd_factor_ice");
-  base_ddf.refreezeFrac = m_config->get_double("pdd_refreeze");
-  base_pddStdDev = m_config->get_double("pdd_std_dev");
-  base_pddThresholdTemp = m_config->get_double("pdd_positive_threshold_temp");
+  base_ddf.snow = m_config->get_double("surface.pdd.factor_snow");
+  base_ddf.ice  = m_config->get_double("surface.pdd.factor_ice");
+  base_ddf.refreezeFrac = m_config->get_double("surface.pdd.refreeze");
+  base_pddStdDev = m_config->get_double("surface.pdd.std_dev");
+  base_pddThresholdTemp = m_config->get_double("surface.pdd.positive_threshold_temp");
 
   pdd_annualize = false;
 
@@ -253,8 +253,8 @@ void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
     faustogreve->update_temp_mj(*usurf, *lat, *lon);
   }
 
-  const PetscScalar sigmalapserate = m_config->get_double("pdd_std_dev_lapse_lat_rate"),
-                    sigmabaselat   = m_config->get_double("pdd_std_dev_lapse_lat_base");
+  const PetscScalar sigmalapserate = m_config->get_double("surface.pdd.std_dev_lapse_lat_rate"),
+                    sigmabaselat   = m_config->get_double("surface.pdd.std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
     lat = m_grid->variables().get_2d_scalar("latitude");
     list.add(*lat);

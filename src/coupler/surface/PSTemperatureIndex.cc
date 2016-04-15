@@ -48,14 +48,14 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_faustogreve           = NULL;
   m_sd_period             = 0;
   m_sd_ref_time           = 0.0;
-  m_base_ddf.snow         = m_config->get_double("pdd_factor_snow");
-  m_base_ddf.ice          = m_config->get_double("pdd_factor_ice");
-  m_base_ddf.refreezeFrac = m_config->get_double("pdd_refreeze");
-  m_base_pddThresholdTemp = m_config->get_double("pdd_positive_threshold_temp");
-  m_base_pddStdDev        = m_config->get_double("pdd_std_dev");
-  m_sd_use_param          = m_config->get_boolean("pdd_std_dev_use_param");
-  m_sd_param_a            = m_config->get_double("pdd_std_dev_param_a");
-  m_sd_param_b            = m_config->get_double("pdd_std_dev_param_b");
+  m_base_ddf.snow         = m_config->get_double("surface.pdd.factor_snow");
+  m_base_ddf.ice          = m_config->get_double("surface.pdd.factor_ice");
+  m_base_ddf.refreezeFrac = m_config->get_double("surface.pdd.refreeze");
+  m_base_pddThresholdTemp = m_config->get_double("surface.pdd.positive_threshold_temp");
+  m_base_pddStdDev        = m_config->get_double("surface.pdd.std_dev");
+  m_sd_use_param          = m_config->get_boolean("surface.pdd.std_dev_use_param");
+  m_sd_param_a            = m_config->get_double("surface.pdd.std_dev_param_a");
+  m_sd_param_b            = m_config->get_double("surface.pdd.std_dev_param_b");
 
 
   m_randomized = options::Bool("-pdd_rand",
@@ -309,8 +309,8 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   }
 
   const double
-    sigmalapserate = m_config->get_double("pdd_std_dev_lapse_lat_rate"),
-    sigmabaselat   = m_config->get_double("pdd_std_dev_lapse_lat_base");
+    sigmalapserate = m_config->get_double("surface.pdd.std_dev_lapse_lat_rate"),
+    sigmabaselat   = m_config->get_double("surface.pdd.std_dev_lapse_lat_base");
 
   if (sigmalapserate != 0.0) {
     latitude = m_grid->variables().get_2d_scalar("latitude");

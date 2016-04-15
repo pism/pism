@@ -210,8 +210,8 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   // counts unreasonably low temperature values; deprecated?
   int myLowTempCount = 0;
-  int maxLowTempCount = static_cast<int>(m_config->get_double("max_low_temp_count"));
-  double globalMinAllowedTemp = m_config->get_double("global_min_allowed_temp");
+  int maxLowTempCount = static_cast<int>(m_config->get_double("energy.max_low_temperature_count"));
+  double globalMinAllowedTemp = m_config->get_double("energy.minimum_allowed_temperature");
 
   ParallelSection loop(m_grid->com);
   try {
