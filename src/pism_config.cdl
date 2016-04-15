@@ -129,10 +129,10 @@ netcdf pism_config {
     pism_config:fracture_density_softening_lower_limit = 1.0;
     pism_config:fracture_density_softening_lower_limit_doc = "epsilon in equation (6) in Albrecht and Levermann, 'Fracture-induced softening for large-scale ice dynamics'";
 
-    pism_config:write_fd_fields_type = "boolean";
-    pism_config:write_fd_fields_option = "write_fd_fields";
-    pism_config:write_fd_fields = "no";
-    pism_config:write_fd_fields_doc = "Writing of fracture density related fields to nc-file.";
+    pism_config:fracture_density.write_fields_type = "boolean";
+    pism_config:fracture_density.write_fields_option = "write_fd_fields";
+    pism_config:fracture_density.write_fields = "no";
+    pism_config:fracture_density.write_fields_doc = "Writing of fracture density related fields to nc-file.";
 
     pism_config:bed_deformation_model_type = "keyword";
     pism_config:bed_deformation_model_option = "bed_def";
@@ -181,7 +181,7 @@ netcdf pism_config {
     pism_config:use_temperature_dependent_thermal_conductivity_type = "boolean";
     pism_config:use_temperature_dependent_thermal_conductivity_option = "vark";
     pism_config:use_temperature_dependent_thermal_conductivity = "no";
-    pism_config:use_temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [@ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice_thermal_conductivity.";
+    pism_config:use_temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [@ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice.thermal_conductivity.";
 
     pism_config:nu_bedrock_option = "nu_bedrock";
     pism_config:nu_bedrock_units = "Pascal second";
@@ -311,11 +311,11 @@ netcdf pism_config {
     pism_config:brutal_sliding_scale = 1.0;
     pism_config:brutal_sliding_scale_doc = "Brutal SSA Sliding Scale";
 
-    pism_config:ice_grain_size_option = "ice_grain_size";
-    pism_config:ice_grain_size_units = "mm";
-    pism_config:ice_grain_size_type = "scalar";
-    pism_config:ice_grain_size = 1.0;
-    pism_config:ice_grain_size_doc = "Default constant ice grain size to use with the Goldsby-Kohlstedt [@ref GoldsbyKohlstedt] flow law";
+    pism_config:ice.grain_size_option = "ice_grain_size";
+    pism_config:ice.grain_size_units = "mm";
+    pism_config:ice.grain_size_type = "scalar";
+    pism_config:ice.grain_size = 1.0;
+    pism_config:ice.grain_size_doc = "Default constant ice grain size to use with the Goldsby-Kohlstedt [@ref GoldsbyKohlstedt] flow law";
 
     pism_config:compute_grain_size_using_age_type = "boolean";
     pism_config:compute_grain_size_using_age_option = "grain_size_age_coupling";
@@ -1029,30 +1029,30 @@ netcdf pism_config {
     pism_config:enthalpy_converter_reference_temperature = 223.15;
     pism_config:enthalpy_converter_reference_temperature_doc = "= T_0 in enthalpy formulas in [@ref AschwandenBuelerKhroulevBlatter]";
 
-    pism_config:water_latent_heat_fusion_units = "Joule / kg";
-    pism_config:water_latent_heat_fusion_type = "scalar";
-    pism_config:water_latent_heat_fusion = 3.34e5;
-    pism_config:water_latent_heat_fusion_doc = "latent heat of fusion for water [@ref AschwandenBlatter]";
+    pism_config:fresh_water.latent_heat_of_fusion_units = "Joule / kg";
+    pism_config:fresh_water.latent_heat_of_fusion_type = "scalar";
+    pism_config:fresh_water.latent_heat_of_fusion = 3.34e5;
+    pism_config:fresh_water.latent_heat_of_fusion_doc = "latent heat of fusion for water [@ref AschwandenBlatter]";
 
-    pism_config:water_specific_heat_capacity_units = "Joule / (kg Kelvin)";
-    pism_config:water_specific_heat_capacity_type = "scalar";
-    pism_config:water_specific_heat_capacity = 4170.0;
-    pism_config:water_specific_heat_capacity_doc = "at melting point T_0 [@ref AschwandenBlatter]";
+    pism_config:fresh_water.specific_heat_capacity_units = "Joule / (kg Kelvin)";
+    pism_config:fresh_water.specific_heat_capacity_type = "scalar";
+    pism_config:fresh_water.specific_heat_capacity = 4170.0;
+    pism_config:fresh_water.specific_heat_capacity_doc = "at melting point T_0 [@ref AschwandenBlatter]";
 
-    pism_config:ice_density_units = "kg / m3";
-    pism_config:ice_density_type = "scalar";
-    pism_config:ice_density = 910.0;
-    pism_config:ice_density_doc = "= rho_i; density of ice in ice sheet";
+    pism_config:ice.density_units = "kg / m3";
+    pism_config:ice.density_type = "scalar";
+    pism_config:ice.density = 910.0;
+    pism_config:ice.density_doc = "= rho_i; density of ice in ice sheet";
 
-    pism_config:ice_thermal_conductivity_units = "Joule / (meter Kelvin second)";
-    pism_config:ice_thermal_conductivity_type = "scalar";
-    pism_config:ice_thermal_conductivity = 2.10;
-    pism_config:ice_thermal_conductivity_doc = "= W m-1 K-1; thermal conductivity of pure ice";
+    pism_config:ice.thermal_conductivity_units = "Joule / (meter Kelvin second)";
+    pism_config:ice.thermal_conductivity_type = "scalar";
+    pism_config:ice.thermal_conductivity = 2.10;
+    pism_config:ice.thermal_conductivity_doc = "= W m-1 K-1; thermal conductivity of pure ice";
 
-    pism_config:ice_specific_heat_capacity_units = "Joule / (kg Kelvin)";
-    pism_config:ice_specific_heat_capacity_type = "scalar";
-    pism_config:ice_specific_heat_capacity = 2009.0;
-    pism_config:ice_specific_heat_capacity_doc = "specific heat capacity of pure ice at melting point T_0";
+    pism_config:ice.specific_heat_capacity_units = "Joule / (kg Kelvin)";
+    pism_config:ice.specific_heat_capacity_type = "scalar";
+    pism_config:ice.specific_heat_capacity = 2009.0;
+    pism_config:ice.specific_heat_capacity_doc = "specific heat capacity of pure ice at melting point T_0";
 
     pism_config:sia.Glen_exponent_option = "sia_n";
     pism_config:sia.Glen_exponent_units = "pure number";
@@ -1066,35 +1066,35 @@ netcdf pism_config {
     pism_config:ssa.Glen_exponent = 3.0;
     pism_config:ssa.Glen_exponent_doc = "Glen exponent in ice flow law for SSA";
 
-    pism_config:ice_softness_units = "Pascal-3 second-1";
-    pism_config:ice_softness_type = "scalar";
-    pism_config:ice_softness = 3.1689e-24;
-    pism_config:ice_softness_doc = "ice softness used by IsothermalGlenIce [@ref EISMINT96]";
+    pism_config:flow_law.isothermal_Glen.ice_softness_units = "Pascal-3 second-1";
+    pism_config:flow_law.isothermal_Glen.ice_softness_type = "scalar";
+    pism_config:flow_law.isothermal_Glen.ice_softness = 3.1689e-24;
+    pism_config:flow_law.isothermal_Glen.ice_softness_doc = "ice softness used by IsothermalGlenIce [@ref EISMINT96]";
 
-    pism_config:Hooke_A_units = "Pascal-3 second-1";
-    pism_config:Hooke_A_type = "scalar";
-    pism_config:Hooke_A = 4.42165e-9;
-    pism_config:Hooke_A_doc = "A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa. See [@ref Hooke]";
+    pism_config:flow_law.Hooke.A_units = "Pascal-3 second-1";
+    pism_config:flow_law.Hooke.A_type = "scalar";
+    pism_config:flow_law.Hooke.A = 4.42165e-9;
+    pism_config:flow_law.Hooke.A_doc = "A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa. See [@ref Hooke]";
 
-    pism_config:Hooke_Q_units = "Joule / mol";
-    pism_config:Hooke_Q_type = "scalar";
-    pism_config:Hooke_Q = 7.88e4;
-    pism_config:Hooke_Q_doc = "Activation energy, see [@ref Hooke]";
+    pism_config:flow_law.Hooke.Q_units = "Joule / mol";
+    pism_config:flow_law.Hooke.Q_type = "scalar";
+    pism_config:flow_law.Hooke.Q = 7.88e4;
+    pism_config:flow_law.Hooke.Q_doc = "Activation energy, see [@ref Hooke]";
 
-    pism_config:Hooke_C_units = "Kelvin^{Hooke_k}";
-    pism_config:Hooke_C_type = "scalar";
-    pism_config:Hooke_C = 0.16612;
-    pism_config:Hooke_C_doc = "See [@ref Hooke]";
+    pism_config:flow_law.Hooke.C_units = "Kelvin^{flow_law.Hooke.k}";
+    pism_config:flow_law.Hooke.C_type = "scalar";
+    pism_config:flow_law.Hooke.C = 0.16612;
+    pism_config:flow_law.Hooke.C_doc = "See [@ref Hooke]";
 
-    pism_config:Hooke_k_units = "pure number";
-    pism_config:Hooke_k_type = "scalar";
-    pism_config:Hooke_k = 1.17;
-    pism_config:Hooke_k_doc = "See [@ref Hooke]";
+    pism_config:flow_law.Hooke.k_units = "pure number";
+    pism_config:flow_law.Hooke.k_type = "scalar";
+    pism_config:flow_law.Hooke.k = 1.17;
+    pism_config:flow_law.Hooke.k_doc = "See [@ref Hooke]";
 
-    pism_config:Hooke_Tr_units = "Kelvin";
-    pism_config:Hooke_Tr_type = "scalar";
-    pism_config:Hooke_Tr = 273.39;
-    pism_config:Hooke_Tr_doc = "See [@ref Hooke]";
+    pism_config:flow_law.Hooke.Tr_units = "Kelvin";
+    pism_config:flow_law.Hooke.Tr_type = "scalar";
+    pism_config:flow_law.Hooke.Tr = 273.39;
+    pism_config:flow_law.Hooke.Tr_doc = "See [@ref Hooke]";
 
     pism_config:Schoof_regularizing_length_units = "km";
     pism_config:Schoof_regularizing_length_type = "scalar";
@@ -1106,30 +1106,30 @@ netcdf pism_config {
     pism_config:Schoof_regularizing_velocity = 1.0;
     pism_config:Schoof_regularizing_velocity_doc = "Regularizing velocity (Schoof definition)";
 
-    pism_config:Paterson_Budd_A_cold_units = "Pascal-3 / second";
-    pism_config:Paterson_Budd_A_cold_type = "scalar";
-    pism_config:Paterson_Budd_A_cold = 3.61e-13;
-    pism_config:Paterson_Budd_A_cold_doc = "Paterson-Budd A_cold, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.A_cold_units = "Pascal-3 / second";
+    pism_config:flow_law.Paterson_Budd.A_cold_type = "scalar";
+    pism_config:flow_law.Paterson_Budd.A_cold = 3.61e-13;
+    pism_config:flow_law.Paterson_Budd.A_cold_doc = "Paterson-Budd A_cold, see [@ref PatersonBudd]";
 
-    pism_config:Paterson_Budd_A_warm_units = "Pascal-3 / second";
-    pism_config:Paterson_Budd_A_warm_type = "scalar";
-    pism_config:Paterson_Budd_A_warm = 1.73e3;
-    pism_config:Paterson_Budd_A_warm_doc = "Paterson-Budd A_warm, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.A_warm_units = "Pascal-3 / second";
+    pism_config:flow_law.Paterson_Budd.A_warm_type = "scalar";
+    pism_config:flow_law.Paterson_Budd.A_warm = 1.73e3;
+    pism_config:flow_law.Paterson_Budd.A_warm_doc = "Paterson-Budd A_warm, see [@ref PatersonBudd]";
 
-    pism_config:Paterson_Budd_Q_cold_units = "Joule / mol";
-    pism_config:Paterson_Budd_Q_cold_type = "scalar";
-    pism_config:Paterson_Budd_Q_cold = 6.0e4;
-    pism_config:Paterson_Budd_Q_cold_doc = "Paterson-Budd Q_cold, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.Q_cold_units = "Joule / mol";
+    pism_config:flow_law.Paterson_Budd.Q_cold_type = "scalar";
+    pism_config:flow_law.Paterson_Budd.Q_cold = 6.0e4;
+    pism_config:flow_law.Paterson_Budd.Q_cold_doc = "Paterson-Budd Q_cold, see [@ref PatersonBudd]";
 
-    pism_config:Paterson_Budd_Q_warm_units = "Joule / mol";
-    pism_config:Paterson_Budd_Q_warm_type = "scalar";
-    pism_config:Paterson_Budd_Q_warm = 13.9e4;
-    pism_config:Paterson_Budd_Q_warm_doc = "Paterson-Budd Q_warm, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.Q_warm_units = "Joule / mol";
+    pism_config:flow_law.Paterson_Budd.Q_warm_type = "scalar";
+    pism_config:flow_law.Paterson_Budd.Q_warm = 13.9e4;
+    pism_config:flow_law.Paterson_Budd.Q_warm_doc = "Paterson-Budd Q_warm, see [@ref PatersonBudd]";
 
-    pism_config:Paterson_Budd_critical_temperature_units = "Kelvin";
-    pism_config:Paterson_Budd_critical_temperature_type = "scalar";
-    pism_config:Paterson_Budd_critical_temperature = 263.15;
-    pism_config:Paterson_Budd_critical_temperature_doc = "Paterson-Budd critical temperature, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.T_critical_units = "Kelvin";
+    pism_config:flow_law.Paterson_Budd.T_critical_type = "scalar";
+    pism_config:flow_law.Paterson_Budd.T_critical = 263.15;
+    pism_config:flow_law.Paterson_Budd.T_critical_doc = "Paterson-Budd critical temperature, see [@ref PatersonBudd]";
 
     pism_config:temperature_allow_above_melting_type = "boolean";
     pism_config:temperature_allow_above_melting = "no";
@@ -1177,20 +1177,20 @@ netcdf pism_config {
     pism_config:drainage_max_rate = 1.58443823077064e-09;
     pism_config:drainage_max_rate_doc = "0.05 year-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see [@ref AschwandenBuelerKhroulevBlatter]";
 
-    pism_config:fresh_water_density_units = "kg / m3";
-    pism_config:fresh_water_density_type = "scalar";
-    pism_config:fresh_water_density = 1000.0;
-    pism_config:fresh_water_density_doc = "density of fresh water";
+    pism_config:fresh_water.density_units = "kg / m3";
+    pism_config:fresh_water.density_type = "scalar";
+    pism_config:fresh_water.density = 1000.0;
+    pism_config:fresh_water.density_doc = "density of fresh water";
 
-    pism_config:sea_water_density_units = "kg / m3";
-    pism_config:sea_water_density_type = "scalar";
-    pism_config:sea_water_density = 1028.0;
-    pism_config:sea_water_density_doc = "density of sea water";
+    pism_config:sea_water.density_units = "kg / m3";
+    pism_config:sea_water.density_type = "scalar";
+    pism_config:sea_water.density = 1028.0;
+    pism_config:sea_water.density_doc = "density of sea water";
 
-    pism_config:sea_water_specific_heat_capacity_units = "Joule / (kg Kelvin)";
-    pism_config:sea_water_specific_heat_capacity_type = "scalar";
-    pism_config:sea_water_specific_heat_capacity = 3985.0;
-    pism_config:sea_water_specific_heat_capacity_doc = "at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html";
+    pism_config:sea_water.specific_heat_capacity_units = "Joule / (kg Kelvin)";
+    pism_config:sea_water.specific_heat_capacity_type = "scalar";
+    pism_config:sea_water.specific_heat_capacity = 3985.0;
+    pism_config:sea_water.specific_heat_capacity_doc = "at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html";
 
     pism_config:ocean_three_equation_model_clip_salinity_type = "boolean";
     pism_config:ocean_three_equation_model_clip_salinity_option = "clip_shelf_base_salinity";

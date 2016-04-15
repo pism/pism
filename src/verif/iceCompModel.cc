@@ -76,7 +76,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
 
   if (testname == 'V') {
     m_config->set_string("ssa.flow_law", "isothermal_glen");
-    m_config->set_double("ice_softness", pow(1.9e8, -m_config->get_double("sia.Glen_exponent")));
+    m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(1.9e8, -m_config->get_double("sia.Glen_exponent")));
   } else {
     // Set the default for IceCompModel:
     m_config->set_string("sia.flow_law", "arr");
@@ -168,9 +168,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     if (testname == 'K') {
       m_log->message(1,
                  "setting material properties of bedrock to those of ice in Test K\n");
-      m_config->set_double("bedrock_thermal_density", m_config->get_double("ice_density"));
-      m_config->set_double("bedrock_thermal_conductivity", m_config->get_double("ice_thermal_conductivity"));
-      m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice_specific_heat_capacity"));
+      m_config->set_double("bedrock_thermal_density", m_config->get_double("ice.density"));
+      m_config->set_double("bedrock_thermal_conductivity", m_config->get_double("ice.thermal_conductivity"));
+      m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice.specific_heat_capacity"));
       bedrock_is_ice_forK = true;
     } else {
       m_log->message(1,
@@ -183,9 +183,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    m_config->set_double("bedrock_thermal_density", m_config->get_double("ice_density"));
-    m_config->set_double("bedrock_thermal_conductivity", m_config->get_double("ice_thermal_conductivity"));
-    m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice_specific_heat_capacity"));
+    m_config->set_double("bedrock_thermal_density", m_config->get_double("ice.density"));
+    m_config->set_double("bedrock_thermal_conductivity", m_config->get_double("ice.thermal_conductivity"));
+    m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice.specific_heat_capacity"));
   }
 
   btu = new energy::BTU_Verification(m_grid, testname, bedrock_is_ice_forK);
@@ -221,7 +221,7 @@ void IceCompModel::allocate_bed_deformation() {
 
   IceModel::allocate_bed_deformation();
 
-  f = m_config->get_double("ice_density") / m_config->get_double("lithosphere_density");  // for simple isostasy
+  f = m_config->get_double("ice.density") / m_config->get_double("lithosphere_density");  // for simple isostasy
 
   std::string bed_def_model = m_config->get_string("bed_deformation_model");
 
@@ -582,8 +582,8 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   }
 
   double
-    seawater_density = m_config->get_double("sea_water_density"),
-    ice_density      = m_config->get_double("ice_density"),
+    seawater_density = m_config->get_double("sea_water.density"),
+    ice_density      = m_config->get_double("ice.density"),
     Glen_n           = m_config->get_double("sia.Glen_exponent"),
     standard_gravity = m_config->get_double("standard_gravity");
 

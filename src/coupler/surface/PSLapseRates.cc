@@ -74,7 +74,7 @@ void LapseRates::init_impl() {
   m_temp_lapse_rate = units::convert(m_sys, m_temp_lapse_rate, "K/km", "K/m");
 
   // convert from [m year-1 / km] to [kg m-2 year-1 / km]
-  m_smb_lapse_rate *= m_config->get_double("ice_density");
+  m_smb_lapse_rate *= m_config->get_double("ice.density");
   m_smb_lapse_rate = units::convert(m_sys, m_smb_lapse_rate,
                                     "(kg m-2) year-1 / km", "(kg m-2) second-1 / m");
 }

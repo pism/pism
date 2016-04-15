@@ -54,12 +54,12 @@ namespace pism {
 
 EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_beta        = config.get_double("beta_CC"); // K Pa-1
-  m_c_i         = config.get_double("ice_specific_heat_capacity"); // J kg-1 K-1
-  m_c_w         = config.get_double("water_specific_heat_capacity"); // J kg-1 K-1
+  m_c_i         = config.get_double("ice.specific_heat_capacity"); // J kg-1 K-1
+  m_c_w         = config.get_double("fresh_water.specific_heat_capacity"); // J kg-1 K-1
   m_g           = config.get_double("standard_gravity"); // m s-2
-  m_L           = config.get_double("water_latent_heat_fusion"); // J kg-1
+  m_L           = config.get_double("fresh_water.latent_heat_of_fusion"); // J kg-1
   m_p_air       = config.get_double("surface_pressure"); // Pa
-  m_rho_i       = config.get_double("ice_density"); // kg m-3
+  m_rho_i       = config.get_double("ice.density"); // kg m-3
   m_T_melting   = config.get_double("water_melting_point_temperature"); // K
   m_T_tolerance = config.get_double("relaxed_is_temperate_ice_tolerance"); // K
   m_T_0         = config.get_double("enthalpy_converter_reference_temperature"); // K

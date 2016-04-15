@@ -126,8 +126,8 @@ void IceCompModel::getCompSourcesTestFG() {
   std::vector<double> strain_heating_C(m_grid->Mz());
 
   const double
-    ice_rho   = m_config->get_double("ice_density"),
-    ice_c     = m_config->get_double("ice_specific_heat_capacity");
+    ice_rho   = m_config->get_double("ice.density"),
+    ice_c     = m_config->get_double("ice.specific_heat_capacity");
 
   // before temperature and flow step, set strain_heating_c from exact values
 
@@ -184,8 +184,8 @@ void IceCompModel::fillSolnTestFG() {
   std::vector<double> strain_heating_C(m_grid->Mz());
 
   const double
-    ice_rho   = m_config->get_double("ice_density"),
-    ice_c     = m_config->get_double("ice_specific_heat_capacity");
+    ice_rho   = m_config->get_double("ice.density"),
+    ice_c     = m_config->get_double("ice.specific_heat_capacity");
 
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
@@ -472,8 +472,8 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   std::vector<double> dummy4(m_grid->Mz());
 
   const double
-    ice_rho   = m_config->get_double("ice_density"),
-    ice_c     = m_config->get_double("ice_specific_heat_capacity");
+    ice_rho   = m_config->get_double("ice.density"),
+    ice_c     = m_config->get_double("ice.specific_heat_capacity");
 
   const double *strain_heating;
   const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();

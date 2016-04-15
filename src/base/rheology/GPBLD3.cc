@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,12 +40,12 @@ static void check_enthalpy_converter(EnthalpyConverter::Ptr EC,
     throw RuntimeError("water_melting_point_temperature mismatch");
   }
 
-  if (c.c_i != config.get_double("ice_specific_heat_capacity")) {
-    throw RuntimeError("ice_specific_heat_capacity mismatch");
+  if (c.c_i != config.get_double("ice.specific_heat_capacity")) {
+    throw RuntimeError("ice.specific_heat_capacity mismatch");
   }
 
-  if (c.c_w != config.get_double("water_specific_heat_capacity")) {
-    throw RuntimeError("water_specific_heat_capacity mismatch");
+  if (c.c_w != config.get_double("fresh_water.specific_heat_capacity")) {
+    throw RuntimeError("fresh_water.specific_heat_capacity mismatch");
   }
 
   if (c.T_0 != config.get_double("enthalpy_converter_reference_temperature")) {
@@ -56,8 +56,8 @@ static void check_enthalpy_converter(EnthalpyConverter::Ptr EC,
     throw RuntimeError("beta_CC mismatch");
   }
 
-  if (c.L0 != config.get_double("water_latent_heat_fusion")) {
-    throw RuntimeError("water_latent_heat_fusion mismatch");
+  if (c.L0 != config.get_double("fresh_water.latent_heat_of_fusion")) {
+    throw RuntimeError("fresh_water.latent_heat_of_fusion mismatch");
   }
 
   // check that L depends on T_m

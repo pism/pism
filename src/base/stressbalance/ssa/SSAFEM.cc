@@ -44,8 +44,8 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
     m_quadrature(g->dx(), g->dy(), 1.0) {
 
 
-  const double ice_density = m_config->get_double("ice_density");
-  m_alpha = 1 - ice_density / m_config->get_double("sea_water_density");
+  const double ice_density = m_config->get_double("ice.density");
+  m_alpha = 1 - ice_density / m_config->get_double("sea_water.density");
   m_rho_g = ice_density * m_config->get_double("standard_gravity");
 
   m_driving_stress_x = NULL;
@@ -566,8 +566,8 @@ void SSAFEM::cache_residual_cfbc() {
     is_dry_simulation = m_config->get_boolean("is_dry_simulation");
 
   const double
-    ice_density      = m_config->get_double("ice_density"),
-    ocean_density    = m_config->get_double("sea_water_density"),
+    ice_density      = m_config->get_double("ice.density"),
+    ocean_density    = m_config->get_double("sea_water.density"),
     standard_gravity = m_config->get_double("standard_gravity");
 
   // Reset the boundary integral so that all values are overwritten.

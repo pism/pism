@@ -1157,7 +1157,7 @@ void IceModel_imass::update(double a, double b) {
 
   double value = model->ice_volume();
 
-  m_ts->append(value * m_grid->ctx()->config()->get_double("ice_density"), a, b);
+  m_ts->append(value * m_grid->ctx()->config()->get_double("ice.density"), a, b);
 }
 
 
@@ -1178,7 +1178,7 @@ void IceModel_dimassdt::update(double a, double b) {
 
   double value = model->ice_volume();
 
-  m_ts->append(value * m_grid->ctx()->config()->get_double("ice_density"), a, b);
+  m_ts->append(value * m_grid->ctx()->config()->get_double("ice.density"), a, b);
 }
 
 
@@ -1787,7 +1787,7 @@ void IceModel_limnsw::update(double a, double b) {
   Config::ConstPtr config = m_grid->ctx()->config();
 
   const double
-    ice_density = config->get_double("ice_density"),
+    ice_density = config->get_double("ice.density"),
     ice_volume  = model->ice_volume_not_displacing_seawater(),
     ice_mass    = ice_volume * ice_density;
 
@@ -2160,8 +2160,8 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
   const double sea_level = model->m_ocean->sea_level_elevation();
 
   const double
-    ice_density   = m_config->get_double("ice_density"),
-    ocean_density = m_config->get_double("sea_water_density");
+    ice_density   = m_config->get_double("ice.density"),
+    ocean_density = m_config->get_double("sea_water.density");
 
   const Vars &variables = m_grid->variables();
 

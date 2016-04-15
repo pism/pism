@@ -118,7 +118,7 @@ tauc_guess_const = None
 
 def testi_tauc(grid, tauc):
     standard_gravity = grid.ctx().config().get_double("standard_gravity")
-    ice_density = grid.ctx().config().get_double("ice_density")
+    ice_density = grid.ctx().config().get_double("ice.density")
     f = ice_density * standard_gravity * H0_schoof * slope
 
     with PISM.vec.Access(comm=tauc):
@@ -151,7 +151,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
         config.set_string("ssa.flow_law", "isothermal_glen")
-        config.set_double("ice_softness", pow(3.7e8, -config.get_double("Glen_exponent")))
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(3.7e8, -config.get_double("Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -177,7 +177,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
 
         grid = self.grid
         standard_gravity = grid.ctx().config().get_double("standard_gravity")
-        ice_density = grid.ctx().config().get_double("ice_density")
+        ice_density = grid.ctx().config().get_double("ice.density")
         f = ice_density * standard_gravity * H0_schoof * slope
 
         vecs.ssa_driving_stress_y.set(0)
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     length_scale = L_schoof
     slope = 0.001
     standard_gravity = config.get_double("standard_gravity")
-    ice_density = config.get_double("ice_density")
+    ice_density = config.get_double("ice.density")
     f0 = ice_density * standard_gravity * H0_schoof * slope
     stress_scale = f0
     Ly = 3 * L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)

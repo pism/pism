@@ -139,9 +139,9 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   bool viewOneColumn = options::Bool("-view_sys", "save column system information to a file");
 
   const double
-    ice_density        = m_config->get_double("ice_density"),
-    ice_c              = m_config->get_double("ice_specific_heat_capacity"),
-    L                  = m_config->get_double("water_latent_heat_fusion"),
+    ice_density        = m_config->get_double("ice.density"),
+    ice_c              = m_config->get_double("ice.specific_heat_capacity"),
+    L                  = m_config->get_double("fresh_water.latent_heat_of_fusion"),
     melting_point_temp = m_config->get_double("water_melting_point_temperature"),
     beta_CC_grad       = m_config->get_double("beta_CC") * ice_density * m_config->get_double("standard_gravity");
 

@@ -43,7 +43,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
 
         #// Use constant hardness
         config.set_string("ssa.flow_law", "isothermal_glen")
-        config.set_double("ice_softness", pow(B0, -glen_n))
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n))
         config.set_double("Glen_exponent", glen_n)
 
         self.modeldata.setPhysics(enthalpyconverter)
@@ -92,7 +92,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
 
     def exactSolution(self, i, j, x, y):
         earth_grav = self.config.get_double("standard_gravity")
-        ice_rho = self.config.get_double("ice_density")
+        ice_rho = self.config.get_double("ice.density")
         f = ice_rho * earth_grav * H0 * dhdx
         ynd = y / L
 

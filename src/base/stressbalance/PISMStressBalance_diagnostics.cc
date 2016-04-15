@@ -471,8 +471,8 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) {
   list.add(*uplift);
   list.add(*result3);
 
-  const double ice_density = m_config->get_double("ice_density"),
-    sea_water_density = m_config->get_double("sea_water_density"),
+  const double ice_density = m_config->get_double("ice.density"),
+    sea_water_density = m_config->get_double("sea_water.density"),
     R = ice_density / sea_water_density;
 
   ParallelSection loop(m_grid->com);
@@ -990,7 +990,7 @@ IceModelVec::Ptr PSB_pressure::compute_impl() {
   list.add(*result);
   list.add(*thickness);
 
-  const double rg = m_config->get_double("ice_density") * m_config->get_double("standard_gravity");
+  const double rg = m_config->get_double("ice.density") * m_config->get_double("standard_gravity");
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1051,7 +1051,7 @@ IceModelVec::Ptr PSB_tauxz::compute_impl() {
   list.add(*surface);
   list.add(*thickness);
 
-  const double rg = m_config->get_double("ice_density") * m_config->get_double("standard_gravity");
+  const double rg = m_config->get_double("ice.density") * m_config->get_double("standard_gravity");
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1114,7 +1114,7 @@ IceModelVec::Ptr PSB_tauyz::compute_impl() {
   list.add(*surface);
   list.add(*thickness);
 
-  const double rg = m_config->get_double("ice_density") * m_config->get_double("standard_gravity");
+  const double rg = m_config->get_double("ice.density") * m_config->get_double("standard_gravity");
 
   ParallelSection loop(m_grid->com);
   try {

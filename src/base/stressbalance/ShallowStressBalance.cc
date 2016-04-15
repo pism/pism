@@ -309,7 +309,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
   }
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
-  double hardness = pow(m_config->get_double("ice_softness"),-1.0/m_config->get_double("ssa.Glen_exponent"));
+  double hardness = pow(m_config->get_double("flow_law.isothermal_Glen.ice_softness"),-1.0/m_config->get_double("ssa.Glen_exponent"));
 
   IceModelVec::AccessList list;
   list.add(V);
@@ -422,7 +422,7 @@ IceModelVec::Ptr SSB_taud::compute_impl() {
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
   double standard_gravity = m_config->get_double("standard_gravity"),
-    ice_density = m_config->get_double("ice_density");
+    ice_density = m_config->get_double("ice.density");
 
   IceModelVec::AccessList list;
   list.add(*result);

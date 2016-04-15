@@ -152,7 +152,7 @@ void IceModel::combine_basal_melt_rate() {
     list.add(m_gl_mask);
   }
 
-  double ice_density = m_config->get_double("ice_density");
+  double ice_density = m_config->get_double("ice.density");
 
   list.add(m_cell_type);
   list.add(m_basal_melt_rate);
@@ -183,7 +183,7 @@ void IceModel::combine_basal_melt_rate() {
 void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double
     T0                     = m_config->get_double("water_melting_point_temperature"),
-    beta_CC_grad_sea_water = (m_config->get_double("beta_CC") * m_config->get_double("sea_water_density") *
+    beta_CC_grad_sea_water = (m_config->get_double("beta_CC") * m_config->get_double("sea_water.density") *
                               m_config->get_double("standard_gravity")); // K m-1
 
   // will need coupler fields in ice-free land and

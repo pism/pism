@@ -211,7 +211,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   // essentially physical constants:
   const double
-    ice_density = m_config->get_double("ice_density"),              // kg m-3
+    ice_density = m_config->get_double("ice.density"),              // kg m-3
     // constants controlling the numerical method:
     bulgeEnthMax = m_config->get_double("enthalpy_cold_bulge_max"); // J kg-1
 

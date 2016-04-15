@@ -102,7 +102,7 @@ void SSATestCasePlug::initializeSSAModel() {
 
   // Use constant hardness
   m_config->set_string("ssa.flow_law", "isothermal_glen");
-  m_config->set_double("ice_softness", pow(B0, -glen_n));
+  m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n));
 }
 
 void SSATestCasePlug::initializeSSACoefficients() {
@@ -159,7 +159,7 @@ void SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
                                               double /*x*/, double y,
                                               double *u, double *v) {
   double earth_grav = m_config->get_double("standard_gravity"),
-    ice_rho = m_config->get_double("ice_density");
+    ice_rho = m_config->get_double("ice.density");
   double f = ice_rho * earth_grav * H0* dhdx;
   double ynd = y/L;
 

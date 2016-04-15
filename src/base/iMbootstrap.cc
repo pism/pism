@@ -303,11 +303,11 @@ void IceModel::putTempAtDepth() {
   const bool do_cold = m_config->get_boolean("do_cold_ice_methods"),
              usesmb  = m_config->get_string("bootstrapping_temperature_heuristic") == "smb";
   const double
-    ice_k = m_config->get_double("ice_thermal_conductivity"),
+    ice_k = m_config->get_double("ice.thermal_conductivity"),
     melting_point_temp = m_config->get_double("water_melting_point_temperature"),
-    ice_density = m_config->get_double("ice_density"),
+    ice_density = m_config->get_double("ice.density"),
     beta_CC_grad = m_config->get_double("beta_CC") * ice_density * m_config->get_double("standard_gravity"),
-    KK = ice_k / (ice_density * m_config->get_double("ice_specific_heat_capacity"));
+    KK = ice_k / (ice_density * m_config->get_double("ice.specific_heat_capacity"));
 
   assert(m_surface != NULL);
 
@@ -317,7 +317,7 @@ void IceModel::putTempAtDepth() {
     if (usesmb == true) {
       m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
       // convert from [kg m-2 s-1] to [m second-1]
-      m_climatic_mass_balance.scale(1.0 / m_config->get_double("ice_density"));
+      m_climatic_mass_balance.scale(1.0 / ice_density);
     }
   }
 

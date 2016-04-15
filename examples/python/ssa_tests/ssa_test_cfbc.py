@@ -77,7 +77,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
         config.set_string("ssa.flow_law", "isothermal_glen")
-        config.set_double("ice_softness", pow(1.9e8, -config.get_double("ssa.Glen_exponent")))
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(1.9e8, -config.get_double("ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -101,8 +101,8 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         vel_bc = vecs.vel_bc
         ice_mask = vecs.mask
 
-        ocean_rho = self.config.get_double("sea_water_density")
-        ice_rho = self.config.get_double("ice_density")
+        ocean_rho = self.config.get_double("sea_water.density")
+        ice_rho = self.config.get_double("ice.density")
 
         with PISM.vec.Access(comm=[thickness, surface, bc_mask, vel_bc, ice_mask]):
             for (i, j) in grid.points():

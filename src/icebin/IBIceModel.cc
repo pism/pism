@@ -152,7 +152,7 @@ void IBIceModel::massContExplicitStep() {
 
   printf("BEGIN IBIceModel::MassContExplicitStep()\n");
 
-  _ice_density              = m_config->get_double("ice_density");
+  _ice_density              = m_config->get_double("ice.density");
   _meter_per_s_to_kg_per_m2 = m_dt * _ice_density;
 
 
@@ -367,7 +367,7 @@ void IBIceModel::prepare_outputs(double t0) {
 }
 
 void IBIceModel::prepare_initial_outputs() {
-  double ice_density = m_config->get_double("ice_density"); // [kg m-3]
+  double ice_density = m_config->get_double("ice.density"); // [kg m-3]
 
   // --------- ice_surface_enth from m_ice_enthalpy
   AccessList access{ &m_ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_ice_thickness };
@@ -460,7 +460,7 @@ the idea from IceModel::get_threshold_thickness(...) (iMpartm_grid->cc).  */
 
 void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &mass2) {
   //   getInternalColumn() is allocated already
-  double ice_density = m_config->get_double("ice_density");
+  double ice_density = m_config->get_double("ice.density");
   AccessList access{ &m_ice_thickness, &m_ice_enthalpy, &enth2, &mass2 };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
@@ -507,7 +507,7 @@ void IBIceModel::construct_surface_temp(
   printf("BEGIN IBIceModel::merge_surface_temp default_val=%g\n", default_val);
   EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
 
-  double ice_density = m_config->get_double("ice_density");
+  double ice_density = m_config->get_double("ice.density");
 
   {
     AccessList access{ &m_ice_enthalpy, &deltah, &m_ice_thickness, &surface_temp };

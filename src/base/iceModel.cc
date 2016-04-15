@@ -416,7 +416,7 @@ void IceModel::createVecs() {
     vFD.metadata().set_double("valid_min", 0.0);
     m_grid->variables().add(vFD);
 
-    if (m_config->get_boolean("write_fd_fields")) {
+    if (m_config->get_boolean("fracture_density.write_fields")) {
       vFG.create(m_grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
       vFG.set_attrs("model_state", "fracture growth rate",       "second-1", "");
       vFG.metadata().set_double("valid_min", 0.0);

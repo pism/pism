@@ -64,7 +64,7 @@ void IceModel::calculateFractureDensity() {
     list.add(m_ssa_dirichlet_bc_values);
   }
 
-  const bool write_fd = m_config->get_boolean("write_fd_fields");
+  const bool write_fd = m_config->get_boolean("fracture_density.write_fields");
   if (write_fd) {
     list.add(vFG);
     list.add(vFH);

@@ -41,7 +41,7 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_standard_gravity   = config.get_double("standard_gravity");
   m_ideal_gas_constant = config.get_double("ideal_gas_constant");
 
-  m_rho                = config.get_double("ice_density");
+  m_rho                = config.get_double("ice.density");
   m_beta_CC_grad       = config.get_double("beta_CC") * m_rho * m_standard_gravity;
   m_melting_point_temp = config.get_double("water_melting_point_temperature");
   m_e                  = config.get_double(prefix + "enhancement_factor");
@@ -50,11 +50,11 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
   m_hardness_power     = -1.0 / m_n;
 
-  m_A_cold = config.get_double("Paterson_Budd_A_cold");
-  m_A_warm = config.get_double("Paterson_Budd_A_warm");
-  m_Q_cold = config.get_double("Paterson_Budd_Q_cold");
-  m_Q_warm = config.get_double("Paterson_Budd_Q_warm");
-  m_crit_temp = config.get_double("Paterson_Budd_critical_temperature");
+  m_A_cold = config.get_double("flow_law.Paterson_Budd.A_cold");
+  m_A_warm = config.get_double("flow_law.Paterson_Budd.A_warm");
+  m_Q_cold = config.get_double("flow_law.Paterson_Budd.Q_cold");
+  m_Q_warm = config.get_double("flow_law.Paterson_Budd.Q_warm");
+  m_crit_temp = config.get_double("flow_law.Paterson_Budd.T_critical");
   m_schoofLen = config.get_double("Schoof_regularizing_length", "m"); // convert to meters
   m_schoofVel = config.get_double("Schoof_regularizing_velocity", "m second-1"); // convert to m second-1
   m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);

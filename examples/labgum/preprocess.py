@@ -35,8 +35,8 @@ def create_config():
         "standard_gravity" : 9.81,
         "standard_gravity_doc" : "m s-2; = g",
 
-        "ice_density" : 1000.0,
-        "ice_density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
+        "ice.density" : 1000.0,
+        "ice.density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
 
         "bed_smoother_range" : -1.0,
         "bed_smoother_range_doc" : "m; negative value de-activates bed smoother",
@@ -68,7 +68,7 @@ def create_config():
         "sia.Glen_exponent" : 5.9,
         "sia.Glen_exponent_doc" : "; : n;  Sayag & Worster (2013) give n = 5.9 +- 0.2",
 
-        "ice_softness" : 9.7316e-09,  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
+        "flow_law.isothermal_Glen.ice_softness" : 9.7316e-09,  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
         "ice_softness_doc" : "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
     }
 

@@ -75,7 +75,7 @@ void PBPointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_th
   m_t_beddef_last = t_final;
 
   const double lithosphere_density = m_config->get_double("lithosphere_density"),
-    ice_density = m_config->get_double("ice_density"),
+    ice_density = m_config->get_double("ice.density"),
     f = ice_density / lithosphere_density;
 
   //! Our goal: topg = topg_last - f*(thk - thk_last)

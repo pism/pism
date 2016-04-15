@@ -330,7 +330,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   list.add(m_runoff_rate);
   list.add(m_snow_depth);
 
-  const double ice_density = m_config->get_double("ice_density");
+  const double ice_density = m_config->get_double("ice.density");
 
   ParallelSection loop(m_grid->com);
   try {

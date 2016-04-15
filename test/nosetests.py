@@ -934,8 +934,8 @@ def po_constant_test():
     grid = create_dummy_grid()
     config = grid.ctx().config()
 
-    L = config.get_double("water_latent_heat_fusion")
-    rho = config.get_double("ice_density")
+    L = config.get_double("fresh_water.latent_heat_of_fusion")
+    rho = config.get_double("ice.density")
 
     # prescribe a heat flux that corresponds to a mass flux which is
     # an integer multiple of m / year so that we can easily specify it

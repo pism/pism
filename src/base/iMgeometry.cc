@@ -458,7 +458,7 @@ void IceModel::massContExplicitStep() {
   const double
     dx                       = m_grid->dx(),
     dy                       = m_grid->dy(),
-    ice_density              = m_config->get_double("ice_density"),
+    ice_density              = m_config->get_double("ice.density"),
     meter_per_s_to_kg_per_m2 = m_dt * ice_density;
 
   assert(m_surface != NULL);
@@ -752,8 +752,8 @@ void IceModel::massContExplicitStep() {
 void IceModel::update_grounded_cell_fraction() {
 
   const double
-    ice_density   = m_config->get_double("ice_density"),
-    ocean_density = m_config->get_double("sea_water_density");
+    ice_density   = m_config->get_double("ice.density"),
+    ocean_density = m_config->get_double("sea_water.density");
 
   assert(m_ocean != NULL);
   const double sea_level = m_ocean->sea_level_elevation();
