@@ -68,7 +68,7 @@ BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
   }
 
   m_Glen_exponent = config->get_double("sia.Glen_exponent"); // choice is SIA; see #285
-  m_smoothing_range = config->get_double("bed_smoother_range");
+  m_smoothing_range = config->get_double("sia.bed_smoother_range");
 
   if (m_smoothing_range > 0.0) {
     log.message(2,

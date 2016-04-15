@@ -39,7 +39,7 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   m_bedstartp0 = m_topg_initial.allocate_proc0_copy();
   m_upliftp0   = m_topg_initial.allocate_proc0_copy();
 
-  bool use_elastic_model = m_config->get_boolean("bed_def_lc_elastic_model");
+  bool use_elastic_model = m_config->get_boolean("bed_deformation.lc_elastic_model");
 
   m_bdLC = NULL;
 
@@ -191,7 +191,7 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
 
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
-  if ((dt_beddef < m_config->get_double("bed_def_interval_years", "seconds") and
+  if ((dt_beddef < m_config->get_double("bed_deformation.update_interval", "seconds") and
        t_final < m_grid->ctx()->time()->end()) or
       dt_beddef < 1e-12) {
     return;

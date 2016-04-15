@@ -165,7 +165,7 @@ double IceModel::max_timestep_diffusivity() {
     const double
       dx = m_grid->dx(),
       dy = m_grid->dy(),
-      adaptive_timestepping_ratio = m_config->get_double("adaptive_timestepping_ratio"),
+      adaptive_timestepping_ratio = m_config->get_double("time_stepping.adaptive_time_stepping_ratio"),
       grid_factor                 = 1.0 / (dx*dx) + 1.0 / (dy*dy);
 
     return adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
@@ -187,11 +187,11 @@ double IceModel::max_timestep_diffusivity() {
  */
 unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
 
-  if (not m_config->get_boolean("do_skip")) {
+  if (not m_config->get_boolean("time_stepping.skip.enabled")) {
     return 0;
   }
 
-  const unsigned int skip_max = static_cast<int>(m_config->get_double("skip_max"));
+  const unsigned int skip_max = static_cast<int>(m_config->get_double("time_stepping.skip.max"));
 
   if (input_dt_diffusivity > 0.0) {
     const double conservativeFactor = 0.95;

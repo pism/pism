@@ -61,8 +61,8 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     mapping("mapping", m_sys),
     run_stats("run_stats", m_sys),
-    m_extra_bounds("time_bounds", m_config->get_string("time_dimension_name"), m_sys),
-    m_timestamp("timestamp", m_config->get_string("time_dimension_name"), m_sys) {
+    m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
+    m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
 
   m_extra_bounds.set_string("units", m_time->units_string());
 
@@ -337,7 +337,7 @@ void IceModel::createVecs() {
   }
 
   if (m_config->get_string("calving.methods").find("eigen_calving") != std::string::npos or
-      m_config->get_boolean("do_fracture_density")) {
+      m_config->get_boolean("fracture_density.enabled")) {
 
     m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,
                         2, // stencil width, has to match or exceed the "offset" in eigenCalving
@@ -354,7 +354,7 @@ void IceModel::createVecs() {
                            "second-1", "", 1);
   }
 
-  if (m_config->get_boolean("do_fracture_density")) {
+  if (m_config->get_boolean("fracture_density.enabled")) {
 
     m_deviatoric_stresses.create(m_grid, "sigma", WITH_GHOSTS,
                                2, // stencil width
@@ -388,7 +388,7 @@ void IceModel::createVecs() {
     m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
     m_grid->variables().add(m_ssa_dirichlet_bc_mask);
 
-    double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+    double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
                                        "m year-1", "m second-1");
     // vel_bc
     m_ssa_dirichlet_bc_values.create(m_grid, "_ssa_bc", WITH_GHOSTS, WIDE_STENCIL); // u_ssa_bc and v_ssa_bc
@@ -409,7 +409,7 @@ void IceModel::createVecs() {
   }
 
   // fracture density field
-  if (m_config->get_boolean("do_fracture_density")) {
+  if (m_config->get_boolean("fracture_density.enabled")) {
     vFD.create(m_grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
     vFD.set_attrs("model_state", "fracture density in ice shelf", "", "");
     vFD.metadata().set_double("valid_max", 1.0);
@@ -686,7 +686,7 @@ void IceModel::step(bool do_mass_continuity,
   profiling.end("basal hydrology");
 
   //! \li update the fracture density field; see calculateFractureDensity()
-  if (m_config->get_boolean("do_fracture_density")) {
+  if (m_config->get_boolean("fracture_density.enabled")) {
     profiling.begin("fracture density");
     calculateFractureDensity();
     profiling.end("fracture density");
@@ -792,9 +792,9 @@ void IceModel::run() {
   bool do_mass_conserve = m_config->get_boolean("do_mass_conserve");
   bool do_energy = m_config->get_boolean("do_energy");
   bool do_age = m_config->get_boolean("do_age");
-  bool do_skip = m_config->get_boolean("do_skip");
+  bool do_skip = m_config->get_boolean("time_stepping.skip.enabled");
 
-  int stepcount = m_config->get_boolean("count_time_steps") ? 0 : -1;
+  int stepcount = m_config->get_boolean("time_stepping.count_steps") ? 0 : -1;
 
   updateSurfaceElevationAndMask();
 

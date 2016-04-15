@@ -48,7 +48,7 @@ PIK::PIK(IceGrid::ConstPtr g)
                         "absolute temperature at ice shelf base");
   m_shelfbtemp.set_string("units", "Kelvin");
 
-  m_meltfactor = m_config->get_double("ocean_pik_melt_factor");
+  m_meltfactor = m_config->get_double("ocean.pik_melt_factor");
 }
 
 PIK::~PIK() {
@@ -84,7 +84,7 @@ void PIK::sea_level_elevation_impl(double &result) {
 
 void PIK::shelf_base_temperature_impl(IceModelVec2S &result) {
   const double
-    T0          = m_config->get_double("water_melting_point_temperature"), // K
+    T0          = m_config->get_double("fresh_water.melting_point_temperature"), // K
     beta_CC     = m_config->get_double("beta_CC"),
     g           = m_config->get_double("standard_gravity"),
     ice_density = m_config->get_double("ice.density");
@@ -160,7 +160,7 @@ void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::stri
 
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
     io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);

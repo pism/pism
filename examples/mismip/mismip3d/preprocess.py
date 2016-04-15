@@ -24,11 +24,11 @@ attrs = {"is_dry_simulation": "no",
          "flow_law.isothermal_Glen.ice_softness": 1.0e-25,
          "ice.density": 900.,
          "sea_water.density": 1000.,
-         "bootstrapping_geothermal_flux_value_no_var": 0.0,
+         "bootstrapping.defaults.geothermal_flux": 0.0,
          "Glen_exponent": 3.,
          "standard_gravity": 9.81,
-         "ocean_sub_shelf_heat_flux_into_ice": 0.0,
-         "bed_smoother_range": 0.0,
+         "ocean.sub_shelf_heat_flux_into_ice": 0.0,
+         "sia.bed_smoother_range": 0.0,
          }
 
 for name, value in attrs.iteritems():

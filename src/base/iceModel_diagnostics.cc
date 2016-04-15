@@ -320,12 +320,12 @@ IceModel_hardav::IceModel_hardav(IceModel *m)
             unitstr, unitstr, 0);
 
   m_vars[0].set_double("valid_min", 0);
-  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("output.fill_value"));
 }
 
 //! \brief Computes vertically-averaged ice hardness.
 IceModelVec::Ptr IceModel_hardav::compute_impl() {
-  const double fillval = m_config->get_double("fill_value");
+  const double fillval = m_config->get_double("output.fill_value");
   double *Eij; // columns of enthalpy values
 
   const rheology::FlowLaw *flow_law = model->get_stress_balance()->get_stressbalance()->flow_law();
@@ -527,7 +527,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m)
 
 IceModelVec::Ptr IceModel_temp_pa::compute_impl() {
   bool cold_mode = m_config->get_boolean("do_cold_ice_methods");
-  double melting_point_temp = m_config->get_double("water_melting_point_temperature");
+  double melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature");
 
   // update vertical levels (in case the m_grid was extended
   m_vars[0].set_levels(m_grid->z());
@@ -593,7 +593,7 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m)
 IceModelVec::Ptr IceModel_temppabase::compute_impl() {
 
   bool cold_mode = m_config->get_boolean("do_cold_ice_methods");
-  double melting_point_temp = m_config->get_double("water_melting_point_temperature");
+  double melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "temp_pa_base", WITHOUT_GHOSTS);
@@ -647,7 +647,7 @@ IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m)
 
   set_attrs("ice enthalpy at 1m below the ice surface", "",
             "J kg-1", "J kg-1", 0);
-  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("output.fill_value"));
 }
 
 IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
@@ -656,7 +656,7 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
   result->create(m_grid, "enthalpysurf", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  double fill_value = m_config->get_double("fill_value");
+  double fill_value = m_config->get_double("output.fill_value");
 
   // compute levels corresponding to 1 m below the ice surface:
 
@@ -691,7 +691,7 @@ IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m)
 
   set_attrs("ice enthalpy at the base of ice", "",
             "J kg-1", "J kg-1", 0);
-  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("output.fill_value"));
 }
 
 IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
@@ -702,7 +702,7 @@ IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
 
   model->m_ice_enthalpy.getHorSlice(*result, 0.0);  // z=0 slice
 
-  result->mask_by(model->m_ice_thickness, m_config->get_double("fill_value"));
+  result->mask_by(model->m_ice_thickness, m_config->get_double("output.fill_value"));
 
   return result;
 }
@@ -716,7 +716,7 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m)
 
   set_attrs("ice temperature at the base of ice", "",
             "K", "K", 0);
-  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("output.fill_value"));
 }
 
 IceModelVec::Ptr IceModel_tempbase::compute_impl() {
@@ -749,7 +749,7 @@ IceModelVec::Ptr IceModel_tempbase::compute_impl() {
       if (cell_type.icy(i, j)) {
         (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
       } else {
-        (*result)(i,j) = m_config->get_double("fill_value");
+        (*result)(i,j) = m_config->get_double("output.fill_value");
       }
     }
   } catch (...) {
@@ -769,7 +769,7 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m)
 
   set_attrs("ice temperature at 1m below the ice surface", "",
             "K", "K", 0);
-  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("output.fill_value"));
 }
 
 IceModelVec::Ptr IceModel_tempsurf::compute_impl() {
@@ -798,7 +798,7 @@ IceModelVec::Ptr IceModel_tempsurf::compute_impl() {
       if ((*thickness)(i,j) > 1) {
         (*result)(i,j) = EC->temperature((*result)(i,j), pressure);
       } else {
-        (*result)(i,j) = m_config->get_double("fill_value");
+        (*result)(i,j) = m_config->get_double("output.fill_value");
       }
     }
   } catch (...) {
@@ -850,7 +850,7 @@ IceModel_tempicethk::IceModel_tempicethk(IceModel *m)
 
   set_attrs("temperate ice thickness (total column content)", "",
             "m", "m", 0);
-  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("output.fill_value"));
 }
 
 IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
@@ -898,7 +898,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
         (*result)(i,j) = temperate_ice_thickness;
       } else {
         // ice-free
-        (*result)(i,j) = m_config->get_double("fill_value");
+        (*result)(i,j) = m_config->get_double("output.fill_value");
       }
     }
   } catch (...) {
@@ -918,7 +918,7 @@ IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m)
 
   set_attrs("thickness of the basal layer of temperate ice", "",
             "m", "m", 0);
-  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
+  m_vars[0].set_double("_FillValue", m_config->get_double("output.fill_value"));
 }
 
 /*!
@@ -933,7 +933,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   double *Enth = NULL;
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  const double fill_value = m_config->get_double("fill_value");
+  const double fill_value = m_config->get_double("output.fill_value");
 
   const IceModelVec2CellType &cell_type = model->cell_type_mask();
 
@@ -1549,7 +1549,7 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m)
   set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
             "m s-1", "m year-1", 0);
 
-  double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+  double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
                                      "m year-1", "m second-1");
 
   m_vars[0].set_double("valid_min",  units::convert(m_sys, -1e6, "m year-1", "m second-1"));
@@ -1907,7 +1907,7 @@ IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(IceModel *m)
             "kg second-1", "Gt year-1", 0);
   m_vars[0].set_string("comment", "positive means ice gain");
 
-  double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+  double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
                                      "Gt year-1", "kg second-1");
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_string("cell_methods", "time: mean");
@@ -1931,7 +1931,7 @@ IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
   const double current_time = m_grid->ctx()->time()->current();
 
   if (gsl_isnan(m_last_report_time)) {
-    const double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+    const double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
                                              "Gt year-1", "kg second-1");
     result->set(fill_value);
   } else {
@@ -2230,7 +2230,7 @@ IceModel_surface_mass_balance_average::IceModel_surface_mass_balance_average(Ice
             "kg m-2 second-1", "kg m-2 year-1", 0);
   m_vars[0].set_string("comment", "positive means ice gain");
 
-  double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+  double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
                                      "kg year-1", "kg second-1");
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_string("cell_methods", "time: mean");
@@ -2253,7 +2253,7 @@ IceModelVec::Ptr IceModel_surface_mass_balance_average::compute_impl() {
   const double current_time = m_grid->ctx()->time()->current();
 
   if (gsl_isnan(m_last_report_time)) {
-    const double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+    const double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
                                              "kg year-1", "kg second-1");
     result->set(fill_value);
   } else {
@@ -2287,7 +2287,7 @@ IceModel_basal_mass_balance_average::IceModel_basal_mass_balance_average(IceMode
             "kg m-2 second-1", "kg m-2 year-1", 0);
   m_vars[0].set_string("comment", "positive means ice gain");
 
-  double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+  double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
                                      "kg year-1", "kg second-1");
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_string("cell_methods", "time: mean");
@@ -2311,7 +2311,7 @@ IceModelVec::Ptr IceModel_basal_mass_balance_average::compute_impl() {
   const double current_time = m_grid->ctx()->time()->current();
 
   if (gsl_isnan(m_last_report_time)) {
-    const double fill_value = units::convert(m_sys, m_config->get_double("fill_value"),
+    const double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
                                              "kg year-1", "kg second-1");
     result->set(fill_value);
   } else {

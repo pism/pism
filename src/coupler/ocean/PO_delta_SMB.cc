@@ -34,7 +34,7 @@ Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
   option_prefix = "-ocean_delta_mass_flux";
   offset_name   = "delta_mass_flux";
 
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time.dimension_name"));
 
   offset->metadata().set_string("units", "m s-1");
   offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
@@ -90,7 +90,7 @@ void Delta_SMB::add_vars_to_output_impl(const std::string &keyword, std::set<std
 
 void Delta_SMB::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                               IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "shelfbtemp")) {

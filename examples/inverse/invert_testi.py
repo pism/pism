@@ -216,7 +216,7 @@ if __name__ == "__main__":
     do_pause = PISM.optionsFlag("-inv_pause", "pause each iteration", default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint", "Test that the adjoint is working", default=False)
 
-    inv_method = config.get_string("inv_ssa_method")
+    inv_method = config.get_string("inverse.ssa_method")
 
     length_scale = L_schoof
     slope = 0.001
@@ -287,12 +287,12 @@ if __name__ == "__main__":
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
-                     grid.ctx().config().get_string("calendar"),
+                     grid.ctx().config().get_string("time.dimension_name"),
+                     grid.ctx().config().get_string("time.calendar"),
                      grid.ctx().time().units_string(),
                      grid.ctx().unit_system())
     PISM.append_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().time().current())
     pio.close()
     zeta0.write(output_file)

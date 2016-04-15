@@ -62,7 +62,7 @@ void IceModel::setFromOptions() {
   }
 
   if (not m_config->get_boolean("do_mass_conserve") &&
-      m_config->get_boolean("do_skip")) {
+      m_config->get_boolean("time_stepping.skip.enabled")) {
     m_log->message(2,
                "PISM WARNING: Both -skip and -no_mass are set.\n"
                "              -skip only makes sense in runs updating ice geometry.\n");

@@ -100,9 +100,9 @@ SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
                          "age is needed for age-dependent flow enhancement");
   }
 
-  m_eemian_start   = m_config->get_double("eemian_start", "seconds");
-  m_eemian_end     = m_config->get_double("eemian_end", "seconds");
-  m_holocene_start = m_config->get_double("holocene_start", "seconds");
+  m_eemian_start   = m_config->get_double("time.eemian_start", "seconds");
+  m_eemian_end     = m_config->get_double("time.eemian_end", "seconds");
+  m_holocene_start = m_config->get_double("time.holocene_start", "seconds");
 }
 
 SIAFD::~SIAFD() {
@@ -194,7 +194,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
 //! \brief Compute the ice surface gradient for the SIA.
 /*!
   There are three methods for computing the surface gradient. Which method is
-  controlled by configuration parameter `surface_gradient_method` which can
+  controlled by configuration parameter `sia.surface_gradient_method` which can
   have values `haseloff`, `mahaffy`, or `eta`.
 
   The most traditional method is to directly differentiate the surface
@@ -203,7 +203,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
   ice-free adjacent bedrock points are above the ice surface, and in those
   cases the returned gradient component is zero.
 
-  The alternative method, when `surface_gradient_method` = `eta`, transforms
+  The alternative method, when `sia.surface_gradient_method` = `eta`, transforms
   the thickness to something more regular and differentiates that. We get back
   to the gradient of the surface by applying the chain rule. In particular, as
   shown in [\ref Vazquezetal2003] for the flat bed and \f$n=3\f$ case, if we define
@@ -229,7 +229,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
 */
 void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
-  const std::string method = m_config->get_string("surface_gradient_method");
+  const std::string method = m_config->get_string("sia.surface_gradient_method");
 
   if (method == "eta") {
 
@@ -244,7 +244,7 @@ void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
     surface_gradient_mahaffy(h_x, h_y);
 
   } else {
-    throw RuntimeError::formatted("value of surface_gradient_method, option '-gradient %s', is not valid",
+    throw RuntimeError::formatted("value of sia.surface_gradient_method, option '-gradient %s', is not valid",
                                   method.c_str());
   }
 }

@@ -103,7 +103,7 @@ void IceModel::init_timeseries() {
 
   if (append == true) {
     double time_max;
-    std::string time_name = m_config->get_string("time_dimension_name");
+    std::string time_name = m_config->get_string("time.dimension_name");
     bool time_exists = false;
 
     time_exists = nc.inq_var(time_name);
@@ -243,8 +243,8 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO nc(m_grid->com, m_config->get_string("output_format"));
-    std::string time_name = m_config->get_string("time_dimension_name");
+    PIO nc(m_grid->com, m_config->get_string("output.format"));
+    std::string time_name = m_config->get_string("time.dimension_name");
     bool time_exists;
 
     nc.open(m_extra_filename, PISM_READONLY);
@@ -427,7 +427,7 @@ void IceModel::write_extras() {
   // find out how much time passed since the beginning of the run
   double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
 
-  PIO nc(m_grid->com, m_config->get_string("output_format"));
+  PIO nc(m_grid->com, m_config->get_string("output.format"));
 
   if (not m_extra_file_is_ready) {
     // default behavior is to move the file aside if it exists already; option allows appending
@@ -440,11 +440,11 @@ void IceModel::write_extras() {
 
     // Prepare the file:
     nc.open(filename, mode);
-    io::define_time(nc, m_config->get_string("time_dimension_name"),
+    io::define_time(nc, m_config->get_string("time.dimension_name"),
                     m_time->calendar(),
                     m_time->CF_units_string(),
                     m_sys);
-    nc.put_att_text(m_config->get_string("time_dimension_name"),
+    nc.put_att_text(m_config->get_string("time.dimension_name"),
                     "bounds", "time_bounds");
 
     m_extra_file_is_ready = true;
@@ -457,7 +457,7 @@ void IceModel::write_extras() {
   write_metadata(nc, true, true);
 
   double      current_time = m_time->current();
-  std::string time_name    = m_config->get_string("time_dimension_name");
+  std::string time_name    = m_config->get_string("time.dimension_name");
 
   unsigned int time_length = nc.inq_dimlen(time_name);
   size_t time_start = static_cast<size_t>(time_length);

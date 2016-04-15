@@ -224,7 +224,7 @@ void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_
 Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
 
-If configuration parameter `surface_gradient_method` = `eta` then the surface
+If configuration parameter `sia.surface_gradient_method` = `eta` then the surface
 gradient \f$\nabla h\f$ is computed by the gradient of the transformed variable
 \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$). The idea is that
 this quantity is more regular at ice sheet margins, and so we get a better
@@ -244,7 +244,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
 
   bool cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
   bool compute_surf_grad_inward_ssa = m_config->get_boolean("ssa.compute_surface_gradient_inward");
-  bool use_eta = (m_config->get_string("surface_gradient_method") == "eta");
+  bool use_eta = (m_config->get_string("sia.surface_gradient_method") == "eta");
 
   IceModelVec::AccessList list;
   list.add(*m_surface);

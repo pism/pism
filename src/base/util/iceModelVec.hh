@@ -141,9 +141,9 @@ private:
 
   If you need to "prepare" a file, do:
   \code
-  PIO nc(grid.com, grid.config.get_string("output_format"));
+  PIO nc(grid.com, grid.config.get_string("output.format"));
 
-  std::string time_name = config.get_string("time_dimension_name");
+  std::string time_name = config.get_string("time.dimension_name");
   ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr); // append == false
   ierr = nc.def_time(time_name, grid.time->calendar(),
   grid.time->CF_units_string()); CHKERRQ(ierr);

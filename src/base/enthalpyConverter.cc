@@ -60,7 +60,7 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_L           = config.get_double("fresh_water.latent_heat_of_fusion"); // J kg-1
   m_p_air       = config.get_double("surface_pressure"); // Pa
   m_rho_i       = config.get_double("ice.density"); // kg m-3
-  m_T_melting   = config.get_double("water_melting_point_temperature"); // K
+  m_T_melting   = config.get_double("fresh_water.melting_point_temperature"); // K
   m_T_tolerance = config.get_double("enthalpy_converter.relaxed_is_temperate_tolerance"); // K
   m_T_0         = config.get_double("enthalpy_converter.T_reference"); // K
 
@@ -83,7 +83,7 @@ bool EnthalpyConverter::is_temperate(double E, double P) const {
 
 //! A relaxed version of `is_temperate()`.
 /*! Returns `true` if the pressure melting temperature corresponding to `(E, P)` is within
-    `enthalpy_converter.relaxed_is_temperate_tolerance` from `water_melting_point_temperature`.
+    `enthalpy_converter.relaxed_is_temperate_tolerance` from `fresh_water.melting_point_temperature`.
  */
 bool EnthalpyConverter::is_temperate_relaxed(double E, double P) const {
   return (pressure_adjusted_temperature(E, P) >= m_T_melting - m_T_tolerance);

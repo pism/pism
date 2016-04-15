@@ -66,11 +66,11 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
 
   get_input_rate(icet, icedt, m_total_input);
 
-  const double tillwat_max = m_config->get_double("hydrology_tillwat_max"),
-               C           = m_config->get_double("hydrology_tillwat_decay_rate");
+  const double tillwat_max = m_config->get_double("hydrology.tillwat_max"),
+               C           = m_config->get_double("hydrology.tillwat_decay_rate");
 
   if (tillwat_max < 0.0) {
-    throw RuntimeError("hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
+    throw RuntimeError("hydrology::NullTransport: hydrology.tillwat_max is negative.\n"
                        "This is not allowed.");
   }
 

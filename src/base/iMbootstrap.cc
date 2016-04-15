@@ -176,12 +176,12 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   }
 
   m_basal_melt_rate.regrid(filename, OPTIONAL,
-                         m_config->get_double("bootstrapping_bmelt_value_no_var"));
+                         m_config->get_double("bootstrapping.defaults.bmelt"));
   m_geothermal_flux.regrid(filename, OPTIONAL,
-                         m_config->get_double("bootstrapping_geothermal_flux_value_no_var"));
+                         m_config->get_double("bootstrapping.defaults.geothermal_flux"));
 
   m_ice_thickness.regrid(filename, OPTIONAL,
-                       m_config->get_double("bootstrapping_H_value_no_var"));
+                       m_config->get_double("bootstrapping.defaults.ice_thickness"));
   // check the range of the ice thickness
   {
     Range thk_range = m_ice_thickness.range();
@@ -249,7 +249,7 @@ the base of the ice.  Suppose the column of ice has height \f$H\f$, the ice
 thickness.
 
 There are two alternative bootstrap methods determined by the configuration parameter
-`config.get_double("bootstrapping_temperature_heuristic"))`. Allowed values are `"smb"` and
+`config.get_double("bootstrapping.temperature_heuristic"))`. Allowed values are `"smb"` and
 `"quartic_guess"`.
 
 1. If the `smb` method is chosen, which is the default, and if \f$m>0\f$,
@@ -297,14 +297,14 @@ bootstrap temperature profile in the bedrock.
 void IceModel::putTempAtDepth() {
 
   m_log->message(2, " - filling ice temperatures using surface temps (and %s)\n",
-             (m_config->get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
+             (m_config->get_string("bootstrapping.temperature_heuristic") == "quartic_guess"
               ? "quartic guess sans smb" : "mass balance for velocity estimate"));
 
   const bool do_cold = m_config->get_boolean("do_cold_ice_methods"),
-             usesmb  = m_config->get_string("bootstrapping_temperature_heuristic") == "smb";
+             usesmb  = m_config->get_string("bootstrapping.temperature_heuristic") == "smb";
   const double
     ice_k = m_config->get_double("ice.thermal_conductivity"),
-    melting_point_temp = m_config->get_double("water_melting_point_temperature"),
+    melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature"),
     ice_density = m_config->get_double("ice.density"),
     beta_CC_grad = m_config->get_double("beta_CC") * ice_density * m_config->get_double("standard_gravity"),
     KK = ice_k / (ice_density * m_config->get_double("ice.specific_heat_capacity"));

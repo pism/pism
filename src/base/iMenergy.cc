@@ -182,7 +182,7 @@ void IceModel::combine_basal_melt_rate() {
 //! the bedrock thermal layer will see.
 void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double
-    T0                     = m_config->get_double("water_melting_point_temperature"),
+    T0                     = m_config->get_double("fresh_water.melting_point_temperature"),
     beta_CC_grad_sea_water = (m_config->get_double("beta_CC") * m_config->get_double("sea_water.density") *
                               m_config->get_double("standard_gravity")); // K m-1
 

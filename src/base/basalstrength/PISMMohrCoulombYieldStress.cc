@@ -135,7 +135,7 @@ read-in-from-file state or with a default constant value from the config file.
 */
 void MohrCoulombYieldStress::init_impl() {
   {
-    std::string hydrology_tillwat_max = "hydrology_tillwat_max";
+    std::string hydrology_tillwat_max = "hydrology.tillwat_max";
     bool till_is_present = m_config->get_double(hydrology_tillwat_max) > 0.0;
 
     if (not till_is_present) {
@@ -219,7 +219,7 @@ void MohrCoulombYieldStress::init_impl() {
   } else if (use_input_file) {
     if (bootstrap) {
       m_till_phi.regrid(filename, OPTIONAL,
-                        m_config->get_double("bootstrapping_tillphi_value_no_var"));
+                        m_config->get_double("bootstrapping.defaults.tillphi"));
     } else {
       m_till_phi.read(filename, start);
     }
@@ -354,7 +354,7 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
        addtransportable = m_config->get_boolean("tauc_add_transportable_water");
 
   const double high_tauc   = m_config->get_double("high_tauc"),
-               tillwat_max = m_config->get_double("hydrology_tillwat_max"),
+               tillwat_max = m_config->get_double("hydrology.tillwat_max"),
                c0          = m_config->get_double("till_cohesion"),
                N0          = m_config->get_double("till_reference_effective_pressure"),
                e0overCc    = m_config->get_double("till_reference_void_ratio")
@@ -495,7 +495,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
     e0overCc      = (m_config->get_double("till_reference_void_ratio") /
                      m_config->get_double("till_compressibility_coefficient")),
     delta         = m_config->get_double("till_effective_fraction_overburden"),
-    tillwat_max   = m_config->get_double("hydrology_tillwat_max");
+    tillwat_max   = m_config->get_double("hydrology.tillwat_max");
 
   assert(m_hydrology != NULL);
 

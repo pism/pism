@@ -168,7 +168,7 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
 void Verification::update_ABCDH(double time) {
   double         A0, T0, H, accum;
 
-  double f = m_config->get_double("ice.density") / m_config->get_double("lithosphere_density");
+  double f = m_config->get_double("ice.density") / m_config->get_double("bed_deformation.lithosphere_density");
 
   rheology::PatersonBuddCold tgaIce("sia.", *m_config, m_EC);
 

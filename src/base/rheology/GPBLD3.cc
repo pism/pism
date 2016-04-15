@@ -36,8 +36,8 @@ static void check_enthalpy_converter(EnthalpyConverter::Ptr EC,
                                      const Config &config) {
   struct enth_constants c = enth_get_constants();
 
-  if (c.T_melting != config.get_double("water_melting_point_temperature")) {
-    throw RuntimeError("water_melting_point_temperature mismatch");
+  if (c.T_melting != config.get_double("fresh_water.melting_point_temperature")) {
+    throw RuntimeError("fresh_water.melting_point_temperature mismatch");
   }
 
   if (c.c_i != config.get_double("ice.specific_heat_capacity")) {

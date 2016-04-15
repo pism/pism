@@ -329,7 +329,7 @@ def run():
     using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
                                              "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)", default=True)
 
-    inv_method = config.get_string("inv_ssa_method")
+    inv_method = config.get_string("inverse.ssa_method")
 
     if output_filename is None:
         output_filename = "pismi_" + os.path.basename(input_filename)
@@ -465,12 +465,12 @@ def run():
         pio = PISM.PIO(grid.com, "netcdf3")
         pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
         PISM.define_time(pio,
-                         grid.ctx().config().get_string("time_dimension_name"),
-                         grid.ctx().config().get_string("calendar"),
+                         grid.ctx().config().get_string("time.dimension_name"),
+                         grid.ctx().config().get_string("time.calendar"),
                          grid.ctx().time().units_string(),
                          grid.ctx().unit_system())
         PISM.append_time(pio,
-                         grid.ctx().config().get_string("time_dimension_name"),
+                         grid.ctx().config().get_string("time.dimension_name"),
                          grid.ctx().time().current())
         pio.close()
     zeta.write(output_filename)

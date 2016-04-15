@@ -121,7 +121,7 @@ void Distributed::init_bwp() {
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
-  const double bwp_default = m_config->get_double("bootstrapping_bwp_value_no_var");
+  const double bwp_default = m_config->get_double("bootstrapping.defaults.bwp");
 
   if (use_input_file) {
     // regridding is equivalent to reading in if grids match, but this way we can start from a file
@@ -239,10 +239,10 @@ in verification and/or reporting.  It is not used during time-dependent
 model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
  */
 void Distributed::P_from_W_steady(IceModelVec2S &result) {
-  double CC = m_config->get_double("hydrology_cavitation_opening_coefficient") /
-                    (m_config->get_double("hydrology_creep_closure_coefficient") * m_config->get_double("flow_law.isothermal_Glen.ice_softness")),
+  double CC = m_config->get_double("hydrology.cavitation_opening_coefficient") /
+                    (m_config->get_double("hydrology.creep_closure_coefficient") * m_config->get_double("flow_law.isothermal_Glen.ice_softness")),
     powglen = 1.0 / m_config->get_double("sia.Glen_exponent"), // choice is SIA; see #285
-    Wr = m_config->get_double("hydrology_roughness_scale");
+    Wr = m_config->get_double("hydrology.roughness_scale");
 
   overburden_pressure(m_Pover);
 
@@ -296,7 +296,7 @@ void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, d
   adaptive_for_W_evolution(t_current,t_end, maxKW,
                            dt_result,maxV_result,maxD_result,dtCFL,dtDIFFW);
 
-  const double phi0 = m_config->get_double("hydrology_regularizing_porosity");
+  const double phi0 = m_config->get_double("hydrology.regularizing_porosity");
   dtDIFFP = 2.0 * phi0 * dtDIFFW;
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
@@ -351,10 +351,10 @@ void Distributed::update_impl(double icet, double icedt) {
             rg    = m_config->get_double("fresh_water.density") * m_config->get_double("standard_gravity"),
             nglen = m_config->get_double("sia.Glen_exponent"), // choice is SIA; see #285
             Aglen = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
-            c1    = m_config->get_double("hydrology_cavitation_opening_coefficient"),
-            c2    = m_config->get_double("hydrology_creep_closure_coefficient"),
-            Wr    = m_config->get_double("hydrology_roughness_scale"),
-            phi0  = m_config->get_double("hydrology_regularizing_porosity");
+            c1    = m_config->get_double("hydrology.cavitation_opening_coefficient"),
+            c2    = m_config->get_double("hydrology.creep_closure_coefficient"),
+            Wr    = m_config->get_double("hydrology.roughness_scale"),
+            phi0  = m_config->get_double("hydrology.regularizing_porosity");
 
   double ht = m_t, hdt = 0, // hydrology model time and time step
             maxKW = 0, maxV = 0, maxD = 0;

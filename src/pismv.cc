@@ -48,7 +48,7 @@ Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
-  config->set_string("calendar", "none");
+  config->set_string("time.calendar", "none");
 
   set_config_from_options(*config);
 

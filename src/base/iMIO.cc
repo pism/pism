@@ -110,12 +110,12 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
 void IceModel::dumpToFile(const std::string &filename) {
   const Profiling &profiling = m_ctx->profiling();
 
-  PIO nc(m_grid->com, m_config->get_string("output_format"));
+  PIO nc(m_grid->com, m_config->get_string("output.format"));
 
   profiling.begin("model state dump");
 
   // Prepare the file
-  std::string time_name = m_config->get_string("time_dimension_name");
+  std::string time_name = m_config->get_string("time.dimension_name");
   nc.open(filename, PISM_READWRITE_MOVE);
 
   // Write metadata *before* everything else:
@@ -719,12 +719,12 @@ void IceModel::write_snapshot() {
              filename, m_time->date().c_str(),
              m_time->date(saving_after).c_str());
 
-  PIO nc(m_grid->com, m_config->get_string("output_format"));
+  PIO nc(m_grid->com, m_config->get_string("output.format"));
 
   if (not m_snapshots_file_is_ready) {
     // Prepare the snapshots file:
     nc.open(filename, PISM_READWRITE_MOVE);
-    io::define_time(nc, m_config->get_string("time_dimension_name"),
+    io::define_time(nc, m_config->get_string("time.dimension_name"),
                 m_time->calendar(),
                 m_time->CF_units_string(),
                 m_sys);
@@ -738,7 +738,7 @@ void IceModel::write_snapshot() {
   // write metadata to the file *every time* we update it
   write_metadata(nc, true, true);
 
-  io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
+  io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
 
   write_variables(nc, m_snapshot_vars, PISM_DOUBLE);
 
@@ -748,7 +748,7 @@ void IceModel::write_snapshot() {
 
     // Get time length now, i.e. after writing variables. This forces PISM to call PIO::enddef(), so
     // that the length of the time dimension is up to date.
-    unsigned int time_length = nc.inq_dimlen(m_config->get_string("time_dimension_name"));
+    unsigned int time_length = nc.inq_dimlen(m_config->get_string("time.dimension_name"));
 
     // make sure that time_start is valid even if time_length is zero
     size_t time_start = 0;
@@ -767,7 +767,7 @@ void IceModel::write_snapshot() {
 //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
 void IceModel::init_backups() {
 
-  m_backup_interval = m_config->get_double("backup_interval");
+  m_backup_interval = m_config->get_double("output.backup_interval");
 
   options::String backup_file("-o", "Output file name");
   if (backup_file.is_set()) {
@@ -813,15 +813,15 @@ void IceModel::write_backup() {
 
   stampHistory(tmp);
 
-  PIO nc(m_grid->com, m_config->get_string("output_format"));
+  PIO nc(m_grid->com, m_config->get_string("output.format"));
 
   // write metadata:
   nc.open(m_backup_filename, PISM_READWRITE_MOVE);
-  io::define_time(nc, m_config->get_string("time_dimension_name"),
+  io::define_time(nc, m_config->get_string("time.dimension_name"),
               m_time->calendar(),
               m_time->CF_units_string(),
               m_sys);
-  io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
+  io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
 
   // Write metadata *before* variables:
   write_metadata(nc, true, true);

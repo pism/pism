@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Constantine Khroulev
+// Copyright (C) 2009--2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -304,7 +304,7 @@ int Timeseries::length() {
 DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name)
   : Timeseries(g, name, dimension_name) {
 
-  buffer_size = (size_t)g.ctx()->config()->get_double("timeseries_buffer_size");
+  buffer_size = (size_t)g.ctx()->config()->get_double("output.timeseries_buffer_size");
   m_start = 0;
   rate_of_change = false;
   m_dimension.set_string("calendar", g.ctx()->time()->calendar());

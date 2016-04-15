@@ -38,11 +38,11 @@ def create_config():
         "ice.density" : 1000.0,
         "ice.density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
 
-        "bed_smoother_range" : -1.0,
-        "bed_smoother_range_doc" : "m; negative value de-activates bed smoother",
+        "sia.bed_smoother_range" : -1.0,
+        "sia.bed_smoother_range_doc" : "m; negative value de-activates bed smoother",
 
-        "bootstrapping_geothermal_flux_value_no_var" : 0.0,
-        "bootstrapping_geothermal_flux_value_no_var_doc" : "W m-2; no geothermal",
+        "bootstrapping.defaults.geothermal_flux" : 0.0,
+        "bootstrapping.defaults.geothermal_flux_doc" : "W m-2; no geothermal",
 
         "summary_time_unit_name" : "second",
         "summary_time_unit_name_doc" : "stdout uses seconds (not years) to show model time",
@@ -62,8 +62,8 @@ def create_config():
         "mask_is_floating_thickness_standard" : 1e-8,
         "mask_is_floating_thickness_standard_doc" : "m; should not matter since all grounded",
 
-        "adaptive_timestepping_ratio" : 0.08,
-        "adaptive_timestepping_ratio_doc" : "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?",
+        "time_stepping.adaptive_time_stepping_ratio" : 0.08,
+        "time_stepping.adaptive_time_stepping_ratio_doc" : "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?",
 
         "sia.Glen_exponent" : 5.9,
         "sia.Glen_exponent_doc" : "; : n;  Sayag & Worster (2013) give n = 5.9 +- 0.2",

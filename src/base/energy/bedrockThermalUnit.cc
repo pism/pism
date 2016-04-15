@@ -45,9 +45,9 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
   m_upward_flux.write_in_glaciological_units = true;
 
   // build constant diffusivity for heat equation
-  m_bed_rho = m_config->get_double("bedrock_thermal_density");
-  m_bed_c   = m_config->get_double("bedrock_thermal_specific_heat_capacity");
-  m_bed_k   = m_config->get_double("bedrock_thermal_conductivity");
+  m_bed_rho = m_config->get_double("energy.bedrock_thermal_density");
+  m_bed_c   = m_config->get_double("energy.bedrock_thermal_specific_heat_capacity");
+  m_bed_k   = m_config->get_double("energy.bedrock_thermal_conductivity");
   m_bed_D   = m_bed_k / (m_bed_rho * m_bed_c);
 
   m_Mbz = (int)m_config->get_double("grid.Mbz");

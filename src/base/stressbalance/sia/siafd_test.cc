@@ -442,11 +442,11 @@ int main(int argc, char *argv[]) {
     PIO pio(grid->com, "netcdf3");
 
     pio.open(output_file, PISM_READWRITE_MOVE);
-    io::define_time(pio, config->get_string("time_dimension_name"),
+    io::define_time(pio, config->get_string("time.dimension_name"),
                     grid->ctx()->time()->calendar(),
                     grid->ctx()->time()->CF_units_string(),
                     unit_system);
-    io::append_time(pio, config->get_string("time_dimension_name"), 0.0);
+    io::append_time(pio, config->get_string("time.dimension_name"), 0.0);
     pio.close();
 
     ice_surface_elevation.write(output_file);

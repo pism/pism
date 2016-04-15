@@ -67,9 +67,9 @@ BedDeformLC::BedDeformLC(const Config &config,
   m_dy     = mydy;
   m_Z      = myZ;
   m_icerho = config.get_double("ice.density");
-  m_rho    = config.get_double("lithosphere_density");
-  m_eta    = config.get_double("mantle_viscosity");
-  m_D      = config.get_double("lithosphere_flexural_rigidity");
+  m_rho    = config.get_double("bed_deformation.lithosphere_density");
+  m_eta    = config.get_double("bed_deformation.mantle_viscosity");
+  m_D      = config.get_double("bed_deformation.lithosphere_flexural_rigidity");
 
   m_standard_gravity = config.get_double("standard_gravity");
 

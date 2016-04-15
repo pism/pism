@@ -68,7 +68,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   // Override some defaults from parent class
   m_config->set_double("sia.enhancement_factor", 1.0);
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("bed_smoother_range", 0.0);
+  m_config->set_double("sia.bed_smoother_range", 0.0);
 
   // set values of flags in run()
   m_config->set_boolean("do_mass_conserve", true);
@@ -111,9 +111,9 @@ void IceCompModel::setFromOptions() {
   // options should be able to override parameter values set here.
 
   if (testname == 'H') {
-    m_config->set_string("bed_deformation_model", "iso");
+    m_config->set_string("bed_deformation.model", "iso");
   } else
-    m_config->set_string("bed_deformation_model", "none");
+    m_config->set_string("bed_deformation.model", "none");
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K') || (testname == 'O')) {
     m_config->set_boolean("do_energy", true);
@@ -129,10 +129,10 @@ void IceCompModel::setFromOptions() {
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((testname == 'K') || (testname == 'O')) {
-    m_config->set_boolean("temperature_allow_above_melting", false);
+    m_config->set_boolean("energy.allow_temperature_above_melting", false);
   } else {
     // note temps are generally allowed to go above pressure melting in verify
-    m_config->set_boolean("temperature_allow_above_melting", true);
+    m_config->set_boolean("energy.allow_temperature_above_melting", true);
   }
 
   if (testname == 'V') {
@@ -168,9 +168,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     if (testname == 'K') {
       m_log->message(1,
                  "setting material properties of bedrock to those of ice in Test K\n");
-      m_config->set_double("bedrock_thermal_density", m_config->get_double("ice.density"));
-      m_config->set_double("bedrock_thermal_conductivity", m_config->get_double("ice.thermal_conductivity"));
-      m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice.specific_heat_capacity"));
+      m_config->set_double("energy.bedrock_thermal_density", m_config->get_double("ice.density"));
+      m_config->set_double("energy.bedrock_thermal_conductivity", m_config->get_double("ice.thermal_conductivity"));
+      m_config->set_double("energy.bedrock_thermal_specific_heat_capacity", m_config->get_double("ice.specific_heat_capacity"));
       bedrock_is_ice_forK = true;
     } else {
       m_log->message(1,
@@ -183,9 +183,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    m_config->set_double("bedrock_thermal_density", m_config->get_double("ice.density"));
-    m_config->set_double("bedrock_thermal_conductivity", m_config->get_double("ice.thermal_conductivity"));
-    m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice.specific_heat_capacity"));
+    m_config->set_double("energy.bedrock_thermal_density", m_config->get_double("ice.density"));
+    m_config->set_double("energy.bedrock_thermal_conductivity", m_config->get_double("ice.thermal_conductivity"));
+    m_config->set_double("energy.bedrock_thermal_specific_heat_capacity", m_config->get_double("ice.specific_heat_capacity"));
   }
 
   btu = new energy::BTU_Verification(m_grid, testname, bedrock_is_ice_forK);
@@ -221,9 +221,9 @@ void IceCompModel::allocate_bed_deformation() {
 
   IceModel::allocate_bed_deformation();
 
-  f = m_config->get_double("ice.density") / m_config->get_double("lithosphere_density");  // for simple isostasy
+  f = m_config->get_double("ice.density") / m_config->get_double("bed_deformation.lithosphere_density");  // for simple isostasy
 
-  std::string bed_def_model = m_config->get_string("bed_deformation_model");
+  std::string bed_def_model = m_config->get_string("bed_deformation.model");
 
   if ((testname == 'H') && bed_def_model != "iso") {
     m_log->message(1,

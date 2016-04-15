@@ -34,7 +34,7 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, OceanModel* in)
   option_prefix = "-ocean_delta_T";
   offset_name   = "delta_T";
 
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time.dimension_name"));
 
   offset->metadata().set_string("units", "Kelvin");
   offset->metadata().set_string("long_name", "ice-shelf-base temperature offsets");
@@ -86,7 +86,7 @@ void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::
 
 void Delta_T::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "shelfbtemp")) {

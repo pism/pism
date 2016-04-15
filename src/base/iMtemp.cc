@@ -48,7 +48,7 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
     dE         = rho * c * (*Texcess) * dvol,
     massmelted = dE / L;
 
-  assert(not m_config->get_boolean("temperature_allow_above_melting"));
+  assert(not m_config->get_boolean("energy.allow_temperature_above_melting"));
 
   if (*Texcess >= 0.0) {
     // T is at or above pressure-melting temp, so temp needs to be set to
@@ -142,15 +142,15 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
     ice_density        = m_config->get_double("ice.density"),
     ice_c              = m_config->get_double("ice.specific_heat_capacity"),
     L                  = m_config->get_double("fresh_water.latent_heat_of_fusion"),
-    melting_point_temp = m_config->get_double("water_melting_point_temperature"),
+    melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature"),
     beta_CC_grad       = m_config->get_double("beta_CC") * ice_density * m_config->get_double("standard_gravity");
 
-  const bool allow_above_melting = m_config->get_boolean("temperature_allow_above_melting");
+  const bool allow_above_melting = m_config->get_boolean("energy.allow_temperature_above_melting");
 
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulgeMax  = m_config->get_double("enthalpy_cold_bulge_max") / ice_c;
+  const double bulgeMax  = m_config->get_double("energy.enthalpy_cold_bulge_max") / ice_c;
 
   // now get map-plane fields, starting with coupler fields
   assert(m_surface != NULL);

@@ -38,7 +38,7 @@ Constant::Constant(IceGrid::ConstPtr g)
 
   {
     const double
-      Q           = m_config->get_double("ocean_sub_shelf_heat_flux_into_ice"),
+      Q           = m_config->get_double("ocean.sub_shelf_heat_flux_into_ice"),
       L           = m_config->get_double("fresh_water.latent_heat_of_fusion"),
       ice_density = m_config->get_double("ice.density");
 
@@ -107,7 +107,7 @@ void Constant::sea_level_elevation_impl(double &result) {
 }
 
 void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
-  const double T0 = m_config->get_double("water_melting_point_temperature"), // K
+  const double T0 = m_config->get_double("fresh_water.melting_point_temperature"), // K
     beta_CC       = m_config->get_double("beta_CC"),
     g             = m_config->get_double("standard_gravity"),
     ice_density   = m_config->get_double("ice.density");
@@ -138,7 +138,7 @@ void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string>
 
 void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
 
   if (set_contains(vars, "shelfbtemp")) {
     io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);

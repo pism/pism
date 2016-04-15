@@ -29,11 +29,11 @@ namespace hydrology {
 
 NullTransport::NullTransport(IceGrid::ConstPtr g)
   : Hydrology(g) {
-  m_diffuse_tillwat    = m_config->get_boolean("hydrology_null_diffuse_till_water");
-  m_diffusion_time     = m_config->get_double("hydrology_null_diffusion_time", "seconds");
-  m_diffusion_distance = m_config->get_double("hydrology_null_diffusion_distance", "meters");
-  m_tillwat_max        = m_config->get_double("hydrology_tillwat_max", "meters");
-  m_tillwat_decay_rate = m_config->get_double("hydrology_tillwat_decay_rate");
+  m_diffuse_tillwat    = m_config->get_boolean("hydrology.null_diffuse_till_water");
+  m_diffusion_time     = m_config->get_double("hydrology.null_diffusion_time", "seconds");
+  m_diffusion_distance = m_config->get_double("hydrology.null_diffusion_distance", "meters");
+  m_tillwat_max        = m_config->get_double("hydrology.tillwat_max", "meters");
+  m_tillwat_decay_rate = m_config->get_double("hydrology.tillwat_decay_rate");
 
   if (m_tillwat_max < 0.0) {
     throw RuntimeError("hydrology::NullTransport: hydrology_tillwat_max is negative.\n"

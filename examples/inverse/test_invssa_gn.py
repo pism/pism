@@ -114,7 +114,7 @@ if __name__ == "__main__":
         vel_ssa_observed.add(-1, vel_sia_observed)
 
     (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(ssarun)
-    eta = config.get_double("tikhonov_penalty_weight")
+    eta = config.get_double("inverse.tikhonov_penalty_weight")
 
     solver_gn = PISM.InvSSATikhonovGN(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
 

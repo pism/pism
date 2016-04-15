@@ -213,7 +213,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   const double
     ice_density = m_config->get_double("ice.density"),              // kg m-3
     // constants controlling the numerical method:
-    bulgeEnthMax = m_config->get_double("enthalpy_cold_bulge_max"); // J kg-1
+    bulgeEnthMax = m_config->get_double("energy.enthalpy_cold_bulge_max"); // J kg-1
 
   bool viewOneColumn = options::Bool("-view_sys",
                                      "save column system information to a file");

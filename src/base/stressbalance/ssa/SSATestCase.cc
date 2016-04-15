@@ -80,7 +80,7 @@ void SSATestCase::buildSSACoefficients()
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
+  double fill_value = units::convert(sys, config->get_double("output.fill_value"), "m year-1", "m second-1");
 
   m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
@@ -365,13 +365,13 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output_format"));
+  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output.format"));
   pio.open(filename, PISM_READWRITE_MOVE);
-  io::define_time(pio, m_config->get_string("time_dimension_name"),
+  io::define_time(pio, m_config->get_string("time.dimension_name"),
                   m_grid->ctx()->time()->calendar(),
                   m_grid->ctx()->time()->CF_units_string(),
                   m_grid->ctx()->unit_system());
-  io::append_time(pio, m_config->get_string("time_dimension_name"), 0.0);
+  io::append_time(pio, m_config->get_string("time.dimension_name"), 0.0);
 
   m_surface.write(pio);
   m_thickness.write(pio);

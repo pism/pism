@@ -41,23 +41,23 @@ def generate_config():
         "flow_law.isothermal_Glen.ice_softness" : 3.1689e-24,
         "flow_law.isothermal_Glen.ice_softness_doc" : "Pa-3 s-1; ice softness; NOT DEFAULT",
 
-        "hydrology_hydraulic_conductivity" : 1.0e-2 / (1000.0 * 9.81),
-        "hydrology_hydraulic_conductivity_doc" : "= k; NOT DEFAULT",
+        "hydrology.hydraulic_conductivity" : 1.0e-2 / (1000.0 * 9.81),
+        "hydrology.hydraulic_conductivity_doc" : "= k; NOT DEFAULT",
 
-        "hydrology_tillwat_max" : 0.0,
-        "hydrology_tillwat_max_doc" : "m; turn off till water mechanism",
+        "hydrology.tillwat_max" : 0.0,
+        "hydrology.tillwat_max_doc" : "m; turn off till water mechanism",
 
-        "hydrology_thickness_power_in_flux" : 1.0,
-        "hydrology_thickness_power_in_flux_doc" : "; = alpha in notes",
+        "hydrology.thickness_power_in_flux" : 1.0,
+        "hydrology.thickness_power_in_flux_doc" : "; = alpha in notes",
 
-        "hydrology_gradient_power_in_flux" : 2.0,
-        "hydrology_gradient_power_in_flux_doc" : "; = beta in notes",
+        "hydrology.gradient_power_in_flux" : 2.0,
+        "hydrology.gradient_power_in_flux_doc" : "; = beta in notes",
 
-        "hydrology_roughness_scale" : 1.0,
-        "hydrology_roughness_scale_doc" : "m; W_r in notes; roughness scale",
+        "hydrology.roughness_scale" : 1.0,
+        "hydrology.roughness_scale_doc" : "m; W_r in notes; roughness scale",
 
-        "hydrology_regularizing_porosity" : 0.01,
-        "hydrology_regularizing_porosity_doc" : "[pure]; phi_0 in notes",
+        "hydrology.regularizing_porosity" : 0.01,
+        "hydrology.regularizing_porosity_doc" : "[pure]; phi_0 in notes",
 
         "yield_stress_model" : "constant",
         "yield_stress_model_doc" : "only the constant yield stress model works without till",

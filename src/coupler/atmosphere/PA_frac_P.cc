@@ -35,7 +35,7 @@ Frac_P::Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in)
 
   option_prefix = "-atmosphere_frac_P";
   offset_name = "frac_P";
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time.dimension_name"));
   offset->metadata().set_string("units", "1");
   offset->metadata().set_string("long_name", "precipitation multiplier, pure fraction");
   offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
@@ -108,7 +108,7 @@ void Frac_P::add_vars_to_output_impl(const std::string &keyword,
 void Frac_P::define_variables_impl(const std::set<std::string> &vars_input,
                                            const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
 
   if (set_contains(vars, "air_temp")) {
     io::define_spatial_variable(air_temp, *m_grid, nc, nctype, order, false);

@@ -253,7 +253,7 @@ void SSAFD::init_impl() {
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;
 
-  if (m_config->get_boolean("do_fracture_density")) {
+  if (m_config->get_boolean("fracture_density.enabled")) {
     fracture_density = m_grid->variables().get_2d_scalar("fracture_density");
   }
 }
@@ -486,7 +486,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
   const bool replace_zero_diagonal_entries =
-    m_config->get_boolean("ssafd_replace_zero_diagonal_entries");
+    m_config->get_boolean("ssa.fd.replace_zero_diagonal_entries");
 
   // FIXME: bedrock_boundary is a misleading name
   const bool bedrock_boundary = m_config->get_boolean("ssa.dirichlet_bc");
@@ -883,7 +883,7 @@ void SSAFD::solve() {
         break;
       } else if (k == 1) {
         // try underrelaxing the iteration
-        const double underrelax = m_config->get_double("ssafd_nuH_iter_failure_underrelaxation");
+        const double underrelax = m_config->get_double("ssa.fd.nuH_iter_failure_underrelaxation");
         m_log->message(1,
                    "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
                    underrelax);
@@ -910,8 +910,8 @@ void SSAFD::solve() {
   }
 
   // Post-process velocities if the user asked for it:
-  if (m_config->get_boolean("brutal_sliding")) {
-    const double brutal_sliding_scaleFactor = m_config->get_double("brutal_sliding_scale");
+  if (m_config->get_boolean("ssa.fd.brutal_sliding")) {
+    const double brutal_sliding_scaleFactor = m_config->get_double("ssa.fd.brutal_sliding_scale");
     m_velocity.scale(brutal_sliding_scaleFactor);
 
     m_velocity.update_ghosts();
@@ -963,8 +963,8 @@ void SSAFD::picard_manager(double nuH_regularization,
   PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
-  unsigned int max_iterations = static_cast<int>(m_config->get_double("ssafd_max_iterations"));
-  double ssa_relative_tolerance = m_config->get_double("ssafd_relative_convergence");
+  unsigned int max_iterations = static_cast<int>(m_config->get_double("ssa.fd.max_iterations"));
+  double ssa_relative_tolerance = m_config->get_double("ssa.fd.relative_convergence");
   char tempstr[100] = "";
   bool verbose = getVerbosityLevel() >= 2,
     very_verbose = getVerbosityLevel() > 2;
@@ -1274,12 +1274,12 @@ void SSAFD::compute_hardav_staggered() {
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
 void SSAFD::fracture_induced_softening() {
-  if (not m_config->get_boolean("do_fracture_density")) {
+  if (not m_config->get_boolean("fracture_density.enabled")) {
     return;
   }
 
   const double
-    epsilon = m_config->get_double("fracture_density_softening_lower_limit"),
+    epsilon = m_config->get_double("fracture_density.softening_lower_limit"),
     n_glen  = m_flow_law->exponent();
 
   IceModelVec::AccessList list;

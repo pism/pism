@@ -167,12 +167,12 @@ def grid_from_file_test():
     output_file = "test_grid_from_file.nc"
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.ctx().config().get_string("time_dimension_name"),
-                     grid.ctx().config().get_string("calendar"),
+    PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
+                     grid.ctx().config().get_string("time.calendar"),
                      grid.ctx().time().units_string(),
                      grid.ctx().unit_system())
     PISM.append_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().time().current())
     pio.close()
 
@@ -382,12 +382,12 @@ def modelvecs_test():
     output_file = "test_ModelVecs.nc"
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.ctx().config().get_string("time_dimension_name"),
-                     grid.ctx().config().get_string("calendar"),
+    PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
+                     grid.ctx().config().get_string("time.calendar"),
                      grid.ctx().time().units_string(),
                      grid.ctx().unit_system())
     PISM.append_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().time().current())
     pio.close()
 
@@ -929,7 +929,7 @@ def regridding_test():
 def po_constant_test():
     """Test that the basal melt rate computed by ocean::Constant is the
     same regardless of whether it is set using
-    ocean_sub_shelf_heat_flux_into_ice or the command-line option."""
+    ocean.sub_shelf_heat_flux_into_ice or the command-line option."""
 
     grid = create_dummy_grid()
     config = grid.ctx().config()
@@ -941,9 +941,9 @@ def po_constant_test():
     # an integer multiple of m / year so that we can easily specify it
     # using a command-line option
     M = PISM.convert(grid.ctx().unit_system(), 1, "m / year", "m / second")
-    Q_default = config.get_double("ocean_sub_shelf_heat_flux_into_ice")
+    Q_default = config.get_double("ocean.sub_shelf_heat_flux_into_ice")
     Q = M * L * rho
-    config.set_double("ocean_sub_shelf_heat_flux_into_ice", Q)
+    config.set_double("ocean.sub_shelf_heat_flux_into_ice", Q)
 
     # without the command-line option
     ocean_constant = PISM.OceanConstant(grid)
@@ -952,7 +952,7 @@ def po_constant_test():
     ocean_constant.shelf_base_mass_flux(mass_flux_1)
 
     # reset Q
-    config.set_double("ocean_sub_shelf_heat_flux_into_ice", Q_default)
+    config.set_double("ocean.sub_shelf_heat_flux_into_ice", Q_default)
 
     # with the command-line option
     o = PISM.PETSc.Options()

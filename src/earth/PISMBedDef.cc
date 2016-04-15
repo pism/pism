@@ -151,9 +151,9 @@ void BedDef::init_impl() {
     if (do_regrid) {
       // bootstrapping
       m_topg.regrid(input_file, OPTIONAL,
-                    m_config->get_double("bootstrapping_bed_value_no_var"));
+                    m_config->get_double("bootstrapping.defaults.bed"));
       m_uplift.regrid(input_file, OPTIONAL,
-                      m_config->get_double("bootstrapping_uplift_value_no_var"));
+                      m_config->get_double("bootstrapping.defaults.uplift"));
     } else {
       // re-starting
       m_topg.read(input_file, start); // fails if not found!

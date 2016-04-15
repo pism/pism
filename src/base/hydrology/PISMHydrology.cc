@@ -142,12 +142,12 @@ void Hydrology::init() {
   if (use_input_file) {
     if (bootstrap) {
       m_Wtil.regrid(filename, OPTIONAL,
-                    m_config->get_double("bootstrapping_tillwat_value_no_var"));
+                    m_config->get_double("bootstrapping.defaults.tillwat"));
     } else {
       m_Wtil.read(filename, start);
     }
   } else {
-    m_Wtil.set(m_config->get_double("bootstrapping_tillwat_value_no_var"));
+    m_Wtil.set(m_config->get_double("bootstrapping.defaults.tillwat"));
   }
 
   // whether or not we could initialize from file, we could be asked to regrid from file
@@ -218,7 +218,7 @@ void Hydrology::wall_melt(IceModelVec2S &result) {
 Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
  */
 void Hydrology::check_Wtil_bounds() {
-  double tillwat_max = m_config->get_double("hydrology_tillwat_max");
+  double tillwat_max = m_config->get_double("hydrology.tillwat_max");
 
   IceModelVec::AccessList list(m_Wtil);
   ParallelSection loop(m_grid->com);
@@ -261,8 +261,8 @@ in derived classes of Hydrology.
  */
 void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
                                IceModelVec2S &result) {
-  bool   use_const   = m_config->get_boolean("hydrology_use_const_bmelt");
-  double const_bmelt = m_config->get_double("hydrology_const_bmelt");
+  bool   use_const   = m_config->get_boolean("hydrology.use_const_bmelt");
+  double const_bmelt = m_config->get_double("hydrology.const_bmelt");
 
   IceModelVec::AccessList list;
   if (m_inputtobed != NULL) {

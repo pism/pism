@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -61,7 +61,7 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
   : Time(conf, calendar_string, units_system),
     m_com(c) {
 
-  std::string ref_date = m_config->get_string("reference_date");
+  std::string ref_date = m_config->get_string("time.reference_date");
 
   try {
     parse_date(ref_date, NULL);
@@ -209,7 +209,7 @@ void Time_Calendar::init(const Logger &log) {
 void Time_Calendar::init_from_file(const std::string &filename, const Logger &log,
                                    bool set_start_time) {
   try {
-    std::string time_name = m_config->get_string("time_dimension_name");
+    std::string time_name = m_config->get_string("time.dimension_name");
 
     PIO nc(m_com, "netcdf3"); // OK to use netcdf3
 

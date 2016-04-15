@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -115,7 +115,7 @@ private:
 
   \code
   std::string seriesname = "ser_delta_T.nc";
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid.com, grid.rank, grid.config.get_string("output.format"));
   nc.open_for_writing(seriesname, true, false);
   nc.close();
   \endcode

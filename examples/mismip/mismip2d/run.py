@@ -153,14 +153,14 @@ class Experiment:
                  "flow_law.isothermal_Glen.ice_softness": MISMIP.A(self.experiment, step),
                  "ice.density": MISMIP.rho_i(),
                  "sea_water.density": MISMIP.rho_w(),
-                 "bootstrapping_geothermal_flux_value_no_var": 0.0,
+                 "bootstrapping.defaults.geothermal_flux": 0.0,
                  "Glen_exponent": MISMIP.n(),
                  "standard_gravity": MISMIP.g(),
-                 "ocean_sub_shelf_heat_flux_into_ice": 0.0,
+                 "ocean.sub_shelf_heat_flux_into_ice": 0.0,
                  }
 
         if self.model != 1:
-            attrs["bed_smoother_range"] = 0.0
+            attrs["sia.bed_smoother_range"] = 0.0
 
         for name, value in attrs.iteritems():
             var.setncattr(name, value)

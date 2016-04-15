@@ -33,7 +33,7 @@ namespace hydrology {
 Routing::Routing(IceGrid::ConstPtr g)
   : Hydrology(g), m_dx(g->dx()), m_dy(g->dy())
 {
-  m_stripwidth = m_config->get_double("hydrology_null_strip_width");
+  m_stripwidth = m_config->get_double("hydrology.null_strip_width");
 
   // these variables are also set to zero every time init() is called
   m_ice_free_land_loss_cumulative      = 0.0;
@@ -130,7 +130,7 @@ void Routing::init_bwat() {
   // initialize water layer thickness from the context if present,
   //   otherwise from -i file, otherwise with constant value
 
-  const PetscReal bwatdefault = m_config->get_double("bootstrapping_bwat_value_no_var");
+  const PetscReal bwatdefault = m_config->get_double("bootstrapping.defaults.bwat");
 
   bool bootstrap = false;
   int start = 0;
@@ -398,9 +398,9 @@ void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
 void Routing::conductivity_staggered(IceModelVec2Stag &result,
                                      double &maxKW) {
   const double
-    k     = m_config->get_double("hydrology_hydraulic_conductivity"),
-    alpha = m_config->get_double("hydrology_thickness_power_in_flux"),
-    beta  = m_config->get_double("hydrology_gradient_power_in_flux"),
+    k     = m_config->get_double("hydrology.hydraulic_conductivity"),
+    alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
+    beta  = m_config->get_double("hydrology.gradient_power_in_flux"),
     rg    = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water.density");
 
   if (alpha < 1.0) {
@@ -475,10 +475,10 @@ At the current state of the code, this is a diagnostic calculation only.
 void Routing::wall_melt(IceModelVec2S &result) {
 
   const double
-    k     = m_config->get_double("hydrology_hydraulic_conductivity"),
+    k     = m_config->get_double("hydrology.hydraulic_conductivity"),
     L     = m_config->get_double("fresh_water.latent_heat_of_fusion"),
-    alpha = m_config->get_double("hydrology_thickness_power_in_flux"),
-    beta  = m_config->get_double("hydrology_gradient_power_in_flux"),
+    alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
+    beta  = m_config->get_double("hydrology.gradient_power_in_flux"),
     rhow  = m_config->get_double("standard_gravity"),
     g     = m_config->get_double("fresh_water.density"),
     rg    = rhow * g,
@@ -623,7 +623,7 @@ void Routing::adaptive_for_W_evolution(double t_current, double t_end, double ma
                                        double &maxV_result, double &maxD_result,
                                        double &dtCFL_result, double &dtDIFFW_result) {
   const double
-    dtmax = m_config->get_double("hydrology_maximum_time_step_years", "seconds"),
+    dtmax = m_config->get_double("hydrology.maximum_time_step_years", "seconds"),
     rg    = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water.density");
 
   // V could be zero if P is constant and bed is flat
@@ -657,8 +657,8 @@ same configurable parameters.
  */
 void Routing::raw_update_Wtil(double hdt) {
   const double
-    tillwat_max = m_config->get_double("hydrology_tillwat_max"),
-    C           = m_config->get_double("hydrology_tillwat_decay_rate");
+    tillwat_max = m_config->get_double("hydrology.tillwat_max"),
+    C           = m_config->get_double("hydrology.tillwat_decay_rate");
 
   IceModelVec::AccessList list;
   list.add(m_Wtil);
@@ -734,8 +734,8 @@ void Routing::update_impl(double icet, double icedt) {
   m_t = icet;
   m_dt = icedt;
 
-  if (m_config->get_double("hydrology_tillwat_max") < 0.0) {
-    throw RuntimeError("hydrology::Routing: hydrology_tillwat_max is negative.\n"
+  if (m_config->get_double("hydrology.tillwat_max") < 0.0) {
+    throw RuntimeError("hydrology::Routing: hydrology.tillwat_max is negative.\n"
                        "This is not allowed.");
   }
 

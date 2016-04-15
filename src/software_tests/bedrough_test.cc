@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 
     // actually use the smoother/bed-roughness-parameterizer
     config->set_double("Glen_exponent", 3.0);
-    config->set_double("bed_smoother_range", 50.0e3);
+    config->set_double("sia.bed_smoother_range", 50.0e3);
     stressbalance::BedSmoother smoother(grid, 1);
     smoother.preprocess_bed(topg);
     int Nx,Ny;

@@ -246,16 +246,16 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
 
 void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<PIO> &nc) {
 
-  //    nc.reset(new PIO(m_grid->com, m_grid->ctx()->config()->get_string("output_format")));
+  //    nc.reset(new PIO(m_grid->com, m_grid->ctx()->config()->get_string("output.format")));
 
-  nc.reset(new PIO(m_grid->com, m_config->get_string("output_format")));
+  nc.reset(new PIO(m_grid->com, m_config->get_string("output.format")));
 
   nc->open(fname, PISM_READWRITE_MOVE);
-  io::define_time(*nc, m_grid->ctx()->config()->get_string("time_dimension_name"), m_grid->ctx()->time()->calendar(),
+  io::define_time(*nc, m_grid->ctx()->config()->get_string("time.dimension_name"), m_grid->ctx()->time()->calendar(),
                   m_grid->ctx()->time()->CF_units_string(), m_grid->ctx()->unit_system());
 
   // These are in iMtimseries, but not listed as required in iceModelVec.hh
-  //    nc->put_att_text(m_config.get_string("time_dimension_name"),
+  //    nc->put_att_text(m_config.get_string("time.dimension_name"),
   //                           "bounds", "time_bounds");
   //    write_metadata(nc, true, false);
   //  nc->close():
@@ -349,9 +349,9 @@ void IBIceModel::prepare_outputs(double t0) {
 #if 0
     // This is not really needed, since Icebin also writes out
     // the same fields.
-    PIO nc(m_grid, m_grid->m_config.get_string("output_format"));
+    PIO nc(m_grid, m_grid->m_config.get_string("output.format"));
     nc.open((params.output_dir / "post_energy.nc").c_str(), PISM_READWRITE);    // append to file
-    nc.append_time(m_config.get_string("time_dimension_name"), t1);
+    nc.append_time(m_config.get_string("time.dimension_name"), t1);
     m_ice_enthalpy.write(nc, PISM_DOUBLE);
     ice_thickness.write(nc, PISM_DOUBLE);
     ice_surface_temp.write(nc, PISM_DOUBLE);
