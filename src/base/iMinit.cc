@@ -749,7 +749,7 @@ void IceModel::misc_setup() {
 //! \brief Initialize calving mechanisms.
 void IceModel::init_calving() {
 
-  std::istringstream arg(m_config->get_string("calving_methods"));
+  std::istringstream arg(m_config->get_string("calving.methods"));
   std::string method_name;
   std::set<std::string> methods;
 

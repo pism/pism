@@ -51,8 +51,8 @@ EigenCalving::EigenCalving(IceGrid::ConstPtr g,
                            "minor principal component of horizontal strain-rate",
                            "second-1", "", 1);
 
-  m_K = m_config->get_double("eigen_calving_K");
-  m_restrict_timestep = m_config->get_boolean("cfl_eigen_calving");
+  m_K = m_config->get_double("calving.eigen_calving.K");
+  m_restrict_timestep = m_config->get_boolean("calving.eigen_calving.use_cfl");
 }
 
 EigenCalving::~EigenCalving() {
@@ -176,7 +176,7 @@ void EigenCalving::update(double dt,
       // Calving law
       //
       // eigen1 * eigen2 has units [s^-2] and calving_rate_horizontal
-      // [m*s^1] hence, eigen_calving_K has units [m*s]
+      // [m*s^1] hence, calving.eigen_calving.K has units [m*s]
       if (eigen2 > eigenCalvOffset and eigen1 > 0.0) {
         // spreading in all directions
         calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);

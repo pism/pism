@@ -68,7 +68,7 @@ void IceModel::setFromOptions() {
                "              -skip only makes sense in runs updating ice geometry.\n");
   }
 
-  if (m_config->get_string("calving_methods").find("thickness_calving") != std::string::npos &&
+  if (m_config->get_string("calving.methods").find("thickness_calving") != std::string::npos &&
       not m_config->get_boolean("part_grid")) {
     m_log->message(2,
                "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"

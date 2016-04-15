@@ -48,8 +48,8 @@ static void check_enthalpy_converter(EnthalpyConverter::Ptr EC,
     throw RuntimeError("fresh_water.specific_heat_capacity mismatch");
   }
 
-  if (c.T_0 != config.get_double("enthalpy_converter_reference_temperature")) {
-    throw RuntimeError("enthalpy_converter_reference_temperature mismatch");
+  if (c.T_0 != config.get_double("enthalpy_converter.T_reference")) {
+    throw RuntimeError("enthalpy_converter.T_reference mismatch");
   }
 
   if (c.beta != config.get_double("beta_CC")) {

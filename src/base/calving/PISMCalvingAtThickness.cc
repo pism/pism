@@ -30,7 +30,7 @@ namespace calving {
 
 CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
   : Component(g) {
-  m_calving_threshold = m_config->get_double("thickness_calving_threshold");
+  m_calving_threshold = m_config->get_double("calving.thickness_calving.threshold");
 
   m_old_mask.create(m_grid, "old_mask", WITH_GHOSTS, 1);
 }

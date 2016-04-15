@@ -187,7 +187,7 @@ void IceModel::createVecs() {
                  "Allocating memory...\n");
 
   // get the list of selected calving methods:
-  std::istringstream calving_methods_list(m_config->get_string("calving_methods"));
+  std::istringstream calving_methods_list(m_config->get_string("calving.methods"));
   std::string calving_method_name;
   std::set<std::string> calving_methods;
 
@@ -336,7 +336,7 @@ void IceModel::createVecs() {
     m_grid->variables().add(vHref);
   }
 
-  if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos or
+  if (m_config->get_string("calving.methods").find("eigen_calving") != std::string::npos or
       m_config->get_boolean("do_fracture_density")) {
 
     m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,

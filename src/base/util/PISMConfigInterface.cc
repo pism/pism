@@ -568,14 +568,14 @@ void set_config_from_options(Config &config) {
     config.set_boolean("sub_groundingline", true, Config::USER);
   }
 
-  if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {
+  if (config.get_string("calving.methods").find("eigen_calving") != std::string::npos) {
     config.set_boolean("part_grid", true, Config::USER);
     // eigen-calving requires a wider stencil:
     config.set_double("grid.max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal
-  if (not config.get_string("calving_methods").empty()) {
+  if (not config.get_string("calving.methods").empty()) {
     config.set_boolean("kill_icebergs", true, Config::USER);
   }
 

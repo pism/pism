@@ -104,19 +104,20 @@ netcdf pism_config {
     pism_config:kill_icebergs = "no";
     pism_config:kill_icebergs_doc = "identify and kill detached ice-shelf areas";
 
-    pism_config:cfl_eigen_calving_type = "boolean";
-    pism_config:cfl_eigen_calving_option = "cfl_eigen_calving";
-    pism_config:cfl_eigen_calving = "false";
-    pism_config:cfl_eigen_calving_doc = "apply CFL criterion for eigen-calving rate front retreat";
+    pism_config:calving.eigen_calving.use_cfl_type = "boolean";
+    pism_config:calving.eigen_calving.use_cfl_option = "cfl_eigen_calving";
+    pism_config:calving.eigen_calving.use_cfl = "false";
+    pism_config:calving.eigen_calving.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
 
-    pism_config:calving_methods_type = "string";
-    pism_config:calving_methods_option = "calving";
-    pism_config:calving_methods = "";
-    pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
+    pism_config:calving.methods_type = "string";
+    pism_config:calving.methods_option = "calving";
+    pism_config:calving.methods = "";
+    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
 
-    pism_config:float_kill_margin_only_type = "boolean";
-    pism_config:float_kill_margin_only = "no";
-    pism_config:float_kill_margin_only_doc = "Apply float_kill at ice margin cells only.";
+    pism_config:calving.float_kill.margin_only_type = "boolean";
+    pism_config:calving.float_kill.margin_only = "no";
+    pism_config:calving.float_kill.margin_only_option = "float_kill_margin_only";
+    pism_config:calving.float_kill.margin_only_doc = "Apply float_kill at ice margin cells only.";
 
     pism_config:do_fracture_density_type = "boolean";
     pism_config:do_fracture_density_option = "fractures";
@@ -624,17 +625,17 @@ netcdf pism_config {
     pism_config:max_low_temp_count = 10;
     pism_config:max_low_temp_count_doc = "Maximum number of grid points with ice temperature below global_min_allowed_temp.";
 
-    pism_config:eigen_calving_K_option = "eigen_calving_K";
-    pism_config:eigen_calving_K_units = "meter second";
-    pism_config:eigen_calving_K_type = "scalar";
-    pism_config:eigen_calving_K = 0.0;
-    pism_config:eigen_calving_K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references [@ref Levermannetal2012, @ref Martinetal2011] use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
+    pism_config:calving.eigen_calving.K_option = "eigen_calving_K";
+    pism_config:calving.eigen_calving.K_units = "meter second";
+    pism_config:calving.eigen_calving.K_type = "scalar";
+    pism_config:calving.eigen_calving.K = 0.0;
+    pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references [@ref Levermannetal2012, @ref Martinetal2011] use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
 
-    pism_config:thickness_calving_threshold_option = "thickness_calving_threshold";
-    pism_config:thickness_calving_threshold_units = "meters";
-    pism_config:thickness_calving_threshold_type = "scalar";
-    pism_config:thickness_calving_threshold = 50.0;
-    pism_config:thickness_calving_threshold_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
+    pism_config:calving.thickness_calving.threshold_option = "thickness_calving_threshold";
+    pism_config:calving.thickness_calving.threshold_units = "meters";
+    pism_config:calving.thickness_calving.threshold_type = "scalar";
+    pism_config:calving.thickness_calving.threshold = 50.0;
+    pism_config:calving.thickness_calving.threshold_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
 
 
     // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
@@ -1024,10 +1025,10 @@ netcdf pism_config {
     pism_config:water_melting_point_temperature = 273.15;
     pism_config:water_melting_point_temperature_doc = "melting point of pure water";
 
-    pism_config:enthalpy_converter_reference_temperature_units = "Kelvin";
-    pism_config:enthalpy_converter_reference_temperature_type = "scalar";
-    pism_config:enthalpy_converter_reference_temperature = 223.15;
-    pism_config:enthalpy_converter_reference_temperature_doc = "= T_0 in enthalpy formulas in [@ref AschwandenBuelerKhroulevBlatter]";
+    pism_config:enthalpy_converter.T_reference_units = "Kelvin";
+    pism_config:enthalpy_converter.T_reference_type = "scalar";
+    pism_config:enthalpy_converter.T_reference = 223.15;
+    pism_config:enthalpy_converter.T_reference_doc = "= T_0 in enthalpy formulas in [@ref AschwandenBuelerKhroulevBlatter]";
 
     pism_config:fresh_water.latent_heat_of_fusion_units = "Joule / kg";
     pism_config:fresh_water.latent_heat_of_fusion_type = "scalar";
@@ -1397,10 +1398,10 @@ netcdf pism_config {
     pism_config:regional_no_model_strip_doc = "Default width of the 'no model strip' in regional setups.";
     pism_config:regional_no_model_strip_option = "no_model_strip";
 
-    pism_config:relaxed_is_temperate_ice_tolerance_units = "Kelvin";
-    pism_config:relaxed_is_temperate_ice_tolerance_type = "scalar";
-    pism_config:relaxed_is_temperate_ice_tolerance = 0.001;
-    pism_config:relaxed_is_temperate_ice_tolerance_doc = "Tolerance within which ice is treated as temperate (cold-ice mode and diagnostics).";
+    pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_units = "Kelvin";
+    pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_type = "scalar";
+    pism_config:enthalpy_converter.relaxed_is_temperate_tolerance = 0.001;
+    pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_doc = "Tolerance within which ice is treated as temperate (cold-ice mode and diagnostics).";
 
     pism_config:correct_cell_areas_type = "boolean";
     pism_config:correct_cell_areas = "yes";
