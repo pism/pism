@@ -624,4 +624,29 @@ Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::
   return config;
 }
 
+ConfigWithPrefix::ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix)
+  : m_prefix(prefix), m_config(c) {
+  // empty
+}
+
+double ConfigWithPrefix::get_double(const std::string &name) const {
+  return m_config->get_double(m_prefix + name);
+}
+
+double ConfigWithPrefix::get_double(const std::string &name, const std::string &units) const {
+  return m_config->get_double(m_prefix + name, units);
+}
+
+std::string ConfigWithPrefix::get_string(const std::string &name) const {
+  return m_config->get_string(m_prefix + name);
+}
+
+bool ConfigWithPrefix::get_boolean(const std::string& name) const {
+  return m_config->get_boolean(m_prefix + name);
+}
+
+void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
+  m_prefix = prefix;
+}
+
 } // end of namespace pism
