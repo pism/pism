@@ -90,7 +90,7 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
 
   config->set_string("time.calendar", "none");
   // when IceGrid constructor is called, these settings are used
-  config->set_double("start_year", 0.0);
+  config->set_double("time.start_year", 0.0);
   config->set_double("run_length_years", 1.0);
 
   set_config_from_options(*config);

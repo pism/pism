@@ -190,8 +190,8 @@ void SSATestCase::report(const std::string &testname) {
     gmaxuerr   = 0.0,
     gmaxverr   = 0.0;
 
-  if (m_config->get_boolean("do_pseudo_plastic_till") &&
-      m_config->get_double("pseudo_plastic_q") != 1.0) {
+  if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") &&
+      m_config->get_double("basal_resistance.pseudo_plastic.q") != 1.0) {
     m_ctx->log()->message(1,
                           "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }

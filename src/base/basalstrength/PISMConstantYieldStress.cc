@@ -42,7 +42,7 @@ void ConstantYieldStress::init_impl() {
   int start = 0;
   bool boot = false;
   bool use_input_file = find_pism_input(filename, boot, start);
-  double tauc = m_config->get_double("default_tauc");
+  double tauc = m_config->get_double("yield_stress.constant.value");
   if (use_input_file) {
     if (boot) {
       m_tauc.regrid(filename, OPTIONAL, tauc);

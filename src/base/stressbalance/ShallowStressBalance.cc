@@ -44,7 +44,7 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g, EnthalpyConverte
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
-  if (m_config->get_boolean("do_pseudo_plastic_till") == true) {
+  if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") == true) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
   } else {
     m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);

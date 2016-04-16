@@ -232,7 +232,7 @@ def adjustTauc(mask, tauc):
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
     grid = mask.get_grid()
-    high_tauc = grid.ctx().config().get_double("high_tauc")
+    high_tauc = grid.ctx().config().get_double("yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
@@ -329,7 +329,7 @@ def run():
     using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
                                              "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)", default=True)
 
-    inv_method = config.get_string("inverse.ssa_method")
+    inv_method = config.get_string("inverse.ssa.method")
 
     if output_filename is None:
         output_filename = "pismi_" + os.path.basename(input_filename)

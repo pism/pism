@@ -482,7 +482,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
 
   const double   dx=m_grid->dx(), dy=m_grid->dy();
-  const double   beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
+  const double   beta_ice_free_bedrock = m_config->get_double("basal_resistance.beta_ice_free_bedrock");
   const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
 
   const bool replace_zero_diagonal_entries =

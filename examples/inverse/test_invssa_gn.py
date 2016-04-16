@@ -33,7 +33,7 @@ def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
     grid = mask.get_grid()
-    high_tauc = grid.ctx().config().get_double("high_tauc")
+    high_tauc = grid.ctx().config().get_double("yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         vel_ssa_observed.add(-1, vel_sia_observed)
 
     (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(ssarun)
-    eta = config.get_double("inverse.tikhonov_penalty_weight")
+    eta = config.get_double("inverse.tikhonov.penalty_weight")
 
     solver_gn = PISM.InvSSATikhonovGN(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
 

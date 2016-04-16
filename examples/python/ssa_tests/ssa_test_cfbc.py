@@ -72,7 +72,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         config.set_boolean("ssa.compute_surface_gradient_inward", True)
         config.set_boolean("calving_front_stress_boundary_condition", True)
 
-        config.set_boolean("do_pseudo_plastic_till", False)
+        config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 

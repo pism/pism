@@ -145,7 +145,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("do_pseudo_plastic_till", False)
+        config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     do_pause = PISM.optionsFlag("-inv_pause", "pause each iteration", default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint", "Test that the adjoint is working", default=False)
 
-    inv_method = config.get_string("inverse.ssa_method")
+    inv_method = config.get_string("inverse.ssa.method")
 
     length_scale = L_schoof
     slope = 0.001

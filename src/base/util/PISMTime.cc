@@ -147,7 +147,7 @@ Time::Time(Config::ConstPtr conf,
 
   init_calendar(calendar_string);
 
-  m_run_start = years_to_seconds(m_config->get_double("start_year"));
+  m_run_start = years_to_seconds(m_config->get_double("time.start_year"));
   m_run_end   = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
 
   m_time_in_seconds = m_run_start;
@@ -249,7 +249,7 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) const {
 }
 
 bool Time::process_ys(double &result) {
-  options::Real ys("-ys", "Start year", m_config->get_double("start_year"));
+  options::Real ys("-ys", "Start year", m_config->get_double("time.start_year"));
   result = years_to_seconds(ys);
   return ys.is_set();
 }
@@ -262,7 +262,7 @@ bool Time::process_y(double &result) {
 
 bool Time::process_ye(double &result) {
   options::Real ye("-ye", "End year",
-                      m_config->get_double("start_year") + m_config->get_double("run_length_years"));
+                      m_config->get_double("time.start_year") + m_config->get_double("run_length_years"));
   result = years_to_seconds(ye);
   return ye.is_set();
 }

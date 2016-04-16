@@ -77,7 +77,7 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
     throw;
   }
 
-  m_run_start = increment_date(0, (int)m_config->get_double("start_year"));
+  m_run_start = increment_date(0, (int)m_config->get_double("time.start_year"));
   m_run_end   = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
 
   m_time_in_seconds = m_run_start;
@@ -98,7 +98,7 @@ bool Time_Calendar::process_ys(double &result) {
       throw;
     }
   } else {
-    result = m_config->get_double("start_year", "seconds");
+    result = m_config->get_double("time.start_year", "seconds");
   }
   return ys.is_set();
 }
@@ -132,7 +132,7 @@ bool Time_Calendar::process_ye(double &result) {
       throw;
     }
   } else {
-    result = (m_config->get_double("start_year", "seconds") +
+    result = (m_config->get_double("time.start_year", "seconds") +
               m_config->get_double("run_length_years", "seconds"));
   }
   return ye.is_set();

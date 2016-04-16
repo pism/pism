@@ -40,11 +40,11 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, SurfaceModel *input)
     m_climatic_mass_balance_original(m_sys, "climatic_mass_balance_original"),
     m_ice_surface_temp(m_sys, "ice_surface_temp") {
 
-  m_alpha = m_config->get_double("force_to_thickness_alpha", "s-1");
-  m_alpha_ice_free_factor = m_config->get_double("force_to_thickness_ice_free_alpha_factor");
-  m_ice_free_thickness_threshold = m_config->get_double("force_to_thickness_ice_free_thickness_threshold");
+  m_alpha = m_config->get_double("surface.force_to_thickness.alpha", "s-1");
+  m_alpha_ice_free_factor = m_config->get_double("surface.force_to_thickness.ice_free_alpha_factor");
+  m_ice_free_thickness_threshold = m_config->get_double("surface.force_to_thickness.ice_free_thickness_threshold");
 
-  m_start_time = m_config->get_double("force_to_thickness_start_time", "seconds");
+  m_start_time = m_config->get_double("surface.force_to_thickness.start_time", "seconds");
 
   m_target_thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
   // will set attributes in init()
@@ -192,7 +192,7 @@ Let's assume \f$H(t_s)=H_0\f$.  This initial value problem has solution
 and so
   \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
 
-The constant \f$\alpha\f$ has a default value `pism_config:force_to_thickness_alpha`.
+The constant \f$\alpha\f$ has a default value `pism_config:surface.force_to_thickness.alpha`.
 
 The next example uses files generated from the EISMINT-Greenland experiment;
 see the corresponding chapter of the User's Manual.

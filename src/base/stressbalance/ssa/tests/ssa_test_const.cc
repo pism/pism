@@ -91,11 +91,11 @@ void SSATestCaseConst::initializeGrid(int Mx,int My) {
 
 
 void SSATestCaseConst::initializeSSAModel() {
-  m_config->set_boolean("do_pseudo_plastic_till", true);
-  m_config->set_double("pseudo_plastic_q", basal_q);
+  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
+  m_config->set_double("basal_resistance.pseudo_plastic.q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
-  m_config->set_boolean("do_pseudo_plastic_till", true);
+  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
 
   // The following is irrelevant because we will force linear rheology later.
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
@@ -153,7 +153,7 @@ void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
                                      double /*x*/, double /*y*/,
                                      double *u, double *v) {
   double earth_grav = m_config->get_double("standard_gravity"),
-    tauc_threshold_velocity = m_config->get_double("pseudo_plastic_uthreshold",
+    tauc_threshold_velocity = m_config->get_double("basal_resistance.pseudo_plastic.u_threshold",
                                                    "m second-1"),
     ice_rho = m_config->get_double("ice.density");
 

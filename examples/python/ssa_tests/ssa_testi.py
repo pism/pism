@@ -44,7 +44,7 @@ class testi(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("do_pseudo_plastic_till", False)
+        config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)

@@ -40,8 +40,8 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("do_pseudo_plastic_till", True)
-        config.set_double("pseudo_plastic_q", 1.0)
+        config.set_boolean("basal_resistance.pseudo_plastic.enabled", True)
+        config.set_double("basal_resistance.pseudo_plastic.q", 1.0)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
@@ -86,7 +86,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         self.config.set_boolean("ssa.compute_surface_gradient_inward", True)
 
     def exactSolution(self, i, j, x, y):
-        tauc_threshold_velocity = self.config.get_double("pseudo_plastic_uthreshold",
+        tauc_threshold_velocity = self.config.get_double("basal_resistance.pseudo_plastic.u_threshold",
                                                          "m/second")
         sys = self.grid.ctx().unit_system()
         v0 = PISM.convert(sys, 100, "m/year", "m/second")

@@ -49,7 +49,7 @@ The maximum vertical velocity is computed but it does not affect
 `CFLmaxdt`.
  */
 double IceModel::max_timestep_cfl_3d() {
-  double max_dt = m_config->get_double("maximum_time_step_years", "seconds");
+  double max_dt = m_config->get_double("time_stepping.maximum_time_step", "seconds");
 
   const IceModelVec3
     &u3 = m_stress_balance->velocity_u(),
@@ -122,7 +122,7 @@ double IceModel::max_timestep_cfl_3d() {
   sliding case we have a CFL condition.
  */
 double IceModel::max_timestep_cfl_2d() {
-  double max_dt = m_config->get_double("maximum_time_step_years", "seconds");
+  double max_dt = m_config->get_double("time_stepping.maximum_time_step", "seconds");
 
   const IceModelVec2V &vel = m_stress_balance->advective_velocity();
 
@@ -170,7 +170,7 @@ double IceModel::max_timestep_diffusivity() {
 
     return adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
   } else {
-    return m_config->get_double("maximum_time_step_years", "seconds");
+    return m_config->get_double("time_stepping.maximum_time_step", "seconds");
   }
 }
 
@@ -226,8 +226,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   std::map<std::string, double> dt_restrictions;
 
   // Always consider the maximum allowed time-step length.
-  if (m_config->get_double("maximum_time_step_years") > 0.0) {
-    dt_restrictions["max"] = m_config->get_double("maximum_time_step_years", "seconds");
+  if (m_config->get_double("time_stepping.maximum_time_step") > 0.0) {
+    dt_restrictions["max"] = m_config->get_double("time_stepping.maximum_time_step", "seconds");
   }
 
   // Always consider maxdt_temporary.
@@ -331,7 +331,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   // Hit multiples of X years, if requested (this has to go last):
   {
-    const int timestep_hit_multiples = static_cast<int>(m_config->get_double("timestep_hit_multiples"));
+    const int timestep_hit_multiples = static_cast<int>(m_config->get_double("time_stepping.hit_multiples"));
     if (timestep_hit_multiples > 0) {
       const double epsilon = 1.0; // 1 second tolerance
       double

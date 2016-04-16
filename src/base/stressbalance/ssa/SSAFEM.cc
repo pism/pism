@@ -54,7 +54,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   PetscErrorCode ierr;
 
   m_dirichletScale = 1.0;
-  m_beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
+  m_beta_ice_free_bedrock = m_config->get_double("basal_resistance.beta_ice_free_bedrock");
 
   ierr = SNESCreate(m_grid->com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");

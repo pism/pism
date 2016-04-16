@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
     tauc = vecs.tauc
     mask = vecs.mask
-    tauc_free_bedrock = config.get_double('high_tauc')
+    tauc_free_bedrock = config.get_double('yield_stress.ice_free_bedrock')
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
             tauc[i, j] = stream_tauc(grid.x(i), grid.y(j))

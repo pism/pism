@@ -350,10 +350,10 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
                                           const IceModelVec2S &lat,
                                           const IceModelVec2S &lon) {
   const double
-    d_mj     = m_config->get_double("snow_temp_fausto_d_mj"),      // K
-    gamma_mj = m_config->get_double("snow_temp_fausto_gamma_mj"),  // K m-1
-    c_mj     = m_config->get_double("snow_temp_fausto_c_mj"),      // K (degN)-1
-    kappa_mj = m_config->get_double("snow_temp_fausto_kappa_mj");  // K (degW)-1
+    d_mj     = m_config->get_double("fausto_snow_temp.d_mj"),      // K
+    gamma_mj = m_config->get_double("fausto_snow_temp.gamma_mj"),  // K m-1
+    c_mj     = m_config->get_double("fausto_snow_temp.c_mj"),      // K (degN)-1
+    kappa_mj = m_config->get_double("fausto_snow_temp.kappa_mj");  // K (degW)-1
 
   const IceModelVec2S
     &h        = surfelev,

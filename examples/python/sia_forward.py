@@ -54,7 +54,7 @@ if is_regional:
     periodicity = PISM.NOT_PERIODIC
 grid = PISM.IceGrid.FromFile(context.ctx, input_file, "enthalpy", periodicity)
 
-config.set_boolean("do_pseudo_plastic_till", False)
+config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 

@@ -57,8 +57,8 @@ void IceModel::setFromOptions() {
 
   // warn about some option combinations
 
-  if (m_config->get_double("maximum_time_step_years") <= 0) {
-    throw RuntimeError("maximum_time_step_years has to be greater than 0.");
+  if (m_config->get_double("time_stepping.maximum_time_step") <= 0) {
+    throw RuntimeError("time_stepping.maximum_time_step has to be greater than 0.");
   }
 
   if (not m_config->get_boolean("do_mass_conserve") &&

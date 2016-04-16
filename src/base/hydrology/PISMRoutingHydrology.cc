@@ -623,7 +623,7 @@ void Routing::adaptive_for_W_evolution(double t_current, double t_end, double ma
                                        double &maxV_result, double &maxD_result,
                                        double &dtCFL_result, double &dtDIFFW_result) {
   const double
-    dtmax = m_config->get_double("hydrology.maximum_time_step_years", "seconds"),
+    dtmax = m_config->get_double("hydrology.maximum_time_step", "seconds"),
     rg    = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water.density");
 
   // V could be zero if P is constant and bed is flat
