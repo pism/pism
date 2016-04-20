@@ -81,7 +81,8 @@ void IceModel::init_diagnostics() {
 
   m_diagnostics["surface_mass_balance_average"] = Diagnostic::Ptr(new IceModel_surface_mass_balance_average(this));
   m_diagnostics["basal_mass_balance_average"]   = Diagnostic::Ptr(new IceModel_basal_mass_balance_average(this));
-
+  m_diagnostics["height_above_flotation"]   = Diagnostic::Ptr(new IceModel_height_above_flotation(this));
+  
 #if (PISM_USE_PROJ4==1)
   if (m_output_global_attributes.has_attribute("proj4")) {
     std::string proj4 = m_output_global_attributes.get_string("proj4");
@@ -2338,4 +2339,104 @@ IceModelVec::Ptr IceModel_basal_mass_balance_average::compute_impl() {
   return result;
 }
 
+IceModel_tempicethk_basal::IceModel_height_above_flotation(IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars.push_back(SpatialVariableMetadata(m_sys,
+                                           "height_above_flotation"));
+
+  set_attrs("the height above flotation", "",
+            "m", "m", 0);
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
+}
+
+IceModelVec::Ptr IceModel_height_above_flotation::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "height_above_flotation", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  const double fill_value = m_config->get_double("fill_value");
+
+  const IceModelVec2CellType &cell_type = model->cell_type_mask();
+
+  IceModelVec::AccessList list;
+  list.add(cell_type);
+  list.add(*result);
+  list.add(model->m_ice_thickness);
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double thk = model->m_ice_thickness(i,j);
+
+      // if we have no ice, go on to the next grid point (this cell will be
+      // marked as "missing" later)
+      if (cell_type.ice_free(i, j)) {
+        (*result)(i,j) = fill_value;
+        continue;
+      }
+
+      Enth = model->m_ice_enthalpy.get_column(i,j);
+      double pressure;
+      unsigned int ks = m_grid->kBelowHeight(thk),
+        k = 0;
+
+      while (k <= ks) {         // FIXME issue #15
+        pressure = EC->pressure(thk - m_grid->z(k));
+
+        if (EC->is_temperate_relaxed(Enth[k],pressure)) {
+          k++;
+        } else {
+          break;
+        }
+      }
+      // after this loop 'pressure' is equal to the pressure at the first level
+      // that is cold
+
+      // no temperate ice at all; go to the next grid point
+      if (k == 0) {
+        (*result)(i,j) = 0.0;
+        continue;
+      }
+
+      // the whole column is temperate (except, possibly, some ice between
+      // z(ks) and the total thickness; we ignore it)
+      if (k == ks + 1) {
+        (*result)(i,j) = m_grid->z(ks);
+        continue;
+      }
+
+      double
+        pressure_0 = EC->pressure(thk - m_grid->z(k-1)),
+        dz         = m_grid->z(k) - m_grid->z(k-1),
+        slope1     = (Enth[k] - Enth[k-1]) / dz,
+        slope2     = (EC->enthalpy_cts(pressure) - EC->enthalpy_cts(pressure_0)) / dz;
+
+      if (slope1 != slope2) {
+        (*result)(i,j) = m_grid->z(k-1) +
+          (EC->enthalpy_cts(pressure_0) - Enth[k-1]) / (slope1 - slope2);
+
+        // check if the resulting thickness is valid:
+        (*result)(i,j) = std::max((*result)(i,j), m_grid->z(k-1));
+        (*result)(i,j) = std::min((*result)(i,j), m_grid->z(k));
+      } else {
+        throw RuntimeError::formatted("Linear interpolation of the thickness of"
+                                      " the basal temperate layer failed:\n"
+                                      "(i=%d, j=%d, k=%d, ks=%d)\n",
+                                      i, j, k, ks);
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+
+  return result;
+}
+  
 } // end of namespace pism

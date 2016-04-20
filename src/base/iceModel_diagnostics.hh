@@ -536,6 +536,15 @@ protected:
   double m_last_report_time;
 };
 
+//! \brief Computes the 2D height above flotation.
+class IceModel_height_above_flotation : public Diag<IceModel>
+{
+public:
+  IceModel_height_above_flotation(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
 } // end of namespace pism
 
 #if (PISM_USE_PROJ4==1)
