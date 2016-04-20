@@ -545,6 +545,15 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
+//! \brief Computes the 2D relative flotation.
+class IceModel_relative_flotation : public Diag<IceModel>
+{
+public:
+  IceModel_relative_flotation(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
 } // end of namespace pism
 
 #if (PISM_USE_PROJ4==1)
