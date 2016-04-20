@@ -2455,7 +2455,7 @@ IceModelVec::Ptr IceModel_relative_flotation::compute_impl() {
         (*result)(i,j) = fill_value;
         continue;
       }
-      (*result)(i,j) = thk - (ocean_density / ice_density) * (sea_level - bed);
+      (*result)(i,j) = thk / (ocean_density / ice_density) * (sea_level - bed);
     }
   } catch (...) {
     loop.failed();
