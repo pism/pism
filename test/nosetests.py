@@ -673,7 +673,7 @@ def pism_context_test():
 def flowlaw_test():
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
     EC = ctx.enthalpy_converter()
-    ff = PISM.FlowLawFactory("sia.", ctx.config(), EC)
+    ff = PISM.FlowLawFactory("stress_balance.sia.", ctx.config(), EC)
     law = ff.create()
 
     TpaC = [-30, -5, 0, 0]
@@ -701,8 +701,8 @@ def gpbld3_flow_test():
     "Test the optimized version of GPBLD."
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
     EC = ctx.enthalpy_converter()
-    gpbld = PISM.GPBLD("sia.", ctx.config(), EC)
-    gpbld3 = PISM.GPBLD3("sia.", ctx.config(), EC)
+    gpbld = PISM.GPBLD("stress_balance.sia.", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("stress_balance.sia.", ctx.config(), EC)
 
     import numpy as np
     N = 11
@@ -732,8 +732,8 @@ def gpbld3_hardness_test():
     "Test the hardness implementation in the optimized version of GPBLD."
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
     EC = ctx.enthalpy_converter()
-    gpbld = PISM.GPBLD("sia.", ctx.config(), EC)
-    gpbld3 = PISM.GPBLD3("sia.", ctx.config(), EC)
+    gpbld = PISM.GPBLD("stress_balance.sia.", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("stress_balance.sia.", ctx.config(), EC)
 
     import numpy as np
     N = 11
@@ -765,8 +765,8 @@ def gpbld3_error_report():
     """
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
     EC = ctx.enthalpy_converter()
-    gpbld = PISM.GPBLD("sia.", ctx.config(), EC)
-    gpbld3 = PISM.GPBLD3("sia.", ctx.config(), EC)
+    gpbld = PISM.GPBLD("stress_balance.sia.", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("stress_balance.sia.", ctx.config(), EC)
 
     import numpy as np
     N = 31

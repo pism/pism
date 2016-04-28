@@ -60,11 +60,11 @@ def generate_config():
         "hydrology.roughness_scale" : 1.0,
         "hydrology.roughness_scale_doc" : "m; W_r in notes; roughness scale",
 
-        "yield_stress.model" : "constant",
-        "yield_stress.model_doc" : "only the constant yield stress model works without till",
+        "basal_yield_stress.model" : "constant",
+        "basal_yield_stress.model_doc" : "only the constant yield stress model works without till",
 
-        "yield_stress.constant.value" : 1e6,
-        "yield_stress.constant.value_doc" : "set default to 'high tauc'",
+        "basal_yield_stress.constant.value" : 1e6,
+        "basal_yield_stress.constant.value_doc" : "set default to 'high tauc'",
     }
     for k,v in attrs.iteritems():
         pism_overrides.setncattr(k, v)

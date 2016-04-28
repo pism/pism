@@ -131,7 +131,7 @@ ZeroSliding::ZeroSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
-  rheology::FlowLawFactory ice_factory("sia.", m_config, m_EC);
+  rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
   m_flow_law = ice_factory.create();
 }
 

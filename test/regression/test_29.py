@@ -59,11 +59,11 @@ def generate_config():
         "hydrology.regularizing_porosity" : 0.01,
         "hydrology.regularizing_porosity_doc" : "[pure]; phi_0 in notes",
 
-        "yield_stress.model" : "constant",
-        "yield_stress.model_doc" : "only the constant yield stress model works without till",
+        "basal_yield_stress.model" : "constant",
+        "basal_yield_stress.model_doc" : "only the constant yield stress model works without till",
 
-        "yield_stress.constant.value" : 1e6,
-        "yield_stress.constant.value_doc" : "set default to 'high tauc'"
+        "basal_yield_stress.constant.value" : 1e6,
+        "basal_yield_stress.constant.value_doc" : "set default to 'high tauc'"
     }
 
     for k,v in attrs.iteritems():

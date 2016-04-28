@@ -66,20 +66,21 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   bedrock_is_ice_forK = false;
 
   // Override some defaults from parent class
-  m_config->set_double("sia.enhancement_factor", 1.0);
+  m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("sia.bed_smoother_range", 0.0);
+  m_config->set_double("stress_balance.sia.bed_smoother_range", 0.0);
 
   // set values of flags in run()
   m_config->set_boolean("do_mass_conserve", true);
   m_config->set_boolean("include_bmr_in_continuity", false);
 
   if (testname == 'V') {
-    m_config->set_string("ssa.flow_law", "isothermal_glen");
-    m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(1.9e8, -m_config->get_double("sia.Glen_exponent")));
+    m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+    const double softness = pow(1.9e8, -m_config->get_double("stress_balance.sia.Glen_exponent"));
+    m_config->set_double("flow_law.isothermal_Glen.ice_softness", softness);
   } else {
     // Set the default for IceCompModel:
-    m_config->set_string("sia.flow_law", "arr");
+    m_config->set_string("stress_balance.sia.flow_law", "arr");
   }
 }
 
@@ -116,16 +117,16 @@ void IceCompModel::setFromOptions() {
     m_config->set_string("bed_deformation.model", "none");
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K') || (testname == 'O')) {
-    m_config->set_boolean("do_energy", true);
+    m_config->set_boolean("energy.enabled", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
     m_config->set_double("energy.minimum_allowed_temperature", 0.0);
     m_config->set_double("energy.max_low_temperature_count", 1000000);
   } else {
-    m_config->set_boolean("do_energy", false);
+    m_config->set_boolean("energy.enabled", false);
   }
 
-  m_config->set_boolean("is_dry_simulation", true);
+  m_config->set_boolean("ocean.always_grounded", true);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((testname == 'K') || (testname == 'O')) {
@@ -140,18 +141,18 @@ void IceCompModel::setFromOptions() {
     m_config->set_boolean("include_bmr_in_continuity", false);
 
     // this test is isothermal
-    m_config->set_boolean("do_energy", false);
+    m_config->set_boolean("energy.enabled", false);
 
     // use the SSA solver
     m_config->set_string("stress_balance_model", "ssa");
 
     // this certainly is not a "dry simulation"
-    m_config->set_boolean("is_dry_simulation", false);
+    m_config->set_boolean("ocean.always_grounded", false);
 
-    m_config->set_boolean("ssa.dirichlet_bc", true);
+    m_config->set_boolean("stress_balance.ssa.dirichlet_bc", true);
   }
 
-  m_config->set_boolean("do_cold_ice_methods", true);
+  m_config->set_boolean("energy.temperature_based", true);
 
   IceModel::setFromOptions();
 }
@@ -295,7 +296,7 @@ void IceCompModel::initTestABCDH() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  rheology::PatersonBuddCold tgaIce("sia.", *m_config, EC);
+  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, EC);
 
   const double time = m_time->current();
 
@@ -384,7 +385,7 @@ void IceCompModel::initTestL() {
 
   assert(testname == 'L');
 
-  rheology::PatersonBuddCold tgaIce("sia.", *m_config, EC);
+  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -584,7 +585,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   double
     seawater_density = m_config->get_double("sea_water.density"),
     ice_density      = m_config->get_double("ice.density"),
-    Glen_n           = m_config->get_double("sia.Glen_exponent"),
+    Glen_n           = m_config->get_double("stress_balance.sia.Glen_exponent"),
     standard_gravity = m_config->get_double("standard_gravity");
 
   // area of grid square in square km:
