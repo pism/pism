@@ -82,7 +82,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
   m_tillwat.set_attrs("internal",
                       "copy of till water thickness held by MohrCoulombYieldStress",
                       "m", "");
-  bool addtransportable = m_config->get_boolean("yield_stress.add_transportable_water");
+  bool addtransportable = m_config->get_boolean("basal_yield_stress.add_transportable_water");
   if (addtransportable == true) {
     m_bwat.create(m_grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS);
     m_bwat.set_attrs("internal",
@@ -146,7 +146,7 @@ void MohrCoulombYieldStress::init_impl() {
   }
 
   {
-    const std::string flag_name = "yield_stress.add_transportable_water";
+    const std::string flag_name = "basal_yield_stress.add_transportable_water";
     hydrology::Routing *hydrology_routing = dynamic_cast<hydrology::Routing*>(m_hydrology);
     if (m_config->get_boolean(flag_name) == true && hydrology_routing == NULL) {
       throw RuntimeError::formatted("Flag %s is set.\n"
@@ -162,7 +162,7 @@ void MohrCoulombYieldStress::init_impl() {
 
   options::Real
     plastic_phi("-plastic_phi", "constant in space till friction angle",
-                m_config->get_double("yield_stress.default_till_phi"));
+                m_config->get_double("basal_yield_stress.default_till_phi"));
 
   options::RealList
     topg_to_phi_option("-topg_to_phi",
@@ -323,7 +323,7 @@ is the coefficient of compressibility of the till.  Constants  @f$ N_0, e_0, C_c
 found by [@ref Tulaczyketal2000] from laboratory experiments on samples of
 till.
 
-If `yield_stress.add_transportable_water` is yes then @f$ s @f$ in the above formula
+If `basal_yield_stress.add_transportable_water` is yes then @f$ s @f$ in the above formula
 becomes @f$ s = (W + W_{til}) / W_{til}^{max} @f$,
 that is, the water amount is the sum @f$ W+W_{til} @f$.  This only works
 if @f$ W @f$ is present, that is, if `hydrology` points to a
@@ -350,10 +350,10 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
   // this model does no internal time-stepping
 
-  bool slipperygl       = m_config->get_boolean("yield_stress.slippery_grounding_lines"),
-       addtransportable = m_config->get_boolean("yield_stress.add_transportable_water");
+  bool slipperygl       = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
+       addtransportable = m_config->get_boolean("basal_yield_stress.add_transportable_water");
 
-  const double high_tauc   = m_config->get_double("yield_stress.ice_free_bedrock"),
+  const double high_tauc   = m_config->get_double("basal_yield_stress.ice_free_bedrock"),
                tillwat_max = m_config->get_double("hydrology.tillwat_max"),
                c0          = m_config->get_double("till_cohesion"),
                N0          = m_config->get_double("till_reference_effective_pressure"),

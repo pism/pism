@@ -62,7 +62,7 @@ class BasalTillStrength:
         config.boolean_from_option("thk_eff", "thk_eff_basal_water_pressure")
 
         # # // "friction angle" in degrees
-        # config.scalar_from_option("plastic_phi", "yield_stress.default_till_phi")
+        # config.scalar_from_option("plastic_phi", "basal_yield_stress.default_till_phi")
 
 # The updateYieldStress and getBasalWaterPressure come from iMBasal.
 

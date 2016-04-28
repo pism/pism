@@ -196,15 +196,15 @@ netcdf pism_config {
     pism_config:sub_groundingline_basal_melt  = "true";
     pism_config:sub_groundingline_basal_melt_doc = "If sub_groundingline is set, use the fractional floatation mask to interpolate the basal melt rate at the grounding line between grounded and floating values.";
 
-    pism_config:yield_stress.slippery_grounding_lines_type = "boolean";
-    pism_config:yield_stress.slippery_grounding_lines_option = "tauc_slippery_grounding_lines";
-    pism_config:yield_stress.slippery_grounding_lines = "no";
-    pism_config:yield_stress.slippery_grounding_lines_doc = "If yes, at icy grounded locations with bed elevations below sea level, within one cell of floating ice or ice-free ocean, make tauc as low as possible from the Mohr-Coulomb relation.  Specifically, at such locations replace the normally-computed tauc from the Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the modeled or reported amount of till water, nor does this mechanism affect water conservation.";
+    pism_config:basal_yield_stress.slippery_grounding_lines_type = "boolean";
+    pism_config:basal_yield_stress.slippery_grounding_lines_option = "tauc_slippery_grounding_lines";
+    pism_config:basal_yield_stress.slippery_grounding_lines = "no";
+    pism_config:basal_yield_stress.slippery_grounding_lines_doc = "If yes, at icy grounded locations with bed elevations below sea level, within one cell of floating ice or ice-free ocean, make tauc as low as possible from the Mohr-Coulomb relation.  Specifically, at such locations replace the normally-computed tauc from the Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the modeled or reported amount of till water, nor does this mechanism affect water conservation.";
 
-    pism_config:yield_stress.add_transportable_water_type = "boolean";
-    pism_config:yield_stress.add_transportable_water_option = "tauc_add_transportable_water";
-    pism_config:yield_stress.add_transportable_water = "no";
-    pism_config:yield_stress.add_transportable_water_doc = "If 'yes' then the water amount in the transport system is added to tillwat in determining tauc (in the Mohr-Coulomb relation).  Normally only the water in the till is used.";
+    pism_config:basal_yield_stress.add_transportable_water_type = "boolean";
+    pism_config:basal_yield_stress.add_transportable_water_option = "tauc_add_transportable_water";
+    pism_config:basal_yield_stress.add_transportable_water = "no";
+    pism_config:basal_yield_stress.add_transportable_water_doc = "If 'yes' then the water amount in the transport system is added to tillwat in determining tauc (in the Mohr-Coulomb relation).  Normally only the water in the till is used.";
 
     pism_config:till_use_topg_to_phi_type = "boolean";
     pism_config:till_use_topg_to_phi = "no";
@@ -384,23 +384,23 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.strength_extension.constant_nu = 9.48680701906572e+14;
     pism_config:stress_balance.ssa.strength_extension.constant_nu_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa year in [@ref Ritzetal2001].";
 
-    pism_config:yield_stress.model_type = "keyword";
-    pism_config:yield_stress.model_option = "yield_stress";
-    pism_config:yield_stress.model_choices = "constant,mohr_coulomb";
-    pism_config:yield_stress.model = "mohr_coulomb";
-    pism_config:yield_stress.model_doc = "The basal yield stress model to use when sliding is active; choose from 'mohr_coulomb' and 'constant'";
+    pism_config:basal_yield_stress.model_type = "keyword";
+    pism_config:basal_yield_stress.model_option = "yield_stress";
+    pism_config:basal_yield_stress.model_choices = "constant,mohr_coulomb";
+    pism_config:basal_yield_stress.model = "mohr_coulomb";
+    pism_config:basal_yield_stress.model_doc = "The basal yield stress model to use when sliding is active; choose from 'mohr_coulomb' and 'constant'";
 
-    pism_config:yield_stress.constant.value_option = "tauc";
-    pism_config:yield_stress.constant.value_units = "Pascal";
-    pism_config:yield_stress.constant.value_type = "scalar";
-    pism_config:yield_stress.constant.value = 2e5;
-    pism_config:yield_stress.constant.value_doc = "fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default";
+    pism_config:basal_yield_stress.constant.value_option = "tauc";
+    pism_config:basal_yield_stress.constant.value_units = "Pascal";
+    pism_config:basal_yield_stress.constant.value_type = "scalar";
+    pism_config:basal_yield_stress.constant.value = 2e5;
+    pism_config:basal_yield_stress.constant.value_doc = "fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default";
 
-    pism_config:yield_stress.ice_free_bedrock_option = "high_tauc";
-    pism_config:yield_stress.ice_free_bedrock_units = "Pascal";
-    pism_config:yield_stress.ice_free_bedrock_type = "scalar";
-    pism_config:yield_stress.ice_free_bedrock = 1e6;
-    pism_config:yield_stress.ice_free_bedrock_doc = "the 'high' yield stress value used in grounded ice-free areas.";
+    pism_config:basal_yield_stress.ice_free_bedrock_option = "high_tauc";
+    pism_config:basal_yield_stress.ice_free_bedrock_units = "Pascal";
+    pism_config:basal_yield_stress.ice_free_bedrock_type = "scalar";
+    pism_config:basal_yield_stress.ice_free_bedrock = 1e6;
+    pism_config:basal_yield_stress.ice_free_bedrock_doc = "the 'high' yield stress value used in grounded ice-free areas.";
 
     pism_config:basal_resistance.pseudo_plastic.sliding_scale_factor_option = "sliding_scale_factor_reduces_tauc";
     pism_config:basal_resistance.pseudo_plastic.sliding_scale_factor_units = "1";
@@ -508,11 +508,11 @@ netcdf pism_config {
     pism_config:time_stepping.skip.max = 10;
     pism_config:time_stepping.skip.max_doc = "Number of mass-balance steps, including SIA diffusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done";
 
-    pism_config:yield_stress.default_till_phi_option = "plastic_phi";
-    pism_config:yield_stress.default_till_phi_units = "degrees";
-    pism_config:yield_stress.default_till_phi_type = "scalar";
-    pism_config:yield_stress.default_till_phi = 30.0;
-    pism_config:yield_stress.default_till_phi_doc = "fill value for till friction angle";
+    pism_config:basal_yield_stress.default_till_phi_option = "plastic_phi";
+    pism_config:basal_yield_stress.default_till_phi_units = "degrees";
+    pism_config:basal_yield_stress.default_till_phi_type = "scalar";
+    pism_config:basal_yield_stress.default_till_phi = 30.0;
+    pism_config:basal_yield_stress.default_till_phi_doc = "fill value for till friction angle";
 
     pism_config:till_cohesion_option = "till_cohesion";
     pism_config:till_cohesion_units = "Pascal";
@@ -547,7 +547,7 @@ netcdf pism_config {
     pism_config:till_log_factor_transportable_water_units = "meters";
     pism_config:till_log_factor_transportable_water_type = "scalar";
     pism_config:till_log_factor_transportable_water = 0.1;
-    pism_config:till_log_factor_transportable_water_doc = "If yield_stress.add_transportable_water = yes then the water amount in the transport system is added to tillwat in determining tauc.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.";
+    pism_config:till_log_factor_transportable_water_doc = "If basal_yield_stress.add_transportable_water = yes then the water amount in the transport system is added to tillwat in determining tauc.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.";
 
     pism_config:till_topg_to_phi_phi_min_units = "degrees";
     pism_config:till_topg_to_phi_phi_min_type = "scalar";
@@ -803,10 +803,10 @@ netcdf pism_config {
     pism_config:surface.pdd.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.pdd.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed surface.pdd.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";
 
-    pism_config:precip_exponential_factor_for_temperature_units = "Kelvin-1";
-    pism_config:precip_exponential_factor_for_temperature_type = "scalar";
-    pism_config:precip_exponential_factor_for_temperature = 0.07041666667;
-    pism_config:precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [@ref Huybrechts02] ";
+    pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
+    pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "scalar";
+    pism_config:atmosphere.precip_exponential_factor_for_temperature = 0.07041666667;
+    pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [@ref Huybrechts02] ";
 
     pism_config:surface.force_to_thickness.alpha_units = "year-1";
     pism_config:surface.force_to_thickness.alpha_type = "scalar";

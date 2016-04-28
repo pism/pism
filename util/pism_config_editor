@@ -326,7 +326,7 @@ if __name__ == "__main__":
     import tkFileDialog, ttk, tkMessageBox
 
     root = tk.Tk()
-    root.geometry("%dx%d" % (1100, 700))
+    root.geometry("%dx%d" % (1200, 700))
     root.wm_title("PISM configuration editor")
 
     a = App(root)

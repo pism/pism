@@ -232,7 +232,7 @@ def adjustTauc(mask, tauc):
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
     grid = mask.get_grid()
-    high_tauc = grid.ctx().config().get_double("yield_stress.ice_free_bedrock")
+    high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():

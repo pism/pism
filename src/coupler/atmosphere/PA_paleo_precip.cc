@@ -48,7 +48,7 @@ PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in)
   precipitation.set_string("units", "m second-1");
   precipitation.set_string("glaciological_units", "m year-1");
 
-  m_precipexpfactor = m_config->get_double("precip_exponential_factor_for_temperature");
+  m_precipexpfactor = m_config->get_double("atmosphere.precip_exponential_factor_for_temperature");
 }
 
 PaleoPrecip::~PaleoPrecip()
