@@ -139,7 +139,7 @@ void IceRegionalModel::model_state_setup() {
                        units::convert(m_sys, strip_km, "km", "m"),
                        m_no_model_mask);
   } else {
-    double strip = m_config->get_double("regional_no_model_strip", "m");
+    double strip = m_config->get_double("regional.no_model_strip", "m");
     m_log->message(2,
                    "* Option -no_model_strip is not set... setting boundary strip width to %.2f km\n",
                    units::convert(m_sys, strip, "m", "km"));
@@ -157,7 +157,7 @@ void IceRegionalModel::allocate_stressbalance() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  std::string model = m_config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance.model");
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
@@ -192,7 +192,7 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     return;
   }
 
-  std::string model = m_config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance.model");
 
   // only these two use the yield stress (so far):
   if (model == "ssa" || model == "ssa+sia") {

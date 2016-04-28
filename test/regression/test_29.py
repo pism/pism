@@ -32,11 +32,11 @@ def generate_config():
     pism_overrides = nc.createVariable("pism_overrides", 'b')
 
     attrs = {
-        "standard_gravity" : 9.81,
-        "standard_gravity_doc" : "m s-2; = g; acceleration due to gravity on Earth geoid",
+        "constants.standard_gravity" : 9.81,
+        "constants.standard_gravity_doc" : "m s-2; = g; acceleration due to gravity on Earth geoid",
 
-        "fresh_water.density" : 1000.0,
-        "fresh_water.density_doc" : "kg m-3; = rhow",
+        "constants.fresh_water.density" : 1000.0,
+        "constants.fresh_water.density_doc" : "kg m-3; = rhow",
 
         "flow_law.isothermal_Glen.ice_softness" : 3.1689e-24,
         "flow_law.isothermal_Glen.ice_softness_doc" : "Pa-3 s-1; ice softness; NOT DEFAULT",

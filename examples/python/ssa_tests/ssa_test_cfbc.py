@@ -101,8 +101,8 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         vel_bc = vecs.vel_bc
         ice_mask = vecs.mask
 
-        ocean_rho = self.config.get_double("sea_water.density")
-        ice_rho = self.config.get_double("ice.density")
+        ocean_rho = self.config.get_double("constants.sea_water.density")
+        ice_rho = self.config.get_double("constants.ice.density")
 
         with PISM.vec.Access(comm=[thickness, surface, bc_mask, vel_bc, ice_mask]):
             for (i, j) in grid.points():

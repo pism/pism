@@ -55,9 +55,9 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_U_ks = GSL_NAN;
   m_B_ks = GSL_NAN;
 
-  m_ice_density = config.get_double("ice.density");
-  m_ice_c   = config.get_double("ice.specific_heat_capacity");
-  m_ice_k   = config.get_double("ice.thermal_conductivity");
+  m_ice_density = config.get_double("constants.ice.density");
+  m_ice_c   = config.get_double("constants.ice.specific_heat_capacity");
+  m_ice_k   = config.get_double("constants.ice.thermal_conductivity");
   m_p_air   = config.get_double("surface_pressure");
 
   m_ice_K  = m_ice_k / m_ice_c;

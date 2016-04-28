@@ -303,11 +303,11 @@ void IceModel::putTempAtDepth() {
   const bool do_cold = m_config->get_boolean("energy.temperature_based"),
              usesmb  = m_config->get_string("bootstrapping.temperature_heuristic") == "smb";
   const double
-    ice_k = m_config->get_double("ice.thermal_conductivity"),
-    melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature"),
-    ice_density = m_config->get_double("ice.density"),
-    beta_CC_grad = m_config->get_double("ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_double("standard_gravity"),
-    KK = ice_k / (ice_density * m_config->get_double("ice.specific_heat_capacity"));
+    ice_k = m_config->get_double("constants.ice.thermal_conductivity"),
+    melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature"),
+    ice_density = m_config->get_double("constants.ice.density"),
+    beta_CC_grad = m_config->get_double("constants.ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_double("constants.standard_gravity"),
+    KK = ice_k / (ice_density * m_config->get_double("constants.ice.specific_heat_capacity"));
 
   assert(m_surface != NULL);
 

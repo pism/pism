@@ -158,8 +158,8 @@ void SSATestCasePlug::initializeSSACoefficients() {
 void SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
                                               double /*x*/, double y,
                                               double *u, double *v) {
-  double earth_grav = m_config->get_double("standard_gravity"),
-    ice_rho = m_config->get_double("ice.density");
+  double earth_grav = m_config->get_double("constants.standard_gravity"),
+    ice_rho = m_config->get_double("constants.ice.density");
   double f = ice_rho * earth_grav * H0* dhdx;
   double ynd = y/L;
 

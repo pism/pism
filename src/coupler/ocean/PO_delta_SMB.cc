@@ -68,7 +68,7 @@ void Delta_SMB::init_impl() {
   init_internal();
 
   // convert from [m s-1] to [kg m-2 s-1]:
-  offset->scale(m_config->get_double("ice.density"));
+  offset->scale(m_config->get_double("constants.ice.density"));
 }
 
 MaxTimestep Delta_SMB::max_timestep_impl(double t) {

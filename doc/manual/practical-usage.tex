@@ -645,8 +645,8 @@ produces the ``Earth'' result, since PISM's defaults correspond to this planet. 
 netcdf mars {
     variables:
     byte pism_overrides;
-    pism_overrides:standard_gravity = 3.728;
-    pism_overrides:standard_gravity_doc = "m s-2; standard gravity on Mars";
+    pism_overrides:constants.standard_gravity = 3.728;
+    pism_overrides:constants.standard_gravity_doc = "m s-2; standard gravity on Mars";
 }
 \end{verbatim}
 \normalsize
@@ -667,13 +667,13 @@ $ diff -U 1 earth_config.txt mars_config.txt
 +++ mars_config.txt	2015-05-08 12:44:51.000000000 -0800
 @@ -734,3 +734,3 @@
                 pism_config:ssafd_relative_convergence_units = "1" ;
--               pism_config:standard_gravity_doc = "acceleration due to gravity on Earth geoid" ;
-+               pism_config:standard_gravity_doc = "m s-2; standard gravity on Mars" ;
-                pism_config:standard_gravity_type = "scalar" ;
+-               pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid" ;
++               pism_config:constants.standard_gravity_doc = "m s-2; standard gravity on Mars" ;
+                pism_config:constants.standard_gravity_type = "scalar" ;
 @@ -1057,3 +1057,3 @@
                 pism_config:ssafd_relative_convergence = 0.0001 ;
--               pism_config:standard_gravity = 9.81 ;
-+               pism_config:standard_gravity = 3.728 ;
+-               pism_config:constants.standard_gravity = 9.81 ;
++               pism_config:constants.standard_gravity = 3.728 ;
                 pism_config:start_year = 0. ;
 \end{verbatim}
 \normalsize

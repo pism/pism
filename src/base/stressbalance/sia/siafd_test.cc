@@ -58,8 +58,8 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
   const double LforFG = 750000; // m
 
   const double
-    ice_rho   = grid.ctx()->config()->get_double("ice.density"),
-    ice_c     = grid.ctx()->config()->get_double("ice.specific_heat_capacity");
+    ice_rho   = grid.ctx()->config()->get_double("constants.ice.density"),
+    ice_c     = grid.ctx()->config()->get_double("constants.ice.specific_heat_capacity");
 
   double   junk0, junk1;
 

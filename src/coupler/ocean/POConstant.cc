@@ -39,8 +39,8 @@ Constant::Constant(IceGrid::ConstPtr g)
   {
     const double
       Q           = m_config->get_double("ocean.sub_shelf_heat_flux_into_ice"),
-      L           = m_config->get_double("fresh_water.latent_heat_of_fusion"),
-      ice_density = m_config->get_double("ice.density");
+      L           = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
+      ice_density = m_config->get_double("constants.ice.density");
 
     // Set default melt rate using configuration parameters
     // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
@@ -107,10 +107,10 @@ void Constant::sea_level_elevation_impl(double &result) {
 }
 
 void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
-  const double T0 = m_config->get_double("fresh_water.melting_point_temperature"), // K
-    beta_CC       = m_config->get_double("ice.beta_Clausius_Clapeyron"),
-    g             = m_config->get_double("standard_gravity"),
-    ice_density   = m_config->get_double("ice.density");
+  const double T0 = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K
+    beta_CC       = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
+    g             = m_config->get_double("constants.standard_gravity"),
+    ice_density   = m_config->get_double("constants.ice.density");
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 

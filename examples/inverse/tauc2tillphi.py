@@ -62,7 +62,7 @@ class BasalTillStrength:
         config.boolean_from_option("thk_eff", "thk_eff_basal_water_pressure")
 
         # # // "friction angle" in degrees
-        # config.scalar_from_option("plastic_phi", "basal_yield_stress.default_till_phi")
+        # config.scalar_from_option("plastic_phi", "basal_yield_stress.mohr_coulomb.till_phi_default")
 
 # The updateYieldStress and getBasalWaterPressure come from iMBasal.
 
@@ -216,8 +216,8 @@ bwat = PISM.model.createBasalWaterVec(grid)
 for v in [bmr, tillphi, bwat]:
     v.regrid(bootfile, True)
 
-standard_gravity = config.get_double("standard_gravity")
-ice_rho = config.get_double("ice.density")
+standard_gravity = config.get_double("constants.standard_gravity")
+ice_rho = config.get_double("constants.ice.density")
 basal_till = BasalTillStrength(grid, ice_rho, standard_gravity)
 
 basal_till.updateYieldStress(ice_mask, thickness, bwat, bmr, tillphi, tauc)

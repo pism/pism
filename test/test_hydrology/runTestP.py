@@ -39,8 +39,8 @@ def generate_config():
     pism_overrides = nc.createVariable("pism_overrides", 'b')
 
     attrs = {
-        "ice.softness" : 3.1689e-24,
-        "ice.softness_doc" : "Pa-3 s-1; ice softness; NOT DEFAULT",
+        "constants.ice.softness" : 3.1689e-24,
+        "constants.ice.softness_doc" : "Pa-3 s-1; ice softness; NOT DEFAULT",
 
         "hydrology.hydraulic_conductivity" : 1.0e-2 / (1000.0 * 9.81),
         "hydrology.hydraulic_conductivity_doc" : "= k; NOT DEFAULT",

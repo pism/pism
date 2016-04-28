@@ -68,7 +68,7 @@ namespace mask {
 class GeometryCalculator {
 public:
   GeometryCalculator(const Config &config) {
-    m_alpha = 1 - config.get_double("ice.density") / config.get_double("sea_water.density");
+    m_alpha = 1 - config.get_double("constants.ice.density") / config.get_double("constants.sea_water.density");
     m_is_dry_simulation = config.get_boolean("ocean.always_grounded");
     m_icefree_thickness = config.get_double("mask_icefree_thickness_standard");
     m_is_floating_thickness = config.get_double("mask_is_floating_thickness_standard");

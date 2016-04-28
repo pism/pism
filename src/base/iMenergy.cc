@@ -152,7 +152,7 @@ void IceModel::combine_basal_melt_rate() {
     list.add(m_gl_mask);
   }
 
-  double ice_density = m_config->get_double("ice.density");
+  double ice_density = m_config->get_double("constants.ice.density");
 
   list.add(m_cell_type);
   list.add(m_basal_melt_rate);
@@ -182,9 +182,9 @@ void IceModel::combine_basal_melt_rate() {
 //! the bedrock thermal layer will see.
 void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double
-    T0                     = m_config->get_double("fresh_water.melting_point_temperature"),
-    beta_CC_grad_sea_water = (m_config->get_double("ice.beta_Clausius_Clapeyron") * m_config->get_double("sea_water.density") *
-                              m_config->get_double("standard_gravity")); // K m-1
+    T0                     = m_config->get_double("constants.fresh_water.melting_point_temperature"),
+    beta_CC_grad_sea_water = (m_config->get_double("constants.ice.beta_Clausius_Clapeyron") * m_config->get_double("constants.sea_water.density") *
+                              m_config->get_double("constants.standard_gravity")); // K m-1
 
   // will need coupler fields in ice-free land and
   assert(m_surface != NULL);

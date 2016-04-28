@@ -215,7 +215,7 @@ void TemperatureIndex_Old::update_impl(PetscReal my_t, PetscReal my_dt) {
 
 void TemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
 
-  const double ice_density = m_config->get_double("ice.density");
+  const double ice_density = m_config->get_double("constants.ice.density");
 
   // to ensure that temperature time series are correct:
   m_atmosphere->update(my_t, my_dt);

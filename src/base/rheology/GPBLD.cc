@@ -32,7 +32,7 @@ GPBLD::GPBLD(const std::string &prefix,
   : FlowLaw(prefix, config, ec) {
   m_name = "Glen-Paterson-Budd-Lliboutry-Duval";
 
-  m_T_0              = config.get_double("fresh_water.melting_point_temperature"); // K
+  m_T_0              = config.get_double("constants.fresh_water.melting_point_temperature"); // K
   m_water_frac_coeff = config.get_double("flow_law.gpbld.water_frac_coeff");
   m_water_frac_observed_limit
     = config.get_double("flow_law.gpbld.water_frac_observed_limit");

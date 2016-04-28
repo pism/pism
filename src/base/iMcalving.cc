@@ -124,7 +124,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
                                            const IceModelVec2S &Href,
                                            const IceModelVec2S &Href_old) {
 
-  const double ice_density = m_config->get_double("ice.density");
+  const double ice_density = m_config->get_double("constants.ice.density");
   const bool
     use_Href = Href.was_created() && Href_old.was_created();
   double my_total_discharge = 0.0, total_discharge;

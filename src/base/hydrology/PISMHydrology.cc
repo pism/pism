@@ -198,7 +198,7 @@ void Hydrology::overburden_pressure(IceModelVec2S &result) {
   const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("thk");
 
   result.copy_from(*thk);  // copies into ghosts if result has them
-  result.scale(m_config->get_double("ice.density") * m_config->get_double("standard_gravity"));
+  result.scale(m_config->get_double("constants.ice.density") * m_config->get_double("constants.standard_gravity"));
 }
 
 

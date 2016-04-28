@@ -68,8 +68,8 @@ class testi(PISM.ssa.SSAExactTestCase):
         self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True)
         self.config.set_double("stress_balance.ssa.epsilon", 0.0)  # don't use this lower bound
 
-        standard_gravity = self.config.get_double("standard_gravity")
-        ice_rho = self.config.get_double("ice.density")
+        standard_gravity = self.config.get_double("constants.standard_gravity")
+        ice_rho = self.config.get_double("constants.ice.density")
         theta = math.atan(0.001)
         f = ice_rho * standard_gravity * H0_schoof * math.tan(theta)
         grid = self.grid

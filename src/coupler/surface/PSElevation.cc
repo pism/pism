@@ -243,7 +243,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   loop.check();
 
   // convert from m second-1 ice equivalent to kg m-2 s-1:
-  result.scale(m_config->get_double("ice.density"));
+  result.scale(m_config->get_double("constants.ice.density"));
 }
 
 void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) {

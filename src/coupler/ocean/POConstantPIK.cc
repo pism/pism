@@ -84,10 +84,10 @@ void PIK::sea_level_elevation_impl(double &result) {
 
 void PIK::shelf_base_temperature_impl(IceModelVec2S &result) {
   const double
-    T0          = m_config->get_double("fresh_water.melting_point_temperature"), // K
-    beta_CC     = m_config->get_double("ice.beta_Clausius_Clapeyron"),
-    g           = m_config->get_double("standard_gravity"),
-    ice_density = m_config->get_double("ice.density");
+    T0          = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K
+    beta_CC     = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
+    g           = m_config->get_double("constants.standard_gravity"),
+    ice_density = m_config->get_double("constants.ice.density");
 
   const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -108,9 +108,9 @@ void PIK::shelf_base_temperature_impl(IceModelVec2S &result) {
  */
 void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   const double
-    L                 = m_config->get_double("fresh_water.latent_heat_of_fusion"),
-    sea_water_density = m_config->get_double("sea_water.density"),
-    ice_density       = m_config->get_double("ice.density"),
+    L                 = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
+    sea_water_density = m_config->get_double("constants.sea_water.density"),
+    ice_density       = m_config->get_double("constants.ice.density"),
     c_p_ocean         = 3974.0, // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T           = 1e-4,   // m/s, thermal exchange velocity
     ocean_salinity    = 35.0,   // g/kg

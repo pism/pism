@@ -151,11 +151,11 @@ class Experiment:
                  "include_bmr_in_continuity": "no",
                  "stress_balance.ssa.compute_surface_gradient_inward": "no",
                  "flow_law.isothermal_Glen.ice_softness": MISMIP.A(self.experiment, step),
-                 "ice.density": MISMIP.rho_i(),
-                 "sea_water.density": MISMIP.rho_w(),
+                 "constants.ice.density": MISMIP.rho_i(),
+                 "constants.sea_water.density": MISMIP.rho_w(),
                  "bootstrapping.defaults.geothermal_flux": 0.0,
                  "Glen_exponent": MISMIP.n(),
-                 "standard_gravity": MISMIP.g(),
+                 "constants.standard_gravity": MISMIP.g(),
                  "ocean.sub_shelf_heat_flux_into_ice": 0.0,
                  }
 

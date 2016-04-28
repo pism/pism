@@ -527,7 +527,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m)
 
 IceModelVec::Ptr IceModel_temp_pa::compute_impl() {
   bool cold_mode = m_config->get_boolean("energy.temperature_based");
-  double melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature");
+  double melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature");
 
   // update vertical levels (in case the m_grid was extended
   m_vars[0].set_levels(m_grid->z());
@@ -593,7 +593,7 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m)
 IceModelVec::Ptr IceModel_temppabase::compute_impl() {
 
   bool cold_mode = m_config->get_boolean("energy.temperature_based");
-  double melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature");
+  double melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "temp_pa_base", WITHOUT_GHOSTS);
@@ -1157,7 +1157,7 @@ void IceModel_imass::update(double a, double b) {
 
   double value = model->ice_volume();
 
-  m_ts->append(value * m_grid->ctx()->config()->get_double("ice.density"), a, b);
+  m_ts->append(value * m_grid->ctx()->config()->get_double("constants.ice.density"), a, b);
 }
 
 
@@ -1178,7 +1178,7 @@ void IceModel_dimassdt::update(double a, double b) {
 
   double value = model->ice_volume();
 
-  m_ts->append(value * m_grid->ctx()->config()->get_double("ice.density"), a, b);
+  m_ts->append(value * m_grid->ctx()->config()->get_double("constants.ice.density"), a, b);
 }
 
 
@@ -1787,7 +1787,7 @@ void IceModel_limnsw::update(double a, double b) {
   Config::ConstPtr config = m_grid->ctx()->config();
 
   const double
-    ice_density = config->get_double("ice.density"),
+    ice_density = config->get_double("constants.ice.density"),
     ice_volume  = model->ice_volume_not_displacing_seawater(),
     ice_mass    = ice_volume * ice_density;
 
@@ -2160,8 +2160,8 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
   const double sea_level = model->m_ocean->sea_level_elevation();
 
   const double
-    ice_density   = m_config->get_double("ice.density"),
-    ocean_density = m_config->get_double("sea_water.density");
+    ice_density   = m_config->get_double("constants.ice.density"),
+    ocean_density = m_config->get_double("constants.sea_water.density");
 
   const Vars &variables = m_grid->variables();
 

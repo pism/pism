@@ -123,8 +123,8 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   list.add(m_bc_values);
   list.add(m_ice_mask);
 
-  double ocean_rho = m_config->get_double("sea_water.density"),
-    ice_rho = m_config->get_double("ice.density");
+  double ocean_rho = m_config->get_double("constants.sea_water.density"),
+    ice_rho = m_config->get_double("constants.ice.density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -32,11 +32,11 @@ def create_config():
     config = nc.createVariable("pism_overrides", 'i4')
 
     attrs = {
-        "standard_gravity" : 9.81,
-        "standard_gravity_doc" : "m s-2; = g",
+        "constants.standard_gravity" : 9.81,
+        "constants.standard_gravity_doc" : "m s-2; = g",
 
-        "ice.density" : 1000.0,
-        "ice.density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
+        "constants.ice.density" : 1000.0,
+        "constants.ice.density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
 
         "stress_balance.sia.bed_smoother_range" : -1.0,
         "stress_balance.sia.bed_smoother_range_doc" : "m; negative value de-activates bed smoother",

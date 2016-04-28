@@ -236,7 +236,7 @@ This method does no reporting at stdout; the calling routine can do that.
 void Routing::boundary_mass_changes(IceModelVec2S &newthk,
                                     double &icefreelost, double &oceanlost,
                                     double &negativegain, double &nullstriplost) {
-  double fresh_water_density = m_config->get_double("fresh_water.density");
+  double fresh_water_density = m_config->get_double("constants.fresh_water.density");
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
 
   const IceModelVec2S        &cellarea = *m_grid->variables().get_2d_scalar("cell_area");
@@ -310,7 +310,7 @@ void Routing::subglacial_water_pressure(IceModelVec2S &result) {
 void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
 
   const double
-    rg = m_config->get_double("fresh_water.density") * m_config->get_double("standard_gravity");
+    rg = m_config->get_double("constants.fresh_water.density") * m_config->get_double("constants.standard_gravity");
 
   const IceModelVec2S        &bed  = *m_grid->variables().get_2d_scalar("bedrock_altitude");
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
@@ -401,7 +401,7 @@ void Routing::conductivity_staggered(IceModelVec2Stag &result,
     k     = m_config->get_double("hydrology.hydraulic_conductivity"),
     alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
     beta  = m_config->get_double("hydrology.gradient_power_in_flux"),
-    rg    = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water.density");
+    rg    = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
 
   if (alpha < 1.0) {
     throw RuntimeError::formatted("alpha = %f < 1 which is not allowed", alpha);
@@ -476,11 +476,11 @@ void Routing::wall_melt(IceModelVec2S &result) {
 
   const double
     k     = m_config->get_double("hydrology.hydraulic_conductivity"),
-    L     = m_config->get_double("fresh_water.latent_heat_of_fusion"),
+    L     = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
     alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
     beta  = m_config->get_double("hydrology.gradient_power_in_flux"),
-    rhow  = m_config->get_double("standard_gravity"),
-    g     = m_config->get_double("fresh_water.density"),
+    rhow  = m_config->get_double("constants.standard_gravity"),
+    g     = m_config->get_double("constants.fresh_water.density"),
     rg    = rhow * g,
     CC    = k / (L * rhow);
 
@@ -548,7 +548,7 @@ have valid ghosts.
 Calls subglacial_water_pressure() method to get water pressure.
  */
 void Routing::velocity_staggered(IceModelVec2Stag &result) {
-  const double  rg = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water.density");
+  const double  rg = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
   double dbdx, dbdy, dPdx, dPdy;
 
   subglacial_water_pressure(m_R);  // R=P; yes, it updates ghosts
@@ -624,7 +624,7 @@ void Routing::adaptive_for_W_evolution(double t_current, double t_end, double ma
                                        double &dtCFL_result, double &dtDIFFW_result) {
   const double
     dtmax = m_config->get_double("hydrology.maximum_time_step", "seconds"),
-    rg    = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water.density");
+    rg    = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
 
   // V could be zero if P is constant and bed is flat
   std::vector<double> tmp = m_V.absmaxcomponents();
@@ -679,7 +679,7 @@ void Routing::raw_update_W(double hdt) {
   const double
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy),
-    rg  = m_config->get_double("standard_gravity") * m_config->get_double("fresh_water.density");
+    rg  = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
 
   IceModelVec::AccessList list;
   list.add(m_W);

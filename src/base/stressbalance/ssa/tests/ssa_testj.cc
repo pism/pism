@@ -85,8 +85,8 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_ice_enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa year for typical vertically-averaged viscosity */
-  double ocean_rho = m_config->get_double("sea_water.density"),
-    ice_rho = m_config->get_double("ice.density");
+  double ocean_rho = m_config->get_double("constants.sea_water.density"),
+    ice_rho = m_config->get_double("constants.ice.density");
   const double nu0 = units::convert(m_sys, 30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
   const double H0 = 500.;       /* 500 m typical thickness */
 

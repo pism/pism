@@ -288,7 +288,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_log->message(5,
              "    updating surface mass balance using -force_to_thickness mechanism ...");
 
-  double ice_density = m_config->get_double("ice.density");
+  double ice_density = m_config->get_double("constants.ice.density");
 
   const IceModelVec2S        &H    = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");

@@ -659,7 +659,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
   std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz), flow(Mz);
   std::vector<double> delta_ij(Mz);
-  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("ice.grain_size"));
+  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("constants.ice.grain_size"));
   std::vector<double> e_factor(Mz, enhancement_factor);
 
   double my_D_max = 0.0;

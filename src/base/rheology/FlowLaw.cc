@@ -38,12 +38,12 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
     throw RuntimeError("EC is NULL in FlowLaw::FlowLaw()");
   }
 
-  m_standard_gravity   = config.get_double("standard_gravity");
+  m_standard_gravity   = config.get_double("constants.standard_gravity");
   m_ideal_gas_constant = config.get_double("ideal_gas_constant");
 
-  m_rho                = config.get_double("ice.density");
-  m_beta_CC_grad       = config.get_double("ice.beta_Clausius_Clapeyron") * m_rho * m_standard_gravity;
-  m_melting_point_temp = config.get_double("fresh_water.melting_point_temperature");
+  m_rho                = config.get_double("constants.ice.density");
+  m_beta_CC_grad       = config.get_double("constants.ice.beta_Clausius_Clapeyron") * m_rho * m_standard_gravity;
+  m_melting_point_temp = config.get_double("constants.fresh_water.melting_point_temperature");
   m_e                  = config.get_double(prefix + "enhancement_factor");
   m_e_interglacial     = config.get_double(prefix + "enhancement_factor_interglacial");
   m_n                  = config.get_double(prefix + "Glen_exponent");

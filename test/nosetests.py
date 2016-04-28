@@ -664,7 +664,7 @@ def pism_context_test():
     ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 
     print ctx.com().Get_size()
-    print ctx.config().get_double("standard_gravity")
+    print ctx.config().get_double("constants.standard_gravity")
     print ctx.enthalpy_converter().L(273.15)
     print ctx.time().current()
     print PISM.convert(ctx.unit_system(), 1, "km", "m")
@@ -934,8 +934,8 @@ def po_constant_test():
     grid = create_dummy_grid()
     config = grid.ctx().config()
 
-    L = config.get_double("fresh_water.latent_heat_of_fusion")
-    rho = config.get_double("ice.density")
+    L = config.get_double("constants.fresh_water.latent_heat_of_fusion")
+    rho = config.get_double("constants.ice.density")
 
     # prescribe a heat flux that corresponds to a mass flux which is
     # an integer multiple of m / year so that we can easily specify it

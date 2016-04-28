@@ -345,8 +345,8 @@ double IceModel::ice_volume() const {
 
 double IceModel::ice_volume_not_displacing_seawater() const {
   const double
-    sea_water_density = m_config->get_double("sea_water.density"),
-    ice_density       = m_config->get_double("ice.density");
+    sea_water_density = m_config->get_double("constants.sea_water.density"),
+    ice_density       = m_config->get_double("constants.ice.density");
 
   assert(m_ocean != NULL);
   double sea_level = m_ocean->sea_level_elevation();
@@ -390,8 +390,8 @@ double IceModel::ice_volume_not_displacing_seawater() const {
 //! Computes the ice volume, which is relevant for sea-level rise in m^3 in SEA-WATER EQUIVALENT.
 double IceModel::sealevel_volume() const {
   const double
-    sea_water_density = m_config->get_double("sea_water.density"),
-    ice_density       = m_config->get_double("ice.density");
+    sea_water_density = m_config->get_double("constants.sea_water.density"),
+    ice_density       = m_config->get_double("constants.ice.density");
 
   const double
     ocean_area = 3.61e14, // units: meter^2
@@ -650,7 +650,7 @@ double IceModel::ice_enthalpy() const {
   loop.check();
 
   // FIXME: use cell_area.
-  enthalpy_sum *= m_config->get_double("ice.density") * (m_grid->dx() * m_grid->dy());
+  enthalpy_sum *= m_config->get_double("constants.ice.density") * (m_grid->dx() * m_grid->dy());
 
   return GlobalSum(m_grid->com, enthalpy_sum);
 }

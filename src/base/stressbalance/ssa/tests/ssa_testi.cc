@@ -99,8 +99,8 @@ void SSATestCaseI::initializeSSACoefficients() {
   IceModelVec::AccessList list;
   list.add(m_tauc);
 
-  double standard_gravity = m_config->get_double("standard_gravity"),
-    ice_rho = m_config->get_double("ice.density");
+  double standard_gravity = m_config->get_double("constants.standard_gravity"),
+    ice_rho = m_config->get_double("constants.ice.density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

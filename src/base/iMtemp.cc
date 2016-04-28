@@ -139,11 +139,11 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   bool viewOneColumn = options::Bool("-view_sys", "save column system information to a file");
 
   const double
-    ice_density        = m_config->get_double("ice.density"),
-    ice_c              = m_config->get_double("ice.specific_heat_capacity"),
-    L                  = m_config->get_double("fresh_water.latent_heat_of_fusion"),
-    melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature"),
-    beta_CC_grad       = m_config->get_double("ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_double("standard_gravity");
+    ice_density        = m_config->get_double("constants.ice.density"),
+    ice_c              = m_config->get_double("constants.ice.specific_heat_capacity"),
+    L                  = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
+    melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature"),
+    beta_CC_grad       = m_config->get_double("constants.ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_double("constants.standard_gravity");
 
   const bool allow_above_melting = m_config->get_boolean("energy.allow_temperature_above_melting");
 

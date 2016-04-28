@@ -348,7 +348,7 @@ void Distributed::update_impl(double icet, double icedt) {
   }
 
   const double
-            rg    = m_config->get_double("fresh_water.density") * m_config->get_double("standard_gravity"),
+            rg    = m_config->get_double("constants.fresh_water.density") * m_config->get_double("constants.standard_gravity"),
             nglen = m_config->get_double("stress_balance.sia.Glen_exponent"), // choice is SIA; see #285
             Aglen = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
             c1    = m_config->get_double("hydrology.cavitation_opening_coefficient"),

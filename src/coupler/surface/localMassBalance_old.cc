@@ -322,8 +322,8 @@ FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(IceGrid::ConstPtr g)
   beta_ice_c = config->get_double("surface.pdd.fausto.beta_ice_c");
   beta_snow_c = config->get_double("surface.pdd.fausto.beta_snow_c");
 
-  fresh_water_density = config->get_double("fresh_water.density");
-  ice_density = config->get_double("ice.density");
+  fresh_water_density = config->get_double("constants.fresh_water.density");
+  ice_density = config->get_double("constants.ice.density");
   pdd_fausto_latitude_beta_w = config->get_double("surface.pdd.fausto.latitude_beta_w");
 
   temp_mj.create(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);

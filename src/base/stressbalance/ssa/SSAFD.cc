@@ -285,9 +285,9 @@ void SSAFD::assemble_rhs() {
 
   const double ice_free_default_velocity = 0.0;
 
-  const double standard_gravity = m_config->get_double("standard_gravity"),
-    rho_ocean = m_config->get_double("sea_water.density"),
-    rho_ice = m_config->get_double("ice.density");
+  const double standard_gravity = m_config->get_double("constants.standard_gravity"),
+    rho_ocean = m_config->get_double("constants.sea_water.density"),
+    rho_ice = m_config->get_double("constants.ice.density");
   const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
   const bool is_dry_simulation = m_config->get_boolean("ocean.always_grounded");
 
