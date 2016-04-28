@@ -238,7 +238,7 @@ void SSAFD::init_impl() {
   nuh_viewer_size = viewer_size;
   view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
-  if (m_config->get_boolean("calving_front_stress_boundary_condition")) {
+  if (m_config->get_boolean("stress_balance.calving_front_stress_bc")) {
     m_log->message(2,
                "  using PISM-PIK calving-front stress boundary condition ...\n");
   }
@@ -288,11 +288,11 @@ void SSAFD::assemble_rhs() {
   const double standard_gravity = m_config->get_double("standard_gravity"),
     rho_ocean = m_config->get_double("sea_water.density"),
     rho_ice = m_config->get_double("ice.density");
-  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
-  const bool is_dry_simulation = m_config->get_boolean("is_dry_simulation");
+  const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
+  const bool is_dry_simulation = m_config->get_boolean("ocean.always_grounded");
 
   // FIXME: bedrock_boundary is a misleading name
-  bool bedrock_boundary = m_config->get_boolean("ssa.dirichlet_bc");
+  bool bedrock_boundary = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
 
   m_b.set(0.0);
 
@@ -483,13 +483,13 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   const double   dx=m_grid->dx(), dy=m_grid->dy();
   const double   beta_ice_free_bedrock = m_config->get_double("basal_resistance.beta_ice_free_bedrock");
-  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
 
   const bool replace_zero_diagonal_entries =
-    m_config->get_boolean("ssa.fd.replace_zero_diagonal_entries");
+    m_config->get_boolean("stress_balance.ssa.fd.replace_zero_diagonal_entries");
 
   // FIXME: bedrock_boundary is a misleading name
-  const bool bedrock_boundary = m_config->get_boolean("ssa.dirichlet_bc");
+  const bool bedrock_boundary = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
 
   // shortcut:
   IceModelVec2V &vel = m_velocity;
@@ -878,16 +878,16 @@ void SSAFD::solve() {
     try {
       if (k == 0) {
         // default strategy
-        picard_iteration(m_config->get_double("ssa.epsilon"), 1.0);
+        picard_iteration(m_config->get_double("stress_balance.ssa.epsilon"), 1.0);
 
         break;
       } else if (k == 1) {
         // try underrelaxing the iteration
-        const double underrelax = m_config->get_double("ssa.fd.nuH_iter_failure_underrelaxation");
+        const double underrelax = m_config->get_double("stress_balance.ssa.fd.nuH_iter_failure_underrelaxation");
         m_log->message(1,
                    "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
                    underrelax);
-        picard_iteration(m_config->get_double("ssa.epsilon"), underrelax);
+        picard_iteration(m_config->get_double("stress_balance.ssa.epsilon"), underrelax);
 
         break;
       } else if (k == 2) {
@@ -910,8 +910,8 @@ void SSAFD::solve() {
   }
 
   // Post-process velocities if the user asked for it:
-  if (m_config->get_boolean("ssa.fd.brutal_sliding")) {
-    const double brutal_sliding_scaleFactor = m_config->get_double("ssa.fd.brutal_sliding_scale");
+  if (m_config->get_boolean("stress_balance.ssa.fd.brutal_sliding")) {
+    const double brutal_sliding_scaleFactor = m_config->get_double("stress_balance.ssa.fd.brutal_sliding_scale");
     m_velocity.scale(brutal_sliding_scaleFactor);
 
     m_velocity.update_ghosts();
@@ -963,8 +963,8 @@ void SSAFD::picard_manager(double nuH_regularization,
   PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
-  unsigned int max_iterations = static_cast<int>(m_config->get_double("ssa.fd.max_iterations"));
-  double ssa_relative_tolerance = m_config->get_double("ssa.fd.relative_convergence");
+  unsigned int max_iterations = static_cast<int>(m_config->get_double("stress_balance.ssa.fd.max_iterations"));
+  double ssa_relative_tolerance = m_config->get_double("stress_balance.ssa.fd.relative_convergence");
   char tempstr[100] = "";
   bool verbose = getVerbosityLevel() >= 2,
     very_verbose = getVerbosityLevel() > 2;
@@ -974,7 +974,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 
   m_stdout_ssa.clear();
 
-  bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
 
   if (use_cfbc == true) {
     compute_nuH_staggered_cfbc(nuH, nuH_regularization);
@@ -1117,7 +1117,7 @@ void SSAFD::picard_manager(double nuH_regularization,
 void SSAFD::picard_strategy_regularization() {
   // this has no units; epsilon goes up by this ratio when previous value failed
   const double DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
-  double nuH_regularization = m_config->get_double("ssa.epsilon");
+  double nuH_regularization = m_config->get_double("stress_balance.ssa.epsilon");
   unsigned int k = 0, max_tries = 5;
 
   if (nuH_regularization <= 0.0) {

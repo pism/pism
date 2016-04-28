@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     config = context.config
     if not PISM.OptionString("-ssa_method", "").is_set():
-        config.set_string("ssa.method", "fem")
+        config.set_string("stress_balance.ssa.method", "fem")
 
     input_file_name = PISM.optionsString("-i",
                                          "file to bootstrap from")
@@ -177,9 +177,9 @@ if __name__ == '__main__':
         # Generate a prior guess for hardav
 
         EC = PISM.EnthalpyConverter(config)
-        ice_factory = PISM.IceFlowLawFactory(grid.com, "ssa.", config, EC)
+        ice_factory = PISM.IceFlowLawFactory(grid.com, "stress_balance.ssa.", config, EC)
         ice_factory.removeType(PISM.ICE_GOLDSBY_KOHLSTEDT)
-        ice_factory.setType(config.get_string("ssa.flow_law"))
+        ice_factory.setType(config.get_string("stress_balance.ssa.flow_law"))
         ice_factory.setFromOptions()
         flow_law = ice_factory.create()
         averaged_hardness_vec(flow_law, vecs.land_ice_thickness, vecs.enthalpy, vecs.hardav)

@@ -56,8 +56,8 @@ John von Neumann
   with ncdump:
 ~~~
     cp lib/pism_config.nc myconfig.nc
-    ncatted -a beta_CC,pism_config,m,d,9.7008e-8 myconfig.nc
-    ncdump -h myconfig.nc | grep beta_CC
+    ncatted -a ice.beta_Clausius_Clapeyron,pism_config,m,d,9.7008e-8 myconfig.nc
+    ncdump -h myconfig.nc | grep ice.beta_Clausius_Clapeyron
 ~~~
   Now run with the new values as before:
 ~~~

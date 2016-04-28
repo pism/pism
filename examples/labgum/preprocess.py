@@ -38,8 +38,8 @@ def create_config():
         "ice.density" : 1000.0,
         "ice.density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
 
-        "sia.bed_smoother_range" : -1.0,
-        "sia.bed_smoother_range_doc" : "m; negative value de-activates bed smoother",
+        "stress_balance.sia.bed_smoother_range" : -1.0,
+        "stress_balance.sia.bed_smoother_range_doc" : "m; negative value de-activates bed smoother",
 
         "bootstrapping.defaults.geothermal_flux" : 0.0,
         "bootstrapping.defaults.geothermal_flux_doc" : "W m-2; no geothermal",
@@ -62,11 +62,11 @@ def create_config():
         "mask_is_floating_thickness_standard" : 1e-8,
         "mask_is_floating_thickness_standard_doc" : "m; should not matter since all grounded",
 
-        "time_stepping.adaptive_time_stepping_ratio" : 0.08,
-        "time_stepping.adaptive_time_stepping_ratio_doc" : "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?",
+        "time_stepping.adaptive_ratio" : 0.08,
+        "time_stepping.adaptive_ratio_doc" : "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?",
 
-        "sia.Glen_exponent" : 5.9,
-        "sia.Glen_exponent_doc" : "; : n;  Sayag & Worster (2013) give n = 5.9 +- 0.2",
+        "stress_balance.sia.Glen_exponent" : 5.9,
+        "stress_balance.sia.Glen_exponent_doc" : "; : n;  Sayag & Worster (2013) give n = 5.9 +- 0.2",
 
         "flow_law.isothermal_Glen.ice_softness" : 9.7316e-09,  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
         "ice_softness_doc" : "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"

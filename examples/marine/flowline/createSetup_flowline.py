@@ -56,9 +56,9 @@ command-line options. (We try to use command-line options whenever we can.)
 filename = "flowline_config.nc"
 nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
 var = nc.createVariable("pism_overrides", 'i')
-attrs = {"is_dry_simulation": "no",
+attrs = {"ocean.always_grounded": "no",
          "include_bmr_in_continuity": "no",
-         "ssa.compute_surface_gradient_inward": "no",
+         "stress_balance.ssa.compute_surface_gradient_inward": "no",
          "flow_law.isothermal_Glen.ice_softness": (B0) ** -3,
          "ice.density": rho_ice,
          "sea_water.density": rho_ocean,
@@ -66,7 +66,7 @@ attrs = {"is_dry_simulation": "no",
          "Glen_exponent": 3.0,
          "standard_gravity": standard_gravity,
          "ocean.sub_shelf_heat_flux_into_ice": 0.0,
-         "sia.bed_smoother_range": 0.0,
+         "stress_balance.sia.bed_smoother_range": 0.0,
          }
 
 for name, value in attrs.iteritems():

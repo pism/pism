@@ -69,15 +69,15 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("ssa.compute_surface_gradient_inward", True)
-        config.set_boolean("calving_front_stress_boundary_condition", True)
+        config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True)
+        config.set_boolean("stress_balance.calving_front_stress_bc", True)
 
         config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa.flow_law", "isothermal_glen")
-        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(1.9e8, -config.get_double("ssa.Glen_exponent")))
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(1.9e8, -config.get_double("stress_balance.ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 

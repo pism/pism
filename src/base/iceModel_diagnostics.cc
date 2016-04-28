@@ -312,7 +312,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m)
   m_vars.push_back(SpatialVariableMetadata(m_sys, "hardav"));
 
   // choice to use SSA power; see #285
-  const double power = 1.0 / m_config->get_double("ssa.Glen_exponent");
+  const double power = 1.0 / m_config->get_double("stress_balance.ssa.Glen_exponent");
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
 
@@ -526,7 +526,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m)
 }
 
 IceModelVec::Ptr IceModel_temp_pa::compute_impl() {
-  bool cold_mode = m_config->get_boolean("do_cold_ice_methods");
+  bool cold_mode = m_config->get_boolean("energy.temperature_based");
   double melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature");
 
   // update vertical levels (in case the m_grid was extended
@@ -592,7 +592,7 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m)
 
 IceModelVec::Ptr IceModel_temppabase::compute_impl() {
 
-  bool cold_mode = m_config->get_boolean("do_cold_ice_methods");
+  bool cold_mode = m_config->get_boolean("energy.temperature_based");
   double melting_point_temp = m_config->get_double("fresh_water.melting_point_temperature");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
@@ -830,7 +830,7 @@ IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
   result->create(m_grid, "liqfrac", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  bool cold_mode = m_config->get_boolean("do_cold_ice_methods");
+  bool cold_mode = m_config->get_boolean("energy.temperature_based");
 
   if (cold_mode) {
     result->set(0.0);

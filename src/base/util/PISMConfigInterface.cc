@@ -519,15 +519,15 @@ void set_config_from_options(Config &config) {
 
     if (energy.is_set()) {
       if (energy == "none") {
-        config.set_boolean("do_energy", false, Config::USER);
+        config.set_boolean("energy.enabled", false, Config::USER);
         // Allow selecting cold ice flow laws in isothermal mode.
-        config.set_boolean("do_cold_ice_methods", true, Config::USER);
+        config.set_boolean("energy.temperature_based", true, Config::USER);
       } else if (energy == "cold") {
-        config.set_boolean("do_energy", true, Config::USER);
-        config.set_boolean("do_cold_ice_methods", true, Config::USER);
+        config.set_boolean("energy.enabled", true, Config::USER);
+        config.set_boolean("energy.temperature_based", true, Config::USER);
       } else if (energy == "enthalpy") {
-        config.set_boolean("do_energy", true, Config::USER);
-        config.set_boolean("do_cold_ice_methods", false, Config::USER);
+        config.set_boolean("energy.enabled", true, Config::USER);
+        config.set_boolean("energy.temperature_based", false, Config::USER);
       } else {
         throw RuntimeError("this can't happen: options::Keyword validates input");
       }
@@ -561,7 +561,7 @@ void set_config_from_options(Config &config) {
   // and in particular NOT  "-calving eigen_calving")
   bool pik = options::Bool("-pik", "enable suite of PISM-PIK mechanisms");
   if (pik) {
-    config.set_boolean("calving_front_stress_boundary_condition", true, Config::USER);
+    config.set_boolean("stress_balance.calving_front_stress_bc", true, Config::USER);
     config.set_boolean("part_grid", true, Config::USER);
     config.set_boolean("part_redist", true, Config::USER);
     config.set_boolean("kill_icebergs", true, Config::USER);
@@ -587,9 +587,9 @@ void set_config_from_options(Config &config) {
   bool test_climate_models = options::Bool("-test_climate_models",
                                            "Disable ice dynamics to test climate models");
   if (test_climate_models) {
-    config.set_string("stress_balance_model", "none", Config::USER);
-    config.set_boolean("do_energy", false, Config::USER);
-    config.set_boolean("do_age", false, Config::USER);
+    config.set_string("stress_balance.model", "none", Config::USER);
+    config.set_boolean("energy.enabled", false, Config::USER);
+    config.set_boolean("age.enabled", false, Config::USER);
     // let the user decide if they want to use "-no_mass" or not
   }
 

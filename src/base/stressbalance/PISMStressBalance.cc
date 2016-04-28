@@ -194,7 +194,7 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  const bool use_upstream_fd = m_config->get_string("stress_balance_vertical_velocity_approximation") == "upstream";
+  const bool use_upstream_fd = m_config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
 
   IceModelVec::AccessList list;
   list.add(u);

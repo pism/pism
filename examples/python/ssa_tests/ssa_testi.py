@@ -49,8 +49,8 @@ class testi(PISM.ssa.SSAExactTestCase):
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa.flow_law", "isothermal_glen")
-        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -config.get_double("ssa.Glen_exponent")))
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -config.get_double("stress_balance.ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -65,8 +65,8 @@ class testi(PISM.ssa.SSAExactTestCase):
 
         # The finite difference code uses the following flag to treat
         # the non-periodic grid correctly.
-        self.config.set_boolean("ssa.compute_surface_gradient_inward", True)
-        self.config.set_double("ssa.epsilon", 0.0)  # don't use this lower bound
+        self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True)
+        self.config.set_double("stress_balance.ssa.epsilon", 0.0)  # don't use this lower bound
 
         standard_gravity = self.config.get_double("standard_gravity")
         ice_rho = self.config.get_double("ice.density")

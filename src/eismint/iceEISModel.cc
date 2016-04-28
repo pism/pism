@@ -44,16 +44,16 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
   // the following flag must be here in constructor because
   // IceModel::createVecs() uses it non-polythermal methods; can be
   // overridden by the command-line option "-energy enthalpy"
-  m_config->set_boolean("do_cold_ice_methods", true);
+  m_config->set_boolean("energy.temperature_based", true);
 
   // see EISMINT II description; choose no ocean interaction,
-  m_config->set_boolean("is_dry_simulation", true);
+  m_config->set_boolean("ocean.always_grounded", true);
 
   // purely SIA, and E=1
-  m_config->set_double("sia.enhancement_factor", 1.0);
+  m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
 
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("sia.bed_smoother_range", 0.0);
+  m_config->set_double("stress_balance.sia.bed_smoother_range", 0.0);
 
   // basal melt does not change computation of mass continuity or vertical velocity:
   m_config->set_boolean("include_bmr_in_continuity", false);

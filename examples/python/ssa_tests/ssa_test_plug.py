@@ -42,7 +42,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
         #// Use constant hardness
-        config.set_string("ssa.flow_law", "isothermal_glen")
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
         config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n))
         config.set_double("Glen_exponent", glen_n)
 
@@ -85,10 +85,10 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         self.ssa.strength_extension.set_min_thickness(H0 / 2)
 
         #// The finite difference code uses the following flag to treat the non-periodic grid correctly.
-        # self.config.set_boolean("ssa.compute_surface_gradient_inward", True);
+        # self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True);
 
         # SSAFEM uses this (even though it has "ssafd" in its name)
-        self.config.set_double("ssa.epsilon", 0.0)
+        self.config.set_double("stress_balance.ssa.epsilon", 0.0)
 
     def exactSolution(self, i, j, x, y):
         earth_grav = self.config.get_double("standard_gravity")

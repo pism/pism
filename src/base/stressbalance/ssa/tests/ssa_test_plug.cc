@@ -101,15 +101,15 @@ void SSATestCasePlug::initializeSSAModel() {
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
   // Use constant hardness
-  m_config->set_string("ssa.flow_law", "isothermal_glen");
+  m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
   m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n));
 }
 
 void SSATestCasePlug::initializeSSACoefficients() {
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("ssa.compute_surface_gradient_inward", true);
-  m_config->set_double("ssa.epsilon", 0.0);
+  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
+  m_config->set_double("stress_balance.ssa.epsilon", 0.0);
 
   // Ensure we never use the strength extension.
   m_ssa->strength_extension->set_min_thickness(H0/2);

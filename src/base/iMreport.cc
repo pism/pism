@@ -104,9 +104,9 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
  */
 double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
-  double result = -1.0;  // result value if not do_age
+  double result = -1.0;  // result value if not age.enabled
 
-  if (not m_config->get_boolean("do_age")) {
+  if (not m_config->get_boolean("age.enabled")) {
     return result;  // leave now
   }
 
@@ -233,7 +233,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
                                 double delta_t,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
-  const bool do_energy = m_config->get_boolean("do_energy");
+  const bool do_energy = m_config->get_boolean("energy.enabled");
   const int log10scalevol  = static_cast<int>(m_config->get_double("summary_vol_scale_factor_log10")),
             log10scalearea = static_cast<int>(m_config->get_double("summary_area_scale_factor_log10"));
   const std::string tunitstr = m_config->get_string("summary_time_unit_name");

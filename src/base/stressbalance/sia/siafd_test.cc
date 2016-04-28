@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();
 
-    config->set_boolean("compute_grain_size_using_age", false);
+    config->set_boolean("stress_balance.sia.grain_size_age_coupling", false);
 
     bool
       usage_set = options::Bool("-usage", "print usage info"),

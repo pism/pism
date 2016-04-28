@@ -522,7 +522,7 @@ static MaxTimestep reporting_max_timestep(const std::vector<double> &times, doub
 MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not m_save_extra) or
-      (not m_config->get_boolean("extras_force_output_times"))) {
+      (not m_config->get_boolean("time_stepping.hit_extra_times"))) {
     return MaxTimestep();
   }
 
@@ -533,7 +533,7 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
 MaxTimestep IceModel::save_max_timestep(double my_t) {
 
   if ((not m_save_snapshots) or
-      (not m_config->get_boolean("save_force_output_times"))) {
+      (not m_config->get_boolean("time_stepping.hit_save_times"))) {
     return MaxTimestep();
   }
 
@@ -544,7 +544,7 @@ MaxTimestep IceModel::save_max_timestep(double my_t) {
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
   if ((not m_save_ts) or
-      (not m_config->get_boolean("ts_force_output_times"))) {
+      (not m_config->get_boolean("time_stepping.hit_ts_times"))) {
     return MaxTimestep();
   }
 

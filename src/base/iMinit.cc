@@ -325,7 +325,7 @@ void IceModel::allocate_stressbalance() {
   m_log->message(2,
              "# Allocating a stress balance model...\n");
 
-  std::string model = m_config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance.model");
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
@@ -333,7 +333,7 @@ void IceModel::allocate_stressbalance() {
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
     sliding = new PrescribedSliding(m_grid, EC);
   } else if (model == "ssa" || model == "ssa+sia") {
-    std::string method = m_config->get_string("ssa.method");
+    std::string method = m_config->get_string("stress_balance.ssa.method");
 
     if (method == "fem") {
       sliding = new SSAFEM(m_grid, EC);
@@ -429,7 +429,7 @@ void IceModel::allocate_basal_yield_stress() {
   m_log->message(2,
              "# Allocating a basal yield stress model...\n");
 
-  std::string model = m_config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance.model");
 
   // only these two use the yield stress (so far):
   if (model == "ssa" || model == "ssa+sia") {
@@ -455,8 +455,8 @@ void IceModel::allocate_basal_yield_stress() {
 void IceModel::allocate_submodels() {
 
   // FIXME: someday we will have an "energy balance" sub-model...
-  if (m_config->get_boolean("do_energy") == true) {
-    if (not m_config->get_boolean("do_cold_ice_methods")) {
+  if (m_config->get_boolean("energy.enabled") == true) {
+    if (not m_config->get_boolean("energy.temperature_based")) {
       m_log->message(2,
                  "* Using the enthalpy-based energy balance model...\n");
     } else {

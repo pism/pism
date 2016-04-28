@@ -147,9 +147,9 @@ class Experiment:
 
         var = nc.createVariable("pism_overrides", 'i')
 
-        attrs = {"is_dry_simulation": "no",
+        attrs = {"ocean.always_grounded": "no",
                  "include_bmr_in_continuity": "no",
-                 "ssa.compute_surface_gradient_inward": "no",
+                 "stress_balance.ssa.compute_surface_gradient_inward": "no",
                  "flow_law.isothermal_Glen.ice_softness": MISMIP.A(self.experiment, step),
                  "ice.density": MISMIP.rho_i(),
                  "sea_water.density": MISMIP.rho_w(),
@@ -160,7 +160,7 @@ class Experiment:
                  }
 
         if self.model != 1:
-            attrs["sia.bed_smoother_range"] = 0.0
+            attrs["stress_balance.sia.bed_smoother_range"] = 0.0
 
         for name, value in attrs.iteritems():
             var.setncattr(name, value)

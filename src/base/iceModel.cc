@@ -207,7 +207,7 @@ void IceModel::createVecs() {
                   "J kg-1", "");
   m_grid->variables().add(m_ice_enthalpy);
 
-  if (m_config->get_boolean("do_cold_ice_methods")) {
+  if (m_config->get_boolean("energy.temperature_based")) {
     // ice temperature
     m_ice_temperature.create(m_grid, "temp", WITH_GHOSTS);
     m_ice_temperature.set_attrs("model_state",
@@ -215,7 +215,7 @@ void IceModel::createVecs() {
     m_ice_temperature.metadata().set_double("valid_min", 0.0);
     m_grid->variables().add(m_ice_temperature);
 
-    if (m_config->get_boolean("do_energy")) {
+    if (m_config->get_boolean("energy.enabled")) {
       m_ice_enthalpy.metadata().set_string("pism_intent", "diagnostic");
     } else {
       m_ice_temperature.metadata().set_string("pism_intent", "diagnostic");
@@ -223,7 +223,7 @@ void IceModel::createVecs() {
   }
 
   // age of ice but only if age will be computed
-  if (m_config->get_boolean("do_age")) {
+  if (m_config->get_boolean("age.enabled")) {
     m_ice_age.create(m_grid, "age", WITH_GHOSTS, WIDE_STENCIL);
     // PROPOSED standard_name = land_ice_age
     m_ice_age.set_attrs("model_state", "age of ice",
@@ -376,7 +376,7 @@ void IceModel::createVecs() {
                                   "Pa", "", 2);
   }
 
-  if (m_config->get_boolean("ssa.dirichlet_bc")) {
+  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
     // bc_locations
     m_ssa_dirichlet_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
     m_ssa_dirichlet_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",
@@ -790,8 +790,8 @@ void IceModel::run() {
   const Profiling &profiling = m_ctx->profiling();
 
   bool do_mass_conserve = m_config->get_boolean("do_mass_conserve");
-  bool do_energy = m_config->get_boolean("do_energy");
-  bool do_age = m_config->get_boolean("do_age");
+  bool do_energy = m_config->get_boolean("energy.enabled");
+  bool do_age = m_config->get_boolean("age.enabled");
   bool do_skip = m_config->get_boolean("time_stepping.skip.enabled");
 
   int stepcount = m_config->get_boolean("time_stepping.count_steps") ? 0 : -1;

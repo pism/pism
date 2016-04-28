@@ -52,8 +52,8 @@ static void check_enthalpy_converter(EnthalpyConverter::Ptr EC,
     throw RuntimeError("enthalpy_converter.T_reference mismatch");
   }
 
-  if (c.beta != config.get_double("beta_CC")) {
-    throw RuntimeError("beta_CC mismatch");
+  if (c.beta != config.get_double("ice.beta_Clausius_Clapeyron")) {
+    throw RuntimeError("ice.beta_Clausius_Clapeyron mismatch");
   }
 
   if (c.L0 != config.get_double("fresh_water.latent_heat_of_fusion")) {

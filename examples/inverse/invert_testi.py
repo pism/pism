@@ -150,7 +150,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa.flow_law", "isothermal_glen")
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
         config.set_double("flow_law.isothermal_Glen.ice_softness", pow(3.7e8, -config.get_double("Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)

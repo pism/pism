@@ -73,18 +73,18 @@ SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_second_to_kiloyear = units::convert(m_sys, 1, "second", "1000 years");
 
   {
-    rheology::FlowLawFactory ice_factory("sia.", m_config, m_EC);
+    rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
     m_flow_law = ice_factory.create();
   }
 
-  const bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
-  const bool age_model_enabled = m_config->get_boolean("do_age");
-  const bool e_age_coupling = m_config->get_boolean("e_age_coupling");
+  const bool compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling");
+  const bool age_model_enabled = m_config->get_boolean("age.enabled");
+  const bool e_age_coupling = m_config->get_boolean("stress_balance.sia.e_age_coupling");
 
   if (compute_grain_size_using_age) {
     if (not FlowLawUsesGrainSize(m_flow_law)) {
       throw RuntimeError::formatted("flow law %s does not use grain size "
-                                    "but compute_grain_size_using_age was set",
+                                    "but sia.grain_size_age_coupling was set",
                                     m_flow_law->name().c_str());
     }
 
@@ -126,7 +126,7 @@ void SIAFD::init() {
 
   // implements an option e.g. described in @ref Greve97Greenland that is the
   // enhancement factor is coupled to the age of the ice
-  if (m_config->get_boolean("e_age_coupling")) {
+  if (m_config->get_boolean("stress_balance.sia.e_age_coupling")) {
     m_log->message(2,
                    "  using age-dependent enhancement factor:\n"
                    "  e=%f for ice accumulated during interglacial periods\n"
@@ -229,7 +229,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
 */
 void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
-  const std::string method = m_config->get_string("sia.surface_gradient_method");
+  const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
 
   if (method == "eta") {
 
@@ -603,9 +603,9 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   const double enhancement_factor = m_flow_law->enhancement_factor();
   const double enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial();
 
-  const bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
+  const bool compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling");
 
-  const bool e_age_coupling = m_config->get_boolean("e_age_coupling");
+  const bool e_age_coupling = m_config->get_boolean("stress_balance.sia.e_age_coupling");
   const double current_time = m_grid->ctx()->time()->current();
 
   const bool use_age = compute_grain_size_using_age or e_age_coupling;

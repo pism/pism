@@ -81,8 +81,8 @@ void SSATestCaseI::initializeSSAModel() {
 
   m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", false);
 
-  m_config->set_string("ssa.flow_law", "isothermal_glen");
-  m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -m_config->get_double("ssa.Glen_exponent")));
+  m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+  m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
 }
 
 void SSATestCaseI::initializeSSACoefficients() {
@@ -93,8 +93,8 @@ void SSATestCaseI::initializeSSACoefficients() {
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("ssa.compute_surface_gradient_inward", true);
-  m_config->set_double("ssa.epsilon", 0.0);  // don't use this lower bound
+  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
+  m_config->set_double("stress_balance.ssa.epsilon", 0.0);  // don't use this lower bound
 
   IceModelVec::AccessList list;
   list.add(m_tauc);

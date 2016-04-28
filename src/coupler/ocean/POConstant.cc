@@ -92,7 +92,7 @@ void Constant::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  if (!m_config->get_boolean("is_dry_simulation")) {
+  if (!m_config->get_boolean("ocean.always_grounded")) {
     m_log->message(2, "* Initializing the constant ocean model...\n");
   }
 }
@@ -108,7 +108,7 @@ void Constant::sea_level_elevation_impl(double &result) {
 
 void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
   const double T0 = m_config->get_double("fresh_water.melting_point_temperature"), // K
-    beta_CC       = m_config->get_double("beta_CC"),
+    beta_CC       = m_config->get_double("ice.beta_Clausius_Clapeyron"),
     g             = m_config->get_double("standard_gravity"),
     ice_density   = m_config->get_double("ice.density");
 

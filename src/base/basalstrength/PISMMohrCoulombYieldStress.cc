@@ -162,7 +162,7 @@ void MohrCoulombYieldStress::init_impl() {
 
   options::Real
     plastic_phi("-plastic_phi", "constant in space till friction angle",
-                m_config->get_double("default_till_phi"));
+                m_config->get_double("yield_stress.default_till_phi"));
 
   options::RealList
     topg_to_phi_option("-topg_to_phi",

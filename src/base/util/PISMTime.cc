@@ -148,7 +148,7 @@ Time::Time(Config::ConstPtr conf,
   init_calendar(calendar_string);
 
   m_run_start = years_to_seconds(m_config->get_double("time.start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
+  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -255,14 +255,14 @@ bool Time::process_ys(double &result) {
 }
 
 bool Time::process_y(double &result) {
-  options::Real y("-y", "Run length, in years", m_config->get_double("run_length_years"));
+  options::Real y("-y", "Run length, in years", m_config->get_double("time.run_length"));
   result = years_to_seconds(y);
   return y.is_set();
 }
 
 bool Time::process_ye(double &result) {
   options::Real ye("-ye", "End year",
-                      m_config->get_double("time.start_year") + m_config->get_double("run_length_years"));
+                      m_config->get_double("time.start_year") + m_config->get_double("time.run_length"));
   result = years_to_seconds(ye);
   return ye.is_set();
 }
@@ -331,7 +331,7 @@ void Time::init(const Logger &log) {
   } else if (y_set == true) {
     m_run_end = m_run_start + y_seconds;
   } else {
-    m_run_end = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
+    m_run_end = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
   }
 }
 

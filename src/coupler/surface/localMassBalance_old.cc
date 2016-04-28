@@ -32,9 +32,9 @@ namespace pism {
 namespace surface {
 
 PDDMassBalance_Old::PDDMassBalance_Old(Config::ConstPtr  myconfig) : LocalMassBalance_Old(myconfig) {
-  precip_as_snow = config->get_boolean("interpret_precip_as_snow");
-  Tmin = config->get_double("air_temp_all_precip_as_snow");
-  Tmax = config->get_double("air_temp_all_precip_as_rain");
+  precip_as_snow = config->get_boolean("surface.pdd.interpret_precip_as_snow");
+  Tmin = config->get_double("surface.pdd.air_temp_all_precip_as_snow");
+  Tmax = config->get_double("surface.pdd.air_temp_all_precip_as_rain");
 
   secpera = 3.15569259747e7;
 }
@@ -314,17 +314,17 @@ double PDDrandMassBalance_Old::getPDDSumFromTemperatureTimeSeries(double pddStdD
 FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(IceGrid::ConstPtr g)
   : grid(g), config(g->ctx()->config()) {
 
-  beta_ice_w = config->get_double("surface.pdd.fausto_beta_ice_w");
-  beta_snow_w = config->get_double("surface.pdd.fausto_beta_snow_w");
+  beta_ice_w = config->get_double("surface.pdd.fausto.beta_ice_w");
+  beta_snow_w = config->get_double("surface.pdd.fausto.beta_snow_w");
 
-  T_c = config->get_double("surface.pdd.fausto_T_c");
-  T_w = config->get_double("surface.pdd.fausto_T_w");
-  beta_ice_c = config->get_double("surface.pdd.fausto_beta_ice_c");
-  beta_snow_c = config->get_double("surface.pdd.fausto_beta_snow_c");
+  T_c = config->get_double("surface.pdd.fausto.T_c");
+  T_w = config->get_double("surface.pdd.fausto.T_w");
+  beta_ice_c = config->get_double("surface.pdd.fausto.beta_ice_c");
+  beta_snow_c = config->get_double("surface.pdd.fausto.beta_snow_c");
 
   fresh_water_density = config->get_double("fresh_water.density");
   ice_density = config->get_double("ice.density");
-  pdd_fausto_latitude_beta_w = config->get_double("surface.pdd.fausto_latitude_beta_w");
+  pdd_fausto_latitude_beta_w = config->get_double("surface.pdd.fausto.latitude_beta_w");
 
   temp_mj.create(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   temp_mj.set_attrs("internal",
@@ -378,10 +378,10 @@ void FaustoGrevePDDObject_Old::update_temp_mj(const IceModelVec2S &surfelev,
                                               const IceModelVec2S &lon) {
 
   const double
-    d_mj     = config->get_double("fausto_snow_temp.d_mj"),      // K
-    gamma_mj = config->get_double("fausto_snow_temp.gamma_mj"),  // K m-1
-    c_mj     = config->get_double("fausto_snow_temp.c_mj"),      // K (degN)-1
-    kappa_mj = config->get_double("fausto_snow_temp.kappa_mj");  // K (degW)-1
+    d_mj     = config->get_double("atmosphere.fausto_air_temp.d_mj"),      // K
+    gamma_mj = config->get_double("atmosphere.fausto_air_temp.gamma_mj"),  // K m-1
+    c_mj     = config->get_double("atmosphere.fausto_air_temp.c_mj"),      // K (degN)-1
+    kappa_mj = config->get_double("atmosphere.fausto_air_temp.kappa_mj");  // K (degW)-1
   
   IceModelVec::AccessList list;
   list.add(surfelev);

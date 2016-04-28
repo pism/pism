@@ -45,11 +45,11 @@ namespace pism {
   - IceModelVec2 vHmelt
   That is, energyStep() is in charge of calling other methods that actually update, and
   then it is in charge of doing the ghost communication as needed.  If
-  do_cold_ice_methods == true, then energyStep() must also update this field
+  energy.temperature_based == true, then energyStep() must also update this field
   - IceModelVec3 m_ice_temperature
 
   Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
-  do_cold_ice_methods == true.
+  energy.temperature_based == true.
 */
 void IceModel::energyStep() {
 
@@ -71,7 +71,7 @@ void IceModel::energyStep() {
   btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
   profiling.end("BTU");
 
-  if (m_config->get_boolean("do_cold_ice_methods")) {
+  if (m_config->get_boolean("energy.temperature_based")) {
     // new temperature values go in vTnew; also updates Hmelt:
     profiling.begin("temp step");
     temperatureStep(&myVertSacrCount,&myBulgeCount);
@@ -81,7 +81,7 @@ void IceModel::energyStep() {
 
     // compute_enthalpy_cold() updates ghosts of m_ice_enthalpy using
     // update_ghosts(). Is not optimized because this
-    // (do_cold_ice_methods) is a rare case.
+    // (energy.temperature_based) is a rare case.
     compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
 
   } else {
@@ -183,7 +183,7 @@ void IceModel::combine_basal_melt_rate() {
 void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double
     T0                     = m_config->get_double("fresh_water.melting_point_temperature"),
-    beta_CC_grad_sea_water = (m_config->get_double("beta_CC") * m_config->get_double("sea_water.density") *
+    beta_CC_grad_sea_water = (m_config->get_double("ice.beta_Clausius_Clapeyron") * m_config->get_double("sea_water.density") *
                               m_config->get_double("standard_gravity")); // K m-1
 
   // will need coupler fields in ice-free land and

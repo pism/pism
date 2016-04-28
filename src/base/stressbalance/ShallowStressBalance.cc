@@ -309,7 +309,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
   }
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
-  double hardness = pow(m_config->get_double("flow_law.isothermal_Glen.ice_softness"),-1.0/m_config->get_double("ssa.Glen_exponent"));
+  double hardness = pow(m_config->get_double("flow_law.isothermal_Glen.ice_softness"),-1.0/m_config->get_double("stress_balance.ssa.Glen_exponent"));
 
   IceModelVec::AccessList list;
   list.add(V);

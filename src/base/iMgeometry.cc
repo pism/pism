@@ -500,7 +500,7 @@ void IceModel::massContExplicitStep() {
       H_residual.set(0.0);
     }
   }
-  const bool dirichlet_bc = m_config->get_boolean("ssa.dirichlet_bc");
+  const bool dirichlet_bc = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
   if (dirichlet_bc) {
     list.add(m_ssa_dirichlet_bc_mask);
     list.add(m_ssa_dirichlet_bc_values);

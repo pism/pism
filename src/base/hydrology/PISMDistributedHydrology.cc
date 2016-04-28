@@ -241,7 +241,7 @@ model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
 void Distributed::P_from_W_steady(IceModelVec2S &result) {
   double CC = m_config->get_double("hydrology.cavitation_opening_coefficient") /
                     (m_config->get_double("hydrology.creep_closure_coefficient") * m_config->get_double("flow_law.isothermal_Glen.ice_softness")),
-    powglen = 1.0 / m_config->get_double("sia.Glen_exponent"), // choice is SIA; see #285
+    powglen = 1.0 / m_config->get_double("stress_balance.sia.Glen_exponent"), // choice is SIA; see #285
     Wr = m_config->get_double("hydrology.roughness_scale");
 
   overburden_pressure(m_Pover);
@@ -349,7 +349,7 @@ void Distributed::update_impl(double icet, double icedt) {
 
   const double
             rg    = m_config->get_double("fresh_water.density") * m_config->get_double("standard_gravity"),
-            nglen = m_config->get_double("sia.Glen_exponent"), // choice is SIA; see #285
+            nglen = m_config->get_double("stress_balance.sia.Glen_exponent"), // choice is SIA; see #285
             Aglen = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
             c1    = m_config->get_double("hydrology.cavitation_opening_coefficient"),
             c2    = m_config->get_double("hydrology.creep_closure_coefficient"),

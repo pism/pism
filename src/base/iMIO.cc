@@ -382,7 +382,7 @@ void IceModel::initFromFile(const std::string &filename) {
     }
   }
 
-  if (m_config->get_boolean("do_energy") && m_config->get_boolean("do_cold_ice_methods")) {
+  if (m_config->get_boolean("energy.enabled") && m_config->get_boolean("energy.temperature_based")) {
     m_log->message(3,
                "  setting enthalpy from temperature...\n");
     compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
@@ -403,7 +403,7 @@ void IceModel::initFromFile(const std::string &filename) {
   }
 
   // read the age field if present, otherwise set to zero
-  if (m_config->get_boolean("do_age")) {
+  if (m_config->get_boolean("age.enabled")) {
     bool age_exists = nc.inq_var("age");
 
     if (age_exists) {
@@ -475,11 +475,11 @@ void IceModel::regrid(int dimensions) {
     // defaults if user gives no regrid_vars list
     regrid_vars->insert("litho_temp");
 
-    if (m_config->get_boolean("do_age")) {
+    if (m_config->get_boolean("age.enabled")) {
       regrid_vars->insert("age");
     }
 
-    if (m_config->get_boolean("do_cold_ice_methods")) {
+    if (m_config->get_boolean("energy.temperature_based")) {
       regrid_vars->insert("temp");
     } else {
       regrid_vars->insert("enthalpy");
