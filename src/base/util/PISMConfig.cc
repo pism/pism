@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -86,7 +86,23 @@ std::string NetCDFConfig::get_string_impl(const std::string &name) const {
 }
 
 Config::Strings NetCDFConfig::all_strings_impl() const {
-  return m_data.get_all_strings();
+  VariableMetadata::StringAttrs strings = m_data.get_all_strings();
+  Strings result;
+
+  VariableMetadata::StringAttrs::const_iterator j, k;
+  for (j = strings.begin(); j != strings.end(); ++j) {
+    std::string name = j->first;
+    std::string value = j->second;
+
+    k = strings.find(name + "_type");
+    if (k != strings.end() and k->second == "boolean") {
+      // Booleans are stored as strings. Skip them.
+      continue;
+    }
+
+    result[name] = value;
+  }
+  return result;
 }
 
 void NetCDFConfig::set_string_impl(const std::string &name, const std::string &value) {
