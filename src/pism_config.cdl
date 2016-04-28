@@ -75,10 +75,6 @@ netcdf pism_config {
     pism_config:basal_resistance.pseudo_plastic.enabled = "no";
     pism_config:basal_resistance.pseudo_plastic.enabled_doc = "Use the pseudo-plastic till model (basal sliding law).";
 
-    pism_config:verbose_pik_messages_type = "boolean";
-    pism_config:verbose_pik_messages = "no";
-    pism_config:verbose_pik_messages_doc = "Display verbose PIK messages e.g. about iceberg removal.";
-
     pism_config:stress_balance.calving_front_stress_bc_type = "boolean";
     pism_config:stress_balance.calving_front_stress_bc_option = "cfbc";
     pism_config:stress_balance.calving_front_stress_bc = "no";
