@@ -97,7 +97,7 @@ public:
   //! \brief Adds more variable names to result (to let sub-models respect
   //! -o_size or -save_size).
   /*!
-    Keyword can be one of "small", "medium", "2dbig", or "big".
+    Keyword can be one of "small", "medium", "big_2d", or "big".
   */
   void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 

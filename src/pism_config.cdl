@@ -60,9 +60,9 @@ netcdf pism_config {
     pism_config:time_stepping.count_steps = "no";
     pism_config:time_stepping.count_steps_doc = "If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.";
 
-    pism_config:summary_time_use_calendar_type = "boolean";
-    pism_config:summary_time_use_calendar = "yes";
-    pism_config:summary_time_use_calendar_doc = "Whether to use the current calendar when printing model time in summary to stdout.";
+    pism_config:output.runtime.time_use_calendar_type = "boolean";
+    pism_config:output.runtime.time_use_calendar = "yes";
+    pism_config:output.runtime.time_use_calendar_doc = "Whether to use the current calendar when printing model time in summary to stdout.";
 
     pism_config:stress_balance.ssa.method_type = "keyword";
     pism_config:stress_balance.ssa.method_option = "ssa_method";
@@ -172,15 +172,15 @@ netcdf pism_config {
     pism_config:energy.temperature_dependent_thermal_conductivity = "no";
     pism_config:energy.temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [@ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice.thermal_conductivity.";
 
-    pism_config:nu_bedrock_option = "nu_bedrock";
-    pism_config:nu_bedrock_units = "Pascal second";
-    pism_config:nu_bedrock_type = "scalar";
-    pism_config:nu_bedrock = 5.0e15;
-    pism_config:nu_bedrock_doc = "Staggered Viscosity used as side friction parameterization.";
+    pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_option = "nu_bedrock";
+    pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_units = "Pascal second";
+    pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_type = "scalar";
+    pism_config:stress_balance.ssa.fd.lateral_drag.viscosity = 5.0e15;
+    pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_doc = "Staggered Viscosity used as side friction parameterization.";
 
-    pism_config:nu_bedrock_set_type = "boolean";
-    pism_config:nu_bedrock_set = "false";
-    pism_config:nu_bedrock_set_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
+    pism_config:stress_balance.ssa.fd.lateral_drag.enabled_type = "boolean";
+    pism_config:stress_balance.ssa.fd.lateral_drag.enabled = "false";
+    pism_config:stress_balance.ssa.fd.lateral_drag.enabled_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
 
     pism_config:sub_groundingline_type = "boolean";
     pism_config:sub_groundingline_option = "subgl";
@@ -987,10 +987,10 @@ netcdf pism_config {
     pism_config:constants.ice.beta_Clausius_Clapeyron = 7.9e-8;
     pism_config:constants.ice.beta_Clausius_Clapeyron_doc = "Clausius-Clapeyron constant relating melting temperature and pressure: beta = dT / dP [@ref Luethi2002]";
 
-    pism_config:surface_pressure_units = "Pascal";
-    pism_config:surface_pressure_type = "scalar";
-    pism_config:surface_pressure = 0.0;
-    pism_config:surface_pressure_doc = "atmospheric pressure; = pressure at ice surface";
+    pism_config:surface.pressure_units = "Pascal";
+    pism_config:surface.pressure_type = "scalar";
+    pism_config:surface.pressure = 0.0;
+    pism_config:surface.pressure_doc = "atmospheric pressure; = pressure at ice surface";
 
     pism_config:constants.fresh_water.melting_point_temperature_units = "Kelvin";
     pism_config:constants.fresh_water.melting_point_temperature_type = "scalar";
@@ -1208,10 +1208,10 @@ netcdf pism_config {
     pism_config:constants.standard_gravity = 9.81;
     pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid";
 
-    pism_config:ideal_gas_constant_units = "Joule / (mol Kelvin)";
-    pism_config:ideal_gas_constant_type = "scalar";
-    pism_config:ideal_gas_constant = 8.31441;
-    pism_config:ideal_gas_constant_doc = "ideal gas constant";
+    pism_config:constants.ideal_gas_constant_units = "Joule / (mol Kelvin)";
+    pism_config:constants.ideal_gas_constant_type = "scalar";
+    pism_config:constants.ideal_gas_constant = 8.31441;
+    pism_config:constants.ideal_gas_constant_doc = "ideal gas constant";
 
     pism_config:climate_forcing_buffer_size_units = "count";
     pism_config:climate_forcing_buffer_size_type = "integer";
@@ -1228,43 +1228,43 @@ netcdf pism_config {
     pism_config:output.timeseries_buffer_size = 10000;
     pism_config:output.timeseries_buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
 
-    pism_config:summary_vol_scale_factor_log10_type = "integer";
-    pism_config:summary_vol_scale_factor_log10_option = "summary_vol_scale_factor_log10";
-    pism_config:summary_vol_scale_factor_log10_units = "pure number";
-    pism_config:summary_vol_scale_factor_log10 = 6;
-    pism_config:summary_vol_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";
+    pism_config:output.runtime.volume_scale_factor_log10_type = "integer";
+    pism_config:output.runtime.volume_scale_factor_log10_option = "summary_vol_scale_factor_log10";
+    pism_config:output.runtime.volume_scale_factor_log10_units = "pure number";
+    pism_config:output.runtime.volume_scale_factor_log10 = 6;
+    pism_config:output.runtime.volume_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";
 
-    pism_config:summary_area_scale_factor_log10_type = "integer";
-    pism_config:summary_area_scale_factor_log10_option = "summary_area_scale_factor_log10";
-    pism_config:summary_area_scale_factor_log10_units = "pure number";
-    pism_config:summary_area_scale_factor_log10 = 6;
-    pism_config:summary_area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
+    pism_config:output.runtime.area_scale_factor_log10_type = "integer";
+    pism_config:output.runtime.area_scale_factor_log10_option = "summary_area_scale_factor_log10";
+    pism_config:output.runtime.area_scale_factor_log10_units = "pure number";
+    pism_config:output.runtime.area_scale_factor_log10 = 6;
+    pism_config:output.runtime.area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
 
     pism_config:mask_icefree_thickness_standard_units = "meters";
     pism_config:mask_icefree_thickness_standard_type = "scalar";
     pism_config:mask_icefree_thickness_standard = 0.01;
     pism_config:mask_icefree_thickness_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.";
 
-    pism_config:mask_icefree_thickness_reporting_standard_units = "meters";
-    pism_config:mask_icefree_thickness_reporting_standard_type = "scalar";
-    pism_config:mask_icefree_thickness_reporting_standard = 10.0;
-    pism_config:mask_icefree_thickness_reporting_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN for purposes of reporting glacierized area, volume, etc.";
+    pism_config:output.ice_free_thickness_standard_units = "meters";
+    pism_config:output.ice_free_thickness_standard_type = "scalar";
+    pism_config:output.ice_free_thickness_standard = 10.0;
+    pism_config:output.ice_free_thickness_standard_doc = "If ice is thinner than this standard then a grid cell is considered ice-free for purposes of reporting glacierized area, volume, etc.";
 
-    pism_config:mask_icefree_thickness_stress_balance_standard_units = "meters";
-    pism_config:mask_icefree_thickness_stress_balance_standard_type = "scalar";
-    pism_config:mask_icefree_thickness_stress_balance_standard = 10.0;
-    pism_config:mask_icefree_thickness_stress_balance_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN for purposes of computing ice velocity distribution.";
+    pism_config:stress_balance.ice_free_thickness_standard_units = "meters";
+    pism_config:stress_balance.ice_free_thickness_standard_type = "scalar";
+    pism_config:stress_balance.ice_free_thickness_standard = 10.0;
+    pism_config:stress_balance.ice_free_thickness_standard_doc = "If ice is thinner than this standard then a cell is considered ice-free for purposes of computing ice velocity distribution.";
 
     pism_config:mask_is_floating_thickness_standard_units = "meters";
     pism_config:mask_is_floating_thickness_standard_type = "scalar";
     pism_config:mask_is_floating_thickness_standard = 1.0;
     pism_config:mask_is_floating_thickness_standard_doc = "If flotation criterion is different by more than this amount then mask is set to MASK_ICE_FREE_OCEAN or MASK_FLOATING.";
 
-    pism_config:viewer_size_option = "view_size";
-    pism_config:viewer_size_units = "count";
-    pism_config:viewer_size_type = "integer";
-    pism_config:viewer_size = 320;
-    pism_config:viewer_size_doc = "default diagnostic viewer size (number of pixels of the longer side)";
+    pism_config:output.runtime.viewer_size_option = "view_size";
+    pism_config:output.runtime.viewer_size_units = "count";
+    pism_config:output.runtime.viewer_size_type = "integer";
+    pism_config:output.runtime.viewer_size = 320;
+    pism_config:output.runtime.viewer_size_doc = "default diagnostic viewer size (number of pixels of the longer side)";
 
 // Strings:
 
@@ -1272,9 +1272,9 @@ netcdf pism_config {
     pism_config:time.dimension_name = "time";
     pism_config:time.dimension_name_doc = "The name of the time dimension in PISM output files.";
 
-    pism_config:summary_time_unit_name_type = "string";
-    pism_config:summary_time_unit_name = "year";
-    pism_config:summary_time_unit_name_doc = "Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)";
+    pism_config:output.runtime.time_unit_name_type = "string";
+    pism_config:output.runtime.time_unit_name = "year";
+    pism_config:output.runtime.time_unit_name_doc = "Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)";
 
     pism_config:time.calendar_type = "keyword";
     pism_config:time.calendar_option = "calendar";
@@ -1375,9 +1375,9 @@ netcdf pism_config {
     pism_config:enthalpy_converter.relaxed_is_temperate_tolerance = 0.001;
     pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_doc = "Tolerance within which ice is treated as temperate (cold-ice mode and diagnostics).";
 
-    pism_config:correct_cell_areas_type = "boolean";
-    pism_config:correct_cell_areas = "yes";
-    pism_config:correct_cell_areas_doc = "Compute corrected cell areas using WGS84 datum (for ice area and volume computations).";
+    pism_config:grid.correct_cell_areas_type = "boolean";
+    pism_config:grid.correct_cell_areas = "yes";
+    pism_config:grid.correct_cell_areas_doc = "Compute corrected cell areas using WGS84 datum (for ice area and volume computations).";
 
     pism_config:output.format_type = "keyword";
     pism_config:output.format_option = "o_format";
@@ -1391,17 +1391,35 @@ netcdf pism_config {
     pism_config:output.variable_order = "yxz";
     pism_config:output.variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 
-    pism_config:output_medium_type = "string";
-    pism_config:output_medium = "IcebergMask,bwat,bwatvel,climatic_mass_balance,diffusivity,enthalpy,flux,flux_mag,ice_surface_temp,liqfrac,mask,schoofs_theta,strain_rates,taub_mag,tauc,taud_mag,temp_pa,tillwat,topgsmooth,usurf,velbar_mag,velbase_mag,velsurf,velsurf_mag,wvelsurf";
-    pism_config:output_medium_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by sub-models.";
+    pism_config:output.sizes.medium_type = "string";
+    pism_config:output.sizes.medium = "IcebergMask,bwat,bwatvel,climatic_mass_balance,diffusivity,enthalpy,flux,flux_mag,ice_surface_temp,liqfrac,mask,schoofs_theta,strain_rates,taub_mag,tauc,taud_mag,temp_pa,tillwat,topgsmooth,usurf,velbar_mag,velbase_mag,velsurf,velsurf_mag,wvelsurf";
+    pism_config:output.sizes.medium_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by sub-models.";
 
-    pism_config:output_2dbig_type = "string";
-    pism_config:output_2dbig = "age,bfrict,bheatflx,bmelt,bwp,bwprel,cell_area,dbdt,effbwp,enthalpybase,enthalpysurf,flux_divergence,hardav,hydroinput,lat,litho_temp,lon,nuH,ocean_kill_mask,rank,tempbase,tempicethk,tempicethk_basal,temppabase,tempsurf,thk,thksmooth,tillphi,topg,velbar,velbase,wallmelt,wvelbase";
-    pism_config:output_2dbig_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output_medium) if '2dbig' output size is selected. Does not include fields written by boundary models.";
+    pism_config:output.size_type = "keyword";
+    pism_config:output.size_option = "o_size";
+    pism_config:output.size_choices = "none,small,medium,big_2d,big";
+    pism_config:output.size = "medium";
+    pism_config:output.size_doc = "The 'size' of an output file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big";
 
-    pism_config:output_big_type = "string";
-    pism_config:output_big = "cts,liqfrac,temp,temp_pa,uvel,vvel,wvel,wvel_rel";
-    pism_config:output_big_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output_medium and output_2dbig) if 'big' output size is selected. Does not include fields written by sub-models.";
+    pism_config:output.save_size_type = "keyword";
+    pism_config:output.save_size_option = "save_size";
+    pism_config:output.save_size_choices = "none,small,medium,big_2d,big";
+    pism_config:output.save_size = "small";
+    pism_config:output.save_size_doc = "The 'size' of a snapshot file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big";
+
+    pism_config:output.backup_size_type = "keyword";
+    pism_config:output.backup_size_option = "backup_size";
+    pism_config:output.backup_size_choices = "none,small,medium,big_2d,big";
+    pism_config:output.backup_size = "small";
+    pism_config:output.backup_size_doc = "The 'size' of a backup file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big";
+
+    pism_config:output.sizes.big_2d_type = "string";
+    pism_config:output.sizes.big_2d = "age,bfrict,bheatflx,bmelt,bwp,bwprel,cell_area,dbdt,effbwp,enthalpybase,enthalpysurf,flux_divergence,hardav,hydroinput,lat,litho_temp,lon,nuH,ocean_kill_mask,rank,tempbase,tempicethk,tempicethk_basal,temppabase,tempsurf,thk,thksmooth,tillphi,topg,velbar,velbase,wallmelt,wvelbase";
+    pism_config:output.sizes.big_2d_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium) if 'big_2d' output size is selected. Does not include fields written by boundary models.";
+
+    pism_config:output.sizes.big_type = "string";
+    pism_config:output.sizes.big = "cts,liqfrac,temp,temp_pa,uvel,vvel,wvel,wvel_rel";
+    pism_config:output.sizes.big_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium and output.sizes.big_2d) if 'big' output size is selected. Does not include fields written by sub-models.";
 
     pism_config:output.backup_interval_units = "hours";
     pism_config:output.backup_interval_type = "scalar";

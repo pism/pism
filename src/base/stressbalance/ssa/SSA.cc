@@ -205,7 +205,7 @@ void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_
   // update the cell type mask using the ice-free thickness threshold for stress balance
   // computations
   {
-    const double H_threshold = m_config->get_double("mask_icefree_thickness_stress_balance_standard");
+    const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
     GeometryCalculator gc(*m_config);
     gc.set_icefree_thickness(H_threshold);
 

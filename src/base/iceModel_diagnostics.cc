@@ -171,37 +171,37 @@ void IceModel::list_diagnostics() {
 
     if (m_beddef != NULL) {
       m_beddef->add_vars_to_output("big", list);
-      m_beddef->add_vars_to_output("2dbig", list);
+      m_beddef->add_vars_to_output("big_2d", list);
     }
 
     if (btu != NULL) {
       btu->add_vars_to_output("big", list);
-      btu->add_vars_to_output("2dbig", list);
+      btu->add_vars_to_output("big_2d", list);
     }
 
     if (basal_yield_stress_model != NULL) {
       basal_yield_stress_model->add_vars_to_output("big", list);
-      basal_yield_stress_model->add_vars_to_output("2dbig", list);
+      basal_yield_stress_model->add_vars_to_output("big_2d", list);
     }
 
     if (subglacial_hydrology != NULL) {
       subglacial_hydrology->add_vars_to_output("big", list);
-      subglacial_hydrology->add_vars_to_output("2dbig", list);
+      subglacial_hydrology->add_vars_to_output("big_2d", list);
     }
 
     if (m_stress_balance != NULL) {
       m_stress_balance->add_vars_to_output("big", list);
-      m_stress_balance->add_vars_to_output("2dbig", list);
+      m_stress_balance->add_vars_to_output("big_2d", list);
     }
 
     if (m_ocean != NULL) {
       m_ocean->add_vars_to_output("big", list);
-      m_ocean->add_vars_to_output("2dbig", list);
+      m_ocean->add_vars_to_output("big_2d", list);
     }
 
     if (m_surface != NULL) {
       m_surface->add_vars_to_output("big", list);
-      m_surface->add_vars_to_output("2dbig", list);
+      m_surface->add_vars_to_output("big_2d", list);
     }
 
     for (unsigned int d = 3; d > 1; --d) {

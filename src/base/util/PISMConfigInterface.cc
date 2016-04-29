@@ -552,7 +552,7 @@ void set_config_from_options(Config &config) {
 
   bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
   if (nu_bedrock) {
-    config.set_boolean("nu_bedrock_set", true, Config::USER);
+    config.set_boolean("stress_balance.ssa.fd.lateral_drag.enabled", true, Config::USER);
   }
 
   // Shortcuts

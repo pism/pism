@@ -91,7 +91,7 @@ void LapseRates::ice_surface_temperature_impl(IceModelVec2S &result) {
 
 void LapseRates::add_vars_to_output_impl(const std::string &keyword,
                                            std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
+  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }

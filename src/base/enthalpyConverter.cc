@@ -53,7 +53,7 @@ namespace pism {
 */
 
 EnthalpyConverter::EnthalpyConverter(const Config &config) {
-  m_p_air       = config.get_double("surface_pressure"); // Pa
+  m_p_air       = config.get_double("surface.pressure"); // Pa
   m_g           = config.get_double("constants.standard_gravity"); // m s-2
   m_beta        = config.get_double("constants.ice.beta_Clausius_Clapeyron"); // K Pa-1
   m_rho_i       = config.get_double("constants.ice.density"); // kg m-3

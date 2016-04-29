@@ -222,8 +222,8 @@ These quantities are reported in this base class version:
   - `max_diffusivity` is the maximum diffusivity
   - `max_hor_vel` is the maximum diffusivity
 
-Configuration parameters `summary_time_unit_name`, `summary_vol_scale_factor_log10`,
-and `summary_area_scale_factor_log10` control the appearance and units.
+Configuration parameters `output.runtime.time_unit_name`, `output.runtime.volume_scale_factor_log10`,
+and `output.runtime.area_scale_factor_log10` control the appearance and units.
 
 For more description and examples, see the PISM User's Manual.
 Derived classes of IceModel may redefine this method and print alternate
@@ -234,10 +234,10 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
   const bool do_energy = m_config->get_boolean("energy.enabled");
-  const int log10scalevol  = static_cast<int>(m_config->get_double("summary_vol_scale_factor_log10")),
-            log10scalearea = static_cast<int>(m_config->get_double("summary_area_scale_factor_log10"));
-  const std::string tunitstr = m_config->get_string("summary_time_unit_name");
-  const bool use_calendar = m_config->get_boolean("summary_time_use_calendar");
+  const int log10scalevol  = static_cast<int>(m_config->get_double("output.runtime.volume_scale_factor_log10")),
+            log10scalearea = static_cast<int>(m_config->get_double("output.runtime.area_scale_factor_log10"));
+  const std::string tunitstr = m_config->get_string("output.runtime.time_unit_name");
+  const bool use_calendar = m_config->get_boolean("output.runtime.time_use_calendar");
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));

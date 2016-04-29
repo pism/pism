@@ -44,17 +44,17 @@ def create_config():
         "bootstrapping.defaults.geothermal_flux" : 0.0,
         "bootstrapping.defaults.geothermal_flux_doc" : "W m-2; no geothermal",
 
-        "summary_time_unit_name" : "second",
-        "summary_time_unit_name_doc" : "stdout uses seconds (not years) to show model time",
+        "output.runtime.time_unit_name" : "second",
+        "output.runtime.time_unit_name_doc" : "stdout uses seconds (not years) to show model time",
 
-        "summary_time_use_calendar" : "no",
-        "summary_time_use_calendar_doc" : "stdout does not use a calendar to show model time",
+        "output.runtime.time_use_calendar" : "no",
+        "output.runtime.time_use_calendar_doc" : "stdout does not use a calendar to show model time",
 
-        "summary_vol_scale_factor_log10" : -15,
-        "summary_vol_scale_factor_log10_doc" : "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3",
+        "output.runtime.volume_scale_factor_log10" : -15,
+        "output.runtime.volume_scale_factor_log10_doc" : "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3",
 
-        "summary_area_scale_factor_log10" : -10,
-        "summary_area_scale_factor_log10_doc" : "; an integer; log base 10 of scale factor to use for area in summary line to stdout; -10 gives area in cm^2",
+        "output.runtime.area_scale_factor_log10" : -10,
+        "output.runtime.area_scale_factor_log10_doc" : "; an integer; log base 10 of scale factor to use for area in summary line to stdout; -10 gives area in cm^2",
 
         "mask_icefree_thickness_standard" : 1e-8,
         "mask_icefree_thickness_standard_doc" : "m; only if the fluid is less than this is a cell marked as ice free",

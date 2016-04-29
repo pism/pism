@@ -39,7 +39,7 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   }
 
   m_standard_gravity   = config.get_double("constants.standard_gravity");
-  m_ideal_gas_constant = config.get_double("ideal_gas_constant");
+  m_ideal_gas_constant = config.get_double("constants.ideal_gas_constant");
 
   m_rho                = config.get_double("constants.ice.density");
   m_beta_CC_grad       = config.get_double("constants.ice.beta_Clausius_Clapeyron") * m_rho * m_standard_gravity;

@@ -83,7 +83,7 @@ std::set<std::string> IceModel::output_size_from_option(const std::string &optio
                                                         const std::string &description,
                                                         const std::string &default_value) {
 
-  options::Keyword o_size(option, description, "none,small,medium,big,2dbig",
+  options::Keyword o_size(option, description, "none,small,medium,big,big_2d",
                           default_value);
 
   return set_output_size(o_size);
@@ -123,16 +123,16 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
   std::string variables;
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):
-    variables = m_config->get_string("output_medium");
-  } else if (keyword == "2dbig") {
-    // add all the variables listed in the config file (under "medium" and "2dbig" sizes):
-    variables = m_config->get_string("output_medium");
-    variables += "," + m_config->get_string("output_2dbig");
+    variables = m_config->get_string("output.sizes.medium");
+  } else if (keyword == "big_2d") {
+    // add all the variables listed in the config file (under "medium" and "big_2d" sizes):
+    variables = m_config->get_string("output.sizes.medium");
+    variables += "," + m_config->get_string("output.sizes.big_2d");
   } else if (keyword == "big") {
     // add all the variables listed in the config file ("big" size):
-    variables = m_config->get_string("output_medium");
-    variables += "," + m_config->get_string("output_2dbig");
-    variables += "," + m_config->get_string("output_big");
+    variables = m_config->get_string("output.sizes.medium");
+    variables += "," + m_config->get_string("output.sizes.big_2d");
+    variables += "," + m_config->get_string("output.sizes.big");
   }
 
   std::vector<std::string> list = split(variables, ',');
@@ -187,7 +187,7 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
 
 //! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
 std::string IceModel::get_output_size(const std::string &option) {
-  return options::Keyword(option, "no description", "none,small,medium,big,2dbig", "no default");
+  return options::Keyword(option, "no description", "none,small,medium,big,big_2d", "no default");
 }
 
 

@@ -101,7 +101,7 @@ void Delta_T::temp_snapshot(IceModelVec2S &result) {
 void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig" ) {
+  if (keyword == "medium" || keyword == "big" || keyword == "big_2d" ) {
     result.insert("air_temp");
     result.insert("precipitation");
   }

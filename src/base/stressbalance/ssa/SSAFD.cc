@@ -513,13 +513,13 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
-  bool nu_bedrock_set=m_config->get_boolean("nu_bedrock_set");
-  if (nu_bedrock_set) {
+  bool lateral_drag_enabled=m_config->get_boolean("stress_balance.ssa.fd.lateral_drag.enabled");
+  if (lateral_drag_enabled) {
     list.add(*m_thickness);
     list.add(*m_bed);
     list.add(*m_surface);
   }
-  double nu_bedrock=m_config->get_double("nu_bedrock");
+  double lateral_drag_viscosity=m_config->get_double("stress_balance.ssa.fd.lateral_drag.viscosity");
   double HminFrozen=0.0;
 
   /* matrix assembly loop */
@@ -546,7 +546,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       double c_s = nuH(i,j-1,1);
       double c_n = nuH(i,j,1);
 
-      if (nu_bedrock_set) {
+      if (lateral_drag_enabled) {
         // if option is set, the viscosity at ice-bedrock boundary layer will
         // be prescribed and is a temperature-independent free (user determined) parameter
 
@@ -558,16 +558,16 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
         if ((*m_thickness)(i,j) > HminFrozen) {
           if ((*m_bed)(i-1,j) > (*m_surface)(i,j) && ice_free_land(M_w)) {
-            c_w = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i-1,j));
+            c_w = lateral_drag_viscosity * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i-1,j));
           }
           if ((*m_bed)(i+1,j) > (*m_surface)(i,j) && ice_free_land(M_e)) {
-            c_e = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
+            c_e = lateral_drag_viscosity * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
           }
           if ((*m_bed)(i,j+1) > (*m_surface)(i,j) && ice_free_land(M_n)) {
-            c_n = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i,j+1));
+            c_n = lateral_drag_viscosity * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i,j+1));
           }
           if ((*m_bed)(i,j-1) > (*m_surface)(i,j) && ice_free_land(M_s)) {
-            c_s = nu_bedrock * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
+            c_s = lateral_drag_viscosity * 0.5 * ((*m_thickness)(i,j)+(*m_thickness)(i+1,j));
           }
         }
       }
