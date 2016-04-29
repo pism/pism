@@ -584,6 +584,14 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
     ys = m_element_index.ys,
     ym = m_element_index.ym;
 
+  // Consider a Q1 element with one exterior node and three interior (or boundary) nodes. This is
+  // not an interior element by itself, but it contains an embedded P1 element that *is* interior
+  // and should contribute. We need to find which of the four types of embedded P1 elements to use,
+  // but P1 elements are numbered by the node at the right angle of the reference element, not the
+  // "missing" node. This array maps "missing" nodes to "opposite" nodes, i.e. nodes used to choose
+  // P1 element types.
+  int p1_element_number[4] = {2, 3, 0, 1};
+
   ParallelSection loop(m_grid->com);
   try {
     for (int j = ys; j < ys + ym; j++) {
@@ -993,7 +1001,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
         }
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees
-        // of freedom per element, for a total of (2*Nk)*(2*Nk) = 16
+        // of freedom per element, for a total of (2*Nk)*(2*Nk) = 64
         // entries in the local Jacobian.
         double K[2*Nk][2*Nk];
         // Build the element-local Jacobian.
