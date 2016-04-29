@@ -54,7 +54,7 @@ def parameter_info(event):
 
     return result
 
-def keyword_func(info, window, first_row):
+def keyword_handler(info, window, first_row):
     value = tk.StringVar()
     value.set(info["value"])
 
@@ -69,10 +69,10 @@ def keyword_func(info, window, first_row):
 
     return j
 
-def keyword_click(event):
-    generic_click(event, keyword_func)
+def keyword_dialog(event):
+    generic_dialog(event, keyword_handler)
 
-def generic_click(event, func):
+def generic_dialog(event, func):
 
     info = parameter_info(event)
 
@@ -83,6 +83,7 @@ def generic_click(event, func):
 
     window = tk.Toplevel(root)
     window.wm_title(info["name"])
+
     frame = ttk.Frame(window)
     frame.grid(padx=5, pady=5)
 
@@ -138,7 +139,7 @@ def generic_click(event, func):
     def update_treeview(tree, name, value):
         print "setting %s to %s in the tree view" % (name, value)
 
-    def handler():
+    def ok_handler():
         if info["type"] in ("keyword", "boolean"):
             value = frame.value.get()
         else:
@@ -155,7 +156,7 @@ def generic_click(event, func):
                                    parent=window)
 
     ttk.Button(footer, text="OK", width=20,
-               command=handler).grid(pady=10, ipady=5, sticky=tk.W)
+               command=ok_handler).grid(pady=10, ipady=5, sticky=tk.W)
     ttk.Button(footer, text="Cancel", width=20,
                command=window.destroy).grid(row=0, column=1, pady=10, ipady=5, sticky=tk.W)
 
@@ -163,7 +164,7 @@ def generic_click(event, func):
     window.grab_set()
     root.wait_window(window)
 
-def scalar_func(info, window, first_row, integer):
+def scalar_handler(info, window, first_row, integer):
 
     j = first_row
 
@@ -185,13 +186,13 @@ def scalar_func(info, window, first_row, integer):
 
     return j
 
-def scalar_click(event):
-    generic_click(event, lambda a, b, c : scalar_func(a, b, c, False))
+def scalar_dialog(event):
+    generic_dialog(event, lambda a, b, c : scalar_handler(a, b, c, False))
 
-def integer_click(event):
-    generic_click(event, lambda a, b, c : scalar_func(a, b, c, True))
+def integer_dialog(event):
+    generic_dialog(event, lambda a, b, c : scalar_handler(a, b, c, True))
 
-def string_func(info, window, first_row):
+def string_handler(info, window, first_row):
 
     ttk.Label(window, text="Value:").grid(row=first_row, column=0, sticky=tk.W+tk.N, padx=10)
 
@@ -207,10 +208,10 @@ def string_func(info, window, first_row):
 
     return j
 
-def string_click(event):
-    generic_click(event, string_func)
+def string_dialog(event):
+    generic_dialog(event, string_handler)
 
-def boolean_func(info, window, first_row):
+def boolean_handler(info, window, first_row):
 
     value = tk.StringVar()
     value.set(str(info["value"]))
@@ -226,8 +227,8 @@ def boolean_func(info, window, first_row):
 
     return j
 
-def boolean_click(event):
-    generic_click(event, boolean_func)
+def boolean_dialog(event):
+    generic_dialog(event, boolean_handler)
 
 class App(object):
     def __init__(self, master):
@@ -239,11 +240,11 @@ class App(object):
         frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
         tree = ttk.Treeview(frame)
-        tree.tag_bind('string', '<Double-Button-1>', string_click)
-        tree.tag_bind('keyword', '<Double-Button-1>', keyword_click)
-        tree.tag_bind('scalar', '<Double-Button-1>', scalar_click)
-        tree.tag_bind('integer', '<Double-Button-1>', integer_click)
-        tree.tag_bind('boolean', '<Double-Button-1>', boolean_click)
+        tree.tag_bind('string', '<Double-Button-1>', string_dialog)
+        tree.tag_bind('keyword', '<Double-Button-1>', keyword_dialog)
+        tree.tag_bind('scalar', '<Double-Button-1>', scalar_dialog)
+        tree.tag_bind('integer', '<Double-Button-1>', integer_dialog)
+        tree.tag_bind('boolean', '<Double-Button-1>', boolean_dialog)
 
         tree.pack(side="left", fill="both", expand=True)
         tree["height"] = 40
@@ -262,11 +263,11 @@ class App(object):
         scrollbar = tk.Scrollbar(master, orient=tk.VERTICAL, command=tree.yview)
         scrollbar.pack(expand=True, fill="y")
 
+        tree["yscrollcommand"] = scrollbar.set
+
         self.load_config(master)
 
         self.add_items("", tree, "", data)
-
-        tree["yscrollcommand"] = scrollbar.set
 
     def add_items(self, id, tree, root, config):
         keys = config.keys()
