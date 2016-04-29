@@ -321,6 +321,31 @@ class App(object):
 
         load_config(self.input_file)
 
+def create_nesting(config, name):
+    p = name.split(".")
+
+    d = config
+    for j in p[:-1]:
+        if j not in d.keys():
+            d[j] = {}
+
+        d = d[j]
+
+def copy_parameter(source, destination, name):
+    create_nesting(destination, name)
+
+    p = name.split(".")
+
+    s = source
+    d = destination
+    for j in p[:-1]:
+        s = s[j]
+        d = d[j]
+
+    for k in s.keys():
+        if k.startswith(p[-1] + "_"):
+            d[k] = s[k]
+
 if __name__ == "__main__":
 
     import Tkinter as tk

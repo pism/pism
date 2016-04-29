@@ -42,13 +42,13 @@ netcdf pism_config {
     pism_config:stress_balance.model_option = "stress_balance";
     pism_config:stress_balance.model_choices = "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia";
     pism_config:stress_balance.model = "sia";
-    pism_config:stress_balance.model_doc = "stress balance model; choose from 'none', 'sia', 'ssa', 'ssa+sia', 'prescribed_sliding', 'prescribed_sliding+sia'";
+    pism_config:stress_balance.model_doc = "Stress balance model";
 
     pism_config:stress_balance.vertical_velocity_approximation_type = "keyword";
     pism_config:stress_balance.vertical_velocity_approximation_option = "vertical_velocity_approximation";
     pism_config:stress_balance.vertical_velocity_approximation_choices = "centered,upstream";
     pism_config:stress_balance.vertical_velocity_approximation = "centered";
-    pism_config:stress_balance.vertical_velocity_approximation_doc = "Vertical velocity FD approximation: 'centered' or 'upstream'. \"Upstream\" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.";
+    pism_config:stress_balance.vertical_velocity_approximation_doc = "Vertical velocity FD approximation. \"Upstream\" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.";
 
     pism_config:time_stepping.skip.enabled_type = "boolean";
     pism_config:time_stepping.skip.enabled_option = "skip";
@@ -68,7 +68,7 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.method_option = "ssa_method";
     pism_config:stress_balance.ssa.method_choices = "fd,fem";
     pism_config:stress_balance.ssa.method = "fd";
-    pism_config:stress_balance.ssa.method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
+    pism_config:stress_balance.ssa.method_doc = "Algorithm for computing the SSA solution.";
 
     pism_config:basal_resistance.pseudo_plastic.enabled_type = "boolean";
     pism_config:basal_resistance.pseudo_plastic.enabled_option = "pseudo_plastic";
@@ -135,7 +135,7 @@ netcdf pism_config {
     pism_config:bed_deformation.model_option = "bed_def";
     pism_config:bed_deformation.model_choices = "none,iso,lc";
     pism_config:bed_deformation.model = "none";
-    pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use; possible choices are 'none', 'iso' (point-wise isostasy), 'lc' (see [@ref LingleClark], requires FFTW3).";
+    pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use. 'iso' is point-wise isostasy, 'lc' is the Lingle-Clark model (see [@ref LingleClark], requires FFTW3).";
 
     pism_config:bed_deformation.lc_elastic_model_type = "boolean";
     pism_config:bed_deformation.lc_elastic_model_option = "bed_def_lc_elastic_model";
@@ -165,7 +165,7 @@ netcdf pism_config {
     pism_config:hydrology.model_option = "hydrology";
     pism_config:hydrology.model_choices = "null,routing,distributed";
     pism_config:hydrology.model = "null";
-    pism_config:hydrology.model_doc = "Choose the hydrology sub-model from 'null', 'routing', 'distributed'.";
+    pism_config:hydrology.model_doc = "Basal hydrology sub-model.";
 
     pism_config:energy.temperature_dependent_thermal_conductivity_type = "boolean";
     pism_config:energy.temperature_dependent_thermal_conductivity_option = "vark";
@@ -219,7 +219,7 @@ netcdf pism_config {
     pism_config:bootstrapping.defaults.bed = 1.0;
     pism_config:bootstrapping.defaults.bed_doc = "bed elevation value to use if topg (bedrock_altitude) variable is absent in bootstrapping file";
 
-    pism_config:bootstrapping.defaults.geothermal_flux_units = "W meter-2";
+    pism_config:bootstrapping.defaults.geothermal_flux_units = "Watt meter-2";
     pism_config:bootstrapping.defaults.geothermal_flux_type = "scalar";
     pism_config:bootstrapping.defaults.geothermal_flux = 0.042;
     pism_config:bootstrapping.defaults.geothermal_flux_doc = "geothermal flux value to use if bheatflx variable is absent in bootstrapping file";
@@ -384,7 +384,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.model_option = "yield_stress";
     pism_config:basal_yield_stress.model_choices = "constant,mohr_coulomb";
     pism_config:basal_yield_stress.model = "mohr_coulomb";
-    pism_config:basal_yield_stress.model_doc = "The basal yield stress model to use when sliding is active; choose from 'mohr_coulomb' and 'constant'";
+    pism_config:basal_yield_stress.model_doc = "The basal yield stress model to use when sliding is active.";
 
     pism_config:basal_yield_stress.constant.value_option = "tauc";
     pism_config:basal_yield_stress.constant.value_units = "Pascal";
@@ -436,37 +436,37 @@ netcdf pism_config {
     pism_config:hydrology.hydraulic_conductivity_units = "m^{2 beta - alpha} s^{2 beta - 3} kg^{1-beta}";
     pism_config:hydrology.hydraulic_conductivity_type = "scalar";
     pism_config:hydrology.hydraulic_conductivity = 0.001;
-    pism_config:hydrology.hydraulic_conductivity_doc = "= k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; units depend on powers alpha = hydrology.thickness_power_in_flux and beta = hydrology_potential_gradient_power_in_flux; used by PISMRoutingHydrology and PISMDistributedHydrology";
+    pism_config:hydrology.hydraulic_conductivity_doc = "= k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; units depend on powers alpha = hydrology.thickness_power_in_flux and beta = hydrology_potential_gradient_power_in_flux; used by hydrology::Routing and hydrology::Distributed";
 
     pism_config:hydrology.thickness_power_in_flux_option = "hydrology_thickness_power_in_flux";
     pism_config:hydrology.thickness_power_in_flux_units = "1";
     pism_config:hydrology.thickness_power_in_flux_type = "scalar";
     pism_config:hydrology.thickness_power_in_flux = 1.25;
-    pism_config:hydrology.thickness_power_in_flux_doc = "= alpha in notes; power alpha in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
+    pism_config:hydrology.thickness_power_in_flux_doc = "= alpha in notes; power alpha in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by hydrology::Routing and hydrology::Distributed";
 
     pism_config:hydrology.gradient_power_in_flux_option = "hydrology_gradient_power_in_flux";
     pism_config:hydrology.gradient_power_in_flux_units = "pure number";
     pism_config:hydrology.gradient_power_in_flux_type = "scalar";
     pism_config:hydrology.gradient_power_in_flux = 1.5;
-    pism_config:hydrology.gradient_power_in_flux_doc = "= beta in notes; power beta in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
+    pism_config:hydrology.gradient_power_in_flux_doc = "= beta in notes; power beta in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by hydrology::Routing and hydrology::Distributed";
 
     pism_config:hydrology.roughness_scale_option = "hydrology_roughness_scale";
     pism_config:hydrology.roughness_scale_units = "meters";
     pism_config:hydrology.roughness_scale_type = "scalar";
     pism_config:hydrology.roughness_scale = 0.1;
-    pism_config:hydrology.roughness_scale_doc = "W_r in notes; roughness scale determining maximum amount of cavitation opening in PISMDistributedHydrology";
+    pism_config:hydrology.roughness_scale_doc = "W_r in notes; roughness scale determining maximum amount of cavitation opening in hydrology::Distributed";
 
     pism_config:hydrology.cavitation_opening_coefficient_option = "hydrology_cavitation_opening_coefficient";
     pism_config:hydrology.cavitation_opening_coefficient_units = "meter-1";
     pism_config:hydrology.cavitation_opening_coefficient_type = "scalar";
     pism_config:hydrology.cavitation_opening_coefficient = 0.5;
-    pism_config:hydrology.cavitation_opening_coefficient_doc = "c_1 in notes; coefficient of cavitation opening term in evolution of layer thickness in PISMDistributedHydrology";
+    pism_config:hydrology.cavitation_opening_coefficient_doc = "c_1 in notes; coefficient of cavitation opening term in evolution of layer thickness in hydrology::Distributed";
 
     pism_config:hydrology.creep_closure_coefficient_option = "hydrology_creep_closure_coefficient";
     pism_config:hydrology.creep_closure_coefficient_units = "pure number";
     pism_config:hydrology.creep_closure_coefficient_type = "scalar";
     pism_config:hydrology.creep_closure_coefficient = 0.04;
-    pism_config:hydrology.creep_closure_coefficient_doc = "c_2 in notes; coefficient of creep closure term in evolution of layer thickness in PISMDistributedHydrology";
+    pism_config:hydrology.creep_closure_coefficient_doc = "c_2 in notes; coefficient of creep closure term in evolution of layer thickness in hydrology::Distributed";
 
     pism_config:hydrology.regularizing_porosity_option = "hydrology_regularizing_porosity";
     pism_config:hydrology.regularizing_porosity_units = "pure number";
@@ -477,7 +477,7 @@ netcdf pism_config {
     pism_config:hydrology.maximum_time_step_units = "years";
     pism_config:hydrology.maximum_time_step_type = "scalar";
     pism_config:hydrology.maximum_time_step = 1.0;
-    pism_config:hydrology.maximum_time_step_doc = "maximum allowed time step length used by PISMRoutingHydrology and PISMDistributedHydrology";
+    pism_config:hydrology.maximum_time_step_doc = "maximum allowed time step length used by hydrology::Routing and hydrology::Distributed";
 
     pism_config:hydrology.null_diffuse_till_water_type = "boolean";
     pism_config:hydrology.null_diffuse_till_water = "no";
@@ -496,7 +496,7 @@ netcdf pism_config {
     pism_config:hydrology.null_strip_width_units = "meters";
     pism_config:hydrology.null_strip_width_type = "scalar";
     pism_config:hydrology.null_strip_width = -1.0;
-    pism_config:hydrology.null_strip_width_doc = "if negative then mechanism is inactive; width of strip around computational domain in which water velocity and water amount are set to zero; used by PISMRoutingHydrology and PISMDistributedHydrology";
+    pism_config:hydrology.null_strip_width_doc = "if negative then mechanism is inactive; width of strip around computational domain in which water velocity and water amount are set to zero; used by hydrology::Routing and hydrology::Distributed";
 
     pism_config:time_stepping.skip.max_option = "skip_max";
     pism_config:time_stepping.skip.max_units = "count";
@@ -574,7 +574,7 @@ netcdf pism_config {
     pism_config:stress_balance.sia.bed_smoother_range_units = "meters";
     pism_config:stress_balance.sia.bed_smoother_range_type = "scalar";
     pism_config:stress_balance.sia.bed_smoother_range = 5.0e3;
-    pism_config:stress_balance.sia.bed_smoother_range_doc = "half-width of smoothing domain for PISMBedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+    pism_config:stress_balance.sia.bed_smoother_range_doc = "half-width of smoothing domain for stressbalance::BedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
 
     pism_config:stress_balance.ssa.fd.max_iterations_option = "ssa_maxi";
     pism_config:stress_balance.ssa.fd.max_iterations_units = "count";
@@ -644,7 +644,7 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.nuH_iter_failure_underrelaxation_doc = "In event of 'Effective viscosity not converged' failure, use outer iteration rule nuH <- nuH + f (nuH - nuH_old), where f is this parameter.";
 
 
-    // PISMAtmosphereModel and PISMSurfaceModel and PSModifier and LocalMassBalance constants
+    // AtmosphereModel and SurfaceModel and PSModifier and LocalMassBalance constants
 
     pism_config:surface.pdd.max_evals_per_year_units = "count";
     pism_config:surface.pdd.max_evals_per_year_type = "integer";
@@ -824,12 +824,12 @@ netcdf pism_config {
     pism_config:surface.force_to_thickness.start_time = -4.54e9;
     pism_config:surface.force_to_thickness.start_time_doc = "Starting time for the \"force to thickness\" modifier; the default is \"start from the creation of the Earth.\"";
 
-    // PISMOceanModel constants
+    // OceanModel constants
 
     pism_config:ocean.sub_shelf_heat_flux_into_ice_units = "W meter-2";
     pism_config:ocean.sub_shelf_heat_flux_into_ice_type = "scalar";
     pism_config:ocean.sub_shelf_heat_flux_into_ice = 0.5;
-    pism_config:ocean.sub_shelf_heat_flux_into_ice_doc = "= J m-2 s-1; naively chosen default value for heat from ocean; see comments in @ref pism::ocean::Constant::shelf_base_mass_flux().";
+    pism_config:ocean.sub_shelf_heat_flux_into_ice_doc = "= J meter-2 second-1; naively chosen default value for heat from ocean; see comments in @ref pism::ocean::Constant::shelf_base_mass_flux().";
 
     pism_config:ocean.pik_melt_factor_option = "meltfactor_pik";
     pism_config:ocean.pik_melt_factor_units = "1";
@@ -1012,7 +1012,7 @@ netcdf pism_config {
     pism_config:constants.fresh_water.specific_heat_capacity = 4170.0;
     pism_config:constants.fresh_water.specific_heat_capacity_doc = "at melting point T_0 [@ref AschwandenBlatter]";
 
-    pism_config:constants.ice.density_units = "kg / m3";
+    pism_config:constants.ice.density_units = "kg meter-3";
     pism_config:constants.ice.density_type = "scalar";
     pism_config:constants.ice.density = 910.0;
     pism_config:constants.ice.density_doc = "= rho_i; density of ice in ice sheet";
@@ -1112,13 +1112,13 @@ netcdf pism_config {
     pism_config:stress_balance.sia.flow_law_option = "sia_flow_law";
     pism_config:stress_balance.sia.flow_law_choices = "arr,arrwarm,gk,gpbld,hooke,isothermal_glen,pb,gpbld3";
     pism_config:stress_balance.sia.flow_law = "gpbld";
-    pism_config:stress_balance.sia.flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+    pism_config:stress_balance.sia.flow_law_doc = "The SIA flow law.";
 
     pism_config:stress_balance.ssa.flow_law_type = "keyword";
     pism_config:stress_balance.ssa.flow_law_option = "ssa_flow_law";
     pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb,gpbld3";
     pism_config:stress_balance.ssa.flow_law = "gpbld";
-    pism_config:stress_balance.ssa.flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
+    pism_config:stress_balance.ssa.flow_law_doc = "The SSA flow law.";
 
     pism_config:energy.enthalpy_cold_bulge_max_units = "Joule / kg";
     pism_config:energy.enthalpy_cold_bulge_max_type = "scalar";
@@ -1150,12 +1150,12 @@ netcdf pism_config {
     pism_config:energy.drainage_maximum_rate = 1.58443823077064e-09;
     pism_config:energy.drainage_maximum_rate_doc = "0.05 year-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see [@ref AschwandenBuelerKhroulevBlatter]";
 
-    pism_config:constants.fresh_water.density_units = "kg / m3";
+    pism_config:constants.fresh_water.density_units = "kg meter-3";
     pism_config:constants.fresh_water.density_type = "scalar";
     pism_config:constants.fresh_water.density = 1000.0;
     pism_config:constants.fresh_water.density_doc = "density of fresh water";
 
-    pism_config:constants.sea_water.density_units = "kg / m3";
+    pism_config:constants.sea_water.density_units = "kg meter-3";
     pism_config:constants.sea_water.density_type = "scalar";
     pism_config:constants.sea_water.density = 1028.0;
     pism_config:constants.sea_water.density_doc = "density of sea water";
@@ -1170,7 +1170,7 @@ netcdf pism_config {
     pism_config:ocean.three_equation_model_clip_salinity = "yes";
     pism_config:ocean.three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See [@ref HollandJenkins1999].";
 
-    pism_config:energy.bedrock_thermal_density_units = "kg / m3";
+    pism_config:energy.bedrock_thermal_density_units = "kg meter-3";
     pism_config:energy.bedrock_thermal_density_type = "scalar";
     pism_config:energy.bedrock_thermal_density = 3300.0;
     pism_config:energy.bedrock_thermal_density_doc = "for bedrock used in thermal model";
@@ -1188,12 +1188,12 @@ netcdf pism_config {
     // for following, reference Lingle & Clark (1985) and  Bueler, Lingle, & Kallen-Brown (2006)
     //    D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness
     //    T = 88 km, and Poisson's ratio nu = 0.5
-    pism_config:bed_deformation.lithosphere_density_units = "kg / m3";
+    pism_config:bed_deformation.lithosphere_density_units = "kg meter-3";
     pism_config:bed_deformation.lithosphere_density_type = "scalar";
     pism_config:bed_deformation.lithosphere_density = 3300.0;
     pism_config:bed_deformation.lithosphere_density_doc = "lithosphere density used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
 
-    pism_config:bed_deformation.lithosphere_flexural_rigidity_units = "N meter";
+    pism_config:bed_deformation.lithosphere_flexural_rigidity_units = "Newton meter";
     pism_config:bed_deformation.lithosphere_flexural_rigidity_type = "scalar";
     pism_config:bed_deformation.lithosphere_flexural_rigidity = 5.0e24;
     pism_config:bed_deformation.lithosphere_flexural_rigidity_doc = "lithosphere flexural rigidity used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
@@ -1203,7 +1203,7 @@ netcdf pism_config {
     pism_config:bed_deformation.mantle_viscosity = 1.0e21;
     pism_config:bed_deformation.mantle_viscosity_doc = "half-space (mantle) viscosity used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
 
-    pism_config:constants.standard_gravity_units = "meter / s2";
+    pism_config:constants.standard_gravity_units = "meter second-2";
     pism_config:constants.standard_gravity_type = "scalar";
     pism_config:constants.standard_gravity = 9.81;
     pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid";
@@ -1280,7 +1280,7 @@ netcdf pism_config {
     pism_config:time.calendar_option = "calendar";
     pism_config:time.calendar_choices = "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none";
     pism_config:time.calendar = "365_day";
-    pism_config:time.calendar_doc = "The calendar to use. Choose from standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian.";
+    pism_config:time.calendar_doc = "The calendar to use.";
 
     pism_config:run_info.title_type = "string";
     pism_config:run_info.title_option = "title";
@@ -1300,7 +1300,7 @@ netcdf pism_config {
     pism_config:stress_balance.sia.surface_gradient_method_option = "gradient";
     pism_config:stress_balance.sia.surface_gradient_method_choices = "eta,haseloff,mahaffy";
     pism_config:stress_balance.sia.surface_gradient_method = "haseloff";
-    pism_config:stress_balance.sia.surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points; possible values are 'mahaffy', 'eta', 'haseloff' (lowercase)";
+    pism_config:stress_balance.sia.surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points";
 
     pism_config:grid.max_stencil_width_units = "count";
     pism_config:grid.max_stencil_width_type = "integer";
@@ -1311,13 +1311,13 @@ netcdf pism_config {
     pism_config:grid.periodicity_option = "periodicity";
     pism_config:grid.periodicity_type = "keyword";
     pism_config:grid.periodicity_choices = "none,x,y,xy";
-    pism_config:grid.periodicity_doc = "PISM grid periodicity; possible values are 'none', 'x', 'y', 'xy' (lowercase).";
+    pism_config:grid.periodicity_doc = "horizontal grid periodicity";
 
     pism_config:grid.ice_vertical_spacing_type = "keyword";
     pism_config:grid.ice_vertical_spacing_option = "z_spacing";
     pism_config:grid.ice_vertical_spacing_choices = "quadratic,equal";
     pism_config:grid.ice_vertical_spacing = "quadratic";
-    pism_config:grid.ice_vertical_spacing_doc = "Default vertical spacing in the ice. Possible values: 'quadratic' and 'equal'.";
+    pism_config:grid.ice_vertical_spacing_doc = "vertical spacing in the ice";
 
     pism_config:grid.Mx_units = "count";
     pism_config:grid.Mx_type = "integer";
@@ -1383,13 +1383,13 @@ netcdf pism_config {
     pism_config:output.format_option = "o_format";
     pism_config:output.format_choices = "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5";
     pism_config:output.format = "netcdf3";
-    pism_config:output.format_doc = "The I/O format used for spatial fields; allowed values are 'netcdf3' (the default), 'netcd4_parallel' (available if PISM was built against NetCDF with parallel I/O enabled), and 'pnetcdf' (available if PISM was built againts PnetCDF).";
+    pism_config:output.format_doc = "The I/O format used for spatial fields; 'netcdf3' is the default, 'netcd4_parallel' is available if PISM was built with parallel NetCDF-4, and 'pnetcdf' is available if PISM was built with PnetCDF.";
 
     pism_config:output.variable_order_type = "keyword";
     pism_config:output.variable_order_option = "o_order";
     pism_config:output.variable_order_choices = "xyz,yxz,zyx";
     pism_config:output.variable_order = "yxz";
-    pism_config:output.variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
+    pism_config:output.variable_order_doc = "Variable order to use in output files.";
 
     pism_config:output.sizes.medium_type = "string";
     pism_config:output.sizes.medium = "IcebergMask,bwat,bwatvel,climatic_mass_balance,diffusivity,enthalpy,flux,flux_mag,ice_surface_temp,liqfrac,mask,schoofs_theta,strain_rates,taub_mag,tauc,taud_mag,temp_pa,tillwat,topgsmooth,usurf,velbar_mag,velbase_mag,velsurf,velsurf_mag,wvelsurf";
