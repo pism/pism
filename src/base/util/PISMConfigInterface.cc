@@ -562,26 +562,26 @@ void set_config_from_options(Config &config) {
   bool pik = options::Bool("-pik", "enable suite of PISM-PIK mechanisms");
   if (pik) {
     config.set_boolean("stress_balance.calving_front_stress_bc", true, Config::USER);
-    config.set_boolean("part_grid", true, Config::USER);
-    config.set_boolean("part_redist", true, Config::USER);
-    config.set_boolean("kill_icebergs", true, Config::USER);
-    config.set_boolean("sub_groundingline", true, Config::USER);
+    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
+    config.set_boolean("geometry.part_grid.redistribute_residual_volume", true, Config::USER);
+    config.set_boolean("geometry.remove_icebergs", true, Config::USER);
+    config.set_boolean("geometry.grounded_cell_fraction", true, Config::USER);
   }
 
   if (config.get_string("calving.methods").find("eigen_calving") != std::string::npos) {
-    config.set_boolean("part_grid", true, Config::USER);
+    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
     // eigen-calving requires a wider stencil:
     config.set_double("grid.max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal
   if (not config.get_string("calving.methods").empty()) {
-    config.set_boolean("kill_icebergs", true, Config::USER);
+    config.set_boolean("geometry.remove_icebergs", true, Config::USER);
   }
 
-  // kill_icebergs requires part_grid
-  if (config.get_boolean("kill_icebergs")) {
-    config.set_boolean("part_grid", true, Config::USER);
+  // geometry.remove_icebergs requires part_grid
+  if (config.get_boolean("geometry.remove_icebergs")) {
+    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
   }
 
   bool test_climate_models = options::Bool("-test_climate_models",

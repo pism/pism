@@ -97,7 +97,7 @@ void Hydrology::init() {
     m_inputtobed_period = itb_period_years;
     m_inputtobed_reference_time = units::convert(m_sys, itb_reference_year, "years", "seconds");
 
-    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing_buffer_size");
+    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
 
     PIO nc(m_grid->com, "netcdf3");
     nc.open(itb_file, PISM_READONLY);

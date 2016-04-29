@@ -301,7 +301,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       dt_restrictions["3D CFL"] = CFLmaxdt;
     }
 
-    if (m_config->get_boolean("do_mass_conserve")) {
+    if (m_config->get_boolean("geometry.update.enabled")) {
       CFLmaxdt2D = max_timestep_cfl_2d();
 
       dt_restrictions["2D CFL"] = CFLmaxdt2D;

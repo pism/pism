@@ -65,7 +65,7 @@ void IceModel::updateSurfaceElevationAndMask() {
 
   GeometryCalculator gc(*m_config);
 
-  if (m_config->get_boolean("kill_icebergs") && iceberg_remover != NULL) {
+  if (m_config->get_boolean("geometry.remove_icebergs") && iceberg_remover != NULL) {
     // the iceberg remover has to use the same mask as the stress balance code, hence the
     // stress-balance-related threshold here
     gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
@@ -77,7 +77,7 @@ void IceModel::updateSurfaceElevationAndMask() {
     // mask (we need to use the different threshold)
   }
 
-  gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_standard"));
+  gc.set_icefree_thickness(m_config->get_double("geometry.ice_free_thickness_standard"));
   gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
   gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
 
@@ -453,7 +453,7 @@ void IceModel::massContExplicitStep() {
     total_surface_ice_flux        = 0;
 
   const bool
-    include_bmr_in_continuity = m_config->get_boolean("include_bmr_in_continuity");
+    include_bmr_in_continuity = m_config->get_boolean("geometry.update.use_basal_melt_rate");
 
   const double
     dx                       = m_grid->dx(),
@@ -488,9 +488,9 @@ void IceModel::massContExplicitStep() {
   list.add(H_new);
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
-  const bool do_part_grid = m_config->get_boolean("part_grid"),
-    do_redist = m_config->get_boolean("part_redist"),
-    reduce_frontal_thickness = m_config->get_boolean("part_grid_reduce_frontal_thickness");
+  const bool do_part_grid = m_config->get_boolean("geometry.part_grid.enabled"),
+    do_redist = m_config->get_boolean("geometry.part_grid.redistribute_residual_volume"),
+    reduce_frontal_thickness = m_config->get_boolean("geometry.part_grid.reduce_frontal_thickness");
   if (do_part_grid) {
     list.add(vHref);
     if (do_redist) {

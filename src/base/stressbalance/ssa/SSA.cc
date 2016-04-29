@@ -145,7 +145,7 @@ void SSA::init_impl() {
   m_log->message(2,
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
-  if (m_config->get_boolean("sub_groundingline")) {
+  if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
     m_gl_mask = m_grid->variables().get_2d_scalar("gl_mask");
   }
 

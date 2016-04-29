@@ -331,7 +331,7 @@ double IceModel::ice_volume() const {
   }
 
   // Add the volume of the ice in Href:
-  if (m_config->get_boolean("part_grid")) {
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
     list.add(vHref);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();

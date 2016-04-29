@@ -71,8 +71,8 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   m_config->set_double("stress_balance.sia.bed_smoother_range", 0.0);
 
   // set values of flags in run()
-  m_config->set_boolean("do_mass_conserve", true);
-  m_config->set_boolean("include_bmr_in_continuity", false);
+  m_config->set_boolean("geometry.update.enabled", true);
+  m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
 
   if (testname == 'V') {
     m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
@@ -138,7 +138,7 @@ void IceCompModel::setFromOptions() {
 
   if (testname == 'V') {
     // no sub-shelf melting
-    m_config->set_boolean("include_bmr_in_continuity", false);
+    m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
 
     // this test is isothermal
     m_config->set_boolean("energy.enabled", false);

@@ -167,7 +167,7 @@ PSB_flux::PSB_flux(StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_flux::compute_impl() {
-  double icefree_thickness = m_config->get_double("mask_icefree_thickness_standard");
+  double icefree_thickness = m_config->get_double("geometry.ice_free_thickness_standard");
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "flux", WITHOUT_GHOSTS);

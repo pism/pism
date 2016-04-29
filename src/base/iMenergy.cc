@@ -143,8 +143,8 @@ void IceModel::combine_basal_melt_rate() {
   assert(m_ocean != NULL);
   m_ocean->shelf_base_mass_flux(m_shelfbmassflux);
 
-  const bool sub_gl = (m_config->get_boolean("sub_groundingline") and
-                       m_config->get_boolean("sub_groundingline_basal_melt"));
+  const bool sub_gl = (m_config->get_boolean("geometry.grounded_cell_fraction") and
+                       m_config->get_boolean("energy.basal_melt.use_grounded_cell_fraction"));
 
   IceModelVec::AccessList list;
 

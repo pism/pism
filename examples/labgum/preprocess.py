@@ -56,11 +56,11 @@ def create_config():
         "output.runtime.area_scale_factor_log10" : -10,
         "output.runtime.area_scale_factor_log10_doc" : "; an integer; log base 10 of scale factor to use for area in summary line to stdout; -10 gives area in cm^2",
 
-        "mask_icefree_thickness_standard" : 1e-8,
-        "mask_icefree_thickness_standard_doc" : "m; only if the fluid is less than this is a cell marked as ice free",
+        "geometry.ice_free_thickness_standard" : 1e-8,
+        "geometry.ice_free_thickness_standard_doc" : "m; only if the fluid is less than this is a cell marked as ice free",
 
-        "mask_is_floating_thickness_standard" : 1e-8,
-        "mask_is_floating_thickness_standard_doc" : "m; should not matter since all grounded",
+        "geometry.is_floating_thickness_standard" : 1e-8,
+        "geometry.is_floating_thickness_standard_doc" : "m; should not matter since all grounded",
 
         "time_stepping.adaptive_ratio" : 0.08,
         "time_stepping.adaptive_ratio_doc" : "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?",

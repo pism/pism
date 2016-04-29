@@ -136,8 +136,8 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
  */
 void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool &done) {
 
-  bool reduce_frontal_thickness = m_config->get_boolean("part_grid_reduce_frontal_thickness");
-  const double thickness_threshold = m_config->get_double("mask_icefree_thickness_standard");
+  bool reduce_frontal_thickness = m_config->get_boolean("geometry.part_grid.reduce_frontal_thickness");
+  const double thickness_threshold = m_config->get_double("geometry.ice_free_thickness_standard");
   const double sea_level = m_ocean->sea_level_elevation();
 
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();

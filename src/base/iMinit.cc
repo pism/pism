@@ -127,7 +127,7 @@ void IceModel::model_state_setup() {
   if (m_stress_balance) {
     m_stress_balance->init();
 
-    if (m_config->get_boolean("include_bmr_in_continuity")) {
+    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
       m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
     }
   }
@@ -270,13 +270,13 @@ void IceModel::model_state_setup() {
 
   // a report on whether PISM-PIK modifications of IceModel are in use
   std::vector<std::string> pik_methods;
-  if (m_config->get_boolean("part_grid")) {
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
     pik_methods.push_back("part_grid");
   }
-  if (m_config->get_boolean("part_redist")) {
+  if (m_config->get_boolean("geometry.part_grid.redistribute_residual_volume")) {
     pik_methods.push_back("part_redist");
   }
-  if (m_config->get_boolean("kill_icebergs")) {
+  if (m_config->get_boolean("geometry.remove_icebergs")) {
     pik_methods.push_back("kill_icebergs");
   }
 
@@ -369,7 +369,7 @@ void IceModel::allocate_iceberg_remover() {
   m_log->message(2,
              "# Allocating an iceberg remover (part of a calving model)...\n");
 
-  if (m_config->get_boolean("kill_icebergs")) {
+  if (m_config->get_boolean("geometry.remove_icebergs")) {
 
     // this will throw an exception on failure
     iceberg_remover = new calving::IcebergRemover(m_grid);

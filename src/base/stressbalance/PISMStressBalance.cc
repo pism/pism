@@ -183,7 +183,7 @@ This is immediately equivalent to the integral
    \f[ w(x,y,z,t) = - \int_{b(x,y,t)}^{z} \nabla\cdot\mathbf{U}\,d\zeta
                            + w_b(x,y,t). \f]
 Here the value \f$w_b(x,y,t)\f$ is either zero or the negative of the basal melt rate
-according to the value of the flag `include_bmr_in_continuity`.
+according to the value of the flag `geometry.update.use_basal_melt_rate`.
 
 The vertical integral is computed by the trapezoid rule.
  */

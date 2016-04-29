@@ -148,7 +148,7 @@ class Experiment:
         var = nc.createVariable("pism_overrides", 'i')
 
         attrs = {"ocean.always_grounded": "no",
-                 "include_bmr_in_continuity": "no",
+                 "geometry.update.use_basal_melt_rate": "no",
                  "stress_balance.ssa.compute_surface_gradient_inward": "no",
                  "flow_law.isothermal_Glen.ice_softness": MISMIP.A(self.experiment, step),
                  "constants.ice.density": MISMIP.rho_i(),

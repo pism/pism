@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -118,7 +118,7 @@ protected:
     m_bc_period = (unsigned int)period;
 
     if (not m_reference_surface.was_created()) {
-      unsigned int buffer_size = (unsigned int) Mod::m_config->get_double("climate_forcing_buffer_size"),
+      unsigned int buffer_size = (unsigned int) Mod::m_config->get_double("climate_forcing.buffer_size"),
         ref_surface_n_records = 1;
 
       PIO nc(g->com, "netcdf3");
@@ -144,7 +144,7 @@ protected:
       m_reference_surface.set_attrs("climate_forcing",
                                   "reference surface for lapse rate corrections",
                                   "m", "surface_altitude");
-      m_reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config->get_double("climate_forcing_evaluations_per_year"));
+      m_reference_surface.set_n_evaluations_per_year((unsigned int)Mod::m_config->get_double("climate_forcing.evaluations_per_year"));
     }
 
     Mod::m_log->message(2,

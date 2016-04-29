@@ -2090,7 +2090,7 @@ IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
   list.add(cell_type);
   list.add(*result);
 
-  const bool do_part_grid = m_config->get_boolean("part_grid");
+  const bool do_part_grid = m_config->get_boolean("geometry.part_grid.enabled");
   const IceModelVec2S *Href = NULL;
   if (do_part_grid) {
     Href = variables.get_2d_scalar("Href");

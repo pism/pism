@@ -247,7 +247,7 @@ void IceModel::createVecs() {
   m_ice_thickness.metadata().set_double("valid_min", 0.0);
   m_grid->variables().add(m_ice_thickness);
 
-  if (m_config->get_boolean("sub_groundingline")) {
+  if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
     m_gl_mask.create(m_grid, "gl_mask", WITHOUT_GHOSTS);
     m_gl_mask.set_attrs("internal",
                       "fractional grounded/floating mask (floating=0, grounded=1)",
@@ -328,7 +328,7 @@ void IceModel::createVecs() {
   vLatitude.metadata().set_double("valid_max",  90.0);
   m_grid->variables().add(vLatitude);
 
-  if (m_config->get_boolean("part_grid")) {
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
     // Href
     vHref.create(m_grid, "Href", WITH_GHOSTS);
     vHref.set_attrs("model_state", "temporary ice thickness at calving front boundary",
@@ -600,7 +600,7 @@ void IceModel::step(bool do_mass_continuity,
 
   // Update the fractional grounded/floating mask (used by the SSA
   // stress balance and the energy code)
-  if (m_config->get_boolean("sub_groundingline")) {
+  if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
     updateSurfaceElevationAndMask(); // update h and mask
     update_grounded_cell_fraction();
   }
@@ -789,7 +789,7 @@ void IceModel::run_to(double run_end) {
 void IceModel::run() {
   const Profiling &profiling = m_ctx->profiling();
 
-  bool do_mass_conserve = m_config->get_boolean("do_mass_conserve");
+  bool do_mass_conserve = m_config->get_boolean("geometry.update.enabled");
   bool do_energy = m_config->get_boolean("energy.enabled");
   bool do_age = m_config->get_boolean("age.enabled");
   bool do_skip = m_config->get_boolean("time_stepping.skip.enabled");

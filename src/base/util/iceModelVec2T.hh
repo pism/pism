@@ -48,7 +48,7 @@ namespace pism {
   // initialization:
   std::string filename = "climate_inputs.nc";
   IceModelVec2T v;
-  v.set_n_records(config.get_double("climate_forcing_buffer_size"))));
+  v.set_n_records(config.get_double("climate_forcing.buffer_size"))));
   ierr = v.create(grid, "snowtemp", false); CHKERRQ(ierr);
   ierr = v.set_attrs("climate_forcing", "snow surface temperature", "K", ""); CHKERRQ(ierr);
   ierr = v.init(filename); CHKERRQ(ierr);

@@ -507,7 +507,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     list.add(*m_bc_mask);
   }
 
-  const bool sub_gl = m_config->get_boolean("sub_groundingline");
+  const bool sub_gl = m_config->get_boolean("geometry.grounded_cell_fraction");
   if (sub_gl) {
     list.add(*m_gl_mask);
   }

@@ -99,7 +99,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 
     unsigned int n_records = 0;
     std::string short_name = "air_temp_sd";
-    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing_buffer_size");
+    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
 
     PIO nc(m_grid->com, "netcdf3");
     nc.open(file, PISM_READONLY);

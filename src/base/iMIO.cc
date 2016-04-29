@@ -389,7 +389,7 @@ void IceModel::initFromFile(const std::string &filename) {
   }
 
   // check if the input file has Href; set to 0 if it is not present
-  if (m_config->get_boolean("part_grid")) {
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
     bool href_exists = nc.inq_var("Href");
 
     if (href_exists == true) {

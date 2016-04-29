@@ -57,7 +57,7 @@ filename = "flowline_config.nc"
 nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
 var = nc.createVariable("pism_overrides", 'i')
 attrs = {"ocean.always_grounded": "no",
-         "include_bmr_in_continuity": "no",
+         "geometry.update.use_basal_melt_rate": "no",
          "stress_balance.ssa.compute_surface_gradient_inward": "no",
          "flow_law.isothermal_Glen.ice_softness": (B0) ** -3,
          "constants.ice.density": rho_ice,

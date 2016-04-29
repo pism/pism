@@ -193,7 +193,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     }
   }
 
-  if (m_config->get_boolean("part_grid")) {
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
     // Read the Href field from an input file. This field is
     // grid-dependent, so interpolating it from one grid to a
     // different one does not make sense in general.
