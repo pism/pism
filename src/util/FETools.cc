@@ -61,6 +61,32 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
 }
 } // end of namespace q0
 
+//! Determinant of a square matrix of size 2.
+static double determinant(const double J[2][2]) {
+  return J[0][0] * J[1][1] - J[1][0] * J[0][1];
+}
+
+//! Compute the inverse of a two by two matrix.
+static void invert(const double A[2][2], double A_inv[2][2]) {
+  const double det_A = determinant(A);
+
+  assert(det_A != 0.0);
+
+  A_inv[0][0] =  A[1][1] / det_A;
+  A_inv[0][1] = -A[0][1] / det_A;
+  A_inv[1][0] = -A[1][0] / det_A;
+  A_inv[1][1] =  A[0][0] / det_A;
+}
+
+//! Compute derivatives with respect to x,y using J^{-1} and derivatives with respect to xi, eta.
+static Germ apply_jacobian_inverse(const double J_inv[2][2], const Germ &f) {
+  Germ result;
+  result.val = f.val;
+  result.dx  = f.dx * J_inv[0][0] + f.dy * J_inv[0][1];
+  result.dy  = f.dx * J_inv[1][0] + f.dy * J_inv[1][1];
+  return result;
+}
+
 namespace q1 {
 
 //! Q1 basis functions on the reference element with nodes (-1,-1), (1,-1), (1,1), (-1,1).
@@ -171,14 +197,14 @@ std::vector<Vector2> outward_normals(unsigned int element_number, double dx, dou
     n30 = Vector2(-1.0,  0.0);  // west
 
   Vector2
-    n13 = Vector2( 1.0, dx / dy) / V, // 1-3 diagonal, outward for element 0
-    n20 = Vector2(-1.0, dx / dy) / V; // 2-0 diagonal, outward for element 1
+    n13 = Vector2( 1.0, dx / dy), // 1-3 diagonal, outward for element 0
+    n20 = Vector2(-1.0, dx / dy); // 2-0 diagonal, outward for element 1
 
   // normalize
   n13 /= n13.magnitude();
   n20 /= n20.magnitude();
 
-  std::vector<double> result(n_sides);
+  std::vector<Vector2> result(n_sides);
   switch (element_number) {
   case 0:
     result[0] = n01;
@@ -198,6 +224,8 @@ std::vector<Vector2> outward_normals(unsigned int element_number, double dx, dou
     result[1] = n30;
     result[2] = -1.0 * n20;
   }
+
+  return result;
 }
 
 } // end of namespace p1
@@ -403,32 +431,6 @@ static void tensor_product_quadrature(unsigned int n,
       ++q;
     }
   }
-}
-
-//! Determinant of a square matrix of size 2.
-static double determinant(const double J[2][2]) {
-  return J[0][0] * J[1][1] - J[1][0] * J[0][1];
-}
-
-//! Compute the inverse of a two by two matrix.
-static void invert(const double A[2][2], double A_inv[2][2]) {
-  const double det_A = determinant(A);
-
-  assert(det_A != 0.0);
-
-  A_inv[0][0] =  A[1][1] / det_A;
-  A_inv[0][1] = -A[0][1] / det_A;
-  A_inv[1][0] = -A[1][0] / det_A;
-  A_inv[1][1] =  A[0][0] / det_A;
-}
-
-//! Compute derivatives with respect to x,y using J^{-1} and derivatives with respect to xi, eta.
-static Germ apply_jacobian_inverse(const double J_inv[2][2], const Germ &f) {
-  Germ result;
-  result.val = f.val;
-  result.dx  = f.dx * J_inv[0][0] + f.dy * J_inv[0][1];
-  result.dy  = f.dx * J_inv[1][0] + f.dy * J_inv[1][1];
-  return result;
 }
 
 //! Two-by-two Gaussian quadrature on a rectangle.
