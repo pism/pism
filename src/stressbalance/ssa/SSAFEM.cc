@@ -545,14 +545,14 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
  */
 void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
-  fem::BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy(), 1.0);
+  fem::q1::BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy(), 1.0);
 
   const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq = bq.n();
   const unsigned int n_sides = fem::q1::n_sides;
   using mask::ocean;
 
-  const Vector2 *outward_normal = fem::q1::outward_normals();
+  const std::vector<Vector2> outward_normal = fem::q1::outward_normals();
 
   const bool
     use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
