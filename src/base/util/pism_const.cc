@@ -34,8 +34,6 @@
 #include "pism_utilities.hh"
 #include "error_handling.hh"
 
-extern FILE *petsc_history;
-
 namespace pism {
 
 //! \brief PISM verbosity level; determines how much gets printed to the
@@ -87,13 +85,6 @@ void verbPrintf(const int threshold,
     if (verbosityLevel >= threshold) {
       va_start(Argp, format);
       ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp);
-      PISM_CHK(ierr, "PetscVFPrintf");
-
-      va_end(Argp);
-    }
-    if (petsc_history) { // always print to history
-      va_start(Argp, format);
-      ierr = PetscVFPrintf(petsc_history, format, Argp);
       PISM_CHK(ierr, "PetscVFPrintf");
 
       va_end(Argp);
