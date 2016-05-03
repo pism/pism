@@ -168,8 +168,7 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
 
 //! Struct for gathering the value and derivative of a function at a point.
 /*! Germ in meant in the mathematical sense, sort of. */
-struct Germ
-{
+struct Germ {
   //! Function value.
   double val;
   //! Function deriviative with respect to x.
@@ -196,6 +195,7 @@ Germ chi(unsigned int k, const QuadPoint &p);
 
 //! Q1 element information.
 namespace q1 {
+
 //! Number of shape functions on a Q1 element.
 const int n_chi = 4;
 //! Number of sides per element.
@@ -209,9 +209,50 @@ const unsigned int incident_nodes[n_sides][2] = {
 };
 
 //! Outward-pointing normal vectors to sides of a Q1 element aligned with the x and y axes.
-const Vector2* outward_normals();
+std::vector<Vector2> outward_normals();
 
+
+//! 2-point quadrature for sides of Q1 quadrilateral elements.
+class BoundaryQuadrature2 {
+public:
+  BoundaryQuadrature2(double dx, double dy, double L);
+
+  inline unsigned int n() const;
+
+  inline double weights(unsigned int side) const;
+
+  inline const Germ& germ(unsigned int side,
+                          unsigned int func,
+                          unsigned int pt) const;
+private:
+  //! Number of quadrature points per side.
+  static const unsigned int m_Nq = 2;
+  Germ m_germs[q1::n_sides][m_Nq][q1::n_chi];
+  double m_W[q1::n_sides];
+};
+
+inline unsigned int BoundaryQuadrature2::n() const {
+  return m_Nq;
 }
+
+inline double BoundaryQuadrature2::weights(unsigned int side) const {
+  assert(side < q1::n_sides);
+  return m_W[side];
+}
+
+//! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
+//! evaluated at the point `pt` on the side `side` of an element.
+inline const Germ& BoundaryQuadrature2::germ(unsigned int side,
+                                             unsigned int q,
+                                             unsigned int k) const {
+  assert(side < q1::n_sides);
+  assert(k < q1::n_chi);
+  assert(q < 2);
+
+  return m_germs[side][q][k];
+}
+
+} // end of namespace q1
 
 //! @brief P1 element embedded in a Q1 element.
 //! function at node 2).
@@ -229,6 +270,11 @@ const unsigned int incident_nodes[q1::n_chi][n_sides][2] = {
   {{1, 2}, {2, 3}, {3, 1}},
   {{2, 3}, {3, 0}, {0, 2}}
 };
+
+//! Outward-pointing normal vectors to sides of a P1 element embedded in a Q1 element aligned with
+//! coordinate axes.
+std::vector<Vector2> outward_normals(unsigned int n, double dx, double dy);
+
 } // end of namespace p1
 
 
@@ -242,10 +288,10 @@ typedef Germ Germs[q1::n_chi];
   for the purposes of local computation, (and the results added back again to the global residual
   and Jacobian arrays).
 
-  An ElementMap mediates the transfer between element-local and global degrees of freedom. In this very
-  concrete implementation, the global degrees of freedom are either scalars (double's) or vectors
-  (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element are
-  q1::n_chi (%i.e. four) scalars or vectors, one for each vertex of the element.
+  An ElementMap mediates the transfer between element-local and global degrees of freedom. In this
+  very concrete implementation, the global degrees of freedom are either scalars (double's) or
+  vectors (Vector2's), one per node in the IceGrid, and the local degrees of freedom on the element
+  are q1::n_chi (%i.e. four) scalars or vectors, one for each vertex of the element.
 
   The ElementMap is also (perhaps awkwardly) overloaded to mediate transfering locally computed
   contributions to residual and Jacobian matrices to their global counterparts.
@@ -650,46 +696,6 @@ public:
 protected:
   const IceModelVec2V *m_values;
 };
-
-//! 2-point quadrature for sides of Q1 quadrilateral elements.
-class BoundaryQuadrature2 {
-public:
-  BoundaryQuadrature2(double dx, double dy, double L);
-
-  inline unsigned int n() const;
-
-  inline double weights(unsigned int side) const;
-
-  inline const Germ& germ(unsigned int side,
-                          unsigned int func,
-                          unsigned int pt) const;
-private:
-  //! Number of quadrature points per side.
-  static const unsigned int m_Nq = 2;
-  Germ m_germs[q1::n_sides][m_Nq][q1::n_chi];
-  double m_W[q1::n_sides];
-};
-
-inline unsigned int BoundaryQuadrature2::n() const {
-  return m_Nq;
-}
-
-inline double BoundaryQuadrature2::weights(unsigned int side) const {
-  assert(side < q1::n_sides);
-  return m_W[side];
-}
-
-//! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
-//! evaluated at the point `pt` on the side `side` of an element.
-inline const Germ& BoundaryQuadrature2::germ(unsigned int side,
-                                             unsigned int q,
-                                             unsigned int k) const {
-  assert(side < q1::n_sides);
-  assert(k < q1::n_chi);
-  assert(q < 2);
-
-  return m_germs[side][q][k];
-}
 
 } // end of namespace fem
 } // end of namespace pism

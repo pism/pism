@@ -79,13 +79,54 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
   return result;
 }
 
+std::vector<Vector2> outward_normals() {
+  std::vector<Vector2> result(n_sides);
+  result[0] = Vector2( 0.0, -1.0);  // south
+  result[1] = Vector2( 1.0,  0.0);  // east
+  result[2] = Vector2( 0.0,  1.0);  // north
+  result[3] = Vector2(-1.0,  0.0);  // west
+  return result;
+}
 
-const Vector2* outward_normals() {
-  static const Vector2 n[] = {Vector2( 0.0, -1.0),  // south
-                              Vector2( 1.0,  0.0),  // east
-                              Vector2( 0.0,  1.0),  // north
-                              Vector2(-1.0,  0.0)}; // west
-  return n;
+BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L) {
+
+  const double J[2][2] = {{0.5 * dx / L, 0.0},
+                          {0.0, 0.5 * dy / L}};
+
+  // The inverse of the Jacobian.
+  double J_inv[2][2];
+  invert(J, J_inv);
+
+  // Note that all quadrature weights are 1.0 (and so they are implicitly included below).
+  //
+  // bottom
+  m_W[0] = J[0][0];
+  // right
+  m_W[1] = J[1][1];
+  // top
+  m_W[2] = J[0][0];
+  // left
+  m_W[3] = J[1][1];
+
+  const double C = 1.0 / sqrt(3);
+  const QuadPoint points[q1::n_sides][m_Nq] = {
+    {{  -C, -1.0}, {   C, -1.0}}, // South
+    {{ 1.0,   -C}, { 1.0,    C}}, // East
+    {{  -C,  1.0}, {   C,  1.0}}, // North
+    {{-1.0,   -C}, {-1.0,    C}}  // West
+  };
+
+  memset(m_germs, 0, q1::n_sides*m_Nq*q1::n_chi*sizeof(Germ));
+
+  for (unsigned int side = 0; side < q1::n_sides; ++side) {
+    for (unsigned int q = 0; q < m_Nq; ++q) {
+      for (unsigned int k = 0; k < q1::n_chi; ++k) {
+        Germ phi = q1::chi(k, points[side][q]);
+
+        m_germs[side][q][k] = apply_jacobian_inverse(J_inv, phi);
+      }
+    }
+  }
 }
 
 } // end of namespace q1
@@ -120,6 +161,45 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
   }
   return result;
 }
+
+std::vector<Vector2> outward_normals(unsigned int element_number, double dx, double dy) {
+
+  const Vector2
+    n01 = Vector2( 0.0, -1.0),  // south
+    n12 = Vector2( 1.0,  0.0),  // east
+    n23 = Vector2( 0.0,  1.0),  // north
+    n30 = Vector2(-1.0,  0.0);  // west
+
+  Vector2
+    n13 = Vector2( 1.0, dx / dy) / V, // 1-3 diagonal, outward for element 0
+    n20 = Vector2(-1.0, dx / dy) / V; // 2-0 diagonal, outward for element 1
+
+  // normalize
+  n13 /= n13.magnitude();
+  n20 /= n20.magnitude();
+
+  std::vector<double> result(n_sides);
+  switch (element_number) {
+  case 0:
+    result[0] = n01;
+    result[1] = n13;
+    result[2] = n30;
+  case 1:
+    result[0] = n01;
+    result[1] = n12;
+    result[2] = n20;
+  case 2:
+    result[0] = n12;
+    result[1] = n23;
+    result[2] = -1.0 * n13;
+  case 3:
+  default:
+    result[0] = n23;
+    result[1] = n30;
+    result[2] = -1.0 * n20;
+  }
+}
+
 } // end of namespace p1
 
 
@@ -840,47 +920,6 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
 DirichletData_Vector::~DirichletData_Vector() {
   finish(m_values);
   m_values = NULL;
-}
-
-BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L) {
-
-  const double J[2][2] = {{0.5 * dx / L, 0.0},
-                          {0.0, 0.5 * dy / L}};
-
-  // The inverse of the Jacobian.
-  double J_inv[2][2];
-  invert(J, J_inv);
-
-  // Note that all quadrature weights are 1.0 (and so they are implicitly included below).
-  //
-  // bottom
-  m_W[0] = J[0][0];
-  // right
-  m_W[1] = J[1][1];
-  // top
-  m_W[2] = J[0][0];
-  // left
-  m_W[3] = J[1][1];
-
-  const double C = 1.0 / sqrt(3);
-  const QuadPoint points[q1::n_sides][m_Nq] = {
-    {{  -C, -1.0}, {   C, -1.0}}, // South
-    {{ 1.0,   -C}, { 1.0,    C}}, // East
-    {{  -C,  1.0}, {   C,  1.0}}, // North
-    {{-1.0,   -C}, {-1.0,    C}}  // West
-  };
-
-  memset(m_germs, 0, q1::n_sides*m_Nq*q1::n_chi*sizeof(Germ));
-
-  for (unsigned int side = 0; side < q1::n_sides; ++side) {
-    for (unsigned int q = 0; q < m_Nq; ++q) {
-      for (unsigned int k = 0; k < q1::n_chi; ++k) {
-        Germ phi = q1::chi(k, points[side][q]);
-
-        m_germs[side][q][k] = apply_jacobian_inverse(J_inv, phi);
-      }
-    }
-  }
 }
 
 } // end of namespace fem
