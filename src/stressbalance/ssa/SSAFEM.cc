@@ -545,14 +545,15 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
  */
 void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
-  fem::q1::BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy(), 1.0);
+  const double dx = m_grid->dx(), dy = m_grid->dy();
+
+  // Q1 boundary quadrature
+  fem::q1::BoundaryQuadrature2 bq(dx, dy, 1.0);
 
   const unsigned int Nk = fem::q1::n_chi;
-  const unsigned int Nq = bq.n();
-  const unsigned int n_sides = fem::q1::n_sides;
   using mask::ocean;
 
-  const std::vector<Vector2> outward_normal = fem::q1::outward_normals();
+  auto q1_outward_normal = fem::q1::outward_normals();
 
   const bool
     use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
@@ -590,7 +591,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
   // but P1 elements are numbered by the node at the right angle of the reference element, not the
   // "missing" node. This array maps "missing" nodes to "opposite" nodes, i.e. nodes used to choose
   // P1 element types.
-  int p1_element_number[4] = {2, 3, 0, 1};
+  const int p1_element_number[4] = {2, 3, 0, 1};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -602,19 +603,45 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         int node_type[Nk];
         m_element.nodal_values(m_node_type, node_type);
 
-        // an element is "interior" if all its nodes are interior or boundary
-        const bool interior_element = (node_type[0] < NODE_EXTERIOR and
-                                       node_type[1] < NODE_EXTERIOR and
-                                       node_type[2] < NODE_EXTERIOR and
-                                       node_type[3] < NODE_EXTERIOR);
+
+        // number of exterior nodes in this element
+        const int n_exterior_nodes = ((node_type[0] == NODE_EXTERIOR) +
+                                      (node_type[1] == NODE_EXTERIOR) +
+                                      (node_type[2] == NODE_EXTERIOR) +
+                                      (node_type[3] == NODE_EXTERIOR));
+
+        // an element is a "Q1 interior" if all its nodes are interior or boundary
+        const bool q1_interior_element = n_exterior_nodes == 0;
+
+        // an element is a "P1 interior" if it has exactly 1 exterior node
+        const bool p1_interior_node = n_exterior_nodes == 1;
+
+        unsigned int n_sides = 0;
+
+        if (q1_interior_element) {
+          n_sides = fem::q1::n_sides;
+        } else if (p1_interior_node) {
+          continue;
+          // unsigned int p1_number = -1;
+
+          // for (unsigned int k = 0; k < Nk; ++k) {
+          //   if (node_type[k] == NODE_EXTERIOR) {
+          //     p1_number = p1_element_number[k];
+          //     break;
+          //   }
+          // }
+          // quadrature     = bq_p1[p1_number];
+          // n_sides        = fem::p1::n_sides;
+          // incident_nodes = fem::p1::incident_nodes;
+        } else {
+          // an exterior node
+          continue;
+        }
+
+        const unsigned int Nq = bq.n();
 
         // residual contributions at element nodes
         std::vector<Vector2> I(Nk);
-
-        if (not interior_element) {
-          // not an interior element: the contribution is zero
-          continue;
-        }
 
         double H_nodal[Nk];
         m_element.nodal_values(inputs.geometry->ice_thickness, H_nodal);
@@ -654,7 +681,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             psi[1] = bq.germ(side, q, n1).val;
 
             // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
-            // expansion on the side.
+            // expansion on the current side.
             const double
               H         = H_nodal[n0]  * psi[0] + H_nodal[n1]  * psi[1],
               bed       = b_nodal[n0]  * psi[0] + b_nodal[n1]  * psi[1],
@@ -671,8 +698,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             // This integral contributes to the residual at 2 nodes (the ones incident to the
             // current side). This is is written in a way that allows *adding* (... += ...) the
             // boundary contribution in the residual computation.
-            I[n0] += W * (- psi[0] * dP) * outward_normal[side];
-            I[n1] += W * (- psi[1] * dP) * outward_normal[side];
+            I[n0] += W * (- psi[0] * dP) * q1_outward_normal[side];
+            I[n1] += W * (- psi[1] * dP) * q1_outward_normal[side];
             // FIXME: I need to include the special case corresponding to ice margins next
             // to fjord walls, nunataks, etc. In this case dP == 0.
             //
