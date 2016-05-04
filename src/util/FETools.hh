@@ -193,6 +193,20 @@ const int n_chi = 4;
 Germ chi(unsigned int k, const QuadPoint &p);
 } // end of namespace q0
 
+class ElementGeometry {
+public:
+  unsigned int n_sides() const;
+  unsigned int incident_node(unsigned int side, unsigned int k) const;
+  Vector2 normal(unsigned int side) const;
+protected:
+  ElementGeometry(unsigned int sides);
+
+  virtual unsigned int incident_node_impl(unsigned int side, unsigned int k) const = 0;
+  std::vector<Vector2> m_normals;
+private:
+  unsigned int m_n_sides;
+};
+
 //! Q1 element information.
 namespace q1 {
 
@@ -204,12 +218,13 @@ const int n_sides = 4;
 Germ chi(unsigned int k, const QuadPoint &p);
 
 //! Nodes incident to a side. Used to extract nodal values and add contributions.
-const unsigned int incident_nodes[n_sides][2] = {
-  {0, 1}, {1, 2}, {2, 3}, {3, 0}
-};
 
-//! Outward-pointing normal vectors to sides of a Q1 element aligned with the x and y axes.
-std::vector<Vector2> outward_normals();
+class Q1ElementGeometry : public ElementGeometry {
+public:
+  Q1ElementGeometry();
+private:
+  unsigned int incident_node_impl(unsigned int side, unsigned int k) const;
+};
 
 
 //! 2-point quadrature for sides of Q1 quadrilateral elements.
@@ -263,17 +278,13 @@ Germ chi(unsigned int k, const QuadPoint &p);
 //! Number of sides per element.
 const int n_sides = 3;
 
-//! Nodes incident to a side. Used to extract nodal values and add contributions.
-const unsigned int incident_nodes[q1::n_chi][n_sides][2] = {
-  {{0, 1}, {1, 3}, {3, 0}},
-  {{0, 1}, {1, 2}, {2, 0}},
-  {{1, 2}, {2, 3}, {3, 1}},
-  {{2, 3}, {3, 0}, {0, 2}}
+class P1ElementGeometry : public ElementGeometry {
+public:
+  P1ElementGeometry(unsigned int type, double dx, double dy);
+private:
+  unsigned int incident_node_impl(unsigned int side, unsigned int k) const;
+  unsigned int m_type;
 };
-
-//! Outward-pointing normal vectors to sides of a P1 element embedded in a Q1 element aligned with
-//! coordinate axes.
-std::vector<Vector2> outward_normals(unsigned int n, double dx, double dy);
 
 } // end of namespace p1
 

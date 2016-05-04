@@ -87,7 +87,42 @@ static Germ apply_jacobian_inverse(const double J_inv[2][2], const Germ &f) {
   return result;
 }
 
+ElementGeometry::ElementGeometry(unsigned int n)
+  : m_n_sides(n) {
+  // empty
+}
+
+unsigned int ElementGeometry::n_sides() const {
+  return m_n_sides;
+}
+
+unsigned int ElementGeometry::incident_node(unsigned int side, unsigned int k) const {
+  return this->incident_node_impl(side, k);
+}
+
+Vector2 ElementGeometry::normal(unsigned int side) const {
+  return m_normals[side];
+}
+
 namespace q1 {
+
+Q1ElementGeometry::Q1ElementGeometry()
+  : ElementGeometry(q1::n_sides) {
+
+  m_normals.resize(n_sides());
+  m_normals[0] = Vector2( 0.0, -1.0);  // south
+  m_normals[1] = Vector2( 1.0,  0.0);  // east
+  m_normals[2] = Vector2( 0.0,  1.0);  // north
+  m_normals[3] = Vector2(-1.0,  0.0);  // west
+}
+
+unsigned int Q1ElementGeometry::incident_node_impl(unsigned int side, unsigned int k) const {
+  static const unsigned int nodes[4][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
+
+  assert(side < n_sides());
+
+  return nodes[side][k];
+}
 
 //! Q1 basis functions on the reference element with nodes (-1,-1), (1,-1), (1,1), (-1,1).
 Germ chi(unsigned int k, const QuadPoint &pt) {
@@ -102,15 +137,6 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
   result.dx  = 0.25 * xi[k] * (1.0 + eta[k] * pt.eta);
   result.dy  = 0.25 * eta[k] * (1.0 + xi[k] * pt.xi);
 
-  return result;
-}
-
-std::vector<Vector2> outward_normals() {
-  std::vector<Vector2> result(n_sides);
-  result[0] = Vector2( 0.0, -1.0);  // south
-  result[1] = Vector2( 1.0,  0.0);  // east
-  result[2] = Vector2( 0.0,  1.0);  // north
-  result[3] = Vector2(-1.0,  0.0);  // west
   return result;
 }
 
@@ -159,6 +185,65 @@ BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L) {
 
 namespace p1 {
 
+P1ElementGeometry::P1ElementGeometry(unsigned int type, double dx, double dy)
+  : ElementGeometry(p1::n_sides), m_type(type) {
+
+  assert(type < q1::n_chi);
+
+  const Vector2
+    n01 = Vector2( 0.0, -1.0),  // south
+    n12 = Vector2( 1.0,  0.0),  // east
+    n23 = Vector2( 0.0,  1.0),  // north
+    n30 = Vector2(-1.0,  0.0);  // west
+
+  Vector2
+    n13 = Vector2( 1.0, dx / dy), // 1-3 diagonal, outward for element 0
+    n20 = Vector2(-1.0, dx / dy); // 2-0 diagonal, outward for element 1
+
+  // normalize
+  n13 /= n13.magnitude();
+  n20 /= n20.magnitude();
+
+  m_normals.resize(n_sides());
+  switch (type) {
+  case 0:
+    m_normals[0] = n01;
+    m_normals[1] = n13;
+    m_normals[2] = n30;
+    break;
+  case 1:
+    m_normals[0] = n01;
+    m_normals[1] = n12;
+    m_normals[2] = n20;
+    break;
+  case 2:
+    m_normals[0] = n12;
+    m_normals[1] = n23;
+    m_normals[2] = -1.0 * n13;
+    break;
+  case 3:
+  default:
+    m_normals[0] = n23;
+    m_normals[1] = n30;
+    m_normals[2] = -1.0 * n20;
+  }
+}
+
+unsigned int P1ElementGeometry::incident_node_impl(unsigned int side, unsigned int k) const {
+//! Nodes incident to a side. Used to extract nodal values and add contributions.
+  static const unsigned int nodes[q1::n_chi][p1::n_sides][2] = {
+    {{0, 1}, {1, 3}, {3, 0}},
+    {{0, 1}, {1, 2}, {2, 0}},
+    {{1, 2}, {2, 3}, {3, 1}},
+    {{2, 3}, {3, 0}, {0, 2}}
+  };
+
+  assert(side < n_sides());
+  assert(k < 2);
+
+  return nodes[m_type][side][k];
+}
+
 //! P1 basis functions on the reference element with nodes (0,0), (1,0), (0,1).
 Germ chi(unsigned int k, const QuadPoint &pt) {
   assert(k < q1::n_chi);
@@ -180,51 +265,12 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
     result.dx  = 0.0;
     result.dy  = 1.0;
     break;
+  case 3:
   default:                      // the fourth (dummy) basis function
     result.val = 0.0;
     result.dx  = 0.0;
     result.dy  = 0.0;
   }
-  return result;
-}
-
-std::vector<Vector2> outward_normals(unsigned int element_number, double dx, double dy) {
-
-  const Vector2
-    n01 = Vector2( 0.0, -1.0),  // south
-    n12 = Vector2( 1.0,  0.0),  // east
-    n23 = Vector2( 0.0,  1.0),  // north
-    n30 = Vector2(-1.0,  0.0);  // west
-
-  Vector2
-    n13 = Vector2( 1.0, dx / dy), // 1-3 diagonal, outward for element 0
-    n20 = Vector2(-1.0, dx / dy); // 2-0 diagonal, outward for element 1
-
-  // normalize
-  n13 /= n13.magnitude();
-  n20 /= n20.magnitude();
-
-  std::vector<Vector2> result(n_sides);
-  switch (element_number) {
-  case 0:
-    result[0] = n01;
-    result[1] = n13;
-    result[2] = n30;
-  case 1:
-    result[0] = n01;
-    result[1] = n12;
-    result[2] = n20;
-  case 2:
-    result[0] = n12;
-    result[1] = n23;
-    result[2] = -1.0 * n13;
-  case 3:
-  default:
-    result[0] = n23;
-    result[1] = n30;
-    result[2] = -1.0 * n20;
-  }
-
   return result;
 }
 

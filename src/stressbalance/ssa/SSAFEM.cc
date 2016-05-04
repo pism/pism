@@ -550,10 +550,15 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
   // Q1 boundary quadrature
   fem::q1::BoundaryQuadrature2 bq(dx, dy, 1.0);
 
+  fem::q1::Q1ElementGeometry q1;
+
+  std::vector<fem::p1::P1ElementGeometry> p1;
+  for (unsigned int k = 0; k < 4; ++k) {
+    p1.push_back(fem::p1::P1ElementGeometry(k, dx, dy));
+  }
+
   const unsigned int Nk = fem::q1::n_chi;
   using mask::ocean;
-
-  auto q1_outward_normal = fem::q1::outward_normals();
 
   const bool
     use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
@@ -616,23 +621,24 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         // an element is a "P1 interior" if it has exactly 1 exterior node
         const bool p1_interior_node = n_exterior_nodes == 1;
 
-        unsigned int n_sides = 0;
+        fem::ElementGeometry *E = NULL;
 
         if (q1_interior_element) {
-          n_sides = fem::q1::n_sides;
+          E = &q1;
         } else if (p1_interior_node) {
-          continue;
-          // unsigned int p1_number = -1;
+          int type = -1;
 
-          // for (unsigned int k = 0; k < Nk; ++k) {
-          //   if (node_type[k] == NODE_EXTERIOR) {
-          //     p1_number = p1_element_number[k];
-          //     break;
-          //   }
-          // }
+          for (unsigned int k = 0; k < Nk; ++k) {
+            if (node_type[k] == NODE_EXTERIOR) {
+              type = p1_element_number[k];
+              break;
+            }
+          }
+
+          E = &p1[type];
+          continue;
+
           // quadrature     = bq_p1[p1_number];
-          // n_sides        = fem::p1::n_sides;
-          // incident_nodes = fem::p1::incident_nodes;
         } else {
           // an exterior node
           continue;
@@ -657,14 +663,15 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         double psi[2] = {0.0, 0.0};
 
         // loop over element sides
-        for (unsigned int side = 0; side < n_sides; ++side) {
+        for (unsigned int side = 0; side < E->n_sides(); ++side) {
 
           // nodes incident to the current side
           const int
-            n0 = fem::q1::incident_nodes[side][0],
-            n1 = fem::q1::incident_nodes[side][1];
+            n0 = E->incident_node(side, 0),
+            n1 = E->incident_node(side, 1);
 
-          if (not (node_type[n0] == NODE_BOUNDARY and node_type[n1] == NODE_BOUNDARY)) {
+          if (not (node_type[n0] == NODE_BOUNDARY and
+                   node_type[n1] == NODE_BOUNDARY)) {
             // not a boundary side; skip it
             continue;
           }
@@ -698,13 +705,14 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             // This integral contributes to the residual at 2 nodes (the ones incident to the
             // current side). This is is written in a way that allows *adding* (... += ...) the
             // boundary contribution in the residual computation.
-            I[n0] += W * (- psi[0] * dP) * q1_outward_normal[side];
-            I[n1] += W * (- psi[1] * dP) * q1_outward_normal[side];
+            //
             // FIXME: I need to include the special case corresponding to ice margins next
             // to fjord walls, nunataks, etc. In this case dP == 0.
             //
             // FIXME: set pressure difference to zero at grounded locations at domain
             // boundaries.
+            I[n0] += W * (- psi[0] * dP) * E->normal(side);
+            I[n1] += W * (- psi[1] * dP) * E->normal(side);
           } // q-loop
 
         } // loop over element sides
