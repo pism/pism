@@ -85,7 +85,7 @@ if (PETSC_DIR AND NOT PETSC_ARCH)
     if (NOT PETSC_ARCH)
       find_path (petscconf petscconf.h
 	HINTS ${PETSC_DIR}
-	PATH_SUFFIXES ${arch}/include bmake/${arch}
+	PATH_SUFFIXES ${arch}/include bmake/${arch} include
 	NO_DEFAULT_PATH)
       if (petscconf)
 	set (PETSC_ARCH "${arch}" CACHE STRING "PETSc build architecture")
@@ -110,6 +110,9 @@ if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")   # > 2.3.3
 elseif (EXISTS "${PETSC_DIR}/bmake/${PETSC_ARCH}/petscconf.h") # <= 2.3.3
   set (petsc_conf_rules "${PETSC_DIR}/bmake/common/rules")
   set (petsc_conf_variables "${PETSC_DIR}/bmake/common/variables")
+elseif (EXISTS "${PETSC_DIR}/include/petscconf.h")   # Installed with "make install"
+  set (petsc_conf_rules "${PETSC_DIR}/conf/rules")
+  set (petsc_conf_variables "${PETSC_DIR}/conf/variables")
 elseif (PETSC_DIR)
   message (SEND_ERROR "The pair PETSC_DIR=${PETSC_DIR} PETSC_ARCH=${PETSC_ARCH} do not specify a valid PETSc installation")
 endif ()
@@ -256,7 +259,7 @@ int main(int argc,char *argv[]) {
   endif()
 
   find_path (PETSC_INCLUDE_DIR petscts.h HINTS "${PETSC_DIR}" PATH_SUFFIXES include NO_DEFAULT_PATH)
-  find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_DIR}" PATH_SUFFIXES "${PETSC_ARCH}/include" "bmake/${PETSC_ARCH}" NO_DEFAULT_PATH)
+  find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_DIR}" PATH_SUFFIXES include "${PETSC_ARCH}/include" "bmake/${PETSC_ARCH}" "${PETSC_INCLUDE_DIR}" NO_DEFAULT_PATH)
   mark_as_advanced (PETSC_INCLUDE_DIR PETSC_INCLUDE_CONF)
   set (petsc_includes_minimal ${PETSC_INCLUDE_CONF} ${PETSC_INCLUDE_DIR})
 
