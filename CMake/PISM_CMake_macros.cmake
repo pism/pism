@@ -99,7 +99,7 @@ macro(pism_set_install_prefix)
 
   # Define the directory structure.
   set (Pism_BIN_DIR "bin")
-  set (Pism_LIB_DIR "lib/pism")
+  set (Pism_LIB_DIR "lib")
   set (Pism_DOC_DIR "share/doc/pism")
 endmacro()
 
