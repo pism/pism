@@ -1,8 +1,5 @@
 /* -*- mode: maxima -*- */
-
-/* Derivation of the Jacobian of the map from the reference P1 element
-to physical elements embedded in a Q1 element aligned with the x and y
-axes. */
+assume(dx > 0, dy > 0);
 
 /* Coordinates of the nodes of a Q1 rectangular element aligned with the coordinate system. */
 pts : [
@@ -12,18 +9,21 @@ pts : [
   [-dx/2,  dy/2]]$
 
 /* Short-cuts for nodes */
-A : pts[1]$
-B : pts[2]$
-C : pts[3]$
-D : pts[4]$
+P0 : pts[1]$
+P1 : pts[2]$
+P2 : pts[3]$
+P3 : pts[4]$
 
 /* Four triangles embedded in a rectangular element */
 tris : [
-  [A, B, D],
-  [B, C, A],
-  [C, D, B],
-  [D, A, C]
+  [P0, P1, P3],
+  [P1, P2, P0],
+  [P2, P3, P1],
+  [P3, P0, P2]
 ]$
+
+/* xi, eta coordinates of the nodes of the reference element */
+P : [[0, 0], [1, 0], [0, 1]];
 
 /* P1 shape functions, using the reference element defined above */
 chi[1](xi,eta) := 1 - xi - eta$
@@ -34,13 +34,16 @@ chi[3](xi,eta) := eta$
 x(xi,eta) := 'sum(x[j]*chi[j](xi,eta), j, 1, 3)$
 y(xi,eta) := 'sum(y[j]*chi[j](xi,eta), j, 1, 3)$
 
+/* Compute the Jacobian of the mapping from the reference element */
 J : matrix(
   ['diff(x(xi,eta), xi), 'diff(y(xi,eta), xi)],
   ['diff(x(xi,eta), eta),'diff(y(xi,eta), eta)])$
 
-/* Compute the Jacobian of the mapping from the reference element */
+/* Jacobian, simplified. */
 J_s : ratsimp(ev(J, nouns))$
 
+/* Coordinates of the nodes of physical elements embedded in Q1
+elements aligned with coordinate axes. */
 eqs[k] := block([T],
   T : tris[k],
   [
@@ -52,13 +55,5 @@ eqs[k] := block([T],
   y[3] = T[3][2]
   ])$
 
+/* Jacobian of the map from the reference P1 element to the k-th triangle */
 J[k] := ev(J_s, eqs[k]);
-
-J_det[k] := determinant(J[k]);
-
-J_inv[k] := invert(J[k]);
-
-J[1];
-J[2];
-J[3];
-J[4];
