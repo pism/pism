@@ -97,6 +97,8 @@ unsigned int ElementGeometry::n_sides() const {
 }
 
 unsigned int ElementGeometry::incident_node(unsigned int side, unsigned int k) const {
+  assert(side < n_sides());
+  assert(k < 2);
   return this->incident_node_impl(side, k);
 }
 
@@ -117,9 +119,7 @@ Q1ElementGeometry::Q1ElementGeometry()
 }
 
 unsigned int Q1ElementGeometry::incident_node_impl(unsigned int side, unsigned int k) const {
-  static const unsigned int nodes[4][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
-
-  assert(side < n_sides());
+  static const unsigned int nodes[q1::n_sides][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
 
   return nodes[side][k];
 }
@@ -237,9 +237,6 @@ unsigned int P1ElementGeometry::incident_node_impl(unsigned int side, unsigned i
     {{1, 2}, {2, 3}, {3, 1}},
     {{2, 3}, {3, 0}, {0, 2}}
   };
-
-  assert(side < n_sides());
-  assert(k < 2);
 
   return nodes[m_type][side][k];
 }
