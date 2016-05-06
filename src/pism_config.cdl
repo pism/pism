@@ -109,10 +109,15 @@ netcdf pism_config {
     pism_config:cfl_eigen_calving = "false";
     pism_config:cfl_eigen_calving_doc = "apply CFL criterion for eigen-calving rate front retreat";
 
-    pism_config:calving_methods_type = "string";
+    pism_config:cfl_stress_calving_type = "boolean";
+    pism_config:cfl_stress_calving_option = "cfl_stress_calving";
+    pism_config:cfl_stress_calving = "false";
+    pism_config:cfl_stress_calving_doc = "apply CFL criterion for stress-calving rate front retreat";
+
+pism_config:calving_methods_type = "string";
     pism_config:calving_methods_option = "calving";
     pism_config:calving_methods = "";
-    pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
+    pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'stress_calving', 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
 
     pism_config:float_kill_margin_only_type = "boolean";
     pism_config:float_kill_margin_only = "no";
@@ -629,6 +634,12 @@ netcdf pism_config {
     pism_config:eigen_calving_K_type = "scalar";
     pism_config:eigen_calving_K = 0.0;
     pism_config:eigen_calving_K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references [@ref Levermannetal2012, @ref Martinetal2011] use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
+
+    pism_config:stress_calving_sigma_max_option = "stress_calving_sigma_max";
+    pism_config:stress_calving_sigma_max_units = "Pa";
+    pism_config:stress_calving_sigma_max_type = "scalar";
+    pism_config:stress_calving_sigma_max = 1.0e6;
+    pism_config:stress_calving_sigma_max_doc = "Set maximum tensile stress.  Note references [@ref Morlighem2016] use 1.0e6 Pa.";
 
     pism_config:thickness_calving_threshold_option = "thickness_calving_threshold";
     pism_config:thickness_calving_threshold_units = "meters";
