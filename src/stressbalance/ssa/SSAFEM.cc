@@ -547,12 +547,15 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  // Q1 boundary quadrature
-  fem::q1::BoundaryQuadrature2 bq(dx, dy, 1.0);
-
+  // Q1 element geometry information
   fem::q1::Q1ElementGeometry q1;
 
+  // Q1 boundary quadratures
+  fem::q1::BoundaryQuadrature2 q1_bq(dx, dy, 1.0);
+
+  // P1 element geometry information (one per P1 element type)
   std::vector<fem::p1::P1ElementGeometry> p1;
+
   for (unsigned int k = 0; k < 4; ++k) {
     p1.push_back(fem::p1::P1ElementGeometry(k, dx, dy));
   }
@@ -622,9 +625,11 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         const bool p1_interior_node = n_exterior_nodes == 1;
 
         fem::ElementGeometry *E = NULL;
+        fem::BoundaryQuadrature *Q = NULL;
 
         if (q1_interior_element) {
           E = &q1;
+          Q = &q1_bq;
         } else if (p1_interior_node) {
           int type = -1;
 
@@ -637,8 +642,6 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
           E = &p1[type];
           continue;
-
-          // quadrature     = bq_p1[p1_number];
         } else {
           // an exterior node
           continue;
@@ -660,7 +663,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         // second
         double psi[2] = {0.0, 0.0};
 
-        const unsigned int Nq = bq.n();
+        const unsigned int Nq = Q->n();
         const unsigned int n_sides = E->n_sides();
         // loop over element sides
         for (unsigned int side = 0; side < n_sides; ++side) {
@@ -676,16 +679,14 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             continue;
           }
 
-          // in our case (i.e. uniform spacing in x and y directions) W is the same at all
-          // quadrature points along a side.
-          const double W = bq.weights(side);
-
           for (unsigned int q = 0; q < Nq; ++q) {
+
+            const double W = Q->weight(side, q);
 
             // test functions at nodes incident to the current side, evaluated at the quadrature point
             // q
-            psi[0] = bq.germ(side, q, n0).val;
-            psi[1] = bq.germ(side, q, n1).val;
+            psi[0] = Q->germ(side, q, n0).val;
+            psi[1] = Q->germ(side, q, n1).val;
 
             // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
             // expansion on the current side.

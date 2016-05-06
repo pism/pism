@@ -66,6 +66,23 @@ static double determinant(const double J[2][2]) {
   return J[0][0] * J[1][1] - J[1][0] * J[0][1];
 }
 
+// Multiply a matrix by a vector.
+static Vector2 multiply(const double A[2][2], const Vector2 &v) {
+  Vector2 result;
+  result.u  = v.u * A[0][0] + v.v * A[0][1];
+  result.v  = v.u * A[1][0] + v.v * A[1][1];
+  return result;
+}
+
+//! Compute derivatives with respect to x,y using J^{-1} and derivatives with respect to xi, eta.
+static Germ multiply(const double A[2][2], const Germ &v) {
+  Germ result;
+  result.val = v.val;
+  result.dx  = v.dx * A[0][0] + v.dy * A[0][1];
+  result.dy  = v.dx * A[1][0] + v.dy * A[1][1];
+  return result;
+}
+
 //! Compute the inverse of a two by two matrix.
 static void invert(const double A[2][2], double A_inv[2][2]) {
   const double det_A = determinant(A);
@@ -76,15 +93,6 @@ static void invert(const double A[2][2], double A_inv[2][2]) {
   A_inv[0][1] = -A[0][1] / det_A;
   A_inv[1][0] = -A[1][0] / det_A;
   A_inv[1][1] =  A[0][0] / det_A;
-}
-
-//! Compute derivatives with respect to x,y using J^{-1} and derivatives with respect to xi, eta.
-static Germ apply_jacobian_inverse(const double J_inv[2][2], const Germ &f) {
-  Germ result;
-  result.val = f.val;
-  result.dx  = f.dx * J_inv[0][0] + f.dy * J_inv[0][1];
-  result.dy  = f.dx * J_inv[1][0] + f.dy * J_inv[1][1];
-  return result;
 }
 
 ElementGeometry::ElementGeometry(unsigned int n)
@@ -106,6 +114,37 @@ Vector2 ElementGeometry::normal(unsigned int side) const {
   return m_normals[side];
 }
 
+BoundaryQuadrature::BoundaryQuadrature(unsigned int size)
+  : m_Nq(size) {
+  // empty
+}
+
+BoundaryQuadrature::~BoundaryQuadrature() {
+  // empty
+}
+
+unsigned int BoundaryQuadrature::n() const {
+  return m_Nq;
+}
+
+double BoundaryQuadrature::weight(unsigned int side,
+                                  unsigned int q) const {
+  assert(side < q1::n_sides);
+  assert(q < m_Nq);
+
+  return this->weight_impl(side, q);
+}
+
+const Germ& BoundaryQuadrature::germ(unsigned int side,
+                                     unsigned int q,
+                                     unsigned int test_function) const {
+  assert(side < q1::n_sides);
+  assert(q < m_Nq);
+  assert(test_function < q1::n_chi);
+
+  return this->germ_impl(side, q, test_function);
+}
+
 namespace q1 {
 
 Q1ElementGeometry::Q1ElementGeometry()
@@ -124,12 +163,13 @@ unsigned int Q1ElementGeometry::incident_node_impl(unsigned int side, unsigned i
   return nodes[side][k];
 }
 
+// coordinates of reference element nodes
+static const double xi[n_chi]  = {-1.0,  1.0, 1.0, -1.0};
+static const double eta[n_chi] = {-1.0, -1.0, 1.0,  1.0};
+
 //! Q1 basis functions on the reference element with nodes (-1,-1), (1,-1), (1,1), (-1,1).
 Germ chi(unsigned int k, const QuadPoint &pt) {
   assert(k < q1::n_chi);
-
-  const double xi[] = {-1.0,  1.0,  1.0, -1.0};
-  const double eta[] = {-1.0, -1.0,  1.0,  1.0};
 
   Germ result;
 
@@ -140,45 +180,74 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
   return result;
 }
 
-BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L) {
+// Parameterization of sides of the Q1 reference element (t \in [-1, 1]).
+static QuadPoint r_star(unsigned int side, double t) {
 
+  // Map t (in [-1, 1]) to [0, 1] to simplify interpolation
+  const double L = 0.5 * (t + 1.0);
+
+  const unsigned int
+    k  = n_chi - 1,             // largest allowed index
+    j0 = side,
+    j1 = side % k + 1;
+
+  QuadPoint result;
+  result.xi  = (1.0 - L) *  xi[j0] + L *  xi[j1];
+  result.eta = (1.0 - L) * eta[j0] + L * eta[j1];
+
+  return result;
+}
+
+BoundaryQuadrature2::BoundaryQuadrature2(double dx, double dy, double L)
+  : BoundaryQuadrature(m_size) {
+
+  // The Jacobian of the map from the reference element to a physical element.
   const double J[2][2] = {{0.5 * dx / L, 0.0},
                           {0.0, 0.5 * dy / L}};
 
-  // The inverse of the Jacobian.
+  // derivative of r_star(t) = (xi(t), eta(t)) (the parameterization of the selected side of the
+  // reference element) with respect to t. See fem_q1_boundary.mac for a derivation.
+  Vector2 dr_star[n_sides] = {{1.0, 0.0}, {0.0, 1.0}, {-1.0, 0.0}, {0.0, -1.0}};
+
+  // 2-point Gaussian quadrature on [-1, 1].
+  const double points[m_size]  = {-1.0 / sqrt(3.0), 1.0 / sqrt(3.0)};
+  const double weights[m_size] = {1.0, 1.0};
+
+  // The inverse of the Jacobian
   double J_inv[2][2];
   invert(J, J_inv);
 
-  // Note that all quadrature weights are 1.0 (and so they are implicitly included below).
-  //
-  // bottom
-  m_W[0] = J[0][0];
-  // right
-  m_W[1] = J[1][1];
-  // top
-  m_W[2] = J[0][0];
-  // left
-  m_W[3] = J[1][1];
+  for (unsigned int side = 0; side < n_sides; ++side) {
+    // Magnitude of the derivative r(t) = (x(t), y(t)) (the parameterization of the current side of
+    // a physical element) with respect to t, computed using the chain rule.
+    const Vector2 dr = multiply(J, dr_star[side]);
 
-  const double C = 1.0 / sqrt(3);
-  const QuadPoint points[q1::n_sides][m_Nq] = {
-    {{  -C, -1.0}, {   C, -1.0}}, // South
-    {{ 1.0,   -C}, { 1.0,    C}}, // East
-    {{  -C,  1.0}, {   C,  1.0}}, // North
-    {{-1.0,   -C}, {-1.0,    C}}  // West
-  };
+    for (unsigned int q = 0; q < m_size; ++q) {
+      QuadPoint pt = r_star(side, points[q]);
 
-  memset(m_germs, 0, q1::n_sides*m_Nq*q1::n_chi*sizeof(Germ));
+      m_W[side][q] = weights[q] * dr.magnitude();
 
-  for (unsigned int side = 0; side < q1::n_sides; ++side) {
-    for (unsigned int q = 0; q < m_Nq; ++q) {
-      for (unsigned int k = 0; k < q1::n_chi; ++k) {
-        Germ phi = q1::chi(k, points[side][q]);
-
-        m_germs[side][q][k] = apply_jacobian_inverse(J_inv, phi);
+      for (unsigned int k = 0; k < n_chi; ++k) {
+        // Compute the value of the current shape function and convert derivatives with respect to
+        // xi and eta into derivatives with respect to x and y:
+        m_germs[side][q][k] = multiply(J_inv, q1::chi(k, pt));
       }
-    }
-  }
+    } // end of loop over quadrature points
+  } // end of loop over sides
+}
+
+double BoundaryQuadrature2::weight_impl(unsigned int side, unsigned int q) const {
+  return m_W[side][q];
+}
+
+
+//! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
+//! evaluated at the point `pt` on the side `side` of an element.
+const Germ& BoundaryQuadrature2::germ_impl(unsigned int side,
+                                           unsigned int q,
+                                           unsigned int k) const {
+
+  return m_germs[side][q][k];
 }
 
 } // end of namespace q1
@@ -226,6 +295,7 @@ P1ElementGeometry::P1ElementGeometry(unsigned int type, double dx, double dy)
     m_normals[0] = n23;
     m_normals[1] = n30;
     m_normals[2] = -1.0 * n20;
+    break;
   }
 }
 
@@ -267,7 +337,8 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
     result.val = 0.0;
     result.dx  = 0.0;
     result.dy  = 0.0;
-  }
+    break;
+ }
   return result;
 }
 
@@ -594,7 +665,7 @@ void Quadrature::initialize(ShapeFunction2 f,
 
   for (unsigned int q = 0; q < m_Nq; q++) {
     for (unsigned int k = 0; k < n_chi; k++) {
-      m_germs[q][k] = apply_jacobian_inverse(J_inv, f(k, points[q]));
+      m_germs[q][k] = multiply(J_inv, f(k, points[q]));
     }
   }
 

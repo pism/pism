@@ -207,6 +207,26 @@ private:
   unsigned int m_n_sides;
 };
 
+class BoundaryQuadrature {
+public:
+  BoundaryQuadrature(unsigned int size);
+  virtual ~BoundaryQuadrature();
+
+  unsigned int n() const;
+
+  double weight(unsigned int side, unsigned int q) const;
+
+  const Germ& germ(unsigned int side, unsigned int q, unsigned int test_function) const;
+protected:
+  virtual double weight_impl(unsigned int side,
+                             unsigned int q) const = 0;
+  virtual const Germ& germ_impl(unsigned int side,
+                                unsigned int q,
+                                unsigned int test_function) const = 0;
+private:
+  unsigned int m_Nq;
+};
+
 //! Q1 element information.
 namespace q1 {
 
@@ -228,44 +248,19 @@ private:
 
 
 //! 2-point quadrature for sides of Q1 quadrilateral elements.
-class BoundaryQuadrature2 {
+class BoundaryQuadrature2 : public BoundaryQuadrature {
 public:
   BoundaryQuadrature2(double dx, double dy, double L);
 
-  inline unsigned int n() const;
-
-  inline double weights(unsigned int side) const;
-
-  inline const Germ& germ(unsigned int side,
-                          unsigned int func,
-                          unsigned int pt) const;
+protected:
+  double weight_impl(unsigned int side, unsigned int q) const;
+  const Germ& germ_impl(unsigned int side, unsigned int q, unsigned int test_function) const;
 private:
   //! Number of quadrature points per side.
-  static const unsigned int m_Nq = 2;
-  Germ m_germs[q1::n_sides][m_Nq][q1::n_chi];
-  double m_W[q1::n_sides];
+  static const unsigned int m_size = 2;
+  double m_W[n_sides][m_size];
+  Germ m_germs[n_sides][m_size][q1::n_chi];
 };
-
-inline unsigned int BoundaryQuadrature2::n() const {
-  return m_Nq;
-}
-
-inline double BoundaryQuadrature2::weights(unsigned int side) const {
-  assert(side < q1::n_sides);
-  return m_W[side];
-}
-
-//! @brief Return the "germ" (value and partial derivatives) of a basis function @f$ \chi_k @f$
-//! evaluated at the point `pt` on the side `side` of an element.
-inline const Germ& BoundaryQuadrature2::germ(unsigned int side,
-                                             unsigned int q,
-                                             unsigned int k) const {
-  assert(side < q1::n_sides);
-  assert(k < q1::n_chi);
-  assert(q < 2);
-
-  return m_germs[side][q][k];
-}
 
 } // end of namespace q1
 
