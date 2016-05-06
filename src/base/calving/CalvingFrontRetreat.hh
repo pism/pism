@@ -20,7 +20,13 @@
 #ifndef CALVINGFRONTRETREAT_H
 #define CALVINGFRONTRETREAT_H
 
+#include "base/util/PISMComponent.hh"
+#include "base/util/iceModelVec.hh"
+
+
 namespace pism {
+
+class IceModelVec2CellType;
 
 //! An abstract class implementing calving front retreat resulting from application of a
 //! spatially-variable horizontal retreat rate.
@@ -32,11 +38,18 @@ public:
   CalvingFrontRetreat(IceGrid::ConstPtr g);
   virtual ~CalvingFrontRetreat();
 
-protected:
   void update(double dt,
+              double sea_level,
+              const IceModelVec2S &bed_topography,
               IceModelVec2CellType &pism_mask,
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
+
+  MaxTimestep max_timestep();
+
+protected:
+  virtual void compute_calving_rate(const IceModelVec2CellType &mask,
+                                    IceModelVec2S &result) = 0;
 
   IceModelVec2S m_thk_loss, m_horizontal_calving_rate;
   bool m_restrict_timestep;

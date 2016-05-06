@@ -141,11 +141,13 @@ add_library (pism
   base/hydrology/PISMDistributedHydrology.cc
   base/hydrology/hydrology_diagnostics.cc
   base/calving/connected_components.cc
+  base/calving/remove_narrow_tongues.cc
   base/calving/IcebergRemover.cc
   base/calving/CalvingAtThickness.cc
   base/calving/FloatKill.cc
   base/calving/OceanKill.cc
   base/calving/EigenCalving.cc
+  base/calving/CalvingFrontRetreat.cc
   $<TARGET_OBJECTS:pismflowlaws>
   $<TARGET_OBJECTS:pismstressbalance>
   $<TARGET_OBJECTS:pismcalcalcs>

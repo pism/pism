@@ -20,7 +20,7 @@
 #define _PISMEIGENCALVING_H_
 
 #include "base/util/iceModelVec.hh"
-#include "base/util/PISMComponent.hh"
+#include "CalvingFrontRetreat.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -31,21 +31,13 @@ class IceModelVec2CellType;
 
 namespace calving {
 
-class EigenCalving : public Component
+class EigenCalving : public CalvingFrontRetreat
 {
 public:
   EigenCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
   virtual ~EigenCalving();
 
-  virtual void init();
-  void update(double dt,
-              double sea_level,
-              const IceModelVec2S &bed_topography,
-              IceModelVec2CellType &mask,
-              IceModelVec2S &Href,
-              IceModelVec2S &ice_thickness);
-
-  MaxTimestep max_timestep();
+  void init();
 
   // empty methods that we're required to implement:
 protected:
@@ -53,19 +45,16 @@ protected:
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
-  void compute_calving_rate(const IceModelVec2CellType &mask);
+  void compute_calving_rate(const IceModelVec2CellType &mask,
+                            IceModelVec2S &result);
   void update_strain_rates();
 
 protected:
   IceModelVec2 m_strain_rates;
-  IceModelVec2S m_thk_loss, m_horizontal_calving_rate;
   const int m_stencil_width;
   stressbalance::StressBalance *m_stress_balance;
   double m_K;
-  bool m_restrict_timestep;
 };
-
-void remove_narrow_tongues(const IceModelVec2CellType &mask, IceModelVec2S &ice_thickness);
 
 } // end of namespace calving
 } // end of namespace pism
