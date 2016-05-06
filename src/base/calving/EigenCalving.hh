@@ -20,19 +20,15 @@
 #define _PISMEIGENCALVING_H_
 
 #include "base/util/iceModelVec.hh"
-#include "CalvingFrontRetreat.hh"
+#include "StressCalving.hh"
 
 namespace pism {
-namespace stressbalance {
-class StressBalance;
-}
 
 class IceModelVec2CellType;
 
 namespace calving {
 
-class EigenCalving : public CalvingFrontRetreat
-{
+class EigenCalving : public StressCalving {
 public:
   EigenCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
   virtual ~EigenCalving();
@@ -45,14 +41,11 @@ protected:
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
+
   void compute_calving_rate(const IceModelVec2CellType &mask,
                             IceModelVec2S &result);
-  void update_strain_rates();
 
 protected:
-  IceModelVec2 m_strain_rates;
-  const int m_stencil_width;
-  stressbalance::StressBalance *m_stress_balance;
   double m_K;
 };
 

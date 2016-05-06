@@ -18,14 +18,9 @@
  */
 
 #include "EigenCalving.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
-#include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
-#include "base/util/pism_const.hh"
-#include "base/util/MaxTimestep.hh"
-#include "base/util/pism_utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "remove_narrow_tongues.hh"
 
@@ -34,21 +29,7 @@ namespace calving {
 
 EigenCalving::EigenCalving(IceGrid::ConstPtr g,
                            stressbalance::StressBalance *stress_balance)
-  : CalvingFrontRetreat(g), m_stencil_width(2),
-    m_stress_balance(stress_balance) {
-  m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,
-                        m_stencil_width,
-                        2);
-
-  m_strain_rates.metadata(0).set_name("eigen1");
-  m_strain_rates.set_attrs("internal",
-                           "major principal component of horizontal strain-rate",
-                           "second-1", "", 0);
-
-  m_strain_rates.metadata(1).set_name("eigen2");
-  m_strain_rates.set_attrs("internal",
-                           "minor principal component of horizontal strain-rate",
-                           "second-1", "", 1);
+  : StressCalving(g, stress_balance, 2) {
 
   m_K = m_config->get_double("eigen_calving_K");
 }
@@ -162,22 +143,6 @@ void EigenCalving::define_variables_impl(const std::set<std::string> &/*vars*/, 
 
 void EigenCalving::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
   // empty
-}
-
-/**
- * Update the strain rates field.
- *
- * Note: this code uses the mask obtained from the Vars
- * dictionary, because the velocity field used to compute it need not
- * extend past the ice margin corresponding to the *beginning* of the
- * time-step.
- *
- * @return 0 on success
- */
-void EigenCalving::update_strain_rates() {
-  const IceModelVec2V        &ssa_velocity = m_stress_balance->advective_velocity();
-  const IceModelVec2CellType &mask         = *m_grid->variables().get_2d_cell_type("mask");
-  m_stress_balance->compute_2D_principal_strain_rates(ssa_velocity, mask, m_strain_rates);
 }
 
 } // end of namespace calving

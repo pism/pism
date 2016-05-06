@@ -146,6 +146,7 @@ add_library (pism
   base/calving/CalvingAtThickness.cc
   base/calving/FloatKill.cc
   base/calving/OceanKill.cc
+  base/calving/StressCalving.cc
   base/calving/EigenCalving.cc
   base/calving/CalvingFrontRetreat.cc
   $<TARGET_OBJECTS:pismflowlaws>
