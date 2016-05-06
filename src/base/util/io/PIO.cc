@@ -53,42 +53,11 @@ namespace pism {
 using std::string;
 using std::vector;
 
-//! This class collects information needed to perform an array writing operation. It is used by
-//! PIO::put_1d_var() to delay writing until PIO::enddef() or PIO::close() are called. This allows
-//! us to avoid repeated nc_enddef() and nc_redef() calls when we write metadata and coordinate
-//! variables.
-class WriteOperation {
-public:
-  WriteOperation(const std::string &name,
-                 const std::vector<unsigned int> &s,
-                 const std::vector<unsigned int> &c,
-                 const std::vector<double> &array)
-    : m_variable_name(name), m_start(s), m_count(c), m_data(array) {
-    // empty
-  }
-  virtual void execute(const PIO &nc) {
-    nc.put_vara_double(m_variable_name, m_start, m_count, &m_data[0]);
-  }
-protected:
-  std::string m_variable_name;
-  std::vector<unsigned int> m_start;
-  std::vector<unsigned int> m_count;
-  std::vector<double> m_data;
-};
-
 struct PIO::Impl {
   MPI_Comm com;
   std::string backend_type;
   io::NCFile::Ptr nc;
-  std::deque<WriteOperation> delayed_writes;
 };
-
-static void execute_ops(const PIO &nc, std::deque<WriteOperation> &ops) {
-  while (not ops.empty()) {
-    ops.front().execute(nc);
-    ops.pop_front();
-  }
-}
 
 static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   if (mode == "netcdf3") {
@@ -257,7 +226,6 @@ void PIO::open(const string &filename, IO_Mode mode) {
 
 void PIO::close() {
   try {
-    execute_ops(*this, m_impl->delayed_writes);
     m_impl->nc->close();
   } catch (RuntimeError &e) {
     e.add_context("closing \"" + inq_filename() + "\"");
@@ -278,7 +246,6 @@ void PIO::redef() const {
 void PIO::enddef() const {
   try {
     m_impl->nc->enddef();
-    execute_ops(*this, m_impl->delayed_writes);
   } catch (RuntimeError &e) {
     e.add_context("switching to data mode; file \"" + inq_filename() + "\"");
     throw;
@@ -611,19 +578,11 @@ void PIO::get_1d_var(const string &name, unsigned int s, unsigned int c,
 
 
 //! Write a 1D (usually a coordinate) variable.
-/**
- * This method delays writing until the next PIO::enddef() or PIO::close() call.
- *
- * We do this to make it possible to define all variables before writing *any* data, which is needed
- * for better I/O performance.
- */
 void PIO::put_1d_var(const string &name, unsigned int s, unsigned int c,
                      const vector<double> &data) const {
   vector<unsigned int> start(1, s), count(1, c);
-  WriteOperation op(name, start, count, data);
 
-  // Add this write operation to the stack of operations to be performed when enddef() is called.
-  m_impl->delayed_writes.push_back(op);
+  put_vara_double(name, start, count, &data[0]);
 }
 
 

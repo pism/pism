@@ -16,12 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <base/util/Mask.hh>
-#include <icebin/NullTransportHydrology.hh>
 #include <base/hydrology/hydrology_diagnostics.hh>
-#include <base/util/error_handling.hh>
-#include <base/util/PISMVars.hh>
 #include <base/util/IceModelVec2CellType.hh>
+#include <base/util/Mask.hh>
+#include <base/util/PISMVars.hh>
+#include <base/util/error_handling.hh>
+#include <icebin/NullTransportHydrology.hh>
 
 using namespace pism;
 
@@ -29,22 +29,18 @@ namespace pism {
 namespace icebin {
 
 
-NullTransportHydrology::NullTransportHydrology(pism::IceGrid::ConstPtr g)
-    : pism::hydrology::NullTransport(g)
-{
+NullTransportHydrology::NullTransportHydrology(pism::IceGrid::ConstPtr g) : pism::hydrology::NullTransport(g) {
 
   printf("BEGIN NullTransportHydrology::NullTransportHydrology()\n");
 
   // *all* PISMHydrology classes have layer of water stored in till
   basal_runoff_sum.create(m_grid, "basal_runoff", WITHOUT_GHOSTS);
-  basal_runoff_sum.set_attrs("excess water",
-    "Effective thickness of subglacial water expelled from till "
-    "(thickness of water, not ice)",
-    "m s-1", "");
+  basal_runoff_sum.set_attrs("excess water", "Effective thickness of subglacial water expelled from till "
+                                             "(thickness of water, not ice)",
+                             "m s-1", "");
 
   printf("END NullTransportHydrology::NullTransportHydrology()\n");
 }
-
 
 
 //! Update the till water thickness by simply integrating the melt input.
@@ -60,16 +56,15 @@ not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-void NullTransportHydrology::update_impl(double icet, double icedt)
-{
+void NullTransportHydrology::update_impl(double icet, double icedt) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6)) {
     return;
   }
-  m_t = icet;
+  m_t  = icet;
   m_dt = icedt;
 
-  get_input_rate(icet,icedt,m_total_input);
+  get_input_rate(icet, icedt, m_total_input);
 
   const double tillwat_max = m_config->get_double("hydrology_tillwat_max"),
                C           = m_config->get_double("hydrology_tillwat_decay_rate");
@@ -85,19 +80,19 @@ void NullTransportHydrology::update_impl(double icet, double icedt)
   list.add(cell_type);
   list.add(m_Wtil);
   list.add(m_total_input);
-  list.add(basal_runoff_sum);                        // ICEBIN ADDITION
+  list.add(basal_runoff_sum); // ICEBIN ADDITION
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i,j) || cell_type.ice_free(i,j)) {
-      m_Wtil(i,j) = 0.0;
+    if (cell_type.ocean(i, j) || cell_type.ice_free(i, j)) {
+      m_Wtil(i, j) = 0.0;
     } else {
-      m_Wtil(i,j) += icedt * (m_total_input(i,j) - C);
-      auto Wtil0 = m_Wtil(i,j);                        // ICEBIN ADDITION
-      m_Wtil(i,j) = std::min(std::max(0.0, m_Wtil(i,j)), tillwat_max);
-      basal_runoff_sum(i,j) += Wtil0 - m_Wtil(i,j);    // ICEBIN ADDITION
+      m_Wtil(i, j) += icedt * (m_total_input(i, j) - C);
+      auto Wtil0 = m_Wtil(i, j); // ICEBIN ADDITION
+      m_Wtil(i, j) = std::min(std::max(0.0, m_Wtil(i, j)), tillwat_max);
+      basal_runoff_sum(i, j) += Wtil0 - m_Wtil(i, j); // ICEBIN ADDITION
     }
   }
 }
-
-}}	// namespace
+}
+} // namespace

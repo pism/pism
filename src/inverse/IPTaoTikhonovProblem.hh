@@ -349,14 +349,19 @@ void IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
 
   taoutil::TaoConvergenceCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
 
-  double fatol = 1e-10, frtol = 1e-20;
   double
     gatol = PETSC_DEFAULT,
     grtol = PETSC_DEFAULT,
     gttol = PETSC_DEFAULT;
 
+#if PETSC_VERSION_LT(3,7,0)
+  double fatol = 1e-10, frtol = 1e-20;
   PetscErrorCode ierr = TaoSetTolerances(tao, fatol, frtol, gatol, grtol, gttol);
   PISM_CHK(ierr, "TaoSetTolerances");
+#else
+  PetscErrorCode ierr = TaoSetTolerances(tao, gatol, grtol, gttol);
+  PISM_CHK(ierr, "TaoSetTolerances");
+#endif
 }
 
 template<class ForwardProblem>

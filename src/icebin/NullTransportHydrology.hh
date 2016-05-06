@@ -20,11 +20,11 @@
 
 #include <assert.h>
 
+#include <base/hydrology/PISMHydrology.hh>
+#include <base/stressbalance/PISMStressBalance.hh>
+#include <base/util/PISMComponent.hh>
 #include <base/util/iceModelVec.hh>
 #include <base/util/iceModelVec2T.hh>
-#include <base/util/PISMComponent.hh>
-#include <base/stressbalance/PISMStressBalance.hh>
-#include <base/hydrology/PISMHydrology.hh>
 
 //! The PISM minimal model has till in a "can".  Water that overflows the can is not conserved.  There is no model for lateral transport.
 /*!
@@ -46,13 +46,14 @@ class NullTransportHydrology : public pism::hydrology::NullTransport {
 
 public:
   NullTransportHydrology(pism::IceGrid::ConstPtr grid);
-  virtual ~NullTransportHydrology() {}
+  virtual ~NullTransportHydrology() {
+  }
 
   // solves an implicit step of a highly-simplified ODE
   void update_impl(double icet, double icedt);
 
 protected:
-  pism::IceModelVec2S basal_runoff_sum;      // Cumulative effective thickness of water removed from till
+  pism::IceModelVec2S basal_runoff_sum; // Cumulative effective thickness of water removed from till
 };
-
-}}
+}
+}
