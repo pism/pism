@@ -149,6 +149,7 @@ add_library (pism
   base/calving/StressCalving.cc
   base/calving/EigenCalving.cc
   base/calving/CalvingFrontRetreat.cc
+  base/calving/vonMisesCalving.cc
   $<TARGET_OBJECTS:pismflowlaws>
   $<TARGET_OBJECTS:pismstressbalance>
   $<TARGET_OBJECTS:pismcalcalcs>
