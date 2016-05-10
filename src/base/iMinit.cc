@@ -29,6 +29,7 @@
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/calving/CalvingAtThickness.hh"
 #include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
 #include "base/calving/FloatKill.hh"
 #include "base/calving/IcebergRemover.hh"
 #include "base/calving/OceanKill.hh"
@@ -786,6 +787,16 @@ void IceModel::init_calving() {
 
     m_eigen_calving->init();
     methods.erase("eigen_calving");
+  }
+
+  if (methods.find("vonmises_calving") != methods.end()) {
+
+    if (m_vonmises_calving == NULL) {
+      m_vonmises_calving = new calving::vonMisesCalving(m_grid, m_stress_balance);
+    }
+
+    m_vonmises_calving->init();
+    methods.erase("vonmises_calving");
   }
 
   if (methods.find("float_kill") != methods.end()) {

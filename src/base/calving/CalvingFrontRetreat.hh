@@ -22,11 +22,10 @@
 
 #include "base/util/PISMComponent.hh"
 #include "base/util/iceModelVec.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 
 namespace pism {
-
-class IceModelVec2CellType;
 
 //! An abstract class implementing calving front retreat resulting from application of a
 //! spatially-variable horizontal retreat rate.
@@ -35,7 +34,7 @@ class IceModelVec2CellType;
  */
 class CalvingFrontRetreat : public Component {
 public:
-  CalvingFrontRetreat(IceGrid::ConstPtr g);
+  CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width);
   virtual ~CalvingFrontRetreat();
 
   void update(double dt,
@@ -51,7 +50,8 @@ protected:
   virtual void compute_calving_rate(const IceModelVec2CellType &mask,
                                     IceModelVec2S &result) = 0;
 
-  IceModelVec2S m_thk_loss, m_horizontal_calving_rate;
+  IceModelVec2CellType m_mask;
+  IceModelVec2S m_tmp, m_horizontal_calving_rate, m_surface_topography;
   bool m_restrict_timestep;
 };
 

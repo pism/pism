@@ -24,19 +24,28 @@
 #include "base/util/MaxTimestep.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/part_grid_threshold_thickness.hh"
 
 namespace pism {
 
-CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g)
+CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
   : Component(g) {
 
-  m_thk_loss.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
+  m_tmp.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
+  m_tmp.set_attrs("internal", "additional mass loss at points near the calving front",
+                  "m", "");
 
   m_horizontal_calving_rate.create(m_grid, "horizontal_calving_rate", WITHOUT_GHOSTS);
   m_horizontal_calving_rate.set_attrs("diagnostic", "calving rate", "m second-1", "");
   m_horizontal_calving_rate.set_time_independent(false);
   m_horizontal_calving_rate.metadata().set_string("glaciological_units", "m year-1");
   m_horizontal_calving_rate.write_in_glaciological_units = true;
+
+  m_mask.create(m_grid, "m_mask", WITH_GHOSTS, mask_stencil_width);
+  m_mask.set_attrs("internal", "cell type mask", "", "");
+
+  m_surface_topography.create(m_grid, "m_surface_topography", WITH_GHOSTS, 1);
+  m_surface_topography.set_attrs("internal", "surface topography", "m", "surface_altitude");
 
   m_restrict_timestep = m_config->get_boolean("cfl_eigen_calving");
 }
@@ -72,7 +81,9 @@ MaxTimestep CalvingFrontRetreat::max_timestep() {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  compute_calving_rate(mask, m_horizontal_calving_rate);
+  m_mask.copy_from(mask);
+
+  compute_calving_rate(m_mask, m_horizontal_calving_rate);
 
   IceModelVec::AccessList list;
   list.add(m_horizontal_calving_rate);
@@ -132,93 +143,115 @@ void CalvingFrontRetreat::update(double dt,
                                  IceModelVec2S &Href,
                                  IceModelVec2S &ice_thickness) {
 
-  compute_calving_rate(mask, m_horizontal_calving_rate);
+  GeometryCalculator gc(*m_config);
+  gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);
+
+  // copy mask to temporary storage to get more ghosts
+  m_mask.copy_from(mask);
+  // use mask with a wide stencil to compute the calving rate
+  compute_calving_rate(m_mask, m_horizontal_calving_rate);
 
   const double dx = m_grid->dx();
 
-  m_thk_loss.set(0.0);
+  m_tmp.set(0.0);
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
+  list.add(bed_topography);
   list.add(mask);
   list.add(Href);
-  list.add(m_thk_loss);
+  list.add(m_tmp);
   list.add(m_horizontal_calving_rate);
+  list.add(m_surface_topography);
 
   // Prepare to loop over neighbors: directions
   const Direction dirs[] = {North, East, South, West};
 
-  // Apply the computed horizontal calving rate:
+  // Step 1: Apply the computed horizontal calving rate:
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    // Find partially filled or empty grid boxes on the icefree ocean, which
-    // have floating ice neighbors after the mass continuity step
-    if (mask.ice_free_ocean(i, j) and mask.next_to_floating_ice(i, j)) {
+    const double calving_rate = m_horizontal_calving_rate(i, j);
+
+    if (calving_rate > 0.0) {
+
+      const double Href_old = Href(i, j);
 
       // Compute the number of floating neighbors and the neighbor-averaged ice thickness:
-      double H_average = 0.0;
-      int N_floating_neighbors = 0;
-      {
-        StarStencil<int> M_star = mask.int_star(i, j);
-        StarStencil<double> H_star = ice_thickness.star(i, j);
-
-        for (int n = 0; n < 4; ++n) {
-          Direction direction = dirs[n];
-          if (mask::floating_ice(M_star[direction])) {
-            H_average += H_star[direction];
-            N_floating_neighbors += 1;
-          }
-        }
-
-        if (N_floating_neighbors > 0) {
-          H_average /= N_floating_neighbors;
-        }
-      }
+      double H_threshold = part_grid_threshold_thickness(mask.int_star(i, j),
+                                                         ice_thickness.star(i, j),
+                                                         m_surface_topography.star(i, j),
+                                                         bed_topography(i, j),
+                                                         dx,
+                                                         false);
 
       // Calculate mass loss with respect to the associated ice thickness and the grid size:
-      double calving_rate = m_horizontal_calving_rate(i, j) * H_average / dx; // in m/s
+      const double Href_change = -dt * calving_rate * H_threshold / dx; // in m
 
-      // Apply calving rate at partially filled or empty grid cells
-      if (calving_rate > 0.0) {
-        Href(i, j) -= calving_rate * dt; // in m
+      if (Href_old + Href_change >= 0.0) {
+        // Href is high enough to absorb the mass loss
+        Href(i, j) = Href_old + Href_change;
+      } else {
+        Href(i, j) = 0.0;
+        // Href is below Href_change: need to distribute mass loss to neighboring points
 
-        if (Href(i, j) < 0.0) {
-          // Partially filled grid cell became ice-free
+        // Find the number of neighbors to distribute to.
+        //
+        // We consider floating cells grounded cells with the base below sea level. In other words,
+        // additional mass losses are distributed to shelf calving fronts and grounded marine
+        // termini.
+        int N = 0;
+        {
+          StarStencil<int> M_star = mask.int_star(i, j);
+          StarStencil<double> bed_star = bed_topography.star(i, j);
 
-          m_thk_loss(i, j) = -Href(i, j); // in m, corresponds to additional ice loss
-          Href(i, j)       = 0.0;
+          for (int n = 0; n < 4; ++n) {
+            const Direction direction = dirs[n];
+            const int M = M_star[direction];
 
-          // additional mass loss will be distributed among
-          // N_floating_neighbors:
-          if (N_floating_neighbors > 0) {
-            m_thk_loss(i, j) /= N_floating_neighbors;
+            // Note: this condition has to match the one in step 2 below.
+            if (mask::floating_ice(M) or
+                (mask::grounded_ice(M) and bed_star[direction] < sea_level)) {
+              N += 1;
+            }
           }
+        }
+
+        if (N > 0) {
+          m_tmp(i, j) = (Href_old + Href_change) / (double)N;
+        } else {
+          // No shelf calving front of grounded terminus to distribute to: calving stops here.
+          m_tmp(i, j) = 0.0;
         }
       }
 
-    } // end of "if (ice_free_ocean and next_to_floating)"
-  }
+    } // end of "if (calving_rate > 0.0)"
+  }   // end of loop over grid points
 
-  m_thk_loss.update_ghosts();
+  // Step 2: update ice thickness and Href in neighboring cells if we need to propagate mass losses
+  // due to calving front retreat.
+  m_tmp.update_ghosts();
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    double thk_loss_ij = 0.0;
 
-    if (mask.floating_ice(i, j) and
-        (m_thk_loss(i + 1, j) > 0.0 or m_thk_loss(i - 1, j) > 0.0 or
-         m_thk_loss(i, j + 1) > 0.0 or m_thk_loss(i, j - 1) > 0.0)) {
+    // Note: this condition has to match the one in step 1 above.
+    if (mask.floating_ice(i, j) or
+        (mask.grounded_ice(i, j) and bed_topography(i, j) < sea_level)) {
 
-      thk_loss_ij = (m_thk_loss(i + 1, j) + m_thk_loss(i - 1, j) +
-                     m_thk_loss(i, j + 1) + m_thk_loss(i, j - 1));     // in m/s
+      const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
+                              m_tmp(i, j + 1) + m_tmp(i, j - 1));
 
-      // Note std::max: we do not account for further calving
-      // ice-inwards! Alternatively CFL criterion for time stepping
-      // could be adjusted to maximum of calving rate
-      Href(i, j) = std::max(ice_thickness(i, j) - thk_loss_ij, 0.0); // in m
+      if (delta_H > 0.0) {
+        Href(i, j) = ice_thickness(i, j) + delta_H; // in m
+        ice_thickness(i, j) = 0.0;
+      }
 
-      ice_thickness(i, j) = 0.0;
+      // Stop calving if the current cell does not have enough ice to absorb the loss.
+      if (Href(i, j) < 0.0) {
+        Href(i, j) = 0.0;
+      }
+
     }
   }
 
@@ -226,7 +259,6 @@ void CalvingFrontRetreat::update(double dt,
   ice_thickness.update_ghosts();
 
   // update mask
-  GeometryCalculator gc(*m_config);
   gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_stress_balance_standard"));
   gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
 

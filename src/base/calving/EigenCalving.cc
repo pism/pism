@@ -40,8 +40,7 @@ EigenCalving::~EigenCalving() {
 
 void EigenCalving::init() {
 
-  m_log->message(2,
-             "* Initializing the 'eigen-calving' mechanism...\n");
+  m_log->message(2, "* Initializing the 'eigen-calving' mechanism...\n");
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
     throw RuntimeError::formatted("-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"

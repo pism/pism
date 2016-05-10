@@ -24,6 +24,7 @@
 #include "iceModel.hh"
 #include "base/calving/CalvingAtThickness.hh"
 #include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
 #include "base/calving/FloatKill.hh"
 #include "base/calving/IcebergRemover.hh"
 #include "base/calving/OceanKill.hh"
@@ -64,6 +65,15 @@ void IceModel::do_calving() {
                             m_cell_type,
                             vHref,
                             m_ice_thickness);
+  }
+
+  if (m_vonmises_calving != NULL) {
+    m_vonmises_calving->update(m_dt,
+                               m_ocean->sea_level_elevation(),
+                               m_beddef->bed_elevation(),
+                               m_cell_type,
+                               vHref,
+                               m_ice_thickness);
   }
 
   if (m_ocean_kill_calving != NULL) {

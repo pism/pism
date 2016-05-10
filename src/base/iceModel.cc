@@ -28,6 +28,7 @@
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/calving/CalvingAtThickness.hh"
 #include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
 #include "base/calving/FloatKill.hh"
 #include "base/calving/IcebergRemover.hh"
 #include "base/calving/OceanKill.hh"
@@ -93,6 +94,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_float_kill_calving          = NULL;
   m_thickness_threshold_calving = NULL;
   m_eigen_calving               = NULL;
+  m_vonmises_calving            = NULL;
 
   // initialize maximum |u|,|v|,|w| in ice
   m_max_u_speed = 0;
@@ -167,6 +169,7 @@ IceModel::~IceModel() {
   delete m_float_kill_calving;
   delete m_thickness_threshold_calving;
   delete m_eigen_calving;
+  delete m_vonmises_calving;
 }
 
 
