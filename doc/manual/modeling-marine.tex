@@ -132,7 +132,7 @@ The rate $c$ is in $\text{m}\,\text{s}^{-1}$, and the principal strain rates $\d
 
 The actual strain rate pattern strongly depends on the geometry and boundary conditions along the confinements of an ice shelf (coast, ice rises, front position).  The strain rate pattern provides information in which regions preexisting fractures are likely to propagate, forming rifts (in two directions).  These rifts may ultimately intersect, leading to the release of icebergs.  This (and other) ice shelf calving models are not intended to resolve individual rifts or calving events, but it produces structurally-stable calving front positions which agree well with observations.  Calving rates balance calving-front ice flow velocities on average.
 
-The partially-filled grid cell formulation (subsection \ref{subsec:part-grid}) provides a framework suitable to relate the calving rate produced by \texttt{eigen_calving} to the mass transport scheme at the ice shelf terminus.  Ice shelf front advance and retreat due to calving are limited to a maximum of one grid cell length per (adaptive) time step.  The calving rate (velocity) from \texttt{eigen_calving} can be used to limit the overall timestep of PISM--thus slowing down all of PISM--by using \intextoption{cfl_eigen_calving}.  This ``CFL''-type time-step limitation is definitely recommended in high-resolution runs which attempt to model calving position accurately.  Without this option, under certain conditions where PISM's adaptive time step happens to be long enough, dendritic structures can appear at the calving front because the calving mechanism cannot ``keep up'' with the computed calving rate.
+The partially-filled grid cell formulation (subsection \ref{subsec:part-grid}) provides a framework suitable to relate the calving rate produced by \texttt{eigen_calving} to the mass transport scheme at the ice shelf terminus.  Ice shelf front advance and retreat due to calving are limited to a maximum of one grid cell length per (adaptive) time step.  The calving rate (velocity) from \texttt{eigen_calving} can be used to limit the overall timestep of PISM--thus slowing down all of PISM--by using \intextoption{calving_cfl}.  This ``CFL''-type time-step limitation is definitely recommended in high-resolution runs which attempt to model calving position accurately.  Without this option, under certain conditions where PISM's adaptive time step happens to be long enough, dendritic structures can appear at the calving front because the calving mechanism cannot ``keep up'' with the computed calving rate.
 
 \subsubsection{Von Mises stress calving}
 \label{subsec:stress-calving}
@@ -142,7 +142,7 @@ The partially-filled grid cell formulation (subsection \ref{subsec:part-grid}) p
 \label{eq: calv3}
 c = |\mathbf{u}| \frac{\tilde{\sigma}}{\sigma_{max}},
 \end{equation}
-where $\tilde{\sigma}$ is the tensile von Mises stress and $\sigma_{max}$ is a threshold that has units $Pa$. It can be set as a configuration parameter (\texttt{stress_calving_sigma_max} in \texttt{src/pism_config.cdl}). As the tensile fracture strength is much smaller than the compressive fracture strenth, the effective tensile strain rate is defined as 
+where $\tilde{\sigma}$ is the tensile von Mises stress and $\sigma_{max}$ is a threshold that has units $Pa$. It can be set as a configuration parameter (\texttt{vonmises_calving_sigma_max} in \texttt{src/pism_config.cdl}). As the tensile fracture strength is much smaller than the compressive fracture strenth, the effective tensile strain rate is defined as 
 \begin{equation}
 \label{eq: calv4}
 \tilde{\dot{\epsilon}}_e = \left(\frac{1}{2}\left(\max(0,\dot{\epsilon}_{_+})^2 + \max(0,\dot{\epsilon}_{_-})^2\right)\right)^{1/2}.
@@ -154,7 +154,7 @@ Following \cite{Morlighem2016} $\tilde{\sigma}$ is given by
 \end{equation}
 where $B$ is the ice hardness.
 
-Similar to \texttt{eigen_calving}, the calving rate from \texttt{stress_calving} can be used to limit the overall timestep of PISM--thus slowing down all of PISM--by using \intextoption{cfl_stress_calving}.
+Similar to \texttt{eigen_calving}, the calving rate from \texttt{vonmises_calving} can be used to limit the overall timestep of PISM--thus slowing down all of PISM--by using \intextoption{calving_cfl}.
 
 \subsubsection{Additional calving methods}
 \label{subsec:additional-calving}
@@ -168,7 +168,7 @@ Option \intextoption{calving ocean_kill} chooses the calving mechanism removing 
 
 To select several calving mechanisms, use a comma-separated list of keywords mentioned in Table \ref{tab:calving}:
 \begin{verbatim}
--calving eigen_calving,thickness_calving,ocean_kill,stress_calving
+-calving eigen_calving,thickness_calving,ocean_kill,vonmises_calving
 \end{verbatim}
 
 \begin{table}[ht]
@@ -178,11 +178,10 @@ To select several calving mechanisms, use a comma-separated list of keywords men
     \textbf{Option} & \textbf{Description} \\
     \midrule
     \intextoption{calving eigen_calving} & Physically-based calving parameterization \cite{Levermannetal2012,Winkelmannetal2011}.  Whereever the product of principal strain rates is positive, the calving rate is proportional to this product.  \\
-    \intextoption{cfl_eigen_calving} & Apply CFL-type criterion to reduce (limit) PISM's time step, according to for eigen-calving rate.  \\
     \txtopt{eigen_calving_K}{($m s$)} & Sets the proportionality parameter $K$ in $\text{m}\,\text{s}$. \\ \midrule
-    \intextoption{calving stress_calving} & Physically-based calving parameterization \cite{Morlighem2016} that uses the tensile von Mises stresses.  \\
-    \intextoption{cfl_stress_calving} & Apply CFL-type criterion to reduce (limit) PISM's time step, according to for stress-calving rate.  \\
-    \txtopt{stress_calving_sigma_max}{($Pa$)} & Sets the maximum tensile stress $\tilde{\sigma}$ in $\text{Pa}$. \\ \midrule
+    \intextoption{calving vonmises_calving} & Physically-based calving parameterization \cite{Morlighem2016} that uses the tensile von Mises stresses.  \\
+    \intextoption{calving_cfl} & Apply CFL-type criterion to reduce (limit) PISM's time step, according to for stress-calving rate.  \\
+    \txtopt{vonmises_calving_sigma_max}{($Pa$)} & Sets the maximum tensile stress $\tilde{\sigma}$ in $\text{Pa}$. \\ \midrule
     \intextoption{calving thickness_calving} & Calve all near-terminus ice which is thinner than ice threshold thickness $H_{\textrm{cr}}$. \\
     \txtopt{thickness_calving_threshold}{(m)} & Sets the thickness threshold $H_{\textrm{cr}}$ in meters. \\ \midrule
     \intextoption{calving float_kill} & All floating ice is calved off immediately.\\ \midrule

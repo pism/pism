@@ -45,7 +45,7 @@ CTHICK=50.0  #  constant thickness for thickness_calving
 exdt=25
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i $STARTNAME \
   -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik \
-  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -cfl_eigen_calving \
+  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -calving_cfl \
   -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $YEARS -o $NAME -o_order zyx -o_size big \
   -thickness_calving_threshold $CTHICK $STRONGKSP \
   -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \
