@@ -144,8 +144,8 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
       }
 
       // [\ref Morlighem2016] equation 6
-      const double effective_tensile_strain_rate = sqrt(0.5 * (max(0.0, PetscSqr(eigen1)) +
-                                                               max(0.0, PetscSqr(eigen2))));
+      const double effective_tensile_strain_rate = sqrt(0.5 * (PetscSqr(max(0.0, eigen1)) +
+                                                               PetscSqr(max(0.0, eigen2))));
       // [\ref Morlighem2016] equation 7
       const double sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
                                                             1.0 / ssa_n);
