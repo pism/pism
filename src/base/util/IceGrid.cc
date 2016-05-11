@@ -616,10 +616,15 @@ void IceGrid::report_parameters() const {
               km(2*Lx()), km(2*Ly()), Lz());
 
   // report on grid cell dims
+  if ((dx() && dy()) > 1000.) {
   log.message(2,
               "     horizontal grid cell   %.2f km x %.2f km\n",
               km(dx()), km(dy()));
-
+  } else {
+  log.message(2,
+              "     horizontal grid cell   %.0f m x %.0f m\n",
+              dx(), dy());
+  }
   if (fabs(dz_max() - dz_min()) <= 1.0e-8) {
     log.message(2,
                 "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
