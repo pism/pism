@@ -153,7 +153,9 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
       // Calving law [\ref Morlighem2016] equation 4
       result(i, j) = velocity_magnitude * sigma_tilde / m_sigma_max;
 
-    } // end of "if (ice_free_ocean and next_to_floating)"
+    } else { // end of "if (ice_free_ocean and next_to_floating)"
+      result(i, j) = 0.0;
+    }
   }   // end of loop over grid points
 }
 
