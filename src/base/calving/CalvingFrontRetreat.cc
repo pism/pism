@@ -242,7 +242,7 @@ void CalvingFrontRetreat::update(double dt,
       const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
                               m_tmp(i, j + 1) + m_tmp(i, j - 1));
 
-      if (delta_H > 0.0) {
+      if (delta_H < 0.0) {
         Href(i, j) = ice_thickness(i, j) + delta_H; // in m
         ice_thickness(i, j) = 0.0;
       }
