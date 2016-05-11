@@ -107,7 +107,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
-          if (mask.floating_ice(I, j) and not mask.ice_margin(I, j)) {
+          if (mask.floating_ice(I, j)) {
             velocity_magnitude += ssa_velocity(I, j).magnitude();
             {
               double H = ice_thickness(I, j);
@@ -122,7 +122,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
-          if (mask.floating_ice(i, J) and not mask.ice_margin(i, J)) {
+          if (mask.floating_ice(i, J)) {
             velocity_magnitude += ssa_velocity(i, J).magnitude();
             {
               double H = ice_thickness(i, J);
