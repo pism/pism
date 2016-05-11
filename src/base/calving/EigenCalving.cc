@@ -144,5 +144,12 @@ void EigenCalving::write_variables_impl(const std::set<std::string> &/*vars*/, c
   // empty
 }
 
+void EigenCalving::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                        std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+  dict["eigen_calving_rate"] = Diagnostic::Ptr(new CalvingRate(this, "eigen_calving_rate",
+                                                               "horizontal calving rate due to eigen-calving"));
+  (void)ts_dict;
+}
+
 } // end of namespace calving
 } // end of namespace pism

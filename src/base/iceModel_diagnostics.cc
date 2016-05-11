@@ -40,7 +40,8 @@
 
 #include "base/grounded_cell_fraction.hh"
 #include "base/part_grid_threshold_thickness.hh"
-
+#include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
 
 namespace pism {
 
@@ -160,6 +161,14 @@ void IceModel::init_diagnostics() {
 
   if (btu != NULL) {
     btu->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  }
+
+  if (m_eigen_calving != NULL) {
+    m_eigen_calving->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  }
+
+  if (m_vonmises_calving != NULL) {
+    m_vonmises_calving->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 }
 

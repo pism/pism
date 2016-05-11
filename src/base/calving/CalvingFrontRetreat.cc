@@ -269,4 +269,31 @@ void CalvingFrontRetreat::update(double dt,
   gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
 }
 
+const IceModelVec2S& CalvingFrontRetreat::calving_rate() const {
+  return m_horizontal_calving_rate;
+}
+
+CalvingRate::CalvingRate(CalvingFrontRetreat *m,
+                         const std::string &name,
+                         const std::string &long_name)
+  : Diag<CalvingFrontRetreat>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, name));
+
+  set_attrs(long_name, "",
+            "m second-1", "m year-1", 0);
+}
+
+IceModelVec::Ptr CalvingRate::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  result->copy_from(model->calving_rate());
+
+  return result;
+}
+
 } // end of namespace pism

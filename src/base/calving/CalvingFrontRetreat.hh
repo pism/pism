@@ -46,6 +46,8 @@ public:
 
   MaxTimestep max_timestep();
 
+  const IceModelVec2S& calving_rate() const;
+
 protected:
   virtual void compute_calving_rate(const IceModelVec2CellType &mask,
                                     IceModelVec2S &result) = 0;
@@ -53,6 +55,16 @@ protected:
   IceModelVec2CellType m_mask;
   IceModelVec2S m_tmp, m_horizontal_calving_rate, m_surface_topography;
   bool m_restrict_timestep;
+};
+
+/*! @brief Calving (or frontal melt) rate diagnostic. */
+class CalvingRate : public Diag<CalvingFrontRetreat>
+{
+public:
+  CalvingRate(CalvingFrontRetreat *m,
+              const std::string &name,
+              const std::string &long_name);
+  IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace pism

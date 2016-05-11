@@ -170,5 +170,12 @@ void vonMisesCalving::write_variables_impl(const std::set<std::string> &/*vars*/
   // empty
 }
 
+void vonMisesCalving::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                           std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+  dict["vonmises_calving_rate"] = Diagnostic::Ptr(new CalvingRate(this, "vonmises_calving_rate",
+                                                                  "horizontal calving rate due to von Mises calving"));
+  (void)ts_dict;
+}
+
 } // end of namespace calving
 } // end of namespace pism
