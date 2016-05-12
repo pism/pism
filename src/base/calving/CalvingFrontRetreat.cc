@@ -173,7 +173,8 @@ void CalvingFrontRetreat::update(double dt,
 
     const double calving_rate = m_horizontal_calving_rate(i, j);
 
-    if (calving_rate > 0.0) {
+    if (mask.ice_free(i, j) and calving_rate > 0.0) {
+      // apply calving rate at the margin (i.e. to partially-filled cells) only
 
       const double Href_old = Href(i, j);
 
