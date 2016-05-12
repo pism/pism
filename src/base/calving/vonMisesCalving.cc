@@ -84,10 +84,11 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
   list.add(m_strain_rates);
   list.add(result);
 
-  const double ssa_n = m_config->get_double("ssa_Glen_exponent");
-  const std::vector<double>& z = m_grid->z();
+  const double *z = &m_grid->z()[0];
   const rheology::FlowLaw*
     flow_law = m_stress_balance->get_stressbalance()->flow_law();
+
+  const double ssa_n = flow_law->exponent();
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
