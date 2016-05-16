@@ -82,6 +82,7 @@ void IceModel::init_diagnostics() {
   m_diagnostics["surface_mass_balance_average"] = Diagnostic::Ptr(new IceModel_surface_mass_balance_average(this));
   m_diagnostics["basal_mass_balance_average"]   = Diagnostic::Ptr(new IceModel_basal_mass_balance_average(this));
   m_diagnostics["height_above_flotation"]   = Diagnostic::Ptr(new IceModel_height_above_flotation(this));
+  m_diagnostics["cell_mass"]   = Diagnostic::Ptr(new IceModel_cell_mass(this));
   
 #if (PISM_USE_PROJ4==1)
   if (m_output_global_attributes.has_attribute("proj4")) {
@@ -2392,6 +2393,71 @@ IceModelVec::Ptr IceModel_height_above_flotation::compute_impl() {
         continue;
       }
       (*result)(i,j) = ((ice_density / ocean_density) * thk) + (bed - sea_level);
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+
+  return result;
+}
+
+IceModel_cell_mass::IceModel_cell_mass(IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars.push_back(SpatialVariableMetadata(m_sys,
+                                           "cell_mass"));
+
+  set_attrs("mass per cell", "",
+            "kg", "kg", 0);
+  m_vars[0].set_double("_FillValue", m_config->get_double("fill_value"));
+}
+
+IceModelVec::Ptr IceModel_cell_mass::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "cell_mass", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  const IceModelVec2CellType &cell_type = model->cell_type_mask();
+
+  const double
+    ice_density   = m_config->get_double("ice_density"),
+    fill_value = m_config->get_double("fill_value");
+
+  const Vars &variables = m_grid->variables();
+
+  const IceModelVec2S
+    &ice_thickness  = *variables.get_2d_scalar("land_ice_thickness"),
+    &cell_area = *variables.get_2d_scalar("cell_area");
+  
+  IceModelVec::AccessList list;
+  list.add(cell_type);
+  list.add(*result);
+  list.add(ice_thickness);
+  list.add(cell_area);
+
+  const SpatialVariableMetadata &m = cell_area.metadata();
+  std::string m_units = m.get_string("units");
+  
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double
+        thk = ice_thickness(i,j),
+        area = units::convert(m_sys, cell_area(i,j), m_units, "m2");
+
+      // if we have no ice, go on to the next grid point (this cell will be
+      // marked as "missing" later)
+      if (cell_type.ice_free(i, j)) {
+        (*result)(i,j) = fill_value;
+        continue;
+      }
+      (*result)(i,j) = ice_density  * thk * area;
     }
   } catch (...) {
     loop.failed();

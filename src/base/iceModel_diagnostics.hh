@@ -545,6 +545,17 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
+
+//! \brief Computes the mass per cell.
+class IceModel_cell_mass : public Diag<IceModel>
+{
+public:
+  IceModel_cell_mass(IceModel *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
+
 } // end of namespace pism
 
 #if (PISM_USE_PROJ4==1)
