@@ -56,9 +56,9 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
   m_precipitation.set_attrs("climate_state",
                             "mean annual ice-equivalent precipitation rate",
-                            "m s-1",
+                            "kg m-2 s-1",
                             ""); // no CF standard_name ??
-  m_precipitation.metadata().set_string("glaciological_units", "m year-1");
+  m_precipitation.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_precipitation.write_in_glaciological_units = true;
   m_precipitation.set_time_independent(true);
 
