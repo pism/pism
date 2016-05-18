@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -50,8 +50,8 @@ Given::Given(IceGrid::ConstPtr g)
   air_temp->set_attrs("climate_forcing", "near-surface air temperature",
                       "Kelvin", "");
   precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
-                           "m s-1", "");
-  precipitation->metadata().set_string("glaciological_units", "m year-1");
+                           "kg m-2 second-1", "");
+  precipitation->metadata().set_string("glaciological_units", "kg m-2 year-1");
   precipitation->write_in_glaciological_units = true;
 }
 
