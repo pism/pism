@@ -547,10 +547,10 @@ protected:
 
 
 //! \brief Computes the mass per cell.
-class IceModel_cell_mass : public Diag<IceModel>
+class IceModel_ice_mass : public Diag<IceModel>
 {
 public:
-  IceModel_cell_mass(IceModel *m);
+  IceModel_ice_mass(IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };

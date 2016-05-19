@@ -330,7 +330,7 @@ double IceModel::ice_volume() const {
     }
   }
 
-  // Add the volume of the ice in Href:
+  // Add the volume of ice in Href:
   if (m_config->get_boolean("part_grid")) {
     list.add(vHref);
     for (Points p(*m_grid); p; p.next()) {
