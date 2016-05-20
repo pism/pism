@@ -49,6 +49,9 @@ Given::Given(IceGrid::ConstPtr g)
 
   air_temp->set_attrs("climate_forcing", "near-surface air temperature",
                       "Kelvin", "");
+  air_temp->metadata().set_double("valid_min", 0.0);
+  air_temp->metadata().set_double("valid_max", 323.15); // 50 C
+
   precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                            "m s-1", "");
   precipitation->metadata().set_string("glaciological_units", "m year-1");

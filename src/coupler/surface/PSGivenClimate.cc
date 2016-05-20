@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,10 +47,20 @@ Given::Given(IceGrid::ConstPtr g)
   ice_surface_temp->set_attrs("climate_forcing",
                               "temperature of the ice at the ice surface but below firn processes",
                               "Kelvin", "");
+  ice_surface_temp->metadata().set_double("valid_min", 0.0);
+  ice_surface_temp->metadata().set_double("valid_max", 323.15); // 50 C
+
+  const double ice_density = m_config->get_double("ice_density");
+  const double smb_max = units::convert(m_sys, 100.0 * ice_density,
+                                        "kg m-2 year-1", "kg m-2 second-1");
+
   climatic_mass_balance->set_attrs("climate_forcing",
                                    "surface mass balance (accumulation/ablation) rate",
                                    "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
   climatic_mass_balance->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  climatic_mass_balance->metadata().set_double("valid_min", -smb_max);
+  climatic_mass_balance->metadata().set_double("valid_max", smb_max);
+
   climatic_mass_balance->write_in_glaciological_units = true;
 }
 
