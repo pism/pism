@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2016 PISM Authors
+/* Copyright (C) 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,4 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-void label_connected_components(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_icebergs, double mask_grounded);
+#ifndef REMOVE_NARROW_TONGUES_H
+#define REMOVE_NARROW_TONGUES_H
+
+namespace pism {
+
+class IceModelVec2CellType;
+class IceModelVec2S;
+
+void remove_narrow_tongues(const IceModelVec2CellType &mask, IceModelVec2S &ice_thickness);
+
+} // end of namespace pism
+
+
+#endif /* REMOVE_NARROW_TONGUES_H */

@@ -21,7 +21,8 @@
 #include <algorithm>
 
 #include "iceModel.hh"
-#include "base/calving/PISMEigenCalving.hh"
+#include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -287,10 +288,17 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       }
     }
 
-    if (eigen_calving != NULL) {
-      MaxTimestep eigencalving_dt = eigen_calving->max_timestep();
+    if (m_eigen_calving != NULL) {
+      MaxTimestep eigencalving_dt = m_eigen_calving->max_timestep();
       if (eigencalving_dt.is_finite()) {
         dt_restrictions["eigencalving"] = eigencalving_dt.value();
+      }
+    }
+
+    if (m_vonmises_calving != NULL) {
+      MaxTimestep vonmisescalving_dt = m_vonmises_calving->max_timestep();
+      if (vonmisescalving_dt.is_finite()) {
+        dt_restrictions["von Mises calving"] = vonmisescalving_dt.value();
       }
     }
 

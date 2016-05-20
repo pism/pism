@@ -232,6 +232,13 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
+/*! @brief tensile von Mises stress */
+class PSB_vonmises_stress : public Diag<StressBalance>
+{
+public:
+  PSB_vonmises_stress(StressBalance *m);
+  IceModelVec::Ptr compute_impl();
+};
 
 } // end of namespace stressbalance
 } // end of namespace pism

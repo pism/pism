@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014 PISM Authors
+/* Copyright (C) 2013, 2014, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,8 @@ void run_union(std::vector<unsigned int> &parent, unsigned int run1, unsigned in
 
 }
 
-void cc(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_icebergs, double mask_grounded) {
+//! In-place labeling of connected components using a 2-scan algorithm with run-length encoding.
+void label_connected_components(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_icebergs, double mask_grounded) {
   unsigned int max_runs = 2*n_rows;
   const double eps = 1e-6;
 

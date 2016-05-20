@@ -69,6 +69,7 @@ class Hydrology;
 
 namespace calving {
 class EigenCalving;
+class vonMisesCalving;
 class OceanKill;
 class FloatKill;
 class CalvingAtThickness;
@@ -87,14 +88,6 @@ class BedDef;
 class IceGrid;
 class YieldStress;
 class IceModelVec2CellType;
-
-double part_grid_threshold_thickness(StarStencil<int> Mask,
-                                     StarStencil<double> thickness,
-                                     StarStencil<double> surface_elevation,
-                                     double bed_elevation,
-                                     double dx,
-                                     bool reduce_frontal_thickness);
-
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -241,11 +234,12 @@ protected:
 
   energy::BedThermalUnit *btu;
 
-  calving::IcebergRemover     *iceberg_remover;
-  calving::OceanKill          *ocean_kill_calving;
-  calving::FloatKill          *float_kill_calving;
-  calving::CalvingAtThickness *thickness_threshold_calving;
-  calving::EigenCalving       *eigen_calving;
+  calving::IcebergRemover     *m_iceberg_remover;
+  calving::OceanKill          *m_ocean_kill_calving;
+  calving::FloatKill          *m_float_kill_calving;
+  calving::CalvingAtThickness *m_thickness_threshold_calving;
+  calving::EigenCalving       *m_eigen_calving;
+  calving::vonMisesCalving    *m_vonmises_calving;
 
   surface::SurfaceModel *m_surface;
   ocean::OceanModel   *m_ocean;

@@ -24,7 +24,7 @@
 #include "iceModel.hh"
 
 #include "base/basalstrength/PISMYieldStress.hh"
-#include "base/calving/PISMOceanKill.hh"
+#include "base/calving/OceanKill.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -148,8 +148,8 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     result.erase("age");
   }
 
-  if (ocean_kill_calving != NULL) {
-    ocean_kill_calving->add_vars_to_output(keyword, result);
+  if (m_ocean_kill_calving != NULL) {
+    m_ocean_kill_calving->add_vars_to_output(keyword, result);
   }
 
   if (m_beddef != NULL) {

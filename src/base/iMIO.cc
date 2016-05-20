@@ -26,10 +26,11 @@
 #include "iceModel.hh"
 
 #include "base/basalstrength/PISMYieldStress.hh"
-#include "base/calving/PISMCalvingAtThickness.hh"
-#include "base/calving/PISMEigenCalving.hh"
-#include "base/calving/PISMFloatKill.hh"
-#include "base/calving/PISMOceanKill.hh"
+#include "base/calving/CalvingAtThickness.hh"
+#include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
+#include "base/calving/FloatKill.hh"
+#include "base/calving/OceanKill.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -198,20 +199,24 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       throw RuntimeError("PISM ERROR: ocean == NULL");
     }
 
-    if (ocean_kill_calving != NULL) {
-      ocean_kill_calving->define_variables(vars, nc, nctype);
+    if (m_ocean_kill_calving != NULL) {
+      m_ocean_kill_calving->define_variables(vars, nc, nctype);
     }
 
-    if (float_kill_calving != NULL) {
-      float_kill_calving->define_variables(vars, nc, nctype);
+    if (m_float_kill_calving != NULL) {
+      m_float_kill_calving->define_variables(vars, nc, nctype);
     }
 
-    if (thickness_threshold_calving != NULL) {
-      thickness_threshold_calving->define_variables(vars, nc, nctype);
+    if (m_thickness_threshold_calving != NULL) {
+      m_thickness_threshold_calving->define_variables(vars, nc, nctype);
     }
 
-    if (eigen_calving != NULL) {
-      eigen_calving->define_variables(vars, nc, nctype);
+    if (m_eigen_calving != NULL) {
+      m_eigen_calving->define_variables(vars, nc, nctype);
+    }
+
+    if (m_vonmises_calving != NULL) {
+      m_vonmises_calving->define_variables(vars, nc, nctype);
     }
 
   }
@@ -268,20 +273,24 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     throw RuntimeError("PISM ERROR: ocean == NULL");
   }
 
-  if (ocean_kill_calving != NULL) {
-    ocean_kill_calving->write_variables(vars, nc);
+  if (m_ocean_kill_calving != NULL) {
+    m_ocean_kill_calving->write_variables(vars, nc);
   }
 
-  if (float_kill_calving != NULL) {
-    float_kill_calving->write_variables(vars, nc);
+  if (m_float_kill_calving != NULL) {
+    m_float_kill_calving->write_variables(vars, nc);
   }
 
-  if (thickness_threshold_calving != NULL) {
-    thickness_threshold_calving->write_variables(vars, nc);
+  if (m_thickness_threshold_calving != NULL) {
+    m_thickness_threshold_calving->write_variables(vars, nc);
   }
 
-  if (eigen_calving != NULL) {
-    eigen_calving->write_variables(vars, nc);
+  if (m_eigen_calving != NULL) {
+    m_eigen_calving->write_variables(vars, nc);
+  }
+
+  if (m_vonmises_calving != NULL) {
+    m_vonmises_calving->write_variables(vars, nc);
   }
 
   // All the remaining names in vars must be of diagnostic quantities.

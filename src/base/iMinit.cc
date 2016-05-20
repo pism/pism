@@ -27,11 +27,12 @@
 #include "base/basalstrength/PISMConstantYieldStress.hh"
 #include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/calving/PISMCalvingAtThickness.hh"
-#include "base/calving/PISMEigenCalving.hh"
-#include "base/calving/PISMFloatKill.hh"
-#include "base/calving/PISMIcebergRemover.hh"
-#include "base/calving/PISMOceanKill.hh"
+#include "base/calving/CalvingAtThickness.hh"
+#include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
+#include "base/calving/FloatKill.hh"
+#include "base/calving/IcebergRemover.hh"
+#include "base/calving/OceanKill.hh"
 #include "base/energy/bedrockThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -362,7 +363,7 @@ void IceModel::allocate_stressbalance() {
 
 void IceModel::allocate_iceberg_remover() {
 
-  if (iceberg_remover != NULL) {
+  if (m_iceberg_remover != NULL) {
     return;
   }
 
@@ -372,11 +373,11 @@ void IceModel::allocate_iceberg_remover() {
   if (m_config->get_boolean("kill_icebergs")) {
 
     // this will throw an exception on failure
-    iceberg_remover = new calving::IcebergRemover(m_grid);
+    m_iceberg_remover = new calving::IcebergRemover(m_grid);
 
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
-    iceberg_remover->init();
+    m_iceberg_remover->init();
   }
 }
 
@@ -759,41 +760,51 @@ void IceModel::init_calving() {
 
   if (methods.find("ocean_kill") != methods.end()) {
 
-    if (ocean_kill_calving == NULL) {
-      ocean_kill_calving = new calving::OceanKill(m_grid);
+    if (m_ocean_kill_calving == NULL) {
+      m_ocean_kill_calving = new calving::OceanKill(m_grid);
     }
 
-    ocean_kill_calving->init();
+    m_ocean_kill_calving->init();
     methods.erase("ocean_kill");
   }
 
   if (methods.find("thickness_calving") != methods.end()) {
 
-    if (thickness_threshold_calving == NULL) {
-      thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
+    if (m_thickness_threshold_calving == NULL) {
+      m_thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
     }
 
-    thickness_threshold_calving->init();
+    m_thickness_threshold_calving->init();
     methods.erase("thickness_calving");
   }
 
 
   if (methods.find("eigen_calving") != methods.end()) {
 
-    if (eigen_calving == NULL) {
-      eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance);
+    if (m_eigen_calving == NULL) {
+      m_eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance);
     }
 
-    eigen_calving->init();
+    m_eigen_calving->init();
     methods.erase("eigen_calving");
   }
 
-  if (methods.find("float_kill") != methods.end()) {
-    if (float_kill_calving == NULL) {
-      float_kill_calving = new calving::FloatKill(m_grid);
+  if (methods.find("vonmises_calving") != methods.end()) {
+
+    if (m_vonmises_calving == NULL) {
+      m_vonmises_calving = new calving::vonMisesCalving(m_grid, m_stress_balance);
     }
 
-    float_kill_calving->init();
+    m_vonmises_calving->init();
+    methods.erase("vonmises_calving");
+  }
+
+  if (methods.find("float_kill") != methods.end()) {
+    if (m_float_kill_calving == NULL) {
+      m_float_kill_calving = new calving::FloatKill(m_grid);
+    }
+
+    m_float_kill_calving->init();
     methods.erase("float_kill");
   }
 

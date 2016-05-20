@@ -17,11 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "PISMCalvingAtThickness.hh"
+#include "CalvingAtThickness.hh"
 #include "base/util/Mask.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_const.hh"
+#include "base/part_grid_threshold_thickness.hh"
+
 
 namespace pism {
 

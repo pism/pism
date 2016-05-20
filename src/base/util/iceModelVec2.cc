@@ -53,6 +53,14 @@ IceModelVec2::IceModelVec2()
   // empty
 }
 
+IceModelVec2::Ptr IceModelVec2::To2D(IceModelVec::Ptr input) {
+  IceModelVec2::Ptr result = dynamic_pointer_cast<IceModelVec2,IceModelVec>(input);
+  if (not (bool)result) {
+    throw RuntimeError("dynamic cast failure");
+  }
+  return result;
+}
+
 IceModelVec2V::~IceModelVec2V() {
   // empty
 }

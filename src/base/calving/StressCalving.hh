@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2016 PISM Authors
+/* Copyright (C) 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,4 +17,37 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-void label_connected_components(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_icebergs, double mask_grounded);
+#ifndef STRESSCALVING_H
+#define STRESSCALVING_H
+
+#include "CalvingFrontRetreat.hh"
+
+namespace pism {
+
+namespace stressbalance {
+class StressBalance;
+}
+
+namespace calving {
+
+class StressCalving : public CalvingFrontRetreat {
+public:
+  StressCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance,
+                unsigned int stencil_width);
+  virtual ~StressCalving();
+
+protected:
+  void update_strain_rates();
+
+protected:
+  IceModelVec2 m_strain_rates;
+  const int m_stencil_width;
+  stressbalance::StressBalance *m_stress_balance;
+};
+
+
+} // end of namespace calving
+} // end of namespace pism
+
+
+#endif /* STRESSCALVING_H */

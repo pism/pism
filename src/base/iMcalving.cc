@@ -22,11 +22,12 @@
 #include <cassert>
 
 #include "iceModel.hh"
-#include "base/calving/PISMCalvingAtThickness.hh"
-#include "base/calving/PISMEigenCalving.hh"
-#include "base/calving/PISMFloatKill.hh"
-#include "base/calving/PISMIcebergRemover.hh"
-#include "base/calving/PISMOceanKill.hh"
+#include "base/calving/CalvingAtThickness.hh"
+#include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
+#include "base/calving/FloatKill.hh"
+#include "base/calving/IcebergRemover.hh"
+#include "base/calving/OceanKill.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
@@ -34,6 +35,8 @@
 #include "base/util/pism_const.hh"
 #include "coupler/PISMOcean.hh"
 #include "base/util/pism_utilities.hh"
+#include "earth/PISMBedDef.hh"
+
 
 namespace pism {
 
@@ -47,26 +50,42 @@ void IceModel::do_calving() {
     old_H.copy_from(m_ice_thickness);
     if (vHref.was_created()) {
       old_Href.copy_from(vHref);
+    } else {
+      old_Href.set(0.0);
     }
   }
 
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
-  if (eigen_calving != NULL) {
-    eigen_calving->update(m_dt, m_cell_type, vHref, m_ice_thickness);
+  if (m_eigen_calving != NULL) {
+    m_eigen_calving->update(m_dt,
+                            m_ocean->sea_level_elevation(),
+                            m_beddef->bed_elevation(),
+                            m_cell_type,
+                            vHref,
+                            m_ice_thickness);
   }
 
-  if (ocean_kill_calving != NULL) {
-    ocean_kill_calving->update(m_cell_type, m_ice_thickness);
+  if (m_vonmises_calving != NULL) {
+    m_vonmises_calving->update(m_dt,
+                               m_ocean->sea_level_elevation(),
+                               m_beddef->bed_elevation(),
+                               m_cell_type,
+                               vHref,
+                               m_ice_thickness);
   }
 
-  if (float_kill_calving != NULL) {
-    float_kill_calving->update(m_cell_type, m_ice_thickness);
+  if (m_ocean_kill_calving != NULL) {
+    m_ocean_kill_calving->update(m_cell_type, m_ice_thickness);
   }
 
-  if (thickness_threshold_calving != NULL) {
-    thickness_threshold_calving->update(m_cell_type, m_ice_thickness);
+  if (m_float_kill_calving != NULL) {
+    m_float_kill_calving->update(m_cell_type, m_ice_thickness);
+  }
+
+  if (m_thickness_threshold_calving != NULL) {
+    m_thickness_threshold_calving->update(m_cell_type, m_ice_thickness);
   }
 
   // This call removes icebergs, too.
