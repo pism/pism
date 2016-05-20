@@ -1201,7 +1201,6 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() {
       const unsigned int k = m_grid->kBelowHeight(H);
 
       const double
-        velocity_magnitude = velocity(i, j).magnitude(),
         *enthalpy_column   = enthalpy->get_column(i, j),
         hardness           = averaged_hardness(*flow_law, H, k, z, enthalpy_column),
         eigen1             = strain_rates(i, j, 0),
@@ -1212,7 +1211,7 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() {
                                                                PetscSqr(max(0.0, eigen2))));
       // [\ref Morlighem2016] equation 7
       vonmises_stress(i, j) = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
-                                                1.0 / ssa_n);
+                                                         1.0 / ssa_n);
 
     } else { // end of "if (mask.icy(i, j))"
       vonmises_stress(i, j) = 0.0;
