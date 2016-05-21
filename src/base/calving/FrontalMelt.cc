@@ -62,7 +62,8 @@ void FrontalMelt::define_variables_impl(const std::set<std::string> &vars, const
 
 void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
                                        IceModelVec2S &result) {
-
+  (void) mask;
+  (void) result;
 }
 
 } // end of namespace pism

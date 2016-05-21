@@ -171,9 +171,9 @@ void CalvingFrontRetreat::update(double dt,
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    const double calving_rate = m_horizontal_calving_rate(i, j);
+    const double rate = m_horizontal_calving_rate(i, j);
 
-    if (mask.ice_free(i, j) and calving_rate > 0.0) {
+    if (mask.ice_free(i, j) and rate > 0.0) {
       // apply calving rate at the margin (i.e. to partially-filled cells) only
 
       const double Href_old = Href(i, j);
@@ -187,7 +187,7 @@ void CalvingFrontRetreat::update(double dt,
                                                          false);
 
       // Calculate mass loss with respect to the associated ice thickness and the grid size:
-      const double Href_change = -dt * calving_rate * H_threshold / dx; // in m
+      const double Href_change = -dt * rate * H_threshold / dx; // in m
 
       if (Href_old + Href_change >= 0.0) {
         // Href is high enough to absorb the mass loss
@@ -226,7 +226,7 @@ void CalvingFrontRetreat::update(double dt,
         }
       }
 
-    } // end of "if (calving_rate > 0.0)"
+    } // end of "if (rate > 0.0)"
   }   // end of loop over grid points
 
   // Step 2: update ice thickness and Href in neighboring cells if we need to propagate mass losses
