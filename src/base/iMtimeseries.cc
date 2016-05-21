@@ -414,7 +414,7 @@ void IceModel::write_extras() {
 
   if (m_split_extra) {
     m_extra_file_is_ready = false;        // each time-series record is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
+    snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
              m_extra_filename.c_str(), m_time->date().c_str());
   } else {
     strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
