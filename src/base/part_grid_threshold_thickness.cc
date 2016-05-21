@@ -19,16 +19,7 @@
 #include <cmath>
 
 #include "base/part_grid_threshold_thickness.hh"
-#include "base/util/mask.hh"
-
-// #include "base/stressbalance/PISMStressBalance.hh"
-// #include "base/util/IceGrid.hh"
-// #include "base/util/Mask.hh"
-// #include "base/util/PISMConfigInterface.hh"
-// #include "base/util/pism_const.hh"
-// #include "coupler/PISMOcean.hh"
-// #include "earth/PISMBedDef.hh"
-// #include "base/util/pism_utilities.hh"
+#include "base/util/Mask.hh"
 
 namespace pism {
 
