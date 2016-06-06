@@ -78,7 +78,7 @@ create_config()
 # shear-thinning fluid, which is Xanthan gum 1% solution
 Lx = 260.0e-3    # m;  = 260 mm;  maximum observed radius is 25.2 cm so we go out just a bit
 Ly = Lx          # square table
-flux = 3.0e-3    # kg s-1;  = 3 g s-1; Sayag personal communication
+flux = 3.8173e-3 # kg s-1;  = 3.8173 g s-1; Sayag personal communication
 pipeR = 8.0e-3   # m;  = 8 mm;  input pipe has this radius; Sayag personal communication
 temp = 20.0      # C;  fluid is at 20 deg (though it should not matter)
 
