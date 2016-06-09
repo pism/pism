@@ -36,10 +36,10 @@ Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
 
   offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
 
-  offset->metadata().set_string("units", "m s-1");
+  offset->metadata().set_string("units", "kg m-2 s-1");
   offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
   offset->metadata().set_string("long_name",
-                                    "ice-shelf-base mass flux offsets, ice equivalent thickness per time");
+                                    "ice-shelf-base mass flux offsets");
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
@@ -67,8 +67,6 @@ void Delta_SMB::init_impl() {
 
   init_internal();
 
-  // convert from [m s-1] to [kg m-2 s-1]:
-  offset->scale(m_config->get_double("ice_density"));
 }
 
 MaxTimestep Delta_SMB::max_timestep_impl(double t) {
