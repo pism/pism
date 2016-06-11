@@ -36,10 +36,10 @@ Frac_SMB::Frac_SMB(IceGrid::ConstPtr g, OceanModel* in)
 
   offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
 
-  offset->metadata().set_string("units", "kg m-2 s-1");
+  offset->metadata().set_string("units", "1");
   offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
   offset->metadata().set_string("long_name",
-                                    "ice-shelf-base mass flux offsets");
+                                    "ice-shelf-base mass flux fractional offsets");
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
