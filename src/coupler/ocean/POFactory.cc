@@ -46,7 +46,7 @@ Factory::Factory(IceGrid::ConstPtr g)
 
   add_modifier<Cache>("cache");
   add_modifier<Delta_SMB>("delta_SMB");
-  add_modifier<Delta_SMB>("frac_SMB");
+  add_modifier<Frac_SMB>("frac_SMB");
   add_modifier<Delta_T>("delta_T");
   add_modifier<Delta_MBP>("delta_MBP");
   add_modifier<Delta_SL>("delta_SL");
