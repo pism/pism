@@ -404,7 +404,8 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
       } else if (addtransportable == true) {
         water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
       }
-      double s    = water / tillwat_max,
+      double
+        s    = water / tillwat_max,
         Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
       Ntil = std::min(m_Po(i,j), Ntil);
 

@@ -167,7 +167,7 @@ void NullTransport::diffuse_till_water(double dt) {
     // enforce bounds
     m_Wtil(i, j) = std::min(std::max(0.0, m_Wtil(i, j)), m_tillwat_max);
 
-    // set to zero in
+    // set to zero in ocean and ice-free areas
     if (mask.ocean(i, j) or mask.ice_free(i, j)) {
       m_Wtil(i, j) = 0.0;
     }

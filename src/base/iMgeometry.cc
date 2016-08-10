@@ -576,8 +576,8 @@ void IceModel::massContExplicitStep() {
 
           if (vHref(i, j) < 0) {
             m_log->message(2,
-                       "PISM WARNING: negative Href at (%d,%d)\n",
-                       i, j);
+                           "PISM WARNING: negative Href at (%d, %d)\n",
+                           i, j);
 
             // Note: this adds mass!
             nonneg_rule_flux += vHref(i, j);

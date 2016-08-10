@@ -355,7 +355,7 @@ void IceModel::initFromFile(const std::string &filename) {
   PIO nc(m_grid->com, "guess_mode");
 
   m_log->message(2, "initializing from NetCDF file '%s'...\n",
-             filename.c_str());
+                 filename.c_str());
 
   nc.open(filename, PISM_READONLY);
 
@@ -393,7 +393,7 @@ void IceModel::initFromFile(const std::string &filename) {
 
   if (m_config->get_boolean("do_energy") && m_config->get_boolean("do_cold_ice_methods")) {
     m_log->message(3,
-               "  setting enthalpy from temperature...\n");
+                   "  setting enthalpy from temperature...\n");
     compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
   }
 
@@ -405,8 +405,8 @@ void IceModel::initFromFile(const std::string &filename) {
       vHref.read(filename, last_record);
     } else {
       m_log->message(2,
-                 "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
-                 filename.c_str());
+                     "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
+                     filename.c_str());
       vHref.set(0.0);
     }
   }
@@ -419,9 +419,9 @@ void IceModel::initFromFile(const std::string &filename) {
       m_ice_age.read(filename, last_record);
     } else {
       m_log->message(2,
-                 "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
-                 "  Setting it to zero...\n",
-                 filename.c_str());
+                     "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
+                     "  Setting it to zero...\n",
+                     filename.c_str());
       m_ice_age.set(0.0);
     }
   }
@@ -434,7 +434,7 @@ void IceModel::initFromFile(const std::string &filename) {
 
   std::string history = nc.get_att_text("PISM_GLOBAL", "history");
   m_output_global_attributes.set_string("history",
-                               history + m_output_global_attributes.get_string("history"));
+                                        history + m_output_global_attributes.get_string("history"));
 
   nc.close();
 }
@@ -562,7 +562,7 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
  * @return 0 on success
  */
 void IceModel::init_enthalpy(const std::string &filename,
-                                       bool do_regrid, int last_record) {
+                             bool do_regrid, int last_record) {
   bool temp_exists  = false,
     liqfrac_exists  = false,
     enthalpy_exists = false;
