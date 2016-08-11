@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@ public:
 protected:
   virtual void set_vars_from_options();
   virtual void bootstrap_2d(const std::string &filename);
-  virtual void initFromFile(const std::string &filename);
+  virtual void initFromFile(const PIO &input_file);
   virtual void model_state_setup();
   virtual void createVecs();
   virtual void allocate_stressbalance();

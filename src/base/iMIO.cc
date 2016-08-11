@@ -351,16 +351,14 @@ void IceModel::write_model_state(const PIO &nc) {
   grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
   box from the same input file.
 */
-void IceModel::initFromFile(const std::string &filename) {
-  PIO nc(m_grid->com, "guess_mode");
+void IceModel::initFromFile(const PIO &input_file) {
+  std::string filename = input_file.inq_filename();
 
   m_log->message(2, "initializing from NetCDF file '%s'...\n",
                  filename.c_str());
 
-  nc.open(filename, PISM_READONLY);
-
   // Find the index of the last record in the file:
-  unsigned int last_record = nc.inq_nrecords() - 1;
+  unsigned int last_record = input_file.inq_nrecords() - 1;
 
   // Read the model state, mapping and climate_steady variables:
   std::set<std::string> vars = m_grid->variables().keys();
@@ -387,7 +385,7 @@ void IceModel::initFromFile(const std::string &filename) {
         continue;
       }
 
-      var->read(filename, last_record);
+      var->read(input_file, last_record);
     }
   }
 
@@ -399,10 +397,10 @@ void IceModel::initFromFile(const std::string &filename) {
 
   // check if the input file has Href; set to 0 if it is not present
   if (m_config->get_boolean("part_grid")) {
-    bool href_exists = nc.inq_var("Href");
+    bool href_exists = input_file.inq_var("Href");
 
     if (href_exists == true) {
-      vHref.read(filename, last_record);
+      vHref.read(input_file, last_record);
     } else {
       m_log->message(2,
                      "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
@@ -413,10 +411,10 @@ void IceModel::initFromFile(const std::string &filename) {
 
   // read the age field if present, otherwise set to zero
   if (m_config->get_boolean("do_age")) {
-    bool age_exists = nc.inq_var("age");
+    bool age_exists = input_file.inq_var("age");
 
     if (age_exists) {
-      m_ice_age.read(filename, last_record);
+      m_ice_age.read(input_file, last_record);
     } else {
       m_log->message(2,
                      "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
@@ -430,13 +428,11 @@ void IceModel::initFromFile(const std::string &filename) {
   // Initialize the enthalpy field by reading from a file or by using
   // temperature and liquid water fraction, or by using temperature
   // and assuming that the ice is cold.
-  init_enthalpy(filename, false, last_record);
+  init_enthalpy(input_file, false, last_record);
 
-  std::string history = nc.get_att_text("PISM_GLOBAL", "history");
+  std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
   m_output_global_attributes.set_string("history",
                                         history + m_output_global_attributes.get_string("history"));
-
-  nc.close();
 }
 
 //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
@@ -461,7 +457,7 @@ void IceModel::regrid(int dimensions) {
     throw RuntimeError("dimensions can only be 0, 2 or 3");
   }
 
-  options::String regrid_file("-regrid_file", "Specifies the file to regrid from");
+  options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
 
   options::StringSet regrid_vars("-regrid_vars",
                                  "Specifies the list of variables to regrid",
@@ -469,15 +465,15 @@ void IceModel::regrid(int dimensions) {
 
 
   // Return if no regridding is requested:
-  if (not regrid_file.is_set()) {
+  if (not regrid_filename.is_set()) {
      return;
   }
 
   if (dimensions != 0) {
     m_log->message(2, "regridding %dD variables from file %s ...\n",
-               dimensions, regrid_file->c_str());
+               dimensions, regrid_filename->c_str());
   } else {
-    m_log->message(2, "regridding from file %s ...\n",regrid_file->c_str());
+    m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
   }
 
   if (regrid_vars->empty()) {
@@ -495,15 +491,20 @@ void IceModel::regrid(int dimensions) {
     }
   }
 
-  if (dimensions == 0) {
-    regrid_variables(regrid_file, regrid_vars, 2);
-    regrid_variables(regrid_file, regrid_vars, 3);
-  } else {
-    regrid_variables(regrid_file, regrid_vars, dimensions);
+  {
+    PIO regrid_file(m_grid->com, "guess_mode");
+    regrid_file.open(regrid_filename, PISM_READONLY);
+
+    if (dimensions == 0) {
+      regrid_variables(regrid_file, regrid_vars, 2);
+      regrid_variables(regrid_file, regrid_vars, 3);
+    } else {
+      regrid_variables(regrid_file, regrid_vars, dimensions);
+    }
   }
 }
 
-void IceModel::regrid_variables(const std::string &filename, const std::set<std::string> &vars, unsigned int ndims) {
+void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::string> &vars, unsigned int ndims) {
 
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
@@ -528,11 +529,11 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
     }
 
     if (*i == "enthalpy") {
-      init_enthalpy(filename, true, 0);
+      init_enthalpy(regrid_file, true, 0);
       continue;
     }
 
-    v->regrid(filename, CRITICAL);
+    v->regrid(regrid_file, CRITICAL);
 
     // Check if the current variable is the same as
     // IceModel::ice_thickess, then check the range of the ice
@@ -561,28 +562,24 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
  *
  * @return 0 on success
  */
-void IceModel::init_enthalpy(const std::string &filename,
+void IceModel::init_enthalpy(const PIO &input_file,
                              bool do_regrid, int last_record) {
-  bool temp_exists  = false,
-    liqfrac_exists  = false,
-    enthalpy_exists = false;
 
-  PIO nc(m_grid->com, "guess_mode");
-  nc.open(filename, PISM_READONLY);
-  enthalpy_exists = nc.inq_var("enthalpy");
-  temp_exists     = nc.inq_var("temp");
-  liqfrac_exists  = nc.inq_var("liqfrac");
-  nc.close();
+  const bool
+    enthalpy_exists = input_file.inq_var("enthalpy"),
+    temp_exists     = input_file.inq_var("temp"),
+    liqfrac_exists  = input_file.inq_var("liqfrac");
 
-  if (enthalpy_exists == true) {
+  if (enthalpy_exists) {
     if (do_regrid) {
-      m_ice_enthalpy.regrid(filename, CRITICAL);
+      m_ice_enthalpy.regrid(input_file, CRITICAL);
     } else {
-      m_ice_enthalpy.read(filename, last_record);
+      m_ice_enthalpy.read(input_file, last_record);
     }
-  } else if (temp_exists == true) {
-    IceModelVec3 &temp = vWork3d,
-      &liqfrac         = m_ice_enthalpy;
+  } else if (temp_exists) {
+    IceModelVec3
+      &temp    = vWork3d,
+      &liqfrac = m_ice_enthalpy;
 
     SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
     temp.set_name("temp");
@@ -591,9 +588,9 @@ void IceModel::init_enthalpy(const std::string &filename,
                    "land_ice_temperature");
 
     if (do_regrid) {
-      temp.regrid(filename, CRITICAL);
+      temp.regrid(input_file, CRITICAL);
     } else {
-      temp.read(filename, last_record);
+      temp.read(input_file, last_record);
     }
 
     if (liqfrac_exists == true) {
@@ -603,9 +600,9 @@ void IceModel::init_enthalpy(const std::string &filename,
                         "1", "");
 
       if (do_regrid) {
-        liqfrac.regrid(filename, CRITICAL);
+        liqfrac.regrid(input_file, CRITICAL);
       } else {
-        liqfrac.read(filename, last_record);
+        liqfrac.read(input_file, last_record);
       }
 
       m_log->message(2,
@@ -621,7 +618,7 @@ void IceModel::init_enthalpy(const std::string &filename,
     m_ice_enthalpy.metadata() = enthalpy_metadata;
   } else {
     throw RuntimeError::formatted("neither enthalpy nor temperature was found in '%s'.\n",
-                                  filename.c_str());
+                                  input_file.inq_filename().c_str());
   }
 }
 

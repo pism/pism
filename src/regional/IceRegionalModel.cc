@@ -226,8 +226,9 @@ void IceRegionalModel::bootstrap_2d(const std::string &filename) {
 }
 
 
-void IceRegionalModel::initFromFile(const std::string &filename) {
-  PIO nc(m_grid->com, "guess_mode");
+void IceRegionalModel::initFromFile(const PIO &input_file) {
+
+  std::string filename = input_file.inq_filename();
 
   bool no_model_strip_set = options::Bool("-no_model_strip", "No-model strip, in km");
 
@@ -242,14 +243,11 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
   // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
   // The user is probably using -regrid_file to bring in SSA B.C. data.
   if (m_config->get_boolean("ssa_dirichlet_bc")) {
-    bool u_ssa_exists, v_ssa_exists;
+    const bool
+      u_ssa_exists = input_file.inq_var("u_ssa_bc"),
+      v_ssa_exists = input_file.inq_var("v_ssa_bc");
 
-    nc.open(filename, PISM_READONLY);
-    u_ssa_exists = nc.inq_var("u_ssa_bc");
-    v_ssa_exists = nc.inq_var("v_ssa_bc");
-    nc.close();
-
-    if (! (u_ssa_exists && v_ssa_exists)) {
+    if (not (u_ssa_exists and v_ssa_exists)) {
       m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "internal");
       m_log->message(2, 
                  "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
@@ -267,7 +265,7 @@ void IceRegionalModel::initFromFile(const std::string &filename) {
     m_usurf_stored.metadata().set_string("pism_intent", "internal");
   }
 
-  IceModel::initFromFile(filename);
+  IceModel::initFromFile(input_file);
 
   if (m_config->get_boolean("ssa_dirichlet_bc")) {
       m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "model_state");

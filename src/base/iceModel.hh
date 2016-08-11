@@ -197,7 +197,7 @@ public:
   virtual void compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
-  virtual void initFromFile(const std::string &name);
+  virtual void initFromFile(const PIO &input_file);
   virtual void writeFiles(const std::string &default_filename);
   virtual void write_model_state(const PIO &nc);
   virtual void write_metadata(const PIO &nc,
@@ -386,10 +386,10 @@ protected:
   // see iMIO.cc
   virtual void dumpToFile(const std::string &filename);
   virtual void regrid(int dimensions);
-  virtual void regrid_variables(const std::string &filename,
+  virtual void regrid_variables(const PIO &regrid_file,
                                 const std::set<std::string> &regrid_vars,
                                 unsigned int ndims);
-  virtual void init_enthalpy(const std::string &filename, bool regrid, int last_record);
+  virtual void init_enthalpy(const PIO &input_file, bool regrid, int last_record);
 
   // see iMfractures.cc
   virtual void calculateFractureDensity();

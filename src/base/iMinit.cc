@@ -103,10 +103,15 @@ void IceModel::model_state_setup() {
   init_couplers();
 
   // Check if we are initializing from a PISM output file:
-  options::String input_file("-i", "Specifies the PISM input file");
+  options::String input_filename("-i", "Specifies the PISM input file");
   bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  if (input_file.is_set() and not bootstrap) {
+  PIO input_file(m_grid->com, "netcdf3");
+  if (input_filename.is_set()) {
+    input_file.open(input_filename, PISM_READONLY);
+  }
+
+  if (input_filename.is_set() and not bootstrap) {
     initFromFile(input_file);
 
     regrid(0);
@@ -139,7 +144,7 @@ void IceModel::model_state_setup() {
       // update surface and ocean models so that we can get the
       // temperature at the top of the bedrock
       m_log->message(2,
-                 "getting surface B.C. from couplers...\n");
+                     "getting surface B.C. from couplers...\n");
       init_step_couplers();
 
       get_bed_top_temp(m_bedtoptemp);
@@ -159,10 +164,10 @@ void IceModel::model_state_setup() {
   }
 
   {
-    if (input_file.is_set()) {
+    if (input_filename.is_set()) {
       m_log->message(2,
-                 "* Trying to read cumulative climatic mass balance from '%s'...\n",
-                 input_file->c_str());
+                     "* Trying to read cumulative climatic mass balance from '%s'...\n",
+                     input_filename->c_str());
       m_climatic_mass_balance_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
       m_climatic_mass_balance_cumulative.set(0.0);
@@ -170,10 +175,10 @@ void IceModel::model_state_setup() {
   }
 
   {
-    if (input_file.is_set()) {
+    if (input_filename.is_set()) {
       m_log->message(2,
-                 "* Trying to read cumulative grounded basal flux from '%s'...\n",
-                 input_file->c_str());
+                     "* Trying to read cumulative grounded basal flux from '%s'...\n",
+                     input_filename->c_str());
       m_grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
       m_grounded_basal_flux_2D_cumulative.set(0.0);
@@ -181,10 +186,10 @@ void IceModel::model_state_setup() {
   }
 
   {
-    if (input_file.is_set()) {
+    if (input_filename.is_set()) {
       m_log->message(2,
-                 "* Trying to read cumulative floating basal flux from '%s'...\n",
-                 input_file->c_str());
+                     "* Trying to read cumulative floating basal flux from '%s'...\n",
+                     input_filename->c_str());
       m_floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
       m_floating_basal_flux_2D_cumulative.set(0.0);
@@ -192,25 +197,20 @@ void IceModel::model_state_setup() {
   }
 
   {
-    if (input_file.is_set()) {
+    if (input_filename.is_set()) {
       m_log->message(2,
-                 "* Trying to read cumulative nonneg flux from '%s'...\n",
-                 input_file->c_str());
+                     "* Trying to read cumulative nonneg flux from '%s'...\n",
+                     input_filename->c_str());
       m_nonneg_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
     } else {
       m_nonneg_flux_2D_cumulative.set(0.0);
     }
   }
 
-  if (input_file.is_set()) {
-    PIO nc(m_grid->com, "netcdf3");
-
-    nc.open(input_file, PISM_READONLY);
-    bool run_stats_exists = nc.inq_var("run_stats");
-    if (run_stats_exists) {
-      io::read_attributes(nc, run_stats.get_name(), run_stats);
+  if (input_filename.is_set()) {
+    if (input_file.inq_var("run_stats")) {
+      io::read_attributes(input_file, run_stats.get_name(), run_stats);
     }
-    nc.close();
 
     if (run_stats.has_attribute("grounded_basal_ice_flux_cumulative")) {
       grounded_basal_ice_flux_cumulative = run_stats.get_double("grounded_basal_ice_flux_cumulative");
@@ -251,16 +251,13 @@ void IceModel::model_state_setup() {
 
   // get projection information and compute cell areas
   {
-    if (input_file.is_set()) {
-      PIO nc(m_grid->com, "guess_mode");
-      nc.open(input_file, PISM_READONLY); // closed at the end of scope
-
-      get_projection_info(nc);
+    if (input_filename.is_set()) {
+      get_projection_info(input_file);
 
       std::string proj4_string = m_output_global_attributes.get_string("proj4");
       if (not proj4_string.empty()) {
         m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
-                       proj4_string.c_str(), nc.inq_filename().c_str());
+                       proj4_string.c_str(), input_filename->c_str());
       }
     }
 
