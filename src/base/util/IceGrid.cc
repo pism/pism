@@ -245,9 +245,10 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
                                const std::vector<std::string> &var_names,
                                Periodicity periodicity) {
 
+  PIO file(ctx->com(), "netcdf3");
+  file.open(filename, PISM_READONLY); // will be closed automatically
+
   for (unsigned int k = 0; k < var_names.size(); ++k) {
-    PIO file(ctx->com(), "netcdf3");
-    file.open(filename, PISM_READONLY); // will be closed automatically
     if (file.inq_var(var_names[k])) {
       return FromFile(ctx, filename, var_names[k], periodicity);
     }
