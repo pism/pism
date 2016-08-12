@@ -250,7 +250,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
 
   for (unsigned int k = 0; k < var_names.size(); ++k) {
     if (file.inq_var(var_names[k])) {
-      return FromFile(ctx, filename, var_names[k], periodicity);
+      return FromFile(ctx, file, var_names[k], periodicity);
     }
   }
 
@@ -262,7 +262,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
 
 //! Create a grid from a file, get information from variable `var_name`.
 IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
-                               const std::string &filename,
+                               const PIO &file,
                                const std::string &var_name,
                                Periodicity periodicity) {
   try {
@@ -270,15 +270,15 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    GridParameters p(ctx, filename, var_name, periodicity);
+    GridParameters p(ctx, file, var_name, periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
       double Lz = ctx->config()->get_double("grid_Lz");
       log.message(3,
-                 "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
-                 "         Using 2 levels and Lz of %3.3fm\n",
-                 var_name.c_str(), filename.c_str(), Lz);
+                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
+                  "         Using 2 levels and Lz of %3.3fm\n",
+                  var_name.c_str(), file.inq_filename().c_str(), Lz);
 
       p.z.clear();
       p.z.push_back(0);
@@ -292,7 +292,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
     return IceGrid::Ptr(new IceGrid(ctx, p));
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
-                  var_name.c_str(), filename.c_str());
+                  var_name.c_str(), file.inq_filename().c_str());
     throw;
   }
 }

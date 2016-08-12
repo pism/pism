@@ -178,7 +178,9 @@ def grid_from_file_test():
 
     enthalpy.write(output_file)
 
-    grid2 = PISM.IceGrid.FromFile(grid.ctx(), output_file, "enthalpy", PISM.NOT_PERIODIC)
+    pio.open(output_file, PISM.PISM_READONLY)
+    grid2 = PISM.IceGrid.FromFile(grid.ctx(), pio, "enthalpy", PISM.NOT_PERIODIC)
+    pio.close()
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
