@@ -136,6 +136,7 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
         pism_python_test (Python:Verification:SSAFEM_plug_flow ssa/ssafem_test_plug.sh)
 
+        pism_python_test (Python:sia_forward.py test_33.sh)
 
 # Inversion regression tests.  We run the appropriate ones if we can find
 # the siple python library or if PISM was built with TAO support.
