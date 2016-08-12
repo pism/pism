@@ -32,7 +32,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
 {
-  option_prefix  = "-atmosphere_anomaly";
+  m_option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor
   air_temp_anomaly      = new IceModelVec2T;
@@ -84,10 +84,10 @@ void Anomaly::init() {
 
   m_log->message(2,
              "    reading anomalies from %s ...\n",
-             filename.c_str());
+             m_filename.c_str());
 
-  air_temp_anomaly->init(filename, bc_period, bc_reference_time);
-  precipitation_anomaly->init(filename, bc_period, bc_reference_time);
+  air_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+  precipitation_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
 }
 
 void Anomaly::update_impl(double my_t, double my_dt) {

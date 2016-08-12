@@ -101,37 +101,37 @@ protected:
 
   void process_options()
   {
-    options::String file(option_prefix + "_file",
+    options::String file(m_option_prefix + "_file",
                          "Specifies a file with boundary conditions");
     if (file.is_set()) {
-      filename = file;
+      m_filename = file;
       Model::m_log->message(2,
                  "  - Reading boundary conditions from '%s'...\n",
-                 filename.c_str());
+                 m_filename.c_str());
     } else {
       // find PISM input file to read data from:
       bool do_regrid; int start;   // will be ignored
-      Model::find_pism_input(filename, do_regrid, start);
+      Model::find_pism_input(m_filename, do_regrid, start);
 
       Model::m_log->message(2,
                  "  - Option %s_file is not set. Trying the input file '%s'...\n",
-                 option_prefix.c_str(), filename.c_str());
+                 m_option_prefix.c_str(), m_filename.c_str());
     }
 
-    options::Integer period(option_prefix + "_period",
+    options::Integer period(m_option_prefix + "_period",
                             "Specifies the length of the climate data period (in years)", 0);
     if (period.value() < 0.0) {
       throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
-                                    option_prefix.c_str(), period.value());
+                                    m_option_prefix.c_str(), period.value());
     }
-    bc_period = (unsigned int)period;
+    m_bc_period = (unsigned int)period;
 
-    options::Integer ref_year(option_prefix + "_reference_year",
+    options::Integer ref_year(m_option_prefix + "_reference_year",
                               "Boundary condition reference year", 0);
     if (ref_year.is_set()) {
-      bc_reference_time = units::convert(Model::m_sys, ref_year, "years", "seconds");
+      m_bc_reference_time = units::convert(Model::m_sys, ref_year, "years", "seconds");
     } else {
-      bc_reference_time = 0;
+      m_bc_reference_time = 0;
     }
   }
 
@@ -140,7 +140,7 @@ protected:
     unsigned int buffer_size = (unsigned int) Model::m_config->get_double("climate_forcing_buffer_size");
 
     PIO nc(Model::m_grid->com, "netcdf3");
-    nc.open(filename, PISM_READONLY);
+    nc.open(m_filename, PISM_READONLY);
 
     std::map<std::string, IceModelVec2T*>::const_iterator k = m_fields.begin();
     while(k != m_fields.end()) {
@@ -158,7 +158,7 @@ protected:
       // If -..._period is not set, make ..._n_records the minimum of the
       // buffer size and the number of available records. Otherwise try
       // to keep all available records in memory.
-      if (bc_period == 0) {
+      if (m_bc_period == 0) {
         n_records = std::min(n_records, buffer_size);
       }
 
@@ -183,7 +183,7 @@ protected:
   virtual void update_internal(double my_t, double my_dt)
   {
     // "Periodize" the climate:
-    my_t = Model::m_grid->ctx()->time()->mod(my_t - bc_reference_time, bc_period);
+    my_t = Model::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time, m_bc_period);
 
     if ((fabs(my_t - Model::m_t) < 1e-12) &&
         (fabs(my_dt - Model::m_dt) < 1e-12)) {
@@ -206,10 +206,10 @@ protected:
   }
 protected:
   std::map<std::string, IceModelVec2T*> m_fields;
-  std::string filename, option_prefix;
+  std::string m_filename, m_option_prefix;
 
-  unsigned int bc_period;       // in (integer) years
-  double bc_reference_time;  // in seconds
+  unsigned int m_bc_period;       // in (integer) years
+  double m_bc_reference_time;  // in seconds
 };
 
 } // end of namespace pism

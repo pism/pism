@@ -30,7 +30,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, SurfaceModel* in)
     climatic_mass_balance(m_sys, "climatic_mass_balance"),
     ice_surface_temp(m_sys, "ice_surface_temp") {
 
-  option_prefix  = "-surface_anomaly";
+  m_option_prefix  = "-surface_anomaly";
 
   // will be de-allocated by the parent's destructor
   climatic_mass_balance_anomaly = new IceModelVec2T;
@@ -87,10 +87,10 @@ void Anomaly::init_impl() {
              "* Initializing the '-surface ...,anomaly' modifier...\n");
 
   m_log->message(2,
-             "    reading anomalies from %s ...\n", filename.c_str());
+             "    reading anomalies from %s ...\n", m_filename.c_str());
 
-  ice_surface_temp_anomaly->init(filename, bc_period, bc_reference_time);
-  climatic_mass_balance_anomaly->init(filename, bc_period, bc_reference_time);
+  ice_surface_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+  climatic_mass_balance_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
 }
 
 void Anomaly::update_impl(double my_t, double my_dt) {

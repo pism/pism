@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@ namespace ocean {
 Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
 
-  option_prefix   = "-ocean_given";
+  m_option_prefix   = "-ocean_given";
 
   // will be de-allocated by the parent's destructor
   shelfbtemp     = new IceModelVec2T;
@@ -65,8 +65,8 @@ void Given::init_impl() {
              "* Initializing the ocean model reading base of the shelf temperature\n"
              "  and sub-shelf mass flux from a file...\n");
 
-  shelfbtemp->init(filename, bc_period, bc_reference_time);
-  shelfbmassflux->init(filename, bc_period, bc_reference_time);
+  shelfbtemp->init(m_filename, m_bc_period, m_bc_reference_time);
+  shelfbmassflux->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
   if (shelfbtemp->get_n_records() == 1 && shelfbmassflux->get_n_records() == 1) {

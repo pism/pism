@@ -27,7 +27,7 @@ namespace surface {
 Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<SurfaceModifier,SurfaceModel>(g, NULL)
 {
-  option_prefix = "-surface_given";
+  m_option_prefix = "-surface_given";
 
   ice_surface_temp      = new IceModelVec2T;
   climatic_mass_balance = new IceModelVec2T;
@@ -81,8 +81,8 @@ void Given::init_impl() {
              "* Initializing the surface model reading temperature at the top of the ice\n"
              "  and ice surface mass flux from a file...\n");
 
-  ice_surface_temp->init(filename, bc_period, bc_reference_time);
-  climatic_mass_balance->init(filename, bc_period, bc_reference_time);
+  ice_surface_temp->init(m_filename, m_bc_period, m_bc_reference_time);
+  climatic_mass_balance->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
   if (ice_surface_temp->get_n_records() == 1 && climatic_mass_balance->get_n_records() == 1) {

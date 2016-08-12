@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace atmosphere {
 Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, NULL)
 {
-  option_prefix = "-atmosphere_given";
+  m_option_prefix = "-atmosphere_given";
   air_temp      = NULL;
   precipitation = NULL;
 
@@ -69,8 +69,8 @@ void Given::init() {
              "* Initializing the atmosphere model reading near-surface air temperature\n"
              "  and ice-equivalent precipitation from a file...\n");
 
-  air_temp->init(filename, bc_period, bc_reference_time);
-  precipitation->init(filename, bc_period, bc_reference_time);
+  air_temp->init(m_filename, m_bc_period, m_bc_reference_time);
+  precipitation->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
   if (air_temp->get_n_records() == 1 && precipitation->get_n_records() == 1) {
