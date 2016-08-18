@@ -727,8 +727,6 @@ void IceModel::step(bool do_mass_continuity,
   do_calving();
   profiling.end("calving");
 
-  Href_cleanup();
-
   //! \li compute the bed deformation, which only depends on current thickness
   //! and bed elevation
   if (m_beddef) {
