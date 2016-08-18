@@ -110,8 +110,6 @@ void IceModel::model_state_setup() {
     initFromFile(input_file);
 
     regrid(0);
-    // Check consistency of geometry after initialization:
-    updateSurfaceElevationAndMask();
   } else {
     set_vars_from_options();
   }
@@ -286,6 +284,9 @@ void IceModel::model_state_setup() {
                    "* PISM-PIK mass/geometry methods are in use: %s\n",
                    join(pik_methods, ", ").c_str());
   }
+
+  // Check consistency of geometry after initialization:
+  updateSurfaceElevationAndMask();
 
   stampHistoryCommand();
 }
