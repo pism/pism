@@ -93,6 +93,10 @@ void IceModel::do_calving() {
 
   Href_cleanup();
 
+  // note that Href_cleanup() changes ice thickness, so we have to
+  // update the mask and surface elevation.
+  updateSurfaceElevationAndMask();
+
   update_cumulative_discharge(m_ice_thickness, old_H, vHref, old_Href);
 }
 
