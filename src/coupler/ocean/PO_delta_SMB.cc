@@ -31,14 +31,14 @@ Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
     shelfbmassflux(m_sys, "shelfbmassflux"),
     shelfbtemp(m_sys, "shelfbtemp") {
 
-  option_prefix = "-ocean_delta_mass_flux";
-  offset_name   = "delta_mass_flux";
+  m_option_prefix = "-ocean_delta_mass_flux";
+  m_offset_name   = "delta_mass_flux";
 
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
 
-  offset->metadata().set_string("units", "kg m-2 s-1");
-  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-  offset->metadata().set_string("long_name",
+  m_offset->metadata().set_string("units", "kg m-2 s-1");
+  m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  m_offset->metadata().set_string("long_name",
                                     "ice-shelf-base mass flux offsets");
 
   shelfbmassflux.set_string("pism_intent", "climate_state");

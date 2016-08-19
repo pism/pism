@@ -33,14 +33,14 @@ Delta_SL::Delta_SL(IceGrid::ConstPtr g, OceanModel* in)
     shelfbmassflux(m_sys, "shelfbmassflux"),
     shelfbtemp(m_sys, "shelfbtemp") {
 
-  option_prefix = "-ocean_delta_SL";
-  offset_name   = "delta_SL";
+  m_option_prefix = "-ocean_delta_SL";
+  m_offset_name   = "delta_SL";
 
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
 
-  offset->metadata().set_string("units", "m");
-  offset->metadata().set_string("long_name", "sea level elevation offsets");
-  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  m_offset->metadata().set_string("units", "m");
+  m_offset->metadata().set_string("long_name", "sea level elevation offsets");
+  m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
@@ -78,8 +78,8 @@ MaxTimestep Delta_SL::max_timestep_impl(double t) {
 void Delta_SL::sea_level_elevation_impl(double &result) {
   result = input_model->sea_level_elevation();
 
-  if (offset) {
-    result += (*offset)(m_t + 0.5*m_dt);
+  if (m_offset) {
+    result += (*m_offset)(m_t + 0.5*m_dt);
   }
 }
 

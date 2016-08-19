@@ -31,14 +31,14 @@ Frac_P::Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in)
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
 {
-  offset = NULL;
+  m_offset = NULL;
 
-  option_prefix = "-atmosphere_frac_P";
-  offset_name = "frac_P";
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
-  offset->metadata().set_string("units", "1");
-  offset->metadata().set_string("long_name", "precipitation multiplier, pure fraction");
-  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  m_option_prefix = "-atmosphere_frac_P";
+  m_offset_name = "frac_P";
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
+  m_offset->metadata().set_string("units", "1");
+  m_offset->metadata().set_string("long_name", "precipitation multiplier, pure fraction");
+  m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
@@ -78,7 +78,7 @@ void Frac_P::init_timeseries(const std::vector<double> &ts) {
 
   m_offset_values.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    m_offset_values[k] = (*offset)(m_ts_times[k]);
+    m_offset_values[k] = (*m_offset)(m_ts_times[k]);
   }
 }
 

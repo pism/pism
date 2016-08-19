@@ -33,14 +33,14 @@ Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, OceanModel* in)
     shelfbtemp(m_sys, "shelfbtemp")
 {
 
-  option_prefix = "-ocean_delta_MBP";
-  offset_name   = "delta_MBP";
+  m_option_prefix = "-ocean_delta_MBP";
+  m_offset_name   = "delta_MBP";
 
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
 
-  offset->metadata().set_string("units", "1");
-  offset->metadata().set_string("long_name", "melange back pressure fraction");
-  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  m_offset->metadata().set_string("units", "1");
+  m_offset->metadata().set_string("long_name", "melange back pressure fraction");
+  m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
@@ -76,7 +76,7 @@ MaxTimestep Delta_MBP::max_timestep_impl(double t) {
 void Delta_MBP::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
   input_model->melange_back_pressure_fraction(result);
 
-  result.shift((*offset)(m_t + 0.5*m_dt));
+  result.shift((*m_offset)(m_t + 0.5*m_dt));
 }
 
 void Delta_MBP::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {

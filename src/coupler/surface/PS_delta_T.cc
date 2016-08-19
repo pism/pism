@@ -33,14 +33,14 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, SurfaceModel* in)
     climatic_mass_balance(m_sys, "climatic_mass_balance"),
     ice_surface_temp(m_sys, "ice_surface_temp") {
 
-  option_prefix = "-surface_delta_T";
-  offset_name   = "delta_T";
+  m_option_prefix = "-surface_delta_T";
+  m_offset_name   = "delta_T";
 
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
 
-  offset->metadata().set_string("units", "Kelvin");
-  offset->metadata().set_string("long_name", "ice-surface temperature offsets");
-  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  m_offset->metadata().set_string("units", "Kelvin");
+  m_offset->metadata().set_string("long_name", "ice-surface temperature offsets");
+  m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
