@@ -33,7 +33,6 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, AtmosphereModel* in)
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
 {
-  m_offset = NULL;
   m_option_prefix = "-atmosphere_delta_T";
   m_offset_name   = "delta_T";
 
@@ -70,7 +69,6 @@ MaxTimestep Delta_T::max_timestep_impl(double t) {
 }
 
 void Delta_T::init_timeseries(const std::vector<double> &ts) {
-
   PAModifier::init_timeseries(ts);
 
   m_offset_values.resize(m_ts_times.size());

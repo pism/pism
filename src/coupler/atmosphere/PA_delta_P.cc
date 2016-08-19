@@ -31,8 +31,6 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
 {
-  m_offset = NULL;
-
   m_option_prefix = "-atmosphere_delta_P";
   m_offset_name = "delta_P";
   m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));

@@ -31,7 +31,6 @@ PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in)
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
 {
-  m_offset = NULL;
   m_option_prefix = "-atmosphere_paleo_precip";
   m_offset_name = "delta_T";
   m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
@@ -74,7 +73,6 @@ MaxTimestep PaleoPrecip::max_timestep_impl(double t) {
 }
 
 void PaleoPrecip::init_timeseries(const std::vector<double> &ts) {
-
   PAModifier::init_timeseries(ts);
 
   size_t N = ts.size();

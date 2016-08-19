@@ -31,8 +31,6 @@ Frac_P::Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in)
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
 {
-  m_offset = NULL;
-
   m_option_prefix = "-atmosphere_frac_P";
   m_offset_name = "frac_P";
   m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
@@ -73,7 +71,6 @@ MaxTimestep Frac_P::max_timestep_impl(double t) {
 }
 
 void Frac_P::init_timeseries(const std::vector<double> &ts) {
-
   PAModifier::init_timeseries(ts);
 
   m_offset_values.resize(m_ts_times.size());
