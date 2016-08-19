@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -90,7 +90,7 @@ public:
 
   void scale(double scaling_factor);
 
-  std::string short_name;
+  std::string name() const;
 protected:
   void set_bounds_units();
   TimeseriesMetadata m_dimension, m_variable;
@@ -101,7 +101,7 @@ protected:
   std::vector<double> m_values;
   std::vector<double> m_time_bounds;
 private:
-  void private_constructor(MPI_Comm com, const std::string &name, const std::string &dimension_name);
+  void private_constructor(MPI_Comm com, const std::string &dimension_name);
   void report_range(const Logger &log);
 };
 
