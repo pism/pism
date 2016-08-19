@@ -36,19 +36,19 @@ class Modifier : public Model
 {
 public:
   Modifier(IceGrid::ConstPtr g, Model* in)
-    : Model(g), input_model(in) {}
+    : Model(g), m_input_model(in) {}
   virtual ~Modifier()
   {
-    if (input_model != NULL) {
-      delete input_model;
+    if (m_input_model != NULL) {
+      delete m_input_model;
     }
   }
 
 protected:
   virtual MaxTimestep max_timestep_impl(double my_t)
   {
-    if (input_model != NULL) {
-      return input_model->max_timestep(my_t);
+    if (m_input_model != NULL) {
+      return m_input_model->max_timestep(my_t);
     } else {
       return MaxTimestep();
     }
@@ -58,40 +58,40 @@ protected:
   {
     Model::m_t = my_t;
     Model::m_dt = my_dt;
-    if (input_model != NULL) {
-      input_model->update(my_t, my_dt);
+    if (m_input_model != NULL) {
+      m_input_model->update(my_t, my_dt);
     }
   }
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-    if (input_model != NULL) {
-      input_model->get_diagnostics(dict, ts_dict);
+    if (m_input_model != NULL) {
+      m_input_model->get_diagnostics(dict, ts_dict);
     }
   }
 
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
   {
-    if (input_model != NULL) {
-      input_model->write_variables(vars, nc);
+    if (m_input_model != NULL) {
+      m_input_model->write_variables(vars, nc);
     }
   }
 
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result)
   {
-    if (input_model != NULL) {
-      input_model->add_vars_to_output(keyword, result);
+    if (m_input_model != NULL) {
+      m_input_model->add_vars_to_output(keyword, result);
     }
   }
 
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype) {
-    if (input_model != NULL) {
-      input_model->define_variables(vars, nc, nctype);
+    if (m_input_model != NULL) {
+      m_input_model->define_variables(vars, nc, nctype);
     }
   }
 protected:
-  Model *input_model;
+  Model *m_input_model;
 };  
 } // end of namespace pism
 

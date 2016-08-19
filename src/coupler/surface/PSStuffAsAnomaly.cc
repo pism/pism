@@ -70,8 +70,8 @@ void StuffAsAnomaly::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  if (input_model != NULL) {
-    input_model->init();
+  if (m_input_model != NULL) {
+    m_input_model->init();
   }
 
   find_pism_input(input_file, do_regrid, start);
@@ -104,10 +104,10 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
   m_t  = my_t;
   m_dt = my_dt;
 
-  if (input_model != NULL) {
-    input_model->update(m_t, m_dt);
-    input_model->ice_surface_temperature(temp);
-    input_model->ice_surface_mass_flux(mass_flux);
+  if (m_input_model != NULL) {
+    m_input_model->update(m_t, m_dt);
+    m_input_model->ice_surface_temperature(temp);
+    m_input_model->ice_surface_mass_flux(mass_flux);
 
     // if we are at the beginning of the run...
     if (m_t < m_grid->ctx()->time()->start() + 1) { // this is goofy, but time-steps are
@@ -144,8 +144,8 @@ void StuffAsAnomaly::ice_surface_temperature_impl(IceModelVec2S &result) {
 }
 
 void StuffAsAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (input_model != NULL) {
-    input_model->add_vars_to_output(keyword, result);
+  if (m_input_model != NULL) {
+    m_input_model->add_vars_to_output(keyword, result);
   }
 
   result.insert("ice_surface_temp");
@@ -168,8 +168,8 @@ void StuffAsAnomaly::define_variables_impl(const std::set<std::string> &vars_inp
   vars.erase("ice_surface_temp");
   vars.erase("climatic_mass_balance");
 
-  if (input_model != NULL) {
-    input_model->define_variables(vars, nc, nctype);
+  if (m_input_model != NULL) {
+    m_input_model->define_variables(vars, nc, nctype);
   }
 }
 
@@ -188,8 +188,8 @@ void StuffAsAnomaly::write_variables_impl(const std::set<std::string> &vars_inpu
   vars.erase("ice_surface_temp");
   vars.erase("climatic_mass_balance");
 
-  if (input_model != NULL) {
-    input_model->write_variables(vars, nc);
+  if (m_input_model != NULL) {
+    m_input_model->write_variables(vars, nc);
   }
 }
 

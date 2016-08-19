@@ -55,7 +55,7 @@ void Delta_T::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "* Initializing near-surface air temperature forcing using scalar offsets...\n");
@@ -79,12 +79,12 @@ void Delta_T::init_timeseries(const std::vector<double> &ts) {
 
 void Delta_T::mean_annual_temp(IceModelVec2S &result) {
 
-  input_model->mean_annual_temp(result);
+  m_input_model->mean_annual_temp(result);
   offset_data(result);
 }
 
 void Delta_T::temp_time_series(int i, int j, std::vector<double> &result) {
-  input_model->temp_time_series(i, j, result);
+  m_input_model->temp_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] += m_offset_values[k];
@@ -92,12 +92,12 @@ void Delta_T::temp_time_series(int i, int j, std::vector<double> &result) {
 }
 
 void Delta_T::temp_snapshot(IceModelVec2S &result) {
-  input_model->temp_snapshot(result);
+  m_input_model->temp_snapshot(result);
   offset_data(result);
 }
 
 void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big" || keyword == "2dbig" ) {
     result.insert("air_temp");
@@ -121,7 +121,7 @@ void Delta_T::define_variables_impl(const std::set<std::string> &vars_input, con
     vars.erase("precipitation");
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 
@@ -153,7 +153,7 @@ void Delta_T::write_variables_impl(const std::set<std::string> &vars_input, cons
     vars.erase("precipitation");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace atmosphere

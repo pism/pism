@@ -62,8 +62,8 @@ protected:
       ++k;
     }
 
-    if (Model::input_model != NULL) {
-      Model::input_model->write_variables(vars, nc);
+    if (Model::m_input_model != NULL) {
+      Model::m_input_model->write_variables(vars, nc);
     }
   }
 
@@ -75,8 +75,8 @@ protected:
       ++k;
     }
 
-    if (Model::input_model != NULL) {
-      Model::input_model->add_vars_to_output(keyword, result);
+    if (Model::m_input_model != NULL) {
+      Model::m_input_model->add_vars_to_output(keyword, result);
     }
 
   }
@@ -94,8 +94,8 @@ protected:
       ++k;
     }
 
-    if (Model::input_model != NULL) {
-      Model::input_model->define_variables(vars, nc, nctype);
+    if (Model::m_input_model != NULL) {
+      Model::m_input_model->define_variables(vars, nc, nctype);
     }
   }
 
@@ -193,8 +193,8 @@ protected:
     Model::m_t  = my_t;
     Model::m_dt = my_dt;
 
-    if (Model::input_model != NULL) {
-      Model::input_model->update(Model::m_t, Model::m_dt);
+    if (Model::m_input_model != NULL) {
+      Model::m_input_model->update(Model::m_t, Model::m_dt);
     }
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();

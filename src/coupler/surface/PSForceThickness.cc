@@ -84,7 +84,7 @@ void ForceThickness::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "* Initializing force-to-thickness mass-balance modifier...\n");
@@ -279,7 +279,7 @@ a factor of five smaller than the default, and one with a forcing at a higher al
 void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
   // get the surface mass balance result from the next level up
-  input_model->ice_surface_mass_flux(result);
+  m_input_model->ice_surface_mass_flux(result);
 
   if (m_t < m_start_time) {
     return;
@@ -316,7 +316,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
 //! Does not modify ice surface temperature.
 void ForceThickness::ice_surface_temperature_impl(IceModelVec2S &result) {
-  return input_model->ice_surface_temperature(result);
+  return m_input_model->ice_surface_temperature(result);
 }
 
 /*!
@@ -332,15 +332,15 @@ Therefore we set here
  */
 MaxTimestep ForceThickness::max_timestep_impl(double my_t) {
   double max_dt = units::convert(m_sys, 2.0 / m_alpha, "years", "seconds");
-  MaxTimestep input_max_dt = input_model->max_timestep(my_t);
+  MaxTimestep input_max_dt = m_input_model->max_timestep(my_t);
 
   return std::min(input_max_dt, MaxTimestep(max_dt));
 }
 
 //! Adds variables to output files.
 void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (input_model != NULL) {
-    input_model->add_vars_to_output(keyword, result);
+  if (m_input_model != NULL) {
+    m_input_model->add_vars_to_output(keyword, result);
   }
 
   if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
@@ -376,7 +376,7 @@ void ForceThickness::define_variables_impl(const std::set<std::string> &vars, co
     io::define_spatial_variable(m_climatic_mass_balance_original, *m_grid, nc, nctype, order, true);
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void ForceThickness::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
@@ -407,7 +407,7 @@ void ForceThickness::write_variables_impl(const std::set<std::string> &vars_inpu
     tmp.create(m_grid, "climatic_mass_balance_original", WITHOUT_GHOSTS);
     tmp.metadata() = m_climatic_mass_balance_original;
 
-    input_model->ice_surface_mass_flux(tmp);
+    m_input_model->ice_surface_mass_flux(tmp);
     tmp.write_in_glaciological_units = true;
     tmp.write(nc);
 
@@ -426,7 +426,7 @@ void ForceThickness::write_variables_impl(const std::set<std::string> &vars_inpu
     vars.erase("climatic_mass_balance");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace surface

@@ -59,7 +59,7 @@ Delta_T::~Delta_T() {
 void Delta_T::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
@@ -73,12 +73,12 @@ MaxTimestep Delta_T::max_timestep_impl(double t) {
 }
 
 void Delta_T::shelf_base_temperature_impl(IceModelVec2S &result) {
-  input_model->shelf_base_temperature(result);
+  m_input_model->shelf_base_temperature(result);
   offset_data(result);
 }
 
 void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
@@ -99,7 +99,7 @@ void Delta_T::define_variables_impl(const std::set<std::string> &vars_input, con
     vars.erase("shelfbmassflux");
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void Delta_T::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
@@ -129,7 +129,7 @@ void Delta_T::write_variables_impl(const std::set<std::string> &vars_input, cons
     vars.erase("shelfbmassflux");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace ocean

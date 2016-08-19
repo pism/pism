@@ -57,7 +57,7 @@ void Frac_P::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "* Initializing precipitation forcing using scalar multipliers...\n");
@@ -80,12 +80,12 @@ void Frac_P::init_timeseries(const std::vector<double> &ts) {
 }
 
 void Frac_P::mean_precipitation(IceModelVec2S &result) {
-  input_model->mean_precipitation(result);
+  m_input_model->mean_precipitation(result);
   scale_data(result);
 }
 
 void Frac_P::precip_time_series(int i, int j, std::vector<double> &result) {
-  input_model->precip_time_series(i, j, result);
+  m_input_model->precip_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] *= m_offset_values[k];
@@ -94,7 +94,7 @@ void Frac_P::precip_time_series(int i, int j, std::vector<double> &result) {
 
 void Frac_P::add_vars_to_output_impl(const std::string &keyword,
                                    std::set<std::string> &result) {
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp");
@@ -117,7 +117,7 @@ void Frac_P::define_variables_impl(const std::set<std::string> &vars_input,
     vars.erase("precipitation");
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void Frac_P::write_variables_impl(const std::set<std::string> &vars_input,
@@ -149,7 +149,7 @@ void Frac_P::write_variables_impl(const std::set<std::string> &vars_input,
     vars.erase("precipitation");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace atmosphere

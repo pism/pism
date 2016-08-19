@@ -52,7 +52,7 @@ protected:
     Mod::m_t  = Mod::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time, m_bc_period);
     Mod::m_dt = my_dt;
 
-    Mod::input_model->update(my_t, my_dt);
+    Mod::m_input_model->update(my_t, my_dt);
 
     m_current_forcing = (*m_offset)(Mod::m_t + 0.5*Mod::m_dt);
   }

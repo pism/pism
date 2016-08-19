@@ -61,7 +61,7 @@ Delta_MBP::~Delta_MBP() {
 void Delta_MBP::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2, "* Initializing melange back pressure fraction forcing...\n");
 
@@ -74,13 +74,13 @@ MaxTimestep Delta_MBP::max_timestep_impl(double t) {
 }
 
 void Delta_MBP::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
-  input_model->melange_back_pressure_fraction(result);
+  m_input_model->melange_back_pressure_fraction(result);
 
   offset_data(result);
 }
 
 void Delta_MBP::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
@@ -101,7 +101,7 @@ void Delta_MBP::define_variables_impl(const std::set<std::string> &vars_input, c
     vars.erase("shelfbmassflux");
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void Delta_MBP::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
@@ -131,7 +131,7 @@ void Delta_MBP::write_variables_impl(const std::set<std::string> &vars_input, co
     vars.erase("shelfbmassflux");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 
