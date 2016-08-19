@@ -35,7 +35,9 @@ class PScalarForcing : public Mod
 {
 public:
   PScalarForcing(IceGrid::ConstPtr g, Model* in)
-    : Mod(g, in), m_input(in) {}
+    : Mod(g, in), m_input(in) {
+    m_current_forcing = NAN;
+  }
 
   virtual ~PScalarForcing()
   {
@@ -51,6 +53,8 @@ protected:
     Mod::m_dt = my_dt;
 
     Mod::input_model->update(my_t, my_dt);
+
+    m_current_forcing = (*m_offset)(Mod::m_t + 0.5*Mod::m_dt);
   }
 
   virtual void init_internal()
@@ -81,8 +85,8 @@ protected:
     }
 
     Mod::m_log->message(2,
-               "  reading %s data from forcing file %s...\n",
-               m_offset->short_name.c_str(), file->c_str());
+                        "  reading %s data from forcing file %s...\n",
+                        m_offset->name().c_str(), file->c_str());
 
     PIO nc(g->com, "netcdf3");
     nc.open(file, PISM_READONLY);
@@ -94,12 +98,12 @@ protected:
 
   //! Apply offset as an offset
   void offset_data(IceModelVec2S &result) {
-    result.shift((*m_offset)(Mod::m_t + 0.5*Mod::m_dt));
+    result.shift(m_current_forcing);
   }
 
   //! Apply offset as a scaling factor
   void scale_data(IceModelVec2S &result) {
-    result.scale((*m_offset)(Mod::m_t + 0.5*Mod::m_dt));
+    result.scale(m_current_forcing);
   }
 
   Model *m_input;
@@ -108,6 +112,9 @@ protected:
 
   unsigned int m_bc_period;       // in years
   double m_bc_reference_time;  // in seconds
+  // current scalar forcing; initialized by init_impl(...), set in update(...), saved by
+  // write_variables_impl(...)
+  double m_current_forcing;
 };
 
 

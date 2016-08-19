@@ -76,11 +76,7 @@ MaxTimestep Delta_SL::max_timestep_impl(double t) {
 
 
 void Delta_SL::sea_level_elevation_impl(double &result) {
-  result = input_model->sea_level_elevation();
-
-  if (m_offset) {
-    result += (*m_offset)(m_t + 0.5*m_dt);
-  }
+  result = input_model->sea_level_elevation() + m_current_forcing;
 }
 
 void Delta_SL::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {

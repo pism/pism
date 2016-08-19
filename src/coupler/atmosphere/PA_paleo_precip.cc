@@ -85,7 +85,7 @@ void PaleoPrecip::init_timeseries(const std::vector<double> &ts) {
 
 void PaleoPrecip::mean_precipitation(IceModelVec2S &result) {
   input_model->mean_precipitation(result);
-  result.scale(exp(m_precipexpfactor * (*m_offset)(m_t + 0.5 * m_dt)));
+  result.scale(exp(m_precipexpfactor * m_current_forcing));
 }
 
 void PaleoPrecip::precip_time_series(int i, int j, std::vector<double> &result) {
