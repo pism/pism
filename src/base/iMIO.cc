@@ -173,8 +173,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       btu->define_variables(vars, nc, nctype);
     }
 
-    if (basal_yield_stress_model != NULL) {
-      basal_yield_stress_model->define_variables(vars, nc, nctype);
+    if (m_basal_yield_stress_model != NULL) {
+      m_basal_yield_stress_model->define_variables(vars, nc, nctype);
     }
 
     if (m_stress_balance != NULL) {
@@ -246,8 +246,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     btu->write_variables(vars, nc);
   }
 
-  if (basal_yield_stress_model != NULL) {
-    basal_yield_stress_model->write_variables(vars, nc);
+  if (m_basal_yield_stress_model != NULL) {
+    m_basal_yield_stress_model->write_variables(vars, nc);
   }
 
   // Write stress balance-related variables:

@@ -76,7 +76,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   signal(SIGUSR2, pism_signal_handler);
 
   subglacial_hydrology = NULL;
-  basal_yield_stress_model = NULL;
+  m_basal_yield_stress_model = NULL;
 
   m_stress_balance = NULL;
 
@@ -161,7 +161,7 @@ IceModel::~IceModel() {
   delete m_beddef;
 
   delete subglacial_hydrology;
-  delete basal_yield_stress_model;
+  delete m_basal_yield_stress_model;
   delete btu;
 
   delete m_iceberg_remover;
@@ -591,11 +591,11 @@ void IceModel::step(bool do_mass_continuity,
     do_energy_step = updateAtDepth and do_energy;
 
   //! \li update the yield stress for the plastic till model (if appropriate)
-  if (updateAtDepth and basal_yield_stress_model) {
+  if (updateAtDepth and m_basal_yield_stress_model) {
     profiling.begin("basal yield stress");
-    basal_yield_stress_model->update(current_time, m_dt);
+    m_basal_yield_stress_model->update();
     profiling.end("basal yield stress");
-    m_basal_yield_stress.copy_from(basal_yield_stress_model->basal_material_yield_stress());
+    m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
     stdout_flags += "y";
   } else {
     stdout_flags += "$";

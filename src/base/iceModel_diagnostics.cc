@@ -152,8 +152,8 @@ void IceModel::init_diagnostics() {
     m_beddef->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 
-  if (basal_yield_stress_model != NULL) {
-    basal_yield_stress_model->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  if (m_basal_yield_stress_model != NULL) {
+    m_basal_yield_stress_model->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 
   if (subglacial_hydrology != NULL) {
@@ -191,9 +191,9 @@ void IceModel::list_diagnostics() {
       btu->add_vars_to_output("2dbig", list);
     }
 
-    if (basal_yield_stress_model != NULL) {
-      basal_yield_stress_model->add_vars_to_output("big", list);
-      basal_yield_stress_model->add_vars_to_output("2dbig", list);
+    if (m_basal_yield_stress_model != NULL) {
+      m_basal_yield_stress_model->add_vars_to_output("big", list);
+      m_basal_yield_stress_model->add_vars_to_output("2dbig", list);
     }
 
     if (subglacial_hydrology != NULL) {

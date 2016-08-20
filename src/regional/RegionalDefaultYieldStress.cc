@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,24 +39,24 @@ const IceModelVec2S& RegionalDefaultYieldStress::basal_material_yield_stress() {
   const IceModelVec2S &result = MohrCoulombYieldStress::basal_material_yield_stress();
 
   // This is almost certainly redundant, but I don't want to count on
-  // the fact that the base class puts results in m_tauc.
-  m_tauc.copy_from(result);
+  // the fact that the base class puts results in m_basal_yield_stress.
+  m_basal_yield_stress.copy_from(result);
 
   const IceModelVec2Int &nmm = *m_grid->variables().get_2d_mask("no_model_mask");
 
   // now set tauc to a big value in no_model_strip
   IceModelVec::AccessList list;
   list.add(nmm);
-  list.add(m_tauc);
+  list.add(m_basal_yield_stress);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (nmm(i,j) > 0.5) {
-      m_tauc(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
+      m_basal_yield_stress(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
     }
   }
-  return m_tauc;
+  return m_basal_yield_stress;
 }
 
 } // end of namespace pism

@@ -160,8 +160,8 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     btu->add_vars_to_output(keyword, result);
   }
 
-  if (basal_yield_stress_model != NULL) {
-    basal_yield_stress_model->add_vars_to_output(keyword, result);
+  if (m_basal_yield_stress_model != NULL) {
+    m_basal_yield_stress_model->add_vars_to_output(keyword, result);
   }
 
   // Ask the stress balance module to add more variables:

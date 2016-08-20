@@ -45,16 +45,16 @@ void ConstantYieldStress::init_impl() {
   double tauc = m_config->get_double("default_tauc");
   if (use_input_file) {
     if (boot) {
-      m_tauc.regrid(filename, OPTIONAL, tauc);
+      m_basal_yield_stress.regrid(filename, OPTIONAL, tauc);
     } else {
-      m_tauc.read(filename, start);
+      m_basal_yield_stress.read(filename, start);
     }
   } else {
     // Set the constant value.
-    m_tauc.set(tauc);
+    m_basal_yield_stress.set(tauc);
   }
 
-  regrid("ConstantYieldStress", m_tauc);
+  regrid("ConstantYieldStress", m_basal_yield_stress);
 }
 
 MaxTimestep ConstantYieldStress::max_timestep_impl(double t) {
@@ -72,7 +72,7 @@ void ConstantYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/
 void ConstantYieldStress::define_variables_impl(const std::set<std::string> &vars,
                                                 const PIO &nc, IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
-    m_tauc.define(nc, nctype);
+    m_basal_yield_stress.define(nc, nctype);
   }
 }
 
@@ -80,14 +80,13 @@ void ConstantYieldStress::define_variables_impl(const std::set<std::string> &var
 void ConstantYieldStress::write_variables_impl(const std::set<std::string> &vars,
                                                const PIO &nc) {
   if (set_contains(vars, "tauc")) {
-    m_tauc.write(nc);
+    m_basal_yield_stress.write(nc);
   }
 }
 
 
-void ConstantYieldStress::update_impl(double my_t, double my_dt) {
-  m_t = my_t;
-  m_dt = my_dt;
+void ConstantYieldStress::update_impl() {
+  // empty
 }
 
 } // end of namespace pism

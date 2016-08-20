@@ -230,7 +230,7 @@ protected:
   VariableMetadata run_stats;
 
   hydrology::Hydrology   *subglacial_hydrology;
-  YieldStress *basal_yield_stress_model;
+  YieldStress *m_basal_yield_stress_model;
 
   energy::BedThermalUnit *btu;
 

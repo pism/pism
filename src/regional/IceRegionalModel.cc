@@ -188,7 +188,7 @@ void IceRegionalModel::allocate_stressbalance() {
 
 void IceRegionalModel::allocate_basal_yield_stress() {
 
-  if (basal_yield_stress_model != NULL) {
+  if (m_basal_yield_stress_model != NULL) {
     return;
   }
 
@@ -199,9 +199,9 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = m_config->get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress_model = new ConstantYieldStress(m_grid);
+      m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress_model = new RegionalDefaultYieldStress(m_grid, subglacial_hydrology);
+      m_basal_yield_stress_model = new RegionalDefaultYieldStress(m_grid, subglacial_hydrology);
     } else {
       throw RuntimeError::formatted("yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());

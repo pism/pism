@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,12 +23,13 @@
 namespace pism {
 
 YieldStress::YieldStress(IceGrid::ConstPtr g)
-  : Component_TS(g) {
-  m_tauc.create(m_grid, "tauc", WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
+  : Component(g) {
+  m_basal_yield_stress.create(m_grid, "tauc",WITH_GHOSTS,
+                              m_config->get_double("grid_max_stencil_width"));
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
-  m_tauc.set_attrs("model_state",
-                 "yield stress for basal till (plastic or pseudo-plastic model)",
-                 "Pa", "");
+  m_basal_yield_stress.set_attrs("model_state",
+                                 "yield stress for basal till (plastic or pseudo-plastic model)",
+                                 "Pa", "");
 }
 
 YieldStress::~YieldStress() {
@@ -39,8 +40,12 @@ void YieldStress::init() {
   this->init_impl();
 }
 
+void YieldStress::update() {
+  this->update_impl();
+}
+
 const IceModelVec2S& YieldStress::basal_material_yield_stress() {
-  return m_tauc;
+  return m_basal_yield_stress;
 }
 
 } // end of namespace pism
