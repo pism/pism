@@ -321,13 +321,13 @@ protected:
     H_to_Href_flux_cumulative,
     discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
 
-  unsigned int skipCountDown,
-    CFLviolcount;
+  unsigned int m_skip_countdown,
+    m_CFL_violation_counter;
 
   // flags
   std::string m_adaptive_timestep_reason;
 
-  std::string stdout_flags;
+  std::string m_stdout_flags;
 
 protected:
   // see iceModel.cc

@@ -161,8 +161,8 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 void IceModel::summary(bool tempAndAge) {
 
   // report CFL violations
-  if (CFLviolcount > 0.0) {
-    const double CFLviolpercent = 100.0 * CFLviolcount / (m_grid->Mx() * m_grid->My() * m_grid->Mz());
+  if (m_CFL_violation_counter > 0.0) {
+    const double CFLviolpercent = 100.0 * m_CFL_violation_counter / (m_grid->Mx() * m_grid->My() * m_grid->Mz());
     // at default verbosity level, only report CFL viols if above:
     const double CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
     if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT ||
@@ -170,8 +170,8 @@ void IceModel::summary(bool tempAndAge) {
       char tempstr[90] = "";
       snprintf(tempstr,90,
               "  [!CFL#=%d (=%5.2f%% of 3D grid)] ",
-              CFLviolcount,CFLviolpercent);
-      stdout_flags = tempstr + stdout_flags;
+              m_CFL_violation_counter,CFLviolpercent);
+      m_stdout_flags = tempstr + m_stdout_flags;
     }
   }
 
@@ -264,7 +264,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
   static int         mass_cont_sub_counter = 0;
   static double      mass_cont_sub_dtsum   = 0.0;
   if (mass_cont_sub_counter == 0) {
-    stdout_flags_count0 = stdout_flags;
+    stdout_flags_count0 = m_stdout_flags;
   }
   if (delta_t > 0.0) {
     mass_cont_sub_counter++;

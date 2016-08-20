@@ -120,7 +120,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
 void IceModel::reset_counters() {
   CFLmaxdt     = 0.0;
   CFLmaxdt2D   = 0.0;
-  CFLviolcount = 0;
+  m_CFL_violation_counter = 0;
   dt_TempAge   = 0.0;
   dt_from_cfl  = 0.0;
 
@@ -130,7 +130,7 @@ void IceModel::reset_counters() {
 
   maxdt_temporary = 0.0;
   m_dt              = 0.0;
-  skipCountDown   = 0;
+  m_skip_countdown   = 0;
 
   m_timestep_hit_multiples_last_time = m_time->current();
 
@@ -567,9 +567,9 @@ void IceModel::createVecs() {
 During the time-step we perform the following actions:
  */
 void IceModel::step(bool do_mass_continuity,
-                              bool do_energy,
-                              bool do_age,
-                              bool do_skip) {
+                    bool do_energy,
+                    bool do_age,
+                    bool do_skip) {
 
   const Profiling &profiling = m_ctx->profiling();
 
@@ -587,7 +587,8 @@ void IceModel::step(bool do_mass_continuity,
   // stability criterion; note *lots* of communication is avoided by skipping
   // SSA (and temp/age)
 
-  bool updateAtDepth = (skipCountDown == 0),
+  const bool
+    updateAtDepth  = (m_skip_countdown == 0),
     do_energy_step = updateAtDepth and do_energy;
 
   //! \li update the yield stress for the plastic till model (if appropriate)
@@ -596,9 +597,9 @@ void IceModel::step(bool do_mass_continuity,
     m_basal_yield_stress_model->update();
     profiling.end("basal yield stress");
     m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
-    stdout_flags += "y";
+    m_stdout_flags += "y";
   } else {
-    stdout_flags += "$";
+    m_stdout_flags += "$";
   }
 
   // Update the fractional grounded/floating mask (used by the SSA
@@ -633,13 +634,13 @@ void IceModel::step(bool do_mass_continuity,
     throw;
   }
 
-  stdout_flags += m_stress_balance->stdout_report();
+  m_stdout_flags += m_stress_balance->stdout_report();
 
-  stdout_flags += (updateAtDepth ? "v" : "V");
+  m_stdout_flags += (updateAtDepth ? "v" : "V");
 
   //! \li determine the time step according to a variety of stability criteria;
   //!  see determineTimeStep()
-  max_timestep(m_dt, skipCountDown);
+  max_timestep(m_dt, m_skip_countdown);
 
   //! \li Update surface and ocean models.
   profiling.begin("surface");
@@ -661,9 +662,9 @@ void IceModel::step(bool do_mass_continuity,
     profiling.begin("age");
     ageStep();
     profiling.end("age");
-    stdout_flags += "a";
+    m_stdout_flags += "a";
   } else {
-    stdout_flags += "$";
+    m_stdout_flags += "$";
   }
 
   //! \li update the enthalpy (or temperature) field according to the conservation of
@@ -673,9 +674,9 @@ void IceModel::step(bool do_mass_continuity,
     profiling.begin("energy");
     energyStep();
     profiling.end("energy");
-    stdout_flags += "E";
+    m_stdout_flags += "E";
   } else {
-    stdout_flags += "$";
+    m_stdout_flags += "$";
   }
 
   // Combine basal melt rate in grounded (computed during the energy
@@ -715,12 +716,12 @@ void IceModel::step(bool do_mass_continuity,
 
     // This is why the following two lines appear here and are executed only
     // if do_mass_continuity is true.
-    if (do_skip and skipCountDown > 0) {
-      skipCountDown--;
+    if (do_skip and m_skip_countdown > 0) {
+      m_skip_countdown--;
     }
-    stdout_flags += "h";
+    m_stdout_flags += "h";
   } else {
-    stdout_flags += "$";
+    m_stdout_flags += "$";
   }
 
   profiling.begin("calving");
@@ -738,10 +739,10 @@ void IceModel::step(bool do_mass_continuity,
     profiling.end("bed deformation");
 
     if (bed_topography.get_state_counter() != topg_state_counter) {
-      stdout_flags += "b";
+      m_stdout_flags += "b";
       updateSurfaceElevationAndMask();
     } else {
-      stdout_flags += " ";
+      m_stdout_flags += " ";
     }
   }
 
@@ -757,7 +758,7 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   // end the flag line
-  stdout_flags += " " + m_adaptive_timestep_reason;
+  m_stdout_flags += " " + m_adaptive_timestep_reason;
 }
 
 
@@ -805,7 +806,7 @@ void IceModel::run() {
 
   m_log->message(2, "running forward ...\n");
 
-  stdout_flags.erase(); // clear it out
+  m_stdout_flags.erase(); // clear it out
   summaryPrintLine(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
   m_adaptive_timestep_reason = '$'; // no reason for no timestep
   summary(do_energy);  // report starting state
@@ -819,13 +820,13 @@ void IceModel::run() {
   profiling.stage_begin("time-stepping loop");
   while (m_time->current() < m_time->end()) {
 
-    stdout_flags.erase();  // clear it out
+    m_stdout_flags.erase();  // clear it out
     maxdt_temporary = -1.0;
 
     step(do_mass_conserve, do_energy, do_age, do_skip);
 
     // report a summary for major steps or the last one
-    bool updateAtDepth = skipCountDown == 0;
+    bool updateAtDepth = m_skip_countdown == 0;
     bool tempAgeStep = updateAtDepth and (do_energy or do_age);
 
     const bool show_step = tempAgeStep or m_adaptive_timestep_reason == "end of the run";

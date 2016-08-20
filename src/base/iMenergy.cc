@@ -103,7 +103,7 @@ void IceModel::energyStep() {
   }
 
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
-  CFLviolcount = countCFLViolations();
+  m_CFL_violation_counter = countCFLViolations();
 
   gVertSacrCount = GlobalSum(m_grid->com, myVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
@@ -113,7 +113,7 @@ void IceModel::energyStep() {
         getVerbosityLevel() > 2) {
       char tempstr[50] = "";
       snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
-      stdout_flags = tempstr + stdout_flags;
+      m_stdout_flags = tempstr + m_stdout_flags;
     }
   }
 
@@ -122,7 +122,7 @@ void IceModel::energyStep() {
                              //    frequently it is identically zero
     char tempstr[50] = "";
     snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)));
-    stdout_flags = tempstr + stdout_flags;
+    m_stdout_flags = tempstr + m_stdout_flags;
   }
 }
 
