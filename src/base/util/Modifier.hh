@@ -54,12 +54,12 @@ protected:
     }
   }
 
-  virtual void update_impl(double my_t, double my_dt)
+  virtual void update_impl(double t, double dt)
   {
-    Model::m_t = my_t;
-    Model::m_dt = my_dt;
+    Model::m_t = t;
+    Model::m_dt = dt;
     if (m_input_model != NULL) {
-      m_input_model->update(my_t, my_dt);
+      m_input_model->update(t, dt);
     }
   }
 
