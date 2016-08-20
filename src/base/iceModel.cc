@@ -618,8 +618,8 @@ void IceModel::step(bool do_mass_continuity,
   try {
     profiling.begin("stress balance");
     m_stress_balance->update(not updateAtDepth,
-                           sea_level,
-                           melange_back_pressure);
+                             sea_level,
+                             melange_back_pressure);
     profiling.end("stress balance");
   } catch (RuntimeError &e) {
     options::String output_file("-o", "output file name",

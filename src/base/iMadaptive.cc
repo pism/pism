@@ -267,7 +267,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     // Query sub-models, which might add time-step restrictions.
 
     MaxTimestep surface_dt = m_surface->max_timestep(current_time);
-    if (surface_dt.is_finite())  {
+    if (surface_dt.is_finite()) {
       dt_restrictions["surface"] = surface_dt.value();
     }
 
