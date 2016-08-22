@@ -25,9 +25,21 @@
 namespace pism {
 namespace surface {
 
-class Initialization : public SurfaceModifier {
+/*! Surface model "modifier" that helps with initialization.
+ *
+ * This modifier saves *all* fields a surface model provides as a part of the model state and
+ * re-loads them during initialization so that they are available *before* the first time step in a
+ * re-started run.
+ *
+ * It is
+ *
+ * - not visible to the user,
+ * - is added automatically, and
+ * - does not have a corresponding "keyword" in surface::Factory.
+ */
+class InitializationHelper : public SurfaceModifier {
 public:
-  Initialization(IceGrid::ConstPtr g, SurfaceModel* in);
+  InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in);
 protected:
   void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *in);
 
@@ -46,9 +58,8 @@ protected:
                              IO_Type nctype);
 
 private:
-  bool m_update_called;
-  // store pointers to fields to make it possible to iterate over them
-  std::vector<const IceModelVec*> m_variables;
+  // store pointers to fields so that we can iterate over them
+  std::vector<IceModelVec*> m_variables;
   // storage
   IceModelVec2S m_ice_surface_mass_flux;
   IceModelVec2S m_ice_surface_temperature;

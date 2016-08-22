@@ -20,33 +20,93 @@
 #include "PSInitialization.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/pism_options.hh"
+#include "base/util/io/PIO.hh"
 
 namespace pism {
 namespace surface {
 
-Initialization::Initialization(IceGrid::ConstPtr g, SurfaceModel* in)
-  : SurfaceModifier(g, in), m_update_called(false) {
+InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in)
+  : SurfaceModifier(g, in) {
 
   if (in == NULL) {
-    throw RuntimeError("pism::surface::Initialization got a NULL input model");
+    throw RuntimeError("pism::surface::InitializationHelper got a NULL input model");
   }
 
-  m_variables.push_back(&m_ice_surface_mass_flux);
-  m_variables.push_back(&m_ice_surface_temperature);
-  m_variables.push_back(&m_ice_surface_liquid_water_fraction);
-  m_variables.push_back(&m_mass_held_in_surface_layer);
-  m_variables.push_back(&m_surface_layer_thickness);
+  // allocate storage
+  {
+    m_ice_surface_mass_flux.create(m_grid, "effective_climatic_mass_balance", WITHOUT_GHOSTS);
+    m_ice_surface_mass_flux.set_attrs("model_state",
+                                      "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)",
+                                      "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
+    m_ice_surface_mass_flux.set_time_independent(false);
+    m_ice_surface_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
+
+    m_ice_surface_temperature.create(m_grid, "effective_ice_surface_temp", WITHOUT_GHOSTS);
+    m_ice_surface_temperature.set_attrs("model_state",
+                                        "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)",
+                                        "Kelvin", "");
+    m_ice_surface_temperature.set_time_independent(false);
+
+    m_ice_surface_liquid_water_fraction.create(m_grid, "effective_ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
+    m_ice_surface_liquid_water_fraction.set_attrs("model_state",
+                                                  "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)",
+                                                  "1", "");
+    m_ice_surface_liquid_water_fraction.set_time_independent(false);
+
+    m_mass_held_in_surface_layer.create(m_grid, "effective_mass_held_in_surface_layer", WITHOUT_GHOSTS);
+    m_mass_held_in_surface_layer.set_attrs("model_state",
+                                           "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)",
+                                           "kg",
+                                           "");
+    m_mass_held_in_surface_layer.set_time_independent(false);
+
+    m_surface_layer_thickness.create(m_grid, "effective_surface_layer_thickness", WITHOUT_GHOSTS);
+    m_surface_layer_thickness.set_attrs("model_state",
+                                        "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)",
+                                        "meters", "");
+    m_surface_layer_thickness.set_time_independent(false);
+  }
+
+  // collect pointers
+  {
+    m_variables.push_back(&m_ice_surface_mass_flux);
+    m_variables.push_back(&m_ice_surface_temperature);
+    m_variables.push_back(&m_ice_surface_liquid_water_fraction);
+    m_variables.push_back(&m_mass_held_in_surface_layer);
+    m_variables.push_back(&m_surface_layer_thickness);
+  }
 }
 
-void Initialization::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *in) {
+void InitializationHelper::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *in) {
   m_input_model->attach_atmosphere_model(in);
 }
 
-void Initialization::init_impl() {
+void InitializationHelper::init_impl() {
   m_input_model->init();
+
+  const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+
+  if (bootstrap) {
+    m_log->message(2, "* Performing a 'fake' surface model time-step for bootstrapping...\n");
+
+    init_step(*this, *m_grid->ctx()->time());
+  } else {
+    options::String input_file("-i", "input file name");
+    m_log->message(2, "* Reading effective surface model outputs from '%s' for re-starting...\n",
+                   input_file->c_str());
+
+    PIO file(m_grid->com, "guess_mode");
+    file.open(input_file, PISM_READONLY);
+    const unsigned int last_record = file.inq_nrecords() - 1;
+    for (unsigned int k = 0; k < m_variables.size(); ++k) {
+      m_variables[k]->read(file, last_record);
+    }
+    file.close();
+  }
 }
 
-void Initialization::update_impl(double t, double dt) {
+void InitializationHelper::update_impl(double t, double dt) {
   // update the input model
   SurfaceModifier::update_impl(t, dt);
 
@@ -56,31 +116,29 @@ void Initialization::update_impl(double t, double dt) {
   m_input_model->ice_surface_liquid_water_fraction(m_ice_surface_liquid_water_fraction);
   m_input_model->mass_held_in_surface_layer(m_mass_held_in_surface_layer);
   m_input_model->surface_layer_thickness(m_surface_layer_thickness);
-
-  m_update_called = true;
 }
 
-void Initialization::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void InitializationHelper::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.copy_from(m_ice_surface_mass_flux);
 }
 
-void Initialization::ice_surface_temperature_impl(IceModelVec2S &result) {
+void InitializationHelper::ice_surface_temperature_impl(IceModelVec2S &result) {
   result.copy_from(m_ice_surface_temperature);
 }
 
-void Initialization::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
+void InitializationHelper::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
   result.copy_from(m_ice_surface_liquid_water_fraction);
 }
 
-void Initialization::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
+void InitializationHelper::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
   result.copy_from(m_mass_held_in_surface_layer);
 }
 
-void Initialization::surface_layer_thickness_impl(IceModelVec2S &result) {
+void InitializationHelper::surface_layer_thickness_impl(IceModelVec2S &result) {
   result.copy_from(m_surface_layer_thickness);
 }
 
-void Initialization::add_vars_to_output_impl(const std::string &keyword,
+void InitializationHelper::add_vars_to_output_impl(const std::string &keyword,
                                              std::set<std::string> &result) {
   // add all the variables we keep track of
   for (unsigned int k = 0; k < m_variables.size(); ++k) {
@@ -94,7 +152,7 @@ static bool in(const std::set<std::string> &S, const IceModelVec *vec) {
   return set_contains(S, vec->get_name());
 }
 
-void Initialization::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
+void InitializationHelper::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                            IO_Type nctype) {
   // make a copy of the set of variables so that we can modify it
   std::set<std::string> list = vars;
@@ -110,7 +168,7 @@ void Initialization::define_variables_impl(const std::set<std::string> &vars, co
   m_input_model->define_variables(list, nc, nctype);
 }
 
-void Initialization::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+void InitializationHelper::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   // make a copy of the set of variables so that we can modify it
   std::set<std::string> list = vars;
 
