@@ -209,6 +209,8 @@ protected:
   double m_dt;
 };
 
+void init_step(Component_TS &model, const Time& time);
+
 } // end of namespace pism
 
 #endif // __Component_hh

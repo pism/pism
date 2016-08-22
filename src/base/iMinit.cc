@@ -528,29 +528,8 @@ void IceModel::init_couplers() {
 //! for initialization, so here we call update() to make sure that
 //! surface and ocean models report a decent state
 void IceModel::init_step_couplers() {
-
-  const double
-    now               = m_time->current(),
-    one_year_from_now = m_time->increment_date(now, 1.0);
-
-  // Take a one year long step if we can.
-  MaxTimestep max_dt(one_year_from_now - now);
-
-  assert(m_surface != NULL);
-  max_dt = std::min(max_dt, m_surface->max_timestep(now));
-
-  assert(m_ocean != NULL);
-  max_dt = std::min(max_dt, m_ocean->max_timestep(now));
-
-  // Do not take time-steps shorter than 1 second
-  if (max_dt.value() < 1.0) {
-    max_dt = MaxTimestep(1.0);
-  }
-
-  assert(max_dt.is_finite() == true);
-
-  m_surface->update(now, max_dt.value());
-  m_ocean->update(now, max_dt.value());
+  init_step(*m_surface, *m_time);
+  init_step(*m_ocean, *m_time);
 }
 
 
