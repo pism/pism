@@ -38,7 +38,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in
     m_ice_surface_mass_flux.create(m_grid, "effective_climatic_mass_balance", WITHOUT_GHOSTS);
     m_ice_surface_mass_flux.set_attrs("model_state",
                                       "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)",
-                                      "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
+                                      "kg m-2 s-1", "");
     m_ice_surface_mass_flux.set_time_independent(false);
     m_ice_surface_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
 
@@ -86,13 +86,9 @@ void InitializationHelper::init_impl() {
   m_input_model->init();
 
   const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  options::String input_file("-i", "input file name");
 
-  if (bootstrap) {
-    m_log->message(2, "* Performing a 'fake' surface model time-step for bootstrapping...\n");
-
-    init_step(*this, *m_grid->ctx()->time());
-  } else {
-    options::String input_file("-i", "input file name");
+  if (input_file.is_set() and not bootstrap) {
     m_log->message(2, "* Reading effective surface model outputs from '%s' for re-starting...\n",
                    input_file->c_str());
 
@@ -103,6 +99,16 @@ void InitializationHelper::init_impl() {
       m_variables[k]->read(file, last_record);
     }
     file.close();
+  } else {
+    m_log->message(2, "* Performing a 'fake' surface model time-step for bootstrapping...\n");
+
+    init_step(*this, *m_grid->ctx()->time());
+  }
+
+  // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to
+  // "-i ... -bootstrap -regrid_file ..."
+  for (unsigned int k = 0; k < m_variables.size(); ++k) {
+    regrid("surface model initialization helper", *m_variables[k], REGRID_WITHOUT_REGRID_VARS);
   }
 }
 

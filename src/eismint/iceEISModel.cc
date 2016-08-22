@@ -32,6 +32,7 @@
 #include "base/util/pism_options.hh"
 #include "coupler/ocean/POConstant.hh"
 #include "coupler/surface/PS_EISMINTII.hh"
+#include "coupler/surface/PSInitialization.hh"
 #include "earth/PISMBedDef.hh"
 
 namespace pism {
@@ -93,7 +94,7 @@ void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
   if (m_surface == NULL) {
-    m_surface = new surface::EISMINTII(m_grid, m_experiment);
+    m_surface = new surface::InitializationHelper(m_grid, new surface::EISMINTII(m_grid, m_experiment));
   }
 
   if (m_ocean == NULL) {

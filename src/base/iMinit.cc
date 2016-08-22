@@ -50,6 +50,7 @@
 #include "coupler/atmosphere/PAFactory.hh"
 #include "coupler/ocean/POFactory.hh"
 #include "coupler/surface/PSFactory.hh"
+#include "coupler/surface/PSInitialization.hh"
 #include "earth/PBLingleClark.hh"
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
@@ -494,7 +495,7 @@ void IceModel::allocate_couplers() {
     m_log->message(2,
              "# Allocating a surface process model or coupler...\n");
 
-    m_surface = ps.create();
+    m_surface = new surface::InitializationHelper(m_grid, ps.create());
     m_external_surface_model = false;
 
     atmosphere = pa.create();
