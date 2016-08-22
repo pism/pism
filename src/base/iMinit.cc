@@ -49,6 +49,7 @@
 #include "coupler/PISMSurface.hh"
 #include "coupler/atmosphere/PAFactory.hh"
 #include "coupler/ocean/POFactory.hh"
+#include "coupler/ocean/POInitialization.hh"
 #include "coupler/surface/PSFactory.hh"
 #include "coupler/surface/PSInitialization.hh"
 #include "earth/PBLingleClark.hh"
@@ -506,7 +507,7 @@ void IceModel::allocate_couplers() {
     m_log->message(2,
              "# Allocating an ocean model or coupler...\n");
 
-    m_ocean = po.create();
+    m_ocean = new ocean::InitializationHelper(m_grid, po.create());
     m_external_ocean_model = false;
   }
 }

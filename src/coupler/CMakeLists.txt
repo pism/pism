@@ -25,6 +25,7 @@ add_library (pismboundary OBJECT
   ./ocean/PO_delta_MBP.cc
   ./ocean/PO_frac_SMB.cc
   ./ocean/POFactory.cc
+  ./ocean/POInitialization.cc
   ./surface/PSInitialization.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc

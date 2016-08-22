@@ -31,6 +31,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
 #include "coupler/ocean/POConstant.hh"
+#include "coupler/ocean/POInitialization.hh"
 #include "coupler/surface/PS_EISMINTII.hh"
 #include "coupler/surface/PSInitialization.hh"
 #include "earth/PISMBedDef.hh"
@@ -98,7 +99,7 @@ void IceEISModel::allocate_couplers() {
   }
 
   if (m_ocean == NULL) {
-    m_ocean = new ocean::Constant(m_grid);
+    m_ocean = new ocean::InitializationHelper(m_grid, new ocean::Constant(m_grid));
   }
 }
 
