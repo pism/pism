@@ -200,9 +200,16 @@ public:
   virtual void initFromFile(const PIO &input_file);
   virtual void writeFiles(const std::string &default_filename);
   virtual void write_model_state(const PIO &nc);
-  virtual void write_metadata(const PIO &nc,
-                              bool write_mapping,
-                              bool write_run_stats);
+
+  enum MetadataFlag {WRITE_MAPPING                         = 1,
+                     WRITE_MAPPING_AND_RUN_STATS           = 1 | 2,
+                     WRITE_MAPPING_AND_GLOBAL_ATTRIBUTES   = 1 | 4,
+                     WRITE_RUN_STATS                       = 2,
+                     WRITE_RUN_STATS_AND_GLOBAL_ATTRIBUTES = 2 | 4,
+                     WRITE_GLOBAL_ATTRIBUTES               = 4,
+                     WRITE_ALL                             = 1 | 2 | 4};
+
+  virtual void write_metadata(const PIO &nc, MetadataFlag flag);
   virtual void write_variables(const PIO &nc, const std::set<std::string> &vars,
                                IO_Type nctype);
 protected:
@@ -474,7 +481,11 @@ protected:
 
   // scalar time-series
   bool m_save_ts;                 //! true if the user requested time-series output
-  std::string m_ts_filename;              //! file to write time-series to
+  //! file to write time-series to
+  std::string m_ts_filename;
+  //! The history attribute in the -ts_file. Read from -ts_file if -ts_append is set, otherwise
+  //! empty.
+  std::string m_old_ts_file_history;
   std::vector<double> m_ts_times; //! times requested
   unsigned int m_current_ts;      //! index of the current time
   std::set<std::string> m_ts_vars;                //! variables requested
@@ -486,6 +497,9 @@ protected:
   // spatially-varying time-series
   bool m_save_extra, m_extra_file_is_ready, m_split_extra;
   std::string m_extra_filename;
+  //! The history attribute in the -extra_file. Read from -extra_file if -extra_append is set,
+  //! otherwise empty.
+  std::string m_old_extra_file_history;
   std::vector<double> m_extra_times;
   unsigned int m_next_extra;
   double m_last_extra;

@@ -77,12 +77,10 @@ void  IceModel::writeFiles(const std::string &default_filename) {
 }
 
 //! \brief Write metadata (global attributes, overrides and mapping parameters) to a file.
-void IceModel::write_metadata(const PIO &nc, bool write_mapping,
-                              bool write_run_stats) {
+void IceModel::write_metadata(const PIO &nc, MetadataFlag flag) {
 
-  if (write_mapping) {
-    bool mapping_exists = nc.inq_var(mapping.get_name());
-    if (not mapping_exists) {
+  if (flag & WRITE_MAPPING) {
+    if (not nc.inq_var(mapping.get_name())) {
       nc.redef();
       nc.def_var(mapping.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
@@ -90,10 +88,9 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
     io::write_attributes(nc, mapping, PISM_DOUBLE, false);
   }
 
-  if (write_run_stats) {
+  if (flag & WRITE_RUN_STATS) {
     update_run_stats();
-    bool run_stats_exists = nc.inq_var(run_stats.get_name());
-    if (not run_stats_exists) {
+    if (not nc.inq_var(run_stats.get_name())) {
       nc.redef();
       nc.def_var(run_stats.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
@@ -101,7 +98,9 @@ void IceModel::write_metadata(const PIO &nc, bool write_mapping,
     io::write_attributes(nc, run_stats, PISM_DOUBLE, false);
   }
 
-  io::write_global_attributes(nc, m_output_global_attributes);
+  if (flag & WRITE_GLOBAL_ATTRIBUTES) {
+    io::write_global_attributes(nc, m_output_global_attributes);
+  }
 
   // write configuration parameters to the file:
   m_config->write(nc);
@@ -120,7 +119,7 @@ void IceModel::dumpToFile(const std::string &filename) {
   nc.open(filename, PISM_READWRITE_MOVE);
 
   // Write metadata *before* everything else:
-  write_metadata(nc, true, true);
+  write_metadata(nc, WRITE_ALL);
 
   io::define_time(nc, time_name, m_time->calendar(),
                   m_time->CF_units_string(),
@@ -742,7 +741,7 @@ void IceModel::write_snapshot() {
   }
 
   // write metadata to the file *every time* we update it
-  write_metadata(nc, true, true);
+  write_metadata(nc, WRITE_ALL);
 
   io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
 
@@ -830,7 +829,7 @@ void IceModel::write_backup() {
   io::append_time(nc, m_config->get_string("time_dimension_name"), m_time->current());
 
   // Write metadata *before* variables:
-  write_metadata(nc, true, true);
+  write_metadata(nc, WRITE_ALL);
 
   write_variables(nc, m_backup_vars, PISM_DOUBLE);
 
