@@ -1292,11 +1292,6 @@ netcdf pism_config {
     pism_config:mask_icefree_thickness_stress_balance_standard = 10.0;
     pism_config:mask_icefree_thickness_stress_balance_standard_doc = "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN for purposes of computing ice velocity distribution.";
 
-    pism_config:mask_is_floating_thickness_standard_units = "meters";
-    pism_config:mask_is_floating_thickness_standard_type = "scalar";
-    pism_config:mask_is_floating_thickness_standard = 1.0;
-    pism_config:mask_is_floating_thickness_standard_doc = "If flotation criterion is different by more than this amount then mask is set to MASK_ICE_FREE_OCEAN or MASK_FLOATING.";
-
     pism_config:viewer_size_option = "view_size";
     pism_config:viewer_size_units = "count";
     pism_config:viewer_size_type = "integer";

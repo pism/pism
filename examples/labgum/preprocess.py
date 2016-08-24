@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013, 2014 the PISM Authors
+# Copyright (C) 2013, 2014, 2016 the PISM Authors
 
 # This script sets up the bootstrap file.
 # See also preprocess.sh.
@@ -57,9 +57,6 @@ def create_config():
 
     config.mask_icefree_thickness_standard = 1e-8
     config.mask_icefree_thickness_standard_doc = "m; only if the fluid is less than this is a cell marked as ice free"
-
-    config.mask_is_floating_thickness_standard = 1e-8
-    config.mask_is_floating_thickness_standard_doc = "m; should not matter since all grounded"
 
     config.adaptive_timestepping_ratio = 0.08
     config.adaptive_timestepping_ratio_doc = "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?"
