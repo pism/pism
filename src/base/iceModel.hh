@@ -251,7 +251,6 @@ protected:
   surface::SurfaceModel *m_surface;
   ocean::OceanModel   *m_ocean;
   bed::BedDef       *m_beddef;
-  bool m_external_surface_model, m_external_ocean_model;
 
   // state variables and some diagnostics/internals
   IceModelVec2S m_ice_surface_elevation,          //!< ice surface elevation; ghosted

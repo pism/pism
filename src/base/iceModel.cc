@@ -80,9 +80,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
 
   m_stress_balance = NULL;
 
-  m_external_surface_model = false;
-  m_external_ocean_model   = false;
-
   m_surface = NULL;
   m_ocean   = NULL;
   m_beddef  = NULL;
@@ -150,13 +147,9 @@ IceModel::~IceModel() {
 
   delete m_stress_balance;
 
-  if (not m_external_ocean_model) {
-    delete m_ocean;
-  }
+  delete m_ocean;
 
-  if (not m_external_surface_model) {
-    delete m_surface;
-  }
+  delete m_surface;
 
   delete m_beddef;
 

@@ -497,7 +497,6 @@ void IceModel::allocate_couplers() {
              "# Allocating a surface process model or coupler...\n");
 
     m_surface = new surface::InitializationHelper(m_grid, ps.create());
-    m_external_surface_model = false;
 
     atmosphere = pa.create();
     m_surface->attach_atmosphere_model(atmosphere);
@@ -508,7 +507,6 @@ void IceModel::allocate_couplers() {
              "# Allocating an ocean model or coupler...\n");
 
     m_ocean = new ocean::InitializationHelper(m_grid, po.create());
-    m_external_ocean_model = false;
   }
 }
 

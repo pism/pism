@@ -45,7 +45,6 @@ void IBIceModel::allocate_couplers() {
     m_log->message(2, "# Allocating a surface process model or coupler...\n");
 
     m_surface                = new IBSurfaceModel(m_grid);
-    m_external_surface_model = false;
 
     atmosphere = pa.create();
     m_surface->attach_atmosphere_model(atmosphere);
@@ -55,7 +54,6 @@ void IBIceModel::allocate_couplers() {
     m_log->message(2, "# Allocating an ocean model or coupler...\n");
 
     m_ocean                = po.create();
-    m_external_ocean_model = false;
   }
 }
 
