@@ -466,10 +466,10 @@ void IceModel::massContExplicitStep() {
   assert(m_surface != NULL);
   m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
 
-  IceModelVec2S &H_new = vWork2d[0];
+  IceModelVec2S &H_new = m_work2d[0];
   H_new.copy_from(m_ice_thickness);
 
-  IceModelVec2S &H_residual = vWork2d[1];
+  IceModelVec2S &H_residual = m_work2d[1];
 
   const IceModelVec2Stag &Qdiff = m_stress_balance->diffusive_flux();
 
@@ -494,7 +494,7 @@ void IceModel::massContExplicitStep() {
     do_redist = m_config->get_boolean("part_redist"),
     reduce_frontal_thickness = m_config->get_boolean("part_grid_reduce_frontal_thickness");
   if (do_part_grid) {
-    list.add(vHref);
+    list.add(m_Href);
     if (do_redist) {
       list.add(H_residual);
       // FIXME: next line causes mass loss if max_loopcount in redistResiduals()
@@ -572,16 +572,16 @@ void IceModel::massContExplicitStep() {
 
           // Add the flow contribution to this partially filled cell.
           H_to_Href_flux  = -(divQ_SSA + divQ_SIA) * m_dt;
-          vHref(i, j)    += H_to_Href_flux;
+          m_Href(i, j)    += H_to_Href_flux;
 
-          if (vHref(i, j) < 0) {
+          if (m_Href(i, j) < 0) {
             m_log->message(2,
                            "PISM WARNING: negative Href at (%d, %d)\n",
                            i, j);
 
             // Note: this adds mass!
-            nonneg_rule_flux += vHref(i, j);
-            vHref(i, j) = 0;
+            nonneg_rule_flux += m_Href(i, j);
+            m_Href(i, j) = 0;
           }
 
           double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
@@ -592,16 +592,16 @@ void IceModel::massContExplicitStep() {
                                                              reduce_frontal_thickness);
           double coverage_ratio = 1.0;
           if (H_threshold > 0.0) {
-            coverage_ratio = vHref(i, j) / H_threshold;
+            coverage_ratio = m_Href(i, j) / H_threshold;
           }
 
           if (coverage_ratio >= 1.0) {
             // A partially filled grid cell is now considered to be full.
             if (do_redist) {
-              H_residual(i, j) = vHref(i, j) - H_threshold; // residual ice thickness
+              H_residual(i, j) = m_Href(i, j) - H_threshold; // residual ice thickness
             }
 
-            vHref(i, j)    = 0.0;
+            m_Href(i, j)    = 0.0;
             Href_to_H_flux = H_threshold;
 
             // A cell that became "full" experiences both SMB and basal melt.

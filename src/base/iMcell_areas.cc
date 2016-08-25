@@ -98,8 +98,8 @@ void IceModel::compute_cell_areas() {
   double dx2 = 0.5 * m_grid->dx(), dy2 = 0.5 * m_grid->dy();
 
   IceModelVec::AccessList list;
-  list.add(vLatitude);
-  list.add(vLongitude);
+  list.add(m_latitude);
+  list.add(m_longitude);
   list.add(m_cell_area);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -132,8 +132,8 @@ void IceModel::compute_cell_areas() {
     // compute lon,lat coordinates:
     pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
     // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
-    vLongitude(i, j) = x * RAD_TO_DEG;
-    vLatitude(i, j)  = y * RAD_TO_DEG;
+    m_longitude(i, j) = x * RAD_TO_DEG;
+    m_latitude(i, j)  = y * RAD_TO_DEG;
   }
 
   pj_free(pism);

@@ -330,11 +330,11 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   IceModel::enthalpyAndDrainageStep(vertSacrCount, liquifiedVol, bulgeCount);
 
-  // note that the call above sets vWork3d; ghosts are comminucated later (in
+  // note that the call above sets m_work3d; ghosts are comminucated later (in
   // IceModel::energyStep()).
   IceModelVec::AccessList list;
   list.add(m_no_model_mask);
-  list.add(vWork3d);
+  list.add(m_work3d);
   list.add(m_ice_enthalpy);
 
   for (Points p(*m_grid); p; p.next()) {
@@ -344,7 +344,7 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       continue;
     }
 
-    double *new_enthalpy = vWork3d.get_column(i, j);
+    double *new_enthalpy = m_work3d.get_column(i, j);
     double *old_enthalpy = m_ice_enthalpy.get_column(i, j);
 
     for (unsigned int k = 0; k < m_grid->Mz(); ++k) {

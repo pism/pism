@@ -221,7 +221,7 @@ void IceModel::ageStep() {
   list.add(u3);
   list.add(v3);
   list.add(w3);
-  list.add(vWork3d);
+  list.add(m_work3d);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -232,7 +232,7 @@ void IceModel::ageStep() {
 
       if (system.ks() == 0) {
         // if no ice, set the entire column to zero age
-        vWork3d.set_column(i, j, 0.0);
+        m_work3d.set_column(i, j, 0.0);
       } else {
         // general case: solve advection PDE
 
@@ -250,13 +250,13 @@ void IceModel::ageStep() {
         }
 
         // put solution in IceModelVec3
-        system.fine_to_coarse(x, i, j, vWork3d);
+        system.fine_to_coarse(x, i, j, m_work3d);
 
         // Ensure that the age of the ice is non-negative.
         //
         // FIXME: this is a kludge. We need to ensure that our numerical method has the maximum
         // principle instead. (We may still need this for correctness, though.)
-        double *column = vWork3d.get_column(i, j);
+        double *column = m_work3d.get_column(i, j);
         for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
           if (column[k] < 0.0) {
             column[k] = 0.0;
@@ -269,7 +269,7 @@ void IceModel::ageStep() {
   }
   loop.check();
 
-  vWork3d.update_ghosts(m_ice_age);
+  m_work3d.update_ghosts(m_ice_age);
 }
 
 

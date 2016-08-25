@@ -118,9 +118,9 @@ This method should be kept because it is worth having alternative physics, and
 
     An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
-    In this procedure two scalar fields are modified: basal_melt_rate and vWork3d.
+    In this procedure two scalar fields are modified: basal_melt_rate and m_work3d.
     But basal_melt_rate will never need to communicate ghosted values (horizontal stencil
-    neighbors).  The ghosted values for m_ice_temperature are updated from the values in vWork3d in the
+    neighbors).  The ghosted values for m_ice_temperature are updated from the values in m_work3d in the
     communication done by energyStep().
 
   The (older) scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
@@ -162,7 +162,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   assert(btu != NULL);
   const IceModelVec2S &G0 = btu->upward_geothermal_flux();
 
-  IceModelVec2S &bwatcurr = vWork2d[0];
+  IceModelVec2S &bwatcurr = m_work2d[0];
   bwatcurr.set_attrs("internal", "current amount of basal water", "m", "");
   bwatcurr.metadata().set_string("glaciological_units", "m");
 
@@ -206,7 +206,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   list.add(w3);
   list.add(strain_heating3);
   list.add(m_ice_temperature);
-  list.add(vWork3d);
+  list.add(m_work3d);
 
   // counts unreasonably low temperature values; deprecated?
   int myLowTempCount = 0;
@@ -325,8 +325,8 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
         Tnew[k] = m_ice_surface_temp(i,j);
       }
 
-      // transfer column into vWork3d; communication later
-      system.fine_to_coarse(Tnew, i, j, vWork3d);
+      // transfer column into m_work3d; communication later
+      system.fine_to_coarse(Tnew, i, j, m_work3d);
 
       // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
       if (m_cell_type.ocean(i,j)) {

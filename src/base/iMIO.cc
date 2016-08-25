@@ -330,8 +330,8 @@ void IceModel::write_model_state(const PIO &nc) {
   if (m_output_global_attributes.has_attribute("proj4")) {
     m_output_vars.insert("lon_bnds");
     m_output_vars.insert("lat_bnds");
-    vLatitude.metadata().set_string("bounds", "lat_bnds");
-    vLongitude.metadata().set_string("bounds", "lon_bnds");
+    m_latitude.metadata().set_string("bounds", "lat_bnds");
+    m_longitude.metadata().set_string("bounds", "lon_bnds");
   }
 #elif (PISM_USE_PROJ4==0)
   // do nothing
@@ -399,12 +399,12 @@ void IceModel::initFromFile(const PIO &input_file) {
     bool href_exists = input_file.inq_var("Href");
 
     if (href_exists == true) {
-      vHref.read(input_file, last_record);
+      m_Href.read(input_file, last_record);
     } else {
       m_log->message(2,
                      "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
                      filename.c_str());
-      vHref.set(0.0);
+      m_Href.set(0.0);
     }
   }
 
@@ -577,7 +577,7 @@ void IceModel::init_enthalpy(const PIO &input_file,
     }
   } else if (temp_exists) {
     IceModelVec3
-      &temp    = vWork3d,
+      &temp    = m_work3d,
       &liqfrac = m_ice_enthalpy;
 
     SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();

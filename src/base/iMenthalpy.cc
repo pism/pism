@@ -192,7 +192,7 @@ void IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
 This method is documented by the page \ref bombproofenth and by [\ref
 AschwandenBuelerKhroulevBlatter].
 
-This method updates IceModelVec3 vWork3d = vEnthnew and IceModelVec2S basal_melt_rate.
+This method updates IceModelVec3 m_work3d = vEnthnew and IceModelVec2S basal_melt_rate.
 No communication of ghosts is done for any of these fields.
 
 We use an instance of enthSystemCtx.
@@ -247,7 +247,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   assert(btu != NULL);
   const IceModelVec2S &basal_heat_flux = btu->upward_geothermal_flux();
 
-  IceModelVec2S &till_water_thickness = vWork2d[0];
+  IceModelVec2S &till_water_thickness = m_work2d[0];
   till_water_thickness.set_attrs("internal", "current amount of basal water in the till",
                                  "m", "");
   assert(subglacial_hydrology != NULL);
@@ -273,7 +273,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   list.add(w3);
   list.add(strain_heating3);
   list.add(m_ice_enthalpy);
-  list.add(vWork3d);
+  list.add(m_work3d);
 
   unsigned int liquifiedCount = 0;
 
@@ -296,7 +296,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
       // deal completely with columns with no ice; enthalpy and basal_melt_rate need setting
       if (ice_free_column) {
-        vWork3d.set_column(i, j, Enth_ks);
+        m_work3d.set_column(i, j, Enth_ks);
         // The floating basal melt rate will be set later; cover this
         // case and set to zero for now. Also, there is no basal melt
         // rate on ice free land and ice free ocean
@@ -490,7 +490,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         } // end of the grounded case
       } // end of the basal melt rate computation
 
-      system.fine_to_coarse(Enthnew, i, j, vWork3d);
+      system.fine_to_coarse(Enthnew, i, j, m_work3d);
     }
   } catch (...) {
     loop.failed();

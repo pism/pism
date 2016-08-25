@@ -39,8 +39,10 @@ void IceModel::calculateFractureDensity() {
   const double dx = m_grid->dx(), dy = m_grid->dy(), Mx = m_grid->Mx(), My = m_grid->My();
 
   IceModelVec2S
-    &vFDnew = vWork2d[0],
-    &vFAnew = vWork2d[1];
+    &D = m_fracture_density,
+    &A = m_fracture_age,
+    &D_new = m_work2d[0],
+    &A_new = m_work2d[1];
 
   // get SSA velocities and related strain rates and stresses
   const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
@@ -53,9 +55,9 @@ void IceModel::calculateFractureDensity() {
   list.add(m_deviatoric_stresses);
 
   list.add(m_ice_thickness);
-  list.add(vFD);
-  vFDnew.copy_from(vFD);
-  list.add(vFDnew);
+  list.add(D);
+  D_new.copy_from(D);
+  list.add(D_new);
   list.add(m_cell_type);
 
   const bool dirichlet_bc = m_config->get_boolean("ssa_dirichlet_bc");
@@ -66,13 +68,13 @@ void IceModel::calculateFractureDensity() {
 
   const bool write_fd = m_config->get_boolean("write_fd_fields");
   if (write_fd) {
-    list.add(vFG);
-    list.add(vFH);
-    list.add(vFE);
-    list.add(vFT);
-    list.add(vFA);
-    vFAnew.copy_from(vFA);
-    list.add(vFAnew);
+    list.add(m_fracture_growth_rate);
+    list.add(m_fracture_healing_rate);
+    list.add(m_fracture_flow_enhancement);
+    list.add(m_fracture_toughness);
+    list.add(A);
+    A_new.copy_from(A);
+    list.add(A_new);
   }
 
   double tempFD;
@@ -150,21 +152,21 @@ void IceModel::calculateFractureDensity() {
     if (fd2d_scheme) {
 
       if (uvel>=dx*vvel/dy && vvel>=0.0) { //1
-        tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx + vvel*(vFD(i-1,j)-vFD(i-1,j-1))/dy;
+        tempFD = uvel*(D(i,j)-D(i-1,j))/dx + vvel*(D(i-1,j)-D(i-1,j-1))/dy;
       } else if (uvel<=dx*vvel/dy && uvel>=0.0) { //2
-        tempFD = uvel*(vFD(i,j-1)-vFD(i-1,j-1))/dx + vvel*(vFD(i,j)-vFD(i,j-1))/dy;
+        tempFD = uvel*(D(i,j-1)-D(i-1,j-1))/dx + vvel*(D(i,j)-D(i,j-1))/dy;
       } else if (uvel>=-dx*vvel/dy && uvel<=0.0) { //3
-        tempFD = -uvel*(vFD(i,j-1)-vFD(i+1,j-1))/dx + vvel*(vFD(i,j)-vFD(i,j-1))/dy;
+        tempFD = -uvel*(D(i,j-1)-D(i+1,j-1))/dx + vvel*(D(i,j)-D(i,j-1))/dy;
       } else if (uvel<=-dx*vvel/dy && vvel>=0.0) { //4
-        tempFD = -uvel*(vFD(i,j)-vFD(i+1,j))/dx + vvel*(vFD(i+1,j)-vFD(i+1,j-1))/dy;
+        tempFD = -uvel*(D(i,j)-D(i+1,j))/dx + vvel*(D(i+1,j)-D(i+1,j-1))/dy;
       } else if (uvel<=dx*vvel/dy && vvel<=0.0) { //5
-        tempFD = -uvel*(vFD(i,j)-vFD(i+1,j))/dx - vvel*(vFD(i+1,j)-vFD(i+1,j+1))/dy;
+        tempFD = -uvel*(D(i,j)-D(i+1,j))/dx - vvel*(D(i+1,j)-D(i+1,j+1))/dy;
       } else if (uvel>=dx*vvel/dy && uvel<=0.0) { //6
-        tempFD = -uvel*(vFD(i,j+1)-vFD(i+1,j+1))/dx - vvel*(vFD(i,j)-vFD(i,j+1))/dy;
+        tempFD = -uvel*(D(i,j+1)-D(i+1,j+1))/dx - vvel*(D(i,j)-D(i,j+1))/dy;
       } else if (uvel<=-dx*vvel/dy && uvel>=0.0) { //7
-        tempFD = uvel*(vFD(i,j+1)-vFD(i-1,j+1))/dx - vvel*(vFD(i,j)-vFD(i,j+1))/dy;
+        tempFD = uvel*(D(i,j+1)-D(i-1,j+1))/dx - vvel*(D(i,j)-D(i,j+1))/dy;
       } else if (uvel>=-dx*vvel/dy && vvel<=0.0) { //8
-        tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx - vvel*(vFD(i-1,j)-vFD(i-1,j+1))/dy;
+        tempFD = uvel*(D(i,j)-D(i-1,j))/dx - vvel*(D(i-1,j)-D(i-1,j+1))/dy;
       } else {
         m_log->message(3,
                    "######### missing case of angle %f of %f and %f at %d, %d \n",
@@ -172,11 +174,11 @@ void IceModel::calculateFractureDensity() {
       }
     }
     else{
-      tempFD += uvel * (uvel<0 ? vFD(i+1,j)-vFD(i,j):vFD(i,j)-vFD(i-1,j))/dx;
-      tempFD += vvel * (vvel<0 ? vFD(i,j+1)-vFD(i,j):vFD(i,j)-vFD(i,j-1))/dy;
+      tempFD += uvel * (uvel<0 ? D(i+1,j)-D(i,j):D(i,j)-D(i-1,j))/dx;
+      tempFD += vvel * (vvel<0 ? D(i,j+1)-D(i,j):D(i,j)-D(i,j-1))/dy;
     }
 
-    vFDnew(i,j)-= tempFD * m_dt;
+    D_new(i,j)-= tempFD * m_dt;
 
     //sources /////////////////////////////////////////////////////////////////
     ///von mises criterion
@@ -247,9 +249,9 @@ void IceModel::calculateFractureDensity() {
     //////////////////////////////////////////////////////////////////////////////
 
     //fracture density
-    double fdnew = gamma*(m_strain_rates(i,j,0)-0.0)*(1-vFDnew(i,j));
+    double fdnew = gamma*(m_strain_rates(i,j,0)-0.0)*(1-D_new(i,j));
     if (sigmat > initThreshold) {
-      vFDnew(i,j)+= fdnew*m_dt;
+      D_new(i,j)+= fdnew*m_dt;
     }
 
     //healing
@@ -258,27 +260,27 @@ void IceModel::calculateFractureDensity() {
       if (constant_healing) {
         fdheal = gammaheal*(-healThreshold);
         if (fracture_weighted_healing) {
-          vFDnew(i,j)+= fdheal*m_dt*(1-vFD(i,j));
+          D_new(i,j)+= fdheal*m_dt*(1-D(i,j));
         } else {
-          vFDnew(i,j)+= fdheal*m_dt;
+          D_new(i,j)+= fdheal*m_dt;
         }
       }
       else if (m_strain_rates(i,j,0) < healThreshold) {
         if (fracture_weighted_healing) {
-          vFDnew(i,j)+= fdheal*m_dt*(1-vFD(i,j));
+          D_new(i,j)+= fdheal*m_dt*(1-D(i,j));
         } else {
-          vFDnew(i,j)+= fdheal*m_dt;
+          D_new(i,j)+= fdheal*m_dt;
         }
       }
     }
 
     //bounding
-    if (vFDnew(i,j)<0.0) {
-      vFDnew(i,j)=0.0;
+    if (D_new(i,j)<0.0) {
+      D_new(i,j)=0.0;
     }
 
-    if (vFDnew(i,j)>1.0) {
-      vFDnew(i,j)=1.0;
+    if (D_new(i,j)>1.0) {
+      D_new(i,j)=1.0;
     }
 
     //################################################################################
@@ -286,44 +288,44 @@ void IceModel::calculateFractureDensity() {
     // if option -write_fd_fields is set
     if (write_fd && m_ice_thickness(i,j)>0.0) {
       //fracture toughness
-      vFT(i,j)=sigmat;
+      m_fracture_toughness(i,j)=sigmat;
 
       // fracture growth rate
       if (sigmat > initThreshold) {
-        vFG(i,j)=fdnew;
-        //vFG(i,j)=gamma*(vPrinStrain1(i,j)-0.0)*(1-vFDnew(i,j));
+        m_fracture_growth_rate(i,j)=fdnew;
+        //m_fracture_growth_rate(i,j)=gamma*(vPrinStrain1(i,j)-0.0)*(1-D_new(i,j));
       } else {
-        vFG(i,j)=0.0;
+        m_fracture_growth_rate(i,j)=0.0;
       }
 
       // fracture healing rate
       if (m_ice_thickness(i,j)>0.0) {
         if (constant_healing || (m_strain_rates(i,j,0) < healThreshold)) {
           if (fracture_weighted_healing) {
-            vFH(i,j)=fdheal*(1-vFD(i,j));
+            m_fracture_healing_rate(i,j)=fdheal*(1-D(i,j));
           } else {
-            vFH(i,j)=fdheal;
+            m_fracture_healing_rate(i,j)=fdheal;
           }
         } else {
-          vFH(i,j)=0.0;
+          m_fracture_healing_rate(i,j)=0.0;
         }
       }
 
       //fracture age since fracturing occured
-      vFAnew(i,j) -= m_dt * uvel * (uvel<0 ? vFA(i+1,j)-vFA(i, j):vFA(i, j)-vFA(i-1, j))/dx;
-      vFAnew(i,j) -= m_dt * vvel * (vvel<0 ? vFA(i,j+1)-vFA(i, j):vFA(i, j)-vFA(i, j-1))/dy;
-      vFAnew(i,j)+= m_dt / one_year;
+      A_new(i,j) -= m_dt * uvel * (uvel<0 ? A(i+1,j)-A(i, j):A(i, j)-A(i-1, j))/dx;
+      A_new(i,j) -= m_dt * vvel * (vvel<0 ? A(i,j+1)-A(i, j):A(i, j)-A(i, j-1))/dy;
+      A_new(i,j)+= m_dt / one_year;
       if (sigmat > initThreshold) {
-        vFAnew(i,j) = 0.0;
+        A_new(i,j) = 0.0;
       }
 
       // additional flow enhancement due to fracture softening
       double phi_exp=3.0;//flow_law->exponent();
-      double softening = pow((1.0-(1.0-soft_residual)*vFDnew(i,j)),-phi_exp);
+      double softening = pow((1.0-(1.0-soft_residual)*D_new(i,j)),-phi_exp);
       if (m_ice_thickness(i,j)>0.0) {
-        vFE(i,j)=1.0/pow(softening,1/3.0);
+        m_fracture_flow_enhancement(i,j)=1.0/pow(softening,1/3.0);
       } else {
-        vFE(i,j)=1.0;
+        m_fracture_flow_enhancement(i,j)=1.0;
       }
     }
 
@@ -331,40 +333,40 @@ void IceModel::calculateFractureDensity() {
     if (dirichlet_bc && !do_fracground) {
       if (m_ssa_dirichlet_bc_mask.as_int(i,j) == 1) {
         if (m_ssa_dirichlet_bc_values(i,j).u != 0.0 || m_ssa_dirichlet_bc_values(i,j).v != 0.0) {
-          vFDnew(i,j)=fdBoundaryValue;
+          D_new(i,j)=fdBoundaryValue;
         }
 
         if (write_fd) {
-          vFAnew(i,j)=0.0;
-          vFG(i,j)=0.0;
-          vFH(i,j)=0.0;
-          vFE(i,j)=1.0;
-          vFT(i,j)=0.0;
+          A_new(i,j)=0.0;
+          m_fracture_growth_rate(i,j)=0.0;
+          m_fracture_healing_rate(i,j)=0.0;
+          m_fracture_flow_enhancement(i,j)=1.0;
+          m_fracture_toughness(i,j)=0.0;
         }
       }
     }
     // ice free regions and boundary of computational domain
     if (m_ice_thickness(i,j)==0.0 || i==0 || j==0 || i==Mx-1 || j==My-1) {
-      vFDnew(i,j)=0.0;
+      D_new(i,j)=0.0;
       if (write_fd) {
-        vFAnew(i,j)=0.0;
-        vFG(i,j)=0.0;
-        vFH(i,j)=0.0;
-        vFE(i,j)=1.0;
-        vFT(i,j)=0.0;
+        A_new(i,j)=0.0;
+        m_fracture_growth_rate(i,j)=0.0;
+        m_fracture_healing_rate(i,j)=0.0;
+        m_fracture_flow_enhancement(i,j)=1.0;
+        m_fracture_toughness(i,j)=0.0;
       }
     }
 
     if (constant_fd) {//no fd evolution
-      vFDnew(i,j)=vFD(i,j);
+      D_new(i,j)=D(i,j);
     }
   }
 
   if (write_fd) {
-    vFAnew.update_ghosts(vFA);
+    A_new.update_ghosts(A);
   }
 
-  vFDnew.update_ghosts(vFD);
+  D_new.update_ghosts(D);
 }
 
 } // end of namespace pism

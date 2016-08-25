@@ -305,31 +305,31 @@ void IceModel::createVecs() {
   m_grid->variables().add(m_basal_melt_rate);
 
   // longitude
-  vLongitude.create(m_grid, "lon", WITH_GHOSTS);
-  vLongitude.set_attrs("mapping", "longitude", "degree_east", "longitude");
-  vLongitude.set_time_independent(true);
-  vLongitude.metadata().set_string("coordinates", "");
-  vLongitude.metadata().set_string("grid_mapping", "");
-  vLongitude.metadata().set_double("valid_min", -180.0);
-  vLongitude.metadata().set_double("valid_max",  180.0);
-  m_grid->variables().add(vLongitude);
+  m_longitude.create(m_grid, "lon", WITH_GHOSTS);
+  m_longitude.set_attrs("mapping", "longitude", "degree_east", "longitude");
+  m_longitude.set_time_independent(true);
+  m_longitude.metadata().set_string("coordinates", "");
+  m_longitude.metadata().set_string("grid_mapping", "");
+  m_longitude.metadata().set_double("valid_min", -180.0);
+  m_longitude.metadata().set_double("valid_max",  180.0);
+  m_grid->variables().add(m_longitude);
 
   // latitude
-  vLatitude.create(m_grid, "lat", WITH_GHOSTS); // has ghosts so that we can compute cell areas
-  vLatitude.set_attrs("mapping", "latitude", "degree_north", "latitude");
-  vLatitude.set_time_independent(true);
-  vLatitude.metadata().set_string("coordinates", "");
-  vLatitude.metadata().set_string("grid_mapping", "");
-  vLatitude.metadata().set_double("valid_min", -90.0);
-  vLatitude.metadata().set_double("valid_max",  90.0);
-  m_grid->variables().add(vLatitude);
+  m_latitude.create(m_grid, "lat", WITH_GHOSTS); // has ghosts so that we can compute cell areas
+  m_latitude.set_attrs("mapping", "latitude", "degree_north", "latitude");
+  m_latitude.set_time_independent(true);
+  m_latitude.metadata().set_string("coordinates", "");
+  m_latitude.metadata().set_string("grid_mapping", "");
+  m_latitude.metadata().set_double("valid_min", -90.0);
+  m_latitude.metadata().set_double("valid_max",  90.0);
+  m_grid->variables().add(m_latitude);
 
   if (m_config->get_boolean("part_grid")) {
     // Href
-    vHref.create(m_grid, "Href", WITH_GHOSTS);
-    vHref.set_attrs("model_state", "temporary ice thickness at calving front boundary",
+    m_Href.create(m_grid, "Href", WITH_GHOSTS);
+    m_Href.set_attrs("model_state", "temporary ice thickness at calving front boundary",
                     "m", "");
-    m_grid->variables().add(vHref);
+    m_grid->variables().add(m_Href);
   }
 
   if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos or
@@ -406,33 +406,33 @@ void IceModel::createVecs() {
 
   // fracture density field
   if (m_config->get_boolean("do_fracture_density")) {
-    vFD.create(m_grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
-    vFD.set_attrs("model_state", "fracture density in ice shelf", "", "");
-    vFD.metadata().set_double("valid_max", 1.0);
-    vFD.metadata().set_double("valid_min", 0.0);
-    m_grid->variables().add(vFD);
+    m_fracture_density.create(m_grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
+    m_fracture_density.set_attrs("model_state", "fracture density in ice shelf", "", "");
+    m_fracture_density.metadata().set_double("valid_max", 1.0);
+    m_fracture_density.metadata().set_double("valid_min", 0.0);
+    m_grid->variables().add(m_fracture_density);
 
     if (m_config->get_boolean("write_fd_fields")) {
-      vFG.create(m_grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
-      vFG.set_attrs("model_state", "fracture growth rate",       "second-1", "");
-      vFG.metadata().set_double("valid_min", 0.0);
-      m_grid->variables().add(vFG);
+      m_fracture_growth_rate.create(m_grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture_growth_rate.set_attrs("model_state", "fracture growth rate",       "second-1", "");
+      m_fracture_growth_rate.metadata().set_double("valid_min", 0.0);
+      m_grid->variables().add(m_fracture_growth_rate);
 
-      vFH.create(m_grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
-      vFH.set_attrs("model_state", "fracture healing rate",      "second-1", "");
-      m_grid->variables().add(vFH);
+      m_fracture_healing_rate.create(m_grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture_healing_rate.set_attrs("model_state", "fracture healing rate",      "second-1", "");
+      m_grid->variables().add(m_fracture_healing_rate);
 
-      vFE.create(m_grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
-      vFE.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
-      m_grid->variables().add(vFE);
+      m_fracture_flow_enhancement.create(m_grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture_flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
+      m_grid->variables().add(m_fracture_flow_enhancement);
 
-      vFA.create(m_grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL);
-      vFA.set_attrs("model_state", "age since fracturing",       "years", "");
-      m_grid->variables().add(vFA);
+      m_fracture_age.create(m_grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture_age.set_attrs("model_state", "age since fracturing",       "years", "");
+      m_grid->variables().add(m_fracture_age);
 
-      vFT.create(m_grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
-      vFT.set_attrs("model_state", "fracture toughness", "Pa", "");
-      m_grid->variables().add(vFT);
+      m_fracture_toughness.create(m_grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture_toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
+      m_grid->variables().add(m_fracture_toughness);
     }
   }
 
@@ -604,7 +604,7 @@ void IceModel::step(bool do_mass_continuity,
 
   double sea_level = m_ocean->sea_level_elevation();
 
-  IceModelVec2S &melange_back_pressure = vWork2d[0];
+  IceModelVec2S &melange_back_pressure = m_work2d[0];
 
   m_ocean->melange_back_pressure_fraction(melange_back_pressure);
 

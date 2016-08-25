@@ -57,7 +57,7 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
   double result = 0.0, meltarea = 0.0;
   const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3; // area unit (km^2)
 
-  IceModelVec2S &Enthbase = vWork2d[0];
+  IceModelVec2S &Enthbase = m_work2d[0];
   // use m_ice_enthalpy to get stats
   m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
 
@@ -332,11 +332,11 @@ double IceModel::ice_volume() const {
 
   // Add the volume of ice in Href:
   if (m_config->get_boolean("part_grid")) {
-    list.add(vHref);
+    list.add(m_Href);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      volume += vHref(i,j) * m_cell_area(i,j);
+      volume += m_Href(i,j) * m_cell_area(i,j);
     }
   }
 
@@ -515,7 +515,7 @@ double IceModel::ice_area_temperate() {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   double area = 0.0;
-  IceModelVec2S &Enthbase = vWork2d[0];
+  IceModelVec2S &Enthbase = m_work2d[0];
 
   m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
 
@@ -549,7 +549,7 @@ double IceModel::ice_area_cold() {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   double area = 0.0;
-  IceModelVec2S &Enthbase = vWork2d[0];
+  IceModelVec2S &Enthbase = m_work2d[0];
 
   m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
 

@@ -165,14 +165,14 @@ void IceModel::bootstrap_2d(const std::string &filename) {
   m_log->message(2,
              "  reading 2D model state variables by regridding ...\n");
 
-  vLongitude.regrid(filename, OPTIONAL);
+  m_longitude.regrid(filename, OPTIONAL);
   if (not lon_found) {
-    vLongitude.metadata().set_string("missing_at_bootstrap","true");
+    m_longitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  vLatitude.regrid(filename, OPTIONAL);
+  m_latitude.regrid(filename, OPTIONAL);
   if (not lat_found) {
-    vLatitude.metadata().set_string("missing_at_bootstrap","true");
+    m_latitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
   m_basal_melt_rate.regrid(filename, OPTIONAL,
@@ -202,7 +202,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     //
     // On the other hand, we need to read it in to be able to re-start
     // from a PISM output file using the -bootstrap option.
-    vHref.regrid(filename, OPTIONAL, 0.0);
+    m_Href.regrid(filename, OPTIONAL, 0.0);
   }
 
   if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos) {

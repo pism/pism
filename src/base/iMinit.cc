@@ -539,15 +539,15 @@ void IceModel::allocate_internal_objects() {
 
   // various internal quantities
   // 2d work vectors
-  for (int j = 0; j < nWork2d; j++) {
+  for (int j = 0; j < m_n_work2d; j++) {
     char namestr[30];
     snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
-    vWork2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
+    m_work2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
   }
 
   // 3d work vectors
-  vWork3d.create(m_grid,"work_vector_3d",WITHOUT_GHOSTS);
-  vWork3d.set_attrs("internal",
+  m_work3d.create(m_grid,"work_vector_3d",WITHOUT_GHOSTS);
+  m_work3d.set_attrs("internal",
                     "e.g. new values of temperature or age or enthalpy during time step",
                     "", "");
 }

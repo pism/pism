@@ -43,13 +43,13 @@ namespace pism {
 void IceModel::do_calving() {
 
   IceModelVec2S
-    &old_H    = vWork2d[0],
-    &old_Href = vWork2d[1];
+    &old_H    = m_work2d[0],
+    &old_Href = m_work2d[1];
 
   {
     old_H.copy_from(m_ice_thickness);
-    if (vHref.was_created()) {
-      old_Href.copy_from(vHref);
+    if (m_Href.was_created()) {
+      old_Href.copy_from(m_Href);
     } else {
       old_Href.set(0.0);
     }
@@ -63,7 +63,7 @@ void IceModel::do_calving() {
                             m_ocean->sea_level_elevation(),
                             m_beddef->bed_elevation(),
                             m_cell_type,
-                            vHref,
+                            m_Href,
                             m_ice_thickness);
   }
 
@@ -72,7 +72,7 @@ void IceModel::do_calving() {
                                m_ocean->sea_level_elevation(),
                                m_beddef->bed_elevation(),
                                m_cell_type,
-                               vHref,
+                               m_Href,
                                m_ice_thickness);
   }
 
@@ -97,7 +97,7 @@ void IceModel::do_calving() {
   // update the mask and surface elevation.
   updateSurfaceElevationAndMask();
 
-  update_cumulative_discharge(m_ice_thickness, old_H, vHref, old_Href);
+  update_cumulative_discharge(m_ice_thickness, old_H, m_Href, old_Href);
 }
 
 /**
@@ -107,25 +107,25 @@ void IceModel::do_calving() {
  * floating ice neighbor.
  */
 void IceModel::Href_cleanup() {
-  if (not vHref.was_created()) {
+  if (not m_Href.was_created()) {
     return;
   }
 
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
-  list.add(vHref);
+  list.add(m_Href);
   list.add(m_cell_type);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
-      m_ice_thickness(i, j) += vHref(i, j);
-      vHref(i, j) = 0.0;
+    if (m_ice_thickness(i, j) > 0 && m_Href(i, j) > 0) {
+      m_ice_thickness(i, j) += m_Href(i, j);
+      m_Href(i, j) = 0.0;
     }
 
-    if (vHref(i, j) > 0.0 && not m_cell_type.next_to_ice(i, j)) {
-      vHref(i, j) = 0.0;
+    if (m_Href(i, j) > 0.0 && not m_cell_type.next_to_ice(i, j)) {
+      m_Href(i, j) = 0.0;
     }
   }
 }

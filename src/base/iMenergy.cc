@@ -77,7 +77,7 @@ void IceModel::energyStep() {
     temperatureStep(&myVertSacrCount,&myBulgeCount);
     profiling.end("temp step");
 
-    vWork3d.update_ghosts(m_ice_temperature);
+    m_work3d.update_ghosts(m_ice_temperature);
 
     // compute_enthalpy_cold() updates ghosts of m_ice_enthalpy using
     // update_ghosts(). Is not optimized because this
@@ -85,14 +85,14 @@ void IceModel::energyStep() {
     compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
 
   } else {
-    // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
+    // new enthalpy values go in m_work3d; also updates (and communicates) Hmelt
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
     profiling.begin("enth step");
     enthalpyAndDrainageStep(&myVertSacrCount, &myLiquifiedVol, &myBulgeCount);
     profiling.end("enth step");
 
-    vWork3d.update_ghosts(m_ice_enthalpy);
+    m_work3d.update_ghosts(m_ice_enthalpy);
 
     gLiquifiedVol = GlobalSum(m_grid->com, myLiquifiedVol);
     if (gLiquifiedVol > 0.0) {

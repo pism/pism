@@ -257,17 +257,17 @@ protected:
     m_ice_thickness,              //!< ghosted
     m_basal_yield_stress,         //!< ghosted
     m_basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
-    vLongitude, //!< Longitude; ghosted to compute cell areas
-    vLatitude,  //!< Latitude; ghosted to compute cell areas
+    m_longitude, //!< Longitude; ghosted to compute cell areas
+    m_latitude,  //!< Latitude; ghosted to compute cell areas
     m_geothermal_flux,   //!< geothermal flux; no ghosts
-    vFD,    //!< fracture density
-    vFG,    //!< fracture growth rate
-    vFH,    //!< fracture healing rate
-    vFE,    //!< fracture flow enhancement
-    vFA,    //!< fracture age
-    vFT,    //!< fracture toughness
+    m_fracture_density,    //!< fracture density
+    m_fracture_growth_rate,    //!< fracture growth rate
+    m_fracture_healing_rate,    //!< fracture healing rate
+    m_fracture_flow_enhancement,    //!< fracture flow enhancement
+    m_fracture_age,    //!< fracture age
+    m_fracture_toughness,    //!< fracture toughness
     m_bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
-    vHref,          //!< accumulated mass advected to a partially filled grid cell
+    m_Href,          //!< accumulated mass advected to a partially filled grid cell
     m_climatic_mass_balance,              //!< accumulation/ablation rate; no ghosts
     m_climatic_mass_balance_cumulative,    //!< cumulative climatic_mass_balance
     m_grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
@@ -428,7 +428,7 @@ public:
   double ice_area_grounded() const;
   double ice_area_floating() const;
   double ice_enthalpy() const;
-  // these are not "const" because they use temporary storage vWork2d
+  // these are not "const" because they use temporary storage m_work2d
   double ice_area_temperate();
   double ice_area_cold();
 
@@ -450,11 +450,11 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const int nWork2d=2;
-  IceModelVec2S vWork2d[nWork2d];
+  static const int m_n_work2d = 2;
+  IceModelVec2S m_work2d[m_n_work2d];
 
   // 3D working space
-  IceModelVec3 vWork3d;
+  IceModelVec3 m_work3d;
 
   stressbalance::StressBalance *m_stress_balance;
 
