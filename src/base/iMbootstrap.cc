@@ -34,154 +34,52 @@
 
 namespace pism {
 
-//! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
-/*!
-This procedure is called by the base class when option `-bootstrap` is used.
+void IceModel::bootstrap_2d(const PIO &input_file) {
 
-See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
- */
-void IceModel::bootstrapFromFile(const std::string &filename) {
-
-  // Bootstrap 2D fields:
-  bootstrap_2d(filename);
-
-  // Regrid 2D fields:
-  regrid(2);
-
-  // Check the consistency of geometry fields:
-  updateSurfaceElevationAndMask();
-
-  // save age, temperature, and enthalpy "revision numbers". If they
-  // changed, then the corresponding field was initialized using
-  // regridding.
-  int age_revision = m_ice_age.get_state_counter(),
-    temperature_revision = m_ice_temperature.get_state_counter(),
-    enthalpy_revision = m_ice_enthalpy.get_state_counter();
-
-  regrid(3);
-
-  m_log->message(2,
-             "bootstrapping 3D variables...\n");
-
-  // Fill 3D fields using heuristics:
-  {
-    // set the initial age of the ice if appropriate
-    if (m_config->get_boolean("do_age")) {
-      if (age_revision == m_ice_age.get_state_counter()) {
-        m_log->message(2,
-                   " - setting initial age to %.4f years\n",
-                   m_config->get_double("initial_age_of_ice_years"));
-        m_ice_age.set(m_config->get_double("initial_age_of_ice_years", "seconds"));
-
-      } else {
-        m_log->message(2,
-                   " - age of the ice was set already\n");
-      }
-    }
-
-    if (m_config->get_boolean("do_cold_ice_methods") == true) {
-      if (temperature_revision == m_ice_temperature.get_state_counter()) {
-        m_log->message(2,
-                   "getting surface B.C. from couplers...\n");
-        init_step_couplers();
-
-        // this call will set ice temperature
-        putTempAtDepth();
-      } else {
-        m_log->message(2,
-                   " - ice temperature was set already\n");
-      }
-
-      // make sure that enthalpy gets initialized:
-      compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
-      m_log->message(2,
-                 " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
-
-    } else {
-      // enthalpy mode
-      if (enthalpy_revision == m_ice_enthalpy.get_state_counter()) {
-        m_log->message(2,
-                   "getting surface B.C. from couplers...\n");
-        init_step_couplers();
-
-        // this call will set ice enthalpy
-        putTempAtDepth();
-      } else {
-        m_log->message(2,
-                   " - ice enthalpy was set already\n");
-      }
-    }
-  } // end of heuristics
-
-  m_log->message(2, "done reading %s; bootstrapping done\n",filename.c_str());
-}
-
-void IceModel::bootstrap_2d(const std::string &filename) {
-
-  PIO nc(m_grid->com, "guess_mode");
-  nc.open(filename, PISM_READONLY);
-
-  m_log->message(2,
-             "bootstrapping by PISM default method from file %s\n", filename.c_str());
-
-  // report on resulting computational box, rescale grid
-  m_log->message(2,
-             "  rescaling computational box for ice from -i file and\n"
-             "    user options to dimensions:\n"
-             "    [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-             (m_grid->x0() - m_grid->Lx())/1000.0,
-             (m_grid->x0() + m_grid->Lx())/1000.0,
-             (m_grid->y0() - m_grid->Ly())/1000.0,
-             (m_grid->y0() + m_grid->Ly())/1000.0,
-             m_grid->Lz());
+  m_log->message(2, "bootstrapping from file '%s'...\n", input_file.inq_filename().c_str());
 
   std::string usurf_name;
   bool usurf_found = false, mask_found = false, usurf_found_by_std_name = false;
-  nc.inq_var("usurf", "surface_altitude",
-             usurf_found, usurf_name, usurf_found_by_std_name);
-  mask_found = nc.inq_var("mask");
+  input_file.inq_var("usurf", "surface_altitude",
+                     usurf_found, usurf_name, usurf_found_by_std_name);
+  mask_found = input_file.inq_var("mask");
 
   std::string lon_name, lat_name;
   bool lon_found = false, lat_found = false,
     lon_found_by_std_name = false, lat_found_by_std_name = false;
-  nc.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name);
-  nc.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name);
-
-  nc.close();
+  input_file.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name);
+  input_file.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name);
 
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately
 
   if (mask_found) {
-    m_log->message(2,
-               "  WARNING: 'mask' found; IGNORING IT!\n");
+    m_log->message(2, "  WARNING: 'mask' found; IGNORING IT!\n");
   }
 
   if (usurf_found) {
-    m_log->message(2,
-               "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
+    m_log->message(2, "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
   }
 
-  m_log->message(2,
-             "  reading 2D model state variables by regridding ...\n");
+  m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
-  m_longitude.regrid(filename, OPTIONAL);
+  m_longitude.regrid(input_file, OPTIONAL);
   if (not lon_found) {
     m_longitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  m_latitude.regrid(filename, OPTIONAL);
+  m_latitude.regrid(input_file, OPTIONAL);
   if (not lat_found) {
     m_latitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  m_basal_melt_rate.regrid(filename, OPTIONAL,
-                         m_config->get_double("bootstrapping_bmelt_value_no_var"));
-  m_geothermal_flux.regrid(filename, OPTIONAL,
-                         m_config->get_double("bootstrapping_geothermal_flux_value_no_var"));
+  m_basal_melt_rate.regrid(input_file, OPTIONAL,
+                           m_config->get_double("bootstrapping_bmelt_value_no_var"));
+  m_geothermal_flux.regrid(input_file, OPTIONAL,
+                           m_config->get_double("bootstrapping_geothermal_flux_value_no_var"));
 
-  m_ice_thickness.regrid(filename, OPTIONAL,
-                       m_config->get_double("bootstrapping_H_value_no_var"));
+  m_ice_thickness.regrid(input_file, OPTIONAL,
+                         m_config->get_double("bootstrapping_H_value_no_var"));
   // check the range of the ice thickness
   {
     Range thk_range = m_ice_thickness.range();
@@ -202,7 +100,7 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     //
     // On the other hand, we need to read it in to be able to re-start
     // from a PISM output file using the -bootstrap option.
-    m_Href.regrid(filename, OPTIONAL, 0.0);
+    m_Href.regrid(input_file, OPTIONAL, 0.0);
   }
 
   if (m_config->get_string("calving_methods").find("eigen_calving") != std::string::npos) {
@@ -211,10 +109,10 @@ void IceModel::bootstrap_2d(const std::string &filename) {
 
   if (m_config->get_boolean("ssa_dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
-    m_ssa_dirichlet_bc_mask.regrid(filename, OPTIONAL, 0.0);
+    m_ssa_dirichlet_bc_mask.regrid(input_file, OPTIONAL, 0.0);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that
     // makes sense is the zero Dirichlet B.C.
-    m_ssa_dirichlet_bc_values.regrid(filename, OPTIONAL,  0.0);
+    m_ssa_dirichlet_bc_values.regrid(input_file, OPTIONAL,  0.0);
   }
 
   // check if Lz is valid
@@ -224,6 +122,32 @@ void IceModel::bootstrap_2d(const std::string &filename) {
     throw RuntimeError::formatted("Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
                                   thk_range.max, m_grid->Lz());
+  }
+}
+
+//! Fill 3D fields using heuristics.
+void IceModel::bootstrap_3d() {
+
+  // set the initial age of the ice if appropriate
+  if (m_config->get_boolean("do_age")) {
+    m_log->message(2, " - setting initial age to %.4f years\n",
+                   m_config->get_double("initial_age_of_ice_years"));
+
+    m_ice_age.set(m_config->get_double("initial_age_of_ice_years", "seconds"));
+  }
+
+  if (m_config->get_boolean("do_cold_ice_methods")) {
+    // set ice temperature:
+    putTempAtDepth();
+
+    // use temperature to initialize enthalpy:
+    compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
+
+    m_log->message(2, " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+  } else {
+    // enthalpy mode
+    // this call will set ice enthalpy
+    putTempAtDepth();
   }
 }
 

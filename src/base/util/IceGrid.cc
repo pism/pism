@@ -1289,17 +1289,19 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
 
   Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
 
+  Logger::ConstPtr log = ctx->log();
+
   if (input_file.is_set() and (not bootstrap)) {
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
-    options::ignored(*ctx->log(), "-Mx");
-    options::ignored(*ctx->log(), "-My");
-    options::ignored(*ctx->log(), "-Mz");
-    options::ignored(*ctx->log(), "-Mbz");
-    options::ignored(*ctx->log(), "-Lx");
-    options::ignored(*ctx->log(), "-Ly");
-    options::ignored(*ctx->log(), "-Lz");
-    options::ignored(*ctx->log(), "-z_spacing");
+    options::ignored(*log, "-Mx");
+    options::ignored(*log, "-My");
+    options::ignored(*log, "-Mz");
+    options::ignored(*log, "-Mbz");
+    options::ignored(*log, "-Lx");
+    options::ignored(*log, "-Ly");
+    options::ignored(*log, "-Lz");
+    options::ignored(*log, "-z_spacing");
 
     // get grid from a PISM input file
     std::vector<std::string> names;
@@ -1350,7 +1352,20 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
     input_grid.vertical_grid_from_options(ctx->config());
     input_grid.ownership_ranges_from_options(ctx->size());
 
-    return IceGrid::Ptr(new IceGrid(ctx, input_grid));
+    IceGrid::Ptr result(new IceGrid(ctx, input_grid));
+
+    // report on resulting computational box
+    log->message(2,
+                 "  setting computational box for ice from '%s' and\n"
+                 "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+                 input_file->c_str(),
+                 (result->x0() - result->Lx())/1000.0,
+                 (result->x0() + result->Lx())/1000.0,
+                 (result->y0() - result->Ly())/1000.0,
+                 (result->y0() + result->Ly())/1000.0,
+                 result->Lz());
+
+    return result;
   } else {
     // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is not set,
     // -bootstrap is not set either".

@@ -30,9 +30,8 @@ class IceRegionalModel : public IceModel {
 public:
   IceRegionalModel(IceGrid::Ptr g, Context::Ptr c);
 protected:
-  virtual void set_vars_from_options();
-  virtual void bootstrap_2d(const std::string &filename);
-  virtual void initFromFile(const PIO &input_file);
+  virtual void bootstrap_2d(const PIO &input_file);
+  virtual void restart_2d(const PIO &input_file, unsigned int record);
   virtual void model_state_setup();
   virtual void createVecs();
   virtual void allocate_stressbalance();

@@ -115,36 +115,28 @@ void IceRegionalModel::createVecs() {
 
 void IceRegionalModel::model_state_setup() {
 
+  if (m_config->get_boolean("do_cold_ice_methods")) {
+    throw RuntimeError("pismo does not support the '-energy cold' mode.");
+  }
+
   IceModel::model_state_setup();
 
-  // Now save the basal melt rate at the beginning of the run.
+  // This code should be here because -zero_grad_where_no_model and -no_model_strip are processed
+  // both when PISM is re-started *and* during bootstrapping.
+  {
+    bool zgwnm = options::Bool("-zero_grad_where_no_model",
+                               "set zero surface gradient in no model strip");
+    if (zgwnm) {
+      m_thk_stored.set(0.0);
+      m_usurf_stored.set(0.0);
+    }
+
+    double strip_width = m_config->get_double("regional_no_model_strip", "meters");
+    set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
+  }
+
+  // Finally, save the basal melt rate at the beginning of the run.
   m_bmr_stored.copy_from(m_basal_melt_rate);
-
-  bool zgwnm = options::Bool("-zero_grad_where_no_model",
-                             "set zero surface gradient in no model strip");
-  if (zgwnm) {
-    m_thk_stored.set(0.0);
-    m_usurf_stored.set(0.0);
-  }
-
-  options::Real strip_km("-no_model_strip", 
-                        "width in km of strip near boundary in which modeling is turned off",
-                        0.0);
-
-  if (strip_km.is_set()) {
-    m_log->message(2, 
-                   "* Option -no_model_strip read... setting boundary strip width to %.2f km\n",
-                   strip_km.value());
-    set_no_model_strip(*m_grid,
-                       units::convert(m_sys, strip_km, "km", "m"),
-                       m_no_model_mask);
-  } else {
-    double strip = m_config->get_double("regional_no_model_strip", "m");
-    m_log->message(2,
-                   "* Option -no_model_strip is not set... setting boundary strip width to %.2f km\n",
-                   units::convert(m_sys, strip, "m", "km"));
-    set_no_model_strip(*m_grid, strip, m_no_model_mask);
-  }
 }
 
 void IceRegionalModel::allocate_stressbalance() {
@@ -210,35 +202,34 @@ void IceRegionalModel::allocate_basal_yield_stress() {
 }
 
 
-void IceRegionalModel::bootstrap_2d(const std::string &filename) {
+void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
 
-  IceModel::bootstrap_2d(filename);
+  IceModel::bootstrap_2d(input_file);
 
   // read usurfstore from usurf, then restore its name
   m_usurf_stored.metadata().set_name("usurf");
-  m_usurf_stored.regrid(filename, OPTIONAL, 0.0);
+  m_usurf_stored.regrid(input_file, OPTIONAL, 0.0);
   m_usurf_stored.metadata().set_name("usurfstore");
 
   // read thkstore from thk, then restore its name
   m_thk_stored.metadata().set_name("thk");
-  m_thk_stored.regrid(filename, OPTIONAL, 0.0);
+  m_thk_stored.regrid(input_file, OPTIONAL, 0.0);
   m_thk_stored.metadata().set_name("thkstore");
 }
 
 
-void IceRegionalModel::initFromFile(const PIO &input_file) {
+void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
 
   std::string filename = input_file.inq_filename();
+
+  m_log->message(2, "* Initializing 2D fields of IceRegionalModel from '%s'...\n",
+                 filename.c_str());
 
   bool no_model_strip_set = options::Bool("-no_model_strip", "No-model strip, in km");
 
   if (no_model_strip_set) {
     m_no_model_mask.metadata().set_string("pism_intent", "internal");
   }
-
-  m_log->message(2, 
-             "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
-             filename.c_str());
 
   // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
   // The user is probably using -regrid_file to bring in SSA B.C. data.
@@ -250,9 +241,9 @@ void IceRegionalModel::initFromFile(const PIO &input_file) {
     if (not (u_ssa_exists and v_ssa_exists)) {
       m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "internal");
       m_log->message(2, 
-                 "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
-                 "              This may be overridden by the -regrid_file option.\n",
-                 filename.c_str());
+                     "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
+                     "              This may be overridden by the -regrid_file option.\n",
+                     filename.c_str());
 
       m_ssa_dirichlet_bc_values.set(0.0);
     }
@@ -261,32 +252,25 @@ void IceRegionalModel::initFromFile(const PIO &input_file) {
   bool zgwnm = options::Bool("-zero_grad_where_no_model",
                              "zero surface gradient in no model strip");
   if (zgwnm) {
+    // mark these as "internal" so that IceModel::restart_2d() does not try to read them from the
+    // input_file.
     m_thk_stored.metadata().set_string("pism_intent", "internal");
     m_usurf_stored.metadata().set_string("pism_intent", "internal");
   }
 
-  IceModel::initFromFile(input_file);
-
-  if (m_config->get_boolean("ssa_dirichlet_bc")) {
-      m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "model_state");
-  }
+  IceModel::restart_2d(input_file, record);
 
   if (zgwnm) {
+    // restore pism_intent to ensure that they are saved at the end of the run
     m_thk_stored.metadata().set_string("pism_intent", "model_state");
     m_usurf_stored.metadata().set_string("pism_intent", "model_state");
   }
-}
 
-
-void IceRegionalModel::set_vars_from_options() {
-
-  // base class reads the -bootstrap option and does the bootstrapping:
-  IceModel::set_vars_from_options();
-
-  if (m_config->get_boolean("do_cold_ice_methods")) {
-    throw RuntimeError("pismo does not support the 'cold' mode.");
+  if (m_config->get_boolean("ssa_dirichlet_bc")) {
+    m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "model_state");
   }
 }
+
 
 void IceRegionalModel::massContExplicitStep() {
 

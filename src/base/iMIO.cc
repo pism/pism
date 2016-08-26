@@ -343,97 +343,6 @@ void IceModel::write_model_state(const PIO &nc) {
 }
 
 
-
-//! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
-/*!
-  Before this is run, the method IceModel::grid_setup() determines the number of
-  grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
-  box from the same input file.
-*/
-void IceModel::initFromFile(const PIO &input_file) {
-  std::string filename = input_file.inq_filename();
-
-  m_log->message(2, "initializing from NetCDF file '%s'...\n",
-                 filename.c_str());
-
-  // Find the index of the last record in the file:
-  unsigned int last_record = input_file.inq_nrecords() - 1;
-
-  // Read the model state, mapping and climate_steady variables:
-  std::set<std::string> vars = m_grid->variables().keys();
-
-  std::set<std::string>::iterator i;
-  for (i = vars.begin(); i != vars.end(); ++i) {
-    // FIXME: remove const_cast. This is bad.
-    IceModelVec *var = const_cast<IceModelVec*>(m_grid->variables().get(*i));
-    SpatialVariableMetadata &m = var->metadata();
-
-    std::string
-      intent     = m.get_string("pism_intent"),
-      short_name = m.get_string("short_name");
-
-    if (intent == "model_state" ||
-        intent == "mapping"     ||
-        intent == "climate_steady") {
-
-      // skip "age", "enthalpy", and "Href" for now: we'll take care
-      // of them a little later
-      if (short_name == "enthalpy" ||
-          short_name == "age"      ||
-          short_name == "Href") {
-        continue;
-      }
-
-      var->read(input_file, last_record);
-    }
-  }
-
-  if (m_config->get_boolean("do_energy") && m_config->get_boolean("do_cold_ice_methods")) {
-    m_log->message(3,
-                   "  setting enthalpy from temperature...\n");
-    compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
-  }
-
-  // check if the input file has Href; set to 0 if it is not present
-  if (m_config->get_boolean("part_grid")) {
-    bool href_exists = input_file.inq_var("Href");
-
-    if (href_exists == true) {
-      m_Href.read(input_file, last_record);
-    } else {
-      m_log->message(2,
-                     "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
-                     filename.c_str());
-      m_Href.set(0.0);
-    }
-  }
-
-  // read the age field if present, otherwise set to zero
-  if (m_config->get_boolean("do_age")) {
-    bool age_exists = input_file.inq_var("age");
-
-    if (age_exists) {
-      m_ice_age.read(input_file, last_record);
-    } else {
-      m_log->message(2,
-                     "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
-                     "  Setting it to zero...\n",
-                     filename.c_str());
-      m_ice_age.set(0.0);
-    }
-  }
-
-
-  // Initialize the enthalpy field by reading from a file or by using
-  // temperature and liquid water fraction, or by using temperature
-  // and assuming that the ice is cold.
-  init_enthalpy(input_file, false, last_record);
-
-  std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
-  m_output_global_attributes.set_string("history",
-                                        history + m_output_global_attributes.get_string("history"));
-}
-
 //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
 /*!
   For each variable selected by option `-regrid_vars`, we regrid it onto the current grid from
@@ -453,7 +362,7 @@ void IceModel::regrid(int dimensions) {
   if (not (dimensions == 0 ||
            dimensions == 2 ||
            dimensions == 3)) {
-    throw RuntimeError("dimensions can only be 0, 2 or 3");
+    throw RuntimeError("dimensions can only be 0 (all), 2 or 3");
   }
 
   options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
@@ -503,7 +412,8 @@ void IceModel::regrid(int dimensions) {
   }
 }
 
-void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::string> &vars, unsigned int ndims) {
+void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::string> &vars,
+                                unsigned int ndims) {
 
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
@@ -528,38 +438,37 @@ void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::stri
     }
 
     if (*i == "enthalpy") {
-      init_enthalpy(regrid_file, true, 0);
+      init_enthalpy(regrid_file,
+                    true,       // regrid
+                    0);         // record index (ignored)
       continue;
     }
 
     v->regrid(regrid_file, CRITICAL);
+  }
 
-    // Check if the current variable is the same as
-    // IceModel::ice_thickess, then check the range of the ice
-    // thickness
-    if (v == &this->m_ice_thickness) {
-      Range thk_range = m_ice_thickness.range();
+  // Check the range of the ice thickness.
+  {
+    double max_thickness = m_ice_thickness.range().max,
+      Lz = m_grid->Lz();
 
-      if (thk_range.max >= m_grid->Lz() + 1e-6) {
-        throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
-                                      "exceeds the height of the computational domain (%f meters).",
-                                      thk_range.max, m_grid->Lz());
-      }
+    if (max_thickness >= Lz + 1e-6) {
+      throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
+                                    "exceeds the height of the computational domain (%f meters).",
+                                    max_thickness, Lz);
     }
-
   }
 }
 
 /**
  * Initialize enthalpy from a file that does not contain it using "temp" and "liqfrac".
  *
- * @param filename input file name
+ * @param input_file input file
  *
  * @param do_regrid use regridding if 'true', otherwise assume that the
- *               input file has the same grid
+ *                  input file has the same grid
  * @param last_record the record to use when 'do_regrid==false'.
  *
- * @return 0 on success
  */
 void IceModel::init_enthalpy(const PIO &input_file,
                              bool do_regrid, int last_record) {
@@ -592,7 +501,7 @@ void IceModel::init_enthalpy(const PIO &input_file,
       temp.read(input_file, last_record);
     }
 
-    if (liqfrac_exists == true) {
+    if (liqfrac_exists and not m_config->get_boolean("do_cold_ice_methods")) {
       liqfrac.set_name("liqfrac");
       liqfrac.metadata(0).set_name("liqfrac");
       liqfrac.set_attrs("temporary", "ice liquid water fraction",

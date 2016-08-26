@@ -52,6 +52,18 @@
 
 namespace pism {
 
+IceModel::FluxCounters::FluxCounters() {
+  grounded_basal = 0.0;
+  nonneg_rule    = 0.0;
+  sub_shelf      = 0.0;
+  surface        = 0.0;
+  sum_divQ_SIA   = 0.0;
+  sum_divQ_SSA   = 0.0;
+  Href_to_H      = 0.0;
+  H_to_Href      = 0.0;
+}
+
+
 IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   : m_grid(g),
     m_config(context->config()),
@@ -114,6 +126,14 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   reset_counters();
 }
 
+IceModel::FluxCounters IceModel::cumulative_fluxes() const {
+  return m_cumulative_fluxes;
+}
+
+double IceModel::dt() const {
+  return m_dt;
+}
+
 void IceModel::reset_counters() {
   CFLmaxdt     = 0.0;
   CFLmaxdt2D   = 0.0;
@@ -130,16 +150,6 @@ void IceModel::reset_counters() {
   m_skip_countdown   = 0;
 
   m_timestep_hit_multiples_last_time = m_time->current();
-
-  grounded_basal_ice_flux_cumulative = 0;
-  nonneg_rule_flux_cumulative        = 0;
-  sub_shelf_ice_flux_cumulative      = 0;
-  surface_ice_flux_cumulative        = 0;
-  sum_divQ_SIA_cumulative            = 0;
-  sum_divQ_SSA_cumulative            = 0;
-  Href_to_H_flux_cumulative          = 0;
-  H_to_Href_flux_cumulative          = 0;
-  discharge_flux_cumulative          = 0;
 }
 
 
@@ -404,7 +414,7 @@ void IceModel::createVecs() {
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }
 
-  // fracture density field
+  // fracture density fields
   if (m_config->get_boolean("do_fracture_density")) {
     m_fracture_density.create(m_grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
     m_fracture_density.set_attrs("model_state", "fracture density in ice shelf", "", "");

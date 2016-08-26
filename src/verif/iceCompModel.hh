@@ -52,7 +52,12 @@ public:
   virtual void allocate_bedrock_thermal_unit();
   virtual void allocate_bed_deformation();
   virtual void allocate_couplers();
-  virtual void set_vars_from_options(); // called by IceModel::model_state_setup()
+
+  virtual void bootstrap_2d(const PIO &input_file);
+  virtual void bootstrap_3d();
+
+  virtual void initialize_2d();
+  virtual void initialize_3d();
 
   void reportErrors();
 

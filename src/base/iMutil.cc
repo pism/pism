@@ -149,15 +149,15 @@ void IceModel::update_run_stats() {
   }
   run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
 
-  run_stats.set_double("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);
-  run_stats.set_double("nonneg_rule_flux_cumulative", nonneg_rule_flux_cumulative);
-  run_stats.set_double("sub_shelf_ice_flux_cumulative", sub_shelf_ice_flux_cumulative);
-  run_stats.set_double("surface_ice_flux_cumulative", surface_ice_flux_cumulative);
-  run_stats.set_double("sum_divQ_SIA_cumulative", sum_divQ_SIA_cumulative);
-  run_stats.set_double("sum_divQ_SSA_cumulative", sum_divQ_SSA_cumulative);
-  run_stats.set_double("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
-  run_stats.set_double("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
-  run_stats.set_double("discharge_flux_cumulative", discharge_flux_cumulative);
+  run_stats.set_double("grounded_basal_ice_flux_cumulative", m_cumulative_fluxes.grounded_basal);
+  run_stats.set_double("nonneg_rule_flux_cumulative",        m_cumulative_fluxes.nonneg_rule);
+  run_stats.set_double("sub_shelf_ice_flux_cumulative",      m_cumulative_fluxes.sub_shelf);
+  run_stats.set_double("surface_ice_flux_cumulative",        m_cumulative_fluxes.surface);
+  run_stats.set_double("sum_divQ_SIA_cumulative",            m_cumulative_fluxes.sum_divQ_SIA);
+  run_stats.set_double("sum_divQ_SSA_cumulative",            m_cumulative_fluxes.sum_divQ_SSA);
+  run_stats.set_double("Href_to_H_flux_cumulative",          m_cumulative_fluxes.Href_to_H);
+  run_stats.set_double("H_to_Href_flux_cumulative",          m_cumulative_fluxes.H_to_Href);
+  run_stats.set_double("discharge_flux_cumulative",          m_cumulative_fluxes.discharge);
 }
 
 //! Build the particular history string associated to the end of a PISM run,

@@ -150,7 +150,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
   const double ice_density = m_config->get_double("ice_density");
   const bool
     use_Href = Href.was_created() && Href_old.was_created();
-  double my_total_discharge = 0.0, total_discharge;
+  double local_discharge = 0.0, total_discharge = 0.0;
 
   IceModelVec::AccessList list;
   list.add(thickness);
@@ -192,13 +192,13 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
 
       m_discharge_flux_2D_cumulative(i,j) += discharge;
 
-      my_total_discharge += discharge;
+      local_discharge += discharge;
     }
   }
 
-  total_discharge = GlobalSum(m_grid->com, my_total_discharge);
+  total_discharge = GlobalSum(m_grid->com, local_discharge);
 
-  this->discharge_flux_cumulative += total_discharge;
+  m_cumulative_fluxes.discharge += total_discharge;
 }
 
 } // end of namespace pism

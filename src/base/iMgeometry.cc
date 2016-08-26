@@ -434,25 +434,7 @@ earlier. (CK)
 */
 void IceModel::massContExplicitStep() {
 
-  double
-    // totals over the processor's domain:
-    proc_H_to_Href_flux           = 0,
-    proc_Href_to_H_flux           = 0,
-    proc_grounded_basal_ice_flux  = 0,
-    proc_nonneg_rule_flux         = 0,
-    proc_sub_shelf_ice_flux       = 0,
-    proc_sum_divQ_SIA             = 0,
-    proc_sum_divQ_SSA             = 0,
-    proc_surface_ice_flux         = 0,
-    // totals over all processors:
-    total_H_to_Href_flux          = 0,
-    total_Href_to_H_flux          = 0,
-    total_grounded_basal_ice_flux = 0,
-    total_nonneg_rule_flux        = 0,
-    total_sub_shelf_ice_flux      = 0,
-    total_sum_divQ_SIA            = 0,
-    total_sum_divQ_SSA            = 0,
-    total_surface_ice_flux        = 0;
+  FluxCounters local, total;
 
   const bool
     include_bmr_in_continuity = m_config->get_boolean("include_bmr_in_continuity");
@@ -490,9 +472,11 @@ void IceModel::massContExplicitStep() {
   list.add(H_new);
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
-  const bool do_part_grid = m_config->get_boolean("part_grid"),
-    do_redist = m_config->get_boolean("part_redist"),
+  const bool
+    do_part_grid             = m_config->get_boolean("part_grid"),
+    do_redist                = m_config->get_boolean("part_redist"),
     reduce_frontal_thickness = m_config->get_boolean("part_grid_reduce_frontal_thickness");
+
   if (do_part_grid) {
     list.add(m_Href);
     if (do_redist) {
@@ -613,10 +597,11 @@ void IceModel::massContExplicitStep() {
 
           // In this case the SSA flux goes into the Href variable and does not
           // directly contribute to ice thickness at this location.
-          proc_sum_divQ_SIA += - divQ_SIA * meter_per_s_to_kg;
-          proc_sum_divQ_SSA += - divQ_SSA * meter_per_s_to_kg;
-          divQ_SIA           = 0.0;
-          divQ_SSA           = 0.0;
+          local.sum_divQ_SIA += - divQ_SIA * meter_per_s_to_kg;
+          local.sum_divQ_SSA += - divQ_SSA * meter_per_s_to_kg;
+          divQ_SIA                = 0.0;
+          divQ_SSA                = 0.0;
+
         } else { // end of "if (part_grid...)
 
           // Standard ice-free ocean case:
@@ -684,17 +669,17 @@ void IceModel::massContExplicitStep() {
       {
         // all these are in units of [kg]
         if (m_cell_type.grounded(i,j)) {
-          proc_grounded_basal_ice_flux += - basal_melt_rate * meter_per_s_to_kg;
+          local.grounded_basal += - basal_melt_rate * meter_per_s_to_kg;
         } else {
-          proc_sub_shelf_ice_flux      += - basal_melt_rate * meter_per_s_to_kg;
+          local.sub_shelf      += - basal_melt_rate * meter_per_s_to_kg;
         }
 
-        proc_surface_ice_flux        +=   surface_mass_balance * meter_per_s_to_kg;
-        proc_sum_divQ_SIA            += - divQ_SIA             * meter_per_s_to_kg;
-        proc_sum_divQ_SSA            += - divQ_SSA             * meter_per_s_to_kg;
-        proc_nonneg_rule_flux        +=   nonneg_rule_flux     * meter_to_kg;
-        proc_H_to_Href_flux          += - H_to_Href_flux       * meter_to_kg;
-        proc_Href_to_H_flux          +=   Href_to_H_flux       * meter_to_kg;
+        local.surface      += surface_mass_balance * meter_per_s_to_kg;
+        local.sum_divQ_SIA += - divQ_SIA           * meter_per_s_to_kg;
+        local.sum_divQ_SSA += - divQ_SSA           * meter_per_s_to_kg;
+        local.nonneg_rule  += nonneg_rule_flux     * meter_to_kg;
+        local.H_to_Href    += - H_to_Href_flux     * meter_to_kg;
+        local.Href_to_H    += Href_to_H_flux       * meter_to_kg;
       }
 
     }
@@ -705,35 +690,23 @@ void IceModel::massContExplicitStep() {
 
   // flux accounting
   {
-    // combine data to perform one reduction call instead of 8:
-    double tmp_local[8] = {proc_grounded_basal_ice_flux,
-                           proc_nonneg_rule_flux,
-                           proc_sub_shelf_ice_flux,
-                           proc_surface_ice_flux,
-                           proc_sum_divQ_SIA,
-                           proc_sum_divQ_SSA,
-                           proc_Href_to_H_flux,
-                           proc_H_to_Href_flux};
-    double tmp_global[8];
-    GlobalSum(m_grid->com, tmp_local, tmp_global, 8);
+    total.H_to_Href      = GlobalSum(m_grid->com, local.H_to_Href);
+    total.Href_to_H      = GlobalSum(m_grid->com, local.Href_to_H);
+    total.grounded_basal = GlobalSum(m_grid->com, local.grounded_basal);
+    total.nonneg_rule    = GlobalSum(m_grid->com, local.nonneg_rule);
+    total.sub_shelf      = GlobalSum(m_grid->com, local.sub_shelf);
+    total.sum_divQ_SIA   = GlobalSum(m_grid->com, local.sum_divQ_SIA);
+    total.sum_divQ_SSA   = GlobalSum(m_grid->com, local.sum_divQ_SSA);
+    total.surface        = GlobalSum(m_grid->com, local.surface);
 
-    total_grounded_basal_ice_flux = tmp_global[0];
-    total_nonneg_rule_flux        = tmp_global[1];
-    total_sub_shelf_ice_flux      = tmp_global[2];
-    total_surface_ice_flux        = tmp_global[3];
-    total_sum_divQ_SIA            = tmp_global[4];
-    total_sum_divQ_SSA            = tmp_global[5];
-    total_Href_to_H_flux          = tmp_global[6];
-    total_H_to_Href_flux          = tmp_global[7];
-
-    grounded_basal_ice_flux_cumulative += total_grounded_basal_ice_flux;
-    sub_shelf_ice_flux_cumulative      += total_sub_shelf_ice_flux;
-    surface_ice_flux_cumulative        += total_surface_ice_flux;
-    sum_divQ_SIA_cumulative            += total_sum_divQ_SIA;
-    sum_divQ_SSA_cumulative            += total_sum_divQ_SSA;
-    nonneg_rule_flux_cumulative        += total_nonneg_rule_flux;
-    Href_to_H_flux_cumulative          += total_Href_to_H_flux;
-    H_to_Href_flux_cumulative          += total_H_to_Href_flux;
+    m_cumulative_fluxes.H_to_Href      += total.H_to_Href;
+    m_cumulative_fluxes.Href_to_H      += total.Href_to_H;
+    m_cumulative_fluxes.grounded_basal += total.grounded_basal;
+    m_cumulative_fluxes.nonneg_rule    += total.nonneg_rule;
+    m_cumulative_fluxes.sub_shelf      += total.sub_shelf;
+    m_cumulative_fluxes.sum_divQ_SIA   += total.sum_divQ_SIA;
+    m_cumulative_fluxes.sum_divQ_SSA   += total.sum_divQ_SSA;
+    m_cumulative_fluxes.surface        += total.surface;
   }
 
   // finally copy H_new into ice_thickness and communicate ghosted values

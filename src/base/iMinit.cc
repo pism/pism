@@ -99,59 +99,63 @@ void IceModel::time_setup() {
  */
 void IceModel::model_state_setup() {
 
-  reset_counters();
-
-  // Initialize (or re-initialize) boundary models.
-  init_couplers();
-
   // Check if we are initializing from a PISM output file:
   options::String input_filename("-i", "Specifies the PISM input file");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+
+  const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
+  const bool restart   = input_filename.is_set() and not bootstrap_is_set;
 
   PIO input_file(m_grid->com, "netcdf3");
-  if (input_filename.is_set()) {
+  unsigned int last_record = 0;
+
+  if (restart or bootstrap) {
     input_file.open(input_filename, PISM_READONLY);
+
+    // Find the index of the last record in the input file.
+    last_record = input_file.inq_nrecords() - 1;
   }
 
-  if (input_filename.is_set() and not bootstrap) {
-    initFromFile(input_file);
-
-    regrid(0);
-  } else {
-    set_vars_from_options();
+  // Initialize 2D fields owned by IceModel (ice geometry, etc)
+  {
+    if (restart) {
+      restart_2d(input_file, last_record);
+    } else if (bootstrap) {
+      bootstrap_2d(input_file);
+    } else {
+      initialize_2d();
+    }
+    // Regrid 2D fields:
+    regrid(2);
   }
 
-  // Initialize a bed deformation model (if needed); this should go
-  // after the regrid(0) call but before other init() calls that need
-  // bed elevation and uplift.
+  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
+  // which may need ice thickness to bootstrap.
+  {
+    m_log->message(2, "* Initializing the ocean model...\n");
+    m_ocean->init();
+  }
+
+  // Initialize a bed deformation model. This may use ice thickness initialized above.
   if (m_beddef) {
     m_beddef->init();
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
   }
 
+  // Now ice thickness, bed elevation, and sea level are available, so we can compute the ice
+  // surface elevation and the cell type mask. This also ensures consistency of ice geometry.
+  updateSurfaceElevationAndMask();
+
+  // Now surface elevation is initialized, so we can initialize surface models (some use
+  // elevation-based parameterizations of surface temperature and/or mass balance).
+  m_surface->init();
+
   if (m_stress_balance) {
     m_stress_balance->init();
 
     if (m_config->get_boolean("include_bmr_in_continuity")) {
       m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
-    }
-  }
-
-  if (btu) {
-    bool bootstrapping_needed = false;
-    btu->init(bootstrapping_needed);
-
-    if (bootstrapping_needed) {
-      // update surface and ocean models so that we can get the
-      // temperature at the top of the bedrock
-      m_log->message(2,
-                     "getting surface B.C. from couplers...\n");
-      init_step_couplers();
-
-      get_bed_top_temp(m_bedtoptemp);
-
-      btu->bootstrap();
     }
   }
 
@@ -165,95 +169,40 @@ void IceModel::model_state_setup() {
     m_basal_yield_stress_model->init();
   }
 
-  {
-    if (input_filename.is_set()) {
-      m_log->message(2,
-                     "* Trying to read cumulative climatic mass balance from '%s'...\n",
-                     input_filename->c_str());
-      m_climatic_mass_balance_cumulative.regrid(input_file, OPTIONAL, 0.0);
-    } else {
-      m_climatic_mass_balance_cumulative.set(0.0);
+  // The bedrock thermal model should be initialized after re-gridding 3D fields.
+  if (btu) {
+    bool bootstrapping_needed = false;
+    btu->init(bootstrapping_needed);
+
+    if (bootstrapping_needed) {
+      // surface model was initialized already, so we can get the temperature at the top of the
+      // bedrock for bootstrapping.
+      get_bed_top_temp(m_bedtoptemp);
+
+      btu->bootstrap();
     }
   }
 
+  // Initialize 3D (age and energy balance) parts of IceModel.
+  //
+  // This has to happen *after* all geometry information (including the mask) is set.
   {
-    if (input_filename.is_set()) {
-      m_log->message(2,
-                     "* Trying to read cumulative grounded basal flux from '%s'...\n",
-                     input_filename->c_str());
-      m_grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
+    if (restart) {
+      // Find the index of the last record in the file:
+      restart_3d(input_file, last_record);
+    } else if (bootstrap) {
+      bootstrap_3d();
     } else {
-      m_grounded_basal_flux_2D_cumulative.set(0.0);
-    }
-  }
-
-  {
-    if (input_filename.is_set()) {
-      m_log->message(2,
-                     "* Trying to read cumulative floating basal flux from '%s'...\n",
-                     input_filename->c_str());
-      m_floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
-    } else {
-      m_floating_basal_flux_2D_cumulative.set(0.0);
-    }
-  }
-
-  {
-    if (input_filename.is_set()) {
-      m_log->message(2,
-                     "* Trying to read cumulative nonneg flux from '%s'...\n",
-                     input_filename->c_str());
-      m_nonneg_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
-    } else {
-      m_nonneg_flux_2D_cumulative.set(0.0);
-    }
-  }
-
-  if (input_filename.is_set()) {
-    if (input_file.inq_var("run_stats")) {
-      io::read_attributes(input_file, run_stats.get_name(), run_stats);
+      initialize_3d();
     }
 
-    if (run_stats.has_attribute("grounded_basal_ice_flux_cumulative")) {
-      grounded_basal_ice_flux_cumulative = run_stats.get_double("grounded_basal_ice_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("nonneg_rule_flux_cumulative")) {
-      nonneg_rule_flux_cumulative = run_stats.get_double("nonneg_rule_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("sub_shelf_ice_flux_cumulative")) {
-      sub_shelf_ice_flux_cumulative = run_stats.get_double("sub_shelf_ice_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("surface_ice_flux_cumulative")) {
-      surface_ice_flux_cumulative = run_stats.get_double("surface_ice_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("sum_divQ_SIA_cumulative")) {
-      sum_divQ_SIA_cumulative = run_stats.get_double("sum_divQ_SIA_cumulative");
-    }
-
-    if (run_stats.has_attribute("sum_divQ_SSA_cumulative")) {
-      sum_divQ_SSA_cumulative = run_stats.get_double("sum_divQ_SSA_cumulative");
-    }
-
-    if (run_stats.has_attribute("Href_to_H_flux_cumulative")) {
-      Href_to_H_flux_cumulative = run_stats.get_double("Href_to_H_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("H_to_Href_flux_cumulative")) {
-      H_to_Href_flux_cumulative = run_stats.get_double("H_to_Href_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("discharge_flux_cumulative")) {
-      discharge_flux_cumulative = run_stats.get_double("discharge_flux_cumulative");
-    }
+    m_log->message(2, "regridding 3D variables...\n");
+    regrid(3);
   }
 
   // get projection information and compute cell areas
   {
-    if (input_filename.is_set()) {
+    if (restart or bootstrap) {
       get_projection_info(input_file);
 
       std::string proj4_string = m_output_global_attributes.get_string("proj4");
@@ -261,56 +210,169 @@ void IceModel::model_state_setup() {
         m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
                        proj4_string.c_str(), input_filename->c_str());
       }
+
+      std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
+      m_output_global_attributes.set_string("history",
+                                            history + m_output_global_attributes.get_string("history"));
     }
 
     compute_cell_areas();
   }
 
-  // a report on whether PISM-PIK modifications of IceModel are in use
-  std::vector<std::string> pik_methods;
-  if (m_config->get_boolean("part_grid")) {
-    pik_methods.push_back("part_grid");
-  }
-  if (m_config->get_boolean("part_redist")) {
-    pik_methods.push_back("part_redist");
-  }
-  if (m_config->get_boolean("kill_icebergs")) {
-    pik_methods.push_back("kill_icebergs");
+  // miscellaneous steps
+  {
+    reset_counters();
+
+    if (restart or bootstrap) {
+      std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
+      m_output_global_attributes.set_string("history",
+                                            history + m_output_global_attributes.get_string("history"));
+
+      initialize_cumulative_fluxes(input_file);
+    } else {
+      reset_cumulative_fluxes();
+    }
+
+    stampHistoryCommand();
   }
 
-  if (not pik_methods.empty()) {
-    m_log->message(2,
-                   "* PISM-PIK mass/geometry methods are in use: %s\n",
-                   join(pik_methods, ", ").c_str());
-  }
-
-  // Check consistency of geometry after initialization:
-  updateSurfaceElevationAndMask();
-
-  stampHistoryCommand();
 }
 
-//! Sets starting values of model state variables using command-line options.
+//! Initialize 2D model state fields managed by IceModel from a file (for re-starting).
 /*!
-  Sets starting values of model state variables using command-line options and
-  (possibly) a bootstrapping file.
-
-  In the base class there is only one case: bootstrapping.
+ * This method should eventually go away as IceModel turns into a "coupler" and all physical
+ * processes are handled by sub-models.
  */
-void IceModel::set_vars_from_options() {
+void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
+  std::string filename = input_file.inq_filename();
 
-  m_log->message(3,
-             "Setting initial values of model state variables...\n");
+  m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
-  options::String input_file("-i", "Specifies the input file");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  // Read the model state, mapping and climate_steady variables:
+  std::set<std::string> vars = m_grid->variables().keys();
 
-  if (bootstrap and input_file.is_set()) {
-    bootstrapFromFile(input_file);
-  } else {
-    throw RuntimeError("No input file specified.");
+  std::set<std::string>::iterator i;
+  for (i = vars.begin(); i != vars.end(); ++i) {
+    // FIXME: remove const_cast. This is bad.
+    IceModelVec *var = const_cast<IceModelVec*>(m_grid->variables().get(*i));
+    SpatialVariableMetadata &m = var->metadata();
+
+    std::string
+      intent     = m.get_string("pism_intent"),
+      short_name = m.get_string("short_name");
+
+    if (intent == "model_state" ||
+        intent == "mapping"     ||
+        intent == "climate_steady") {
+
+      // skip "age", "enthalpy", and "Href" for now: we'll take care
+      // of them a little later
+      if (short_name == "enthalpy" ||
+          short_name == "age"      ||
+          short_name == "Href") {
+        continue;
+      }
+
+      var->read(input_file, last_record);
+    }
+  }
+
+  // check if the input file has Href; set to 0 if it is not present
+  if (m_config->get_boolean("part_grid")) {
+
+    if (input_file.inq_var("Href")) {
+      m_Href.read(input_file, last_record);
+    } else {
+      m_log->message(2,
+                     "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'."
+                     " Setting it to zero...\n",
+                     filename.c_str());
+      m_Href.set(0.0);
+    }
   }
 }
+
+/*! @brief Initialize 3D fields managed by IceModel. */
+/*!
+ * This method should go away once we isolate "age" and "energy balance" sub-models.
+ */
+void IceModel::restart_3d(const PIO &input_file, unsigned int last_record) {
+
+  // read the age field if present, otherwise set to zero
+  if (m_config->get_boolean("do_age")) {
+    bool age_exists = input_file.inq_var("age");
+
+    if (age_exists) {
+      m_ice_age.read(input_file, last_record);
+    } else {
+      m_log->message(2,
+                     "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
+                     "  Setting it to zero...\n",
+                     input_file.inq_filename().c_str());
+      m_ice_age.set(0.0);
+    }
+  }
+
+  // Initialize the enthalpy field by reading from a file or by using
+  // temperature and liquid water fraction, or by using temperature
+  // and assuming that the ice is cold.
+  init_enthalpy(input_file, false, last_record);
+}
+
+
+void IceModel::initialize_2d() {
+  throw RuntimeError("cannot initialize IceModel without an input file");
+}
+
+
+void IceModel::initialize_3d() {
+  throw RuntimeError("cannot initialize IceModel without an input file");
+}
+
+
+void IceModel::reset_cumulative_fluxes() {
+  // 2D
+  m_climatic_mass_balance_cumulative.set(0.0);
+  m_grounded_basal_flux_2D_cumulative.set(0.0);
+  m_floating_basal_flux_2D_cumulative.set(0.0);
+  m_nonneg_flux_2D_cumulative.set(0.0);
+  // scalar
+  m_cumulative_fluxes = FluxCounters();
+}
+
+
+void IceModel::initialize_cumulative_fluxes(const PIO &input_file) {
+  // 2D
+  {
+    m_climatic_mass_balance_cumulative.regrid(input_file,  OPTIONAL, 0.0);
+    m_grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
+    m_floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
+    m_nonneg_flux_2D_cumulative.regrid(input_file,         OPTIONAL, 0.0);
+  }
+
+  // scalar, stored in run_stats
+  if (input_file.inq_var("run_stats")) {
+    io::read_attributes(input_file, run_stats.get_name(), run_stats);
+
+    try {
+      m_cumulative_fluxes.H_to_Href      = run_stats.get_double("H_to_Href_flux_cumulative");
+      m_cumulative_fluxes.Href_to_H      = run_stats.get_double("Href_to_H_flux_cumulative");
+      m_cumulative_fluxes.discharge      = run_stats.get_double("discharge_flux_cumulative");
+      m_cumulative_fluxes.grounded_basal = run_stats.get_double("grounded_basal_ice_flux_cumulative");
+      m_cumulative_fluxes.nonneg_rule    = run_stats.get_double("nonneg_rule_flux_cumulative");
+      m_cumulative_fluxes.sub_shelf      = run_stats.get_double("sub_shelf_ice_flux_cumulative");
+      m_cumulative_fluxes.sum_divQ_SIA   = run_stats.get_double("sum_divQ_SIA_cumulative");
+      m_cumulative_fluxes.sum_divQ_SSA   = run_stats.get_double("sum_divQ_SSA_cumulative");
+      m_cumulative_fluxes.surface        = run_stats.get_double("surface_ice_flux_cumulative");
+    }
+    catch (RuntimeError &e) {
+      e.add_context("initializing cumulative flux counters from '%s'",
+                    input_file.inq_filename().c_str());
+      throw;
+    }
+  }
+}
+
 
 //! \brief Decide which stress balance model to use.
 void IceModel::allocate_stressbalance() {
@@ -510,28 +572,6 @@ void IceModel::allocate_couplers() {
   }
 }
 
-//! Initializes atmosphere and ocean couplers.
-void IceModel::init_couplers() {
-
-  m_log->message(3,
-             "Initializing boundary models...\n");
-
-  assert(m_surface != NULL);
-  m_surface->init();
-
-  assert(m_ocean != NULL);
-  m_ocean->init();
-}
-
-
-//! Some sub-models need fields provided by surface and ocean models
-//! for initialization, so here we call update() to make sure that
-//! surface and ocean models report a decent state
-void IceModel::init_step_couplers() {
-  init_step(*m_surface, *m_time);
-  init_step(*m_ocean, *m_time);
-}
-
 
 //! Allocates work vectors.
 void IceModel::allocate_internal_objects() {
@@ -698,14 +738,6 @@ void IceModel::misc_setup() {
   m_output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
                                         "medium");
 
-  // Quietly re-initialize couplers (they might have done one
-  // time-step during initialization)
-  {
-    m_log->disable();
-    init_couplers();
-    m_log->enable();
-  }
-
   init_calving();
   init_diagnostics();
   init_snapshots();
@@ -721,6 +753,26 @@ void IceModel::misc_setup() {
   if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
       m_config->get_string("output_variable_order") != "yxz") {
     throw RuntimeError("output formats netcdf4_parallel, quilt, and hdf5 require -o_order yxz.");
+  }
+
+  // a report on whether PISM-PIK modifications of IceModel are in use
+  {
+    std::vector<std::string> pik_methods;
+    if (m_config->get_boolean("part_grid")) {
+      pik_methods.push_back("part_grid");
+    }
+    if (m_config->get_boolean("part_redist")) {
+      pik_methods.push_back("part_redist");
+    }
+    if (m_config->get_boolean("kill_icebergs")) {
+      pik_methods.push_back("kill_icebergs");
+    }
+
+    if (not pik_methods.empty()) {
+      m_log->message(2,
+                     "* PISM-PIK mass/geometry methods are in use: %s\n",
+                     join(pik_methods, ", ").c_str());
+    }
   }
 }
 

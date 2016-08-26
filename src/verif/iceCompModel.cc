@@ -240,15 +240,17 @@ void IceCompModel::allocate_couplers() {
   m_ocean   = new ocean::Constant(m_grid);
 }
 
-void IceCompModel::set_vars_from_options() {
+void IceCompModel::bootstrap_2d(const PIO &input_file) {
+  (void) input_file;
+  throw RuntimeError("pismv (IceCompModel) does not support bootstrapping.");
+}
 
-  // -bootstrap command-line option is not allowed here.
-  options::forbidden("-bootstrap");
+void IceCompModel::bootstrap_3d() {
+  throw RuntimeError("pismv (IceCompModel) does not support bootstrapping.");
+}
 
-  strain_heating3_comp.set(0.0);
-
-  m_log->message(3,
-             "initializing Test %c from formulas ...\n",testname);
+void IceCompModel::initialize_2d() {
+  m_log->message(3, "initializing Test %c from formulas ...\n",testname);
 
   // all have no uplift
   IceModelVec2S bed_uplift;
@@ -286,6 +288,11 @@ void IceCompModel::set_vars_from_options() {
   default:
     throw RuntimeError("Desired test not implemented by IceCompModel.");
   }
+}
+
+void IceCompModel::initialize_3d() {
+
+  strain_heating3_comp.set(0.0);
 
   compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
 }

@@ -1375,9 +1375,7 @@ IceModel_surface_flux::IceModel_surface_flux(IceModel *m)
 
 void IceModel_surface_flux::update(double a, double b) {
 
-  double value = model->surface_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().surface, a, b);
 }
 
 IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m)
@@ -1392,10 +1390,7 @@ IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m)
 }
 
 void IceModel_surface_flux_cumulative::update(double a, double b) {
-
-  double value = model->surface_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().surface, a, b);
 }
 
 IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m)
@@ -1412,10 +1407,7 @@ IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m)
 }
 
 void IceModel_grounded_basal_flux::update(double a, double b) {
-
-  double value = model->grounded_basal_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
 }
 
 IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(IceModel *m)
@@ -1431,10 +1423,7 @@ IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative
 }
 
 void IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
-
-  double value = model->grounded_basal_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
 }
 
 IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m)
@@ -1451,10 +1440,7 @@ IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m)
 }
 
 void IceModel_sub_shelf_flux::update(double a, double b) {
-
-  double value = model->sub_shelf_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
 IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel *m)
@@ -1470,10 +1456,7 @@ IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel 
 }
 
 void IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
-
-  double value = model->sub_shelf_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
 IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m)
@@ -1490,10 +1473,7 @@ IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m)
 }
 
 void IceModel_nonneg_flux::update(double a, double b) {
-
-  double value = model->nonneg_rule_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
 }
 
 IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m)
@@ -1509,10 +1489,7 @@ IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m)
 }
 
 void IceModel_nonneg_flux_cumulative::update(double a, double b) {
-
-  double value = model->nonneg_rule_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
 }
 
 IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m)
@@ -1529,9 +1506,7 @@ IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m)
 }
 
 void IceModel_discharge_flux::update(double a, double b) {
-  double value = model->discharge_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().discharge, a, b);
 }
 
 IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel *m)
@@ -1547,9 +1522,7 @@ IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel 
 }
 
 void IceModel_discharge_flux_cumulative::update(double a, double b) {
-  double value = model->discharge_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().discharge, a, b);
 }
 
 IceModel_dHdt::IceModel_dHdt(IceModel *m)
@@ -1740,8 +1713,7 @@ IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m)
 }
 
 void IceModel_H_to_Href_flux::update(double a, double b) {
-
-  m_ts->append(model->H_to_Href_flux_cumulative, a, b);
+  m_ts->append(model->cumulative_fluxes().H_to_Href, a, b);
 }
 
 
@@ -1758,8 +1730,7 @@ IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m)
 }
 
 void IceModel_Href_to_H_flux::update(double a, double b) {
-
-  m_ts->append(model->Href_to_H_flux_cumulative, a, b);
+  m_ts->append(model->cumulative_fluxes().Href_to_H, a, b);
 }
 
 
@@ -1778,8 +1749,9 @@ IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m)
 
 void IceModel_sum_divQ_flux::update(double a, double b) {
 
-  m_ts->append(model->sum_divQ_SIA_cumulative + model->sum_divQ_SSA_cumulative,
-             a, b);
+  m_ts->append(model->cumulative_fluxes().sum_divQ_SIA +
+               model->cumulative_fluxes().sum_divQ_SSA,
+               a, b);
 }
 
 IceModel_limnsw::IceModel_limnsw(IceModel *m)

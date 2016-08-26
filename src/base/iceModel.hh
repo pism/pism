@@ -120,20 +120,7 @@ class IceModel {
   // scalar:
   friend class IceModel_dt;
   friend class IceModel_max_diffusivity;
-  friend class IceModel_surface_flux;
-  friend class IceModel_surface_flux_cumulative;
-  friend class IceModel_grounded_basal_flux;
-  friend class IceModel_grounded_basal_flux_cumulative;
-  friend class IceModel_sub_shelf_flux;
-  friend class IceModel_sub_shelf_flux_cumulative;
-  friend class IceModel_nonneg_flux;
-  friend class IceModel_nonneg_flux_cumulative;
-  friend class IceModel_discharge_flux;
-  friend class IceModel_discharge_flux_cumulative;
   friend class IceModel_max_hor_vel;
-  friend class IceModel_sum_divQ_flux;
-  friend class IceModel_H_to_Href_flux;
-  friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid::Ptr g, Context::Ptr context);
@@ -155,10 +142,7 @@ public:
   virtual void allocate_couplers();
   virtual void allocate_iceberg_remover();
 
-  virtual void init_couplers();
-  virtual void init_step_couplers();
   virtual void model_state_setup();
-  virtual void set_vars_from_options();
   virtual void allocate_internal_objects();
   virtual void misc_setup();
   virtual void get_projection_info(const PIO &input_file);
@@ -179,8 +163,8 @@ public:
   void reset_counters();
 
   // see iMbootstrap.cc
-  virtual void bootstrapFromFile(const std::string &fname);
-  virtual void bootstrap_2d(const std::string &fname);
+  virtual void bootstrap_2d(const PIO &input_file);
+  virtual void bootstrap_3d();
   virtual void putTempAtDepth();
 
   // see iMoptions.cc
@@ -197,7 +181,16 @@ public:
   virtual void compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
-  virtual void initFromFile(const PIO &input_file);
+  virtual void restart_2d(const PIO &input_file, unsigned int record);
+  virtual void restart_3d(const PIO &input_file, unsigned int record);
+
+  virtual void initialize_2d();
+  virtual void initialize_3d();
+
+  void initialize_flux_counters(const PIO &input_file);
+  void initialize_cumulative_fluxes(const PIO &input_file);
+  void reset_cumulative_fluxes();
+
   virtual void writeFiles(const std::string &default_filename);
   virtual void write_model_state(const PIO &nc);
 
@@ -316,17 +309,28 @@ protected:
     maxdt_temporary,
     dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
   // global maximums on 3D grid of abs value of vel components
-    m_max_u_speed, m_max_v_speed, m_max_w_speed,
-    grounded_basal_ice_flux_cumulative,
-    nonneg_rule_flux_cumulative,
-    sub_shelf_ice_flux_cumulative,
-    surface_ice_flux_cumulative,
-    sum_divQ_SIA_cumulative,
-    sum_divQ_SSA_cumulative,
-    Href_to_H_flux_cumulative,
-    H_to_Href_flux_cumulative,
-    discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
+    m_max_u_speed, m_max_v_speed, m_max_w_speed;
 
+  struct FluxCounters {
+    FluxCounters();
+
+    double H_to_Href;
+    double Href_to_H;
+    double discharge;
+    double grounded_basal;
+    double nonneg_rule;
+    double sub_shelf;
+    double sum_divQ_SIA;
+    double sum_divQ_SSA;
+    double surface;
+  };
+
+public:
+  FluxCounters cumulative_fluxes() const;
+  double dt() const;
+
+protected:
+  FluxCounters m_cumulative_fluxes;
   unsigned int m_skip_countdown,
     m_CFL_violation_counter;
 
@@ -335,7 +339,6 @@ protected:
 
   std::string m_stdout_flags;
 
-protected:
   // see iceModel.cc
   virtual void createVecs();
 
@@ -395,7 +398,7 @@ protected:
   virtual void regrid_variables(const PIO &regrid_file,
                                 const std::set<std::string> &regrid_vars,
                                 unsigned int ndims);
-  virtual void init_enthalpy(const PIO &input_file, bool regrid, int last_record);
+  virtual void init_enthalpy(const PIO &input_file, bool regrid, int record);
 
   // see iMfractures.cc
   virtual void calculateFractureDensity();
