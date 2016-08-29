@@ -80,22 +80,22 @@ void  IceModel::writeFiles(const std::string &default_filename) {
 void IceModel::write_metadata(const PIO &nc, MetadataFlag flag) {
 
   if (flag & WRITE_MAPPING) {
-    if (not nc.inq_var(mapping.get_name())) {
+    if (not nc.inq_var(m_mapping.get_name())) {
       nc.redef();
-      nc.def_var(mapping.get_name(), PISM_DOUBLE,
+      nc.def_var(m_mapping.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
     }
-    io::write_attributes(nc, mapping, PISM_DOUBLE, false);
+    io::write_attributes(nc, m_mapping, PISM_DOUBLE, false);
   }
 
   if (flag & WRITE_RUN_STATS) {
     update_run_stats();
-    if (not nc.inq_var(run_stats.get_name())) {
+    if (not nc.inq_var(m_run_stats.get_name())) {
       nc.redef();
-      nc.def_var(run_stats.get_name(), PISM_DOUBLE,
+      nc.def_var(m_run_stats.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
     }
-    io::write_attributes(nc, run_stats, PISM_DOUBLE, false);
+    io::write_attributes(nc, m_run_stats, PISM_DOUBLE, false);
   }
 
   if (flag & WRITE_GLOBAL_ATTRIBUTES) {
@@ -168,8 +168,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       m_beddef->define_variables(vars, nc, nctype);
     }
 
-    if (btu != NULL) {
-      btu->define_variables(vars, nc, nctype);
+    if (m_btu != NULL) {
+      m_btu->define_variables(vars, nc, nctype);
     }
 
     if (m_basal_yield_stress_model != NULL) {
@@ -182,8 +182,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       throw RuntimeError("PISM ERROR: stress_balance == NULL");
     }
 
-    if (subglacial_hydrology != NULL) {
-      subglacial_hydrology->define_variables(vars, nc, nctype);
+    if (m_subglacial_hydrology != NULL) {
+      m_subglacial_hydrology->define_variables(vars, nc, nctype);
     }
 
     if (m_surface != NULL) {
@@ -241,8 +241,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   }
 
   // Write BedThermalUnit variables:
-  if (btu != NULL) {
-    btu->write_variables(vars, nc);
+  if (m_btu != NULL) {
+    m_btu->write_variables(vars, nc);
   }
 
   if (m_basal_yield_stress_model != NULL) {
@@ -256,8 +256,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     throw RuntimeError("PISM ERROR: stress_balance == NULL");
   }
 
-  if (subglacial_hydrology != NULL) {
-    subglacial_hydrology->write_variables(vars, nc);
+  if (m_subglacial_hydrology != NULL) {
+    m_subglacial_hydrology->write_variables(vars, nc);
   }
 
   // Ask boundary models to write their variables:

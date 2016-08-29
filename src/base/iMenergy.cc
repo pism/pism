@@ -68,7 +68,7 @@ void IceModel::energyStep() {
   get_bed_top_temp(m_bedtoptemp);
 
   profiling.begin("BTU");
-  btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
+  m_btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
   profiling.end("BTU");
 
   if (m_config->get_boolean("do_cold_ice_methods")) {

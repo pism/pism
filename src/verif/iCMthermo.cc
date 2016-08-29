@@ -322,7 +322,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   double    FF;
   std::vector<double> Tex(m_grid->Mz());
 
-  energy::BTU_Verification *my_btu = dynamic_cast<energy::BTU_Verification*>(btu);
+  energy::BTU_Verification *my_btu = dynamic_cast<energy::BTU_Verification*>(m_btu);
   if (my_btu == NULL) {
     throw RuntimeError("my_btu == NULL");
   }
@@ -677,7 +677,7 @@ void IceCompModel::fillBasalMeltRateSolnTestO() {
 
 void IceCompModel::initTestsKO() {
 
-  if (testname == 'K' and btu->Mbz() < 2) {
+  if (testname == 'K' and m_btu->Mbz() < 2) {
     throw RuntimeError("pismv test K requires a bedrock thermal layer 1000m deep");
   }
 

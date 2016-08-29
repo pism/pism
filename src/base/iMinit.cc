@@ -159,8 +159,8 @@ void IceModel::model_state_setup() {
     }
   }
 
-  if (subglacial_hydrology) {
-    subglacial_hydrology->init();
+  if (m_subglacial_hydrology) {
+    m_subglacial_hydrology->init();
   }
 
   // basal_yield_stress_model->init() needs bwat so this must happen
@@ -170,16 +170,16 @@ void IceModel::model_state_setup() {
   }
 
   // The bedrock thermal model should be initialized after re-gridding 3D fields.
-  if (btu) {
+  if (m_btu) {
     bool bootstrapping_needed = false;
-    btu->init(bootstrapping_needed);
+    m_btu->init(bootstrapping_needed);
 
     if (bootstrapping_needed) {
       // surface model was initialized already, so we can get the temperature at the top of the
       // bedrock for bootstrapping.
       get_bed_top_temp(m_bedtoptemp);
 
-      btu->bootstrap();
+      m_btu->bootstrap();
     }
   }
 
@@ -352,18 +352,18 @@ void IceModel::initialize_cumulative_fluxes(const PIO &input_file) {
 
   // scalar, stored in run_stats
   if (input_file.inq_var("run_stats")) {
-    io::read_attributes(input_file, run_stats.get_name(), run_stats);
+    io::read_attributes(input_file, m_run_stats.get_name(), m_run_stats);
 
     try {
-      m_cumulative_fluxes.H_to_Href      = run_stats.get_double("H_to_Href_flux_cumulative");
-      m_cumulative_fluxes.Href_to_H      = run_stats.get_double("Href_to_H_flux_cumulative");
-      m_cumulative_fluxes.discharge      = run_stats.get_double("discharge_flux_cumulative");
-      m_cumulative_fluxes.grounded_basal = run_stats.get_double("grounded_basal_ice_flux_cumulative");
-      m_cumulative_fluxes.nonneg_rule    = run_stats.get_double("nonneg_rule_flux_cumulative");
-      m_cumulative_fluxes.sub_shelf      = run_stats.get_double("sub_shelf_ice_flux_cumulative");
-      m_cumulative_fluxes.sum_divQ_SIA   = run_stats.get_double("sum_divQ_SIA_cumulative");
-      m_cumulative_fluxes.sum_divQ_SSA   = run_stats.get_double("sum_divQ_SSA_cumulative");
-      m_cumulative_fluxes.surface        = run_stats.get_double("surface_ice_flux_cumulative");
+      m_cumulative_fluxes.H_to_Href      = m_run_stats.get_double("H_to_Href_flux_cumulative");
+      m_cumulative_fluxes.Href_to_H      = m_run_stats.get_double("Href_to_H_flux_cumulative");
+      m_cumulative_fluxes.discharge      = m_run_stats.get_double("discharge_flux_cumulative");
+      m_cumulative_fluxes.grounded_basal = m_run_stats.get_double("grounded_basal_ice_flux_cumulative");
+      m_cumulative_fluxes.nonneg_rule    = m_run_stats.get_double("nonneg_rule_flux_cumulative");
+      m_cumulative_fluxes.sub_shelf      = m_run_stats.get_double("sub_shelf_ice_flux_cumulative");
+      m_cumulative_fluxes.sum_divQ_SIA   = m_run_stats.get_double("sum_divQ_SIA_cumulative");
+      m_cumulative_fluxes.sum_divQ_SSA   = m_run_stats.get_double("sum_divQ_SSA_cumulative");
+      m_cumulative_fluxes.surface        = m_run_stats.get_double("surface_ice_flux_cumulative");
     }
     catch (RuntimeError &e) {
       e.add_context("initializing cumulative flux counters from '%s'",
@@ -446,14 +446,14 @@ void IceModel::allocate_iceberg_remover() {
 //! \brief Decide which bedrock thermal unit to use.
 void IceModel::allocate_bedrock_thermal_unit() {
 
-  if (btu != NULL) {
+  if (m_btu != NULL) {
     return;
   }
 
   m_log->message(2,
              "# Allocating a bedrock thermal layer model...\n");
 
-  btu = new energy::BedThermalUnit(m_grid);
+  m_btu = new energy::BedThermalUnit(m_grid);
 }
 
 //! \brief Decide which subglacial hydrology model to use.
@@ -463,7 +463,7 @@ void IceModel::allocate_subglacial_hydrology() {
 
   std::string hydrology_model = m_config->get_string("hydrology_model");
 
-  if (subglacial_hydrology != NULL) { // indicates it has already been allocated
+  if (m_subglacial_hydrology != NULL) { // indicates it has already been allocated
     return;
   }
 
@@ -471,11 +471,11 @@ void IceModel::allocate_subglacial_hydrology() {
              "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
-    subglacial_hydrology = new NullTransport(m_grid);
+    m_subglacial_hydrology = new NullTransport(m_grid);
   } else if (hydrology_model == "routing") {
-    subglacial_hydrology = new Routing(m_grid);
+    m_subglacial_hydrology = new Routing(m_grid);
   } else if (hydrology_model == "distributed") {
-    subglacial_hydrology = new Distributed(m_grid, m_stress_balance);
+    m_subglacial_hydrology = new Distributed(m_grid, m_stress_balance);
   } else {
     throw RuntimeError::formatted("unknown value for configuration string 'hydrology_model':\n"
                                   "has value '%s'", hydrology_model.c_str());
@@ -501,7 +501,7 @@ void IceModel::allocate_basal_yield_stress() {
     if (yield_stress_model == "constant") {
       m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      m_basal_yield_stress_model = new MohrCoulombYieldStress(m_grid, subglacial_hydrology);
+      m_basal_yield_stress_model = new MohrCoulombYieldStress(m_grid, m_subglacial_hydrology);
     } else {
       throw RuntimeError::formatted("yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
@@ -601,11 +601,11 @@ void IceModel::get_projection_info(const PIO &input_file) {
     m_output_global_attributes.set_string("proj4", proj4_string);
   }
 
-  bool input_has_mapping = input_file.inq_var(mapping.get_name());
+  bool input_has_mapping = input_file.inq_var(m_mapping.get_name());
   if (input_has_mapping) {
     // Note: read_attributes clears attributes before reading
-    io::read_attributes(input_file, mapping.get_name(), mapping);
-    mapping.report_to_stdout(*m_log, 4);
+    io::read_attributes(input_file, m_mapping.get_name(), m_mapping);
+    m_mapping.report_to_stdout(*m_log, 4);
   }
 
   std::string::size_type pos = proj4_string.find("+init=epsg:");
@@ -619,13 +619,13 @@ void IceModel::get_projection_info(const PIO &input_file) {
   // Check that the EPSG code matches the projection information stored in the "mapping" variable
   // *unless* this variable has no attributes, in which case initialize it.
   if (input_has_mapping and
-      ((not mapping.get_all_strings().empty()) or (not mapping.get_all_doubles().empty()))) {
+      ((not m_mapping.get_all_strings().empty()) or (not m_mapping.get_all_doubles().empty()))) {
     // Check if the "mapping" variable in the input file matches the EPSG code.
     // Check strings.
     VariableMetadata::StringAttrs strings = epsg_mapping.get_all_strings();
     VariableMetadata::StringAttrs::const_iterator j;
     for (j = strings.begin(); j != strings.end(); ++j) {
-      if (not mapping.has_attribute(j->first)) {
+      if (not m_mapping.has_attribute(j->first)) {
         throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
                                       "%s requires %s = \"%s\",\n"
                                       "but the mapping variable has no %s.",
@@ -635,7 +635,7 @@ void IceModel::get_projection_info(const PIO &input_file) {
                                       j->first.c_str());
       }
 
-      if (not (mapping.get_string(j->first) == j->second)) {
+      if (not (m_mapping.get_string(j->first) == j->second)) {
         throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
                                       "%s requires %s = \"%s\",\n"
                                       "but the mapping variable has %s = \"%s\".",
@@ -643,7 +643,7 @@ void IceModel::get_projection_info(const PIO &input_file) {
                                       proj4_string.c_str(),
                                       j->first.c_str(), j->second.c_str(),
                                       j->first.c_str(),
-                                      mapping.get_string(j->first).c_str());
+                                      m_mapping.get_string(j->first).c_str());
       }
     }
 
@@ -651,7 +651,7 @@ void IceModel::get_projection_info(const PIO &input_file) {
     VariableMetadata::DoubleAttrs doubles = epsg_mapping.get_all_doubles();
     VariableMetadata::DoubleAttrs::const_iterator k;
     for (k = doubles.begin(); k != doubles.end(); ++k) {
-      if (not mapping.has_attribute(k->first)) {
+      if (not m_mapping.has_attribute(k->first)) {
         throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has no %s.",
@@ -661,7 +661,7 @@ void IceModel::get_projection_info(const PIO &input_file) {
                                       k->first.c_str());
       }
 
-      if (fabs(mapping.get_double(k->first) - k->second[0]) > 1e-12) {
+      if (fabs(m_mapping.get_double(k->first) - k->second[0]) > 1e-12) {
         throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has %s = %f.",
@@ -669,12 +669,12 @@ void IceModel::get_projection_info(const PIO &input_file) {
                                       proj4_string.c_str(),
                                       k->first.c_str(), k->second[0],
                                       k->first.c_str(),
-                                      mapping.get_double(k->first));
+                                      m_mapping.get_double(k->first));
       }
     }
   } else {
     // Set "mapping" using the EPSG code.
-    mapping = epsg_mapping;
+    m_mapping = epsg_mapping;
   }
 }
 

@@ -72,8 +72,8 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_log(context->log()),
     m_time(context->time()),
     m_output_global_attributes("PISM_GLOBAL", m_sys),
-    mapping("mapping", m_sys),
-    run_stats("run_stats", m_sys),
+    m_mapping("mapping", m_sys),
+    m_run_stats("run_stats", m_sys),
     m_extra_bounds("time_bounds", m_config->get_string("time_dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time_dimension_name"), m_sys) {
 
@@ -87,7 +87,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   signal(SIGUSR1, pism_signal_handler);
   signal(SIGUSR2, pism_signal_handler);
 
-  subglacial_hydrology = NULL;
+  m_subglacial_hydrology = NULL;
   m_basal_yield_stress_model = NULL;
 
   m_stress_balance = NULL;
@@ -96,7 +96,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_ocean   = NULL;
   m_beddef  = NULL;
 
-  btu = NULL;
+  m_btu = NULL;
 
   m_iceberg_remover             = NULL;
   m_ocean_kill_calving          = NULL;
@@ -163,9 +163,9 @@ IceModel::~IceModel() {
 
   delete m_beddef;
 
-  delete subglacial_hydrology;
+  delete m_subglacial_hydrology;
   delete m_basal_yield_stress_model;
-  delete btu;
+  delete m_btu;
 
   delete m_iceberg_remover;
   delete m_ocean_kill_calving;
@@ -689,7 +689,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   profiling.begin("basal hydrology");
-  subglacial_hydrology->update(current_time, m_dt);
+  m_subglacial_hydrology->update(current_time, m_dt);
   profiling.end("basal hydrology");
 
   //! \li update the fracture density field; see calculateFractureDensity()

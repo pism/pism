@@ -224,15 +224,15 @@ protected:
   VariableMetadata m_output_global_attributes;
 
   //! grid projection (mapping) parameters
-  VariableMetadata  mapping;
+  VariableMetadata  m_mapping;
 
   //! run statistics
-  VariableMetadata run_stats;
+  VariableMetadata m_run_stats;
 
-  hydrology::Hydrology   *subglacial_hydrology;
+  hydrology::Hydrology   *m_subglacial_hydrology;
   YieldStress *m_basal_yield_stress_model;
 
-  energy::BedThermalUnit *btu;
+  energy::BedThermalUnit *m_btu;
 
   calving::IcebergRemover     *m_iceberg_remover;
   calving::OceanKill          *m_ocean_kill_calving;

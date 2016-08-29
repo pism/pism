@@ -156,12 +156,12 @@ void IceModel::init_diagnostics() {
     m_basal_yield_stress_model->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 
-  if (subglacial_hydrology != NULL) {
-    subglacial_hydrology->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  if (m_subglacial_hydrology != NULL) {
+    m_subglacial_hydrology->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 
-  if (btu != NULL) {
-    btu->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  if (m_btu != NULL) {
+    m_btu->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 
   if (m_eigen_calving != NULL) {
@@ -186,9 +186,9 @@ void IceModel::list_diagnostics() {
       m_beddef->add_vars_to_output("2dbig", list);
     }
 
-    if (btu != NULL) {
-      btu->add_vars_to_output("big", list);
-      btu->add_vars_to_output("2dbig", list);
+    if (m_btu != NULL) {
+      m_btu->add_vars_to_output("big", list);
+      m_btu->add_vars_to_output("2dbig", list);
     }
 
     if (m_basal_yield_stress_model != NULL) {
@@ -196,9 +196,9 @@ void IceModel::list_diagnostics() {
       m_basal_yield_stress_model->add_vars_to_output("2dbig", list);
     }
 
-    if (subglacial_hydrology != NULL) {
-      subglacial_hydrology->add_vars_to_output("big", list);
-      subglacial_hydrology->add_vars_to_output("2dbig", list);
+    if (m_subglacial_hydrology != NULL) {
+      m_subglacial_hydrology->add_vars_to_output("big", list);
+      m_subglacial_hydrology->add_vars_to_output("2dbig", list);
     }
 
     if (m_stress_balance != NULL) {

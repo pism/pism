@@ -156,8 +156,8 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     m_beddef->add_vars_to_output(keyword, result);
   }
 
-  if (btu != NULL) {
-    btu->add_vars_to_output(keyword, result);
+  if (m_btu != NULL) {
+    m_btu->add_vars_to_output(keyword, result);
   }
 
   if (m_basal_yield_stress_model != NULL) {
@@ -169,8 +169,8 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     m_stress_balance->add_vars_to_output(keyword, result);
   }
 
-  if (subglacial_hydrology != NULL) {
-    subglacial_hydrology->add_vars_to_output(keyword, result);
+  if (m_subglacial_hydrology != NULL) {
+    m_subglacial_hydrology->add_vars_to_output(keyword, result);
   }
 
   // Ask ocean and surface models to add more variables to the list:

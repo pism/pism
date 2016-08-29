@@ -159,15 +159,15 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   assert(m_ocean != NULL);
   m_ocean->shelf_base_temperature(m_shelfbtemp);
 
-  assert(btu != NULL);
-  const IceModelVec2S &G0 = btu->upward_geothermal_flux();
+  assert(m_btu != NULL);
+  const IceModelVec2S &G0 = m_btu->upward_geothermal_flux();
 
   IceModelVec2S &bwatcurr = m_work2d[0];
   bwatcurr.set_attrs("internal", "current amount of basal water", "m", "");
   bwatcurr.metadata().set_string("glaciological_units", "m");
 
-  assert(subglacial_hydrology != NULL);
-  subglacial_hydrology->subglacial_water_thickness(bwatcurr);
+  assert(m_subglacial_hydrology != NULL);
+  m_subglacial_hydrology->subglacial_water_thickness(bwatcurr);
 
   IceModelVec::AccessList list;
   list.add(m_ice_surface_temp);

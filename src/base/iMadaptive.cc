@@ -276,13 +276,13 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       dt_restrictions["ocean"] = ocean_dt.value();
     }
 
-    MaxTimestep hydrology_dt = subglacial_hydrology->max_timestep(current_time);
+    MaxTimestep hydrology_dt = m_subglacial_hydrology->max_timestep(current_time);
     if (hydrology_dt.is_finite()) {
       dt_restrictions["hydrology"] = hydrology_dt.value();
     }
 
-    if (btu != NULL) {
-      MaxTimestep btu_dt = btu->max_timestep(current_time);
+    if (m_btu != NULL) {
+      MaxTimestep btu_dt = m_btu->max_timestep(current_time);
       if (btu_dt.is_finite()) {
         dt_restrictions["BTU"] = btu_dt.value();
       }

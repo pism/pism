@@ -26,9 +26,9 @@ IBIceModel::~IBIceModel() {
 
 void IBIceModel::allocate_subglacial_hydrology() {
   printf("BEGIN IBIceModel::allocate_subglacial_hydrology()\n");
-  if (pism::IceModel::subglacial_hydrology)
+  if (pism::IceModel::m_subglacial_hydrology)
     return; // indicates it has already been allocated
-  subglacial_hydrology = new pism::icebin::NullTransportHydrology(m_grid);
+  m_subglacial_hydrology = new pism::icebin::NullTransportHydrology(m_grid);
   printf("END IBIceModel::allocate_subglacial_hydrology()\n");
 }
 
@@ -124,7 +124,7 @@ void IBIceModel::energyStep() {
   // Use actual geothermal flux, not the long-term average..
   // See: file:///Users/rpfische/git/pism/build/doc/browser/html/classPISMBedThermalUnit.html#details
   {
-    const IceModelVec2S &upward_geothermal_flux(btu->upward_geothermal_flux());
+    const IceModelVec2S &upward_geothermal_flux(m_btu->upward_geothermal_flux());
     cur.upward_geothermal_flux.add(my_dt, upward_geothermal_flux);
   }
 
