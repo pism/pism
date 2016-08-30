@@ -190,6 +190,7 @@ add_library (pismverif OBJECT
   verif/iCMthermo.cc
   verif/iceCompModel.cc
   verif/PSVerification.cc
+  verif/BTU_Verification.cc
   verif/tests/exactTestH.c
   verif/tests/exactTestK.c
   verif/tests/exactTestO.c
