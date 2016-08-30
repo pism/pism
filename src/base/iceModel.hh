@@ -252,7 +252,6 @@ protected:
     m_basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
     m_longitude, //!< Longitude; ghosted to compute cell areas
     m_latitude,  //!< Latitude; ghosted to compute cell areas
-    m_geothermal_flux,   //!< geothermal flux; no ghosts
     m_fracture_density,    //!< fracture density
     m_fracture_growth_rate,    //!< fracture growth rate
     m_fracture_healing_rate,    //!< fracture healing rate

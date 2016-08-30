@@ -245,7 +245,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   m_ocean->shelf_base_temperature(m_shelfbtemp);
 
   assert(m_btu != NULL);
-  const IceModelVec2S &basal_heat_flux = m_btu->upward_geothermal_flux();
+  const IceModelVec2S &basal_heat_flux = m_btu->flux_through_top_surface();
 
   IceModelVec2S &till_water_thickness = m_work2d[0];
   till_water_thickness.set_attrs("internal", "current amount of basal water in the till",

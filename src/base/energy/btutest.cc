@@ -23,7 +23,7 @@ static char help[] =
 #include "base/util/IceGrid.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/VariableMetadata.hh"
-#include "bedrockThermalUnit.hh"
+#include "verif/BTU_Verification.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/PISMConfigInterface.hh"
@@ -38,42 +38,6 @@ static char help[] =
 #include "base/enthalpyConverter.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/Logger.hh"
-
-namespace pism {
-namespace energy {
-
-class BTU_Test : public BedThermalUnit {
-public:
-  BTU_Test(IceGrid::ConstPtr g)
-    : BedThermalUnit(g) {}
-  virtual ~BTU_Test() {}
-  /** Initialize the bedrock temperature field at the beginning of the run. */
-  virtual void bootstrap();
-};
-
-void BTU_Test::bootstrap() {
-
-  // fill exact bedrock temperature from Test K at time ys
-  if (m_Mbz > 1) {
-    std::vector<double> zlevels = m_temp.get_levels();
-
-    IceModelVec::AccessList list(m_temp);
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double *Tb = m_temp.get_column(i, j);
-      for (unsigned int k=0; k < m_Mbz; k++) {
-        const double z = zlevels[k];
-        double FF = 0.0; // Test K:  use Tb[k], ignore FF
-        exactK(m_grid->ctx()->time()->start(), z, &Tb[k], &FF, 0);
-      }
-    }
-  }
-}
-
-} // end of namespace energy
-} // end of namespace pism
 
 //! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
 pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
@@ -181,17 +145,13 @@ int main(int argc, char *argv[]) {
     ctx->time()->init(*log);
 
     // allocate tools and IceModelVecs
-    IceModelVec2S bedtoptemp, ghf;
+    IceModelVec2S bedtoptemp, heat_flux_at_ice_base;
     {
-      ghf.create(grid, "bheatflx", WITHOUT_GHOSTS);
-      ghf.set_attrs("",
+      heat_flux_at_ice_base.create(grid, "upward_heat_flux_at_ice_base", WITHOUT_GHOSTS);
+      heat_flux_at_ice_base.set_attrs("",
                      "upward geothermal flux at bedrock thermal layer base",
                      "W m-2", "");
-      ghf.metadata().set_string("glaciological_units", "mW m-2");
-
-      ghf.set(0.042);  // see Test K
-
-      grid->variables().add(ghf);
+      heat_flux_at_ice_base.metadata().set_string("glaciological_units", "mW m-2");
 
       bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS);
       bedtoptemp.set_attrs("",
@@ -201,11 +161,10 @@ int main(int argc, char *argv[]) {
     }
 
     // initialize BTU object:
-    energy::BTU_Test btu(grid);
+    energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(ctx);
+    energy::BTU_Verification btu(grid, bedrock_grid, 'K', false);
 
-    bool bootstrapping_needed = true; // we know it's true
-    btu.init(bootstrapping_needed);
-    btu.bootstrap();
+    btu.init();
 
     double dt_seconds = units::convert(ctx->unit_system(), dt_years, "years", "seconds");
 
@@ -245,8 +204,8 @@ int main(int argc, char *argv[]) {
 
     log->message(2, "\n  done ...\n");
 
-    // compute final output heat flux G_0 at z=0; reuse ghf for this purpose
-    ghf.copy_from(btu.upward_geothermal_flux());
+    // compute final output heat flux G_0 at z=0
+    heat_flux_at_ice_base.copy_from(btu.flux_through_top_surface());
 
     // get, and tell stdout, the correct answer from Test K
     double TT, FF; // Test K:  use FF, ignore TT
@@ -256,12 +215,11 @@ int main(int argc, char *argv[]) {
                  ctx->time()->end_date().c_str(), FF);
 
     // compute numerical error
-    double maxghferr, avghferr;
-    ghf.shift(-FF);
-    maxghferr = ghf.norm(NORM_INFINITY);
-    avghferr  = ghf.norm(NORM_1);
-    ghf.shift(+FF); // shift it back for writing
-    avghferr /= (grid->Mx() * grid->My());
+    heat_flux_at_ice_base.shift(-FF);
+    double max_error = heat_flux_at_ice_base.norm(NORM_INFINITY);
+    double avg_error = heat_flux_at_ice_base.norm(NORM_1);
+    heat_flux_at_ice_base.shift(+FF); // shift it back for writing
+    avg_error /= (grid->Mx() * grid->My());
     log->message(2,
                  "case dt = %.5f:\n", dt_years.value());
     log->message(1,
@@ -270,7 +228,7 @@ int main(int argc, char *argv[]) {
                  "bheatflx0  :       max    prcntmax          av\n");
     log->message(1,
                  "           %11.7f  %11.7f  %11.7f\n",
-                 maxghferr, 100.0*maxghferr/FF, avghferr);
+                 max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
     std::set<std::string> vars;
@@ -288,7 +246,7 @@ int main(int argc, char *argv[]) {
     btu.write_variables(vars, pio);
 
     bedtoptemp.write(pio);
-    ghf.write(pio);
+    heat_flux_at_ice_base.write(pio);
 
     pio.close();
 

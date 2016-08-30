@@ -106,7 +106,7 @@ void IceModel::model_state_setup() {
   const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
   const bool restart   = input_filename.is_set() and not bootstrap_is_set;
 
-  PIO input_file(m_grid->com, "netcdf3");
+  PIO input_file(m_grid->com, "guess_mode");
   unsigned int last_record = 0;
 
   if (restart or bootstrap) {
@@ -125,7 +125,7 @@ void IceModel::model_state_setup() {
     } else {
       initialize_2d();
     }
-    // Regrid 2D fields:
+
     regrid(2);
   }
 
@@ -169,23 +169,31 @@ void IceModel::model_state_setup() {
     m_basal_yield_stress_model->init();
   }
 
-  // The bedrock thermal model should be initialized after re-gridding 3D fields.
+  // Initialize the bedrock thermal layer model.
+  //
+  // If
+  // - PISM is bootstrapping and
+  // - we are using a non-zero-thickness thermal layer
+  //
+  // initialization of m_btu requires the temperature at the top of the bedrock. This is a problem
+  // because get_bed_top_temp() uses the enthalpy field that is not initialized until later and
+  // bootstrapping enthalpy uses the flux through the bottom surface of the ice (top surface of the
+  // bedrock) provided by m_btu.
+  //
+  // We get out of this by using the fact that the full state of m_btu is not needed and
+  // bootstrapping of the temperature field can be delayed.
+  //
+  // Note that to bootstrap m_btu we use the steady state solution of the heat equation in columns
+  // of the bedrock (a straight line at each column), so the flux through the top surface of the
+  // bedrock after bootstrapping is the same as the time-independent geothermal flux applied at the
+  // BOTTOM surface of the bedrock layer.
+  //
+  // The code then delays bootstrapping of the thickness field until the first time step.
   if (m_btu) {
-    bool bootstrapping_needed = false;
-    m_btu->init(bootstrapping_needed);
-
-    if (bootstrapping_needed) {
-      // surface model was initialized already, so we can get the temperature at the top of the
-      // bedrock for bootstrapping.
-      get_bed_top_temp(m_bedtoptemp);
-
-      m_btu->bootstrap();
-    }
+    m_btu->init();
   }
 
   // Initialize 3D (age and energy balance) parts of IceModel.
-  //
-  // This has to happen *after* all geometry information (including the mask) is set.
   {
     if (restart) {
       // Find the index of the last record in the file:
@@ -196,8 +204,11 @@ void IceModel::model_state_setup() {
       initialize_3d();
     }
 
-    m_log->message(2, "regridding 3D variables...\n");
     regrid(3);
+
+    // compute temperature at the top of the bedrock so that m_btu can bootstrap during the first
+    // time step
+    get_bed_top_temp(m_bedtoptemp);
   }
 
   // get projection information and compute cell areas
@@ -235,7 +246,6 @@ void IceModel::model_state_setup() {
 
     stampHistoryCommand();
   }
-
 }
 
 //! Initialize 2D model state fields managed by IceModel from a file (for re-starting).
@@ -450,10 +460,11 @@ void IceModel::allocate_bedrock_thermal_unit() {
     return;
   }
 
-  m_log->message(2,
-             "# Allocating a bedrock thermal layer model...\n");
+  m_log->message(2, "# Allocating a bedrock thermal layer model...\n");
 
-  m_btu = new energy::BedThermalUnit(m_grid);
+  energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(m_ctx);
+
+  m_btu = new energy::BedThermalUnit(m_grid, bedrock_grid);
 }
 
 //! \brief Decide which subglacial hydrology model to use.

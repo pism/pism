@@ -160,7 +160,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   m_ocean->shelf_base_temperature(m_shelfbtemp);
 
   assert(m_btu != NULL);
-  const IceModelVec2S &G0 = m_btu->upward_geothermal_flux();
+  const IceModelVec2S &G0 = m_btu->flux_through_top_surface();
 
   IceModelVec2S &bwatcurr = m_work2d[0];
   bwatcurr.set_attrs("internal", "current amount of basal water", "m", "");

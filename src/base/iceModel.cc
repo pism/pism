@@ -275,16 +275,6 @@ void IceModel::createVecs() {
                               "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
   m_grid->variables().add(m_cell_type);
 
-  // upward geothermal flux at bedrock surface
-  m_geothermal_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
-  // PROPOSED standard_name = lithosphere_upward_heat_flux
-  m_geothermal_flux.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
-                            "W m-2", "");
-  m_geothermal_flux.metadata().set_string("glaciological_units", "mW m-2");
-  m_geothermal_flux.write_in_glaciological_units = true;
-  m_geothermal_flux.set_time_independent(true);
-  m_grid->variables().add(m_geothermal_flux);
-
   // temperature seen by top of bedrock thermal layer
   m_bedtoptemp.create(m_grid, "bedtoptemp", WITHOUT_GHOSTS);
   m_bedtoptemp.set_attrs("internal",
@@ -927,11 +917,6 @@ void IceModel::init() {
   m_start_time = GlobalMax(m_grid->com, GetTime());
 
   profiling.end("initialization");
-}
-
-// FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
-IceModelVec2S* IceModel::get_geothermal_flux() {
-  return &this->m_geothermal_flux;
 }
 
 // FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)

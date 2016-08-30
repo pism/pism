@@ -188,7 +188,10 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice_specific_heat_capacity"));
   }
 
-  m_btu = new energy::BTU_Verification(m_grid, testname, bedrock_is_ice_forK);
+  energy::BTUGrid bed_vertical_grid = energy::BTUGrid::FromOptions(m_grid->ctx());
+
+  m_btu = new energy::BTU_Verification(m_grid, bed_vertical_grid,
+                                       testname, bedrock_is_ice_forK);
 }
 
 void IceCompModel::allocate_stressbalance() {
@@ -312,7 +315,6 @@ void IceCompModel::initTestABCDH() {
   T0 = tgaIce.tempFromSoftness(A0);
 
   m_ice_temperature.set(T0);
-  m_geothermal_flux.set(Ggeo);
   m_cell_type.set(MASK_GROUNDED);
 
   IceModelVec::AccessList list(m_ice_thickness);
@@ -399,7 +401,6 @@ void IceCompModel::initTestL() {
   T0 = tgaIce.tempFromSoftness(A0);
 
   m_ice_temperature.set(T0);
-  m_geothermal_flux.set(Ggeo);
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order

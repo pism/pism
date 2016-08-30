@@ -99,7 +99,7 @@ void InitializationHelper::init_impl() {
 
     file.close();
   } else {
-    m_log->message(2, "* Performing a 'fake' surface model time-step for bootstrapping...\n");
+    m_log->message(2, "* Performing a 'fake' ocean model time-step for bootstrapping...\n");
 
     init_step(*this, *m_grid->ctx()->time());
   }

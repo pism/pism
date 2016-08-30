@@ -175,9 +175,7 @@ void IceEISModel::initialize_2d() {
   }
 
   m_basal_melt_rate.set(0.0);
-  m_geothermal_flux.set(0.042); // EISMINT II value; J m-2 s-1
   m_ice_thickness.set(0.0); // start with zero ice
-
 }
 
 void IceEISModel::initialize_3d() {

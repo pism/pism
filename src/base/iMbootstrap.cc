@@ -31,6 +31,7 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "enthalpyConverter.hh"
+#include "base/energy/bedrockThermalUnit.hh"
 
 namespace pism {
 
@@ -75,8 +76,6 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
 
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
                            m_config->get_double("bootstrapping_bmelt_value_no_var"));
-  m_geothermal_flux.regrid(input_file, OPTIONAL,
-                           m_config->get_double("bootstrapping_geothermal_flux_value_no_var"));
 
   m_ice_thickness.regrid(input_file, OPTIONAL,
                          m_config->get_double("bootstrapping_H_value_no_var"));
@@ -252,11 +251,13 @@ void IceModel::putTempAtDepth() {
     result = &m_ice_enthalpy;
   }
 
+  const IceModelVec2S &ice_base_heat_flux = m_btu->flux_through_top_surface();
+
   IceModelVec::AccessList list;
   list.add(m_ice_surface_temp);
   list.add(m_climatic_mass_balance);
   list.add(m_ice_thickness);
-  list.add(m_geothermal_flux);
+  list.add(ice_base_heat_flux);
   list.add(*result);
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
@@ -268,7 +269,7 @@ void IceModel::putTempAtDepth() {
 
       const double HH = m_ice_thickness(i,j),
         Ts = m_ice_surface_temp(i,j),
-        gg = m_geothermal_flux(i,j);
+        gg = ice_base_heat_flux(i,j);
       const unsigned int ks = m_grid->kBelowHeight(HH);
 
       double *T = result->get_column(i, j);

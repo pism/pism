@@ -32,17 +32,93 @@
 namespace pism {
 namespace energy {
 
-BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
-    : Component_TS(g) {
+BTUGrid::BTUGrid(Context::ConstPtr ctx) {
+  Mbz = (unsigned int) ctx->config()->get_double("grid_Mbz");
+  Lbz = ctx->config()->get_double("grid_Lbz");
+}
 
-  const Logger &log = *g->ctx()->log();
+BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
+  BTUGrid result(ctx);
 
-  m_upward_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
-  // PROPOSED standard_name = lithosphere_upward_heat_flux
-  m_upward_flux.set_attrs("diagnostic", "upward geothermal flux at bedrock surface",
-                          "W m-2", "");
-  m_upward_flux.metadata().set_string("glaciological_units", "mW m-2");
-  m_upward_flux.write_in_glaciological_units = true;
+  const Logger &log = *ctx->log();
+
+  options::String input_filename("-i", "Specifies the PISM input file");
+  bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+
+  const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
+  const bool restart   = input_filename.is_set() and not bootstrap_is_set;
+
+  if (restart) {
+    options::ignored(log, "-Mbz");
+    options::ignored(log, "-Lbz");
+
+    // If we're initializing from a file we need to get the number of bedrock
+    // levels and the depth of the bed thermal layer from it:
+    PIO input_file(ctx->com(), "guess_mode");
+
+    input_file.open(input_filename, PISM_READONLY);
+
+    if (input_file.inq_var("litho_temp")) {
+      grid_info info(input_file, "litho_temp", ctx->unit_system(),
+                     NOT_PERIODIC); // periodicity is irrelevant
+
+      result.Mbz = info.z_len;
+      result.Lbz = -info.z_min;
+    } else {
+      // override values we got using config.get_double() in the constructor
+      result.Mbz = 1;
+      result.Lbz = 0;
+    }
+
+    input_file.close();
+  } else if (bootstrap) {
+    // Bootstrapping
+    options::Integer Mbz("-Mbz", "number of levels in bedrock thermal layer",
+                         result.Mbz);
+
+    options::Real Lbz("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
+                      result.Lbz);
+
+    if (Mbz.is_set() ^ Lbz.is_set()) {
+      throw RuntimeError("please specify both -Mbz and -Lbz");
+    }
+
+    if (Mbz.is_set() and Mbz == 1) {
+      options::ignored(log, "-Lbz");
+      result.Lbz = 0;
+      result.Mbz = 1;
+    } else {
+      result.Lbz = Lbz;
+      result.Mbz = Mbz;
+    }
+  } else {
+    // empty: use defaults from the configuration database
+  }
+  return result;
+}
+
+
+BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g, const BTUGrid &grid)
+  : Component_TS(g),
+    m_bootstrapping_needed(false) {
+
+  {
+    m_bottom_surface_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
+    m_bottom_surface_flux.set_attrs("model_state",
+                                    "upward geothermal flux at bottom surface of the bedrock",
+                                    "W m-2", "");
+    m_bottom_surface_flux.metadata().set_string("glaciological_units", "mW m-2");
+    m_bottom_surface_flux.write_in_glaciological_units = true;
+  }
+
+  {
+    m_top_surface_flux.create(m_grid, "ground_level_geothermal_flux", WITHOUT_GHOSTS);
+    m_top_surface_flux.set_attrs("diagnostic",
+                                 "upward geothermal flux at the top surface of the bedrock",
+                                 "W m-2", "");
+    m_top_surface_flux.metadata().set_string("glaciological_units", "mW m-2");
+    m_top_surface_flux.write_in_glaciological_units = true;
+  }
 
   // build constant diffusivity for heat equation
   m_bed_rho = m_config->get_double("bedrock_thermal_density");
@@ -50,66 +126,17 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
   m_bed_k   = m_config->get_double("bedrock_thermal_conductivity");
   m_bed_D   = m_bed_k / (m_bed_rho * m_bed_c);
 
-  m_Mbz = (int)m_config->get_double("grid_Mbz");
-  m_Lbz = (int)m_config->get_double("grid_Lbz");
-  m_input_file.clear();
-
-  // FIXME: Move the code processing command-line options elsewhere,
-  // possibly making Mbz and Lbz arguments of the constructor. It's
-  // good to validate Lbz and Mbz here, though.
+  // allocate m_temp, if necessary
+  //
+  // FIXME: the "trivial" BTU should be moved to a derived class
   {
-    options::String input_file("-i", "PISM input file name");
-    bool boot = options::Bool("-bootstrap", "enable bootstrapping heuristics");
-
-    options::Integer Mbz_option("-Mbz", "number of levels in bedrock thermal layer", m_Mbz);
-    m_Mbz = Mbz_option;
-
-    options::Real Lbz("-Lbz",
-                      "depth (thickness) of bedrock thermal layer, in meters", m_Lbz);
-    m_Lbz = Lbz;
-
-    if (input_file.is_set() and not boot) {
-      m_input_file = input_file;
-      options::ignored(log, "-Mbz");
-      options::ignored(log, "-Lbz");
-
-      // If we're initializing from a file we need to get the number of bedrock
-      // levels and the depth of the bed thermal layer from it:
-      PIO nc(m_grid->com, "guess_mode");
-
-      nc.open(m_input_file, PISM_READONLY);
-
-      bool exists = nc.inq_var("litho_temp");
-
-      if (exists) {
-        grid_info info(nc, "litho_temp", m_sys, m_grid->periodicity());
-
-        m_Mbz = info.z_len;
-        m_Lbz = -info.z_min;
-      } else {
-        // override values we got using config.get_double() in the constructor
-        m_Mbz = 1;
-        m_Lbz = 0;
-      }
-
-      nc.close();
-    } else {
-      // Bootstrapping
-
-      if (Mbz_option.is_set() && m_Mbz == 1) {
-        options::ignored(log, "-Lbz");
-        m_Lbz = 0;
-      } else if (Mbz_option.is_set() ^ Lbz.is_set()) {
-        throw RuntimeError("please specify both -Mbz and -Lbz");
-      }
-    }
-
-    // actual allocation
+    m_Mbz = grid.Mbz;
+    m_Lbz = grid.Lbz;
 
     // validate Lbz and Mbz:
     if ((m_Lbz <= 0.0) && (m_Mbz > 1)) {
-      throw RuntimeError("BedThermalUnit can not be created with negative or zero Lbz value\n"
-                         "and more than one layers");
+      throw RuntimeError("BedThermalUnit can not be created with"
+                         " negative or zero Lbz value and more than one layer");
     }
 
     if (m_Mbz > 1) {
@@ -128,8 +155,8 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
       m_temp.create(m_grid, "litho_temp", "zb", z, attrs);
 
       m_temp.set_attrs("model_state",
-                     "lithosphere (bedrock) temperature, in BedThermalUnit",
-                     "K", "");
+                       "lithosphere (bedrock) temperature, in BedThermalUnit",
+                       "K", "");
       m_temp.metadata().set_double("valid_min", 0.0);
     }
   }
@@ -141,48 +168,77 @@ BedThermalUnit::~BedThermalUnit() {
 
 
 //! \brief Initialize the bedrock thermal unit.
-void BedThermalUnit::init(bool &bootstrapping_needed) {
-  grid_info g;
+void BedThermalUnit::init() {
+  options::String input_filename("-i", "Specifies the PISM input file");
+  bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  // first assume that we don't need to bootstrap
-  bootstrapping_needed = false;
-
-  // store the current "revision number" of the temperature field
-  int temp_revision = m_temp.get_state_counter();
+  const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
+  const bool restart   = input_filename.is_set() and not bootstrap_is_set;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  m_log->message(2,
-             "* Initializing the bedrock thermal unit... setting constants...\n");
+  m_log->message(2, "* Initializing the bedrock thermal unit...\n");
 
-  // If we're using a minimal model, then we're done:
-  if (!m_temp.was_created()) {
-    m_log->message(2,
-               "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
-    return;
+  PIO input_file(m_grid->com, "guess_mode");
+  unsigned int last_record = 0;
+
+  if (restart or bootstrap) {
+    input_file.open(input_filename, PISM_READONLY);
+
+    // Find the index of the last record in the input file.
+    last_record = input_file.inq_nrecords() - 1;
   }
 
-  if (not m_input_file.empty()) {
-    PIO nc(m_grid->com, "guess_mode");
-
-    nc.open(m_input_file, PISM_READONLY);
-    bool exists = nc.inq_var("litho_temp");
-
-    if (exists) {
-      const unsigned int last_record = nc.inq_nrecords("litho_temp", "", m_sys) - 1;
-      m_temp.read(m_input_file, last_record);
+  // 2D initialization
+  {
+    if (restart) {
+      // assume that geothermal flux is time-independent, so record 0 is OK
+      m_bottom_surface_flux.read(input_file, last_record);
+    } else if (bootstrap) {
+      m_bottom_surface_flux.regrid(input_file, OPTIONAL,
+                                   m_config->get_double("bootstrapping_geothermal_flux_value_no_var"));
+    } else {
+      initialize_bottom_surface_flux();
     }
 
-    nc.close();
+    regrid("BedThermalUnit", m_bottom_surface_flux, REGRID_WITHOUT_REGRID_VARS);
   }
 
-  if (m_temp.was_created() == true) {
+  // 3D initialization
+  if (m_temp.was_created()) {
+    // store the current "revision number" of the temperature field
+    const int temp_revision = m_temp.get_state_counter();
+
+    if (restart) {
+      if (input_file.inq_var("litho_temp")) {
+        m_temp.read(input_file, last_record);
+      }
+    }
+
     regrid("BedThermalUnit", m_temp, REGRID_WITHOUT_REGRID_VARS);
-  }
 
-  if (m_temp.get_state_counter() == temp_revision) {
-    bootstrapping_needed = true;
+    if (m_temp.get_state_counter() == temp_revision) {
+      m_bootstrapping_needed = true;
+    } else {
+      m_bootstrapping_needed = false;
+    }
+
+  } else {
+    m_bootstrapping_needed = false;
+
+    m_log->message(2,
+                   "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
   }
+}
+
+void BedThermalUnit::initialize_bottom_surface_flux() {
+  const double heat_flux = m_config->get_double("bootstrapping_geothermal_flux_value_no_var");
+
+  m_log->message(2,
+                 "  using constant geothermal flux %f W m-2 ...\n",
+                 heat_flux);
+
+  m_bottom_surface_flux.set(heat_flux);
 }
 
 /** Returns the vertical spacing used by the bedrock grid.
@@ -191,7 +247,7 @@ void BedThermalUnit::init(bool &bootstrapping_needed) {
  * zero.
  */
 double BedThermalUnit::vertical_spacing() const {
-  if (m_temp.was_created() == true) {
+  if (m_temp.was_created()) {
     return m_Lbz / (m_Mbz - 1.0);
   } else {
     return 0.0;
@@ -204,24 +260,34 @@ unsigned int BedThermalUnit::Mbz() const {
 
 void BedThermalUnit::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
   if (m_temp.was_created()) {
-    result.insert(m_temp.metadata().get_string("short_name"));
+    result.insert(m_temp.metadata().get_name());
   }
+
+  result.insert(m_bottom_surface_flux.metadata().get_name());
 }
 
 void BedThermalUnit::define_variables_impl(const std::set<std::string> &vars,
                                                 const PIO &nc, IO_Type nctype) {
   if (m_temp.was_created()) {
-    if (set_contains(vars, m_temp.metadata().get_string("short_name"))) {
+    if (set_contains(vars, m_temp.metadata().get_name())) {
       m_temp.define(nc, nctype);
     }
+  }
+
+  if (set_contains(vars, m_bottom_surface_flux.metadata().get_name())) {
+    m_bottom_surface_flux.define(nc, nctype);
   }
 }
 
 void BedThermalUnit::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (m_temp.was_created()) {
-    if (set_contains(vars, m_temp.metadata().get_string("short_name"))) {
+    if (set_contains(vars, m_temp.metadata().get_name())) {
       m_temp.write(nc);
     }
+  }
+
+  if (set_contains(vars, m_bottom_surface_flux.metadata().get_name())) {
+    m_bottom_surface_flux.write(nc);
   }
 }
 
@@ -277,8 +343,13 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
   if (not m_temp.was_created()) {
-    update_upward_geothermal_flux();
+    update_flux_through_top_surface();
     return;  // in this case we are up to date
+  }
+
+  if (m_bootstrapping_needed) {
+    bootstrap();
+    m_bootstrapping_needed = false;
   }
 
   // as a derived class of Component_TS, has t,dt members which keep track
@@ -357,7 +428,7 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
     m_temp.set_column(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
   }
 
-  update_upward_geothermal_flux();
+  update_flux_through_top_surface();
 }
 
 /*! Computes the heat flux from the bedrock thermal layer upward into the
@@ -371,10 +442,10 @@ The above expression only makes sense when `Mbz` = `temp.n_levels` >= 3.
 When `Mbz` = 2 we use first-order differencing.  When temp was not created,
 the `Mbz` <= 1 cases, we return the stored geothermal flux.
  */
-void BedThermalUnit::update_upward_geothermal_flux() {
+void BedThermalUnit::update_flux_through_top_surface() {
 
   if (not m_temp.was_created()) {
-    m_upward_flux.copy_from(*m_grid->variables().get_2d_scalar("bheatflx"));
+    m_top_surface_flux.copy_from(m_bottom_surface_flux);
     return;
   }
 
@@ -383,7 +454,7 @@ void BedThermalUnit::update_upward_geothermal_flux() {
 
   IceModelVec::AccessList list;
   list.add(m_temp);
-  list.add(m_upward_flux);
+  list.add(m_top_surface_flux);
 
   if (m_Mbz >= 3) {
 
@@ -391,7 +462,7 @@ void BedThermalUnit::update_upward_geothermal_flux() {
       const int i = p.i(), j = p.j();
 
       const double *Tb = m_temp.get_column(i,j);
-      m_upward_flux(i,j) = - m_bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
+      m_top_surface_flux(i,j) = - m_bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
     }
 
   } else {
@@ -400,14 +471,26 @@ void BedThermalUnit::update_upward_geothermal_flux() {
       const int i = p.i(), j = p.j();
 
       const double *Tb = m_temp.get_column(i,j);
-      m_upward_flux(i,j) = - m_bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
+      m_top_surface_flux(i,j) = - m_bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
     }
 
   }
 }
 
-const IceModelVec2S& BedThermalUnit::upward_geothermal_flux() const {
-  return m_upward_flux;
+const IceModelVec3Custom* BedThermalUnit::temperature() {
+  if (m_bootstrapping_needed) {
+    throw RuntimeError("bedrock temperature is not available (bootstrapping is needed)");
+  }
+
+  return &m_temp;
+}
+
+const IceModelVec2S& BedThermalUnit::flux_through_top_surface() const {
+  return m_top_surface_flux;
+}
+
+const IceModelVec2S& BedThermalUnit::flux_through_bottom_surface() const {
+  return m_bottom_surface_flux;
 }
 
 void BedThermalUnit::bootstrap() {
@@ -425,20 +508,20 @@ void BedThermalUnit::bootstrap() {
 
   // Get pointers to fields owned by IceModel.
   const IceModelVec2S
-    *bedtoptemp = m_grid->variables().get_2d_scalar("bedtoptemp"),
-    *ghf        = m_grid->variables().get_2d_scalar("bheatflx");
+    &top_surface_temperature = *m_grid->variables().get_2d_scalar("bedtoptemp");
 
   IceModelVec::AccessList list;
-  list.add(*bedtoptemp);
-  list.add(*ghf);
+  list.add(top_surface_temperature);
+  list.add(m_bottom_surface_flux);
   list.add(m_temp);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *Tb = m_temp.get_column(i,j); // Tb points into temp memory
-    Tb[k0] = (*bedtoptemp)(i,j);
+
+    Tb[k0] = top_surface_temperature(i,j);
     for (int k = k0-1; k >= 0; k--) {
-      Tb[k] = Tb[k+1] + dzb * (*ghf)(i,j) / m_bed_k;
+      Tb[k] = Tb[k+1] + dzb * m_bottom_surface_flux(i,j) / m_bed_k;
     }
   }
 
@@ -458,7 +541,7 @@ IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() {
   result->create(m_grid, "hfgeoubed", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  result->copy_from(model->upward_geothermal_flux());
+  result->copy_from(model->flux_through_top_surface());
 
   return result;
 }

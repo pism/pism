@@ -124,12 +124,11 @@ void IBIceModel::energyStep() {
   // Use actual geothermal flux, not the long-term average..
   // See: file:///Users/rpfische/git/pism/build/doc/browser/html/classPISMBedThermalUnit.html#details
   {
-    const IceModelVec2S &upward_geothermal_flux(m_btu->upward_geothermal_flux());
-    cur.upward_geothermal_flux.add(my_dt, upward_geothermal_flux);
+    cur.upward_geothermal_flux.add(my_dt, m_btu->flux_through_top_surface());
   }
 
   // ----------- Geothermal Flux
-  cur.geothermal_flux.add(my_dt, m_geothermal_flux);
+  cur.geothermal_flux.add(my_dt, m_btu->flux_through_bottom_surface());
 
   // ---------- Basal Frictional Heating (see iMenthalpy.cc l. 220)
   IceModelVec2S const &Rb(m_stress_balance->basal_frictional_heating());

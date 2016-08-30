@@ -34,7 +34,6 @@
 namespace pism {
 
 // boundary conditions for tests F, G (same as EISMINT II Experiment F)
-const double IceCompModel::Ggeo = 0.042;
 const double IceCompModel::ST = 1.67e-5;
 const double IceCompModel::Tmin = 223.15;  // K
 const double IceCompModel::LforFG = 750000; // m
@@ -71,8 +70,6 @@ void IceCompModel::initTestFG() {
   bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
   bed_topography.set(0);
   m_beddef->set_elevation(bed_topography);
-
-  m_geothermal_flux.set(Ggeo);
 
   std::vector<double> T(m_grid->Mz());
 
@@ -686,75 +683,10 @@ void IceCompModel::initTestsKO() {
   bed_topography.set(0);
   m_beddef->set_elevation(bed_topography);
 
-  m_geothermal_flux.set(0.042);
   m_ice_thickness.set(3000.0);
   m_ice_surface_elevation.copy_from(m_ice_thickness);
 
   fillTemperatureSolnTestsKO();
 }
 
-namespace energy {
-
-BTU_Verification::BTU_Verification(IceGrid::ConstPtr g, int test, bool bii)
-  : BedThermalUnit(g) {
-  m_testname = test;
-  m_bedrock_is_ice = bii;
-}
-
-BTU_Verification::~BTU_Verification() {
-  // empty
-}
-
-const IceModelVec3Custom* BTU_Verification::temperature() {
-  return &m_temp;
-}
-
-void BTU_Verification::bootstrap() {
-
-  if (m_Mbz < 2) {
-    return;
-  }
-
-  std::vector<double> Tbcol(m_Mbz),
-    zlevels = m_temp.get_levels();
-  double dum1, dum2, dum3, dum4;
-  double FF;
-
-  // evaluate exact solution in a column; all columns are the same
-  switch (m_testname) {
-    case 'K':
-      for (unsigned int k = 0; k < m_Mbz; k++) {
-        if (exactK(m_grid->ctx()->time()->current(), zlevels[k], &Tbcol[k], &FF,
-                   (m_bedrock_is_ice==true))) {
-          throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
-                                        zlevels[k]);
-        }
-      }
-      break;
-    case 'O':
-      for (unsigned int k = 0; k < m_Mbz; k++) {
-        exactO(zlevels[k], &Tbcol[k], &dum1, &dum2, &dum3, &dum4);
-      }
-      break;
-    default:
-      {
-        BedThermalUnit::bootstrap();
-      }
-  }
-
-  // copy column values into 3D arrays
-  IceModelVec::AccessList list(m_temp);
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      m_temp.set_column(p.i(), p.j(), &Tbcol[0]);
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-}
-
-} // end of namespace energy
 } // end of namespace pism
