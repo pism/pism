@@ -45,7 +45,6 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
   options::String input_filename("-i", "Specifies the PISM input file");
   bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
   const bool restart   = input_filename.is_set() and not bootstrap_is_set;
 
   if (restart) {
@@ -71,7 +70,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
     }
 
     input_file.close();
-  } else if (bootstrap) {
+  } else {
     // Bootstrapping
     options::Integer Mbz("-Mbz", "number of levels in bedrock thermal layer",
                          result.Mbz);
@@ -79,21 +78,20 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
     options::Real Lbz("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
                       result.Lbz);
 
-    if (Mbz.is_set() ^ Lbz.is_set()) {
-      throw RuntimeError("please specify both -Mbz and -Lbz");
-    }
-
     if (Mbz.is_set() and Mbz == 1) {
       options::ignored(log, "-Lbz");
       result.Lbz = 0;
       result.Mbz = 1;
     } else {
+      if (Mbz.is_set() ^ Lbz.is_set()) {
+        throw RuntimeError("please specify both -Mbz and -Lbz");
+      }
+
       result.Lbz = Lbz;
       result.Mbz = Mbz;
     }
-  } else {
-    // empty: use defaults from the configuration database
   }
+
   return result;
 }
 
@@ -396,9 +394,7 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 
   // Get pointers to fields owned by IceModel.
-  const IceModelVec2S
-    *bedtoptemp = m_grid->variables().get_2d_scalar("bedtoptemp"),
-    *ghf        = m_grid->variables().get_2d_scalar("bheatflx");
+  const IceModelVec2S &bedtoptemp = *m_grid->variables().get_2d_scalar("bedtoptemp");
 
   double dzb = this->vertical_spacing();
   const int  k0  = m_Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
@@ -409,21 +405,21 @@ void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
   IceModelVec::AccessList list;
   list.add(m_temp);
-  list.add(*ghf);
-  list.add(*bedtoptemp);
+  list.add(m_bottom_surface_flux);
+  list.add(bedtoptemp);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *Tbold = m_temp.get_column(i,j); // Tbold actually points into temp memory
-    Tbold[k0] = (*bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
+    Tbold[k0] = bedtoptemp(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
 
-    const double Tbold_negone = Tbold[1] + 2 * (*ghf)(i,j) * dzb / m_bed_k;
+    const double Tbold_negone = Tbold[1] + 2 * m_bottom_surface_flux(i,j) * dzb / m_bed_k;
     Tbnew[0] = Tbold[0] + bed_R * (Tbold_negone - 2 * Tbold[0] + Tbold[1]);
     for (int k = 1; k < k0; k++) { // working upward from base
       Tbnew[k] = Tbold[k] + bed_R * (Tbold[k-1] - 2 * Tbold[k] + Tbold[k+1]);
     }
-    Tbnew[k0] = (*bedtoptemp)(i,j);
+    Tbnew[k0] = bedtoptemp(i,j);
 
     m_temp.set_column(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
   }
@@ -500,8 +496,9 @@ void BedThermalUnit::bootstrap() {
   }
 
   m_log->message(2,
-             "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"
-             "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
+                 "  bootstrapping to fill lithosphere temperatures in the bedrock thermal layer\n"
+                 "  using temperature at the top bedrock surface and geothermal flux\n"
+                 "  (bedrock temperature is linear in depth)...\n");
 
   double dzb = this->vertical_spacing();
   const int k0 = m_Mbz-1; // Tb[k0] = ice/bedrock interface temp
