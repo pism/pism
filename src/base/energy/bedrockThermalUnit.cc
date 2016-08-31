@@ -203,7 +203,7 @@ void BedThermalUnit::init() {
   }
 
   // 3D initialization
-  if (m_temp.was_created()) {
+  if (m_Mbz > 1) {
     // store the current "revision number" of the temperature field
     const int temp_revision = m_temp.get_state_counter();
 
@@ -227,6 +227,8 @@ void BedThermalUnit::init() {
     m_log->message(2,
                    "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
   }
+
+  update_flux_through_top_surface();
 }
 
 void BedThermalUnit::initialize_bottom_surface_flux() {
@@ -245,7 +247,7 @@ void BedThermalUnit::initialize_bottom_surface_flux() {
  * zero.
  */
 double BedThermalUnit::vertical_spacing() const {
-  if (m_temp.was_created()) {
+  if (m_Mbz > 1) {
     return m_Lbz / (m_Mbz - 1.0);
   } else {
     return 0.0;
@@ -257,7 +259,7 @@ unsigned int BedThermalUnit::Mbz() const {
 }
 
 void BedThermalUnit::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
-  if (m_temp.was_created()) {
+  if (m_Mbz > 1) {
     result.insert(m_temp.metadata().get_name());
   }
 
@@ -266,7 +268,7 @@ void BedThermalUnit::add_vars_to_output_impl(const std::string &/*keyword*/, std
 
 void BedThermalUnit::define_variables_impl(const std::set<std::string> &vars,
                                                 const PIO &nc, IO_Type nctype) {
-  if (m_temp.was_created()) {
+  if (m_Mbz > 1) {
     if (set_contains(vars, m_temp.metadata().get_name())) {
       m_temp.define(nc, nctype);
     }
@@ -278,7 +280,7 @@ void BedThermalUnit::define_variables_impl(const std::set<std::string> &vars,
 }
 
 void BedThermalUnit::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (m_temp.was_created()) {
+  if (m_Mbz > 1) {
     if (set_contains(vars, m_temp.metadata().get_name())) {
       m_temp.write(nc);
     }
@@ -314,7 +316,7 @@ The above describes the general case where Mbz > 1.
 MaxTimestep BedThermalUnit::max_timestep_impl(double t) {
   (void) t;
 
-  if (m_temp.was_created()) {
+  if (m_Mbz > 1) {
     double dzb = this->vertical_spacing();
     // max dt from stability; in seconds
     return MaxTimestep(dzb * dzb / (2.0 * m_bed_D));
@@ -340,7 +342,7 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 */
 void BedThermalUnit::update_impl(double my_t, double my_dt) {
 
-  if (not m_temp.was_created()) {
+  if (m_Mbz <= 1) {
     update_flux_through_top_surface();
     return;  // in this case we are up to date
   }
@@ -440,7 +442,7 @@ the `Mbz` <= 1 cases, we return the stored geothermal flux.
  */
 void BedThermalUnit::update_flux_through_top_surface() {
 
-  if (not m_temp.was_created()) {
+  if (m_Mbz <= 1 or m_bootstrapping_needed) {
     m_top_surface_flux.copy_from(m_bottom_surface_flux);
     return;
   }
