@@ -258,7 +258,6 @@ protected:
     m_fracture_flow_enhancement,    //!< fracture flow enhancement
     m_fracture_age,    //!< fracture age
     m_fracture_toughness,    //!< fracture toughness
-    m_bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
     m_Href,          //!< accumulated mass advected to a partially filled grid cell
     m_climatic_mass_balance,              //!< accumulation/ablation rate; no ghosts
     m_climatic_mass_balance_cumulative,    //!< cumulative climatic_mass_balance

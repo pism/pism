@@ -275,14 +275,6 @@ void IceModel::createVecs() {
                               "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
   m_grid->variables().add(m_cell_type);
 
-  // temperature seen by top of bedrock thermal layer
-  m_bedtoptemp.create(m_grid, "bedtoptemp", WITHOUT_GHOSTS);
-  m_bedtoptemp.set_attrs("internal",
-                       "temperature of top of bedrock thermal layer",
-                       "K", "");
-  m_bedtoptemp.metadata().set_string("glaciological_units", "K");
-  m_grid->variables().add(m_bedtoptemp);
-
   // yield stress for basal till (plastic or pseudo-plastic model)
   {
     m_basal_yield_stress.create(m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);

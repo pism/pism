@@ -65,10 +65,11 @@ void IceModel::energyStep() {
   //   tell BedThermalUnit* btu that we have an ice base temp; it will return
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyAndDrainageStep()
-  get_bed_top_temp(m_bedtoptemp);
+  IceModelVec2S &bedtoptemp = m_work2d[0];
+  get_bed_top_temp(bedtoptemp);
 
   profiling.begin("BTU");
-  m_btu->update(m_bedtoptemp, t_TempAge, dt_TempAge);
+  m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("BTU");
 
   if (m_config->get_boolean("do_cold_ice_methods")) {
