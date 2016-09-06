@@ -19,8 +19,6 @@
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
 
-#include <petscdmda.h>
-#include <cassert>
 #include <algorithm>
 
 #include "iceModel.hh"
@@ -33,7 +31,7 @@
 #include "base/calving/FloatKill.hh"
 #include "base/calving/IcebergRemover.hh"
 #include "base/calving/OceanKill.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/stressbalance/sia/SIAFD.hh"
@@ -100,26 +98,21 @@ void IceModel::time_setup() {
 void IceModel::model_state_setup() {
 
   // Check if we are initializing from a PISM output file:
-  options::String input_filename("-i", "Specifies the PISM input file");
-  bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  InputOptions opts = process_input_options(m_ctx->com());
 
-  const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
-  const bool restart   = input_filename.is_set() and not bootstrap_is_set;
+  const bool bootstrap = opts.type == INIT_BOOTSTRAP;
+  const bool restart   = opts.type == INIT_RESTART;
 
   PIO input_file(m_grid->com, "guess_mode");
-  unsigned int last_record = 0;
 
   if (restart or bootstrap) {
-    input_file.open(input_filename, PISM_READONLY);
-
-    // Find the index of the last record in the input file.
-    last_record = input_file.inq_nrecords() - 1;
+    input_file.open(opts.filename, PISM_READONLY);
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
   {
     if (restart) {
-      restart_2d(input_file, last_record);
+      restart_2d(input_file, opts.record);
     } else if (bootstrap) {
       bootstrap_2d(input_file);
     } else {
@@ -190,14 +183,14 @@ void IceModel::model_state_setup() {
   //
   // The code then delays bootstrapping of the thickness field until the first time step.
   if (m_btu) {
-    m_btu->init();
+    m_btu->init(opts);
   }
 
   // Initialize 3D (age and energy balance) parts of IceModel.
   {
     if (restart) {
       // Find the index of the last record in the file:
-      restart_3d(input_file, last_record);
+      restart_3d(input_file, opts.record);
     } else if (bootstrap) {
       bootstrap_3d();
     } else {
@@ -205,10 +198,6 @@ void IceModel::model_state_setup() {
     }
 
     regrid(3);
-
-    // compute temperature at the top of the bedrock so that m_btu can bootstrap during the first
-    // time step
-    get_bed_top_temp(m_bedtoptemp);
   }
 
   // get projection information and compute cell areas
@@ -219,7 +208,7 @@ void IceModel::model_state_setup() {
       std::string proj4_string = m_output_global_attributes.get_string("proj4");
       if (not proj4_string.empty()) {
         m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
-                       proj4_string.c_str(), input_filename->c_str());
+                       proj4_string.c_str(), opts.filename.c_str());
       }
 
       std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
@@ -462,9 +451,7 @@ void IceModel::allocate_bedrock_thermal_unit() {
 
   m_log->message(2, "# Allocating a bedrock thermal layer model...\n");
 
-  energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(m_ctx);
-
-  m_btu = new energy::BedThermalUnit(m_grid, bedrock_grid);
+  m_btu = energy::BedThermalUnit::FromOptions(m_grid, m_ctx);
 }
 
 //! \brief Decide which subglacial hydrology model to use.

@@ -31,7 +31,7 @@
 #include "base/calving/vonMisesCalving.hh"
 #include "base/calving/FloatKill.hh"
 #include "base/calving/OceanKill.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"

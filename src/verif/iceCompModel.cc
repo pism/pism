@@ -48,6 +48,8 @@
 #include "base/util/io/io_helpers.hh"
 #include "base/util/Logger.hh"
 #include "base/util/pism_utilities.hh"
+#include "BTU_Verification.hh"
+#include "base/energy/BTU_Minimal.hh"
 
 namespace pism {
 
@@ -190,8 +192,12 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
 
   energy::BTUGrid bed_vertical_grid = energy::BTUGrid::FromOptions(m_grid->ctx());
 
-  m_btu = new energy::BTU_Verification(m_grid, bed_vertical_grid,
-                                       testname, bedrock_is_ice_forK);
+  if (bed_vertical_grid.Mbz > 1) {
+    m_btu = new energy::BTU_Verification(m_grid, bed_vertical_grid,
+                                         testname, bedrock_is_ice_forK);
+  } else {
+    m_btu = new energy::BTU_Minimal(m_grid);
+  }
 }
 
 void IceCompModel::allocate_stressbalance() {

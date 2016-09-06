@@ -31,7 +31,7 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "enthalpyConverter.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 
 namespace pism {
 

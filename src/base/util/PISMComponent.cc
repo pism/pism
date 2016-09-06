@@ -33,6 +33,49 @@
 
 namespace pism {
 
+/*! Process command-line options -i and -bootstrap.
+ *
+ */
+InputOptions process_input_options(MPI_Comm com) {
+  InputOptions result;
+
+  options::String input_filename("-i", "Specifies the PISM input file");
+  bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+
+  const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
+  const bool restart   = input_filename.is_set() and not bootstrap_is_set;
+
+  result.filename = input_filename;
+
+  if (restart) {
+    // re-start a run by initializing from an input file
+    result.type = INIT_RESTART;
+  } else if (bootstrap) {
+    // initialize from an input file using bootstrapping heuristics
+    result.type = INIT_BOOTSTRAP;
+  } else {
+    // other types of initialization (usually from formulas)
+    result.type = INIT_OTHER;
+  }
+
+  // get the index of the last record in the input file
+  if (input_filename.is_set()) {
+    PIO input_file(com, "guess_mode");
+    unsigned int last_record = 0;
+
+    input_file.open(input_filename, PISM_READONLY);
+
+    // Find the index of the last record in the input file.
+    last_record = input_file.inq_nrecords() - 1;
+
+    result.record = last_record;
+  } else {
+    result.record = 0;
+  }
+
+  return result;
+}
+
 Component::Component(IceGrid::ConstPtr g)
   : m_grid(g), m_config(g->ctx()->config()), m_sys(g->ctx()->unit_system()),
     m_log(g->ctx()->log()) {

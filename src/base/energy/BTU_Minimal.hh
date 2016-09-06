@@ -17,31 +17,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef BTU_VERIFICATION_H
-#define BTU_VERIFICATION_H
+#ifndef BTU_MINIMAL_H
+#define BTU_MINIMAL_H
 
-#include "base/energy/BTU_Full.hh"
+#include "BedThermalUnit.hh"
 
 namespace pism {
 namespace energy {
 
-class BTU_Verification : public BTU_Full
-{
+class BTU_Minimal : public BedThermalUnit {
 public:
-  BTU_Verification(IceGrid::ConstPtr g,
-                   const BTUGrid &vertical_grid,
-                   int test, bool bii);
-  virtual ~BTU_Verification();
+  BTU_Minimal(IceGrid::ConstPtr g);
 
 protected:
-  virtual void initialize_bottom_surface_flux();
-  virtual void bootstrap(const IceModelVec2S &bedrock_top_temperature);
-  int m_testname;
-  bool m_bedrock_is_ice;
+  void init_impl(const InputOptions &opts);
+
+  double vertical_spacing_impl() const;
+  double depth_impl() const;
+  unsigned int Mz_impl() const;
+  MaxTimestep max_timestep_impl(double t);
+
+  void update_impl(const IceModelVec2S &bedrock_top_temperature, double t, double dt);
 };
 
 } // end of namespace energy
 } // end of namespace pism
 
 
-#endif /* BTU_VERIFICATION_H */
+#endif /* BTU_MINIMAL_H */

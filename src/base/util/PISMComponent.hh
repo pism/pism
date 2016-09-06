@@ -36,6 +36,19 @@ class MaxTimestep;
 class PIO;
 class IceModelVec;
 
+enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};
+
+struct InputOptions {
+  //! initialization type
+  InitializationType type;
+  //! name of the input file (if applicable)
+  std::string filename;
+  //! index of the record to re-start from
+  unsigned int record;
+};
+
+InputOptions process_input_options(MPI_Comm com);
+
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
   \section pism_components PISM's model components and their interface
@@ -90,6 +103,7 @@ class IceModelVec;
 */
 class Component {
 public:
+
   /** Create a Component instance given a grid. */
   Component(IceGrid::ConstPtr g);
   virtual ~Component();

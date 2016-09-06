@@ -20,7 +20,7 @@
 
 #include "iceModel.hh"
 
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/energy/tempSystem.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"

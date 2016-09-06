@@ -17,13 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Tests BedThermalUnit using Test K.  Sans IceModel.\n\n";
+  "Tests BedThermalUnit using Test K, without IceModel.\n\n";
 
 #include "base/util/pism_options.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/VariableMetadata.hh"
 #include "verif/BTU_Verification.hh"
+#include "base/energy/BTU_Minimal.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/PISMConfigInterface.hh"
@@ -157,14 +158,21 @@ int main(int argc, char *argv[]) {
       bedtoptemp.set_attrs("",
                             "temperature at top of bedrock thermal layer",
                             "K", "");
-      grid->variables().add(bedtoptemp);
     }
 
     // initialize BTU object:
     energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(ctx);
-    energy::BTU_Verification btu(grid, bedrock_grid, 'K', false);
 
-    btu.init();
+    energy::BedThermalUnit::Ptr btu;
+
+    if (bedrock_grid.Mbz > 1) {
+      btu.reset(new energy::BTU_Verification(grid, bedrock_grid, 'K', false));
+    } else {
+      btu.reset(new energy::BTU_Minimal(grid));
+    }
+
+    InputOptions opts = process_input_options(com);
+    btu->init(opts);
 
     double dt_seconds = units::convert(ctx->unit_system(), dt_years, "years", "seconds");
 
@@ -175,7 +183,7 @@ int main(int argc, char *argv[]) {
                  "  user set timestep of %.4f years ...\n"
                  "  reset to %.4f years to get integer number of steps ... \n",
                  dt_years.value(), units::convert(ctx->unit_system(), dt_seconds, "seconds", "years"));
-    MaxTimestep max_dt = btu.max_timestep(0.0);
+    MaxTimestep max_dt = btu->max_timestep(0.0);
     log->message(2,
                  "  BedThermalUnit reports max timestep of %.4f years ...\n",
                  units::convert(ctx->unit_system(), max_dt.value(), "seconds", "years"));
@@ -187,25 +195,27 @@ int main(int argc, char *argv[]) {
       const double time = ctx->time()->start() + dt_seconds * (double)n;
 
       // compute exact ice temperature at z=0 at time y
-      IceModelVec::AccessList list(bedtoptemp);
-      for (Points p(*grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
+      {
+        IceModelVec::AccessList list(bedtoptemp);
+        for (Points p(*grid); p; p.next()) {
+          const int i = p.i(), j = p.j();
 
-        double TT, FF; // Test K:  use TT, ignore FF
-        exactK(time, 0.0, &TT, &FF, 0);
-        bedtoptemp(i,j) = TT;
+          double TT, FF; // Test K:  use TT, ignore FF
+          exactK(time, 0.0, &TT, &FF, 0);
+          bedtoptemp(i,j) = TT;
+        }
       }
-      // we are not communicating anything, which is fine
+      // no need to update ghost values
 
       // update the temperature inside the thermal layer using bedtoptemp
-      btu.update(time, dt_seconds);
+      btu->update(bedtoptemp, time, dt_seconds);
       log->message(2,".");
     }
 
     log->message(2, "\n  done ...\n");
 
     // compute final output heat flux G_0 at z=0
-    heat_flux_at_ice_base.copy_from(btu.flux_through_top_surface());
+    heat_flux_at_ice_base.copy_from(btu->flux_through_top_surface());
 
     // get, and tell stdout, the correct answer from Test K
     double TT, FF; // Test K:  use FF, ignore TT
@@ -232,7 +242,7 @@ int main(int argc, char *argv[]) {
     log->message(1, "NUM ERRORS DONE\n");
 
     std::set<std::string> vars;
-    btu.add_vars_to_output("big", vars); // "write everything you can"
+    btu->add_vars_to_output("big", vars); // "write everything you can"
 
     PIO pio(grid->com, grid->ctx()->config()->get_string("output_format"));
 
@@ -242,8 +252,8 @@ int main(int argc, char *argv[]) {
                     ctx->time()->CF_units_string(), ctx->unit_system());
     io::append_time(pio, time_name, ctx->time()->end());
 
-    btu.define_variables(vars, pio, PISM_DOUBLE);
-    btu.write_variables(vars, pio);
+    btu->define_variables(vars, pio, PISM_DOUBLE);
+    btu->write_variables(vars, pio);
 
     bedtoptemp.write(pio);
     heat_flux_at_ice_base.write(pio);

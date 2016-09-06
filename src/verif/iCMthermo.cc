@@ -30,6 +30,7 @@
 #include "earth/PISMBedDef.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/pism_utilities.hh"
+#include "BTU_Verification.hh"
 
 namespace pism {
 
@@ -323,9 +324,9 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   if (my_btu == NULL) {
     throw RuntimeError("my_btu == NULL");
   }
-  const IceModelVec3Custom *bedrock_temp = my_btu->temperature();
+  const IceModelVec3Custom &bedrock_temp = my_btu->temperature();
 
-  std::vector<double> zblevels = bedrock_temp->get_levels();
+  std::vector<double> zblevels = bedrock_temp.get_levels();
   unsigned int Mbz = (unsigned int)zblevels.size();
   std::vector<double> Tbex(Mbz);
 
@@ -355,12 +356,12 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 
   IceModelVec::AccessList list;
   list.add(m_ice_temperature);
-  list.add(*bedrock_temp);
+  list.add(bedrock_temp);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Tb = bedrock_temp->get_column(i, j);
+    Tb = bedrock_temp.get_column(i, j);
     for (unsigned int kb = 0; kb < Mbz; kb++) {
       const double Tberr = fabs(Tb[kb] - Tbex[kb]);
       maxTberr = std::max(maxTberr, Tberr);
@@ -674,7 +675,7 @@ void IceCompModel::fillBasalMeltRateSolnTestO() {
 
 void IceCompModel::initTestsKO() {
 
-  if (testname == 'K' and m_btu->Mbz() < 2) {
+  if (testname == 'K' and m_btu->Mz() < 2) {
     throw RuntimeError("pismv test K requires a bedrock thermal layer 1000m deep");
   }
 

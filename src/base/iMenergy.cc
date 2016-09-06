@@ -18,7 +18,7 @@
 
 #include <cassert>
 
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
@@ -68,7 +68,7 @@ void IceModel::energyStep() {
   get_bed_top_temp(m_bedtoptemp);
 
   profiling.begin("BTU");
-  m_btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
+  m_btu->update(m_bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("BTU");
 
   if (m_config->get_boolean("do_cold_ice_methods")) {

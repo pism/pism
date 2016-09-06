@@ -20,8 +20,7 @@
 #define __iceCompModel_hh
 
 #include "base/iceModel.hh"
-#include "base/energy/bedrockThermalUnit.hh"
-#include "BTU_Verification.hh"
+#include "base/energy/BedThermalUnit.hh"
 
 namespace pism {
 

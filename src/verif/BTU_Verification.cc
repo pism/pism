@@ -27,10 +27,11 @@ namespace energy {
 
 BTU_Verification::BTU_Verification(IceGrid::ConstPtr g,
                                    const BTUGrid &vertical_grid,
-                                   int test, bool bii)
-  : BedThermalUnit(g, vertical_grid) {
-  m_testname = test;
-  m_bedrock_is_ice = bii;
+                                   int testname, bool bedrock_is_ice)
+  : BTU_Full(g, vertical_grid) {
+
+  m_testname       = testname;
+  m_bedrock_is_ice = bedrock_is_ice;
 }
 
 BTU_Verification::~BTU_Verification() {
@@ -38,14 +39,12 @@ BTU_Verification::~BTU_Verification() {
 }
 
 void BTU_Verification::initialize_bottom_surface_flux() {
+  // hard-wired value used in exact solutions (tests K and O)
   m_bottom_surface_flux.set(0.042);
 }
 
-void BTU_Verification::bootstrap() {
-
-  if (m_Mbz < 2) {
-    return;
-  }
+void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
+  (void) bedrock_top_temperature;
 
   std::vector<double> Tbcol(m_Mbz),
     zlevels = m_temp.get_levels();
@@ -54,24 +53,21 @@ void BTU_Verification::bootstrap() {
 
   // evaluate exact solution in a column; all columns are the same
   switch (m_testname) {
-    case 'K':
-      for (unsigned int k = 0; k < m_Mbz; k++) {
-        if (exactK(m_grid->ctx()->time()->current(), zlevels[k], &Tbcol[k], &FF,
-                   (m_bedrock_is_ice==true))) {
-          throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
-                                        zlevels[k]);
-        }
+  default:
+  case 'K':
+    for (unsigned int k = 0; k < m_Mbz; k++) {
+      if (exactK(m_grid->ctx()->time()->current(), zlevels[k], &Tbcol[k], &FF,
+                 (m_bedrock_is_ice==true))) {
+        throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
+                                      zlevels[k]);
       }
-      break;
-    case 'O':
-      for (unsigned int k = 0; k < m_Mbz; k++) {
-        exactO(zlevels[k], &Tbcol[k], &dum1, &dum2, &dum3, &dum4);
-      }
-      break;
-    default:
-      {
-        BedThermalUnit::bootstrap();
-      }
+    }
+    break;
+  case 'O':
+    for (unsigned int k = 0; k < m_Mbz; k++) {
+      exactO(zlevels[k], &Tbcol[k], &dum1, &dum2, &dum3, &dum4);
+    }
+    break;
   }
 
   // copy column values into 3D arrays

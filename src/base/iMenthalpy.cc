@@ -18,7 +18,7 @@
 
 #include "iceModel.hh"
 #include "DrainageCalculator.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/energy/enthSystem.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"

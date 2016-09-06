@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "base/basalstrength/PISMYieldStress.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/rheology/FlowLaw.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
