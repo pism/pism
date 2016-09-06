@@ -225,17 +225,12 @@ void TemperatureIndex::init_impl() {
     m_air_temp_sd.init_constant(m_base_pddStdDev);
   }
 
-  std::string input_file;
-  bool do_regrid = false;
-  int start = -1;
-
-  // find PISM input file to read data from:
-  find_pism_input(input_file, do_regrid, start);
+  std::string input_file = process_input_options(m_grid->com).filename;
 
   // read snow precipitation rate from file
   m_log->message(2,
-             "    reading snow depth (ice equivalent meters) from %s ... \n",
-             input_file.c_str());
+                 "    reading snow depth (ice equivalent meters) from %s ... \n",
+                 input_file.c_str());
   m_snow_depth.regrid(input_file, OPTIONAL, 0.0);
 
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());

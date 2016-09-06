@@ -115,45 +115,6 @@ IceGrid::ConstPtr Component::grid() const {
   return m_grid;
 }
 
-//! Finds PISM's input file by reading options `-i` and `-bootstrap`.
-/*! This might be useful since coupling fields are usually in the file
-  IceModel uses to initialize from.
-
-  Returns `true` if an input file is used and `false` otherwise.
-*/
-bool Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
-
-  // read file name options:
-  options::String input_file("-i", "input file name");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
-
-  if (input_file.is_set()) {
-
-    filename = input_file;
-
-    PIO nc(m_grid->com, "netcdf3");      // OK to use netcdf3
-    unsigned int last_record;
-    nc.open(filename, PISM_READONLY);
-    last_record = nc.inq_nrecords() - 1;
-    nc.close();
-
-    if (bootstrap) {
-      do_regrid = true;
-      start     = 0;
-    } else {
-      do_regrid = false;
-      start     = last_record;
-    }
-
-    return true;
-  } else {
-    filename.clear();
-    do_regrid = false;
-    start     = -1;
-    return false;
-  }
-}
-
 /**
  * Regrid a variable by processing -regrid_file and -regrid_vars.
  *

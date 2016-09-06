@@ -38,7 +38,7 @@ namespace pism {
 void IceModel::calculateFractureDensity() {
   const double dx = m_grid->dx(), dy = m_grid->dy(), Mx = m_grid->Mx(), My = m_grid->My();
 
-  IceModelVec2S &D = m_fracture_density, &A = m_fracture_age, &D_new = m_work2d[0], &A_new = m_work2d[1];
+  IceModelVec2S &D = m_fracture.density, &A = m_fracture.age, &D_new = m_work2d[0], &A_new = m_work2d[1];
 
   // get SSA velocities and related strain rates and stresses
   const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
@@ -64,10 +64,10 @@ void IceModel::calculateFractureDensity() {
 
   const bool write_fd = m_config->get_boolean("write_fd_fields");
   if (write_fd) {
-    list.add(m_fracture_growth_rate);
-    list.add(m_fracture_healing_rate);
-    list.add(m_fracture_flow_enhancement);
-    list.add(m_fracture_toughness);
+    list.add(m_fracture.growth_rate);
+    list.add(m_fracture.healing_rate);
+    list.add(m_fracture.flow_enhancement);
+    list.add(m_fracture.toughness);
     list.add(A);
     A_new.copy_from(A);
     list.add(A_new);
@@ -271,26 +271,26 @@ void IceModel::calculateFractureDensity() {
     // if option -write_fd_fields is set
     if (write_fd && m_ice_thickness(i, j) > 0.0) {
       //fracture toughness
-      m_fracture_toughness(i, j) = sigmat;
+      m_fracture.toughness(i, j) = sigmat;
 
       // fracture growth rate
       if (sigmat > initThreshold) {
-        m_fracture_growth_rate(i, j) = fdnew;
-        //m_fracture_growth_rate(i,j)=gamma*(vPrinStrain1(i,j)-0.0)*(1-D_new(i,j));
+        m_fracture.growth_rate(i, j) = fdnew;
+        //m_fracture.growth_rate(i,j)=gamma*(vPrinStrain1(i,j)-0.0)*(1-D_new(i,j));
       } else {
-        m_fracture_growth_rate(i, j) = 0.0;
+        m_fracture.growth_rate(i, j) = 0.0;
       }
 
       // fracture healing rate
       if (m_ice_thickness(i, j) > 0.0) {
         if (constant_healing || (m_strain_rates(i, j, 0) < healThreshold)) {
           if (fracture_weighted_healing) {
-            m_fracture_healing_rate(i, j) = fdheal * (1 - D(i, j));
+            m_fracture.healing_rate(i, j) = fdheal * (1 - D(i, j));
           } else {
-            m_fracture_healing_rate(i, j) = fdheal;
+            m_fracture.healing_rate(i, j) = fdheal;
           }
         } else {
-          m_fracture_healing_rate(i, j) = 0.0;
+          m_fracture.healing_rate(i, j) = 0.0;
         }
       }
 
@@ -306,9 +306,9 @@ void IceModel::calculateFractureDensity() {
       double phi_exp   = 3.0; //flow_law->exponent();
       double softening = pow((1.0 - (1.0 - soft_residual) * D_new(i, j)), -phi_exp);
       if (m_ice_thickness(i, j) > 0.0) {
-        m_fracture_flow_enhancement(i, j) = 1.0 / pow(softening, 1 / 3.0);
+        m_fracture.flow_enhancement(i, j) = 1.0 / pow(softening, 1 / 3.0);
       } else {
-        m_fracture_flow_enhancement(i, j) = 1.0;
+        m_fracture.flow_enhancement(i, j) = 1.0;
       }
     }
 
@@ -321,10 +321,10 @@ void IceModel::calculateFractureDensity() {
 
         if (write_fd) {
           A_new(i, j)                       = 0.0;
-          m_fracture_growth_rate(i, j)      = 0.0;
-          m_fracture_healing_rate(i, j)     = 0.0;
-          m_fracture_flow_enhancement(i, j) = 1.0;
-          m_fracture_toughness(i, j)        = 0.0;
+          m_fracture.growth_rate(i, j)      = 0.0;
+          m_fracture.healing_rate(i, j)     = 0.0;
+          m_fracture.flow_enhancement(i, j) = 1.0;
+          m_fracture.toughness(i, j)        = 0.0;
         }
       }
     }
@@ -333,10 +333,10 @@ void IceModel::calculateFractureDensity() {
       D_new(i, j) = 0.0;
       if (write_fd) {
         A_new(i, j)                       = 0.0;
-        m_fracture_growth_rate(i, j)      = 0.0;
-        m_fracture_healing_rate(i, j)     = 0.0;
-        m_fracture_flow_enhancement(i, j) = 1.0;
-        m_fracture_toughness(i, j)        = 0.0;
+        m_fracture.growth_rate(i, j)      = 0.0;
+        m_fracture.healing_rate(i, j)     = 0.0;
+        m_fracture.flow_enhancement(i, j) = 1.0;
+        m_fracture.toughness(i, j)        = 0.0;
       }
     }
 

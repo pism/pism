@@ -89,6 +89,15 @@ class IceGrid;
 class YieldStress;
 class IceModelVec2CellType;
 
+struct FractureFields {
+  IceModelVec2S density;
+  IceModelVec2S growth_rate;
+  IceModelVec2S healing_rate;
+  IceModelVec2S flow_enhancement;
+  IceModelVec2S age;
+  IceModelVec2S toughness;
+};
+
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
   // The following classes implement various diagnostic computations.
@@ -252,12 +261,6 @@ protected:
     m_basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
     m_longitude, //!< Longitude; ghosted to compute cell areas
     m_latitude,  //!< Latitude; ghosted to compute cell areas
-    m_fracture_density,    //!< fracture density
-    m_fracture_growth_rate,    //!< fracture growth rate
-    m_fracture_healing_rate,    //!< fracture healing rate
-    m_fracture_flow_enhancement,    //!< fracture flow enhancement
-    m_fracture_age,    //!< fracture age
-    m_fracture_toughness,    //!< fracture toughness
     m_Href,          //!< accumulated mass advected to a partially filled grid cell
     m_climatic_mass_balance,              //!< accumulation/ablation rate; no ghosts
     m_climatic_mass_balance_cumulative,    //!< cumulative climatic_mass_balance
@@ -271,6 +274,8 @@ protected:
     m_shelfbmassflux,     //!< ice mass flux into the ocean at the shelf base; no ghosts
     m_cell_area,          //!< cell areas (computed using the WGS84 datum)
     m_flux_divergence;    //!< flux divergence
+
+  FractureFields m_fracture;
 
 public:
   IceModelVec2S* get_geothermal_flux();

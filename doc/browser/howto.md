@@ -114,39 +114,7 @@ There are at least three cases of "reading data from a file":
 - reading a field stored in a file **other** than the input file using
   interpolation (assuming that grids are compatible but not identical)
 
-This snippet from PAYearlyCycle::init() covers the first two cases (at least for
-surface, atmosphere and ocean models; %i.e. for all the classes derived from PISMComponent)
-
-~~~
-bool do_regrid = false;
-int start = -1;
-
-find_pism_input(precip_filename, do_regrid, start);
-
-// read precipitation rate from file
-verbPrintf(2, grid.com,
-           "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-           "      from %s ... \n",
-           precip_filename.c_str());
-if (do_regrid) {
-  precipitation.regrid(precip_filename, CRITICAL); // fails if not found!
-} else {
-  precipitation.read(precip_filename, start); // fails if not found!
-}
-~~~
-
-Here
-- "start" is an index of a record *within a file* that we need to
-  read. PISM almost always reads the last record.
-
-Please see PISMComponent::find_pism_input() to see how to compute the "start"
-index "by hand".
-
-The snippet below is an example of case 3 (for 2D fields, reading the last record).
-
-~~~
-variable.regrid(filename, CRITICAL); // fails if not found!
-~~~
+FIXME
 
 @subsection writing_data Writing data to a file
 

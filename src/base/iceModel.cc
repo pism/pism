@@ -398,33 +398,33 @@ void IceModel::createVecs() {
 
   // fracture density fields
   if (m_config->get_boolean("do_fracture_density")) {
-    m_fracture_density.create(m_grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
-    m_fracture_density.set_attrs("model_state", "fracture density in ice shelf", "", "");
-    m_fracture_density.metadata().set_double("valid_max", 1.0);
-    m_fracture_density.metadata().set_double("valid_min", 0.0);
-    m_grid->variables().add(m_fracture_density);
+    m_fracture.density.create(m_grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
+    m_fracture.density.set_attrs("model_state", "fracture density in ice shelf", "", "");
+    m_fracture.density.metadata().set_double("valid_max", 1.0);
+    m_fracture.density.metadata().set_double("valid_min", 0.0);
+    m_grid->variables().add(m_fracture.density);
 
     if (m_config->get_boolean("write_fd_fields")) {
-      m_fracture_growth_rate.create(m_grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture_growth_rate.set_attrs("model_state", "fracture growth rate",       "second-1", "");
-      m_fracture_growth_rate.metadata().set_double("valid_min", 0.0);
-      m_grid->variables().add(m_fracture_growth_rate);
+      m_fracture.growth_rate.create(m_grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture.growth_rate.set_attrs("model_state", "fracture growth rate",       "second-1", "");
+      m_fracture.growth_rate.metadata().set_double("valid_min", 0.0);
+      m_grid->variables().add(m_fracture.growth_rate);
 
-      m_fracture_healing_rate.create(m_grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture_healing_rate.set_attrs("model_state", "fracture healing rate",      "second-1", "");
-      m_grid->variables().add(m_fracture_healing_rate);
+      m_fracture.healing_rate.create(m_grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture.healing_rate.set_attrs("model_state", "fracture healing rate",      "second-1", "");
+      m_grid->variables().add(m_fracture.healing_rate);
 
-      m_fracture_flow_enhancement.create(m_grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture_flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
-      m_grid->variables().add(m_fracture_flow_enhancement);
+      m_fracture.flow_enhancement.create(m_grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture.flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
+      m_grid->variables().add(m_fracture.flow_enhancement);
 
-      m_fracture_age.create(m_grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture_age.set_attrs("model_state", "age since fracturing",       "years", "");
-      m_grid->variables().add(m_fracture_age);
+      m_fracture.age.create(m_grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture.age.set_attrs("model_state", "age since fracturing",       "years", "");
+      m_grid->variables().add(m_fracture.age);
 
-      m_fracture_toughness.create(m_grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture_toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
-      m_grid->variables().add(m_fracture_toughness);
+      m_fracture.toughness.create(m_grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
+      m_fracture.toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
+      m_grid->variables().add(m_fracture.toughness);
     }
   }
 

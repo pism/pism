@@ -64,29 +64,25 @@ StuffAsAnomaly::~StuffAsAnomaly() {
 }
 
 void StuffAsAnomaly::init_impl() {
-  std::string input_file;
-  bool do_regrid = false;
-  int start = 0;
-
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (m_input_model != NULL) {
     m_input_model->init();
   }
 
-  find_pism_input(input_file, do_regrid, start);
+  InputOptions opts = process_input_options(m_grid->com);
 
   m_log->message(2,
              "* Initializing the 'turn_into_anomaly' modifier\n"
              "  (it applies climate data as anomalies relative to 'ice_surface_temp' and 'climatic_mass_balance'\n"
-             "  read from '%s'.\n", input_file.c_str());
+             "  read from '%s'.\n", opts.filename.c_str());
 
-  if (do_regrid) {
-    mass_flux_input.regrid(input_file, CRITICAL); // fails if not found!
-    temp_input.regrid(input_file, CRITICAL); // fails if not found!
+  if (opts.type == INIT_BOOTSTRAP) {
+    mass_flux_input.regrid(opts.filename, CRITICAL);
+    temp_input.regrid(opts.filename, CRITICAL);
   } else {
-    mass_flux_input.read(input_file, start); // fails if not found!
-    temp_input.read(input_file, start); // fails if not found!
+    mass_flux_input.read(opts.filename, opts.record);
+    temp_input.read(opts.filename, opts.record);
   }
 }
 

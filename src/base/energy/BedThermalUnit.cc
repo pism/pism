@@ -43,14 +43,11 @@ BTUGrid::BTUGrid(Context::ConstPtr ctx) {
 BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
   BTUGrid result(ctx);
 
+  InputOptions opts = process_input_options(ctx->com());
+
   const Logger &log = *ctx->log();
 
-  options::String input_filename("-i", "Specifies the PISM input file");
-  bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
-
-  const bool restart   = input_filename.is_set() and not bootstrap_is_set;
-
-  if (restart) {
+  if (opts.type == INIT_RESTART) {
     options::ignored(log, "-Mbz");
     options::ignored(log, "-Lbz");
 
@@ -58,7 +55,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
     // levels and the depth of the bed thermal layer from it:
     PIO input_file(ctx->com(), "guess_mode");
 
-    input_file.open(input_filename, PISM_READONLY);
+    input_file.open(opts.filename, PISM_READONLY);
 
     if (input_file.inq_var("litho_temp")) {
       grid_info info(input_file, "litho_temp", ctx->unit_system(),
@@ -74,7 +71,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
 
     input_file.close();
   } else {
-    // Bootstrapping
+    // Bootstrapping or initializing without an input file.
     options::Integer Mbz("-Mbz", "number of levels in bedrock thermal layer",
                          result.Mbz);
 
@@ -153,16 +150,17 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
   switch (opts.type) {
   case INIT_RESTART:
     m_bottom_surface_flux.read(opts.filename, opts.record);
+    break;
   case INIT_BOOTSTRAP:
     m_bottom_surface_flux.regrid(opts.filename, OPTIONAL,
                                  m_config->get_double("bootstrapping_geothermal_flux_value_no_var"));
+    break;
   case INIT_OTHER:
   default:
     initialize_bottom_surface_flux();
   }
 
-  regrid("bedrock thermal layer",
-         m_bottom_surface_flux, REGRID_WITHOUT_REGRID_VARS);
+  regrid("bedrock thermal layer", m_bottom_surface_flux, REGRID_WITHOUT_REGRID_VARS);
 }
 
 void BedThermalUnit::initialize_bottom_surface_flux() {

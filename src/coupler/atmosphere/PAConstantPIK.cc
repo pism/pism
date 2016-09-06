@@ -141,9 +141,6 @@ void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
 }
 
 void PIK::init() {
-  bool do_regrid = false;
-  int start = -1;
-
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
@@ -151,18 +148,17 @@ void PIK::init() {
              "  It reads a precipitation field directly from the file and holds it constant.\n"
              "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
 
-  // find PISM input file to read data from:
-  find_pism_input(m_input_file, do_regrid, start);
+  InputOptions opts = process_input_options(m_grid->com);
 
   // read snow precipitation rate and air_temps from file
   m_log->message(2,
              "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
              "    from %s ... \n",
-             m_input_file.c_str());
-  if (do_regrid) {
-    m_precipitation.regrid(m_input_file, CRITICAL);
+             opts.filename.c_str());
+  if (opts.type == INIT_BOOTSTRAP) {
+    m_precipitation.regrid(opts.filename, CRITICAL);
   } else {
-    m_precipitation.read(m_input_file, start); // fails if not found!
+    m_precipitation.read(opts.filename, opts.record); // fails if not found!
   }
 }
 

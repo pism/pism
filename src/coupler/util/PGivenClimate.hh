@@ -26,6 +26,7 @@
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/PISMComponent.hh"
 
 namespace pism {
 
@@ -109,13 +110,11 @@ protected:
                  "  - Reading boundary conditions from '%s'...\n",
                  m_filename.c_str());
     } else {
-      // find PISM input file to read data from:
-      bool do_regrid; int start;   // will be ignored
-      Model::find_pism_input(m_filename, do_regrid, start);
+      m_filename = process_input_options(Model::m_grid->com).filename;
 
       Model::m_log->message(2,
-                 "  - Option %s_file is not set. Trying the input file '%s'...\n",
-                 m_option_prefix.c_str(), m_filename.c_str());
+                            "  - Option %s_file is not set. Trying the input file '%s'...\n",
+                            m_option_prefix.c_str(), m_filename.c_str());
     }
 
     options::Integer period(m_option_prefix + "_period",

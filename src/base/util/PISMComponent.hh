@@ -138,7 +138,6 @@ protected:
                                      IO_Type nctype) = 0;
   virtual void write_variables_impl(const std::set<std::string> &vars,
                                     const PIO& nc) = 0;
-  virtual bool find_pism_input(std::string &filename, bool &regrid, int &start);
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in

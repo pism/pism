@@ -38,18 +38,18 @@ ConstantYieldStress::~ConstantYieldStress () {
 void ConstantYieldStress::init_impl() {
   m_log->message(2, "* Initializing the constant basal yield stress model...\n");
 
-  std::string filename;
-  int start = 0;
-  bool boot = false;
-  bool use_input_file = find_pism_input(filename, boot, start);
-  double tauc = m_config->get_double("default_tauc");
-  if (use_input_file) {
-    if (boot) {
-      m_basal_yield_stress.regrid(filename, OPTIONAL, tauc);
-    } else {
-      m_basal_yield_stress.read(filename, start);
-    }
-  } else {
+  InputOptions opts = process_input_options(m_grid->com);
+  const double tauc = m_config->get_double("default_tauc");
+
+  switch (opts.type) {
+  case INIT_RESTART:
+    m_basal_yield_stress.read(opts.filename, opts.record);
+    break;
+  case INIT_BOOTSTRAP:
+    m_basal_yield_stress.regrid(opts.filename, OPTIONAL, tauc);
+    break;
+  case INIT_OTHER:
+  default:
     // Set the constant value.
     m_basal_yield_stress.set(tauc);
   }

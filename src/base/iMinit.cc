@@ -100,22 +100,25 @@ void IceModel::model_state_setup() {
   // Check if we are initializing from a PISM output file:
   InputOptions opts = process_input_options(m_ctx->com());
 
-  const bool bootstrap = opts.type == INIT_BOOTSTRAP;
-  const bool restart   = opts.type == INIT_RESTART;
+  const bool use_input_file = opts.type == INIT_BOOTSTRAP or opts.type == INIT_RESTART;
 
   PIO input_file(m_grid->com, "guess_mode");
 
-  if (restart or bootstrap) {
+  if (use_input_file) {
     input_file.open(opts.filename, PISM_READONLY);
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
   {
-    if (restart) {
+    switch (opts.type) {
+    case INIT_RESTART:
       restart_2d(input_file, opts.record);
-    } else if (bootstrap) {
+      break;
+    case INIT_BOOTSTRAP:
       bootstrap_2d(input_file);
-    } else {
+      break;
+    case INIT_OTHER:
+    default:
       initialize_2d();
     }
 
@@ -188,12 +191,15 @@ void IceModel::model_state_setup() {
 
   // Initialize 3D (age and energy balance) parts of IceModel.
   {
-    if (restart) {
-      // Find the index of the last record in the file:
+    switch (opts.type) {
+    case INIT_RESTART:
       restart_3d(input_file, opts.record);
-    } else if (bootstrap) {
+      break;
+    case INIT_BOOTSTRAP:
       bootstrap_3d();
-    } else {
+      break;
+    case INIT_OTHER:
+    default:
       initialize_3d();
     }
 
@@ -202,7 +208,7 @@ void IceModel::model_state_setup() {
 
   // get projection information and compute cell areas
   {
-    if (restart or bootstrap) {
+    if (use_input_file) {
       get_projection_info(input_file);
 
       std::string proj4_string = m_output_global_attributes.get_string("proj4");
@@ -223,7 +229,7 @@ void IceModel::model_state_setup() {
   {
     reset_counters();
 
-    if (restart or bootstrap) {
+    if (use_input_file) {
       std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
       m_output_global_attributes.set_string("history",
                                             history + m_output_global_attributes.get_string("history"));

@@ -169,10 +169,7 @@ void MohrCoulombYieldStress::init_impl() {
                        "Turn on, and specify, the till friction angle parameterization"
                        " based on bedrock elevation (topg)");
 
-  bool bootstrap = false;
-  int start = 0;
-  std::string filename;
-  bool use_input_file = find_pism_input(filename, bootstrap, start);
+  InputOptions opts = process_input_options(m_grid->com);
 
   if (topg_to_phi_option.is_set() and plastic_phi.is_set()) {
     throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.");
@@ -183,19 +180,19 @@ void MohrCoulombYieldStress::init_impl() {
     m_log->message(2,
                  "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
 
-    if (use_input_file) {
+    if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
 
       PIO nc(m_grid->com, "guess_mode");
 
-      nc.open(filename, PISM_READONLY);
-      bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_string("short_name"));
+      nc.open(opts.filename, PISM_READONLY);
+      bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_name());
       nc.close();
 
       if (tillphi_present) {
         m_log->message(2,
                      "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
                      "              present in the input file '%s'!\n",
-                     m_till_phi.metadata().get_string("short_name").c_str(), filename.c_str());
+                     m_till_phi.metadata().get_string("short_name").c_str(), opts.filename.c_str());
       }
     }
 
@@ -216,13 +213,11 @@ void MohrCoulombYieldStress::init_impl() {
                  phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
                  phi_max, topg_max);
 
-  } else if (use_input_file) {
-    if (bootstrap) {
-      m_till_phi.regrid(filename, OPTIONAL,
-                        m_config->get_double("bootstrapping_tillphi_value_no_var"));
-    } else {
-      m_till_phi.read(filename, start);
-    }
+  } else if (opts.type == INIT_RESTART) {
+    m_till_phi.read(opts.filename, opts.record);
+  } else if (opts.type == INIT_BOOTSTRAP) {
+    m_till_phi.regrid(opts.filename, OPTIONAL,
+                      m_config->get_double("bootstrapping_tillphi_value_no_var"));
   } else {
     // Use the default value *or* the value set using the -plastic_phi
     // command-line option.
@@ -245,16 +240,16 @@ void MohrCoulombYieldStress::init_impl() {
     } else {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file
-      if (bootstrap) {
-        m_basal_yield_stress.regrid(filename, CRITICAL);
+      if (opts.type == INIT_BOOTSTRAP) {
+        m_basal_yield_stress.regrid(opts.filename, CRITICAL);
       } else {
-        m_basal_yield_stress.read(filename, start);
+        m_basal_yield_stress.read(opts.filename, opts.record);
       }
     }
 
     m_log->message(2,
-                 "  Will compute till friction angle (tillphi) as a function"
-                 " of the yield stress (tauc)...\n");
+                   "  Will compute till friction angle (tillphi) as a function"
+                   " of the yield stress (tauc)...\n");
 
     m_tauc_to_phi = true;
 

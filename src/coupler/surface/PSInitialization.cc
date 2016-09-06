@@ -85,15 +85,14 @@ void InitializationHelper::attach_atmosphere_model_impl(atmosphere::AtmosphereMo
 void InitializationHelper::init_impl() {
   m_input_model->init();
 
-  const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
-  options::String input_file("-i", "input file name");
+  InputOptions opts = process_input_options(m_grid->com);
 
-  if (input_file.is_set() and not bootstrap) {
+  if (opts.type == INIT_RESTART) {
     m_log->message(2, "* Reading effective surface model outputs from '%s' for re-starting...\n",
-                   input_file->c_str());
+                   opts.filename.c_str());
 
     PIO file(m_grid->com, "guess_mode");
-    file.open(input_file, PISM_READONLY);
+    file.open(opts.filename, PISM_READONLY);
     const unsigned int last_record = file.inq_nrecords() - 1;
     for (unsigned int k = 0; k < m_variables.size(); ++k) {
       m_variables[k]->read(file, last_record);

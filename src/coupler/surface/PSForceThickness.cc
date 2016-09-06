@@ -96,7 +96,6 @@ void ForceThickness::init_impl() {
   if (not input_file.is_set()) {
     throw RuntimeError("surface model forcing requires the -force_to_thickness_file option.");
   }
-  m_input_file = input_file;
 
   options::Real ftt_alpha("-force_to_thickness_alpha",
                           "Specifies the value of force-to-thickness alpha in per-year units",
@@ -125,18 +124,18 @@ void ForceThickness::init_impl() {
              m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "year-1"),
              m_ice_free_thickness_threshold);
 
-  // m_input_file now contains name of -force_to_thickness file; now check
+  // input_file now contains name of -force_to_thickness file; now check
   // it is really there; and regrid the target thickness
   PIO nc(m_grid->com, "guess_mode");
   bool mask_exists = false;
-  nc.open(m_input_file, PISM_READONLY);
+  nc.open(input_file, PISM_READONLY);
   mask_exists = nc.inq_var("ftt_mask");
   nc.close();
 
   m_log->message(2,
              "    reading target thickness 'thk' from %s ...\n"
              "    (this field will appear in output file as 'ftt_target_thk')\n",
-             m_input_file.c_str());
+             input_file->c_str());
   {
     m_target_thickness.metadata(0).set_name("thk"); // name to read by
     // set attributes for the read stage; see below for reset
@@ -145,7 +144,7 @@ void ForceThickness::init_impl() {
                                  "m",
                                  "land_ice_thickness"); // standard_name *to read by*
 
-    m_target_thickness.regrid(m_input_file, CRITICAL);
+    m_target_thickness.regrid(input_file, CRITICAL);
 
     // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
     m_target_thickness.metadata(0).set_name("ftt_target_thk");
@@ -160,11 +159,11 @@ void ForceThickness::init_impl() {
   if (mask_exists) {
     m_log->message(2,
                "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
-               m_input_file.c_str());
-    m_ftt_mask.regrid(m_input_file, CRITICAL);
+               input_file->c_str());
+    m_ftt_mask.regrid(input_file, CRITICAL);
   } else {
     throw RuntimeError::formatted("variable 'ftt_mask' was not found in '%s'",
-                                  m_input_file.c_str());
+                                  input_file->c_str());
   }
 }
 
