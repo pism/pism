@@ -29,33 +29,33 @@ Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, NULL)
 {
   m_option_prefix = "-atmosphere_given";
-  air_temp      = NULL;
-  precipitation = NULL;
+  m_air_temp      = NULL;
+  m_precipitation = NULL;
 
   // will be de-allocated by the parent's destructor
-  precipitation = new IceModelVec2T;
-  air_temp      = new IceModelVec2T;
+  m_precipitation = new IceModelVec2T;
+  m_air_temp      = new IceModelVec2T;
 
-  m_fields["precipitation"] = precipitation;
-  m_fields["air_temp"]      = air_temp;
+  m_fields["precipitation"] = m_precipitation;
+  m_fields["air_temp"]      = m_air_temp;
 
   process_options();
 
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  air_temp->create(m_grid, "air_temp");
-  precipitation->create(m_grid, "precipitation");
+  m_air_temp->create(m_grid, "air_temp");
+  m_precipitation->create(m_grid, "precipitation");
 
-  air_temp->set_attrs("climate_forcing", "near-surface air temperature",
+  m_air_temp->set_attrs("climate_forcing", "near-surface air temperature",
                       "Kelvin", "");
-  air_temp->metadata().set_double("valid_min", 0.0);
-  air_temp->metadata().set_double("valid_max", 323.15); // 50 C
+  m_air_temp->metadata().set_double("valid_min", 0.0);
+  m_air_temp->metadata().set_double("valid_max", 323.15); // 50 C
 
-  precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
+  m_precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
                            "kg m-2 second-1", "");
-  precipitation->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  precipitation->write_in_glaciological_units = true;
+  m_precipitation->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_precipitation->write_in_glaciological_units = true;
 }
 
 Given::~Given() {
@@ -69,11 +69,11 @@ void Given::init() {
              "* Initializing the atmosphere model reading near-surface air temperature\n"
              "  and ice-equivalent precipitation from a file...\n");
 
-  air_temp->init(m_filename, m_bc_period, m_bc_reference_time);
-  precipitation->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_air_temp->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_precipitation->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
-  if (air_temp->get_n_records() == 1 && precipitation->get_n_records() == 1) {
+  if (m_air_temp->get_n_records() == 1 && m_precipitation->get_n_records() == 1) {
     update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
@@ -82,52 +82,52 @@ void Given::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
   // compute mean precipitation
-  precipitation->average(m_t, m_dt);
+  m_precipitation->average(m_t, m_dt);
 
   // Average so that the mean_annual_temp() may be reported correctly (at least
   // in the "-surface pdd" case).
-  air_temp->average(m_t, m_dt);
+  m_air_temp->average(m_t, m_dt);
 }
 
 void Given::mean_precipitation(IceModelVec2S &result) {
-  result.copy_from(*precipitation);
+  result.copy_from(*m_precipitation);
 }
 
 void Given::mean_annual_temp(IceModelVec2S &result) {
-  result.copy_from(*air_temp);
+  result.copy_from(*m_air_temp);
 }
 
 void Given::temp_snapshot(IceModelVec2S &result) {
-  result.copy_from(*air_temp);
+  result.copy_from(*m_air_temp);
 }
 
 void Given::begin_pointwise_access() {
 
-  air_temp->begin_access();
-  precipitation->begin_access();
+  m_air_temp->begin_access();
+  m_precipitation->begin_access();
 }
 
 void Given::end_pointwise_access() {
 
-  air_temp->end_access();
-  precipitation->end_access();
+  m_air_temp->end_access();
+  m_precipitation->end_access();
 }
 
 void Given::temp_time_series(int i, int j, std::vector<double> &result) {
 
-  air_temp->interp(i, j, result);
+  m_air_temp->interp(i, j, result);
 }
 
 void Given::precip_time_series(int i, int j, std::vector<double> &result) {
 
-  precipitation->interp(i, j, result);
+  m_precipitation->interp(i, j, result);
 }
 
 void Given::init_timeseries(const std::vector<double> &ts) {
 
-  air_temp->init_interpolation(ts);
+  m_air_temp->init_interpolation(ts);
 
-  precipitation->init_interpolation(ts);
+  m_precipitation->init_interpolation(ts);
 
   m_ts_times = ts;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,7 +37,7 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
-  Timeseries *A;                 // amplitude scaling
+  Timeseries *m_A;                 // amplitude scaling
 };
 
 } // end of namespace atmosphere

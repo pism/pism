@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -51,9 +51,9 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
 protected:
-  std::vector<double> ts_mod, ts_values;
-  SpatialVariableMetadata air_temp, precipitation;
-  IceModelVec2T *air_temp_anomaly, *precipitation_anomaly;
+  std::vector<double> m_ts_mod, m_ts_values;
+  SpatialVariableMetadata m_air_temp, m_precipitation;
+  IceModelVec2T *m_air_temp_anomaly, *m_precipitation_anomaly;
   std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 };
 

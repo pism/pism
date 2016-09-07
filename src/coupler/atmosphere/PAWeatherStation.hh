@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -60,10 +60,10 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
 protected:
-  Timeseries m_precipitation, m_air_temperature;
+  Timeseries m_precipitation_timeseries, m_air_temp_timeseries;
   std::vector<double> m_precip_values, m_air_temp_values;
 
-  SpatialVariableMetadata m_precip_metadata, m_air_temp_metadata;
+  SpatialVariableMetadata m_precipitation, m_air_temp;
 };
 
 } // end of namespace atmosphere

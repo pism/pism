@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,7 @@ public:
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:
   virtual void update_impl(double my_t, double my_dt);
-  IceModelVec2T *precipitation, *air_temp;
+  IceModelVec2T *m_precipitation, *m_air_temp;
 };
 
 } // end of namespace atmosphere

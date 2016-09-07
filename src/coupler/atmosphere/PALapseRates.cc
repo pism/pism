@@ -28,8 +28,8 @@ namespace atmosphere {
 
 LapseRates::LapseRates(IceGrid::ConstPtr g, AtmosphereModel* in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, in),
-    m_precipitation(m_sys, "precipitation"),
-    m_air_temp(m_sys, "air_temp") {
+    m_precipitation(m_sys, "effective_precipitation"),
+    m_air_temp(m_sys, "effective_air_temp") {
   m_precip_lapse_rate = 0;
   m_option_prefix     = "-atmosphere_lapse_rate";
 
@@ -150,11 +150,11 @@ void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
   std::string order = m_config->get_string("output_variable_order");
 
-  if (set_contains(vars, "air_temp")) {
+  if (set_contains(vars, m_air_temp.get_name())) {
     io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, true);
   }
 
-  if (set_contains(vars, "precipitation")) {
+  if (set_contains(vars, m_precipitation.get_name())) {
     io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
   }
 
@@ -164,28 +164,28 @@ void LapseRates::define_variables_impl(const std::set<std::string> &vars,
 void LapseRates::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, "air_temp")) {
+  if (set_contains(vars, m_air_temp.get_name())) {
     IceModelVec2S tmp;
-    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
+    tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp;
 
     temp_snapshot(tmp);
 
     tmp.write(nc);
 
-    vars.erase("air_temp");
+    vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, "precipitation")) {
+  if (set_contains(vars, m_precipitation.get_name())) {
     IceModelVec2S tmp;
-    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
+    tmp.create(m_grid, m_precipitation.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_precipitation;
 
     mean_precipitation(tmp);
     tmp.write_in_glaciological_units = true;
     tmp.write(nc);
 
-    vars.erase("precipitation");
+    vars.erase(m_precipitation.get_name());
   }
 
   m_input_model->write_variables(vars, nc);
@@ -196,8 +196,8 @@ void LapseRates::add_vars_to_output_impl(const std::string &keyword,
   m_input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
-    result.insert("air_temp");
-    result.insert("precipitation");
+    result.insert(m_air_temp.get_name());
+    result.insert(m_precipitation.get_name());
   }
 }
 

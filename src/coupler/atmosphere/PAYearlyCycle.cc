@@ -101,14 +101,14 @@ void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<s
   if (keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp_mean_annual");
     result.insert("air_temp_mean_july");
-    result.insert("air_temp_snapshot");
+    result.insert(m_air_temp_snapshot.get_name());
   }
 }
 
 
 void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
-  if (set_contains(vars, "air_temp_snapshot")) {
+  if (set_contains(vars, m_air_temp_snapshot.get_name())) {
     std::string order = m_config->get_string("output_variable_order");
     io::define_spatial_variable(m_air_temp_snapshot, *m_grid, nc, nctype, order, false);
   }
@@ -129,9 +129,9 @@ void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const
 
 void YearlyCycle::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
-  if (set_contains(vars, "air_temp_snapshot")) {
+  if (set_contains(vars, m_air_temp_snapshot.get_name())) {
     IceModelVec2S tmp;
-    tmp.create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
+    tmp.create(m_grid, m_air_temp_snapshot.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp_snapshot;
 
     temp_snapshot(tmp);

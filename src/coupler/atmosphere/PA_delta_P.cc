@@ -28,8 +28,8 @@ namespace atmosphere {
 
 Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    air_temp(m_sys, "air_temp"),
-    precipitation(m_sys, "precipitation")
+    m_air_temp(m_sys, "effective_air_temp"),
+    m_precipitation(m_sys, "effective_precipitation")
 {
   m_offset = NULL;
 
@@ -42,14 +42,14 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
 
-  air_temp.set_string("pism_intent", "diagnostic");
-  air_temp.set_string("long_name", "near-surface air temperature");
-  air_temp.set_string("units", "K");
+  m_air_temp.set_string("pism_intent", "diagnostic");
+  m_air_temp.set_string("long_name", "near-surface air temperature");
+  m_air_temp.set_string("units", "K");
 
-  precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name", "precipitation rate");
-  precipitation.set_string("units", "kg m-2 second-1");
-  precipitation.set_string("glaciological_units", "kg m-2 year-1");
+  m_precipitation.set_string("pism_intent", "diagnostic");
+  m_precipitation.set_string("long_name", "precipitation rate");
+  m_precipitation.set_string("units", "kg m-2 second-1");
+  m_precipitation.set_string("glaciological_units", "kg m-2 year-1");
 }
 
 Delta_P::~Delta_P()
@@ -102,8 +102,8 @@ void Delta_P::add_vars_to_output_impl(const std::string &keyword, std::set<std::
   m_input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
-    result.insert("air_temp");
-    result.insert("precipitation");
+    result.insert(m_air_temp.get_name());
+    result.insert(m_precipitation.get_name());
   }
 }
 
@@ -113,14 +113,14 @@ void Delta_P::define_variables_impl(const std::set<std::string> &vars_input, con
   std::set<std::string> vars = vars_input;
   std::string order = m_config->get_string("output_variable_order");
 
-  if (set_contains(vars, "air_temp")) {
-    io::define_spatial_variable(air_temp, *m_grid, nc, nctype, order, false);
-    vars.erase("air_temp");
+  if (set_contains(vars, m_air_temp.get_name())) {
+    io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, false);
+    vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, "precipitation")) {
-    io::define_spatial_variable(precipitation, *m_grid, nc, nctype, order, true);
-    vars.erase("precipitation");
+  if (set_contains(vars, m_precipitation.get_name())) {
+    io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
+    vars.erase(m_precipitation.get_name());
   }
 
   m_input_model->define_variables(vars, nc, nctype);
@@ -130,29 +130,29 @@ void Delta_P::define_variables_impl(const std::set<std::string> &vars_input, con
 void Delta_P::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, "air_temp")) {
+  if (set_contains(vars, m_air_temp.get_name())) {
     IceModelVec2S tmp;
-    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
-    tmp.metadata() = air_temp;
+    tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
+    tmp.metadata() = m_air_temp;
 
     mean_annual_temp(tmp);
 
     tmp.write(nc);
 
-    vars.erase("air_temp");
+    vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, "precipitation")) {
+  if (set_contains(vars, m_precipitation.get_name())) {
     IceModelVec2S tmp;
-    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-    tmp.metadata() = precipitation;
+    tmp.create(m_grid, m_precipitation.get_name(), WITHOUT_GHOSTS);
+    tmp.metadata() = m_precipitation;
 
     mean_precipitation(tmp);
 
     tmp.write_in_glaciological_units = true;
     tmp.write(nc);
 
-    vars.erase("precipitation");
+    vars.erase(m_precipitation.get_name());
   }
 
   m_input_model->write_variables(vars, nc);
