@@ -338,6 +338,12 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
       // the precipitation time series from AtmosphereModel and its modifiers
       m_atmosphere->precip_time_series(i, j, P);
 
+      // Atmosphere models provide precipitation in "kg m-2 s-1", but the PDD computation expects
+      // it to be in "m s-1", so we need to multiply by ice density.
+      for (int k = 0; k < Nseries; ++k) {
+        P[k] /= ice_density;
+      }
+
       // interpolate temperature standard deviation time series
       if (m_sd_file_set == true) {
         m_air_temp_sd.interp(i, j, S);
