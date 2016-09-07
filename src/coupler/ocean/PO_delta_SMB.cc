@@ -36,15 +36,15 @@ Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
 
   m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
 
-  m_offset->metadata().set_string("units", "kg m-2 s-1");
+  m_offset->metadata().set_string("units", "kg m-2 second-1");
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
   m_offset->metadata().set_string("long_name",
-                                    "ice-shelf-base mass flux offsets");
+                                "ice-shelf-base mass flux offsets");
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_string("units", "kg m-2 s-1");
+  shelfbmassflux.set_string("units", "kg m-2 second-1");
   shelfbmassflux.set_string("glaciological_units", "kg m-2 year-1");
 
   shelfbtemp.set_string("pism_intent", "climate_state");
@@ -66,7 +66,6 @@ void Delta_SMB::init_impl() {
              "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
 
   init_internal();
-
 }
 
 MaxTimestep Delta_SMB::max_timestep_impl(double t) {

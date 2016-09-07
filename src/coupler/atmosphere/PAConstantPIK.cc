@@ -40,24 +40,24 @@ PIK::PIK(IceGrid::ConstPtr g)
   // rain, and before melt, etc. in SurfaceModel)
   m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
   m_precipitation.set_attrs("climate_state",
-                          "mean annual ice-equivalent precipitation rate",
-                          "m s-1",
-                          ""); // no CF standard_name ??
-  m_precipitation.metadata().set_string("glaciological_units", "m year-1");
+                            "mean annual ice-equivalent precipitation rate",
+                            "kg m-2 second-1",
+                            ""); // no CF standard_name
+  m_precipitation.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_precipitation.write_in_glaciological_units = true;
   m_precipitation.set_time_independent(true);
 
   m_air_temp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
   m_air_temp.set_attrs("climate_state",
-                     "mean annual near-surface (2 m) air temperature",
-                     "K",
-                     "");
+                       "mean annual near-surface (2 m) air temperature",
+                       "K",
+                       "");
   m_air_temp.set_time_independent(true);
 
   // initialize metadata for "air_temp_snapshot"
   m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
   m_air_temp_snapshot.set_string("long_name",
-                               "snapshot of the near-surface air temperature");
+                                 "snapshot of the near-surface air temperature");
   m_air_temp_snapshot.set_string("units", "K");
 }
 
@@ -172,17 +172,17 @@ void PIK::update_impl(double, double) {
   // elevation-dependent parameterization:
 
   const IceModelVec2S
-    *usurf = m_grid->variables().get_2d_scalar("surface_altitude"),
-    *lat   = m_grid->variables().get_2d_scalar("latitude");
+    &elevation = *m_grid->variables().get_2d_scalar("surface_altitude"),
+    &latitude  = *m_grid->variables().get_2d_scalar("latitude");
 
   IceModelVec::AccessList list;
   list.add(m_air_temp);
-  list.add(*usurf);
-  list.add(*lat);
+  list.add(elevation);
+  list.add(latitude);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
+    m_air_temp(i, j) = 273.15 + 30 - 0.0075 * elevation(i, j) - 0.68775 * latitude(i, j)*(-1.0) ;
   }
 }
 

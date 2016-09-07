@@ -31,13 +31,14 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
 {
+  m_offset = NULL;
+
   m_option_prefix = "-atmosphere_delta_P";
   m_offset_name = "delta_P";
   m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
-  m_offset->metadata().set_string("units", "m second-1");
-  m_offset->metadata().set_string("glaciological_units", "m year-1");
-  m_offset->metadata().set_string("long_name",
-                                    "precipitation offsets, units of ice-equivalent thickness");
+  m_offset->metadata().set_string("units", "kg m-2 second-1");
+  m_offset->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_offset->metadata().set_string("long_name", "precipitation offsets");
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
 
@@ -46,9 +47,9 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
   air_temp.set_string("units", "K");
 
   precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  precipitation.set_string("units", "m second-1");
-  precipitation.set_string("glaciological_units", "m year-1");
+  precipitation.set_string("long_name", "precipitation rate");
+  precipitation.set_string("units", "kg m-2 second-1");
+  precipitation.set_string("glaciological_units", "kg m-2 year-1");
 }
 
 Delta_P::~Delta_P()

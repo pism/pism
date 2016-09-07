@@ -338,6 +338,13 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
       // the precipitation time series from AtmosphereModel and its modifiers
       m_atmosphere->precip_time_series(i, j, P);
 
+      // convert precipitation from "kg m-2 second-1" to "m second-1" (PDDMassBalance expects
+      // accumulation in m/second ice equivalent)
+      for (int k = 0; k < Nseries; ++k) {
+        P[k] = P[k] / ice_density;
+        // kg / (m^2 * second) / (kg / m^3) = m / second
+      }
+
       // interpolate temperature standard deviation time series
       if (m_sd_file_set == true) {
         m_air_temp_sd.interp(i, j, S);
