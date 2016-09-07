@@ -29,10 +29,11 @@ PISMVERSION=pism_$DATANAME
 echo -n "creating bootstrapable $PISMVERSION from $DATANAME ... "
 # copy the vars we want, and preserve history and global attrs
 ncks -O -v mapping,lat,lon,bheatflx,topg,thk,presprcp,smb,airtemp2m $DATANAME $PISMVERSION
-# convert from water equiv to ice thickness change rate; assumes ice density 910.0 kg m-3
-ncap2 -O -s "precipitation=presprcp*(1000.0/910.0)" $PISMVERSION $PISMVERSION
-ncatted -O -a units,precipitation,c,c,"m/year" $PISMVERSION
-ncatted -O -a long_name,precipitation,c,c,"ice-equivalent mean annual precipitation rate" $PISMVERSION
+# convert from water equivalent thickness rate ("m year-1") to "kg m-2 year-1".
+# Assumes water density of 1000.0 kg m-3
+ncap2 -O -s "precipitation=presprcp*1000.0" $PISMVERSION $PISMVERSION
+ncatted -O -a units,precipitation,m,c,"kg m-2 year-1" $PISMVERSION
+ncatted -O -a long_name,precipitation,c,c,"mean annual precipitation rate" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION
 # use pism-recognized name for 2m air temp
