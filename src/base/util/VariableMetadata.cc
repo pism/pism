@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,7 @@
 #include "PISMConfigInterface.hh"
 #include "error_handling.hh"
 #include "base/util/Logger.hh"
+#include "pism_utilities.hh"
 
 namespace pism {
 
@@ -423,6 +424,10 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
     }
 
   }
+}
+
+bool set_contains(const std::set<std::string> &S, const VariableMetadata &variable) {
+  return set_contains(S, variable.get_name());
 }
 
 TimeseriesMetadata::TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
