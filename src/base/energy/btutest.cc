@@ -200,9 +200,7 @@ int main(int argc, char *argv[]) {
         for (Points p(*grid); p; p.next()) {
           const int i = p.i(), j = p.j();
 
-          double TT, FF; // Test K:  use TT, ignore FF
-          exactK(time, 0.0, &TT, &FF, 0);
-          bedtoptemp(i,j) = TT;
+          bedtoptemp(i,j) = exactK(time, 0.0, 0).T;
         }
       }
       // no need to update ghost values
@@ -218,8 +216,7 @@ int main(int argc, char *argv[]) {
     heat_flux_at_ice_base.copy_from(btu->flux_through_top_surface());
 
     // get, and tell stdout, the correct answer from Test K
-    double TT, FF; // Test K:  use FF, ignore TT
-    exactK(ctx->time()->end(), 0.0, &TT, &FF, 0);
+    const double FF = exactK(ctx->time()->end(), 0.0, 0).F;
     log->message(2,
                  "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
                  ctx->time()->end_date().c_str(), FF);

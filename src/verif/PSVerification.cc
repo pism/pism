@@ -28,7 +28,7 @@
 #include "base/util/PISMConfigInterface.hh"
 
 #include "tests/exactTestsABCD.h"
-#include "tests/exactTestsFG.h"
+#include "tests/exactTestsFG.hh"
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.h"
 
@@ -188,16 +188,16 @@ void Verification::update_ABCDH(double time) {
       const double r = radius(*m_grid, i, j);
       switch (m_testname) {
       case 'A':
-        exactA(r, &H, &accum);
+        accum = exactA(r).M;
         break;
       case 'B':
-        exactB(time, r, &H, &accum);
+        accum = exactB(time, r).M;
         break;
       case 'C':
-        exactC(time, r, &H, &accum);
+        accum = exactC(time, r).M;
         break;
       case 'D':
-        exactD(time, r, &H, &accum);
+        accum = exactD(time, r).M;
         break;
       case 'H':
         exactH(f, time, r, &H, &accum);
@@ -215,10 +215,9 @@ void Verification::update_ABCDH(double time) {
 }
 
 void Verification::update_FG(double time) {
-  unsigned int   Mz = m_grid->Mz();
-  double         H, accum;
 
-  std::vector<double> dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz), dummy5(Mz);
+  const double t = m_testname == 'F' ? 0.0 : time;
+  const double A = m_testname == 'F' ? 0.0 : ApforG;
 
   IceModelVec::AccessList list(m_climatic_mass_balance);
   list.add(m_ice_surface_temp);
@@ -226,23 +225,17 @@ void Verification::update_FG(double time) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = std::max(radius(*m_grid, i, j), 1.0); // avoid singularity at origin
+    // avoid singularity at origin
+    const double r = std::max(radius(*m_grid, i, j), 1.0);
 
     m_ice_surface_temp(i, j) = Tmin + ST * r;
 
-    if (r > LforFG - 1.0) { // if (essentially) outside of sheet
-      accum = - ablationRateOutside / secpera;
+    if (r > LforFG - 1.0) {
+      // if (essentially) outside of sheet
+      m_climatic_mass_balance(i, j) = - ablationRateOutside / secpera;
     } else {
-      if (m_testname == 'F') {
-        bothexact(0.0, r, &(m_grid->z()[0]), Mz, 0.0,
-                  &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
-      } else {
-        bothexact(time, r, &(m_grid->z()[0]), Mz, ApforG,
-                  &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
-      }
+      m_climatic_mass_balance(i, j) = exactFG(t, r, m_grid->z(), A).M;
     }
-    m_climatic_mass_balance(i, j) = accum;
-
   }
 }
 

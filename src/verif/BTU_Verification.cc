@@ -49,18 +49,20 @@ void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
   std::vector<double> Tbcol(m_Mbz),
     zlevels = m_temp.get_levels();
   double dum1, dum2, dum3, dum4;
-  double FF;
+
+  double time = m_grid->ctx()->time()->current();
 
   // evaluate exact solution in a column; all columns are the same
   switch (m_testname) {
   default:
   case 'K':
     for (unsigned int k = 0; k < m_Mbz; k++) {
-      if (exactK(m_grid->ctx()->time()->current(), zlevels[k], &Tbcol[k], &FF,
-                 (m_bedrock_is_ice==true))) {
+      TestKParameters P = exactK(time, zlevels[k], m_bedrock_is_ice);
+      if (P.error_code != 0) {
         throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
                                       zlevels[k]);
       }
+      Tbcol[k] = P.T;
     }
     break;
   case 'O':

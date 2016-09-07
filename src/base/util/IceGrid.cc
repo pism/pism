@@ -618,13 +618,13 @@ void IceGrid::report_parameters() const {
 
   // report on grid cell dims
   if ((dx() && dy()) > 1000.) {
-  log.message(2,
-              "     horizontal grid cell   %.2f km x %.2f km\n",
-              km(dx()), km(dy()));
+    log.message(2,
+                "     horizontal grid cell   %.2f km x %.2f km\n",
+                km(dx()), km(dy()));
   } else {
-  log.message(2,
-              "     horizontal grid cell   %.0f m x %.0f m\n",
-              dx(), dy());
+    log.message(2,
+                "     horizontal grid cell   %.0f m x %.0f m\n",
+                dx(), dy());
   }
   if (fabs(dz_max() - dz_min()) <= 1.0e-8) {
     log.message(2,

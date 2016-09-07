@@ -3,30 +3,15 @@
 # scheme, much less PISM runs, here!
 
 .PHONY : all
-all : simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK simpleL simpleM simpleN
+all : simpleE simpleH simpleL simpleM simpleN
 
 # TYPICAL BY-HAND COMPILE-LINK-RUN EXAMPLE:
-#   $ gcc -c simpleABCD.c -o simpleABCD.o
-#   $ gcc -c exactTestsABCD.c -o exactTestsABCD.o
-#   $ gcc -lm exactTestsABCD.o simpleABCD.o -o simpleABCD
-#   $ ./simpleABCD
-
-simpleABCD : simpleABCD.o exactTestsABCD.o
-	$(CC) $^ -o $@ -lm
-
-simpleFG : simpleFG.o exactTestsFG.o
-	$(CC) $^ -o $@ -lm
+#   $ gcc -c simpleH.c -o simpleH.o
+#   $ gcc -c exactTestH.c -o exactTestH.o
+#   $ gcc -lm exactTestH.o simpleH.o -o simpleH
+#   $ ./simpleH
 
 simpleH : simpleH.o exactTestH.o
-	$(CC) $^ -o $@ -lm
-
-simpleI : simpleI.o exactTestsIJ.o
-	$(CC) $^ -o $@ -lm 
-
-simpleJ : simpleJ.o exactTestsIJ.o
-	$(CC) $^ -o $@ -lm
-
-simpleK : simpleK.o exactTestK.o
 	$(CC) $^ -o $@ -lm
 
 simpleL : simpleL.o exactTestL.o
@@ -46,6 +31,4 @@ simpleP : simpleP.o exactTestP.o
 
 .PHONY: clean
 clean:
-	@rm -f *.o *~ simpleABCD simpleFG simpleH simpleI simpleJ simpleK \
-	              simpleL simpleM simpleN simpleO simpleP
-
+	@rm -f *.o *~ simpleH simpleL simpleM simpleN simpleO simpleP

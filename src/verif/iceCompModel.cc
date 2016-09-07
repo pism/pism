@@ -24,7 +24,7 @@
 #include <algorithm>  // required by sort(...) in test L
 
 #include "tests/exactTestsABCD.h"
-#include "tests/exactTestsFG.h"
+#include "tests/exactTestsFG.hh"
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.h"
 
@@ -166,17 +166,17 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
 
   // this switch changes Test K to make material properties for bedrock the same as for ice
   bool biiSet = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
-  if (biiSet == true) {
+  if (biiSet) {
     if (testname == 'K') {
       m_log->message(1,
-                 "setting material properties of bedrock to those of ice in Test K\n");
+                     "setting material properties of bedrock to those of ice in Test K\n");
       m_config->set_double("bedrock_thermal_density", m_config->get_double("ice_density"));
       m_config->set_double("bedrock_thermal_conductivity", m_config->get_double("ice_thermal_conductivity"));
       m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice_specific_heat_capacity"));
       bedrock_is_ice_forK = true;
     } else {
       m_log->message(1,
-                 "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
+                     "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
     }
   }
 
@@ -333,20 +333,16 @@ void IceCompModel::initTestABCDH() {
       const double r = radius(*m_grid, i, j);
       switch (testname) {
       case 'A':
-        exactA(r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactA(r).H;
         break;
       case 'B':
-        exactB(time, r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactB(time, r).H;
         break;
       case 'C':
-        exactC(time, r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactC(time, r).H;
         break;
       case 'D':
-        exactD(time, r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactD(time, r).H;
         break;
       case 'H':
         exactH(f, time, r, &H, &accum);
@@ -513,20 +509,16 @@ void IceCompModel::fillSolnTestABCDH() {
       double r = radius(*m_grid, i, j);
       switch (testname) {
       case 'A':
-        exactA(r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactA(r).H;
         break;
       case 'B':
-        exactB(time, r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactB(time, r).H;
         break;
       case 'C':
-        exactC(time, r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactC(time, r).H;
         break;
       case 'D':
-        exactD(time, r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactD(time, r).H;
         break;
       case 'H':
         exactH(f, time, r, &H, &accum);
@@ -588,7 +580,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     avHerr = 0.0,
     etaerr = 0.0;
 
-  double     dummy, z, dummy1, dummy2, dummy3, dummy4, dummy5;
+  double dummy;
 
   IceModelVec::AccessList list(m_ice_thickness);
   if (testname == 'L') {
@@ -617,25 +609,24 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
       double xx = m_grid->x(i), r = radius(*m_grid, i,j);
       switch (testname) {
       case 'A':
-        exactA(r,&Hexact,&dummy);
+        Hexact = exactA(r).H;
         break;
       case 'B':
-        exactB(time,r,&Hexact,&dummy);
+        Hexact = exactB(time, r).H;
         break;
       case 'C':
-        exactC(time,r,&Hexact,&dummy);
+        Hexact = exactC(time, r).H;
         break;
       case 'D':
-        exactD(time,r,&Hexact,&dummy);
+        Hexact = exactD(time, r).H;
         break;
       case 'F':
         if (r > LforFG - 1.0) {  // outside of sheet
           Hexact=0.0;
         } else {
           r=std::max(r,1.0);
-          z=0.0;
-          bothexact(0.0,r,&z,1,0.0,
-                    &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
+          std::vector<double> z(1, 0.0);
+          Hexact = exactFG(0.0, r, z, 0.0).H;
         }
         break;
       case 'G':
@@ -643,9 +634,8 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
           Hexact=0.0;
         } else {
           r=std::max(r,1.0);
-          z=0.0;
-          bothexact(time,r,&z,1,ApforG,
-                    &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
+          std::vector<double> z(1, 0.0);
+          Hexact = exactFG(time, r, z, ApforG).H;
         }
         break;
       case 'H':
