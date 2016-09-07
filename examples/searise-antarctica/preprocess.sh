@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015  PISM authors
+# Copyright (C) 2009-2016  PISM authors
 
 # downloads development version of SeaRISE "Present Day Antarctica" master
 # dataset NetCDF file, adjusts metadata, breaks up, saves under new names,
@@ -33,10 +33,13 @@ ncrename -O -v usrf,usurf $PISMVERSION
 # fix surface temperature name and make K
 ncap2 -O -s "air_temp=temp+273.15" $PISMVERSION $PISMVERSION
 ncatted -O -a units,air_temp,m,c,"K" $PISMVERSION
-# choose Van de Berg et al version of accumulation; will treat as ice-equivalent snow rate
-ncrename -O -v accr,precipitation $PISMVERSION
-ncatted -O -a units,precipitation,m,c,"m/year" $PISMVERSION
-# use bheatflx_shapiro as the default bheatflx data and 
+# choose Van de Berg et al version of accumulation; will treat as
+# ice-equivalent snow rate and convert from an ice-equivalent
+# thickness rate ("m year-1") to "kg m-2 year-1" by assuming ice
+# density of 910 kg m-3
+ncap2 -O -s "precipitation=accr*910.0" $PISMVERSION $PISMVERSION
+ncatted -O -a units,precipitation,m,c,"kg m-2 year-1" $PISMVERSION
+# use bheatflx_shapiro as the default bheatflx data
 ncrename -O -v bheatflx_shapiro,bheatflx $PISMVERSION
 ncatted -O -a units,bheatflx,m,c,"W m-2" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
