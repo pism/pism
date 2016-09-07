@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -44,43 +44,43 @@ public:
   virtual ~SurfaceModifier() {}
 protected:
   virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *in) {
-    if (input_model != NULL) {
-      input_model->attach_atmosphere_model(in);
+    if (m_input_model != NULL) {
+      m_input_model->attach_atmosphere_model(in);
     }
   }
 
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result)
   {
-    if (input_model != NULL) {
-      input_model->ice_surface_mass_flux(result);
+    if (m_input_model != NULL) {
+      m_input_model->ice_surface_mass_flux(result);
     }
   }
 
   virtual void ice_surface_temperature_impl(IceModelVec2S &result)
   {
-    if (input_model != NULL) {
-      input_model->ice_surface_temperature(result);
+    if (m_input_model != NULL) {
+      m_input_model->ice_surface_temperature(result);
     }
   }
 
   virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result)
   {
-    if (input_model != NULL) {
-      input_model->ice_surface_liquid_water_fraction(result);
+    if (m_input_model != NULL) {
+      m_input_model->ice_surface_liquid_water_fraction(result);
     }
   }
 
   virtual void mass_held_in_surface_layer_impl(IceModelVec2S &result)
   {
-    if (input_model != NULL) {
-      input_model->mass_held_in_surface_layer(result);
+    if (m_input_model != NULL) {
+      m_input_model->mass_held_in_surface_layer(result);
     }
   }
 
   virtual void surface_layer_thickness_impl(IceModelVec2S &result)
   {
-    if (input_model != NULL) {
-      input_model->surface_layer_thickness(result);
+    if (m_input_model != NULL) {
+      m_input_model->surface_layer_thickness(result);
     }
   }
 };

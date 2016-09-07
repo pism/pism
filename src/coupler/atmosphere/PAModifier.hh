@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -34,57 +34,57 @@ public:
 
   virtual void mean_precipitation(IceModelVec2S &result)
   {
-    if (input_model != NULL) {
-      input_model->mean_precipitation(result);
+    if (m_input_model != NULL) {
+      m_input_model->mean_precipitation(result);
     }
   }
 
   virtual void mean_annual_temp(IceModelVec2S &result)
   {
-    if (input_model != NULL) {
-      input_model->mean_annual_temp(result);
+    if (m_input_model != NULL) {
+      m_input_model->mean_annual_temp(result);
     }
   }
 
   virtual void begin_pointwise_access()
   {
-    if (input_model != NULL) {
-      input_model->begin_pointwise_access();
+    if (m_input_model != NULL) {
+      m_input_model->begin_pointwise_access();
     }
   }
 
   virtual void end_pointwise_access()
   {
-    if (input_model != NULL) {
-      input_model->end_pointwise_access();
+    if (m_input_model != NULL) {
+      m_input_model->end_pointwise_access();
     }
   }
 
   virtual void temp_time_series(int i, int j, std::vector<double> &result)
   {
-    if (input_model != NULL) {
-      input_model->temp_time_series(i, j, result);
+    if (m_input_model != NULL) {
+      m_input_model->temp_time_series(i, j, result);
     }
   }
 
   virtual void precip_time_series(int i, int j, std::vector<double> &result)
   {
-    if (input_model != NULL) {
-      input_model->precip_time_series(i, j, result);
+    if (m_input_model != NULL) {
+      m_input_model->precip_time_series(i, j, result);
     }
   }
 
   virtual void temp_snapshot(IceModelVec2S &result)
   {
-    if (input_model != NULL) {
-      input_model->temp_snapshot(result);
+    if (m_input_model != NULL) {
+      m_input_model->temp_snapshot(result);
     }
   }
 
   virtual void init_timeseries(const std::vector<double> &ts)
   {
-    if (input_model != NULL) {
-      input_model->init_timeseries(ts);
+    if (m_input_model != NULL) {
+      m_input_model->init_timeseries(ts);
     }
 
     m_ts_times = ts;

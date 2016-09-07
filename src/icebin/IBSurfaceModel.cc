@@ -71,16 +71,13 @@ void IBSurfaceModel::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *i
 }
 
 void IBSurfaceModel::init_impl() {
-  bool do_regrid = false;
-  int start      = -1;
-
   m_t = m_dt = GSL_NAN; // every re-init restarts the clock
 
   m_log->message(2, "* Initializing the IceBin interface surface model IBSurfaceModel.\n"
                     "  IceBin changes its state when surface conditions change.\n");
 
   // find PISM input file to read data from:
-  find_pism_input(m_input_file, do_regrid, start);
+  m_input_file = process_input_options(m_grid->com).filename;
 
   // It doesn't matter what we set this to, it will be re-set later.
   icebin_wflux.set(0.0);

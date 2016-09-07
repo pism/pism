@@ -161,31 +161,27 @@ void SSA::init_impl() {
   m_bed      = m_grid->variables().get_2d_scalar("bedrock_altitude");
   m_ice_enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
 
+  InputOptions opts = process_input_options(m_grid->com);
+
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
-  options::String input_file("-i", "PISM input file");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  if (opts.type == INIT_RESTART) {
+    bool read_initial_guess = not options::Bool("-dontreadSSAvels",
+                                                "don't read the initial guess");
 
-  if (input_file.is_set() and not bootstrap) {
-    bool u_ssa_found = false, v_ssa_found = false;
-    unsigned int start = 0;
-    PIO nc(m_grid->com, "guess_mode");
+    if (read_initial_guess) {
+      PIO input_file(m_grid->com, "guess_mode");
+      input_file.open(opts.filename, PISM_READONLY);
+      bool u_ssa_found = input_file.inq_var("u_ssa");
+      bool v_ssa_found = input_file.inq_var("v_ssa");
+      unsigned int start = input_file.inq_nrecords() - 1;
 
-    bool dont_read_initial_guess = options::Bool("-dontreadSSAvels",
-                                                 "don't read the initial guess");
+      if (u_ssa_found and v_ssa_found) {
+        m_log->message(3, "Reading u_ssa and v_ssa...\n");
 
-    nc.open(input_file, PISM_READONLY);
-    u_ssa_found = nc.inq_var("u_ssa");
-    v_ssa_found = nc.inq_var("v_ssa");
-    start = nc.inq_nrecords() - 1;
-    nc.close();
-
-    if (u_ssa_found && v_ssa_found && (not dont_read_initial_guess)) {
-      m_log->message(3, "Reading u_ssa and v_ssa...\n");
-
-      m_velocity.read(input_file, start);
+        m_velocity.read(input_file, start);
+      }
     }
-
   } else {
     m_velocity.set(0.0); // default initial guess
   }

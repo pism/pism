@@ -36,6 +36,19 @@ class MaxTimestep;
 class PIO;
 class IceModelVec;
 
+enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};
+
+struct InputOptions {
+  //! initialization type
+  InitializationType type;
+  //! name of the input file (if applicable)
+  std::string filename;
+  //! index of the record to re-start from
+  unsigned int record;
+};
+
+InputOptions process_input_options(MPI_Comm com);
+
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
   \section pism_components PISM's model components and their interface
@@ -90,6 +103,7 @@ class IceModelVec;
 */
 class Component {
 public:
+
   /** Create a Component instance given a grid. */
   Component(IceGrid::ConstPtr g);
   virtual ~Component();
@@ -124,7 +138,6 @@ protected:
                                      IO_Type nctype) = 0;
   virtual void write_variables_impl(const std::set<std::string> &vars,
                                     const PIO& nc) = 0;
-  virtual bool find_pism_input(std::string &filename, bool &regrid, int &start);
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in
@@ -208,6 +221,8 @@ protected:
   //! Last time-step used as an argument for the update() method.
   double m_dt;
 };
+
+void init_step(Component_TS &model, const Time& time);
 
 } // end of namespace pism
 

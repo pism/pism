@@ -31,6 +31,15 @@ class Vars;
 //! @brief Energy balance models and utilities.
 namespace energy {
 
+// Vertical grid information for BTU_Full.
+struct BTUGrid {
+  BTUGrid(Context::ConstPtr ctx);
+  static BTUGrid FromOptions(Context::ConstPtr ctx);
+
+  unsigned int Mbz;             // number of vertical levels
+  double Lbz;                   // depth of the bed thermal layer
+};
+
 //! Given the temperature of the top of the bedrock, for the duration of one time-step, provides upward geothermal flux at that interface at the end of the time-step.
 /*!
   The geothermal flux actually applied to the base of an ice sheet is dependent, over time,
@@ -67,7 +76,7 @@ namespace energy {
   conductivity of the upper lithosphere.  In these terms the actual
   upward heat flux into the ice/bedrock interface is the quantity,
   \f[G_0 = -k_b \frac{\partial T_b}{\partial z}.\f]
-  This is the \e output of the method upward_geothermal_flux() in this class.
+  This is the \e output of the method top_heat_flux() in this class.
 
   The evolution equation solved in this class, for which a timestep is done by the
   update() method, is the standard 1D heat equation
@@ -76,37 +85,62 @@ namespace energy {
   `bedrock_thermal_specific_heat_capacity` in pism_config.cdl.
 
   If `n_levels` >= 3 then everything is the general case.  The lithospheric temperature
-  in `temp` is saved in files as `litho_temp`.  The upward_geothermal_flux()
+  in `temp` is saved in files as `litho_temp`.  The top_heat_flux()
   method uses second-order differencing to compute the values of \f$G_0\f$.
 
   If `n_levels` <= 1 then this object becomes very simplified: there is no internal
   state in IceModelVec3 temp.  The update() and allocate() methods are null,
-  and the upward_geothermal_flux() method does nothing other than to copy the
+  and the top_heat_flux() method does nothing other than to copy the
   field \f$G\f$ = `bheatflx` into `result`.
 
   If `n_levels` == 2 then everything is the general case except that 
-  upward_geothermal_flux() method uses first-order differencing to compute the
+  top_heat_flux() method uses first-order differencing to compute the
   values of \f$G_0\f$.
 */
 class BedThermalUnit : public Component_TS {
 public:
+
+  static BedThermalUnit* FromOptions(IceGrid::ConstPtr g,
+                                     Context::ConstPtr ctx);
+
   BedThermalUnit(IceGrid::ConstPtr g);
 
   virtual ~BedThermalUnit();
 
-  virtual void init(bool &bootstrapping_needed);
+  typedef PISM_SHARED_PTR(BedThermalUnit) Ptr;
+  typedef PISM_SHARED_PTR(const BedThermalUnit) ConstPtr;
 
-  virtual const IceModelVec2S& upward_geothermal_flux() const;
+  void init(const InputOptions &opts);
 
-  virtual void bootstrap();
+  //! Return the upward heat flux through the top surface of the bedrock thermal layer.
+  const IceModelVec2S& flux_through_top_surface() const;
+
+  //! Return the upward heat flux through the bottom surface of the bedrock thermal layer.
+  const IceModelVec2S& flux_through_bottom_surface() const;
+
+  using Component_TS::update;
+  void update(const IceModelVec2S &bedrock_top_temperature,
+              double t, double dt);
 
   double vertical_spacing() const;
+  double depth() const;
 
-  unsigned int Mbz() const;
+  unsigned int Mz() const;
+
 protected:
-  virtual MaxTimestep max_timestep_impl(double my_t);
+  virtual void initialize_bottom_surface_flux();
 
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void init_impl(const InputOptions &opts);
+
+  virtual void update_impl(const IceModelVec2S &bedrock_top_temperature,
+                           double t, double dt) = 0;
+
+  virtual double vertical_spacing_impl() const = 0;
+  virtual double depth_impl() const = 0;
+  virtual unsigned int Mz_impl() const = 0;
+
+  void update_impl(double my_t, double my_dt);
+
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
@@ -114,23 +148,11 @@ protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
 protected:
-  IceModelVec3Custom m_temp;
-  IceModelVec2S m_upward_flux;
-  //!< storage for bedrock thermal layer temperature; part of state;
-  //!< units K; equally-spaced layers; This IceModelVec is only
-  //!< created if Mbz > 1.
+  //! upward heat flux through the bottom surface of the bed thermal layer
+  IceModelVec2S m_bottom_surface_flux;
 
-  // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
-  double m_bed_rho, //!< bedrock density
-    m_bed_c,        //!< bedrock heat capacity
-    m_bed_k,        //!< bedrock thermal conductivity
-    m_bed_D;        //!< diffusivity of the heat flow within the bedrock layer
-  
-  unsigned int m_Mbz;             //!< number of vertical levels within the bedrock
-  double m_Lbz;                   //!< thickness of the bedrock layer, in meters
-  std::string m_input_file;             //!< non-empty if "-i" was set
-
-  void update_upward_geothermal_flux();
+  //! upward heat flux through the top surface of the bed thermal layer
+  IceModelVec2S m_top_surface_flux;
 };
 
 class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {

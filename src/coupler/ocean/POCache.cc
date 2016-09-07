@@ -64,7 +64,7 @@ Cache::~Cache() {
 void Cache::init_impl() {
   int update_interval = m_update_interval_years;
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "* Initializing the 'caching' ocean model modifier...\n");
@@ -95,15 +95,15 @@ void Cache::update_impl(double my_t, double my_dt) {
 
     assert(update_dt > 0.0);
 
-    input_model->update(my_t, update_dt);
+    m_input_model->update(my_t, update_dt);
 
     m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                    m_update_interval_years);
 
-    m_sea_level = input_model->sea_level_elevation();
-    input_model->shelf_base_temperature(m_shelf_base_temperature);
-    input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
-    input_model->melange_back_pressure_fraction(m_melange_back_pressure_fraction);
+    m_sea_level = m_input_model->sea_level_elevation();
+    m_input_model->shelf_base_temperature(m_shelf_base_temperature);
+    m_input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
+    m_input_model->melange_back_pressure_fraction(m_melange_back_pressure_fraction);
   }
 }
 
@@ -144,7 +144,7 @@ void Cache::define_variables_impl(const std::set<std::string> &vars_input, const
     vars.erase(m_melange_back_pressure_fraction.metadata().get_string("short_name"));
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void Cache::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
@@ -165,7 +165,7 @@ void Cache::write_variables_impl(const std::set<std::string> &vars_input, const 
     vars.erase(m_melange_back_pressure_fraction.metadata().get_string("short_name"));
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 MaxTimestep Cache::max_timestep_impl(double t) {
@@ -181,9 +181,7 @@ MaxTimestep Cache::max_timestep_impl(double t) {
     assert(dt > 0.0);
   }
 
-  assert(input_model != NULL);
-
-  MaxTimestep input_max_timestep = input_model->max_timestep(t);
+  MaxTimestep input_max_timestep = m_input_model->max_timestep(t);
   if (input_max_timestep.is_finite()) {
     return std::min(input_max_timestep, MaxTimestep(dt));
   } else {

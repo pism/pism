@@ -116,7 +116,7 @@ def compare(file1, file2, variables, exclude, tol, relative):
         from netCDF4 import Dataset as NC
     except:
         print "netCDF4 is not installed!"
-        sys.exit(1)
+        exit(1)
 
     print "Comparing %s and %s" % (file1, file2)
 

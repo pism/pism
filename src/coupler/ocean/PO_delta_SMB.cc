@@ -31,15 +31,15 @@ Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
     shelfbmassflux(m_sys, "shelfbmassflux"),
     shelfbtemp(m_sys, "shelfbtemp") {
 
-  option_prefix = "-ocean_delta_mass_flux";
-  offset_name   = "delta_mass_flux";
+  m_option_prefix = "-ocean_delta_mass_flux";
+  m_offset_name   = "delta_mass_flux";
 
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
 
-  offset->metadata().set_string("units", "kg m-2 second-1");
-  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-  offset->metadata().set_string("long_name",
-                                "ice-shelf-base mass flux offsets, ice equivalent thickness per time");
+  m_offset->metadata().set_string("units", "kg m-2 second-1");
+  m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  m_offset->metadata().set_string("long_name",
+                                "ice-shelf-base mass flux offsets");
 
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
@@ -60,7 +60,7 @@ Delta_SMB::~Delta_SMB() {
 void Delta_SMB::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
@@ -74,12 +74,12 @@ MaxTimestep Delta_SMB::max_timestep_impl(double t) {
 }
 
 void Delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) {
-  input_model->shelf_base_mass_flux(result);
+  m_input_model->shelf_base_mass_flux(result);
   offset_data(result);
 }
 
 void Delta_SMB::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
@@ -100,7 +100,7 @@ void Delta_SMB::define_variables_impl(const std::set<std::string> &vars_input, c
     vars.erase("shelfbmassflux");
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void Delta_SMB::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
@@ -130,7 +130,7 @@ void Delta_SMB::write_variables_impl(const std::set<std::string> &vars_input, co
     vars.erase("shelfbmassflux");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace ocean

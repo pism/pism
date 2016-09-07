@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012, 2014, 2015, 2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,16 +25,18 @@
 namespace pism {
 
 //! \brief The PISM basal yield stress model interface (virtual base class)
-class YieldStress : public Component_TS {
+class YieldStress : public Component {
 public:
   YieldStress(IceGrid::ConstPtr g);
   virtual ~YieldStress();
 
   void init();
   const IceModelVec2S& basal_material_yield_stress();
+  void update();
 protected:
   virtual void init_impl() = 0;
-  IceModelVec2S m_tauc;
+  virtual void update_impl() = 0;
+  IceModelVec2S m_basal_yield_stress;
 };
 
 } // end of namespace pism

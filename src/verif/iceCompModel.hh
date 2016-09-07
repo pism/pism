@@ -20,24 +20,9 @@
 #define __iceCompModel_hh
 
 #include "base/iceModel.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 
 namespace pism {
-namespace energy {
-
-class BTU_Verification : public BedThermalUnit
-{
-public:
-  BTU_Verification(IceGrid::ConstPtr g, int test, bool bedrock_is_ice);
-  virtual ~BTU_Verification();
-
-  virtual const IceModelVec3Custom* temperature();
-protected:
-  virtual void bootstrap();
-  int m_testname;
-  bool m_bedrock_is_ice;
-};
-} // end of namespace energy
 
 class IceCompModel : public IceModel {
 
@@ -52,7 +37,12 @@ public:
   virtual void allocate_bedrock_thermal_unit();
   virtual void allocate_bed_deformation();
   virtual void allocate_couplers();
-  virtual void set_vars_from_options(); // called by IceModel::model_state_setup()
+
+  virtual void bootstrap_2d(const PIO &input_file);
+  virtual void bootstrap_3d();
+
+  virtual void initialize_2d();
+  virtual void initialize_3d();
 
   void reportErrors();
 
@@ -127,7 +117,6 @@ private:
   bool bedrock_is_ice_forK;
 
   // see iCMthermo.cc
-  static const double Ggeo;    // J/m^2 s; geothermal heat flux, assumed constant
   static const double ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
   static const double Tmin;    // K;       minimum temperature (at center)
   static const double LforFG;  // m;  exact radius of tests F&G ice sheet

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014 PISM Authors
+// Copyright (C) 2012-2014, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -55,5 +55,5 @@ public:
 protected:
   pism::IceModelVec2S basal_runoff_sum; // Cumulative effective thickness of water removed from till
 };
-}
-}
+} // end of namespace icebin
+} // end of namespace pism

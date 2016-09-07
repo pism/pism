@@ -39,13 +39,18 @@ ELB 5/12/06; 10/14/06; 10/24/06
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int exactA(const double r, double *H, double *M);
+struct TestABCDParameters {
+  int error_code;
+  double H, M;
+};
 
-int exactB(const double t, const double r, double *H, double *M);
+struct TestABCDParameters exactA(const double r);
 
-int exactC(const double t, const double r, double *H, double *M);
+struct TestABCDParameters exactB(const double t, const double r);
 
-int exactD(const double t, const double r, double *H, double *M);
+struct TestABCDParameters exactC(const double t, const double r);
+
+struct TestABCDParameters exactD(const double t, const double r);
 
 #ifdef __cplusplus
 }

@@ -21,8 +21,9 @@
 #include <algorithm>
 
 #include "iceModel.hh"
-#include "base/calving/PISMEigenCalving.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
@@ -217,7 +218,7 @@ by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived cl
  */
 void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
 
-  const bool update_3d = (skipCountDown == 0);
+  const bool update_3d = (m_skip_countdown == 0);
   const double current_time = m_time->current();
   const double time_to_end = m_time->end() - current_time;
 
@@ -266,7 +267,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     // Query sub-models, which might add time-step restrictions.
 
     MaxTimestep surface_dt = m_surface->max_timestep(current_time);
-    if (surface_dt.is_finite())  {
+    if (surface_dt.is_finite()) {
       dt_restrictions["surface"] = surface_dt.value();
     }
 
@@ -275,22 +276,29 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       dt_restrictions["ocean"] = ocean_dt.value();
     }
 
-    MaxTimestep hydrology_dt = subglacial_hydrology->max_timestep(current_time);
+    MaxTimestep hydrology_dt = m_subglacial_hydrology->max_timestep(current_time);
     if (hydrology_dt.is_finite()) {
       dt_restrictions["hydrology"] = hydrology_dt.value();
     }
 
-    if (btu != NULL) {
-      MaxTimestep btu_dt = btu->max_timestep(current_time);
+    if (m_btu != NULL) {
+      MaxTimestep btu_dt = m_btu->max_timestep(current_time);
       if (btu_dt.is_finite()) {
         dt_restrictions["BTU"] = btu_dt.value();
       }
     }
 
-    if (eigen_calving != NULL) {
-      MaxTimestep eigencalving_dt = eigen_calving->max_timestep();
+    if (m_eigen_calving != NULL) {
+      MaxTimestep eigencalving_dt = m_eigen_calving->max_timestep();
       if (eigencalving_dt.is_finite()) {
         dt_restrictions["eigencalving"] = eigencalving_dt.value();
+      }
+    }
+
+    if (m_vonmises_calving != NULL) {
+      MaxTimestep vonmisescalving_dt = m_vonmises_calving->max_timestep();
+      if (vonmisescalving_dt.is_finite()) {
+        dt_restrictions["von Mises calving"] = vonmisescalving_dt.value();
       }
     }
 

@@ -28,82 +28,13 @@
 #include "coupler/PISMOcean.hh"
 #include "earth/PISMBedDef.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/part_grid_threshold_thickness.hh"
 
 namespace pism {
 
 
-//! \file iMpartgrid.cc Methods implementing PIK option -part_grid [\ref Albrechtetal2011].
-
-//! @brief Compute threshold thickness used when deciding if a
-//! partially-filled cell should be considered 'full'.
-double part_grid_threshold_thickness(StarStencil<int> M,
-                                     StarStencil<double> H,
-                                     StarStencil<double> h,
-                                     double bed_elevation,
-                                     double dx,
-                                     bool reduce_frontal_thickness) {
-  // get mean ice thickness and surface elevation over adjacent
-  // icy cells
-  double
-    H_average   = 0.0,
-    h_average   = 0.0,
-    H_threshold = 0.0;
-  int N = 0;
-
-  if (mask::icy(M.e)) {
-    H_average += H.e;
-    h_average += h.e;
-    N++;
-  }
-
-  if (mask::icy(M.w)) {
-    H_average += H.w;
-    h_average += h.w;
-    N++;
-  }
-
-  if (mask::icy(M.n)) {
-    H_average += H.n;
-    h_average += h.n;
-    N++;
-  }
-
-  if (mask::icy(M.s)) {
-    H_average += H.s;
-    h_average += h.s;
-    N++;
-  }
-
-  if (N == 0) {
-    // If there are no "icy" neighbors, return the threshold thickness
-    // of zero, forcing Href to be converted to H immediately.
-    return 0.0;
-  }
-
-  H_average = H_average / N;
-  h_average = h_average / N;
-
-  if (bed_elevation + H_average > h_average) {
-    H_threshold = h_average - bed_elevation;
-  } else {
-    H_threshold = H_average;
-    // reduces the guess at the front
-    if (reduce_frontal_thickness) {
-      // FIXME: Magic numbers without references to the literature are bad.
-      // for declining front C / Q0 according to analytical flowline profile in
-      //   vandeveen with v0 = 300m year-1 and H0 = 600m
-      const double
-        H0         = 600.0,     // 600 m
-        V0         = 300.0 / 3.15569259747e7, // 300 m year-1 (hard-wired for efficiency)
-        mslope     = 2.4511e-18 * dx / (H0 * V0);
-      H_threshold -= 0.8*mslope*pow(H_average, 5);
-    }
-  }
-
-  // make sure that the returned threshold thickness is non-negative:
-  return std::max(H_threshold, 0.0);
-}
-
+//! @file iMpartgrid.cc Methods implementing geometry evolution with PIK option -part_grid [@ref
+//! Albrechtetal2011].
 
 //! Redistribute residual ice mass from subgrid-scale parameterization, when using -part_redist option.
 /*!
@@ -152,7 +83,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
     IceModelVec::AccessList list; // will be destroyed at the end of the block
     list.add(m_cell_type);
     list.add(m_ice_thickness);
-    list.add(vHref);
+    list.add(m_Href);
     list.add(H_residual);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -188,16 +119,16 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
         // adjacent partially-filled cells (is there a more physical
         // way?)
         if (neighbors.e) {
-          vHref(i + 1, j) += H_residual(i, j) / N;
+          m_Href(i + 1, j) += H_residual(i, j) / N;
         }
         if (neighbors.w) {
-          vHref(i - 1, j) += H_residual(i, j) / N;
+          m_Href(i - 1, j) += H_residual(i, j) / N;
         }
         if (neighbors.n) {
-          vHref(i, j + 1) += H_residual(i, j) / N;
+          m_Href(i, j + 1) += H_residual(i, j) / N;
         }
         if (neighbors.s) {
-          vHref(i, j - 1) += H_residual(i, j) / N;
+          m_Href(i, j - 1) += H_residual(i, j) / N;
         }
 
         H_residual(i, j) = 0.0;
@@ -234,7 +165,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (vHref(i,j) <= 0.0) {
+      if (m_Href(i,j) <= 0.0) {
         continue;
       }
 
@@ -247,24 +178,24 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
 
       double coverage_ratio = 1.0;
       if (H_threshold > 0.0) {
-        coverage_ratio = vHref(i, j) / H_threshold;
+        coverage_ratio = m_Href(i, j) / H_threshold;
       }
       if (coverage_ratio >= 1.0) {
         // The current partially filled grid cell is considered to be full
-        H_residual(i, j) = vHref(i, j) - H_threshold;
+        H_residual(i, j) = m_Href(i, j) - H_threshold;
         remaining_residual_thickness += H_residual(i, j);
         m_ice_thickness(i, j) += H_threshold;
-        vHref(i, j) = 0.0;
+        m_Href(i, j) = 0.0;
       }
-      if (m_ice_thickness(i, j)<0) {
+      if (m_ice_thickness(i, j) < 0) {
         m_log->message(1,
                    "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
                    "  H_threshold: %f\n"
                    "  coverage_ratio: %f\n"
-                   "  vHref: %f\n"
+                   "  m_Href: %f\n"
                    "  H_residual: %f\n"
                    "  ice_thickness: %f\n", i, j, H_threshold, coverage_ratio,
-                   vHref(i, j), H_residual(i, j), m_ice_thickness(i, j));
+                   m_Href(i, j), H_residual(i, j), m_ice_thickness(i, j));
       }
 
     }

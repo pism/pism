@@ -24,6 +24,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/IceModelVec2CellType.hh"
+#include "base/rheology/FlowLaw.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -55,6 +56,7 @@ void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> 
   dict["wvelsurf"] = Diagnostic::Ptr(new PSB_wvelsurf(this));
   dict["wvel_rel"] = Diagnostic::Ptr(new PSB_wvel_rel(this));
   dict["strain_rates"] = Diagnostic::Ptr(new PSB_strain_rates(this));
+  dict["vonmises_stress"] = Diagnostic::Ptr(new PSB_vonmises_stress(this));
   dict["deviatoric_stresses"] = Diagnostic::Ptr(new PSB_deviatoric_stresses(this));
 
   dict["pressure"] = Diagnostic::Ptr(new PSB_pressure(this));
@@ -1144,6 +1146,80 @@ IceModelVec::Ptr PSB_tauyz::compute_impl() {
   return result;
 }
 
+PSB_vonmises_stress::PSB_vonmises_stress(StressBalance *m)
+  : Diag<StressBalance>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "vonmises_stress"));
+
+  set_attrs("tensile von Mises stress",
+            "",                 // no standard name
+            "Pascal", "Pascal", 0);
+}
+
+IceModelVec::Ptr PSB_vonmises_stress::compute_impl() {
+
+  using std::max;
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "vonmises_stress", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  IceModelVec2S &vonmises_stress = *result;
+
+  IceModelVec2V::Ptr velbar = IceModelVec2V::ToVector(PSB_velbar(model).compute());
+  IceModelVec2V &velocity = *velbar;
+
+  IceModelVec2::Ptr eigen12 = IceModelVec2::To2D(PSB_strain_rates(model).compute());
+  IceModelVec2 &strain_rates = *eigen12;
+
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+
+  const rheology::FlowLaw* flow_law = model->get_stressbalance()->flow_law();
+
+  const double *z = &m_grid->z()[0];
+  const double ssa_n = flow_law->exponent();
+
+  IceModelVec::AccessList list;
+  list.add(vonmises_stress);
+  list.add(velocity);
+  list.add(strain_rates);
+  list.add(ice_thickness);
+  list.add(*enthalpy);
+  list.add(mask);
+
+  for (Points pt(*m_grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
+
+    // Find partially filled or empty grid boxes on the icefree ocean, which
+    // have floating ice neighbors after the mass continuity step
+    if (mask.icy(i, j)) {
+
+      const double       H = ice_thickness(i, j);
+      const unsigned int k = m_grid->kBelowHeight(H);
+
+      const double
+        *enthalpy_column   = enthalpy->get_column(i, j),
+        hardness           = averaged_hardness(*flow_law, H, k, z, enthalpy_column),
+        eigen1             = strain_rates(i, j, 0),
+        eigen2             = strain_rates(i, j, 1);
+
+      // [\ref Morlighem2016] equation 6
+      const double effective_tensile_strain_rate = sqrt(0.5 * (PetscSqr(max(0.0, eigen1)) +
+                                                               PetscSqr(max(0.0, eigen2))));
+      // [\ref Morlighem2016] equation 7
+      vonmises_stress(i, j) = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
+                                                         1.0 / ssa_n);
+
+    } else { // end of "if (mask.icy(i, j))"
+      vonmises_stress(i, j) = 0.0;
+    }
+  }   // end of loop over grid points
+
+  return result;
+}
 
 } // end of namespace stressbalance
 } // end of namespace pism

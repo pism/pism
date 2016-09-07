@@ -94,5 +94,5 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
     }
   }
 }
-}
-} // namespace
+} // end of namespace icebin
+} // end of namespace pism

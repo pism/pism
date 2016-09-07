@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,9 @@ namespace pism {
 class IceEISModel : public IceModel {
 public:
   IceEISModel(IceGrid::Ptr g, Context::Ptr ctx, char experiment);
-  virtual void set_vars_from_options();
+  virtual void initialize_2d();
+  virtual void initialize_3d();
+
   virtual void allocate_stressbalance();
   virtual void allocate_couplers();
 protected:

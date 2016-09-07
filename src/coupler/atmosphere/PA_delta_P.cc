@@ -31,15 +31,15 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
 {
-  offset = NULL;
+  m_offset = NULL;
 
-  option_prefix = "-atmosphere_delta_P";
-  offset_name = "delta_P";
-  offset = new Timeseries(*m_grid, offset_name, m_config->get_string("time_dimension_name"));
-  offset->metadata().set_string("units", "kg m-2 second-1");
-  offset->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  offset->metadata().set_string("long_name", "precipitation offsets");
-  offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  m_option_prefix = "-atmosphere_delta_P";
+  m_offset_name = "delta_P";
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
+  m_offset->metadata().set_string("units", "kg m-2 second-1");
+  m_offset->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_offset->metadata().set_string("long_name", "precipitation offsets");
+  m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
 
   air_temp.set_string("pism_intent", "diagnostic");
@@ -61,7 +61,7 @@ void Delta_P::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "* Initializing precipitation forcing using scalar offsets...\n");
@@ -79,19 +79,19 @@ void Delta_P::init_timeseries(const std::vector<double> &ts) {
 
   m_offset_values.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    m_offset_values[k] = (*offset)(m_ts_times[k]);
+    m_offset_values[k] = (*m_offset)(m_ts_times[k]);
   }
 }
 
 
 
 void Delta_P::mean_precipitation(IceModelVec2S &result) {
-  input_model->mean_precipitation(result);
+  m_input_model->mean_precipitation(result);
   offset_data(result);
 }
 
 void Delta_P::precip_time_series(int i, int j, std::vector<double> &result) {
-  input_model->precip_time_series(i, j, result);
+  m_input_model->precip_time_series(i, j, result);
   
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] += m_offset_values[k];
@@ -99,7 +99,7 @@ void Delta_P::precip_time_series(int i, int j, std::vector<double> &result) {
 }
 
 void Delta_P::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp");
@@ -123,7 +123,7 @@ void Delta_P::define_variables_impl(const std::set<std::string> &vars_input, con
     vars.erase("precipitation");
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 
@@ -155,7 +155,7 @@ void Delta_P::write_variables_impl(const std::set<std::string> &vars_input, cons
     vars.erase("precipitation");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace atmosphere

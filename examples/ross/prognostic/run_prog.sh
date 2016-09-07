@@ -42,14 +42,15 @@ ${cmd_diag}
 NAME=prog_Mx${M}_yr${YEARS}.nc
 ECALV=1e18   #  constant for eigen_calving parameterization
 CTHICK=50.0  #  constant thickness for thickness_calving
-exdt=25
+exdt=5
+exvars="thk,mask,velsurf_mag,strain_rates,discharge_flux,discharge_flux_cumulative"
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i $STARTNAME \
   -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik \
-  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -cfl_eigen_calving \
+  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -calving_cfl \
   -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $YEARS -o $NAME -o_order zyx -o_size big \
   -thickness_calving_threshold $CTHICK $STRONGKSP \
   -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \
-  -extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,velsurf_mag,strain_rates \
+  -extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars ${exvars} \
   -options_left"
 echo "running command:"
 echo

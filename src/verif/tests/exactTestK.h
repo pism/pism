@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2011 Ed Bueler
+   Copyright (C) 2007-2011, 2016 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -34,16 +34,20 @@ extern "C"
 !    Ed Bueler (2007).  "An exact solution to the temperature 
 !    equation in a column of ice and bedrock", preprint arXiv:0710.1314
 !
-! See also src/exact/simpleK.c.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
+
+struct TestKParameters {
+  int error_code;
+  double T, F;
+};
 
 /* compute the exact solution TT = T(t,z); returns 0 for z >= -1000 m but returns
    1 for z < -1000 m because eigenfunction is not valid there;
    normally use bedrockIsIce_p = 0 (false); also returns heat flux
      FF = - k \partial T / \partial z
    where k = k_ice for z>0 and k=k_bed for z<=0; note the z=0 value is bedrock */
-int exactK(const double t, const double z, double *TT, double *FF, const int bedrockIsIce_p);
+struct TestKParameters exactK(double t, double z, int bedrock_is_ice);
 
 /* find the alpha_k values for the eigenfunction expansion in the exact
    solution; these values are found by rigorous (bracketed) numerical 

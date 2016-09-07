@@ -335,6 +335,8 @@ public:
   typedef PISM_SHARED_PTR(IceModelVec2) Ptr;
   typedef PISM_SHARED_PTR(const IceModelVec2) ConstPtr;
 
+  static Ptr To2D(IceModelVec::Ptr input);
+
   virtual void view(int viewer_size) const;
   virtual void view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const;
   // component-wise access:

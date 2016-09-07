@@ -19,7 +19,7 @@
 
 #include <cassert>
 
-#include "PISMOceanKill.hh"
+#include "OceanKill.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/Mask.hh"

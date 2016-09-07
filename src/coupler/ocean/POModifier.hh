@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -34,20 +34,20 @@ public:
 protected:
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result)
   {
-    input_model->melange_back_pressure_fraction(result);
+    m_input_model->melange_back_pressure_fraction(result);
   }
   virtual void shelf_base_temperature_impl(IceModelVec2S &result)
   {
-    input_model->shelf_base_temperature(result);
+    m_input_model->shelf_base_temperature(result);
   }
 
   virtual void sea_level_elevation_impl(double &result)
   {
-    result = input_model->sea_level_elevation();
+    result = m_input_model->sea_level_elevation();
   }
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result)
   {
-    input_model->shelf_base_mass_flux(result);
+    m_input_model->shelf_base_mass_flux(result);
   }
 };
 

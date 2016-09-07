@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013, 2014 the PISM Authors
+# Copyright (C) 2013, 2014, 2016 the PISM Authors
 
 # This script sets up the bootstrap file.
 # See also preprocess.sh.
@@ -58,9 +58,6 @@ def create_config():
     config.mask_icefree_thickness_standard = 1e-8
     config.mask_icefree_thickness_standard_doc = "m; only if the fluid is less than this is a cell marked as ice free"
 
-    config.mask_is_floating_thickness_standard = 1e-8
-    config.mask_is_floating_thickness_standard_doc = "m; should not matter since all grounded"
-
     config.adaptive_timestepping_ratio = 0.08
     config.adaptive_timestepping_ratio_doc = "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?"
 
@@ -78,7 +75,7 @@ create_config()
 # shear-thinning fluid, which is Xanthan gum 1% solution
 Lx = 260.0e-3    # m;  = 260 mm;  maximum observed radius is 25.2 cm so we go out just a bit
 Ly = Lx          # square table
-flux = 3.0e-3    # kg s-1;  = 3 g s-1; Sayag personal communication
+flux = 3.8173e-3 # kg s-1;  = 3.8173 g s-1; Sayag personal communication
 pipeR = 8.0e-3   # m;  = 8 mm;  input pipe has this radius; Sayag personal communication
 temp = 20.0      # C;  fluid is at 20 deg (though it should not matter)
 

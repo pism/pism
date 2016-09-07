@@ -22,7 +22,7 @@
 
 #include "iceModel.hh"
 
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMDiagnostic.hh"
@@ -136,28 +136,28 @@ void IceModel::update_run_stats() {
 
   double flops = GlobalSum(m_grid->com, my_flops);
 
-  run_stats.set_double("wall_clock_hours", wall_clock_hours);
-  run_stats.set_double("processor_hours", proc_hours);
-  run_stats.set_double("model_years_per_processor_hour", mypph);
-  run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
-  run_stats.set_double("grid_dx_meters", m_grid->dx());
-  run_stats.set_double("grid_dy_meters", m_grid->dy());
-  run_stats.set_double("grid_dz_min_meters", m_grid->dz_min());
-  run_stats.set_double("grid_dz_max_meters", m_grid->dz_max());
-  if (btu != NULL) {
-    run_stats.set_double("grid_dzb_meters", btu->vertical_spacing());
+  m_run_stats.set_double("wall_clock_hours", wall_clock_hours);
+  m_run_stats.set_double("processor_hours", proc_hours);
+  m_run_stats.set_double("model_years_per_processor_hour", mypph);
+  m_run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
+  m_run_stats.set_double("grid_dx_meters", m_grid->dx());
+  m_run_stats.set_double("grid_dy_meters", m_grid->dy());
+  m_run_stats.set_double("grid_dz_min_meters", m_grid->dz_min());
+  m_run_stats.set_double("grid_dz_max_meters", m_grid->dz_max());
+  if (m_btu != NULL) {
+    m_run_stats.set_double("grid_dzb_meters", m_btu->vertical_spacing());
   }
-  run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
+  m_run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
 
-  run_stats.set_double("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);
-  run_stats.set_double("nonneg_rule_flux_cumulative", nonneg_rule_flux_cumulative);
-  run_stats.set_double("sub_shelf_ice_flux_cumulative", sub_shelf_ice_flux_cumulative);
-  run_stats.set_double("surface_ice_flux_cumulative", surface_ice_flux_cumulative);
-  run_stats.set_double("sum_divQ_SIA_cumulative", sum_divQ_SIA_cumulative);
-  run_stats.set_double("sum_divQ_SSA_cumulative", sum_divQ_SSA_cumulative);
-  run_stats.set_double("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
-  run_stats.set_double("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
-  run_stats.set_double("discharge_flux_cumulative", discharge_flux_cumulative);
+  m_run_stats.set_double("grounded_basal_ice_flux_cumulative", m_cumulative_fluxes.grounded_basal);
+  m_run_stats.set_double("nonneg_rule_flux_cumulative",        m_cumulative_fluxes.nonneg_rule);
+  m_run_stats.set_double("sub_shelf_ice_flux_cumulative",      m_cumulative_fluxes.sub_shelf);
+  m_run_stats.set_double("surface_ice_flux_cumulative",        m_cumulative_fluxes.surface);
+  m_run_stats.set_double("sum_divQ_SIA_cumulative",            m_cumulative_fluxes.sum_divQ_SIA);
+  m_run_stats.set_double("sum_divQ_SSA_cumulative",            m_cumulative_fluxes.sum_divQ_SSA);
+  m_run_stats.set_double("Href_to_H_flux_cumulative",          m_cumulative_fluxes.Href_to_H);
+  m_run_stats.set_double("H_to_Href_flux_cumulative",          m_cumulative_fluxes.H_to_Href);
+  m_run_stats.set_double("discharge_flux_cumulative",          m_cumulative_fluxes.discharge);
 }
 
 //! Build the particular history string associated to the end of a PISM run,
@@ -171,10 +171,10 @@ void  IceModel::stampHistoryEnd() {
 
   snprintf(str, TEMPORARY_STRING_LENGTH,
     "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour, PETSc MFlops = %.2f.",
-           run_stats.get_double("wall_clock_hours"),
-           run_stats.get_double("processor_hours"),
-           run_stats.get_double("model_years_per_processor_hour"),
-           run_stats.get_double("PETSc_MFlops"));
+           m_run_stats.get_double("wall_clock_hours"),
+           m_run_stats.get_double("processor_hours"),
+           m_run_stats.get_double("model_years_per_processor_hour"),
+           m_run_stats.get_double("PETSc_MFlops"));
 
   stampHistory(str);
 }

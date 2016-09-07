@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,7 @@ protected:
   void init_internal(const std::string &input_filename, bool regrid,
                                unsigned int start);
   double m_snow_temp_july_day;
-  std::string m_reference, m_precip_filename;
+  std::string m_reference;
   IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;
   SpatialVariableMetadata m_air_temp_snapshot;
   std::vector<double> m_ts_times, m_cosine_cycle;

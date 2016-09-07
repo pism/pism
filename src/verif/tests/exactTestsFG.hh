@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006, 2014 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2014, 2016 Jed Brown and Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -18,44 +18,47 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __exactTestsFG_h
-#define __exactTestsFG_h 1
+#ifndef EXACTTESTSFG_H
+#define EXACTTESTSFG_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include <vector>
 
-#include <math.h>
+namespace pism {
 
 /*
 ELB 9/12/05;  05/12/06;  10/14/06;  5/30/08
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! exactTestsFG is a C implementation of the exact solutions Test F & G for a
+! exactTestsFG is a C++ implementation of the exact solutions Test F & G for a
 ! thermocoupled ice sheet.  References:
 !
 !    Ed Bueler, Jed Brown, and Craig Lingle, "Exact solutions to the
-!       thermomechanically coupled shallow ice approximation: effective 
+!       thermomechanically coupled shallow ice approximation: effective
 !       tools for verification,"  J. Glaciol. 53 (182), 499--516.
 !
-!    Ed Bueler and Jed Brown, "On exact solutions for cold, shallow, and 
+!    Ed Bueler and Jed Brown, "On exact solutions for cold, shallow, and
 !       thermocoupled ice sheets," preprint arXiv:physics/0610106, 2006
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int bothexact(double t, double r, const double *z, int Mz, double Cp,
-              double *H, double *M, double *TT, double *U, double *w,
-              double *Sig, double *Sigc);
+struct TestFGParameters {
+  TestFGParameters(int Mz)
+    : T(Mz), U(Mz), w(Mz), Sig(Mz), Sigc(Mz) {
+    // empty
+  }
 
-  /*
-  * NOTE:  Units returned for Sig and Sigc are K/s (i.e. temperature) not J/s.
-  * This matches the published sources above but requires conversion in
-  * PISM as of revision 311.
-  */
+  double H, M;
+  std::vector<double> T, U, w, Sig, Sigc;
+};
 
-#ifdef __cplusplus
-}
-#endif
+TestFGParameters exactFG(double t, double r, const std::vector<double> &z, double Cp);
 
-#endif
+/*
+ * NOTE:  Units returned for Sig and Sigc are K/s (i.e. temperature) not J/s.
+ * This matches the published sources above but requires conversion in
+ * PISM as of revision 311.
+ */
+
+} // end of namespace pism
+
+#endif /* EXACTTESTSFG_H */
