@@ -41,8 +41,6 @@ add_library (pismboundary OBJECT
   ./surface/PSForceThickness.cc
   ./surface/PSAnomaly.cc
   ./surface/PSFactory.cc
-  ./surface/PSTemperatureIndex_Old.cc
-  ./surface/localMassBalance_old.cc
   ./surface/PSFormulas.cc
   ./surface/PS_EISMINTII.cc
   )
