@@ -53,8 +53,8 @@ Given::Given(IceGrid::ConstPtr g)
   air_temp->metadata().set_double("valid_max", 323.15); // 50 C
 
   precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
-                           "m s-1", "");
-  precipitation->metadata().set_string("glaciological_units", "m year-1");
+                           "kg m-2 s-1", "");
+  precipitation->metadata().set_string("glaciological_units", "kg m-2 year-1");
   precipitation->write_in_glaciological_units = true;
 }
 
