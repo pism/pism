@@ -30,8 +30,8 @@ namespace ocean {
 
 Delta_SL::Delta_SL(IceGrid::ConstPtr g, OceanModel* in)
   : PScalarForcing<OceanModel,OceanModifier>(g, in),
-    shelfbmassflux(m_sys, "shelfbmassflux"),
-    shelfbtemp(m_sys, "shelfbtemp") {
+    m_shelfbmassflux(m_sys, "shelfbmassflux"),
+    m_shelfbtemp(m_sys, "shelfbtemp") {
 
   m_option_prefix = "-ocean_delta_SL";
   m_offset_name   = "delta_SL";
@@ -42,16 +42,16 @@ Delta_SL::Delta_SL(IceGrid::ConstPtr g, OceanModel* in)
   m_offset->metadata().set_string("long_name", "sea level elevation offsets");
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
-  shelfbmassflux.set_string("pism_intent", "climate_state");
-  shelfbmassflux.set_string("long_name",
+  m_shelfbmassflux.set_string("pism_intent", "climate_state");
+  m_shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_string("units", "kg m-2 s-1");
-  shelfbmassflux.set_string("glaciological_units", "kg m-2 year-1");
+  m_shelfbmassflux.set_string("units", "kg m-2 s-1");
+  m_shelfbmassflux.set_string("glaciological_units", "kg m-2 year-1");
 
-  shelfbtemp.set_string("pism_intent", "climate_state");
-  shelfbtemp.set_string("long_name",
+  m_shelfbtemp.set_string("pism_intent", "climate_state");
+  m_shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_string("units", "Kelvin");
+  m_shelfbtemp.set_string("units", "Kelvin");
 }
 
 Delta_SL::~Delta_SL() {
@@ -92,12 +92,12 @@ void Delta_SL::define_variables_impl(const std::set<std::string> &vars_input, co
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "shelfbtemp")) {
-    io::define_spatial_variable(shelfbtemp, *m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);
     vars.erase("shelfbtemp");
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    io::define_spatial_variable(shelfbmassflux, *m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_shelfbmassflux, *m_grid, nc, nctype, order, true);
     vars.erase("shelfbmassflux");
   }
 
@@ -113,7 +113,7 @@ void Delta_SL::write_variables_impl(const std::set<std::string> &vars_input, con
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbtemp;
+    tmp.metadata() = m_shelfbtemp;
     shelf_base_temperature(tmp);
     tmp.write(nc);
     vars.erase("shelfbtemp");
@@ -124,7 +124,7 @@ void Delta_SL::write_variables_impl(const std::set<std::string> &vars_input, con
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbmassflux;
+    tmp.metadata() = m_shelfbmassflux;
     tmp.write_in_glaciological_units = true;
     shelf_base_mass_flux(tmp);
     tmp.write(nc);

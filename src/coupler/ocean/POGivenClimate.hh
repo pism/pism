@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ protected:
   virtual void shelf_base_temperature_impl(IceModelVec2S &result);
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
 protected:
-  IceModelVec2T *shelfbtemp, *shelfbmassflux;
+  IceModelVec2T *m_shelfbtemp, *m_shelfbmassflux;
 };
 
 } // end of namespace ocean

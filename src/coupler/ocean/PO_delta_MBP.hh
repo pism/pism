@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -45,7 +45,7 @@ protected:
   virtual void init_impl();
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
 protected:
-  SpatialVariableMetadata shelfbmassflux, shelfbtemp;
+  SpatialVariableMetadata m_shelfbmassflux, m_shelfbtemp;
 };
 
 } // end of namespace ocean
