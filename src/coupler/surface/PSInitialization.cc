@@ -153,10 +153,6 @@ void InitializationHelper::add_vars_to_output_impl(const std::string &keyword,
   m_input_model->add_vars_to_output(keyword, result);
 }
 
-static bool in(const std::set<std::string> &S, const IceModelVec *vec) {
-  return set_contains(S, vec->get_name());
-}
-
 void InitializationHelper::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                            IO_Type nctype) {
   // make a copy of the set of variables so that we can modify it
@@ -164,7 +160,7 @@ void InitializationHelper::define_variables_impl(const std::set<std::string> &va
 
   for (unsigned int k = 0; k < m_variables.size(); ++k) {
     const IceModelVec *variable = m_variables[k];
-    if (in(list, variable)) {
+    if (set_contains(list, *variable)) {
       variable->define(nc, nctype);
       list.erase(variable->get_name());
     }
@@ -179,7 +175,7 @@ void InitializationHelper::write_variables_impl(const std::set<std::string> &var
 
   for (unsigned int k = 0; k < m_variables.size(); ++k) {
     const IceModelVec *variable = m_variables[k];
-    if (in(list, variable)) {
+    if (set_contains(list, *variable)) {
       variable->write(nc);
       list.erase(variable->get_name());
     }
