@@ -29,11 +29,11 @@ Given::Given(IceGrid::ConstPtr g)
 {
   m_option_prefix = "-surface_given";
 
-  ice_surface_temp      = new IceModelVec2T;
-  climatic_mass_balance = new IceModelVec2T;
+  m_ice_surface_temp      = new IceModelVec2T;
+  m_climatic_mass_balance = new IceModelVec2T;
 
-  m_fields["ice_surface_temp"]      = ice_surface_temp;
-  m_fields["climatic_mass_balance"] = climatic_mass_balance;
+  m_fields["ice_surface_temp"]      = m_ice_surface_temp;
+  m_fields["climatic_mass_balance"] = m_climatic_mass_balance;
 
   process_options();
 
@@ -41,27 +41,27 @@ Given::Given(IceGrid::ConstPtr g)
   standard_names["climatic_mass_balance"] = "land_ice_surface_specific_mass_balance_flux";
   set_vec_parameters(standard_names);
 
-  ice_surface_temp->create(m_grid, "ice_surface_temp");
-  climatic_mass_balance->create(m_grid, "climatic_mass_balance");
+  m_ice_surface_temp->create(m_grid, "ice_surface_temp");
+  m_climatic_mass_balance->create(m_grid, "climatic_mass_balance");
 
-  ice_surface_temp->set_attrs("climate_forcing",
+  m_ice_surface_temp->set_attrs("climate_forcing",
                               "temperature of the ice at the ice surface but below firn processes",
                               "Kelvin", "");
-  ice_surface_temp->metadata().set_double("valid_min", 0.0);
-  ice_surface_temp->metadata().set_double("valid_max", 323.15); // 50 C
+  m_ice_surface_temp->metadata().set_double("valid_min", 0.0);
+  m_ice_surface_temp->metadata().set_double("valid_max", 323.15); // 50 C
 
   const double ice_density = m_config->get_double("ice_density");
   const double smb_max = units::convert(m_sys, 100.0 * ice_density,
                                         "kg m-2 year-1", "kg m-2 second-1");
 
-  climatic_mass_balance->set_attrs("climate_forcing",
+  m_climatic_mass_balance->set_attrs("climate_forcing",
                                    "surface mass balance (accumulation/ablation) rate",
                                    "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
-  climatic_mass_balance->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  climatic_mass_balance->metadata().set_double("valid_min", -smb_max);
-  climatic_mass_balance->metadata().set_double("valid_max", smb_max);
+  m_climatic_mass_balance->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_climatic_mass_balance->metadata().set_double("valid_min", -smb_max);
+  m_climatic_mass_balance->metadata().set_double("valid_max", smb_max);
 
-  climatic_mass_balance->write_in_glaciological_units = true;
+  m_climatic_mass_balance->write_in_glaciological_units = true;
 }
 
 Given::~Given() {
@@ -81,11 +81,11 @@ void Given::init_impl() {
              "* Initializing the surface model reading temperature at the top of the ice\n"
              "  and ice surface mass flux from a file...\n");
 
-  ice_surface_temp->init(m_filename, m_bc_period, m_bc_reference_time);
-  climatic_mass_balance->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_ice_surface_temp->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_climatic_mass_balance->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
-  if (ice_surface_temp->get_n_records() == 1 && climatic_mass_balance->get_n_records() == 1) {
+  if (m_ice_surface_temp->get_n_records() == 1 && m_climatic_mass_balance->get_n_records() == 1) {
     update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
@@ -93,16 +93,16 @@ void Given::init_impl() {
 void Given::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
-  climatic_mass_balance->average(m_t, m_dt);
-  ice_surface_temp->average(m_t, m_dt);
+  m_climatic_mass_balance->average(m_t, m_dt);
+  m_ice_surface_temp->average(m_t, m_dt);
 }
 
 void Given::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  result.copy_from(*climatic_mass_balance);
+  result.copy_from(*m_climatic_mass_balance);
 }
 
 void Given::ice_surface_temperature_impl(IceModelVec2S &result) {
-  result.copy_from(*ice_surface_temp);
+  result.copy_from(*m_ice_surface_temp);
 }
 
 } // end of namespace surface
