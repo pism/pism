@@ -63,16 +63,15 @@ void SeaRISEGreenland::init() {
   std::string option_prefix = "-atmosphere_searise_greenland";
   options::String precip_file(option_prefix + "_file",
                               "Specifies a file with boundary conditions");
-  m_precip_filename = precip_file;
 
   if (precip_file.is_set()) {
     m_log->message(2,
-               "  * Option '-atmosphere_searise_greenland %s' is set...\n",
-               m_precip_filename.c_str());
+                   "  * Option '-atmosphere_searise_greenland %s' is set...\n",
+                   precip_file->c_str());
 
-    YearlyCycle::init_internal(m_precip_filename,
-                                 true, /* do regrid */
-                                 0 /* start (irrelevant) */);
+    YearlyCycle::init_internal(precip_file,
+                               true, /* do regrid */
+                               0 /* start (irrelevant) */);
   } else {
     YearlyCycle::init();
   }

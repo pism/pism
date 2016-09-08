@@ -61,7 +61,7 @@ GivenTH::Constants::Constants(const Config &config) {
 GivenTH::GivenTH(IceGrid::ConstPtr g)
   : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
 
-  option_prefix   = "-ocean_th";
+  m_option_prefix   = "-ocean_th";
 
   // will be de-allocated by the parent's destructor
   m_theta_ocean    = new IceModelVec2T;
@@ -109,8 +109,8 @@ void GivenTH::init_impl() {
              "* Initializing the 3eqn melting parameterization ocean model\n"
              "  reading ocean temperature and salinity from a file...\n");
 
-  m_theta_ocean->init(filename, bc_period, bc_reference_time);
-  m_salinity_ocean->init(filename, bc_period, bc_reference_time);
+  m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {

@@ -55,7 +55,7 @@ void LapseRates::init() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "  [using air temperature and precipitation lapse corrections]\n");
@@ -78,17 +78,17 @@ void LapseRates::init() {
 }
 
 void LapseRates::mean_precipitation(IceModelVec2S &result) {
-  input_model->mean_precipitation(result);
+  m_input_model->mean_precipitation(result);
   lapse_rate_correction(result, m_precip_lapse_rate);
 }
 
 void LapseRates::mean_annual_temp(IceModelVec2S &result) {
-  input_model->mean_annual_temp(result);
+  m_input_model->mean_annual_temp(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
 void LapseRates::begin_pointwise_access() {
-  input_model->begin_pointwise_access();
+  m_input_model->begin_pointwise_access();
   m_reference_surface.begin_access();
 
   assert(m_surface != NULL);
@@ -96,7 +96,7 @@ void LapseRates::begin_pointwise_access() {
 }
 
 void LapseRates::end_pointwise_access() {
-  input_model->end_pointwise_access();
+  m_input_model->end_pointwise_access();
   m_reference_surface.end_access();
 
   assert(m_surface != NULL);
@@ -104,7 +104,7 @@ void LapseRates::end_pointwise_access() {
 }
 
 void LapseRates::init_timeseries(const std::vector<double> &ts) {
-  input_model->init_timeseries(ts);
+  m_input_model->init_timeseries(ts);
 
   m_ts_times = ts;
 
@@ -116,7 +116,7 @@ void LapseRates::init_timeseries(const std::vector<double> &ts) {
 void LapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
   std::vector<double> usurf(m_ts_times.size());
 
-  input_model->temp_time_series(i, j, result);
+  m_input_model->temp_time_series(i, j, result);
 
   m_reference_surface.interp(i, j, usurf);
 
@@ -130,7 +130,7 @@ void LapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
 void LapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
   std::vector<double> usurf(m_ts_times.size());
 
-  input_model->precip_time_series(i, j, result);
+  m_input_model->precip_time_series(i, j, result);
 
   m_reference_surface.interp(i, j, usurf);
 
@@ -142,7 +142,7 @@ void LapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
 }
 
 void LapseRates::temp_snapshot(IceModelVec2S &result) {
-  input_model->temp_snapshot(result);
+  m_input_model->temp_snapshot(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
@@ -158,7 +158,7 @@ void LapseRates::define_variables_impl(const std::set<std::string> &vars,
     io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void LapseRates::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
@@ -188,12 +188,12 @@ void LapseRates::write_variables_impl(const std::set<std::string> &vars_input, c
     vars.erase("precipitation");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 void LapseRates::add_vars_to_output_impl(const std::string &keyword,
                                            std::set<std::string> &result) {
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert("air_temp");

@@ -56,9 +56,9 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
   m_precipitation.set_attrs("climate_state",
                             "mean annual ice-equivalent precipitation rate",
-                            "m s-1",
+                            "kg m-2 s-1",
                             ""); // no CF standard_name ??
-  m_precipitation.metadata().set_string("glaciological_units", "m year-1");
+  m_precipitation.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_precipitation.write_in_glaciological_units = true;
   m_precipitation.set_time_independent(true);
 
@@ -76,16 +76,13 @@ YearlyCycle::~YearlyCycle() {
 void YearlyCycle::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  bool do_regrid = false;
-  int start = -1;
-  find_pism_input(m_precip_filename, do_regrid, start);
-
-  init_internal(m_precip_filename, do_regrid, start);
+  InputOptions opts = process_input_options(m_grid->com);
+  init_internal(opts.filename, opts.type == INIT_BOOTSTRAP, opts.record);
 }
 
 //! Read precipitation data from a given file.
 void YearlyCycle::init_internal(const std::string &input_filename, bool do_regrid,
-                                            unsigned int start) {
+                                unsigned int start) {
   // read precipitation rate from file
   m_log->message(2,
              "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"

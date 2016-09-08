@@ -201,15 +201,9 @@ add_custom_target (test-python
 )
 
 # Install helper scripts residing in util/
-install (PROGRAMS
-  util/check_stationarity.py
-  util/fill_missing.py
-  util/flowline.py
-  util/nc2cdo.py
-  util/nc2mat.py
-  util/nccmp.py
-  util/pism_config_editor.py
-  DESTINATION ${Pism_BIN_DIR})
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/util/ DESTINATION ${Pism_BIN_DIR}
+  USE_SOURCE_PERMISSIONS
+  FILES_MATCHING PATTERN "*.py")
 
 add_subdirectory (src)
 add_subdirectory (site-packages)

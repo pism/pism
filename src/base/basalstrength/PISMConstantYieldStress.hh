@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ public:
 protected:
   virtual void init_impl();
   virtual MaxTimestep max_timestep_impl(double t);
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void update_impl();
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,

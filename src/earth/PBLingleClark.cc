@@ -100,12 +100,8 @@ MaxTimestep PBLingleClark::max_timestep_impl(double t) {
 }
 
 void PBLingleClark::correct_topg() {
-  bool use_special_regrid_semantics, topg_exists, topg_initial_exists;
-
-  PIO nc(m_grid->com, "guess_mode");
-
-  use_special_regrid_semantics = options::Bool("-regrid_bed_special",
-                                               "Correct topg when switching to a different grid");
+  bool use_special_regrid_semantics = options::Bool("-regrid_bed_special",
+                                                    "Correct topg when switching to a different grid");
 
   // Stop if topg correction was not requiested.
   if (not use_special_regrid_semantics) {
@@ -115,18 +111,17 @@ void PBLingleClark::correct_topg() {
   options::String regrid_file("-regrid_file",
                               "Specifies the name of a file to regrid from");
 
-  options::String input_file("-i", "Specifies the name of the input file.");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  InputOptions opts = process_input_options(m_grid->com);
 
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
-  if (not (regrid_file.is_set() and bootstrap)) {
+  if (not (regrid_file.is_set() and opts.type == INIT_BOOTSTRAP)) {
     return;
   }
 
+  PIO nc(m_grid->com, "guess_mode");
   nc.open(regrid_file, PISM_READONLY);
-
-  topg_initial_exists = nc.inq_var("topg_initial");
-  topg_exists = nc.inq_var("topg");
+  bool topg_initial_exists = nc.inq_var("topg_initial");
+  bool topg_exists = nc.inq_var("topg");
   nc.close();
 
   // Stop if the regridding file does not have both topg and topg_initial.
@@ -148,7 +143,7 @@ void PBLingleClark::correct_topg() {
   m_log->message(2,
              "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
              "  of the bed deformation from '%s'...\n",
-             input_file->c_str(), regrid_file->c_str());
+             opts.filename.c_str(), regrid_file->c_str());
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");

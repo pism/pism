@@ -134,20 +134,20 @@ void Hydrology::init() {
     m_inputtobed->init(itb_file, m_inputtobed_period, m_inputtobed_reference_time);
   }
 
-  bool bootstrap = false;
-  int start = 0;
-  std::string filename;
-  bool use_input_file = find_pism_input(filename, bootstrap, start);
+  InputOptions opts = process_input_options(m_grid->com);
 
-  if (use_input_file) {
-    if (bootstrap) {
-      m_Wtil.regrid(filename, OPTIONAL,
-                    m_config->get_double("bootstrapping.defaults.tillwat"));
-    } else {
-      m_Wtil.read(filename, start);
-    }
-  } else {
-    m_Wtil.set(m_config->get_double("bootstrapping.defaults.tillwat"));
+  double tillwat_default = m_config->get_double("bootstrapping.defaults.tillwat");
+
+  switch (opts.type) {
+  case INIT_RESTART:
+    m_Wtil.read(opts.filename, opts.record);
+    break;
+  case INIT_BOOTSTRAP:
+    m_Wtil.regrid(opts.filename, OPTIONAL, tillwat_default);
+    break;
+  case INIT_OTHER:
+  default:
+    m_Wtil.set(tillwat_default);
   }
 
   // whether or not we could initialize from file, we could be asked to regrid from file

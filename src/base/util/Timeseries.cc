@@ -37,7 +37,7 @@ Timeseries::Timeseries(const IceGrid &g, const std::string &name, const std::str
     m_variable(name, dimension_name, g.ctx()->unit_system()),
     m_bounds(dimension_name + "_bounds", dimension_name, g.ctx()->unit_system())
 {
-  private_constructor(g.com, name, dimension_name);
+  private_constructor(g.com, dimension_name);
 }
 
 Timeseries::Timeseries(MPI_Comm c, units::System::Ptr unit_system,
@@ -46,14 +46,13 @@ Timeseries::Timeseries(MPI_Comm c, units::System::Ptr unit_system,
     m_variable(name, dimension_name, unit_system),
     m_bounds(dimension_name + "_bounds", dimension_name, unit_system)
 {
-  private_constructor(c, name, dimension_name);
+  private_constructor(c, dimension_name);
 }
 
-void Timeseries::private_constructor(MPI_Comm c, const std::string &name, const std::string &dimension_name) {
+void Timeseries::private_constructor(MPI_Comm c, const std::string &dimension_name) {
   m_com = c;
   m_dimension.set_string("bounds", dimension_name + "_bounds");
 
-  short_name = name;
   m_use_bounds = true;
 }
 
@@ -72,12 +71,12 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
   std::string time_name, standard_name = m_variable.get_string("standard_name"),
     name_found;
 
-  nc.inq_var(short_name, standard_name,
+  nc.inq_var(name(), standard_name,
              exists, name_found, found_by_standard_name);
 
   if (!exists) {
     throw RuntimeError::formatted("Can't find '%s' ('%s') in '%s'.\n",
-                                  short_name.c_str(), standard_name.c_str(),
+                                  name().c_str(), standard_name.c_str(),
                                   nc.inq_filename().c_str());
   }
 
@@ -86,7 +85,7 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
   if (dims.size() != 1) {
     throw RuntimeError::formatted("Variable '%s' in '%s' depends on %d dimensions,\n"
                                   "but a time-series variable can only depend on 1 dimension.",
-                                  short_name.c_str(),
+                                  name().c_str(),
                                   nc.inq_filename().c_str(),
                                   (int)dims.size());
   }
@@ -214,7 +213,7 @@ double Timeseries::operator()(double t) {
     if (i % 2 == 0) {
       throw RuntimeError::formatted("time bounds array in %s does not represent continguous time intervals.\n"
                                     "(PISM was trying to compute %s at time %3.3f seconds.)",
-                                    m_bounds.get_name().c_str(), short_name.c_str(), t);
+                                    m_bounds.get_name().c_str(), name().c_str(), t);
     }
 
     return m_values[(i-1)/2];
@@ -285,6 +284,10 @@ void Timeseries::append(double v, double a, double b) {
 
 TimeseriesMetadata& Timeseries::metadata() {
   return m_variable;
+}
+
+std::string Timeseries::name() const {
+  return m_variable.get_name();
 }
 
 TimeseriesMetadata& Timeseries::dimension_metadata() {
@@ -399,10 +402,10 @@ void DiagnosticTimeseries::init(const std::string &filename) {
     if (len > 0) {
       // read the last value and initialize v_previous and v[0]
       std::vector<double> tmp;
-      bool var_exists = nc.inq_var(short_name);
+      bool var_exists = nc.inq_var(name());
 
       if (var_exists) {
-        nc.get_1d_var(short_name, len - 1, 1, tmp);
+        nc.get_1d_var(name(), len - 1, 1, tmp);
         // NOTE: this is WRONG if rate_of_change == true!
         m_v.push_back(tmp[0]);
         m_v_previous = tmp[0];

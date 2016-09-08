@@ -49,7 +49,7 @@ protected:
     // "Periodize" the climate:
     t = Mod::m_grid->ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
 
-    MaxTimestep input_max_dt = Mod::input_model->max_timestep(t);
+    MaxTimestep input_max_dt = Mod::m_input_model->max_timestep(t);
     MaxTimestep surface_max_dt = m_reference_surface.max_timestep(t);
 
     if (input_max_dt.is_finite()) {
@@ -76,7 +76,7 @@ protected:
     dt = my_dt;
 
     // NB! Input model uses original t and dt
-    Mod::input_model->update(my_t, my_dt);
+    Mod::m_input_model->update(my_t, my_dt);
 
     m_reference_surface.update(t, dt);
 

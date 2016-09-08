@@ -43,14 +43,14 @@ WeatherStation::WeatherStation(IceGrid::ConstPtr g)
     m_air_temp_metadata(m_sys, "air_temp")
 {
   m_precipitation.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-  m_precipitation.metadata().set_string("units", "m second-1");
+  m_precipitation.metadata().set_string("units", "kg m-2 second-1");
   m_precipitation.metadata().set_string("long_name",
-                                            "ice-equivalent precipitation rate");
+                                        "ice-equivalent precipitation rate");
 
   m_air_temperature.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
   m_air_temperature.metadata().set_string("units", "Kelvin");
   m_air_temperature.metadata().set_string("long_name",
-                                              "near-surface air temperature");
+                                          "near-surface air temperature");
 
   m_air_temp_metadata.set_string("pism_intent", "diagnostic");
   m_air_temp_metadata.set_string("long_name", "near-surface air temperature");
@@ -58,8 +58,8 @@ WeatherStation::WeatherStation(IceGrid::ConstPtr g)
 
   m_precip_metadata.set_string("pism_intent", "diagnostic");
   m_precip_metadata.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  m_precip_metadata.set_string("units", "m second-1");
-  m_precip_metadata.set_string("glaciological_units", "m year-1");
+  m_precip_metadata.set_string("units", "kg m-2 second-1");
+  m_precip_metadata.set_string("glaciological_units", "kg m-2 year-1");
 }
 
 WeatherStation::~WeatherStation() {

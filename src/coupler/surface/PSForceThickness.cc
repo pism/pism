@@ -84,7 +84,7 @@ void ForceThickness::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "* Initializing force-to-thickness mass-balance modifier...\n");
@@ -96,7 +96,6 @@ void ForceThickness::init_impl() {
   if (not input_file.is_set()) {
     throw RuntimeError("surface model forcing requires the -force_to_thickness_file option.");
   }
-  m_input_file = input_file;
 
   options::Real ftt_alpha("-force_to_thickness_alpha",
                           "Specifies the value of force-to-thickness alpha in per-year units",
@@ -125,18 +124,18 @@ void ForceThickness::init_impl() {
              m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "year-1"),
              m_ice_free_thickness_threshold);
 
-  // m_input_file now contains name of -force_to_thickness file; now check
+  // input_file now contains name of -force_to_thickness file; now check
   // it is really there; and regrid the target thickness
   PIO nc(m_grid->com, "guess_mode");
   bool mask_exists = false;
-  nc.open(m_input_file, PISM_READONLY);
+  nc.open(input_file, PISM_READONLY);
   mask_exists = nc.inq_var("ftt_mask");
   nc.close();
 
   m_log->message(2,
              "    reading target thickness 'thk' from %s ...\n"
              "    (this field will appear in output file as 'ftt_target_thk')\n",
-             m_input_file.c_str());
+             input_file->c_str());
   {
     m_target_thickness.metadata(0).set_name("thk"); // name to read by
     // set attributes for the read stage; see below for reset
@@ -145,7 +144,7 @@ void ForceThickness::init_impl() {
                                  "m",
                                  "land_ice_thickness"); // standard_name *to read by*
 
-    m_target_thickness.regrid(m_input_file, CRITICAL);
+    m_target_thickness.regrid(input_file, CRITICAL);
 
     // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
     m_target_thickness.metadata(0).set_name("ftt_target_thk");
@@ -160,11 +159,11 @@ void ForceThickness::init_impl() {
   if (mask_exists) {
     m_log->message(2,
                "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
-               m_input_file.c_str());
-    m_ftt_mask.regrid(m_input_file, CRITICAL);
+               input_file->c_str());
+    m_ftt_mask.regrid(input_file, CRITICAL);
   } else {
     throw RuntimeError::formatted("variable 'ftt_mask' was not found in '%s'",
-                                  m_input_file.c_str());
+                                  input_file->c_str());
   }
 }
 
@@ -279,7 +278,7 @@ a factor of five smaller than the default, and one with a forcing at a higher al
 void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
   // get the surface mass balance result from the next level up
-  input_model->ice_surface_mass_flux(result);
+  m_input_model->ice_surface_mass_flux(result);
 
   if (m_t < m_start_time) {
     return;
@@ -316,7 +315,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
 //! Does not modify ice surface temperature.
 void ForceThickness::ice_surface_temperature_impl(IceModelVec2S &result) {
-  return input_model->ice_surface_temperature(result);
+  return m_input_model->ice_surface_temperature(result);
 }
 
 /*!
@@ -332,15 +331,15 @@ Therefore we set here
  */
 MaxTimestep ForceThickness::max_timestep_impl(double my_t) {
   double max_dt = units::convert(m_sys, 2.0 / m_alpha, "years", "seconds");
-  MaxTimestep input_max_dt = input_model->max_timestep(my_t);
+  MaxTimestep input_max_dt = m_input_model->max_timestep(my_t);
 
   return std::min(input_max_dt, MaxTimestep(max_dt));
 }
 
 //! Adds variables to output files.
 void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (input_model != NULL) {
-    input_model->add_vars_to_output(keyword, result);
+  if (m_input_model != NULL) {
+    m_input_model->add_vars_to_output(keyword, result);
   }
 
   if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
@@ -376,7 +375,7 @@ void ForceThickness::define_variables_impl(const std::set<std::string> &vars, co
     io::define_spatial_variable(m_climatic_mass_balance_original, *m_grid, nc, nctype, order, true);
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void ForceThickness::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
@@ -407,7 +406,7 @@ void ForceThickness::write_variables_impl(const std::set<std::string> &vars_inpu
     tmp.create(m_grid, "climatic_mass_balance_original", WITHOUT_GHOSTS);
     tmp.metadata() = m_climatic_mass_balance_original;
 
-    input_model->ice_surface_mass_flux(tmp);
+    m_input_model->ice_surface_mass_flux(tmp);
     tmp.write_in_glaciological_units = true;
     tmp.write(nc);
 
@@ -426,7 +425,7 @@ void ForceThickness::write_variables_impl(const std::set<std::string> &vars_inpu
     vars.erase("climatic_mass_balance");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace surface

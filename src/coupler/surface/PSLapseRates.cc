@@ -54,7 +54,7 @@ void LapseRates::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "  [using temperature and mass balance lapse corrections]\n");
@@ -80,12 +80,12 @@ void LapseRates::init_impl() {
 }
 
 void LapseRates::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  input_model->ice_surface_mass_flux(result);
+  m_input_model->ice_surface_mass_flux(result);
   lapse_rate_correction(result, m_smb_lapse_rate);
 }
 
 void LapseRates::ice_surface_temperature_impl(IceModelVec2S &result) {
-  input_model->ice_surface_temperature(result);
+  m_input_model->ice_surface_temperature(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
@@ -96,7 +96,7 @@ void LapseRates::add_vars_to_output_impl(const std::string &keyword,
     result.insert("climatic_mass_balance");
   }
 
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 }
 
 void LapseRates::define_variables_impl(const std::set<std::string> &vars,
@@ -111,7 +111,7 @@ void LapseRates::define_variables_impl(const std::set<std::string> &vars,
     io::define_spatial_variable(m_climatic_mass_balance, *m_grid, nc, nctype, order, true);
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void LapseRates::write_variables_impl(const std::set<std::string> &vars_input,
@@ -142,7 +142,7 @@ void LapseRates::write_variables_impl(const std::set<std::string> &vars_input,
     vars.erase("climatic_mass_balance");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace surface

@@ -31,7 +31,9 @@
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
 #include "coupler/ocean/POConstant.hh"
+#include "coupler/ocean/POInitialization.hh"
 #include "coupler/surface/PS_EISMINTII.hh"
+#include "coupler/surface/PSInitialization.hh"
 #include "earth/PISMBedDef.hh"
 
 namespace pism {
@@ -93,11 +95,11 @@ void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
   if (m_surface == NULL) {
-    m_surface = new surface::EISMINTII(m_grid, m_experiment);
+    m_surface = new surface::InitializationHelper(m_grid, new surface::EISMINTII(m_grid, m_experiment));
   }
 
   if (m_ocean == NULL) {
-    m_ocean = new ocean::Constant(m_grid);
+    m_ocean = new ocean::InitializationHelper(m_grid, new ocean::Constant(m_grid));
   }
 }
 
@@ -143,8 +145,7 @@ void IceEISModel::generateMoundTopography(IceModelVec2S &result) {
 }
 
 
-//! Only executed if NOT initialized from file (-i).
-void IceEISModel::set_vars_from_options() {
+void IceEISModel::initialize_2d() {
 
   // initialize from EISMINT II formulas
   m_log->message(2,
@@ -174,19 +175,13 @@ void IceEISModel::set_vars_from_options() {
   }
 
   m_basal_melt_rate.set(0.0);
-  m_geothermal_flux.set(0.042); // EISMINT II value; J m-2 s-1
   m_ice_thickness.set(0.0); // start with zero ice
+}
 
-  // regrid 2D variables
-  regrid(2);
-
+void IceEISModel::initialize_3d() {
   // this IceModel bootstrap method should do right thing because of
   // variable settings above and init of coupler above
   putTempAtDepth();
-
-  // regrid 3D variables
-  regrid(3);
 }
-
 
 } // end of namespace pism

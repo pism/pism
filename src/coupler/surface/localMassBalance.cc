@@ -153,6 +153,8 @@ void PDDMassBalance::get_snow_accumulation(double *P, double *T,
  * This is a PDD scheme. The input parameter `ddf.snow` is a rate of
  * melting per positive degree day for snow.
  *
+ * `accumulation` has units "meter / second".
+ *
  * - a fraction of the melted snow and ice refreezes, conceptualized
  *   as superimposed ice, and this is controlled by parameter \c
  *   ddf.refreezeFrac

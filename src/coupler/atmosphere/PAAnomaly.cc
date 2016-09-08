@@ -32,7 +32,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
     air_temp(m_sys, "air_temp"),
     precipitation(m_sys, "precipitation")
 {
-  option_prefix  = "-atmosphere_anomaly";
+  m_option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor
   air_temp_anomaly      = new IceModelVec2T;
@@ -54,8 +54,8 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
   precipitation_anomaly->create(m_grid, "precipitation_anomaly");
   precipitation_anomaly->set_attrs("climate_forcing",
                                    "anomaly of the ice-equivalent precipitation rate",
-                                   "m s-1", "");
-  precipitation_anomaly->metadata().set_string("glaciological_units", "m year-1");
+                                   "kg m-2 second-1", "");
+  precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
   precipitation_anomaly->write_in_glaciological_units = true;
 
   air_temp.set_string("pism_intent", "diagnostic");
@@ -64,8 +64,8 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
 
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  precipitation.set_string("units", "m second-1");
-  precipitation.set_string("glaciological_units", "m year-1");
+  precipitation.set_string("units", "kg m-2 second-1");
+  precipitation.set_string("glaciological_units", "kg m-2 year-1");
 }
 
 Anomaly::~Anomaly()
@@ -76,18 +76,17 @@ Anomaly::~Anomaly()
 void Anomaly::init() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  assert(input_model != NULL);
-  input_model->init();
+  m_input_model->init();
 
   m_log->message(2,
              "* Initializing the -atmosphere ...,anomaly code...\n");
 
   m_log->message(2,
              "    reading anomalies from %s ...\n",
-             filename.c_str());
+             m_filename.c_str());
 
-  air_temp_anomaly->init(filename, bc_period, bc_reference_time);
-  precipitation_anomaly->init(filename, bc_period, bc_reference_time);
+  air_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+  precipitation_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
 }
 
 void Anomaly::update_impl(double my_t, double my_dt) {
@@ -99,38 +98,38 @@ void Anomaly::update_impl(double my_t, double my_dt) {
 
 
 void Anomaly::mean_precipitation(IceModelVec2S &result) {
-  input_model->mean_precipitation(result);
+  m_input_model->mean_precipitation(result);
 
   result.add(1.0, *precipitation_anomaly);
 }
 
 void Anomaly::mean_annual_temp(IceModelVec2S &result) {
-  input_model->mean_annual_temp(result);
+  m_input_model->mean_annual_temp(result);
 
   result.add(1.0, *air_temp_anomaly);
 }
 
 void Anomaly::temp_snapshot(IceModelVec2S &result) {
-  input_model->temp_snapshot(result);
+  m_input_model->temp_snapshot(result);
 
   result.add(1.0, *air_temp_anomaly);
 }
 
 
 void Anomaly::begin_pointwise_access() {
-  input_model->begin_pointwise_access();
+  m_input_model->begin_pointwise_access();
   air_temp_anomaly->begin_access();
   precipitation_anomaly->begin_access();
 }
 
 void Anomaly::end_pointwise_access() {
-  input_model->end_pointwise_access();
+  m_input_model->end_pointwise_access();
   precipitation_anomaly->end_access();
   air_temp_anomaly->end_access();
 }
 
 void Anomaly::init_timeseries(const std::vector<double> &ts) {
-  input_model->init_timeseries(ts);
+  m_input_model->init_timeseries(ts);
 
   air_temp_anomaly->init_interpolation(ts);
 
@@ -140,7 +139,7 @@ void Anomaly::init_timeseries(const std::vector<double> &ts) {
 }
 
 void Anomaly::temp_time_series(int i, int j, std::vector<double> &result) {
-  input_model->temp_time_series(i, j, result);
+  m_input_model->temp_time_series(i, j, result);
 
   m_temp_anomaly.reserve(m_ts_times.size());
   air_temp_anomaly->interp(i, j, m_temp_anomaly);
@@ -151,7 +150,7 @@ void Anomaly::temp_time_series(int i, int j, std::vector<double> &result) {
 }
 
 void Anomaly::precip_time_series(int i, int j, std::vector<double> &result) {
-  input_model->precip_time_series(i, j, result);
+  m_input_model->precip_time_series(i, j, result);
 
   m_mass_flux_anomaly.reserve(m_ts_times.size());
   precipitation_anomaly->interp(i, j, m_mass_flux_anomaly);
@@ -162,7 +161,7 @@ void Anomaly::precip_time_series(int i, int j, std::vector<double> &result) {
 }
 
 void Anomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert("air_temp");
@@ -185,7 +184,7 @@ void Anomaly::define_variables_impl(const std::set<std::string> &vars_input, con
     vars.erase("precipitation");
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 
@@ -217,7 +216,7 @@ void Anomaly::write_variables_impl(const std::set<std::string> &vars_input, cons
     vars.erase("precipitation");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 

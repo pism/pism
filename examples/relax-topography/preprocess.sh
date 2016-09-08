@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014 Ed Bueler and Andy Aschwanden
+# Copyright (C) 2009-2014, 2016 Ed Bueler and Andy Aschwanden
 
 # downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts metadata,
 # saves under new name, ready for PISM
@@ -29,10 +29,10 @@ echo -n "creating bootstrapable $PISMVERSION from $DATANAME ..."
 ncks -O $DATANAME $PISMVERSION  # just copies over, but preserves history and global attrs
 
 # adjust metadata; uses NCO (http://nco.sourceforge.net/)
-# convert from water equiv to ice thickness change rate; assumes ice density 910.0 kg m-3
-ncap2 -O -s "precipitation=presprcp*(1000.0/910.0)" $PISMVERSION $PISMVERSION
+# convert from water equivalent rate to "kg m-2 year-1"; assumes water density 1000.0 kg m-3
+ncap2 -O -s "precipitation=presprcp*1000.0" $PISMVERSION $PISMVERSION
 ncatted -O -a units,airtemp2m,c,c,"degC" $PISMVERSION
-ncatted -O -a units,precipitation,c,c,"m/year" $PISMVERSION
+ncatted -O -a units,precipitation,m,c,"kg m-2 year-1" $PISMVERSION
 ncatted -O -a long_name,precipitation,c,c,"ice-equivalent mean annual precipitation rate" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION

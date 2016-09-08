@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "PISMIcebergRemover.hh"
+#include "IcebergRemover.hh"
 #include "connected_components.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMVars.hh"
@@ -97,7 +97,7 @@ void IcebergRemover::update(IceModelVec2CellType &mask,
     try {
       if (m_grid->rank() == 0) {
         petsc::VecArray mask_p0(*m_mask_p0);
-        cc(mask_p0.get(), m_grid->My(), m_grid->Mx(), true, mask_grounded_ice);
+        label_connected_components(mask_p0.get(), m_grid->My(), m_grid->Mx(), true, mask_grounded_ice);
       }
     } catch (...) {
       rank0.failed();

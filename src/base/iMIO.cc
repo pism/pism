@@ -26,11 +26,12 @@
 #include "iceModel.hh"
 
 #include "base/basalstrength/PISMYieldStress.hh"
-#include "base/calving/PISMCalvingAtThickness.hh"
-#include "base/calving/PISMEigenCalving.hh"
-#include "base/calving/PISMFloatKill.hh"
-#include "base/calving/PISMOceanKill.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/calving/CalvingAtThickness.hh"
+#include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
+#include "base/calving/FloatKill.hh"
+#include "base/calving/OceanKill.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
@@ -76,31 +77,30 @@ void  IceModel::writeFiles(const std::string &default_filename) {
 }
 
 //! \brief Write metadata (global attributes, overrides and mapping parameters) to a file.
-void IceModel::write_metadata(const PIO &nc, bool write_mapping,
-                              bool write_run_stats) {
+void IceModel::write_metadata(const PIO &nc, MetadataFlag flag) {
 
-  if (write_mapping) {
-    bool mapping_exists = nc.inq_var(mapping.get_name());
-    if (not mapping_exists) {
+  if (flag & WRITE_MAPPING) {
+    if (not nc.inq_var(m_mapping.get_name())) {
       nc.redef();
-      nc.def_var(mapping.get_name(), PISM_DOUBLE,
+      nc.def_var(m_mapping.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
     }
-    io::write_attributes(nc, mapping, PISM_DOUBLE, false);
+    io::write_attributes(nc, m_mapping, PISM_DOUBLE, false);
   }
 
-  if (write_run_stats) {
+  if (flag & WRITE_RUN_STATS) {
     update_run_stats();
-    bool run_stats_exists = nc.inq_var(run_stats.get_name());
-    if (not run_stats_exists) {
+    if (not nc.inq_var(m_run_stats.get_name())) {
       nc.redef();
-      nc.def_var(run_stats.get_name(), PISM_DOUBLE,
+      nc.def_var(m_run_stats.get_name(), PISM_DOUBLE,
                  std::vector<std::string>());
     }
-    io::write_attributes(nc, run_stats, PISM_DOUBLE, false);
+    io::write_attributes(nc, m_run_stats, PISM_DOUBLE, false);
   }
 
-  io::write_global_attributes(nc, m_output_global_attributes);
+  if (flag & WRITE_GLOBAL_ATTRIBUTES) {
+    io::write_global_attributes(nc, m_output_global_attributes);
+  }
 
   // write configuration parameters to the file:
   m_config->write(nc);
@@ -119,7 +119,7 @@ void IceModel::dumpToFile(const std::string &filename) {
   nc.open(filename, PISM_READWRITE_MOVE);
 
   // Write metadata *before* everything else:
-  write_metadata(nc, true, true);
+  write_metadata(nc, WRITE_ALL);
 
   io::define_time(nc, time_name, m_time->calendar(),
                   m_time->CF_units_string(),
@@ -168,12 +168,12 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       m_beddef->define_variables(vars, nc, nctype);
     }
 
-    if (btu != NULL) {
-      btu->define_variables(vars, nc, nctype);
+    if (m_btu != NULL) {
+      m_btu->define_variables(vars, nc, nctype);
     }
 
-    if (basal_yield_stress_model != NULL) {
-      basal_yield_stress_model->define_variables(vars, nc, nctype);
+    if (m_basal_yield_stress_model != NULL) {
+      m_basal_yield_stress_model->define_variables(vars, nc, nctype);
     }
 
     if (m_stress_balance != NULL) {
@@ -182,8 +182,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       throw RuntimeError("PISM ERROR: stress_balance == NULL");
     }
 
-    if (subglacial_hydrology != NULL) {
-      subglacial_hydrology->define_variables(vars, nc, nctype);
+    if (m_subglacial_hydrology != NULL) {
+      m_subglacial_hydrology->define_variables(vars, nc, nctype);
     }
 
     if (m_surface != NULL) {
@@ -198,20 +198,24 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       throw RuntimeError("PISM ERROR: ocean == NULL");
     }
 
-    if (ocean_kill_calving != NULL) {
-      ocean_kill_calving->define_variables(vars, nc, nctype);
+    if (m_ocean_kill_calving != NULL) {
+      m_ocean_kill_calving->define_variables(vars, nc, nctype);
     }
 
-    if (float_kill_calving != NULL) {
-      float_kill_calving->define_variables(vars, nc, nctype);
+    if (m_float_kill_calving != NULL) {
+      m_float_kill_calving->define_variables(vars, nc, nctype);
     }
 
-    if (thickness_threshold_calving != NULL) {
-      thickness_threshold_calving->define_variables(vars, nc, nctype);
+    if (m_thickness_threshold_calving != NULL) {
+      m_thickness_threshold_calving->define_variables(vars, nc, nctype);
     }
 
-    if (eigen_calving != NULL) {
-      eigen_calving->define_variables(vars, nc, nctype);
+    if (m_eigen_calving != NULL) {
+      m_eigen_calving->define_variables(vars, nc, nctype);
+    }
+
+    if (m_vonmises_calving != NULL) {
+      m_vonmises_calving->define_variables(vars, nc, nctype);
     }
 
   }
@@ -237,12 +241,12 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   }
 
   // Write BedThermalUnit variables:
-  if (btu != NULL) {
-    btu->write_variables(vars, nc);
+  if (m_btu != NULL) {
+    m_btu->write_variables(vars, nc);
   }
 
-  if (basal_yield_stress_model != NULL) {
-    basal_yield_stress_model->write_variables(vars, nc);
+  if (m_basal_yield_stress_model != NULL) {
+    m_basal_yield_stress_model->write_variables(vars, nc);
   }
 
   // Write stress balance-related variables:
@@ -252,8 +256,8 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     throw RuntimeError("PISM ERROR: stress_balance == NULL");
   }
 
-  if (subglacial_hydrology != NULL) {
-    subglacial_hydrology->write_variables(vars, nc);
+  if (m_subglacial_hydrology != NULL) {
+    m_subglacial_hydrology->write_variables(vars, nc);
   }
 
   // Ask boundary models to write their variables:
@@ -268,20 +272,24 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     throw RuntimeError("PISM ERROR: ocean == NULL");
   }
 
-  if (ocean_kill_calving != NULL) {
-    ocean_kill_calving->write_variables(vars, nc);
+  if (m_ocean_kill_calving != NULL) {
+    m_ocean_kill_calving->write_variables(vars, nc);
   }
 
-  if (float_kill_calving != NULL) {
-    float_kill_calving->write_variables(vars, nc);
+  if (m_float_kill_calving != NULL) {
+    m_float_kill_calving->write_variables(vars, nc);
   }
 
-  if (thickness_threshold_calving != NULL) {
-    thickness_threshold_calving->write_variables(vars, nc);
+  if (m_thickness_threshold_calving != NULL) {
+    m_thickness_threshold_calving->write_variables(vars, nc);
   }
 
-  if (eigen_calving != NULL) {
-    eigen_calving->write_variables(vars, nc);
+  if (m_eigen_calving != NULL) {
+    m_eigen_calving->write_variables(vars, nc);
+  }
+
+  if (m_vonmises_calving != NULL) {
+    m_vonmises_calving->write_variables(vars, nc);
   }
 
   // All the remaining names in vars must be of diagnostic quantities.
@@ -322,8 +330,8 @@ void IceModel::write_model_state(const PIO &nc) {
   if (m_output_global_attributes.has_attribute("proj4")) {
     m_output_vars.insert("lon_bnds");
     m_output_vars.insert("lat_bnds");
-    vLatitude.metadata().set_string("bounds", "lat_bnds");
-    vLongitude.metadata().set_string("bounds", "lon_bnds");
+    m_latitude.metadata().set_string("bounds", "lat_bnds");
+    m_longitude.metadata().set_string("bounds", "lon_bnds");
   }
 #elif (PISM_USE_PROJ4==0)
   // do nothing
@@ -334,101 +342,6 @@ void IceModel::write_model_state(const PIO &nc) {
   write_variables(nc, m_output_vars, PISM_DOUBLE);
 }
 
-
-
-//! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
-/*!
-  Before this is run, the method IceModel::grid_setup() determines the number of
-  grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
-  box from the same input file.
-*/
-void IceModel::initFromFile(const std::string &filename) {
-  PIO nc(m_grid->com, "guess_mode");
-
-  m_log->message(2, "initializing from NetCDF file '%s'...\n",
-             filename.c_str());
-
-  nc.open(filename, PISM_READONLY);
-
-  // Find the index of the last record in the file:
-  unsigned int last_record = nc.inq_nrecords() - 1;
-
-  // Read the model state, mapping and climate_steady variables:
-  std::set<std::string> vars = m_grid->variables().keys();
-
-  std::set<std::string>::iterator i;
-  for (i = vars.begin(); i != vars.end(); ++i) {
-    // FIXME: remove const_cast. This is bad.
-    IceModelVec *var = const_cast<IceModelVec*>(m_grid->variables().get(*i));
-    SpatialVariableMetadata &m = var->metadata();
-
-    std::string
-      intent     = m.get_string("pism_intent"),
-      short_name = m.get_string("short_name");
-
-    if (intent == "model_state" ||
-        intent == "mapping"     ||
-        intent == "climate_steady") {
-
-      // skip "age", "enthalpy", and "Href" for now: we'll take care
-      // of them a little later
-      if (short_name == "enthalpy" ||
-          short_name == "age"      ||
-          short_name == "Href") {
-        continue;
-      }
-
-      var->read(filename, last_record);
-    }
-  }
-
-  if (m_config->get_boolean("energy.enabled") && m_config->get_boolean("energy.temperature_based")) {
-    m_log->message(3,
-               "  setting enthalpy from temperature...\n");
-    compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
-  }
-
-  // check if the input file has Href; set to 0 if it is not present
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
-    bool href_exists = nc.inq_var("Href");
-
-    if (href_exists == true) {
-      vHref.read(filename, last_record);
-    } else {
-      m_log->message(2,
-                 "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'. Setting it to zero...\n",
-                 filename.c_str());
-      vHref.set(0.0);
-    }
-  }
-
-  // read the age field if present, otherwise set to zero
-  if (m_config->get_boolean("age.enabled")) {
-    bool age_exists = nc.inq_var("age");
-
-    if (age_exists) {
-      m_ice_age.read(filename, last_record);
-    } else {
-      m_log->message(2,
-                 "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
-                 "  Setting it to zero...\n",
-                 filename.c_str());
-      m_ice_age.set(0.0);
-    }
-  }
-
-
-  // Initialize the enthalpy field by reading from a file or by using
-  // temperature and liquid water fraction, or by using temperature
-  // and assuming that the ice is cold.
-  init_enthalpy(filename, false, last_record);
-
-  std::string history = nc.get_att_text("PISM_GLOBAL", "history");
-  m_output_global_attributes.set_string("history",
-                               history + m_output_global_attributes.get_string("history"));
-
-  nc.close();
-}
 
 //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
 /*!
@@ -449,10 +362,10 @@ void IceModel::regrid(int dimensions) {
   if (not (dimensions == 0 ||
            dimensions == 2 ||
            dimensions == 3)) {
-    throw RuntimeError("dimensions can only be 0, 2 or 3");
+    throw RuntimeError("dimensions can only be 0 (all), 2 or 3");
   }
 
-  options::String regrid_file("-regrid_file", "Specifies the file to regrid from");
+  options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
 
   options::StringSet regrid_vars("-regrid_vars",
                                  "Specifies the list of variables to regrid",
@@ -460,15 +373,15 @@ void IceModel::regrid(int dimensions) {
 
 
   // Return if no regridding is requested:
-  if (not regrid_file.is_set()) {
+  if (not regrid_filename.is_set()) {
      return;
   }
 
   if (dimensions != 0) {
     m_log->message(2, "regridding %dD variables from file %s ...\n",
-               dimensions, regrid_file->c_str());
+               dimensions, regrid_filename->c_str());
   } else {
-    m_log->message(2, "regridding from file %s ...\n",regrid_file->c_str());
+    m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
   }
 
   if (regrid_vars->empty()) {
@@ -486,15 +399,21 @@ void IceModel::regrid(int dimensions) {
     }
   }
 
-  if (dimensions == 0) {
-    regrid_variables(regrid_file, regrid_vars, 2);
-    regrid_variables(regrid_file, regrid_vars, 3);
-  } else {
-    regrid_variables(regrid_file, regrid_vars, dimensions);
+  {
+    PIO regrid_file(m_grid->com, "guess_mode");
+    regrid_file.open(regrid_filename, PISM_READONLY);
+
+    if (dimensions == 0) {
+      regrid_variables(regrid_file, regrid_vars, 2);
+      regrid_variables(regrid_file, regrid_vars, 3);
+    } else {
+      regrid_variables(regrid_file, regrid_vars, dimensions);
+    }
   }
 }
 
-void IceModel::regrid_variables(const std::string &filename, const std::set<std::string> &vars, unsigned int ndims) {
+void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::string> &vars,
+                                unsigned int ndims) {
 
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
@@ -519,61 +438,56 @@ void IceModel::regrid_variables(const std::string &filename, const std::set<std:
     }
 
     if (*i == "enthalpy") {
-      init_enthalpy(filename, true, 0);
+      init_enthalpy(regrid_file,
+                    true,       // regrid
+                    0);         // record index (ignored)
       continue;
     }
 
-    v->regrid(filename, CRITICAL);
+    v->regrid(regrid_file, CRITICAL);
+  }
 
-    // Check if the current variable is the same as
-    // IceModel::ice_thickess, then check the range of the ice
-    // thickness
-    if (v == &this->m_ice_thickness) {
-      Range thk_range = m_ice_thickness.range();
+  // Check the range of the ice thickness.
+  {
+    double max_thickness = m_ice_thickness.range().max,
+      Lz = m_grid->Lz();
 
-      if (thk_range.max >= m_grid->Lz() + 1e-6) {
-        throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
-                                      "exceeds the height of the computational domain (%f meters).",
-                                      thk_range.max, m_grid->Lz());
-      }
+    if (max_thickness >= Lz + 1e-6) {
+      throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
+                                    "exceeds the height of the computational domain (%f meters).",
+                                    max_thickness, Lz);
     }
-
   }
 }
 
 /**
  * Initialize enthalpy from a file that does not contain it using "temp" and "liqfrac".
  *
- * @param filename input file name
+ * @param input_file input file
  *
  * @param do_regrid use regridding if 'true', otherwise assume that the
- *               input file has the same grid
+ *                  input file has the same grid
  * @param last_record the record to use when 'do_regrid==false'.
  *
- * @return 0 on success
  */
-void IceModel::init_enthalpy(const std::string &filename,
-                                       bool do_regrid, int last_record) {
-  bool temp_exists  = false,
-    liqfrac_exists  = false,
-    enthalpy_exists = false;
+void IceModel::init_enthalpy(const PIO &input_file,
+                             bool do_regrid, int last_record) {
 
-  PIO nc(m_grid->com, "guess_mode");
-  nc.open(filename, PISM_READONLY);
-  enthalpy_exists = nc.inq_var("enthalpy");
-  temp_exists     = nc.inq_var("temp");
-  liqfrac_exists  = nc.inq_var("liqfrac");
-  nc.close();
+  const bool
+    enthalpy_exists = input_file.inq_var("enthalpy"),
+    temp_exists     = input_file.inq_var("temp"),
+    liqfrac_exists  = input_file.inq_var("liqfrac");
 
-  if (enthalpy_exists == true) {
+  if (enthalpy_exists) {
     if (do_regrid) {
-      m_ice_enthalpy.regrid(filename, CRITICAL);
+      m_ice_enthalpy.regrid(input_file, CRITICAL);
     } else {
-      m_ice_enthalpy.read(filename, last_record);
+      m_ice_enthalpy.read(input_file, last_record);
     }
-  } else if (temp_exists == true) {
-    IceModelVec3 &temp = vWork3d,
-      &liqfrac         = m_ice_enthalpy;
+  } else if (temp_exists) {
+    IceModelVec3
+      &temp    = m_work3d,
+      &liqfrac = m_ice_enthalpy;
 
     SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
     temp.set_name("temp");
@@ -582,21 +496,21 @@ void IceModel::init_enthalpy(const std::string &filename,
                    "land_ice_temperature");
 
     if (do_regrid) {
-      temp.regrid(filename, CRITICAL);
+      temp.regrid(input_file, CRITICAL);
     } else {
-      temp.read(filename, last_record);
+      temp.read(input_file, last_record);
     }
 
-    if (liqfrac_exists == true) {
+    if (liqfrac_exists and not m_config->get_boolean("energy.temperature_based")) {
       liqfrac.set_name("liqfrac");
       liqfrac.metadata(0).set_name("liqfrac");
       liqfrac.set_attrs("temporary", "ice liquid water fraction",
                         "1", "");
 
       if (do_regrid) {
-        liqfrac.regrid(filename, CRITICAL);
+        liqfrac.regrid(input_file, CRITICAL);
       } else {
-        liqfrac.read(filename, last_record);
+        liqfrac.read(input_file, last_record);
       }
 
       m_log->message(2,
@@ -612,7 +526,7 @@ void IceModel::init_enthalpy(const std::string &filename,
     m_ice_enthalpy.metadata() = enthalpy_metadata;
   } else {
     throw RuntimeError::formatted("neither enthalpy nor temperature was found in '%s'.\n",
-                                  filename.c_str());
+                                  input_file.inq_filename().c_str());
   }
 }
 
@@ -736,7 +650,7 @@ void IceModel::write_snapshot() {
   }
 
   // write metadata to the file *every time* we update it
-  write_metadata(nc, true, true);
+  write_metadata(nc, WRITE_ALL);
 
   io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
 
@@ -824,7 +738,7 @@ void IceModel::write_backup() {
   io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
 
   // Write metadata *before* variables:
-  write_metadata(nc, true, true);
+  write_metadata(nc, WRITE_ALL);
 
   write_variables(nc, m_backup_vars, PISM_DOUBLE);
 

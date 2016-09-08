@@ -23,7 +23,7 @@
 #include <algorithm>
 
 #include "iceModel.hh"
-#include "base/calving/PISMIcebergRemover.hh"
+#include "base/calving/IcebergRemover.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
@@ -36,6 +36,8 @@
 #include "base/util/pism_utilities.hh"
 
 #include "base/grounded_cell_fraction.hh"
+#include "base/part_grid_threshold_thickness.hh"
+
 
 namespace pism {
 
@@ -65,14 +67,14 @@ void IceModel::updateSurfaceElevationAndMask() {
 
   GeometryCalculator gc(*m_config);
 
-  if (m_config->get_boolean("geometry.remove_icebergs") && iceberg_remover != NULL) {
+  if (m_config->get_boolean("geometry.remove_icebergs") and m_iceberg_remover != NULL) {
     // the iceberg remover has to use the same mask as the stress balance code, hence the
     // stress-balance-related threshold here
     gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
     gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
 
-    iceberg_remover->update(m_cell_type, m_ice_thickness);
+    m_iceberg_remover->update(m_cell_type, m_ice_thickness);
     // the call above modifies ice thickness and updates the mask accordingly, but we re-compute the
     // mask (we need to use the different threshold)
   }
@@ -432,25 +434,7 @@ earlier. (CK)
 */
 void IceModel::massContExplicitStep() {
 
-  double
-    // totals over the processor's domain:
-    proc_H_to_Href_flux           = 0,
-    proc_Href_to_H_flux           = 0,
-    proc_grounded_basal_ice_flux  = 0,
-    proc_nonneg_rule_flux         = 0,
-    proc_sub_shelf_ice_flux       = 0,
-    proc_sum_divQ_SIA             = 0,
-    proc_sum_divQ_SSA             = 0,
-    proc_surface_ice_flux         = 0,
-    // totals over all processors:
-    total_H_to_Href_flux          = 0,
-    total_Href_to_H_flux          = 0,
-    total_grounded_basal_ice_flux = 0,
-    total_nonneg_rule_flux        = 0,
-    total_sub_shelf_ice_flux      = 0,
-    total_sum_divQ_SIA            = 0,
-    total_sum_divQ_SSA            = 0,
-    total_surface_ice_flux        = 0;
+  FluxCounters local, total;
 
   const bool
     include_bmr_in_continuity = m_config->get_boolean("geometry.update.use_basal_melt_rate");
@@ -464,10 +448,10 @@ void IceModel::massContExplicitStep() {
   assert(m_surface != NULL);
   m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
 
-  IceModelVec2S &H_new = vWork2d[0];
+  IceModelVec2S &H_new = m_work2d[0];
   H_new.copy_from(m_ice_thickness);
 
-  IceModelVec2S &H_residual = vWork2d[1];
+  IceModelVec2S &H_residual = m_work2d[1];
 
   const IceModelVec2Stag &Qdiff = m_stress_balance->diffusive_flux();
 
@@ -488,11 +472,13 @@ void IceModel::massContExplicitStep() {
   list.add(H_new);
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
-  const bool do_part_grid = m_config->get_boolean("geometry.part_grid.enabled"),
-    do_redist = m_config->get_boolean("geometry.part_grid.redistribute_residual_volume"),
+  const bool
+    do_part_grid             = m_config->get_boolean("geometry.part_grid.enabled"),
+    do_redist                = m_config->get_boolean("geometry.part_grid.redistribute_residual_volume"),
     reduce_frontal_thickness = m_config->get_boolean("geometry.part_grid.reduce_frontal_thickness");
+
   if (do_part_grid) {
-    list.add(vHref);
+    list.add(m_Href);
     if (do_redist) {
       list.add(H_residual);
       // FIXME: next line causes mass loss if max_loopcount in redistResiduals()
@@ -570,16 +556,16 @@ void IceModel::massContExplicitStep() {
 
           // Add the flow contribution to this partially filled cell.
           H_to_Href_flux  = -(divQ_SSA + divQ_SIA) * m_dt;
-          vHref(i, j)    += H_to_Href_flux;
+          m_Href(i, j)    += H_to_Href_flux;
 
-          if (vHref(i, j) < 0) {
+          if (m_Href(i, j) < 0) {
             m_log->message(2,
-                       "PISM WARNING: negative Href at (%d,%d)\n",
-                       i, j);
+                           "PISM WARNING: negative Href at (%d, %d)\n",
+                           i, j);
 
             // Note: this adds mass!
-            nonneg_rule_flux += vHref(i, j);
-            vHref(i, j) = 0;
+            nonneg_rule_flux += m_Href(i, j);
+            m_Href(i, j) = 0;
           }
 
           double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
@@ -590,16 +576,16 @@ void IceModel::massContExplicitStep() {
                                                              reduce_frontal_thickness);
           double coverage_ratio = 1.0;
           if (H_threshold > 0.0) {
-            coverage_ratio = vHref(i, j) / H_threshold;
+            coverage_ratio = m_Href(i, j) / H_threshold;
           }
 
           if (coverage_ratio >= 1.0) {
             // A partially filled grid cell is now considered to be full.
             if (do_redist) {
-              H_residual(i, j) = vHref(i, j) - H_threshold; // residual ice thickness
+              H_residual(i, j) = m_Href(i, j) - H_threshold; // residual ice thickness
             }
 
-            vHref(i, j)    = 0.0;
+            m_Href(i, j)    = 0.0;
             Href_to_H_flux = H_threshold;
 
             // A cell that became "full" experiences both SMB and basal melt.
@@ -611,10 +597,11 @@ void IceModel::massContExplicitStep() {
 
           // In this case the SSA flux goes into the Href variable and does not
           // directly contribute to ice thickness at this location.
-          proc_sum_divQ_SIA += - divQ_SIA * meter_per_s_to_kg;
-          proc_sum_divQ_SSA += - divQ_SSA * meter_per_s_to_kg;
-          divQ_SIA           = 0.0;
-          divQ_SSA           = 0.0;
+          local.sum_divQ_SIA += - divQ_SIA * meter_per_s_to_kg;
+          local.sum_divQ_SSA += - divQ_SSA * meter_per_s_to_kg;
+          divQ_SIA                = 0.0;
+          divQ_SSA                = 0.0;
+
         } else { // end of "if (part_grid...)
 
           // Standard ice-free ocean case:
@@ -682,17 +669,17 @@ void IceModel::massContExplicitStep() {
       {
         // all these are in units of [kg]
         if (m_cell_type.grounded(i,j)) {
-          proc_grounded_basal_ice_flux += - basal_melt_rate * meter_per_s_to_kg;
+          local.grounded_basal += - basal_melt_rate * meter_per_s_to_kg;
         } else {
-          proc_sub_shelf_ice_flux      += - basal_melt_rate * meter_per_s_to_kg;
+          local.sub_shelf      += - basal_melt_rate * meter_per_s_to_kg;
         }
 
-        proc_surface_ice_flux        +=   surface_mass_balance * meter_per_s_to_kg;
-        proc_sum_divQ_SIA            += - divQ_SIA             * meter_per_s_to_kg;
-        proc_sum_divQ_SSA            += - divQ_SSA             * meter_per_s_to_kg;
-        proc_nonneg_rule_flux        +=   nonneg_rule_flux     * meter_to_kg;
-        proc_H_to_Href_flux          += - H_to_Href_flux       * meter_to_kg;
-        proc_Href_to_H_flux          +=   Href_to_H_flux       * meter_to_kg;
+        local.surface      += surface_mass_balance * meter_per_s_to_kg;
+        local.sum_divQ_SIA += - divQ_SIA           * meter_per_s_to_kg;
+        local.sum_divQ_SSA += - divQ_SSA           * meter_per_s_to_kg;
+        local.nonneg_rule  += nonneg_rule_flux     * meter_to_kg;
+        local.H_to_Href    += - H_to_Href_flux     * meter_to_kg;
+        local.Href_to_H    += Href_to_H_flux       * meter_to_kg;
       }
 
     }
@@ -703,35 +690,23 @@ void IceModel::massContExplicitStep() {
 
   // flux accounting
   {
-    // combine data to perform one reduction call instead of 8:
-    double tmp_local[8] = {proc_grounded_basal_ice_flux,
-                           proc_nonneg_rule_flux,
-                           proc_sub_shelf_ice_flux,
-                           proc_surface_ice_flux,
-                           proc_sum_divQ_SIA,
-                           proc_sum_divQ_SSA,
-                           proc_Href_to_H_flux,
-                           proc_H_to_Href_flux};
-    double tmp_global[8];
-    GlobalSum(m_grid->com, tmp_local, tmp_global, 8);
+    total.H_to_Href      = GlobalSum(m_grid->com, local.H_to_Href);
+    total.Href_to_H      = GlobalSum(m_grid->com, local.Href_to_H);
+    total.grounded_basal = GlobalSum(m_grid->com, local.grounded_basal);
+    total.nonneg_rule    = GlobalSum(m_grid->com, local.nonneg_rule);
+    total.sub_shelf      = GlobalSum(m_grid->com, local.sub_shelf);
+    total.sum_divQ_SIA   = GlobalSum(m_grid->com, local.sum_divQ_SIA);
+    total.sum_divQ_SSA   = GlobalSum(m_grid->com, local.sum_divQ_SSA);
+    total.surface        = GlobalSum(m_grid->com, local.surface);
 
-    total_grounded_basal_ice_flux = tmp_global[0];
-    total_nonneg_rule_flux        = tmp_global[1];
-    total_sub_shelf_ice_flux      = tmp_global[2];
-    total_surface_ice_flux        = tmp_global[3];
-    total_sum_divQ_SIA            = tmp_global[4];
-    total_sum_divQ_SSA            = tmp_global[5];
-    total_Href_to_H_flux          = tmp_global[6];
-    total_H_to_Href_flux          = tmp_global[7];
-
-    grounded_basal_ice_flux_cumulative += total_grounded_basal_ice_flux;
-    sub_shelf_ice_flux_cumulative      += total_sub_shelf_ice_flux;
-    surface_ice_flux_cumulative        += total_surface_ice_flux;
-    sum_divQ_SIA_cumulative            += total_sum_divQ_SIA;
-    sum_divQ_SSA_cumulative            += total_sum_divQ_SSA;
-    nonneg_rule_flux_cumulative        += total_nonneg_rule_flux;
-    Href_to_H_flux_cumulative          += total_Href_to_H_flux;
-    H_to_Href_flux_cumulative          += total_H_to_Href_flux;
+    m_cumulative_fluxes.H_to_Href      += total.H_to_Href;
+    m_cumulative_fluxes.Href_to_H      += total.Href_to_H;
+    m_cumulative_fluxes.grounded_basal += total.grounded_basal;
+    m_cumulative_fluxes.nonneg_rule    += total.nonneg_rule;
+    m_cumulative_fluxes.sub_shelf      += total.sub_shelf;
+    m_cumulative_fluxes.sum_divQ_SIA   += total.sum_divQ_SIA;
+    m_cumulative_fluxes.sum_divQ_SSA   += total.sum_divQ_SSA;
+    m_cumulative_fluxes.surface        += total.surface;
   }
 
   // finally copy H_new into ice_thickness and communicate ghosted values

@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include <base/energy/bedrockThermalUnit.hh>
+#include <base/energy/BedThermalUnit.hh>
 #include <base/enthalpyConverter.hh>
 #include <base/util/io/PIO.hh>
 #include <base/util/io/io_helpers.hh>
@@ -26,9 +26,9 @@ IBIceModel::~IBIceModel() {
 
 void IBIceModel::allocate_subglacial_hydrology() {
   printf("BEGIN IBIceModel::allocate_subglacial_hydrology()\n");
-  if (pism::IceModel::subglacial_hydrology)
+  if (pism::IceModel::m_subglacial_hydrology)
     return; // indicates it has already been allocated
-  subglacial_hydrology = new pism::icebin::NullTransportHydrology(m_grid);
+  m_subglacial_hydrology = new pism::icebin::NullTransportHydrology(m_grid);
   printf("END IBIceModel::allocate_subglacial_hydrology()\n");
 }
 
@@ -45,7 +45,6 @@ void IBIceModel::allocate_couplers() {
     m_log->message(2, "# Allocating a surface process model or coupler...\n");
 
     m_surface                = new IBSurfaceModel(m_grid);
-    m_external_surface_model = false;
 
     atmosphere = pa.create();
     m_surface->attach_atmosphere_model(atmosphere);
@@ -55,7 +54,6 @@ void IBIceModel::allocate_couplers() {
     m_log->message(2, "# Allocating an ocean model or coupler...\n");
 
     m_ocean                = po.create();
-    m_external_ocean_model = false;
   }
 }
 
@@ -126,12 +124,11 @@ void IBIceModel::energyStep() {
   // Use actual geothermal flux, not the long-term average..
   // See: file:///Users/rpfische/git/pism/build/doc/browser/html/classPISMBedThermalUnit.html#details
   {
-    const IceModelVec2S &upward_geothermal_flux(btu->upward_geothermal_flux());
-    cur.upward_geothermal_flux.add(my_dt, upward_geothermal_flux);
+    cur.upward_geothermal_flux.add(my_dt, m_btu->flux_through_top_surface());
   }
 
   // ----------- Geothermal Flux
-  cur.geothermal_flux.add(my_dt, m_geothermal_flux);
+  cur.geothermal_flux.add(my_dt, m_btu->flux_through_bottom_surface());
 
   // ---------- Basal Frictional Heating (see iMenthalpy.cc l. 220)
   IceModelVec2S const &Rb(m_stress_balance->basal_frictional_heating());
@@ -367,7 +364,7 @@ void IBIceModel::prepare_outputs(double t0) {
 }
 
 void IBIceModel::prepare_initial_outputs() {
-  double ice_density = m_config->get_double("constants.ice.density"); // [kg m-3]
+  double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
 
   // --------- ice_surface_enth from m_ice_enthalpy
   AccessList access{ &m_ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_ice_thickness };
@@ -460,7 +457,7 @@ the idea from IceModel::get_threshold_thickness(...) (iMpartm_grid->cc).  */
 
 void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &mass2) {
   //   getInternalColumn() is allocated already
-  double ice_density = m_config->get_double("constants.ice.density");
+  double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
   AccessList access{ &m_ice_thickness, &m_ice_enthalpy, &enth2, &mass2 };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {

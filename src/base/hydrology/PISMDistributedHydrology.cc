@@ -112,22 +112,24 @@ void Distributed::init() {
 
 void Distributed::init_bwp() {
 
-  // initialize water layer thickness from the context if present,
-  //   otherwise from -i otherwise with constant value
-  bool bootstrap = false;
-  int start = 0;
-  std::string filename;
-  bool use_input_file = find_pism_input(filename, bootstrap, start);
+  // initialize water layer thickness from the context if present, otherwise from -i otherwise with
+  // constant value
+
+  InputOptions opts = process_input_options(m_grid->com);
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
   const double bwp_default = m_config->get_double("bootstrapping.defaults.bwp");
 
-  if (use_input_file) {
+  switch (opts.type) {
+  case INIT_RESTART:
+  case INIT_BOOTSTRAP:
     // regridding is equivalent to reading in if grids match, but this way we can start from a file
     // that does not have 'bwp', setting it to bwp_default
-    m_P.regrid(filename, OPTIONAL, bwp_default);
-  } else {
+    m_P.regrid(opts.filename, OPTIONAL, bwp_default);
+    break;
+  case INIT_OTHER:
+  default:
     m_P.set(bwp_default);
   }
 

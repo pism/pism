@@ -25,7 +25,7 @@
 
 #define SperA 31556926.0  /* seconds per year; 365.2422 days */
 
-int exactA(const double r, double *H, double *M) {
+int exactA_old(const double r, double *H, double *M) {
   /* NOTE: t is in seconds */
   const double L = 750000.0;       /* m; distance of margin from center */
   const double M0 = 0.3 / SperA;   /* 30 cm year-1 constant accumulation */
@@ -52,8 +52,15 @@ int exactA(const double r, double *H, double *M) {
   return 0;
 }
 
+struct TestABCDParameters exactA(double r) {
+  struct TestABCDParameters result;
 
-int exactB(const double t, const double r, double *H, double *M) {
+  result.error_code = exactA_old(r, &result.H, &result.M);
+
+  return result;
+}
+
+int exactB_old(const double t, const double r, double *H, double *M) {
   /* NOTE: t and t0 are in seconds */
   double alpha, beta, t0, Rmargin;
   const double n = 3.0, H0 = 3600.0, R0=750000.0;
@@ -76,8 +83,15 @@ int exactB(const double t, const double r, double *H, double *M) {
   return 0;
 }
 
+struct TestABCDParameters exactB(const double t, const double r) {
+  struct TestABCDParameters result;
 
-int exactC(const double t, const double r, double *H, double *M) {
+  result.error_code = exactB_old(t, r, &result.H, &result.M);
+
+  return result;
+}
+
+int exactC_old(const double t, const double r, double *H, double *M) {
   double lambda, alpha, beta, t0, Rmargin;
   const double n = 3.0, H0 = 3600.0, R0=750000.0;
 
@@ -106,8 +120,15 @@ int exactC(const double t, const double r, double *H, double *M) {
   return 0;
 }
 
+struct TestABCDParameters exactC(const double t, const double r) {
+  struct TestABCDParameters result;
 
-int exactD(const double t, const double rin, double *H, double *M) {
+  result.error_code = exactC_old(t, r, &result.H, &result.M);
+
+  return result;
+}
+
+int exactD_old(const double t, const double rin, double *H, double *M) {
 
   /* parameters describing extent of sheet: */
   const double H0=3600.0;          /* m */
@@ -179,3 +200,10 @@ int exactD(const double t, const double rin, double *H, double *M) {
   return 0;
 }
 
+struct TestABCDParameters exactD(const double t, const double r) {
+  struct TestABCDParameters result;
+
+  result.error_code = exactD_old(t, r, &result.H, &result.M);
+
+  return result;
+}

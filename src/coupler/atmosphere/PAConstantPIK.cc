@@ -40,24 +40,24 @@ PIK::PIK(IceGrid::ConstPtr g)
   // rain, and before melt, etc. in SurfaceModel)
   m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
   m_precipitation.set_attrs("climate_state",
-                          "mean annual ice-equivalent precipitation rate",
-                          "m s-1",
-                          ""); // no CF standard_name ??
-  m_precipitation.metadata().set_string("glaciological_units", "m year-1");
+                            "mean annual ice-equivalent precipitation rate",
+                            "kg m-2 second-1",
+                            ""); // no CF standard_name
+  m_precipitation.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_precipitation.write_in_glaciological_units = true;
   m_precipitation.set_time_independent(true);
 
   m_air_temp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
   m_air_temp.set_attrs("climate_state",
-                     "mean annual near-surface (2 m) air temperature",
-                     "K",
-                     "");
+                       "mean annual near-surface (2 m) air temperature",
+                       "K",
+                       "");
   m_air_temp.set_time_independent(true);
 
   // initialize metadata for "air_temp_snapshot"
   m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
   m_air_temp_snapshot.set_string("long_name",
-                               "snapshot of the near-surface air temperature");
+                                 "snapshot of the near-surface air temperature");
   m_air_temp_snapshot.set_string("units", "K");
 }
 
@@ -141,9 +141,6 @@ void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
 }
 
 void PIK::init() {
-  bool do_regrid = false;
-  int start = -1;
-
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
@@ -151,18 +148,17 @@ void PIK::init() {
              "  It reads a precipitation field directly from the file and holds it constant.\n"
              "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
 
-  // find PISM input file to read data from:
-  find_pism_input(m_input_file, do_regrid, start);
+  InputOptions opts = process_input_options(m_grid->com);
 
   // read snow precipitation rate and air_temps from file
   m_log->message(2,
              "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
              "    from %s ... \n",
-             m_input_file.c_str());
-  if (do_regrid) {
-    m_precipitation.regrid(m_input_file, CRITICAL);
+             opts.filename.c_str());
+  if (opts.type == INIT_BOOTSTRAP) {
+    m_precipitation.regrid(opts.filename, CRITICAL);
   } else {
-    m_precipitation.read(m_input_file, start); // fails if not found!
+    m_precipitation.read(opts.filename, opts.record); // fails if not found!
   }
 }
 
@@ -176,17 +172,17 @@ void PIK::update_impl(double, double) {
   // elevation-dependent parameterization:
 
   const IceModelVec2S
-    *usurf = m_grid->variables().get_2d_scalar("surface_altitude"),
-    *lat   = m_grid->variables().get_2d_scalar("latitude");
+    &elevation = *m_grid->variables().get_2d_scalar("surface_altitude"),
+    &latitude  = *m_grid->variables().get_2d_scalar("latitude");
 
   IceModelVec::AccessList list;
   list.add(m_air_temp);
-  list.add(*usurf);
-  list.add(*lat);
+  list.add(elevation);
+  list.add(latitude);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
+    m_air_temp(i, j) = 273.15 + 30 - 0.0075 * elevation(i, j) - 0.68775 * latitude(i, j)*(-1.0) ;
   }
 }
 

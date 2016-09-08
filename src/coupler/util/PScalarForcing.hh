@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,79 +35,86 @@ class PScalarForcing : public Mod
 {
 public:
   PScalarForcing(IceGrid::ConstPtr g, Model* in)
-    : Mod(g, in), input(in) {}
+    : Mod(g, in), m_input(in) {
+    m_current_forcing = NAN;
+  }
 
   virtual ~PScalarForcing()
   {
-    if (offset) {
-      delete offset;
+    if (m_offset) {
+      delete m_offset;
     }
   }
 
 protected:
   virtual void update_impl(double my_t, double my_dt)
   {
-    Mod::m_t  = Mod::m_grid->ctx()->time()->mod(my_t - bc_reference_time, bc_period);
+    Mod::m_t  = Mod::m_grid->ctx()->time()->mod(my_t - m_bc_reference_time, m_bc_period);
     Mod::m_dt = my_dt;
 
-    Mod::input_model->update(my_t, my_dt);
+    Mod::m_input_model->update(my_t, my_dt);
+
+    m_current_forcing = (*m_offset)(Mod::m_t + 0.5*Mod::m_dt);
   }
 
   virtual void init_internal()
   {
     IceGrid::ConstPtr g = Mod::m_grid;
 
-    options::String file(option_prefix + "_file", "Specifies a file with scalar offsets");
-    options::Integer period(option_prefix + "_period",
+    options::String file(m_option_prefix + "_file", "Specifies a file with scalar offsets");
+    options::Integer period(m_option_prefix + "_period",
                             "Specifies the length of the climate data period", 0);
-    options::Real bc_reference_year(option_prefix + "_reference_year",
+    options::Real bc_reference_year(m_option_prefix + "_reference_year",
                                     "Boundary condition reference year", 0.0);
 
     if (not file.is_set()) {
       throw RuntimeError::formatted("command-line option %s_file is required.",
-                                    option_prefix.c_str());
+                                    m_option_prefix.c_str());
     }
 
     if (period.value() < 0.0) {
       throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
-                                    option_prefix.c_str(), period.value());
+                                    m_option_prefix.c_str(), period.value());
     }
-    bc_period = (unsigned int)period;
+    m_bc_period = (unsigned int)period;
 
     if (bc_reference_year.is_set()) {
-      bc_reference_time = units::convert(Mod::m_sys, bc_reference_year, "years", "seconds");
+      m_bc_reference_time = units::convert(Mod::m_sys, bc_reference_year, "years", "seconds");
     } else {
-      bc_reference_time = 0;
+      m_bc_reference_time = 0;
     }
 
     Mod::m_log->message(2,
-               "  reading %s data from forcing file %s...\n",
-               offset->short_name.c_str(), file->c_str());
+                        "  reading %s data from forcing file %s...\n",
+                        m_offset->name().c_str(), file->c_str());
 
     PIO nc(g->com, "netcdf3");
     nc.open(file, PISM_READONLY);
     {
-      offset->read(nc, *g->ctx()->time(), *g->ctx()->log());
+      m_offset->read(nc, *g->ctx()->time(), *g->ctx()->log());
     }
     nc.close();
   }
 
   //! Apply offset as an offset
   void offset_data(IceModelVec2S &result) {
-    result.shift((*offset)(Mod::m_t + 0.5*Mod::m_dt));
+    result.shift(m_current_forcing);
   }
 
   //! Apply offset as a scaling factor
   void scale_data(IceModelVec2S &result) {
-    result.scale((*offset)(Mod::m_t + 0.5*Mod::m_dt));
+    result.scale(m_current_forcing);
   }
 
-  Model *input;
-  Timeseries *offset;
-  std::string filename, offset_name, option_prefix;
+  Model *m_input;
+  Timeseries *m_offset;
+  std::string m_filename, m_offset_name, m_option_prefix;
 
-  unsigned int bc_period;       // in years
-  double bc_reference_time;  // in seconds
+  unsigned int m_bc_period;       // in years
+  double m_bc_reference_time;  // in seconds
+  // current scalar forcing; initialized by init_impl(...), set in update(...), saved by
+  // write_variables_impl(...)
+  double m_current_forcing;
 };
 
 

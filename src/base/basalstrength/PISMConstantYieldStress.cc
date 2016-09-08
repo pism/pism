@@ -38,23 +38,23 @@ ConstantYieldStress::~ConstantYieldStress () {
 void ConstantYieldStress::init_impl() {
   m_log->message(2, "* Initializing the constant basal yield stress model...\n");
 
-  std::string filename;
-  int start = 0;
-  bool boot = false;
-  bool use_input_file = find_pism_input(filename, boot, start);
-  double tauc = m_config->get_double("basal_yield_stress.constant.value");
-  if (use_input_file) {
-    if (boot) {
-      m_tauc.regrid(filename, OPTIONAL, tauc);
-    } else {
-      m_tauc.read(filename, start);
-    }
-  } else {
+  InputOptions opts = process_input_options(m_grid->com);
+  const double tauc = m_config->get_double("basal_yield_stress.constant.value");
+
+  switch (opts.type) {
+  case INIT_RESTART:
+    m_basal_yield_stress.read(opts.filename, opts.record);
+    break;
+  case INIT_BOOTSTRAP:
+    m_basal_yield_stress.regrid(opts.filename, OPTIONAL, tauc);
+    break;
+  case INIT_OTHER:
+  default:
     // Set the constant value.
-    m_tauc.set(tauc);
+    m_basal_yield_stress.set(tauc);
   }
 
-  regrid("ConstantYieldStress", m_tauc);
+  regrid("ConstantYieldStress", m_basal_yield_stress);
 }
 
 MaxTimestep ConstantYieldStress::max_timestep_impl(double t) {
@@ -72,7 +72,7 @@ void ConstantYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/
 void ConstantYieldStress::define_variables_impl(const std::set<std::string> &vars,
                                                 const PIO &nc, IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
-    m_tauc.define(nc, nctype);
+    m_basal_yield_stress.define(nc, nctype);
   }
 }
 
@@ -80,14 +80,13 @@ void ConstantYieldStress::define_variables_impl(const std::set<std::string> &var
 void ConstantYieldStress::write_variables_impl(const std::set<std::string> &vars,
                                                const PIO &nc) {
   if (set_contains(vars, "tauc")) {
-    m_tauc.write(nc);
+    m_basal_yield_stress.write(nc);
   }
 }
 
 
-void ConstantYieldStress::update_impl(double my_t, double my_dt) {
-  m_t = my_t;
-  m_dt = my_dt;
+void ConstantYieldStress::update_impl() {
+  // empty
 }
 
 } // end of namespace pism

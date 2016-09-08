@@ -56,33 +56,29 @@ void PIK::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)
 }
 
 void PIK::init_impl() {
-  bool do_regrid = false;
-  int start = -1;
-
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
-             "* Initializing the constant-in-time surface processes model PIK.\n"
-             "  It reads surface mass balance directly from the file and holds it constant.\n"
-             "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
-             "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
+                 "* Initializing the constant-in-time surface processes model PIK.\n"
+                 "  It reads surface mass balance directly from the file and holds it constant.\n"
+                 "  Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
+                 "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
 
-  // find PISM input file to read data from:
-  find_pism_input(m_input_file, do_regrid, start);
+  InputOptions opts = process_input_options(m_grid->com);
 
   // read snow precipitation rate from file
   m_log->message(2,
-             "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
-             m_input_file.c_str());
-  if (do_regrid) {
-    m_climatic_mass_balance.regrid(m_input_file, CRITICAL); // fails if not found!
+                 "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
+                 opts.filename.c_str());
+  if (opts.type == INIT_BOOTSTRAP) {
+    m_climatic_mass_balance.regrid(opts.filename, CRITICAL); // fails if not found!
   } else {
-    m_climatic_mass_balance.read(m_input_file, start); // fails if not found!
+    m_climatic_mass_balance.read(opts.filename, opts.record); // fails if not found!
   }
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
   m_log->message(2,
-             "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
+                 "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
 }
 
 MaxTimestep PIK::max_timestep_impl(double t) {

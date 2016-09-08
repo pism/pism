@@ -169,10 +169,7 @@ void MohrCoulombYieldStress::init_impl() {
                        "Turn on, and specify, the till friction angle parameterization"
                        " based on bedrock elevation (topg)");
 
-  bool bootstrap = false;
-  int start = 0;
-  std::string filename;
-  bool use_input_file = find_pism_input(filename, bootstrap, start);
+  InputOptions opts = process_input_options(m_grid->com);
 
   if (topg_to_phi_option.is_set() and plastic_phi.is_set()) {
     throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.");
@@ -183,19 +180,19 @@ void MohrCoulombYieldStress::init_impl() {
     m_log->message(2,
                  "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
 
-    if (use_input_file) {
+    if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
 
       PIO nc(m_grid->com, "guess_mode");
 
-      nc.open(filename, PISM_READONLY);
-      bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_string("short_name"));
+      nc.open(opts.filename, PISM_READONLY);
+      bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_name());
       nc.close();
 
       if (tillphi_present) {
         m_log->message(2,
                      "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
                      "              present in the input file '%s'!\n",
-                     m_till_phi.metadata().get_string("short_name").c_str(), filename.c_str());
+                     m_till_phi.metadata().get_string("short_name").c_str(), opts.filename.c_str());
       }
     }
 
@@ -216,13 +213,11 @@ void MohrCoulombYieldStress::init_impl() {
                  phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
                  phi_max, topg_max);
 
-  } else if (use_input_file) {
-    if (bootstrap) {
-      m_till_phi.regrid(filename, OPTIONAL,
-                        m_config->get_double("bootstrapping.defaults.tillphi"));
-    } else {
-      m_till_phi.read(filename, start);
-    }
+  } else if (opts.type == INIT_RESTART) {
+    m_till_phi.read(opts.filename, opts.record);
+  } else if (opts.type == INIT_BOOTSTRAP) {
+    m_till_phi.regrid(opts.filename, OPTIONAL,
+                      m_config->get_double("bootstrapping.defaults.tillphi"));
   } else {
     // Use the default value *or* the value set using the -plastic_phi
     // command-line option.
@@ -241,29 +236,26 @@ void MohrCoulombYieldStress::init_impl() {
 
     if (not tauc_to_phi_file->empty()) {
       // "-tauc_to_phi filename.nc" is given
-      m_tauc.regrid(tauc_to_phi_file, CRITICAL);
+      m_basal_yield_stress.regrid(tauc_to_phi_file, CRITICAL);
     } else {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file
-      if (bootstrap) {
-        m_tauc.regrid(filename, CRITICAL);
+      if (opts.type == INIT_BOOTSTRAP) {
+        m_basal_yield_stress.regrid(opts.filename, CRITICAL);
       } else {
-        m_tauc.read(filename, start);
+        m_basal_yield_stress.read(opts.filename, opts.record);
       }
     }
 
     m_log->message(2,
-                 "  Will compute till friction angle (tillphi) as a function"
-                 " of the yield stress (tauc)...\n");
+                   "  Will compute till friction angle (tillphi) as a function"
+                   " of the yield stress (tauc)...\n");
 
     m_tauc_to_phi = true;
 
   } else {
-    m_tauc.set(0.0);
+    m_basal_yield_stress.set(0.0);
   }
-
-  // ensure that update() computes tauc at the beginning of the run:
-  m_t = m_dt = GSL_NAN;
 }
 
 MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) {
@@ -329,7 +321,7 @@ that is, the water amount is the sum @f$ W+W_{til} @f$.  This only works
 if @f$ W @f$ is present, that is, if `hydrology` points to a
 hydrology::Routing (or derived class thereof).
  */
-void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
+void MohrCoulombYieldStress::update_impl() {
 
   if (m_topg_to_phi) {
     this->topg_to_phi();
@@ -340,15 +332,6 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
     this->tauc_to_phi();
     m_tauc_to_phi = false;
   }
-
-  if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  m_t = my_t;
-  m_dt = my_dt;
-  // this model does no internal time-stepping
 
   bool slipperygl       = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
        addtransportable = m_config->get_boolean("basal_yield_stress.add_transportable_water");
@@ -381,7 +364,7 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
   }
   list.add(m_tillwat);
   list.add(m_till_phi);
-  list.add(m_tauc);
+  list.add(m_basal_yield_stress);
   list.add(mask);
   list.add(bed_topography);
   list.add(m_Po);
@@ -390,9 +373,9 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
     const int i = p.i(), j = p.j();
 
     if (mask.ocean(i, j)) {
-      m_tauc(i, j) = 0.0;
+      m_basal_yield_stress(i, j) = 0.0;
     } else if (mask.ice_free(i, j)) {
-      m_tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
+      m_basal_yield_stress(i, j) = high_tauc;  // large yield stress if grounded and ice-free
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
       const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
@@ -404,15 +387,16 @@ void MohrCoulombYieldStress::update_impl(double my_t, double my_dt) {
       } else if (addtransportable == true) {
         water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
       }
-      double s    = water / tillwat_max,
+      double
+        s    = water / tillwat_max,
         Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
       Ntil = std::min(m_Po(i,j), Ntil);
 
-      m_tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
+      m_basal_yield_stress(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
     }
   }
 
-  m_tauc.update_ghosts();
+  m_basal_yield_stress.update_ghosts();
 }
 
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
@@ -506,7 +490,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
 
   IceModelVec::AccessList list;
   list.add(mask);
-  list.add(m_tauc);
+  list.add(m_basal_yield_stress);
   list.add(m_tillwat);
   list.add(m_Po);
   list.add(m_till_phi);
@@ -514,7 +498,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
   // make sure that we have enough ghosts:
   unsigned int GHOSTS = m_till_phi.get_stencil_width();
   assert(mask.get_stencil_width()      >= GHOSTS);
-  assert(m_tauc.get_stencil_width()    >= GHOSTS);
+  assert(m_basal_yield_stress.get_stencil_width()    >= GHOSTS);
   assert(m_tillwat.get_stencil_width() >= GHOSTS);
   assert(m_Po.get_stencil_width()      >= GHOSTS);
 
@@ -529,7 +513,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
       double s    = m_tillwat(i,j) / tillwat_max,
         Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
       Ntil = std::min(m_Po(i,j), Ntil);
-      m_till_phi(i, j) = 180.0/M_PI * atan((m_tauc(i, j) - c0) / Ntil);
+      m_till_phi(i, j) = 180.0/M_PI * atan((m_basal_yield_stress(i, j) - c0) / Ntil);
     }
   }
 }

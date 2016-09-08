@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,7 +27,6 @@
 #include "PSStuffAsAnomaly.hh"
 #include "PS_delta_T.hh"
 #include "PSTemperatureIndex.hh"
-#include "PSTemperatureIndex_Old.hh"
 #include "PSSimple.hh"
 #include "PSConstantPIK.hh"
 #include "PSForceThickness.hh"
@@ -44,7 +43,6 @@ Factory::Factory(IceGrid::ConstPtr  g)
   add_model<Elevation>("elevation");
   add_model<Given>("given");
   add_model<TemperatureIndex>("pdd");
-  add_model<TemperatureIndex_Old>("pdd_old");
   add_model<PIK>("pik");
   add_model<Simple>("simple");
   set_default("given");

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@ namespace surface {
 Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<SurfaceModifier,SurfaceModel>(g, NULL)
 {
-  option_prefix = "-surface_given";
+  m_option_prefix = "-surface_given";
 
   ice_surface_temp      = new IceModelVec2T;
   climatic_mass_balance = new IceModelVec2T;
@@ -47,10 +47,20 @@ Given::Given(IceGrid::ConstPtr g)
   ice_surface_temp->set_attrs("climate_forcing",
                               "temperature of the ice at the ice surface but below firn processes",
                               "Kelvin", "");
+  ice_surface_temp->metadata().set_double("valid_min", 0.0);
+  ice_surface_temp->metadata().set_double("valid_max", 323.15); // 50 C
+
+  const double ice_density = m_config->get_double("constants.ice.density");
+  const double smb_max = units::convert(m_sys, 100.0 * ice_density,
+                                        "kg m-2 year-1", "kg m-2 second-1");
+
   climatic_mass_balance->set_attrs("climate_forcing",
                                    "surface mass balance (accumulation/ablation) rate",
                                    "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
   climatic_mass_balance->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  climatic_mass_balance->metadata().set_double("valid_min", -smb_max);
+  climatic_mass_balance->metadata().set_double("valid_max", smb_max);
+
   climatic_mass_balance->write_in_glaciological_units = true;
 }
 
@@ -71,8 +81,8 @@ void Given::init_impl() {
              "* Initializing the surface model reading temperature at the top of the ice\n"
              "  and ice surface mass flux from a file...\n");
 
-  ice_surface_temp->init(filename, bc_period, bc_reference_time);
-  climatic_mass_balance->init(filename, bc_period, bc_reference_time);
+  ice_surface_temp->init(m_filename, m_bc_period, m_bc_reference_time);
+  climatic_mass_balance->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
   if (ice_surface_temp->get_n_records() == 1 && climatic_mass_balance->get_n_records() == 1) {

@@ -23,7 +23,10 @@ add_library (pismboundary OBJECT
   ./ocean/PO_delta_T.cc
   ./ocean/PO_delta_SMB.cc
   ./ocean/PO_delta_MBP.cc
+  ./ocean/PO_frac_SMB.cc
   ./ocean/POFactory.cc
+  ./ocean/POInitialization.cc
+  ./surface/PSInitialization.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
   ./surface/PSCache.cc
@@ -38,8 +41,6 @@ add_library (pismboundary OBJECT
   ./surface/PSForceThickness.cc
   ./surface/PSAnomaly.cc
   ./surface/PSFactory.cc
-  ./surface/PSTemperatureIndex_Old.cc
-  ./surface/localMassBalance_old.cc
   ./surface/PSFormulas.cc
   ./surface/PS_EISMINTII.cc
   )

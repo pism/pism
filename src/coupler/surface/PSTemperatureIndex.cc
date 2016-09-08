@@ -225,17 +225,12 @@ void TemperatureIndex::init_impl() {
     m_air_temp_sd.init_constant(m_base_pddStdDev);
   }
 
-  std::string input_file;
-  bool do_regrid = false;
-  int start = -1;
-
-  // find PISM input file to read data from:
-  find_pism_input(input_file, do_regrid, start);
+  std::string input_file = process_input_options(m_grid->com).filename;
 
   // read snow precipitation rate from file
   m_log->message(2,
-             "    reading snow depth (ice equivalent meters) from %s ... \n",
-             input_file.c_str());
+                 "    reading snow depth (ice equivalent meters) from %s ... \n",
+                 input_file.c_str());
   m_snow_depth.regrid(input_file, OPTIONAL, 0.0);
 
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
@@ -342,6 +337,13 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
       // the precipitation time series from AtmosphereModel and its modifiers
       m_atmosphere->precip_time_series(i, j, P);
+
+      // convert precipitation from "kg m-2 second-1" to "m second-1" (PDDMassBalance expects
+      // accumulation in m/second ice equivalent)
+      for (int k = 0; k < Nseries; ++k) {
+        P[k] = P[k] / ice_density;
+        // kg / (m^2 * second) / (kg / m^3) = m / second
+      }
 
       // interpolate temperature standard deviation time series
       if (m_sd_file_set == true) {

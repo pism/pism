@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,6 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  std::string m_input_file;
   IceModelVec2S m_precipitation, m_air_temp;
   SpatialVariableMetadata m_air_temp_snapshot;
 };

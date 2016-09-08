@@ -41,9 +41,10 @@ static char help[] =
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/pism_options.hh"
-#include "verif/tests/exactTestsFG.h"
+#include "verif/tests/exactTestsFG.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 
@@ -60,12 +61,6 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
   const double
     ice_rho   = grid.ctx()->config()->get_double("constants.ice.density"),
     ice_c     = grid.ctx()->config()->get_double("constants.ice.specific_heat_capacity");
-
-  double   junk0, junk1;
-
-  std::vector<double> strain_heating_exact(Mz), dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz);
-
-  const double *strain_heating_ij;
 
   IceModelVec::AccessList list;
   list.add(thickness);
@@ -84,17 +79,15 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {
         // only evaluate error if inside sheet and not at central
         // singularity
-        bothexact(0.0, r, &(grid.z()[0]), Mz, 0.0,
-                  &junk0, &junk1, &dummy1[0], &dummy2[0], &dummy3[0],
-                  &strain_heating_exact[0], &dummy4[0]);
+        TestFGParameters F = exactFG(0.0, r, grid.z(), 0.0);
 
         for (int k = 0; k < Mz; k++) {
-          strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
+          F.Sig[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
         }
         const int ks = grid.kBelowHeight(thickness(i, j));
-        strain_heating_ij = strain_heating.get_column(i, j);
+        const double *strain_heating_ij = strain_heating.get_column(i, j);
         for (int k = 0; k < ks; k++) {  // only eval error if below num surface
-          const double _strain_heating_error = fabs(strain_heating_ij[k] - strain_heating_exact[k]);
+          const double _strain_heating_error = fabs(strain_heating_ij[k] - F.Sig[k]);
           max_strain_heating_error = std::max(max_strain_heating_error, _strain_heating_error);
           avcount += 1.0;
           av_strain_heating_error += _strain_heating_error;
@@ -139,20 +132,18 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
       r = sqrt(PetscSqr(xx) + PetscSqr(yy));
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
-      double radialUex,wex;
-      double dummy0,dummy1,dummy2,dummy3,dummy4;
-      bothexact(0.0,r,&(ice_thickness(i,j)),1,0.0,
-                &dummy0,&dummy1,&dummy2,&radialUex,&wex,&dummy3,&dummy4);
+      const double H = ice_thickness(i, j);
+      std::vector<double> z(1, H);
+      TestFGParameters F = exactFG(0.0, r, z, 0.0);
 
-      const double uex = (xx/r) * radialUex;
-      const double vex = (yy/r) * radialUex;
-      // note that because getValZ does linear interpolation and ice_thickness(i,j) is not exactly at
+      const double uex = (xx/r) * F.U[0];
+      const double vex = (yy/r) * F.U[0];
+      // note that because getValZ does linear interpolation and H is not exactly at
       // a grid point, this causes nonzero errors even with option -eo
-      const double Uerr = sqrt(PetscSqr(u3.getValZ(i,j,ice_thickness(i,j)) - uex)
-                               + PetscSqr(v3.getValZ(i,j,ice_thickness(i,j)) - vex));
+      const double Uerr = sqrt(PetscSqr(u3.getValZ(i,j,H) - uex) + PetscSqr(v3.getValZ(i,j,H) - vex));
       maxUerr = std::max(maxUerr,Uerr);
       avUerr += Uerr;
-      const double Werr = fabs(w3.getValZ(i,j,ice_thickness(i,j)) - wex);
+      const double Werr = fabs(w3.getValZ(i,j,H) - F.w[0]);
       maxWerr = std::max(maxWerr,Werr);
       avWerr += Werr;
     }
@@ -168,9 +159,9 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
 
 
 static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
-                                           IceGrid &grid,
-                                           IceModelVec2S &thickness,
-                                           IceModelVec3 &temperature,
+                                           const IceGrid &grid,
+                                           const IceModelVec2S &thickness,
+                                           const IceModelVec3 &temperature,
                                            IceModelVec3 &enthalpy) {
 
   IceModelVec::AccessList list;
@@ -178,12 +169,11 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
   list.add(enthalpy);
   list.add(thickness);
 
-  double *T_ij, *E_ij; // columns of these values
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    T_ij = temperature.get_column(i,j);
-    E_ij = enthalpy.get_column(i,j);
+    const double *T_ij = temperature.get_column(i,j);
+    double *E_ij = enthalpy.get_column(i,j);
 
     for (unsigned int k=0; k<grid.Mz(); ++k) {
       double depth = thickness(i,j) - grid.z(k);
@@ -200,55 +190,49 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 //! \brief Set the test F initial state.
 static void setInitStateF(IceGrid &grid,
                           EnthalpyConverter &EC,
-                          IceModelVec2S *bed,
-                          IceModelVec2Int *mask,
-                          IceModelVec2S *surface,
-                          IceModelVec2S *thickness,
-                          IceModelVec3 *enthalpy) {
-  int Mz = grid.Mz();
+                          IceModelVec2S &bed,
+                          IceModelVec2Int &mask,
+                          IceModelVec2S &surface,
+                          IceModelVec2S &thickness,
+                          IceModelVec3 &enthalpy) {
 
-  double ST = 1.67e-5,
-    Tmin = 223.15,  // K
-    LforFG = 750000; // m
+  double
+    ST     = 1.67e-5,
+    Tmin   = 223.15,            // K
+    LforFG = 750000;            // m
 
-  std::vector<double> dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz), dummy5(Mz);
-
-  bed->set(0);
-  mask->set(MASK_GROUNDED);
-
-  std::vector<double> T(Mz);
+  bed.set(0.0);
+  mask.set(MASK_GROUNDED);
 
   IceModelVec::AccessList list;
-  list.add(*thickness);
-  list.add(*enthalpy);
+  list.add(thickness);
+  list.add(enthalpy);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = radius(grid, i, j),
+    const double
+      r  = std::max(radius(grid, i, j), 1.0), // avoid singularity at origin
       Ts = Tmin + ST * r;
 
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
-      (*thickness)(i, j) = 0.0;
-      for (int k = 0; k < Mz; k++) {
-        T[k]=Ts;
-      }
+      thickness(i, j) = 0.0;
+      enthalpy.set_column(i, j, Ts);
     } else {
-      r = std::max(r, 1.0); // avoid singularity at origin
-      bothexact(0.0, r, &(grid.z()[0]), Mz, 0.0,
-                &(*thickness)(i, j), &dummy5[0], &T[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
+      TestFGParameters F = exactFG(0.0, r, grid.z(), 0.0);
+
+      thickness(i, j) = F.H;
+      enthalpy.set_column(i, j, &F.T[0]);
     }
-    enthalpy->set_column(i, j, &T[0]);
   }
 
 
-  thickness->update_ghosts();
+  thickness.update_ghosts();
 
-  surface->copy_from(*thickness);
+  surface.copy_from(thickness);
 
-  enthalpy_from_temperature_cold(EC, grid, *thickness,
-                                 *enthalpy,
-                                 *enthalpy);
+  enthalpy_from_temperature_cold(EC, grid, thickness, enthalpy,
+                                 enthalpy);
 }
 
 static void reportErrors(const IceGrid &grid,
@@ -305,11 +289,14 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
+    // set default verbosity
+    setVerbosityLevel(2);
     units::System::Ptr unit_system(new units::System);
     Context::Ptr ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();
 
     config->set_boolean("stress_balance.sia.grain_size_age_coupling", false);
+    config->set_string("sia_flow_law", "arr");
 
     bool
       usage_set = options::Bool("-usage", "print usage info"),
@@ -340,13 +327,11 @@ int main(int argc, char *argv[]) {
     IceGrid::Ptr grid(new IceGrid(ctx, P));
     grid->report_parameters();
 
-    setVerbosityLevel(5);
-
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
     rheology::PatersonBuddCold ice("stress_balance.sia.", *config, EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
-    IceModelVec2Int cell_type;
+    IceModelVec2CellType cell_type;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
     const int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
@@ -411,8 +396,8 @@ int main(int argc, char *argv[]) {
 
     // fill the fields:
     setInitStateF(*grid, *EC,
-                  &bed_topography, &cell_type, &ice_surface_elevation, &ice_thickness,
-                  &enthalpy);
+                  bed_topography, cell_type, ice_surface_elevation, ice_thickness,
+                  enthalpy);
 
     // Allocate the SIA solver:
     stress_balance.init();

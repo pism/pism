@@ -18,16 +18,16 @@
 
 
 #include <cmath>
+#include <gsl/gsl_math.h> // M_PI
 #include <petscsys.h>
-#include <gsl/gsl_math.h>       // M_PI
 
-#include "iceModel.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
+#include "iceModel.hh"
 
 namespace pism {
 
@@ -38,9 +38,7 @@ namespace pism {
 void IceModel::calculateFractureDensity() {
   const double dx = m_grid->dx(), dy = m_grid->dy(), Mx = m_grid->Mx(), My = m_grid->My();
 
-  IceModelVec2S
-    &vFDnew = vWork2d[0],
-    &vFAnew = vWork2d[1];
+  IceModelVec2S &D = m_fracture.density, &A = m_fracture.age, &D_new = m_work2d[0], &A_new = m_work2d[1];
 
   // get SSA velocities and related strain rates and stresses
   const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
@@ -53,9 +51,9 @@ void IceModel::calculateFractureDensity() {
   list.add(m_deviatoric_stresses);
 
   list.add(m_ice_thickness);
-  list.add(vFD);
-  vFDnew.copy_from(vFD);
-  list.add(vFDnew);
+  list.add(D);
+  D_new.copy_from(D);
+  list.add(D_new);
   list.add(m_cell_type);
 
   const bool dirichlet_bc = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
@@ -66,16 +64,14 @@ void IceModel::calculateFractureDensity() {
 
   const bool write_fd = m_config->get_boolean("fracture_density.write_fields");
   if (write_fd) {
-    list.add(vFG);
-    list.add(vFH);
-    list.add(vFE);
-    list.add(vFT);
-    list.add(vFA);
-    vFAnew.copy_from(vFA);
-    list.add(vFAnew);
+    list.add(m_fracture.growth_rate);
+    list.add(m_fracture.healing_rate);
+    list.add(m_fracture.flow_enhancement);
+    list.add(m_fracture.toughness);
+    list.add(A);
+    A_new.copy_from(A);
+    list.add(A_new);
   }
-
-  double tempFD;
 
   //options
   /////////////////////////////////////////////////////////
@@ -95,11 +91,7 @@ void IceModel::calculateFractureDensity() {
   // ice dynamics; (2012), Journal of Glaciology, Vol. 58, No. 207,
   // 165-176, DOI: 10.3189/2012JoG11J191.
 
-  double
-    gamma         = 1.0,
-    initThreshold = 7.0e4,
-    gammaheal     = 0.0,
-    healThreshold = 2.0e-10;
+  double gamma = 1.0, initThreshold = 7.0e4, gammaheal = 0.0, healThreshold = 2.0e-10;
 
   options::RealList fractures("-fractures", "gamma, initThreshold, gammaheal, healThreshold");
 
@@ -113,20 +105,17 @@ void IceModel::calculateFractureDensity() {
     healThreshold = fractures[3];
   }
 
-  m_log->message(3,
-             "PISM-PIK INFO: fracture density is found with parameters:\n"
-             " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
-             gamma, initThreshold, gammaheal, healThreshold, soft_residual);
+  m_log->message(3, "PISM-PIK INFO: fracture density is found with parameters:\n"
+                    " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
+                 gamma, initThreshold, gammaheal, healThreshold, soft_residual);
 
-  bool do_fracground = options::Bool("-do_frac_on_grounded",
-                                     "model fracture density in grounded areas");
+  bool do_fracground = options::Bool("-do_frac_on_grounded", "model fracture density in grounded areas");
 
   double fdBoundaryValue = options::Real("-phi0", "phi0", 0.0);
 
   bool constant_healing = options::Bool("-constant_healing", "constant healing");
 
-  bool fracture_weighted_healing = options::Bool("-fracture_weighted_healing",
-                                                 "fracture weighted healing");
+  bool fracture_weighted_healing = options::Bool("-fracture_weighted_healing", "fracture weighted healing");
 
   bool max_shear_stress = options::Bool("-max_shear", "max shear");
 
@@ -141,230 +130,226 @@ void IceModel::calculateFractureDensity() {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    tempFD=0;
+    double tempFD = 0.0;
     //SSA: v . grad memField
 
-    double uvel=ssa_velocity(i,j).u;
-    double vvel=ssa_velocity(i,j).v;
+    double uvel = ssa_velocity(i, j).u;
+    double vvel = ssa_velocity(i, j).v;
 
     if (fd2d_scheme) {
-
-      if (uvel>=dx*vvel/dy && vvel>=0.0) { //1
-        tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx + vvel*(vFD(i-1,j)-vFD(i-1,j-1))/dy;
-      } else if (uvel<=dx*vvel/dy && uvel>=0.0) { //2
-        tempFD = uvel*(vFD(i,j-1)-vFD(i-1,j-1))/dx + vvel*(vFD(i,j)-vFD(i,j-1))/dy;
-      } else if (uvel>=-dx*vvel/dy && uvel<=0.0) { //3
-        tempFD = -uvel*(vFD(i,j-1)-vFD(i+1,j-1))/dx + vvel*(vFD(i,j)-vFD(i,j-1))/dy;
-      } else if (uvel<=-dx*vvel/dy && vvel>=0.0) { //4
-        tempFD = -uvel*(vFD(i,j)-vFD(i+1,j))/dx + vvel*(vFD(i+1,j)-vFD(i+1,j-1))/dy;
-      } else if (uvel<=dx*vvel/dy && vvel<=0.0) { //5
-        tempFD = -uvel*(vFD(i,j)-vFD(i+1,j))/dx - vvel*(vFD(i+1,j)-vFD(i+1,j+1))/dy;
-      } else if (uvel>=dx*vvel/dy && uvel<=0.0) { //6
-        tempFD = -uvel*(vFD(i,j+1)-vFD(i+1,j+1))/dx - vvel*(vFD(i,j)-vFD(i,j+1))/dy;
-      } else if (uvel<=-dx*vvel/dy && uvel>=0.0) { //7
-        tempFD = uvel*(vFD(i,j+1)-vFD(i-1,j+1))/dx - vvel*(vFD(i,j)-vFD(i,j+1))/dy;
-      } else if (uvel>=-dx*vvel/dy && vvel<=0.0) { //8
-        tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx - vvel*(vFD(i-1,j)-vFD(i-1,j+1))/dy;
+      if (uvel >= dx * vvel / dy && vvel >= 0.0) { //1
+        tempFD = uvel * (D(i, j) - D(i - 1, j)) / dx + vvel * (D(i - 1, j) - D(i - 1, j - 1)) / dy;
+      } else if (uvel <= dx * vvel / dy && uvel >= 0.0) { //2
+        tempFD = uvel * (D(i, j - 1) - D(i - 1, j - 1)) / dx + vvel * (D(i, j) - D(i, j - 1)) / dy;
+      } else if (uvel >= -dx * vvel / dy && uvel <= 0.0) { //3
+        tempFD = -uvel * (D(i, j - 1) - D(i + 1, j - 1)) / dx + vvel * (D(i, j) - D(i, j - 1)) / dy;
+      } else if (uvel <= -dx * vvel / dy && vvel >= 0.0) { //4
+        tempFD = -uvel * (D(i, j) - D(i + 1, j)) / dx + vvel * (D(i + 1, j) - D(i + 1, j - 1)) / dy;
+      } else if (uvel <= dx * vvel / dy && vvel <= 0.0) { //5
+        tempFD = -uvel * (D(i, j) - D(i + 1, j)) / dx - vvel * (D(i + 1, j) - D(i + 1, j + 1)) / dy;
+      } else if (uvel >= dx * vvel / dy && uvel <= 0.0) { //6
+        tempFD = -uvel * (D(i, j + 1) - D(i + 1, j + 1)) / dx - vvel * (D(i, j) - D(i, j + 1)) / dy;
+      } else if (uvel <= -dx * vvel / dy && uvel >= 0.0) { //7
+        tempFD = uvel * (D(i, j + 1) - D(i - 1, j + 1)) / dx - vvel * (D(i, j) - D(i, j + 1)) / dy;
+      } else if (uvel >= -dx * vvel / dy && vvel <= 0.0) { //8
+        tempFD = uvel * (D(i, j) - D(i - 1, j)) / dx - vvel * (D(i - 1, j) - D(i - 1, j + 1)) / dy;
       } else {
-        m_log->message(3,
-                   "######### missing case of angle %f of %f and %f at %d, %d \n",
-                   atan(vvel/uvel)/M_PI*180.,uvel*3e7,vvel*3e7,i,j);
+        m_log->message(3, "######### missing case of angle %f of %f and %f at %d, %d \n",
+                       atan(vvel / uvel) / M_PI * 180., uvel * 3e7, vvel * 3e7, i, j);
       }
-    }
-    else{
-      tempFD += uvel * (uvel<0 ? vFD(i+1,j)-vFD(i,j):vFD(i,j)-vFD(i-1,j))/dx;
-      tempFD += vvel * (vvel<0 ? vFD(i,j+1)-vFD(i,j):vFD(i,j)-vFD(i,j-1))/dy;
+    } else {
+      tempFD += uvel * (uvel < 0 ? D(i + 1, j) - D(i, j) : D(i, j) - D(i - 1, j)) / dx;
+      tempFD += vvel * (vvel < 0 ? D(i, j + 1) - D(i, j) : D(i, j) - D(i, j - 1)) / dy;
     }
 
-    vFDnew(i,j)-= tempFD * m_dt;
+    D_new(i, j) -= tempFD * m_dt;
 
     //sources /////////////////////////////////////////////////////////////////
     ///von mises criterion
-    double txx = m_deviatoric_stresses(i , j, 0),
-      tyy = m_deviatoric_stresses(i , j, 1),
-      txy = m_deviatoric_stresses(i , j, 2),
 
-      T1 = 0.5*(txx+tyy)+sqrt(0.25*PetscSqr(txx-tyy)+PetscSqr(txy)),//Pa
-      T2 = 0.5*(txx+tyy)-sqrt(0.25*PetscSqr(txx-tyy)+PetscSqr(txy)),//Pa
-      sigmat = sqrt(PetscSqr(T1)+PetscSqr(T2)-T1*T2);
+    double txx = m_deviatoric_stresses(i, j, 0),
+      tyy    = m_deviatoric_stresses(i, j, 1),
+      txy    = m_deviatoric_stresses(i, j, 2),
+      T1     = 0.5 * (txx + tyy) + sqrt(0.25 * PetscSqr(txx - tyy) + PetscSqr(txy)), //Pa
+      T2     = 0.5 * (txx + tyy) - sqrt(0.25 * PetscSqr(txx - tyy) + PetscSqr(txy)), //Pa
+      sigmat = sqrt(PetscSqr(T1) + PetscSqr(T2) - T1 * T2);
 
 
     ///max shear stress criterion (more stringent than von mises)
     if (max_shear_stress) {
-      double maxshear=fabs(T1);
-      maxshear=std::max(maxshear,fabs(T2));
-      maxshear=std::max(maxshear,fabs(T1-T2));
+      double maxshear = fabs(T1);
+      maxshear        = std::max(maxshear, fabs(T2));
+      maxshear        = std::max(maxshear, fabs(T1 - T2));
 
-      sigmat=maxshear;
+      sigmat = maxshear;
     }
 
     ///lefm mixed-mode criterion
     if (lefm) {
       double sigmamu = 0.1; //friction coefficient between crack faces
 
-      double sigmac = 0.64/M_PI; //initial crack depth 20cm
+      double sigmac = 0.64 / M_PI; //initial crack depth 20cm
 
-      double sigmabetatest, sigmanor, sigmatau, Kone, Ktwo,
-        KSI, KSImax = 0.0, sigmatetanull;
+      double sigmabetatest, sigmanor, sigmatau, Kone, Ktwo, KSI, KSImax = 0.0, sigmatetanull;
 
       for (int l = 46; l <= 90; ++l) { //optimize for various precursor angles beta
-        sigmabetatest = l*M_PI/180.0;
+        sigmabetatest = l * M_PI / 180.0;
 
         //rist_sammonds99
-        sigmanor = 0.5*(T1+T2)-(T1-T2)*cos(2*sigmabetatest);
-        sigmatau = 0.5*(T1-T2)*sin(2*sigmabetatest);
+        sigmanor = 0.5 * (T1 + T2) - (T1 - T2) * cos(2 * sigmabetatest);
+        sigmatau = 0.5 * (T1 - T2) * sin(2 * sigmabetatest);
         //shayam_wu90
-        if (sigmamu*sigmanor<0.0) {//compressive case
-          if (fabs(sigmatau) <= fabs(sigmamu*sigmanor)) {
-            sigmatau=0.0;
+        if (sigmamu * sigmanor < 0.0) { //compressive case
+          if (fabs(sigmatau) <= fabs(sigmamu * sigmanor)) {
+            sigmatau = 0.0;
           } else {
-            if (sigmatau>0) { //coulomb friction opposing sliding
-              sigmatau+=(sigmamu*sigmanor);
+            if (sigmatau > 0) { //coulomb friction opposing sliding
+              sigmatau += (sigmamu * sigmanor);
             } else {
-              sigmatau-=(sigmamu*sigmanor);
+              sigmatau -= (sigmamu * sigmanor);
             }
           }
         }
 
         //stress intensity factors
-        Kone = sigmanor*sqrt(M_PI*sigmac);//normal
-        Ktwo = sigmatau*sqrt(M_PI*sigmac);//shear
+        Kone = sigmanor * sqrt(M_PI * sigmac); //normal
+        Ktwo = sigmatau * sqrt(M_PI * sigmac); //shear
 
-        if (Ktwo==0.0) {
-          sigmatetanull=0.0;
+        if (Ktwo == 0.0) {
+          sigmatetanull = 0.0;
         } else { //eq15 in hulbe_ledoux10 or eq15 shayam_wu90
-          sigmatetanull=-2.0*atan((sqrt(PetscSqr(Kone) + 8.0 * PetscSqr(Ktwo)) - Kone)/(4.0*Ktwo));
+          sigmatetanull = -2.0 * atan((sqrt(PetscSqr(Kone) + 8.0 * PetscSqr(Ktwo)) - Kone) / (4.0 * Ktwo));
         }
 
-        KSI = cos(0.5*sigmatetanull)*(Kone*cos(0.5*sigmatetanull)*cos(0.5*sigmatetanull) - 0.5*3.0*Ktwo*sin(sigmatetanull));
+        KSI = cos(0.5 * sigmatetanull) *
+              (Kone * cos(0.5 * sigmatetanull) * cos(0.5 * sigmatetanull) - 0.5 * 3.0 * Ktwo * sin(sigmatetanull));
         // mode I stress intensity
 
-        KSImax=std::max(KSI,KSImax);
+        KSImax = std::max(KSI, KSImax);
       }
-      sigmat=KSImax;
+      sigmat = KSImax;
     }
 
     //////////////////////////////////////////////////////////////////////////////
 
     //fracture density
-    double fdnew = gamma*(m_strain_rates(i,j,0)-0.0)*(1-vFDnew(i,j));
+    double fdnew = gamma * (m_strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
     if (sigmat > initThreshold) {
-      vFDnew(i,j)+= fdnew*m_dt;
+      D_new(i, j) += fdnew * m_dt;
     }
 
     //healing
-    double fdheal = gammaheal*(m_strain_rates(i,j,0)-healThreshold);
-    if (m_ice_thickness(i,j)>0.0) {
+    double fdheal = gammaheal * (m_strain_rates(i, j, 0) - healThreshold);
+    if (m_ice_thickness(i, j) > 0.0) {
       if (constant_healing) {
-        fdheal = gammaheal*(-healThreshold);
+        fdheal = gammaheal * (-healThreshold);
         if (fracture_weighted_healing) {
-          vFDnew(i,j)+= fdheal*m_dt*(1-vFD(i,j));
+          D_new(i, j) += fdheal * m_dt * (1 - D(i, j));
         } else {
-          vFDnew(i,j)+= fdheal*m_dt;
+          D_new(i, j) += fdheal * m_dt;
         }
-      }
-      else if (m_strain_rates(i,j,0) < healThreshold) {
+      } else if (m_strain_rates(i, j, 0) < healThreshold) {
         if (fracture_weighted_healing) {
-          vFDnew(i,j)+= fdheal*m_dt*(1-vFD(i,j));
+          D_new(i, j) += fdheal * m_dt * (1 - D(i, j));
         } else {
-          vFDnew(i,j)+= fdheal*m_dt;
+          D_new(i, j) += fdheal * m_dt;
         }
       }
     }
 
     //bounding
-    if (vFDnew(i,j)<0.0) {
-      vFDnew(i,j)=0.0;
+    if (D_new(i, j) < 0.0) {
+      D_new(i, j) = 0.0;
     }
 
-    if (vFDnew(i,j)>1.0) {
-      vFDnew(i,j)=1.0;
+    if (D_new(i, j) > 1.0) {
+      D_new(i, j) = 1.0;
     }
 
     //################################################################################
     // write related fracture quantities to nc-file
     // if option -write_fd_fields is set
-    if (write_fd && m_ice_thickness(i,j)>0.0) {
+    if (write_fd && m_ice_thickness(i, j) > 0.0) {
       //fracture toughness
-      vFT(i,j)=sigmat;
+      m_fracture.toughness(i, j) = sigmat;
 
       // fracture growth rate
       if (sigmat > initThreshold) {
-        vFG(i,j)=fdnew;
-        //vFG(i,j)=gamma*(vPrinStrain1(i,j)-0.0)*(1-vFDnew(i,j));
+        m_fracture.growth_rate(i, j) = fdnew;
+        //m_fracture.growth_rate(i,j)=gamma*(vPrinStrain1(i,j)-0.0)*(1-D_new(i,j));
       } else {
-        vFG(i,j)=0.0;
+        m_fracture.growth_rate(i, j) = 0.0;
       }
 
       // fracture healing rate
-      if (m_ice_thickness(i,j)>0.0) {
-        if (constant_healing || (m_strain_rates(i,j,0) < healThreshold)) {
+      if (m_ice_thickness(i, j) > 0.0) {
+        if (constant_healing || (m_strain_rates(i, j, 0) < healThreshold)) {
           if (fracture_weighted_healing) {
-            vFH(i,j)=fdheal*(1-vFD(i,j));
+            m_fracture.healing_rate(i, j) = fdheal * (1 - D(i, j));
           } else {
-            vFH(i,j)=fdheal;
+            m_fracture.healing_rate(i, j) = fdheal;
           }
         } else {
-          vFH(i,j)=0.0;
+          m_fracture.healing_rate(i, j) = 0.0;
         }
       }
 
       //fracture age since fracturing occured
-      vFAnew(i,j) -= m_dt * uvel * (uvel<0 ? vFA(i+1,j)-vFA(i, j):vFA(i, j)-vFA(i-1, j))/dx;
-      vFAnew(i,j) -= m_dt * vvel * (vvel<0 ? vFA(i,j+1)-vFA(i, j):vFA(i, j)-vFA(i, j-1))/dy;
-      vFAnew(i,j)+= m_dt / one_year;
+      A_new(i, j) -= m_dt * uvel * (uvel < 0 ? A(i + 1, j) - A(i, j) : A(i, j) - A(i - 1, j)) / dx;
+      A_new(i, j) -= m_dt * vvel * (vvel < 0 ? A(i, j + 1) - A(i, j) : A(i, j) - A(i, j - 1)) / dy;
+      A_new(i, j) += m_dt / one_year;
       if (sigmat > initThreshold) {
-        vFAnew(i,j) = 0.0;
+        A_new(i, j) = 0.0;
       }
 
       // additional flow enhancement due to fracture softening
-      double phi_exp=3.0;//flow_law->exponent();
-      double softening = pow((1.0-(1.0-soft_residual)*vFDnew(i,j)),-phi_exp);
-      if (m_ice_thickness(i,j)>0.0) {
-        vFE(i,j)=1.0/pow(softening,1/3.0);
+      double phi_exp   = 3.0; //flow_law->exponent();
+      double softening = pow((1.0 - (1.0 - soft_residual) * D_new(i, j)), -phi_exp);
+      if (m_ice_thickness(i, j) > 0.0) {
+        m_fracture.flow_enhancement(i, j) = 1.0 / pow(softening, 1 / 3.0);
       } else {
-        vFE(i,j)=1.0;
+        m_fracture.flow_enhancement(i, j) = 1.0;
       }
     }
 
     //boundary condition
     if (dirichlet_bc && !do_fracground) {
-      if (m_ssa_dirichlet_bc_mask.as_int(i,j) == 1) {
-        if (m_ssa_dirichlet_bc_values(i,j).u != 0.0 || m_ssa_dirichlet_bc_values(i,j).v != 0.0) {
-          vFDnew(i,j)=fdBoundaryValue;
+      if (m_ssa_dirichlet_bc_mask.as_int(i, j) == 1) {
+        if (m_ssa_dirichlet_bc_values(i, j).u != 0.0 || m_ssa_dirichlet_bc_values(i, j).v != 0.0) {
+          D_new(i, j) = fdBoundaryValue;
         }
 
         if (write_fd) {
-          vFAnew(i,j)=0.0;
-          vFG(i,j)=0.0;
-          vFH(i,j)=0.0;
-          vFE(i,j)=1.0;
-          vFT(i,j)=0.0;
+          A_new(i, j)                       = 0.0;
+          m_fracture.growth_rate(i, j)      = 0.0;
+          m_fracture.healing_rate(i, j)     = 0.0;
+          m_fracture.flow_enhancement(i, j) = 1.0;
+          m_fracture.toughness(i, j)        = 0.0;
         }
       }
     }
     // ice free regions and boundary of computational domain
-    if (m_ice_thickness(i,j)==0.0 || i==0 || j==0 || i==Mx-1 || j==My-1) {
-      vFDnew(i,j)=0.0;
+    if (m_ice_thickness(i, j) == 0.0 || i == 0 || j == 0 || i == Mx - 1 || j == My - 1) {
+      D_new(i, j) = 0.0;
       if (write_fd) {
-        vFAnew(i,j)=0.0;
-        vFG(i,j)=0.0;
-        vFH(i,j)=0.0;
-        vFE(i,j)=1.0;
-        vFT(i,j)=0.0;
+        A_new(i, j)                       = 0.0;
+        m_fracture.growth_rate(i, j)      = 0.0;
+        m_fracture.healing_rate(i, j)     = 0.0;
+        m_fracture.flow_enhancement(i, j) = 1.0;
+        m_fracture.toughness(i, j)        = 0.0;
       }
     }
 
-    if (constant_fd) {//no fd evolution
-      vFDnew(i,j)=vFD(i,j);
+    if (constant_fd) { //no fd evolution
+      D_new(i, j) = D(i, j);
     }
   }
 
   if (write_fd) {
-    vFAnew.update_ghosts(vFA);
+    A_new.update_ghosts(A);
   }
 
-  vFDnew.update_ghosts(vFD);
+  D_new.update_ghosts(D);
 }
 
 } // end of namespace pism

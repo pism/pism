@@ -23,8 +23,6 @@
 #include <base/util/error_handling.hh>
 #include <icebin/NullTransportHydrology.hh>
 
-using namespace pism;
-
 namespace pism {
 namespace icebin {
 
@@ -94,5 +92,5 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
     }
   }
 }
-}
-} // namespace
+} // end of namespace icebin
+} // end of namespace pism

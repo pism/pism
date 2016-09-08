@@ -90,7 +90,7 @@ void initialize_time(MPI_Comm com, const std::string &dimension_name,
   options::String input_file("-i", "Specifies a PISM input file");
 
   if (input_file.is_set()) {
-    PIO nc(com, "guess_mode");
+    PIO nc(com, "netcdf3");     // OK to use netcdf3
 
     nc.open(input_file, PISM_READONLY);
     time.init_from_input_file(nc, dimension_name, log);

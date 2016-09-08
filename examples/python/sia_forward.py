@@ -23,6 +23,7 @@ from petsc4py import PETSc
 import os
 
 context = PISM.Context()
+ctx = context.ctx
 config = context.config
 
 PISM.set_abort_on_sigint(True)
@@ -36,15 +37,15 @@ sia_forward.py -i IN.nc [-o file.nc]
 """
 
 PISM.verbosityLevelFromOptions()
-PISM.show_usage_check_req_opts(context.com, "sia_forward.py", ["-i"], usage)
+PISM.show_usage_check_req_opts(ctx.log(), "sia_forward.py", ["-i"], usage)
 
-input_file, input_set = PISM.optionsStringWasSet("-i", "input file")
+input_filename, input_set = PISM.optionsStringWasSet("-i", "input file")
 if not input_set:
     import sys
     sys.exit(1)
 
 output_file = PISM.optionsString("-o", "output file",
-                                 default="sia_" + os.path.basename(input_file))
+                                 default="sia_" + os.path.basename(input_filename))
 is_regional = PISM.optionsFlag("-regional",
                                "Compute SIA using regional model semantics", default=False)
 verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
@@ -52,7 +53,10 @@ verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
 periodicity = PISM.XY_PERIODIC
 if is_regional:
     periodicity = PISM.NOT_PERIODIC
-grid = PISM.IceGrid.FromFile(context.ctx, input_file, "enthalpy", periodicity)
+
+input_file = PISM.PIO(ctx.com(), "netcdf3")
+input_file.open(input_filename, PISM.PISM_READONLY)
+grid = PISM.IceGrid.FromFile(ctx, input_file, "enthalpy", periodicity)
 
 config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 

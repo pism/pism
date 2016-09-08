@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,53 +16,43 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#ifndef _PISMEIGENCALVING_H_
-#define _PISMEIGENCALVING_H_
+
+#ifndef VONMISESCALVING_H
+#define VONMISESCALVING_H
 
 #include "base/util/iceModelVec.hh"
-#include "base/util/PISMComponent.hh"
+#include "StressCalving.hh"
 
 namespace pism {
-namespace stressbalance {
-class StressBalance;
-}
 
 class IceModelVec2CellType;
 
 namespace calving {
 
-class EigenCalving : public Component
-{
+class vonMisesCalving : public StressCalving {
 public:
-  EigenCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
-  virtual ~EigenCalving();
+  vonMisesCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance);
+  virtual ~vonMisesCalving();
 
-  virtual void init();
-  void update(double dt,
-              IceModelVec2CellType &pism_mask,
-              IceModelVec2S &Href,
-              IceModelVec2S &ice_thickness);
-
-  MaxTimestep max_timestep();
+  void init();
 
   // empty methods that we're required to implement:
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
-  void update_strain_rates();
-  void remove_narrow_tongues(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
+
+  void compute_calving_rate(const IceModelVec2CellType &mask,
+                            IceModelVec2S &result);
+
 protected:
-  IceModelVec2 m_strain_rates;
-  IceModelVec2S m_thk_loss;
-  const int m_stencil_width;
-  stressbalance::StressBalance *m_stress_balance;
-  double m_K;
-  bool m_restrict_timestep;
+  double m_sigma_max;
 };
 
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* _PISMEIGENCALVING_H_ */
+#endif /* VONMISESCALVING_H */

@@ -1621,7 +1621,7 @@ It takes the following command-line options:
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-ocean~...,delta_SMB} \index[options]{OB@\oceanmods!\texttt{delta_SMB}} \\
-    NetCDF variables: & \variable{delta_SMB} \\
+    NetCDF variables: & \variable{delta_SMB} [kg m-2 s-1]\\
     C++ class: & \class{PO_delta_SMB}\\
     \bottomrule
   \end{tabular}
@@ -1631,9 +1631,32 @@ This modifier implements forcing using sub-shelf mass flux (melt rate) offsets.
 
 It takes the following command-line options:
 \begin{itemize}
-\item \fileopt{ocean_delta_SMB_file}: specifies the name of the file containing forcing data. This file has to contain the \variable{delta_SMB} variable using units of ice-equivalent thickness per time.
+\item \fileopt{ocean_delta_SMB_file}: specifies the name of the file containing forcing data. This file has to contain the \variable{delta_SMB} variable using units $\mathrm{kg} / (\mathrm{m}^{2} \mathrm{second})$ or equivalent.
 \item \intextoption{ocean_delta_SMB_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
 \item \intextoption{ocean_delta_SMB_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+\subsection{Modifier: Scalar sub-shelf mass flux fraction offsets}
+\label{sec:frac-subshelf-smb}
+\optsection{OB@\oceanmods!\texttt{frac_SMB}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~...,frac_SMB} \index[options]{OB@\oceanmods!\texttt{frac_SMB}} \\
+    NetCDF variables: & \variable{frac_SMB} [1]\\
+    C++ class: & \class{PO_frac_SMB}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier implements forcing using sub-shelf mass flux (melt rate) fraction offsets.
+
+It takes the following command-line options:
+\begin{itemize}
+\item \fileopt{ocean_frac_SMB_file}: specifies the name of the file containing forcing data. This file has to contain the \variable{frac_SMB} variable.
+\item \intextoption{ocean_frac_SMB_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
+\item \intextoption{ocean_frac_SMB_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
 
 \subsection{Modifier: Scalar melange back pressure fraction offsets}

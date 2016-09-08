@@ -136,36 +136,36 @@ void BedDef::init_impl() {
   m_t  = GSL_NAN;
   m_dt = GSL_NAN;
 
-  std::string input_file;
-  bool do_regrid = false;
-  int start = -1;
+  InputOptions opts = process_input_options(m_grid->com);
 
-  bool input_given = find_pism_input(input_file, do_regrid, start);
-
-  if (input_given) {
+  switch (opts.type) {
+  case INIT_RESTART:
     // read bed elevation and uplift rate from file
     m_log->message(2,
-               "    reading bed topography and bed uplift rate\n"
-               "    from %s ... \n",
-               input_file.c_str());
-    if (do_regrid) {
-      // bootstrapping
-      m_topg.regrid(input_file, OPTIONAL,
-                    m_config->get_double("bootstrapping.defaults.bed"));
-      m_uplift.regrid(input_file, OPTIONAL,
-                      m_config->get_double("bootstrapping.defaults.uplift"));
-    } else {
-      // re-starting
-      m_topg.read(input_file, start); // fails if not found!
-      m_uplift.read(input_file, start); // fails if not found!
+                   "    reading bed topography and bed uplift rate\n"
+                   "    from %s ... \n",
+                   opts.filename.c_str());
+    // re-starting
+    m_topg.read(opts.filename, opts.record); // fails if not found!
+    m_uplift.read(opts.filename, opts.record); // fails if not found!
+    break;
+  case INIT_BOOTSTRAP:
+    // bootstrapping
+    m_topg.regrid(opts.filename, OPTIONAL,
+                  m_config->get_double("bootstrapping.defaults.bed"));
+    m_uplift.regrid(opts.filename, OPTIONAL,
+                    m_config->get_double("bootstrapping.defaults.uplift"));
+    break;
+  case INIT_OTHER:
+  default:
+    {
+      // do nothing, keeping values set elsewhere
     }
-  } else {
-    // do nothing, keeping values set elsewhere
   }
 
   // process -regrid_file and -regrid_vars
-  regrid("BedDef", m_topg);
-  regrid("BedDef", m_uplift);
+  regrid("bed deformation", m_topg);
+  regrid("bed deformation", m_uplift);
 
   // this should be the last thing we do here
   m_topg_initial.copy_from(m_topg);

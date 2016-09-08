@@ -19,20 +19,19 @@
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
 
-#include <petscdmda.h>
-#include <cassert>
 #include <algorithm>
 
 #include "iceModel.hh"
 #include "base/basalstrength/PISMConstantYieldStress.hh"
 #include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/calving/PISMCalvingAtThickness.hh"
-#include "base/calving/PISMEigenCalving.hh"
-#include "base/calving/PISMFloatKill.hh"
-#include "base/calving/PISMIcebergRemover.hh"
-#include "base/calving/PISMOceanKill.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/calving/CalvingAtThickness.hh"
+#include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
+#include "base/calving/FloatKill.hh"
+#include "base/calving/IcebergRemover.hh"
+#include "base/calving/OceanKill.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/stressbalance/sia/SIAFD.hh"
@@ -48,7 +47,9 @@
 #include "coupler/PISMSurface.hh"
 #include "coupler/atmosphere/PAFactory.hh"
 #include "coupler/ocean/POFactory.hh"
+#include "coupler/ocean/POInitialization.hh"
 #include "coupler/surface/PSFactory.hh"
+#include "coupler/surface/PSInitialization.hh"
 #include "earth/PBLingleClark.hh"
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
@@ -96,33 +97,55 @@ void IceModel::time_setup() {
  */
 void IceModel::model_state_setup() {
 
-  reset_counters();
-
-  // Initialize (or re-initialize) boundary models.
-  init_couplers();
-
   // Check if we are initializing from a PISM output file:
-  options::String input_file("-i", "Specifies the PISM input file");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  InputOptions opts = process_input_options(m_ctx->com());
 
-  if (input_file.is_set() and not bootstrap) {
-    initFromFile(input_file);
+  const bool use_input_file = opts.type == INIT_BOOTSTRAP or opts.type == INIT_RESTART;
 
-    regrid(0);
-    // Check consistency of geometry after initialization:
-    updateSurfaceElevationAndMask();
-  } else {
-    set_vars_from_options();
+  PIO input_file(m_grid->com, "guess_mode");
+
+  if (use_input_file) {
+    input_file.open(opts.filename, PISM_READONLY);
   }
 
-  // Initialize a bed deformation model (if needed); this should go
-  // after the regrid(0) call but before other init() calls that need
-  // bed elevation and uplift.
+  // Initialize 2D fields owned by IceModel (ice geometry, etc)
+  {
+    switch (opts.type) {
+    case INIT_RESTART:
+      restart_2d(input_file, opts.record);
+      break;
+    case INIT_BOOTSTRAP:
+      bootstrap_2d(input_file);
+      break;
+    case INIT_OTHER:
+    default:
+      initialize_2d();
+    }
+
+    regrid(2);
+  }
+
+  // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
+  // which may need ice thickness to bootstrap.
+  {
+    m_log->message(2, "* Initializing the ocean model...\n");
+    m_ocean->init();
+  }
+
+  // Initialize a bed deformation model. This may use ice thickness initialized above.
   if (m_beddef) {
     m_beddef->init();
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
   }
+
+  // Now ice thickness, bed elevation, and sea level are available, so we can compute the ice
+  // surface elevation and the cell type mask. This also ensures consistency of ice geometry.
+  updateSurfaceElevationAndMask();
+
+  // Now surface elevation is initialized, so we can initialize surface models (some use
+  // elevation-based parameterizations of surface temperature and/or mass balance).
+  m_surface->init();
 
   if (m_stress_balance) {
     m_stress_balance->init();
@@ -132,184 +155,229 @@ void IceModel::model_state_setup() {
     }
   }
 
-  if (btu) {
-    bool bootstrapping_needed = false;
-    btu->init(bootstrapping_needed);
-
-    if (bootstrapping_needed) {
-      // update surface and ocean models so that we can get the
-      // temperature at the top of the bedrock
-      m_log->message(2,
-                 "getting surface B.C. from couplers...\n");
-      init_step_couplers();
-
-      get_bed_top_temp(m_bedtoptemp);
-
-      btu->bootstrap();
-    }
-  }
-
-  if (subglacial_hydrology) {
-    subglacial_hydrology->init();
+  if (m_subglacial_hydrology) {
+    m_subglacial_hydrology->init();
   }
 
   // basal_yield_stress_model->init() needs bwat so this must happen
   // after subglacial_hydrology->init()
-  if (basal_yield_stress_model) {
-    basal_yield_stress_model->init();
+  if (m_basal_yield_stress_model) {
+    m_basal_yield_stress_model->init();
   }
 
+  // Initialize the bedrock thermal layer model.
+  //
+  // If
+  // - PISM is bootstrapping and
+  // - we are using a non-zero-thickness thermal layer
+  //
+  // initialization of m_btu requires the temperature at the top of the bedrock. This is a problem
+  // because get_bed_top_temp() uses the enthalpy field that is not initialized until later and
+  // bootstrapping enthalpy uses the flux through the bottom surface of the ice (top surface of the
+  // bedrock) provided by m_btu.
+  //
+  // We get out of this by using the fact that the full state of m_btu is not needed and
+  // bootstrapping of the temperature field can be delayed.
+  //
+  // Note that to bootstrap m_btu we use the steady state solution of the heat equation in columns
+  // of the bedrock (a straight line at each column), so the flux through the top surface of the
+  // bedrock after bootstrapping is the same as the time-independent geothermal flux applied at the
+  // BOTTOM surface of the bedrock layer.
+  //
+  // The code then delays bootstrapping of the thickness field until the first time step.
+  if (m_btu) {
+    m_btu->init(opts);
+  }
+
+  // Initialize 3D (age and energy balance) parts of IceModel.
   {
-    if (input_file.is_set()) {
-      m_log->message(2,
-                 "* Trying to read cumulative climatic mass balance from '%s'...\n",
-                 input_file->c_str());
-      m_climatic_mass_balance_cumulative.regrid(input_file, OPTIONAL, 0.0);
-    } else {
-      m_climatic_mass_balance_cumulative.set(0.0);
-    }
-  }
-
-  {
-    if (input_file.is_set()) {
-      m_log->message(2,
-                 "* Trying to read cumulative grounded basal flux from '%s'...\n",
-                 input_file->c_str());
-      m_grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
-    } else {
-      m_grounded_basal_flux_2D_cumulative.set(0.0);
-    }
-  }
-
-  {
-    if (input_file.is_set()) {
-      m_log->message(2,
-                 "* Trying to read cumulative floating basal flux from '%s'...\n",
-                 input_file->c_str());
-      m_floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
-    } else {
-      m_floating_basal_flux_2D_cumulative.set(0.0);
-    }
-  }
-
-  {
-    if (input_file.is_set()) {
-      m_log->message(2,
-                 "* Trying to read cumulative nonneg flux from '%s'...\n",
-                 input_file->c_str());
-      m_nonneg_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
-    } else {
-      m_nonneg_flux_2D_cumulative.set(0.0);
-    }
-  }
-
-  if (input_file.is_set()) {
-    PIO nc(m_grid->com, "netcdf3");
-
-    nc.open(input_file, PISM_READONLY);
-    bool run_stats_exists = nc.inq_var("run_stats");
-    if (run_stats_exists) {
-      io::read_attributes(nc, run_stats.get_name(), run_stats);
-    }
-    nc.close();
-
-    if (run_stats.has_attribute("grounded_basal_ice_flux_cumulative")) {
-      grounded_basal_ice_flux_cumulative = run_stats.get_double("grounded_basal_ice_flux_cumulative");
+    switch (opts.type) {
+    case INIT_RESTART:
+      restart_3d(input_file, opts.record);
+      break;
+    case INIT_BOOTSTRAP:
+      bootstrap_3d();
+      break;
+    case INIT_OTHER:
+    default:
+      initialize_3d();
     }
 
-    if (run_stats.has_attribute("nonneg_rule_flux_cumulative")) {
-      nonneg_rule_flux_cumulative = run_stats.get_double("nonneg_rule_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("sub_shelf_ice_flux_cumulative")) {
-      sub_shelf_ice_flux_cumulative = run_stats.get_double("sub_shelf_ice_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("surface_ice_flux_cumulative")) {
-      surface_ice_flux_cumulative = run_stats.get_double("surface_ice_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("sum_divQ_SIA_cumulative")) {
-      sum_divQ_SIA_cumulative = run_stats.get_double("sum_divQ_SIA_cumulative");
-    }
-
-    if (run_stats.has_attribute("sum_divQ_SSA_cumulative")) {
-      sum_divQ_SSA_cumulative = run_stats.get_double("sum_divQ_SSA_cumulative");
-    }
-
-    if (run_stats.has_attribute("Href_to_H_flux_cumulative")) {
-      Href_to_H_flux_cumulative = run_stats.get_double("Href_to_H_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("H_to_Href_flux_cumulative")) {
-      H_to_Href_flux_cumulative = run_stats.get_double("H_to_Href_flux_cumulative");
-    }
-
-    if (run_stats.has_attribute("discharge_flux_cumulative")) {
-      discharge_flux_cumulative = run_stats.get_double("discharge_flux_cumulative");
-    }
+    regrid(3);
   }
 
   // get projection information and compute cell areas
   {
-    if (input_file.is_set()) {
-      PIO nc(m_grid->com, "guess_mode");
-      nc.open(input_file, PISM_READONLY); // closed at the end of scope
-
-      get_projection_info(nc);
+    if (use_input_file) {
+      get_projection_info(input_file);
 
       std::string proj4_string = m_output_global_attributes.get_string("proj4");
       if (not proj4_string.empty()) {
         m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
-                       proj4_string.c_str(), nc.inq_filename().c_str());
+                       proj4_string.c_str(), opts.filename.c_str());
       }
+
+      std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
+      m_output_global_attributes.set_string("history",
+                                            history + m_output_global_attributes.get_string("history"));
     }
 
     compute_cell_areas();
   }
 
-  // a report on whether PISM-PIK modifications of IceModel are in use
-  std::vector<std::string> pik_methods;
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
-    pik_methods.push_back("part_grid");
-  }
-  if (m_config->get_boolean("geometry.part_grid.redistribute_residual_volume")) {
-    pik_methods.push_back("part_redist");
-  }
-  if (m_config->get_boolean("geometry.remove_icebergs")) {
-    pik_methods.push_back("kill_icebergs");
-  }
+  // miscellaneous steps
+  {
+    reset_counters();
 
-  if (not pik_methods.empty()) {
-    m_log->message(2,
-                   "* PISM-PIK mass/geometry methods are in use: %s\n",
-                   join(pik_methods, ", ").c_str());
-  }
+    if (use_input_file) {
+      std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
+      m_output_global_attributes.set_string("history",
+                                            history + m_output_global_attributes.get_string("history"));
 
-  stampHistoryCommand();
+      initialize_cumulative_fluxes(input_file);
+    } else {
+      reset_cumulative_fluxes();
+    }
+
+    stampHistoryCommand();
+  }
 }
 
-//! Sets starting values of model state variables using command-line options.
+//! Initialize 2D model state fields managed by IceModel from a file (for re-starting).
 /*!
-  Sets starting values of model state variables using command-line options and
-  (possibly) a bootstrapping file.
-
-  In the base class there is only one case: bootstrapping.
+ * This method should eventually go away as IceModel turns into a "coupler" and all physical
+ * processes are handled by sub-models.
  */
-void IceModel::set_vars_from_options() {
+void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
+  std::string filename = input_file.inq_filename();
 
-  m_log->message(3,
-             "Setting initial values of model state variables...\n");
+  m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
-  options::String input_file("-i", "Specifies the input file");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
+  // Read the model state, mapping and climate_steady variables:
+  std::set<std::string> vars = m_grid->variables().keys();
 
-  if (bootstrap and input_file.is_set()) {
-    bootstrapFromFile(input_file);
-  } else {
-    throw RuntimeError("No input file specified.");
+  std::set<std::string>::iterator i;
+  for (i = vars.begin(); i != vars.end(); ++i) {
+    // FIXME: remove const_cast. This is bad.
+    IceModelVec *var = const_cast<IceModelVec*>(m_grid->variables().get(*i));
+    SpatialVariableMetadata &m = var->metadata();
+
+    std::string
+      intent     = m.get_string("pism_intent"),
+      short_name = m.get_string("short_name");
+
+    if (intent == "model_state" ||
+        intent == "mapping"     ||
+        intent == "climate_steady") {
+
+      // skip "age", "enthalpy", and "Href" for now: we'll take care
+      // of them a little later
+      if (short_name == "enthalpy" ||
+          short_name == "age"      ||
+          short_name == "Href") {
+        continue;
+      }
+
+      var->read(input_file, last_record);
+    }
+  }
+
+  // check if the input file has Href; set to 0 if it is not present
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
+
+    if (input_file.inq_var("Href")) {
+      m_Href.read(input_file, last_record);
+    } else {
+      m_log->message(2,
+                     "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'."
+                     " Setting it to zero...\n",
+                     filename.c_str());
+      m_Href.set(0.0);
+    }
   }
 }
+
+/*! @brief Initialize 3D fields managed by IceModel. */
+/*!
+ * This method should go away once we isolate "age" and "energy balance" sub-models.
+ */
+void IceModel::restart_3d(const PIO &input_file, unsigned int last_record) {
+
+  // read the age field if present, otherwise set to zero
+  if (m_config->get_boolean("age.enabled")) {
+    bool age_exists = input_file.inq_var("age");
+
+    if (age_exists) {
+      m_ice_age.read(input_file, last_record);
+    } else {
+      m_log->message(2,
+                     "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
+                     "  Setting it to zero...\n",
+                     input_file.inq_filename().c_str());
+      m_ice_age.set(0.0);
+    }
+  }
+
+  // Initialize the enthalpy field by reading from a file or by using
+  // temperature and liquid water fraction, or by using temperature
+  // and assuming that the ice is cold.
+  init_enthalpy(input_file, false, last_record);
+}
+
+
+void IceModel::initialize_2d() {
+  throw RuntimeError("cannot initialize IceModel without an input file");
+}
+
+
+void IceModel::initialize_3d() {
+  throw RuntimeError("cannot initialize IceModel without an input file");
+}
+
+
+void IceModel::reset_cumulative_fluxes() {
+  // 2D
+  m_climatic_mass_balance_cumulative.set(0.0);
+  m_grounded_basal_flux_2D_cumulative.set(0.0);
+  m_floating_basal_flux_2D_cumulative.set(0.0);
+  m_nonneg_flux_2D_cumulative.set(0.0);
+  // scalar
+  m_cumulative_fluxes = FluxCounters();
+}
+
+
+void IceModel::initialize_cumulative_fluxes(const PIO &input_file) {
+  // 2D
+  {
+    m_climatic_mass_balance_cumulative.regrid(input_file,  OPTIONAL, 0.0);
+    m_grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
+    m_floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
+    m_nonneg_flux_2D_cumulative.regrid(input_file,         OPTIONAL, 0.0);
+  }
+
+  // scalar, stored in run_stats
+  if (input_file.inq_var("run_stats")) {
+    io::read_attributes(input_file, m_run_stats.get_name(), m_run_stats);
+
+    try {
+      m_cumulative_fluxes.H_to_Href      = m_run_stats.get_double("H_to_Href_flux_cumulative");
+      m_cumulative_fluxes.Href_to_H      = m_run_stats.get_double("Href_to_H_flux_cumulative");
+      m_cumulative_fluxes.discharge      = m_run_stats.get_double("discharge_flux_cumulative");
+      m_cumulative_fluxes.grounded_basal = m_run_stats.get_double("grounded_basal_ice_flux_cumulative");
+      m_cumulative_fluxes.nonneg_rule    = m_run_stats.get_double("nonneg_rule_flux_cumulative");
+      m_cumulative_fluxes.sub_shelf      = m_run_stats.get_double("sub_shelf_ice_flux_cumulative");
+      m_cumulative_fluxes.sum_divQ_SIA   = m_run_stats.get_double("sum_divQ_SIA_cumulative");
+      m_cumulative_fluxes.sum_divQ_SSA   = m_run_stats.get_double("sum_divQ_SSA_cumulative");
+      m_cumulative_fluxes.surface        = m_run_stats.get_double("surface_ice_flux_cumulative");
+    }
+    catch (RuntimeError &e) {
+      e.add_context("initializing cumulative flux counters from '%s'",
+                    input_file.inq_filename().c_str());
+      throw;
+    }
+  }
+}
+
 
 //! \brief Decide which stress balance model to use.
 void IceModel::allocate_stressbalance() {
@@ -362,7 +430,7 @@ void IceModel::allocate_stressbalance() {
 
 void IceModel::allocate_iceberg_remover() {
 
-  if (iceberg_remover != NULL) {
+  if (m_iceberg_remover != NULL) {
     return;
   }
 
@@ -372,25 +440,24 @@ void IceModel::allocate_iceberg_remover() {
   if (m_config->get_boolean("geometry.remove_icebergs")) {
 
     // this will throw an exception on failure
-    iceberg_remover = new calving::IcebergRemover(m_grid);
+    m_iceberg_remover = new calving::IcebergRemover(m_grid);
 
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
-    iceberg_remover->init();
+    m_iceberg_remover->init();
   }
 }
 
 //! \brief Decide which bedrock thermal unit to use.
 void IceModel::allocate_bedrock_thermal_unit() {
 
-  if (btu != NULL) {
+  if (m_btu != NULL) {
     return;
   }
 
-  m_log->message(2,
-             "# Allocating a bedrock thermal layer model...\n");
+  m_log->message(2, "# Allocating a bedrock thermal layer model...\n");
 
-  btu = new energy::BedThermalUnit(m_grid);
+  m_btu = energy::BedThermalUnit::FromOptions(m_grid, m_ctx);
 }
 
 //! \brief Decide which subglacial hydrology model to use.
@@ -400,7 +467,7 @@ void IceModel::allocate_subglacial_hydrology() {
 
   std::string hydrology_model = m_config->get_string("hydrology.model");
 
-  if (subglacial_hydrology != NULL) { // indicates it has already been allocated
+  if (m_subglacial_hydrology != NULL) { // indicates it has already been allocated
     return;
   }
 
@@ -408,11 +475,11 @@ void IceModel::allocate_subglacial_hydrology() {
              "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
-    subglacial_hydrology = new NullTransport(m_grid);
+    m_subglacial_hydrology = new NullTransport(m_grid);
   } else if (hydrology_model == "routing") {
-    subglacial_hydrology = new Routing(m_grid);
+    m_subglacial_hydrology = new Routing(m_grid);
   } else if (hydrology_model == "distributed") {
-    subglacial_hydrology = new Distributed(m_grid, m_stress_balance);
+    m_subglacial_hydrology = new Distributed(m_grid, m_stress_balance);
   } else {
     throw RuntimeError::formatted("unknown value for configuration string 'hydrology.model':\n"
                                   "has value '%s'", hydrology_model.c_str());
@@ -422,7 +489,7 @@ void IceModel::allocate_subglacial_hydrology() {
 //! \brief Decide which basal yield stress model to use.
 void IceModel::allocate_basal_yield_stress() {
 
-  if (basal_yield_stress_model != NULL) {
+  if (m_basal_yield_stress_model != NULL) {
     return;
   }
 
@@ -436,9 +503,9 @@ void IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress_model = new ConstantYieldStress(m_grid);
+      m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress_model = new MohrCoulombYieldStress(m_grid, subglacial_hydrology);
+      m_basal_yield_stress_model = new MohrCoulombYieldStress(m_grid, m_subglacial_hydrology);
     } else {
       throw RuntimeError::formatted("yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
@@ -495,8 +562,7 @@ void IceModel::allocate_couplers() {
     m_log->message(2,
              "# Allocating a surface process model or coupler...\n");
 
-    m_surface = ps.create();
-    m_external_surface_model = false;
+    m_surface = new surface::InitializationHelper(m_grid, ps.create());
 
     atmosphere = pa.create();
     m_surface->attach_atmosphere_model(atmosphere);
@@ -506,52 +572,8 @@ void IceModel::allocate_couplers() {
     m_log->message(2,
              "# Allocating an ocean model or coupler...\n");
 
-    m_ocean = po.create();
-    m_external_ocean_model = false;
+    m_ocean = new ocean::InitializationHelper(m_grid, po.create());
   }
-}
-
-//! Initializes atmosphere and ocean couplers.
-void IceModel::init_couplers() {
-
-  m_log->message(3,
-             "Initializing boundary models...\n");
-
-  assert(m_surface != NULL);
-  m_surface->init();
-
-  assert(m_ocean != NULL);
-  m_ocean->init();
-}
-
-
-//! Some sub-models need fields provided by surface and ocean models
-//! for initialization, so here we call update() to make sure that
-//! surface and ocean models report a decent state
-void IceModel::init_step_couplers() {
-
-  const double
-    now               = m_time->current(),
-    one_year_from_now = m_time->increment_date(now, 1.0);
-
-  // Take a one year long step if we can.
-  MaxTimestep max_dt(one_year_from_now - now);
-
-  assert(m_surface != NULL);
-  max_dt = std::min(max_dt, m_surface->max_timestep(now));
-
-  assert(m_ocean != NULL);
-  max_dt = std::min(max_dt, m_ocean->max_timestep(now));
-
-  // Do not take time-steps shorter than 1 second
-  if (max_dt.value() < 1.0) {
-    max_dt = MaxTimestep(1.0);
-  }
-
-  assert(max_dt.is_finite() == true);
-
-  m_surface->update(now, max_dt.value());
-  m_ocean->update(now, max_dt.value());
 }
 
 
@@ -561,15 +583,15 @@ void IceModel::allocate_internal_objects() {
 
   // various internal quantities
   // 2d work vectors
-  for (int j = 0; j < nWork2d; j++) {
+  for (int j = 0; j < m_n_work2d; j++) {
     char namestr[30];
     snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
-    vWork2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
+    m_work2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
   }
 
   // 3d work vectors
-  vWork3d.create(m_grid,"work_vector_3d",WITHOUT_GHOSTS);
-  vWork3d.set_attrs("internal",
+  m_work3d.create(m_grid,"work_vector_3d",WITHOUT_GHOSTS);
+  m_work3d.set_attrs("internal",
                     "e.g. new values of temperature or age or enthalpy during time step",
                     "", "");
 }
@@ -583,11 +605,11 @@ void IceModel::get_projection_info(const PIO &input_file) {
     m_output_global_attributes.set_string("proj4", proj4_string);
   }
 
-  bool input_has_mapping = input_file.inq_var(mapping.get_name());
+  bool input_has_mapping = input_file.inq_var(m_mapping.get_name());
   if (input_has_mapping) {
     // Note: read_attributes clears attributes before reading
-    io::read_attributes(input_file, mapping.get_name(), mapping);
-    mapping.report_to_stdout(*m_log, 4);
+    io::read_attributes(input_file, m_mapping.get_name(), m_mapping);
+    m_mapping.report_to_stdout(*m_log, 4);
   }
 
   std::string::size_type pos = proj4_string.find("+init=epsg:");
@@ -601,13 +623,13 @@ void IceModel::get_projection_info(const PIO &input_file) {
   // Check that the EPSG code matches the projection information stored in the "mapping" variable
   // *unless* this variable has no attributes, in which case initialize it.
   if (input_has_mapping and
-      ((not mapping.get_all_strings().empty()) or (not mapping.get_all_doubles().empty()))) {
+      ((not m_mapping.get_all_strings().empty()) or (not m_mapping.get_all_doubles().empty()))) {
     // Check if the "mapping" variable in the input file matches the EPSG code.
     // Check strings.
     VariableMetadata::StringAttrs strings = epsg_mapping.get_all_strings();
     VariableMetadata::StringAttrs::const_iterator j;
     for (j = strings.begin(); j != strings.end(); ++j) {
-      if (not mapping.has_attribute(j->first)) {
+      if (not m_mapping.has_attribute(j->first)) {
         throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
                                       "%s requires %s = \"%s\",\n"
                                       "but the mapping variable has no %s.",
@@ -617,7 +639,7 @@ void IceModel::get_projection_info(const PIO &input_file) {
                                       j->first.c_str());
       }
 
-      if (not (mapping.get_string(j->first) == j->second)) {
+      if (not (m_mapping.get_string(j->first) == j->second)) {
         throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
                                       "%s requires %s = \"%s\",\n"
                                       "but the mapping variable has %s = \"%s\".",
@@ -625,7 +647,7 @@ void IceModel::get_projection_info(const PIO &input_file) {
                                       proj4_string.c_str(),
                                       j->first.c_str(), j->second.c_str(),
                                       j->first.c_str(),
-                                      mapping.get_string(j->first).c_str());
+                                      m_mapping.get_string(j->first).c_str());
       }
     }
 
@@ -633,7 +655,7 @@ void IceModel::get_projection_info(const PIO &input_file) {
     VariableMetadata::DoubleAttrs doubles = epsg_mapping.get_all_doubles();
     VariableMetadata::DoubleAttrs::const_iterator k;
     for (k = doubles.begin(); k != doubles.end(); ++k) {
-      if (not mapping.has_attribute(k->first)) {
+      if (not m_mapping.has_attribute(k->first)) {
         throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has no %s.",
@@ -643,7 +665,7 @@ void IceModel::get_projection_info(const PIO &input_file) {
                                       k->first.c_str());
       }
 
-      if (fabs(mapping.get_double(k->first) - k->second[0]) > 1e-12) {
+      if (fabs(m_mapping.get_double(k->first) - k->second[0]) > 1e-12) {
         throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has %s = %f.",
@@ -651,12 +673,12 @@ void IceModel::get_projection_info(const PIO &input_file) {
                                       proj4_string.c_str(),
                                       k->first.c_str(), k->second[0],
                                       k->first.c_str(),
-                                      mapping.get_double(k->first));
+                                      m_mapping.get_double(k->first));
       }
     }
   } else {
     // Set "mapping" using the EPSG code.
-    mapping = epsg_mapping;
+    m_mapping = epsg_mapping;
   }
 }
 
@@ -720,14 +742,6 @@ void IceModel::misc_setup() {
   m_output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
                                         "medium");
 
-  // Quietly re-initialize couplers (they might have done one
-  // time-step during initialization)
-  {
-    m_log->disable();
-    init_couplers();
-    m_log->enable();
-  }
-
   init_calving();
   init_diagnostics();
   init_snapshots();
@@ -744,6 +758,26 @@ void IceModel::misc_setup() {
       m_config->get_string("output.variable_order") != "yxz") {
     throw RuntimeError("output formats netcdf4_parallel, quilt, and hdf5 require -o_order yxz.");
   }
+
+  // a report on whether PISM-PIK modifications of IceModel are in use
+  {
+    std::vector<std::string> pik_methods;
+    if (m_config->get_boolean("geometry.part_grid.enabled")) {
+      pik_methods.push_back("part_grid");
+    }
+    if (m_config->get_boolean("geometry.part_grid.redistribute_residual_volume")) {
+      pik_methods.push_back("part_redist");
+    }
+    if (m_config->get_boolean("geometry.remove_icebergs")) {
+      pik_methods.push_back("kill_icebergs");
+    }
+
+    if (not pik_methods.empty()) {
+      m_log->message(2,
+                     "* PISM-PIK mass/geometry methods are in use: %s\n",
+                     join(pik_methods, ", ").c_str());
+    }
+  }
 }
 
 //! \brief Initialize calving mechanisms.
@@ -759,41 +793,51 @@ void IceModel::init_calving() {
 
   if (methods.find("ocean_kill") != methods.end()) {
 
-    if (ocean_kill_calving == NULL) {
-      ocean_kill_calving = new calving::OceanKill(m_grid);
+    if (m_ocean_kill_calving == NULL) {
+      m_ocean_kill_calving = new calving::OceanKill(m_grid);
     }
 
-    ocean_kill_calving->init();
+    m_ocean_kill_calving->init();
     methods.erase("ocean_kill");
   }
 
   if (methods.find("thickness_calving") != methods.end()) {
 
-    if (thickness_threshold_calving == NULL) {
-      thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
+    if (m_thickness_threshold_calving == NULL) {
+      m_thickness_threshold_calving = new calving::CalvingAtThickness(m_grid);
     }
 
-    thickness_threshold_calving->init();
+    m_thickness_threshold_calving->init();
     methods.erase("thickness_calving");
   }
 
 
   if (methods.find("eigen_calving") != methods.end()) {
 
-    if (eigen_calving == NULL) {
-      eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance);
+    if (m_eigen_calving == NULL) {
+      m_eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance);
     }
 
-    eigen_calving->init();
+    m_eigen_calving->init();
     methods.erase("eigen_calving");
   }
 
-  if (methods.find("float_kill") != methods.end()) {
-    if (float_kill_calving == NULL) {
-      float_kill_calving = new calving::FloatKill(m_grid);
+  if (methods.find("vonmises_calving") != methods.end()) {
+
+    if (m_vonmises_calving == NULL) {
+      m_vonmises_calving = new calving::vonMisesCalving(m_grid, m_stress_balance);
     }
 
-    float_kill_calving->init();
+    m_vonmises_calving->init();
+    methods.erase("vonmises_calving");
+  }
+
+  if (methods.find("float_kill") != methods.end()) {
+    if (m_float_kill_calving == NULL) {
+      m_float_kill_calving = new calving::FloatKill(m_grid);
+    }
+
+    m_float_kill_calving->init();
     methods.erase("float_kill");
   }
 

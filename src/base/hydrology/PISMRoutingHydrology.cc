@@ -127,19 +127,21 @@ MaxTimestep Routing::max_timestep_impl(double t) {
 
 void Routing::init_bwat() {
 
-  // initialize water layer thickness from the context if present,
-  //   otherwise from -i file, otherwise with constant value
+  // initialize water layer thickness from the context if present, otherwise from -i file, otherwise
+  // with constant value
+
+  InputOptions opts = process_input_options(m_grid->com);
 
   const PetscReal bwatdefault = m_config->get_double("bootstrapping.defaults.bwat");
 
-  bool bootstrap = false;
-  int start = 0;
-  std::string filename;
-  bool use_input_file = find_pism_input(filename, bootstrap, start);
-
-  if (use_input_file) {
-    m_W.regrid(filename, OPTIONAL, bwatdefault);
-  } else { // not sure if this case can be reached, but ...
+  switch (opts.type) {
+  case INIT_RESTART:
+    m_W.read(opts.filename, opts.record);
+    break;
+  case INIT_BOOTSTRAP:
+    m_W.regrid(opts.filename, OPTIONAL, bwatdefault);
+    break;
+  default:
     m_W.set(bwatdefault);
   }
 

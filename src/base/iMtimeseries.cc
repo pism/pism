@@ -101,7 +101,9 @@ void IceModel::init_timeseries() {
   PIO nc(m_grid->com, "netcdf3");      // Use NetCDF-3 to write time-series.
   nc.open(ts_file, mode);
 
-  if (append == true) {
+  if (append) {
+    m_old_ts_file_history = nc.get_att_text("PISM_GLOBAL", "history");
+
     double time_max;
     std::string time_name = m_config->get_string("time.dimension_name");
     bool time_exists = false;
@@ -122,7 +124,7 @@ void IceModel::init_timeseries() {
     }
   }
 
-  write_metadata(nc, false, true);
+  write_metadata(nc, WRITE_RUN_STATS_AND_GLOBAL_ATTRIBUTES);
 
   nc.close();
 
@@ -238,19 +240,19 @@ void IceModel::init_extras() {
     throw RuntimeError("no argument for -extra_times option.");
   }
 
-  if (append && split) {
+  if (append and split) {
     throw RuntimeError("both -extra_split and -extra_append are set.");
   }
 
   if (append) {
     PIO nc(m_grid->com, m_config->get_string("output.format"));
     std::string time_name = m_config->get_string("time.dimension_name");
-    bool time_exists;
 
     nc.open(m_extra_filename, PISM_READONLY);
-    time_exists = nc.inq_var(time_name);
 
-    if (time_exists == true) {
+    m_old_extra_file_history = nc.get_att_text("PISM_GLOBAL", "history");
+
+    if (nc.inq_var(time_name)) {
       double time_max;
       nc.inq_dim_limits(time_name, NULL, &time_max);
 
@@ -414,7 +416,7 @@ void IceModel::write_extras() {
 
   if (m_split_extra) {
     m_extra_file_is_ready = false;        // each time-series record is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
+    snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
              m_extra_filename.c_str(), m_time->date().c_str());
   } else {
     strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
@@ -453,8 +455,17 @@ void IceModel::write_extras() {
     nc.open(filename, PISM_READWRITE);
   }
 
-  // write metadata to the file *every time* we update it
-  write_metadata(nc, true, true);
+  // write metadata to the file *every time* we update it, but avoid prepending history.
+  write_metadata(nc, WRITE_MAPPING_AND_RUN_STATS);
+  // write global attributes, but avoid prepending history every time
+  {
+    VariableMetadata tmp = m_output_global_attributes;
+
+    tmp.set_string("history",
+                   tmp.get_string("history") + m_old_extra_file_history);
+
+    io::write_attributes(nc, tmp, PISM_DOUBLE, false);
+  }
 
   double      current_time = m_time->current();
   std::string time_name    = m_config->get_string("time.dimension_name");
@@ -566,9 +577,17 @@ void IceModel::flush_timeseries() {
   if (m_save_ts) {
     PIO nc(m_grid->com, "netcdf3");
     nc.open(m_ts_filename, PISM_READWRITE);
-    write_metadata(nc,
-                   false,       // write_mapping == false
-                   true);       // write_run_stats == true
+
+    write_metadata(nc, WRITE_RUN_STATS);
+    // write global attributes, but avoid prepending history every time
+    {
+      VariableMetadata tmp = m_output_global_attributes;
+
+      tmp.set_string("history",
+                     tmp.get_string("history") + m_old_ts_file_history);
+
+      io::write_attributes(nc, tmp, PISM_DOUBLE, false);
+    }
 
     nc.close();
   }

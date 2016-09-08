@@ -18,7 +18,7 @@
 
 #include <cassert>
 
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
@@ -65,10 +65,11 @@ void IceModel::energyStep() {
   //   tell BedThermalUnit* btu that we have an ice base temp; it will return
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyAndDrainageStep()
-  get_bed_top_temp(m_bedtoptemp);
+  IceModelVec2S &bedtoptemp = m_work2d[0];
+  get_bed_top_temp(bedtoptemp);
 
   profiling.begin("BTU");
-  btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
+  m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("BTU");
 
   if (m_config->get_boolean("energy.temperature_based")) {
@@ -77,7 +78,7 @@ void IceModel::energyStep() {
     temperatureStep(&myVertSacrCount,&myBulgeCount);
     profiling.end("temp step");
 
-    vWork3d.update_ghosts(m_ice_temperature);
+    m_work3d.update_ghosts(m_ice_temperature);
 
     // compute_enthalpy_cold() updates ghosts of m_ice_enthalpy using
     // update_ghosts(). Is not optimized because this
@@ -85,14 +86,14 @@ void IceModel::energyStep() {
     compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
 
   } else {
-    // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
+    // new enthalpy values go in m_work3d; also updates (and communicates) Hmelt
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
     profiling.begin("enth step");
     enthalpyAndDrainageStep(&myVertSacrCount, &myLiquifiedVol, &myBulgeCount);
     profiling.end("enth step");
 
-    vWork3d.update_ghosts(m_ice_enthalpy);
+    m_work3d.update_ghosts(m_ice_enthalpy);
 
     gLiquifiedVol = GlobalSum(m_grid->com, myLiquifiedVol);
     if (gLiquifiedVol > 0.0) {
@@ -103,7 +104,7 @@ void IceModel::energyStep() {
   }
 
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
-  CFLviolcount = countCFLViolations();
+  m_CFL_violation_counter = countCFLViolations();
 
   gVertSacrCount = GlobalSum(m_grid->com, myVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
@@ -113,7 +114,7 @@ void IceModel::energyStep() {
         getVerbosityLevel() > 2) {
       char tempstr[50] = "";
       snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
-      stdout_flags = tempstr + stdout_flags;
+      m_stdout_flags = tempstr + m_stdout_flags;
     }
   }
 
@@ -122,7 +123,7 @@ void IceModel::energyStep() {
                              //    frequently it is identically zero
     char tempstr[50] = "";
     snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)));
-    stdout_flags = tempstr + stdout_flags;
+    m_stdout_flags = tempstr + m_stdout_flags;
   }
 }
 

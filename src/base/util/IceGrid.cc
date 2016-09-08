@@ -245,11 +245,12 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
                                const std::vector<std::string> &var_names,
                                Periodicity periodicity) {
 
+  PIO file(ctx->com(), "netcdf3");
+  file.open(filename, PISM_READONLY); // will be closed automatically
+
   for (unsigned int k = 0; k < var_names.size(); ++k) {
-    PIO file(ctx->com(), "netcdf3");
-    file.open(filename, PISM_READONLY); // will be closed automatically
     if (file.inq_var(var_names[k])) {
-      return FromFile(ctx, filename, var_names[k], periodicity);
+      return FromFile(ctx, file, var_names[k], periodicity);
     }
   }
 
@@ -261,7 +262,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
 
 //! Create a grid from a file, get information from variable `var_name`.
 IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
-                               const std::string &filename,
+                               const PIO &file,
                                const std::string &var_name,
                                Periodicity periodicity) {
   try {
@@ -269,15 +270,15 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    GridParameters p(ctx, filename, var_name, periodicity);
+    GridParameters p(ctx, file, var_name, periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
       double Lz = ctx->config()->get_double("grid.Lz");
       log.message(3,
-                 "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
-                 "         Using 2 levels and Lz of %3.3fm\n",
-                 var_name.c_str(), filename.c_str(), Lz);
+                  "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
+                  "         Using 2 levels and Lz of %3.3fm\n",
+                  var_name.c_str(), file.inq_filename().c_str(), Lz);
 
       p.z.clear();
       p.z.push_back(0);
@@ -291,7 +292,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
     return IceGrid::Ptr(new IceGrid(ctx, p));
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
-                  var_name.c_str(), filename.c_str());
+                  var_name.c_str(), file.inq_filename().c_str());
     throw;
   }
 }
@@ -616,10 +617,15 @@ void IceGrid::report_parameters() const {
               km(2*Lx()), km(2*Ly()), Lz());
 
   // report on grid cell dims
-  log.message(2,
-              "     horizontal grid cell   %.2f km x %.2f km\n",
-              km(dx()), km(dy()));
-
+  if ((dx() && dy()) > 1000.) {
+    log.message(2,
+                "     horizontal grid cell   %.2f km x %.2f km\n",
+                km(dx()), km(dy()));
+  } else {
+    log.message(2,
+                "     horizontal grid cell   %.0f m x %.0f m\n",
+                dx(), dy());
+  }
   if (fabs(dz_max() - dz_min()) <= 1.0e-8) {
     log.message(2,
                 "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
@@ -1283,17 +1289,19 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
 
   Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
 
+  Logger::ConstPtr log = ctx->log();
+
   if (input_file.is_set() and (not bootstrap)) {
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
-    options::ignored(*ctx->log(), "-Mx");
-    options::ignored(*ctx->log(), "-My");
-    options::ignored(*ctx->log(), "-Mz");
-    options::ignored(*ctx->log(), "-Mbz");
-    options::ignored(*ctx->log(), "-Lx");
-    options::ignored(*ctx->log(), "-Ly");
-    options::ignored(*ctx->log(), "-Lz");
-    options::ignored(*ctx->log(), "-z_spacing");
+    options::ignored(*log, "-Mx");
+    options::ignored(*log, "-My");
+    options::ignored(*log, "-Mz");
+    options::ignored(*log, "-Mbz");
+    options::ignored(*log, "-Lx");
+    options::ignored(*log, "-Ly");
+    options::ignored(*log, "-Lz");
+    options::ignored(*log, "-z_spacing");
 
     // get grid from a PISM input file
     std::vector<std::string> names;
@@ -1344,7 +1352,20 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
     input_grid.vertical_grid_from_options(ctx->config());
     input_grid.ownership_ranges_from_options(ctx->size());
 
-    return IceGrid::Ptr(new IceGrid(ctx, input_grid));
+    IceGrid::Ptr result(new IceGrid(ctx, input_grid));
+
+    // report on resulting computational box
+    log->message(2,
+                 "  setting computational box for ice from '%s' and\n"
+                 "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
+                 input_file->c_str(),
+                 (result->x0() - result->Lx())/1000.0,
+                 (result->x0() + result->Lx())/1000.0,
+                 (result->y0() - result->Ly())/1000.0,
+                 (result->y0() + result->Ly())/1000.0,
+                 result->Lz());
+
+    return result;
   } else {
     // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is not set,
     // -bootstrap is not set either".

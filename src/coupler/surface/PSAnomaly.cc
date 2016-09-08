@@ -30,7 +30,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, SurfaceModel* in)
     climatic_mass_balance(m_sys, "climatic_mass_balance"),
     ice_surface_temp(m_sys, "ice_surface_temp") {
 
-  option_prefix  = "-surface_anomaly";
+  m_option_prefix  = "-surface_anomaly";
 
   // will be de-allocated by the parent's destructor
   climatic_mass_balance_anomaly = new IceModelVec2T;
@@ -79,18 +79,18 @@ void Anomaly::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  if (input_model != NULL) {
-    input_model->init();
+  if (m_input_model != NULL) {
+    m_input_model->init();
   }
 
   m_log->message(2,
              "* Initializing the '-surface ...,anomaly' modifier...\n");
 
   m_log->message(2,
-             "    reading anomalies from %s ...\n", filename.c_str());
+             "    reading anomalies from %s ...\n", m_filename.c_str());
 
-  ice_surface_temp_anomaly->init(filename, bc_period, bc_reference_time);
-  climatic_mass_balance_anomaly->init(filename, bc_period, bc_reference_time);
+  ice_surface_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+  climatic_mass_balance_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
 }
 
 void Anomaly::update_impl(double my_t, double my_dt) {
@@ -101,17 +101,17 @@ void Anomaly::update_impl(double my_t, double my_dt) {
 }
 
 void Anomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  input_model->ice_surface_mass_flux(result);
+  m_input_model->ice_surface_mass_flux(result);
   result.add(1.0, *climatic_mass_balance_anomaly);
 }
 
 void Anomaly::ice_surface_temperature_impl(IceModelVec2S &result) {
-  input_model->ice_surface_temperature(result);
+  m_input_model->ice_surface_temperature(result);
   result.add(1.0, *ice_surface_temp_anomaly);
 }
 
 void Anomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  input_model->add_vars_to_output(keyword, result);
+  m_input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert("ice_surface_temp");
@@ -130,7 +130,7 @@ void Anomaly::define_variables_impl(const std::set<std::string> &vars, const PIO
     io::define_spatial_variable(climatic_mass_balance, *m_grid, nc, nctype, order, true);
   }
 
-  input_model->define_variables(vars, nc, nctype);
+  m_input_model->define_variables(vars, nc, nctype);
 }
 
 void Anomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
@@ -160,7 +160,7 @@ void Anomaly::write_variables_impl(const std::set<std::string> &vars_input, cons
     vars.erase("climatic_mass_balance");
   }
 
-  input_model->write_variables(vars, nc);
+  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace surface

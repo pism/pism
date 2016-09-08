@@ -71,7 +71,6 @@ public:
     m_alpha = 1 - config.get_double("constants.ice.density") / config.get_double("constants.sea_water.density");
     m_is_dry_simulation = config.get_boolean("ocean.always_grounded");
     m_icefree_thickness = config.get_double("geometry.ice_free_thickness_standard");
-    m_is_floating_thickness = config.get_double("geometry.is_floating_thickness_standard");
   }
 
   void set_icefree_thickness(double threshold) {
@@ -96,7 +95,7 @@ public:
     const double hfloating = sea_level + m_alpha*thickness;
 
     const bool
-      is_floating = (hfloating > hgrounded + m_is_floating_thickness),
+      is_floating = (hfloating > hgrounded),
       ice_free    = (thickness < m_icefree_thickness);
 
     int mask_result;
@@ -142,7 +141,8 @@ public:
   }
 
 protected:
-  double m_alpha, m_icefree_thickness, m_is_floating_thickness;
+  double m_alpha;
+  double m_icefree_thickness;
   bool m_is_dry_simulation;
 };
 

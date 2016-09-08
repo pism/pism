@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace atmosphere {
 Given::Given(IceGrid::ConstPtr g)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, NULL)
 {
-  option_prefix = "-atmosphere_given";
+  m_option_prefix = "-atmosphere_given";
   air_temp      = NULL;
   precipitation = NULL;
 
@@ -49,9 +49,12 @@ Given::Given(IceGrid::ConstPtr g)
 
   air_temp->set_attrs("climate_forcing", "near-surface air temperature",
                       "Kelvin", "");
+  air_temp->metadata().set_double("valid_min", 0.0);
+  air_temp->metadata().set_double("valid_max", 323.15); // 50 C
+
   precipitation->set_attrs("climate_forcing", "ice-equivalent precipitation rate",
-                           "m s-1", "");
-  precipitation->metadata().set_string("glaciological_units", "m year-1");
+                           "kg m-2 second-1", "");
+  precipitation->metadata().set_string("glaciological_units", "kg m-2 year-1");
   precipitation->write_in_glaciological_units = true;
 }
 
@@ -66,8 +69,8 @@ void Given::init() {
              "* Initializing the atmosphere model reading near-surface air temperature\n"
              "  and ice-equivalent precipitation from a file...\n");
 
-  air_temp->init(filename, bc_period, bc_reference_time);
-  precipitation->init(filename, bc_period, bc_reference_time);
+  air_temp->init(m_filename, m_bc_period, m_bc_reference_time);
+  precipitation->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
   if (air_temp->get_n_records() == 1 && precipitation->get_n_records() == 1) {

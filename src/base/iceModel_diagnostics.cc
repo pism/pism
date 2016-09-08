@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "base/basalstrength/PISMYieldStress.hh"
-#include "base/energy/bedrockThermalUnit.hh"
+#include "base/energy/BedThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/rheology/FlowLaw.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -39,7 +39,9 @@
 #include "base/util/pism_utilities.hh"
 
 #include "base/grounded_cell_fraction.hh"
-
+#include "base/part_grid_threshold_thickness.hh"
+#include "base/calving/EigenCalving.hh"
+#include "base/calving/vonMisesCalving.hh"
 
 namespace pism {
 
@@ -81,7 +83,9 @@ void IceModel::init_diagnostics() {
 
   m_diagnostics["surface_mass_balance_average"] = Diagnostic::Ptr(new IceModel_surface_mass_balance_average(this));
   m_diagnostics["basal_mass_balance_average"]   = Diagnostic::Ptr(new IceModel_basal_mass_balance_average(this));
-
+  m_diagnostics["height_above_flotation"]   = Diagnostic::Ptr(new IceModel_height_above_flotation(this));
+  m_diagnostics["ice_mass"]   = Diagnostic::Ptr(new IceModel_ice_mass(this));
+  
 #if (PISM_USE_PROJ4==1)
   if (m_output_global_attributes.has_attribute("proj4")) {
     std::string proj4 = m_output_global_attributes.get_string("proj4");
@@ -148,16 +152,24 @@ void IceModel::init_diagnostics() {
     m_beddef->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 
-  if (basal_yield_stress_model != NULL) {
-    basal_yield_stress_model->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  if (m_basal_yield_stress_model != NULL) {
+    m_basal_yield_stress_model->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 
-  if (subglacial_hydrology != NULL) {
-    subglacial_hydrology->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  if (m_subglacial_hydrology != NULL) {
+    m_subglacial_hydrology->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 
-  if (btu != NULL) {
-    btu->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  if (m_btu != NULL) {
+    m_btu->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  }
+
+  if (m_eigen_calving != NULL) {
+    m_eigen_calving->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  }
+
+  if (m_vonmises_calving != NULL) {
+    m_vonmises_calving->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 }
 
@@ -174,19 +186,19 @@ void IceModel::list_diagnostics() {
       m_beddef->add_vars_to_output("big_2d", list);
     }
 
-    if (btu != NULL) {
-      btu->add_vars_to_output("big", list);
-      btu->add_vars_to_output("big_2d", list);
+    if (m_btu != NULL) {
+      m_btu->add_vars_to_output("big", list);
+      m_btu->add_vars_to_output("2dbig", list);
     }
 
-    if (basal_yield_stress_model != NULL) {
-      basal_yield_stress_model->add_vars_to_output("big", list);
-      basal_yield_stress_model->add_vars_to_output("big_2d", list);
+    if (m_basal_yield_stress_model != NULL) {
+      m_basal_yield_stress_model->add_vars_to_output("big", list);
+      m_basal_yield_stress_model->add_vars_to_output("2dbig", list);
     }
 
-    if (subglacial_hydrology != NULL) {
-      subglacial_hydrology->add_vars_to_output("big", list);
-      subglacial_hydrology->add_vars_to_output("big_2d", list);
+    if (m_subglacial_hydrology != NULL) {
+      m_subglacial_hydrology->add_vars_to_output("big", list);
+      m_subglacial_hydrology->add_vars_to_output("2dbig", list);
     }
 
     if (m_stress_balance != NULL) {
@@ -1363,9 +1375,7 @@ IceModel_surface_flux::IceModel_surface_flux(IceModel *m)
 
 void IceModel_surface_flux::update(double a, double b) {
 
-  double value = model->surface_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().surface, a, b);
 }
 
 IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m)
@@ -1380,10 +1390,7 @@ IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m)
 }
 
 void IceModel_surface_flux_cumulative::update(double a, double b) {
-
-  double value = model->surface_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().surface, a, b);
 }
 
 IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m)
@@ -1400,10 +1407,7 @@ IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m)
 }
 
 void IceModel_grounded_basal_flux::update(double a, double b) {
-
-  double value = model->grounded_basal_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
 }
 
 IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(IceModel *m)
@@ -1419,10 +1423,7 @@ IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative
 }
 
 void IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
-
-  double value = model->grounded_basal_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
 }
 
 IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m)
@@ -1439,10 +1440,7 @@ IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m)
 }
 
 void IceModel_sub_shelf_flux::update(double a, double b) {
-
-  double value = model->sub_shelf_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
 IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel *m)
@@ -1458,10 +1456,7 @@ IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel 
 }
 
 void IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
-
-  double value = model->sub_shelf_ice_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
 IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m)
@@ -1478,10 +1473,7 @@ IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m)
 }
 
 void IceModel_nonneg_flux::update(double a, double b) {
-
-  double value = model->nonneg_rule_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
 }
 
 IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m)
@@ -1497,10 +1489,7 @@ IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m)
 }
 
 void IceModel_nonneg_flux_cumulative::update(double a, double b) {
-
-  double value = model->nonneg_rule_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
 }
 
 IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m)
@@ -1517,9 +1506,7 @@ IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m)
 }
 
 void IceModel_discharge_flux::update(double a, double b) {
-  double value = model->discharge_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().discharge, a, b);
 }
 
 IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel *m)
@@ -1535,9 +1522,7 @@ IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel 
 }
 
 void IceModel_discharge_flux_cumulative::update(double a, double b) {
-  double value = model->discharge_flux_cumulative;
-
-  m_ts->append(value, a, b);
+  m_ts->append(model->cumulative_fluxes().discharge, a, b);
 }
 
 IceModel_dHdt::IceModel_dHdt(IceModel *m)
@@ -1728,8 +1713,7 @@ IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m)
 }
 
 void IceModel_H_to_Href_flux::update(double a, double b) {
-
-  m_ts->append(model->H_to_Href_flux_cumulative, a, b);
+  m_ts->append(model->cumulative_fluxes().H_to_Href, a, b);
 }
 
 
@@ -1746,8 +1730,7 @@ IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m)
 }
 
 void IceModel_Href_to_H_flux::update(double a, double b) {
-
-  m_ts->append(model->Href_to_H_flux_cumulative, a, b);
+  m_ts->append(model->cumulative_fluxes().Href_to_H, a, b);
 }
 
 
@@ -1766,8 +1749,9 @@ IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m)
 
 void IceModel_sum_divQ_flux::update(double a, double b) {
 
-  m_ts->append(model->sum_divQ_SIA_cumulative + model->sum_divQ_SSA_cumulative,
-             a, b);
+  m_ts->append(model->cumulative_fluxes().sum_divQ_SIA +
+               model->cumulative_fluxes().sum_divQ_SSA,
+               a, b);
 }
 
 IceModel_limnsw::IceModel_limnsw(IceModel *m)
@@ -2334,6 +2318,140 @@ IceModelVec::Ptr IceModel_basal_mass_balance_average::compute_impl() {
   // Save the cumulative BMB and the corresponding time:
   cumulative_grounded_BMB.add(1.0, cumulative_floating_BMB, m_last_cumulative_BMB);
   m_last_report_time = current_time;
+
+  return result;
+}
+
+IceModel_height_above_flotation::IceModel_height_above_flotation(IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars.push_back(SpatialVariableMetadata(m_sys,
+                                           "height_above_flotation"));
+
+  set_attrs("the height above flotation", "",
+            "m", "m", 0);
+  m_vars[0].set_double("_FillValue", m_config->get_double("output.fill_value"));
+}
+
+IceModelVec::Ptr IceModel_height_above_flotation::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "height_above_flotation", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  const IceModelVec2CellType &cell_type = model->cell_type_mask();
+
+  const double
+    ice_density   = m_config->get_double("constants.ice.density"),
+    ocean_density = m_config->get_double("constants.sea_water.density"),
+    sea_level = model->m_ocean->sea_level_elevation(),
+    fill_value = m_config->get_double("output.fill_value");
+
+  const Vars &variables = m_grid->variables();
+
+  const IceModelVec2S
+    &ice_thickness  = *variables.get_2d_scalar("land_ice_thickness"),
+    &bed_topography = *variables.get_2d_scalar("bedrock_altitude");
+
+  IceModelVec::AccessList list;
+  list.add(cell_type);
+  list.add(*result);
+  list.add(ice_thickness);
+  list.add(bed_topography);
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double thk = ice_thickness(i,j);
+      double bed = bed_topography(i,j);
+
+      // if we have no ice, go on to the next grid point (this cell will be
+      // marked as "missing" later)
+      if (cell_type.ice_free(i, j)) {
+        (*result)(i,j) = fill_value;
+        continue;
+      }
+      (*result)(i,j) = ((ice_density / ocean_density) * thk) + (bed - sea_level);
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+
+  return result;
+}
+
+IceModel_ice_mass::IceModel_ice_mass(IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "ice_mass"));
+
+  set_attrs("mass per cell",
+            "",                 // no standard name
+            "kg", "kg", 0);
+  m_vars[0].set_double("_FillValue", m_config->get_double("output.fill_value"));
+}
+
+IceModelVec::Ptr IceModel_ice_mass::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "ice_mass", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  const IceModelVec2CellType &cell_type = model->cell_type_mask();
+
+  const double
+    ice_density = m_config->get_double("constants.ice.density"),
+    fill_value  = m_config->get_double("output.fill_value");
+
+  const Vars &variables = m_grid->variables();
+
+  const IceModelVec2S
+    &ice_thickness = *variables.get_2d_scalar("land_ice_thickness"),
+    &cell_area     = *variables.get_2d_scalar("cell_area");
+
+  IceModelVec::AccessList list;
+  list.add(cell_type);
+  list.add(*result);
+  list.add(ice_thickness);
+  list.add(cell_area);
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      // count all ice, including cells which have so little they
+      // are considered "ice-free"
+      if (ice_thickness(i, j) > 0.0) {
+        (*result)(i,j) = ice_density * ice_thickness(i, j) * cell_area(i, j);
+      } else {
+        (*result)(i,j) = fill_value;
+      }
+    } // end of loop over grid points
+
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  // Add the mass of ice in Href:
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
+    const IceModelVec2S &Href = *variables.get_2d_scalar("Href");
+    list.add(Href);
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (ice_thickness(i, j) <= 0.0 and Href(i, j) > 0.0) {
+        (*result)(i, j) = ice_density * Href(i, j) * cell_area(i,j);
+      }
+    }
+  }
 
   return result;
 }
