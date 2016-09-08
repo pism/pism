@@ -132,19 +132,19 @@ void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
 }
 
 void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string> &result) {
-  result.insert("shelfbtemp");
-  result.insert("shelfbmassflux");
+  result.insert(m_shelfbtemp.get_name());
+  result.insert(m_shelfbmassflux.get_name());
 }
 
 void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype) {
   std::string order = m_config->get_string("output_variable_order");
 
-  if (set_contains(vars, "shelfbtemp")) {
+  if (set_contains(vars, m_shelfbtemp)) {
     io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);
   }
 
-  if (set_contains(vars, "shelfbmassflux")) {
+  if (set_contains(vars, m_shelfbmassflux)) {
     io::define_spatial_variable(m_shelfbmassflux, *m_grid, nc, nctype, order, true);
   }
 }
@@ -152,7 +152,7 @@ void Constant::define_variables_impl(const std::set<std::string> &vars, const PI
 void Constant::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   IceModelVec2S tmp;
 
-  if (set_contains(vars, "shelfbtemp")) {
+  if (set_contains(vars, m_shelfbtemp)) {
     if (!tmp.was_created()) {
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
@@ -162,7 +162,7 @@ void Constant::write_variables_impl(const std::set<std::string> &vars, const PIO
     tmp.write(nc);
   }
 
-  if (set_contains(vars, "shelfbmassflux")) {
+  if (set_contains(vars, m_shelfbmassflux)) {
     if (!tmp.was_created()) {
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }

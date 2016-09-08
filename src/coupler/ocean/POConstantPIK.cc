@@ -153,8 +153,8 @@ void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
 
 void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
-    result.insert("shelfbtemp");
-    result.insert("shelfbmassflux");
+    result.insert(m_shelfbtemp.get_name());
+    result.insert(m_shelfbmassflux.get_name());
   }
 }
 
@@ -162,11 +162,11 @@ void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc
                                           IO_Type nctype) {
   std::string order = m_config->get_string("output_variable_order");
 
-  if (set_contains(vars, "shelfbtemp")) {
+  if (set_contains(vars, m_shelfbtemp)) {
     io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);
   }
 
-  if (set_contains(vars, "shelfbmassflux")) {
+  if (set_contains(vars, m_shelfbmassflux)) {
     io::define_spatial_variable(m_shelfbmassflux, *m_grid, nc, nctype, order, true);
   }
 }
@@ -174,7 +174,7 @@ void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc
 void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   IceModelVec2S tmp;
 
-  if (set_contains(vars, "shelfbtemp")) {
+  if (set_contains(vars, m_shelfbtemp)) {
     if (not tmp.was_created()) {
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
@@ -184,7 +184,7 @@ void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
     tmp.write(nc);
   }
 
-  if (set_contains(vars, "shelfbmassflux")) {
+  if (set_contains(vars, m_shelfbmassflux)) {
     if (!tmp.was_created()) {
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
