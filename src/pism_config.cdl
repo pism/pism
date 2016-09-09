@@ -115,6 +115,12 @@ netcdf pism_config {
     pism_config:calving.float_kill.margin_only_option = "float_kill_margin_only";
     pism_config:calving.float_kill.margin_only_doc = "Apply float_kill at ice margin cells only.";
 
+    pism_config:calving.vonmises.sigma_max_option = "vonmises_calving_sigma_max";
+    pism_config:calving.vonmises.sigma_max_units = "Pa";
+    pism_config:calving.vonmises.sigma_max_type = "scalar";
+    pism_config:calving.vonmises.sigma_max = 1.0e6;
+    pism_config:calving.vonmises.sigma_max_doc = "Set maximum tensile stress.  Note references [@ref Morlighem2016] use 1.0e6 Pa.";
+
     pism_config:fracture_density.enabled_type = "boolean";
     pism_config:fracture_density.enabled_option = "fractures";
     pism_config:fracture_density.enabled = "no";
