@@ -66,7 +66,7 @@ void CosineYearlyCycle::init() {
 
   m_air_temp_mean_annual.regrid(input_file, CRITICAL);
   m_air_temp_mean_july.regrid(input_file, CRITICAL);
-  m_precipitation.regrid(input_file, CRITICAL);
+  m_precipitation_vec.regrid(input_file, CRITICAL);
 
   if (scaling_file.is_set()) {
 

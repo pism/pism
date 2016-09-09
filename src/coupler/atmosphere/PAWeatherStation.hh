@@ -62,8 +62,6 @@ protected:
 protected:
   Timeseries m_precipitation_timeseries, m_air_temp_timeseries;
   std::vector<double> m_precip_values, m_air_temp_values;
-
-  SpatialVariableMetadata m_precipitation, m_air_temp;
 };
 
 } // end of namespace atmosphere

@@ -38,9 +38,7 @@ namespace atmosphere {
 WeatherStation::WeatherStation(IceGrid::ConstPtr g)
   : AtmosphereModel(g),
     m_precipitation_timeseries(*g, "precipitation", m_config->get_string("time_dimension_name")),
-    m_air_temp_timeseries(*g, "air_temp", m_config->get_string("time_dimension_name")),
-    m_precipitation(m_sys, "precipitation"),
-    m_air_temp(m_sys, "air_temp")
+    m_air_temp_timeseries(*g, "air_temp", m_config->get_string("time_dimension_name"))
 {
   m_precipitation_timeseries.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
   m_precipitation_timeseries.metadata().set_string("units", "kg m-2 second-1");
@@ -51,15 +49,6 @@ WeatherStation::WeatherStation(IceGrid::ConstPtr g)
   m_air_temp_timeseries.metadata().set_string("units", "Kelvin");
   m_air_temp_timeseries.metadata().set_string("long_name",
                                           "near-surface air temperature");
-
-  m_air_temp.set_string("pism_intent", "diagnostic");
-  m_air_temp.set_string("long_name", "near-surface air temperature");
-  m_air_temp.set_string("units", "K");
-
-  m_precipitation.set_string("pism_intent", "diagnostic");
-  m_precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  m_precipitation.set_string("units", "kg m-2 second-1");
-  m_precipitation.set_string("glaciological_units", "kg m-2 year-1");
 }
 
 WeatherStation::~WeatherStation() {
@@ -174,12 +163,12 @@ void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
                                                   const PIO &nc, IO_Type nctype) {
   std::string order = m_config->get_string("output_variable_order");
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     // don't write using glaciological units
     io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, false);
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     // do write using glaciological units
     io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
   }
@@ -188,7 +177,7 @@ void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
 void WeatherStation::write_variables_impl(const std::set<std::string> &vars,
                                           const PIO &nc) {
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp;
@@ -198,7 +187,7 @@ void WeatherStation::write_variables_impl(const std::set<std::string> &vars,
     tmp.write(nc);
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_precipitation.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_precipitation;

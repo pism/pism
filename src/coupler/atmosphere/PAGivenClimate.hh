@@ -45,7 +45,7 @@ public:
   virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:
   virtual void update_impl(double my_t, double my_dt);
-  IceModelVec2T *m_precipitation, *m_air_temp;
+  IceModelVec2T *m_precipitation_vec, *m_air_temp_vec;
 };
 
 } // end of namespace atmosphere

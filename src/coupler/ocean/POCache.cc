@@ -131,17 +131,17 @@ void Cache::define_variables_impl(const std::set<std::string> &vars_input, const
 
   if (set_contains(vars, m_shelf_base_mass_flux)) {
     m_shelf_base_mass_flux.define(nc, nctype);
-    vars.erase(m_shelf_base_mass_flux.metadata().get_name());
+    vars.erase(m_shelf_base_mass_flux.get_name());
   }
 
   if (set_contains(vars, m_shelf_base_temperature)) {
     m_shelf_base_temperature.define(nc, nctype);
-    vars.erase(m_shelf_base_temperature.metadata().get_name());
+    vars.erase(m_shelf_base_temperature.get_name());
   }
 
   if (set_contains(vars, m_melange_back_pressure_fraction)) {
     m_melange_back_pressure_fraction.define(nc, nctype);
-    vars.erase(m_melange_back_pressure_fraction.metadata().get_name());
+    vars.erase(m_melange_back_pressure_fraction.get_name());
   }
 
   m_input_model->define_variables(vars, nc, nctype);
@@ -152,17 +152,17 @@ void Cache::write_variables_impl(const std::set<std::string> &vars_input, const 
 
   if (set_contains(vars, m_shelf_base_mass_flux)) {
     m_shelf_base_mass_flux.write(nc);
-    vars.erase(m_shelf_base_mass_flux.metadata().get_name());
+    vars.erase(m_shelf_base_mass_flux.get_name());
   }
 
   if (set_contains(vars, m_shelf_base_temperature)) {
     m_shelf_base_temperature.write(nc);
-    vars.erase(m_shelf_base_temperature.metadata().get_name());
+    vars.erase(m_shelf_base_temperature.get_name());
   }
 
   if (set_contains(vars, m_melange_back_pressure_fraction)) {
     m_melange_back_pressure_fraction.write(nc);
-    vars.erase(m_melange_back_pressure_fraction.metadata().get_name());
+    vars.erase(m_melange_back_pressure_fraction.get_name());
   }
 
   m_input_model->write_variables(vars, nc);

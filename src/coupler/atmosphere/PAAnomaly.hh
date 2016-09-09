@@ -52,7 +52,6 @@ protected:
                                           IO_Type nctype);
 protected:
   std::vector<double> m_ts_mod, m_ts_values;
-  SpatialVariableMetadata m_air_temp, m_precipitation;
   IceModelVec2T *m_air_temp_anomaly, *m_precipitation_anomaly;
   std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 };

@@ -28,10 +28,7 @@ namespace pism {
 namespace atmosphere {
 
 Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
-  : PGivenClimate<PAModifier,AtmosphereModel>(g, in),
-    m_air_temp(m_sys, "effective_air_temp"),
-    m_precipitation(m_sys, "effective_precipitation")
-{
+  : PGivenClimate<PAModifier,AtmosphereModel>(g, in) {
   m_option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor
@@ -57,15 +54,6 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
                                    "kg m-2 second-1", "");
   m_precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_precipitation_anomaly->write_in_glaciological_units = true;
-
-  m_air_temp.set_string("pism_intent", "diagnostic");
-  m_air_temp.set_string("long_name", "near-surface air temperature");
-  m_air_temp.set_string("units", "K");
-
-  m_precipitation.set_string("pism_intent", "diagnostic");
-  m_precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  m_precipitation.set_string("units", "kg m-2 second-1");
-  m_precipitation.set_string("glaciological_units", "kg m-2 year-1");
 }
 
 Anomaly::~Anomaly()
@@ -174,12 +162,12 @@ void Anomaly::define_variables_impl(const std::set<std::string> &vars_input, con
   std::set<std::string> vars = vars_input;
   std::string order = m_config->get_string("output_variable_order");
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, false);
     vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
     vars.erase(m_precipitation.get_name());
   }
@@ -191,7 +179,7 @@ void Anomaly::define_variables_impl(const std::set<std::string> &vars_input, con
 void Anomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp;
@@ -203,7 +191,7 @@ void Anomaly::write_variables_impl(const std::set<std::string> &vars_input, cons
     vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_precipitation.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_precipitation;

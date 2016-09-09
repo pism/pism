@@ -64,29 +64,29 @@ void PSFormulas::ice_surface_temperature_impl(IceModelVec2S &result) {
 void PSFormulas::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   (void) keyword;
 
-  result.insert(m_climatic_mass_balance.metadata().get_name());
-  result.insert(m_ice_surface_temp.metadata().get_name());
+  result.insert(m_climatic_mass_balance.get_name());
+  result.insert(m_ice_surface_temp.get_name());
 }
 
 void PSFormulas::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                              IO_Type nctype) {
 
-  if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {
+  if (set_contains(vars, m_climatic_mass_balance)) {
     m_climatic_mass_balance.define(nc, nctype);
   }
 
-  if (set_contains(vars, m_ice_surface_temp.metadata().get_name())) {
+  if (set_contains(vars, m_ice_surface_temp)) {
     m_ice_surface_temp.define(nc, nctype);
   }
 }
 
 void PSFormulas::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
-  if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {
+  if (set_contains(vars, m_climatic_mass_balance)) {
     m_climatic_mass_balance.write(nc);
   }
 
-  if (set_contains(vars, m_ice_surface_temp.metadata().get_name())) {
+  if (set_contains(vars, m_ice_surface_temp)) {
     m_ice_surface_temp.write(nc);
   }
 }

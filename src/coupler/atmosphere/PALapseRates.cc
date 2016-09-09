@@ -27,23 +27,9 @@ namespace pism {
 namespace atmosphere {
 
 LapseRates::LapseRates(IceGrid::ConstPtr g, AtmosphereModel* in)
-  : PLapseRates<AtmosphereModel,PAModifier>(g, in),
-    m_precipitation(m_sys, "effective_precipitation"),
-    m_air_temp(m_sys, "effective_air_temp") {
-  m_precip_lapse_rate = 0;
+  : PLapseRates<AtmosphereModel,PAModifier>(g, in) {
+  m_precip_lapse_rate = 0.0;
   m_option_prefix     = "-atmosphere_lapse_rate";
-
-  m_precipitation.set_string("pism_intent", "diagnostic");
-  m_precipitation.set_string("long_name",
-                           "ice-equivalent precipitation rate with a lapse-rate correction");
-  m_precipitation.set_string("units", "m s-1");
-  m_precipitation.set_string("glaciological_units", "m year-1");
-
-  m_air_temp.set_string("pism_intent", "diagnostic");
-  m_air_temp.set_string("long_name",
-                      "near-surface air temperature with a lapse-rate correction");
-  m_air_temp.set_string("units", "K");
-
   m_surface = NULL;
 }
 
@@ -150,11 +136,11 @@ void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
   std::string order = m_config->get_string("output_variable_order");
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, true);
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
   }
 
@@ -164,7 +150,7 @@ void LapseRates::define_variables_impl(const std::set<std::string> &vars,
 void LapseRates::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp;
@@ -176,7 +162,7 @@ void LapseRates::write_variables_impl(const std::set<std::string> &vars_input, c
     vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_precipitation.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_precipitation;

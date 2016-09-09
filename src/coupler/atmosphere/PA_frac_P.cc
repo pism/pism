@@ -27,25 +27,13 @@ namespace pism {
 namespace atmosphere {
 
 Frac_P::Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    m_air_temp(m_sys, "effective_air_temp"),
-    m_precipitation(m_sys, "effective_precipitation")
-{
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
   m_option_prefix = "-atmosphere_frac_P";
   m_offset_name = "frac_P";
   m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
   m_offset->metadata().set_string("units", "1");
   m_offset->metadata().set_string("long_name", "precipitation multiplier, pure fraction");
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-
-  m_air_temp.set_string("pism_intent", "diagnostic");
-  m_air_temp.set_string("long_name", "near-surface air temperature");
-  m_air_temp.set_string("units", "K");
-
-  m_precipitation.set_string("pism_intent", "diagnostic");
-  m_precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  m_precipitation.set_string("units", "m second-1");
-  m_precipitation.set_string("glaciological_units", "m year-1");
 }
 
 Frac_P::~Frac_P()
@@ -107,12 +95,12 @@ void Frac_P::define_variables_impl(const std::set<std::string> &vars_input,
   std::set<std::string> vars = vars_input;
   std::string order = m_config->get_string("output_variable_order");
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, false);
     vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
     vars.erase(m_precipitation.get_name());
   }
@@ -124,7 +112,7 @@ void Frac_P::write_variables_impl(const std::set<std::string> &vars_input,
                                           const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp;
@@ -136,7 +124,7 @@ void Frac_P::write_variables_impl(const std::set<std::string> &vars_input,
     vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_precipitation.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_precipitation;

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "base/util/PISMComponent.hh"
+#include "base/util/VariableMetadata.hh"
 
 namespace pism {
 class IceModelVec2S;
@@ -32,8 +33,7 @@ namespace atmosphere {
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
 class AtmosphereModel : public Component_TS {
 public:
-  AtmosphereModel(IceGrid::ConstPtr g)
-    : Component_TS(g) {};
+  AtmosphereModel(IceGrid::ConstPtr g);
 
   virtual void init() = 0;
 
@@ -61,7 +61,8 @@ public:
   //! (For diagnostic purposes.)
   virtual void temp_snapshot(IceModelVec2S &result) = 0;
 protected:
-
+  SpatialVariableMetadata m_air_temp;
+  SpatialVariableMetadata m_precipitation;
   std::vector<double> m_ts_times;
 };
 

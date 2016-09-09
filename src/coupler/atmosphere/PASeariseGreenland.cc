@@ -80,7 +80,7 @@ void SeaRISEGreenland::init() {
 void SeaRISEGreenland::precip_time_series(int i, int j, std::vector<double> &result) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    result[k] = m_precipitation(i,j);
+    result[k] = m_precipitation_vec(i,j);
   }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -52,7 +52,6 @@ protected:
                                      const PIO &nc, IO_Type nctype);
 protected:
   double m_precip_lapse_rate;
-  SpatialVariableMetadata m_precipitation, m_air_temp;
   const IceModelVec2S *m_surface;
 };
 

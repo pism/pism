@@ -45,7 +45,7 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  IceModelVec2S m_precipitation, m_air_temp;
+  IceModelVec2S m_precipitation_vec, m_air_temp_vec;
   SpatialVariableMetadata m_air_temp_snapshot;
 };
 

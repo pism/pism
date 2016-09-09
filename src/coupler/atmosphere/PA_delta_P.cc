@@ -27,10 +27,7 @@ namespace pism {
 namespace atmosphere {
 
 Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    m_air_temp(m_sys, "effective_air_temp"),
-    m_precipitation(m_sys, "effective_precipitation")
-{
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
   m_offset = NULL;
 
   m_option_prefix = "-atmosphere_delta_P";
@@ -40,16 +37,6 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
   m_offset->metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_offset->metadata().set_string("long_name", "precipitation offsets");
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-
-
-  m_air_temp.set_string("pism_intent", "diagnostic");
-  m_air_temp.set_string("long_name", "near-surface air temperature");
-  m_air_temp.set_string("units", "K");
-
-  m_precipitation.set_string("pism_intent", "diagnostic");
-  m_precipitation.set_string("long_name", "precipitation rate");
-  m_precipitation.set_string("units", "kg m-2 second-1");
-  m_precipitation.set_string("glaciological_units", "kg m-2 year-1");
 }
 
 Delta_P::~Delta_P()
@@ -113,12 +100,12 @@ void Delta_P::define_variables_impl(const std::set<std::string> &vars_input, con
   std::set<std::string> vars = vars_input;
   std::string order = m_config->get_string("output_variable_order");
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, false);
     vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
     vars.erase(m_precipitation.get_name());
   }
@@ -130,7 +117,7 @@ void Delta_P::define_variables_impl(const std::set<std::string> &vars_input, con
 void Delta_P::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, m_air_temp.get_name())) {
+  if (set_contains(vars, m_air_temp)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp;
@@ -142,7 +129,7 @@ void Delta_P::write_variables_impl(const std::set<std::string> &vars_input, cons
     vars.erase(m_air_temp.get_name());
   }
 
-  if (set_contains(vars, m_precipitation.get_name())) {
+  if (set_contains(vars, m_precipitation)) {
     IceModelVec2S tmp;
     tmp.create(m_grid, m_precipitation.get_name(), WITHOUT_GHOSTS);
     tmp.metadata() = m_precipitation;

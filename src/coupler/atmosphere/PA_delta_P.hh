@@ -45,7 +45,6 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
 protected:
-  SpatialVariableMetadata m_air_temp, m_precipitation;
   std::vector<double> m_offset_values;
 };
 
