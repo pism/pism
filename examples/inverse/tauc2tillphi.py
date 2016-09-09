@@ -194,7 +194,7 @@ if PISM.getVerbosityLevel() > 3:
 if PISM.OptionBool("-ssa_glen", "SSA flow law Glen exponent"):
     B_schoof = 3.7e8     # Pa s^{1/3}; hardness
     config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
-    config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -config.get_double("Glen_exponent")))
+    config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -config.get_double("stress_balance.ssa.Glen_exponent")))
 else:
     config.set_string("stress_balance.ssa.flow_law", "gpbld")
 

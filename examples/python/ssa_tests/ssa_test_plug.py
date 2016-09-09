@@ -44,7 +44,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         #// Use constant hardness
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
         config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n))
-        config.set_double("Glen_exponent", glen_n)
+        config.set_double("stress_balance.ssa.Glen_exponent", glen_n)
 
         self.modeldata.setPhysics(enthalpyconverter)
 

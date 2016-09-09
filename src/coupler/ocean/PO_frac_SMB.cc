@@ -88,7 +88,7 @@ void Frac_SMB::add_vars_to_output_impl(const std::string &keyword, std::set<std:
 
 void Frac_SMB::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                               IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "shelfbtemp")) {

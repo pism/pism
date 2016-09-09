@@ -154,7 +154,7 @@ class Experiment:
                  "constants.ice.density": MISMIP.rho_i(),
                  "constants.sea_water.density": MISMIP.rho_w(),
                  "bootstrapping.defaults.geothermal_flux": 0.0,
-                 "Glen_exponent": MISMIP.n(),
+                 "stress_balance.ssa.Glen_exponent": MISMIP.n(),
                  "constants.standard_gravity": MISMIP.g(),
                  "ocean.sub_shelf_heat_flux_into_ice": 0.0,
                  }

@@ -31,7 +31,7 @@ EigenCalving::EigenCalving(IceGrid::ConstPtr g,
                            stressbalance::StressBalance *stress_balance)
   : StressCalving(g, stress_balance, 2) {
 
-  m_K = m_config->get_double("eigen_calving_K");
+  m_K = m_config->get_double("calving.eigen_calving.K");
 }
 
 EigenCalving::~EigenCalving() {

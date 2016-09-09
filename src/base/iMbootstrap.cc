@@ -130,9 +130,9 @@ void IceModel::bootstrap_3d() {
   // set the initial age of the ice if appropriate
   if (m_config->get_boolean("age.enabled")) {
     m_log->message(2, " - setting initial age to %.4f years\n",
-                   m_config->get_double("initial_age_of_ice_years"));
+                   m_config->get_double("age.initial_value"));
 
-    m_ice_age.set(m_config->get_double("initial_age_of_ice_years", "seconds"));
+    m_ice_age.set(m_config->get_double("age.initial_value", "seconds"));
   }
 
   if (m_config->get_boolean("energy.temperature_based")) {
