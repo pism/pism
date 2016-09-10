@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -54,7 +54,7 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  SpatialVariableMetadata climatic_mass_balance, ice_surface_temp;
+  SpatialVariableMetadata m_climatic_mass_balance, m_ice_surface_temp;
 };
 
 } // end of namespace surface

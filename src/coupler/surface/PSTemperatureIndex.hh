@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -77,7 +77,7 @@ protected:
     m_snow_depth;            //!< snow depth (reset once a year)
   IceModelVec2T m_air_temp_sd;
 
-  SpatialVariableMetadata ice_surface_temp;
+  SpatialVariableMetadata m_ice_surface_temp;
 
   bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
   bool m_sd_use_param, m_sd_file_set;
