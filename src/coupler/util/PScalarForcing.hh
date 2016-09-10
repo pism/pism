@@ -96,12 +96,12 @@ protected:
     nc.close();
   }
 
-  //! Apply offset as an offset
+  //! Apply the current forcing as an offset.
   void offset_data(IceModelVec2S &result) {
     result.shift(m_current_forcing);
   }
 
-  //! Apply offset as a scaling factor
+  //! Apply the current forcing as a scaling factor.
   void scale_data(IceModelVec2S &result) {
     result.scale(m_current_forcing);
   }
