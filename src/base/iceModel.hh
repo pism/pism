@@ -125,9 +125,7 @@ class IceModel {
   friend class IceModel_surface_mass_balance_average;
   friend class IceModel_basal_mass_balance_average;
   friend class IceModel_height_above_flotation;
-  friend class IceModel_ice_mass;
   // scalar:
-  friend class IceModel_dt;
   friend class IceModel_max_diffusivity;
   friend class IceModel_max_hor_vel;
 public:
