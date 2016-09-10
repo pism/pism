@@ -43,8 +43,12 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  IceModelVec2S m_mass_flux, m_mass_flux_0, m_mass_flux_input,
-    m_temp, m_temp_0, m_temp_input;
+  IceModelVec2S m_mass_flux;
+  IceModelVec2S m_mass_flux_0;
+  IceModelVec2S m_mass_flux_input;
+  IceModelVec2S m_temp;
+  IceModelVec2S m_temp_0;
+  IceModelVec2S m_temp_input;
 };
 
 } // end of namespace surface

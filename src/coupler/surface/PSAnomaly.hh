@@ -42,7 +42,9 @@ protected:
                                      const PIO &nc, IO_Type nctype);
 protected:
   SpatialVariableMetadata m_climatic_mass_balance, m_ice_surface_temp;
-  IceModelVec2T *m_climatic_mass_balance_anomaly, *m_ice_surface_temp_anomaly;
+
+  IceModelVec2T *m_climatic_mass_balance_anomaly;
+  IceModelVec2T *m_ice_surface_temp_anomaly;
 };
 
 } // end of namespace surface

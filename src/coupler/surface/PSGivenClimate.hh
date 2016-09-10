@@ -38,7 +38,8 @@ protected:
   void ice_surface_mass_flux_impl(IceModelVec2S &result);
   void ice_surface_temperature_impl(IceModelVec2S &result);
   void update_impl(double my_t, double my_dt);
-  IceModelVec2T *m_climatic_mass_balance, *m_ice_surface_temp;
+  IceModelVec2T *m_climatic_mass_balance;
+  IceModelVec2T *m_ice_surface_temp;
 };
 
 } // end of namespace surface

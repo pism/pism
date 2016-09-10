@@ -44,7 +44,8 @@ protected:
 private:
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;
   double m_start_time;
-  IceModelVec2S m_target_thickness, m_ftt_mask;
+  IceModelVec2S m_target_thickness;
+  IceModelVec2S m_ftt_mask;
   SpatialVariableMetadata m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
 };
 
