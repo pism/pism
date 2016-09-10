@@ -49,8 +49,7 @@ System::System(const std::string &path) {
   }
 
   if (tmp == NULL) {
-    std::string message = std::string("ut_read_xml(") + path + ") failed";
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("ut_read_xml(%s) failed", path.c_str());
   }
   ut_set_error_message_handler(ut_write_to_stderr);
 
@@ -74,8 +73,8 @@ Unit::Unit(System::Ptr system, const std::string &spec)
   : m_unit(NULL), m_system(system) {
   m_unit = ut_parse(m_system->m_system.get(), spec.c_str(), UT_ASCII);
   if (m_unit == NULL) {
-    std::string message = "unit specification '" + spec + "' is unknown or invalid";
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("unit specification '%s' is unknown or invalid",
+                                  spec.c_str());
   }
   m_unit_string = spec;
 }
@@ -153,14 +152,14 @@ Converter::Converter(System::Ptr sys,
 
 Converter::Converter(const Unit &u1, const Unit &u2) {
   if (ut_are_convertible(u1.get(), u2.get()) == 0) {
-    std::string message = "cannot convert " + u1.format() + " to " + u2.format();
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("cannot convert '%s' to '%s'",
+                                  u1.format().c_str(), u2.format().c_str());
   }
 
   m_converter = ut_get_converter(u1.get(), u2.get());
   if (m_converter == NULL) {
-    std::string message = "cannot create a converter from " + u1.format() + " to " + u2.format();
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("failed to create a converter from '%s' to '%s'",
+                                  u1.format().c_str(), u2.format().c_str());
   }
 }
 
