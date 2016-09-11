@@ -32,17 +32,17 @@ public:
   Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~Anomaly();
 
-  virtual void init();
+  virtual void init_impl();
 
-  virtual void mean_precipitation(IceModelVec2S &result);
-  virtual void mean_annual_temp(IceModelVec2S &result); 
-  virtual void temp_snapshot(IceModelVec2S &result);
+  virtual void mean_precipitation_impl(IceModelVec2S &result);
+  virtual void mean_annual_temp_impl(IceModelVec2S &result);
+  virtual void temp_snapshot_impl(IceModelVec2S &result);
 
-  virtual void init_timeseries(const std::vector<double> &ts);
-  virtual void begin_pointwise_access();
-  virtual void end_pointwise_access();
-  virtual void temp_time_series(int i, int j, std::vector<double> &values);
-  virtual void precip_time_series(int i, int j, std::vector<double> &values);
+  virtual void init_timeseries_impl(const std::vector<double> &ts);
+  virtual void begin_pointwise_access_impl();
+  virtual void end_pointwise_access_impl();
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
 
 protected:
   virtual void update_impl(double my_t, double my_dt);

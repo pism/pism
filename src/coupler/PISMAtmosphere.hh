@@ -35,31 +35,32 @@ class AtmosphereModel : public Component_TS {
 public:
   AtmosphereModel(IceGrid::ConstPtr g);
 
-  virtual void init() = 0;
+protected:
+  virtual void init_impl() = 0;
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
-  virtual void mean_precipitation(IceModelVec2S &result) = 0;
+  virtual void mean_precipitation_impl(IceModelVec2S &result) = 0;
 
   //! \brief Sets result to the mean annual near-surface air temperature, in degrees Kelvin.
-  virtual void mean_annual_temp(IceModelVec2S &result) = 0;
+  virtual void mean_annual_temp_impl(IceModelVec2S &result) = 0;
 
-  virtual void begin_pointwise_access() = 0;
-  virtual void end_pointwise_access() = 0;
-  virtual void init_timeseries(const std::vector<double> &ts) = 0;
+  virtual void begin_pointwise_access_impl() = 0;
+  virtual void end_pointwise_access_impl() = 0;
+  virtual void init_timeseries_impl(const std::vector<double> &ts) = 0;
   //! \brief Sets a pre-allocated N-element array "result" to the time-series of
   //! ice-equivalent precipitation (m/s) at the point i,j on the grid.
   //!
   //! See temp_time_series() for more.
-  virtual void precip_time_series(int i, int j, std::vector<double> &result) = 0;
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) = 0;
 
   //! \brief Sets a pre-allocated N-element array "result" to the time-series
   //! of near-surface air temperature (degrees Kelvin) at the point i,j on the
   //! grid. Times (in years) are specified in ts. NB! Has to be surrounded by
   //! begin_pointwise_access() and end_pointwise_access()
-  virtual void temp_time_series(int i, int j, std::vector<double> &result) = 0;
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) = 0;
   //! \brief Sets result to a snapshot of temperature for the current time.
   //! (For diagnostic purposes.)
-  virtual void temp_snapshot(IceModelVec2S &result) = 0;
+  virtual void temp_snapshot_impl(IceModelVec2S &result) = 0;
 protected:
   SpatialVariableMetadata m_air_temp;
   SpatialVariableMetadata m_precipitation;

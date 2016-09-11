@@ -85,7 +85,7 @@ void Anomaly::update_impl(double my_t, double my_dt) {
 }
 
 
-void Anomaly::mean_precipitation(IceModelVec2S &result) {
+void Anomaly::mean_precipitation_impl(IceModelVec2S &result) {
   m_input_model->mean_precipitation(result);
 
   result.add(1.0, *m_precipitation_anomaly);

@@ -31,14 +31,14 @@ public:
   Delta_T(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~Delta_T() {}
 
-  virtual void init();
-  virtual void init_timeseries(const std::vector<double> &ts);
+  virtual void init_impl();
+  virtual void init_timeseries_impl(const std::vector<double> &ts);
 
-  virtual void mean_annual_temp(IceModelVec2S &result);
+  virtual void mean_annual_temp_impl(IceModelVec2S &result);
 
-  virtual void temp_time_series(int i, int j, std::vector<double> &values);
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
 
-  virtual void temp_snapshot(IceModelVec2S &result);
+  virtual void temp_snapshot_impl(IceModelVec2S &result);
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
