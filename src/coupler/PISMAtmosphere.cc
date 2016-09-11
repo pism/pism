@@ -37,5 +37,9 @@ AtmosphereModel::AtmosphereModel(IceGrid::ConstPtr g)
   m_precipitation.set_string("glaciological_units", "kg m-2 year-1");
 }
 
+AtmosphereModel::~AtmosphereModel() {
+  // empty
+}
+
 } // end of namespace atmosphere
 } // end of namespace pism

@@ -34,6 +34,7 @@ namespace atmosphere {
 class AtmosphereModel : public Component_TS {
 public:
   AtmosphereModel(IceGrid::ConstPtr g);
+  virtual ~AtmosphereModel();
 
 protected:
   virtual void init_impl() = 0;
