@@ -44,7 +44,7 @@ PaleoPrecip::~PaleoPrecip()
   // empty
 }
 
-void PaleoPrecip::init() {
+void PaleoPrecip::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -61,7 +61,7 @@ MaxTimestep PaleoPrecip::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void PaleoPrecip::init_timeseries(const std::vector<double> &ts) {
+void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) {
   PAModifier::init_timeseries(ts);
 
   size_t N = ts.size();
@@ -72,12 +72,12 @@ void PaleoPrecip::init_timeseries(const std::vector<double> &ts) {
   }
 }
 
-void PaleoPrecip::mean_precipitation(IceModelVec2S &result) {
+void PaleoPrecip::mean_precipitation_impl(IceModelVec2S &result) {
   m_input_model->mean_precipitation(result);
   result.scale(exp(m_precipexpfactor * m_current_forcing));
 }
 
-void PaleoPrecip::precip_time_series(int i, int j, std::vector<double> &result) {
+void PaleoPrecip::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   m_input_model->precip_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {

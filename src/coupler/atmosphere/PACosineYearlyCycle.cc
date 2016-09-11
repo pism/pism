@@ -42,7 +42,7 @@ CosineYearlyCycle::~CosineYearlyCycle() {
   }
 }
 
-void CosineYearlyCycle::init() {
+void CosineYearlyCycle::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -107,7 +107,7 @@ void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 }
 
-void CosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
+void CosineYearlyCycle::temp_snapshot_impl(IceModelVec2S &result) {
   const double
     julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
     T                = m_grid->ctx()->time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
@@ -129,9 +129,9 @@ void CosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   }
 }
 
-void CosineYearlyCycle::init_timeseries(const std::vector<double> &ts) {
+void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) {
 
-  YearlyCycle::init_timeseries(ts);
+  YearlyCycle::init_timeseries_impl(ts);
 
   if (m_A != NULL) {
     for (unsigned int k = 0; k < ts.size(); ++k) {

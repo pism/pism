@@ -58,37 +58,37 @@ PIK::PIK(IceGrid::ConstPtr g)
   m_air_temp_snapshot.set_string("units", "K");
 }
 
-void PIK::mean_precipitation(IceModelVec2S &result) {
+void PIK::mean_precipitation_impl(IceModelVec2S &result) {
   result.copy_from(m_precipitation_vec);
 }
 
-void PIK::mean_annual_temp(IceModelVec2S &result) {
+void PIK::mean_annual_temp_impl(IceModelVec2S &result) {
   result.copy_from(m_air_temp_vec);
 }
 
-void PIK::begin_pointwise_access() {
+void PIK::begin_pointwise_access_impl() {
   m_precipitation_vec.begin_access();
   m_air_temp_vec.begin_access();
 }
 
-void PIK::end_pointwise_access() {
+void PIK::end_pointwise_access_impl() {
   m_precipitation_vec.end_access();
   m_air_temp_vec.end_access();
 }
 
-void PIK::temp_time_series(int i, int j, std::vector<double> &result) {
+void PIK::temp_time_series_impl(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_air_temp_vec(i,j);
   }
 }
 
-void PIK::precip_time_series(int i, int j, std::vector<double> &result) {
+void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation_vec(i,j);
   }
 }
 
-void PIK::temp_snapshot(IceModelVec2S &result) {
+void PIK::temp_snapshot_impl(IceModelVec2S &result) {
   mean_annual_temp(result);
 }
 
@@ -137,7 +137,7 @@ void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
   }
 }
 
-void PIK::init() {
+void PIK::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
@@ -183,7 +183,7 @@ void PIK::update_impl(double, double) {
   }
 }
 
-void PIK::init_timeseries(const std::vector<double> &ts) {
+void PIK::init_timeseries_impl(const std::vector<double> &ts) {
   m_ts_times = ts;
 }
 

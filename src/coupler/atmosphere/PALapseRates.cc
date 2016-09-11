@@ -37,7 +37,7 @@ LapseRates::~LapseRates() {
   // empty
 }
 
-void LapseRates::init() {
+void LapseRates::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -63,17 +63,17 @@ void LapseRates::init() {
   m_precip_lapse_rate = units::convert(m_sys, m_precip_lapse_rate, "m year-1 / km", "m second-1 / m");
 }
 
-void LapseRates::mean_precipitation(IceModelVec2S &result) {
+void LapseRates::mean_precipitation_impl(IceModelVec2S &result) {
   m_input_model->mean_precipitation(result);
   lapse_rate_correction(result, m_precip_lapse_rate);
 }
 
-void LapseRates::mean_annual_temp(IceModelVec2S &result) {
+void LapseRates::mean_annual_temp_impl(IceModelVec2S &result) {
   m_input_model->mean_annual_temp(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }
 
-void LapseRates::begin_pointwise_access() {
+void LapseRates::begin_pointwise_access_impl() {
   m_input_model->begin_pointwise_access();
   m_reference_surface.begin_access();
 
@@ -81,7 +81,7 @@ void LapseRates::begin_pointwise_access() {
   m_surface->begin_access();
 }
 
-void LapseRates::end_pointwise_access() {
+void LapseRates::end_pointwise_access_impl() {
   m_input_model->end_pointwise_access();
   m_reference_surface.end_access();
 
@@ -89,7 +89,7 @@ void LapseRates::end_pointwise_access() {
   m_surface->end_access();
 }
 
-void LapseRates::init_timeseries(const std::vector<double> &ts) {
+void LapseRates::init_timeseries_impl(const std::vector<double> &ts) {
   m_input_model->init_timeseries(ts);
 
   m_ts_times = ts;
@@ -99,7 +99,7 @@ void LapseRates::init_timeseries(const std::vector<double> &ts) {
   m_surface = m_grid->variables().get_2d_scalar("surface_altitude");
 }
 
-void LapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
+void LapseRates::temp_time_series_impl(int i, int j, std::vector<double> &result) {
   std::vector<double> usurf(m_ts_times.size());
 
   m_input_model->temp_time_series(i, j, result);
@@ -113,7 +113,7 @@ void LapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void LapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
+void LapseRates::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   std::vector<double> usurf(m_ts_times.size());
 
   m_input_model->precip_time_series(i, j, result);
@@ -127,7 +127,7 @@ void LapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void LapseRates::temp_snapshot(IceModelVec2S &result) {
+void LapseRates::temp_snapshot_impl(IceModelVec2S &result) {
   m_input_model->temp_snapshot(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }

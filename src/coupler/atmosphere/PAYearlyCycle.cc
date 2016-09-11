@@ -71,7 +71,7 @@ YearlyCycle::~YearlyCycle() {
 }
 
 //! Allocates memory and reads in the precipitaion data.
-void YearlyCycle::init() {
+void YearlyCycle::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   InputOptions opts = process_input_options(m_grid->com);
@@ -151,16 +151,16 @@ void YearlyCycle::write_variables_impl(const std::set<std::string> &vars, const 
 }
 
 //! Copies the stored precipitation field into result.
-void YearlyCycle::mean_precipitation(IceModelVec2S &result) {
+void YearlyCycle::mean_precipitation_impl(IceModelVec2S &result) {
   result.copy_from(m_precipitation_vec);
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-void YearlyCycle::mean_annual_temp(IceModelVec2S &result) {
+void YearlyCycle::mean_annual_temp_impl(IceModelVec2S &result) {
   result.copy_from(m_air_temp_mean_annual);
 }
 
-void YearlyCycle::init_timeseries(const std::vector<double> &ts) {
+void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) {
   // constants related to the standard yearly cycle
   const double
     julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
@@ -177,20 +177,20 @@ void YearlyCycle::init_timeseries(const std::vector<double> &ts) {
   }
 }
 
-void YearlyCycle::precip_time_series(int i, int j, std::vector<double> &result) {
+void YearlyCycle::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation_vec(i,j);
   }
 }
 
-void YearlyCycle::temp_time_series(int i, int j, std::vector<double> &result) {
+void YearlyCycle::temp_time_series_impl(int i, int j, std::vector<double> &result) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
   }
 }
 
-void YearlyCycle::temp_snapshot(IceModelVec2S &result) {
+void YearlyCycle::temp_snapshot_impl(IceModelVec2S &result) {
   const double
     julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
     T                = m_grid->ctx()->time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
@@ -207,13 +207,13 @@ void YearlyCycle::temp_snapshot(IceModelVec2S &result) {
   }
 }
 
-void YearlyCycle::begin_pointwise_access() {
+void YearlyCycle::begin_pointwise_access_impl() {
   m_air_temp_mean_annual.begin_access();
   m_air_temp_mean_july.begin_access();
   m_precipitation_vec.begin_access();
 }
 
-void YearlyCycle::end_pointwise_access() {
+void YearlyCycle::end_pointwise_access_impl() {
   m_air_temp_mean_annual.end_access();
   m_air_temp_mean_july.end_access();
   m_precipitation_vec.end_access();

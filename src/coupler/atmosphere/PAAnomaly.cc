@@ -61,7 +61,7 @@ Anomaly::~Anomaly()
   // empty
 }
 
-void Anomaly::init() {
+void Anomaly::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_input_model->init();
@@ -91,32 +91,32 @@ void Anomaly::mean_precipitation_impl(IceModelVec2S &result) {
   result.add(1.0, *m_precipitation_anomaly);
 }
 
-void Anomaly::mean_annual_temp(IceModelVec2S &result) {
+void Anomaly::mean_annual_temp_impl(IceModelVec2S &result) {
   m_input_model->mean_annual_temp(result);
 
   result.add(1.0, *m_air_temp_anomaly);
 }
 
-void Anomaly::temp_snapshot(IceModelVec2S &result) {
+void Anomaly::temp_snapshot_impl(IceModelVec2S &result) {
   m_input_model->temp_snapshot(result);
 
   result.add(1.0, *m_air_temp_anomaly);
 }
 
 
-void Anomaly::begin_pointwise_access() {
+void Anomaly::begin_pointwise_access_impl() {
   m_input_model->begin_pointwise_access();
   m_air_temp_anomaly->begin_access();
   m_precipitation_anomaly->begin_access();
 }
 
-void Anomaly::end_pointwise_access() {
+void Anomaly::end_pointwise_access_impl() {
   m_input_model->end_pointwise_access();
   m_precipitation_anomaly->end_access();
   m_air_temp_anomaly->end_access();
 }
 
-void Anomaly::init_timeseries(const std::vector<double> &ts) {
+void Anomaly::init_timeseries_impl(const std::vector<double> &ts) {
   m_input_model->init_timeseries(ts);
 
   m_air_temp_anomaly->init_interpolation(ts);
@@ -126,7 +126,7 @@ void Anomaly::init_timeseries(const std::vector<double> &ts) {
   m_ts_times = ts;
 }
 
-void Anomaly::temp_time_series(int i, int j, std::vector<double> &result) {
+void Anomaly::temp_time_series_impl(int i, int j, std::vector<double> &result) {
   m_input_model->temp_time_series(i, j, result);
 
   m_temp_anomaly.reserve(m_ts_times.size());
@@ -137,7 +137,7 @@ void Anomaly::temp_time_series(int i, int j, std::vector<double> &result) {
   }
 }
 
-void Anomaly::precip_time_series(int i, int j, std::vector<double> &result) {
+void Anomaly::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   m_input_model->precip_time_series(i, j, result);
 
   m_mass_flux_anomaly.reserve(m_ts_times.size());

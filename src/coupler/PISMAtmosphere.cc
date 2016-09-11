@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #include "PISMAtmosphere.hh"
 
@@ -39,6 +39,42 @@ AtmosphereModel::AtmosphereModel(IceGrid::ConstPtr g)
 
 AtmosphereModel::~AtmosphereModel() {
   // empty
+}
+
+void AtmosphereModel::init() {
+  this->init_impl();
+}
+
+void AtmosphereModel::mean_precipitation(IceModelVec2S &result) {
+  this->mean_precipitation_impl(result);
+}
+
+void AtmosphereModel::mean_annual_temp(IceModelVec2S &result) {
+  this->mean_annual_temp_impl(result);
+}
+
+void AtmosphereModel::begin_pointwise_access() {
+  this->begin_pointwise_access_impl();
+}
+
+void AtmosphereModel::end_pointwise_access() {
+  this->end_pointwise_access_impl();
+}
+
+void AtmosphereModel::init_timeseries(const std::vector<double> &ts) {
+  this->init_timeseries_impl(ts);
+}
+
+void AtmosphereModel::precip_time_series(int i, int j, std::vector<double> &result) {
+  this->precip_time_series_impl(i, j, result);
+}
+
+void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result) {
+  this->temp_time_series_impl(i, j, result);
+}
+
+void AtmosphereModel::temp_snapshot(IceModelVec2S &result) {
+  this->temp_snapshot_impl(result);
 }
 
 } // end of namespace atmosphere

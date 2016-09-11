@@ -44,7 +44,7 @@ Delta_P::~Delta_P()
   // empty
 }
 
-void Delta_P::init() {
+void Delta_P::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -61,7 +61,7 @@ MaxTimestep Delta_P::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void Delta_P::init_timeseries(const std::vector<double> &ts) {
+void Delta_P::init_timeseries_impl(const std::vector<double> &ts) {
   PAModifier::init_timeseries(ts);
 
   m_offset_values.resize(m_ts_times.size());
@@ -72,12 +72,12 @@ void Delta_P::init_timeseries(const std::vector<double> &ts) {
 
 
 
-void Delta_P::mean_precipitation(IceModelVec2S &result) {
+void Delta_P::mean_precipitation_impl(IceModelVec2S &result) {
   m_input_model->mean_precipitation(result);
   offset_data(result);
 }
 
-void Delta_P::precip_time_series(int i, int j, std::vector<double> &result) {
+void Delta_P::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   m_input_model->precip_time_series(i, j, result);
   
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {

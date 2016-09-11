@@ -48,7 +48,7 @@ SeaRISEGreenland::SeaRISEGreenland(IceGrid::ConstPtr g)
 SeaRISEGreenland::~SeaRISEGreenland() {
 }
 
-void SeaRISEGreenland::init() {
+void SeaRISEGreenland::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -73,11 +73,11 @@ void SeaRISEGreenland::init() {
                                true, /* do regrid */
                                0 /* start (irrelevant) */);
   } else {
-    YearlyCycle::init();
+    YearlyCycle::init_impl();
   }
 }
 
-void SeaRISEGreenland::precip_time_series(int i, int j, std::vector<double> &result) {
+void SeaRISEGreenland::precip_time_series_impl(int i, int j, std::vector<double> &result) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation_vec(i,j);

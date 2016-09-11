@@ -61,7 +61,7 @@ Given::~Given() {
   // empty
 }
 
-void Given::init() {
+void Given::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
@@ -88,41 +88,41 @@ void Given::update_impl(double my_t, double my_dt) {
   m_air_temp_vec->average(m_t, m_dt);
 }
 
-void Given::mean_precipitation(IceModelVec2S &result) {
+void Given::mean_precipitation_impl(IceModelVec2S &result) {
   result.copy_from(*m_precipitation_vec);
 }
 
-void Given::mean_annual_temp(IceModelVec2S &result) {
+void Given::mean_annual_temp_impl(IceModelVec2S &result) {
   result.copy_from(*m_air_temp_vec);
 }
 
-void Given::temp_snapshot(IceModelVec2S &result) {
+void Given::temp_snapshot_impl(IceModelVec2S &result) {
   result.copy_from(*m_air_temp_vec);
 }
 
-void Given::begin_pointwise_access() {
+void Given::begin_pointwise_access_impl() {
 
   m_air_temp_vec->begin_access();
   m_precipitation_vec->begin_access();
 }
 
-void Given::end_pointwise_access() {
+void Given::end_pointwise_access_impl() {
 
   m_air_temp_vec->end_access();
   m_precipitation_vec->end_access();
 }
 
-void Given::temp_time_series(int i, int j, std::vector<double> &result) {
+void Given::temp_time_series_impl(int i, int j, std::vector<double> &result) {
 
   m_air_temp_vec->interp(i, j, result);
 }
 
-void Given::precip_time_series(int i, int j, std::vector<double> &result) {
+void Given::precip_time_series_impl(int i, int j, std::vector<double> &result) {
 
   m_precipitation_vec->interp(i, j, result);
 }
 
-void Given::init_timeseries(const std::vector<double> &ts) {
+void Given::init_timeseries_impl(const std::vector<double> &ts) {
 
   m_air_temp_vec->init_interpolation(ts);
 
