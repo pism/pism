@@ -29,11 +29,11 @@ AtmosphereModel::AtmosphereModel(IceGrid::ConstPtr g)
     m_precipitation(m_sys, "effective_precipitation") {
 
   m_air_temp.set_string("pism_intent", "diagnostic");
-  m_air_temp.set_string("long_name", "near-surface air temperature");
+  m_air_temp.set_string("long_name", "effective mean annual near-surface air temperature");
   m_air_temp.set_string("units", "K");
 
   m_precipitation.set_string("pism_intent", "diagnostic");
-  m_precipitation.set_string("long_name", "precipitation");
+  m_precipitation.set_string("long_name", "effective precipitation");
   m_precipitation.set_string("units", "kg m-2 second-1");
   m_precipitation.set_string("glaciological_units", "kg m-2 year-1");
 }
@@ -76,10 +76,21 @@ void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result
 
 void AtmosphereModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-  // Don't override the diagnostic if it is already in dict.
+  // Don't override diagnostics that are already set.
+
   if (not dict["air_temp_snapshot"]) {
     dict["air_temp_snapshot"] = Diagnostic::Ptr(new PA_air_temp_snapshot(this));
   }
+
+  if (not dict["effective_air_temp"]) {
+    dict["effective_air_temp"] = Diagnostic::Ptr(new PA_air_temp(this));
+  }
+
+  if (not dict["effective_precipitation"]) {
+    dict["effective_precipitation"] = Diagnostic::Ptr(new PA_precipitation(this));
+  }
+
+  // no scalar diagnostics
   (void) ts_dict;
 }
 
@@ -123,6 +134,49 @@ IceModelVec::Ptr PA_air_temp_snapshot::compute_impl() {
   loop.check();
 
   model->end_pointwise_access();
+
+  return result;
+}
+
+PA_air_temp::PA_air_temp(AtmosphereModel *m)
+  : Diag<AtmosphereModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "effective_air_temp"));
+
+  set_attrs("effective mean-annual near-surface air temperature", "",
+            "Kelvin", "Kelvin", 0);
+}
+
+IceModelVec::Ptr PA_air_temp::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "effective_air_temp", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  model->mean_annual_temp(*result);
+
+  return result;
+}
+
+PA_precipitation::PA_precipitation(AtmosphereModel *m)
+  : Diag<AtmosphereModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "effective_precipitation"));
+
+  set_attrs("effective precipitation rate",
+            "",                 // no standard name, as far as I know
+            "kg m-2 second-1", "kg m-2 year-1", 0);
+}
+
+IceModelVec::Ptr PA_precipitation::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "effective_precipitation", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  model->mean_precipitation(*result);
 
   return result;
 }
