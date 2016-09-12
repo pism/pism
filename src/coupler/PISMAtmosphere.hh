@@ -71,10 +71,22 @@ protected:
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) = 0;
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) = 0;
   virtual void temp_snapshot_impl(IceModelVec2S &result) = 0;
+
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
 protected:
   SpatialVariableMetadata m_air_temp;
   SpatialVariableMetadata m_precipitation;
   std::vector<double> m_ts_times;
+};
+
+/*! @brief Instantaneous near-surface air temperature. */
+class PA_air_temp_snapshot : public Diag<AtmosphereModel>
+{
+public:
+  PA_air_temp_snapshot(AtmosphereModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace atmosphere

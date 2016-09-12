@@ -18,6 +18,7 @@
 */
 
 #include "PISMAtmosphere.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -75,6 +76,59 @@ void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result
 
 void AtmosphereModel::temp_snapshot(IceModelVec2S &result) {
   this->temp_snapshot_impl(result);
+}
+
+void AtmosphereModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                           std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+  // Don't override the diagnostic if it is already in dict.
+  if (not dict["air_temp_snapshot"]) {
+    dict["air_temp_snapshot"] = Diagnostic::Ptr(new PA_air_temp_snapshot(this));
+  }
+  (void) ts_dict;
+}
+
+PA_air_temp_snapshot::PA_air_temp_snapshot(AtmosphereModel *m)
+  : Diag<AtmosphereModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "air_temp_snapshot"));
+
+  set_attrs("instantaneous value of the near-surface air temperature",
+            "",                 // no standard name
+            "Kelvin", "Kelvin", 0);
+}
+
+IceModelVec::Ptr PA_air_temp_snapshot::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  std::vector<double> current_time(1, m_grid->ctx()->time()->current());
+  std::vector<double> temp(1, 0.0);
+
+  model->init_timeseries(current_time);
+
+  model->begin_pointwise_access();
+
+  IceModelVec::AccessList list(*result);
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      model->temp_time_series(i, j, temp);
+
+      (*result)(i, j) = temp[0];
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  model->end_pointwise_access();
+
+  return result;
 }
 
 } // end of namespace atmosphere
