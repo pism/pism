@@ -79,11 +79,6 @@ void Delta_T::temp_time_series_impl(int i, int j, std::vector<double> &result) {
   }
 }
 
-void Delta_T::temp_snapshot_impl(IceModelVec2S &result) {
-  m_input_model->temp_snapshot(result);
-  offset_data(result);
-}
-
 void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   m_input_model->add_vars_to_output(keyword, result);
 

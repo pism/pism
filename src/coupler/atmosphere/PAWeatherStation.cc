@@ -147,10 +147,6 @@ void WeatherStation::temp_time_series_impl(int i, int j, std::vector<double> &re
   result = m_air_temp_values;
 }
 
-void WeatherStation::temp_snapshot_impl(IceModelVec2S &result) {
-  result.set(m_air_temp_timeseries(m_t + 0.5*m_dt));
-}
-
 void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
                                              std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {

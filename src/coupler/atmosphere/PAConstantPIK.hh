@@ -35,7 +35,6 @@ public:
   virtual void end_pointwise_access_impl();
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
-  virtual void temp_snapshot_impl(IceModelVec2S &result);
   virtual void init_timeseries_impl(const std::vector<double> &ts);
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
@@ -46,7 +45,6 @@ protected:
                                      const PIO &nc, IO_Type nctype);
 protected:
   IceModelVec2S m_precipitation_vec, m_air_temp_vec;
-  SpatialVariableMetadata m_air_temp_snapshot;
 };
 
 } // end of namespace atmosphere

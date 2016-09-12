@@ -40,7 +40,6 @@ public:
   virtual void mean_annual_temp_impl(IceModelVec2S &result);
   virtual void begin_pointwise_access_impl();
   virtual void end_pointwise_access_impl();
-  virtual void temp_snapshot_impl(IceModelVec2S &result);
 
   virtual void init_timeseries_impl(const std::vector<double> &ts);
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result);
@@ -57,7 +56,6 @@ protected:
   double m_snow_temp_july_day;
   std::string m_reference;
   IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation_vec;
-  SpatialVariableMetadata m_air_temp_snapshot;
   std::vector<double> m_ts_times, m_cosine_cycle;
 };
 

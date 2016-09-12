@@ -38,8 +38,6 @@ public:
 
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
 
-  virtual void temp_snapshot_impl(IceModelVec2S &result);
-
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);

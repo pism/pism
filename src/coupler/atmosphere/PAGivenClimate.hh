@@ -35,7 +35,6 @@ public:
 
   virtual void mean_precipitation_impl(IceModelVec2S &result);
   virtual void mean_annual_temp_impl(IceModelVec2S &result);
-  virtual void temp_snapshot_impl(IceModelVec2S &result);
 
   virtual void begin_pointwise_access_impl();
   virtual void end_pointwise_access_impl();

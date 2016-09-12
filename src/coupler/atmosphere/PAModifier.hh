@@ -75,13 +75,6 @@ protected:
     }
   }
 
-  virtual void temp_snapshot_impl(IceModelVec2S &result)
-  {
-    if (m_input_model != NULL) {
-      m_input_model->temp_snapshot(result);
-    }
-  }
-
   virtual void init_timeseries_impl(const std::vector<double> &ts)
   {
     if (m_input_model != NULL) {

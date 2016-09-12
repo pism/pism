@@ -127,11 +127,6 @@ void LapseRates::precip_time_series_impl(int i, int j, std::vector<double> &resu
   }
 }
 
-void LapseRates::temp_snapshot_impl(IceModelVec2S &result) {
-  m_input_model->temp_snapshot(result);
-  lapse_rate_correction(result, m_temp_lapse_rate);
-}
-
 void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
   std::string order = m_config->get_string("output_variable_order");
@@ -149,18 +144,6 @@ void LapseRates::define_variables_impl(const std::set<std::string> &vars,
 
 void LapseRates::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, m_air_temp)) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
-    tmp.metadata() = m_air_temp;
-
-    temp_snapshot(tmp);
-
-    tmp.write(nc);
-
-    vars.erase(m_air_temp.get_name());
-  }
 
   if (set_contains(vars, m_precipitation)) {
     IceModelVec2S tmp;

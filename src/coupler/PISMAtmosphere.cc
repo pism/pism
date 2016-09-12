@@ -74,10 +74,6 @@ void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result
   this->temp_time_series_impl(i, j, result);
 }
 
-void AtmosphereModel::temp_snapshot(IceModelVec2S &result) {
-  this->temp_snapshot_impl(result);
-}
-
 void AtmosphereModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
   // Don't override the diagnostic if it is already in dict.

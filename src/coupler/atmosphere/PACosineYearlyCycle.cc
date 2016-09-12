@@ -107,28 +107,6 @@ void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 }
 
-void CosineYearlyCycle::temp_snapshot_impl(IceModelVec2S &result) {
-  const double
-    julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
-    T                = m_grid->ctx()->time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
-    cos_T            = cos(2.0 * M_PI * T);
-
-  double scaling = 1.0;
-  if (m_A != NULL) {
-    scaling = (*m_A)(m_t + 0.5 * m_dt);
-  }
-
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(m_air_temp_mean_annual);
-  list.add(m_air_temp_mean_july);
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * scaling * cos_T;
-  }
-}
-
 void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) {
 
   YearlyCycle::init_timeseries_impl(ts);

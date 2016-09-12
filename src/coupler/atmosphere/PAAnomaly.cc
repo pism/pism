@@ -97,13 +97,6 @@ void Anomaly::mean_annual_temp_impl(IceModelVec2S &result) {
   result.add(1.0, *m_air_temp_anomaly);
 }
 
-void Anomaly::temp_snapshot_impl(IceModelVec2S &result) {
-  m_input_model->temp_snapshot(result);
-
-  result.add(1.0, *m_air_temp_anomaly);
-}
-
-
 void Anomaly::begin_pointwise_access_impl() {
   m_input_model->begin_pointwise_access();
   m_air_temp_anomaly->begin_access();

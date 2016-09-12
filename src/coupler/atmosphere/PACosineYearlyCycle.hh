@@ -33,7 +33,6 @@ public:
 
   virtual void init_impl();
   virtual void init_timeseries_impl(const std::vector<double> &ts);
-  virtual void temp_snapshot_impl(IceModelVec2S &result);
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);

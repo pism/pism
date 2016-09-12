@@ -33,8 +33,7 @@ namespace pism {
 namespace atmosphere {
 
 YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
-  : AtmosphereModel(g),
-    m_air_temp_snapshot(m_sys, "air_temp_snapshot") {
+  : AtmosphereModel(g) {
 
   m_snow_temp_july_day = m_config->get_double("snow_temp_july_day");
 
@@ -59,11 +58,6 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   m_precipitation_vec.metadata(0).set_name("precipitation");
   m_precipitation_vec.write_in_glaciological_units = true;
   m_precipitation_vec.set_time_independent(true);
-
-  m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
-  m_air_temp_snapshot.set_string("long_name",
-                         "snapshot of the near-surface air temperature");
-  m_air_temp_snapshot.set_string("units", "K");
 }
 
 YearlyCycle::~YearlyCycle() {
@@ -99,17 +93,11 @@ void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<s
   if (keyword == "big" || keyword == "2dbig") {
     result.insert("air_temp_mean_annual");
     result.insert("air_temp_mean_july");
-    result.insert(m_air_temp_snapshot.get_name());
   }
 }
 
 
 void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-
-  if (set_contains(vars, m_air_temp_snapshot)) {
-    std::string order = m_config->get_string("output_variable_order");
-    io::define_spatial_variable(m_air_temp_snapshot, *m_grid, nc, nctype, order, false);
-  }
 
   if (set_contains(vars, "air_temp_mean_annual")) {
     m_air_temp_mean_annual.define(nc, nctype);
@@ -126,16 +114,6 @@ void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const
 
 
 void YearlyCycle::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, m_air_temp_snapshot)) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, m_air_temp_snapshot.get_name(), WITHOUT_GHOSTS);
-    tmp.metadata() = m_air_temp_snapshot;
-
-    temp_snapshot(tmp);
-
-    tmp.write(nc);
-  }
 
   if (set_contains(vars, "air_temp_mean_annual")) {
     m_air_temp_mean_annual.write(nc);
@@ -187,23 +165,6 @@ void YearlyCycle::temp_time_series_impl(int i, int j, std::vector<double> &resul
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
-  }
-}
-
-void YearlyCycle::temp_snapshot_impl(IceModelVec2S &result) {
-  const double
-    julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
-    T                = m_grid->ctx()->time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
-    cos_T            = cos(2.0 * M_PI * T);
-
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(m_air_temp_mean_annual);
-  list.add(m_air_temp_mean_july);
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * cos_T;
   }
 }
 

@@ -31,8 +31,7 @@ namespace pism {
 namespace atmosphere {
 
 PIK::PIK(IceGrid::ConstPtr g)
-  : AtmosphereModel(g),
-    m_air_temp_snapshot(m_sys, "air_temp_snapshot") {
+  : AtmosphereModel(g) {
 
   // allocate IceModelVecs for storing temperature and precipitation fields:
 
@@ -50,12 +49,6 @@ PIK::PIK(IceGrid::ConstPtr g)
   // reset the name
   m_air_temp_vec.metadata(0).set_name("air_temp");
   m_air_temp_vec.set_time_independent(true);
-
-  // initialize metadata for "air_temp_snapshot"
-  m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
-  m_air_temp_snapshot.set_string("long_name",
-                                 "snapshot of the near-surface air temperature");
-  m_air_temp_snapshot.set_string("units", "K");
 }
 
 void PIK::mean_precipitation_impl(IceModelVec2S &result) {
@@ -88,25 +81,14 @@ void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   }
 }
 
-void PIK::temp_snapshot_impl(IceModelVec2S &result) {
-  mean_annual_temp(result);
-}
-
 void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  (void) keyword;
   result.insert("precipitation");
   result.insert("air_temp");
-
-  if (keyword == "big" || keyword == "2dbig") {
-    result.insert("air_temp_snapshot");
-  }
 }
 
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
-  if (set_contains(vars, "air_temp_snapshot")) {
-    std::string order = m_config->get_string("output_variable_order");
-    io::define_spatial_variable(m_air_temp_snapshot, *m_grid, nc, nctype, order, false);
-  }
 
   if (set_contains(vars, "precipitation")) {
     m_precipitation_vec.define(nc, nctype);
@@ -118,15 +100,6 @@ void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc
 }
 
 void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "air_temp_snapshot")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
-    tmp.metadata() = m_air_temp_snapshot;
-
-    temp_snapshot(tmp);
-
-    tmp.write(nc);
-  }
 
   if (set_contains(vars, "precipitation")) {
     m_precipitation_vec.write(nc);

@@ -58,9 +58,6 @@ public:
   //! grid. Times (in years) are specified in ts. NB! Has to be surrounded by
   //! begin_pointwise_access() and end_pointwise_access()
   void temp_time_series(int i, int j, std::vector<double> &result);
-  //! \brief Sets result to a snapshot of temperature for the current time.
-  //! (For diagnostic purposes.)
-  void temp_snapshot(IceModelVec2S &result);
 protected:
   virtual void init_impl() = 0;
   virtual void mean_precipitation_impl(IceModelVec2S &result) = 0;
@@ -70,7 +67,6 @@ protected:
   virtual void init_timeseries_impl(const std::vector<double> &ts) = 0;
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) = 0;
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) = 0;
-  virtual void temp_snapshot_impl(IceModelVec2S &result) = 0;
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict);

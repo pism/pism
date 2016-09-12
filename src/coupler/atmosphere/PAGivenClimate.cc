@@ -96,10 +96,6 @@ void Given::mean_annual_temp_impl(IceModelVec2S &result) {
   result.copy_from(*m_air_temp_vec);
 }
 
-void Given::temp_snapshot_impl(IceModelVec2S &result) {
-  result.copy_from(*m_air_temp_vec);
-}
-
 void Given::begin_pointwise_access_impl() {
 
   m_air_temp_vec->begin_access();

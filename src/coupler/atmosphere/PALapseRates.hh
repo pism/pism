@@ -43,8 +43,6 @@ public:
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &result);
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result);
 
-  virtual void temp_snapshot_impl(IceModelVec2S &result);
-
 protected:
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
