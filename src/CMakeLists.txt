@@ -29,7 +29,6 @@ set(PISMUTIL_SRC
   base/util/Mask.cc
   base/util/VariableMetadata.cc
   base/util/PISMConfig.cc
-  base/util/ConfigJSON.cc
   base/util/PISMConfigInterface.cc
   base/util/PISMComponent.cc
   base/util/PISMTime.cc
@@ -63,6 +62,10 @@ set(PISMUTIL_SRC
 # PISM Revision string
 set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
+
+if(Pism_USE_JANSSON)
+  list(APPEND PISMUTIL_SRC base/util/ConfigJSON.cc)
+endif()
 
 if(Pism_USE_TAO)
   list(APPEND PISMUTIL_SRC base/util/petscwrappers/Tao.cc)
@@ -168,8 +171,11 @@ add_library (pism
 target_link_libraries (pism ${Pism_EXTERNAL_LIBS})
 add_dependencies (pism pism_config)
 add_dependencies (pism touch_pism_revision)
-if (Pism_BUILD_JANSSON)
-  add_dependencies (pism pism_jansson)
+
+if (Pism_USE_JANSSON)
+  if (Pism_BUILD_JANSSON)
+    add_dependencies (pism pism_jansson)
+  endif()
 endif()
 
 # Bed deformation models.
