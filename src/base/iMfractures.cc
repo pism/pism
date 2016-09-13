@@ -56,13 +56,13 @@ void IceModel::calculateFractureDensity() {
   list.add(D_new);
   list.add(m_cell_type);
 
-  const bool dirichlet_bc = m_config->get_boolean("ssa_dirichlet_bc");
+  const bool dirichlet_bc = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
   if (dirichlet_bc) {
     list.add(m_ssa_dirichlet_bc_mask);
     list.add(m_ssa_dirichlet_bc_values);
   }
 
-  const bool write_fd = m_config->get_boolean("write_fd_fields");
+  const bool write_fd = m_config->get_boolean("fracture_density.write_fields");
   if (write_fd) {
     list.add(m_fracture.growth_rate);
     list.add(m_fracture.healing_rate);

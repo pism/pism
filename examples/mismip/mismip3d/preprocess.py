@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012, 2014 Moritz Huetten and Torsten Albrecht
+# Copyright (C) 2012, 2014, 2016 Moritz Huetten and Torsten Albrecht
 
 # create MISMIP config override file
 
@@ -18,17 +18,17 @@ nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
 
 var = nc.createVariable("pism_overrides", 'i')
 
-attrs = {"is_dry_simulation": "no",
-         "include_bmr_in_continuity": "no",
-         "compute_surf_grad_inward_ssa": "no",
-         "ice_softness": 1.0e-25,
-         "ice_density": 900.,
-         "sea_water_density": 1000.,
-         "bootstrapping_geothermal_flux_value_no_var": 0.0,
-         "Glen_exponent": 3.,
-         "standard_gravity": 9.81,
-         "ocean_sub_shelf_heat_flux_into_ice": 0.0,
-         "bed_smoother_range": 0.0,
+attrs = {"ocean.always_grounded": "no",
+         "geometry.update.use_basal_melt_rate": "no",
+         "stress_balance.ssa.compute_surface_gradient_inward": "no",
+         "flow_law.isothermal_Glen.ice_softness": 1.0e-25,
+         "constants.ice.density": 900.,
+         "constants.sea_water.density": 1000.,
+         "bootstrapping.defaults.geothermal_flux": 0.0,
+         "stress_balance.ssa.Glen_exponent": 3.,
+         "constants.standard_gravity": 9.81,
+         "ocean.sub_shelf_heat_flux_into_ice": 0.0,
+         "stress_balance.sia.bed_smoother_range": 0.0,
          }
 
 for name, value in attrs.iteritems():

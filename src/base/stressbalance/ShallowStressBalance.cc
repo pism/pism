@@ -42,9 +42,9 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g, EnthalpyConverte
   m_bc_mask = NULL;
   m_sea_level = 0.0;
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
-  if (m_config->get_boolean("do_pseudo_plastic_till") == true) {
+  if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") == true) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
   } else {
     m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
@@ -131,7 +131,7 @@ ZeroSliding::ZeroSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : ShallowStressBalance(g, e) {
 
   // Use the SIA flow law.
-  rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);
+  rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
   m_flow_law = ice_factory.create();
 }
 
@@ -309,7 +309,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
   }
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
-  double hardness = pow(m_config->get_double("ice_softness"),-1.0/m_config->get_double("ssa_Glen_exponent"));
+  double hardness = pow(m_config->get_double("flow_law.isothermal_Glen.ice_softness"),-1.0/m_config->get_double("stress_balance.ssa.Glen_exponent"));
 
   IceModelVec::AccessList list;
   list.add(V);
@@ -421,8 +421,8 @@ IceModelVec::Ptr SSB_taud::compute_impl() {
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  double standard_gravity = m_config->get_double("standard_gravity"),
-    ice_density = m_config->get_double("ice_density");
+  double standard_gravity = m_config->get_double("constants.standard_gravity"),
+    ice_density = m_config->get_double("constants.ice.density");
 
   IceModelVec::AccessList list;
   list.add(*result);

@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     config = context.config
     if not PISM.OptionString("-ssa_method", "").is_set():
-        config.set_string("ssa_method", "fem")
+        config.set_string("stress_balance.ssa.method", "fem")
 
     input_file_name = PISM.optionsString("-i",
                                          "file to bootstrap from")
@@ -177,9 +177,9 @@ if __name__ == '__main__':
         # Generate a prior guess for hardav
 
         EC = PISM.EnthalpyConverter(config)
-        ice_factory = PISM.IceFlowLawFactory(grid.com, "ssa_", config, EC)
+        ice_factory = PISM.IceFlowLawFactory(grid.com, "stress_balance.ssa.", config, EC)
         ice_factory.removeType(PISM.ICE_GOLDSBY_KOHLSTEDT)
-        ice_factory.setType(config.get_string("ssa_flow_law"))
+        ice_factory.setType(config.get_string("stress_balance.ssa.flow_law"))
         ice_factory.setFromOptions()
         flow_law = ice_factory.create()
         averaged_hardness_vec(flow_law, vecs.land_ice_thickness, vecs.enthalpy, vecs.hardav)
@@ -245,12 +245,12 @@ if __name__ == '__main__':
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file_name, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
-                     grid.ctx().config().get_string("calendar"),
+                     grid.ctx().config().get_string("time.dimension_name"),
+                     grid.ctx().config().get_string("time.calendar"),
                      grid.ctx().time().units_string(),
                      grid.ctx().unit_system())
     PISM.append_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().time().current())
     pio.close()
 

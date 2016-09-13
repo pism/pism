@@ -52,25 +52,25 @@ void IceModel::setFromOptions() {
   m_jd = options::Integer("-jd", "Specifies the sounding column", m_jd);
 
   // Set global attributes using the config database:
-  m_output_global_attributes.set_string("title", m_config->get_string("run_title"));
-  m_output_global_attributes.set_string("institution", m_config->get_string("institution"));
+  m_output_global_attributes.set_string("title", m_config->get_string("run_info.title"));
+  m_output_global_attributes.set_string("institution", m_config->get_string("run_info.institution"));
   m_output_global_attributes.set_string("command", pism_args_string());
 
   // warn about some option combinations
 
-  if (m_config->get_double("maximum_time_step_years") <= 0) {
-    throw RuntimeError("maximum_time_step_years has to be greater than 0.");
+  if (m_config->get_double("time_stepping.maximum_time_step") <= 0) {
+    throw RuntimeError("time_stepping.maximum_time_step has to be greater than 0.");
   }
 
-  if (not m_config->get_boolean("do_mass_conserve") &&
-      m_config->get_boolean("do_skip")) {
+  if (not m_config->get_boolean("geometry.update.enabled") &&
+      m_config->get_boolean("time_stepping.skip.enabled")) {
     m_log->message(2,
                "PISM WARNING: Both -skip and -no_mass are set.\n"
                "              -skip only makes sense in runs updating ice geometry.\n");
   }
 
-  if (m_config->get_string("calving_methods").find("thickness_calving") != std::string::npos &&
-      not m_config->get_boolean("part_grid")) {
+  if (m_config->get_string("calving.methods").find("thickness_calving") != std::string::npos &&
+      not m_config->get_boolean("geometry.part_grid.enabled")) {
     m_log->message(2,
                "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
                "              without application of partially filled grid cell scheme (-part_grid)\n"
@@ -83,7 +83,7 @@ std::set<std::string> IceModel::output_size_from_option(const std::string &optio
                                                         const std::string &description,
                                                         const std::string &default_value) {
 
-  options::Keyword o_size(option, description, "none,small,medium,big,2dbig",
+  options::Keyword o_size(option, description, "none,small,medium,big,big_2d",
                           default_value);
 
   return set_output_size(o_size);
@@ -123,16 +123,16 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
   std::string variables;
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):
-    variables = m_config->get_string("output_medium");
-  } else if (keyword == "2dbig") {
-    // add all the variables listed in the config file (under "medium" and "2dbig" sizes):
-    variables = m_config->get_string("output_medium");
-    variables += "," + m_config->get_string("output_2dbig");
+    variables = m_config->get_string("output.sizes.medium");
+  } else if (keyword == "big_2d") {
+    // add all the variables listed in the config file (under "medium" and "big_2d" sizes):
+    variables = m_config->get_string("output.sizes.medium");
+    variables += "," + m_config->get_string("output.sizes.big_2d");
   } else if (keyword == "big") {
     // add all the variables listed in the config file ("big" size):
-    variables = m_config->get_string("output_medium");
-    variables += "," + m_config->get_string("output_2dbig");
-    variables += "," + m_config->get_string("output_big");
+    variables = m_config->get_string("output.sizes.medium");
+    variables += "," + m_config->get_string("output.sizes.big_2d");
+    variables += "," + m_config->get_string("output.sizes.big");
   }
 
   std::vector<std::string> list = split(variables, ',');
@@ -142,7 +142,7 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     }
   }
 
-  if (m_config->get_boolean("do_age")) {
+  if (m_config->get_boolean("age.enabled")) {
     result.insert("age");
   } else {
     result.erase("age");
@@ -187,7 +187,7 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
 
 //! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
 std::string IceModel::get_output_size(const std::string &option) {
-  return options::Keyword(option, "no description", "none,small,medium,big,2dbig", "no default");
+  return options::Keyword(option, "no description", "none,small,medium,big,big_2d", "no default");
 }
 
 

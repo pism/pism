@@ -519,15 +519,15 @@ void set_config_from_options(Config &config) {
 
     if (energy.is_set()) {
       if (energy == "none") {
-        config.set_boolean("do_energy", false, Config::USER);
+        config.set_boolean("energy.enabled", false, Config::USER);
         // Allow selecting cold ice flow laws in isothermal mode.
-        config.set_boolean("do_cold_ice_methods", true, Config::USER);
+        config.set_boolean("energy.temperature_based", true, Config::USER);
       } else if (energy == "cold") {
-        config.set_boolean("do_energy", true, Config::USER);
-        config.set_boolean("do_cold_ice_methods", true, Config::USER);
+        config.set_boolean("energy.enabled", true, Config::USER);
+        config.set_boolean("energy.temperature_based", true, Config::USER);
       } else if (energy == "enthalpy") {
-        config.set_boolean("do_energy", true, Config::USER);
-        config.set_boolean("do_cold_ice_methods", false, Config::USER);
+        config.set_boolean("energy.enabled", true, Config::USER);
+        config.set_boolean("energy.temperature_based", false, Config::USER);
       } else {
         throw RuntimeError("this can't happen: options::Keyword validates input");
       }
@@ -541,18 +541,18 @@ void set_config_from_options(Config &config) {
       throw RuntimeError::formatted("option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
                                     (int)topg_to_phi->size());
     }
-    config.set_boolean("till_use_topg_to_phi", true);
-    config.set_double("till_topg_to_phi_phi_min", topg_to_phi[0]);
-    config.set_double("till_topg_to_phi_phi_max", topg_to_phi[1]);
-    config.set_double("till_topg_to_phi_topg_min", topg_to_phi[2]);
-    config.set_double("till_topg_to_phi_topg_max", topg_to_phi[3]);
+    config.set_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);
+    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min", topg_to_phi[0]);
+    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max", topg_to_phi[1]);
+    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min", topg_to_phi[2]);
+    config.set_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max", topg_to_phi[3]);
   }
 
   // Ice shelves
 
   bool nu_bedrock = options::Bool("-nu_bedrock", "constant viscosity near margins");
   if (nu_bedrock) {
-    config.set_boolean("nu_bedrock_set", true, Config::USER);
+    config.set_boolean("stress_balance.ssa.fd.lateral_drag.enabled", true, Config::USER);
   }
 
   // Shortcuts
@@ -561,35 +561,35 @@ void set_config_from_options(Config &config) {
   // and in particular NOT  "-calving eigen_calving")
   bool pik = options::Bool("-pik", "enable suite of PISM-PIK mechanisms");
   if (pik) {
-    config.set_boolean("calving_front_stress_boundary_condition", true, Config::USER);
-    config.set_boolean("part_grid", true, Config::USER);
-    config.set_boolean("part_redist", true, Config::USER);
-    config.set_boolean("kill_icebergs", true, Config::USER);
-    config.set_boolean("sub_groundingline", true, Config::USER);
+    config.set_boolean("stress_balance.calving_front_stress_bc", true, Config::USER);
+    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
+    config.set_boolean("geometry.part_grid.redistribute_residual_volume", true, Config::USER);
+    config.set_boolean("geometry.remove_icebergs", true, Config::USER);
+    config.set_boolean("geometry.grounded_cell_fraction", true, Config::USER);
   }
 
-  if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {
-    config.set_boolean("part_grid", true, Config::USER);
+  if (config.get_string("calving.methods").find("eigen_calving") != std::string::npos) {
+    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
     // eigen-calving requires a wider stencil:
-    config.set_double("grid_max_stencil_width", 3);
+    config.set_double("grid.max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal
-  if (not config.get_string("calving_methods").empty()) {
-    config.set_boolean("kill_icebergs", true, Config::USER);
+  if (not config.get_string("calving.methods").empty()) {
+    config.set_boolean("geometry.remove_icebergs", true, Config::USER);
   }
 
-  // kill_icebergs requires part_grid
-  if (config.get_boolean("kill_icebergs")) {
-    config.set_boolean("part_grid", true, Config::USER);
+  // geometry.remove_icebergs requires part_grid
+  if (config.get_boolean("geometry.remove_icebergs")) {
+    config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
   }
 
   bool test_climate_models = options::Bool("-test_climate_models",
                                            "Disable ice dynamics to test climate models");
   if (test_climate_models) {
-    config.set_string("stress_balance_model", "none", Config::USER);
-    config.set_boolean("do_energy", false, Config::USER);
-    config.set_boolean("do_age", false, Config::USER);
+    config.set_string("stress_balance.model", "none", Config::USER);
+    config.set_boolean("energy.enabled", false, Config::USER);
+    config.set_boolean("age.enabled", false, Config::USER);
     // let the user decide if they want to use "-no_mass" or not
   }
 
@@ -622,6 +622,31 @@ Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::
   set_config_from_options(*config);
 
   return config;
+}
+
+ConfigWithPrefix::ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix)
+  : m_prefix(prefix), m_config(c) {
+  // empty
+}
+
+double ConfigWithPrefix::get_double(const std::string &name) const {
+  return m_config->get_double(m_prefix + name);
+}
+
+double ConfigWithPrefix::get_double(const std::string &name, const std::string &units) const {
+  return m_config->get_double(m_prefix + name, units);
+}
+
+std::string ConfigWithPrefix::get_string(const std::string &name) const {
+  return m_config->get_string(m_prefix + name);
+}
+
+bool ConfigWithPrefix::get_boolean(const std::string& name) const {
+  return m_config->get_boolean(m_prefix + name);
+}
+
+void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
+  m_prefix = prefix;
 }
 
 } // end of namespace pism

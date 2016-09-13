@@ -91,11 +91,11 @@ void SSATestCaseConst::initializeGrid(int Mx,int My) {
 
 
 void SSATestCaseConst::initializeSSAModel() {
-  m_config->set_boolean("do_pseudo_plastic_till", true);
-  m_config->set_double("pseudo_plastic_q", basal_q);
+  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
+  m_config->set_double("basal_resistance.pseudo_plastic.q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
-  m_config->set_boolean("do_pseudo_plastic_till", true);
+  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
 
   // The following is irrelevant because we will force linear rheology later.
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
@@ -108,7 +108,7 @@ void SSATestCaseConst::initializeSSACoefficients() {
   m_ssa->strength_extension->set_min_thickness(0.5*H0);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
+  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
 
   // Set constant thickness, tauc
   m_bc_mask.set(MASK_GROUNDED);
@@ -152,10 +152,10 @@ void SSATestCaseConst::initializeSSACoefficients() {
 void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
                                      double /*x*/, double /*y*/,
                                      double *u, double *v) {
-  double earth_grav = m_config->get_double("standard_gravity"),
-    tauc_threshold_velocity = m_config->get_double("pseudo_plastic_uthreshold",
+  double earth_grav = m_config->get_double("constants.standard_gravity"),
+    tauc_threshold_velocity = m_config->get_double("basal_resistance.pseudo_plastic.u_threshold",
                                                    "m second-1"),
-    ice_rho = m_config->get_double("ice_density");
+    ice_rho = m_config->get_double("constants.ice.density");
 
   *u = pow(ice_rho * earth_grav * H0 * dhdx / tauc0, 1./basal_q)*tauc_threshold_velocity;
   *v = 0;

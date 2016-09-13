@@ -97,7 +97,7 @@ void Hydrology::init() {
     m_inputtobed_period = itb_period_years;
     m_inputtobed_reference_time = units::convert(m_sys, itb_reference_year, "years", "seconds");
 
-    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing_buffer_size");
+    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
 
     PIO nc(m_grid->com, "netcdf3");
     nc.open(itb_file, PISM_READONLY);
@@ -136,7 +136,7 @@ void Hydrology::init() {
 
   InputOptions opts = process_input_options(m_grid->com);
 
-  double tillwat_default = m_config->get_double("bootstrapping_tillwat_value_no_var");
+  double tillwat_default = m_config->get_double("bootstrapping.defaults.tillwat");
 
   switch (opts.type) {
   case INIT_RESTART:
@@ -198,7 +198,7 @@ void Hydrology::overburden_pressure(IceModelVec2S &result) {
   const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("thk");
 
   result.copy_from(*thk);  // copies into ghosts if result has them
-  result.scale(m_config->get_double("ice_density") * m_config->get_double("standard_gravity"));
+  result.scale(m_config->get_double("constants.ice.density") * m_config->get_double("constants.standard_gravity"));
 }
 
 
@@ -218,7 +218,7 @@ void Hydrology::wall_melt(IceModelVec2S &result) {
 Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
  */
 void Hydrology::check_Wtil_bounds() {
-  double tillwat_max = m_config->get_double("hydrology_tillwat_max");
+  double tillwat_max = m_config->get_double("hydrology.tillwat_max");
 
   IceModelVec::AccessList list(m_Wtil);
   ParallelSection loop(m_grid->com);
@@ -261,8 +261,8 @@ in derived classes of Hydrology.
  */
 void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
                                IceModelVec2S &result) {
-  bool   use_const   = m_config->get_boolean("hydrology_use_const_bmelt");
-  double const_bmelt = m_config->get_double("hydrology_const_bmelt");
+  bool   use_const   = m_config->get_boolean("hydrology.use_const_bmelt");
+  double const_bmelt = m_config->get_double("hydrology.const_bmelt");
 
   IceModelVec::AccessList list;
   if (m_inputtobed != NULL) {

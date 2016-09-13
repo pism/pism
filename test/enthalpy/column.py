@@ -20,11 +20,11 @@ ctx = PISM.Context()
 unit_system = ctx.unit_system
 config = ctx.config
 
-config.set_string("grid_ice_vertical_spacing_type", "equal")
+config.set_string("grid.ice_vertical_spacing", "equal")
 
-k = config.get_double("ice_thermal_conductivity")
-c = config.get_double("ice_specific_heat_capacity")
-rho = config.get_double("ice_density")
+k = config.get_double("constants.ice.thermal_conductivity")
+c = config.get_double("constants.ice.specific_heat_capacity")
+rho = config.get_double("constants.ice.density")
 K = k / c
 # alpha squared
 alpha2 = k / (c * rho)
@@ -319,9 +319,9 @@ def errors_advection_up(plot_results=True, T_final=1000.0, dt=100, Mz=101):
     """
     w = 1.0
 
-    config.set_double("ice_thermal_conductivity", 0.0)
+    config.set_double("constants.ice.thermal_conductivity", 0.0)
     column = EnthalpyColumn(Mz, dt)
-    config.set_double("ice_thermal_conductivity", k)
+    config.set_double("constants.ice.thermal_conductivity", k)
 
     Lz = column.Lz
     z = np.array(column.sys.z())
@@ -378,9 +378,9 @@ def errors_advection_down(plot_results=True, T_final=1000.0, dt=100, Mz=101):
     """
     w = -1.0
 
-    config.set_double("ice_thermal_conductivity", 0.0)
+    config.set_double("constants.ice.thermal_conductivity", 0.0)
     column = EnthalpyColumn(Mz, dt)
-    config.set_double("ice_thermal_conductivity", k)
+    config.set_double("constants.ice.thermal_conductivity", k)
 
     Lz = column.Lz
     z = np.array(column.sys.z())

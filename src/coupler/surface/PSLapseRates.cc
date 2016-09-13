@@ -74,7 +74,7 @@ void LapseRates::init_impl() {
   m_temp_lapse_rate = units::convert(m_sys, m_temp_lapse_rate, "K/km", "K/m");
 
   // convert from [m year-1 / km] to [kg m-2 year-1 / km]
-  m_smb_lapse_rate *= m_config->get_double("ice_density");
+  m_smb_lapse_rate *= m_config->get_double("constants.ice.density");
   m_smb_lapse_rate = units::convert(m_sys, m_smb_lapse_rate,
                                     "(kg m-2) year-1 / km", "(kg m-2) second-1 / m");
 }
@@ -91,7 +91,7 @@ void LapseRates::ice_surface_temperature_impl(IceModelVec2S &result) {
 
 void LapseRates::add_vars_to_output_impl(const std::string &keyword,
                                            std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
+  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }
@@ -101,7 +101,7 @@ void LapseRates::add_vars_to_output_impl(const std::string &keyword,
 
 void LapseRates::define_variables_impl(const std::set<std::string> &vars,
                                          const PIO &nc, IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
     io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);

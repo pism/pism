@@ -37,8 +37,8 @@ namespace atmosphere {
 
 WeatherStation::WeatherStation(IceGrid::ConstPtr g)
   : AtmosphereModel(g),
-    m_precipitation_timeseries(*g, "precipitation", m_config->get_string("time_dimension_name")),
-    m_air_temp_timeseries(*g, "air_temp", m_config->get_string("time_dimension_name"))
+    m_precipitation_timeseries(*g, "precipitation", m_config->get_string("time.dimension_name")),
+    m_air_temp_timeseries(*g, "air_temp", m_config->get_string("time.dimension_name"))
 {
   m_precipitation_timeseries.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
   m_precipitation_timeseries.metadata().set_string("units", "kg m-2 second-1");

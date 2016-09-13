@@ -38,9 +38,9 @@ Constant::Constant(IceGrid::ConstPtr g)
 
   {
     const double
-      Q           = m_config->get_double("ocean_sub_shelf_heat_flux_into_ice"),
-      L           = m_config->get_double("water_latent_heat_fusion"),
-      ice_density = m_config->get_double("ice_density");
+      Q           = m_config->get_double("ocean.sub_shelf_heat_flux_into_ice"),
+      L           = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
+      ice_density = m_config->get_double("constants.ice.density");
 
     // Set default melt rate using configuration parameters
     // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
@@ -92,7 +92,7 @@ void Constant::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  if (!m_config->get_boolean("is_dry_simulation")) {
+  if (!m_config->get_boolean("ocean.always_grounded")) {
     m_log->message(2, "* Initializing the constant ocean model...\n");
   }
 }
@@ -107,10 +107,10 @@ void Constant::sea_level_elevation_impl(double &result) const{
 }
 
 void Constant::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  const double T0 = m_config->get_double("water_melting_point_temperature"), // K
-    beta_CC       = m_config->get_double("beta_CC"),
-    g             = m_config->get_double("standard_gravity"),
-    ice_density   = m_config->get_double("ice_density");
+  const double T0 = m_config->get_double("constants.fresh_water.melting_point_temperature"), // K
+    beta_CC       = m_config->get_double("constants.ice.beta_Clausius_Clapeyron"),
+    g             = m_config->get_double("constants.standard_gravity"),
+    ice_density   = m_config->get_double("constants.ice.density");
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -138,7 +138,7 @@ void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string>
 
 void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
 
   if (set_contains(vars, m_shelfbtemp)) {
     io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);

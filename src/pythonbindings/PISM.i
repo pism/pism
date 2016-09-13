@@ -47,6 +47,10 @@
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/PISMConfig.hh"
 
+#ifdef PISM_USE_JANSSON
+#include "base/util/ConfigJSON.hh"
+#endif
+
 #include "base/util/MaxTimestep.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
@@ -197,6 +201,11 @@
 %shared_ptr(pism::DefaultConfig);
 %include "base/util/PISMConfigInterface.hh"
 %include "base/util/PISMConfig.hh"
+
+#ifdef PISM_USE_JANSSON
+%shared_ptr(pism::ConfigJSON);
+%include "base/util/ConfigJSON.hh"
+#endif
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::EnthalpyConverter);

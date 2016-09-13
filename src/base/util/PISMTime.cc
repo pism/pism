@@ -31,7 +31,7 @@
 namespace pism {
 
 /**
- * Select a calendar using the "calendar" configuration parameter, the
+ * Select a calendar using the "time.calendar" configuration parameter, the
  * "-calendar" command-line option, or the "calendar" attribute of the
  * "time" variable in the file specified using "-time_file".
  *
@@ -39,7 +39,7 @@ namespace pism {
 std::string calendar_from_options(MPI_Comm com, const Config &config) {
   // Set the default calendar using the config. parameter or the
   // "-calendar" option:
-  std::string result = config.get_string("calendar");
+  std::string result = config.get_string("time.calendar");
 
   // Check if -time_file was set and override the setting above if the
   // "calendar" attribute is found.
@@ -49,7 +49,7 @@ std::string calendar_from_options(MPI_Comm com, const Config &config) {
 
     nc.open(time_file, PISM_READONLY);
     {
-      std::string time_name = config.get_string("time_dimension_name");
+      std::string time_name = config.get_string("time.dimension_name");
       bool time_exists = nc.inq_var(time_name);
       if (time_exists) {
         std::string tmp = nc.get_att_text(time_name, "calendar");
@@ -147,8 +147,8 @@ Time::Time(Config::ConstPtr conf,
 
   init_calendar(calendar_string);
 
-  m_run_start = years_to_seconds(m_config->get_double("start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
+  m_run_start = years_to_seconds(m_config->get_double("time.start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -202,7 +202,7 @@ double Time::end() const {
 }
 
 std::string Time::CF_units_string() const {
-  return "seconds since " + m_config->get_string("reference_date");
+  return "seconds since " + m_config->get_string("time.reference_date");
 }
 
 //! \brief Returns the calendar string.
@@ -249,20 +249,20 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) const {
 }
 
 bool Time::process_ys(double &result) {
-  options::Real ys("-ys", "Start year", m_config->get_double("start_year"));
+  options::Real ys("-ys", "Start year", m_config->get_double("time.start_year"));
   result = years_to_seconds(ys);
   return ys.is_set();
 }
 
 bool Time::process_y(double &result) {
-  options::Real y("-y", "Run length, in years", m_config->get_double("run_length_years"));
+  options::Real y("-y", "Run length, in years", m_config->get_double("time.run_length"));
   result = years_to_seconds(y);
   return y.is_set();
 }
 
 bool Time::process_ye(double &result) {
   options::Real ye("-ye", "End year",
-                      m_config->get_double("start_year") + m_config->get_double("run_length_years"));
+                      m_config->get_double("time.start_year") + m_config->get_double("time.run_length"));
   result = years_to_seconds(ye);
   return ye.is_set();
 }
@@ -331,7 +331,7 @@ void Time::init(const Logger &log) {
   } else if (y_set == true) {
     m_run_end = m_run_start + y_seconds;
   } else {
-    m_run_end = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
+    m_run_end = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
   }
 }
 

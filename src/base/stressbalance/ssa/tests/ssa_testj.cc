@@ -70,10 +70,10 @@ void SSATestCaseJ::initializeGrid(int Mx,int My) {
 }
 
 void SSATestCaseJ::initializeSSAModel() {
-  m_config->set_boolean("do_pseudo_plastic_till", false);
+  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", false);
 
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-  m_config->set_string("ssa_flow_law", "isothermal_glen");
+  m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
 }
 
 void SSATestCaseJ::initializeSSACoefficients() {
@@ -85,8 +85,8 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_ice_enthalpy.set(enth0);
 
   /* use Ritz et al (2001) value of 30 MPa year for typical vertically-averaged viscosity */
-  double ocean_rho = m_config->get_double("sea_water_density"),
-    ice_rho = m_config->get_double("ice_density");
+  double ocean_rho = m_config->get_double("constants.sea_water.density"),
+    ice_rho = m_config->get_double("constants.ice.density");
   const double nu0 = units::convert(m_sys, 30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
   const double H0 = 500.;       /* 500 m typical thickness */
 

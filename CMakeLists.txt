@@ -40,6 +40,7 @@ option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." OFF)
 option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
+option (Pism_USE_JANSSON "Use Jansson to store configuration files." OFF)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
@@ -143,6 +144,10 @@ else()
   message(STATUS "Using '#include <memory> and std::shared_ptr<...>.")
 endif()
 mark_as_advanced (Pism_USE_TR1)
+
+if (Pism_USE_JANSSON)
+  add_definitions (-DPISM_USE_JANSSON=1)
+endif()
 
 # Look for libraries using find_package(...), etc. Run CMake with -DPism_LOOK_FOR_LIBRARIES=OFF
 # to build on systems that rely on the module system to set all compiler and linker flags.

@@ -50,7 +50,7 @@ Given::Given(IceGrid::ConstPtr g)
   m_ice_surface_temp->metadata().set_double("valid_min", 0.0);
   m_ice_surface_temp->metadata().set_double("valid_max", 323.15); // 50 C
 
-  const double ice_density = m_config->get_double("ice_density");
+  const double ice_density = m_config->get_double("constants.ice.density");
   const double smb_max = units::convert(m_sys, 100.0 * ice_density,
                                         "kg m-2 year-1", "kg m-2 second-1");
 

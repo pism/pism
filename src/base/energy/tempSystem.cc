@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -55,9 +55,9 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
   m_T_w.resize(Mz);
 
   // set physical constants
-  m_ice_density = config.get_double("ice_density");
-  m_ice_c       = config.get_double("ice_specific_heat_capacity");
-  m_ice_k       = config.get_double("ice_thermal_conductivity");
+  m_ice_density = config.get_double("constants.ice.density");
+  m_ice_c       = config.get_double("constants.ice.specific_heat_capacity");
+  m_ice_k       = config.get_double("constants.ice.thermal_conductivity");
 
   // set derived constants
   m_nu    = m_dt / m_dz;

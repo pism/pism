@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of Pism.
 //
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     EnthalpyConverter::Ptr EC(new EnthalpyConverter(*ctx->config()));
 
     rheology::FlowLaw *flow_law = NULL;
-    rheology::FlowLawFactory ice_factory("sia_", ctx->config(), EC);
+    rheology::FlowLawFactory ice_factory("stress_balance.sia.", ctx->config(), EC);
     flow_law = ice_factory.create();
 
     double     TpaC[]  = {-30.0, -5.0, 0.0, 0.0},  // pressure-adjusted, deg C

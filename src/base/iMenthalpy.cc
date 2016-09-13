@@ -207,13 +207,13 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  assert(not m_config->get_boolean("do_cold_ice_methods"));
+  assert(not m_config->get_boolean("energy.temperature_based"));
 
   // essentially physical constants:
   const double
-    ice_density = m_config->get_double("ice_density"),              // kg m-3
+    ice_density = m_config->get_double("constants.ice.density"),              // kg m-3
     // constants controlling the numerical method:
-    bulgeEnthMax = m_config->get_double("enthalpy_cold_bulge_max"); // J kg-1
+    bulgeEnthMax = m_config->get_double("energy.enthalpy_cold_bulge_max"); // J kg-1
 
   bool viewOneColumn = options::Bool("-view_sys",
                                      "save column system information to a file");

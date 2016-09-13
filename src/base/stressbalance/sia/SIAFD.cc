@@ -39,7 +39,7 @@ namespace stressbalance {
 SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : SSB_Modifier(g, e) {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   // 2D temporary storage:
   for (int i = 0; i < 2; ++i) {
@@ -73,18 +73,18 @@ SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_second_to_kiloyear = units::convert(m_sys, 1, "second", "1000 years");
 
   {
-    rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);
+    rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
     m_flow_law = ice_factory.create();
   }
 
-  const bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
-  const bool age_model_enabled = m_config->get_boolean("do_age");
-  const bool e_age_coupling = m_config->get_boolean("e_age_coupling");
+  const bool compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling");
+  const bool age_model_enabled = m_config->get_boolean("age.enabled");
+  const bool e_age_coupling = m_config->get_boolean("stress_balance.sia.e_age_coupling");
 
   if (compute_grain_size_using_age) {
     if (not FlowLawUsesGrainSize(m_flow_law)) {
       throw RuntimeError::formatted("flow law %s does not use grain size "
-                                    "but compute_grain_size_using_age was set",
+                                    "but sia.grain_size_age_coupling was set",
                                     m_flow_law->name().c_str());
     }
 
@@ -100,9 +100,9 @@ SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
                          "age is needed for age-dependent flow enhancement");
   }
 
-  m_eemian_start   = m_config->get_double("eemian_start", "seconds");
-  m_eemian_end     = m_config->get_double("eemian_end", "seconds");
-  m_holocene_start = m_config->get_double("holocene_start", "seconds");
+  m_eemian_start   = m_config->get_double("time.eemian_start", "seconds");
+  m_eemian_end     = m_config->get_double("time.eemian_end", "seconds");
+  m_holocene_start = m_config->get_double("time.holocene_start", "seconds");
 }
 
 SIAFD::~SIAFD() {
@@ -126,7 +126,7 @@ void SIAFD::init() {
 
   // implements an option e.g. described in @ref Greve97Greenland that is the
   // enhancement factor is coupled to the age of the ice
-  if (m_config->get_boolean("e_age_coupling")) {
+  if (m_config->get_boolean("stress_balance.sia.e_age_coupling")) {
     m_log->message(2,
                    "  using age-dependent enhancement factor:\n"
                    "  e=%f for ice accumulated during interglacial periods\n"
@@ -194,7 +194,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
 //! \brief Compute the ice surface gradient for the SIA.
 /*!
   There are three methods for computing the surface gradient. Which method is
-  controlled by configuration parameter `surface_gradient_method` which can
+  controlled by configuration parameter `sia.surface_gradient_method` which can
   have values `haseloff`, `mahaffy`, or `eta`.
 
   The most traditional method is to directly differentiate the surface
@@ -203,7 +203,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
   ice-free adjacent bedrock points are above the ice surface, and in those
   cases the returned gradient component is zero.
 
-  The alternative method, when `surface_gradient_method` = `eta`, transforms
+  The alternative method, when `sia.surface_gradient_method` = `eta`, transforms
   the thickness to something more regular and differentiates that. We get back
   to the gradient of the surface by applying the chain rule. In particular, as
   shown in [\ref Vazquezetal2003] for the flat bed and \f$n=3\f$ case, if we define
@@ -229,7 +229,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
 */
 void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
-  const std::string method = m_config->get_string("surface_gradient_method");
+  const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
 
   if (method == "eta") {
 
@@ -244,7 +244,7 @@ void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
     surface_gradient_mahaffy(h_x, h_y);
 
   } else {
-    throw RuntimeError::formatted("value of surface_gradient_method, option '-gradient %s', is not valid",
+    throw RuntimeError::formatted("value of sia.surface_gradient_method, option '-gradient %s', is not valid",
                                   method.c_str());
   }
 }
@@ -603,9 +603,9 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   const double enhancement_factor = m_flow_law->enhancement_factor();
   const double enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial();
 
-  const bool compute_grain_size_using_age = m_config->get_boolean("compute_grain_size_using_age");
+  const bool compute_grain_size_using_age = m_config->get_boolean("stress_balance.sia.grain_size_age_coupling");
 
-  const bool e_age_coupling = m_config->get_boolean("e_age_coupling");
+  const bool e_age_coupling = m_config->get_boolean("stress_balance.sia.e_age_coupling");
   const double current_time = m_grid->ctx()->time()->current();
 
   const bool use_age = compute_grain_size_using_age or e_age_coupling;
@@ -659,7 +659,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
   std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz), flow(Mz);
   std::vector<double> delta_ij(Mz);
-  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("ice_grain_size"));
+  std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_double("constants.ice.grain_size"));
   std::vector<double> e_factor(Mz, enhancement_factor);
 
   double my_D_max = 0.0;

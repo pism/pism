@@ -47,11 +47,11 @@ Context::Ptr pisms_context(MPI_Comm com) {
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
-  config->set_string("calendar", "none");
-  config->set_double("grid_Lx", 750e3);
-  config->set_double("grid_Ly", 750e3);
-  config->set_string("grid_periodicity", "none");
-  config->set_string("sia_flow_law", "pb");
+  config->set_string("time.calendar", "none");
+  config->set_double("grid.Lx", 750e3);
+  config->set_double("grid.Ly", 750e3);
+  config->set_string("grid.periodicity", "none");
+  config->set_string("stress_balance.sia.flow_law", "pb");
 
   set_config_from_options(*config);
 
@@ -69,7 +69,7 @@ IceGrid::Ptr pisms_grid(Context::Ptr ctx) {
   options::forbidden("-bootstrap");
 
   if (input_file.is_set()) {
-    Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
+    Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
 
     // get grid from a PISM input file
     std::vector<std::string> names;

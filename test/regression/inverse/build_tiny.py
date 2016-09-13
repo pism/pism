@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
     tauc = vecs.tauc
     mask = vecs.mask
-    tauc_free_bedrock = config.get_double('high_tauc')
+    tauc_free_bedrock = config.get_double('basal_yield_stress.ice_free_bedrock')
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
             tauc[i, j] = stream_tauc(grid.x(i), grid.y(j))
@@ -124,12 +124,12 @@ if __name__ == '__main__':
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("time.dimension_name"),
                      "365_day",
                      "seconds since 1-1-1",
                      grid.ctx().unit_system())
     PISM.append_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("time.dimension_name"),
                      0.0)
     pio.close()
     vecs.writeall(output_filename)

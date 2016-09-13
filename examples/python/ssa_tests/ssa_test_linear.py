@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -40,12 +40,12 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("do_pseudo_plastic_till", True)
-        config.set_double("pseudo_plastic_q", 1.0)
+        config.set_boolean("basal_resistance.pseudo_plastic.enabled", True)
+        config.set_double("basal_resistance.pseudo_plastic.q", 1.0)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -83,10 +83,10 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         se.set_min_thickness(4000 * 10)
 
         # For the benefit of SSAFD on a non-periodic grid
-        self.config.set_boolean("compute_surf_grad_inward_ssa", True)
+        self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True)
 
     def exactSolution(self, i, j, x, y):
-        tauc_threshold_velocity = self.config.get_double("pseudo_plastic_uthreshold",
+        tauc_threshold_velocity = self.config.get_double("basal_resistance.pseudo_plastic.u_threshold",
                                                          "m/second")
         sys = self.grid.ctx().unit_system()
         v0 = PISM.convert(sys, 100, "m/year", "m/second")

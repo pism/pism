@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2014, 2015 David Maxwell
+# Copyright (C) 2011, 2012, 2014, 2015, 2016 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -117,8 +117,8 @@ tauc_guess_const = None
 
 
 def testi_tauc(grid, tauc):
-    standard_gravity = grid.ctx().config().get_double("standard_gravity")
-    ice_density = grid.ctx().config().get_double("ice_density")
+    standard_gravity = grid.ctx().config().get_double("constants.standard_gravity")
+    ice_density = grid.ctx().config().get_double("constants.ice.density")
     f = ice_density * standard_gravity * H0_schoof * slope
 
     with PISM.vec.Access(comm=tauc):
@@ -145,13 +145,13 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("do_pseudo_plastic_till", False)
+        config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
-        config.set_double("ice_softness", pow(3.7e8, -config.get_double("Glen_exponent")))
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(3.7e8, -config.get_double("stress_balance.ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -176,8 +176,8 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
         testi_tauc(self.modeldata.grid, vecs.tauc)
 
         grid = self.grid
-        standard_gravity = grid.ctx().config().get_double("standard_gravity")
-        ice_density = grid.ctx().config().get_double("ice_density")
+        standard_gravity = grid.ctx().config().get_double("constants.standard_gravity")
+        ice_density = grid.ctx().config().get_double("constants.ice.density")
         f = ice_density * standard_gravity * H0_schoof * slope
 
         vecs.ssa_driving_stress_y.set(0)
@@ -216,12 +216,12 @@ if __name__ == "__main__":
     do_pause = PISM.optionsFlag("-inv_pause", "pause each iteration", default=False)
     test_adjoint = PISM.optionsFlag("-inv_test_adjoint", "Test that the adjoint is working", default=False)
 
-    inv_method = config.get_string("inv_ssa_method")
+    inv_method = config.get_string("inverse.ssa.method")
 
     length_scale = L_schoof
     slope = 0.001
-    standard_gravity = config.get_double("standard_gravity")
-    ice_density = config.get_double("ice_density")
+    standard_gravity = config.get_double("constants.standard_gravity")
+    ice_density = config.get_double("constants.ice.density")
     f0 = ice_density * standard_gravity * H0_schoof * slope
     stress_scale = f0
     Ly = 3 * L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
@@ -287,12 +287,12 @@ if __name__ == "__main__":
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
-                     grid.ctx().config().get_string("calendar"),
+                     grid.ctx().config().get_string("time.dimension_name"),
+                     grid.ctx().config().get_string("time.calendar"),
                      grid.ctx().time().units_string(),
                      grid.ctx().unit_system())
     PISM.append_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().time().current())
     pio.close()
     zeta0.write(output_file)

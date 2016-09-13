@@ -136,7 +136,7 @@ void EISMINTII::initialize_using_formulas() {
   }
 
   // convert from [m second-1] to [kg m-2 s-1]
-  m_climatic_mass_balance.scale(m_config->get_double("ice_density"));
+  m_climatic_mass_balance.scale(m_config->get_double("constants.ice.density"));
 }
 
 void EISMINTII::update_impl(PetscReal t, PetscReal dt) {

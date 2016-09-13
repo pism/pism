@@ -36,7 +36,7 @@ Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, OceanModel* in)
   m_option_prefix = "-ocean_delta_MBP";
   m_offset_name   = "delta_MBP";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
 
   m_offset->metadata().set_string("units", "1");
   m_offset->metadata().set_string("long_name", "melange back pressure fraction");
@@ -89,7 +89,7 @@ void Delta_MBP::add_vars_to_output_impl(const std::string &keyword, std::set<std
 void Delta_MBP::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
                                               IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
 
   if (set_contains(vars, m_shelfbtemp)) {
     io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);

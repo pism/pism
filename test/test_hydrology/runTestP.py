@@ -38,32 +38,36 @@ def generate_config():
     nc = PISMDataset("testPconfig.nc", 'w')
     pism_overrides = nc.createVariable("pism_overrides", 'b')
 
-    pism_overrides.ice_softness = 3.1689e-24
-    pism_overrides.ice_softness_doc = "Pa-3 s-1; ice softness; NOT DEFAULT"
+    attrs = {
+        "constants.ice.softness" : 3.1689e-24,
+        "constants.ice.softness_doc" : "Pa-3 s-1; ice softness; NOT DEFAULT",
 
-    pism_overrides.hydrology_hydraulic_conductivity = 1.0e-2 / (1000.0 * 9.81)
-    pism_overrides.hydrology_hydraulic_conductivity_doc = "= k; NOT DEFAULT"
+        "hydrology.hydraulic_conductivity" : 1.0e-2 / (1000.0 * 9.81),
+        "hydrology.hydraulic_conductivity_doc" : "= k; NOT DEFAULT",
 
-    pism_overrides.hydrology_regularizing_porosity = 0.01
-    pism_overrides.hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes"
+        "hydrology.regularizing_porosity" : 0.01,
+        "hydrology.regularizing_porosity_doc" : "[pure]; phi_0 in notes",
 
-    pism_overrides.hydrology_tillwat_max = 0.0
-    pism_overrides.hydrology_tillwat_max_doc = "m; turn off till water mechanism"
+        "hydrology.tillwat_max" : 0.0,
+        "hydrology.tillwat_max_doc" : "m; turn off till water mechanism",
 
-    pism_overrides.hydrology_thickness_power_in_flux = 1.0
-    pism_overrides.hydrology_thickness_power_in_flux_doc = "; = alpha in notes"
+        "hydrology.thickness_power_in_flux" : 1.0,
+        "hydrology.thickness_power_in_flux_doc" : "; = alpha in notes",
 
-    pism_overrides.hydrology_gradient_power_in_flux = 2.0
-    pism_overrides.hydrology_gradient_power_in_flux_doc = "; = beta in notes"
+        "hydrology.gradient_power_in_flux" : 2.0,
+        "hydrology.gradient_power_in_flux_doc" : "; = beta in notes",
 
-    pism_overrides.hydrology_roughness_scale = 1.0
-    pism_overrides.hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale"
+        "hydrology.roughness_scale" : 1.0,
+        "hydrology.roughness_scale_doc" : "m; W_r in notes; roughness scale",
 
-    pism_overrides.yield_stress_model = "constant"
-    pism_overrides.yield_stress_model_doc = "only the constant yield stress model works without till"
+        "basal_yield_stress.model" : "constant",
+        "basal_yield_stress.model_doc" : "only the constant yield stress model works without till",
 
-    pism_overrides.default_tauc = 1e6
-    pism_overrides.default_tauc_doc = "set default to 'high tauc'"
+        "basal_yield_stress.constant.value" : 1e6,
+        "basal_yield_stress.constant.value_doc" : "set default to 'high tauc'",
+    }
+    for k,v in attrs.iteritems():
+        pism_overrides.setncattr(k, v)
 
     nc.close()
 

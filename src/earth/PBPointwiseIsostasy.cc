@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace bed {
 
 PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid::ConstPtr g)
   : BedDef(g) {
-  m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config->get_double("grid_max_stencil_width"));
+  m_thk_last.create(m_grid, "thk_last", WITH_GHOSTS, m_config->get_double("grid.max_stencil_width"));
 }
 
 PBPointwiseIsostasy::~PBPointwiseIsostasy() {
@@ -66,7 +66,7 @@ void PBPointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_th
 
   // Check if it's time to update:
   double dt_beddef = t_final - m_t_beddef_last; // in seconds
-  if ((dt_beddef < m_config->get_double("bed_def_interval_years", "seconds") &&
+  if ((dt_beddef < m_config->get_double("bed_deformation.update_interval", "seconds") &&
        t_final < m_grid->ctx()->time()->end()) ||
       dt_beddef < 1e-12) {
     return;
@@ -74,8 +74,8 @@ void PBPointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_th
 
   m_t_beddef_last = t_final;
 
-  const double lithosphere_density = m_config->get_double("lithosphere_density"),
-    ice_density = m_config->get_double("ice_density"),
+  const double lithosphere_density = m_config->get_double("bed_deformation.lithosphere_density"),
+    ice_density = m_config->get_double("constants.ice.density"),
     f = ice_density / lithosphere_density;
 
   //! Our goal: topg = topg_last - f*(thk - thk_last)

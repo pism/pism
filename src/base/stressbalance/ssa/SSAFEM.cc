@@ -44,9 +44,9 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
     m_quadrature(g->dx(), g->dy(), 1.0) {
 
 
-  const double ice_density = m_config->get_double("ice_density");
-  m_alpha = 1 - ice_density / m_config->get_double("sea_water_density");
-  m_rho_g = ice_density * m_config->get_double("standard_gravity");
+  const double ice_density = m_config->get_double("constants.ice.density");
+  m_alpha = 1 - ice_density / m_config->get_double("constants.sea_water.density");
+  m_rho_g = ice_density * m_config->get_double("constants.standard_gravity");
 
   m_driving_stress_x = NULL;
   m_driving_stress_y = NULL;
@@ -54,7 +54,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   PetscErrorCode ierr;
 
   m_dirichletScale = 1.0;
-  m_beta_ice_free_bedrock = m_config->get_double("beta_ice_free_bedrock");
+  m_beta_ice_free_bedrock = m_config->get_double("basal_resistance.beta_ice_free_bedrock");
 
   ierr = SNESCreate(m_grid->com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");
@@ -202,7 +202,7 @@ TerminationReason::Ptr SSAFEM::solve_with_reason() {
 TerminationReason::Ptr SSAFEM::solve_nocache() {
   PetscErrorCode ierr;
 
-  m_epsilon_ssa = m_config->get_double("epsilon_ssa");
+  m_epsilon_ssa = m_config->get_double("stress_balance.ssa.epsilon");
 
   options::String filename("-ssa_view", "");
   if (filename.is_set()) {
@@ -327,11 +327,11 @@ void SSAFEM::cache_inputs() {
 
   m_coefficients.update_ghosts();
 
-  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
   if (use_cfbc) {
     // Note: the call below uses ghosts of m_thickness.
     compute_node_types(*m_thickness,
-                       m_config->get_double("mask_icefree_thickness_stress_balance_standard"),
+                       m_config->get_double("stress_balance.ice_free_thickness_standard"),
                        m_node_type);
   } else {
     m_node_type.set(NODE_INTERIOR);
@@ -562,13 +562,13 @@ void SSAFEM::cache_residual_cfbc() {
   const Vector2 *outward_normal = fem::q1::outward_normals();
 
   const bool
-    use_cfbc          = m_config->get_boolean("calving_front_stress_boundary_condition"),
-    is_dry_simulation = m_config->get_boolean("is_dry_simulation");
+    use_cfbc          = m_config->get_boolean("stress_balance.calving_front_stress_bc"),
+    is_dry_simulation = m_config->get_boolean("ocean.always_grounded");
 
   const double
-    ice_density      = m_config->get_double("ice_density"),
-    ocean_density    = m_config->get_double("sea_water_density"),
-    standard_gravity = m_config->get_double("standard_gravity");
+    ice_density      = m_config->get_double("constants.ice.density"),
+    ocean_density    = m_config->get_double("constants.sea_water.density"),
+    standard_gravity = m_config->get_double("constants.standard_gravity");
 
   // Reset the boundary integral so that all values are overwritten.
   m_boundary_integral.set(0.0);
@@ -695,7 +695,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
 
   const bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
 
-  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
 
   const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
@@ -914,7 +914,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  const bool use_cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
+  const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
 
   // Zero out the Jacobian in preparation for updating it.
   PetscErrorCode ierr = MatZeroEntries(Jac);

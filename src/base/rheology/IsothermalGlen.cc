@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,7 @@ IsothermalGlen::IsothermalGlen(const std::string &prefix,
   : PatersonBudd(prefix, config, ec) {
   m_name = "isothermal Glen";
   
-  m_softness_A = config.get_double("ice_softness");
+  m_softness_A = config.get_double("flow_law.isothermal_Glen.ice_softness");
   m_hardness_B = pow(m_softness_A, m_hardness_power);
 }
 

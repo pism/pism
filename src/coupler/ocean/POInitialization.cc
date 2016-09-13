@@ -29,7 +29,7 @@ namespace ocean {
 InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
   : OceanModifier(g, in),
     m_sea_level_metadata("effective_sea_level_elevation",
-                         m_config->get_string("time_dimension_name"),
+                         m_config->get_string("time.dimension_name"),
                          m_sys) {
 
   m_melange_back_pressure_fraction.create(m_grid, "effective_melange_back_pressure_fraction",

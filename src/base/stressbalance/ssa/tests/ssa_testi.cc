@@ -79,10 +79,10 @@ void SSATestCaseI::initializeGrid(int Mx,int My) {
 void SSATestCaseI::initializeSSAModel() {
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
-  m_config->set_boolean("do_pseudo_plastic_till", false);
+  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", false);
 
-  m_config->set_string("ssa_flow_law", "isothermal_glen");
-  m_config->set_double("ice_softness", pow(B_schoof, -m_config->get_double("ssa_Glen_exponent")));
+  m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+  m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
 }
 
 void SSATestCaseI::initializeSSACoefficients() {
@@ -93,14 +93,14 @@ void SSATestCaseI::initializeSSACoefficients() {
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
-  m_config->set_double("epsilon_ssa", 0.0);  // don't use this lower bound
+  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
+  m_config->set_double("stress_balance.ssa.epsilon", 0.0);  // don't use this lower bound
 
   IceModelVec::AccessList list;
   list.add(m_tauc);
 
-  double standard_gravity = m_config->get_double("standard_gravity"),
-    ice_rho = m_config->get_double("ice_density");
+  double standard_gravity = m_config->get_double("constants.standard_gravity"),
+    ice_rho = m_config->get_double("constants.ice.density");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

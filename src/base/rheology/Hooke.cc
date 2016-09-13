@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,11 +32,11 @@ Hooke::Hooke(const std::string &prefix,
   : PatersonBudd(prefix, config, ec) {
   m_name = "Hooke";
 
-  m_Q_Hooke  = config.get_double("Hooke_Q");
-  m_A_Hooke  = config.get_double("Hooke_A");
-  m_C_Hooke  = config.get_double("Hooke_C");
-  m_K_Hooke  = config.get_double("Hooke_k");
-  m_Tr_Hooke = config.get_double("Hooke_Tr");
+  m_Q_Hooke  = config.get_double("flow_law.Hooke.Q");
+  m_A_Hooke  = config.get_double("flow_law.Hooke.A");
+  m_C_Hooke  = config.get_double("flow_law.Hooke.C");
+  m_K_Hooke  = config.get_double("flow_law.Hooke.k");
+  m_Tr_Hooke = config.get_double("flow_law.Hooke.Tr");
 }
 
 Hooke::~Hooke() {

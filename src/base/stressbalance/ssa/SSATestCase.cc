@@ -34,7 +34,7 @@ namespace stressbalance {
 void SSATestCase::buildSSACoefficients()
 {
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   // ice surface elevation
   m_surface.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
@@ -80,7 +80,7 @@ void SSATestCase::buildSSACoefficients()
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys = m_grid->ctx()->unit_system();
-  double fill_value = units::convert(sys, config->get_double("fill_value"), "m year-1", "m second-1");
+  double fill_value = units::convert(sys, config->get_double("output.fill_value"), "m year-1", "m second-1");
 
   m_bc_values.metadata(0).set_string("glaciological_units", "m year-1");
   m_bc_values.metadata(0).set_double("valid_min", units::convert(m_sys, -1e6, "m year-1", "m second-1"));
@@ -120,7 +120,7 @@ void SSATestCase::buildSSACoefficients()
   mask_values[1] = 1;
   m_bc_mask.metadata().set_doubles("flag_values", mask_values);
   m_bc_mask.metadata().set_string("flag_meanings",
-                                  "no_data ssa_dirichlet_bc_location");
+                                  "no_data ssa.dirichlet_bc_location");
   m_grid->variables().add(m_bc_mask);
 
   m_melange_back_pressure.create(m_grid, "melange_back_pressure_fraction",
@@ -190,8 +190,8 @@ void SSATestCase::report(const std::string &testname) {
     gmaxuerr   = 0.0,
     gmaxverr   = 0.0;
 
-  if (m_config->get_boolean("do_pseudo_plastic_till") &&
-      m_config->get_double("pseudo_plastic_q") != 1.0) {
+  if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") &&
+      m_config->get_double("basal_resistance.pseudo_plastic.q") != 1.0) {
     m_ctx->log()->message(1,
                           "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }
@@ -365,13 +365,13 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output_format"));
+  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output.format"));
   pio.open(filename, PISM_READWRITE_MOVE);
-  io::define_time(pio, m_config->get_string("time_dimension_name"),
+  io::define_time(pio, m_config->get_string("time.dimension_name"),
                   m_grid->ctx()->time()->calendar(),
                   m_grid->ctx()->time()->CF_units_string(),
                   m_grid->ctx()->unit_system());
-  io::append_time(pio, m_config->get_string("time_dimension_name"), 0.0);
+  io::append_time(pio, m_config->get_string("time.dimension_name"), 0.0);
 
   m_surface.write(pio);
   m_thickness.write(pio);

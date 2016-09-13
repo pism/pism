@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -61,7 +61,7 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
   : Time(conf, calendar_string, units_system),
     m_com(c) {
 
-  std::string ref_date = m_config->get_string("reference_date");
+  std::string ref_date = m_config->get_string("time.reference_date");
 
   try {
     parse_date(ref_date, NULL);
@@ -77,8 +77,8 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
     throw;
   }
 
-  m_run_start = increment_date(0, (int)m_config->get_double("start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("run_length_years"));
+  m_run_start = increment_date(0, (int)m_config->get_double("time.start_year"));
+  m_run_end   = increment_date(m_run_start, (int)m_config->get_double("time.run_length"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -98,7 +98,7 @@ bool Time_Calendar::process_ys(double &result) {
       throw;
     }
   } else {
-    result = m_config->get_double("start_year", "seconds");
+    result = m_config->get_double("time.start_year", "seconds");
   }
   return ys.is_set();
 }
@@ -114,7 +114,7 @@ bool Time_Calendar::process_y(double &result) {
     }
     result = years_to_seconds(y);
   } else {
-    result = m_config->get_double("run_length_years", "seconds");
+    result = m_config->get_double("time.run_length", "seconds");
   }
   return y.is_set();
 }
@@ -132,8 +132,8 @@ bool Time_Calendar::process_ye(double &result) {
       throw;
     }
   } else {
-    result = (m_config->get_double("start_year", "seconds") +
-              m_config->get_double("run_length_years", "seconds"));
+    result = (m_config->get_double("time.start_year", "seconds") +
+              m_config->get_double("time.run_length", "seconds"));
   }
   return ye.is_set();
 }
@@ -209,7 +209,7 @@ void Time_Calendar::init(const Logger &log) {
 void Time_Calendar::init_from_file(const std::string &filename, const Logger &log,
                                    bool set_start_time) {
   try {
-    std::string time_name = m_config->get_string("time_dimension_name");
+    std::string time_name = m_config->get_string("time.dimension_name");
 
     PIO nc(m_com, "netcdf3"); // OK to use netcdf3
 

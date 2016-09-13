@@ -30,7 +30,7 @@ Frac_P::Frac_P(IceGrid::ConstPtr g, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
   m_option_prefix = "-atmosphere_frac_P";
   m_offset_name = "frac_P";
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
   m_offset->metadata().set_string("units", "1");
   m_offset->metadata().set_string("long_name", "precipitation multiplier, pure fraction");
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());

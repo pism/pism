@@ -36,7 +36,7 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, SurfaceModel* in)
   m_option_prefix = "-surface_delta_T";
   m_offset_name   = "delta_T";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
 
   m_offset->metadata().set_string("units", "Kelvin");
   m_offset->metadata().set_string("long_name", "ice-surface temperature offsets");
@@ -85,14 +85,14 @@ void Delta_T::ice_surface_temperature_impl(IceModelVec2S &result) {
 void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   m_input_model->add_vars_to_output(keyword, result);
 
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
+  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }
 }
 
 void Delta_T::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
     io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);

@@ -67,10 +67,10 @@ void IceModel::updateSurfaceElevationAndMask() {
 
   GeometryCalculator gc(*m_config);
 
-  if (m_config->get_boolean("kill_icebergs") && m_iceberg_remover != NULL) {
+  if (m_config->get_boolean("geometry.remove_icebergs") and m_iceberg_remover != NULL) {
     // the iceberg remover has to use the same mask as the stress balance code, hence the
     // stress-balance-related threshold here
-    gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_stress_balance_standard"));
+    gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
     gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
 
@@ -79,7 +79,7 @@ void IceModel::updateSurfaceElevationAndMask() {
     // mask (we need to use the different threshold)
   }
 
-  gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_standard"));
+  gc.set_icefree_thickness(m_config->get_double("geometry.ice_free_thickness_standard"));
   gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
   gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
 
@@ -437,12 +437,12 @@ void IceModel::massContExplicitStep() {
   FluxCounters local, total;
 
   const bool
-    include_bmr_in_continuity = m_config->get_boolean("include_bmr_in_continuity");
+    include_bmr_in_continuity = m_config->get_boolean("geometry.update.use_basal_melt_rate");
 
   const double
     dx                       = m_grid->dx(),
     dy                       = m_grid->dy(),
-    ice_density              = m_config->get_double("ice_density"),
+    ice_density              = m_config->get_double("constants.ice.density"),
     meter_per_s_to_kg_per_m2 = m_dt * ice_density;
 
   assert(m_surface != NULL);
@@ -473,9 +473,9 @@ void IceModel::massContExplicitStep() {
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool
-    do_part_grid             = m_config->get_boolean("part_grid"),
-    do_redist                = m_config->get_boolean("part_redist"),
-    reduce_frontal_thickness = m_config->get_boolean("part_grid_reduce_frontal_thickness");
+    do_part_grid             = m_config->get_boolean("geometry.part_grid.enabled"),
+    do_redist                = m_config->get_boolean("geometry.part_grid.redistribute_residual_volume"),
+    reduce_frontal_thickness = m_config->get_boolean("geometry.part_grid.reduce_frontal_thickness");
 
   if (do_part_grid) {
     list.add(m_Href);
@@ -486,7 +486,7 @@ void IceModel::massContExplicitStep() {
       H_residual.set(0.0);
     }
   }
-  const bool dirichlet_bc = m_config->get_boolean("ssa_dirichlet_bc");
+  const bool dirichlet_bc = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
   if (dirichlet_bc) {
     list.add(m_ssa_dirichlet_bc_mask);
     list.add(m_ssa_dirichlet_bc_values);
@@ -727,8 +727,8 @@ void IceModel::massContExplicitStep() {
 void IceModel::update_grounded_cell_fraction() {
 
   const double
-    ice_density   = m_config->get_double("ice_density"),
-    ocean_density = m_config->get_double("sea_water_density");
+    ice_density   = m_config->get_double("constants.ice.density"),
+    ocean_density = m_config->get_double("constants.sea_water.density");
 
   assert(m_ocean != NULL);
   const double sea_level = m_ocean->sea_level_elevation();

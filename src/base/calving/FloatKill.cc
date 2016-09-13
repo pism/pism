@@ -29,7 +29,7 @@ namespace calving {
 
 FloatKill::FloatKill(IceGrid::ConstPtr g)
   : Component(g) {
-  m_margin_only = m_config->get_boolean("float_kill_margin_only");
+  m_margin_only = m_config->get_boolean("calving.float_kill.margin_only");
 }
 
 FloatKill::~FloatKill() {

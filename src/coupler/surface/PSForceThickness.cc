@@ -40,11 +40,11 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, SurfaceModel *input)
     m_climatic_mass_balance_original(m_sys, "climatic_mass_balance_original"),
     m_ice_surface_temp(m_sys, "ice_surface_temp") {
 
-  m_alpha = m_config->get_double("force_to_thickness_alpha", "s-1");
-  m_alpha_ice_free_factor = m_config->get_double("force_to_thickness_ice_free_alpha_factor");
-  m_ice_free_thickness_threshold = m_config->get_double("force_to_thickness_ice_free_thickness_threshold");
+  m_alpha = m_config->get_double("surface.force_to_thickness.alpha", "s-1");
+  m_alpha_ice_free_factor = m_config->get_double("surface.force_to_thickness.ice_free_alpha_factor");
+  m_ice_free_thickness_threshold = m_config->get_double("surface.force_to_thickness.ice_free_thickness_threshold");
 
-  m_start_time = m_config->get_double("force_to_thickness_start_time", "seconds");
+  m_start_time = m_config->get_double("surface.force_to_thickness.start_time", "seconds");
 
   m_target_thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
   // will set attributes in init()
@@ -191,7 +191,7 @@ Let's assume \f$H(t_s)=H_0\f$.  This initial value problem has solution
 and so
   \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
 
-The constant \f$\alpha\f$ has a default value `pism_config:force_to_thickness_alpha`.
+The constant \f$\alpha\f$ has a default value `pism_config:surface.force_to_thickness.alpha`.
 
 The next example uses files generated from the EISMINT-Greenland experiment;
 see the corresponding chapter of the User's Manual.
@@ -287,7 +287,7 @@ void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_log->message(5,
              "    updating surface mass balance using -force_to_thickness mechanism ...");
 
-  double ice_density = m_config->get_double("ice_density");
+  double ice_density = m_config->get_double("constants.ice.density");
 
   const IceModelVec2S        &H    = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
@@ -342,7 +342,7 @@ void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::se
     m_input_model->add_vars_to_output(keyword, result);
   }
 
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
+  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
     result.insert("climatic_mass_balance_original");
@@ -353,7 +353,7 @@ void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::se
 }
 
 void ForceThickness::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
 
   if (set_contains(vars, "ftt_mask")) {
     m_ftt_mask.define(nc, nctype);

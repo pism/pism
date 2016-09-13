@@ -68,20 +68,21 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   bedrock_is_ice_forK = false;
 
   // Override some defaults from parent class
-  m_config->set_double("sia_enhancement_factor", 1.0);
+  m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
   // none use bed smoothing & bed roughness parameterization
-  m_config->set_double("bed_smoother_range", 0.0);
+  m_config->set_double("stress_balance.sia.bed_smoother_range", 0.0);
 
   // set values of flags in run()
-  m_config->set_boolean("do_mass_conserve", true);
-  m_config->set_boolean("include_bmr_in_continuity", false);
+  m_config->set_boolean("geometry.update.enabled", true);
+  m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
 
   if (testname == 'V') {
-    m_config->set_string("ssa_flow_law", "isothermal_glen");
-    m_config->set_double("ice_softness", pow(1.9e8, -m_config->get_double("sia_Glen_exponent")));
+    m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+    const double softness = pow(1.9e8, -m_config->get_double("stress_balance.sia.Glen_exponent"));
+    m_config->set_double("flow_law.isothermal_Glen.ice_softness", softness);
   } else {
     // Set the default for IceCompModel:
-    m_config->set_string("sia_flow_law", "arr");
+    m_config->set_string("stress_balance.sia.flow_law", "arr");
   }
 }
 
@@ -113,47 +114,47 @@ void IceCompModel::setFromOptions() {
   // options should be able to override parameter values set here.
 
   if (testname == 'H') {
-    m_config->set_string("bed_deformation_model", "iso");
+    m_config->set_string("bed_deformation.model", "iso");
   } else
-    m_config->set_string("bed_deformation_model", "none");
+    m_config->set_string("bed_deformation.model", "none");
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K') || (testname == 'O')) {
-    m_config->set_boolean("do_energy", true);
+    m_config->set_boolean("energy.enabled", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
-    m_config->set_double("global_min_allowed_temp", 0.0);
-    m_config->set_double("max_low_temp_count", 1000000);
+    m_config->set_double("energy.minimum_allowed_temperature", 0.0);
+    m_config->set_double("energy.max_low_temperature_count", 1000000);
   } else {
-    m_config->set_boolean("do_energy", false);
+    m_config->set_boolean("energy.enabled", false);
   }
 
-  m_config->set_boolean("is_dry_simulation", true);
+  m_config->set_boolean("ocean.always_grounded", true);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((testname == 'K') || (testname == 'O')) {
-    m_config->set_boolean("temperature_allow_above_melting", false);
+    m_config->set_boolean("energy.allow_temperature_above_melting", false);
   } else {
     // note temps are generally allowed to go above pressure melting in verify
-    m_config->set_boolean("temperature_allow_above_melting", true);
+    m_config->set_boolean("energy.allow_temperature_above_melting", true);
   }
 
   if (testname == 'V') {
     // no sub-shelf melting
-    m_config->set_boolean("include_bmr_in_continuity", false);
+    m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
 
     // this test is isothermal
-    m_config->set_boolean("do_energy", false);
+    m_config->set_boolean("energy.enabled", false);
 
     // use the SSA solver
     m_config->set_string("stress_balance_model", "ssa");
 
     // this certainly is not a "dry simulation"
-    m_config->set_boolean("is_dry_simulation", false);
+    m_config->set_boolean("ocean.always_grounded", false);
 
-    m_config->set_boolean("ssa_dirichlet_bc", true);
+    m_config->set_boolean("stress_balance.ssa.dirichlet_bc", true);
   }
 
-  m_config->set_boolean("do_cold_ice_methods", true);
+  m_config->set_boolean("energy.temperature_based", true);
 
   IceModel::setFromOptions();
 }
@@ -169,10 +170,10 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   if (biiSet) {
     if (testname == 'K') {
       m_log->message(1,
-                     "setting material properties of bedrock to those of ice in Test K\n");
-      m_config->set_double("bedrock_thermal_density", m_config->get_double("ice_density"));
-      m_config->set_double("bedrock_thermal_conductivity", m_config->get_double("ice_thermal_conductivity"));
-      m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice_specific_heat_capacity"));
+                 "setting material properties of bedrock to those of ice in Test K\n");
+      m_config->set_double("energy.bedrock_thermal_density", m_config->get_double("constants.ice.density"));
+      m_config->set_double("energy.bedrock_thermal_conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
+      m_config->set_double("energy.bedrock_thermal_specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
       bedrock_is_ice_forK = true;
     } else {
       m_log->message(1,
@@ -185,9 +186,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    m_config->set_double("bedrock_thermal_density", m_config->get_double("ice_density"));
-    m_config->set_double("bedrock_thermal_conductivity", m_config->get_double("ice_thermal_conductivity"));
-    m_config->set_double("bedrock_thermal_specific_heat_capacity", m_config->get_double("ice_specific_heat_capacity"));
+    m_config->set_double("energy.bedrock_thermal_density", m_config->get_double("constants.ice.density"));
+    m_config->set_double("energy.bedrock_thermal_conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
+    m_config->set_double("energy.bedrock_thermal_specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
   }
 
   energy::BTUGrid bed_vertical_grid = energy::BTUGrid::FromOptions(m_grid->ctx());
@@ -230,9 +231,9 @@ void IceCompModel::allocate_bed_deformation() {
 
   IceModel::allocate_bed_deformation();
 
-  f = m_config->get_double("ice_density") / m_config->get_double("lithosphere_density");  // for simple isostasy
+  f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.lithosphere_density");  // for simple isostasy
 
-  std::string bed_def_model = m_config->get_string("bed_deformation_model");
+  std::string bed_def_model = m_config->get_string("bed_deformation.model");
 
   if ((testname == 'H') && bed_def_model != "iso") {
     m_log->message(1,
@@ -311,7 +312,7 @@ void IceCompModel::initTestABCDH() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  rheology::PatersonBuddCold tgaIce("sia_", *m_config, EC);
+  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, EC);
 
   const double time = m_time->current();
 
@@ -395,7 +396,7 @@ void IceCompModel::initTestL() {
 
   assert(testname == 'L');
 
-  rheology::PatersonBuddCold tgaIce("sia_", *m_config, EC);
+  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -588,10 +589,10 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   }
 
   double
-    seawater_density = m_config->get_double("sea_water_density"),
-    ice_density      = m_config->get_double("ice_density"),
-    Glen_n           = m_config->get_double("sia_Glen_exponent"),
-    standard_gravity = m_config->get_double("standard_gravity");
+    seawater_density = m_config->get_double("constants.sea_water.density"),
+    ice_density      = m_config->get_double("constants.ice.density"),
+    Glen_n           = m_config->get_double("stress_balance.sia.Glen_exponent"),
+    standard_gravity = m_config->get_double("constants.standard_gravity");
 
   // area of grid square in square km:
   const double   a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3;

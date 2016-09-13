@@ -33,7 +33,7 @@ BedDef::BedDef(IceGrid::ConstPtr g)
 
   m_t_beddef_last = GSL_NAN;
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   m_topg.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg.set_attrs("model_state", "bedrock surface elevation",
@@ -152,9 +152,9 @@ void BedDef::init_impl() {
   case INIT_BOOTSTRAP:
     // bootstrapping
     m_topg.regrid(opts.filename, OPTIONAL,
-                  m_config->get_double("bootstrapping_bed_value_no_var"));
+                  m_config->get_double("bootstrapping.defaults.bed"));
     m_uplift.regrid(opts.filename, OPTIONAL,
-                    m_config->get_double("bootstrapping_uplift_value_no_var"));
+                    m_config->get_double("bootstrapping.defaults.uplift"));
     break;
   case INIT_OTHER:
   default:

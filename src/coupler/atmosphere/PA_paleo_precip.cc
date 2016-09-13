@@ -31,12 +31,12 @@ PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in)
   m_option_prefix = "-atmosphere_paleo_precip";
 
   m_offset_name = "delta_T";
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
   m_offset->metadata().set_string("units", "Kelvin");
   m_offset->metadata().set_string("long_name", "air temperature offsets");
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
-  m_precipexpfactor = m_config->get_double("precip_exponential_factor_for_temperature");
+  m_precipexpfactor = m_config->get_double("atmosphere.precip_exponential_factor_for_temperature");
 }
 
 PaleoPrecip::~PaleoPrecip()

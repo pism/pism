@@ -243,7 +243,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   loop.check();
 
   // convert from m second-1 ice equivalent to kg m-2 s-1:
-  result.scale(m_config->get_double("ice_density"));
+  result.scale(m_config->get_double("constants.ice.density"));
 }
 
 void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) {
@@ -280,14 +280,14 @@ void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) {
 }
 
 void Elevation::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
+  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }
 }
 
 void Elevation::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
   SurfaceModel::define_variables_impl(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {

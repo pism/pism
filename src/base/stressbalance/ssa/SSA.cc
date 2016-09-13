@@ -34,8 +34,8 @@ namespace pism {
 namespace stressbalance {
 
 SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
-  m_min_thickness = config.get_double("min_thickness_strength_extension_ssa");
-  m_constant_nu = config.get_double("constant_nu_strength_extension_ssa");
+  m_min_thickness = config.get_double("stress_balance.ssa.strength_extension.min_thickness");
+  m_constant_nu = config.get_double("stress_balance.ssa.strength_extension.constant_nu");
 }
 
 //! Set strength = (viscosity times thickness).
@@ -82,7 +82,7 @@ SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
   strength_extension = new SSAStrengthExtension(*m_config);
 
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   // grounded_dragging_floating integer mask
   m_mask.create(m_grid, "ssa_mask", WITH_GHOSTS, WIDE_STENCIL);
@@ -118,7 +118,7 @@ SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_da = m_velocity_global.get_dm();
 
   {
-    rheology::FlowLawFactory ice_factory("ssa_", m_config, m_EC);
+    rheology::FlowLawFactory ice_factory("stress_balance.ssa.", m_config, m_EC);
     ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
     m_flow_law = ice_factory.create();
   }
@@ -145,7 +145,7 @@ void SSA::init_impl() {
   m_log->message(2,
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
-  if (m_config->get_boolean("sub_groundingline")) {
+  if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
     m_gl_mask = m_grid->variables().get_2d_scalar("gl_mask");
   }
 
@@ -186,7 +186,7 @@ void SSA::init_impl() {
     m_velocity.set(0.0); // default initial guess
   }
 
-  if (m_config->get_boolean("ssa_dirichlet_bc")) {
+  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
     m_bc_mask = m_grid->variables().get_2d_mask("bc_mask");
     m_bc_values = m_grid->variables().get_2d_vector("vel_ssa_bc");
   }
@@ -201,7 +201,7 @@ void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_
   // update the cell type mask using the ice-free thickness threshold for stress balance
   // computations
   {
-    const double H_threshold = m_config->get_double("mask_icefree_thickness_stress_balance_standard");
+    const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
     GeometryCalculator gc(*m_config);
     gc.set_icefree_thickness(H_threshold);
 
@@ -220,7 +220,7 @@ void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_
 Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
 
-If configuration parameter `surface_gradient_method` = `eta` then the surface
+If configuration parameter `sia.surface_gradient_method` = `eta` then the surface
 gradient \f$\nabla h\f$ is computed by the gradient of the transformed variable
 \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$). The idea is that
 this quantity is more regular at ice sheet margins, and so we get a better
@@ -238,9 +238,9 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   const double minThickEtaTransform = 5.0; // m
   const double dx=m_grid->dx(), dy=m_grid->dy();
 
-  bool cfbc = m_config->get_boolean("calving_front_stress_boundary_condition");
-  bool compute_surf_grad_inward_ssa = m_config->get_boolean("compute_surf_grad_inward_ssa");
-  bool use_eta = (m_config->get_string("surface_gradient_method") == "eta");
+  bool cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
+  bool compute_surf_grad_inward_ssa = m_config->get_boolean("stress_balance.ssa.compute_surface_gradient_inward");
+  bool use_eta = (m_config->get_string("stress_balance.sia.surface_gradient_method") == "eta");
 
   IceModelVec::AccessList list;
   list.add(*m_surface);

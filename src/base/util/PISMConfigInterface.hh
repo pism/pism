@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -125,6 +125,24 @@ protected:
 private:
   struct Impl;
   Impl *m_impl;
+};
+
+class ConfigWithPrefix {
+public:
+  ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix);
+
+  double get_double(const std::string &name) const;
+  double get_double(const std::string &name, const std::string &units) const;
+
+  std::string get_string(const std::string &name) const;
+
+  bool get_boolean(const std::string& name) const;
+
+  void reset_prefix(const std::string &prefix);
+
+private:
+  std::string m_prefix;
+  Config::ConstPtr m_config;
 };
 
 Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system);

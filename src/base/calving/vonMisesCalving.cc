@@ -35,7 +35,7 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr g,
                            stressbalance::StressBalance *stress_balance)
   : StressCalving(g, stress_balance, 2) {
 
-  m_sigma_max = m_config->get_double("vonmises_calving_sigma_max");
+  m_sigma_max = m_config->get_double("calving.vonmises.sigma_max");
 }
 
 vonMisesCalving::~vonMisesCalving() {

@@ -72,7 +72,7 @@ void CosineYearlyCycle::init_impl() {
 
     if (m_A == NULL) {
       m_A = new Timeseries(*m_grid, "amplitude_scaling",
-                         m_config->get_string("time_dimension_name"));
+                           m_config->get_string("time.dimension_name"));
       m_A->metadata().set_string("units", "1");
       m_A->metadata().set_string("long_name", "cosine yearly cycle amplitude scaling");
       m_A->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());

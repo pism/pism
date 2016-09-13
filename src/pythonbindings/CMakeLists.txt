@@ -85,6 +85,10 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TR1" APPEND)
     endif()
 
+    if(Pism_USE_JANSSON)
+      set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_JANSSON" APPEND)
+    endif()
+
     set_source_files_properties(PISM.i PROPERTIES
       CPLUSPLUS ON
       SWIG_MODULE_NAME cpp)

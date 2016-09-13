@@ -101,15 +101,15 @@ void SSATestCasePlug::initializeSSAModel() {
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
   // Use constant hardness
-  m_config->set_string("ssa_flow_law", "isothermal_glen");
-  m_config->set_double("ice_softness", pow(B0, -glen_n));
+  m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+  m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n));
 }
 
 void SSATestCasePlug::initializeSSACoefficients() {
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
-  m_config->set_boolean("compute_surf_grad_inward_ssa", true);
-  m_config->set_double("epsilon_ssa", 0.0);
+  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
+  m_config->set_double("stress_balance.ssa.epsilon", 0.0);
 
   // Ensure we never use the strength extension.
   m_ssa->strength_extension->set_min_thickness(H0/2);
@@ -158,8 +158,8 @@ void SSATestCasePlug::initializeSSACoefficients() {
 void SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
                                               double /*x*/, double y,
                                               double *u, double *v) {
-  double earth_grav = m_config->get_double("standard_gravity"),
-    ice_rho = m_config->get_double("ice_density");
+  double earth_grav = m_config->get_double("constants.standard_gravity"),
+    ice_rho = m_config->get_double("constants.ice.density");
   double f = ice_rho * earth_grav * H0* dhdx;
   double ynd = y/L;
 

@@ -147,20 +147,20 @@ class Experiment:
 
         var = nc.createVariable("pism_overrides", 'i')
 
-        attrs = {"is_dry_simulation": "no",
-                 "include_bmr_in_continuity": "no",
-                 "compute_surf_grad_inward_ssa": "no",
-                 "ice_softness": MISMIP.A(self.experiment, step),
-                 "ice_density": MISMIP.rho_i(),
-                 "sea_water_density": MISMIP.rho_w(),
-                 "bootstrapping_geothermal_flux_value_no_var": 0.0,
-                 "Glen_exponent": MISMIP.n(),
-                 "standard_gravity": MISMIP.g(),
-                 "ocean_sub_shelf_heat_flux_into_ice": 0.0,
+        attrs = {"ocean.always_grounded": "no",
+                 "geometry.update.use_basal_melt_rate": "no",
+                 "stress_balance.ssa.compute_surface_gradient_inward": "no",
+                 "flow_law.isothermal_Glen.ice_softness": MISMIP.A(self.experiment, step),
+                 "constants.ice.density": MISMIP.rho_i(),
+                 "constants.sea_water.density": MISMIP.rho_w(),
+                 "bootstrapping.defaults.geothermal_flux": 0.0,
+                 "stress_balance.ssa.Glen_exponent": MISMIP.n(),
+                 "constants.standard_gravity": MISMIP.g(),
+                 "ocean.sub_shelf_heat_flux_into_ice": 0.0,
                  }
 
         if self.model != 1:
-            attrs["bed_smoother_range"] = 0.0
+            attrs["stress_balance.sia.bed_smoother_range"] = 0.0
 
         for name, value in attrs.iteritems():
             var.setncattr(name, value)

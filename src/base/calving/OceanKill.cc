@@ -34,7 +34,7 @@ OceanKill::OceanKill(IceGrid::ConstPtr g)
   : Component(g) {
 
   m_ocean_kill_mask.create(m_grid, "ocean_kill_mask", WITH_GHOSTS,
-                           m_config->get_double("grid_max_stencil_width"));
+                           m_config->get_double("grid.max_stencil_width"));
 
   m_ocean_kill_mask.set_attrs("internal",
                               "mask specifying fixed calving front locations",
@@ -125,7 +125,7 @@ void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness)
 }
 
 void OceanKill::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
+  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert(m_ocean_kill_mask.metadata().get_string("short_name"));
   }
 }

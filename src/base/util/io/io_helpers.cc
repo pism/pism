@@ -242,7 +242,7 @@ void define_time(const PIO &nc, const std::string &name, const std::string &cale
     // time
     VariableMetadata time(name, unit_system);
     time.set_string("long_name", "time");
-    time.set_string("calendar", calendar);
+    time.set_string("time.calendar", calendar);
     time.set_string("units", units);
     time.set_string("axis", "T");
 
@@ -386,7 +386,7 @@ static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
     // switch to data mode and perform all delayed write operations
     nc.enddef();
 
-    unsigned int t_length = nc.inq_dimlen(grid.ctx()->config()->get_string("time_dimension_name"));
+    unsigned int t_length = nc.inq_dimlen(grid.ctx()->config()->get_string("time.dimension_name"));
 
     assert(t_length >= 1);
 
@@ -401,7 +401,7 @@ static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
                             0, z_count,
                             start, count, imap);
 
-    if (grid.ctx()->config()->get_string("output_variable_order") == "yxz") {
+    if (grid.ctx()->config()->get_string("output.variable_order") == "yxz") {
       // Use the faster and safer (avoids a NetCDF bug) call if the array storage
       // orders in the memory and in NetCDF files are the same.
       nc.put_vara_double(var_name, start, count, input);
@@ -568,7 +568,7 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
     t = "";
 
   if (not var.get_time_independent()) {
-    t = grid.ctx()->config()->get_string("time_dimension_name");
+    t = grid.ctx()->config()->get_string("time.dimension_name");
   }
 
   nc.redef();

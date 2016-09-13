@@ -1,4 +1,4 @@
-// Copyright (C) 2012,2013,2014,2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012,2013,2014,2015,2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -303,8 +303,8 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
 
   m_grid = m_d0.get_grid();
 
-  m_tikhonov_atol = m_grid->ctx()->config()->get_double("tikhonov_atol");
-  m_tikhonov_rtol = m_grid->ctx()->config()->get_double("tikhonov_rtol");
+  m_tikhonov_atol = m_grid->ctx()->config()->get_double("inverse.tikhonov.atol");
+  m_tikhonov_rtol = m_grid->ctx()->config()->get_double("inverse.tikhonov.rtol");
 
   int design_stencil_width = m_d0.get_stencil_width();
   int state_stencil_width = m_u_obs.get_stencil_width();

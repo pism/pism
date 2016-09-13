@@ -59,8 +59,8 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
   const double LforFG = 750000; // m
 
   const double
-    ice_rho   = grid.ctx()->config()->get_double("ice_density"),
-    ice_c     = grid.ctx()->config()->get_double("ice_specific_heat_capacity");
+    ice_rho   = grid.ctx()->config()->get_double("constants.ice.density"),
+    ice_c     = grid.ctx()->config()->get_double("constants.ice.specific_heat_capacity");
 
   IceModelVec::AccessList list;
   list.add(thickness);
@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();
 
-    config->set_boolean("compute_grain_size_using_age", false);
+    config->set_boolean("stress_balance.sia.grain_size_age_coupling", false);
     config->set_string("sia_flow_law", "arr");
 
     bool
@@ -328,13 +328,13 @@ int main(int argc, char *argv[]) {
     grid->report_parameters();
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));
-    rheology::PatersonBuddCold ice("sia_", *config, EC);
+    rheology::PatersonBuddCold ice("stress_balance.sia.", *config, EC);
 
     IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
     IceModelVec2CellType cell_type;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
-    const int WIDE_STENCIL = config->get_double("grid_max_stencil_width");
+    const int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
 
     Vars &vars = grid->variables();
 
@@ -427,11 +427,11 @@ int main(int argc, char *argv[]) {
     PIO pio(grid->com, "netcdf3");
 
     pio.open(output_file, PISM_READWRITE_MOVE);
-    io::define_time(pio, config->get_string("time_dimension_name"),
+    io::define_time(pio, config->get_string("time.dimension_name"),
                     grid->ctx()->time()->calendar(),
                     grid->ctx()->time()->CF_units_string(),
                     unit_system);
-    io::append_time(pio, config->get_string("time_dimension_name"), 0.0);
+    io::append_time(pio, config->get_string("time.dimension_name"), 0.0);
     pio.close();
 
     ice_surface_elevation.write(output_file);

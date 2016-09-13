@@ -31,41 +31,46 @@ def create_config():
     nc = CDF("gumparams.nc", 'w')
     config = nc.createVariable("pism_overrides", 'i4')
 
-    config.standard_gravity = 9.81
-    config.standard_gravity_doc = "m s-2; = g"
+    attrs = {
+        "constants.standard_gravity" : 9.81,
+        "constants.standard_gravity_doc" : "m s-2; = g",
 
-    config.ice_density = 1000.0
-    config.ice_density_doc = "kg m-3; 1% Xanthan gum in water has same density as water"
+        "constants.ice.density" : 1000.0,
+        "constants.ice.density_doc" : "kg m-3; 1% Xanthan gum in water has same density as water",
 
-    config.bed_smoother_range = -1.0
-    config.bed_smoother_range_doc = "m; negative value de-activates bed smoother"
+        "stress_balance.sia.bed_smoother_range" : -1.0,
+        "stress_balance.sia.bed_smoother_range_doc" : "m; negative value de-activates bed smoother",
 
-    config.bootstrapping_geothermal_flux_value_no_var = 0.0
-    config.bootstrapping_geothermal_flux_value_no_var_doc = "W m-2; no geothermal"
+        "bootstrapping.defaults.geothermal_flux" : 0.0,
+        "bootstrapping.defaults.geothermal_flux_doc" : "W m-2; no geothermal",
 
-    config.summary_time_unit_name = "second"
-    config.summary_time_unit_name_doc = "stdout uses seconds (not years) to show model time"
+        "output.runtime.time_unit_name" : "second",
+        "output.runtime.time_unit_name_doc" : "stdout uses seconds (not years) to show model time",
 
-    config.summary_time_use_calendar = "no"
-    config.summary_time_use_calendar_doc = "stdout does not use a calendar to show model time"
+        "output.runtime.time_use_calendar" : "no",
+        "output.runtime.time_use_calendar_doc" : "stdout does not use a calendar to show model time",
 
-    config.summary_vol_scale_factor_log10 = -15
-    config.summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3"
+        "output.runtime.volume_scale_factor_log10" : -15,
+        "output.runtime.volume_scale_factor_log10_doc" : "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3",
 
-    config.summary_area_scale_factor_log10 = -10
-    config.summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area in summary line to stdout; -10 gives area in cm^2"
+        "output.runtime.area_scale_factor_log10" : -10,
+        "output.runtime.area_scale_factor_log10_doc" : "; an integer; log base 10 of scale factor to use for area in summary line to stdout; -10 gives area in cm^2",
 
-    config.mask_icefree_thickness_standard = 1e-8
-    config.mask_icefree_thickness_standard_doc = "m; only if the fluid is less than this is a cell marked as ice free"
+        "geometry.ice_free_thickness_standard" : 1e-8,
+        "geometry.ice_free_thickness_standard_doc" : "m; only if the fluid is less than this is a cell marked as ice free",
 
-    config.adaptive_timestepping_ratio = 0.08
-    config.adaptive_timestepping_ratio_doc = "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?"
+        "time_stepping.adaptive_ratio" : 0.08,
+        "time_stepping.adaptive_ratio_doc" : "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?",
 
-    config.sia_Glen_exponent = 5.9
-    config.sia_Glen_exponent_doc = "; = n;  Sayag & Worster (2013) give n = 5.9 +- 0.2"
+        "stress_balance.sia.Glen_exponent" : 5.9,
+        "stress_balance.sia.Glen_exponent_doc" : "; : n;  Sayag & Worster (2013) give n = 5.9 +- 0.2",
 
-    config.ice_softness = 9.7316e-09  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
-    config.ice_softness_doc = "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
+        "flow_law.isothermal_Glen.ice_softness" : 9.7316e-09,  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
+        "ice_softness_doc" : "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
+    }
+
+    for k,v in attrs.iteritems()
+        config.setncattr(k, v)
 
     nc.close()
 

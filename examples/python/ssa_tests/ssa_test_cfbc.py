@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -69,15 +69,15 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("compute_surf_grad_inward_ssa", True)
-        config.set_boolean("calving_front_stress_boundary_condition", True)
+        config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True)
+        config.set_boolean("stress_balance.calving_front_stress_bc", True)
 
-        config.set_boolean("do_pseudo_plastic_till", False)
+        config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
-        config.set_double("ice_softness", pow(1.9e8, -config.get_double("ssa_Glen_exponent")))
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(1.9e8, -config.get_double("stress_balance.ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -101,8 +101,8 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         vel_bc = vecs.vel_bc
         ice_mask = vecs.mask
 
-        ocean_rho = self.config.get_double("sea_water_density")
-        ice_rho = self.config.get_double("ice_density")
+        ocean_rho = self.config.get_double("constants.sea_water.density")
+        ice_rho = self.config.get_double("constants.ice.density")
 
         with PISM.vec.Access(comm=[thickness, surface, bc_mask, vel_bc, ice_mask]):
             for (i, j) in grid.points():

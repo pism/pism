@@ -45,11 +45,11 @@ namespace pism {
   - IceModelVec2 vHmelt
   That is, energyStep() is in charge of calling other methods that actually update, and
   then it is in charge of doing the ghost communication as needed.  If
-  do_cold_ice_methods == true, then energyStep() must also update this field
+  energy.temperature_based == true, then energyStep() must also update this field
   - IceModelVec3 m_ice_temperature
 
   Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
-  do_cold_ice_methods == true.
+  energy.temperature_based == true.
 */
 void IceModel::energyStep() {
 
@@ -72,7 +72,7 @@ void IceModel::energyStep() {
   m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("BTU");
 
-  if (m_config->get_boolean("do_cold_ice_methods")) {
+  if (m_config->get_boolean("energy.temperature_based")) {
     // new temperature values go in vTnew; also updates Hmelt:
     profiling.begin("temp step");
     temperatureStep(&myVertSacrCount,&myBulgeCount);
@@ -82,7 +82,7 @@ void IceModel::energyStep() {
 
     // compute_enthalpy_cold() updates ghosts of m_ice_enthalpy using
     // update_ghosts(). Is not optimized because this
-    // (do_cold_ice_methods) is a rare case.
+    // (energy.temperature_based) is a rare case.
     compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
 
   } else {
@@ -144,8 +144,8 @@ void IceModel::combine_basal_melt_rate() {
   assert(m_ocean != NULL);
   m_ocean->shelf_base_mass_flux(m_shelfbmassflux);
 
-  const bool sub_gl = (m_config->get_boolean("sub_groundingline") and
-                       m_config->get_boolean("sub_groundingline_basal_melt"));
+  const bool sub_gl = (m_config->get_boolean("geometry.grounded_cell_fraction") and
+                       m_config->get_boolean("energy.basal_melt.use_grounded_cell_fraction"));
 
   IceModelVec::AccessList list;
 
@@ -153,7 +153,7 @@ void IceModel::combine_basal_melt_rate() {
     list.add(m_gl_mask);
   }
 
-  double ice_density = m_config->get_double("ice_density");
+  double ice_density = m_config->get_double("constants.ice.density");
 
   list.add(m_cell_type);
   list.add(m_basal_melt_rate);
@@ -183,9 +183,9 @@ void IceModel::combine_basal_melt_rate() {
 //! the bedrock thermal layer will see.
 void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double
-    T0                     = m_config->get_double("water_melting_point_temperature"),
-    beta_CC_grad_sea_water = (m_config->get_double("beta_CC") * m_config->get_double("sea_water_density") *
-                              m_config->get_double("standard_gravity")); // K m-1
+    T0                     = m_config->get_double("constants.fresh_water.melting_point_temperature"),
+    beta_CC_grad_sea_water = (m_config->get_double("constants.ice.beta_Clausius_Clapeyron") * m_config->get_double("constants.sea_water.density") *
+                              m_config->get_double("constants.standard_gravity")); // K m-1
 
   // will need coupler fields in ice-free land and
   assert(m_surface != NULL);

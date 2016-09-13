@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,8 +41,8 @@ void IP_SSAHardavTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec 
 
   double zeta_min, zeta_max, hardav_min, hardav_max;
 
-  hardav_min = m_grid->ctx()->config()->get_double("inv_ssa_hardav_min");
-  hardav_max = m_grid->ctx()->config()->get_double("inv_ssa_hardav_max");
+  hardav_min = m_grid->ctx()->config()->get_double("inverse.ssa.hardav_min");
+  hardav_max = m_grid->ctx()->config()->get_double("inverse.ssa.hardav_max");
 
   IPDesignVariableParameterization &design_param = m_forward.design_param();
   design_param.fromDesignVariable(hardav_min,&zeta_min);

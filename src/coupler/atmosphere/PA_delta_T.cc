@@ -33,7 +33,7 @@ Delta_T::Delta_T(IceGrid::ConstPtr g, AtmosphereModel* in)
   m_option_prefix = "-atmosphere_delta_T";
   m_offset_name   = "delta_T";
 
-  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time_dimension_name"));
+  m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
   m_offset->metadata().set_string("units", "Kelvin");
   m_offset->metadata().set_string("long_name", "near-surface air temperature offsets");
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());

@@ -183,7 +183,7 @@ This is immediately equivalent to the integral
    \f[ w(x,y,z,t) = - \int_{b(x,y,t)}^{z} \nabla\cdot\mathbf{U}\,d\zeta
                            + w_b(x,y,t). \f]
 Here the value \f$w_b(x,y,t)\f$ is either zero or the negative of the basal melt rate
-according to the value of the flag `include_bmr_in_continuity`.
+according to the value of the flag `geometry.update.use_basal_melt_rate`.
 
 The vertical integral is computed by the trapezoid rule.
  */
@@ -194,7 +194,7 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  const bool use_upstream_fd = m_config->get_string("stress_balance_vertical_velocity_approximation") == "upstream";
+  const bool use_upstream_fd = m_config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
 
   IceModelVec::AccessList list;
   list.add(u);

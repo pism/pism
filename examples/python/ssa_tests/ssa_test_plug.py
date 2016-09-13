@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -42,9 +42,9 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
         #// Use constant hardness
-        config.set_string("ssa_flow_law", "isothermal_glen")
-        config.set_double("ice_softness", pow(B0, -glen_n))
-        config.set_double("Glen_exponent", glen_n)
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n))
+        config.set_double("stress_balance.ssa.Glen_exponent", glen_n)
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -85,14 +85,14 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         self.ssa.strength_extension.set_min_thickness(H0 / 2)
 
         #// The finite difference code uses the following flag to treat the non-periodic grid correctly.
-        # self.config.set_boolean("compute_surf_grad_inward_ssa", True);
+        # self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True);
 
         # SSAFEM uses this (even though it has "ssafd" in its name)
-        self.config.set_double("epsilon_ssa", 0.0)
+        self.config.set_double("stress_balance.ssa.epsilon", 0.0)
 
     def exactSolution(self, i, j, x, y):
-        earth_grav = self.config.get_double("standard_gravity")
-        ice_rho = self.config.get_double("ice_density")
+        earth_grav = self.config.get_double("constants.standard_gravity")
+        ice_rho = self.config.get_double("constants.ice.density")
         f = ice_rho * earth_grav * H0 * dhdx
         ynd = y / L
 

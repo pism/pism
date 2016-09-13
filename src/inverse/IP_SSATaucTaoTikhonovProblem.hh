@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,8 +34,8 @@ namespace inverse {
   is a reduced space method, inasmuch as we are performing unconstrained minimization on a Tikhonov functional
   that depends on a design variable (the value of \f$\tau_c\f$). It is compatible with any of the elementary
   TAO minimization algorithms, e.g. tao_cg, tao_lmvm.  If the minimization algorithm tao_blmvm is selected,
-  the values of \f$\tau_c\f$ will be constrained by the config variables \a inv_ssa_tauc_min
-  and \a inv_ssa_tauc_max.  
+  the values of \f$\tau_c\f$ will be constrained by the config variables \a inverse.ssa.tauc_min
+  and \a inverse.ssa.tauc_max.
 
   The TAO algorithm tao_lcl is not compatible with IP_SSATaucTaoTikhonovProblem.  Use IP_SSATaucTaoTikhonovProblemLCL
   instead.

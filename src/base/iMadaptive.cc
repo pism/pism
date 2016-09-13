@@ -50,7 +50,7 @@ The maximum vertical velocity is computed but it does not affect
 `CFLmaxdt`.
  */
 double IceModel::max_timestep_cfl_3d() {
-  double max_dt = m_config->get_double("maximum_time_step_years", "seconds");
+  double max_dt = m_config->get_double("time_stepping.maximum_time_step", "seconds");
 
   const IceModelVec3
     &u3 = m_stress_balance->velocity_u(),
@@ -123,7 +123,7 @@ double IceModel::max_timestep_cfl_3d() {
   sliding case we have a CFL condition.
  */
 double IceModel::max_timestep_cfl_2d() {
-  double max_dt = m_config->get_double("maximum_time_step_years", "seconds");
+  double max_dt = m_config->get_double("time_stepping.maximum_time_step", "seconds");
 
   const IceModelVec2V &vel = m_stress_balance->advective_velocity();
 
@@ -166,12 +166,12 @@ double IceModel::max_timestep_diffusivity() {
     const double
       dx = m_grid->dx(),
       dy = m_grid->dy(),
-      adaptive_timestepping_ratio = m_config->get_double("adaptive_timestepping_ratio"),
+      adaptive_timestepping_ratio = m_config->get_double("time_stepping.adaptive_ratio"),
       grid_factor                 = 1.0 / (dx*dx) + 1.0 / (dy*dy);
 
     return adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
   } else {
-    return m_config->get_double("maximum_time_step_years", "seconds");
+    return m_config->get_double("time_stepping.maximum_time_step", "seconds");
   }
 }
 
@@ -188,11 +188,11 @@ double IceModel::max_timestep_diffusivity() {
  */
 unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
 
-  if (not m_config->get_boolean("do_skip")) {
+  if (not m_config->get_boolean("time_stepping.skip.enabled")) {
     return 0;
   }
 
-  const unsigned int skip_max = static_cast<int>(m_config->get_double("skip_max"));
+  const unsigned int skip_max = static_cast<int>(m_config->get_double("time_stepping.skip.max"));
 
   if (input_dt_diffusivity > 0.0) {
     const double conservativeFactor = 0.95;
@@ -227,8 +227,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   std::map<std::string, double> dt_restrictions;
 
   // Always consider the maximum allowed time-step length.
-  if (m_config->get_double("maximum_time_step_years") > 0.0) {
-    dt_restrictions["max"] = m_config->get_double("maximum_time_step_years", "seconds");
+  if (m_config->get_double("time_stepping.maximum_time_step") > 0.0) {
+    dt_restrictions["max"] = m_config->get_double("time_stepping.maximum_time_step", "seconds");
   }
 
   // Always consider maxdt_temporary.
@@ -302,14 +302,14 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       }
     }
 
-    if (m_config->get_boolean("do_energy")) {
+    if (m_config->get_boolean("energy.enabled")) {
       if (update_3d) {
         CFLmaxdt = max_timestep_cfl_3d();
       }
       dt_restrictions["3D CFL"] = CFLmaxdt;
     }
 
-    if (m_config->get_boolean("do_mass_conserve")) {
+    if (m_config->get_boolean("geometry.update.enabled")) {
       CFLmaxdt2D = max_timestep_cfl_2d();
 
       dt_restrictions["2D CFL"] = CFLmaxdt2D;
@@ -339,7 +339,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 
   // Hit multiples of X years, if requested (this has to go last):
   {
-    const int timestep_hit_multiples = static_cast<int>(m_config->get_double("timestep_hit_multiples"));
+    const int timestep_hit_multiples = static_cast<int>(m_config->get_double("time_stepping.hit_multiples"));
     if (timestep_hit_multiples > 0) {
       const double epsilon = 1.0; // 1 second tolerance
       double

@@ -63,7 +63,7 @@ namespace pism {
 //! Initialize time from an input file or command-line options.
 void IceModel::time_setup() {
   initialize_time(m_grid->com,
-                  m_config->get_string("time_dimension_name"),
+                  m_config->get_string("time.dimension_name"),
                   *m_log, *m_time);
 
   m_log->message(2,
@@ -150,7 +150,7 @@ void IceModel::model_state_setup() {
   if (m_stress_balance) {
     m_stress_balance->init();
 
-    if (m_config->get_boolean("include_bmr_in_continuity")) {
+    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
       m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
     }
   }
@@ -283,7 +283,7 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
   }
 
   // check if the input file has Href; set to 0 if it is not present
-  if (m_config->get_boolean("part_grid")) {
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
 
     if (input_file.inq_var("Href")) {
       m_Href.read(input_file, last_record);
@@ -304,7 +304,7 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
 void IceModel::restart_3d(const PIO &input_file, unsigned int last_record) {
 
   // read the age field if present, otherwise set to zero
-  if (m_config->get_boolean("do_age")) {
+  if (m_config->get_boolean("age.enabled")) {
     bool age_exists = input_file.inq_var("age");
 
     if (age_exists) {
@@ -393,7 +393,7 @@ void IceModel::allocate_stressbalance() {
   m_log->message(2,
              "# Allocating a stress balance model...\n");
 
-  std::string model = m_config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance.model");
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
@@ -401,7 +401,7 @@ void IceModel::allocate_stressbalance() {
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
     sliding = new PrescribedSliding(m_grid, EC);
   } else if (model == "ssa" || model == "ssa+sia") {
-    std::string method = m_config->get_string("ssa_method");
+    std::string method = m_config->get_string("stress_balance.ssa.method");
 
     if (method == "fem") {
       sliding = new SSAFEM(m_grid, EC);
@@ -437,7 +437,7 @@ void IceModel::allocate_iceberg_remover() {
   m_log->message(2,
              "# Allocating an iceberg remover (part of a calving model)...\n");
 
-  if (m_config->get_boolean("kill_icebergs")) {
+  if (m_config->get_boolean("geometry.remove_icebergs")) {
 
     // this will throw an exception on failure
     m_iceberg_remover = new calving::IcebergRemover(m_grid);
@@ -465,7 +465,7 @@ void IceModel::allocate_subglacial_hydrology() {
 
   using namespace pism::hydrology;
 
-  std::string hydrology_model = m_config->get_string("hydrology_model");
+  std::string hydrology_model = m_config->get_string("hydrology.model");
 
   if (m_subglacial_hydrology != NULL) { // indicates it has already been allocated
     return;
@@ -481,7 +481,7 @@ void IceModel::allocate_subglacial_hydrology() {
   } else if (hydrology_model == "distributed") {
     m_subglacial_hydrology = new Distributed(m_grid, m_stress_balance);
   } else {
-    throw RuntimeError::formatted("unknown value for configuration string 'hydrology_model':\n"
+    throw RuntimeError::formatted("unknown value for configuration string 'hydrology.model':\n"
                                   "has value '%s'", hydrology_model.c_str());
   }
 }
@@ -496,11 +496,11 @@ void IceModel::allocate_basal_yield_stress() {
   m_log->message(2,
              "# Allocating a basal yield stress model...\n");
 
-  std::string model = m_config->get_string("stress_balance_model");
+  std::string model = m_config->get_string("stress_balance.model");
 
   // only these two use the yield stress (so far):
   if (model == "ssa" || model == "ssa+sia") {
-    std::string yield_stress_model = m_config->get_string("yield_stress_model");
+    std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {
       m_basal_yield_stress_model = new ConstantYieldStress(m_grid);
@@ -522,8 +522,8 @@ void IceModel::allocate_basal_yield_stress() {
 void IceModel::allocate_submodels() {
 
   // FIXME: someday we will have an "energy balance" sub-model...
-  if (m_config->get_boolean("do_energy") == true) {
-    if (not m_config->get_boolean("do_cold_ice_methods")) {
+  if (m_config->get_boolean("energy.enabled") == true) {
+    if (not m_config->get_boolean("energy.temperature_based")) {
       m_log->message(2,
                  "* Using the enthalpy-based energy balance model...\n");
     } else {
@@ -579,7 +579,7 @@ void IceModel::allocate_couplers() {
 
 //! Allocates work vectors.
 void IceModel::allocate_internal_objects() {
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid_max_stencil_width");
+  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   // various internal quantities
   // 2d work vectors
@@ -728,7 +728,7 @@ void IceModel::misc_setup() {
       Mx_long = m_grid->Mx(),
       My_long = m_grid->My(),
       Mz_long = m_grid->Mz();
-    std::string output_format = m_config->get_string("output_format");
+    std::string output_format = m_config->get_string("output.format");
     if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 and
         (output_format == "netcdf3" or output_format == "pnetcdf")) {
       throw RuntimeError::formatted("The computational grid is too big to fit in a NetCDF-3 file.\n"
@@ -750,25 +750,25 @@ void IceModel::misc_setup() {
   init_extras();
   init_viewers();
 
-  // Make sure that we use the output_variable_order that works with NetCDF-4,
+  // Make sure that we use the output.variable_order that works with NetCDF-4,
   // "quilt", and HDF5 parallel I/O. (For different reasons, but mainly because
   // it is faster.)
-  std::string o_format = m_config->get_string("output_format");
+  std::string o_format = m_config->get_string("output.format");
   if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
-      m_config->get_string("output_variable_order") != "yxz") {
+      m_config->get_string("output.variable_order") != "yxz") {
     throw RuntimeError("output formats netcdf4_parallel, quilt, and hdf5 require -o_order yxz.");
   }
 
   // a report on whether PISM-PIK modifications of IceModel are in use
   {
     std::vector<std::string> pik_methods;
-    if (m_config->get_boolean("part_grid")) {
+    if (m_config->get_boolean("geometry.part_grid.enabled")) {
       pik_methods.push_back("part_grid");
     }
-    if (m_config->get_boolean("part_redist")) {
+    if (m_config->get_boolean("geometry.part_grid.redistribute_residual_volume")) {
       pik_methods.push_back("part_redist");
     }
-    if (m_config->get_boolean("kill_icebergs")) {
+    if (m_config->get_boolean("geometry.remove_icebergs")) {
       pik_methods.push_back("kill_icebergs");
     }
 
@@ -783,7 +783,7 @@ void IceModel::misc_setup() {
 //! \brief Initialize calving mechanisms.
 void IceModel::init_calving() {
 
-  std::istringstream arg(m_config->get_string("calving_methods"));
+  std::istringstream arg(m_config->get_string("calving.methods"));
   std::string method_name;
   std::set<std::string> methods;
 
@@ -856,7 +856,7 @@ void IceModel::init_calving() {
 }
 
 void IceModel::allocate_bed_deformation() {
-  std::string model = m_config->get_string("bed_deformation_model");
+  std::string model = m_config->get_string("bed_deformation.model");
 
   if (m_beddef != NULL) {
     return;

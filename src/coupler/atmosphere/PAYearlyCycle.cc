@@ -35,7 +35,7 @@ namespace atmosphere {
 YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   : AtmosphereModel(g) {
 
-  m_snow_temp_july_day = m_config->get_double("snow_temp_july_day");
+  m_snow_temp_july_day = m_config->get_double("atmosphere.fausto_air_temp.summer_peak_day");
 
   // Allocate internal IceModelVecs:
   m_air_temp_mean_annual.create(m_grid, "air_temp_mean_annual", WITHOUT_GHOSTS);

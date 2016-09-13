@@ -34,11 +34,11 @@ class testj(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.modeldata.config
-        config.set_boolean("do_pseudo_plastic_till", False)
+        config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -58,8 +58,8 @@ class testj(PISM.ssa.SSAExactTestCase):
         enth0 = EC.enthalpy(273.15, 0.01, 0)  # 0.01 water fraction
         vecs.enthalpy.set(enth0)
 
-        ocean_rho = self.config.get_double("sea_water_density")
-        ice_rho = self.config.get_double("ice_density")
+        ocean_rho = self.config.get_double("constants.sea_water.density")
+        ice_rho = self.config.get_double("constants.ice.density")
 
         # The PISM.vec.Access object ensures that we call beginAccess for each
         # variable in 'vars', and that endAccess is called for each one on exiting

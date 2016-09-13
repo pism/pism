@@ -48,7 +48,7 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
     dE         = rho * c * (*Texcess) * dvol,
     massmelted = dE / L;
 
-  assert(not m_config->get_boolean("temperature_allow_above_melting"));
+  assert(not m_config->get_boolean("energy.allow_temperature_above_melting"));
 
   if (*Texcess >= 0.0) {
     // T is at or above pressure-melting temp, so temp needs to be set to
@@ -139,18 +139,18 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
   bool viewOneColumn = options::Bool("-view_sys", "save column system information to a file");
 
   const double
-    ice_density        = m_config->get_double("ice_density"),
-    ice_c              = m_config->get_double("ice_specific_heat_capacity"),
-    L                  = m_config->get_double("water_latent_heat_fusion"),
-    melting_point_temp = m_config->get_double("water_melting_point_temperature"),
-    beta_CC_grad       = m_config->get_double("beta_CC") * ice_density * m_config->get_double("standard_gravity");
+    ice_density        = m_config->get_double("constants.ice.density"),
+    ice_c              = m_config->get_double("constants.ice.specific_heat_capacity"),
+    L                  = m_config->get_double("constants.fresh_water.latent_heat_of_fusion"),
+    melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature"),
+    beta_CC_grad       = m_config->get_double("constants.ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_double("constants.standard_gravity");
 
-  const bool allow_above_melting = m_config->get_boolean("temperature_allow_above_melting");
+  const bool allow_above_melting = m_config->get_boolean("energy.allow_temperature_above_melting");
 
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulgeMax  = m_config->get_double("enthalpy_cold_bulge_max") / ice_c;
+  const double bulgeMax  = m_config->get_double("energy.enthalpy_cold_bulge_max") / ice_c;
 
   // now get map-plane fields, starting with coupler fields
   assert(m_surface != NULL);
@@ -210,8 +210,8 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
   // counts unreasonably low temperature values; deprecated?
   int myLowTempCount = 0;
-  int maxLowTempCount = static_cast<int>(m_config->get_double("max_low_temp_count"));
-  double globalMinAllowedTemp = m_config->get_double("global_min_allowed_temp");
+  int maxLowTempCount = static_cast<int>(m_config->get_double("energy.max_low_temperature_count"));
+  double globalMinAllowedTemp = m_config->get_double("energy.minimum_allowed_temperature");
 
   ParallelSection loop(m_grid->com);
   try {

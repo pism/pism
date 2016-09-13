@@ -48,7 +48,7 @@ Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
-  config->set_string("calendar", "none");
+  config->set_string("time.calendar", "none");
 
   set_config_from_options(*config);
 
@@ -70,15 +70,15 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
   // use the non-periodic grid:
   P.periodicity = NOT_PERIODIC;
   // equal spacing is the default for all the tests except K
-  P.Lx = config->get_double("grid_Lx");
-  P.Ly = config->get_double("grid_Ly");
+  P.Lx = config->get_double("grid.Lx");
+  P.Ly = config->get_double("grid.Ly");
 
-  P.Mx = config->get_double("grid_Mx");
-  P.My = config->get_double("grid_My");
+  P.Mx = config->get_double("grid.Mx");
+  P.My = config->get_double("grid.My");
 
   SpacingType spacing = EQUAL;
-  double Lz = config->get_double("grid_Lz");
-  unsigned int Mz = config->get_double("grid_Mz");
+  double Lz = config->get_double("grid.Lz");
+  unsigned int Mz = config->get_double("grid.Mz");
 
   switch (testname) {
   case 'A':
@@ -107,8 +107,8 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
   case 'K':
   case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-    config->set_double("grid_Mbz", 2);
-    config->set_double("grid_Lbz", 1000);
+    config->set_double("grid.Mbz", 2);
+    config->set_double("grid.Lbz", 1000);
     P.Lx = 1000e3;
     P.Ly = P.Lx;
     Lz = 4000;
@@ -125,7 +125,7 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
   }
 
   P.z = IceGrid::compute_vertical_levels(Lz, Mz, spacing,
-                                         config->get_double("grid_lambda"));
+                                         config->get_double("grid.lambda"));
   return P;
 }
 
@@ -134,7 +134,7 @@ IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
   options::forbidden("-bootstrap");
 
   if (input_file.is_set()) {
-    Periodicity p = string_to_periodicity(ctx->config()->get_string("grid_periodicity"));
+    Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
 
     // get grid from a PISM input file
     std::vector<std::string> names;

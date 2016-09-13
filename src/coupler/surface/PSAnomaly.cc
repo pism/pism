@@ -113,14 +113,14 @@ void Anomaly::ice_surface_temperature_impl(IceModelVec2S &result) {
 void Anomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   m_input_model->add_vars_to_output(keyword, result);
 
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
+  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }
 }
 
 void Anomaly::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
+  std::string order = m_config->get_string("output.variable_order");
 
   if (set_contains(vars, "ice_surface_temp")) {
     io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);

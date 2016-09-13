@@ -103,14 +103,14 @@ void SeaRISEGreenland::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 
   const double
-    d_ma     = m_config->get_double("snow_temp_fausto_d_ma"),      // K
-    gamma_ma = m_config->get_double("snow_temp_fausto_gamma_ma"),  // K m-1
-    c_ma     = m_config->get_double("snow_temp_fausto_c_ma"),      // K (degN)-1
-    kappa_ma = m_config->get_double("snow_temp_fausto_kappa_ma"),  // K (degW)-1
-    d_mj     = m_config->get_double("snow_temp_fausto_d_mj"),      // SAME UNITS as for _ma ...
-    gamma_mj = m_config->get_double("snow_temp_fausto_gamma_mj"),
-    c_mj     = m_config->get_double("snow_temp_fausto_c_mj"),
-    kappa_mj = m_config->get_double("snow_temp_fausto_kappa_mj");
+    d_ma     = m_config->get_double("atmosphere.fausto_air_temp.d_ma"),      // K
+    gamma_ma = m_config->get_double("atmosphere.fausto_air_temp.gamma_ma"),  // K m-1
+    c_ma     = m_config->get_double("atmosphere.fausto_air_temp.c_ma"),      // K (degN)-1
+    kappa_ma = m_config->get_double("atmosphere.fausto_air_temp.kappa_ma"),  // K (degW)-1
+    d_mj     = m_config->get_double("atmosphere.fausto_air_temp.d_mj"),      // SAME UNITS as for _ma ...
+    gamma_mj = m_config->get_double("atmosphere.fausto_air_temp.gamma_mj"),
+    c_mj     = m_config->get_double("atmosphere.fausto_air_temp.c_mj"),
+    kappa_mj = m_config->get_double("atmosphere.fausto_air_temp.kappa_mj");
 
 
   // initialize pointers to fields the parameterization depends on:

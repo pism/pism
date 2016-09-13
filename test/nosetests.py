@@ -167,12 +167,12 @@ def grid_from_file_test():
     output_file = "test_grid_from_file.nc"
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.ctx().config().get_string("time_dimension_name"),
-                     grid.ctx().config().get_string("calendar"),
+    PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
+                     grid.ctx().config().get_string("time.calendar"),
                      grid.ctx().time().units_string(),
                      grid.ctx().unit_system())
     PISM.append_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().time().current())
     pio.close()
 
@@ -384,12 +384,12 @@ def modelvecs_test():
     output_file = "test_ModelVecs.nc"
     pio = PISM.PIO(grid.com, "netcdf3")
     pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.ctx().config().get_string("time_dimension_name"),
-                     grid.ctx().config().get_string("calendar"),
+    PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
+                     grid.ctx().config().get_string("time.calendar"),
                      grid.ctx().time().units_string(),
                      grid.ctx().unit_system())
     PISM.append_time(pio,
-                     grid.ctx().config().get_string("time_dimension_name"),
+                     grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().time().current())
     pio.close()
 
@@ -666,7 +666,7 @@ def pism_context_test():
     ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 
     print ctx.com().Get_size()
-    print ctx.config().get_double("standard_gravity")
+    print ctx.config().get_double("constants.standard_gravity")
     print ctx.enthalpy_converter().L(273.15)
     print ctx.time().current()
     print PISM.convert(ctx.unit_system(), 1, "km", "m")
@@ -675,7 +675,7 @@ def pism_context_test():
 def flowlaw_test():
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
     EC = ctx.enthalpy_converter()
-    ff = PISM.FlowLawFactory("sia_", ctx.config(), EC)
+    ff = PISM.FlowLawFactory("stress_balance.sia.", ctx.config(), EC)
     law = ff.create()
 
     TpaC = [-30, -5, 0, 0]
@@ -703,8 +703,8 @@ def gpbld3_flow_test():
     "Test the optimized version of GPBLD."
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
     EC = ctx.enthalpy_converter()
-    gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
-    gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
+    gpbld = PISM.GPBLD("stress_balance.sia.", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("stress_balance.sia.", ctx.config(), EC)
 
     import numpy as np
     N = 11
@@ -734,8 +734,8 @@ def gpbld3_hardness_test():
     "Test the hardness implementation in the optimized version of GPBLD."
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
     EC = ctx.enthalpy_converter()
-    gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
-    gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
+    gpbld = PISM.GPBLD("stress_balance.sia.", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("stress_balance.sia.", ctx.config(), EC)
 
     import numpy as np
     N = 11
@@ -767,8 +767,8 @@ def gpbld3_error_report():
     """
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
     EC = ctx.enthalpy_converter()
-    gpbld = PISM.GPBLD("sia_", ctx.config(), EC)
-    gpbld3 = PISM.GPBLD3("sia_", ctx.config(), EC)
+    gpbld = PISM.GPBLD("stress_balance.sia.", ctx.config(), EC)
+    gpbld3 = PISM.GPBLD3("stress_balance.sia.", ctx.config(), EC)
 
     import numpy as np
     N = 31
@@ -846,7 +846,7 @@ def ssa_trivial_test():
             se.set_min_thickness(4000 * 10)
 
             # For the benefit of SSAFD on a non-periodic grid
-            self.config.set_boolean("compute_surf_grad_inward_ssa", True)
+            self.config.set_boolean("ssa.compute_surface_gradient_inward", True)
 
         def exactSolution(self, i, j, x, y):
             return [0, 0]
@@ -931,21 +931,21 @@ def regridding_test():
 def po_constant_test():
     """Test that the basal melt rate computed by ocean::Constant is the
     same regardless of whether it is set using
-    ocean_sub_shelf_heat_flux_into_ice or the command-line option."""
+    ocean.sub_shelf_heat_flux_into_ice or the command-line option."""
 
     grid = create_dummy_grid()
     config = grid.ctx().config()
 
-    L = config.get_double("water_latent_heat_fusion")
-    rho = config.get_double("ice_density")
+    L = config.get_double("constants.fresh_water.latent_heat_of_fusion")
+    rho = config.get_double("constants.ice.density")
 
     # prescribe a heat flux that corresponds to a mass flux which is
     # an integer multiple of m / year so that we can easily specify it
     # using a command-line option
     M = PISM.convert(grid.ctx().unit_system(), 1, "m / year", "m / second")
-    Q_default = config.get_double("ocean_sub_shelf_heat_flux_into_ice")
+    Q_default = config.get_double("ocean.sub_shelf_heat_flux_into_ice")
     Q = M * L * rho
-    config.set_double("ocean_sub_shelf_heat_flux_into_ice", Q)
+    config.set_double("ocean.sub_shelf_heat_flux_into_ice", Q)
 
     # without the command-line option
     ocean_constant = PISM.OceanConstant(grid)
@@ -954,7 +954,7 @@ def po_constant_test():
     ocean_constant.shelf_base_mass_flux(mass_flux_1)
 
     # reset Q
-    config.set_double("ocean_sub_shelf_heat_flux_into_ice", Q_default)
+    config.set_double("ocean.sub_shelf_heat_flux_into_ice", Q_default)
 
     # with the command-line option
     o = PISM.PETSc.Options()

@@ -104,9 +104,9 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
  */
 double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
-  double result = -1.0;  // result value if not do_age
+  double result = -1.0;  // result value if not age.enabled
 
-  if (not m_config->get_boolean("do_age")) {
+  if (not m_config->get_boolean("age.enabled")) {
     return result;  // leave now
   }
 
@@ -222,8 +222,8 @@ These quantities are reported in this base class version:
   - `max_diffusivity` is the maximum diffusivity
   - `max_hor_vel` is the maximum diffusivity
 
-Configuration parameters `summary_time_unit_name`, `summary_vol_scale_factor_log10`,
-and `summary_area_scale_factor_log10` control the appearance and units.
+Configuration parameters `output.runtime.time_unit_name`, `output.runtime.volume_scale_factor_log10`,
+and `output.runtime.area_scale_factor_log10` control the appearance and units.
 
 For more description and examples, see the PISM User's Manual.
 Derived classes of IceModel may redefine this method and print alternate
@@ -233,11 +233,11 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
                                 double delta_t,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {
-  const bool do_energy = m_config->get_boolean("do_energy");
-  const int log10scalevol  = static_cast<int>(m_config->get_double("summary_vol_scale_factor_log10")),
-            log10scalearea = static_cast<int>(m_config->get_double("summary_area_scale_factor_log10"));
-  const std::string tunitstr = m_config->get_string("summary_time_unit_name");
-  const bool use_calendar = m_config->get_boolean("summary_time_use_calendar");
+  const bool do_energy = m_config->get_boolean("energy.enabled");
+  const int log10scalevol  = static_cast<int>(m_config->get_double("output.runtime.volume_scale_factor_log10")),
+            log10scalearea = static_cast<int>(m_config->get_double("output.runtime.area_scale_factor_log10"));
+  const std::string tunitstr = m_config->get_string("output.runtime.time_unit_name");
+  const bool use_calendar = m_config->get_boolean("output.runtime.time_use_calendar");
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));
@@ -330,8 +330,8 @@ double IceModel::ice_volume() const {
     }
   }
 
-  // Add the volume of ice in Href:
-  if (m_config->get_boolean("part_grid")) {
+  // Add the volume of the ice in Href:
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
     list.add(m_Href);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -345,8 +345,8 @@ double IceModel::ice_volume() const {
 
 double IceModel::ice_volume_not_displacing_seawater() const {
   const double
-    sea_water_density = m_config->get_double("sea_water_density"),
-    ice_density       = m_config->get_double("ice_density");
+    sea_water_density = m_config->get_double("constants.sea_water.density"),
+    ice_density       = m_config->get_double("constants.ice.density");
 
   assert(m_ocean != NULL);
   double sea_level = m_ocean->sea_level_elevation();
@@ -390,8 +390,8 @@ double IceModel::ice_volume_not_displacing_seawater() const {
 //! Computes the ice volume, which is relevant for sea-level rise in m^3 in SEA-WATER EQUIVALENT.
 double IceModel::sealevel_volume() const {
   const double
-    sea_water_density = m_config->get_double("sea_water_density"),
-    ice_density       = m_config->get_double("ice_density");
+    sea_water_density = m_config->get_double("constants.sea_water.density"),
+    ice_density       = m_config->get_double("constants.ice.density");
 
   const double
     ocean_area = 3.61e14, // units: meter^2
@@ -650,7 +650,7 @@ double IceModel::ice_enthalpy() const {
   loop.check();
 
   // FIXME: use cell_area.
-  enthalpy_sum *= m_config->get_double("ice_density") * (m_grid->dx() * m_grid->dy());
+  enthalpy_sum *= m_config->get_double("constants.ice.density") * (m_grid->dx() * m_grid->dy());
 
   return GlobalSum(m_grid->com, enthalpy_sum);
 }

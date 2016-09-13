@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -123,9 +123,9 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   m_iter_max = 1000;
   m_iter_max = options::Integer("-inv_gn_iter_max", "", m_iter_max);
 
-  m_tikhonov_atol = grid->ctx()->config()->get_double("tikhonov_atol");
-  m_tikhonov_rtol = grid->ctx()->config()->get_double("tikhonov_rtol");
-  m_tikhonov_ptol = grid->ctx()->config()->get_double("tikhonov_ptol");
+  m_tikhonov_atol = grid->ctx()->config()->get_double("inverse.tikhonov.atol");
+  m_tikhonov_rtol = grid->ctx()->config()->get_double("inverse.tikhonov.rtol");
+  m_tikhonov_ptol = grid->ctx()->config()->get_double("inverse.tikhonov.ptol");
 }
 
 TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::init() {

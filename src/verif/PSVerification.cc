@@ -89,7 +89,7 @@ void Verification::update_KO() {
 void Verification::update_L() {
   double     A0, T0;
 
-  rheology::PatersonBuddCold tgaIce("sia_", *m_config, m_EC);
+  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
@@ -99,7 +99,7 @@ void Verification::update_L() {
   m_ice_surface_temp.set(T0);
 
   const double
-    ice_density = m_config->get_double("ice_density"),
+    ice_density = m_config->get_double("constants.ice.density"),
     a0          = units::convert(m_sys, 0.3, "m year-1", "m second-1"),
     L           = 750e3,
     Lsqr        = L * L;
@@ -158,7 +158,7 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
   }
 
   // convert from [m second-1] to [kg m-2 s-1]
-  m_climatic_mass_balance.scale(m_config->get_double("ice_density"));
+  m_climatic_mass_balance.scale(m_config->get_double("constants.ice.density"));
 }
 
 /** Update climate inputs for tests A, B, C, D, E, H.
@@ -168,9 +168,9 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
 void Verification::update_ABCDH(double time) {
   double         A0, T0, H, accum;
 
-  double f = m_config->get_double("ice_density") / m_config->get_double("lithosphere_density");
+  double f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.lithosphere_density");
 
-  rheology::PatersonBuddCold tgaIce("sia_", *m_config, m_EC);
+  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant

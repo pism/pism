@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -44,13 +44,13 @@ class testi(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("do_pseudo_plastic_till", False)
+        config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 
         # irrelevant
         enthalpyconverter = PISM.EnthalpyConverter(config)
 
-        config.set_string("ssa_flow_law", "isothermal_glen")
-        config.set_double("ice_softness", pow(B_schoof, -config.get_double("ssa_Glen_exponent")))
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
+        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -config.get_double("stress_balance.ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -65,11 +65,11 @@ class testi(PISM.ssa.SSAExactTestCase):
 
         # The finite difference code uses the following flag to treat
         # the non-periodic grid correctly.
-        self.config.set_boolean("compute_surf_grad_inward_ssa", True)
-        self.config.set_double("epsilon_ssa", 0.0)  # don't use this lower bound
+        self.config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True)
+        self.config.set_double("stress_balance.ssa.epsilon", 0.0)  # don't use this lower bound
 
-        standard_gravity = self.config.get_double("standard_gravity")
-        ice_rho = self.config.get_double("ice_density")
+        standard_gravity = self.config.get_double("constants.standard_gravity")
+        ice_rho = self.config.get_double("constants.ice.density")
         theta = math.atan(0.001)
         f = ice_rho * standard_gravity * H0_schoof * math.tan(theta)
         grid = self.grid

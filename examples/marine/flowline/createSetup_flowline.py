@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2011, 2013, 2014 Torsten Albrecht and Moritz Huetten
+# Copyright (C) 2011, 2013, 2014, 2016 Torsten Albrecht and Moritz Huetten
 
 # ./createSetup_flowline.py -a 0.0 -r 10.0
 
@@ -56,17 +56,17 @@ command-line options. (We try to use command-line options whenever we can.)
 filename = "flowline_config.nc"
 nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
 var = nc.createVariable("pism_overrides", 'i')
-attrs = {"is_dry_simulation": "no",
-         "include_bmr_in_continuity": "no",
-         "compute_surf_grad_inward_ssa": "no",
-         "ice_softness": (B0) ** -3,
-         "ice_density": rho_ice,
-         "sea_water_density": rho_ocean,
-         "bootstrapping_geothermal_flux_value_no_var": 0.0,
-         "Glen_exponent": 3.0,
-         "standard_gravity": standard_gravity,
-         "ocean_sub_shelf_heat_flux_into_ice": 0.0,
-         "bed_smoother_range": 0.0,
+attrs = {"ocean.always_grounded": "no",
+         "geometry.update.use_basal_melt_rate": "no",
+         "stress_balance.ssa.compute_surface_gradient_inward": "no",
+         "flow_law.isothermal_Glen.ice_softness": (B0) ** -3,
+         "constants.ice.density": rho_ice,
+         "constants.sea_water.density": rho_ocean,
+         "bootstrapping.defaults.geothermal_flux": 0.0,
+         "stress_balance.ssa.Glen_exponent": 3.0,
+         "constants.standard_gravity": standard_gravity,
+         "ocean.sub_shelf_heat_flux_into_ice": 0.0,
+         "stress_balance.sia.bed_smoother_range": 0.0,
          }
 
 for name, value in attrs.iteritems():

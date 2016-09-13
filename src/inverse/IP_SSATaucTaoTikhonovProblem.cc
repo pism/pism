@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,8 +40,8 @@ void IP_SSATaucTaoTikhonovProblem::connect(Tao tao) {
 void IP_SSATaucTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec hi) {
   double zeta_min = 0.0, zeta_max = 0.0, tauc_min = 0.0, tauc_max = 0.0;
 
-  tauc_min = m_grid->ctx()->config()->get_double("inv_ssa_tauc_min");
-  tauc_max = m_grid->ctx()->config()->get_double("inv_ssa_tauc_max");
+  tauc_min = m_grid->ctx()->config()->get_double("inverse.ssa.tauc_min");
+  tauc_max = m_grid->ctx()->config()->get_double("inverse.ssa.tauc_max");
 
   IPDesignVariableParameterization &tauc_param = m_forward.tauc_param();
   tauc_param.fromDesignVariable(tauc_min,&zeta_min);

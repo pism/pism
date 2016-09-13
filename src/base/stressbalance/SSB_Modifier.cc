@@ -100,7 +100,7 @@ void ConstantInColumn::init() {
 ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   : SSB_Modifier(g, e)
 {
-  rheology::FlowLawFactory ice_factory("sia_", m_config, m_EC);
+  rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
 
   m_flow_law = ice_factory.create();
 }

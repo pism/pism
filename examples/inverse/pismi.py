@@ -232,7 +232,7 @@ def adjustTauc(mask, tauc):
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
     grid = mask.get_grid()
-    high_tauc = grid.ctx().config().get_double("high_tauc")
+    high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):
         for (i, j) in grid.points():
@@ -261,7 +261,7 @@ def run():
     com = context.com
     PISM.set_abort_on_sigint(True)
 
-    WIDE_STENCIL = int(config.get_double("grid_max_stencil_width"))
+    WIDE_STENCIL = int(config.get_double("grid.max_stencil_width"))
 
     usage = \
         """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model] 
@@ -329,7 +329,7 @@ def run():
     using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",
                                              "Enforce locations where the parameterized design variable should be fixed. (Automatically determined if not provided)", default=True)
 
-    inv_method = config.get_string("inv_ssa_method")
+    inv_method = config.get_string("inverse.ssa.method")
 
     if output_filename is None:
         output_filename = "pismi_" + os.path.basename(input_filename)
@@ -465,12 +465,12 @@ def run():
         pio = PISM.PIO(grid.com, "netcdf3")
         pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
         PISM.define_time(pio,
-                         grid.ctx().config().get_string("time_dimension_name"),
-                         grid.ctx().config().get_string("calendar"),
+                         grid.ctx().config().get_string("time.dimension_name"),
+                         grid.ctx().config().get_string("time.calendar"),
                          grid.ctx().time().units_string(),
                          grid.ctx().unit_system())
         PISM.append_time(pio,
-                         grid.ctx().config().get_string("time_dimension_name"),
+                         grid.ctx().config().get_string("time.dimension_name"),
                          grid.ctx().time().current())
         pio.close()
     zeta.write(output_filename)

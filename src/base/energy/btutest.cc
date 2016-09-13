@@ -53,10 +53,10 @@ pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
-  config->set_string("calendar", "none");
+  config->set_string("time.calendar", "none");
   // when IceGrid constructor is called, these settings are used
-  config->set_double("start_year", 0.0);
-  config->set_double("run_length_years", 1.0);
+  config->set_double("time.start_year", 0.0);
+  config->set_double("time.run_length", 1.0);
 
   set_config_from_options(*config);
 
@@ -117,12 +117,12 @@ int main(int argc, char *argv[]) {
     Config::Ptr config = ctx->config();
 
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
-    config->set_double("grid_Mbz", 11);
-    config->set_double("grid_Lbz", 1000);
+    config->set_double("grid.Mbz", 11);
+    config->set_double("grid.Lbz", 1000);
 
     // Set default vertical grid parameters.
-    config->set_double("grid_Mz", 41);
-    config->set_double("grid_Lz", 4000);
+    config->set_double("grid.Mz", 41);
+    config->set_double("grid.Lz", 4000);
 
     log->message(2,
                  "  initializing IceGrid from options ...\n");
@@ -241,9 +241,9 @@ int main(int argc, char *argv[]) {
     std::set<std::string> vars;
     btu->add_vars_to_output("big", vars); // "write everything you can"
 
-    PIO pio(grid->com, grid->ctx()->config()->get_string("output_format"));
+    PIO pio(grid->com, grid->ctx()->config()->get_string("output.format"));
 
-    std::string time_name = config->get_string("time_dimension_name");
+    std::string time_name = config->get_string("time.dimension_name");
     pio.open(outname, PISM_READWRITE_MOVE);
     io::define_time(pio, time_name, ctx->time()->calendar(),
                     ctx->time()->CF_units_string(), ctx->unit_system());

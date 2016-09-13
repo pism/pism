@@ -47,7 +47,7 @@ CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_
   m_surface_topography.create(m_grid, "m_surface_topography", WITH_GHOSTS, 1);
   m_surface_topography.set_attrs("internal", "surface topography", "m", "surface_altitude");
 
-  m_restrict_timestep = m_config->get_boolean("calving_cfl");
+  m_restrict_timestep = m_config->get_boolean("calving.eigen_calving.use_cfl");
 }
 
 CalvingFrontRetreat::~CalvingFrontRetreat() {
@@ -260,7 +260,7 @@ void CalvingFrontRetreat::update(double dt,
   ice_thickness.update_ghosts();
 
   // update mask
-  gc.set_icefree_thickness(m_config->get_double("mask_icefree_thickness_stress_balance_standard"));
+  gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
   gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
 
   // remove narrow ice tongues
