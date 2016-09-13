@@ -75,7 +75,7 @@ MaxTimestep Delta_SL::max_timestep_impl(double t) {
 }
 
 
-void Delta_SL::sea_level_elevation_impl(double &result) {
+void Delta_SL::sea_level_elevation_impl(double &result) const {
   result = m_input_model->sea_level_elevation() + m_current_forcing;
 }
 

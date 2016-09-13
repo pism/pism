@@ -78,11 +78,11 @@ void PIK::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 }
 
-void PIK::sea_level_elevation_impl(double &result) {
+void PIK::sea_level_elevation_impl(double &result) const {
   result = m_sea_level;
 }
 
-void PIK::shelf_base_temperature_impl(IceModelVec2S &result) {
+void PIK::shelf_base_temperature_impl(IceModelVec2S &result) const {
   const double
     T0          = m_config->get_double("water_melting_point_temperature"), // K
     beta_CC     = m_config->get_double("beta_CC"),
@@ -106,7 +106,7 @@ void PIK::shelf_base_temperature_impl(IceModelVec2S &result) {
 /*!
  * Assumes that mass flux is proportional to the shelf-base heat flux.
  */
-void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   const double
     L                 = m_config->get_double("water_latent_heat_fusion"),
     sea_water_density = m_config->get_double("sea_water_density"),

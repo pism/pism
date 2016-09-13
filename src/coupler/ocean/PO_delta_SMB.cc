@@ -73,7 +73,7 @@ MaxTimestep Delta_SMB::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void Delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void Delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   m_input_model->shelf_base_mass_flux(result);
   offset_data(result);
 }

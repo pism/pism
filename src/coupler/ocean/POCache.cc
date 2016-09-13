@@ -108,19 +108,19 @@ void Cache::update_impl(double my_t, double my_dt) {
 }
 
 
-void Cache::sea_level_elevation_impl(double &result) {
+void Cache::sea_level_elevation_impl(double &result) const {
   result = m_sea_level;
 }
 
-void Cache::shelf_base_temperature_impl(IceModelVec2S &result) {
+void Cache::shelf_base_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelf_base_temperature);
 }
 
-void Cache::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void Cache::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelf_base_mass_flux);
 }
 
-void Cache::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+void Cache::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
   result.copy_from(m_melange_back_pressure_fraction);
 }
 

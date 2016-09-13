@@ -162,7 +162,7 @@ void GivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) {
   result.copy_from(m_shelfbmassflux);
 }
 
-void GivenTH::sea_level_elevation_impl(double &result) {
+void GivenTH::sea_level_elevation_impl(double &result) const {
   result = m_sea_level;
 }
 

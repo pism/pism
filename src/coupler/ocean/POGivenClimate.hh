@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014, 2015, 2016 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,10 +33,10 @@ public:
 protected:
   virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
-  virtual void sea_level_elevation_impl(double &result);
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
+  virtual void sea_level_elevation_impl(double &result) const;
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 protected:
   IceModelVec2T *shelfbtemp, *shelfbmassflux;
 };

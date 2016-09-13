@@ -72,7 +72,7 @@ MaxTimestep Delta_T::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void Delta_T::shelf_base_temperature_impl(IceModelVec2S &result) {
+void Delta_T::shelf_base_temperature_impl(IceModelVec2S &result) const {
   m_input_model->shelf_base_temperature(result);
   offset_data(result);
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,21 +35,21 @@ void OceanModel::init() {
   this->init_impl();
 }
 
-double OceanModel::sea_level_elevation() {
+double OceanModel::sea_level_elevation() const {
   double result;
   this->sea_level_elevation_impl(result);
   return result;
 }
 
-void OceanModel::shelf_base_temperature(IceModelVec2S &result) {
+void OceanModel::shelf_base_temperature(IceModelVec2S &result) const {
   this->shelf_base_temperature_impl(result);
 }
 
-void OceanModel::shelf_base_mass_flux(IceModelVec2S &result) {
+void OceanModel::shelf_base_mass_flux(IceModelVec2S &result) const {
   this->shelf_base_mass_flux_impl(result);
 }
 
-void OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) {
+void OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) const {
   this->melange_back_pressure_fraction_impl(result);
 }
 
@@ -61,7 +61,7 @@ void OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) {
  *
  * @return 0 on success
  */
-void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 

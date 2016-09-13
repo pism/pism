@@ -102,11 +102,11 @@ MaxTimestep Constant::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void Constant::sea_level_elevation_impl(double &result) {
+void Constant::sea_level_elevation_impl(double &result) const{
   result = m_sea_level;
 }
 
-void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
+void Constant::shelf_base_temperature_impl(IceModelVec2S &result) const {
   const double T0 = m_config->get_double("water_melting_point_temperature"), // K
     beta_CC       = m_config->get_double("beta_CC"),
     g             = m_config->get_double("standard_gravity"),
@@ -127,7 +127,7 @@ void Constant::shelf_base_temperature_impl(IceModelVec2S &result) {
 
 //! @brief Computes mass flux in [kg m-2 s-1], from assumption that
 //! basal heat flux rate converts to mass flux.
-void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.set(m_meltrate);
 }
 

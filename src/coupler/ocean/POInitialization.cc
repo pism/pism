@@ -116,19 +116,19 @@ void InitializationHelper::init_impl() {
   // FIXME: fake "regridding" of sea level
 }
 
-void InitializationHelper::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+void InitializationHelper::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
   result.copy_from(m_melange_back_pressure_fraction);
 }
 
-void InitializationHelper::sea_level_elevation_impl(double &result) {
+void InitializationHelper::sea_level_elevation_impl(double &result) const {
   result = m_sea_level_elevation;
 }
 
-void InitializationHelper::shelf_base_temperature_impl(IceModelVec2S &result) {
+void InitializationHelper::shelf_base_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelf_base_temperature);
 }
 
-void InitializationHelper::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void InitializationHelper::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelf_base_mass_flux);
 }
 

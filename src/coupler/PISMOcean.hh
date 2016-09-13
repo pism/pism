@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011, 2013, 2014, 2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011, 2013, 2014, 2015, 2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -37,16 +37,16 @@ public:
 
   void init();
 
-  double sea_level_elevation();
-  void shelf_base_temperature(IceModelVec2S &result);
-  void shelf_base_mass_flux(IceModelVec2S &result);
-  void melange_back_pressure_fraction(IceModelVec2S &result);
+  double sea_level_elevation() const;
+  void shelf_base_temperature(IceModelVec2S &result) const;
+  void shelf_base_mass_flux(IceModelVec2S &result) const;
+  void melange_back_pressure_fraction(IceModelVec2S &result) const;
 protected:
   virtual void init_impl() = 0;
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) = 0;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result) = 0;
-  virtual void sea_level_elevation_impl(double &result) = 0;
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const ;
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const = 0;
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const = 0;
+  virtual void sea_level_elevation_impl(double &result) const = 0;
 protected:
   double m_sea_level;
 };

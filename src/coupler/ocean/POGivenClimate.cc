@@ -81,20 +81,20 @@ void Given::update_impl(double my_t, double my_dt) {
   shelfbtemp->average(m_t, m_dt);
 }
 
-void Given::sea_level_elevation_impl(double &result) {
+void Given::sea_level_elevation_impl(double &result) const {
   result = m_sea_level;
 }
 
-void Given::shelf_base_temperature_impl(IceModelVec2S &result) {
+void Given::shelf_base_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(*shelfbtemp);
 }
 
 
-void Given::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void Given::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(*shelfbmassflux);
 }
 
-void Given::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+void Given::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 } // end of namespace ocean

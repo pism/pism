@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,7 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
   virtual void init_impl();
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
 protected:
   SpatialVariableMetadata shelfbmassflux, shelfbtemp;
 };
