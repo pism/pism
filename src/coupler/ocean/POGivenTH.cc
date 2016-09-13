@@ -154,11 +154,11 @@ void GivenTH::write_variables_impl(const std::set<std::string> &vars, const PIO&
   }
 }
 
-void GivenTH::shelf_base_temperature_impl(IceModelVec2S &result) {
+void GivenTH::shelf_base_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelfbtemp);
 }
 
-void GivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void GivenTH::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelfbmassflux);
 }
 
@@ -166,7 +166,7 @@ void GivenTH::sea_level_elevation_impl(double &result) const {
   result = m_sea_level;
 }
 
-void GivenTH::melange_back_pressure_fraction_impl(IceModelVec2S &result) {
+void GivenTH::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 

@@ -74,7 +74,7 @@ MaxTimestep Frac_SMB::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void Frac_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) {
+void Frac_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   m_input_model->shelf_base_mass_flux(result);
   scale_data(result);
 }

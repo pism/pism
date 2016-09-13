@@ -40,7 +40,7 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
   virtual void init_impl();
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 protected:
   SpatialVariableMetadata m_shelfbmassflux, m_shelfbtemp;
 };

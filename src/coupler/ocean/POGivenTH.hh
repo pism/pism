@@ -65,10 +65,10 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
   virtual void init_impl();
-  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result);
+  virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
   virtual void sea_level_elevation_impl(double &result) const;
-  virtual void shelf_base_temperature_impl(IceModelVec2S &result);
-  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result);
+  virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
+  virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 private:
   IceModelVec2S m_shelfbtemp, m_shelfbmassflux;
   IceModelVec2T *m_theta_ocean, *m_salinity_ocean;
