@@ -33,23 +33,30 @@ class YearlyCycle : public AtmosphereModel {
 public:
   YearlyCycle(IceGrid::ConstPtr g);
   virtual ~YearlyCycle();
-
+public:
+  virtual void mean_july_temp(IceModelVec2S &result);
+protected:
   virtual void init_impl();
-  //! This method implements the parameterization.
+
   virtual void mean_precipitation_impl(IceModelVec2S &result);
   virtual void mean_annual_temp_impl(IceModelVec2S &result);
+
   virtual void begin_pointwise_access_impl();
   virtual void end_pointwise_access_impl();
 
   virtual void init_timeseries_impl(const std::vector<double> &ts);
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result);
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &result);
-protected:
+
   virtual void update_impl(double my_t, double my_dt) = 0;
+
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
+
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
 protected:
   void init_internal(const std::string &input_filename, bool regrid,
                                unsigned int start);
@@ -57,6 +64,15 @@ protected:
   std::string m_reference;
   IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation_vec;
   std::vector<double> m_ts_times, m_cosine_cycle;
+};
+
+/*! @brief Mean July near-surface air temperature. */
+class PA_mean_july_temp : public Diag<YearlyCycle>
+{
+public:
+  PA_mean_july_temp(YearlyCycle *m);
+protected:
+  IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace atmosphere

@@ -33,21 +33,16 @@ namespace atmosphere {
 PIK::PIK(IceGrid::ConstPtr g)
   : AtmosphereModel(g) {
 
-  // allocate IceModelVecs for storing temperature and precipitation fields:
-
-  // create mean annual ice equivalent precipitation rate (before separating
-  // rain, and before melt, etc. in SurfaceModel)
   m_precipitation_vec.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-  m_precipitation_vec.metadata(0) = m_precipitation;
-  // reset the name
-  m_precipitation_vec.metadata(0).set_name("precipitation");
+  m_precipitation_vec.set_attrs("model_state", "precipitation rate",
+                                "kg m-2 second-1", "", 0);
+  m_precipitation_vec.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
   m_precipitation_vec.write_in_glaciological_units = true;
   m_precipitation_vec.set_time_independent(true);
 
   m_air_temp_vec.create(m_grid, "air_temp", WITHOUT_GHOSTS);
-  m_air_temp_vec.metadata(0) = m_air_temp;
-  // reset the name
-  m_air_temp_vec.metadata(0).set_name("air_temp");
+  m_air_temp_vec.set_attrs("model_state", "mean annual near-surface air temperature",
+                           "Kelvin", "", 0);
   m_air_temp_vec.set_time_independent(true);
 }
 
@@ -84,7 +79,6 @@ void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) {
 void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   (void) keyword;
   result.insert("precipitation");
-  result.insert("air_temp");
 }
 
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
@@ -93,20 +87,12 @@ void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc
   if (set_contains(vars, "precipitation")) {
     m_precipitation_vec.define(nc, nctype);
   }
-
-  if (set_contains(vars, "air_temp")) {
-    m_air_temp_vec.define(nc, nctype);
-  }
 }
 
 void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, "precipitation")) {
     m_precipitation_vec.write(nc);
-  }
-
-  if (set_contains(vars, "air_temp")) {
-    m_air_temp_vec.write(nc);
   }
 }
 

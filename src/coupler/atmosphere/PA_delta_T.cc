@@ -45,8 +45,7 @@ void Delta_T::init_impl() {
 
   m_input_model->init();
 
-  m_log->message(2,
-             "* Initializing near-surface air temperature forcing using scalar offsets...\n");
+  m_log->message(2, "* Initializing near-surface air temperature forcing using scalar offsets...\n");
 
   init_internal();
 }
@@ -77,66 +76,6 @@ void Delta_T::temp_time_series_impl(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] += m_offset_values[k];
   }
-}
-
-void Delta_T::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  m_input_model->add_vars_to_output(keyword, result);
-
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig" ) {
-    result.insert(m_air_temp.get_name());
-    result.insert(m_precipitation.get_name());
-  }
-}
-
-
-void Delta_T::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
-                                            IO_Type nctype) {
-  std::set<std::string> vars = vars_input;
-  std::string order = m_config->get_string("output_variable_order");
-
-  if (set_contains(vars, m_air_temp)) {
-    io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, false);
-    vars.erase(m_air_temp.get_name());
-  }
-
-  if (set_contains(vars, m_precipitation)) {
-    io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
-    vars.erase(m_precipitation.get_name());
-  }
-
-  m_input_model->define_variables(vars, nc, nctype);
-}
-
-
-void Delta_T::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
-  std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, m_air_temp)) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
-    tmp.metadata() = m_air_temp;
-
-    mean_annual_temp(tmp);
-
-    tmp.write(nc);
-
-    vars.erase(m_air_temp.get_name());
-  }
-
-  if (set_contains(vars, m_precipitation)) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, m_precipitation.get_name(), WITHOUT_GHOSTS);
-    tmp.metadata() = m_precipitation;
-
-    mean_precipitation(tmp);
-
-    tmp.write_in_glaciological_units = true;
-    tmp.write(nc);
-
-    vars.erase(m_precipitation.get_name());
-  }
-
-  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace atmosphere

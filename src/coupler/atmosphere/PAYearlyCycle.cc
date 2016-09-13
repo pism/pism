@@ -53,9 +53,9 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   m_air_temp_mean_july.metadata().set_string("source", m_reference);
 
   m_precipitation_vec.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-  m_precipitation_vec.metadata(0) = m_precipitation;
-  // reset the name
-  m_precipitation_vec.metadata(0).set_name("precipitation");
+  m_precipitation_vec.set_attrs("model_state", "precipitation rate",
+                                "kg m-2 second-1", "", 0);
+  m_precipitation_vec.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
   m_precipitation_vec.write_in_glaciological_units = true;
   m_precipitation_vec.set_time_independent(true);
 }
@@ -88,25 +88,13 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
 }
 
 void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  (void) keyword;
+  // precipitation is read from a PISM input file, so it is a part of the "model state"
   result.insert("precipitation");
-
-  if (keyword == "big" || keyword == "2dbig") {
-    result.insert("air_temp_mean_annual");
-    result.insert("air_temp_mean_july");
-  }
 }
 
 
 void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-
-  if (set_contains(vars, "air_temp_mean_annual")) {
-    m_air_temp_mean_annual.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "air_temp_mean_july")) {
-    m_air_temp_mean_july.define(nc, nctype);
-  }
-
   if (set_contains(vars, "precipitation")) {
     m_precipitation_vec.define(nc, nctype);
   }
@@ -114,15 +102,6 @@ void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const
 
 
 void YearlyCycle::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, "air_temp_mean_annual")) {
-    m_air_temp_mean_annual.write(nc);
-  }
-
-  if (set_contains(vars, "air_temp_mean_july")) {
-    m_air_temp_mean_july.write(nc);
-  }
-
   if (set_contains(vars, "precipitation")) {
     m_precipitation_vec.write(nc);
   }
@@ -136,6 +115,11 @@ void YearlyCycle::mean_precipitation_impl(IceModelVec2S &result) {
 //! Copies the stored mean annual near-surface air temperature field into result.
 void YearlyCycle::mean_annual_temp_impl(IceModelVec2S &result) {
   result.copy_from(m_air_temp_mean_annual);
+}
+
+//! Copies the stored mean July near-surface air temperature field into result.
+void YearlyCycle::mean_july_temp(IceModelVec2S &result) {
+  result.copy_from(m_air_temp_mean_july);
 }
 
 void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) {
@@ -179,7 +163,35 @@ void YearlyCycle::end_pointwise_access_impl() {
   m_air_temp_mean_july.end_access();
   m_precipitation_vec.end_access();
 }
+void YearlyCycle::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+  AtmosphereModel::get_diagnostics_impl(dict, ts_dict);
 
+  if (not dict["air_temp_mean_july"]) {
+    dict["air_temp_mean_july"] = Diagnostic::Ptr(new PA_mean_july_temp(this));
+  }
+}
+
+PA_mean_july_temp::PA_mean_july_temp(YearlyCycle *m)
+  : Diag<YearlyCycle>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "air_temp_mean_july"));
+
+  set_attrs("mean July near-surface air temperature used in the cosine yearly cycle", "",
+            "Kelvin", "Kelvin", 0);
+}
+
+IceModelVec::Ptr PA_mean_july_temp::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  model->mean_july_temp(*result);
+
+  return result;
+}
 
 } // end of namespace atmosphere
 } // end of namespace pism

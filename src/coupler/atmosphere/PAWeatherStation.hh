@@ -40,6 +40,7 @@ public:
   WeatherStation(IceGrid::ConstPtr g);
   virtual ~WeatherStation();
 
+protected:
   virtual void init_impl();
 
   virtual void mean_precipitation_impl(IceModelVec2S &result);
@@ -51,7 +52,6 @@ public:
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
 
-protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double t, double dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);

@@ -24,18 +24,8 @@ namespace pism {
 namespace atmosphere {
 
 AtmosphereModel::AtmosphereModel(IceGrid::ConstPtr g)
-  : Component_TS(g),
-    m_air_temp(m_sys, "effective_air_temp"),
-    m_precipitation(m_sys, "effective_precipitation") {
-
-  m_air_temp.set_string("pism_intent", "diagnostic");
-  m_air_temp.set_string("long_name", "effective mean annual near-surface air temperature");
-  m_air_temp.set_string("units", "K");
-
-  m_precipitation.set_string("pism_intent", "diagnostic");
-  m_precipitation.set_string("long_name", "effective precipitation");
-  m_precipitation.set_string("units", "kg m-2 second-1");
-  m_precipitation.set_string("glaciological_units", "kg m-2 year-1");
+  : Component_TS(g) {
+  // empty
 }
 
 AtmosphereModel::~AtmosphereModel() {
@@ -112,7 +102,7 @@ IceModelVec::Ptr PA_air_temp_snapshot::compute_impl() {
   result->metadata(0) = m_vars[0];
 
   std::vector<double> current_time(1, m_grid->ctx()->time()->current());
-  std::vector<double> temp(1, 0.0);
+  std::vector<double> temperature(1, 0.0);
 
   model->init_timeseries(current_time);
 
@@ -124,9 +114,9 @@ IceModelVec::Ptr PA_air_temp_snapshot::compute_impl() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      model->temp_time_series(i, j, temp);
+      model->temp_time_series(i, j, temperature);
 
-      (*result)(i, j) = temp[0];
+      (*result)(i, j) = temperature[0];
     }
   } catch (...) {
     loop.failed();

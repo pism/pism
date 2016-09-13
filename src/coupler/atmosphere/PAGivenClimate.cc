@@ -44,17 +44,20 @@ Given::Given(IceGrid::ConstPtr g)
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  m_air_temp_vec->create(m_grid, "air_temp");
-  m_precipitation_vec->create(m_grid, "precipitation");
-
-  m_air_temp_vec->metadata(0) = m_air_temp;
-  m_air_temp_vec->metadata(0).set_name("air_temp");
-  m_air_temp_vec->metadata().set_double("valid_min", 0.0);
-  m_air_temp_vec->metadata().set_double("valid_max", 323.15); // 50 C
-
-  m_precipitation_vec->metadata(0) = m_precipitation;
-  m_precipitation_vec->metadata(0).set_name("precipitation");
-  m_precipitation_vec->write_in_glaciological_units = true;
+  {
+    m_air_temp_vec->create(m_grid, "air_temp");
+    m_air_temp_vec->set_attrs("diagnostic", "mean annual near-surface air temperature",
+                              "Kelvin", "", 0);
+    m_air_temp_vec->metadata(0).set_double("valid_min", 0.0);
+    m_air_temp_vec->metadata(0).set_double("valid_max", 323.15); // 50 C
+  }
+  {
+    m_precipitation_vec->create(m_grid, "precipitation");
+    m_precipitation_vec->set_attrs("model_state", "precipitation rate",
+                                   "kg m-2 second-1", "", 0);
+    m_precipitation_vec->metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+    m_precipitation_vec->write_in_glaciological_units = true;
+  }
 }
 
 Given::~Given() {

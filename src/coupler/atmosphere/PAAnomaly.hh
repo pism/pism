@@ -32,6 +32,7 @@ public:
   Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~Anomaly();
 
+protected:
   virtual void init_impl();
 
   virtual void mean_precipitation_impl(IceModelVec2S &result);
@@ -43,12 +44,7 @@ public:
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
 
-protected:
   virtual void update_impl(double my_t, double my_dt);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
 protected:
   std::vector<double> m_ts_mod, m_ts_values;
   IceModelVec2T *m_air_temp_anomaly, *m_precipitation_anomaly;

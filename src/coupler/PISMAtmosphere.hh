@@ -71,8 +71,6 @@ protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
 protected:
-  SpatialVariableMetadata m_air_temp;
-  SpatialVariableMetadata m_precipitation;
   std::vector<double> m_ts_times;
 };
 
@@ -94,7 +92,7 @@ protected:
   IceModelVec::Ptr compute_impl();
 };
 
-/*! @brief Effective precipitation rate. */
+/*! @brief Effective precipitation rate (average over time step). */
 class PA_precipitation : public Diag<AtmosphereModel>
 {
 public:

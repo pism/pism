@@ -149,50 +149,21 @@ void WeatherStation::temp_time_series_impl(int i, int j, std::vector<double> &re
 
 void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
                                              std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
-    result.insert(m_air_temp.get_name());
-    result.insert(m_precipitation.get_name());
-  }
+  (void) keyword;
+  (void) result;
 }
 
 void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
-                                                  const PIO &nc, IO_Type nctype) {
-  std::string order = m_config->get_string("output_variable_order");
-
-  if (set_contains(vars, m_air_temp)) {
-    // don't write using glaciological units
-    io::define_spatial_variable(m_air_temp, *m_grid, nc, nctype, order, false);
-  }
-
-  if (set_contains(vars, m_precipitation)) {
-    // do write using glaciological units
-    io::define_spatial_variable(m_precipitation, *m_grid, nc, nctype, order, true);
-  }
+                                           const PIO &nc, IO_Type nctype) {
+  (void) vars;
+  (void) nc;
+  (void) nctype;
 }
 
 void WeatherStation::write_variables_impl(const std::set<std::string> &vars,
                                           const PIO &nc) {
-
-  if (set_contains(vars, m_air_temp)) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, m_air_temp.get_name(), WITHOUT_GHOSTS);
-    tmp.metadata() = m_air_temp;
-
-    mean_annual_temp(tmp);
-
-    tmp.write(nc);
-  }
-
-  if (set_contains(vars, m_precipitation)) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, m_precipitation.get_name(), WITHOUT_GHOSTS);
-    tmp.metadata() = m_precipitation;
-
-    mean_precipitation(tmp);
-
-    tmp.write_in_glaciological_units = true;
-    tmp.write(nc);
-  }
+  (void) vars;
+  (void) nc;
 }
 
 } // end of namespace atmosphere

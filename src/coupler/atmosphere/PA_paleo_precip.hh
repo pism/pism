@@ -56,6 +56,7 @@ public:
   PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~PaleoPrecip();
 
+protected:
   virtual void init_impl();
   virtual void init_timeseries_impl(const std::vector<double> &ts);
 
@@ -63,12 +64,7 @@ public:
 
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
 
-protected:
   virtual MaxTimestep max_timestep_impl(double t);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
 protected:
   double m_precipexpfactor;
   std::vector<double> m_scaling_values;
