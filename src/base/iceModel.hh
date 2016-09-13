@@ -253,25 +253,43 @@ protected:
   bed::BedDef       *m_beddef;
 
   // state variables and some diagnostics/internals
-  IceModelVec2S m_ice_surface_elevation,          //!< ice surface elevation; ghosted
-    m_ice_thickness,              //!< ghosted
-    m_basal_yield_stress,         //!< ghosted
-    m_basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
-    m_longitude, //!< Longitude; ghosted to compute cell areas
-    m_latitude,  //!< Latitude; ghosted to compute cell areas
-    m_Href,          //!< accumulated mass advected to a partially filled grid cell
-    m_climatic_mass_balance,              //!< accumulation/ablation rate; no ghosts
-    m_climatic_mass_balance_cumulative,    //!< cumulative climatic_mass_balance
-    m_grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
-    m_floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
-    m_nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
-    m_discharge_flux_2D_cumulative,      //!< cumulative discharge (calving) flux (2D field)
-    m_ice_surface_temp,           //!< ice temperature at the ice surface but below firn; no ghosts
-    m_liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
-    m_shelfbtemp,         //!< ice temperature at the shelf base; no ghosts
-    m_shelfbmassflux,     //!< ice mass flux into the ocean at the shelf base; no ghosts
-    m_cell_area,          //!< cell areas (computed using the WGS84 datum)
-    m_flux_divergence;    //!< flux divergence
+  IceModelVec2S m_ice_surface_elevation;          //!< ice surface elevation; ghosted
+  //! ghosted
+  IceModelVec2S m_ice_thickness;
+  //! ghosted
+  IceModelVec2S m_basal_yield_stress;
+  //! rate of production of basal meltwater (ice-equivalent); no ghosts
+  IceModelVec2S m_basal_melt_rate;
+  //! Longitude; ghosted to compute cell areas
+  IceModelVec2S m_longitude;
+  //! Latitude; ghosted to compute cell areas
+  IceModelVec2S m_latitude;
+  //! accumulated mass advected to a partially filled grid cell
+  IceModelVec2S m_Href;
+  //! accumulation/ablation rate; no ghosts
+  IceModelVec2S m_climatic_mass_balance;
+  //! cumulative climatic_mass_balance
+  IceModelVec2S m_climatic_mass_balance_cumulative;
+  //! grounded basal (melt/freeze-on) cumulative flux
+  IceModelVec2S m_grounded_basal_flux_2D_cumulative;
+  //! floating (sub-shelf) basal (melt/freeze-on) cumulative flux
+  IceModelVec2S m_floating_basal_flux_2D_cumulative;
+  //! cumulative nonnegative-rule flux
+  IceModelVec2S m_nonneg_flux_2D_cumulative;
+  //! cumulative discharge (calving) flux (2D field)
+  IceModelVec2S m_discharge_flux_2D_cumulative;
+  //! ice temperature at the ice surface but below firn; no ghosts
+  IceModelVec2S m_ice_surface_temp;
+  //! ice liquid water fraction at the top surface of the ice
+  IceModelVec2S m_liqfrac_surface;
+  //! ice temperature at the shelf base; no ghosts
+  IceModelVec2S m_shelfbtemp;
+  //! ice mass flux into the ocean at the shelf base; no ghosts
+  IceModelVec2S m_shelfbmassflux;
+  //! cell areas (computed using the WGS84 datum)
+  IceModelVec2S m_cell_area;
+  //! flux divergence
+  IceModelVec2S m_flux_divergence;
 
   FractureFields m_fracture;
 
