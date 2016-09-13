@@ -62,7 +62,7 @@ protected:
                                unsigned int start);
   double m_snow_temp_july_day;
   std::string m_reference;
-  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation_vec;
+  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;
   std::vector<double> m_ts_times, m_cosine_cycle;
 };
 

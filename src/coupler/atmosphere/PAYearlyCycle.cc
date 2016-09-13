@@ -52,12 +52,12 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
                                  "");  // no CF standard_name ??
   m_air_temp_mean_july.metadata().set_string("source", m_reference);
 
-  m_precipitation_vec.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-  m_precipitation_vec.set_attrs("model_state", "precipitation rate",
+  m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
+  m_precipitation.set_attrs("model_state", "precipitation rate",
                                 "kg m-2 second-1", "", 0);
-  m_precipitation_vec.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
-  m_precipitation_vec.write_in_glaciological_units = true;
-  m_precipitation_vec.set_time_independent(true);
+  m_precipitation.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+  m_precipitation.write_in_glaciological_units = true;
+  m_precipitation.set_time_independent(true);
 }
 
 YearlyCycle::~YearlyCycle() {
@@ -81,9 +81,9 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
              "      from %s ... \n",
              input_filename.c_str());
   if (do_regrid == true) {
-    m_precipitation_vec.regrid(input_filename, CRITICAL); // fails if not found!
+    m_precipitation.regrid(input_filename, CRITICAL); // fails if not found!
   } else {
-    m_precipitation_vec.read(input_filename, start); // fails if not found!
+    m_precipitation.read(input_filename, start); // fails if not found!
   }
 }
 
@@ -96,20 +96,20 @@ void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<s
 
 void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   if (set_contains(vars, "precipitation")) {
-    m_precipitation_vec.define(nc, nctype);
+    m_precipitation.define(nc, nctype);
   }
 }
 
 
 void YearlyCycle::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "precipitation")) {
-    m_precipitation_vec.write(nc);
+    m_precipitation.write(nc);
   }
 }
 
 //! Copies the stored precipitation field into result.
 void YearlyCycle::mean_precipitation_impl(IceModelVec2S &result) {
-  result.copy_from(m_precipitation_vec);
+  result.copy_from(m_precipitation);
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
@@ -141,7 +141,7 @@ void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) {
 
 void YearlyCycle::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    result[k] = m_precipitation_vec(i,j);
+    result[k] = m_precipitation(i,j);
   }
 }
 
@@ -155,13 +155,13 @@ void YearlyCycle::temp_time_series_impl(int i, int j, std::vector<double> &resul
 void YearlyCycle::begin_pointwise_access_impl() {
   m_air_temp_mean_annual.begin_access();
   m_air_temp_mean_july.begin_access();
-  m_precipitation_vec.begin_access();
+  m_precipitation.begin_access();
 }
 
 void YearlyCycle::end_pointwise_access_impl() {
   m_air_temp_mean_annual.end_access();
   m_air_temp_mean_july.end_access();
-  m_precipitation_vec.end_access();
+  m_precipitation.end_access();
 }
 void YearlyCycle::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                        std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {

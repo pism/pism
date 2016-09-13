@@ -33,46 +33,46 @@ namespace atmosphere {
 PIK::PIK(IceGrid::ConstPtr g)
   : AtmosphereModel(g) {
 
-  m_precipitation_vec.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-  m_precipitation_vec.set_attrs("model_state", "precipitation rate",
+  m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
+  m_precipitation.set_attrs("model_state", "precipitation rate",
                                 "kg m-2 second-1", "", 0);
-  m_precipitation_vec.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
-  m_precipitation_vec.write_in_glaciological_units = true;
-  m_precipitation_vec.set_time_independent(true);
+  m_precipitation.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
+  m_precipitation.write_in_glaciological_units = true;
+  m_precipitation.set_time_independent(true);
 
-  m_air_temp_vec.create(m_grid, "air_temp", WITHOUT_GHOSTS);
-  m_air_temp_vec.set_attrs("model_state", "mean annual near-surface air temperature",
+  m_air_temp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
+  m_air_temp.set_attrs("model_state", "mean annual near-surface air temperature",
                            "Kelvin", "", 0);
-  m_air_temp_vec.set_time_independent(true);
+  m_air_temp.set_time_independent(true);
 }
 
 void PIK::mean_precipitation_impl(IceModelVec2S &result) {
-  result.copy_from(m_precipitation_vec);
+  result.copy_from(m_precipitation);
 }
 
 void PIK::mean_annual_temp_impl(IceModelVec2S &result) {
-  result.copy_from(m_air_temp_vec);
+  result.copy_from(m_air_temp);
 }
 
 void PIK::begin_pointwise_access_impl() {
-  m_precipitation_vec.begin_access();
-  m_air_temp_vec.begin_access();
+  m_precipitation.begin_access();
+  m_air_temp.begin_access();
 }
 
 void PIK::end_pointwise_access_impl() {
-  m_precipitation_vec.end_access();
-  m_air_temp_vec.end_access();
+  m_precipitation.end_access();
+  m_air_temp.end_access();
 }
 
 void PIK::temp_time_series_impl(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    result[k] = m_air_temp_vec(i,j);
+    result[k] = m_air_temp(i,j);
   }
 }
 
 void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    result[k] = m_precipitation_vec(i,j);
+    result[k] = m_precipitation(i,j);
   }
 }
 
@@ -85,14 +85,14 @@ void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc
                                             IO_Type nctype) {
 
   if (set_contains(vars, "precipitation")) {
-    m_precipitation_vec.define(nc, nctype);
+    m_precipitation.define(nc, nctype);
   }
 }
 
 void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, "precipitation")) {
-    m_precipitation_vec.write(nc);
+    m_precipitation.write(nc);
   }
 }
 
@@ -112,9 +112,9 @@ void PIK::init_impl() {
              "    from %s ... \n",
              opts.filename.c_str());
   if (opts.type == INIT_BOOTSTRAP) {
-    m_precipitation_vec.regrid(opts.filename, CRITICAL);
+    m_precipitation.regrid(opts.filename, CRITICAL);
   } else {
-    m_precipitation_vec.read(opts.filename, opts.record); // fails if not found!
+    m_precipitation.read(opts.filename, opts.record); // fails if not found!
   }
 }
 
@@ -132,13 +132,13 @@ void PIK::update_impl(double, double) {
     &latitude  = *m_grid->variables().get_2d_scalar("latitude");
 
   IceModelVec::AccessList list;
-  list.add(m_air_temp_vec);
+  list.add(m_air_temp);
   list.add(elevation);
   list.add(latitude);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_air_temp_vec(i, j) = 273.15 + 30 - 0.0075 * elevation(i, j) - 0.68775 * latitude(i, j)*(-1.0) ;
+    m_air_temp(i, j) = 273.15 + 30 - 0.0075 * elevation(i, j) - 0.68775 * latitude(i, j)*(-1.0) ;
   }
 }
 
