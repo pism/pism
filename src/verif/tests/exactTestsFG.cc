@@ -18,6 +18,9 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <cstddef>              // size_t
+#include <stdexcept>            // runtime_error
+
 #include <cmath>
 #include <gsl/gsl_math.h>       // M_PI
 

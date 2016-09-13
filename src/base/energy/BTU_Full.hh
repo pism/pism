@@ -97,6 +97,7 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double my_t);
 
+  using BedThermalUnit::update_impl;
   virtual void update_impl(const IceModelVec2S &bedrock_top_temperature,
                            double t, double dt);
 
