@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -65,19 +65,30 @@ protected:
   //! holds degree-day factors in location-independent case
   LocalMassBalance::DegreeDayFactors m_base_ddf;
 
-  double  m_base_pddStdDev,        //!< K; daily amount of randomness
-    m_base_pddThresholdTemp, //!< K; temps are positive above this
-    m_next_balance_year_start;
-  IceModelVec2S
-  m_climatic_mass_balance, //!< cached surface mass balance rate
-    m_accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)
-    m_melt_rate,             //!< diagnostic output melt rate (rate at which snow
-  //!< and ice is melted, but some snow melt refreezes)
-    m_runoff_rate,           //!< diagnostic output meltwater runoff rate
-    m_snow_depth;            //!< snow depth (reset once a year)
+  //! K; daily amount of randomness
+  double m_base_pddStdDev;
+  //! K; temps are positive above this
+  double m_base_pddThresholdTemp;
+  double m_next_balance_year_start;
+
+  //! cached surface mass balance rate
+  IceModelVec2S m_climatic_mass_balance;
+
+  //! diagnostic output accumulation rate (snow - rain)
+  IceModelVec2S m_accumulation_rate;
+
+  //! diagnostic output melt rate (rate at which snow and ice is melted; but some snow melt
+  //! refreezes)
+  IceModelVec2S m_melt_rate;
+
+  //! diagnostic output meltwater runoff rate
+  IceModelVec2S m_runoff_rate;
+
+  //! snow depth (reset once a year)
+  IceModelVec2S m_snow_depth;
   IceModelVec2T m_air_temp_sd;
 
-  SpatialVariableMetadata ice_surface_temp;
+  SpatialVariableMetadata m_ice_surface_temp;
 
   bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
   bool m_sd_use_param, m_sd_file_set;

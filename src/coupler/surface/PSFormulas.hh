@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,7 +44,8 @@ protected:
   void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                              IO_Type nctype);
 protected:
-  IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
+  IceModelVec2S m_climatic_mass_balance;
+  IceModelVec2S m_ice_surface_temp;
 };
 
 

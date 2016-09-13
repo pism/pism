@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,8 +43,11 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars,
                                      const PIO &nc, IO_Type nctype);
 protected:
-  IceModelVec2S m_mass_flux, m_temperature, m_liquid_water_fraction,
-    m_mass_held_in_surface_layer, m_surface_layer_thickness;
+  IceModelVec2S m_mass_flux;
+  IceModelVec2S m_temperature;
+  IceModelVec2S m_liquid_water_fraction;
+  IceModelVec2S m_mass_held_in_surface_layer;
+  IceModelVec2S m_surface_layer_thickness;
   double m_next_update_time;
   unsigned int m_update_interval_years;
 };

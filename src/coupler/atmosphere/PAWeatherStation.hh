@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,19 +40,18 @@ public:
   WeatherStation(IceGrid::ConstPtr g);
   virtual ~WeatherStation();
 
-  virtual void init();
-
-  virtual void mean_precipitation(IceModelVec2S &result);
-  virtual void mean_annual_temp(IceModelVec2S &result);
-
-  virtual void begin_pointwise_access();
-  virtual void end_pointwise_access();
-  virtual void init_timeseries(const std::vector<double> &ts);
-  virtual void precip_time_series(int i, int j, std::vector<double> &values);
-  virtual void temp_time_series(int i, int j, std::vector<double> &values);
-  virtual void temp_snapshot(IceModelVec2S &result);
-
 protected:
+  virtual void init_impl();
+
+  virtual void mean_precipitation_impl(IceModelVec2S &result);
+  virtual void mean_annual_temp_impl(IceModelVec2S &result);
+
+  virtual void begin_pointwise_access_impl();
+  virtual void end_pointwise_access_impl();
+  virtual void init_timeseries_impl(const std::vector<double> &ts);
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
+
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double t, double dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
@@ -60,10 +59,8 @@ protected:
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                      IO_Type nctype);
 protected:
-  Timeseries m_precipitation, m_air_temperature;
+  Timeseries m_precipitation_timeseries, m_air_temp_timeseries;
   std::vector<double> m_precip_values, m_air_temp_values;
-
-  SpatialVariableMetadata m_precip_metadata, m_air_temp_metadata;
 };
 
 } // end of namespace atmosphere

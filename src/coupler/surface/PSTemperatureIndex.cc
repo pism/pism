@@ -42,7 +42,7 @@ namespace surface {
 
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   : SurfaceModel(g),
-    ice_surface_temp(m_sys, "ice_surface_temp") {
+    m_ice_surface_temp(m_sys, "ice_surface_temp") {
 
   m_mbscheme              = NULL;
   m_faustogreve           = NULL;
@@ -172,10 +172,10 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                          "m", "");
   m_snow_depth.set(0.0);
 
-  ice_surface_temp.set_string("pism_intent", "diagnostic");
-  ice_surface_temp.set_string("long_name",
+  m_ice_surface_temp.set_string("pism_intent", "diagnostic");
+  m_ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ice_surface_temp.set_string("units", "K");
+  m_ice_surface_temp.set_string("units", "K");
 }
 
 TemperatureIndex::~TemperatureIndex() {
@@ -469,7 +469,7 @@ void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, 
 
   if (set_contains(vars, "ice_surface_temp")) {
     std::string order = m_config->get_string("output_variable_order");
-    io::define_spatial_variable(ice_surface_temp, *m_grid, nc, nctype, order, true);
+    io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
@@ -505,7 +505,7 @@ void TemperatureIndex::write_variables_impl(const std::set<std::string> &vars_in
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
     tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-    tmp.metadata() = ice_surface_temp;
+    tmp.metadata() = m_ice_surface_temp;
 
     ice_surface_temperature(tmp);
 

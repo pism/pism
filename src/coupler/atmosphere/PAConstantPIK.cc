@@ -31,116 +31,72 @@ namespace pism {
 namespace atmosphere {
 
 PIK::PIK(IceGrid::ConstPtr g)
-  : AtmosphereModel(g),
-    m_air_temp_snapshot(m_sys, "air_temp_snapshot") {
+  : AtmosphereModel(g) {
 
-  // allocate IceModelVecs for storing temperature and precipitation fields:
-
-  // create mean annual ice equivalent precipitation rate (before separating
-  // rain, and before melt, etc. in SurfaceModel)
   m_precipitation.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-  m_precipitation.set_attrs("climate_state",
-                            "mean annual ice-equivalent precipitation rate",
-                            "kg m-2 second-1",
-                            ""); // no CF standard_name
-  m_precipitation.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_precipitation.set_attrs("model_state", "precipitation rate",
+                                "kg m-2 second-1", "", 0);
+  m_precipitation.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
   m_precipitation.write_in_glaciological_units = true;
   m_precipitation.set_time_independent(true);
 
   m_air_temp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
-  m_air_temp.set_attrs("climate_state",
-                       "mean annual near-surface (2 m) air temperature",
-                       "K",
-                       "");
+  m_air_temp.set_attrs("model_state", "mean annual near-surface air temperature",
+                           "Kelvin", "", 0);
   m_air_temp.set_time_independent(true);
-
-  // initialize metadata for "air_temp_snapshot"
-  m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
-  m_air_temp_snapshot.set_string("long_name",
-                                 "snapshot of the near-surface air temperature");
-  m_air_temp_snapshot.set_string("units", "K");
 }
 
-void PIK::mean_precipitation(IceModelVec2S &result) {
+void PIK::mean_precipitation_impl(IceModelVec2S &result) {
   result.copy_from(m_precipitation);
 }
 
-void PIK::mean_annual_temp(IceModelVec2S &result) {
+void PIK::mean_annual_temp_impl(IceModelVec2S &result) {
   result.copy_from(m_air_temp);
 }
 
-void PIK::begin_pointwise_access() {
+void PIK::begin_pointwise_access_impl() {
   m_precipitation.begin_access();
   m_air_temp.begin_access();
 }
 
-void PIK::end_pointwise_access() {
+void PIK::end_pointwise_access_impl() {
   m_precipitation.end_access();
   m_air_temp.end_access();
 }
 
-void PIK::temp_time_series(int i, int j, std::vector<double> &result) {
+void PIK::temp_time_series_impl(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_air_temp(i,j);
   }
 }
 
-void PIK::precip_time_series(int i, int j, std::vector<double> &result) {
+void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
 }
 
-void PIK::temp_snapshot(IceModelVec2S &result) {
-  mean_annual_temp(result);
-}
-
 void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  (void) keyword;
   result.insert("precipitation");
-  result.insert("air_temp");
-
-  if (keyword == "big" || keyword == "2dbig") {
-    result.insert("air_temp_snapshot");
-  }
 }
 
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
-  if (set_contains(vars, "air_temp_snapshot")) {
-    std::string order = m_config->get_string("output_variable_order");
-    io::define_spatial_variable(m_air_temp_snapshot, *m_grid, nc, nctype, order, false);
-  }
 
   if (set_contains(vars, "precipitation")) {
     m_precipitation.define(nc, nctype);
   }
-
-  if (set_contains(vars, "air_temp")) {
-    m_air_temp.define(nc, nctype);
-  }
 }
 
 void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "air_temp_snapshot")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
-    tmp.metadata() = m_air_temp_snapshot;
-
-    temp_snapshot(tmp);
-
-    tmp.write(nc);
-  }
 
   if (set_contains(vars, "precipitation")) {
     m_precipitation.write(nc);
   }
-
-  if (set_contains(vars, "air_temp")) {
-    m_air_temp.write(nc);
-  }
 }
 
-void PIK::init() {
+void PIK::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_log->message(2,
@@ -186,7 +142,7 @@ void PIK::update_impl(double, double) {
   }
 }
 
-void PIK::init_timeseries(const std::vector<double> &ts) {
+void PIK::init_timeseries_impl(const std::vector<double> &ts) {
   m_ts_times = ts;
 }
 

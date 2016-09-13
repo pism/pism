@@ -161,29 +161,29 @@ void Cache::surface_layer_thickness_impl(IceModelVec2S &result) {
 void Cache::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_mass_flux)) {
     m_mass_flux.define(nc, nctype);
-    vars.erase(m_mass_flux.metadata().get_string("short_name"));
+    vars.erase(m_mass_flux.get_name());
   }
 
-  if (set_contains(vars, m_temperature.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_temperature)) {
     m_temperature.define(nc, nctype);
-    vars.erase(m_temperature.metadata().get_string("short_name"));
+    vars.erase(m_temperature.get_name());
   }
 
-  if (set_contains(vars, m_liquid_water_fraction.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_liquid_water_fraction)) {
     m_liquid_water_fraction.define(nc, nctype);
-    vars.erase(m_liquid_water_fraction.metadata().get_string("short_name"));
+    vars.erase(m_liquid_water_fraction.get_name());
   }
 
-  if (set_contains(vars, m_mass_held_in_surface_layer.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_mass_held_in_surface_layer)) {
     m_mass_held_in_surface_layer.define(nc, nctype);
-    vars.erase(m_mass_held_in_surface_layer.metadata().get_string("short_name"));
+    vars.erase(m_mass_held_in_surface_layer.get_name());
   }
 
-  if (set_contains(vars, m_surface_layer_thickness.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_surface_layer_thickness)) {
     m_surface_layer_thickness.define(nc, nctype);
-    vars.erase(m_surface_layer_thickness.metadata().get_string("short_name"));
+    vars.erase(m_surface_layer_thickness.get_name());
   }
 
   m_input_model->define_variables(vars, nc, nctype);
@@ -192,29 +192,29 @@ void Cache::define_variables_impl(const std::set<std::string> &vars_input, const
 void Cache::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_mass_flux)) {
     m_mass_flux.write(nc);
-    vars.erase(m_mass_flux.metadata().get_string("short_name"));
+    vars.erase(m_mass_flux.get_name());
   }
 
-  if (set_contains(vars, m_temperature.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_temperature)) {
     m_temperature.write(nc);
-    vars.erase(m_temperature.metadata().get_string("short_name"));
+    vars.erase(m_temperature.get_name());
   }
 
-  if (set_contains(vars, m_liquid_water_fraction.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_liquid_water_fraction)) {
     m_liquid_water_fraction.write(nc);
-    vars.erase(m_liquid_water_fraction.metadata().get_string("short_name"));
+    vars.erase(m_liquid_water_fraction.get_name());
   }
 
-  if (set_contains(vars, m_mass_held_in_surface_layer.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_mass_held_in_surface_layer)) {
     m_mass_held_in_surface_layer.write(nc);
-    vars.erase(m_mass_held_in_surface_layer.metadata().get_string("short_name"));
+    vars.erase(m_mass_held_in_surface_layer.get_name());
   }
 
-  if (set_contains(vars, m_surface_layer_thickness.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_surface_layer_thickness)) {
     m_surface_layer_thickness.write(nc);
-    vars.erase(m_surface_layer_thickness.metadata().get_string("short_name"));
+    vars.erase(m_surface_layer_thickness.get_name());
   }
 
   m_input_model->write_variables(vars, nc);

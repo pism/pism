@@ -319,6 +319,8 @@ public:
   typedef pism::AccessList AccessList;
 };
 
+bool set_contains(const std::set<std::string> &S, const IceModelVec &field);
+
 class IceModelVec2S;
 
 /** Class for a 2d DA-based Vec.

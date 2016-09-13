@@ -28,15 +28,14 @@ namespace atmosphere {
 class PIK : public AtmosphereModel {
 public:
   PIK(IceGrid::ConstPtr g);
-  virtual void init();
-  virtual void mean_precipitation(IceModelVec2S &result);
-  virtual void mean_annual_temp(IceModelVec2S &result);
-  virtual void begin_pointwise_access();
-  virtual void end_pointwise_access();
-  virtual void temp_time_series(int i, int j, std::vector<double> &values);
-  virtual void precip_time_series(int i, int j, std::vector<double> &values);
-  virtual void temp_snapshot(IceModelVec2S &result);
-  virtual void init_timeseries(const std::vector<double> &ts);
+  virtual void init_impl();
+  virtual void mean_precipitation_impl(IceModelVec2S &result);
+  virtual void mean_annual_temp_impl(IceModelVec2S &result);
+  virtual void begin_pointwise_access_impl();
+  virtual void end_pointwise_access_impl();
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
+  virtual void init_timeseries_impl(const std::vector<double> &ts);
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
@@ -46,7 +45,6 @@ protected:
                                      const PIO &nc, IO_Type nctype);
 protected:
   IceModelVec2S m_precipitation, m_air_temp;
-  SpatialVariableMetadata m_air_temp_snapshot;
 };
 
 } // end of namespace atmosphere

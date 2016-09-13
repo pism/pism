@@ -29,28 +29,28 @@ Given::Given(IceGrid::ConstPtr g)
   m_option_prefix   = "-ocean_given";
 
   // will be de-allocated by the parent's destructor
-  shelfbtemp     = new IceModelVec2T;
-  shelfbmassflux = new IceModelVec2T;
+  m_shelfbtemp     = new IceModelVec2T;
+  m_shelfbmassflux = new IceModelVec2T;
 
-  m_fields["shelfbtemp"]     = shelfbtemp;
-  m_fields["shelfbmassflux"] = shelfbmassflux;
+  m_fields["shelfbtemp"]     = m_shelfbtemp;
+  m_fields["shelfbmassflux"] = m_shelfbmassflux;
 
   process_options();
 
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  shelfbtemp->create(m_grid, "shelfbtemp");
-  shelfbmassflux->create(m_grid, "shelfbmassflux");
+  m_shelfbtemp->create(m_grid, "shelfbtemp");
+  m_shelfbmassflux->create(m_grid, "shelfbmassflux");
 
-  shelfbtemp->set_attrs("climate_forcing",
+  m_shelfbtemp->set_attrs("climate_forcing",
                         "absolute temperature at ice shelf base",
                         "Kelvin", "");
-  shelfbmassflux->set_attrs("climate_forcing",
+  m_shelfbmassflux->set_attrs("climate_forcing",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                             "kg m-2 s-1", "");
-  shelfbmassflux->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  shelfbmassflux->write_in_glaciological_units = true;
+  m_shelfbmassflux->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_shelfbmassflux->write_in_glaciological_units = true;
 }
 
 Given::~Given() {
@@ -65,11 +65,11 @@ void Given::init_impl() {
              "* Initializing the ocean model reading base of the shelf temperature\n"
              "  and sub-shelf mass flux from a file...\n");
 
-  shelfbtemp->init(m_filename, m_bc_period, m_bc_reference_time);
-  shelfbmassflux->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_shelfbtemp->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_shelfbmassflux->init(m_filename, m_bc_period, m_bc_reference_time);
 
   // read time-independent data right away:
-  if (shelfbtemp->get_n_records() == 1 && shelfbmassflux->get_n_records() == 1) {
+  if (m_shelfbtemp->get_n_records() == 1 && m_shelfbmassflux->get_n_records() == 1) {
     update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
@@ -77,8 +77,8 @@ void Given::init_impl() {
 void Given::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
-  shelfbmassflux->average(m_t, m_dt);
-  shelfbtemp->average(m_t, m_dt);
+  m_shelfbmassflux->average(m_t, m_dt);
+  m_shelfbtemp->average(m_t, m_dt);
 }
 
 void Given::sea_level_elevation_impl(double &result) const {
@@ -86,12 +86,12 @@ void Given::sea_level_elevation_impl(double &result) const {
 }
 
 void Given::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(*shelfbtemp);
+  result.copy_from(*m_shelfbtemp);
 }
 
 
 void Given::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(*shelfbmassflux);
+  result.copy_from(*m_shelfbmassflux);
 }
 
 void Given::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {

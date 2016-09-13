@@ -37,7 +37,7 @@ Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
   m_next_update_time = m_grid->ctx()->time()->current();
   m_update_interval_years = 10;
 
-  m_shelf_base_mass_flux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
+  m_shelf_base_mass_flux.create(m_grid, "effective_shelf_base_mass_flux", WITHOUT_GHOSTS);
   m_shelf_base_mass_flux.set_attrs("climate_state",
                                    "ice mass flux from ice shelf base"
                                    " (positive flux is loss from ice shelf)",
@@ -45,7 +45,7 @@ Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
   m_shelf_base_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
-  m_shelf_base_temperature.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
+  m_shelf_base_temperature.create(m_grid, "effective_shelf_base_temperature", WITHOUT_GHOSTS);
   m_shelf_base_temperature.set_attrs("climate_state",
                                      "absolute temperature at ice shelf base",
                                      "K", "");
@@ -129,19 +129,19 @@ void Cache::define_variables_impl(const std::set<std::string> &vars_input, const
                                          IO_Type nctype) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_shelf_base_mass_flux)) {
     m_shelf_base_mass_flux.define(nc, nctype);
-    vars.erase(m_shelf_base_mass_flux.metadata().get_string("short_name"));
+    vars.erase(m_shelf_base_mass_flux.get_name());
   }
 
-  if (set_contains(vars, m_shelf_base_temperature.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_shelf_base_temperature)) {
     m_shelf_base_temperature.define(nc, nctype);
-    vars.erase(m_shelf_base_temperature.metadata().get_string("short_name"));
+    vars.erase(m_shelf_base_temperature.get_name());
   }
 
-  if (set_contains(vars, m_melange_back_pressure_fraction.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_melange_back_pressure_fraction)) {
     m_melange_back_pressure_fraction.define(nc, nctype);
-    vars.erase(m_melange_back_pressure_fraction.metadata().get_string("short_name"));
+    vars.erase(m_melange_back_pressure_fraction.get_name());
   }
 
   m_input_model->define_variables(vars, nc, nctype);
@@ -150,19 +150,19 @@ void Cache::define_variables_impl(const std::set<std::string> &vars_input, const
 void Cache::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_shelf_base_mass_flux)) {
     m_shelf_base_mass_flux.write(nc);
-    vars.erase(m_shelf_base_mass_flux.metadata().get_string("short_name"));
+    vars.erase(m_shelf_base_mass_flux.get_name());
   }
 
-  if (set_contains(vars, m_shelf_base_temperature.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_shelf_base_temperature)) {
     m_shelf_base_temperature.write(nc);
-    vars.erase(m_shelf_base_temperature.metadata().get_string("short_name"));
+    vars.erase(m_shelf_base_temperature.get_name());
   }
 
-  if (set_contains(vars, m_melange_back_pressure_fraction.metadata().get_string("short_name"))) {
+  if (set_contains(vars, m_melange_back_pressure_fraction)) {
     m_melange_back_pressure_fraction.write(nc);
-    vars.erase(m_melange_back_pressure_fraction.metadata().get_string("short_name"));
+    vars.erase(m_melange_back_pressure_fraction.get_name());
   }
 
   m_input_model->write_variables(vars, nc);

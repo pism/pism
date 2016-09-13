@@ -132,31 +132,27 @@ void InitializationHelper::shelf_base_mass_flux_impl(IceModelVec2S &result) cons
   result.copy_from(m_shelf_base_mass_flux);
 }
 
-static bool in(const std::set<std::string> &S, const IceModelVec &vec) {
-  return set_contains(S, vec.get_name());
-}
-
 void InitializationHelper::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
   // make a copy of the set of variables so that we can modify it
   std::set<std::string> list = vars;
 
-  if (in(list, m_melange_back_pressure_fraction)) {
+  if (set_contains(list, m_melange_back_pressure_fraction)) {
     m_melange_back_pressure_fraction.define(nc, nctype);
     list.erase(m_melange_back_pressure_fraction.get_name());
   }
 
-  if (in(list, m_shelf_base_mass_flux)) {
+  if (set_contains(list, m_shelf_base_mass_flux)) {
     m_shelf_base_mass_flux.define(nc, nctype);
     list.erase(m_shelf_base_mass_flux.get_name());
   }
 
-  if (in(list, m_shelf_base_temperature)) {
+  if (set_contains(list, m_shelf_base_temperature)) {
     m_shelf_base_temperature.define(nc, nctype);
     list.erase(m_shelf_base_temperature.get_name());
   }
 
-  if (set_contains(list, m_sea_level_metadata.get_name())) {
+  if (set_contains(list, m_sea_level_metadata)) {
     io::define_timeseries(m_sea_level_metadata, nc, PISM_DOUBLE, true);
   }
 
@@ -167,22 +163,22 @@ void InitializationHelper::write_variables_impl(const std::set<std::string> &var
   // make a copy of the set of variables so that we can modify it
   std::set<std::string> list = vars;
 
-  if (in(list, m_melange_back_pressure_fraction)) {
+  if (set_contains(list, m_melange_back_pressure_fraction)) {
     m_melange_back_pressure_fraction.write(nc);
     list.erase(m_melange_back_pressure_fraction.get_name());
   }
 
-  if (in(list, m_shelf_base_mass_flux)) {
+  if (set_contains(list, m_shelf_base_mass_flux)) {
     m_shelf_base_mass_flux.write(nc);
     list.erase(m_shelf_base_mass_flux.get_name());
   }
 
-  if (in(list, m_shelf_base_temperature)) {
+  if (set_contains(list, m_shelf_base_temperature)) {
     m_shelf_base_temperature.write(nc);
     list.erase(m_shelf_base_temperature.get_name());
   }
 
-  if (set_contains(list, m_sea_level_metadata.get_name())) {
+  if (set_contains(list, m_sea_level_metadata)) {
     unsigned int t_start = nc.inq_dimlen(m_sea_level_metadata.get_dimension_name()) - 1;
     io::write_timeseries(nc, m_sea_level_metadata, t_start, m_sea_level_elevation, PISM_DOUBLE);
   }

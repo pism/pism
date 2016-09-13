@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -34,8 +34,8 @@ public:
   SeaRISEGreenland(IceGrid::ConstPtr g);
   virtual ~SeaRISEGreenland();
 
-  virtual void init();
-  virtual void precip_time_series(int i, int j, std::vector<double> &values);
+  virtual void init_impl();
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);

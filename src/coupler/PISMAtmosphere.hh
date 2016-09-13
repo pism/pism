@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2015 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "base/util/PISMComponent.hh"
+#include "base/util/VariableMetadata.hh"
 
 namespace pism {
 class IceModelVec2S;
@@ -32,37 +33,72 @@ namespace atmosphere {
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
 class AtmosphereModel : public Component_TS {
 public:
-  AtmosphereModel(IceGrid::ConstPtr g)
-    : Component_TS(g) {};
+  AtmosphereModel(IceGrid::ConstPtr g);
+  virtual ~AtmosphereModel();
 
-  virtual void init() = 0;
+  void init();
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
-  virtual void mean_precipitation(IceModelVec2S &result) = 0;
+  void mean_precipitation(IceModelVec2S &result);
 
   //! \brief Sets result to the mean annual near-surface air temperature, in degrees Kelvin.
-  virtual void mean_annual_temp(IceModelVec2S &result) = 0;
+  void mean_annual_temp(IceModelVec2S &result);
 
-  virtual void begin_pointwise_access() = 0;
-  virtual void end_pointwise_access() = 0;
-  virtual void init_timeseries(const std::vector<double> &ts) = 0;
+  void begin_pointwise_access();
+  void end_pointwise_access();
+  void init_timeseries(const std::vector<double> &ts);
   //! \brief Sets a pre-allocated N-element array "result" to the time-series of
   //! ice-equivalent precipitation (m/s) at the point i,j on the grid.
   //!
   //! See temp_time_series() for more.
-  virtual void precip_time_series(int i, int j, std::vector<double> &result) = 0;
+  void precip_time_series(int i, int j, std::vector<double> &result);
 
   //! \brief Sets a pre-allocated N-element array "result" to the time-series
   //! of near-surface air temperature (degrees Kelvin) at the point i,j on the
   //! grid. Times (in years) are specified in ts. NB! Has to be surrounded by
   //! begin_pointwise_access() and end_pointwise_access()
-  virtual void temp_time_series(int i, int j, std::vector<double> &result) = 0;
-  //! \brief Sets result to a snapshot of temperature for the current time.
-  //! (For diagnostic purposes.)
-  virtual void temp_snapshot(IceModelVec2S &result) = 0;
+  void temp_time_series(int i, int j, std::vector<double> &result);
 protected:
+  virtual void init_impl() = 0;
+  virtual void mean_precipitation_impl(IceModelVec2S &result) = 0;
+  virtual void mean_annual_temp_impl(IceModelVec2S &result) = 0;
+  virtual void begin_pointwise_access_impl() = 0;
+  virtual void end_pointwise_access_impl() = 0;
+  virtual void init_timeseries_impl(const std::vector<double> &ts) = 0;
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) = 0;
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) = 0;
 
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+protected:
   std::vector<double> m_ts_times;
+};
+
+/*! @brief Instantaneous near-surface air temperature. */
+class PA_air_temp_snapshot : public Diag<AtmosphereModel>
+{
+public:
+  PA_air_temp_snapshot(AtmosphereModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Effective near-surface mean-annual air temperature. */
+class PA_air_temp : public Diag<AtmosphereModel>
+{
+public:
+  PA_air_temp(AtmosphereModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Effective precipitation rate (average over time step). */
+class PA_precipitation : public Diag<AtmosphereModel>
+{
+public:
+  PA_precipitation(AtmosphereModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace atmosphere

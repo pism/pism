@@ -64,7 +64,11 @@ protected:
   }
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict)
+  {
+    // give the model class a chance to add diagnostics
+    Model::get_diagnostics_impl(dict, ts_dict);
+
     if (m_input_model != NULL) {
       m_input_model->get_diagnostics(dict, ts_dict);
     }

@@ -29,33 +29,33 @@ namespace surface {
 StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, SurfaceModel *input)
     : SurfaceModifier(g, input) {
 
-  mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-  mass_flux.set_attrs("climate_state",
+  m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_mass_flux.set_attrs("climate_state",
                       "surface mass balance (accumulation/ablation) rate",
                       "kg m-2 s-1",
                       "land_ice_surface_specific_mass_balance_flux");
-  mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  mass_flux.write_in_glaciological_units = true;
+  m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_mass_flux.write_in_glaciological_units = true;
 
-  temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-  temp.set_attrs("climate_state", "ice temperature at the ice surface",
+  m_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  m_temp.set_attrs("climate_state", "ice temperature at the ice surface",
                  "K", "");
 
   // create special variables
-  mass_flux_0.create(m_grid, "mass_flux_0", WITHOUT_GHOSTS);
-  mass_flux_0.set_attrs("internal", "surface mass flux at the beginning of a run",
+  m_mass_flux_0.create(m_grid, "mass_flux_0", WITHOUT_GHOSTS);
+  m_mass_flux_0.set_attrs("internal", "surface mass flux at the beginning of a run",
                         "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
 
-  mass_flux_input.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-  mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
+  m_mass_flux_input.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  m_mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
                             "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux");
 
-  temp_0.create(m_grid, "ice_surface_temp_0", WITHOUT_GHOSTS);
-  temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
+  m_temp_0.create(m_grid, "ice_surface_temp_0", WITHOUT_GHOSTS);
+  m_temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",
                    "");
 
-  temp_input.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-  temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
+  m_temp_input.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  m_temp_input.set_attrs("model_state", "ice-surface temperature to apply anomalies to",
                        "K", "");
 }
 
@@ -78,11 +78,11 @@ void StuffAsAnomaly::init_impl() {
              "  read from '%s'.\n", opts.filename.c_str());
 
   if (opts.type == INIT_BOOTSTRAP) {
-    mass_flux_input.regrid(opts.filename, CRITICAL);
-    temp_input.regrid(opts.filename, CRITICAL);
+    m_mass_flux_input.regrid(opts.filename, CRITICAL);
+    m_temp_input.regrid(opts.filename, CRITICAL);
   } else {
-    mass_flux_input.read(opts.filename, opts.record);
-    temp_input.read(opts.filename, opts.record);
+    m_mass_flux_input.read(opts.filename, opts.record);
+    m_temp_input.read(opts.filename, opts.record);
   }
 }
 
@@ -102,41 +102,41 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
 
   if (m_input_model != NULL) {
     m_input_model->update(m_t, m_dt);
-    m_input_model->ice_surface_temperature(temp);
-    m_input_model->ice_surface_mass_flux(mass_flux);
+    m_input_model->ice_surface_temperature(m_temp);
+    m_input_model->ice_surface_mass_flux(m_mass_flux);
 
     // if we are at the beginning of the run...
     if (m_t < m_grid->ctx()->time()->start() + 1) { // this is goofy, but time-steps are
                                       // usually longer than 1 second, so it
                                       // should work
-      temp_0.copy_from(temp);
-      mass_flux_0.copy_from(mass_flux);
+      m_temp_0.copy_from(m_temp);
+      m_mass_flux_0.copy_from(m_mass_flux);
     }
   }
 
   IceModelVec::AccessList list;
-  list.add(mass_flux);
-  list.add(mass_flux_0);
-  list.add(mass_flux_input);
+  list.add(m_mass_flux);
+  list.add(m_mass_flux_0);
+  list.add(m_mass_flux_input);
 
-  list.add(temp);
-  list.add(temp_0);
-  list.add(temp_input);
+  list.add(m_temp);
+  list.add(m_temp_0);
+  list.add(m_temp_input);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);
-    temp(i, j)      = temp(i, j) - temp_0(i, j) + temp_input(i, j);
+    m_mass_flux(i, j) = m_mass_flux(i, j) - m_mass_flux_0(i, j) + m_mass_flux_input(i, j);
+    m_temp(i, j)      = m_temp(i, j) - m_temp_0(i, j) + m_temp_input(i, j);
   }
 }
 
 void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  result.copy_from(mass_flux);
+  result.copy_from(m_mass_flux);
 }
 
 void StuffAsAnomaly::ice_surface_temperature_impl(IceModelVec2S &result) {
-  result.copy_from(temp);
+  result.copy_from(m_temp);
 }
 
 void StuffAsAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
@@ -153,11 +153,11 @@ void StuffAsAnomaly::define_variables_impl(const std::set<std::string> &vars_inp
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {
-    temp.define(nc, nctype);
+    m_temp.define(nc, nctype);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    mass_flux.define(nc, nctype);
+    m_mass_flux.define(nc, nctype);
   }
 
   // ensure that no one overwrites these two
@@ -173,11 +173,11 @@ void StuffAsAnomaly::write_variables_impl(const std::set<std::string> &vars_inpu
   std::set<std::string> vars = vars_input;
 
   if (set_contains(vars, "ice_surface_temp")) {
-    temp.write(nc);
+    m_temp.write(nc);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    mass_flux.write(nc);
+    m_mass_flux.write(nc);
   }
 
   // ensure that no one overwrites these two

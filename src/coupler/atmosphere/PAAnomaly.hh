@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,28 +32,22 @@ public:
   Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~Anomaly();
 
-  virtual void init();
-
-  virtual void mean_precipitation(IceModelVec2S &result);
-  virtual void mean_annual_temp(IceModelVec2S &result); 
-  virtual void temp_snapshot(IceModelVec2S &result);
-
-  virtual void init_timeseries(const std::vector<double> &ts);
-  virtual void begin_pointwise_access();
-  virtual void end_pointwise_access();
-  virtual void temp_time_series(int i, int j, std::vector<double> &values);
-  virtual void precip_time_series(int i, int j, std::vector<double> &values);
-
 protected:
+  virtual void init_impl();
+
+  virtual void mean_precipitation_impl(IceModelVec2S &result);
+  virtual void mean_annual_temp_impl(IceModelVec2S &result);
+
+  virtual void init_timeseries_impl(const std::vector<double> &ts);
+  virtual void begin_pointwise_access_impl();
+  virtual void end_pointwise_access_impl();
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
+
   virtual void update_impl(double my_t, double my_dt);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
 protected:
-  std::vector<double> ts_mod, ts_values;
-  SpatialVariableMetadata air_temp, precipitation;
-  IceModelVec2T *air_temp_anomaly, *precipitation_anomaly;
+  std::vector<double> m_ts_mod, m_ts_values;
+  IceModelVec2T *m_air_temp_anomaly, *m_precipitation_anomaly;
   std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 };
 

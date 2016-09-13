@@ -28,8 +28,8 @@ namespace ocean {
 
 Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
   : PScalarForcing<OceanModel,OceanModifier>(g, in),
-    shelfbmassflux(m_sys, "shelfbmassflux"),
-    shelfbtemp(m_sys, "shelfbtemp") {
+    m_shelfbmassflux(m_sys, "effective_shelf_base_mass_flux"),
+    m_shelfbtemp(m_sys, "effective_shelf_base_temperature") {
 
   m_option_prefix = "-ocean_delta_mass_flux";
   m_offset_name   = "delta_mass_flux";
@@ -41,16 +41,16 @@ Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, OceanModel* in)
   m_offset->metadata().set_string("long_name",
                                 "ice-shelf-base mass flux offsets");
 
-  shelfbmassflux.set_string("pism_intent", "climate_state");
-  shelfbmassflux.set_string("long_name",
+  m_shelfbmassflux.set_string("pism_intent", "climate_state");
+  m_shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_string("units", "kg m-2 second-1");
-  shelfbmassflux.set_string("glaciological_units", "kg m-2 year-1");
+  m_shelfbmassflux.set_string("units", "kg m-2 second-1");
+  m_shelfbmassflux.set_string("glaciological_units", "kg m-2 year-1");
 
-  shelfbtemp.set_string("pism_intent", "climate_state");
-  shelfbtemp.set_string("long_name",
+  m_shelfbtemp.set_string("pism_intent", "climate_state");
+  m_shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
-  shelfbtemp.set_string("units", "Kelvin");
+  m_shelfbtemp.set_string("units", "Kelvin");
 }
 
 Delta_SMB::~Delta_SMB() {
@@ -81,8 +81,8 @@ void Delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
 void Delta_SMB::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   m_input_model->add_vars_to_output(keyword, result);
 
-  result.insert("shelfbtemp");
-  result.insert("shelfbmassflux");
+  result.insert(m_shelfbtemp.get_name());
+  result.insert(m_shelfbmassflux.get_name());
 }
 
 void Delta_SMB::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
@@ -90,14 +90,14 @@ void Delta_SMB::define_variables_impl(const std::set<std::string> &vars_input, c
   std::string order = m_config->get_string("output_variable_order");
   std::set<std::string> vars = vars_input;
 
-  if (set_contains(vars, "shelfbtemp")) {
-    io::define_spatial_variable(shelfbtemp, *m_grid, nc, nctype, order, true);
-    vars.erase("shelfbtemp");
+  if (set_contains(vars, m_shelfbtemp)) {
+    io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);
+    vars.erase(m_shelfbtemp.get_name());
   }
 
-  if (set_contains(vars, "shelfbmassflux")) {
-    io::define_spatial_variable(shelfbmassflux, *m_grid, nc, nctype, order, true);
-    vars.erase("shelfbmassflux");
+  if (set_contains(vars, m_shelfbmassflux)) {
+    io::define_spatial_variable(m_shelfbmassflux, *m_grid, nc, nctype, order, true);
+    vars.erase(m_shelfbmassflux.get_name());
   }
 
   m_input_model->define_variables(vars, nc, nctype);
@@ -107,27 +107,27 @@ void Delta_SMB::write_variables_impl(const std::set<std::string> &vars_input, co
   std::set<std::string> vars = vars_input;
   IceModelVec2S tmp;
 
-  if (set_contains(vars, "shelfbtemp")) {
+  if (set_contains(vars, m_shelfbtemp)) {
     if (!tmp.was_created()) {
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbtemp;
+    tmp.metadata() = m_shelfbtemp;
     shelf_base_temperature(tmp);
     tmp.write(nc);
-    vars.erase("shelfbtemp");
+    vars.erase(m_shelfbtemp.get_name());
   }
 
-  if (set_contains(vars, "shelfbmassflux")) {
+  if (set_contains(vars, m_shelfbmassflux)) {
     if (!tmp.was_created()) {
       tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
     }
 
-    tmp.metadata() = shelfbmassflux;
+    tmp.metadata() = m_shelfbmassflux;
     tmp.write_in_glaciological_units = true;
     shelf_base_mass_flux(tmp);
     tmp.write(nc);
-    vars.erase("shelfbmassflux");
+    vars.erase(m_shelfbmassflux.get_name());
   }
 
   m_input_model->write_variables(vars, nc);

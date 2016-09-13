@@ -27,10 +27,7 @@ namespace pism {
 namespace atmosphere {
 
 Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
-  : PScalarForcing<AtmosphereModel,PAModifier>(g, in),
-    air_temp(m_sys, "air_temp"),
-    precipitation(m_sys, "precipitation")
-{
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, in) {
   m_offset = NULL;
 
   m_option_prefix = "-atmosphere_delta_P";
@@ -40,16 +37,6 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
   m_offset->metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_offset->metadata().set_string("long_name", "precipitation offsets");
   m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-
-
-  air_temp.set_string("pism_intent", "diagnostic");
-  air_temp.set_string("long_name", "near-surface air temperature");
-  air_temp.set_string("units", "K");
-
-  precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name", "precipitation rate");
-  precipitation.set_string("units", "kg m-2 second-1");
-  precipitation.set_string("glaciological_units", "kg m-2 year-1");
 }
 
 Delta_P::~Delta_P()
@@ -57,14 +44,13 @@ Delta_P::~Delta_P()
   // empty
 }
 
-void Delta_P::init() {
+void Delta_P::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_input_model->init();
 
-  m_log->message(2,
-             "* Initializing precipitation forcing using scalar offsets...\n");
+  m_log->message(2, "* Initializing precipitation forcing using scalar offsets...\n");
 
   init_internal();
 }
@@ -74,7 +60,7 @@ MaxTimestep Delta_P::max_timestep_impl(double t) {
   return MaxTimestep();
 }
 
-void Delta_P::init_timeseries(const std::vector<double> &ts) {
+void Delta_P::init_timeseries_impl(const std::vector<double> &ts) {
   PAModifier::init_timeseries(ts);
 
   m_offset_values.resize(m_ts_times.size());
@@ -83,79 +69,17 @@ void Delta_P::init_timeseries(const std::vector<double> &ts) {
   }
 }
 
-
-
-void Delta_P::mean_precipitation(IceModelVec2S &result) {
+void Delta_P::mean_precipitation_impl(IceModelVec2S &result) {
   m_input_model->mean_precipitation(result);
   offset_data(result);
 }
 
-void Delta_P::precip_time_series(int i, int j, std::vector<double> &result) {
+void Delta_P::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   m_input_model->precip_time_series(i, j, result);
   
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] += m_offset_values[k];
   }
-}
-
-void Delta_P::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  m_input_model->add_vars_to_output(keyword, result);
-
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
-    result.insert("air_temp");
-    result.insert("precipitation");
-  }
-}
-
-
-void Delta_P::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
-                                            IO_Type nctype) {
-  std::set<std::string> vars = vars_input;
-  std::string order = m_config->get_string("output_variable_order");
-
-  if (set_contains(vars, "air_temp")) {
-    io::define_spatial_variable(air_temp, *m_grid, nc, nctype, order, false);
-    vars.erase("air_temp");
-  }
-
-  if (set_contains(vars, "precipitation")) {
-    io::define_spatial_variable(precipitation, *m_grid, nc, nctype, order, true);
-    vars.erase("precipitation");
-  }
-
-  m_input_model->define_variables(vars, nc, nctype);
-}
-
-
-void Delta_P::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
-  std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, "air_temp")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
-    tmp.metadata() = air_temp;
-
-    mean_annual_temp(tmp);
-
-    tmp.write(nc);
-
-    vars.erase("air_temp");
-  }
-
-  if (set_contains(vars, "precipitation")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-    tmp.metadata() = precipitation;
-
-    mean_precipitation(tmp);
-
-    tmp.write_in_glaciological_units = true;
-    tmp.write(nc);
-
-    vars.erase("precipitation");
-  }
-
-  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace atmosphere

@@ -33,16 +33,16 @@ namespace pism {
 namespace atmosphere {
 
 CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr g)
-  : YearlyCycle(g), A(NULL) {
+  : YearlyCycle(g), m_A(NULL) {
 }
 
 CosineYearlyCycle::~CosineYearlyCycle() {
-  if (A != NULL) {
-    delete A;
+  if (m_A != NULL) {
+    delete m_A;
   }
 }
 
-void CosineYearlyCycle::init() {
+void CosineYearlyCycle::init_impl() {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -70,12 +70,12 @@ void CosineYearlyCycle::init() {
 
   if (scaling_file.is_set()) {
 
-    if (A == NULL) {
-      A = new Timeseries(*m_grid, "amplitude_scaling",
+    if (m_A == NULL) {
+      m_A = new Timeseries(*m_grid, "amplitude_scaling",
                          m_config->get_string("time_dimension_name"));
-      A->metadata().set_string("units", "1");
-      A->metadata().set_string("long_name", "cosine yearly cycle amplitude scaling");
-      A->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+      m_A->metadata().set_string("units", "1");
+      m_A->metadata().set_string("long_name", "cosine yearly cycle amplitude scaling");
+      m_A->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
     }
 
     m_log->message(2,
@@ -85,15 +85,15 @@ void CosineYearlyCycle::init() {
     PIO nc(m_grid->com, "netcdf3");    // OK to use netcdf3
     nc.open(scaling_file, PISM_READONLY);
     {
-      A->read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
+      m_A->read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
     }
     nc.close();
 
   } else {
-    if (A != NULL) {
-      delete A;
+    if (m_A != NULL) {
+      delete m_A;
     }
-    A = NULL;
+    m_A = NULL;
   }
 }
 
@@ -107,35 +107,13 @@ void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 }
 
-void CosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
-  const double
-    julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
-    T                = m_grid->ctx()->time()->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
-    cos_T            = cos(2.0 * M_PI * T);
+void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) {
 
-  double scaling = 1.0;
-  if (A != NULL) {
-    scaling = (*A)(m_t + 0.5 * m_dt);
-  }
+  YearlyCycle::init_timeseries_impl(ts);
 
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(m_air_temp_mean_annual);
-  list.add(m_air_temp_mean_july);
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * scaling * cos_T;
-  }
-}
-
-void CosineYearlyCycle::init_timeseries(const std::vector<double> &ts) {
-
-  YearlyCycle::init_timeseries(ts);
-
-  if (A != NULL) {
+  if (m_A != NULL) {
     for (unsigned int k = 0; k < ts.size(); ++k) {
-      m_cosine_cycle[k] *= (*A)(ts[k]);
+      m_cosine_cycle[k] *= (*m_A)(ts[k]);
     }
   }
 }

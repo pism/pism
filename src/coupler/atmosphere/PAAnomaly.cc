@@ -28,44 +28,32 @@ namespace pism {
 namespace atmosphere {
 
 Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
-  : PGivenClimate<PAModifier,AtmosphereModel>(g, in),
-    air_temp(m_sys, "air_temp"),
-    precipitation(m_sys, "precipitation")
-{
+  : PGivenClimate<PAModifier,AtmosphereModel>(g, in) {
   m_option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor
-  air_temp_anomaly      = new IceModelVec2T;
-  precipitation_anomaly = new IceModelVec2T;
+  m_air_temp_anomaly      = new IceModelVec2T;
+  m_precipitation_anomaly = new IceModelVec2T;
 
-  m_fields["air_temp_anomaly"]      = air_temp_anomaly;
-  m_fields["precipitation_anomaly"] = precipitation_anomaly;
+  m_fields["air_temp_anomaly"]      = m_air_temp_anomaly;
+  m_fields["precipitation_anomaly"] = m_precipitation_anomaly;
 
   process_options();
 
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
-  air_temp_anomaly->create(m_grid, "air_temp_anomaly");
-  air_temp_anomaly->set_attrs("climate_forcing",
+  m_air_temp_anomaly->create(m_grid, "air_temp_anomaly");
+  m_air_temp_anomaly->set_attrs("climate_forcing",
                               "anomaly of the near-surface air temperature",
                               "Kelvin", "");
 
-  precipitation_anomaly->create(m_grid, "precipitation_anomaly");
-  precipitation_anomaly->set_attrs("climate_forcing",
+  m_precipitation_anomaly->create(m_grid, "precipitation_anomaly");
+  m_precipitation_anomaly->set_attrs("climate_forcing",
                                    "anomaly of the ice-equivalent precipitation rate",
                                    "kg m-2 second-1", "");
-  precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  precipitation_anomaly->write_in_glaciological_units = true;
-
-  air_temp.set_string("pism_intent", "diagnostic");
-  air_temp.set_string("long_name", "near-surface air temperature");
-  air_temp.set_string("units", "K");
-
-  precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
-  precipitation.set_string("units", "kg m-2 second-1");
-  precipitation.set_string("glaciological_units", "kg m-2 year-1");
+  m_precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_precipitation_anomaly->write_in_glaciological_units = true;
 }
 
 Anomaly::~Anomaly()
@@ -73,7 +61,7 @@ Anomaly::~Anomaly()
   // empty
 }
 
-void Anomaly::init() {
+void Anomaly::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_input_model->init();
@@ -85,140 +73,73 @@ void Anomaly::init() {
              "    reading anomalies from %s ...\n",
              m_filename.c_str());
 
-  air_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
-  precipitation_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_air_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_precipitation_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
 }
 
 void Anomaly::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
-  precipitation_anomaly->average(m_t, m_dt);
-  air_temp_anomaly->average(m_t, m_dt);
+  m_precipitation_anomaly->average(m_t, m_dt);
+  m_air_temp_anomaly->average(m_t, m_dt);
 }
 
 
-void Anomaly::mean_precipitation(IceModelVec2S &result) {
+void Anomaly::mean_precipitation_impl(IceModelVec2S &result) {
   m_input_model->mean_precipitation(result);
 
-  result.add(1.0, *precipitation_anomaly);
+  result.add(1.0, *m_precipitation_anomaly);
 }
 
-void Anomaly::mean_annual_temp(IceModelVec2S &result) {
+void Anomaly::mean_annual_temp_impl(IceModelVec2S &result) {
   m_input_model->mean_annual_temp(result);
 
-  result.add(1.0, *air_temp_anomaly);
+  result.add(1.0, *m_air_temp_anomaly);
 }
 
-void Anomaly::temp_snapshot(IceModelVec2S &result) {
-  m_input_model->temp_snapshot(result);
-
-  result.add(1.0, *air_temp_anomaly);
-}
-
-
-void Anomaly::begin_pointwise_access() {
+void Anomaly::begin_pointwise_access_impl() {
   m_input_model->begin_pointwise_access();
-  air_temp_anomaly->begin_access();
-  precipitation_anomaly->begin_access();
+  m_air_temp_anomaly->begin_access();
+  m_precipitation_anomaly->begin_access();
 }
 
-void Anomaly::end_pointwise_access() {
+void Anomaly::end_pointwise_access_impl() {
   m_input_model->end_pointwise_access();
-  precipitation_anomaly->end_access();
-  air_temp_anomaly->end_access();
+  m_precipitation_anomaly->end_access();
+  m_air_temp_anomaly->end_access();
 }
 
-void Anomaly::init_timeseries(const std::vector<double> &ts) {
+void Anomaly::init_timeseries_impl(const std::vector<double> &ts) {
   m_input_model->init_timeseries(ts);
 
-  air_temp_anomaly->init_interpolation(ts);
+  m_air_temp_anomaly->init_interpolation(ts);
 
-  precipitation_anomaly->init_interpolation(ts);
+  m_precipitation_anomaly->init_interpolation(ts);
 
   m_ts_times = ts;
 }
 
-void Anomaly::temp_time_series(int i, int j, std::vector<double> &result) {
+void Anomaly::temp_time_series_impl(int i, int j, std::vector<double> &result) {
   m_input_model->temp_time_series(i, j, result);
 
   m_temp_anomaly.reserve(m_ts_times.size());
-  air_temp_anomaly->interp(i, j, m_temp_anomaly);
+  m_air_temp_anomaly->interp(i, j, m_temp_anomaly);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] += m_temp_anomaly[k];
   }
 }
 
-void Anomaly::precip_time_series(int i, int j, std::vector<double> &result) {
+void Anomaly::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   m_input_model->precip_time_series(i, j, result);
 
   m_mass_flux_anomaly.reserve(m_ts_times.size());
-  precipitation_anomaly->interp(i, j, m_mass_flux_anomaly);
+  m_precipitation_anomaly->interp(i, j, m_mass_flux_anomaly);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] += m_mass_flux_anomaly[k];
   }
 }
-
-void Anomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  m_input_model->add_vars_to_output(keyword, result);
-
-  if (keyword == "medium" || keyword == "big" || keyword == "2dbig") {
-    result.insert("air_temp");
-    result.insert("precipitation");
-  }
-}
-
-void Anomaly::define_variables_impl(const std::set<std::string> &vars_input, const PIO &nc,
-                                           IO_Type nctype) {
-  std::set<std::string> vars = vars_input;
-  std::string order = m_config->get_string("output_variable_order");
-
-  if (set_contains(vars, "air_temp")) {
-    io::define_spatial_variable(air_temp, *m_grid, nc, nctype, order, false);
-    vars.erase("air_temp");
-  }
-
-  if (set_contains(vars, "precipitation")) {
-    io::define_spatial_variable(precipitation, *m_grid, nc, nctype, order, true);
-    vars.erase("precipitation");
-  }
-
-  m_input_model->define_variables(vars, nc, nctype);
-}
-
-
-void Anomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
-  std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, "air_temp")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "air_temp", WITHOUT_GHOSTS);
-    tmp.metadata() = air_temp;
-
-    mean_annual_temp(tmp);
-
-    tmp.write(nc);
-
-    vars.erase("air_temp");
-  }
-
-  if (set_contains(vars, "precipitation")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "precipitation", WITHOUT_GHOSTS);
-    tmp.metadata() = precipitation;
-
-    mean_precipitation(tmp);
-
-    tmp.write_in_glaciological_units = true;
-    tmp.write(nc);
-
-    vars.erase("precipitation");
-  }
-
-  m_input_model->write_variables(vars, nc);
-}
-
 
 } // end of namespace atmosphere
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,28 +31,21 @@ public:
   LapseRates(IceGrid::ConstPtr g, AtmosphereModel* in);
   virtual ~LapseRates();
 
-  virtual void init();
-
-  virtual void mean_precipitation(IceModelVec2S &result);
-  virtual void mean_annual_temp(IceModelVec2S &result);
-
-  virtual void begin_pointwise_access();
-  virtual void end_pointwise_access();
-
-  virtual void init_timeseries(const std::vector<double> &ts);
-  virtual void precip_time_series(int i, int j, std::vector<double> &result);
-  virtual void temp_time_series(int i, int j, std::vector<double> &result);
-
-  virtual void temp_snapshot(IceModelVec2S &result);
-
 protected:
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype);
+  virtual void init_impl();
+
+  virtual void mean_precipitation_impl(IceModelVec2S &result);
+  virtual void mean_annual_temp_impl(IceModelVec2S &result);
+
+  virtual void begin_pointwise_access_impl();
+  virtual void end_pointwise_access_impl();
+
+  virtual void init_timeseries_impl(const std::vector<double> &ts);
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result);
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result);
+
 protected:
   double m_precip_lapse_rate;
-  SpatialVariableMetadata m_precipitation, m_air_temp;
   const IceModelVec2S *m_surface;
 };
 
