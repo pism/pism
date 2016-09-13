@@ -217,7 +217,7 @@ void IceCompModel::allocate_stressbalance() {
     // FlowLaw for verification (we need to have the right flow law for
     // errors to make sense)
 
-    rheology::FlowLaw *ice = m_stress_balance->get_ssb_modifier()->flow_law();
+    const rheology::FlowLaw *ice = m_stress_balance->modifier()->flow_law();
 
     if (not FlowLawIsPatersonBuddCold(ice, *m_config, EC)) {
       m_log->message(1,
@@ -654,7 +654,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
             H0 = 600.0,
             v0 = convert(m_sys, 300.0, "m year-1", "m second-1"),
             Q0 = H0 * v0,
-            B0 = m_stress_balance->get_stressbalance()->flow_law()->hardness(0, 0),
+            B0 = m_stress_balance->shallow()->flow_law()->hardness(0, 0),
             C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
 
           Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
@@ -807,7 +807,7 @@ void IceCompModel::reportErrors() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  rheology::FlowLaw* flow_law = m_stress_balance->get_ssb_modifier()->flow_law();
+  const rheology::FlowLaw* flow_law = m_stress_balance->modifier()->flow_law();
   if ((testname == 'F' or testname == 'G') and
       testname != 'V' and
       not FlowLawIsPatersonBuddCold(flow_law, *m_config, EC)) {

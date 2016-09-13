@@ -912,8 +912,13 @@ void IceModel::init() {
 }
 
 // FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
-stressbalance::StressBalance* IceModel::get_stress_balance() {
+const stressbalance::StressBalance* IceModel::stress_balance() const {
   return this->m_stress_balance;
 }
+
+const ocean::OceanModel* IceModel::ocean_model() const {
+  return this->m_ocean;
+}
+
 
 } // end of namespace pism

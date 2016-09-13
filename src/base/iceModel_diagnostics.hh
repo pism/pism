@@ -555,6 +555,14 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
+/*! @brief Sea-level adjusted bed topography (zero at sea level). */
+class IceModel_topg_sl_adjusted : public Diag<IceModel>
+{
+public:
+  IceModel_topg_sl_adjusted(IceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
 
 } // end of namespace pism
 

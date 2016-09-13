@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -52,7 +52,7 @@ double PatersonBuddCold::flow_from_temp(double stress, double temp,
 
 
 // Rather than make this part of the base class, we just check at some reference values.
-bool FlowLawIsPatersonBuddCold(FlowLaw *flow_law, const Config &config,
+bool FlowLawIsPatersonBuddCold(const FlowLaw *flow_law, const Config &config,
                                EnthalpyConverter::Ptr EC) {
   static const struct {double s, E, p, gs;} v[] = {
     {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};

@@ -340,9 +340,9 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
   const double fillval = m_config->get_double("fill_value");
   double *Eij; // columns of enthalpy values
 
-  const rheology::FlowLaw *flow_law = model->get_stress_balance()->get_stressbalance()->flow_law();
+  const rheology::FlowLaw *flow_law = model->stress_balance()->shallow()->flow_law();
   if (flow_law == NULL) {
-    flow_law = model->get_stress_balance()->get_ssb_modifier()->flow_law();
+    flow_law = model->stress_balance()->modifier()->flow_law();
     if (flow_law == NULL) {
       throw RuntimeError("Can't compute vertically-averaged hardness: no flow law is used.");
     }
@@ -1355,7 +1355,7 @@ IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m)
 }
 
 void IceModel_max_diffusivity::update(double a, double b) {
-  double value = model->get_stress_balance()->max_diffusivity();
+  double value = model->stress_balance()->max_diffusivity();
 
   m_ts->append(value, a, b);
 }
@@ -2455,5 +2455,28 @@ IceModelVec::Ptr IceModel_ice_mass::compute_impl() {
 
   return result;
 }
+
+IceModel_topg_sl_adjusted::IceModel_topg_sl_adjusted(IceModel *m)
+  : Diag<IceModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "topg_sl_adjusted"));
+
+  set_attrs("sea-level adjusted bed topography (zero is at sea level)", "",
+            "meters", "meters", 0);
+}
+
+IceModelVec::Ptr IceModel_topg_sl_adjusted::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "topg_sl_adjusted", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  // FIXME: add the implementation
+
+  return result;
+}
+
+
 
 } // end of namespace pism

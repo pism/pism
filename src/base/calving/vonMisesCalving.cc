@@ -86,7 +86,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
   const double *z = &m_grid->z()[0];
   const rheology::FlowLaw*
-    flow_law = m_stress_balance->get_stressbalance()->flow_law();
+    flow_law = m_stress_balance->shallow()->flow_law();
 
   const double ssa_n = flow_law->exponent();
 

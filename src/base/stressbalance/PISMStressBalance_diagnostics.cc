@@ -1177,7 +1177,7 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() {
   const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  const rheology::FlowLaw* flow_law = model->get_stressbalance()->flow_law();
+  const rheology::FlowLaw* flow_law = model->shallow()->flow_law();
 
   const double *z = &m_grid->z()[0];
   const double ssa_n = flow_law->exponent();

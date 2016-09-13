@@ -116,7 +116,7 @@ public:
 
   void set_initial_guess(const IceModelVec2V &guess);
 
-  virtual std::string stdout_report();
+  virtual std::string stdout_report() const;
 
   virtual void compute_driving_stress(IceModelVec2V &taud);
 

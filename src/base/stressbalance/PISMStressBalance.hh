@@ -73,7 +73,7 @@ public:
   const IceModelVec2Stag& diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  double max_diffusivity();
+  double max_diffusivity() const;
 
   // for the energy/age time step:
 
@@ -100,13 +100,13 @@ public:
                            IceModelVec2 &result);
 
   //! \brief Produce a report string for the standard output.
-  std::string stdout_report();
+  std::string stdout_report() const;
 
-  //! \brief Returns a pointer to a stress balance solver implementation.
-  ShallowStressBalance* get_stressbalance();
+  //! \brief Returns a pointer to a shallow stress balance solver implementation.
+  const ShallowStressBalance* shallow() const;
 
   //! \brief Returns a pointer to a stress balance modifier implementation.
-  SSB_Modifier* get_ssb_modifier();
+  const SSB_Modifier* modifier() const;
 protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict);

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -47,17 +47,17 @@ public:
   virtual const IceModelVec2Stag& diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual double max_diffusivity();
+  virtual double max_diffusivity() const;
 
-  const IceModelVec3& velocity_u();
+  const IceModelVec3& velocity_u() const;
 
-  const IceModelVec3& velocity_v();
+  const IceModelVec3& velocity_v() const;
 
-  const IceModelVec3& volumetric_strain_heating();
+  const IceModelVec3& volumetric_strain_heating() const;
 
-  virtual std::string stdout_report();
+  virtual std::string stdout_report() const;
 
-  rheology::FlowLaw* flow_law();
+  const rheology::FlowLaw* flow_law() const;
 protected:
   rheology::FlowLaw *m_flow_law;
   EnthalpyConverter::Ptr m_EC;

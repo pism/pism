@@ -481,7 +481,8 @@ protected:
   stressbalance::StressBalance *m_stress_balance;
 
 public:
-  stressbalance::StressBalance* get_stress_balance();
+  const stressbalance::StressBalance* stress_balance() const;
+  const ocean::OceanModel* ocean_model() const;
 protected:
 
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;

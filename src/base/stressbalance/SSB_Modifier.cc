@@ -68,27 +68,27 @@ const IceModelVec2Stag& SSB_Modifier::diffusive_flux() {
 }
 
 //! \brief Get the max diffusivity (for the adaptive time-stepping).
-double SSB_Modifier::max_diffusivity() {
+double SSB_Modifier::max_diffusivity() const {
   return m_D_max;
 }
 
-const IceModelVec3& SSB_Modifier::velocity_u() {
+const IceModelVec3& SSB_Modifier::velocity_u() const {
   return m_u;
 }
 
-const IceModelVec3& SSB_Modifier::velocity_v() {
+const IceModelVec3& SSB_Modifier::velocity_v() const {
   return m_v;
 }
 
-const IceModelVec3& SSB_Modifier::volumetric_strain_heating() {
+const IceModelVec3& SSB_Modifier::volumetric_strain_heating() const {
   return m_strain_heating;
 }
 
-std::string SSB_Modifier::stdout_report() {
+std::string SSB_Modifier::stdout_report() const {
   return "";
 }
 
-rheology::FlowLaw* SSB_Modifier::flow_law() {
+const rheology::FlowLaw* SSB_Modifier::flow_law() const {
   return m_flow_law;
 }
 

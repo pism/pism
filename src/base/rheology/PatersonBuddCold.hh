@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,7 @@ protected:
                         double , double) const;
 };
 
-bool FlowLawIsPatersonBuddCold(FlowLaw *, const Config &, EnthalpyConverter::Ptr);
+bool FlowLawIsPatersonBuddCold(const FlowLaw *, const Config &, EnthalpyConverter::Ptr);
 
 } // end of namespace rheology
 } // end of namespace pism

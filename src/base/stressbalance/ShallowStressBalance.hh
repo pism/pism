@@ -71,13 +71,13 @@ public:
   // helpers:
 
   //! \brief Produce a report string for the standard output.
-  virtual std::string stdout_report();
+  virtual std::string stdout_report() const;
 
-  const rheology::FlowLaw* flow_law();
+  const rheology::FlowLaw* flow_law() const;
 
   EnthalpyConverter::Ptr enthalpy_converter();
 
-  const IceBasalResistancePlasticLaw* sliding_law();
+  const IceBasalResistancePlasticLaw* sliding_law() const;
 protected:
   virtual void init_impl();
   

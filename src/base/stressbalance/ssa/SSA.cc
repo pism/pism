@@ -370,7 +370,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) {
   }
 }
 
-std::string SSA::stdout_report() {
+std::string SSA::stdout_report() const {
   return m_stdout_ssa;
 }
 

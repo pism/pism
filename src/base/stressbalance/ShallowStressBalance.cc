@@ -83,11 +83,11 @@ void ShallowStressBalance::init_impl() {
   // empty
 }
 
-std::string ShallowStressBalance::stdout_report() {
+std::string ShallowStressBalance::stdout_report() const {
   return "";
 }
 
-const rheology::FlowLaw* ShallowStressBalance::flow_law() {
+const rheology::FlowLaw* ShallowStressBalance::flow_law() const {
   return m_flow_law;
 }
 
@@ -95,7 +95,7 @@ EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() {
   return m_EC;
 }
 
-const IceBasalResistancePlasticLaw* ShallowStressBalance::sliding_law() {
+const IceBasalResistancePlasticLaw* ShallowStressBalance::sliding_law() const {
   return m_basal_sliding_law;
 }
 

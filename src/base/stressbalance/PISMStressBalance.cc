@@ -121,7 +121,7 @@ const IceModelVec2Stag& StressBalance::diffusive_flux() {
   return m_modifier->diffusive_flux();
 }
 
-double StressBalance::max_diffusivity() {
+double StressBalance::max_diffusivity() const {
   return m_modifier->max_diffusivity();
 }
 
@@ -559,15 +559,15 @@ void StressBalance::compute_volumetric_strain_heating() {
   loop.check();
 }
 
-std::string StressBalance::stdout_report() {
+std::string StressBalance::stdout_report() const {
   return m_shallow_stress_balance->stdout_report() + m_modifier->stdout_report();
 }
 
-ShallowStressBalance* StressBalance::get_stressbalance() {
+const ShallowStressBalance* StressBalance::shallow() const {
   return m_shallow_stress_balance;
 }
 
-SSB_Modifier* StressBalance::get_ssb_modifier() {
+const SSB_Modifier* StressBalance::modifier() const {
   return m_modifier;
 }
 
