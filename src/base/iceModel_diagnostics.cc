@@ -85,6 +85,7 @@ void IceModel::init_diagnostics() {
   m_diagnostics["basal_mass_balance_average"]   = Diagnostic::Ptr(new IceModel_basal_mass_balance_average(this));
   m_diagnostics["height_above_flotation"]   = Diagnostic::Ptr(new IceModel_height_above_flotation(this));
   m_diagnostics["ice_mass"]   = Diagnostic::Ptr(new IceModel_ice_mass(this));
+  m_diagnostics["topg_sl_adjusted"]   = Diagnostic::Ptr(new IceModel_topg_sl_adjusted(this));
   
 #if (PISM_USE_PROJ4==1)
   if (m_output_global_attributes.has_attribute("proj4")) {
@@ -2472,11 +2473,11 @@ IceModelVec::Ptr IceModel_topg_sl_adjusted::compute_impl() {
   result->create(m_grid, "topg_sl_adjusted", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  // FIXME: add the implementation
+  result->copy_from(model->bed_model()->bed_elevation());
+  // result = topg - sea_level
+  result->shift(-model->ocean_model()->sea_level_elevation());
 
   return result;
 }
-
-
 
 } // end of namespace pism
