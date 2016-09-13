@@ -920,5 +920,9 @@ const ocean::OceanModel* IceModel::ocean_model() const {
   return this->m_ocean;
 }
 
+const bed::BedDef* IceModel:: bed_model() const {
+  return m_beddef;
+}
+
 
 } // end of namespace pism

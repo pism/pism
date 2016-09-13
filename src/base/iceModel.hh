@@ -483,6 +483,7 @@ protected:
 public:
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
+  const bed::BedDef* bed_model() const;
 protected:
 
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
