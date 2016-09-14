@@ -47,7 +47,7 @@ CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_
   m_surface_topography.create(m_grid, "m_surface_topography", WITH_GHOSTS, 1);
   m_surface_topography.set_attrs("internal", "surface topography", "m", "surface_altitude");
 
-  m_restrict_timestep = m_config->get_boolean("calving.eigen_calving.use_cfl");
+  m_restrict_timestep = m_config->get_boolean("calving.front_retreat.use_cfl");
 }
 
 CalvingFrontRetreat::~CalvingFrontRetreat() {

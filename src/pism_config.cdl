@@ -100,10 +100,10 @@ netcdf pism_config {
     pism_config:geometry.remove_icebergs = "no";
     pism_config:geometry.remove_icebergs_doc = "identify and kill detached ice-shelf areas";
 
-    pism_config:calving.eigen_calving.use_cfl_type = "boolean";
-    pism_config:calving.eigen_calving.use_cfl_option = "cfl_eigen_calving";
-    pism_config:calving.eigen_calving.use_cfl = "false";
-    pism_config:calving.eigen_calving.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
+    pism_config:calving.front_retreat.use_cfl_type = "boolean";
+    pism_config:calving.front_retreat.use_cfl_option = "calving_cfl";
+    pism_config:calving.front_retreat.use_cfl = "false";
+    pism_config:calving.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
 
     pism_config:calving.methods_type = "string";
     pism_config:calving.methods_option = "calving";

@@ -30,6 +30,7 @@ class StressBalance;
 
 namespace calving {
 
+/*! @brief An abstract class containing fields used by all stress-based calving methods. */
 class StressCalving : public CalvingFrontRetreat {
 public:
   StressCalving(IceGrid::ConstPtr g, stressbalance::StressBalance *stress_balance,
