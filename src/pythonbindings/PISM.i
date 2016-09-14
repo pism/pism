@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2016 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -273,7 +273,7 @@ namespace std {
 %extend PISMVars
 {
   %pythoncode
-  {
+  %{
     def __init__(self,*args):
       this = _cpp.new_PISMVars()
       try: self.this.append(this)
@@ -287,7 +287,7 @@ namespace std {
           # assume its a list of vecs
           for v in args[0]:
             self.add(v)
-  }
+  %}
 }
 
 // There was a collision between the two IceModelVec::regrid methods:
@@ -537,13 +537,13 @@ namespace std {
 %include "stressbalance/ShallowStressBalance.hh"
 %include "SSB_Modifier.hh"
 %template(PISMDiag_SIAFD) PISMDiag<SIAFD>;
-# Swig is confused about SIAFD being concrete.  Changing
-# using PISMComponent_Diag::update;
-# in its interface to 
-# virtual PetscErrorCode update(bool) { return 0; }
-# convinces SWIG that it is concrete.  Is it because the
-# implementation of update comes from a class that is itself abstract?
-# Regardless, we assure SWIG that the class is concrete.
+// Swig is confused about SIAFD being concrete.  Changing
+// using PISMComponent_Diag::update;
+// in its interface to
+// virtual PetscErrorCode update(bool) { return 0; }
+// convinces SWIG that it is concrete.  Is it because the
+// implementation of update comes from a class that is itself abstract?
+// Regardless, we assure SWIG that the class is concrete.
 %feature("notabstract") SIAFD;
 %include "stressbalance/sia/SIAFD.hh"
 
