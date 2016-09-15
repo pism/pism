@@ -90,9 +90,7 @@ void LapseRates::end_pointwise_access_impl() {
 }
 
 void LapseRates::init_timeseries_impl(const std::vector<double> &ts) {
-  m_input_model->init_timeseries(ts);
-
-  m_ts_times = ts;
+  PAModifier::init_timeseries_impl(ts);
 
   m_reference_surface.init_interpolation(ts);
 

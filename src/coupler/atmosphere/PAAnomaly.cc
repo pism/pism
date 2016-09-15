@@ -110,13 +110,11 @@ void Anomaly::end_pointwise_access_impl() {
 }
 
 void Anomaly::init_timeseries_impl(const std::vector<double> &ts) {
-  m_input_model->init_timeseries(ts);
+  PAModifier::init_timeseries_impl(ts);
 
   m_air_temp_anomaly->init_interpolation(ts);
 
   m_precipitation_anomaly->init_interpolation(ts);
-
-  m_ts_times = ts;
 }
 
 void Anomaly::temp_time_series_impl(int i, int j, std::vector<double> &result) {

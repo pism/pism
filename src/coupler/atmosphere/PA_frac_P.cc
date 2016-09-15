@@ -59,7 +59,7 @@ MaxTimestep Frac_P::max_timestep_impl(double t) {
 }
 
 void Frac_P::init_timeseries_impl(const std::vector<double> &ts) {
-  PAModifier::init_timeseries(ts);
+  PAModifier::init_timeseries_impl(ts);
 
   m_offset_values.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {

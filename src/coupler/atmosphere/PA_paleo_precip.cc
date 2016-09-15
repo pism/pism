@@ -62,7 +62,7 @@ MaxTimestep PaleoPrecip::max_timestep_impl(double t) {
 }
 
 void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) {
-  PAModifier::init_timeseries(ts);
+  PAModifier::init_timeseries_impl(ts);
 
   size_t N = ts.size();
 
