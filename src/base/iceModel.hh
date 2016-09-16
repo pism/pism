@@ -76,6 +76,8 @@ class CalvingAtThickness;
 class IcebergRemover;
 }
 
+class FrontalMelt;
+
 namespace energy {
 class BedThermalUnit;
 }
@@ -247,6 +249,7 @@ protected:
   calving::CalvingAtThickness *m_thickness_threshold_calving;
   calving::EigenCalving       *m_eigen_calving;
   calving::vonMisesCalving    *m_vonmises_calving;
+  FrontalMelt                 *m_frontal_melt;
 
   surface::SurfaceModel *m_surface;
   ocean::OceanModel   *m_ocean;

@@ -31,6 +31,7 @@
 #include "base/calving/FloatKill.hh"
 #include "base/calving/IcebergRemover.hh"
 #include "base/calving/OceanKill.hh"
+#include "base/calving/FrontalMelt.hh"
 #include "base/energy/BedThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -830,6 +831,16 @@ void IceModel::init_calving() {
 
     m_vonmises_calving->init();
     methods.erase("vonmises_calving");
+  }
+
+  if (methods.find("frontal_melt") != methods.end()) {
+
+    if (m_frontal_melt == NULL) {
+      m_frontal_melt = new FrontalMelt(m_grid, m_ocean);
+    }
+
+    m_frontal_melt->init();
+    methods.erase("frontal_melt");
   }
 
   if (methods.find("float_kill") != methods.end()) {

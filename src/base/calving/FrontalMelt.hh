@@ -21,12 +21,13 @@
 #define FRONTALMELT_H
 
 #include "CalvingFrontRetreat.hh"
+#include "coupler/PISMOcean.hh"
 
 namespace pism {
 
 class FrontalMelt : public CalvingFrontRetreat {
 public:
-  FrontalMelt(IceGrid::ConstPtr g);
+  FrontalMelt(IceGrid::ConstPtr g, const ocean::OceanModel *ocean_model);
   virtual ~FrontalMelt();
 
   void init();
@@ -42,6 +43,9 @@ protected:
 
   void compute_calving_rate(const IceModelVec2CellType &mask,
                             IceModelVec2S &result);
+
+  const ocean::OceanModel *m_ocean;
+  IceModelVec2S m_shelf_base_mass_flux;
 };
 
 } // end of namespace pism

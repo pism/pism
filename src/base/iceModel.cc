@@ -104,6 +104,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_thickness_threshold_calving = NULL;
   m_eigen_calving               = NULL;
   m_vonmises_calving            = NULL;
+  m_frontal_melt                = NULL;
 
   // initialize maximum |u|,|v|,|w| in ice
   m_max_u_speed = 0;
@@ -173,6 +174,7 @@ IceModel::~IceModel() {
   delete m_thickness_threshold_calving;
   delete m_eigen_calving;
   delete m_vonmises_calving;
+  delete m_frontal_melt;
 }
 
 

@@ -42,6 +42,7 @@
 #include "base/part_grid_threshold_thickness.hh"
 #include "base/calving/EigenCalving.hh"
 #include "base/calving/vonMisesCalving.hh"
+#include "base/calving/FrontalMelt.hh"
 
 namespace pism {
 
@@ -171,6 +172,10 @@ void IceModel::init_diagnostics() {
 
   if (m_vonmises_calving != NULL) {
     m_vonmises_calving->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  }
+
+  if (m_frontal_melt != NULL) {
+    m_frontal_melt->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 }
 
