@@ -64,7 +64,7 @@ YearlyCycle::~YearlyCycle() {
   // empty
 }
 
-//! Allocates memory and reads in the precipitaion data.
+//! Reads in the precipitation data from the input file.
 void YearlyCycle::init_impl() {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
