@@ -258,9 +258,6 @@ install (FILES
   DESTINATION ${Pism_SHARE_DIR})
 
 # miscellaneous executables needed by software tests
-add_executable (flowlaw_test software_tests/flowlaw_test.cc)
-target_link_libraries (flowlaw_test pism)
-install (TARGETS flowlaw_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 add_executable (bedrough_test software_tests/bedrough_test.cc)
 target_link_libraries (bedrough_test pism)

@@ -78,16 +78,6 @@ pism_test (Schoof_2003_bed_roughness_SIA_regress test_22.sh)
 
 pism_test (restart:i_vs_bootstrap_and_regrid_file test_23.sh)
 
-pism_test (flow_law:GPBLD test_20.sh)
-
-pism_test (flow_law:Paterson-Budd test_21.sh)
-
-pism_test (flow_law:Hooke test_24.sh)
-
-pism_test (flow_law:GK test_25.sh)
-
-pism_test (flow_law:Paterson-Budd_cold test_26.sh)
-
 pism_test (runtime_viewers test_27.sh)
 
 pism_test (bootstrapping_incomplete_input test_28.sh)

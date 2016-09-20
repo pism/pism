@@ -12,7 +12,7 @@ nosetests --with-coverage --cover-branches --cover-html --cover-package=PISM tes
 
 import PISM
 import sys
-
+import numpy as np
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -672,35 +672,86 @@ def pism_context_test():
     print PISM.convert(ctx.unit_system(), 1, "km", "m")
     print ctx.prefix()
 
-def flowlaw_test():
-    ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
-    EC = ctx.enthalpy_converter()
-    ff = PISM.FlowLawFactory("stress_balance.sia.", ctx.config(), EC)
-    law = ff.create()
+def check_flow_law(factory, flow_law_name, EC, stored_data):
+    factory.set_default(flow_law_name)
+    law = factory.create()
 
-    TpaC = [-30, -5, 0, 0]
     depth = 2000
-    gs = 1e-3
-    omega = [0.0, 0.0, 0.0, 0.005]
+    gs    = 1e-3
     sigma = [1e4, 5e4, 1e5, 1.5e5]
+
+    T_pa  = [-30, -5, 0, 0]
+    omega = [0.0, 0.0, 0.0, 0.005]
+
+    assert len(T_pa) == len(omega)
 
     p = EC.pressure(depth)
     Tm = EC.melting_temperature(p)
 
-    print "flow law:   \"%s\"" % law.name()
-    print "pressure = %9.3e Pa = (hydrostatic at depth %7.2f m)" % (p, depth)
-    print "flowtable:"
-    print "  (dev stress)   (abs temp) (liq frac) =   (flow)"
+    data = []
+    print "  Flow table for %s" % law.name()
+    print "| Sigma        | Temperature  | Omega        | Flow factor  |"
+    print "|--------------+--------------+--------------+--------------|"
+    for S in sigma:
+        for Tpa, O in zip(T_pa, omega):
+            T = Tm + Tpa
+            E = EC.enthalpy(T, O, p)
+            F = law.flow(S, E, p, gs)
+            data.append(F)
 
-    for i in range(4):
-        for j in range(4):
-            T = Tm + TpaC[j]
-            E = EC.enthalpy(T, omega[j], p)
-            flowcoeff = law.flow(sigma[i], E, p, gs)
-            print "    %10.2e   %10.3f  %9.3f = %10.6e" % (sigma[i], T, omega[j], flowcoeff)
+            print "| %e | %e | %e | %e |" % (S, T, O, F)
+    print "|--------------+--------------+--------------+--------------|"
+    print ""
 
-def gpbld3_flow_test():
-    "Test the optimized version of GPBLD."
+    data = np.array(data)
+
+    assert np.max(np.fabs(data - stored_data)) < 1e-16
+
+def flowlaw_test():
+    data = {}
+    data["arr"] = [3.91729503e-18, 6.42803396e-17, 1.05746828e-16, 1.05746828e-16,
+                   9.79323757e-17, 1.60700849e-15, 2.64367070e-15, 2.64367070e-15,
+                   3.91729503e-16, 6.42803396e-15, 1.05746828e-14, 1.05746828e-14,
+                   8.81391381e-16, 1.44630764e-14, 2.37930363e-14, 2.37930363e-14]
+    data["arrwarm"] = [1.59798478e-19, 1.04360343e-16, 3.30653997e-16, 3.30653997e-16,
+                       3.99496194e-18, 2.60900856e-15, 8.26634991e-15, 8.26634991e-15,
+                       1.59798478e-17, 1.04360343e-14, 3.30653997e-14, 3.30653997e-14,
+                       3.59546574e-17, 2.34810771e-14, 7.43971492e-14, 7.43971492e-14]
+    data["gk"] = [7.32439717e-17, 5.49629815e-15, 2.41713799e-14, 2.41713799e-14,
+                  2.16360102e-16, 1.93446849e-14, 9.04428380e-14, 9.04428380e-14,
+                  4.06191746e-16, 3.39770143e-14, 1.60574708e-13, 1.60574708e-13,
+                  6.68976826e-16, 4.80704753e-14, 2.27816175e-13, 2.27816175e-13]
+    data["gpbld"] = [4.65791754e-18, 1.45114704e-16, 4.54299921e-16, 8.66009225e-16,
+                     1.16447938e-16, 3.62786761e-15, 1.13574980e-14, 2.16502306e-14,
+                     4.65791754e-16, 1.45114704e-14, 4.54299921e-14, 8.66009225e-14,
+                     1.04803145e-15, 3.26508084e-14, 1.02217482e-13, 1.94852076e-13]
+    data["hooke"] = [5.26775897e-18, 2.12325906e-16, 5.32397091e-15, 5.32397091e-15,
+                     1.31693974e-16, 5.30814764e-15, 1.33099273e-13, 1.33099273e-13,
+                     5.26775897e-16, 2.12325906e-14, 5.32397091e-13, 5.32397091e-13,
+                     1.18524577e-15, 4.77733287e-14, 1.19789346e-12, 1.19789346e-12]
+    data["isothermal_glen"] = [3.16890000e-16, 3.16890000e-16, 3.16890000e-16, 3.16890000e-16,
+                               7.92225000e-15, 7.92225000e-15, 7.92225000e-15, 7.92225000e-15,
+                               3.16890000e-14, 3.16890000e-14, 3.16890000e-14, 3.16890000e-14,
+                               7.13002500e-14, 7.13002500e-14, 7.13002500e-14, 7.13002500e-14]
+    data["pb"] = [4.65791754e-18, 1.45114704e-16, 4.54299921e-16, 4.54299921e-16,
+                  1.16447938e-16, 3.62786761e-15, 1.13574980e-14, 1.13574980e-14,
+                  4.65791754e-16, 1.45114704e-14, 4.54299921e-14, 4.54299921e-14,
+                  1.04803145e-15, 3.26508084e-14, 1.02217482e-13, 1.02217482e-13]
+    data["gpbld3"] = [4.65791754e-18, 1.45114704e-16, 4.54299921e-16, 8.66009225e-16,
+                      1.16447938e-16, 3.62786761e-15, 1.13574980e-14, 2.16502306e-14,
+                      4.65791754e-16, 1.45114704e-14, 4.54299921e-14, 8.66009225e-14,
+                      1.04803145e-15, 3.26508084e-14, 1.02217482e-13, 1.94852076e-13]
+
+    ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "flowlaw_test")
+    EC = ctx.enthalpy_converter()
+    factory = PISM.FlowLawFactory("stress_balance.sia.", ctx.config(), EC)
+
+    for flow_law_name, data in data.iteritems():
+        check_flow_law(factory, flow_law_name, EC, np.array(data))
+
+
+def gpbld3_vs_gpbld_test():
+    "Test the optimized version of GPBLD by comparing it to the one that uses libm."
     ctx = PISM.context_from_options(PISM.PETSc.COMM_WORLD, "GPBLD3_test")
     EC = ctx.enthalpy_converter()
     gpbld = PISM.GPBLD("stress_balance.sia.", ctx.config(), EC)
@@ -708,7 +759,7 @@ def gpbld3_flow_test():
 
     import numpy as np
     N = 11
-    TpaC = np.linspace(-30, 0, N)
+    T_pa = np.linspace(-30, 0, N)
     depth = np.linspace(0, 4000, N)
     omega = np.linspace(0, 0.02, N)
     sigma = [1e4, 5e4, 1e5, 1.5e5]
@@ -718,7 +769,7 @@ def gpbld3_flow_test():
     for d in depth:
         p = EC.pressure(d)
         Tm = EC.melting_temperature(p)
-        for Tpa in TpaC:
+        for Tpa in T_pa:
             T = Tm + Tpa
             for o in omega:
                 if T >= Tm:
@@ -739,14 +790,14 @@ def gpbld3_hardness_test():
 
     import numpy as np
     N = 11
-    TpaC = np.linspace(-30, 0, N)
+    T_pa = np.linspace(-30, 0, N)
     depth = np.linspace(0, 4000, N)
     omega = np.linspace(0, 0.02, N)
 
     for d in depth:
         p = EC.pressure(d)
         Tm = EC.melting_temperature(p)
-        for Tpa in TpaC:
+        for Tpa in T_pa:
             T = Tm + Tpa
             for o in omega:
                 if T >= Tm:
@@ -772,7 +823,7 @@ def gpbld3_error_report():
 
     import numpy as np
     N = 31
-    TpaC = np.linspace(-30, 0, N)
+    T_pa = np.linspace(-30, 0, N)
     depth = np.linspace(0, 5000, N)
     omega = np.linspace(0, 0.02, N)
     sigma = np.linspace(0, 5e5, N)
@@ -785,7 +836,7 @@ def gpbld3_error_report():
     for d in depth:
         p = EC.pressure(d)
         Tm = EC.melting_temperature(p)
-        for Tpa in TpaC:
+        for Tpa in T_pa:
             T = Tm + Tpa
             for o in omega:
                 if T >= Tm:
@@ -1033,5 +1084,3 @@ netcdf string_attribute_test {
     netcdf4_parallel()
 
     teardown()
-
-netcdf_string_attribute_test()
