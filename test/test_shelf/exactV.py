@@ -106,7 +106,7 @@ parser.epilog = """Model "variants":
 
 0:  no subgrid parameterization, no stress boundary condition at the calving front
 1: -cfbc -part_grid
-2: -cfbc -part_grid -part_redist -part_grid_reduce_frontal_thickness
+2: -cfbc -part_grid -part_grid_reduce_frontal_thickness
 
 Here -part_grid_reduce_frontal_thickness adjusts the thickness
 threshold used to decide when a 'partially filled' cell becomes full.
@@ -151,13 +151,13 @@ elif options.variant == 1:
     run_pismv(Mx, run_length, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'green', same_figure=True)
 elif options.variant == 2:
-    opt += " -cfbc -part_grid -part_redist -part_grid_reduce_frontal_thickness"
+    opt += " -cfbc -part_grid -part_grid_reduce_frontal_thickness"
     run_pismv(Mx, run_length, opt, "out.nc")
-    plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'blue')
+    plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid, reduce frontal thickness)", 'blue')
 
     opt = opt + extras
     run_pismv(Mx, run_length, opt + " -max_dt 1", "out.nc")
-    plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'green', same_figure=True)
+    plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid)", 'green', same_figure=True)
 else:
     print "Wrong variant number. Choose one of 0, 1, 2."
     sys.exit(1)

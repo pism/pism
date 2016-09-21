@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2015  PISM authors
+# Copyright (C) 2009-2016  PISM authors
 
 # grids
 export THIRTYKMGRID="-Mx 200 -My 200 -Lz 5000 -Lbz 2000 -Mz 41 -Mbz 16"
@@ -19,7 +19,7 @@ export SKIPSEVENKM=100
 export SKIPFIVEKM=200
 
 #PIK-stuff; notes:
-# 1)   '-pik' = '-cfbc -part_grid -part_redist -kill_icebergs -subgl'
+# 1)   '-pik' = '-cfbc -part_grid -kill_icebergs -subgl'
 # 2)   -meltfactor_pik 5e-3 is default when using -ocean pik
 export PIKPHYS="-ssa_method fd -ssa_e 0.6 -pik -calving eigen_calving,thickness_calving -eigen_calving_K 2.0e18 -thickness_calving_threshold 200.0"
 export PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANAME -surface simple -ocean pik -meltfactor_pik 5e-3"

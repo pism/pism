@@ -42,7 +42,7 @@ NAME=frac_Mx${M}_yr-${YEARS}.nc
 output="-o $NAME -o_order zyx -o_size big"
 
 ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
-#-pik:-part_grid -cfbc -kill_icebergs -part_redist
+#-pik:-part_grid -cfbc -kill_icebergs
 
 calving="-calving ocean_kill "
 

@@ -563,7 +563,6 @@ void set_config_from_options(Config &config) {
   if (pik) {
     config.set_boolean("stress_balance.calving_front_stress_bc", true, Config::USER);
     config.set_boolean("geometry.part_grid.enabled", true, Config::USER);
-    config.set_boolean("geometry.part_grid.redistribute_residual_volume", true, Config::USER);
     config.set_boolean("geometry.remove_icebergs", true, Config::USER);
     config.set_boolean("geometry.grounded_cell_fraction", true, Config::USER);
   }

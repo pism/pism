@@ -85,11 +85,6 @@ netcdf pism_config {
     pism_config:geometry.part_grid.enabled = "no";
     pism_config:geometry.part_grid.enabled_doc = "apply partially filled grid cell scheme";
 
-    pism_config:geometry.part_grid.redistribute_residual_volume_type = "boolean";
-    pism_config:geometry.part_grid.redistribute_residual_volume_option = "part_redist";
-    pism_config:geometry.part_grid.redistribute_residual_volume = "no";
-    pism_config:geometry.part_grid.redistribute_residual_volume_doc = "for partially filled grid cell scheme, redistribute residuals Hresidual";
-
     pism_config:geometry.part_grid.reduce_frontal_thickness_type = "boolean";
     pism_config:geometry.part_grid.reduce_frontal_thickness_option = "part_grid_reduce_frontal_thickness";
     pism_config:geometry.part_grid.reduce_frontal_thickness = "no";

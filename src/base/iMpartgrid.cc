@@ -36,7 +36,7 @@ namespace pism {
 //! @file iMpartgrid.cc Methods implementing geometry evolution with PIK option -part_grid [@ref
 //! Albrechtetal2011].
 
-//! Redistribute residual ice mass from subgrid-scale parameterization, when using -part_redist option.
+//! Redistribute residual ice mass from subgrid-scale parameterization.
 /*!
   See [\ref Albrechtetal2011].  Manages the loop.
 
@@ -57,8 +57,7 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
 }
 
 
-//! @brief This routine carries-over the ice mass when using
-// -part_redist option, one step in the loop.
+//! @brief Perform one iteration of the residual mass redistribution.
 /**
  * @param[in,out] H_residual Residual Ice thickness. Updated in place.
  * @param[out] done set to 'true' if this was the last iteration we needed

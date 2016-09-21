@@ -167,7 +167,7 @@ pismr -i startfile_Mx211.nc -surface given -stress_balance ssa \
 \end{verbatim}
 %$ - match dollar signs to make emacs happy    
 
-Several of these options are different from those used in the diagnostic case.  First, while the command \texttt{-pik} is the same as before, now each part of its expansion, namely \texttt{-cfbc -kill_icebergs -part_grid -part_redist}, is important.  As the calving front evolves (i.e.~regardless of the calving law choices), option \texttt{-part_grid} moves the calving front by one grid cell only when the cell is full of the ice flowing into it; see \cite{Albrechtetal2011}.  The option \texttt{-kill_icebergs} is essential to maintain well-posedness of the SSA velocity problem at each time step \cite{Winkelmannetal2011}.  See section \ref{sec:pism-pik}.
+Several of these options are different from those used in the diagnostic case.  First, while the command \texttt{-pik} is the same as before, now each part of its expansion, namely \texttt{-cfbc -kill_icebergs -part_grid}, is important.  As the calving front evolves (i.e.~regardless of the calving law choices), option \texttt{-part_grid} moves the calving front by one grid cell only when the cell is full of the ice flowing into it; see \cite{Albrechtetal2011}.  The option \texttt{-kill_icebergs} is essential to maintain well-posedness of the SSA velocity problem at each time step \cite{Winkelmannetal2011}.  See section \ref{sec:pism-pik}.
 
 Option combination
 \begin{verbatim}

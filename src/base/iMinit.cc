@@ -766,9 +766,6 @@ void IceModel::misc_setup() {
     if (m_config->get_boolean("geometry.part_grid.enabled")) {
       pik_methods.push_back("part_grid");
     }
-    if (m_config->get_boolean("geometry.part_grid.redistribute_residual_volume")) {
-      pik_methods.push_back("part_redist");
-    }
     if (m_config->get_boolean("geometry.remove_icebergs")) {
       pik_methods.push_back("kill_icebergs");
     }

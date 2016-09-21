@@ -14,8 +14,5 @@ default: input.nc
 part_grid: input.nc
 	pismr -i input.nc -bootstrap ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc -part_grid
 
-part_redist: input.nc
-	pismr -i input.nc -bootstrap ${OPTIONS} ${TS} ts_$@.nc ${EXTRA} ex_$@.nc -part_grid -part_redist
-
 clean:
 	@rm -f *.nc*

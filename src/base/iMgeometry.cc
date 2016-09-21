@@ -474,7 +474,7 @@ void IceModel::massContExplicitStep() {
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool
     do_part_grid             = m_config->get_boolean("geometry.part_grid.enabled"),
-    do_redist                = m_config->get_boolean("geometry.part_grid.redistribute_residual_volume"),
+    do_redist                = do_part_grid,
     reduce_frontal_thickness = m_config->get_boolean("geometry.part_grid.reduce_frontal_thickness");
 
   if (do_part_grid) {

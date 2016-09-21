@@ -8,7 +8,7 @@ input="-i input.nc -bootstrap"
 
 grid="-Mx $xx -My $yy -Mz 11 -Mbz 1 -Lz 1500 -Lbz 0 -y $length"
 
-physics="-stress_balance ssa+sia -ssa_dirichlet_bc -cfbc -part_grid -part_redist"
+physics="-stress_balance ssa+sia -ssa_dirichlet_bc -cfbc -part_grid"
 
 extra="-extra_vars thk,mask,velbar_mag,Href,velbar"
 

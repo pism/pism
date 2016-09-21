@@ -29,8 +29,8 @@ doit="mpiexec -n $N pismr $pismopts"
 
 
 # run with strength extension and part_grid but no CFBC
-# this could be a regression for -part_grid and -part_redist
-$doit -y $length -part_grid -part_redist -o so_part.nc $extra so_ex_part.nc
+# this could be a regression for -part_grid
+$doit -y $length -part_grid -o so_part.nc $extra so_ex_part.nc
 
 # run with CFBC but no part_grid
 # this could be a regression for -ssa_method fd_pik only
@@ -38,5 +38,4 @@ $doit -y $length -ssa_method fd -cfbc -o so_cfbc.nc $extra so_ex_cfbc.nc
 
 # run with CFBC and part_grid
 # this could be a regression for -ssa_method fd_pik only
-$doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -part_redist -o so_partcfbc.nc $extra so_ex_partcfbc.nc
-
+$doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -o so_partcfbc.nc $extra so_ex_partcfbc.nc

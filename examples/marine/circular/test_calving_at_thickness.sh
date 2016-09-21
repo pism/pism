@@ -24,7 +24,7 @@ viewers="-view_map $diagnostics"
 
 extra="-extra_times 10 -extra_vars $diagnostics -extra_file ${output_basename}_ex.nc"
 
-misc_options="-cfbc -part_grid -part_redist -o_order zyx -energy none"
+misc_options="-cfbc -part_grid -o_order zyx -energy none"
 
 pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $extra $misc_options"
 

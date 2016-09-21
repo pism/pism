@@ -30,7 +30,7 @@ extra="-extra_times 10 -extra_vars $diagnostics -extra_file ${output_basename}_e
 
 ts="-ts_times 10 -ts_file ${output_basename}_ts.nc"
 
-misc_options="-cfbc -part_grid -part_redist -o_order zyx"
+misc_options="-cfbc -part_grid -o_order zyx"
 
 pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $extra $ts $misc_options"
 

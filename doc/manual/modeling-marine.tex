@@ -23,11 +23,11 @@ References \cite{Albrechtetal2011,Levermannetal2012,Winkelmannetal2011} by the r
     \intextoption{kill_icebergs} & identify and eliminate free-floating icebergs, which cause well-posedness problems for the SSA stress balance solver \cite{Winkelmannetal2011} \\
     \intextoption{part_grid} & allow the ice shelf front to advance by a part of a grid cell, avoiding
 	the development of unphysically-thinned ice shelves \cite{Albrechtetal2011} \\
-    \intextoption{part_redist} & additional scheme which makes \texttt{-part_grid} conserve mass  \cite{Albrechtetal2011} \\
+
     \intextoption{subgl} & apply interpolation to compute basal shear stress and basal melt near the grounding line \cite{Feldmannetal2014} \\
     \intextoption{no_subgl_basal_melt} & \textbf{don't} apply interpolation to compute basal melt near the grounding line if \intextoption{subgl} is set \cite{Feldmannetal2014} \\
     \midrule
-    \intextoption{pik} & equivalent to option combination ``\texttt{-cfbc -kill_icebergs -part_grid -part_redist -subgl}'' \\
+    \intextoption{pik} & equivalent to option combination ``\texttt{-cfbc -kill_icebergs -part_grid -subgl}'' \\
     \bottomrule
  \end{tabular}
 \caption{Options which turn on PIK ice shelf front and grounding line mechanisms.  A calving law choice is needed in addition to these options.}
@@ -62,7 +62,7 @@ Note that the discretized SSA stress balance, in the default finite difference d
 
 Albrecht et al \cite{Albrechtetal2011} argue that the correct movement of the ice shelf calving front on a finite-difference grid, assuming for the moment that ice velocities are correctly determined (see below), requires tracking some cells as being partially-filled (option \intextoption{part_grid}).  If the calving front is moving forward, for example, then the neighboring cell gets a little ice at the next time step.  It is not correct to add that little mass as a thin layer of ice which fills the cell's horizontal extent, as that would smooth the steep ice front after a few time steps.  Instead the cell must be regarded as having ice which is comparably thick to the upstream cells, but where the ice only partially fills the cell.
 
-Specifically, the PIK mechanism turned on by \texttt{-part_grid} adds mass to the partially-filled cell which the advancing front enters, and it determines the coverage ratio according to the ice thickness of neighboring fully-filled ice shelf cells.  If option \texttt{-part_grid} is used then the PISM output file will have field \texttt{Href} which shows the amount of ice in the partially-filled cells as a thickness.  When a cell becomes fully-filled, in the sense that the \texttt{Href} thickness equals the average of neighbors, then the residual mass is redistributed to neighboring partially-filled or empty grid cells if option \intextoption{part_redist} is set.
+Specifically, the PIK mechanism turned on by \texttt{-part_grid} adds mass to the partially-filled cell which the advancing front enters, and it determines the coverage ratio according to the ice thickness of neighboring fully-filled ice shelf cells.  If option \texttt{-part_grid} is used then the PISM output file will have field \texttt{Href} which shows the amount of ice in the partially-filled cells as a thickness.  When a cell becomes fully-filled, in the sense that the \texttt{Href} thickness equals the average of neighbors, then the residual mass is redistributed to neighboring partially-filled or empty grid cells.
 
 The stress balance equations determining the velocities are only sensitive to ``fully-filled'' cells.  Similarly, advection is controlled only by values of velocity in fully-filled cells.  Adaptive time stepping (specifically: the CFL criterion) limits the speed of ice front propagation so that at most one empty cell is filled, or one full cell emptied, per time step by the advance or retreat, respectively, of the calving front.
 

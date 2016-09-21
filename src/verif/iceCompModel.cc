@@ -1068,7 +1068,7 @@ void IceCompModel::reportErrors() {
 
  for 6c and 6d,
 
- pismv -test V -y 300 -ssa_method fd -cfbc -part_grid -part_redist -o fig6-ef.nc
+ pismv -test V -y 300 -ssa_method fd -cfbc -part_grid -o fig6-ef.nc
 
  for 6e and 6f.
 
