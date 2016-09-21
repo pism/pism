@@ -105,9 +105,6 @@ protected:
 
   double m_Glen_exponent, m_smoothing_range;
 
-  void allocate(int MAX_GHOSTS);
-  void deallocate();
-
   petsc::Vec::Ptr m_topgp0,         //!< original bed elevation on processor 0
     m_topgsmoothp0,   //!< smoothed bed elevation on processor 0
     m_maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)

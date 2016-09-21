@@ -128,13 +128,14 @@ Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
 void BedSmoother::preprocess_bed(const IceModelVec2S &topg,
-                                 unsigned int Nx_in, unsigned int Ny_in) {
+                                 unsigned int Nx, unsigned int Ny) {
 
-  if ((Nx_in >= m_grid->Mx()) || (Ny_in >= m_grid->My())) {
+  if ((Nx >= m_grid->Mx()) || (Ny >= m_grid->My())) {
     throw RuntimeError("input Nx, Ny in bed smoother is too large because\n"
                        "domain of smoothing exceeds IceGrid domain");
   }
-  m_Nx = Nx_in; m_Ny = Ny_in;
+  m_Nx = Nx;
+  m_Ny = Ny;
 
   topg.put_on_proc0(*m_topgp0);
   smooth_the_bed_on_proc0();
@@ -395,7 +396,7 @@ void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S &result) {
           omega = 0.001;
         }
 
-        result(i, j) = pow(omega,-m_Glen_exponent);
+        result(i, j) = pow(omega, -m_Glen_exponent);
         // now guarantee in [0,1]; this check *should not* be necessary, by convexity of p4
         if (result(i, j) > 1.0) {
           result(i, j) = 1.0;
