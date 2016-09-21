@@ -394,7 +394,7 @@ protected:
                                        unsigned int *bulgeCount);
 
   // see iMgeometry.cc
-  virtual void updateSurfaceElevationAndMask();
+  virtual void enforce_consistency_of_geometry();
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      StarStencil<Vector2> input_velocity,

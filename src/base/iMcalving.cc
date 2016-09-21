@@ -99,13 +99,13 @@ void IceModel::do_calving() {
   }
 
   // This call removes icebergs, too.
-  updateSurfaceElevationAndMask();
+  enforce_consistency_of_geometry();
 
   Href_cleanup();
 
   // note that Href_cleanup() changes ice thickness, so we have to
   // update the mask and surface elevation.
-  updateSurfaceElevationAndMask();
+  enforce_consistency_of_geometry();
 
   update_cumulative_discharge(m_ice_thickness, old_H, m_Href, old_Href);
 }

@@ -58,7 +58,7 @@ using namespace mask;
   Also calls the code which removes icebergs, to avoid stress balance
   solver problems associated to not-attached-to-grounded ice.
 */
-void IceModel::updateSurfaceElevationAndMask() {
+void IceModel::enforce_consistency_of_geometry() {
 
   assert(m_ocean != NULL);
   const double sea_level = m_ocean->sea_level_elevation();

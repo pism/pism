@@ -592,7 +592,7 @@ void IceModel::step(bool do_mass_continuity,
   // Update the fractional grounded/floating mask (used by the SSA
   // stress balance and the energy code)
   if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
-    updateSurfaceElevationAndMask(); // update h and mask
+    enforce_consistency_of_geometry(); // update h and mask
     update_grounded_cell_fraction();
   }
 
@@ -688,7 +688,7 @@ void IceModel::step(bool do_mass_continuity,
   if (do_mass_continuity) {
     profiling.begin("mass transport");
     massContExplicitStep();
-    updateSurfaceElevationAndMask(); // update h and mask
+    enforce_consistency_of_geometry(); // update h and mask
     profiling.end("mass transport");
 
     // Note that there are three adaptive time-stepping criteria. Two of them
@@ -727,7 +727,7 @@ void IceModel::step(bool do_mass_continuity,
 
     if (bed_topography.get_state_counter() != topg_state_counter) {
       m_stdout_flags += "b";
-      updateSurfaceElevationAndMask();
+      enforce_consistency_of_geometry();
     } else {
       m_stdout_flags += " ";
     }
@@ -785,7 +785,7 @@ void IceModel::run() {
 
   int stepcount = m_config->get_boolean("time_stepping.count_steps") ? 0 : -1;
 
-  updateSurfaceElevationAndMask();
+  enforce_consistency_of_geometry();
 
   // update diagnostics at the beginning of the run:
   write_timeseries();

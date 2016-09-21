@@ -142,7 +142,7 @@ void IceModel::model_state_setup() {
 
   // Now ice thickness, bed elevation, and sea level are available, so we can compute the ice
   // surface elevation and the cell type mask. This also ensures consistency of ice geometry.
-  updateSurfaceElevationAndMask();
+  enforce_consistency_of_geometry();
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
