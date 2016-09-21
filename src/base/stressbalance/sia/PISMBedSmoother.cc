@@ -150,35 +150,28 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg,
 }
 
 
-/*!
-Call preprocess_bed() first.
- */
-void BedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
-  Nx_out = m_Nx;
-  Ny_out = m_Ny;
-}
-
-
 //! Computes the smoothed bed by a simple average over a rectangle of grid points.
 void BedSmoother::smooth_the_bed_on_proc0() {
 
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      petsc::VecArray2D
-        b0(*m_topgp0,       m_grid->Mx(), m_grid->My()),
-        bs(*m_topgsmoothp0, m_grid->Mx(), m_grid->My());
+      const int Mx = (int)m_grid->Mx();
+      const int My = (int)m_grid->My();
 
-      for (int j=0; j < (int)m_grid->My(); j++) {
-        for (int i=0; i < (int)m_grid->Mx(); i++) {
+      petsc::VecArray2D
+        b0(*m_topgp0,       Mx, My),
+        bs(*m_topgsmoothp0, Mx, My);
+
+      for (int j=0; j < My; j++) {
+        for (int i=0; i < Mx; i++) {
           // average only over those points which are in the grid; do
           // not wrap periodically
           double sum = 0.0, count = 0.0;
           for (int r = -m_Nx; r <= m_Nx; r++) {
             for (int s = -m_Ny; s <= m_Ny; s++) {
-              if ((i+r >= 0) and (i+r < (int)m_grid->Mx()) and
-                  (j+s >= 0) and (j+s < (int)m_grid->My())) {
-                sum += b0(i+r, j+s);
+              if ((i+r >= 0) and (i+r < Mx) and (j+s >= 0) and (j+s < My)) {
+                sum   += b0(i+r, j+s);
                 count += 1.0;
               }
             }

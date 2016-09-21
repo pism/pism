@@ -84,9 +84,6 @@ public:
 
   virtual void preprocess_bed(const IceModelVec2S &topg);
 
-  // FIXME: this method is used exactly once in bedrough_test.cc. Consider removing it.
-  virtual void get_smoothing_domain(int &Nx_out, int &Ny_out);
-
   virtual void get_smoothed_thk(const IceModelVec2S &usurf,
                                 const IceModelVec2S &thk,
                                 const IceModelVec2CellType &mask,
