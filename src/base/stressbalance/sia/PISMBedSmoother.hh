@@ -91,19 +91,18 @@ public:
                                 const IceModelVec2S &thk,
                                 const IceModelVec2CellType &mask,
                                 IceModelVec2S &thksmooth);
-  virtual void get_theta(const IceModelVec2S &usurf,
-                         IceModelVec2S &result);
+  virtual void get_theta(const IceModelVec2S &usurf, IceModelVec2S &result);
 
   const IceModelVec2S& get_smoothed_bed();
 protected:
   //! smoothed bed elevation; set by calling preprocess_bed()
-  IceModelVec2S topgsmooth;
+  IceModelVec2S m_topgsmooth;
 
-  IceGrid::ConstPtr grid;
-  const Config::ConstPtr config;
-  IceModelVec2S maxtl, C2, C3, C4;
+  IceGrid::ConstPtr m_grid;
+  const Config::ConstPtr m_config;
+  IceModelVec2S m_maxtl, m_C2, m_C3, m_C4;
 
-  int Nx, Ny;  //!< number of grid points to smooth over; e.g.
+  int m_Nx, m_Ny;  //!< number of grid points to smooth over; e.g.
   //!i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note Nx>=1 and Ny>=1
   //!always, unless lambda<=0
 
@@ -112,10 +111,10 @@ protected:
   void allocate(int MAX_GHOSTS);
   void deallocate();
 
-  petsc::Vec::Ptr topgp0,         //!< original bed elevation on processor 0
-    topgsmoothp0,   //!< smoothed bed elevation on processor 0
-    maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
-    C2p0, C3p0, C4p0;
+  petsc::Vec::Ptr m_topgp0,         //!< original bed elevation on processor 0
+    m_topgsmoothp0,   //!< smoothed bed elevation on processor 0
+    m_maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
+    m_C2p0, m_C3p0, m_C4p0;
 
   virtual void preprocess_bed(const IceModelVec2S &topg,
                               unsigned int Nx_in, unsigned int Ny_in);
