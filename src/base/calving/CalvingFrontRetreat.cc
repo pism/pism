@@ -146,8 +146,32 @@ void CalvingFrontRetreat::update(double dt,
   GeometryCalculator gc(*m_config);
   gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);
 
-  // copy mask to temporary storage to get more ghosts
-  m_mask.copy_from(mask);
+  // Make a copy of the mask with ghosts and with MASK_ICE_FREE_OCEAN outside the modeling domain.
+  // This is needed to avoid "wrapping around" in regional setups.
+  {
+    // copy mask to temporary storage to get more ghosts
+    m_mask.copy_from(mask);
+
+    IceModelVec::AccessList list(m_mask);
+
+    const int Mx = m_grid->Mx();
+    const int My = m_grid->My();
+
+    ParallelSection loop(m_grid->com);
+    try {
+      for (PointsWithGhosts p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        if (i < 0 or i >= Mx or j < 0 or j >= My) {
+          m_mask(i, j) = MASK_ICE_FREE_OCEAN;
+        }
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
+  }
+
   // use mask with a wide stencil to compute the calving rate
   compute_calving_rate(m_mask, m_horizontal_calving_rate);
 
@@ -198,8 +222,8 @@ void CalvingFrontRetreat::update(double dt,
 
         // Find the number of neighbors to distribute to.
         //
-        // We consider floating cells grounded cells with the base below sea level. In other words,
-        // additional mass losses are distributed to shelf calving fronts and grounded marine
+        // We consider floating cells and grounded cells with the base below sea level. In other
+        // words, additional mass losses are distributed to shelf calving fronts and grounded marine
         // termini.
         int N = 0;
         {
@@ -210,7 +234,6 @@ void CalvingFrontRetreat::update(double dt,
             const Direction direction = dirs[n];
             const int M = M_star[direction];
 
-            // Note: this condition has to match the one in step 2 below.
             if (mask::floating_ice(M) or
                 (mask::grounded_ice(M) and bed_star[direction] < sea_level)) {
               N += 1;
