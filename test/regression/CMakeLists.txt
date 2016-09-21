@@ -74,8 +74,6 @@ pism_test (Verification:test_G test_17.sh)
 
 pism_test (Verification:test_K test_18.sh)
 
-pism_test (Schoof_2003_bed_roughness_SIA_regress test_22.sh)
-
 pism_test (restart:i_vs_bootstrap_and_regrid_file test_23.sh)
 
 pism_test (runtime_viewers test_27.sh)

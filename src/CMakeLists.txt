@@ -258,11 +258,6 @@ install (FILES
   DESTINATION ${Pism_SHARE_DIR})
 
 # miscellaneous executables needed by software tests
-
-add_executable (bedrough_test software_tests/bedrough_test.cc)
-target_link_libraries (bedrough_test pism)
-install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
-
 if (Pism_BUILD_EXTRA_EXECS)
   set (EXTRA_EXECS simpleH simpleI simpleJ simpleL)
   foreach (EXEC ${EXTRA_EXECS})
