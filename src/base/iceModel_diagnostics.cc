@@ -58,6 +58,7 @@ void IceModel::init_diagnostics() {
   m_diagnostics["enthalpybase"]     = Diagnostic::Ptr(new IceModel_enthalpybase(this));
   m_diagnostics["enthalpysurf"]     = Diagnostic::Ptr(new IceModel_enthalpysurf(this));
   m_diagnostics["hardav"]           = Diagnostic::Ptr(new IceModel_hardav(this));
+  m_diagnostics["hardness"]         = Diagnostic::Ptr(new IceModel_hardness(this));
   m_diagnostics["liqfrac"]          = Diagnostic::Ptr(new IceModel_liqfrac(this));
   m_diagnostics["proc_ice_area"]    = Diagnostic::Ptr(new IceModel_proc_ice_area(this));
   m_diagnostics["rank"]             = Diagnostic::Ptr(new IceModel_rank(this));
@@ -2494,6 +2495,66 @@ IceModelVec::Ptr IceModel_topg_sl_adjusted::compute_impl() {
   result->copy_from(model->bed_model()->bed_elevation());
   // result = topg - sea_level
   result->shift(-model->ocean_model()->sea_level_elevation());
+
+  return result;
+}
+
+IceModel_hardness::IceModel_hardness(IceModel *m)
+  : Diag<IceModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "hardness", m_grid->z()));
+
+  const double power = 1.0 / m_config->get_double("stress_balance.sia.Glen_exponent");
+  char unitstr[TEMPORARY_STRING_LENGTH];
+  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
+
+  set_attrs("ice hardness computed using the SIA flow law", "",
+            unitstr, unitstr, 0);
+}
+
+IceModelVec::Ptr IceModel_hardness::compute_impl() {
+
+  IceModelVec3::Ptr result(new IceModelVec3);
+  result->create(m_grid, "hardness", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
+
+  const IceModelVec3  &ice_enthalpy  = model->ice_enthalpy();
+  const IceModelVec2S &ice_thickness = model->ice_thickness();
+
+  const rheology::FlowLaw *flow_law = model->stress_balance()->modifier()->flow_law();
+
+  IceModelVec::AccessList list;
+  list.add(ice_enthalpy);
+  list.add(ice_thickness);
+  list.add(*result);
+
+  const unsigned int Mz = m_grid->Mz();
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      const double *E = ice_enthalpy.get_column(i, j);
+      const double H = ice_thickness(i, j);
+
+      double *hardness = result->get_column(i, j);
+
+      for (unsigned int k = 0; k < Mz; ++k) {
+        const double depth = H - m_grid->z(k);
+
+        // EC->pressure() handles negative depths correctly
+        const double pressure = EC->pressure(depth);
+
+        hardness[k] = flow_law->hardness(E[k], pressure);
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 
   return result;
 }

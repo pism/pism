@@ -564,6 +564,15 @@ protected:
   IceModelVec::Ptr compute_impl();
 };
 
+/*! @brief Ice hardness computed using the SIA flow law. */
+class IceModel_hardness : public Diag<IceModel>
+{
+public:
+  IceModel_hardness(IceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
 } // end of namespace pism
 
 #if (PISM_USE_PROJ4==1)
