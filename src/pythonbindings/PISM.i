@@ -298,6 +298,8 @@ pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 
 %include pism_SSA.i
 
+%include pism_blatter.i
+
 %include pism_SIA.i
 
 %include pism_BedDef.i
