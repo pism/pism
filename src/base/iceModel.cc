@@ -937,7 +937,6 @@ void IceModel::init() {
   profiling.end("initialization");
 }
 
-// FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
 const stressbalance::StressBalance* IceModel::stress_balance() const {
   return this->m_stress_balance;
 }

@@ -92,7 +92,6 @@ const rheology::FlowLaw* SSB_Modifier::flow_law() const {
   return m_flow_law;
 }
 
-
 void ConstantInColumn::init() {
   SSB_Modifier::init();
 }
