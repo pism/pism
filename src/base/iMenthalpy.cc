@@ -115,10 +115,13 @@ void IceModel::compute_enthalpy(const IceModelVec3 &temperature,
 /*!
 Does not communicate ghosts for IceModelVec3 result
  */
-void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
-                                             IceModelVec3 &result) {
+void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
+                                   const IceModelVec2S &ice_thickness,
+                                   IceModelVec3 &result) {
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+  IceGrid::ConstPtr grid = result.get_grid();
+
+  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   result.set_name("liqfrac");
   result.metadata(0).set_name("liqfrac");
@@ -129,18 +132,18 @@ void IceModel::compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
   IceModelVec::AccessList list;
   list.add(result);
   list.add(enthalpy);
-  list.add(m_ice_thickness);
+  list.add(ice_thickness);
 
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double *Enthij = enthalpy.get_column(i,j);
       double *omegaij = result.get_column(i,j);
 
-      for (unsigned int k=0; k<m_grid->Mz(); ++k) {
-        const double depth = m_ice_thickness(i,j) - m_grid->z(k); // FIXME issue #15
+      for (unsigned int k=0; k < grid->Mz(); ++k) {
+        const double depth = ice_thickness(i,j) - grid->z(k); // FIXME issue #15
         omegaij[k] = EC->water_fraction(Enthij[k],EC->pressure(depth));
       }
     }

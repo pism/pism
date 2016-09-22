@@ -344,7 +344,6 @@ IceModel_hardav::IceModel_hardav(IceModel *m)
 //! \brief Computes vertically-averaged ice hardness.
 IceModelVec::Ptr IceModel_hardav::compute_impl() {
   const double fillval = m_config->get_double("output.fill_value");
-  double *Eij; // columns of enthalpy values
 
   const rheology::FlowLaw *flow_law = model->stress_balance()->shallow()->flow_law();
   if (flow_law == NULL) {
@@ -360,18 +359,21 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
 
   const IceModelVec2CellType &cell_type = model->cell_type_mask();
 
+  const IceModelVec3& ice_enthalpy = model->ice_enthalpy();
+  const IceModelVec2S& ice_thickness = model->ice_thickness();
+
   IceModelVec::AccessList list;
   list.add(cell_type);
-  list.add(model->m_ice_enthalpy);
-  list.add(model->m_ice_thickness);
+  list.add(ice_enthalpy);
+  list.add(ice_thickness);
   list.add(*result);
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      Eij = model->m_ice_enthalpy.get_column(i,j);
-      const double H = model->m_ice_thickness(i,j);
+      const double *Eij = ice_enthalpy.get_column(i,j);
+      const double H = ice_thickness(i,j);
       if (cell_type.icy(i, j)) {
         (*result)(i,j) = rheology::averaged_hardness(*flow_law,
                                                      H, m_grid->kBelowHeight(H),
@@ -678,22 +680,25 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
 
   // compute levels corresponding to 1 m below the ice surface:
 
+  const IceModelVec3& ice_enthalpy = model->ice_enthalpy();
+  const IceModelVec2S& ice_thickness = model->ice_thickness();
+
   IceModelVec::AccessList list;
-  list.add(model->m_ice_thickness);
+  list.add(ice_thickness);
   list.add(*result);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    (*result)(i,j) = std::max(model->m_ice_thickness(i,j) - 1.0, 0.0);
+    (*result)(i,j) = std::max(ice_thickness(i,j) - 1.0, 0.0);
   }
 
-  model->m_ice_enthalpy.getSurfaceValues(*result, *result);  // z=0 slice
+  ice_enthalpy.getSurfaceValues(*result, *result);  // z=0 slice
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (model->m_ice_thickness(i,j) <= 1.0) {
+    if (ice_thickness(i,j) <= 1.0) {
       (*result)(i,j) = fill_value;
     }
   }
@@ -718,9 +723,9 @@ IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
   result->create(m_grid, "enthalpybase", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  model->m_ice_enthalpy.getHorSlice(*result, 0.0);  // z=0 slice
+  model->ice_enthalpy().getHorSlice(*result, 0.0);  // z=0 slice
 
-  result->mask_by(model->m_ice_thickness, m_config->get_double("output.fill_value"));
+  result->mask_by(model->ice_thickness(), m_config->get_double("output.fill_value"));
 
   return result;
 }
@@ -853,7 +858,9 @@ IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
   if (cold_mode) {
     result->set(0.0);
   } else {
-    model->compute_liquid_water_fraction(model->m_ice_enthalpy, *result);
+    compute_liquid_water_fraction(model->ice_enthalpy(),
+                                  model->ice_thickness(),
+                                  *result);
   }
 
   return result;
@@ -877,15 +884,15 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
   result->create(m_grid, "tempicethk", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  double *Enth = NULL;
-
   const IceModelVec2CellType &cell_type = model->cell_type_mask();
+  const IceModelVec3& ice_enthalpy = model->ice_enthalpy();
+  const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
   list.add(cell_type);
   list.add(*result);
-  list.add(model->m_ice_enthalpy);
-  list.add(model->m_ice_thickness);
+  list.add(ice_enthalpy);
+  list.add(ice_thickness);
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
@@ -895,25 +902,25 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
       const int i = p.i(), j = p.j();
 
       if (cell_type.icy(i, j)) {
-        Enth = model->m_ice_enthalpy.get_column(i,j);
-        double temperate_ice_thickness = 0.0;
-        double ice_thickness = model->m_ice_thickness(i,j);
-        const unsigned int ks = m_grid->kBelowHeight(ice_thickness);
+        const double *Enth = ice_enthalpy.get_column(i,j);
+        double H_temperate = 0.0;
+        const double H = ice_thickness(i,j);
+        const unsigned int ks = m_grid->kBelowHeight(H);
 
         for (unsigned int k=0; k<ks; ++k) { // FIXME issue #15
-          double pressure = EC->pressure(ice_thickness - m_grid->z(k));
+          double pressure = EC->pressure(H - m_grid->z(k));
 
           if (EC->is_temperate_relaxed(Enth[k], pressure)) {
-            temperate_ice_thickness += m_grid->z(k+1) - m_grid->z(k);
+            H_temperate += m_grid->z(k+1) - m_grid->z(k);
           }
         }
 
-        double pressure = EC->pressure(ice_thickness - m_grid->z(ks));
+        double pressure = EC->pressure(H - m_grid->z(ks));
         if (EC->is_temperate_relaxed(Enth[ks], pressure)) {
-          temperate_ice_thickness += ice_thickness - m_grid->z(ks);
+          H_temperate += H - m_grid->z(ks);
         }
 
-        (*result)(i,j) = temperate_ice_thickness;
+        (*result)(i,j) = H_temperate;
       } else {
         // ice-free
         (*result)(i,j) = m_config->get_double("output.fill_value");
@@ -948,25 +955,26 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   result->create(m_grid, "tempicethk_basal", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  double *Enth = NULL;
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   const double fill_value = m_config->get_double("output.fill_value");
 
   const IceModelVec2CellType &cell_type = model->cell_type_mask();
+  const IceModelVec3& ice_enthalpy = model->ice_enthalpy();
+  const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
   list.add(cell_type);
   list.add(*result);
-  list.add(model->m_ice_thickness);
-  list.add(model->m_ice_enthalpy);
+  list.add(ice_thickness);
+  list.add(ice_enthalpy);
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double thk = model->m_ice_thickness(i,j);
+      double H = ice_thickness(i,j);
 
       // if we have no ice, go on to the next grid point (this cell will be
       // marked as "missing" later)
@@ -975,13 +983,14 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
         continue;
       }
 
-      Enth = model->m_ice_enthalpy.get_column(i,j);
-      double pressure;
-      unsigned int ks = m_grid->kBelowHeight(thk),
-        k = 0;
+      const double *Enth = ice_enthalpy.get_column(i,j);
 
+      unsigned int ks = m_grid->kBelowHeight(H);
+
+      unsigned int k = 0;
+      double pressure = EC->pressure(H - m_grid->z(k));
       while (k <= ks) {         // FIXME issue #15
-        pressure = EC->pressure(thk - m_grid->z(k));
+        pressure = EC->pressure(H - m_grid->z(k));
 
         if (EC->is_temperate_relaxed(Enth[k],pressure)) {
           k++;
@@ -1006,7 +1015,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
       }
 
       double
-        pressure_0 = EC->pressure(thk - m_grid->z(k-1)),
+        pressure_0 = EC->pressure(H - m_grid->z(k-1)),
         dz         = m_grid->z(k) - m_grid->z(k-1),
         slope1     = (Enth[k] - Enth[k-1]) / dz,
         slope2     = (EC->enthalpy_cts(pressure) - EC->enthalpy_cts(pressure_0)) / dz;
@@ -1050,7 +1059,7 @@ IceModelVec::Ptr IceModel_flux_divergence::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  result->copy_from(model->m_flux_divergence);
+  result->copy_from(model->flux_divergence());
 
   return result;
 }
@@ -1073,7 +1082,7 @@ IceModelVec::Ptr IceModel_climatic_mass_balance_cumulative::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  result->copy_from(model->m_climatic_mass_balance_cumulative);
+  result->copy_from(model->cumulative_fluxes_2d().climatic_mass_balance);
 
   return result;
 }
@@ -1291,7 +1300,7 @@ IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m)
 
 void IceModel_ienthalpy::update(double a, double b) {
 
-  double value = model->ice_enthalpy();
+  double value = model->total_ice_enthalpy();
 
   m_ts->append(value, a, b);
 }
@@ -1566,16 +1575,18 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
   if (gsl_isnan(m_last_report_time)) {
     result->set(units::convert(m_sys, 2e6, "m year-1", "m second-1"));
   } else {
+    const IceModelVec2S& ice_thickness = model->ice_thickness();
+
     IceModelVec::AccessList list;
     list.add(*result);
     list.add(m_last_ice_thickness);
-    list.add(model->m_ice_thickness);
+    list.add(ice_thickness);
 
     double dt = m_grid->ctx()->time()->current() - m_last_report_time;
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      (*result)(i, j) = (model->m_ice_thickness(i, j) - m_last_ice_thickness(i, j)) / dt;
+      (*result)(i, j) = (ice_thickness(i, j) - m_last_ice_thickness(i, j)) / dt;
     }
   }
 
@@ -1586,13 +1597,15 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
 }
 
 void IceModel_dHdt::update_cumulative() {
+  const IceModelVec2S& ice_thickness = model->ice_thickness();
+
   IceModelVec::AccessList list;
-  list.add(model->m_ice_thickness);
+  list.add(ice_thickness);
   list.add(m_last_ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    m_last_ice_thickness(i, j) = model->m_ice_thickness(i, j);
+    m_last_ice_thickness(i, j) = ice_thickness(i, j);
   }
 
   m_last_report_time = m_grid->ctx()->time()->current();
@@ -1806,7 +1819,7 @@ IceModelVec::Ptr IceModel_nonneg_flux_2D_cumulative::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  result->copy_from(model->m_nonneg_flux_2D_cumulative);
+  result->copy_from(model->cumulative_fluxes_2d().nonneg);
 
   return result;
 }
@@ -1831,7 +1844,7 @@ IceModelVec::Ptr IceModel_grounded_basal_flux_2D_cumulative::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  result->copy_from(model->m_grounded_basal_flux_2D_cumulative);
+  result->copy_from(model->cumulative_fluxes_2d().basal_grounded);
 
   return result;
 }
@@ -1855,7 +1868,7 @@ IceModelVec::Ptr IceModel_floating_basal_flux_2D_cumulative::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  result->copy_from(model->m_floating_basal_flux_2D_cumulative);
+  result->copy_from(model->cumulative_fluxes_2d().basal_floating);
 
   return result;
 }
@@ -1881,7 +1894,7 @@ IceModelVec::Ptr IceModel_discharge_flux_2D_cumulative::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  result->copy_from(model->m_discharge_flux_2D_cumulative);
+  result->copy_from(model->cumulative_fluxes_2d().discharge);
 
   return result;
 }
@@ -1917,7 +1930,7 @@ IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  const IceModelVec2S &cumulative_discharge = model->m_discharge_flux_2D_cumulative;
+  const IceModelVec2S &cumulative_discharge = model->cumulative_fluxes_2d().discharge;
   const double current_time = m_grid->ctx()->time()->current();
 
   if (gsl_isnan(m_last_report_time)) {
@@ -2147,7 +2160,7 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
   result->create(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  const double sea_level = model->m_ocean->sea_level_elevation();
+  const double sea_level = model->ocean_model()->sea_level_elevation();
 
   const double
     ice_density   = m_config->get_double("constants.ice.density"),
@@ -2239,7 +2252,7 @@ IceModelVec::Ptr IceModel_surface_mass_balance_average::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  const IceModelVec2S &cumulative_SMB = model->m_climatic_mass_balance_cumulative;
+  const IceModelVec2S &cumulative_SMB = model->cumulative_fluxes_2d().climatic_mass_balance;
   const double current_time = m_grid->ctx()->time()->current();
 
   if (gsl_isnan(m_last_report_time)) {
@@ -2296,8 +2309,8 @@ IceModelVec::Ptr IceModel_basal_mass_balance_average::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
-  const IceModelVec2S &cumulative_grounded_BMB = model->m_grounded_basal_flux_2D_cumulative;
-  const IceModelVec2S &cumulative_floating_BMB = model->m_floating_basal_flux_2D_cumulative;
+  const IceModelVec2S &cumulative_grounded_BMB = model->cumulative_fluxes_2d().basal_grounded;
+  const IceModelVec2S &cumulative_floating_BMB = model->cumulative_fluxes_2d().basal_floating;
   const double current_time = m_grid->ctx()->time()->current();
 
   if (gsl_isnan(m_last_report_time)) {
@@ -2351,7 +2364,7 @@ IceModelVec::Ptr IceModel_height_above_flotation::compute_impl() {
   const double
     ice_density   = m_config->get_double("constants.ice.density"),
     ocean_density = m_config->get_double("constants.sea_water.density"),
-    sea_level = model->m_ocean->sea_level_elevation(),
+    sea_level = model->ocean_model()->sea_level_elevation(),
     fill_value = m_config->get_double("output.fill_value");
 
   const Vars &variables = m_grid->variables();

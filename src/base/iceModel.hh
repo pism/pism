@@ -92,6 +92,8 @@ class YieldStress;
 class IceModelVec2CellType;
 
 struct FractureFields {
+  FractureFields(IceGrid::ConstPtr grid);
+
   IceModelVec2S density;
   IceModelVec2S growth_rate;
   IceModelVec2S healing_rate;
@@ -103,30 +105,6 @@ struct FractureFields {
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
   // The following classes implement various diagnostic computations.
-  // 2D and 3D:
-  friend class IceModel_hardav;
-  friend class IceModel_bwp;
-  friend class IceModel_cts;
-  friend class IceModel_dhdt;
-  friend class IceModel_enthalpybase;
-  friend class IceModel_enthalpysurf;
-  friend class IceModel_tempbase;
-  friend class IceModel_liqfrac;
-  friend class IceModel_tempicethk;
-  friend class IceModel_tempicethk_basal;
-  friend class IceModel_new_mask;
-  friend class IceModel_climatic_mass_balance_cumulative;
-  friend class IceModel_dHdt;
-  friend class IceModel_flux_divergence;
-  friend class IceModel_grounded_ice_sheet_area_fraction;
-  friend class IceModel_nonneg_flux_2D_cumulative;
-  friend class IceModel_grounded_basal_flux_2D_cumulative;
-  friend class IceModel_floating_basal_flux_2D_cumulative;
-  friend class IceModel_discharge_flux_2D_cumulative;
-  friend class IceModel_discharge_flux_2D;
-  friend class IceModel_surface_mass_balance_average;
-  friend class IceModel_basal_mass_balance_average;
-  friend class IceModel_height_above_flotation;
   // scalar:
   friend class IceModel_max_diffusivity;
   friend class IceModel_max_hor_vel;
@@ -256,7 +234,9 @@ protected:
   bed::BedDef       *m_beddef;
 
   // state variables and some diagnostics/internals
-  IceModelVec2S m_ice_surface_elevation;          //!< ice surface elevation; ghosted
+
+  //! ice surface elevation; ghosted
+  IceModelVec2S m_ice_surface_elevation;
   //! ghosted
   IceModelVec2S m_ice_thickness;
   //! ghosted
@@ -271,16 +251,6 @@ protected:
   IceModelVec2S m_Href;
   //! accumulation/ablation rate; no ghosts
   IceModelVec2S m_climatic_mass_balance;
-  //! cumulative climatic_mass_balance
-  IceModelVec2S m_climatic_mass_balance_cumulative;
-  //! grounded basal (melt/freeze-on) cumulative flux
-  IceModelVec2S m_grounded_basal_flux_2D_cumulative;
-  //! floating (sub-shelf) basal (melt/freeze-on) cumulative flux
-  IceModelVec2S m_floating_basal_flux_2D_cumulative;
-  //! cumulative nonnegative-rule flux
-  IceModelVec2S m_nonneg_flux_2D_cumulative;
-  //! cumulative discharge (calving) flux (2D field)
-  IceModelVec2S m_discharge_flux_2D_cumulative;
   //! ice temperature at the ice surface but below firn; no ghosts
   IceModelVec2S m_ice_surface_temp;
   //! ice liquid water fraction at the top surface of the ice
@@ -294,10 +264,9 @@ protected:
   //! flux divergence
   IceModelVec2S m_flux_divergence;
 
-  FractureFields m_fracture;
+  FractureFields *m_fracture;
 
 public:
-  IceModelVec2S* get_geothermal_flux();
   void setCTSFromEnthalpy(IceModelVec3 &result);
 protected:
 
@@ -325,13 +294,20 @@ protected:
   IceModelVec3 m_ice_age;
 
   // parameters
-  double   m_dt,     //!< mass continuity time step, s
-    t_TempAge,  //!< time of last update for enthalpy/temperature
-    dt_TempAge,  //!< enthalpy/temperature and age time-steps
-    maxdt_temporary,
-    dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
+  //! mass continuity time step, s
+  double m_dt;
+  //! time of last update for enthalpy/temperature
+  double t_TempAge;
+  //! enthalpy/temperature and age time-steps
+  double dt_TempAge;
+  double maxdt_temporary;
+  double dt_from_cfl;
+  double CFLmaxdt;
+  double CFLmaxdt2D;
   // global maximums on 3D grid of abs value of vel components
-    m_max_u_speed, m_max_v_speed, m_max_w_speed;
+  double m_max_u_speed;
+  double m_max_v_speed;
+  double m_max_w_speed;
 
   struct FluxCounters {
     FluxCounters();
@@ -347,14 +323,34 @@ protected:
     double surface;
   };
 
+  struct FluxFields {
+    FluxFields(IceGrid::ConstPtr grid);
+    void reset();
+    void regrid(const PIO &input_file);
+
+    //! climatic_mass_balance
+    IceModelVec2S climatic_mass_balance;
+    //! grounded basal (melt/freeze-on) cumulative flux
+    IceModelVec2S basal_grounded;
+    //! floating (sub-shelf) basal (melt/freeze-on) cumulative flux
+    IceModelVec2S basal_floating;
+    //! cumulative nonnegative-rule flux
+    IceModelVec2S nonneg;
+    //! cumulative discharge (calving) flux
+    IceModelVec2S discharge;
+  };
+
 public:
   FluxCounters cumulative_fluxes() const;
+  const IceModelVec2S& flux_divergence() const;
+  const FluxFields& cumulative_fluxes_2d() const;
   double dt() const;
 
 protected:
   FluxCounters m_cumulative_fluxes;
-  unsigned int m_skip_countdown,
-    m_CFL_violation_counter;
+  FluxFields m_cumulative_flux_fields;
+  unsigned int m_skip_countdown;
+  unsigned int m_CFL_violation_counter;
 
   // flags
   std::string m_adaptive_timestep_reason;
@@ -386,8 +382,6 @@ protected:
   virtual void compute_enthalpy(const IceModelVec3 &temperature,
                                 const IceModelVec3 &liquid_water_fraction,
                                 IceModelVec3 &result);
-  virtual void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
-                                             IceModelVec3 &result);
 
   virtual void enthalpyAndDrainageStep(unsigned int *vertSacrCount,
                                        double* liquifiedVol,
@@ -452,7 +446,7 @@ public:
   double ice_area() const;
   double ice_area_grounded() const;
   double ice_area_floating() const;
-  double ice_enthalpy() const;
+  double total_ice_enthalpy() const;
   // these are not "const" because they use temporary storage m_work2d
   double ice_area_temperate();
   double ice_area_cold();
@@ -487,6 +481,10 @@ public:
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
   const bed::BedDef* bed_model() const;
+  const energy::BedThermalUnit* bedrock_thermal_model() const;
+
+  const IceModelVec3& ice_enthalpy() const;
+  const IceModelVec2S& ice_thickness() const;
 protected:
 
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
@@ -559,6 +557,10 @@ protected:
 private:
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
+
+void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
+                                   const IceModelVec2S &ice_thickness,
+                                   IceModelVec3 &result);
 
 } // end of namespace pism
 

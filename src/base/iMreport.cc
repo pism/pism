@@ -621,7 +621,7 @@ double IceModel::ice_area_floating() const {
   by the density to get units of energy:
   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
 */
-double IceModel::ice_enthalpy() const {
+double IceModel::total_ice_enthalpy() const {
   double enthalpy_sum = 0.0;
 
   IceModelVec::AccessList list;

@@ -32,6 +32,7 @@
 #include "base/calving/FloatKill.hh"
 #include "base/calving/IcebergRemover.hh"
 #include "base/calving/OceanKill.hh"
+#include "base/calving/FrontalMelt.hh"
 #include "base/energy/BedThermalUnit.hh"
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
@@ -63,6 +64,96 @@ IceModel::FluxCounters::FluxCounters() {
   H_to_Href      = 0.0;
 }
 
+FractureFields::FractureFields(IceGrid::ConstPtr grid) {
+  Config::ConstPtr config = grid->ctx()->config();
+
+  const unsigned int WIDE_STENCIL = config->get_double("grid.max_stencil_width");
+
+  density.create(grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
+  density.set_attrs("model_state", "fracture density in ice shelf", "", "");
+  density.metadata().set_double("valid_max", 1.0);
+  density.metadata().set_double("valid_min", 0.0);
+
+  growth_rate.create(grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
+  growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "");
+  growth_rate.metadata().set_double("valid_min", 0.0);
+
+  healing_rate.create(grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
+  healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "");
+
+  flow_enhancement.create(grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
+  flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
+
+  age.create(grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL);
+  age.set_attrs("model_state", "age since fracturing", "years", "");
+
+  toughness.create(grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
+  toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
+}
+
+IceModel::FluxFields::FluxFields(IceGrid::ConstPtr grid) {
+  {
+    climatic_mass_balance.create(grid, "climatic_mass_balance_cumulative",
+                                 WITHOUT_GHOSTS);
+    climatic_mass_balance.set_attrs("diagnostic",
+                                    "cumulative surface mass balance",
+                                    "kg m-2", "");
+  }
+  {
+    basal_grounded.create(grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS);
+    basal_grounded.set_attrs("diagnostic",
+                             "cumulative basal flux into the ice "
+                             "in grounded areas (positive means ice gain)",
+                             "kg m-2", "");
+    basal_grounded.set_time_independent(false);
+    basal_grounded.metadata().set_string("glaciological_units", "Gt m-2");
+    basal_grounded.write_in_glaciological_units = true;
+  }
+  {
+    basal_floating.create(grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS);
+    basal_floating.set_attrs("diagnostic",
+                             "cumulative basal flux into the ice "
+                             "in floating areas (positive means ice gain)",
+                             "kg m-2", "");
+    basal_floating.set_time_independent(false);
+    basal_floating.metadata().set_string("glaciological_units", "Gt m-2");
+    basal_floating.write_in_glaciological_units = true;
+  }
+  {
+    nonneg.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS);
+    nonneg.set_attrs("diagnostic",
+                     "cumulative nonnegative rule flux (positive means ice gain)",
+                     "kg m-2", "");
+    nonneg.set_time_independent(false);
+    nonneg.metadata().set_string("glaciological_units", "Gt m-2");
+    nonneg.write_in_glaciological_units = true;
+  }
+  {
+    discharge.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
+    discharge.set_attrs("diagnostic",
+                        "cumulative discharge (calving) flux (positive means ice loss)",
+                        "kg", "");
+    discharge.set_time_independent(false);
+    discharge.metadata().set_string("glaciological_units", "Gt");
+    discharge.write_in_glaciological_units = true;
+  }
+}
+
+void IceModel::FluxFields::reset() {
+  climatic_mass_balance.set(0.0);
+  basal_grounded.set(0.0);
+  basal_floating.set(0.0);
+  nonneg.set(0.0);
+  discharge.set(0.0);
+}
+
+void IceModel::FluxFields::regrid(const PIO &input_file) {
+  climatic_mass_balance.regrid(input_file, OPTIONAL, 0.0);
+  basal_grounded.regrid(input_file,        OPTIONAL, 0.0);
+  basal_floating.regrid(input_file,        OPTIONAL, 0.0);
+  nonneg.regrid(input_file,                OPTIONAL, 0.0);
+  discharge.regrid(input_file,             OPTIONAL, 0.0);
+}
 
 IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   : m_grid(g),
@@ -74,6 +165,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_mapping("mapping", m_sys),
     m_run_stats("run_stats", m_sys),
+    m_cumulative_flux_fields(m_grid),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
 
@@ -124,11 +216,21 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_save_ts        = false;
   m_save_extra     = false;
 
+  m_fracture = NULL;
+
   reset_counters();
 }
 
 IceModel::FluxCounters IceModel::cumulative_fluxes() const {
   return m_cumulative_fluxes;
+}
+
+const IceModel::FluxFields& IceModel::cumulative_fluxes_2d() const {
+  return m_cumulative_flux_fields;
+}
+
+const IceModelVec2S& IceModel::flux_divergence() const {
+  return m_flux_divergence;
 }
 
 double IceModel::dt() const {
@@ -168,6 +270,8 @@ IceModel::~IceModel() {
   delete m_basal_yield_stress_model;
   delete m_btu;
 
+  delete m_fracture;
+
   delete m_iceberg_remover;
   delete m_ocean_kill_calving;
   delete m_float_kill_calving;
@@ -191,29 +295,19 @@ void IceModel::createVecs() {
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
-  m_log->message(3,
-                 "Allocating memory...\n");
-
-  // get the list of selected calving methods:
-  std::istringstream calving_methods_list(m_config->get_string("calving.methods"));
-  std::string calving_method_name;
-  std::set<std::string> calving_methods;
-
-  while (getline(calving_methods_list, calving_method_name, ',')) {
-    calving_methods.insert(calving_method_name);
-  }
-
   // The following code creates (and documents -- to some extent) the
   // variables. The main (and only) principle here is using standard names from
   // the CF conventions; see
   // http://cf-pcmdi.llnl.gov/documents/cf-standard-names
 
-  m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
-  // POSSIBLE standard name = land_ice_enthalpy
-  m_ice_enthalpy.set_attrs("model_state",
-                  "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                  "J kg-1", "");
-  m_grid->variables().add(m_ice_enthalpy);
+  {
+    m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
+    // POSSIBLE standard name = land_ice_enthalpy
+    m_ice_enthalpy.set_attrs("model_state",
+                             "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                             "J kg-1", "");
+    m_grid->variables().add(m_ice_enthalpy);
+  }
 
   if (m_config->get_boolean("energy.temperature_based")) {
     // ice temperature
@@ -249,11 +343,22 @@ void IceModel::createVecs() {
   m_grid->variables().add(m_ice_surface_elevation);
 
   // land ice thickness
-  m_ice_thickness.create(m_grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
-  m_ice_thickness.set_attrs("model_state", "land ice thickness",
-                          "m", "land_ice_thickness");
-  m_ice_thickness.metadata().set_double("valid_min", 0.0);
-  m_grid->variables().add(m_ice_thickness);
+  {
+    m_ice_thickness.create(m_grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
+    m_ice_thickness.set_attrs("model_state", "land ice thickness",
+                              "m", "land_ice_thickness");
+    m_ice_thickness.metadata().set_double("valid_min", 0.0);
+    m_grid->variables().add(m_ice_thickness);
+  }
+
+  {
+    m_flux_divergence.create(m_grid, "flux_divergence", WITHOUT_GHOSTS);
+    m_flux_divergence.set_attrs("diagnostic",
+                                "flux divergence",
+                                "m s-1", "");
+    m_flux_divergence.metadata().set_string("glaciological_units", "m year-1");
+    m_flux_divergence.write_in_glaciological_units = true;
+  }
 
   if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
     m_gl_mask.create(m_grid, "gl_mask", WITHOUT_GHOSTS);
@@ -326,8 +431,7 @@ void IceModel::createVecs() {
     m_grid->variables().add(m_Href);
   }
 
-  if (m_config->get_string("calving.methods").find("eigen_calving") != std::string::npos or
-      m_config->get_boolean("fracture_density.enabled")) {
+  if (m_config->get_boolean("fracture_density.enabled")) {
 
     m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,
                         2, // stencil width, has to match or exceed the "offset" in eigenCalving
@@ -398,37 +502,6 @@ void IceModel::createVecs() {
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }
 
-  // fracture density fields
-  if (m_config->get_boolean("fracture_density.enabled")) {
-    m_fracture.density.create(m_grid, "fracture_density", WITH_GHOSTS, WIDE_STENCIL);
-    m_fracture.density.set_attrs("model_state", "fracture density in ice shelf", "", "");
-    m_fracture.density.metadata().set_double("valid_max", 1.0);
-    m_fracture.density.metadata().set_double("valid_min", 0.0);
-    m_grid->variables().add(m_fracture.density);
-
-    if (m_config->get_boolean("fracture_density.write_fields")) {
-      m_fracture.growth_rate.create(m_grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture.growth_rate.set_attrs("model_state", "fracture growth rate",       "second-1", "");
-      m_fracture.growth_rate.metadata().set_double("valid_min", 0.0);
-      m_grid->variables().add(m_fracture.growth_rate);
-
-      m_fracture.healing_rate.create(m_grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture.healing_rate.set_attrs("model_state", "fracture healing rate",      "second-1", "");
-      m_grid->variables().add(m_fracture.healing_rate);
-
-      m_fracture.flow_enhancement.create(m_grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture.flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "");
-      m_grid->variables().add(m_fracture.flow_enhancement);
-
-      m_fracture.age.create(m_grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture.age.set_attrs("model_state", "age since fracturing",       "years", "");
-      m_grid->variables().add(m_fracture.age);
-
-      m_fracture.toughness.create(m_grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
-      m_fracture.toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
-      m_grid->variables().add(m_fracture.toughness);
-    }
-  }
 
   // cell areas
   m_cell_area.create(m_grid, "cell_area", WITHOUT_GHOSTS);
@@ -488,64 +561,15 @@ void IceModel::createVecs() {
   // do not add; boundary models are in charge here
   // grid.variables().add(shelfbtemp);
 
-  {
-    m_climatic_mass_balance_cumulative.create(m_grid,
-                                              "climatic_mass_balance_cumulative",
-                                              WITHOUT_GHOSTS);
-    m_climatic_mass_balance_cumulative.set_attrs("diagnostic",
-                                                 "cumulative surface mass balance",
-                                                 "kg m-2", "");
-  }
+  if (m_config->get_boolean("fracture_density.enabled")) {
+    m_fracture = new FractureFields(m_grid);
 
-  {
-    m_flux_divergence.create(m_grid, "flux_divergence", WITHOUT_GHOSTS);
-    m_flux_divergence.set_attrs("diagnostic",
-                                "flux divergence",
-                                "m s-1", "");
-    m_flux_divergence.metadata().set_string("glaciological_units", "m year-1");
-    m_flux_divergence.write_in_glaciological_units = true;
-  }
-
-  {
-    m_grounded_basal_flux_2D_cumulative.create(m_grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS);
-    m_grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
-                                                  "cumulative basal flux into the ice "
-                                                  "in grounded areas (positive means ice gain)",
-                                                  "kg m-2", "");
-    m_grounded_basal_flux_2D_cumulative.set_time_independent(false);
-    m_grounded_basal_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
-    m_grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
-  }
-
-  {
-    m_floating_basal_flux_2D_cumulative.create(m_grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS);
-    m_floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
-                                                  "cumulative basal flux into the ice "
-                                                  "in floating areas (positive means ice gain)",
-                                                  "kg m-2", "");
-    m_floating_basal_flux_2D_cumulative.set_time_independent(false);
-    m_floating_basal_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
-    m_floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
-  }
-
-  {
-    m_nonneg_flux_2D_cumulative.create(m_grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS);
-    m_nonneg_flux_2D_cumulative.set_attrs("diagnostic",
-                                          "cumulative nonnegative rule flux (positive means ice gain)",
-                                          "kg m-2", "");
-    m_nonneg_flux_2D_cumulative.set_time_independent(false);
-    m_nonneg_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
-    m_nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
-  }
-
-  {
-    m_discharge_flux_2D_cumulative.create(m_grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
-    m_discharge_flux_2D_cumulative.set_attrs("diagnostic",
-                                             "cumulative discharge (calving) flux (positive means ice loss)",
-                                             "kg m-2", "");
-    m_discharge_flux_2D_cumulative.set_time_independent(false);
-    m_discharge_flux_2D_cumulative.metadata().set_string("glaciological_units", "Gt m-2");
-    m_discharge_flux_2D_cumulative.write_in_glaciological_units = true;
+    m_grid->variables().add(m_fracture->toughness);
+    m_grid->variables().add(m_fracture->age);
+    m_grid->variables().add(m_fracture->flow_enhancement);
+    m_grid->variables().add(m_fracture->healing_rate);
+    m_grid->variables().add(m_fracture->growth_rate);
+    m_grid->variables().add(m_fracture->density);
   }
 }
 
@@ -922,9 +946,20 @@ const ocean::OceanModel* IceModel::ocean_model() const {
   return this->m_ocean;
 }
 
-const bed::BedDef* IceModel:: bed_model() const {
+const bed::BedDef* IceModel::bed_model() const {
   return m_beddef;
 }
 
+const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
+  return m_btu;
+}
+
+const IceModelVec3& IceModel::ice_enthalpy() const {
+  return m_ice_enthalpy;
+}
+
+const IceModelVec2S& IceModel::ice_thickness() const {
+  return m_ice_thickness;
+}
 
 } // end of namespace pism

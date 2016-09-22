@@ -169,7 +169,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
   list.add(m_cell_area);
 
 
-  list.add(m_discharge_flux_2D_cumulative);
+  list.add(m_cumulative_flux_fields.discharge);
 
   if (use_Href) {
     list.add(Href);
@@ -200,7 +200,7 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
 
       discharge = (delta_H + delta_Href) * m_cell_area(i,j) * ice_density;
 
-      m_discharge_flux_2D_cumulative(i,j) += discharge;
+      m_cumulative_flux_fields.discharge(i,j) += discharge;
 
       local_discharge += discharge;
     }

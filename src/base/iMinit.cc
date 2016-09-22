@@ -338,10 +338,7 @@ void IceModel::initialize_3d() {
 
 void IceModel::reset_cumulative_fluxes() {
   // 2D
-  m_climatic_mass_balance_cumulative.set(0.0);
-  m_grounded_basal_flux_2D_cumulative.set(0.0);
-  m_floating_basal_flux_2D_cumulative.set(0.0);
-  m_nonneg_flux_2D_cumulative.set(0.0);
+  m_cumulative_flux_fields.reset();
   // scalar
   m_cumulative_fluxes = FluxCounters();
 }
@@ -349,12 +346,7 @@ void IceModel::reset_cumulative_fluxes() {
 
 void IceModel::initialize_cumulative_fluxes(const PIO &input_file) {
   // 2D
-  {
-    m_climatic_mass_balance_cumulative.regrid(input_file,  OPTIONAL, 0.0);
-    m_grounded_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
-    m_floating_basal_flux_2D_cumulative.regrid(input_file, OPTIONAL, 0.0);
-    m_nonneg_flux_2D_cumulative.regrid(input_file,         OPTIONAL, 0.0);
-  }
+  m_cumulative_flux_fields.regrid(input_file);
 
   // scalar, stored in run_stats
   if (input_file.inq_var("run_stats")) {
