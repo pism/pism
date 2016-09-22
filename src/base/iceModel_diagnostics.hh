@@ -573,6 +573,23 @@ protected:
   IceModelVec::Ptr compute_impl();
 };
 
+/*! @brief Effective viscosity of ice (3D). */
+class IceModel_viscosity : public Diag<IceModel>
+{
+public:
+  IceModel_viscosity(IceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+} // end of namespace pism
+
+#if (PISM_USE_PROJ4==1)
+#include <proj_api.h>
+#endif
+
+namespace pism {
+
 //! \brief Computes latitude and longitude bounds.
 class IceModel_lat_lon_bounds : public Diag<IceModel>
 {
@@ -580,7 +597,6 @@ public:
   IceModel_lat_lon_bounds(IceModel *m,
                           const std::string &var_name,
                           const std::string &proj_string);
-  ~IceModel_lat_lon_bounds();
 protected:
   virtual IceModelVec::Ptr compute_impl();
 protected:

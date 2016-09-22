@@ -75,6 +75,7 @@ void IceModel::init_diagnostics() {
   m_diagnostics["temppabase"]       = Diagnostic::Ptr(new IceModel_temppabase(this));
   m_diagnostics["tempsurf"]         = Diagnostic::Ptr(new IceModel_tempsurf(this));
   m_diagnostics["dHdt"]             = Diagnostic::Ptr(new IceModel_dHdt(this));
+  m_diagnostics["effective_viscosity"] = Diagnostic::Ptr(new IceModel_viscosity(this));
 
   m_diagnostics[land_ice_area_fraction_name]           = Diagnostic::Ptr(new IceModel_land_ice_area_fraction(this));
   m_diagnostics[grounded_ice_sheet_area_fraction_name] = Diagnostic::Ptr(new IceModel_grounded_ice_sheet_area_fraction(this));
@@ -1995,9 +1996,6 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
   // will not be available and so this code will not run.
 }
 
-IceModel_lat_lon_bounds::~IceModel_lat_lon_bounds() {
-}
-
 IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
   std::map<std::string,std::string> attrs;
   std::vector<double> indices(4);
@@ -2516,5 +2514,194 @@ IceModelVec::Ptr IceModel_hardness::compute_impl() {
 
   return result;
 }
+
+IceModel_viscosity::IceModel_viscosity(IceModel *m)
+  : Diag<IceModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "effective_viscosity",
+                                           m_grid->z()));
+
+  set_attrs("effective viscosity of ice", "",
+            "Pascal second", "kPascal second", 0);
+  m_vars[0].set_double("valid_min", 0);
+  m_vars[0].set_double("_FillValue", m_fill_value);
+}
+
+static inline double square(double x) {
+  return x * x;
+}
+
+IceModelVec::Ptr IceModel_viscosity::compute_impl() {
+
+  IceModelVec3::Ptr result(new IceModelVec3);
+  result->create(m_grid, "effective_viscosity", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  IceModelVec3 W;
+  W.create(m_grid, "wvel", WITH_GHOSTS);
+
+  using mask::ice_free;
+
+  EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
+
+  const rheology::FlowLaw *flow_law = model->stress_balance()->modifier()->flow_law();
+
+  const IceModelVec2S &ice_thickness = model->ice_thickness();
+
+  const IceModelVec3
+    &ice_enthalpy     = model->ice_enthalpy(),
+    &U                = model->stress_balance()->velocity_u(),
+    &V                = model->stress_balance()->velocity_v(),
+    &W_without_ghosts = model->stress_balance()->velocity_w();
+
+  W_without_ghosts.update_ghosts(W);
+
+  const unsigned int Mz = m_grid->Mz();
+  const double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
+  const std::vector<double> &z = m_grid->z();
+
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+
+  IceModelVec::AccessList list;
+  list.add(U);
+  list.add(V);
+  list.add(W);
+  list.add(ice_enthalpy);
+  list.add(ice_thickness);
+  list.add(mask);
+  list.add(*result);
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      const double *E = ice_enthalpy.get_column(i, j);
+      const double H = ice_thickness(i, j);
+
+      const double
+        *u   = U.get_column(i, j),
+        *u_n = U.get_column(i, j + 1),
+        *u_e = U.get_column(i + 1, j),
+        *u_s = U.get_column(i, j - 1),
+        *u_w = U.get_column(i - 1, j);
+
+      const double
+        *v   = V.get_column(i, j),
+        *v_n = V.get_column(i, j + 1),
+        *v_e = V.get_column(i + 1, j),
+        *v_s = V.get_column(i, j - 1),
+        *v_w = V.get_column(i - 1, j);
+
+      const double
+        *w   = W.get_column(i, j),
+        *w_n = W.get_column(i, j + 1),
+        *w_e = W.get_column(i + 1, j),
+        *w_s = W.get_column(i, j - 1),
+        *w_w = W.get_column(i - 1, j);
+
+      StarStencil<int> m = mask.int_star(i, j);
+      const unsigned int
+        east  = ice_free(m.e) ? 0 : 1,
+        west  = ice_free(m.w) ? 0 : 1,
+        south = ice_free(m.s) ? 0 : 1,
+        north = ice_free(m.n) ? 0 : 1;
+
+      double *viscosity = result->get_column(i, j);
+
+      if (ice_free(m.ij)) {
+        result->set_column(i, j, m_fill_value);
+        continue;
+      }
+
+      for (unsigned int k = 0; k < Mz; ++k) {
+        const double depth = H - z[k];
+
+        if (depth < 0.0) {
+          viscosity[k] = m_fill_value;
+          continue;
+        }
+
+        // EC->pressure() handles negative depths correctly
+        const double pressure = EC->pressure(depth);
+
+        const double hardness = flow_law->hardness(E[k], pressure);
+
+        double u_x = 0.0, v_x = 0.0, w_x = 0.0;
+        if (west + east > 0) {
+          const double D = 1.0 / (dx * (west + east));
+          u_x = D * (west * (u[k] - u_w[k]) + east * (u_e[k] - u[k]));
+          v_x = D * (west * (v[k] - v_w[k]) + east * (v_e[k] - v[k]));
+          w_x = D * (west * (w[k] - w_w[k]) + east * (w_e[k] - w[k]));
+        }
+
+        double u_y = 0.0, v_y = 0.0, w_y = 0.0;
+        if (south + north > 0) {
+          const double D = 1.0 / (dy * (south + north));
+          u_y = D * (south * (u[k] - u_s[k]) + north * (u_n[k] - u[k]));
+          v_y = D * (south * (v[k] - v_s[k]) + north * (v_n[k] - v[k]));
+          w_y = D * (south * (w[k] - w_s[k]) + north * (w_n[k] - w[k]));
+        }
+
+        double
+          u_z = 0.0,
+          v_z = 0.0,
+          w_z = 0.0;
+
+        if (k == 0) {
+          const double dz = z[1] - z[0];
+          u_z = (u[1] - u[0]) / dz;
+          v_z = (v[1] - v[0]) / dz;
+          w_z = (w[1] - w[0]) / dz;
+        } else if (k == Mz - 1) {
+          const double dz = z[Mz - 1] - z[Mz - 2];
+          u_z = (u[Mz - 1] - u[Mz - 2]) / dz;
+          v_z = (v[Mz - 1] - v[Mz - 2]) / dz;
+          w_z = (w[Mz - 1] - w[Mz - 2]) / dz;
+        } else {
+          const double
+            dz_p = z[k + 1] - z[k],
+            dz_m = z[k] - z[k - 1];
+          u_z = 0.5 * ((u[k + 1] - u[k]) / dz_p + (u[k] - u[k - 1]) / dz_m);
+          v_z = 0.5 * ((v[k + 1] - v[k]) / dz_p + (v[k] - v[k - 1]) / dz_m);
+          w_z = 0.5 * ((w[k + 1] - w[k]) / dz_p + (w[k] - w[k - 1]) / dz_m);
+        }
+
+        // These should be "epsilon dot", but that's just too long.
+        const double
+          eps_xx = u_x,
+          eps_yy = v_y,
+          eps_zz = w_z,
+          eps_xy = 0.5 * (u_y + v_x),
+          eps_xz = 0.5 * (u_z + w_x),
+          eps_yz = 0.5 * (v_z + w_y);
+
+        // The second invariant of the 3D strain rate tensor; see equation 4.8 in [@ref
+        // GreveBlatter2009]. Unlike secondInvariant_2D(), this code does not make assumptions about
+        // the input velocity field: we do not ignore w_x and w_y and do not assume that u_z and v_z
+        // are zero.
+        const double
+          gamma = (square(eps_xx) + square(eps_yy) + square(eps_zz) +
+                   2.0 * (square(eps_xy) + square(eps_xz) + square(eps_yz)));
+
+        double nu = 0.0;
+        // Note: in PISM gamma has an extra factor of 1/2; compare to
+        flow_law->effective_viscosity(hardness, 0.5 * gamma, &nu, NULL);
+
+        viscosity[k] = nu;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
+
+
 
 } // end of namespace pism
