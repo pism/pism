@@ -67,25 +67,25 @@ public:
               const IceModelVec2S &melange_back_pressure);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
-  const IceModelVec2V& advective_velocity();
+  const IceModelVec2V& advective_velocity() const;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  const IceModelVec2Stag& diffusive_flux();
+  const IceModelVec2Stag& diffusive_flux() const;
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   double max_diffusivity() const;
 
   // for the energy/age time step:
 
-  //! \brief Get the 3D velocity (for the energy/age time-stepping).
-  const IceModelVec3& velocity_u();
-  const IceModelVec3& velocity_v();
-  const IceModelVec3& velocity_w();
+  //! \brief Get components of the the 3D velocity field.
+  const IceModelVec3& velocity_u() const;
+  const IceModelVec3& velocity_v() const;
+  const IceModelVec3& velocity_w() const;
 
-  //! \brief Get the basal frictional heating (for the energy time-stepping).
-  const IceModelVec2S& basal_frictional_heating();
+  //! \brief Get the basal frictional heating.
+  const IceModelVec2S& basal_frictional_heating() const;
 
-  const IceModelVec3& volumetric_strain_heating();
+  const IceModelVec3& volumetric_strain_heating() const;
 
   // for the calving, etc.:
 

@@ -113,11 +113,11 @@ void StressBalance::update(bool fast, double sea_level,
   }
 }
 
-const IceModelVec2V& StressBalance::advective_velocity() {
+const IceModelVec2V& StressBalance::advective_velocity() const {
   return m_shallow_stress_balance->velocity();
 }
 
-const IceModelVec2Stag& StressBalance::diffusive_flux() {
+const IceModelVec2Stag& StressBalance::diffusive_flux() const {
   return m_modifier->diffusive_flux();
 }
 
@@ -125,23 +125,23 @@ double StressBalance::max_diffusivity() const {
   return m_modifier->max_diffusivity();
 }
 
-const IceModelVec3& StressBalance::velocity_u() {
+const IceModelVec3& StressBalance::velocity_u() const {
   return m_modifier->velocity_u();
 }
 
-const IceModelVec3& StressBalance::velocity_v() {
+const IceModelVec3& StressBalance::velocity_v() const {
   return m_modifier->velocity_v();
 }
 
-const IceModelVec3& StressBalance::velocity_w() {
+const IceModelVec3& StressBalance::velocity_w() const {
   return m_w;
 }
 
-const IceModelVec2S& StressBalance::basal_frictional_heating() {
+const IceModelVec2S& StressBalance::basal_frictional_heating() const {
   return m_shallow_stress_balance->basal_frictional_heating();
 }
 
-const IceModelVec3& StressBalance::volumetric_strain_heating() {
+const IceModelVec3& StressBalance::volumetric_strain_heating() const {
   return m_strain_heating;
 }
 
