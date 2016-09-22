@@ -91,6 +91,8 @@ protected:
   IO_Type m_output_datatype;
   //! metadata corresponding to NetCDF variables
   std::vector<SpatialVariableMetadata> m_vars;
+  //! fill value (used often enough to justify storing it)
+  double m_fill_value;
 };
 
 //! A template derived from Diagnostic, adding a "Model".

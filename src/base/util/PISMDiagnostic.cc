@@ -29,6 +29,7 @@ Diagnostic::Diagnostic(IceGrid::ConstPtr g)
   : m_grid(g), m_sys(g->ctx()->unit_system()), m_config(g->ctx()->config()) {
   m_output_datatype = PISM_FLOAT;
   m_dof = 1;
+  m_fill_value = m_config->get_double("output.fill_value");
 }
 
 Diagnostic::~Diagnostic() {
