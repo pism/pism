@@ -430,14 +430,11 @@ IceModel_cts::IceModel_cts(IceModel *m)
 
 IceModelVec::Ptr IceModel_cts::compute_impl() {
 
-  // update vertical levels (in case the grid was extended
-  m_vars[0].set_levels(m_grid->z());
-
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "cts", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  model->setCTSFromEnthalpy(*result);
+  compute_cts(model->ice_enthalpy(), model->ice_thickness(), *result);
 
   return result;
 }
@@ -1296,7 +1293,9 @@ IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m)
 
 void IceModel_ienthalpy::update(double a, double b) {
 
-  double value = model->total_ice_enthalpy();
+  double value = total_ice_enthalpy(model->ice_enthalpy(),
+                                    model->ice_thickness(),
+                                    model->cell_area());
 
   m_ts->append(value, a, b);
 }

@@ -496,7 +496,6 @@ double IceModel::ice_area() const {
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
-  list.add(m_ice_thickness);
   list.add(m_cell_area);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -611,48 +610,6 @@ double IceModel::ice_area_floating() const {
   }
 
   return GlobalSum(m_grid->com, area);
-}
-
-
-//! Computes the total ice enthalpy in J.
-/*!
-  Units of the specific enthalpy field \f$E=\f$(IceModelVec3::m_ice_enthalpy) are J kg-1.  We integrate
-  \f$E(t,x,y,z)\f$ over the entire ice fluid region \f$\Omega(t)\f$, multiplying
-  by the density to get units of energy:
-  \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
-*/
-double IceModel::total_ice_enthalpy() const {
-  double enthalpy_sum = 0.0;
-
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(m_ice_enthalpy);
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      // count all ice, including cells which have so little they
-      // are considered "ice-free"
-      if (m_ice_thickness(i,j) > 0) {
-        const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
-        const double *Enth = m_ice_enthalpy.get_column(i,j);
-
-        for (int k=0; k<ks; ++k) {
-          enthalpy_sum += Enth[k] * (m_grid->z(k+1) - m_grid->z(k));
-        }
-        enthalpy_sum += Enth[ks] * (m_ice_thickness(i,j) - m_grid->z(ks));
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  // FIXME: use cell_area.
-  enthalpy_sum *= m_config->get_double("constants.ice.density") * (m_grid->dx() * m_grid->dy());
-
-  return GlobalSum(m_grid->com, enthalpy_sum);
 }
 
 } // end of namespace pism

@@ -140,7 +140,8 @@ void IceModel::bootstrap_3d() {
     putTempAtDepth();
 
     // use temperature to initialize enthalpy:
-    compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
+    compute_enthalpy_cold(m_ice_temperature, m_ice_thickness,
+                          m_ice_enthalpy);
 
     m_log->message(2, " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
   } else {

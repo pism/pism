@@ -83,7 +83,7 @@ void IceModel::energyStep() {
     // compute_enthalpy_cold() updates ghosts of m_ice_enthalpy using
     // update_ghosts(). Is not optimized because this
     // (energy.temperature_based) is a rare case.
-    compute_enthalpy_cold(m_ice_temperature, m_ice_enthalpy);
+    compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
 
   } else {
     // new enthalpy values go in m_work3d; also updates (and communicates) Hmelt

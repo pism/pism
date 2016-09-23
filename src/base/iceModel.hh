@@ -266,8 +266,6 @@ protected:
 
   FractureFields *m_fracture;
 
-public:
-  void setCTSFromEnthalpy(IceModelVec3 &result);
 protected:
 
   IceModelVec2 m_strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
@@ -378,11 +376,6 @@ protected:
   virtual void combine_basal_melt_rate();
 
   // see iMenthalpy.cc
-  virtual void compute_enthalpy_cold(const IceModelVec3 &temperature, IceModelVec3 &result);
-  virtual void compute_enthalpy(const IceModelVec3 &temperature,
-                                const IceModelVec3 &liquid_water_fraction,
-                                IceModelVec3 &result);
-
   virtual void enthalpyAndDrainageStep(unsigned int *vertSacrCount,
                                        double* liquifiedVol,
                                        unsigned int *bulgeCount);
@@ -446,7 +439,6 @@ public:
   double ice_area() const;
   double ice_area_grounded() const;
   double ice_area_floating() const;
-  double total_ice_enthalpy() const;
   // these are not "const" because they use temporary storage m_work2d
   double ice_area_temperate();
   double ice_area_cold();
@@ -558,9 +550,26 @@ private:
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
 
+void compute_enthalpy(const IceModelVec3 &temperature,
+                      const IceModelVec3 &liquid_water_fraction,
+                      const IceModelVec2S &ice_thickness,
+                      IceModelVec3 &result);
+
+void compute_enthalpy_cold(const IceModelVec3 &temperature,
+                           const IceModelVec2S &ice_thickness,
+                           IceModelVec3 &result);
+
 void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
                                    const IceModelVec2S &ice_thickness,
                                    IceModelVec3 &result);
+
+void compute_cts(const IceModelVec3 &enthalpy,
+                 const IceModelVec2S &ice_thickness,
+                 IceModelVec3 &result);
+
+double total_ice_enthalpy(const IceModelVec3 &ice_enthalpy,
+                          const IceModelVec2S &ice_thickness,
+                          const IceModelVec2S &cell_area);
 
 } // end of namespace pism
 
