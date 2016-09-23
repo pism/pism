@@ -172,15 +172,15 @@ void PBLingleClark::correct_topg() {
 
 //! Update the Lingle-Clark bed deformation model.
 void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                               double my_t, double my_dt) {
+                                               double t, double dt) {
 
-  if ((fabs(my_t - m_t)   < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12)) {
+  if ((fabs(t - m_t)   < 1e-12) &&
+      (fabs(dt - m_dt) < 1e-12)) {
     return;
   }
 
-  m_t  = my_t;
-  m_dt = my_dt;
+  m_t  = t;
+  m_dt = dt;
 
   double t_final = m_t + m_dt;
 
