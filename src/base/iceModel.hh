@@ -106,7 +106,6 @@ struct FractureFields {
 class IceModel {
   // The following classes implement various diagnostic computations.
   // scalar:
-  friend class IceModel_max_diffusivity;
   friend class IceModel_max_hor_vel;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
