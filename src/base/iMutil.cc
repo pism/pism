@@ -190,16 +190,17 @@ void  IceModel::stampHistory(const std::string &str) {
 
 }
 
-void IceModel::check_minimum_ice_thickness() const {
+void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
+  IceGrid::ConstPtr grid = ice_thickness.get_grid();
 
-  IceModelVec::AccessList list(m_ice_thickness);
+  IceModelVec::AccessList list(ice_thickness);
 
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_ice_thickness(i, j) < 0.0) {
+      if (ice_thickness(i, j) < 0.0) {
         throw RuntimeError::formatted("Thickness is negative at point i=%d, j=%d", i, j);
       }
     }
@@ -213,20 +214,22 @@ void IceModel::check_minimum_ice_thickness() const {
 /*!
   Extends the grid such that the new one has 2 (two) levels above the ice.
  */
-void IceModel::check_maximum_ice_thickness() const {
-  const double Lz = m_grid->Lz();
+void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness) {
+  IceGrid::ConstPtr grid = ice_thickness.get_grid();
 
-  IceModelVec::AccessList list(m_ice_thickness);
+  const double Lz = grid->Lz();
 
-  ParallelSection loop(m_grid->com);
+  IceModelVec::AccessList list(ice_thickness);
+
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_ice_thickness(i, j) > Lz) {
+      if (ice_thickness(i, j) > Lz) {
         throw RuntimeError::formatted("Ice thickness (%7.4f m) exceeds the height"
                                       " of the computational box (%7.4f m) at i=%d, j=%d.",
-                                      m_ice_thickness(i, j), Lz, i, j);
+                                      ice_thickness(i, j), Lz, i, j);
       }
     }
   } catch (...) {

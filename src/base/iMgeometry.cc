@@ -83,7 +83,7 @@ void IceModel::enforce_consistency_of_geometry() {
   gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
   gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
 
-  check_minimum_ice_thickness();
+  check_minimum_ice_thickness(m_ice_thickness);
 }
 
 //! \brief Adjust ice flow through interfaces of the cell i,j.
@@ -718,7 +718,7 @@ void IceModel::massContExplicitStep() {
   }
 
   // Check if the ice thickness exceeded the height of the computational box and stop if it did.
-  check_maximum_ice_thickness();
+  check_maximum_ice_thickness(m_ice_thickness);
 }
 
 /**

@@ -455,8 +455,6 @@ protected:
   virtual void stampHistoryEnd();
   virtual void stampHistory(const std::string &);
   virtual void update_run_stats();
-  virtual void check_minimum_ice_thickness() const;
-  virtual void check_maximum_ice_thickness() const;
 
 protected:
   // working space (a convenience)
@@ -568,6 +566,9 @@ void compute_cts(const IceModelVec3 &enthalpy,
 double total_ice_enthalpy(const IceModelVec3 &ice_enthalpy,
                           const IceModelVec2S &ice_thickness,
                           const IceModelVec2S &cell_area);
+
+void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
+void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
 } // end of namespace pism
 
