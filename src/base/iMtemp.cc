@@ -136,8 +136,6 @@ This method should be kept because it is worth having alternative physics, and
 void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeCount) {
   PetscErrorCode  ierr;
 
-  bool viewOneColumn = options::Bool("-view_sys", "save column system information to a file");
-
   const double
     ice_density        = m_config->get_double("constants.ice.density"),
     ice_c              = m_config->get_double("constants.ice.specific_heat_capacity"),
@@ -237,17 +235,6 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
 
         // solve the system for this column; melting not addressed yet
         system.solveThisColumn(x);
-
-        if (viewOneColumn && (i == m_id && j == m_jd)) {
-          ierr = PetscPrintf(m_grid->com,
-                             "\n"
-                             "in temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file... \n",
-                             i, j);
-          PISM_CHK(ierr, "PetscPrintf");
-
-          system.save_to_file(x);
-        }
-
       }       // end of "if there are enough points in ice to bother ..."
 
       // prepare for melting/refreezing

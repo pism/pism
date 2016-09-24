@@ -235,9 +235,6 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
     // constants controlling the numerical method:
     bulgeEnthMax = m_config->get_double("energy.enthalpy_cold_bulge_max"); // J kg-1
 
-  bool viewOneColumn = options::Bool("-view_sys",
-                                     "save column system information to a file");
-
   energy::DrainageCalculator dc(*m_config);
 
   const IceModelVec2S &Rb = m_stress_balance->basal_frictional_heating();
@@ -368,9 +365,6 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         // solve the system
         system.solve(Enthnew);
 
-        if (viewOneColumn && (i == m_id && j == m_jd)) {
-          system.save_to_file(Enthnew);
-        }
       }
 
       // post-process (drainage and bulge-limiting)

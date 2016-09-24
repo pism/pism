@@ -48,9 +48,6 @@ void IceModel::setFromOptions() {
 
   set_config_from_options(*m_config);
 
-  m_id = options::Integer("-id", "Specifies the sounding row", m_id);
-  m_jd = options::Integer("-jd", "Specifies the sounding column", m_jd);
-
   // Set global attributes using the config database:
   m_output_global_attributes.set_string("title", m_config->get_string("run_info.title"));
   m_output_global_attributes.set_string("institution", m_config->get_string("run_info.institution"));

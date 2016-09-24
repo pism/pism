@@ -198,10 +198,6 @@ the storage grid.  The storage grid may or may not be equally-spaced.  See
 ageSystemCtx::solveThisColumn() for the actual method.
  */
 void IceModel::ageStep() {
-  PetscErrorCode  ierr;
-
-  bool viewOneColumn = options::Bool("-view_sys",
-                                     "save column system information to file");
 
   const IceModelVec3
     &u3 = m_stress_balance->velocity_u(),
@@ -238,16 +234,6 @@ void IceModel::ageStep() {
 
         // solve the system for this column; call checks that params set
         system.solveThisColumn(x);
-
-        if (viewOneColumn && (i == m_id && j == m_jd)) {
-          ierr = PetscPrintf(PETSC_COMM_SELF,
-                             "\n"
-                             "in ageStep(): saving ageSystemCtx at (i,j)=(%d,%d) to m-file... \n",
-                             i, j);
-          PISM_CHK(ierr, "PetscPrintf");
-
-          system.save_to_file(x);
-        }
 
         // put solution in IceModelVec3
         system.fine_to_coarse(x, i, j, m_work3d);

@@ -596,9 +596,6 @@ $ pismr -i input.nc -y 1000 -o output.nc -view_map thk,tempsurf
 \end{verbatim}
 shows ice thickness and ice temperature at the surface.
 
-One can also expose all the linear systems being solved in ice columns by using \texttt{-view_sys} along with the map-plane location specified using \intextoption{id XX} and \intextoption{jd YY}.  For example, if the enthalpy formulation is in use then a \Matlab-format text file \texttt{enth_iXX_jYY.m} will be generated at each time step.  % FIXME:  add year to file name?
-This text file can be run as a script in \Matlab.  The linear system will be stored in a matrix, a right-hand-side vector, and the solution in a solution vector.  This way these linear systems can be checked for debugging purposes.
-
 \begin{table}[ht]
   \centering
  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule

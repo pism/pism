@@ -542,7 +542,6 @@ protected:
   virtual void update_viewers();
   virtual void view_field(const IceModelVec *field);
   std::set<std::string> m_map_viewers, m_slice_viewers;
-  int     m_id, m_jd;            // sounding indexes
   std::map<std::string,petsc::Viewer::Ptr> viewers;
 
 private:

@@ -203,10 +203,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_max_v_speed = 0;
   m_max_w_speed = 0;
 
-  // set default locations of the column used by -view_system
-  m_id = (m_grid->Mx() - 1)/2;
-  m_jd = (m_grid->My() - 1)/2;
-
   m_output_global_attributes.set_string("Conventions", "CF-1.5");
   m_output_global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
