@@ -231,14 +231,6 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     dt_restrictions["max"] = m_config->get_double("time_stepping.maximum_time_step", "seconds");
   }
 
-  // Always consider maxdt_temporary.
-  //
-  // FIXME: maxdt_temporary is used by iceCompModel (and only there).
-  // It should probably be removed.
-  if (maxdt_temporary > 0.0) {
-    dt_restrictions["internal (derived class)"] = maxdt_temporary;
-  }
-
   // Never go past the end of a run.
   if (time_to_end > 0.0) {
     dt_restrictions["end of the run"] = time_to_end;

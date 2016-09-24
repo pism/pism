@@ -244,7 +244,6 @@ void IceModel::reset_counters() {
   m_max_v_speed = 0.0;
   m_max_w_speed = 0.0;
 
-  maxdt_temporary = 0.0;
   m_dt              = 0.0;
   m_skip_countdown   = 0;
 
@@ -828,7 +827,6 @@ void IceModel::run() {
   while (m_time->current() < m_time->end()) {
 
     m_stdout_flags.erase();  // clear it out
-    maxdt_temporary = -1.0;
 
     step(do_mass_conserve, do_energy, do_age, do_skip);
 

@@ -297,7 +297,6 @@ protected:
   double t_TempAge;
   //! enthalpy/temperature and age time-steps
   double dt_TempAge;
-  double maxdt_temporary;
   double dt_from_cfl;
   double CFLmaxdt;
   double CFLmaxdt2D;
