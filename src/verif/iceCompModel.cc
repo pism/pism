@@ -26,7 +26,7 @@
 #include "tests/exactTestsABCD.h"
 #include "tests/exactTestsFG.hh"
 #include "tests/exactTestH.h"
-#include "tests/exactTestL.h"
+#include "tests/exactTestL.hh"
 
 #include "iceCompModel.hh"
 #include "base/stressbalance/sia/SIAFD.hh"
@@ -308,7 +308,7 @@ void IceCompModel::initialize_3d() {
 }
 
 void IceCompModel::initTestABCDH() {
-  double     A0, T0, H, accum;
+  double     A0, T0;
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
@@ -346,8 +346,7 @@ void IceCompModel::initTestABCDH() {
         m_ice_thickness(i, j) = exactD(time, r).H;
         break;
       case 'H':
-        exactH(f, time, r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactH(f, time, r).H;
         break;
       default:
         throw RuntimeError("test must be A, B, C, D, or H");
@@ -389,7 +388,6 @@ struct rgridReverseSort {
 };
 
 void IceCompModel::initTestL() {
-  int ierr;
   double     A0, T0;
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
@@ -430,30 +428,7 @@ void IceCompModel::initTestL() {
     rr[k] = rrv[k].r;
   }
 
-  ierr = exactL_list(&rr[0], MM, &HH[0], &bb[0], &aa[0]);
-  switch (ierr) {
-     case TESTL_NOT_DONE:
-       m_log->message(1,
-          "\n\nTest L ERROR: exactL_list() returns 'NOT_DONE' (%d) ...\n\n\n",ierr);
-       break;
-     case TESTL_NOT_DECREASING:
-       m_log->message(1,
-          "\n\nTest L ERROR: exactL_list() returns 'NOT_DECREASING' (%d) ...\n\n\n",ierr);
-       break;
-     case TESTL_INVALID_METHOD:
-       m_log->message(1,
-          "\n\nTest L ERROR: exactL_list() returns 'INVALID_METHOD' (%d) ...\n\n\n",ierr);
-       break;
-     case TESTL_NO_LIST:
-       m_log->message(1,
-          "\n\nTest L ERROR: exactL_list() returns 'NO_LIST' (%d) ...\n\n\n",ierr);
-       break;
-     default:
-       break;
-  }
-  if (ierr != 0) {
-    throw RuntimeError("test L: exactL_list(..) failed");
-  }
+  ExactLParameters L = exactL(rr);
 
   {
     IceModelVec2S bed_topography;
@@ -464,8 +439,8 @@ void IceCompModel::initTestL() {
     list.add(bed_topography);
 
     for (k = 0; k < MM; k++) {
-      m_ice_thickness(rrv[k].i, rrv[k].j)  = HH[k];
-      bed_topography(rrv[k].i, rrv[k].j) = bb[k];
+      m_ice_thickness(rrv[k].i, rrv[k].j)  = L.H[k];
+      bed_topography(rrv[k].i, rrv[k].j) = L.b[k];
     }
 
     m_ice_thickness.update_ghosts();
@@ -496,7 +471,6 @@ void IceCompModel::reset_thickness_test_A() {
 
 
 void IceCompModel::fillSolnTestABCDH() {
-  double     H, accum;
 
   const double time = m_time->current();
 
@@ -522,8 +496,7 @@ void IceCompModel::fillSolnTestABCDH() {
         m_ice_thickness(i, j) = exactD(time, r).H;
         break;
       case 'H':
-        exactH(f, time, r, &H, &accum);
-        m_ice_thickness(i, j)   = H;
+        m_ice_thickness(i, j) = exactH(f, time, r).H;
         break;
       default:
         throw RuntimeError("test must be A, B, C, D, or H");
@@ -580,8 +553,6 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     Herr   = 0.0,
     avHerr = 0.0,
     etaerr = 0.0;
-
-  double dummy;
 
   IceModelVec::AccessList list(m_ice_thickness);
   if (testname == 'L') {
@@ -640,7 +611,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         }
         break;
       case 'H':
-        exactH(f,time,r,&Hexact,&dummy);
+        Hexact = exactH(f, time, r).H;
         break;
       case 'K':
       case 'O':

@@ -30,7 +30,7 @@
 #include "tests/exactTestsABCD.h"
 #include "tests/exactTestsFG.hh"
 #include "tests/exactTestH.h"
-#include "tests/exactTestL.h"
+#include "tests/exactTestL.hh"
 
 #include "base/util/error_handling.hh"
 #include "base/util/IceGrid.hh"
@@ -166,7 +166,7 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
  * @return 0 on success
  */
 void Verification::update_ABCDH(double time) {
-  double         A0, T0, H, accum;
+  double A0, T0, accum;
 
   double f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.lithosphere_density");
 
@@ -200,7 +200,7 @@ void Verification::update_ABCDH(double time) {
         accum = exactD(time, r).M;
         break;
       case 'H':
-        exactH(f, time, r, &H, &accum);
+        accum = exactH(f, time, r).M;
         break;
       default:
         throw RuntimeError::formatted("test must be A, B, C, D, or H, got %c",

@@ -3,19 +3,13 @@
 # scheme, much less PISM runs, here!
 
 .PHONY : all
-all : simpleE simpleH simpleL simpleM simpleN
+all : simpleM simpleN
 
 # TYPICAL BY-HAND COMPILE-LINK-RUN EXAMPLE:
 #   $ gcc -c simpleH.c -o simpleH.o
 #   $ gcc -c exactTestH.c -o exactTestH.o
 #   $ gcc -lm exactTestH.o simpleH.o -o simpleH
 #   $ ./simpleH
-
-simpleH : simpleH.o exactTestH.o
-	$(CC) $^ -o $@ -lm
-
-simpleL : simpleL.o exactTestL.o
-	$(CC) $^ -o $@ -lm -lgsl -lgslcblas
 
 simpleM : simpleM.o exactTestM.o
 	$(CC) $^ -o $@ -lm -lgsl -lgslcblas

@@ -206,7 +206,7 @@ add_library (pismverif OBJECT
   verif/tests/exactTestH.c
   verif/tests/exactTestK.c
   verif/tests/exactTestO.c
-  verif/tests/exactTestL.c
+  verif/tests/exactTestL.cc
   verif/tests/exactTestsABCD.c
   verif/tests/exactTestsFG.cc
   verif/tests/exactTestsIJ.c
@@ -259,12 +259,6 @@ install (FILES
 
 # miscellaneous executables needed by software tests
 if (Pism_BUILD_EXTRA_EXECS)
-  set (EXTRA_EXECS simpleH simpleI simpleJ simpleL)
-  foreach (EXEC ${EXTRA_EXECS})
-    add_executable (${EXEC} verif/tests/${EXEC}.c)
-    target_link_libraries (${EXEC} pism)
-  endforeach (EXEC)
-
   add_executable (btutest base/energy/btutest.cc)
   target_link_libraries (btutest pism)
   list (APPEND EXTRA_EXECS btutest)

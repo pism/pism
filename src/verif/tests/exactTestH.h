@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2016 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -45,8 +45,13 @@ extern "C"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int exactH(const double f, const double t, const double r, 
-           double *H, double *M);
+struct TestHParameters {
+  int error_code;
+  double H;
+  double M;
+};
+
+struct TestHParameters exactH(const double f, const double t, const double r);
 
 #ifdef __cplusplus
 }

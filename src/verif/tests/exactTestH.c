@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006, 2014 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2014, 2016 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -22,10 +22,10 @@
 #include <math.h>
 #include "exactTestH.h"
 
-#define SperA 31556926.0  /* seconds per year; 365.2422 days */
+static const double SperA = 31556926.0;  /* seconds per year; 365.2422 days */
 
-int exactH(const double f, const double tIN, const double r,
-           double *H, double *M) {
+int exactH_old(const double f, const double tIN, const double r,
+               double *H, double *M) {
 
   const double n = 3.0;
   const double H0 = 3600.0, R0=750000.0;
@@ -71,4 +71,10 @@ int exactH(const double f, const double tIN, const double r,
   }
   
   return 0;
+}
+
+struct TestHParameters exactH(const double f, const double t, const double r) {
+  struct TestHParameters result;
+  result.error_code = exactH_old(f, t, r, &result.H, &result.M);
+  return result;
 }
