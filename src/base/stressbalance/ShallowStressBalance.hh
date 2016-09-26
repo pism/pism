@@ -51,23 +51,19 @@ public:
                       const IceModelVec2S &melange_back_pressure) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
-  const IceModelVec2V& velocity();
+  const IceModelVec2V& velocity() const;
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
   const IceModelVec2S& basal_frictional_heating();
 
-  void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
-                                         const IceModelVec2CellType &mask,
-                                         IceModelVec2 &result);
-
   void compute_2D_stresses(const IceModelVec2V &velocity,
                            const IceModelVec2CellType &mask,
-                           IceModelVec2 &result);
+                           IceModelVec2 &result) const;
 
   void compute_basal_frictional_heating(const IceModelVec2V &velocity,
                                         const IceModelVec2S &tauc,
                                         const IceModelVec2CellType &mask,
-                                        IceModelVec2S &result);
+                                        IceModelVec2S &result) const;
   // helpers:
 
   //! \brief Produce a report string for the standard output.
@@ -75,7 +71,7 @@ public:
 
   const rheology::FlowLaw* flow_law() const;
 
-  EnthalpyConverter::Ptr enthalpy_converter();
+  EnthalpyConverter::Ptr enthalpy_converter() const;
 
   const IceBasalResistancePlasticLaw* sliding_law() const;
 protected:

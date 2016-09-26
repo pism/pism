@@ -91,7 +91,7 @@ const rheology::FlowLaw* ShallowStressBalance::flow_law() const {
   return m_flow_law;
 }
 
-EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() {
+EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() const {
   return m_EC;
 }
 
@@ -107,7 +107,7 @@ void ShallowStressBalance::set_boundary_conditions(const IceModelVec2Int &locati
 }
 
 //! \brief Get the thickness-advective 2D velocity.
-const IceModelVec2V& ShallowStressBalance::velocity() {
+const IceModelVec2V& ShallowStressBalance::velocity() const {
   return m_velocity;
 }
 
@@ -175,7 +175,7 @@ void ZeroSliding::update(bool fast, double sea_level, const IceModelVec2S &melan
 void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V &V,
                                                             const IceModelVec2S &tauc,
                                                             const IceModelVec2CellType &mask,
-                                                            IceModelVec2S &result) {
+                                                            IceModelVec2S &result) const {
 
   IceModelVec::AccessList list;
   list.add(V);
@@ -199,117 +199,22 @@ void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V 
 }
 
 
-//! \brief Compute eigenvalues of the horizontal, vertically-integrated strain rate tensor.
-/*!
-Calculates all components \f$D_{xx}, D_{yy}, D_{xy}=D_{yx}\f$ of the
-vertically-averaged strain rate tensor \f$D\f$ [\ref SchoofStream].  Then computes
-the eigenvalues `result(i,j,0)` = (maximum eigenvalue), `result(i,j,1)` = (minimum
-eigenvalue).  Uses the provided thickness to make decisions (PIK) about computing
-strain rates near calving front.
-
-Note that `result(i,j,0)` >= `result(i,j,1)`, but there is no necessary relation between 
-the magnitudes, and either principal strain rate could be negative or positive.
-
-Result can be used in a calving law, for example in eigencalving (PIK).
-
-Note: strain rates will be derived from SSA velocities, using ghosts when
-necessary. Both implementations (SSAFD and SSAFEM) call
-update_ghosts() to ensure that ghost values are up to date.
- */
-void ShallowStressBalance::compute_2D_principal_strain_rates(const IceModelVec2V &V,
-                                                             const IceModelVec2CellType &mask,
-                                                             IceModelVec2 &result) {
-  double    dx = m_grid->dx(), dy = m_grid->dy();
-
-  if (result.get_ndof() != 2) {
-    throw RuntimeError("result.dof() == 2 is required");
-  }
-
-  IceModelVec::AccessList list;
-  list.add(V);
-  list.add(result);
-  list.add(mask);
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (mask.ice_free(i,j)) {
-      result(i,j,0) = 0.0;
-      result(i,j,1) = 0.0;
-      continue;
-    }
-
-    StarStencil<int> m = mask.int_star(i,j);
-    StarStencil<Vector2> U = V.star(i,j);
-
-    // strain in units s-1
-    double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
-      east = 1, west = 1, south = 1, north = 1;
-
-    // Computes u_x using second-order centered finite differences written as
-    // weighted sums of first-order one-sided finite differences.
-    //
-    // Given the cell layout
-    // *----n----*
-    // |         |
-    // |         |
-    // w         e
-    // |         |
-    // |         |
-    // *----s----*
-    // east == 0 if the east neighbor of the current cell is ice-free. In
-    // this case we use the left- (west-) sided difference.
-    //
-    // If both neighbors in the east-west (x) direction are ice-free the
-    // x-derivative is set to zero (see u_x, v_x initialization above).
-    //
-    // Similarly in other directions.
-    if (ice_free(m.e)) {
-      east = 0;
-    }
-    if (ice_free(m.w)) {
-      west = 0;
-    }
-    if (ice_free(m.n)) {
-      north = 0;
-    }
-    if (ice_free(m.s)) {
-      south = 0;
-    }
-
-    if (west + east > 0) {
-      u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
-      v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
-    }
-
-    if (south + north > 0) {
-      u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
-      v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
-    }
-
-    const double A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
-      B   = 0.5 * (u_x - v_y),
-      Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
-      q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
-    result(i,j,0) = A + q;
-    result(i,j,1) = A - q; // q >= 0 so e1 >= e2
-
-  }
-}
-
 //! \brief Compute 2D deviatoric stresses.
 /*! Note: IceModelVec2 result has to have dof == 3. */
 void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
                                                const IceModelVec2CellType &mask,
-                                               IceModelVec2 &result) {
-  double    dx = m_grid->dx(), dy = m_grid->dy();
+                                               IceModelVec2 &result) const {
+  const double
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
 
   if (result.get_ndof() != 3) {
     throw RuntimeError("result.get_dof() == 3 is required");
   }
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
-  double hardness = pow(m_config->get_double("flow_law.isothermal_Glen.ice_softness"),-1.0/m_config->get_double("stress_balance.ssa.Glen_exponent"));
+  double hardness = pow(m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
+                        -1.0 / m_config->get_double("stress_balance.ssa.Glen_exponent"));
 
   IceModelVec::AccessList list;
   list.add(V);

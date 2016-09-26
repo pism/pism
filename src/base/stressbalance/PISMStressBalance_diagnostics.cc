@@ -927,7 +927,7 @@ IceModelVec::Ptr PSB_strain_rates::compute_impl() {
   // copy_from communicates ghosts
   velbar_with_ghosts.copy_from(*velbar);
 
-  model->compute_2D_principal_strain_rates(velbar_with_ghosts, mask, *result);
+  compute_2D_principal_strain_rates(velbar_with_ghosts, mask, *result);
 
   return result;
 }

@@ -42,7 +42,7 @@ void IceModel::calculateFractureDensity() {
 
   // get SSA velocities and related strain rates and stresses
   const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
-  m_stress_balance->compute_2D_principal_strain_rates(ssa_velocity, m_cell_type, m_strain_rates);
+  stressbalance::compute_2D_principal_strain_rates(ssa_velocity, m_cell_type, m_strain_rates);
   m_stress_balance->compute_2D_stresses(ssa_velocity, m_cell_type, m_deviatoric_stresses);
 
   IceModelVec::AccessList list;

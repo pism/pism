@@ -89,15 +89,10 @@ public:
 
   // for the calving, etc.:
 
-  //! \brief Get the largest and smallest eigenvalues of the strain rate tensor.
-  void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
-                                         const IceModelVec2CellType &mask,
-                                         IceModelVec2 &result);
-
   //! \brief Get the components of the 2D deviatoric stress tensor.
   void compute_2D_stresses(const IceModelVec2V &velocity,
                            const IceModelVec2CellType &mask,
-                           IceModelVec2 &result);
+                           IceModelVec2 &result) const;
 
   //! \brief Produce a report string for the standard output.
   std::string stdout_report() const;
@@ -128,6 +123,10 @@ protected:
   ShallowStressBalance *m_shallow_stress_balance;
   SSB_Modifier *m_modifier;
 };
+
+void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
+                                       const IceModelVec2CellType &mask,
+                                       IceModelVec2 &result);
 
 } // end of namespace stressbalance
 } // end of namespace pism

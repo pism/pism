@@ -59,13 +59,11 @@ StressCalving::~StressCalving() {
  * dictionary, because the velocity field used to compute it need not
  * extend past the ice margin corresponding to the *beginning* of the
  * time-step.
- *
- * @return 0 on success
  */
 void StressCalving::update_strain_rates() {
   const IceModelVec2V        &ssa_velocity = m_stress_balance->advective_velocity();
   const IceModelVec2CellType &mask         = *m_grid->variables().get_2d_cell_type("mask");
-  m_stress_balance->compute_2D_principal_strain_rates(ssa_velocity, mask, m_strain_rates);
+  stressbalance::compute_2D_principal_strain_rates(ssa_velocity, mask, m_strain_rates);
 }
 
 
