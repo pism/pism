@@ -17,6 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PBLingleClark.hh"
+
+#include <gsl/gsl_math.h>       // GSL_NAN
+
 #include "base/util/io/PIO.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/IceGrid.hh"
@@ -39,7 +42,7 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   m_bedstartp0 = m_topg_initial.allocate_proc0_copy();
   m_upliftp0   = m_topg_initial.allocate_proc0_copy();
 
-  bool use_elastic_model = m_config->get_boolean("bed_deformation.lc_elastic_model");
+  bool use_elastic_model = m_config->get_boolean("bed_deformation.lc.elastic_model");
 
   m_bdLC = NULL;
 
@@ -66,6 +69,11 @@ PBLingleClark::~PBLingleClark() {
 void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
                                           const IceModelVec2S &bed_uplift,
                                           const IceModelVec2S &ice_thickness) {
+  m_t_beddef_last = m_grid->ctx()->time()->start();
+
+  m_t  = GSL_NAN;
+  m_dt = GSL_NAN;
+
   ice_thickness.put_on_proc0(*m_Hstartp0);
   bed.put_on_proc0(*m_bedstartp0);
   bed_uplift.put_on_proc0(*m_upliftp0);
@@ -79,6 +87,10 @@ void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
     rank0.failed();
   }
   rank0.check();
+
+  // this should be the last thing we do here
+  m_topg_initial.copy_from(m_topg);
+  m_topg_last.copy_from(m_topg);
 }
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
@@ -88,7 +100,10 @@ void PBLingleClark::init_impl() {
   m_log->message(2,
              "* Initializing the Lingle-Clark bed deformation model...\n");
 
-  correct_topg();
+  // Correct bed elevation.
+  if (m_config->get_boolean("bed_deformation.lc.regrid_bed_special")) {
+    correct_topg();
+  }
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   this->init_with_inputs_impl(m_topg, m_uplift, *ice_thickness);
@@ -100,13 +115,6 @@ MaxTimestep PBLingleClark::max_timestep_impl(double t) {
 }
 
 void PBLingleClark::correct_topg() {
-  bool use_special_regrid_semantics = options::Bool("-regrid_bed_special",
-                                                    "Correct topg when switching to a different grid");
-
-  // Stop if topg correction was not requiested.
-  if (not use_special_regrid_semantics) {
-    return;
-  }
 
   options::String regrid_file("-regrid_file",
                               "Specifies the name of a file to regrid from");

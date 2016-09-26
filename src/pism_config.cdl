@@ -138,10 +138,15 @@ netcdf pism_config {
     pism_config:bed_deformation.model = "none";
     pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use. 'iso' is point-wise isostasy, 'lc' is the Lingle-Clark model (see [@ref LingleClark], requires FFTW3).";
 
-    pism_config:bed_deformation.lc_elastic_model_type = "boolean";
-    pism_config:bed_deformation.lc_elastic_model_option = "bed_def_lc_elastic_model";
-    pism_config:bed_deformation.lc_elastic_model = "no";
-    pism_config:bed_deformation.lc_elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
+    pism_config:bed_deformation.lc.elastic_model_type = "boolean";
+    pism_config:bed_deformation.lc.elastic_model_option = "bed_def_lc_elastic_model";
+    pism_config:bed_deformation.lc.elastic_model = "no";
+    pism_config:bed_deformation.lc.elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
+
+    pism_config:bed_deformation.lc.regrid_bed_special = "no";
+    pism_config:bed_deformation.lc.regrid_bed_special_doc = "Correct topg when switching to a different grid";
+    pism_config:bed_deformation.lc.regrid_bed_special_option = "regrid_bed_special";
+    pism_config:bed_deformation.lc.regrid_bed_special_type = "boolean";
 
     pism_config:ocean.always_grounded_type = "boolean";
     pism_config:ocean.always_grounded_option = "dry";
