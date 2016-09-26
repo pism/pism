@@ -265,10 +265,6 @@ if (Pism_BUILD_EXTRA_EXECS)
     target_link_libraries (${EXEC} pism)
   endforeach (EXEC)
 
-  add_executable (tryLCbd earth/tryLCbd.cc)
-  target_link_libraries (tryLCbd pism)
-  list (APPEND EXTRA_EXECS tryLCbd)
-
   add_executable (btutest base/energy/btutest.cc)
   target_link_libraries (btutest pism)
   list (APPEND EXTRA_EXECS btutest)

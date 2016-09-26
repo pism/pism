@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import PISM
+from math import cos, pi
+
 # Simple testing program for Lingle & Clark bed deformation model.
 # Runs go for 150,000 years on 63.5km grid with 100a time steps and Z=2 in L&C model.
 # SCENARIOS:  run 'python bed_deformation.py -scenario N' where N=1,2,3,4 as follows
@@ -18,44 +21,14 @@
 #        half-space model and elastic model:
 #              include_elastic = TRUE, do_uplift = TRUE, H0 = 1000.0;
 
-scenarios = {"1" : (False, False, 1000.0),
-             "2" : (True,  False, 1000.0),
-             "3" : (False, True,  0.0),
-             "4" : (True,  True,  1000.0)}
-
-R0 = 1000e3
-t_final_years = 15e3
-
-dt_years = 100.0
-dt = PISM.convert(ctx.unit_system, dt_years, "years", "seconds")
-
-one_year = PISM.convert(ctx.unit_system, 1.0, "years", "seconds")
-
-import PISM
-from math import cos, pi
-
 ctx = PISM.Context()
-
 config = ctx.config
 
-# set grid defaults
-config.set_double("grid.Mx", 193)
-config.set_double("grid.My", 129)
-
-config.set_double("grid.Lx", 3000e3)
-config.set_double("grid.Ly", 2000e3)
-
-config.set_double("grid.Mz", 2)
-config.set_double("grid.Lz", 1000)
-
-scenario = PISM.OptionKeyword("-scenario", "choose one of 4 scenarios", "1,2,3,4", "1")
-
-elastic, use_uplift, H0 = scenarios[scenario.value()]
-
-config.set_boolean("bed_deformation.lc_elastic_model", elastic)
+R0 = 1000e3
 
 def initialize_uplift(uplift):
     "Initialize the uplift field."
+    grid = uplift.get_grid()
     peak_uplift = PISM.convert(ctx.unit_system, 10, "mm/year", "m/second")
     with PISM.vec.Access(nocomm=[uplift]):
         for (i, j) in grid.points():
@@ -65,7 +38,8 @@ def initialize_uplift(uplift):
             else:
                 uplift[i, j] = 0.0
 
-def initialize_thickness(thickness):
+def initialize_thickness(thickness, H0):
+    grid = thickness.get_grid()
     with PISM.vec.Access(nocomm=[thickness]):
         for (i, j) in grid.points():
             r = PISM.radius(grid, i, j)
@@ -92,46 +66,88 @@ def create_grid():
 
     return PISM.IceGrid(ctx.ctx, P)
 
-grid = create_grid()
+def run(scenario, plot, pause, save):
 
-thickness, bed, uplift = allocate(grid)
+    # set grid defaults
+    config.set_double("grid.Mx", 193)
+    config.set_double("grid.My", 129)
 
-# FIXME: this should not be necessary.
-grid.variables().add(thickness)
-grid.variables().add(bed)
-grid.variables().add(uplift)
+    config.set_double("grid.Lx", 3000e3)
+    config.set_double("grid.Ly", 2000e3)
 
-# set initial geometry and uplift
-bed.set(0.0)
-thickness.set(0.0)
-if use_uplift:
-    initialize_uplift(uplift)
+    config.set_double("grid.Mz", 2)
+    config.set_double("grid.Lz", 1000)
 
-model = PISM.PBLingleClark(grid)
-model.init()
+    scenarios = {"1" : (False, False, 1000.0),
+                 "2" : (True,  False, 1000.0),
+                 "3" : (False, True,  0.0),
+                 "4" : (True,  True,  1000.0)}
 
-# FIXME! This does not work for some reason.
-# model.init(bed, uplift, thickness)
+    elastic, use_uplift, H0 = scenarios[scenario]
 
-# now add the disc load
-initialize_thickness(thickness)
+    print "Using scenario %s: elastic model = %s, use uplift = %s, H0 = %f m" % (scenario, elastic, use_uplift, H0)
 
-# the time stepping loop
-n_steps = int(t_final_years / dt_years)
+    config.set_boolean("bed_deformation.lc.elastic_model", elastic)
 
-for k in range(n_steps + 1):
-    time_years = k * dt_years
+    grid = create_grid()
 
-    time = one_year * time_years
+    thickness, bed, uplift = allocate(grid)
 
-    model.update(thickness, time, dt)
+    # set initial geometry and uplift
+    bed.set(0.0)
+    thickness.set(0.0)
+    if use_uplift:
+        initialize_uplift(uplift)
 
-    print "Time: %f years" % time_years
+    time = ctx.ctx.time()
 
-    model.bed_elevation().view(400)
-    model.uplift().view(400)
+    time.init(ctx.ctx.log())
 
-PISM.PETSc.Sys.sleep(5)
+    model = PISM.PBLingleClark(grid)
 
-model.bed_elevation().dump("bed_elevation.nc")
-model.uplift().dump("bed_uplift.nc")
+    model.init(bed, uplift, thickness)
+
+    # now add the disc load
+    initialize_thickness(thickness, H0)
+
+    dt = PISM.convert(ctx.unit_system, 100, "365 day", "seconds")
+
+    # the time-stepping loop
+    while time.current() < time.end():
+        # don't go past the end of the run
+        dt_current = min(dt, time.end() - time.current())
+
+        model.update(thickness, time.current(), dt_current)
+
+        if plot:
+            model.bed_elevation().view(400)
+            model.uplift().view(400)
+
+        print "t = %s years, dt = %s years" % (time.date(), time.convert_time_interval(dt_current, "years"))
+        time.step(dt_current)
+
+    print "Reached t = %s years" % time.date()
+
+    if pause:
+        print "Pausing for 5 seconds..."
+        PISM.PETSc.Sys.sleep(5)
+
+    if save:
+        model.bed_elevation().dump("bed_elevation.nc")
+        model.uplift().dump("bed_uplift.nc")
+
+if __name__ == "__main__":
+    scenario = PISM.OptionKeyword("-scenario", "choose one of 4 scenarios", "1,2,3,4", "1")
+    plot = PISM.OptionBool("-plot", "Plot bed elevation and uplift.")
+    save = PISM.OptionBool("-save", "Save final states of the bed elevation and uplift.")
+    pause = PISM.OptionBool("-pause", "Pause for 5 seconds to look at runtime 2D plots.")
+
+    run(scenario.value(), plot, pause, save)
+
+def scenario1_test():
+    "Test if scenario 1 runs"
+    run("1", False, False, False)
+
+def scenario3_test():
+    "Test if scenario 3 runs"
+    run("3", False, False, False)
