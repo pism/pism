@@ -109,21 +109,21 @@ void IceModel::calculateFractureDensity() {
                     " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
                  gamma, initThreshold, gammaheal, healThreshold, soft_residual);
 
-  bool do_fracground = options::Bool("-do_frac_on_grounded", "model fracture density in grounded areas");
+  bool do_fracground = m_config->get_boolean("fracture_density.include_grounded_ice");
 
-  double fdBoundaryValue = options::Real("-phi0", "phi0", 0.0);
+  double fdBoundaryValue = m_config->get_double("fracture_density.phi0");
 
-  bool constant_healing = options::Bool("-constant_healing", "constant healing");
+  bool constant_healing = m_config->get_boolean("fracture_density.constant_healing");
 
-  bool fracture_weighted_healing = options::Bool("-fracture_weighted_healing", "fracture weighted healing");
+  bool fracture_weighted_healing = m_config->get_boolean("fracture_density.fracture_weighted_healing");
 
-  bool max_shear_stress = options::Bool("-max_shear", "max shear");
+  bool max_shear_stress = m_config->get_boolean("fracture_density.max_shear_stress");
 
-  bool lefm = options::Bool("-lefm", "lefm");
+  bool lefm = m_config->get_boolean("fracture_density.lefm");
 
-  bool constant_fd = options::Bool("-constant_fd", "constant fd");
+  bool constant_fd = m_config->get_boolean("fracture_density.constant_fd");
 
-  bool fd2d_scheme = options::Bool("-scheme_fd2d", "scheme fd2d");
+  bool fd2d_scheme = m_config->get_boolean("fracture_density.fd2d_scheme");
 
   const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
 
@@ -167,7 +167,8 @@ void IceModel::calculateFractureDensity() {
     //sources /////////////////////////////////////////////////////////////////
     ///von mises criterion
 
-    double txx = m_deviatoric_stresses(i, j, 0),
+    double
+      txx    = m_deviatoric_stresses(i, j, 0),
       tyy    = m_deviatoric_stresses(i, j, 1),
       txy    = m_deviatoric_stresses(i, j, 2),
       T1     = 0.5 * (txx + tyy) + sqrt(0.25 * PetscSqr(txx - tyy) + PetscSqr(txy)), //Pa
