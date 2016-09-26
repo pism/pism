@@ -480,8 +480,6 @@ def logging_test():
     L.add_logger(L.print_logger)
     L.add_logger(c)
 
-    PISM.setVerbosityLevel(2)
-
     L.log("log message\n", L.kError)
 
     L.logError("error message\n")

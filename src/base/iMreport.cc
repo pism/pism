@@ -166,7 +166,7 @@ void IceModel::summary(bool tempAndAge) {
     // at default verbosity level, only report CFL viols if above:
     const double CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
     if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT ||
-        getVerbosityLevel() > 2) {
+        m_log->get_threshold() > 2) {
       char tempstr[90] = "";
       snprintf(tempstr,90,
               "  [!CFL#=%d (=%5.2f%% of 3D grid)] ",
@@ -182,7 +182,7 @@ void IceModel::summary(bool tempAndAge) {
   double area = ice_area();
 
   double meltfrac = 0.0;
-  if (tempAndAge or getVerbosityLevel() >= 3) {
+  if (tempAndAge or m_log->get_threshold() >= 3) {
     meltfrac = compute_temperate_base_fraction(area);
   }
 
@@ -271,7 +271,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     mass_cont_sub_dtsum += delta_t;
   }
 
-  if ((tempAndAge == true) || (!do_energy) || (getVerbosityLevel() > 2)) {
+  if ((tempAndAge == true) || (!do_energy) || (m_log->get_threshold() > 2)) {
     char tempstr[90]    = "",
          velunitstr[90] = "";
 

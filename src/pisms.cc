@@ -98,7 +98,6 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    verbosityLevelFromOptions();
     Context::Ptr ctx = pisms_context(com);
     Logger::Ptr log = ctx->log();
 

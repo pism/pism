@@ -158,8 +158,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    verbosityLevelFromOptions();
-    Logger log(com, getVerbosityLevel());
+    Logger log(com, 2);
 
     log.message(2, "PISM-MERGE %s (output file merging tool)\n",
                 PISM_Revision);

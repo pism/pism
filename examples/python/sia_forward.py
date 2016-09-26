@@ -36,7 +36,6 @@ sia_forward.py -i IN.nc [-o file.nc]
     * -i is required
 """
 
-PISM.verbosityLevelFromOptions()
 PISM.show_usage_check_req_opts(ctx.log(), "sia_forward.py", ["-i"], usage)
 
 input_filename, input_set = PISM.optionsStringWasSet("-i", "input file")

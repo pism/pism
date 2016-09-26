@@ -290,7 +290,6 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     // set default verbosity
-    setVerbosityLevel(2);
     units::System::Ptr unit_system(new units::System);
     Context::Ptr ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();

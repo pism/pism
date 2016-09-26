@@ -28,37 +28,6 @@
 
 namespace pism {
 
-//! Determine verbosity level from user options.
-/*!
-\verbatim
-   level  option        meaning
-   -----  ------        -------
-   0      -verbose 0    never print to std out AT ALL!
-   1      -verbose 1    less verbose than default: thresh must be 1 to print
-   2      -verbose 2    DEFAULT
-   3      -verbose 3    somewhat verbose
-          -verbose      same as "-verbose 3"
-   4      -verbose 4    fairly verbose
-   5      -verbose 5    very verbose: print everything
-\endverbatim
-See verbPrintf().
- */
-void verbosityLevelFromOptions() {
-
-  setVerbosityLevel(2);
-
-  options::String just_verbose("-verbose", "verbosity level", "");
-
-  if (just_verbose.is_set() and just_verbose->empty()) {
-    setVerbosityLevel(3);
-  } else {
-    options::Integer verbose("-verbose", "verbosity level", 2);
-    if (verbose.is_set()) {
-      setVerbosityLevel(verbose);
-    }
-  }
-}
-
 //! \brief Print a usage message.
 void show_usage(const Logger &log, const std::string &execname, const std::string &usage) {
   log.message(1,

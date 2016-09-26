@@ -207,7 +207,6 @@ if __name__ == "__main__":
     Mx = PISM.optionsInt("-Mx", "Number of grid points in x-direction", default=Mx)
     My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=My)
     output_file = PISM.optionsString("-o", "output file", default="invert_testi.nc")
-    verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
     right_side_weight = PISM.optionsReal("-right_side_weight", "L2 weight for y>0", default=right_side_weight)
     tauc_guess_scale = PISM.optionsReal("-tauc_guess_scale", "initial guess for tauc to be this factor of the true value", default=tauc_guess_scale)
     tauc_guess_const = PISM.optionsReal("-tauc_guess_const", "initial guess for tauc to be this constant", default=tauc_guess_const)
@@ -236,7 +235,6 @@ if __name__ == "__main__":
     viscosity_scale = B * (strainrate_scale ** (-2. / 3.))
     nuH_scale = viscosity_scale * depth_scale
 
-    PISM.setVerbosityLevel(verbosity)
     testi = testi_run(Mx, My)
     testi.setup()
     solver = PISM.invert.ssa.createInvSSASolver(testi)

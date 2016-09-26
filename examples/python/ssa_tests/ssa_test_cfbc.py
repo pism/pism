@@ -142,8 +142,6 @@ if __name__ == '__main__':
     output_file = PISM.optionsString("-o", "output file", default="ssa_test_cfbc.nc")
     verbosity = PISM.optionsInt("-verbose", "verbosity level", default=3)
 
-    PISM.setVerbosityLevel(verbosity)
-
     context.config.set_string('ssa_method', 'fd')
 
     tc = test_cfbc(Mx, My)

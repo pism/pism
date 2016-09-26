@@ -36,62 +36,6 @@
 
 namespace pism {
 
-//! \brief PISM verbosity level; determines how much gets printed to the
-//! standard out.
-static int verbosityLevel;
-
-//! \brief Set the PISM verbosity level.
-void setVerbosityLevel(int level) {
-  if ((level < 0) || (level > 5)) {
-    throw RuntimeError::formatted("verbosity level %d is invalid", level);
-  }
-  verbosityLevel = level;
-}
-
-//! \brief Get the verbosity level.
-int getVerbosityLevel() {
-  return verbosityLevel;
-}
-
-//! Print messages to standard out according to verbosity threshhold.
-/*!
-Verbosity level version of PetscPrintf.  We print according to whether 
-(threshold <= verbosityLevel), in which case print, or (threshold > verbosityLevel)
-in which case no print.
-
-verbosityLevelFromOptions() actually reads the threshold.
-
-The range 1 <= threshold <= 5  is enforced.
-
-Use this method for messages and warnings which should
-- go to stdout and
-- appear only once (regardless of number of processors).
-
-For each communicator, rank 0 does the printing. Calls from other
-ranks are ignored.
-
-Should not be used for reporting fatal errors.
- */
-void verbPrintf(const int threshold, 
-                MPI_Comm comm, const char format[], ...) {
-  PetscErrorCode ierr;
-  int            rank;
-
-  assert(1 <= threshold && threshold <= 5);
-
-  ierr = MPI_Comm_rank(comm, &rank); PISM_C_CHK(ierr, 0, "MPI_Comm_rank");
-  if (rank == 0) {
-    va_list Argp;
-    if (verbosityLevel >= threshold) {
-      va_start(Argp, format);
-      ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp);
-      PISM_CHK(ierr, "PetscVFPrintf");
-
-      va_end(Argp);
-    }
-  }
-}
-
 //! Creates a time-stamp used for the history NetCDF attribute.
 std::string pism_timestamp(MPI_Comm com) {
   time_t now;

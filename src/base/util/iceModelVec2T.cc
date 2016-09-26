@@ -327,8 +327,9 @@ void IceModelVec2T::update(unsigned int start) {
 
   Time::ConstPtr t = m_grid->ctx()->time();
 
-  if (this->get_n_records() > 1 || getVerbosityLevel() > 4) {
-    m_grid->ctx()->log()->message(2, 
+  Logger::ConstPtr log = m_grid->ctx()->log();
+  if (this->get_n_records() > 1) {
+    log->message(4,
                "  reading \"%s\" into buffer\n"
                "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
                metadata().get_string("long_name").c_str(), m_name.c_str(), missing,

@@ -42,7 +42,6 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    verbosityLevelFromOptions();
     Context::Ptr ctx = context_from_options(com, "pismr");
     Logger::Ptr log = ctx->log();
 

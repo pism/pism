@@ -65,7 +65,6 @@ if __name__ == '__main__':
 
     PISM.set_abort_on_sigint(True)
 
-    PISM.verbosityLevelFromOptions()
     PISM.verbPrintf(2, PISM.Context().com, "SSA forward model.\n")
     if PISM.OptionBool("-version", "stop after printing PISM version"):
         sys.exit(0)

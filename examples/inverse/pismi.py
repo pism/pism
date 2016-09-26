@@ -284,7 +284,6 @@ def run():
    """
 
     append_mode = False
-    PISM.setVerbosityLevel(1)
 
     input_filename = PISM.optionsString("-i", "input file")
     append_filename = PISM.optionsString("-a", "append file", default=None)
@@ -308,7 +307,6 @@ def run():
         append_mode = True
 
     inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
-    verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
 
     do_plotting = PISM.optionsFlag("-inv_plot", "perform visualization during the computation", default=False)
     do_final_plot = PISM.optionsFlag("-inv_final_plot", "perform visualization at the end of the computation", default=False)
@@ -336,7 +334,6 @@ def run():
 
     saving_inv_data = (inv_data_filename != output_filename)
 
-    PISM.setVerbosityLevel(verbosity)
     forward_run = SSAForwardRun(input_filename, inv_data_filename, design_var)
     forward_run.setup()
     design_param = forward_run.designVariableParameterization()

@@ -33,10 +33,6 @@ extern const char *PISM_DefaultConfigFile;
 
 const int TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
-void setVerbosityLevel(int level);
-int getVerbosityLevel();
-void verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
-
 std::string pism_timestamp(MPI_Comm com);
 std::string pism_username_prefix(MPI_Comm com);
 std::string pism_args_string();

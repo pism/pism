@@ -184,7 +184,7 @@ void SSAFEM::solve() {
   if (reason->failed()) {
     throw RuntimeError::formatted("SSAFEM solve failed to converge (SNES reason %s)",
                                   reason->description().c_str());
-  } else if (getVerbosityLevel() > 2) {
+  } else if (m_log->get_threshold() > 2) {
     m_stdout_ssa += "SSAFEM converged (SNES reason " + reason->description() + ")";
   }
 }
@@ -224,7 +224,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
   }
 
   m_stdout_ssa.clear();
-  if (getVerbosityLevel() >= 2) {
+  if (m_log->get_threshold() >= 2) {
     m_stdout_ssa = "  SSA: ";
   }
 

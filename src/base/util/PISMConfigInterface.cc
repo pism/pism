@@ -340,7 +340,7 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
   std::set<std::string> parameters_used = config.parameters_used();
 
   if (options::Bool("-options_left", "report unused options")) {
-    verbosity_threshhold = getVerbosityLevel();
+    verbosity_threshhold = log.get_threshold();
   }
 
   std::set<std::string>::const_iterator k;

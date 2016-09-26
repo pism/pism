@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2015 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy
+// Copyright (C) 2010--2016 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy
 // Aschwanden
 //
 // This file is part of PISM.
@@ -65,7 +65,6 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    verbosityLevelFromOptions();
     Context::Ptr ctx = context_from_options(com, "pismo");
     Logger::Ptr log = ctx->log();
 

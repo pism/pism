@@ -168,11 +168,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    verbosityLevelFromOptions();
     Context::Ptr ctx = context_from_options(com, "ssa_testi");
     Config::Ptr config = ctx->config();
-
-    setVerbosityLevel(5);
 
     bool
       usage_set = options::Bool("-usage", "print usage info"),
@@ -193,10 +190,6 @@ int main(int argc, char *argv[]) {
                             "fem,fd", "fem");
 
     options::String output_file("-o", "Set the output file name", "ssa_test_i.nc");
-    options::Integer my_verbosity_level("-verbose", "Verbosity level", 2);
-    if (my_verbosity_level.is_set()) {
-      setVerbosityLevel(my_verbosity_level);
-    }
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;

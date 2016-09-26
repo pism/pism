@@ -32,8 +32,6 @@ namespace pism {
 class Config;
 class Logger;
 
-void verbosityLevelFromOptions();
-
 void show_usage(const Logger &log, const std::string &execname, const std::string &usage);
 
 //! @brief Returns true if PISM should terminate after printing some

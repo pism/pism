@@ -111,7 +111,7 @@ void IceModel::energyStep() {
     const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (m_grid->Mx() * m_grid->My()));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
-        getVerbosityLevel() > 2) {
+        m_log->get_threshold() > 2) {
       char tempstr[50] = "";
       snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
       m_stdout_flags = tempstr + m_stdout_flags;

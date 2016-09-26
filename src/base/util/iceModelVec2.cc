@@ -290,7 +290,6 @@ void IceModelVec2S::mask_by(const IceModelVec2S &M, double fill) {
 }
 
 void IceModelVec2::write_impl(const PIO &nc) const {
-  PetscErrorCode ierr;
 
   assert(m_v != NULL);
 
@@ -308,10 +307,8 @@ void IceModelVec2::write_impl(const PIO &nc) const {
   // the same way v is
   petsc::TemporaryGlobalVec tmp(da2);
 
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(m_grid->com, "  Writing %s...\n", m_name.c_str());
-    PISM_CHK(ierr, "PetscPrintf");
-  }
+  Logger::ConstPtr log = m_grid->ctx()->log();
+  log->message(4, "  Writing %s...\n", m_name.c_str());
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     IceModelVec2::get_dof(da2, tmp, j);
@@ -323,17 +320,14 @@ void IceModelVec2::write_impl(const PIO &nc) const {
 }
 
 void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
-  PetscErrorCode ierr;
 
   if ((m_dof == 1) and (not m_has_ghosts)) {
     IceModelVec::read_impl(nc, time);
     return;
   }
 
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(m_grid->com, "  Reading %s...\n", m_name.c_str());
-    PISM_CHK(ierr, "PetscPrintf");
-  }
+  Logger::ConstPtr log = m_grid->ctx()->log();
+  log->message(4, "  Reading %s...\n", m_name.c_str());
 
   assert(m_v != NULL);
 

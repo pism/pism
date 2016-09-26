@@ -422,11 +422,9 @@ if __name__ == "__main__":
     PISM.set_abort_on_sigint(True)
 
     append_mode = False
-    PISM.setVerbosityLevel(1)
 
     input_filename = PISM.optionsString("-i", "input file")
     inv_data_filename = PISM.optionsString("-inv_data", "inverse data file", default=input_filename)
-    verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
     use_design_prior = PISM.optionsFlag("-inv_use_design_prior", "Use prior from inverse data file as initial guess.", default=True)
     design_var = PISM.optionsList("-inv_ssa", "design variable for inversion", ["tauc", "hardav"], "tauc")
     using_zeta_fixed_mask = PISM.optionsFlag("-inv_use_zeta_fixed_mask",

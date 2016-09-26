@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2014, 2015 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -28,7 +28,6 @@ if __name__ == '__main__':
 
     PISM.set_abort_on_sigint(True)
 
-    PISM.verbosityLevelFromOptions()
     PISM.verbPrintf(2, PISM.Context().com, "SSA forward model.\n")
     usage = \
         """  ssa_forward.py -i IN.nc -Mx number -My number [-o file.nc]

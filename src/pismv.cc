@@ -162,7 +162,6 @@ int main(int argc, char *argv[]) {
       
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    verbosityLevelFromOptions();
     Context::Ptr ctx = pismv_context(com, "pismv");
     Logger::Ptr log = ctx->log();
 

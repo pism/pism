@@ -94,11 +94,6 @@ int NCFile::move_if_exists_impl(const std::string &file_to_move, int rank_to_use
     }
 
     if (exists) {
-      if (getVerbosityLevel() >= 2) {
-        printf("PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
-               file_to_move.c_str(), backup_filename.c_str());
-      }
-
       stat = rename(file_to_move.c_str(), backup_filename.c_str());
       if (stat != 0) {
         fprintf(stderr, "PISM ERROR: can't move '%s' to '%s'.\n", file_to_move.c_str(), backup_filename.c_str());
@@ -134,11 +129,6 @@ int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to
     }
 
     if (exists) {
-      if (getVerbosityLevel() >= 2) {
-        printf("PISM WARNING: output file '%s' already exists. Deleting it...\n",
-               file_to_remove.c_str());
-      }
-
       stat = remove(file_to_remove.c_str());
       if (stat != 0) {
         fprintf(stderr, "PISM ERROR: can't remove '%s'.\n", file_to_remove.c_str());

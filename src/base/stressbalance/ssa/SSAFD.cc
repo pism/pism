@@ -966,8 +966,8 @@ void SSAFD::picard_manager(double nuH_regularization,
   unsigned int max_iterations = static_cast<int>(m_config->get_double("stress_balance.ssa.fd.max_iterations"));
   double ssa_relative_tolerance = m_config->get_double("stress_balance.ssa.fd.relative_convergence");
   char tempstr[100] = "";
-  bool verbose = getVerbosityLevel() >= 2,
-    very_verbose = getVerbosityLevel() > 2;
+  bool verbose = m_log->get_threshold() >= 2,
+    very_verbose = m_log->get_threshold() > 2;
 
   // set the initial guess:
   m_velocity_global.copy_from(m_velocity);

@@ -79,7 +79,6 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    verbosityLevelFromOptions();
     Context::Ptr ctx = btutest_context(com, "btutest");
     Logger::Ptr log = ctx->log();
 
