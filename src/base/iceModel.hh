@@ -173,7 +173,6 @@ public:
   virtual void initialize_2d();
   virtual void initialize_3d();
 
-  void initialize_flux_counters(const PIO &input_file);
   void initialize_cumulative_fluxes(const PIO &input_file);
   void reset_cumulative_fluxes();
 
@@ -229,8 +228,8 @@ protected:
   FrontalMelt                 *m_frontal_melt;
 
   surface::SurfaceModel *m_surface;
-  ocean::OceanModel   *m_ocean;
-  bed::BedDef       *m_beddef;
+  ocean::OceanModel     *m_ocean;
+  bed::BedDef           *m_beddef;
 
   // state variables and some diagnostics/internals
 

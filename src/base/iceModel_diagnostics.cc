@@ -195,17 +195,17 @@ void IceModel::list_diagnostics() {
 
     if (m_btu != NULL) {
       m_btu->add_vars_to_output("big", list);
-      m_btu->add_vars_to_output("2dbig", list);
+      m_btu->add_vars_to_output("big_2d", list);
     }
 
     if (m_basal_yield_stress_model != NULL) {
       m_basal_yield_stress_model->add_vars_to_output("big", list);
-      m_basal_yield_stress_model->add_vars_to_output("2dbig", list);
+      m_basal_yield_stress_model->add_vars_to_output("big_2d", list);
     }
 
     if (m_subglacial_hydrology != NULL) {
       m_subglacial_hydrology->add_vars_to_output("big", list);
-      m_subglacial_hydrology->add_vars_to_output("2dbig", list);
+      m_subglacial_hydrology->add_vars_to_output("big_2d", list);
     }
 
     if (m_stress_balance != NULL) {
