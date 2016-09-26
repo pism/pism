@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
+
 #include <fftw3.h>
-#include <cassert>
 #include <gsl/gsl_math.h>       // M_PI
 
 #include "base/util/pism_const.hh"
@@ -35,11 +35,11 @@ namespace bed {
 template <class T>
 class VecAccessor2D {
 public:
-  VecAccessor2D(T* a, int my_Mx, int my_My, int my_i_offset, int my_j_offset)
-    : m_Mx(my_Mx), m_My(my_My), m_i_offset(my_i_offset), m_j_offset(my_j_offset), m_array(a) {}
+  VecAccessor2D(T* a, int Mx, int My, int i_offset, int j_offset)
+    : m_Mx(Mx), m_My(My), m_i_offset(i_offset), m_j_offset(j_offset), m_array(a) {}
 
-  VecAccessor2D(T* a, int my_Mx, int my_My)
-    : m_Mx(my_Mx), m_My(my_My), m_i_offset(0), m_j_offset(0), m_array(a) {}
+  VecAccessor2D(T* a, int Mx, int My)
+    : m_Mx(Mx), m_My(My), m_i_offset(0), m_j_offset(0), m_array(a) {}
 
   inline T& operator()(int i, int j) {
     return m_array[(m_j_offset + j) + m_My * (m_i_offset + i)];
@@ -51,21 +51,21 @@ private:
 };
 
 BedDeformLC::BedDeformLC(const Config &config,
-                         bool myinclude_elastic,
-                         int myMx, int myMy,
-                         double mydx, double mydy,
-                         int myZ,
-                         Vec myHstart, Vec mybedstart, Vec myuplift,
-                         Vec myH, Vec mybed) {
+                         bool include_elastic,
+                         int Mx, int My,
+                         double dx, double dy,
+                         int Z,
+                         Vec Hstart, Vec bedstart, Vec uplift,
+                         Vec H, Vec bed) {
 
   // set parameters
-  m_include_elastic = myinclude_elastic;
+  m_include_elastic = include_elastic;
 
-  m_Mx     = myMx;
-  m_My     = myMy;
-  m_dx     = mydx;
-  m_dy     = mydy;
-  m_Z      = myZ;
+  m_Mx     = Mx;
+  m_My     = My;
+  m_dx     = dx;
+  m_dy     = dy;
+  m_Z      = Z;
   m_icerho = config.get_double("constants.ice.density");
   m_rho    = config.get_double("bed_deformation.lithosphere_density");
   m_eta    = config.get_double("bed_deformation.mantle_viscosity");
@@ -86,11 +86,11 @@ BedDeformLC::BedDeformLC(const Config &config,
   m_j0_plate = (m_Z - 1)*(m_My - 1) / 2;
 
   // attach to existing (must be allocated!) sequential Vecs
-  m_H         = myH;
-  m_bed       = mybed;
-  m_H_start   = myHstart;
-  m_bed_start = mybedstart;
-  m_uplift    = myuplift;
+  m_H         = H;
+  m_bed       = bed;
+  m_H_start   = Hstart;
+  m_bed_start = bedstart;
+  m_uplift    = uplift;
 
   // memory allocation
   PetscErrorCode  ierr;

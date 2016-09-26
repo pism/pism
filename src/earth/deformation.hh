@@ -53,13 +53,13 @@ namespace bed {
 class BedDeformLC {
 public:
   BedDeformLC(const Config &config,
-                bool myinclude_elastic,
-                int myMx, int myMy, double mydx, double mydy,
-                int myZ,
-                Vec myHstart, Vec mybedstart, Vec myuplift,  // initial state
-                Vec myH,     // generally gets changed by calling program
+                bool include_elastic,
+                int Mx, int My, double dx, double dy,
+                int Z,
+                Vec Hstart, Vec bedstart, Vec uplift,  // initial state
+                Vec H,     // generally gets changed by calling program
                 // before each call to step
-                Vec mybed);  // mybed gets modified by step()
+                Vec bed);  // bed gets modified by step()
   ~BedDeformLC();
 
   void uplift_init();
