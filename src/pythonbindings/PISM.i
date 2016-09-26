@@ -153,11 +153,6 @@
 %apply double * OUTPUT {double * result};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
 
-// The varargs to verbPrintf aren't making it through from python.  But that's ok: we'd like
-// to extend the printf features of verbPrintf to include python's formatting for objects.
-// So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
-%rename(_verbPrintf) verbPrintf;
-
 // The SWIG built-in typecheck for a const char [] (used, e.g., with overloaded methods) checks that
 // the string is zero length. So we have this bug fix from SWIG developer William Fulton here.
 %typemap(typecheck,noblock=1,precedence=SWIG_TYPECHECK_STRING, fragment="SWIG_AsCharPtrAndSize") const char[] {

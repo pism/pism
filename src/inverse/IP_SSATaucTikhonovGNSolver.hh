@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -162,7 +162,7 @@ protected:
   double m_tikhonov_rtol, m_tikhonov_atol, m_tikhonov_ptol;
 
   MPI_Comm m_comm;
-
+  Logger::ConstPtr m_log;
 };
 
 } // end of namespace inverse

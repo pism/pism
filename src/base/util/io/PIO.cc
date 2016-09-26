@@ -159,11 +159,6 @@ void PIO::detect_mode(const string &filename) {
 
     if (m_impl->nc) {
       m_impl->backend_type = modes[j];
-#if (PISM_DEBUG==1)
-      verbPrintf(3, m_impl->com,
-                 "  - Using the %s backend to read from %s...\n",
-                 modes[j].c_str(), filename.c_str());
-#endif
       break;
     }
   }

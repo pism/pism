@@ -35,6 +35,8 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
     m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
     m_target_misfit(0.0) {
   this->construct();
+
+  m_log = d0.get_grid()->ctx()->log();
 }
 
 IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
@@ -230,17 +232,16 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::check_convergence() {
 
   sumNorm = m_gradient.norm(NORM_2);
 
-  verbPrintf(2, PETSC_COMM_WORLD,
-             "----------------------------------------------------------\n",
-             designNorm, stateNorm, sumNorm);
-  verbPrintf(2, PETSC_COMM_WORLD,
+  m_log->message(2,
+             "----------------------------------------------------------\n");
+  m_log->message(2,
              "IP_SSATaucTikhonovGNSolver Iteration %d: misfit %g; functional %g \n",
              m_iter, sqrt(m_val_state)*m_vel_scale, m_value*m_vel_scale*m_vel_scale);
   if (m_tikhonov_adaptive) {
-    verbPrintf(2, PETSC_COMM_WORLD, "alpha %g; log(alpha) %g\n", m_alpha, m_logalpha);
+    m_log->message(2, "alpha %g; log(alpha) %g\n", m_alpha, m_logalpha);
   }
   double relsum = (sumNorm/std::max(designNorm,stateNorm));
-  verbPrintf(2, PETSC_COMM_WORLD,
+  m_log->message(2,
              "design norm %g stateNorm %g sum %g; relative difference %g\n",
              designNorm, stateNorm, sumNorm, relsum);
 
@@ -467,7 +468,7 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlo
   if (ddisc_sq_dalpha <= 0) {
     // Try harder.
     
-    verbPrintf(3, PETSC_COMM_WORLD,
+    m_log->message(3,
                "Adaptive Tikhonov sanity check failed (dh/dalpha= %g <= 0)."
                " Tighten inv_gn_ksp_rtol?\n",
                ddisc_sq_dalpha);
@@ -482,7 +483,7 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlo
     m_designFunctional.dot(m_dh_dalpha,m_dh_dalpha,&ddisc_sq_dalpha_b);
     ddisc_sq_dalpha = 2*m_alpha*(ddisc_sq_dalpha_a+m_alpha*ddisc_sq_dalpha_b);
 
-    verbPrintf(3, PETSC_COMM_WORLD,
+    m_log->message(3,
                "Adaptive Tikhonov sanity check recovery attempt: dh/dalpha= %g. \n",
                ddisc_sq_dalpha);
 
