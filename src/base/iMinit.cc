@@ -679,34 +679,30 @@ void IceModel::get_projection_info(const PIO &input_file) {
 void IceModel::misc_setup() {
 
   m_log->message(3, "Finishing initialization...\n");
+  InputOptions opts = process_input_options(m_ctx->com());
 
-  // Check if we are initializing from a PISM output file:
-  options::String input_file("-i", "Specifies a PISM input file");
-  bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
-
-  if (input_file.is_set()) {
+  if (not (opts.type == INIT_OTHER)) {
+    // initializing from a file
     PIO nc(m_grid->com, "guess_mode");
 
-    nc.open(input_file, PISM_READONLY);
-
+    nc.open(opts.filename, PISM_READONLY);
     std::string source = nc.get_att_text("PISM_GLOBAL", "source");
-    nc.close();
 
-    if (not bootstrap) {
+    if (opts.type == INIT_RESTART) {
       // If it's missing, print a warning
       if (source.empty()) {
         m_log->message(1,
                        "PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
                        "     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
                        "     ncatted -a source,global,c,c,PISM %s\n",
-                       input_file->c_str(), input_file->c_str(), input_file->c_str());
+                       opts.filename.c_str(), opts.filename.c_str(), opts.filename.c_str());
       } else if (source.find("PISM") == std::string::npos) {
         // If the 'source' attribute does not contain the string "PISM", then print
         // a message and stop:
         m_log->message(1,
                        "PISM WARNING: '%s' does not seem to be a PISM output file.\n"
                        "     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
-                       input_file->c_str());
+                       opts.filename.c_str());
       }
     }
   }

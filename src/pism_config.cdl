@@ -1362,11 +1362,13 @@ netcdf pism_config {
     pism_config:grid.ice_vertical_spacing = "quadratic";
     pism_config:grid.ice_vertical_spacing_doc = "vertical spacing in the ice";
 
+    pism_config:grid.Mx_option = "Mx";
     pism_config:grid.Mx_units = "count";
     pism_config:grid.Mx_type = "integer";
     pism_config:grid.Mx = 61;
     pism_config:grid.Mx_doc = "Number of grid points in the x direction.";
 
+    pism_config:grid.My_option = "My";
     pism_config:grid.My_units = "count";
     pism_config:grid.My_type = "integer";
     pism_config:grid.My = 61;

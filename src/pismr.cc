@@ -45,14 +45,6 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "pismr");
     Logger::Ptr log = ctx->log();
 
-    log->message(2, "PISMR %s (basic evolution run mode)\n",
-                 PISM_Revision);
-
-    if (options::Bool("-version", "stop after printing print PISM version")) {
-      return 0;
-    }
-
-    bool input_file_set = options::Bool("-i", "input file name");
     std::string usage =
       "  pismr -i IN.nc [-bootstrap] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
@@ -61,15 +53,11 @@ int main(int argc, char *argv[]) {
       "notes:\n"
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
-    if (not input_file_set) {
-      log->error("PISM ERROR: option -i is required\n\n");
-      show_usage(*log, "pismr", usage);
-      return 0;
-    } else {
-      std::vector<std::string> required;
-      required.clear();
+    {
+      std::vector<std::string> required(1, "-i");
 
-      bool done = show_usage_check_req_opts(*log, "pismr", required, usage);
+      bool done = show_usage_check_req_opts(*log, "PISMR (basic evolution run mode)" ,
+                                            required, usage);
       if (done) {
         return 0;
       }

@@ -68,14 +68,6 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = context_from_options(com, "pismo");
     Logger::Ptr log = ctx->log();
 
-    log->message(2, "PISMO %s (regional outlet-glacier run mode)\n",
-                 PISM_Revision);
-
-    if (options::Bool("-version", "stop after printing print PISM version")) {
-      return 0;
-    }
-
-    options::String input_file("-i", "input file name");
     std::string usage =
       "  pismo -i IN.nc [-bootstrap] [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
@@ -87,12 +79,8 @@ int main(int argc, char *argv[]) {
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
 
-    if (not input_file.is_set()) {
-      throw RuntimeError("options -i is required\n\n" + usage);
-    }
-
-    bool done = show_usage_check_req_opts(*log, "pismo",
-                                          std::vector<std::string>(), // no required options
+    bool done = show_usage_check_req_opts(*log, "PISMO (regional outlet-glacier run mode)",
+                                          std::vector<std::string>(1, "-i"), // no required options
                                           usage);
     if (done) {
       return 0;

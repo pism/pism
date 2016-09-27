@@ -58,6 +58,12 @@ bool show_usage_check_req_opts(const Logger &log,
     keep_running = false,
     terminate = true;
 
+  log.message(2, "%s %s\n", execname.c_str(), PISM_Revision);
+
+  if (options::Bool("-version", "stop after printing print PISM version")) {
+    return terminate;
+  }
+
   if (options::Bool("-usage", "print PISM usage")) {
     show_usage(log, execname, usage);
     return terminate;

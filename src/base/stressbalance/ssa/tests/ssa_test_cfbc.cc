@@ -196,6 +196,7 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     Context::Ptr ctx = context_from_options(com, "ssa_test_cfbc");
+    Config::Ptr config = ctx->config();
 
     bool
       usage_set = options::Bool("-usage", "print usage info"),
@@ -210,8 +211,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    options::Integer Mx("-Mx", "Number of grid points in the X direction", 61);
-    options::Integer My("-My", "Number of grid points in the Y direction", 61);
+    unsigned int Mx = config->get_double("grid.Mx");
+    unsigned int My = config->get_double("grid.My");
 
     options::Keyword method("-ssa_method", "Algorithm for computing the SSA solution",
                             "fem,fd", "fd");

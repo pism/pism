@@ -82,13 +82,6 @@ int main(int argc, char *argv[]) {
     Context::Ptr ctx = btutest_context(com, "btutest");
     Logger::Ptr log = ctx->log();
 
-    log->message(2, "BTUTEST %s (test program for BedThermalUnit)\n",
-                 PISM_Revision);
-
-    if (options::Bool("-version", "stop after printing print PISM version")) {
-      return 0;
-    }
-
     std::string usage =
       "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
       "where these are required because they are used in BedThermalUnit:\n"
@@ -103,16 +96,14 @@ int main(int argc, char *argv[]) {
       "  -Lz            height of ice/atmospher box\n";
 
     // check required options
-    std::vector<std::string> required;
-    required.push_back("-Mbz");
+    std::vector<std::string> required(1, "-Mbz");
 
-    bool done = show_usage_check_req_opts(*log, "btutest", required, usage);
+    bool done = show_usage_check_req_opts(*log, "BTUTEST %s (test program for BedThermalUnit)",
+                                          required, usage);
     if (done) {
       return 0;
     }
 
-    log->message(2,
-                 "btutest tests BedThermalUnit and IceModelVec3BTU\n");
     Config::Ptr config = ctx->config();
 
     // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
@@ -125,10 +116,6 @@ int main(int argc, char *argv[]) {
 
     log->message(2,
                  "  initializing IceGrid from options ...\n");
-
-    options::String outname("-o", "Output file name", "unnamed_btutest.nc");
-
-    options::Real dt_years("-dt", "Time-step, in years", 1.0);
 
     GridParameters P(config);
     P.Mx = 3;
@@ -143,6 +130,10 @@ int main(int argc, char *argv[]) {
     IceGrid::Ptr grid(new IceGrid(ctx, P));
 
     ctx->time()->init(*log);
+
+    options::String outname("-o", "Output file name", "unnamed_btutest.nc");
+
+    options::Real dt_years("-dt", "Time-step, in years", 1.0);
 
     // allocate tools and IceModelVecs
     IceModelVec2S bedtoptemp, heat_flux_at_ice_base;

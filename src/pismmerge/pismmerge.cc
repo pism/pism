@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -160,12 +160,6 @@ int main(int argc, char *argv[]) {
   try {
     Logger log(com, 2);
 
-    log.message(2, "PISM-MERGE %s (output file merging tool)\n",
-                PISM_Revision);
-    if (options::Bool("-version", "stop after printing print PISM version")) {
-      return 0;
-    }
-
     options::String input_file("-i", "Input file name");
     options::String output_name("-o", "Output file name");
     options::String var_name("-v", "Name of the variable to merge");
@@ -181,10 +175,10 @@ int main(int argc, char *argv[]) {
       "notes:\n"
       "  * -o is optional\n";
 
-    std::vector<std::string> required;
-    required.push_back("-i");
+    std::vector<std::string> required(1, "-i");
 
-    bool done = show_usage_check_req_opts(log, "pismmerge", required, usage);
+    bool done = show_usage_check_req_opts(log, "PISM-MERGE %s (output file merging tool)",
+                                          required, usage);
     if (done) {
       return 0;
     }
