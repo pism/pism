@@ -69,18 +69,18 @@ SSAFD::SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   const double power = 1.0 / m_flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
-  hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
-  hardness.set_attrs("diagnostic",
+  m_hardness.create(m_grid, "hardness", WITHOUT_GHOSTS);
+  m_hardness.set_attrs("diagnostic",
                      "vertically-averaged ice hardness",
                      unitstr, "");
 
-  nuH.create(m_grid, "nuH", WITH_GHOSTS);
-  nuH.set_attrs("internal",
+  m_nuH.create(m_grid, "nuH", WITH_GHOSTS);
+  m_nuH.set_attrs("internal",
                 "ice thickness times effective viscosity",
                 "Pa s m", "");
 
-  nuH_old.create(m_grid, "nuH_old", WITH_GHOSTS);
-  nuH_old.set_attrs("internal",
+  m_nuH_old.create(m_grid, "nuH_old", WITH_GHOSTS);
+  m_nuH_old.set_attrs("internal",
                     "ice thickness times effective viscosity (before an update)",
                     "Pa s m", "");
 
@@ -94,12 +94,12 @@ SSAFD::SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_scaling = 1.0e9;  // comparable to typical beta for an ice stream;
 
   // The nuH viewer:
-  view_nuh = false;
-  nuh_viewer_size = 300;
+  m_view_nuh = false;
+  m_nuh_viewer_size = 300;
 
-  dump_system_matlab = false;
+  m_dump_system_matlab = false;
 
-  fracture_density = NULL;
+  m_fracture_density = NULL;
   m_melange_back_pressure = NULL;
 
   // PETSc objects and settings
@@ -234,9 +234,9 @@ void SSAFD::init_impl() {
 
   // options
   options::Integer viewer_size("-ssa_nuh_viewer_size", "nuH viewer size",
-                               nuh_viewer_size);
-  nuh_viewer_size = viewer_size;
-  view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
+                               m_nuh_viewer_size);
+  m_nuh_viewer_size = viewer_size;
+  m_view_nuh = options::Bool("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer");
 
   if (m_config->get_boolean("stress_balance.calving_front_stress_bc")) {
     m_log->message(2,
@@ -247,14 +247,14 @@ void SSAFD::init_impl() {
   // numerical solution of SSA equations; can be given with or without filename prefix
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
-  dump_system_matlab = options::Bool("-ssafd_matlab",
+  m_dump_system_matlab = options::Bool("-ssafd_matlab",
                                      "Save linear system in Matlab-readable ASCII format");
 
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;
 
   if (m_config->get_boolean("fracture_density.enabled")) {
-    fracture_density = m_grid->variables().get_2d_scalar("fracture_density");
+    m_fracture_density = m_grid->variables().get_2d_scalar("fracture_density");
   }
 }
 
@@ -498,7 +498,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PISM_CHK(ierr, "MatZeroEntries");
 
   IceModelVec::AccessList list;
-  list.add(nuH);
+  list.add(m_nuH);
   list.add(*m_tauc);
   list.add(vel);
   list.add(m_mask);
@@ -541,10 +541,10 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
        *      c_s
        */
       // const
-      double c_w = nuH(i-1,j,0);
-      double c_e = nuH(i,j,0);
-      double c_s = nuH(i,j-1,1);
-      double c_n = nuH(i,j,1);
+      double c_w = m_nuH(i-1,j,0);
+      double c_e = m_nuH(i,j,0);
+      double c_s = m_nuH(i,j-1,1);
+      double c_n = m_nuH(i,j,1);
 
       if (lateral_drag_enabled) {
         // if option is set, the viscosity at ice-bedrock boundary layer will
@@ -905,7 +905,7 @@ void SSAFD::solve() {
     }
   }
 
-  if (dump_system_matlab) {
+  if (m_dump_system_matlab) {
     write_system_matlab("");
   }
 
@@ -977,9 +977,9 @@ void SSAFD::picard_manager(double nuH_regularization,
   bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
 
   if (use_cfbc == true) {
-    compute_nuH_staggered_cfbc(nuH, nuH_regularization);
+    compute_nuH_staggered_cfbc(m_nuH, nuH_regularization);
   } else {
-    compute_nuH_staggered(nuH, nuH_regularization);
+    compute_nuH_staggered(m_nuH, nuH_regularization);
   }
   update_nuH_viewers();
 
@@ -992,7 +992,7 @@ void SSAFD::picard_manager(double nuH_regularization,
     }
 
     // in preparation of measuring change of effective viscosity:
-    nuH_old.copy_from(nuH);
+    m_nuH_old.copy_from(m_nuH);
 
     // assemble (or re-assemble) matrix, which depends on updated viscosity
     assemble_matrix(true, m_A);
@@ -1048,14 +1048,14 @@ void SSAFD::picard_manager(double nuH_regularization,
 
     // update viscosity and check for viscosity convergence
     if (use_cfbc == true) {
-      compute_nuH_staggered_cfbc(nuH, nuH_regularization);
+      compute_nuH_staggered_cfbc(m_nuH, nuH_regularization);
     } else {
-      compute_nuH_staggered(nuH, nuH_regularization);
+      compute_nuH_staggered(m_nuH, nuH_regularization);
     }
 
     if (nuH_iter_failure_underrelax != 1.0) {
-      nuH.scale(nuH_iter_failure_underrelax);
-      nuH.add(1.0 - nuH_iter_failure_underrelax, nuH_old);
+      m_nuH.scale(nuH_iter_failure_underrelax);
+      m_nuH.add(1.0 - nuH_iter_failure_underrelax, m_nuH_old);
     }
     compute_nuH_norm(nuH_norm, nuH_norm_change);
 
@@ -1168,11 +1168,11 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
   const NormType MY_NORM = NORM_1;
 
   // Test for change in nu
-  nuH_old.add(-1, nuH);
+  m_nuH_old.add(-1, m_nuH);
 
   std::vector<double>
-    nuNorm   = nuH.norm_all(MY_NORM),
-    nuChange = nuH_old.norm_all(MY_NORM);
+    nuNorm   = m_nuH.norm_all(MY_NORM),
+    nuChange = m_nuH_old.norm_all(MY_NORM);
 
   nuChange[0] *= area;
   nuChange[1] *= area;
@@ -1192,7 +1192,7 @@ void SSAFD::compute_hardav_staggered() {
   IceModelVec::AccessList list;
   list.add(*m_thickness);
   list.add(*m_ice_enthalpy);
-  list.add(hardness);
+  list.add(m_hardness);
   list.add(m_mask);
 
   ParallelSection loop(m_grid->com);
@@ -1214,7 +1214,7 @@ void SSAFD::compute_hardav_staggered() {
         }
 
         if (H == 0) {
-          hardness(i,j,o) = -1e6; // an obviously impossible value
+          m_hardness(i,j,o) = -1e6; // an obviously impossible value
           continue;
         }
 
@@ -1224,7 +1224,7 @@ void SSAFD::compute_hardav_staggered() {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        hardness(i,j,o) = rheology::averaged_hardness(*m_flow_law,
+        m_hardness(i,j,o) = rheology::averaged_hardness(*m_flow_law,
                                                       H, m_grid->kBelowHeight(H),
                                                       &(m_grid->z()[0]), &E[0]);
       } // o
@@ -1283,8 +1283,8 @@ void SSAFD::fracture_induced_softening() {
     n_glen  = m_flow_law->exponent();
 
   IceModelVec::AccessList list;
-  list.add(hardness);
-  list.add(*fracture_density);
+  list.add(m_hardness);
+  list.add(*m_fracture_density);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1294,11 +1294,11 @@ void SSAFD::fracture_induced_softening() {
 
       const double
         // fracture density on the staggered grid:
-        phi       = 0.5 * ((*fracture_density)(i,j) + (*fracture_density)(i+oi,j+oj)),
+        phi       = 0.5 * ((*m_fracture_density)(i,j) + (*m_fracture_density)(i+oi,j+oj)),
         // the line below implements equation (6) in the paper
         softening = pow((1.0-(1.0-epsilon)*phi), -n_glen);
 
-      hardness(i,j,o) *= pow(softening,-1.0/n_glen);
+      m_hardness(i,j,o) *= pow(softening,-1.0/n_glen);
     }
   }
 }
@@ -1358,7 +1358,7 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
   IceModelVec::AccessList list;
   list.add(result);
   list.add(uv);
-  list.add(hardness);
+  list.add(m_hardness);
   list.add(*m_thickness);
 
   double ssa_enhancement_factor = m_flow_law->enhancement_factor(),
@@ -1394,7 +1394,7 @@ void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
       }
 
       double nu = 0.0;
-      m_flow_law->effective_viscosity(hardness(i,j,o),
+      m_flow_law->effective_viscosity(m_hardness(i,j,o),
                                       secondInvariant_2D(Vector2(u_x, v_x),
                                                          Vector2(u_y, v_y)),
                                       &nu, NULL);
@@ -1484,7 +1484,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   }
 
   list.add(result);
-  list.add(hardness);
+  list.add(m_hardness);
   list.add(*m_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
@@ -1517,7 +1517,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
           v_y = 0.0;
         }
 
-        m_flow_law->effective_viscosity(hardness(i,j,0),
+        m_flow_law->effective_viscosity(m_hardness(i,j,0),
                                         secondInvariant_2D(Vector2(u_x, v_x),
                                                            Vector2(u_y, v_y)),
                                         &nu, NULL);
@@ -1552,7 +1552,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
           v_x = 0.0;
         }
 
-        m_flow_law->effective_viscosity(hardness(i,j,1),
+        m_flow_law->effective_viscosity(m_hardness(i,j,1),
                                         secondInvariant_2D(Vector2(u_x, v_x),
                                                            Vector2(u_y, v_y)),
                                         &nu, NULL);
@@ -1579,7 +1579,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 //! Update the nuH viewer, which shows log10(nu H).
 void SSAFD::update_nuH_viewers() {
 
-  if (not view_nuh) {
+  if (not m_view_nuh) {
     return;
   }
 
@@ -1590,13 +1590,13 @@ void SSAFD::update_nuH_viewers() {
                 "Pa s m", "");
 
   IceModelVec::AccessList list;
-  list.add(nuH);
+  list.add(m_nuH);
   list.add(tmp);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
+    double avg_nuH = 0.5 * (m_nuH(i,j,0) + m_nuH(i,j,1));
     if (avg_nuH > 1.0e14) {
       tmp(i,j) = log10(avg_nuH);
     } else {
@@ -1604,12 +1604,12 @@ void SSAFD::update_nuH_viewers() {
     }
   }
 
-  if (not nuh_viewer) {
-    nuh_viewer.reset(new petsc::Viewer(m_grid->com, "nuH", nuh_viewer_size,
+  if (not m_nuh_viewer) {
+    m_nuh_viewer.reset(new petsc::Viewer(m_grid->com, "nuH", m_nuh_viewer_size,
                                        m_grid->Lx(), m_grid->Ly()));
   }
 
-  tmp.view(nuh_viewer, petsc::Viewer::Ptr());
+  tmp.view(m_nuh_viewer, petsc::Viewer::Ptr());
 }
 
 void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
@@ -1803,7 +1803,7 @@ IceModelVec::Ptr SSAFD_nuH::compute_impl() {
   result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
-  result->copy_from(model->nuH);
+  result->copy_from(model->integrated_viscosity());
 
   return result;
 }
@@ -1814,6 +1814,11 @@ void SSAFD::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
 
   dict["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
 }
+
+const IceModelVec2Stag & SSAFD::integrated_viscosity() const {
+  return m_nuH;
+}
+
 
 } // end of namespace stressbalance
 } // end of namespace pism
