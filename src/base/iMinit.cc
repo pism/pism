@@ -714,22 +714,22 @@ void IceModel::misc_setup() {
     // Here we use "long int" to avoid integer overflow.
     const long int two_to_thirty_two = 4294967296L;
     const long int
-      Mx_long = m_grid->Mx(),
-      My_long = m_grid->My(),
-      Mz_long = m_grid->Mz();
+      Mx = m_grid->Mx(),
+      My = m_grid->My(),
+      Mz = m_grid->Mz();
     std::string output_format = m_config->get_string("output.format");
-    if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 and
+    if (Mx * My * Mz * sizeof(double) > two_to_thirty_two - 4 and
         (output_format == "netcdf3" or output_format == "pnetcdf")) {
       throw RuntimeError::formatted("The computational grid is too big to fit in a NetCDF-3 file.\n"
                                     "Each 3D variable requires %lu Mb.\n"
                                     "Please use '-o_format quilt' or re-build PISM with parallel NetCDF-4 or HDF5\n"
                                     "and use '-o_format netcdf4_parallel' or '-o_format hdf5' to proceed.",
-                                    Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
+                                    Mx * My * Mz * sizeof(double) / (1024 * 1024));
     }
   }
 
   m_output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
-                                        "medium");
+                                          "medium");
 
   init_calving();
   init_diagnostics();
