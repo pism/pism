@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cstdlib>
+#include <cstdlib>              // strtol
 
 #include "projection.hh"
 #include "VariableMetadata.hh"
@@ -65,6 +65,72 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_
                                   (int)epsg, proj4_string.c_str());
   }
   return mapping;
+}
+
+void check_mapping_equivalence(const VariableMetadata &mapping,
+                               const std::string &proj4_string) {
+
+  VariableMetadata epsg_mapping = epsg_to_cf(mapping.unit_system(), proj4_string);
+
+  bool mapping_is_empty = (mapping.get_all_strings().empty() and
+                           mapping.get_all_doubles().empty());
+
+  bool epsg_mapping_is_empty = (epsg_mapping.get_all_strings().empty() and
+                                epsg_mapping.get_all_doubles().empty());
+
+  if (mapping_is_empty and epsg_mapping_is_empty) {
+    // empty mapping variables are equivalent
+    return;
+  } else {
+    // Check if the "mapping" variable in the input file matches the EPSG code.
+    // Check strings.
+    VariableMetadata::StringAttrs strings = epsg_mapping.get_all_strings();
+    VariableMetadata::StringAttrs::const_iterator j;
+    for (j = strings.begin(); j != strings.end(); ++j) {
+      if (not mapping.has_attribute(j->first)) {
+        throw RuntimeError::formatted("inconsistent metadata:\n"
+                                      "%s requires %s = \"%s\",\n"
+                                      "but the mapping variable has no %s.",
+                                      proj4_string.c_str(),
+                                      j->first.c_str(), j->second.c_str(),
+                                      j->first.c_str());
+      }
+
+      if (not (mapping.get_string(j->first) == j->second)) {
+        throw RuntimeError::formatted("inconsistent metadata:\n"
+                                      "%s requires %s = \"%s\",\n"
+                                      "but the mapping variable has %s = \"%s\".",
+                                      proj4_string.c_str(),
+                                      j->first.c_str(), j->second.c_str(),
+                                      j->first.c_str(),
+                                      mapping.get_string(j->first).c_str());
+      }
+    }
+
+    // Check doubles
+    VariableMetadata::DoubleAttrs doubles = epsg_mapping.get_all_doubles();
+    VariableMetadata::DoubleAttrs::const_iterator k;
+    for (k = doubles.begin(); k != doubles.end(); ++k) {
+      if (not mapping.has_attribute(k->first)) {
+        throw RuntimeError::formatted("inconsistent metadata:\n"
+                                      "%s requires %s = %f,\n"
+                                      "but the mapping variable has no %s.",
+                                      proj4_string.c_str(),
+                                      k->first.c_str(), k->second[0],
+                                      k->first.c_str());
+      }
+
+      if (fabs(mapping.get_double(k->first) - k->second[0]) > 1e-12) {
+        throw RuntimeError::formatted("inconsistent metadata:\n"
+                                      "%s requires %s = %f,\n"
+                                      "but the mapping variable has %s = %f.",
+                                      proj4_string.c_str(),
+                                      k->first.c_str(), k->second[0],
+                                      k->first.c_str(),
+                                      mapping.get_double(k->first));
+      }
+    }
+  }
 }
 
 } // end of namespace pism

@@ -28,6 +28,10 @@ namespace pism {
 class VariableMetadata;
 
 VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_string);
+
+void check_mapping_equivalence(const VariableMetadata &mapping,
+                               const std::string &proj4_string);
+
 } // end of namespace pism
 
 #endif /* _PROJECTION_H_ */
