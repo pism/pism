@@ -25,6 +25,12 @@
 #include "error_handling.hh"
 #include "io/PIO.hh"
 #include "io/io_helpers.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/IceModelVec.hh"
+
+#if (PISM_USE_PROJ4==1)
+#include "base/util/Proj.hh"
+#endif
 
 namespace pism {
 
@@ -178,5 +184,128 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
   }
   return result;
 }
+
+#if (PISM_USE_PROJ4==1)
+
+//! Computes the area of a triangle using vector cross product.
+static double triangle_area(double *A, double *B, double *C) {
+  double V1[3], V2[3];
+  for (int j = 0; j < 3; ++j) {
+    V1[j] = B[j] - A[j];
+    V2[j] = C[j] - A[j];
+  }
+
+  return 0.5*sqrt(PetscSqr(V1[1]*V2[2] - V2[1]*V1[2]) +
+                  PetscSqr(V1[0]*V2[2] - V2[0]*V1[2]) +
+                  PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
+}
+
+void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
+  IceGrid::ConstPtr grid = result.get_grid();
+
+  Proj geocent("+proj=geocent +datum=WGS84 +ellps=WGS84");
+  Proj pism(projection);
+
+// Cell layout:
+// (nw)        (ne)
+// +-----------+
+// |           |
+// |           |
+// |     o     |
+// |           |
+// |           |
+// +-----------+
+// (sw)        (se)
+
+  double dx2 = 0.5 * grid->dx(), dy2 = 0.5 * grid->dy();
+
+  IceModelVec::AccessList list(result);
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double
+      x = grid->x(i),
+      y = grid->y(j);
+    double
+      x_nw = x - dx2, y_nw = y + dy2, Z_nw = 0,
+      x_ne = x + dx2, y_ne = y + dy2, Z_ne = 0,
+      x_se = x + dx2, y_se = y - dy2, Z_se = 0,
+      x_sw = x - dx2, y_sw = y - dy2, Z_sw = 0;
+
+    pj_transform(pism, geocent, 1, 1, &x_nw, &y_nw, &Z_nw);
+    double nw[3] = {x_nw, y_nw, Z_nw};
+
+    pj_transform(pism, geocent, 1, 1, &x_ne, &y_ne, &Z_ne);
+    double ne[3] = {x_ne, y_ne, Z_ne};
+
+    pj_transform(pism, geocent, 1, 1, &x_se, &y_se, &Z_se);
+    double se[3] = {x_se, y_se, Z_se};
+
+    pj_transform(pism, geocent, 1, 1, &x_sw, &y_sw, &Z_sw);
+    double sw[3] = {x_sw, y_sw, Z_sw};
+
+    result(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
+  }
+}
+
+void compute_lon_lat(const std::string &projection,
+                     IceModelVec2S &longitude,
+                     IceModelVec2S &latitude) {
+
+  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
+  Proj pism(projection);
+
+// Cell layout:
+// (nw)        (ne)
+// +-----------+
+// |           |
+// |           |
+// |     o     |
+// |           |
+// |           |
+// +-----------+
+// (sw)        (se)
+
+  IceGrid::ConstPtr grid = longitude.get_grid();
+
+  IceModelVec::AccessList list;
+  list.add(latitude);
+  list.add(longitude);
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double
+      x = grid->x(i),
+      y = grid->y(j);
+
+    pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
+
+    // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
+    longitude(i, j) = x * RAD_TO_DEG;
+    latitude(i, j)  = y * RAD_TO_DEG;
+  }
+}
+
+#else
+
+void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
+  (void) projection;
+
+  IceGrid::ConstPtr grid = result.get_grid();
+  result.set(grid->dx() * grid->dy());
+}
+
+void compute_lon_lat(const std::string &projection,
+                     IceModelVec2S &longitude,
+                     IceModelVec2S &latitude) {
+  (void) projection;
+  (void) longitude;
+  (void) latitude;
+
+  throw RuntimeError("Cannot compile longitude and latitude. Please rebuild PISM with PROJ.4.");
+}
+
+#endif
 
 } // end of namespace pism
