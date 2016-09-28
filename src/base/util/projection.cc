@@ -281,11 +281,50 @@ static void compute_lon_lat(const std::string &projection,
 
     pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
 
-    // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
     if (which == LONGITUDE) {
       result(i, j) = x * RAD_TO_DEG;
     } else {
       result(i, j) = y * RAD_TO_DEG;
+    }
+  }
+}
+
+static void compute_lon_lat_bounds(const std::string &projection,
+                                   LonLat which,
+                                   IceModelVec3D &result) {
+
+  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
+  Proj pism(projection);
+
+  IceGrid::ConstPtr grid = result.get_grid();
+
+  double dx2 = 0.5 * grid->dx(), dy2 = 0.5 * grid->dy();
+  double x_offsets[] = {-dx2, dx2, dx2, -dx2};
+  double y_offsets[] = {-dy2, -dy2, dy2, dy2};
+
+  IceModelVec::AccessList list;
+  list.add(result);
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double x0 = grid->x(i), y0 = grid->y(j);
+
+    double *values = result.get_column(i, j);
+
+    for (int k = 0; k < 4; ++k) {
+      double
+        x = x0 + x_offsets[k],
+        y = y0 + y_offsets[k];
+
+      // compute lon,lat coordinates:
+      pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
+
+      if (which == LATITUDE) {
+        values[k] = y * RAD_TO_DEG;
+      } else {
+        values[k] = x * RAD_TO_DEG;
+      }
     }
   }
 }
@@ -305,7 +344,19 @@ static void compute_lon_lat(const std::string &projection, LonLat which,
   (void) which;
   (void) result;
 
-  throw RuntimeError("Cannot compile longitude and latitude. Please rebuild PISM with PROJ.4.");
+  throw RuntimeError("Cannot compile longitude and latitude."
+                     " Please rebuild PISM with PROJ.4.");
+}
+
+static void compute_lon_lat_bounds(const std::string &projection,
+                                   LonLat which,
+                                   IceModelVec3 &result) {
+  (void) projection;
+  (void) which;
+  (void) result;
+
+  throw RuntimeError("Cannot compile longitude and latitude bounds."
+                     " Please rebuild PISM with PROJ.4.");
 }
 
 #endif
@@ -317,5 +368,12 @@ void compute_latitude(const std::string &projection, IceModelVec2S &result) {
   compute_lon_lat(projection, LATITUDE, result);
 }
 
+void compute_lon_bounds(const std::string &projection, IceModelVec3D &result) {
+  compute_lon_lat_bounds(projection, LONGITUDE, result);
+}
+
+void compute_lat_bounds(const std::string &projection, IceModelVec3D &result) {
+  compute_lon_lat_bounds(projection, LATITUDE, result);
+}
 
 } // end of namespace pism

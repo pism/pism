@@ -29,6 +29,7 @@ namespace pism {
 
 class PIO;
 class IceModelVec2S;
+class IceModelVec3D;
 
 /*! @brief Convert a proj4 string with an EPSG code to a set of CF attributes. */
 /*!
@@ -55,8 +56,12 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
                                 units::System::Ptr unit_system);
 
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result);
+
 void compute_longitude(const std::string &projection, IceModelVec2S &result);
 void compute_latitude(const std::string &projection, IceModelVec2S &result);
+
+void compute_lon_bounds(const std::string &projection, IceModelVec3D &result);
+void compute_lat_bounds(const std::string &projection, IceModelVec3D &result);
 
 } // end of namespace pism
 
