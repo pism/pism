@@ -45,7 +45,7 @@ public:
 
 /*! @brief Check consistency of the "mapping" variable with the EPSG code in the proj4 string. */
 /*!
- * If the consistency check faild, throws RuntimeError explaining the failure. Fails if `info.proj4`
+ * If the consistency check fails, throws RuntimeError explaining the failure. Fails if `info.proj4`
  * does not use an EPSG code.
  */
 void check_consistency_epsg(const MappingInfo &info);
@@ -55,9 +55,8 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
                                 units::System::Ptr unit_system);
 
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result);
-
-void compute_lon_lat(const std::string &projection,
-                     IceModelVec2S &longitude, IceModelVec2S &latitude);
+void compute_longitude(const std::string &projection, IceModelVec2S &result);
+void compute_latitude(const std::string &projection, IceModelVec2S &result);
 
 } // end of namespace pism
 

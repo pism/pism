@@ -185,6 +185,8 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
   return result;
 }
 
+enum LonLat {LONGITUDE, LATITUDE};
+
 #if (PISM_USE_PROJ4==1)
 
 //! Computes the area of a triangle using vector cross product.
@@ -249,9 +251,8 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
   }
 }
 
-void compute_lon_lat(const std::string &projection,
-                     IceModelVec2S &longitude,
-                     IceModelVec2S &latitude) {
+static void compute_lon_lat(const std::string &projection,
+                            LonLat which, IceModelVec2S &result) {
 
   Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
   Proj pism(projection);
@@ -267,11 +268,10 @@ void compute_lon_lat(const std::string &projection,
 // +-----------+
 // (sw)        (se)
 
-  IceGrid::ConstPtr grid = longitude.get_grid();
+  IceGrid::ConstPtr grid = result.get_grid();
 
   IceModelVec::AccessList list;
-  list.add(latitude);
-  list.add(longitude);
+  list.add(result);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -282,8 +282,11 @@ void compute_lon_lat(const std::string &projection,
     pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
 
     // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
-    longitude(i, j) = x * RAD_TO_DEG;
-    latitude(i, j)  = y * RAD_TO_DEG;
+    if (which == LONGITUDE) {
+      result(i, j) = x * RAD_TO_DEG;
+    } else {
+      result(i, j) = y * RAD_TO_DEG;
+    }
   }
 }
 
@@ -296,16 +299,23 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
   result.set(grid->dx() * grid->dy());
 }
 
-void compute_lon_lat(const std::string &projection,
-                     IceModelVec2S &longitude,
-                     IceModelVec2S &latitude) {
+static void compute_lon_lat(const std::string &projection, LonLat which,
+                            IceModelVec2S &result) {
   (void) projection;
-  (void) longitude;
-  (void) latitude;
+  (void) which;
+  (void) result;
 
   throw RuntimeError("Cannot compile longitude and latitude. Please rebuild PISM with PROJ.4.");
 }
 
 #endif
+
+void compute_longitude(const std::string &projection, IceModelVec2S &result) {
+  compute_lon_lat(projection, LONGITUDE, result);
+}
+void compute_latitude(const std::string &projection, IceModelVec2S &result) {
+  compute_lon_lat(projection, LATITUDE, result);
+}
+
 
 } // end of namespace pism

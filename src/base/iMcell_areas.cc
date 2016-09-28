@@ -40,7 +40,8 @@ void IceModel::compute_cell_areas() {
                    "* Computing longitude and latitude using projection parameters (%s)...\n",
                    projection.c_str());
 
-    compute_lon_lat(projection, m_longitude, m_latitude);
+    compute_longitude(projection, m_longitude);
+    compute_latitude(projection, m_latitude);
   } else {
     m_log->message(2,
                    "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
