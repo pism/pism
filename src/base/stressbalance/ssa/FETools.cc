@@ -337,7 +337,7 @@ Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
 
 Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
   : Q1Quadrature(m_size, dx, dy, L) {
-  // The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
+  // The quadrature points on the reference square.
 
   const double
     A         = 0.0,
@@ -359,7 +359,7 @@ Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
 
 Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
   : Q1Quadrature(m_size, dx, dy, L) {
-  // The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
+  // The quadrature points on the reference square.
   const double
     A          = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
     B          = sqrt(3.0 / 7.0 + (2.0 / 7.0) * sqrt(6.0 / 5.0)), // larger magnitude
