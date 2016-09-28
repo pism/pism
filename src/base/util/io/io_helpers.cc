@@ -1247,13 +1247,14 @@ void read_attributes(const PIO &nc, const std::string &variable_name, VariableMe
 
 //! Write variable attributes to a NetCDF file.
 /*!
+  - If use_glaciological_units == true, "glaciological_units" are
+    written under the name "units" plus the valid range is written in
+    glaciological units.
 
-  \li if use_glaciological_units == true, "glaciological_units" are
-  written under the name "units" plus the valid range is written in
-  glaciological units.
+  - If both valid_min and valid_max are set, then valid_range is written
+    instead of the valid_min, valid_max pair.
 
-  \li if both valid_min and valid_max are set, then valid_range is written
-  instead of the valid_min, valid_max pair.
+  - Skips empty text attributes.
  */
 void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type nctype,
                       bool use_glaciological_units) {
