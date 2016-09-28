@@ -153,7 +153,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name,
   m_z.set_string("positive", "up");
 
   set_string("coordinates", "lat lon");
-  set_string("grid_mapping", "mapping");
 
   set_name(name);
 

@@ -30,6 +30,7 @@
 #include "base/util/PISMTime.hh"
 #include "base/util/pism_memory.hh"
 #include "base/util/Logger.hh"
+#include "base/util/projection.hh"
 
 namespace pism {
 namespace io {
@@ -607,6 +608,13 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
   nc.def_var(name, nctype, dims);
 
   write_attributes(nc, var, nctype, use_glaciological_units);
+
+  // add the "grid_mapping" attribute if the grid has an associated mapping.
+  const VariableMetadata &mapping = grid.get_mapping_info().mapping;
+  if (mapping.has_attributes()) {
+    nc.put_att_text(var.get_name(), "grid_mapping",
+                    mapping.get_name());
+  }
 }
 
 //! Read a variable from a file into an array `output`.

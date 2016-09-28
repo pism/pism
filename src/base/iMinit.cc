@@ -122,7 +122,7 @@ void IceModel::model_state_setup() {
       }
 
       m_output_global_attributes.set_string("proj4", info.proj4);
-      m_mapping = info.mapping;
+      m_grid->set_mapping_info(info);
 
       std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
       m_output_global_attributes.set_string("history",
