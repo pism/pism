@@ -69,6 +69,7 @@
 // Conversions between python lists and certain STL vectors
 %include std_vector.i
 %include std_set.i
+%include std_map.i
 
 %include "base/util/pism_memory.hh"
 #ifdef PISM_USE_TR1
@@ -82,6 +83,8 @@
 %template(DoubleVector) std::vector<double>;
 %template(StringVector) std::vector<std::string>;
 %template(StringSet) std::set<std::string>;
+%template(DoubleVectorMap) std::map<std::string, std::vector<double> >;
+%template(StringMap) std::map<std::string, std::string>;
 
 // Why did I include this?
 %include "cstring.i"
