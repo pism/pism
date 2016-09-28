@@ -113,7 +113,8 @@ void IceModel::model_state_setup() {
   // use latitude or longitude...
   {
     if (use_input_file) {
-      MappingInfo info = get_projection_info(input_file, m_mapping.get_name(),
+      std::string mapping_name = m_grid->get_mapping_info().mapping.get_name();
+      MappingInfo info = get_projection_info(input_file, mapping_name,
                                              m_ctx->unit_system());
 
       if (not info.proj4.empty()) {

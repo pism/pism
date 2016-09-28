@@ -163,7 +163,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_log(context->log()),
     m_time(context->time()),
     m_output_global_attributes("PISM_GLOBAL", m_sys),
-    m_mapping("mapping", m_sys),
     m_run_stats("run_stats", m_sys),
     m_cumulative_flux_fields(m_grid),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),

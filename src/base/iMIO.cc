@@ -48,6 +48,7 @@
 #include "base/util/io/io_helpers.hh"
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/util/projection.hh"
 
 namespace pism {
 
@@ -81,13 +82,13 @@ void IceModel::write_metadata(const PIO &nc, MetadataFlag flag) {
 
   if (flag & WRITE_MAPPING) {
     // only write mapping if it is set.
-    if (m_mapping.has_attributes()) {
-      if (not nc.inq_var(m_mapping.get_name())) {
+    const VariableMetadata &mapping = m_grid->get_mapping_info().mapping;
+    if (mapping.has_attributes()) {
+      if (not nc.inq_var(mapping.get_name())) {
         nc.redef();
-        nc.def_var(m_mapping.get_name(), PISM_DOUBLE,
-                   std::vector<std::string>());
+        nc.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>());
       }
-      io::write_attributes(nc, m_mapping, PISM_DOUBLE, false);
+      io::write_attributes(nc, mapping, PISM_DOUBLE, false);
     }
   }
 

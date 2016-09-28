@@ -207,9 +207,6 @@ protected:
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
 
-  //! grid projection (mapping) parameters
-  VariableMetadata  m_mapping;
-
   //! run statistics
   VariableMetadata m_run_stats;
 
