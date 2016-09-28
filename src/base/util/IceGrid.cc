@@ -39,6 +39,13 @@ namespace pism {
 struct IceGrid::Impl {
   Impl(Context::Ptr ctx);
 
+  petsc::DM::Ptr create_dm(int da_dof, int stencil_width) const;
+  void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
+                            const std::vector<unsigned int> &procs_y);
+
+  void compute_horizontal_coordinates();
+
+
   Context::Ptr ctx;
 
   MappingInfo mapping_info;
@@ -212,9 +219,9 @@ IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
     m_impl->Ly = p.Ly;
     m_impl->periodicity = p.periodicity;
     m_impl->z = p.z;
-    this->set_ownership_ranges(p.procs_x, p.procs_y);
+    m_impl->set_ownership_ranges(p.procs_x, p.procs_y);
 
-    compute_horizontal_coordinates();
+    m_impl->compute_horizontal_coordinates();
 
     {
       unsigned int max_stencil_width = (unsigned int)context->config()->get_double("grid.max_stencil_width");
@@ -443,20 +450,20 @@ static std::vector<unsigned int> ownership_ranges(unsigned int Mx,
 }
 
 //! Set processor ownership ranges. Takes care of type conversion (`unsigned int` -> `PetscInt`).
-void IceGrid::set_ownership_ranges(const std::vector<unsigned int> &procs_x,
-                                   const std::vector<unsigned int> &procs_y) {
-  if (procs_x.size() * procs_y.size() != size()) {
+void IceGrid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_procs_x,
+                                         const std::vector<unsigned int> &input_procs_y) {
+  if (input_procs_x.size() * input_procs_y.size() != (size_t)size) {
     throw RuntimeError("length(procs_x) * length(procs_y) != MPI size");
   }
 
-  m_impl->procs_x.resize(procs_x.size());
-  for (unsigned int k = 0; k < procs_x.size(); ++k) {
-    m_impl->procs_x[k] = procs_x[k];
+  procs_x.resize(input_procs_x.size());
+  for (unsigned int k = 0; k < input_procs_x.size(); ++k) {
+    procs_x[k] = input_procs_x[k];
   }
 
-  m_impl->procs_y.resize(procs_y.size());
-  for (unsigned int k = 0; k < procs_y.size(); ++k) {
-    m_impl->procs_y[k] = procs_y[k];
+  procs_y.resize(input_procs_y.size());
+  for (unsigned int k = 0; k < input_procs_y.size(); ++k) {
+    procs_y[k] = input_procs_y[k];
   }
 }
 
@@ -579,29 +586,29 @@ The upshot is that if one computes in a truly periodic way then the gap between 
 `i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.
 Thus we compute  `dx = 2 * Lx / Mx`.
  */
-void IceGrid::compute_horizontal_coordinates() {
+void IceGrid::Impl::compute_horizontal_coordinates() {
 
-  m_impl->dx = compute_horizontal_spacing(m_impl->Lx, m_impl->Mx,
-                                          m_impl->periodicity & X_PERIODIC);
+  dx = compute_horizontal_spacing(Lx, Mx,
+                                  periodicity & X_PERIODIC);
 
-  m_impl->dy = compute_horizontal_spacing(m_impl->Ly, m_impl->My,
-                                          m_impl->periodicity & Y_PERIODIC);
-
-  double
-    x_min = m_impl->x0 - m_impl->Lx,
-    x_max = m_impl->x0 + m_impl->Lx;
-
-  m_impl->x = compute_coordinates(m_impl->Mx, m_impl->dx,
-                                  x_min, x_max,
-                                  m_impl->periodicity & X_PERIODIC);
+  dy = compute_horizontal_spacing(Ly, My,
+                                  periodicity & Y_PERIODIC);
 
   double
-    y_min = m_impl->y0 - m_impl->Ly,
-    y_max = m_impl->y0 + m_impl->Ly;
+    x_min = x0 - Lx,
+    x_max = x0 + Lx;
 
-  m_impl->y = compute_coordinates(m_impl->My, m_impl->dy,
-                                  y_min, y_max,
-                                  m_impl->periodicity & Y_PERIODIC);
+  x = compute_coordinates(Mx, dx,
+                          x_min, x_max,
+                          periodicity & X_PERIODIC);
+
+  double
+    y_min = y0 - Ly,
+    y_max = y0 + Ly;
+
+  y = compute_coordinates(My, dy,
+                          y_min, y_max,
+                          periodicity & Y_PERIODIC);
 }
 
 //! \brief Report grid parameters.
@@ -777,7 +784,7 @@ petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
   int j = dm_hash(da_dof, stencil_width);
 
   if (m_impl->dms[j].expired()) {
-    result = this->create_dm(da_dof, stencil_width);
+    result = m_impl->create_dm(da_dof, stencil_width);
     m_impl->dms[j] = result;
   } else {
     result = m_impl->dms[j].lock();
@@ -798,25 +805,25 @@ Context::ConstPtr IceGrid::ctx() const {
 
 //! @brief Create a DM with the given number of `dof` (degrees of freedom per grid point) and
 //! stencil width.
-petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
+petsc::DM::Ptr IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
 
-  ctx()->log()->message(3,
-             "* Creating a DM with dof=%d and stencil_width=%d...\n",
-             da_dof, stencil_width);
+  ctx->log()->message(3,
+                      "* Creating a DM with dof=%d and stencil_width=%d...\n",
+                      da_dof, stencil_width);
 
   DM result;
-  PetscErrorCode ierr = DMDACreate2d(com,
+  PetscErrorCode ierr = DMDACreate2d(ctx->com(),
 #if PETSC_VERSION_LT(3,5,0)
                                      DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
 #else
                                      DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
 #endif
                                      DMDA_STENCIL_BOX,
-                                     m_impl->Mx, m_impl->My,
-                                     (PetscInt)m_impl->procs_x.size(),
-                                     (PetscInt)m_impl->procs_y.size(),
+                                     Mx, My,
+                                     (PetscInt)procs_x.size(),
+                                     (PetscInt)procs_y.size(),
                                      da_dof, stencil_width,
-                                     &m_impl->procs_x[0], &m_impl->procs_y[0], // lx, ly
+                                     &procs_x[0], &procs_y[0], // lx, ly
                                      &result);
   PISM_CHK(ierr,"DMDACreate2d");
 

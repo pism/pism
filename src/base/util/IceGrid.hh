@@ -287,13 +287,6 @@ private:
   struct Impl;
   Impl *m_impl;
 
-  void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
-                            const std::vector<unsigned int> &procs_y);
-
-  void compute_horizontal_coordinates();
-
-  petsc::DM::Ptr create_dm(int da_dof, int stencil_width) const;
-
   // Hide copy constructor / assignment operator.
   IceGrid(const IceGrid &);
   IceGrid & operator=(const IceGrid &);
