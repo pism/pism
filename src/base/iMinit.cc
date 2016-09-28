@@ -99,21 +99,44 @@ void IceModel::time_setup() {
 void IceModel::model_state_setup() {
 
   // Check if we are initializing from a PISM output file:
-  InputOptions opts = process_input_options(m_ctx->com());
+  InputOptions input = process_input_options(m_ctx->com());
 
-  const bool use_input_file = opts.type == INIT_BOOTSTRAP or opts.type == INIT_RESTART;
+  const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
   PIO input_file(m_grid->com, "guess_mode");
 
   if (use_input_file) {
-    input_file.open(opts.filename, PISM_READONLY);
+    input_file.open(input.filename, PISM_READONLY);
+  }
+
+  // Get projection information and compute cell areas and lat/lon *before* a component decides to
+  // use latitude or longitude...
+  {
+    if (use_input_file) {
+      MappingInfo info = get_projection_info(input_file, m_mapping.get_name(),
+                                             m_ctx->unit_system());
+
+      if (not info.proj4.empty()) {
+        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
+                       info.proj4.c_str(), input.filename.c_str());
+      }
+
+      m_output_global_attributes.set_string("proj4", info.proj4);
+      m_mapping = info.mapping;
+
+      std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
+      m_output_global_attributes.set_string("history",
+                                            history + m_output_global_attributes.get_string("history"));
+    }
+
+    compute_cell_areas();
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
   {
-    switch (opts.type) {
+    switch (input.type) {
     case INIT_RESTART:
-      restart_2d(input_file, opts.record);
+      restart_2d(input_file, input.record);
       break;
     case INIT_BOOTSTRAP:
       bootstrap_2d(input_file);
@@ -187,14 +210,14 @@ void IceModel::model_state_setup() {
   //
   // The code then delays bootstrapping of the thickness field until the first time step.
   if (m_btu) {
-    m_btu->init(opts);
+    m_btu->init(input);
   }
 
   // Initialize 3D (age and energy balance) parts of IceModel.
   {
-    switch (opts.type) {
+    switch (input.type) {
     case INIT_RESTART:
-      restart_3d(input_file, opts.record);
+      restart_3d(input_file, input.record);
       break;
     case INIT_BOOTSTRAP:
       bootstrap_3d();
@@ -205,25 +228,6 @@ void IceModel::model_state_setup() {
     }
 
     regrid(3);
-  }
-
-  // get projection information and compute cell areas
-  {
-    if (use_input_file) {
-      get_projection_info(input_file);
-
-      std::string proj4_string = m_output_global_attributes.get_string("proj4");
-      if (not proj4_string.empty()) {
-        m_log->message(2, "* Got projection parameters \"%s\" from \"%s\".\n",
-                       proj4_string.c_str(), opts.filename.c_str());
-      }
-
-      std::string history = input_file.get_att_text("PISM_GLOBAL", "history");
-      m_output_global_attributes.set_string("history",
-                                            history + m_output_global_attributes.get_string("history"));
-    }
-
-    compute_cell_areas();
   }
 
   // miscellaneous steps
@@ -587,44 +591,6 @@ void IceModel::allocate_internal_objects() {
   m_work3d.set_attrs("internal",
                     "e.g. new values of temperature or age or enthalpy during time step",
                     "", "");
-}
-
-/** 
- * Process the "mapping" variable and the "proj4" global attribute in the input file.
- */
-void IceModel::get_projection_info(const PIO &input_file) {
-  std::string proj4_string = input_file.get_att_text("PISM_GLOBAL", "proj4");
-  if (not proj4_string.empty()) {
-    m_output_global_attributes.set_string("proj4", proj4_string);
-  }
-
-  bool input_has_mapping = input_file.inq_var(m_mapping.get_name());
-  if (input_has_mapping) {
-    // Note: read_attributes clears attributes before reading
-    io::read_attributes(input_file, m_mapping.get_name(), m_mapping);
-    m_mapping.report_to_stdout(*m_log, 4);
-  }
-
-  std::string::size_type pos = proj4_string.find("+init=epsg:");
-  if (pos == std::string::npos) {
-    // if the PROJ.4 string does not contain "+init=epsg:", we're done
-    return;
-  }
-
-  VariableMetadata epsg_mapping = epsg_to_cf(m_ctx->unit_system(), proj4_string);
-
-  // Check that the EPSG code matches the projection information stored in the "mapping" variable
-  // *unless* this variable has no attributes, in which case initialize it.
-  if (input_has_mapping) {
-    try {
-      check_mapping_equivalence(m_mapping, proj4_string);
-    } catch (RuntimeError &e) {
-      e.add_context("getting projection info from %s", input_file.inq_filename().c_str());
-    }
-  } else {
-    // Set "mapping" using the EPSG code.
-    m_mapping = epsg_mapping;
-  }
 }
 
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
