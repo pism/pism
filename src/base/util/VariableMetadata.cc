@@ -276,6 +276,10 @@ bool VariableMetadata::has_attribute(const std::string &name) const {
   return false;
 }
 
+bool VariableMetadata::has_attributes() const {
+  return not (this->get_all_strings().empty() and this->get_all_doubles().empty());
+}
+
 void VariableMetadata::set_name(const std::string &name) {
   m_short_name = name;
 }

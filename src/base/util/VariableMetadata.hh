@@ -97,6 +97,7 @@ public:
   unsigned int get_n_spatial_dimensions() const;
 
   bool has_attribute(const std::string &name) const;
+  bool has_attributes() const;
   bool get_time_independent() const;
 
   typedef std::map<std::string,std::string> StringAttrs;
