@@ -615,59 +615,11 @@ void IceModel::get_projection_info(const PIO &input_file) {
 
   // Check that the EPSG code matches the projection information stored in the "mapping" variable
   // *unless* this variable has no attributes, in which case initialize it.
-  if (input_has_mapping and
-      ((not m_mapping.get_all_strings().empty()) or (not m_mapping.get_all_doubles().empty()))) {
-    // Check if the "mapping" variable in the input file matches the EPSG code.
-    // Check strings.
-    VariableMetadata::StringAttrs strings = epsg_mapping.get_all_strings();
-    VariableMetadata::StringAttrs::const_iterator j;
-    for (j = strings.begin(); j != strings.end(); ++j) {
-      if (not m_mapping.has_attribute(j->first)) {
-        throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
-                                      "%s requires %s = \"%s\",\n"
-                                      "but the mapping variable has no %s.",
-                                      input_file.inq_filename().c_str(),
-                                      proj4_string.c_str(),
-                                      j->first.c_str(), j->second.c_str(),
-                                      j->first.c_str());
-      }
-
-      if (not (m_mapping.get_string(j->first) == j->second)) {
-        throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
-                                      "%s requires %s = \"%s\",\n"
-                                      "but the mapping variable has %s = \"%s\".",
-                                      input_file.inq_filename().c_str(),
-                                      proj4_string.c_str(),
-                                      j->first.c_str(), j->second.c_str(),
-                                      j->first.c_str(),
-                                      m_mapping.get_string(j->first).c_str());
-      }
-    }
-
-    // Check doubles
-    VariableMetadata::DoubleAttrs doubles = epsg_mapping.get_all_doubles();
-    VariableMetadata::DoubleAttrs::const_iterator k;
-    for (k = doubles.begin(); k != doubles.end(); ++k) {
-      if (not m_mapping.has_attribute(k->first)) {
-        throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
-                                      "%s requires %s = %f,\n"
-                                      "but the mapping variable has no %s.",
-                                      input_file.inq_filename().c_str(),
-                                      proj4_string.c_str(),
-                                      k->first.c_str(), k->second[0],
-                                      k->first.c_str());
-      }
-
-      if (fabs(m_mapping.get_double(k->first) - k->second[0]) > 1e-12) {
-        throw RuntimeError::formatted("input file '%s' has inconsistent metadata:\n"
-                                      "%s requires %s = %f,\n"
-                                      "but the mapping variable has %s = %f.",
-                                      input_file.inq_filename().c_str(),
-                                      proj4_string.c_str(),
-                                      k->first.c_str(), k->second[0],
-                                      k->first.c_str(),
-                                      m_mapping.get_double(k->first));
-      }
+  if (input_has_mapping) {
+    try {
+      check_mapping_equivalence(m_mapping, proj4_string);
+    } catch (RuntimeError &e) {
+      e.add_context("getting projection info from %s", input_file.inq_filename().c_str());
     }
   } else {
     // Set "mapping" using the EPSG code.

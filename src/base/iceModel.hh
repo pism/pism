@@ -568,6 +568,9 @@ double total_ice_enthalpy(const IceModelVec3 &ice_enthalpy,
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
+void check_mapping_equivalence(const VariableMetadata &mapping,
+                               const std::string &proj4_string);
+
 } // end of namespace pism
 
 #endif /* __iceModel_hh */
