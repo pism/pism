@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,7 +27,7 @@
 namespace pism {
 class VariableMetadata;
 
-VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string proj4_string);
+VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_string);
 } // end of namespace pism
 
 #endif /* _PROJECTION_H_ */
