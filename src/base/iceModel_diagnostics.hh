@@ -573,14 +573,6 @@ protected:
   IceModelVec::Ptr compute_impl();
 };
 
-} // end of namespace pism
-
-#if (PISM_USE_PROJ4==1)
-
-#include <proj_api.h>
-
-namespace pism {
-
 //! \brief Computes latitude and longitude bounds.
 class IceModel_lat_lon_bounds : public Diag<IceModel>
 {
@@ -592,17 +584,10 @@ public:
 protected:
   virtual IceModelVec::Ptr compute_impl();
 protected:
-  std::string m_var_name;
-  projPJ m_pism, m_lonlat;
+  std::string m_var_name, m_proj_string;
 };
 
 } // end of namespace pism
-
-#elif (PISM_USE_PROJ4==0)
-// do nothing
-#else  // PISM_USE_PROJ4 is not set
-#error "PISM build system error: PISM_USE_PROJ4 is not set."
-#endif
 
 #endif  /* _ICEMODEL_DIAGNOSTICS_H_ */
 

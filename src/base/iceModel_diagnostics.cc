@@ -43,6 +43,7 @@
 #include "base/calving/EigenCalving.hh"
 #include "base/calving/vonMisesCalving.hh"
 #include "base/calving/FrontalMelt.hh"
+#include "base/util/Proj.hh"
 
 namespace pism {
 
@@ -1984,26 +1985,19 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
   }
   m_vars[0].set_string("coordinates", "");
 
-  m_lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
-  if (m_lonlat == NULL) {
-    throw RuntimeError("projection initialization failed\n"
-                       "('+proj=latlong +datum=WGS84 +ellps=WGS84').\n");
-  }
+  m_proj_string = proj_string;
 
-  m_pism = pj_init_plus(proj_string.c_str());
-  if (m_pism == NULL) {
-    // if we got here, then lonlat was allocated already
-    pj_free(m_lonlat);
-    throw RuntimeError::formatted("proj.4 string '%s' is invalid.", proj_string.c_str());
-  }
+  // create PROJ.4 objects to check if proj_string is OK.
+  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
+  Proj pism(m_proj_string);
 }
 
 IceModel_lat_lon_bounds::~IceModel_lat_lon_bounds() {
-  pj_free(m_pism);
-  pj_free(m_lonlat);
 }
 
 IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
+  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
+  Proj pism(m_proj_string);
 
   std::map<std::string,std::string> attrs;
   std::vector<double> indices(4);
@@ -2038,7 +2032,7 @@ IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
         y = y0 + y_offsets[k];
 
       // compute lon,lat coordinates:
-      pj_transform(m_pism, m_lonlat, 1, 1, &x, &y, NULL);
+      pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
 
       // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
 
