@@ -23,14 +23,35 @@
 #include <string>
 
 #include "PISMUnits.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
-class VariableMetadata;
 
+class PIO;
+
+/*! @brief Convert a proj4 string with an EPSG code to a set of CF attributes. */
+/*!
+ * Fails if `proj4_string` does not contain an EPSG code.
+ */
 VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_string);
 
-void check_mapping_equivalence(const VariableMetadata &mapping,
-                               const std::string &proj4_string);
+class MappingInfo {
+public:
+  MappingInfo(const std::string &mapping_name, units::System::Ptr unit_system);
+  VariableMetadata mapping;
+  std::string proj4;
+};
+
+/*! @brief Check consistency of the "mapping" variable with the EPSG code in the proj4 string. */
+/*!
+ * If the consistency check faild, throws RuntimeError explaining the failure. Fails if `info.proj4`
+ * does not use an EPSG code.
+ */
+void check_consistency_epsg(const MappingInfo &info);
+
+/*! @brief Get projection info from a file. */
+MappingInfo get_projection_info(const PIO &input_file, const std::string &mapping_name,
+                                units::System::Ptr unit_system);
 
 } // end of namespace pism
 

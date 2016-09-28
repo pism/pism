@@ -31,12 +31,17 @@
 #include "base/util/io/PIO.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/Logger.hh"
+#include "base/util/projection.hh"
 
 namespace pism {
 
 //! Internal structures of IceGrid.
 struct IceGrid::Impl {
+  Impl(Context::Ptr ctx);
+
   Context::Ptr ctx;
+
+  MappingInfo mapping_info;
 
   // int to match types used by MPI
   int rank;
@@ -91,6 +96,11 @@ struct IceGrid::Impl {
   //! GSL binary search accelerator used to speed up kBelowHeight().
   gsl_interp_accel *bsearch_accel;
 };
+
+IceGrid::Impl::Impl(Context::Ptr context)
+  : ctx(context), mapping_info("mapping", ctx->unit_system()) {
+  // empty
+}
 
 //! Convert a string to Periodicity.
 Periodicity string_to_periodicity(const std::string &keyword) {
@@ -181,11 +191,9 @@ IceGrid::Ptr IceGrid::Shallow(Context::Ptr ctx,
 
 //! @brief Create a PISM distributed computational grid.
 IceGrid::IceGrid(Context::Ptr context, const GridParameters &p)
-  : com(context->com()), m_impl(new Impl) {
+  : com(context->com()), m_impl(new Impl(context)) {
 
   try {
-    m_impl->ctx = context;
-
     m_impl->bsearch_accel = gsl_interp_accel_alloc();
     if (m_impl->bsearch_accel == NULL) {
       throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
@@ -804,11 +812,11 @@ petsc::DM::Ptr IceGrid::create_dm(int da_dof, int stencil_width) const {
                                      DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
 #endif
                                      DMDA_STENCIL_BOX,
-                                     m_impl->Mx, m_impl->My, // M, N
+                                     m_impl->Mx, m_impl->My,
                                      (PetscInt)m_impl->procs_x.size(),
-                                     (PetscInt)m_impl->procs_y.size(), // n, m
+                                     (PetscInt)m_impl->procs_y.size(),
                                      da_dof, stencil_width,
-                                     &m_impl->procs_x[0], &m_impl->procs_y[0], // ly, lx
+                                     &m_impl->procs_x[0], &m_impl->procs_y[0], // lx, ly
                                      &result);
   PISM_CHK(ierr,"DMDACreate2d");
 
@@ -1372,5 +1380,16 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
     throw RuntimeError("Please set the input file using the \"-i\" command-line option.");
   }
 }
+
+const MappingInfo& IceGrid::get_mapping_info() const {
+  return m_impl->mapping_info;
+}
+
+void IceGrid::set_mapping_info(const MappingInfo &info) {
+  m_impl->mapping_info = info;
+  // FIXME: re-compute cell areas and lat/lon
+}
+
+
 
 } // end of namespace pism

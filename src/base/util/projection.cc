@@ -18,12 +18,20 @@
  */
 
 #include <cstdlib>              // strtol
+#include <cmath>                // fabs
 
 #include "projection.hh"
 #include "VariableMetadata.hh"
 #include "error_handling.hh"
+#include "io/PIO.hh"
+#include "io/io_helpers.hh"
 
 namespace pism {
+
+MappingInfo::MappingInfo(const std::string &mapping_name, units::System::Ptr unit_system)
+  : mapping(mapping_name, unit_system) {
+  // empty
+}
 
 //! @brief Return CF-Convention "mapping" variable corresponding to an EPSG code specified in a
 //! PROJ.4 string.
@@ -64,46 +72,45 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_
     throw RuntimeError::formatted("unknown EPSG code '%d' in PROJ.4 string '%s'",
                                   (int)epsg, proj4_string.c_str());
   }
+
   return mapping;
 }
 
-void check_mapping_equivalence(const VariableMetadata &mapping,
-                               const std::string &proj4_string) {
+void check_consistency_epsg(const MappingInfo &info) {
 
-  VariableMetadata epsg_mapping = epsg_to_cf(mapping.unit_system(), proj4_string);
+  VariableMetadata epsg_mapping = epsg_to_cf(info.mapping.unit_system(), info.proj4);
 
-  bool mapping_is_empty = (mapping.get_all_strings().empty() and
-                           mapping.get_all_doubles().empty());
-
-  bool epsg_mapping_is_empty = (epsg_mapping.get_all_strings().empty() and
-                                epsg_mapping.get_all_doubles().empty());
+  bool mapping_is_empty      = not info.mapping.has_attributes();
+  bool epsg_mapping_is_empty = not epsg_mapping.has_attributes();
 
   if (mapping_is_empty and epsg_mapping_is_empty) {
     // empty mapping variables are equivalent
     return;
   } else {
-    // Check if the "mapping" variable in the input file matches the EPSG code.
+    // Check if the "info.mapping" variable in the input file matches the EPSG code.
     // Check strings.
     VariableMetadata::StringAttrs strings = epsg_mapping.get_all_strings();
     VariableMetadata::StringAttrs::const_iterator j;
     for (j = strings.begin(); j != strings.end(); ++j) {
-      if (not mapping.has_attribute(j->first)) {
+      if (not info.mapping.has_attribute(j->first)) {
         throw RuntimeError::formatted("inconsistent metadata:\n"
-                                      "%s requires %s = \"%s\",\n"
+                                      "PROJ.4 string \"%s\" requires %s = \"%s\",\n"
                                       "but the mapping variable has no %s.",
-                                      proj4_string.c_str(),
+                                      info.proj4.c_str(),
                                       j->first.c_str(), j->second.c_str(),
                                       j->first.c_str());
       }
 
-      if (not (mapping.get_string(j->first) == j->second)) {
+      std::string string = info.mapping.get_string(j->first);
+
+      if (not (string == j->second)) {
         throw RuntimeError::formatted("inconsistent metadata:\n"
                                       "%s requires %s = \"%s\",\n"
                                       "but the mapping variable has %s = \"%s\".",
-                                      proj4_string.c_str(),
+                                      info.proj4.c_str(),
                                       j->first.c_str(), j->second.c_str(),
                                       j->first.c_str(),
-                                      mapping.get_string(j->first).c_str());
+                                      string.c_str());
       }
     }
 
@@ -111,26 +118,65 @@ void check_mapping_equivalence(const VariableMetadata &mapping,
     VariableMetadata::DoubleAttrs doubles = epsg_mapping.get_all_doubles();
     VariableMetadata::DoubleAttrs::const_iterator k;
     for (k = doubles.begin(); k != doubles.end(); ++k) {
-      if (not mapping.has_attribute(k->first)) {
+      if (not info.mapping.has_attribute(k->first)) {
         throw RuntimeError::formatted("inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has no %s.",
-                                      proj4_string.c_str(),
+                                      info.proj4.c_str(),
                                       k->first.c_str(), k->second[0],
                                       k->first.c_str());
       }
 
-      if (fabs(mapping.get_double(k->first) - k->second[0]) > 1e-12) {
+      double value = info.mapping.get_double(k->first);
+
+      if (fabs(value - k->second[0]) > 1e-12) {
         throw RuntimeError::formatted("inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has %s = %f.",
-                                      proj4_string.c_str(),
+                                      info.proj4.c_str(),
                                       k->first.c_str(), k->second[0],
                                       k->first.c_str(),
-                                      mapping.get_double(k->first));
+                                      value);
       }
     }
   }
+}
+
+MappingInfo get_projection_info(const PIO &input_file, const std::string &mapping_name,
+                                units::System::Ptr unit_system) {
+  MappingInfo result(mapping_name, unit_system);
+
+  result.proj4 = input_file.get_att_text("PISM_GLOBAL", "proj4");
+
+  std::string::size_type position = result.proj4.find("+init=epsg:");
+  bool proj4_is_epsg = position != std::string::npos;
+
+  if (input_file.inq_var(mapping_name)) {
+    // input file has a mapping variable
+
+    io::read_attributes(input_file, mapping_name, result.mapping);
+
+    if (proj4_is_epsg) {
+      // check consistency
+      try {
+        check_consistency_epsg(result);
+      } catch (RuntimeError &e) {
+        e.add_context("getting projection info from %s", input_file.inq_filename().c_str());
+        throw;
+      }
+    } else {
+      // use mapping read from input_file (can't check consistency here)
+    }
+  } else {
+    // no mapping variable in the input file
+
+    if (proj4_is_epsg) {
+      result.mapping = epsg_to_cf(unit_system, result.proj4);
+    } else {
+      // leave mapping empty
+    }
+  }
+  return result;
 }
 
 } // end of namespace pism
