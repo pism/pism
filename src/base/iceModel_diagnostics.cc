@@ -44,6 +44,7 @@
 #include "base/calving/vonMisesCalving.hh"
 #include "base/calving/FrontalMelt.hh"
 #include "base/util/Proj.hh"
+#include "base/util/projection.hh"
 
 namespace pism {
 
@@ -91,15 +92,11 @@ void IceModel::init_diagnostics() {
   m_diagnostics["topg_sl_adjusted"]   = Diagnostic::Ptr(new IceModel_topg_sl_adjusted(this));
   
 #if (PISM_USE_PROJ4==1)
-  if (m_output_global_attributes.has_attribute("proj4")) {
-    std::string proj4 = m_output_global_attributes.get_string("proj4");
+  std::string proj4 = m_grid->get_mapping_info().proj4;
+  if (not proj4.empty()) {
     m_diagnostics["lat_bnds"] = Diagnostic::Ptr(new IceModel_lat_lon_bounds(this, "lat", proj4));
     m_diagnostics["lon_bnds"] = Diagnostic::Ptr(new IceModel_lat_lon_bounds(this, "lon", proj4));
   }
-#elif (PISM_USE_PROJ4==0)
-  // do nothing
-#else  // PISM_USE_PROJ4 is not set
-#error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif
 
   m_ts_diagnostics["ivol"]            = TSDiagnostic::Ptr(new IceModel_ivol(this));
@@ -1954,7 +1951,6 @@ IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
   return result;
 }
 
-#if (PISM_USE_PROJ4==1)
 IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
                                                  const std::string &var_name,
                                                  const std::string &proj_string)
@@ -1987,18 +1983,19 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
 
   m_proj_string = proj_string;
 
+#if (PISM_USE_PROJ4==1)
   // create PROJ.4 objects to check if proj_string is OK.
   Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
   Proj pism(m_proj_string);
+#endif
+  // If PISM_USE_PROJ4 is not 1 we don't need to check validity of m_proj_string: this diagnostic
+  // will not be available and so this code will not run.
 }
 
 IceModel_lat_lon_bounds::~IceModel_lat_lon_bounds() {
 }
 
 IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
-  Proj lonlat("+proj=latlong +datum=WGS84 +ellps=WGS84");
-  Proj pism(m_proj_string);
-
   std::map<std::string,std::string> attrs;
   std::vector<double> indices(4);
 
@@ -2007,50 +2004,19 @@ IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
                  indices, attrs);
   result->metadata(0) = m_vars[0];
 
-  double dx2 = 0.5 * m_grid->dx(), dy2 = 0.5 * m_grid->dy();
-  double x_offsets[] = {-dx2, dx2, dx2, -dx2};
-  double y_offsets[] = {-dy2, -dy2, dy2, dy2};
-
   bool latitude = true;
   if (m_var_name == "lon") {
     latitude = false;
   }
 
-  IceModelVec::AccessList list;
-  list.add(*result);
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    double x0 = m_grid->x(i), y0 = m_grid->y(j);
-
-    double *values = result->get_column(i,j);
-
-    for (int k = 0; k < 4; ++k) {
-      double
-        x = x0 + x_offsets[k],
-        y = y0 + y_offsets[k];
-
-      // compute lon,lat coordinates:
-      pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
-
-      // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
-
-      if (latitude) {
-        values[k] = y * RAD_TO_DEG;
-      } else {
-        values[k] = x * RAD_TO_DEG;
-      }
-    }
+  if (latitude) {
+    compute_lat_bounds(m_proj_string, *result);
+  } else {
+    compute_lon_bounds(m_proj_string, *result);
   }
 
   return result;
 }
-#elif (PISM_USE_PROJ4==0)
-  // do nothing
-#else  // PISM_USE_PROJ4 is not set
-#error "PISM build system error: PISM_USE_PROJ4 is not set."
-#endif
 
 IceModel_land_ice_area_fraction::IceModel_land_ice_area_fraction(IceModel *m)
   : Diag<IceModel>(m) {

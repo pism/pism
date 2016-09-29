@@ -331,7 +331,8 @@ void IceModel::write_model_state(const PIO &nc) {
   std::string o_size = get_output_size("-o_size");
 
 #if (PISM_USE_PROJ4==1)
-  if (m_output_global_attributes.has_attribute("proj4")) {
+  std::string proj_string = m_grid->get_mapping_info().proj4;
+  if (not proj_string.empty()) {
     m_output_vars.insert("lon_bnds");
     m_output_vars.insert("lat_bnds");
     m_latitude.metadata().set_string("bounds", "lat_bnds");
