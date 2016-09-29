@@ -219,16 +219,16 @@
 
 %include pism_IceGrid.i
 
-/* Timeseries uses IceGrid, so IceGrid has to be wrapped first. */
-%include pism_Timeseries.i
-
 /* PIO uses IceGrid, so IceGrid has to be wrapped first. */
 %include pism_PIO.i
 
 /* make sure PIO.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
 
-/* IceModelVec uses IceGrid and VariableMetadata, so they have to be wrapped first. */
+/* Timeseries uses IceGrid and VariableMetadata so they have to be wrapped first. */
+%include pism_Timeseries.i
+
+/* IceModelVec uses IceGrid and VariableMetadata so they have to be wrapped first. */
 %include pism_IceModelVec.i
 
 /* pism::Vars uses IceModelVec, so IceModelVec has to be wrapped first. */
