@@ -62,6 +62,14 @@ void Timeseries::set_bounds_units() {
   m_bounds.set_string("glaciological_units", m_dimension.get_string("glaciological_units"));
 }
 
+bool Timeseries::get_use_bounds() const {
+  return m_use_bounds;
+}
+
+void Timeseries::set_use_bounds(bool flag) {
+  m_use_bounds = flag;
+}
+
 
 //! Read timeseries data from a NetCDF file `filename`.
 void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log) {

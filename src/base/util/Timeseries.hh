@@ -91,6 +91,10 @@ public:
   void scale(double scaling_factor);
 
   std::string name() const;
+
+  bool get_use_bounds() const;
+  void set_use_bounds(bool flag);
+
 protected:
   void set_bounds_units();
   TimeseriesMetadata m_dimension, m_variable;
