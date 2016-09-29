@@ -112,14 +112,16 @@ if (Pism_CODE_COVERAGE)
     set (CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage -g -O0 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
   endif()
   add_custom_target (coverage_report
-    COMMAND lcov -d . -c -o pism-coverage.info
-    COMMAND lcov -q -r pism-coverage.info PISMPYTHON
+    # remove coverage data from src/pythonbindings
+    COMMAND lcov -d ${Pism_BINARY_DIR}/src/pythonbindings -z
+    COMMAND lcov -d ${Pism_BINARY_DIR}/src/vdt -z
+    COMMAND lcov -q -b ${Pism_SOURCE_DIR} --no-external -d . -c -o pism-coverage.info
     COMMAND genhtml -t "PISM Coverage report" -o cover --demangle-cpp --legend pism-coverage.info
     WORKING_DIRECTORY ${Pism_BINARY_DIR}
     VERBATIM
     )
   add_custom_target (coverage_reset
-    COMMAND lcov -d . -z
+    COMMAND lcov -d ${Pism_BINARY_DIR} -z
     WORKING_DIRECTORY ${Pism_BINARY_DIR}
     VERBATIM
     )
