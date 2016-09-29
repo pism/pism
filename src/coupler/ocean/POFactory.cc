@@ -29,7 +29,8 @@
 #include "PO_frac_MBP.hh"
 #include "PO_frac_SMB.hh"
 #include "POCache.hh"
-#include "POGivenTH.hh" 
+#include "POGivenTH.hh"
+#include "POcavity.hh"
 
 namespace pism {
 namespace ocean {
