@@ -42,7 +42,7 @@ const double IceCompModel::ApforG = 200; // m
 
 
 /*! Re-implemented so that we can add compensatory strain_heating in Tests F and G. */
-void IceCompModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeCount) {
+void IceCompModel::temperatureStep(EnergyModelStats &stats) {
 
   if ((testname == 'F') || (testname == 'G')) {
     // FIXME: This code messes with the strain heating field owned by
@@ -50,10 +50,10 @@ void IceCompModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bu
     IceModelVec3 &strain_heating3 = const_cast<IceModelVec3&>(m_stress_balance->volumetric_strain_heating());
 
     strain_heating3.add(1.0, strain_heating3_comp);      // strain_heating = strain_heating + strain_heating_c
-    IceModel::temperatureStep(vertSacrCount, bulgeCount);
+    IceModel::temperatureStep(stats);
     strain_heating3.add(-1.0, strain_heating3_comp); // strain_heating = strain_heating - strain_heating_c
   } else {
-    IceModel::temperatureStep(vertSacrCount, bulgeCount);
+    IceModel::temperatureStep(stats);
   }
 }
 

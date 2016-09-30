@@ -102,6 +102,18 @@ struct FractureFields {
   IceModelVec2S toughness;
 };
 
+
+struct EnergyModelStats {
+  EnergyModelStats() {
+    bulge_counter = 0;
+    reduced_accuracy_counter = 0;
+    liquified_ice_volume = 0.0;
+  }
+  unsigned int bulge_counter;
+  unsigned int reduced_accuracy_counter;
+  double liquified_ice_volume;
+};
+
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
   // The following classes implement various diagnostic computations.
@@ -369,9 +381,7 @@ protected:
   virtual void combine_basal_melt_rate();
 
   // see iMenthalpy.cc
-  virtual void enthalpyAndDrainageStep(unsigned int *vertSacrCount,
-                                       double* liquifiedVol,
-                                       unsigned int *bulgeCount);
+  virtual void enthalpyAndDrainageStep(EnergyModelStats &stats);
 
   // see iMgeometry.cc
   virtual void enforce_consistency_of_geometry();
@@ -441,7 +451,7 @@ protected:
   virtual void excessToFromBasalMeltLayer(double rho, double c, double L,
                                           double z, double dz,
                                           double *Texcess, double *bwat);
-  virtual void temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeCount);
+  virtual void temperatureStep(EnergyModelStats &stats);
 
   // see iMutil.cc
   virtual int endOfTimeStepHook();

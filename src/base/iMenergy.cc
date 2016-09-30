@@ -55,11 +55,7 @@ void IceModel::energyStep() {
 
   const Profiling &profiling = m_ctx->profiling();
 
-  unsigned int
-    myVertSacrCount = 0,
-    myBulgeCount    = 0,
-    gVertSacrCount  = 0,
-    gBulgeCount     = 0;
+  EnergyModelStats stats;
 
   // operator-splitting occurs here (ice and bedrock energy updates are split):
   //   tell BedThermalUnit* btu that we have an ice base temp; it will return
@@ -75,7 +71,7 @@ void IceModel::energyStep() {
   if (m_config->get_boolean("energy.temperature_based")) {
     // new temperature values go in vTnew; also updates Hmelt:
     profiling.begin("temp step");
-    temperatureStep(&myVertSacrCount,&myBulgeCount);
+    temperatureStep(stats);
     profiling.end("temp step");
 
     m_work3d.update_ghosts(m_ice_temperature);
@@ -87,28 +83,27 @@ void IceModel::energyStep() {
 
   } else {
     // new enthalpy values go in m_work3d; also updates (and communicates) Hmelt
-    double myLiquifiedVol = 0.0, gLiquifiedVol;
 
     profiling.begin("enth step");
-    enthalpyAndDrainageStep(&myVertSacrCount, &myLiquifiedVol, &myBulgeCount);
+    enthalpyAndDrainageStep(stats);
     profiling.end("enth step");
 
     m_work3d.update_ghosts(m_ice_enthalpy);
 
-    gLiquifiedVol = GlobalSum(m_grid->com, myLiquifiedVol);
-    if (gLiquifiedVol > 0.0) {
+    stats.liquified_ice_volume = GlobalSum(m_grid->com, stats.liquified_ice_volume);
+    if (stats.liquified_ice_volume > 0.0) {
       m_log->message(1,
                  "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
-                 gLiquifiedVol / 1.0e9);
+                 stats.liquified_ice_volume / 1.0e9);
     }
   }
 
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
   m_CFL_violation_counter = countCFLViolations();
 
-  gVertSacrCount = GlobalSum(m_grid->com, myVertSacrCount);
-  if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
-    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (m_grid->Mx() * m_grid->My()));
+  stats.reduced_accuracy_counter = GlobalSum(m_grid->com, stats.reduced_accuracy_counter);
+  if (stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
+    const double bfsacrPRCNT = 100.0 * (stats.reduced_accuracy_counter / (m_grid->Mx() * m_grid->My()));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
         m_log->get_threshold() > 2) {
@@ -118,11 +113,11 @@ void IceModel::energyStep() {
     }
   }
 
-  gBulgeCount = GlobalSum(m_grid->com, myBulgeCount);
-  if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
-                             //    frequently it is identically zero
+  stats.bulge_counter = GlobalSum(m_grid->com, stats.bulge_counter);
+  if (stats.bulge_counter > 0) {
+    // count of when advection bulges are limited; frequently it is identically zero
     char tempstr[50] = "";
-    snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)));
+    snprintf(tempstr,50, " BULGE=%d ", stats.bulge_counter);
     m_stdout_flags = tempstr + m_stdout_flags;
   }
 }

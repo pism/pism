@@ -221,9 +221,7 @@ Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references th
 
 \image html BC-decision-chart.png "Setting the basal boundary condition"
  */
-void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
-                                       double* liquifiedVol,
-                                       unsigned int *bulgeCount) {
+void IceModel::enthalpyAndDrainageStep(EnergyModelStats &stats) {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
@@ -322,7 +320,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
       } // end of if (ice_free_column)
 
       if (system.lambda() < 1.0) {
-        *vertSacrCount += 1; // count columns with lambda < 1
+        stats.reduced_accuracy_counter += 1; // count columns with lambda < 1
       }
 
       const bool is_floating = m_cell_type.ocean(i, j);
@@ -402,8 +400,8 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
         const double lowerEnthLimit = Enth_ks - bulgeEnthMax;
         for (unsigned int k=0; k < system.ks(); k++) {
           if (Enthnew[k] < lowerEnthLimit) {
-            *bulgeCount += 1;      // count the columns which have very large cold
-            Enthnew[k] = lowerEnthLimit;  // limit advection bulge ... enthalpy not too low
+            stats.bulge_counter += 1;            // count grid points which have very large cold
+            Enthnew[k] = lowerEnthLimit; // limit advection bulge ... enthalpy not too low
           }
         }
 
@@ -511,9 +509,8 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   }
   loop.check();
 
-
   // FIXME: use cell areas
-  *liquifiedVol = ((double) liquifiedCount) * dz * m_grid->dx() * m_grid->dy();
+  stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->dx() * m_grid->dy();
 }
 
 //! Computes the total ice enthalpy in J.

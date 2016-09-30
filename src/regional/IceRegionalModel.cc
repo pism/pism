@@ -308,11 +308,11 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
   //
 }
 
-void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
-                                               double *liquifiedVol,
-                                               unsigned int *bulgeCount) {
+void IceRegionalModel::enthalpyAndDrainageStep(EnergyModelStats &stats) {
 
-  IceModel::enthalpyAndDrainageStep(vertSacrCount, liquifiedVol, bulgeCount);
+  IceModel::enthalpyAndDrainageStep(stats);
+
+  unsigned int Mz = m_grid->Mz();
 
   // note that the call above sets m_work3d; ghosts are comminucated later (in
   // IceModel::energyStep()).
@@ -324,15 +324,13 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_no_model_mask(i, j) < 0.5) {
-      continue;
-    }
+    if (m_no_model_mask(i, j) > 0.5) {
+      double *new_enthalpy = m_work3d.get_column(i, j);
+      double *old_enthalpy = m_ice_enthalpy.get_column(i, j);
 
-    double *new_enthalpy = m_work3d.get_column(i, j);
-    double *old_enthalpy = m_ice_enthalpy.get_column(i, j);
-
-    for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
-      new_enthalpy[k] = old_enthalpy[k];
+      for (unsigned int k = 0; k < Mz; ++k) {
+        new_enthalpy[k] = old_enthalpy[k];
+      }
     }
   }
 
@@ -342,11 +340,9 @@ void IceRegionalModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_no_model_mask(i, j) < 0.5) {
-      continue;
+    if (m_no_model_mask(i, j) > 0.5) {
+      m_basal_melt_rate(i, j) = m_bmr_stored(i, j);
     }
-
-    m_basal_melt_rate(i, j) = m_bmr_stored(i, j);
   }
 }
 

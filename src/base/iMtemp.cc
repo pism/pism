@@ -133,7 +133,7 @@ This method should be kept because it is worth having alternative physics, and
   the column minus the bulge maximum (15 K) if it is below that level.  The number of
   times this occurs is reported as a "BPbulge" percentage.
   */
-void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeCount) {
+void IceModel::temperatureStep(EnergyModelStats &stats) {
   PetscErrorCode  ierr;
 
   const double
@@ -226,7 +226,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
       if (ks > 0) { // if there are enough points in ice to bother ...
 
         if (system.lambda() < 1.0) {
-          *vertSacrCount += 1; // count columns with lambda < 1
+          stats.reduced_accuracy_counter += 1; // count columns with lambda < 1
         }
 
         // set boundary values for tridiagonal system
@@ -268,7 +268,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
         }
         if (Tnew[k] < m_ice_surface_temp(i,j) - bulgeMax) {
           Tnew[k] = m_ice_surface_temp(i,j) - bulgeMax;
-          *bulgeCount += 1;
+          stats.bulge_counter += 1;
         }
       }
 
@@ -303,7 +303,7 @@ void IceModel::temperatureStep(unsigned int *vertSacrCount, unsigned int *bulgeC
         }
         if (Tnew[0] < m_ice_surface_temp(i,j) - bulgeMax) {
           Tnew[0] = m_ice_surface_temp(i,j) - bulgeMax;
-          *bulgeCount += 1;
+          stats.bulge_counter += 1;
         }
       }
 
