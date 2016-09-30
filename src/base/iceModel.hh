@@ -122,6 +122,17 @@ public:
   const IceModelVec3 *w3;
 };
 
+class AgeModelInputs {
+public:
+  AgeModelInputs();
+  void check() const;
+
+  const IceModelVec2S *ice_thickness;
+  const IceModelVec3 *u3;
+  const IceModelVec3 *v3;
+  const IceModelVec3 *w3;
+};
+
 class EnergyModelStats {
 public:
   EnergyModelStats();
@@ -388,7 +399,7 @@ protected:
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMage.cc
-  virtual void ageStep();
+  virtual void ageStep(const AgeModelInputs &inputs);
 
   // see iMenergy.cc
   virtual void energyStep();

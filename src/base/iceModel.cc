@@ -663,8 +663,15 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the age of the ice (if appropriate)
   if (do_age and updateAtDepth) {
+    AgeModelInputs inputs;
+
+    inputs.ice_thickness = &m_ice_thickness;
+    inputs.u3 = &m_stress_balance->velocity_u();
+    inputs.v3 = &m_stress_balance->velocity_v();
+    inputs.w3 = &m_stress_balance->velocity_w();
+
     profiling.begin("age");
-    ageStep();
+    ageStep(inputs);
     profiling.end("age");
     m_stdout_flags += "a";
   } else {

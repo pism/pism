@@ -28,6 +28,27 @@
 
 namespace pism {
 
+AgeModelInputs::AgeModelInputs() {
+  ice_thickness = NULL;
+  u3            = NULL;
+  v3            = NULL;
+  w3            = NULL;
+}
+
+static void check_input(const IceModelVec *ptr, const char *name) {
+  if (ptr == NULL) {
+    throw RuntimeError::formatted("ice age model input %s was not provided", name);
+  }
+}
+
+void AgeModelInputs::check() const {
+  check_input(ice_thickness, "ice_thickness");
+  check_input(u3, "u3");
+  check_input(v3, "v3");
+  check_input(w3, "w3");
+}
+
+
 //! Tridiagonal linear system for vertical column of age (pure advection) problem.
 class ageSystemCtx : public columnSystemCtx {
 public:
@@ -197,31 +218,37 @@ fine_to_coarse() interpolate back and forth between this fine grid and
 the storage grid.  The storage grid may or may not be equally-spaced.  See
 ageSystemCtx::solveThisColumn() for the actual method.
  */
-void IceModel::ageStep() {
+void IceModel::ageStep(const AgeModelInputs &inputs) {
+
+  inputs.check();
+
+  const IceModelVec2S &ice_thickness = *inputs.ice_thickness;
 
   const IceModelVec3
-    &u3 = m_stress_balance->velocity_u(),
-    &v3 = m_stress_balance->velocity_v(),
-    &w3 = m_stress_balance->velocity_w();
+    &u3 = *inputs.u3,
+    &v3 = *inputs.v3,
+    &w3 = *inputs.w3;
 
-  ageSystemCtx system(m_grid->z(), "age",
-                      m_grid->dx(), m_grid->dy(), dt_TempAge,
+  IceGrid::ConstPtr grid = m_ice_age.get_grid();
+
+  ageSystemCtx system(grid->z(), "age",
+                      grid->dx(), grid->dy(), dt_TempAge,
                       m_ice_age, u3, v3, w3); // linear system to solve in each column
 
   size_t Mz_fine = system.z().size();
   std::vector<double> x(Mz_fine);   // space for solution
 
   IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(m_ice_age);
+  list.add(ice_thickness);
   list.add(u3);
   list.add(v3);
   list.add(w3);
+  list.add(m_ice_age);
   list.add(m_work3d);
 
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       system.initThisColumn(i, j, m_ice_thickness(i, j));
@@ -243,7 +270,7 @@ void IceModel::ageStep() {
         // FIXME: this is a kludge. We need to ensure that our numerical method has the maximum
         // principle instead. (We may still need this for correctness, though.)
         double *column = m_work3d.get_column(i, j);
-        for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
+        for (unsigned int k = 0; k < grid->Mz(); ++k) {
           if (column[k] < 0.0) {
             column[k] = 0.0;
           }
