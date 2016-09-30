@@ -17,10 +17,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_poly.h>
 
 #include "POcavity.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
 
 namespace pism {
@@ -84,196 +87,189 @@ const int Cavity::imask_unidentified = -1;
 
 Cavity::Cavity(IceGrid::ConstPtr g)
   : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
-{
-  PetscErrorCode ierr = allocate_POoceanboxmodel(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+// {
+//   PetscErrorCode ierr = allocate_POoceanboxmodel(); CHKERRCONTINUE(ierr);
+//   if (ierr != 0)
+//     PISMEnd();
+// }
+
+
+// PetscErrorCode POoceanboxmodel::allocate_POoceanboxmodel() {
+//   PetscErrorCode ierr;
+
+  m_option_prefix   = "-ocean_oceanboxmodel";
+
+  // will be de-allocated by the parent's destructor
+  m_theta_ocean    = new IceModelVec2T;
+  m_salinity_ocean = new IceModelVec2T;
+
+  m_fields["theta_ocean"]     = m_theta_ocean;
+  m_fields["salinity_ocean"]  = m_salinity_ocean;
+
+  process_options();
+
+  std::map<std::string, std::string> standard_names;
+  set_vec_parameters(standard_names);
+
+  m_theta_ocean->create(m_grid, "theta_ocean");
+  m_theta_ocean->set_attrs("climate_forcing",
+                           "absolute potential temperature of the adjacent ocean",
+                           "Kelvin", "");
+
+  m_salinity_ocean->create(m_grid, "salinity_ocean");
+  m_salinity_ocean->set_attrs("climate_forcing",
+                                   "salinity of the adjacent ocean",
+                                   "g/kg", "");
+
+  m_shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
+  m_shelfbtemp.set_attrs("climate_forcing",
+                              "absolute temperature at ice shelf base",
+                              "Kelvin", "");
+
+  m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
+  m_shelfbmassflux.set_attrs("climate_forcing",
+                                  "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                                  "kg m-2 s-1", "");
+  m_shelfbmassflux.metadata().set_string("glaciological_units", "kg m-2 year-1");
+
+  //////////////////////////////////////////////////////////////////////////
+
+
+  // mask to identify the ocean boxes
+  BOXMODELmask.create(m_grid, "BOXMODELmask", WITH_GHOSTS);
+  BOXMODELmask.set_attrs("model_state", "mask displaying ocean box model grid","", "");
+
+  // mask to identify the grounded ice rises
+  ICERISESmask.create(m_grid, "ICERISESmask", WITH_GHOSTS);
+  ICERISESmask.set_attrs("model_state", "mask displaying ice rises","", "");
+  bool exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in ocean cavity model");
+  // mask displaying continental shelf - region where mean salinity and ocean temperature is calculated
+  OCEANMEANmask.create(m_grid, "OCEANMEANmask", WITH_GHOSTS);
+  OCEANMEANmask.set_attrs("model_state", "mask displaying ocean region for parameter input","", "");
+
+  // mask with distance (in boxes) to grounding line
+  DistGL.create(m_grid, "DistGL", WITH_GHOSTS);
+  DistGL.set_attrs("model_state", "mask displaying distance to grounding line","", "");
+  // mask with distance (in boxes) to ice front
+  DistIF.create(m_grid, "DistIF", WITH_GHOSTS);
+  DistIF.set_attrs("model_state", "mask displaying distance to ice shelf calving front","", "");
+
+  // salinity
+  Soc.create(m_grid, "Soc", WITHOUT_GHOSTS);
+  Soc.set_attrs("model_state", "ocean salinity field","", "ocean salinity field");  //NOTE unit=psu
+
+  Soc_base.create(m_grid, "Soc_base", WITHOUT_GHOSTS);
+  Soc_base.set_attrs("model_state", "ocean base salinity field","", "ocean base salinity field");  //NOTE unit=psu
+
+  // temperature
+  Toc.create(m_grid, "Toc", WITHOUT_GHOSTS);
+  Toc.set_attrs("model_state", "ocean temperature field","K", "ocean temperature field");
+
+  Toc_base.create(m_grid, "Toc_base", WITHOUT_GHOSTS);
+  Toc_base.set_attrs("model_state", "ocean base temperature","K", "ocean base temperature");
+
+  Toc_inCelsius.create(m_grid, "Toc_inCelsius", WITHOUT_GHOSTS);
+  Toc_inCelsius.set_attrs("model_state", "ocean box model temperature field","degree C", "ocean box model temperature field");
+
+  T_star.create(m_grid, "T_star", WITHOUT_GHOSTS);
+  T_star.set_attrs("model_state", "T_star field","degree C", "T_star field");
+
+  Toc_anomaly.create(m_grid, "Toc_anomaly", WITHOUT_GHOSTS);
+  Toc_anomaly.set_attrs("model_state", "ocean temperature anomaly","K", "ocean temperature anomaly");
+
+
+  // overturning rate
+  overturning.create(m_grid, "overturning", WITHOUT_GHOSTS);
+  overturning.set_attrs("model_state", "cavity overturning","m^3 s-1", "cavity overturning"); // no CF standard_name?
+
+  // heat flux
+  heatflux.create(m_grid, "ocean heat flux", WITHOUT_GHOSTS);
+  heatflux.set_attrs("climate_state", "ocean heat flux", "W/m^2", "");
+
+  // basal melt rate
+  basalmeltrate_shelf.create(m_grid, "basal melt rate from ocean box model", WITHOUT_GHOSTS);
+  basalmeltrate_shelf.set_attrs("climate_state", "basal melt rate from ocean box model", "m/s", "");
+  //FIXME unit in field is kg m-2 a-1, but the written unit is m per a
+  basalmeltrate_shelf.metadata().set_string("glaciological_units", "m year-1");
 }
 
 Cavity::~Cavity() {
   // empty
 }
 
-PetscErrorCode POoceanboxmodel::allocate_POoceanboxmodel() {
-  PetscErrorCode ierr;
-  option_prefix   = "-ocean_oceanboxmodel";
+void Cavity::init_impl() {
 
-  // will be de-allocated by the parent's destructor
-  theta_ocean    = new IceModelVec2T;
-  salinity_ocean = new IceModelVec2T;
-
-  m_fields["theta_ocean"]     = theta_ocean;
-  m_fields["salinity_ocean"]  = salinity_ocean;
-
-  ierr = process_options(); CHKERRQ(ierr);
-
-  std::map<std::string, std::string> standard_names;
-  ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
-
-  ierr = theta_ocean->create(grid, "theta_ocean", false); CHKERRQ(ierr);
-  ierr = theta_ocean->set_attrs("climate_forcing",
-                                "absolute potential temperature of the adjacent ocean",
-                                "Kelvin", ""); CHKERRQ(ierr);
-
-  ierr = salinity_ocean->create(grid, "salinity_ocean", false); CHKERRQ(ierr);
-  ierr = salinity_ocean->set_attrs("climate_forcing",
-                                   "salinity of the adjacent ocean",
-                                   "g/kg", ""); CHKERRQ(ierr);
-
-  ierr = shelfbtemp.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = shelfbtemp.set_attrs("climate_forcing",
-                              "absolute temperature at ice shelf base",
-                              "Kelvin", ""); CHKERRQ(ierr);
-
-  ierr = shelfbmassflux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = shelfbmassflux.set_attrs("climate_forcing",
-                                  "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                                  "kg m-2 s-1", ""); CHKERRQ(ierr);
-  ierr = shelfbmassflux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
-  shelfbmassflux.write_in_glaciological_units = true;
-
-
-  //////////////////////////////////////////////////////////////////////////
-
-
-  // mask to identify the ocean boxes
-  ierr = BOXMODELmask.create(grid, "BOXMODELmask", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = BOXMODELmask.set_attrs("model_state", "mask displaying ocean box model grid","", ""); CHKERRQ(ierr);
-
-  // mask to identify the grounded ice rises
-  ierr = ICERISESmask.create(grid, "ICERISESmask", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = ICERISESmask.set_attrs("model_state", "mask displaying ice rises","", ""); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-exclude_icerises", exicerises_set); CHKERRQ(ierr);
-
-  // mask displaying continental shelf - region where mean salinity and ocean temperature is calculated
-  ierr = OCEANMEANmask.create(grid, "OCEANMEANmask", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = OCEANMEANmask.set_attrs("model_state", "mask displaying ocean region for parameter input","", ""); CHKERRQ(ierr);
-
-  // mask with distance (in boxes) to grounding line
-  ierr = DistGL.create(grid, "DistGL", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = DistGL.set_attrs("model_state", "mask displaying distance to grounding line","", ""); CHKERRQ(ierr);
-  // mask with distance (in boxes) to ice front
-  ierr = DistIF.create(grid, "DistIF", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = DistIF.set_attrs("model_state", "mask displaying distance to ice shelf calving front","", ""); CHKERRQ(ierr);
-
-  // salinity
-  ierr = Soc.create(grid, "Soc", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Soc.set_attrs("model_state", "ocean salinity field","", "ocean salinity field"); CHKERRQ(ierr);  //NOTE unit=psu
-
-  ierr = Soc_base.create(grid, "Soc_base", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Soc_base.set_attrs("model_state", "ocean base salinity field","", "ocean base salinity field"); CHKERRQ(ierr);  //NOTE unit=psu
-
-
-  // temperature
-  ierr = Toc.create(grid, "Toc", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Toc.set_attrs("model_state", "ocean temperature field","K", "ocean temperature field"); CHKERRQ(ierr);
-
-  ierr = Toc_base.create(grid, "Toc_base", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Toc_base.set_attrs("model_state", "ocean base temperature","K", "ocean base temperature"); CHKERRQ(ierr);
-
-  ierr = Toc_inCelsius.create(grid, "Toc_inCelsius", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Toc_inCelsius.set_attrs("model_state", "ocean box model temperature field","degree C", "ocean box model temperature field"); CHKERRQ(ierr);
-
-  ierr = T_star.create(grid, "T_star", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = T_star.set_attrs("model_state", "T_star field","degree C", "T_star field"); CHKERRQ(ierr);
-
-  ierr = Toc_anomaly.create(grid, "Toc_anomaly", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = Toc_anomaly.set_attrs("model_state", "ocean temperature anomaly","K", "ocean temperature anomaly"); CHKERRQ(ierr);
-
-
-  // overturning rate
-  ierr = overturning.create(grid, "overturning", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = overturning.set_attrs("model_state", "cavity overturning","m^3 s-1", "cavity overturning"); CHKERRQ(ierr); // no CF standard_name?
-
-  // heat flux
-  ierr = heatflux.create(grid, "ocean heat flux", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = heatflux.set_attrs("climate_state", "ocean heat flux", "W/m^2", ""); CHKERRQ(ierr);
-
-  // basal melt rate
-  ierr = basalmeltrate_shelf.create(grid, "basal melt rate from ocean box model", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = basalmeltrate_shelf.set_attrs("climate_state", "basal melt rate from ocean box model", "m/s", ""); CHKERRQ(ierr);
-  ierr = basalmeltrate_shelf.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  //FIXME unit in field is kg m-2 a-1, but the written unit is m per a
-  basalmeltrate_shelf.write_in_glaciological_units = true;
-
- ///////// forcing  /////////////////////////////////////////////////////////////////////////////////
-
-
-  // option for scalar forcing of ocean temperature
-  ierr = PISMOptionsIsSet("-ocean_obm_deltaT", ocean_oceanboxmodel_deltaT_set); CHKERRQ(ierr);
-
-  if (ocean_oceanboxmodel_deltaT_set) {
-    bool delta_T_set;
-    std::string delta_T_file;
-
-    ierr = PISMOptionsString("-ocean_obm_deltaT",
-                             "Specifies the ocean temperature offsets file to use with -ocean_obm_deltaT",
-                             delta_T_file, delta_T_set); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2, grid.com,
-                      "  reading delta_T data from forcing file %s for -ocean_obm_deltaT actions ...\n",
-                      delta_T_file.c_str());  CHKERRQ(ierr);
-
-    delta_T = new Timeseries(&grid, "delta_T",grid.config.get_string("time_dimension_name"));
-    ierr = delta_T->set_units("Kelvin", ""); CHKERRQ(ierr);
-    ierr = delta_T->set_dimension_units(grid.time->units_string(), ""); CHKERRQ(ierr);
-    ierr = delta_T->set_attr("long_name", "ocean temperature offsets"); CHKERRQ(ierr);
-    //ierr = delta_T->read(delta_T_file, grid.time->use_reference_date()); CHKERRQ(ierr);
-
-    PIO nc(grid.com, "netcdf3", grid.get_unit_system());
-    ierr = nc.open(delta_T_file, PISM_NOWRITE); CHKERRQ(ierr);
-    {
-      ierr = delta_T->read(nc, grid.time); CHKERRQ(ierr);
-    }
-    ierr = nc.close(); CHKERRQ(ierr);
-
-    bool delta_T_factor_set;
-    delta_T_factor=1.0;
-
-    ierr = PISMOptionsReal("-ocean_obm_factor","ocean_obm_factor set",delta_T_factor, delta_T_factor_set); CHKERRQ(ierr);
-
-  }
-  return 0;
-}
-
-
-PetscErrorCode POoceanboxmodel::init(PISMVars &vars) {
-  PetscErrorCode ierr;
-
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the ocean box model (based on Olbers & Hellmer (2010)...\n"); CHKERRQ(ierr);
+  m_log->message(2,
+       "* Initializing the Potsdam Cavity Model for the ocean ...\n");
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (ice_thickness == NULL) {SETERRQ(grid.com, 1, "ERROR: ice thickness is not available");}
+  // NOTE: to delete. Should be read later directly
+  // ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
+  // if (ice_thickness == NULL) {SETERRQ(grid.com, 1, "ERROR: ice thickness is not available");}
 
-  topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (topg == NULL) SETERRQ(grid.com, 1, "ERROR: bedrock topography is not available");
+  // topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
+  // if (topg == NULL) SETERRQ(grid.com, 1, "ERROR: bedrock topography is not available");
 
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (!mask) { SETERRQ(grid.com, 1, "ERROR: mask is not available"); }
+  // mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
+  // if (!mask) { SETERRQ(grid.com, 1, "ERROR: mask is not available"); }
 
-  basins = dynamic_cast<IceModelVec2S*>(vars.get("drainage_basins")); //if option drainageBasins set
-  if (!basins) { SETERRQ(grid.com, 1, "ERROR: drainage basins is not available"); }
+  // basins = dynamic_cast<IceModelVec2S*>(vars.get("drainage_basins")); //if option drainageBasins set
+  // if (!basins) { SETERRQ(grid.com, 1, "ERROR: drainage basins is not available"); }
 
-  bool omeans_set;
-  ierr = PISMOptionsIsSet("-ocean_means", omeans_set); CHKERRQ(ierr);
+  // option for scalar forcing of ocean temperature
+  // ierr = PISMOptionsIsSet("-ocean_obm_deltaT", ocean_oceanboxmodel_deltaT_set); CHKERRQ(ierr);
+  bool ocean_oceanboxmodel_deltaT_set = options::Bool("-ocean_obm_deltaT",
+      "TODO: description of option -ocean_obm_deltaT");
 
-  //FIXME: not necessarry when -ocean_means set
-  ierr = theta_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = salinity_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  if (ocean_oceanboxmodel_deltaT_set) {
+    bool delta_T_set;
+    // std::string delta_T_file;
 
-  // read time-independent data right away:
-  if (theta_ocean->get_n_records() == 1 && salinity_ocean->get_n_records() == 1) {
-    ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
+    options::String input_file("-ocean_obm_deltaT",
+                         "Specifies the ocean temperature offsets file to use with -ocean_obm_deltaT");
+    if (not input_file.is_set()) {
+      throw RuntimeError("Potsdam Cavity model requires an input file through the -ocean_obm_deltaT\n"
+                         "option if -ocean_obm_deltaT is set.");
+    }
+
+    m_log->message(2,
+                      "  reading delta_T data from forcing file %s for -ocean_obm_deltaT actions ...\n",
+                      input_file->c_str());
+
+    delta_T = new Timeseries(*m_grid, "delta_T", m_config->get_string("time_dimension_name"));
+    delta_T->metadata().set_string("units", "Kelvin");
+    delta_T->metadata().set_string("long_name", "ocean temperature offsets");
+    delta_T->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+
+    PIO nc(m_grid->com, "netcdf3");
+    nc.open(input_file, PISM_READONLY);
+    delta_T->read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
+    nc.close();
+
+    // bool delta_T_factor_set;
+    delta_T_factor=1.0;
+    delta_T_factor = options::Real("-ocean_obm_factor","delta T factor for ocean cavity model",
+                                   delta_T_factor);
+
   }
 
-  POBMConstants cc(config);
-  ierr = initBasinsOptions(cc); CHKERRQ(ierr);
+  bool omeans_set = options::Bool("-ocean_means", "TODO: decribe this option");
 
+  if (not omeans_set){
+    m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
+    m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
+  }
 
-  return 0;
+  // read time-independent data right away:
+  if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
+    update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+  }
+
+  // NOTE: moved to update_impl
+  // POBMConstants cc(config);
+  // ierr = initBasinsOptions(cc); CHKERRQ(ierr);
+
 }
 
 void POoceanboxmodel::add_vars_to_output(std::string keyword, std::set<std::string> &result) {

@@ -25,15 +25,6 @@
 
 namespace pism {
 namespace ocean {
-// class GivenTH : public PGivenClimate<OceanModifier,OceanModel>
-// {
-// public:
-//   GivenTH(IceGrid::ConstPtr g);
-//   virtual ~GivenTH();
-
-//   class Constants {
-//   public:
-//     Constants(const Config &config);
 
 class Cavity : public PGivenClimate<OceanModifier,OceanModel>
 {
@@ -79,18 +70,19 @@ protected:
   double temp_anomaly;
 
 
-  bool  ocean_oceanboxmodel_deltaT_set,
-        exicerises_set,
+  bool
+  // ocean_oceanboxmodel_deltaT_set,
+        // exicerises_set,
         roundbasins_set,
         continental_shelf_depth_set;
 
 private:
 
-  IceModelVec2S   shelfbtemp,
-                  shelfbmassflux;
+  IceModelVec2S   m_shelfbtemp,
+                  m_shelfbmassflux;
 
-  IceModelVec2T   *theta_ocean,
-                  *salinity_ocean;
+  IceModelVec2T   *m_theta_ocean,
+                  *m_salinity_ocean;
 
   IceModelVec2S   *ice_thickness,
                   *topg,
