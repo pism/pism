@@ -237,7 +237,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
 
   energy::DrainageCalculator dc(*m_config);
 
-  const IceModelVec2S &Rb = m_stress_balance->basal_frictional_heating();
+  const IceModelVec2S &basal_frictional_heating = m_stress_balance->basal_frictional_heating();
   const IceModelVec3
     &u3 = m_stress_balance->velocity_u(),
     &v3 = m_stress_balance->velocity_v(),
@@ -279,7 +279,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
   list.add(m_liqfrac_surface);
   list.add(m_ice_thickness);
   list.add(m_basal_melt_rate);
-  list.add(Rb);
+  list.add(basal_frictional_heating);
   list.add(basal_heat_flux);
   list.add(till_water_thickness);
   list.add(m_cell_type);
@@ -358,7 +358,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
             // (Neumann) case:  q . n = q_lith . n + F_b
             // a) cold and dry base, or
             // b) base that is still warm from the last time step, but without basal water
-            system.set_basal_heat_flux(basal_heat_flux(i, j) + Rb(i, j));
+            system.set_basal_heat_flux(basal_heat_flux(i, j) + basal_frictional_heating(i, j));
           }
         }
 
@@ -492,7 +492,7 @@ void IceModel::enthalpyAndDrainageStep(unsigned int *vertSacrCount,
             //
             // after we compute it we make sure there is no refreeze if
             // there is no available basal water
-            m_basal_melt_rate(i, j) = (Rb(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * EC->L(Tpmp_0));
+            m_basal_melt_rate(i, j) = (basal_frictional_heating(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * EC->L(Tpmp_0));
 
             if (till_water_thickness(i, j) <= 0 && m_basal_melt_rate(i, j) < 0) {
               m_basal_melt_rate(i, j) = 0.0;
