@@ -272,42 +272,39 @@ void Cavity::init_impl() {
 
 }
 
-void POoceanboxmodel::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
-  PGivenClimate<POModifier,PISMOceanModel>::add_vars_to_output(keyword, result);
+void Cavity::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  PGivenClimate<OceanModifier,OceanModel>::add_vars_to_output_impl(keyword, result);
 
   if (keyword != "none" && keyword != "small") {
-    result.insert("shelfbtemp");
-    result.insert("shelfbmassflux");
+    result.insert(m_shelfbtemp.get_name());
+    result.insert(m_shelfbmassflux.get_name());
   }
 }
 
 
-PetscErrorCode POoceanboxmodel::define_variables(std::set<std::string> vars, const PIO &nc,
-                                           PISM_IO_Type nctype) {
-  PetscErrorCode ierr;
+void Cavity::define_variables_impl(const std::set<std::string> &vars,
+                                           const PIO &nc, IO_Type nctype) {
 
-  ierr = PGivenClimate<POModifier,PISMOceanModel>::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  PGivenClimate<OceanModifier,OceanModel>::define_variables_impl(vars, nc, nctype);
 
-  if (set_contains(vars, "shelfbtemp")) {
-    ierr = shelfbtemp.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, m_shelfbtemp)) {
+    m_shelfbtemp.define(nc, nctype);
   }
 
-  if (set_contains(vars, "shelfbmassflux")) {
-    ierr = shelfbmassflux.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, m_shelfbmassflux)) {
+    m_shelfbmassflux.define(nc, nctype);
   }
-
-  return 0;
 }
 
 
-PetscErrorCode POoceanboxmodel::initBasinsOptions(const POBMConstants &cc) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(4, grid.com,"0b : set number of Basins\n"); CHKERRQ(ierr);
+void Cavity::initBasinsOptions(const Constants &cc) {
 
-  //set number of basins per option
-  bool number_of_basins_set;
+  m_log->message(4, "0b : set number of Basins\n");
+
   numberOfBasins = cc.numberOfBasins;
-  ierr = PISMOptionsInt("-number_of_basins","Number of Drainage Basins",numberOfBasins, number_of_basins_set); CHKERRQ(ierr);
+  numberOfBasins = options::Integer("-number_of_basins",
+                                    "number of drainage basins for ocean cavity model",
+                                    numberOfBasins);
 
 
   Toc_base_vec.resize(numberOfBasins);
@@ -317,54 +314,37 @@ PetscErrorCode POoceanboxmodel::initBasinsOptions(const POBMConstants &cc) {
 
   counter_boxes.resize(numberOfBasins, std::vector<double>(2,0)); //does this work?
 
-  ierr = verbPrintf(2, grid.com,"counter_boxes(1,0) = %.2f \n", counter_boxes[1][0] ); CHKERRQ(ierr);
+  m_log->message(4, "counter_boxes(1,0) = %.2f \n", counter_boxes[1][0]);
 
   mean_salinity_boundary_vector.resize(numberOfBasins);
   mean_temperature_boundary_vector.resize(numberOfBasins);
   mean_meltrate_boundary_vector.resize(numberOfBasins);
   mean_overturning_GLbox_vector.resize(numberOfBasins);
 
-  //set gamma_T and value_C per option
-  bool gamma_T_set;
   gamma_T = cc.gamma_T;
-  ierr = PISMOptionsReal("-gamma_T","-gamma_T",gamma_T, gamma_T_set); CHKERRQ(ierr);
+  gamma_T = options::Real("-gamma_T","gamma_T for ocean cavity model",gamma_T);
 
-  bool value_C_set;
   value_C = cc.value_C;
-  ierr = PISMOptionsReal("-value_C","-value_C",value_C, value_C_set); CHKERRQ(ierr);
-
-  ///////////////////////////////////////////////////////////////////////////////////
-  // data have been calculated previously for the 18 Rignot basins
-
-  //const double Toc_base_schmidtko[18] = {0.0,271.56415203,271.63356482,271.42074233,271.46720524,272.30038929,271.52821139,271.5440751,271.58201494,272.90159695,273.61058862,274.19203524,274.32083917,272.55938554,271.35349906,271.39337366,271.49926019,271.49473924}; //Schmidtko
-  //const double Soc_base_schmidtko[18] = {0.0,34.49308909,34.50472554,34.70187911,34.65306507,34.7137078,34.74817136,34.89206844,34.78056731,34.60528314,34.72521443,34.86210624,34.83836297,34.73392011,34.83617088,34.82137147,34.69477334,34.48145265}; //Schmidtko
+  value_C = options::Real("-value_C","value_C for ocean cavity model",value_C);
 
   // data have been calculated previously for the 20 Zwally basins
   const double Toc_base_schmidtko[20] = {0.0,271.39431005,271.49081157,271.49922596,271.56714804,271.63507013,271.42228667,271.46720524,272.42253843,271.53779093,271.84942002,271.31676801,271.56846696,272.79372542,273.61694268,274.19168456,274.31958227,273.38372579,271.91951514,271.35349906}; //Schmidtko
   const double Soc_base_schmidtko[20] = {0.0,34.82193374,34.69721226,34.47641407,34.48950162,34.50258917,34.70101507,34.65306507,34.73295029,34.74859586,34.8368573,34.9529016,34.79486795,34.58380953,34.7260615,34.86198383,34.8374212 ,34.70418016,34.75598208,34.83617088}; //Schmidtko
 
-
-  //const double Toc_base_woa[18] = {0.0,272.28351693,272.10101401,271.65965597,271.50766979,273.02732277,272.12473624,271.79505722,271.93548261,273.37866926,272.98126135,273.73564726,273.95971315,273.02383769,272.56732024,271.75152607,271.93962932,272.46601985}; //World Ocean Atlas
-  //const double Soc_base_woa[18] = {0.0,34.48230812,34.46499742,34.51939747,34.40695979,34.62947893,34.59932424,34.77118004,34.71666183,34.54603987,34.44824601,34.62416923,34.57034648,34.60459029,34.68356516,34.67159838,34.62308218,34.49961882}; //World Ocean Atlas
-
   const double Toc_base_woa[20] = {272.99816667,271.27814004,272.1840257,272.04435251,272.20415662,272.36396072,271.48763831,271.99695864,272.06504052,272.27114732,272.66657018,271.18920729,271.74067699,273.01811291,272.15295572,273.08542047,272.74584469,273.14263356,272.58496563,272.45217911}; //World Ocean Atlas
   const double Soc_base_woa[20] = {34.6810522,34.78161073,34.67151084,34.66538478,34.67127468,34.67716458,34.75327377,34.69213327,34.72086382,34.70670158,34.71210592,34.80229468,34.76588022,34.69745763,34.7090778,34.68690903,34.66379606,34.64572337,34.6574402,34.65813983}; //World Ocean Atlas
 
-
-
-  bool ocean_mean_set;
-  std::string data_input;
-  ierr = PISMOptionsString("-ocean_means", "Input data name",
-                             data_input, ocean_mean_set); CHKERRQ(ierr);
+  // std::string ocean_means;
+  options::String ocean_means("-ocean_means", "TODO: description of option");
 
   /////////////////////////////////////////////////////////////////////////////////////
 
   for(int k=0;k<numberOfBasins;k++) {
-      if (ocean_mean_set){
-        if (data_input=="schmidtko"){
+      if (ocean_means.is_set()){
+        if (ocean_means=="schmidtko"){
           Toc_base_vec[k] = Toc_base_schmidtko[k] - 273.15;
           Soc_base_vec[k] = Soc_base_schmidtko[k];}
-        else if (data_input=="woa"){
+        else if (ocean_means=="woa"){
           Toc_base_vec[k] = Toc_base_woa[k] - 273.15;
           Soc_base_vec[k] = Soc_base_woa[k];}
         else{
@@ -381,24 +361,28 @@ PetscErrorCode POoceanboxmodel::initBasinsOptions(const POBMConstants &cc) {
       C_vec[k]           = value_C;
   }
 
-  ierr = verbPrintf(5, grid.com,"     Using %d drainage basins and default values: \n"
+  m_log->message(5, "     Using %d drainage basins and default values: \n"
                                 "     gamma_T_star= %.2e, C = %.2e... \n"
-                                 , numberOfBasins, gamma_T, value_C); CHKERRQ(ierr);
+                                 , numberOfBasins, gamma_T, value_C);
 
-  if (!ocean_mean_set) {
-    ierr = verbPrintf(5, grid.com,"  calculate Soc and Toc from thetao and salinity... \n"); CHKERRQ(ierr);
+  if (not ocean_means.is_set()) {
+    m_log->message(5, "  calculate Soc and Toc from thetao and salinity... \n");
 
     // set continental shelf depth
     continental_shelf_depth = cc.continental_shelf_depth;
-    ierr = PISMOptionsReal("-continental_shelf_depth","-continental_shelf_depth", continental_shelf_depth, continental_shelf_depth_set); CHKERRQ(ierr);
-    if (continental_shelf_depth_set) {
-      ierr = verbPrintf(5, grid.com,
-                        "  Depth of continental shelf for computation of temperature and salinity input\n"
-                        "  is set for whole domain to continental_shelf_depth=%.0f meter\n", continental_shelf_depth); CHKERRQ(ierr);
+    options::Real cont_shelf_depth("-continental_shelf_depth",
+                                   "continental shelf depth for ocean cavity model",
+                                   continental_shelf_depth);
+
+    // ierr = PISMOptionsReal("-continental_shelf_depth","-continental_shelf_depth", continental_shelf_depth, continental_shelf_depth_set); CHKERRQ(ierr);
+    if (cont_shelf_depth.is_set()) {
+      m_log->message(5,
+      "  Depth of continental shelf for computation of temperature and salinity input\n"
+      "  is set for whole domain to continental_shelf_depth=%.0f meter\n",
+      continental_shelf_depth);
     }
   }
 
-  return 0;
 }
 
 
