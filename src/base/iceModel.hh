@@ -126,10 +126,12 @@ struct EnergyModelStats {
   EnergyModelStats() {
     bulge_counter = 0;
     reduced_accuracy_counter = 0;
+    low_temperature_counter = 0;
     liquified_ice_volume = 0.0;
   }
   unsigned int bulge_counter;
   unsigned int reduced_accuracy_counter;
+  unsigned int low_temperature_counter;
   double liquified_ice_volume;
 };
 
@@ -471,7 +473,8 @@ protected:
   virtual void excessToFromBasalMeltLayer(double rho, double c, double L,
                                           double z, double dz,
                                           double *Texcess, double *bwat);
-  virtual void temperatureStep(EnergyModelStats &stats);
+  virtual void temperatureStep(const EnergyModelInputs &inputs,
+                               EnergyModelStats &stats);
 
   // see iMutil.cc
   virtual int endOfTimeStepHook();

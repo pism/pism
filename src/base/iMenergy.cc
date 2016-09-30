@@ -139,7 +139,7 @@ void IceModel::energyStep() {
   if (m_config->get_boolean("energy.temperature_based")) {
     // new temperature values go in vTnew; also updates Hmelt:
     profiling.begin("temp step");
-    temperatureStep(stats);
+    temperatureStep(inputs, stats);
     profiling.end("temp step");
 
     m_work3d.update_ghosts(m_ice_temperature);
