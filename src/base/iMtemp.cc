@@ -31,6 +31,7 @@
 #include "base/util/pism_options.hh"
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -47,8 +48,6 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
     dvol       = darea * dz,
     dE         = rho * c * (*Texcess) * dvol,
     massmelted = dE / L;
-
-  assert(not m_config->get_boolean("energy.allow_temperature_above_melting"));
 
   if (*Texcess >= 0.0) {
     // T is at or above pressure-melting temp, so temp needs to be set to
@@ -135,7 +134,10 @@ This method should be kept because it is worth having alternative physics, and
   */
 void IceModel::temperatureStep(const EnergyModelInputs &inputs,
                                EnergyModelStats &stats) {
-  PetscErrorCode  ierr;
+
+  using mask::ocean;
+
+  Logger log(MPI_COMM_SELF, m_log->get_threshold());
 
   const double
     ice_density        = m_config->get_double("constants.ice.density"),
@@ -148,7 +150,7 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulgeMax  = m_config->get_double("energy.enthalpy_cold_bulge_max") / ice_c;
+  const double bulge_max  = m_config->get_double("energy.enthalpy_cold_bulge_max") / ice_c;
 
   inputs.check();
   const IceModelVec3
@@ -193,22 +195,24 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
   const std::vector<double>& z_fine = system.z();
   size_t Mz_fine = z_fine.size();
   std::vector<double> x(Mz_fine);// space for solution of system
-  std::vector<double> Tnew(Mz_fine);
+  std::vector<double> Tnew(Mz_fine); // post-processed solution
 
   // counts unreasonably low temperature values; deprecated?
-  int myLowTempCount = 0;
-  int maxLowTempCount = static_cast<int>(m_config->get_double("energy.max_low_temperature_count"));
-  double globalMinAllowedTemp = m_config->get_double("energy.minimum_allowed_temperature");
+  unsigned int maxLowTempCount = m_config->get_double("energy.max_low_temperature_count");
+  const double T_minimum = m_config->get_double("energy.minimum_allowed_temperature");
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      MaskValue mask_value = static_cast<MaskValue>(cell_type.as_int(i,j));
+      MaskValue mask = static_cast<MaskValue>(cell_type.as_int(i,j));
+
+      const double H = ice_thickness(i, j);
+      const double T_surface = ice_surface_temp(i, j);
 
       // false means "don't ignore horizontal advection and strain heating near margins"
-      system.initThisColumn(i, j, false, mask_value, ice_thickness(i,j));
+      system.initThisColumn(i, j, false, mask, H);
 
       const int ks = system.ks();
 
@@ -219,7 +223,7 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
         }
 
         // set boundary values for tridiagonal system
-        system.setSurfaceBoundaryValuesThisColumn(ice_surface_temp(i,j));
+        system.setSurfaceBoundaryValuesThisColumn(T_surface);
         system.setBasalBoundaryValuesThisColumn(basal_heat_flux(i,j),
                                                 shelf_base_temp(i,j),
                                                 basal_frictional_heating(i,j));
@@ -233,11 +237,11 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
 
       // insert solution for generic ice segments
       for (int k=1; k <= ks; k++) {
-        if (allow_above_melting == true) { // in the ice
+        if (allow_above_melting) { // in the ice
           Tnew[k] = x[k];
         } else {
           const double
-            Tpmp = melting_point_temp - beta_CC_grad * (ice_thickness(i,j) - z_fine[k]); // FIXME issue #15
+            Tpmp = melting_point_temp - beta_CC_grad * (H - z_fine[k]); // FIXME issue #15
           if (x[k] > Tpmp) {
             Tnew[k] = Tpmp;
             double Texcess = x[k] - Tpmp; // always positive
@@ -247,18 +251,17 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
             Tnew[k] = x[k];
           }
         }
-        if (Tnew[k] < globalMinAllowedTemp) {
-          ierr = PetscPrintf(PETSC_COMM_SELF,
-                             "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
-                             " proc %d; mask=%d; w=%f m year-1]]\n",
-                             Tnew[k], i, j, k, m_grid->rank(), mask_value,
-                             units::convert(m_sys, system.w(k), "m second-1", "m year-1"));
-          PISM_CHK(ierr, "PetscPrintf");
+        if (Tnew[k] < T_minimum) {
+          log.message(1,
+                      "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
+                      " proc %d; mask=%d; w=%f m year-1]]\n",
+                      Tnew[k], i, j, k, m_grid->rank(), mask,
+                      units::convert(m_sys, system.w(k), "m second-1", "m year-1"));
 
-          myLowTempCount++;
+          stats.low_temperature_counter++;
         }
-        if (Tnew[k] < ice_surface_temp(i,j) - bulgeMax) {
-          Tnew[k] = ice_surface_temp(i,j) - bulgeMax;
+        if (Tnew[k] < T_surface - bulge_max) {
+          Tnew[k] = T_surface - bulge_max;
           stats.bulge_counter += 1;
         }
       }
@@ -268,9 +271,9 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
         if (allow_above_melting == true) { // ice/rock interface
           Tnew[0] = x[0];
         } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-          const double Tpmp = melting_point_temp - beta_CC_grad * ice_thickness(i,j); // FIXME issue #15
+          const double Tpmp = melting_point_temp - beta_CC_grad * H; // FIXME issue #15
           double Texcess = x[0] - Tpmp; // positive or negative
-          if (cell_type.ocean(i,j)) {
+          if (ocean(mask)) {
             // when floating, only half a segment has had its temperature raised
             // above Tpmp
             excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
@@ -282,32 +285,31 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
             throw RuntimeError("updated temperature came out above Tpmp");
           }
         }
-        if (Tnew[0] < globalMinAllowedTemp) {
-          ierr = PetscPrintf(PETSC_COMM_SELF,
-                             "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
-                             " proc %d; mask=%d; w=%f]]\n",
-                             Tnew[0],i,j,m_grid->rank(), mask_value,
-                             units::convert(m_sys, system.w(0), "m second-1", "m year-1"));
-          PISM_CHK(ierr, "PetscPrintf");
+        if (Tnew[0] < T_minimum) {
+          log.message(1,
+                      "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
+                      " proc %d; mask=%d; w=%f]]\n",
+                      Tnew[0],i,j,m_grid->rank(), mask,
+                      units::convert(m_sys, system.w(0), "m second-1", "m year-1"));
 
-          myLowTempCount++;
+          stats.low_temperature_counter++;
         }
-        if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {
-          Tnew[0] = ice_surface_temp(i,j) - bulgeMax;
+        if (Tnew[0] < T_surface - bulge_max) {
+          Tnew[0] = T_surface - bulge_max;
           stats.bulge_counter += 1;
         }
       }
 
       // set to air temp above ice
       for (unsigned int k = ks; k < Mz_fine; k++) {
-        Tnew[k] = ice_surface_temp(i,j);
+        Tnew[k] = T_surface;
       }
 
       // transfer column into m_work3d; communication later
       system.fine_to_coarse(Tnew, i, j, m_work3d);
 
       // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
-      if (cell_type.ocean(i,j)) {
+      if (ocean(mask)) {
         m_basal_melt_rate(i,j) = 0.0;
       } else {
         // basalMeltRate is rate of change of bwat;  can be negative
@@ -322,8 +324,9 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
   }
   loop.check();
 
-  if (myLowTempCount > maxLowTempCount) {
-    throw RuntimeError::formatted("too many low temps: %d", myLowTempCount);
+  stats.low_temperature_counter = GlobalSum(m_grid->com, stats.low_temperature_counter);
+  if (stats.low_temperature_counter > maxLowTempCount) {
+    throw RuntimeError::formatted("too many low temps: %d", stats.low_temperature_counter);
   }
 }
 

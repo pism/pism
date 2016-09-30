@@ -142,6 +142,7 @@ void IceModel::energyStep() {
     temperatureStep(inputs, stats);
     profiling.end("temp step");
 
+    // need to update ghosts of temperature for the next time step
     m_work3d.update_ghosts(m_ice_temperature);
 
     // compute_enthalpy_cold() updates ghosts of m_ice_enthalpy using
