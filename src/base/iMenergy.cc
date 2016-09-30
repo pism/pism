@@ -18,6 +18,8 @@
 
 #include <cassert>
 
+#include "iceModel.hh"
+
 #include "base/energy/BedThermalUnit.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
@@ -28,11 +30,50 @@
 #include "coupler/PISMSurface.hh"
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
-#include "iceModel.hh"
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
 
+#include "base/hydrology/PISMHydrology.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+
 namespace pism {
+
+static void check_input(const IceModelVec *ptr, const char *name) {
+  if (ptr == NULL) {
+    throw RuntimeError::formatted("energy balance model input %s was not provided", name);
+  }
+}
+EnergyModelInputs::EnergyModelInputs() {
+  basal_frictional_heating = NULL;
+  basal_heat_flux          = NULL;
+  cell_type                = NULL;
+  ice_thickness            = NULL;
+  surface_liquid_fraction  = NULL;
+  shelf_base_temp          = NULL;
+  surface_temp             = NULL;
+  till_water_thickness     = NULL;
+
+  strain_heating3          = NULL;
+  u3                       = NULL;
+  v3                       = NULL;
+  w3                       = NULL;
+}
+
+void EnergyModelInputs::check() const {
+  check_input(cell_type,                "cell_type");
+  check_input(basal_frictional_heating, "basal_frictional_heating");
+  check_input(basal_heat_flux,          "basal_heat_flux");
+  check_input(ice_thickness,            "ice_thickness");
+  check_input(surface_liquid_fraction,  "surface_liquid_fraction");
+  check_input(shelf_base_temp,          "shelf_base_temp");
+  check_input(surface_temp,             "surface_temp");
+  check_input(till_water_thickness,     "till_water_thickness");
+
+  check_input(strain_heating3, "strain_heating3");
+  check_input(u3, "u3");
+  check_input(v3, "v3");
+  check_input(w3, "w3");
+}
 
 //! \file iMenergy.cc Methods of IceModel which address conservation of energy.
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
@@ -68,6 +109,33 @@ void IceModel::energyStep() {
   m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("BTU");
 
+  EnergyModelInputs inputs;
+  {
+    m_surface->ice_surface_temperature(m_ice_surface_temp);
+    m_surface->ice_surface_liquid_water_fraction(m_liqfrac_surface);
+
+    m_ocean->shelf_base_temperature(m_shelfbtemp);
+
+    IceModelVec2S &till_water_thickness = m_work2d[0];
+    m_subglacial_hydrology->till_water_thickness(till_water_thickness);
+
+    inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
+    inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
+    inputs.cell_type                = &m_cell_type;                       // geometry
+    inputs.ice_thickness            = &m_ice_thickness;                   // geometry
+    inputs.shelf_base_temp          = &m_shelfbtemp;                      // ocean model
+    inputs.surface_liquid_fraction  = &m_liqfrac_surface;                 // surface model
+    inputs.surface_temp             = &m_ice_surface_temp;                // surface model
+    inputs.till_water_thickness     = &till_water_thickness;              // hydrology model
+
+    inputs.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
+    inputs.u3                       = &m_stress_balance->velocity_u();
+    inputs.v3                       = &m_stress_balance->velocity_v();
+    inputs.w3                       = &m_stress_balance->velocity_w();
+
+    inputs.check();             // make sure all data members were set
+  }
+
   if (m_config->get_boolean("energy.temperature_based")) {
     // new temperature values go in vTnew; also updates Hmelt:
     profiling.begin("temp step");
@@ -82,10 +150,10 @@ void IceModel::energyStep() {
     compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
 
   } else {
-    // new enthalpy values go in m_work3d; also updates (and communicates) Hmelt
+    // new enthalpy values go in m_work3d
 
     profiling.begin("enth step");
-    enthalpyAndDrainageStep(stats);
+    enthalpyAndDrainageStep(inputs, stats);
     profiling.end("enth step");
 
     m_work3d.update_ghosts(m_ice_enthalpy);

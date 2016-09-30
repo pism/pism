@@ -102,6 +102,25 @@ struct FractureFields {
   IceModelVec2S toughness;
 };
 
+class EnergyModelInputs {
+public:
+  EnergyModelInputs();
+  void check() const;
+
+  const IceModelVec2CellType *cell_type;
+  const IceModelVec2S *basal_frictional_heating;
+  const IceModelVec2S *basal_heat_flux;
+  const IceModelVec2S *ice_thickness;
+  const IceModelVec2S *surface_liquid_fraction;
+  const IceModelVec2S *shelf_base_temp;
+  const IceModelVec2S *surface_temp;
+  const IceModelVec2S *till_water_thickness;
+
+  const IceModelVec3 *strain_heating3;
+  const IceModelVec3 *u3;
+  const IceModelVec3 *v3;
+  const IceModelVec3 *w3;
+};
 
 struct EnergyModelStats {
   EnergyModelStats() {
@@ -381,7 +400,8 @@ protected:
   virtual void combine_basal_melt_rate();
 
   // see iMenthalpy.cc
-  virtual void enthalpyAndDrainageStep(EnergyModelStats &stats);
+  virtual void enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
+                                       EnergyModelStats &stats);
 
   // see iMgeometry.cc
   virtual void enforce_consistency_of_geometry();
