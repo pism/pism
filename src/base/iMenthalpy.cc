@@ -226,12 +226,8 @@ void IceModel::enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  assert(not m_config->get_boolean("energy.temperature_based"));
-
-  // essentially physical constants:
   const double
     ice_density = m_config->get_double("constants.ice.density"),              // kg m-3
-    // constants controlling the numerical method:
     bulgeEnthMax = m_config->get_double("energy.enthalpy_cold_bulge_max"); // J kg-1
 
   energy::DrainageCalculator dc(*m_config);

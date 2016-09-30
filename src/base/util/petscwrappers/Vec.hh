@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ namespace pism {
 namespace petsc {
 /** Wrapper around PETSc's Vec. Simplifies memory management.
  *
- * The constructor takes ownership of the dm argument passed to it.
+ * The constructor takes ownership of the Vec argument passed to it.
  *
  * The destructor call VecDestroy().
  */

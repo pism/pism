@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,8 +21,8 @@
 
 namespace pism {
 namespace petsc {
-SNES::SNES(::SNES dm) {
-  m_value = dm;
+SNES::SNES(::SNES snes) {
+  m_value = snes;
 }
 SNES::SNES() {
   m_value = NULL;

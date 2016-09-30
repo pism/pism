@@ -17,7 +17,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cmath>                // for erf() in method 1 in putTempAtDepth()
+#include <cmath>                // for erf() in method 1 in bootstrap_ice_temperature()
 #include <cassert>
 #include <gsl/gsl_math.h>       // M_PI
 
@@ -135,19 +135,31 @@ void IceModel::bootstrap_3d() {
     m_ice_age.set(m_config->get_double("age.initial_value", "seconds"));
   }
 
+  {
+    m_surface->ice_surface_temperature(m_ice_surface_temp);
+    m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
+  }
+
   if (m_config->get_boolean("energy.temperature_based")) {
     // set ice temperature:
-    putTempAtDepth();
+    bootstrap_ice_temperature(m_ice_thickness,
+                              m_ice_surface_temp,
+                              m_climatic_mass_balance,
+                              m_btu->flux_through_top_surface(),
+                              m_ice_temperature);
 
     // use temperature to initialize enthalpy:
-    compute_enthalpy_cold(m_ice_temperature, m_ice_thickness,
-                          m_ice_enthalpy);
+    compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
 
     m_log->message(2, " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
   } else {
     // enthalpy mode
-    // this call will set ice enthalpy
-    putTempAtDepth();
+
+    bootstrap_ice_enthalpy(m_ice_thickness,
+                           m_ice_surface_temp,
+                           m_climatic_mass_balance,
+                           m_btu->flux_through_top_surface(),
+                           m_ice_enthalpy);
   }
 }
 
@@ -218,108 +230,107 @@ This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
 temperature is used by BedThermalUnit::bootstrap() to determine a
 bootstrap temperature profile in the bedrock.
 */
-void IceModel::putTempAtDepth() {
+void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
+                               const IceModelVec2S &ice_surface_temp,
+                               const IceModelVec2S &surface_mass_balance,
+                               const IceModelVec2S &basal_heat_flux,
+                               IceModelVec3 &result) {
 
-  m_log->message(2, " - filling ice temperatures using surface temps (and %s)\n",
-             (m_config->get_string("bootstrapping.temperature_heuristic") == "quartic_guess"
-              ? "quartic guess sans smb" : "mass balance for velocity estimate"));
+  IceGrid::ConstPtr      grid   = result.get_grid();
+  Context::ConstPtr      ctx    = grid->ctx();
+  Config::ConstPtr       config = ctx->config();
+  Logger::ConstPtr       log    = ctx->log();
+  EnthalpyConverter::Ptr EC     = ctx->enthalpy_converter();
 
-  const bool do_cold = m_config->get_boolean("energy.temperature_based"),
-             usesmb  = m_config->get_string("bootstrapping.temperature_heuristic") == "smb";
-  const double
-    ice_k = m_config->get_double("constants.ice.thermal_conductivity"),
-    melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature"),
-    ice_density = m_config->get_double("constants.ice.density"),
-    beta_CC_grad = m_config->get_double("constants.ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_double("constants.standard_gravity"),
-    KK = ice_k / (ice_density * m_config->get_double("constants.ice.specific_heat_capacity"));
+  const bool use_smb  = config->get_string("bootstrapping.temperature_heuristic") == "smb";
 
-  assert(m_surface != NULL);
+  if (use_smb) {
+    log->message(2,
+                 " - filling 3D ice temperatures using surface temperature"
+                 " (and mass balance for velocity estimate)\n");
 
-  // Note that surface->update was called in bootstrapFromFile()
-  {
-    m_surface->ice_surface_temperature(m_ice_surface_temp);
-    if (usesmb == true) {
-      m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
-      // convert from [kg m-2 s-1] to [m second-1]
-      m_climatic_mass_balance.scale(1.0 / ice_density);
-    }
-  }
-
-  IceModelVec3 *result;
-  if (do_cold) {
-    result = &m_ice_temperature;
   } else {
-    result = &m_ice_enthalpy;
+    log->message(2,
+                 " - filling 3D ice temperatures using surface temperature"
+                 " (and a quartic guess without SMB)\n");
   }
 
-  const IceModelVec2S &ice_base_heat_flux = m_btu->flux_through_top_surface();
+  const double
+    ice_k       = config->get_double("constants.ice.thermal_conductivity"),
+    ice_density = config->get_double("constants.ice.density"),
+    ice_c       = config->get_double("constants.ice.specific_heat_capacity"),
+    K           = ice_k / (ice_density * ice_c);
 
   IceModelVec::AccessList list;
-  list.add(m_ice_surface_temp);
-  list.add(m_climatic_mass_balance);
-  list.add(m_ice_thickness);
-  list.add(ice_base_heat_flux);
-  list.add(*result);
+  list.add(ice_surface_temp);
+  list.add(surface_mass_balance);
+  list.add(ice_thickness);
+  list.add(basal_heat_flux);
+  list.add(result);
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
-
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double HH = m_ice_thickness(i,j),
-        Ts = m_ice_surface_temp(i,j),
-        gg = ice_base_heat_flux(i,j);
-      const unsigned int ks = m_grid->kBelowHeight(HH);
+      const double
+        T_surface = ice_surface_temp(i, j),
+        H         = ice_thickness(i, j),
+        G         = basal_heat_flux(i, j);
 
-      double *T = result->get_column(i, j);
+      const unsigned int ks = grid->kBelowHeight(H);
+
+      double *T = result.get_column(i, j);
 
       // within ice
-      if (usesmb == true) { // method 1:  includes surface mass balance in estimate
-        const double mm = m_climatic_mass_balance(i,j);
-        if (mm <= 0.0) { // negative or zero surface mass balance case: linear
+      if (use_smb) { // method 1:  includes surface mass balance in estimate
+
+        // Convert SMB from "kg m-2 s-1" to "m second-1".
+        const double SMB = surface_mass_balance(i, j) / ice_density;
+
+        if (SMB <= 0.0) {
+          // negative or zero surface mass balance case: linear
           for (unsigned int k = 0; k < ks; k++) {
-            const double z = m_grid->z(k),
-              Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
-            T[k] = gg / ice_k * (HH - z) + Ts;
-            T[k] = std::min(Tpmp,T[k]);
+            const double
+              depth = H - grid->z(k),
+              Tpmp  = EC->melting_temperature(EC->pressure(depth));
+
+            T[k] = G / ice_k * depth + T_surface;
+            T[k] = std::min(Tpmp, T[k]);
           }
-        } else { // positive surface mass balance case
-          const double C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
-            gamma0 = sqrt(mm * HH / (2.0 * KK));
+        } else {
+          // positive surface mass balance case
+          const double
+            C0     = (G * sqrt(M_PI * H * K)) / (ice_k * sqrt(2.0 * SMB)),
+            gamma0 = sqrt(SMB * H / (2.0 * K));
 
           for (unsigned int k = 0; k < ks; k++) {
-            const double z = m_grid->z(k),
-              Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
-            T[k] = Ts + C0 * (erf(gamma0) - erf(gamma0 * z / HH));
+            const double
+              z    = grid->z(k),
+              Tpmp = EC->melting_temperature(EC->pressure(H - z));
+
+            T[k] = T_surface + C0 * (erf(gamma0) - erf(gamma0 * z / H));
             T[k] = std::min(Tpmp,T[k]);
           }
         }
-      } else { // method 2:  does not use smb
-        const double beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
-          alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
+      } else { // method 2:  does not use SMB
+        const double
+          beta = (4.0/21.0) * (G / (2.0 * ice_k * H * H * H)),
+          alpha = (G / (2.0 * H * ice_k)) - 2.0 * H * H * beta;
+
         for (unsigned int k = 0; k < ks; k++) {
-          const double depth = HH - m_grid->z(k),
-            Tpmp = melting_point_temp - beta_CC_grad * depth,
-            d2 = depth * depth;
-          T[k] = std::min(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
+          const double
+            depth = H - grid->z(k),
+            Tpmp  = EC->melting_temperature(EC->pressure(depth)),
+            d2    = depth * depth;
+
+          T[k] = std::min(Tpmp, T_surface + alpha * d2 + beta * d2 * d2);
         }
       }
 
       // above ice
-      for (unsigned int k = ks; k < m_grid->Mz(); k++) {
-        T[k] = Ts;
-      }
-
-      // convert to enthalpy if that's what we are calculating
-      if (not do_cold) {
-        for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
-          const double depth = HH - m_grid->z(k);
-          const double pressure = EC->pressure(depth);
-          // reuse T to store enthalpy; assume that the ice is cold
-          T[k]= EC->enthalpy_permissive(T[k], 0.0, pressure);
-        }
+      for (unsigned int k = ks; k < grid->Mz(); k++) {
+        T[k] = T_surface;
       }
     }
   } catch (...) {
@@ -327,7 +338,20 @@ void IceModel::putTempAtDepth() {
   }
   loop.check();
 
-  result->update_ghosts();
+  result.update_ghosts();
+}
+
+void bootstrap_ice_enthalpy(const IceModelVec2S &ice_thickness,
+                            const IceModelVec2S &ice_surface_temp,
+                            const IceModelVec2S &surface_mass_balance,
+                            const IceModelVec2S &basal_heat_flux,
+                            IceModelVec3 &result) {
+
+  bootstrap_ice_temperature(ice_thickness, ice_surface_temp,
+                            surface_mass_balance, basal_heat_flux,
+                            result);
+
+  compute_enthalpy_cold(result, ice_thickness, result);
 }
 
 

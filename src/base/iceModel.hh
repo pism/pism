@@ -122,13 +122,10 @@ public:
   const IceModelVec3 *w3;
 };
 
-struct EnergyModelStats {
-  EnergyModelStats() {
-    bulge_counter = 0;
-    reduced_accuracy_counter = 0;
-    low_temperature_counter = 0;
-    liquified_ice_volume = 0.0;
-  }
+class EnergyModelStats {
+public:
+  EnergyModelStats();
+
   unsigned int bulge_counter;
   unsigned int reduced_accuracy_counter;
   unsigned int low_temperature_counter;
@@ -183,7 +180,6 @@ public:
   // see iMbootstrap.cc
   virtual void bootstrap_2d(const PIO &input_file);
   virtual void bootstrap_3d();
-  virtual void putTempAtDepth();
 
   // see iMoptions.cc
   virtual void setFromOptions();
@@ -571,6 +567,18 @@ protected:
 private:
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
+
+void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
+                               const IceModelVec2S &ice_surface_temp,
+                               const IceModelVec2S &surface_mass_balance,
+                               const IceModelVec2S &basal_heat_flux,
+                               IceModelVec3 &result);
+
+void bootstrap_ice_enthalpy(const IceModelVec2S &ice_thickness,
+                            const IceModelVec2S &ice_surface_temp,
+                            const IceModelVec2S &surface_mass_balance,
+                            const IceModelVec2S &basal_heat_flux,
+                            IceModelVec3 &result);
 
 void compute_enthalpy(const IceModelVec3 &temperature,
                       const IceModelVec3 &liquid_water_fraction,

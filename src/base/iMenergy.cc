@@ -43,6 +43,7 @@ static void check_input(const IceModelVec *ptr, const char *name) {
     throw RuntimeError::formatted("energy balance model input %s was not provided", name);
   }
 }
+
 EnergyModelInputs::EnergyModelInputs() {
   basal_frictional_heating = NULL;
   basal_heat_flux          = NULL;
@@ -73,6 +74,13 @@ void EnergyModelInputs::check() const {
   check_input(u3, "u3");
   check_input(v3, "v3");
   check_input(w3, "w3");
+}
+
+EnergyModelStats::EnergyModelStats() {
+  bulge_counter = 0;
+  reduced_accuracy_counter = 0;
+  low_temperature_counter = 0;
+  liquified_ice_volume = 0.0;
 }
 
 //! \file iMenergy.cc Methods of IceModel which address conservation of energy.

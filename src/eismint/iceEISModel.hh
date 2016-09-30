@@ -23,27 +23,27 @@
 
 namespace pism {
 
-
 //! Derived class for doing EISMINT II simplified geometry experiments.  
 /*!
   These experiments use the thermomechanically-coupled, non-polythermal shallow
-  ice approximation.  Experiment H does \e not \e recommended SIA-sliding
-  paradigm.  See \ref EISMINT00 and Appendix B of \ref BBssasliding.
+  ice approximation. See \ref EISMINT00 and Appendix B of \ref BBssasliding.
 */
 class IceEISModel : public IceModel {
 public:
   IceEISModel(IceGrid::Ptr g, Context::Ptr ctx, char experiment);
+
+protected:
   virtual void initialize_2d();
   virtual void initialize_3d();
 
   virtual void allocate_stressbalance();
   virtual void allocate_couplers();
-protected:
-  char m_experiment;
 
-  virtual void generateTroughTopography(IceModelVec2S &result);  // for experiments I,J
-  virtual void generateMoundTopography(IceModelVec2S &result);   // for experiments K,L
+  char m_experiment;
 };
+
+void generate_trough_topography(IceModelVec2S &result);  // for experiments I,J
+void generate_mound_topography(IceModelVec2S &result);   // for experiments K,L
 
 } // end of namespace pism
 
