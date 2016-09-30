@@ -71,10 +71,11 @@ protected:
 
 
   bool
-  // ocean_oceanboxmodel_deltaT_set,
-        // exicerises_set,
+  ocean_oceanboxmodel_deltaT_set,
+        omeans_set,
         roundbasins_set,
-        continental_shelf_depth_set;
+        continental_shelf_depth_set,
+        exicerises_set;
 
 private:
 

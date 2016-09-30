@@ -142,7 +142,7 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   // mask to identify the grounded ice rises
   ICERISESmask.create(m_grid, "ICERISESmask", WITH_GHOSTS);
   ICERISESmask.set_attrs("model_state", "mask displaying ice rises","", "");
-  bool exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in ocean cavity model");
+  exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in ocean cavity model");
   // mask displaying continental shelf - region where mean salinity and ocean temperature is calculated
   OCEANMEANmask.create(m_grid, "OCEANMEANmask", WITH_GHOSTS);
   OCEANMEANmask.set_attrs("model_state", "mask displaying ocean region for parameter input","", "");
@@ -219,7 +219,7 @@ void Cavity::init_impl() {
 
   // option for scalar forcing of ocean temperature
   // ierr = PISMOptionsIsSet("-ocean_obm_deltaT", ocean_oceanboxmodel_deltaT_set); CHKERRQ(ierr);
-  bool ocean_oceanboxmodel_deltaT_set = options::Bool("-ocean_obm_deltaT",
+  ocean_oceanboxmodel_deltaT_set = options::Bool("-ocean_obm_deltaT",
       "TODO: description of option -ocean_obm_deltaT");
 
   if (ocean_oceanboxmodel_deltaT_set) {
@@ -254,7 +254,7 @@ void Cavity::init_impl() {
 
   }
 
-  bool omeans_set = options::Bool("-ocean_means", "TODO: decribe this option");
+  omeans_set = options::Bool("-ocean_means", "TODO: decribe this option");
 
   if (not omeans_set){
     m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
@@ -387,61 +387,53 @@ void Cavity::initBasinsOptions(const Constants &cc) {
 
 
 
-PetscErrorCode POoceanboxmodel::update(double my_t, double my_dt) {
+void Cavity::update_impl(double my_t, double my_dt) {
 
   // Make sure that sea water salinity and sea water potential
   // temperature fields are up to date:
-  PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
+  update_internal(my_t, my_dt);
 
-  ierr = theta_ocean->average(m_t, m_dt); CHKERRQ(ierr);
-  ierr = salinity_ocean->average(m_t, m_dt); CHKERRQ(ierr);
+  m_theta_ocean->average(m_t, m_dt);
+  m_salinity_ocean->average(m_t, m_dt);
+
+  Constants cc(*m_config);
 
   if ((delta_T != NULL) && ocean_oceanboxmodel_deltaT_set) {
     temp_anomaly = (*delta_T)(my_t + 0.5*my_dt);
-    ierr = verbPrintf(4, grid.com,"0a : set global temperature anomaly = %.3f\n",temp_anomaly); CHKERRQ(ierr);
+    m_log->message(4, "0a : set global temperature anomaly = %.3f\n", temp_anomaly);
   }
 
-  bool omeans_set;
-  ierr = PISMOptionsIsSet("-ocean_means", omeans_set); CHKERRQ(ierr);
-
-  POBMConstants cc(config);
-  ierr = initBasinsOptions(cc); CHKERRQ(ierr);
-
-  ierr = roundBasins(); CHKERRQ(ierr);
+  // POBMConstants cc(config);
+  initBasinsOptions(cc);
+  roundBasins();
   if (omeans_set){
-    ierr = verbPrintf(4, grid.com,"0c : reading mean salinity and temperatures\n"); CHKERRQ(ierr);
+    m_log->message(4, "0c : reading mean salinity and temperatures\n");
   } else {
-    ierr = verbPrintf(4, grid.com,"0c : calculating mean salinity and temperatures\n"); CHKERRQ(ierr);
-    ierr = identifyMASK(OCEANMEANmask,"ocean"); CHKERRQ(ierr);
-    ierr = computeOCEANMEANS(); CHKERRQ(ierr);
+    m_log->message(4, "0c : calculating mean salinity and temperatures\n");
+    identifyMASK(OCEANMEANmask,"ocean");
+    computeOCEANMEANS();
   }
-
 
   //geometry of ice shelves and temperatures
-  ierr = verbPrintf(4, grid.com,"A  : calculating shelf_base_temperature\n"); CHKERRQ(ierr);
+  m_log->message(4, "A  : calculating shelf_base_temperature\n");
   if (exicerises_set) {
-    ierr = identifyMASK(ICERISESmask,"icerises");}
-  ierr = extentOfIceShelves(); CHKERRQ(ierr);
-  ierr = verbPrintf(2, grid.com,"Back here....\n"); CHKERRQ(ierr);
-  ierr = identifyBOXMODELmask(); CHKERRQ(ierr);
-  ierr = oceanTemperature(cc); CHKERRQ(ierr);
-  ierr = Toc.copy_to(shelfbtemp); CHKERRQ(ierr);
+    identifyMASK(ICERISESmask,"icerises");}
+  extentOfIceShelves();
+  m_log->message(2, "Back here....\n");
+  identifyBOXMODELmask();
+  oceanTemperature(cc);
+  m_shelfbtemp.copy_from(Toc);
 
 
   //basal melt rates underneath ice shelves
-  ierr = verbPrintf(4, grid.com,"B  : calculating shelf_base_mass_flux\n"); CHKERRQ(ierr);
-  ierr = basalMeltRateForGroundingLineBox(cc); CHKERRQ(ierr);
-  ierr = basalMeltRateForIceFrontBox(cc); CHKERRQ(ierr); // TODO Diese Routinen woanders aufrufen (um Dopplung zu vermeiden)
-  ierr = basalMeltRateForOtherShelves(cc); CHKERRQ(ierr);  //Assumes that mass flux is proportional to the shelf-base heat flux.
+  m_log->message(4, "B  : calculating shelf_base_mass_flux\n");
+  basalMeltRateForGroundingLineBox(cc);
+  basalMeltRateForIceFrontBox(cc); // TODO Diese Routinen woanders aufrufen (um Dopplung zu vermeiden)
+  basalMeltRateForOtherShelves(cc);  //Assumes that mass flux is proportional to the shelf-base heat flux.
   //const double secpera=31556926.0;
-  ierr = basalmeltrate_shelf.scale(cc.rhoi); CHKERRQ(ierr);
-  ierr = basalmeltrate_shelf.copy_to(shelfbmassflux); CHKERRQ(ierr); //TODO Check if scaling with ice density
-
-
-  return 0;
+  basalmeltrate_shelf.scale(cc.rhoi);
+  m_shelfbmassflux.copy_from(basalmeltrate_shelf); //TODO Check if scaling with ice density
 }
-
-
 
 //! Round basin mask non integer values to an integral value of the next neigbor
 PetscErrorCode POoceanboxmodel::roundBasins() {
