@@ -25,6 +25,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace ocean {
@@ -497,23 +498,36 @@ void Cavity::roundBasins() {
 
 void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
-  PetscErrorCode ierr;
-  verbPrintf(4, grid.com,"0b1: in identifyMASK rountine\n");
+  m_log->message(4, "0b1: in identifyMASK rountine\n");
+  const unsigned int Mx = m_grid->Mx(),
+                     My = m_grid->My(),
+                     xs = m_grid->xs(),
+                     xm = m_grid->xm(),
+                     ys = m_grid->ys(),
+                     ym = m_grid->xm();
 
-  int seed_x = (grid.Mx - 1)/2,
-           seed_y = (grid.My - 1)/2;
+  int seed_x = (Mx - 1)/2,
+      seed_y = (My - 1)/2;
 
   double linner_identified = 0.0,
-              all_inner_identified = 1.0,
-              previous_step_identified = 0.0;;
+         all_inner_identified = 1.0,
+         previous_step_identified = 0.0;
 
+  const IceModelVec2CellType &m_mask = *m_grid->variables().get_2d_cell_type("mask");
+  IceModelVec::AccessList list;
+  list.add(inputmask);
+  list.add(m_mask);
+  // inputmask.begin_access();
 
-  inputmask.begin_access();
   inputmask.set(imask_unidentified);
-  if ((seed_x >= grid.xs) && (seed_x < grid.xs+grid.xm) && (seed_y >= grid.ys)&& (seed_y <= grid.ys+grid.ym)){
+  if ((seed_x >= xs) && (seed_x < xs+xm) && (seed_y >= ys)&& (seed_y <= ys+ym)){
     inputmask(seed_x,seed_y)=imask_inner;
   }
-  inputmask.end_access();
+  // inputmask.end_access();
+
+
+  // IceModelVec::AccessList list;
+  // list.add(inputmask);
 
   int iteration_round = 0;
   // find inner region first
@@ -522,70 +536,66 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
     iteration_round+=1;
     previous_step_identified = all_inner_identified;
 
-    inputmask.begin_access();
-    mask->begin_access();
-    topg->begin_access();
+    list.add(*topg);
+    // inputmask.begin_access();
+    // mask->begin_access();
+    // topg->begin_access();
 
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        bool masktype_condition = false;
-        if (masktype=="ocean"){
-          masktype_condition = ((*mask)(i,j)!=maskocean || (*topg)(i,j) >= continental_shelf_depth);}
-        else if (masktype=="icerises"){
-          masktype_condition = ((*mask)(i,j)==maskgrounded);
-        }
-
-        if (masktype_condition && inputmask(i,j)==imask_unidentified &&
-          (inputmask(i,j+1)==imask_inner || inputmask(i,j-1)==imask_inner ||
-           inputmask(i+1,j)==imask_inner || inputmask(i-1,j)==imask_inner)){
-           inputmask(i,j)=imask_inner;
-           linner_identified+=1;
-        }
-        else if (masktype_condition == false){
-          inputmask(i,j)=imask_outer;
-        }
-
-        //verbPrintf(4, grid.com,"!!! %d %d, %.0f \n",i,j,inputmask(i,j));
+      bool masktype_condition = false;
+      if (masktype=="ocean"){
+        masktype_condition = (m_mask(i,j)!=maskocean || (*topg)(i,j) >= continental_shelf_depth);}
+      else if (masktype=="icerises"){
+        masktype_condition = (m_mask(i,j)==maskgrounded);
       }
+
+      if (masktype_condition && inputmask(i,j)==imask_unidentified &&
+        (inputmask(i,j+1)==imask_inner || inputmask(i,j-1)==imask_inner ||
+         inputmask(i+1,j)==imask_inner || inputmask(i-1,j)==imask_inner)){
+         inputmask(i,j)=imask_inner;
+         linner_identified+=1;
+      }
+      else if (masktype_condition == false){
+        inputmask(i,j)=imask_outer;
+      }
+
+        //m_log->message(4, grid.com,"!!! %d %d, %.0f \n",i,j,inputmask(i,j));
     }
 
-    mask->end_access();
-    topg->end_access();
+    // mask->end_access();
+    // topg->end_access();
 
-    inputmask.end_access();
+    // inputmask.end_access();
     //inputmask.beginGhostComm();
     //inputmask.endGhostComm();
     inputmask.update_ghosts();
 
-    PISMGlobalSum(&linner_identified, &all_inner_identified, grid.com);
+    double all_inner_identified = GlobalSum(m_grid->com, linner_identified);
 
   }
 
+  // TODO: Not sure if we have to reinitialize m_mask and inputmask here.
   //set value for excluded areas (ice rises or submarine islands)
-  inputmask.begin_access();
-  mask->begin_access();
+  // list.add(inputmask);
+  // list.add(m_mask);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (inputmask(i,j)==imask_unidentified){
-        inputmask(i,j)=imask_exclude;
-      }
+    if (inputmask(i,j)==imask_unidentified){
+      inputmask(i,j)=imask_exclude;
+    }
 
-      if (masktype=="ocean"){ //exclude ice covered parts
-        if ((*mask)(i,j)!=maskocean && inputmask(i,j) == imask_inner){
-          inputmask(i,j) = imask_outer;
-        }
+    if (masktype=="ocean"){ //exclude ice covered parts
+      if (m_mask(i,j)!=maskocean && inputmask(i,j) == imask_inner){
+        inputmask(i,j) = imask_outer;
       }
     }
+
   }
 
-  inputmask.end_access();
-  mask->end_access();
-
-
-  return 0;
 }
 
 
@@ -595,7 +605,7 @@ void Cavity::computeOCEANMEANS() {
   // FIXME currently the mean is also calculated over submarine islands which are higher than continental_shelf_depth
 
   PetscErrorCode ierr;
-  verbPrintf(4, grid.com,"0b2: in computeOCEANMEANS routine \n");
+  m_log->message(4, grid.com,"0b2: in computeOCEANMEANS routine \n");
 
   double lm_count[numberOfBasins]; //count cells to take mean over for each basin
   double m_count[numberOfBasins];
@@ -641,14 +651,14 @@ void Cavity::computeOCEANMEANS() {
     PISMGlobalSum(&lm_Tval[k], &m_Tval[k], grid.com);
 
     if(k>0 && m_count[k]==0){ //if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
-      verbPrintf(2, grid.com,"PISM_WARNING: basin %d contains no ocean mean cells, no mean salinity or temperature values are computed! \n ", k);
+      m_log->message(2, grid.com,"PISM_WARNING: basin %d contains no ocean mean cells, no mean salinity or temperature values are computed! \n ", k);
     } else {
       m_Sval[k] = m_Sval[k] / m_count[k];
       m_Tval[k] = m_Tval[k] / m_count[k];
 
       Toc_base_vec[k]=m_Tval[k] - 273.15;
       Soc_base_vec[k]=m_Sval[k];
-      verbPrintf(4, grid.com,"  %d: temp =%.3f, salinity=%.3f\n", k, Toc_base_vec[k], Soc_base_vec[k]);
+      m_log->message(4, grid.com,"  %d: temp =%.3f, salinity=%.3f\n", k, Toc_base_vec[k], Soc_base_vec[k]);
     }
   }
 
@@ -665,7 +675,7 @@ void Cavity::computeOCEANMEANS() {
 
 void Cavity::extentOfIceShelves() {
 	PetscErrorCode ierr;
-	verbPrintf(4, grid.com,"A1b: in extent of ice shelves rountine\n");
+	m_log->message(4, grid.com,"A1b: in extent of ice shelves rountine\n");
 
 	double currentLabelGL = 1; // to find DistGL, 1 iff floating and directly adjacent to a grounded cell
 	double currentLabelIF = 1; // to find DistIF, 1 iff floating and directly adjacent to an ocean cell
@@ -812,7 +822,7 @@ void Cavity::extentOfIceShelves() {
 void Cavity::identifyBOXMODELmask() {
 
   PetscErrorCode ierr;
-  verbPrintf(2, grid.com,"A1c: in identify boxmodel mask rountine\n");
+  m_log->message(2, grid.com,"A1c: in identify boxmodel mask rountine\n");
 
   // Find the maximal DistGL and DistIF
   // FIXME! this could already be done in routine where DistGL and DistIF are computed
@@ -849,7 +859,7 @@ void Cavity::identifyBOXMODELmask() {
     PISMGlobalMax(&lmax_distGL[l], &max_distGL[l], grid.com);  // FIXME is this correct?
     PISMGlobalMax(&lmax_distIF[l], &max_distIF[l], grid.com);
 
-    //verbPrintf(2, grid.com,"maxDistGL[%d]=%.0f, maxDistIF[%d]=%.0f \n", l, max_distGL[l], l, max_distIF[l]);
+    //m_log->message(2, grid.com,"maxDistGL[%d]=%.0f, maxDistIF[%d]=%.0f \n", l, max_distGL[l], l, max_distIF[l]);
   }
 
 
@@ -865,7 +875,7 @@ void Cavity::identifyBOXMODELmask() {
   for (int l=0;l<numberOfBasins;l++){
     lnumberOfBoxes_perBasin[l] = 0;
     lnumberOfBoxes_perBasin[l] = n_min + static_cast<int>(round(pow((max_distGL[l]*grid.dx/max_distGL_ref), zeta) *(numberOfBoxes-n_min))); //ATTENTION, this is only correct for same dx and dy spacing. Otherwise, we need to change the calculation of DistGL and DistIF
-    verbPrintf(2, grid.com,"lnumberOfBoxes[%d]=%d \n", l, lnumberOfBoxes_perBasin[l]);
+    m_log->message(2, grid.com,"lnumberOfBoxes[%d]=%d \n", l, lnumberOfBoxes_perBasin[l]);
   }
 
   // Define the BOXMODELmask
@@ -940,7 +950,7 @@ void Cavity::identifyBOXMODELmask() {
   mask->end_access();
 
 
-  //verbPrintf(2, grid.com,"Number of Boxes=%.0f, lnumberOfBoxes = %.0f\n", numberOfBoxes, lnumberOfBoxes);
+  //m_log->message(2, grid.com,"Number of Boxes=%.0f, lnumberOfBoxes = %.0f\n", numberOfBoxes, lnumberOfBoxes);
 
   // Compute the number of cells per box and basin. Later: Include this in the loop above to save time...
   int nBoxes = static_cast<int>(round(numberOfBoxes+2));
@@ -979,11 +989,11 @@ void Cavity::identifyBOXMODELmask() {
 
   // CHECK!! basin=1 FRIS, 14=PIG  NOTE there might be a gap between the cells for the OBM boxes and the cells for Beckmann-Goose (they are at position numberOfBoxes+1!!)
   //for (int l=0;l<nBoxes;l++){
-  //  verbPrintf(2, grid.com,"counter_boxes[1][:]=%.0f \n", counter_boxes[1][l]);
+  //  m_log->message(2, grid.com,"counter_boxes[1][:]=%.0f \n", counter_boxes[1][l]);
   //}
 
   // FIXME print the size of the boxes here
-  //for(int k=0;k<numberOfBasins;k++){ verbPrintf(5, grid.com,"  %d: cnt[i] = %.0f, cnt_CFbox = %.0f, cnt_GLbox = %.0f, ratio_CF_box = %.3f, ratio_GL_box = %.3f\n", k, counter[k], counter_CFbox[k], counter_GLbox[k], counter_CFbox[k]/counter[k], counter_GLbox[k]/counter[k]); }
+  //for(int k=0;k<numberOfBasins;k++){ m_log->message(5, grid.com,"  %d: cnt[i] = %.0f, cnt_CFbox = %.0f, cnt_GLbox = %.0f, ratio_CF_box = %.3f, ratio_GL_box = %.3f\n", k, counter[k], counter_CFbox[k], counter_GLbox[k], counter_CFbox[k]/counter[k], counter_GLbox[k]/counter[k]); }
 
   return 0;
 }
@@ -1000,7 +1010,7 @@ Compute ocean temperature outside of the ice shelf cavities.
 void Cavity::oceanTemperature(const POBMConstants &cc) {
 
   PetscErrorCode ierr;
-  verbPrintf(4, grid.com,"A2 : in ocean temp rountine\n");
+  m_log->message(4, grid.com,"A2 : in ocean temp rountine\n");
 
   mask->begin_access();
   basins->begin_access();
@@ -1028,7 +1038,7 @@ void Cavity::oceanTemperature(const POBMConstants &cc) {
 
         //! salinity and temperature for grounding line box
         if ( Soc_base(i,j) == 0.0 || Toc_base_vec[shelf_id] == 0.0 ) {
-          verbPrintf(2, grid.com,"PISM_ERROR: Missing Soc_base and Toc_base for %d, %d, basin %d \n   Aborting... \n", i, j, shelf_id);
+          m_log->message(2, grid.com,"PISM_ERROR: Missing Soc_base and Toc_base for %d, %d, basin %d \n   Aborting... \n", i, j, shelf_id);
           PISMEnd();
         }
 
@@ -1052,7 +1062,7 @@ void Cavity::oceanTemperature(const POBMConstants &cc) {
         const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2,
         const double T_pmt = cc.a*Soc_base(i,j) + cc.b - cc.c*pressure;
 
-        //verbPrintf(5, grid.com,"!!!!! T_pmt=%f, Ta=%f, Tb=%f, Toc=%f, Ta2=%f, Toc2=%f at %d,%d,%d\n", T_pmt,   Toc_anomaly(i,j),   Toc_base(i,j)-273.15,   Toc_base(i,j)-273.15 + Toc_anomaly(i,j),    PetscMax( T_pmt+273.15-Toc_base(i,j),   Toc_anomaly(i,j)),    Toc_base(i,j)-273.15+PetscMax( T_pmt+273.15-Toc_base(i,j),Toc_anomaly(i,j))  ,i  ,j,  shelf_id);
+        //m_log->message(5, grid.com,"!!!!! T_pmt=%f, Ta=%f, Tb=%f, Toc=%f, Ta2=%f, Toc2=%f at %d,%d,%d\n", T_pmt,   Toc_anomaly(i,j),   Toc_base(i,j)-273.15,   Toc_base(i,j)-273.15 + Toc_anomaly(i,j),    PetscMax( T_pmt+273.15-Toc_base(i,j),   Toc_anomaly(i,j)),    Toc_base(i,j)-273.15+PetscMax( T_pmt+273.15-Toc_base(i,j),Toc_anomaly(i,j))  ,i  ,j,  shelf_id);
 
         Toc_anomaly(i,j) = PetscMax( T_pmt + 273.15 - Toc_base(i,j) , Toc_anomaly(i,j));
         /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1083,7 +1093,7 @@ void Cavity::oceanTemperature(const POBMConstants &cc) {
 //! Compute the basal melt / refreezing rates for each shelf cell bordering the grounding line box
 void Cavity::basalMeltRateForGroundingLineBox(const POBMConstants &cc) {
   PetscErrorCode ierr;
-  verbPrintf(4, grid.com,"B1 : in basal melt rate gl rountine\n");
+  m_log->message(4, grid.com,"B1 : in basal melt rate gl rountine\n");
 
   double lcounter_edge_of_GLbox_vector[numberOfBasins],
               lmean_salinity_GLbox_vector[numberOfBasins],
@@ -1152,9 +1162,9 @@ void Cavity::basalMeltRateForGroundingLineBox(const POBMConstants &cc) {
 
 
         if ((0.25*PetscSqr(helpterm1) -helpterm2) < 0.0) {
-          //verbPrintf(5, grid.com,"PISM_ERROR: Tb=%f, Ta=%f, Tst=%f, Sb=%f  at %d, %d\n\n",Toc_base(i,j),Toc_anomaly(i,j),T_star(i,j),Soc_base(i,j),i,j);
-          //verbPrintf(5, grid.com,"PISM_ERROR: h1=%f, h2=%f, h1sq=%f at %d, %d\n\n",helpterm1,helpterm2,0.25*PetscSqr(helpterm1),i,j);
-          //verbPrintf(5, grid.com,"PISM_ERROR: square-root is negative! %f at %d, %d\n...with 0.25*helpterm^2=%f,helpterm2=%f,g1=%f,(cc.beta*(Soc_base(i,j)/(cc.nu*cc.lambda))-cc.alpha)=%f,Tstar=%f\n Not aborting, but setting sum to 0... \n", 0.25*PetscSqr(helpterm1) -helpterm2, i, j, 0.25*PetscSqr(helpterm1),helpterm2,g1,(cc.beta*(Soc_base(i,j) / (cc.nu*cc.lambda)) - cc.alpha),T_star(i,j));
+          //m_log->message(5, grid.com,"PISM_ERROR: Tb=%f, Ta=%f, Tst=%f, Sb=%f  at %d, %d\n\n",Toc_base(i,j),Toc_anomaly(i,j),T_star(i,j),Soc_base(i,j),i,j);
+          //m_log->message(5, grid.com,"PISM_ERROR: h1=%f, h2=%f, h1sq=%f at %d, %d\n\n",helpterm1,helpterm2,0.25*PetscSqr(helpterm1),i,j);
+          //m_log->message(5, grid.com,"PISM_ERROR: square-root is negative! %f at %d, %d\n...with 0.25*helpterm^2=%f,helpterm2=%f,g1=%f,(cc.beta*(Soc_base(i,j)/(cc.nu*cc.lambda))-cc.alpha)=%f,Tstar=%f\n Not aborting, but setting sum to 0... \n", 0.25*PetscSqr(helpterm1) -helpterm2, i, j, 0.25*PetscSqr(helpterm1),helpterm2,g1,(cc.beta*(Soc_base(i,j) / (cc.nu*cc.lambda)) - cc.alpha),T_star(i,j));
           //PISMEnd();
           helpterm2=0.25*PetscSqr(helpterm1);
           //FIXME: In this case, there is no solution for the basal melt rate, how to deal with these cells?
@@ -1187,7 +1197,7 @@ void Cavity::basalMeltRateForGroundingLineBox(const POBMConstants &cc) {
           lmean_meltrate_GLbox_vector[shelf_id] += basalmeltrate_shelf(i,j);
           lmean_overturning_GLbox_vector[shelf_id] += overturning(i,j);
 
-          //verbPrintf(4, grid.com,"B1 : in basal melt rate gl rountine test1: %d,%d, %d: %.0f \n",i,j,shelf_id,lcounter_edge_of_GLbox_vector[shelf_id]);
+          //m_log->message(4, grid.com,"B1 : in basal melt rate gl rountine test1: %d,%d, %d: %.0f \n",i,j,shelf_id,lcounter_edge_of_GLbox_vector[shelf_id]);
 
         } // no else-case necessary since all variables are set to zero at the beginning of this routine
 
@@ -1229,12 +1239,12 @@ void Cavity::basalMeltRateForGroundingLineBox(const POBMConstants &cc) {
       mean_salinity_boundary_vector[k]=0.0; mean_temperature_boundary_vector[k]=0.0; mean_meltrate_boundary_vector[k]=0.0; mean_overturning_GLbox_vector[k]=0.0;
     }
 
-    verbPrintf(2, grid.com,"  %d: cnt=%.0f, sal=%.3f, temp=%.3f, melt=%.3e, over=%.1e \n", k,counter_edge_of_GLbox_vector,mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],mean_meltrate_boundary_vector[k],mean_overturning_GLbox_vector[k]) ;
+    m_log->message(2, grid.com,"  %d: cnt=%.0f, sal=%.3f, temp=%.3f, melt=%.3e, over=%.1e \n", k,counter_edge_of_GLbox_vector,mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],mean_meltrate_boundary_vector[k],mean_overturning_GLbox_vector[k]) ;
   }
 
     PISMGlobalSum(&lcountHelpterm, &countHelpterm, grid.com);
     if (countHelpterm > 0) {
-      verbPrintf(2, grid.com,"B1!: PISM_WARNING: square-root has been negative in %.0f cases!\n",countHelpterm);
+      m_log->message(2, grid.com,"B1!: PISM_WARNING: square-root has been negative in %.0f cases!\n",countHelpterm);
     }
 
   return 0;
@@ -1248,7 +1258,7 @@ void Cavity::basalMeltRateForGroundingLineBox(const POBMConstants &cc) {
 
 void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rename routine!!
   PetscErrorCode ierr;  // FIXME redo all verbprintfs!
-  verbPrintf(4, grid.com,"B2 : in bm other shelves rountine\n");
+  m_log->message(4, grid.com,"B2 : in bm other shelves rountine\n");
 
   double countk4=0,
          lcountk4=0,
@@ -1263,7 +1273,7 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
 
   //! Iterate over all Boxes > 1=GF_Box
   for (int iBox=2; iBox <nBoxes; ++iBox) {
-    verbPrintf(2, grid.com,"B2 : iBox =%d, numberOfBoxes=%0.f \n", iBox, numberOfBoxes);
+    m_log->message(2, grid.com,"B2 : iBox =%d, numberOfBoxes=%0.f \n", iBox, numberOfBoxes);
 
 
     double lcounter_edge_of_ibox_vector[numberOfBasins],     // to compute means at boundary for the current box
@@ -1318,8 +1328,8 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
 
           if (mean_salinity_in_boundary==0 || mean_overturning_in_GLbox ==0) { // if there are no boundary values from the box before
             // This should not happen any more since we use distIF and distGL, so every cell within a OBM-Box has to be reachable from IF and GL
-            //verbPrintf(5, grid.com,"!!!! GLBOX =0 , basin = %d at %d,%d, \n   ", shelf_id,i,j);
-            verbPrintf(2, grid.com,"!!!! ATTENTION, this should not happen(?) by the definition of the boxes, problem at %d,%d \n", i,j);
+            //m_log->message(5, grid.com,"!!!! GLBOX =0 , basin = %d at %d,%d, \n   ", shelf_id,i,j);
+            m_log->message(2, grid.com,"!!!! ATTENTION, this should not happen(?) by the definition of the boxes, problem at %d,%d \n", i,j);
             BOXMODELmask(i,j) = numberOfBoxes+1;
             lcountGl0+=1;
 
@@ -1333,7 +1343,7 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
             k2 = (mean_overturning_in_GLbox + area_iBox*gamma_T_star);
             // in m^3/s
             if (k2==0){
-              verbPrintf(2, grid.com,"PISM_ERROR: Division by zero! k2=%f at %d, %d\n   Aborting... \n", k2, i, j);
+              m_log->message(2, grid.com,"PISM_ERROR: Division by zero! k2=%f at %d, %d\n   Aborting... \n", k2, i, j);
               PISMEnd(); // Check calculations: what happens if this is true with the solution?
             }
             k3 = (k1/(cc.nu*cc.lambda)*cc.a - k1*k1/(cc.nu*cc.lambda*k2)*cc.a);
@@ -1343,13 +1353,13 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
             k5 = mean_overturning_in_GLbox*mean_salinity_in_boundary;
             // m^3/s*psu
 
-            //verbPrintf(2, grid.com,"!!!! ACF=%.3e, AGL=%.3e, MS=%.3f, MM=%.3f, MO=%.3f, basin = %d at %d,%d, \n   ",  area_CFbox,area_GLbox,mean_salinity_in_boundary,mean_meltrate_in_boundary,mean_overturning_in_GLbox,shelf_id,i,j);
-            //verbPrintf(2, grid.com,"!!!! k1=%.3f, k2=%.3f, k3=%.3f, k4=%.3f, k5=%.3f, k6=%.3f, basin = %d at %d,%d, \n   ",k1,k2,k3,k4,k5,k6,shelf_id,i,j);
+            //m_log->message(2, grid.com,"!!!! ACF=%.3e, AGL=%.3e, MS=%.3f, MM=%.3f, MO=%.3f, basin = %d at %d,%d, \n   ",  area_CFbox,area_GLbox,mean_salinity_in_boundary,mean_meltrate_in_boundary,mean_overturning_in_GLbox,shelf_id,i,j);
+            //m_log->message(2, grid.com,"!!!! k1=%.3f, k2=%.3f, k3=%.3f, k4=%.3f, k5=%.3f, k6=%.3f, basin = %d at %d,%d, \n   ",k1,k2,k3,k4,k5,k6,shelf_id,i,j);
 
             //! salinity for calving front box
             if (k3 == 0.0) {
-              //verbPrintf(5, grid.com,"PISM_ERROR: Division by zero! k3=%f at %d, %d\n   Aborting... \n", k3, i, j);
-              //verbPrintf(5, grid.com,"PISM_ERROR: Probably mean_overturning_in_GLbox = %f is zero, check if there is a grounding line box in basin %d , \n   ", mean_overturning_in_GLbox, shelf_id);
+              //m_log->message(5, grid.com,"PISM_ERROR: Division by zero! k3=%f at %d, %d\n   Aborting... \n", k3, i, j);
+              //m_log->message(5, grid.com,"PISM_ERROR: Probably mean_overturning_in_GLbox = %f is zero, check if there is a grounding line box in basin %d , \n   ", mean_overturning_in_GLbox, shelf_id);
               //PISMEnd();
               // In this case, there is no solution for the melt rates, we compute melt rates following Beckmann-Goose
               lcountk4+=1;
@@ -1359,7 +1369,7 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
 
             if ((0.25*k4*k4/(k3*k3) -k5/k3) < 0.0) {
               // In this case, there is no solution for the melt rates, we compute melt rates following Beckmann-Goose
-              //verbPrintf(5, grid.com,"PISM_ERROR: Square-root is negative! %f at %d, %d\n...with 0.25*k5^2/k3^2 - k4/k3 =%f \n   Aborting... \n", (0.25*k5*k5/(k3*k3) -k4/k3)) ;
+              //m_log->message(5, grid.com,"PISM_ERROR: Square-root is negative! %f at %d, %d\n...with 0.25*k5^2/k3^2 - k4/k3 =%f \n   Aborting... \n", (0.25*k5*k5/(k3*k3) -k4/k3)) ;
               //PISMEnd();
               lcountSqr+=1;
               BOXMODELmask(i,j) = numberOfBoxes+1;
@@ -1380,7 +1390,7 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
               // NEW: THIS SHOULD NOT HAPPEN ANY MORE, since every cell can be reached from GL (distGL taken into account)
               // In this case, there is no solution for the melt rates, we compute melt rates following Beckmann-Goose
               // this must not occur since there must always be a GL_box neighbor
-              //verbPrintf(5, grid.com, "PISM_ERROR: DETECTION CFBOX: There is no neighbouring grounding line box for this calving front box at %d,%d! \nThis will lead to a zero k4 and in turn to NaN in Soc, Toc_inCelsius and basalmeltrate_shelf. After the next massContExplicitStep(), H will be NaN, too! This will cause ks in temperatureStep() to be NaN and lead to a Segmentation Violation! \nIn particular: basin_id=%d, BOXMODELmask=%f, H=%f, T_star=%f, \narea_GLbox=%e, area_CFbox=%e, mean_salinity_in_GLbox=%f, mean_meltrate_in_GLbox=%e, mean_overturning_in_GLbox=%e, \nk1=%e,k2=%e,k3=%e,k4=%e,k5=%e,k6=%e, \nToc_base=%f, Toc_anomaly=%f, Toc_inCelsius=%f, Toc=%f, Soc_base=%f, Soc=%f, basalmeltrate_shelf=%e \n   Aborting... \n", i,j, shelf_id, BOXMODELmask(i,j), (*ice_thickness)(i,j), T_star(i,j), area_GLbox,area_CFbox,mean_salinity_in_GLbox,mean_meltrate_in_GLbox,mean_overturning_in_GLbox,k1,k2,k3,k4,k5,k6, Toc_base(i,j), Toc_anomaly(i,j), Toc_inCelsius(i,j), Toc(i,j), Soc_base(i,j), Soc(i,j), basalmeltrate_shelf(i,j));
+              //m_log->message(5, grid.com, "PISM_ERROR: DETECTION CFBOX: There is no neighbouring grounding line box for this calving front box at %d,%d! \nThis will lead to a zero k4 and in turn to NaN in Soc, Toc_inCelsius and basalmeltrate_shelf. After the next massContExplicitStep(), H will be NaN, too! This will cause ks in temperatureStep() to be NaN and lead to a Segmentation Violation! \nIn particular: basin_id=%d, BOXMODELmask=%f, H=%f, T_star=%f, \narea_GLbox=%e, area_CFbox=%e, mean_salinity_in_GLbox=%f, mean_meltrate_in_GLbox=%e, mean_overturning_in_GLbox=%e, \nk1=%e,k2=%e,k3=%e,k4=%e,k5=%e,k6=%e, \nToc_base=%f, Toc_anomaly=%f, Toc_inCelsius=%f, Toc=%f, Soc_base=%f, Soc=%f, basalmeltrate_shelf=%e \n   Aborting... \n", i,j, shelf_id, BOXMODELmask(i,j), (*ice_thickness)(i,j), T_star(i,j), area_GLbox,area_CFbox,mean_salinity_in_GLbox,mean_meltrate_in_GLbox,mean_overturning_in_GLbox,k1,k2,k3,k4,k5,k6, Toc_base(i,j), Toc_anomaly(i,j), Toc_inCelsius(i,j), Toc(i,j), Soc_base(i,j), Soc(i,j), basalmeltrate_shelf(i,j));
               //PISMEnd();
               lcountMean0+=1;
               BOXMODELmask(i,j) = numberOfBoxes+1;
@@ -1394,7 +1404,7 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
               lmean_salinity_ibox_vector[shelf_id] += Soc(i,j);
               lmean_temperature_ibox_vector[shelf_id] += Toc_inCelsius(i,j);
               lmean_meltrate_ibox_vector[shelf_id] += basalmeltrate_shelf(i,j);
-              //verbPrintf(4, grid.com,"B1 : in basal melt rate gl rountine test1: %d,%d, %d: %.0f \n",i,j,shelf_id,lcounter_edge_of_GLbox_vector[shelf_id]);
+              //m_log->message(4, grid.com,"B1 : in basal melt rate gl rountine test1: %d,%d, %d: %.0f \n",i,j,shelf_id,lcounter_edge_of_GLbox_vector[shelf_id]);
             } // no else-case necessary since all variables are set to zero at the beginning of this routine
           }
         } // NOTE NO else-case, since  basalMeltRateForGroundingLineBox() and basalMeltRateForOtherShelves() cover all other cases and we would overwrite those results here.
@@ -1430,7 +1440,7 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
         mean_salinity_boundary_vector[k]=0.0; mean_temperature_boundary_vector[k]=0.0; mean_meltrate_boundary_vector[k]=0.0;
       }
 
-      verbPrintf(2, grid.com,"  %d: cnt=%.0f, sal=%.3f, temp=%.3f, melt=%.3e, over=%.1e \n", k,counter_edge_of_ibox_vector,mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],mean_meltrate_boundary_vector[k],mean_overturning_GLbox_vector[k]) ;
+      m_log->message(2, grid.com,"  %d: cnt=%.0f, sal=%.3f, temp=%.3f, melt=%.3e, over=%.1e \n", k,counter_edge_of_ibox_vector,mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],mean_meltrate_boundary_vector[k],mean_overturning_GLbox_vector[k]) ;
     } // basins
 
   } // iBox
@@ -1442,16 +1452,16 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
   PISMGlobalSum(&lcountMean0, &countMean0, grid.com);
 
   if (countk4 > 0) {
-    verbPrintf(2, grid.com,"B2!: PISM_WARNING: k4 is zero in %.0f case(s)!\n",countk4);
+    m_log->message(2, grid.com,"B2!: PISM_WARNING: k4 is zero in %.0f case(s)!\n",countk4);
   }
   if (countGl0 > 0) {
-    verbPrintf(2, grid.com,"B2!: PISM_WARNING: no grounding line box in basin in %.0f case(s)!\n",countGl0);
+    m_log->message(2, grid.com,"B2!: PISM_WARNING: no grounding line box in basin in %.0f case(s)!\n",countGl0);
   }
   if (countSqr > 0) {
-    verbPrintf(2, grid.com,"B2!: PISM_WARNING: square root is negative in %.0f case(s)!\n",countSqr);
+    m_log->message(2, grid.com,"B2!: PISM_WARNING: square root is negative in %.0f case(s)!\n",countSqr);
   }
   if (countMean0 > 0) {
-    verbPrintf(2, grid.com,"B2!: PISM_WARNING: mean of salinity, meltrate or overturning is zero in %.0f case(s)!\n",countMean0);
+    m_log->message(2, grid.com,"B2!: PISM_WARNING: mean of salinity, meltrate or overturning is zero in %.0f case(s)!\n",countMean0);
   }
 
   return 0;
@@ -1468,7 +1478,7 @@ void Cavity::basalMeltRateForIceFrontBox(const POBMConstants &cc) { //FIXME rena
 //! Compute the melt rate for all other ice shelves.
 void Cavity::basalMeltRateForOtherShelves(const POBMConstants &cc) {
   PetscErrorCode ierr;
-  verbPrintf(4, grid.com,"B3 : in bm others rountine\n");
+  m_log->message(4, grid.com,"B3 : in bm others rountine\n");
 
 
   ice_thickness->begin_access();
@@ -1511,7 +1521,7 @@ void Cavity::basalMeltRateForOtherShelves(const POBMConstants &cc) {
         Toc(i,j) = 273.15 + Toc_inCelsius(i,j) + Toc_anomaly(i,j); // in K
       } else { // This must not happen
 
-        verbPrintf(2, grid.com,"PISM_ERROR: [rank %d] at %d, %d  -- basins(i,j)=%d causes problems.\n   Aborting... \n",grid.rank, i, j, shelf_id);
+        m_log->message(2, grid.com,"PISM_ERROR: [rank %d] at %d, %d  -- basins(i,j)=%d causes problems.\n   Aborting... \n",grid.rank, i, j, shelf_id);
         PISMEnd();
       }
     } // end j

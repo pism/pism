@@ -82,6 +82,8 @@ private:
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux;
 
+  // const IceModelVec2CellType   m_mask;
+
   IceModelVec2T   *m_theta_ocean,
                   *m_salinity_ocean;
 
