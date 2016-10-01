@@ -43,8 +43,11 @@
 #include "base/calving/EigenCalving.hh"
 #include "base/calving/vonMisesCalving.hh"
 #include "base/calving/FrontalMelt.hh"
-#include "base/util/Proj.hh"
 #include "base/util/projection.hh"
+
+#if (PISM_USE_PROJ4==1)
+#include "base/util/Proj.hh"
+#endif
 
 namespace pism {
 

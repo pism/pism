@@ -20,7 +20,7 @@
 #ifndef BOOTSTRAPPING_H
 #define BOOTSTRAPPING_H
 
-#include "base/EnthalpyConverter.hh"
+#include "base/enthalpyConverter.hh"
 
 namespace pism {
 

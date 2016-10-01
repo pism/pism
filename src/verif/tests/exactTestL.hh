@@ -21,7 +21,7 @@
 #define EXACTTESTL_HH
 
 #include <vector>
-
+#include <cstddef>
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! exactTestL is a C++ implementation of an isothermal "exact" solution on a

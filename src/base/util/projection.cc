@@ -26,7 +26,7 @@
 #include "io/PIO.hh"
 #include "io/io_helpers.hh"
 #include "base/util/IceGrid.hh"
-#include "base/util/IceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 
 #if (PISM_USE_PROJ4==1)
 #include "base/util/Proj.hh"
@@ -187,6 +187,8 @@ MappingInfo get_projection_info(const PIO &input_file, const std::string &mappin
 
 enum LonLat {LONGITUDE, LATITUDE};
 
+#if (PISM_USE_PROJ4==1)
+
 //! Computes the area of a triangle using vector cross product.
 static double triangle_area(double *A, double *B, double *C) {
   double V1[3], V2[3];
@@ -199,8 +201,6 @@ static double triangle_area(double *A, double *B, double *C) {
                   PetscSqr(V1[0]*V2[2] - V2[0]*V1[2]) +
                   PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
 }
-
-#if (PISM_USE_PROJ4==1)
 
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
   IceGrid::ConstPtr grid = result.get_grid();
@@ -350,7 +350,7 @@ static void compute_lon_lat(const std::string &projection, LonLat which,
 
 static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
-                                   IceModelVec3 &result) {
+                                   IceModelVec3D &result) {
   (void) projection;
   (void) which;
   (void) result;
