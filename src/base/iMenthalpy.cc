@@ -221,9 +221,9 @@ Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references th
 
 \image html BC-decision-chart.png "Setting the basal boundary condition"
  */
-void IceModel::enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
-                                       double dt,
-                                       EnergyModelStats &stats) {
+void IceModel::enthalpyStep(const EnergyModelInputs &inputs,
+                            double dt,
+                            EnergyModelStats &stats) {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 

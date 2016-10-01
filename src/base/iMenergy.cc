@@ -97,7 +97,7 @@ EnergyModelStats::EnergyModelStats() {
   energy.temperature_based == true, then energyStep() must also update this field
   - IceModelVec3 m_ice_temperature
 
-  Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
+  Normally calls the method enthalpyStep().  Calls temperatureStep() if
   energy.temperature_based == true.
 */
 void IceModel::energyStep() {
@@ -109,7 +109,7 @@ void IceModel::energyStep() {
   // operator-splitting occurs here (ice and bedrock energy updates are split):
   //   tell BedThermalUnit* btu that we have an ice base temp; it will return
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
-  //   enthalpyAndDrainageStep()
+  //   enthalpyStep()
   IceModelVec2S &bedtoptemp = m_work2d[0];
   get_bed_top_temp(bedtoptemp);
 
@@ -162,7 +162,7 @@ void IceModel::energyStep() {
     // new enthalpy values go in m_work3d
 
     profiling.begin("enth step");
-    enthalpyAndDrainageStep(inputs, dt_TempAge, stats);
+    enthalpyStep(inputs, dt_TempAge, stats);
     profiling.end("enth step");
 
     m_work3d.update_ghosts(m_ice_enthalpy);

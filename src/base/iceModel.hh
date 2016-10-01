@@ -403,9 +403,9 @@ protected:
   virtual void combine_basal_melt_rate();
 
   // see iMenthalpy.cc
-  virtual void enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
-                                       double dt,
-                                       EnergyModelStats &stats);
+  virtual void enthalpyStep(const EnergyModelInputs &inputs,
+                            double dt,
+                            EnergyModelStats &stats);
 
   // see iMgeometry.cc
   virtual void enforce_consistency_of_geometry();

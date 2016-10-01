@@ -308,11 +308,11 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
   //
 }
 
-void IceRegionalModel::enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
-                                               double dt,
-                                               EnergyModelStats &stats) {
+void IceRegionalModel::enthalpyStep(const EnergyModelInputs &inputs,
+                                    double dt,
+                                    EnergyModelStats &stats) {
 
-  IceModel::enthalpyAndDrainageStep(inputs, dt, stats);
+  IceModel::enthalpyStep(inputs, dt, stats);
 
   unsigned int Mz = m_grid->Mz();
 

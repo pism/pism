@@ -35,11 +35,10 @@
 namespace pism {
 
 // boundary conditions for tests F, G (same as EISMINT II Experiment F)
-const double IceCompModel::ST = 1.67e-5;
-const double IceCompModel::Tmin = 223.15;  // K
+const double IceCompModel::ST     = 1.67e-5;
+const double IceCompModel::Tmin   = 223.15; // K
 const double IceCompModel::LforFG = 750000; // m
 const double IceCompModel::ApforG = 200; // m
-
 
 /*! Re-implemented so that we can add compensatory strain_heating in Tests F and G. */
 void IceCompModel::temperatureStep(const EnergyModelInputs &inputs,
@@ -58,7 +57,6 @@ void IceCompModel::temperatureStep(const EnergyModelInputs &inputs,
     IceModel::temperatureStep(inputs, dt, stats);
   }
 }
-
 
 void IceCompModel::initTestFG() {
 
