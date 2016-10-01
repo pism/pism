@@ -57,6 +57,7 @@
 #include "base/util/Profiling.hh"
 
 #include "base/util/projection.hh"
+#include "base/energy/bootstrapping.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -287,3 +288,5 @@
 %include pism_ocean.i
 
 %include pism_verification.i
+
+%include "base/energy/bootstrapping.hh"
