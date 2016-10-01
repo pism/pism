@@ -41,13 +41,9 @@ namespace pism {
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!
 Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.
-Then sets `CFLmaxdt`, the maximum time step allowed under the
-Courant-Friedrichs-Lewy (CFL) condition on the
-horizontal advection scheme for age and for temperature.
 
 Under BOMBPROOF there is no CFL condition for the vertical advection.
-The maximum vertical velocity is computed but it does not affect
-`CFLmaxdt`.
+The maximum vertical velocity is computed but it does not affect the output.
  */
 double IceModel::max_timestep_cfl_3d() {
   double max_dt = m_config->get_double("time_stepping.maximum_time_step", "seconds");
@@ -294,20 +290,13 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       }
     }
 
-    if (m_config->get_boolean("energy.enabled")) {
-      if (update_3d) {
-        CFLmaxdt = max_timestep_cfl_3d();
-      }
-      dt_restrictions["3D CFL"] = CFLmaxdt;
+    if (m_config->get_boolean("energy.enabled") and update_3d) {
+      dt_restrictions["3D CFL"] = max_timestep_cfl_3d();
     }
 
     if (m_config->get_boolean("geometry.update.enabled")) {
-      CFLmaxdt2D = max_timestep_cfl_2d();
-
-      dt_restrictions["2D CFL"] = CFLmaxdt2D;
-
-      double max_dt_diffusivity = max_timestep_diffusivity();
-      dt_restrictions["diffusivity"] = max_dt_diffusivity;
+      dt_restrictions["2D CFL"] = max_timestep_cfl_2d();
+      dt_restrictions["diffusivity"] = max_timestep_diffusivity();
     }
   }
 
