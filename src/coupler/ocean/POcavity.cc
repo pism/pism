@@ -604,8 +604,7 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 void Cavity::computeOCEANMEANS() {
   // FIXME currently the mean is also calculated over submarine islands which are higher than continental_shelf_depth
 
-  PetscErrorCode ierr;
-  m_log->message(4, grid.com,"0b2: in computeOCEANMEANS routine \n");
+  m_log->message(4, "0b2: in computeOCEANMEANS routine \n");
 
   double lm_count[numberOfBasins]; //count cells to take mean over for each basin
   double m_count[numberOfBasins];
@@ -623,46 +622,45 @@ void Cavity::computeOCEANMEANS() {
     m_Sval[k]=0.0;
   }
 
-  OCEANMEANmask.begin_access();
-  theta_ocean->begin_access();
-  salinity_ocean->begin_access();    //salinitiy
-  basins->begin_access();
+  IceModelVec::AccessList list;
+  list.add(*m_theta_ocean);
+  list.add(*m_salinity_ocean);
+  list.add(*basins);
+  list.add(OCEANMEANmask);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (OCEANMEANmask(i,j) == imask_inner ){
-        int shelf_id =(*basins)(i,j);
-        lm_count[shelf_id]+=1;
-        lm_Sval[shelf_id]+=(*salinity_ocean)(i,j);
-        lm_Tval[shelf_id]+=(*theta_ocean)(i,j);
-      } //if
-    } //j
-  } //i
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-  OCEANMEANmask.end_access();
-  theta_ocean->end_access();
-  salinity_ocean->end_access();     //salinity
-  basins->end_access();
+    if (OCEANMEANmask(i,j) == imask_inner ){
+      int shelf_id =(*basins)(i,j);
+      lm_count[shelf_id]+=1;
+      lm_Sval[shelf_id]+=(*m_salinity_ocean)(i,j);
+      lm_Tval[shelf_id]+=(*m_theta_ocean)(i,j);
+    } //if
+
+  }
 
 
   for(int k=0;k<numberOfBasins;k++) {
-    PISMGlobalSum(&lm_count[k], &m_count[k], grid.com);
-    PISMGlobalSum(&lm_Sval[k], &m_Sval[k], grid.com);
-    PISMGlobalSum(&lm_Tval[k], &m_Tval[k], grid.com);
 
-    if(k>0 && m_count[k]==0){ //if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
-      m_log->message(2, grid.com,"PISM_WARNING: basin %d contains no ocean mean cells, no mean salinity or temperature values are computed! \n ", k);
+    m_count[k] = GlobalSum(m_grid->com, lm_count[k]);
+    m_Sval[k] = GlobalSum(m_grid->com, lm_Sval[k]);
+    m_Tval[k] = GlobalSum(m_grid->com, lm_Tval[k]);
+
+    //if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
+    if(k>0 && m_count[k]==0){
+      m_log->message(2, "PISM_WARNING: basin %d contains no ocean mean cells,"
+                        " no mean salinity or temperature values are computed! \n ", k);
     } else {
       m_Sval[k] = m_Sval[k] / m_count[k];
       m_Tval[k] = m_Tval[k] / m_count[k];
 
       Toc_base_vec[k]=m_Tval[k] - 273.15;
       Soc_base_vec[k]=m_Sval[k];
-      m_log->message(4, grid.com,"  %d: temp =%.3f, salinity=%.3f\n", k, Toc_base_vec[k], Soc_base_vec[k]);
+      m_log->message(4, "  %d: temp =%.3f, salinity=%.3f\n", k, Toc_base_vec[k], Soc_base_vec[k]);
     }
   }
 
-  return 0;
 }
 
 
