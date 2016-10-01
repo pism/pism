@@ -38,8 +38,8 @@ public:
   virtual void allocate_bed_deformation();
   virtual void allocate_couplers();
 
-  virtual void bootstrap_2d(const PIO &input_file);
-  virtual void bootstrap_3d();
+  virtual void bootstrap_2d(const PIO &input_file) __attribute__((noreturn));
+  virtual void bootstrap_3d() __attribute__((noreturn));
 
   virtual void initialize_2d();
   virtual void initialize_3d();
