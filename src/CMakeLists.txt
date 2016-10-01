@@ -117,6 +117,7 @@ add_library (pism
   base/energy/BTU_Minimal.cc
   base/energy/enthSystem.cc
   base/energy/tempSystem.cc
+  base/energy/bootstrapping.cc
   base/iMadaptive.cc
   base/iMage.cc
   base/iMbootstrap.cc

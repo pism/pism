@@ -32,6 +32,7 @@
 #include "coupler/PISMSurface.hh"
 #include "enthalpyConverter.hh"
 #include "base/energy/BedThermalUnit.hh"
+#include "base/energy/bootstrapping.hh"
 
 namespace pism {
 
@@ -288,44 +289,18 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
         // Convert SMB from "kg m-2 s-1" to "m second-1".
         const double SMB = surface_mass_balance(i, j) / ice_density;
 
-        if (SMB <= 0.0) {
-          // negative or zero surface mass balance case: linear
-          for (unsigned int k = 0; k < ks; k++) {
-            const double
-              depth = H - grid->z(k),
-              Tpmp  = EC->melting_temperature(EC->pressure(depth));
-
-            T[k] = G / ice_k * depth + T_surface;
-            T[k] = std::min(Tpmp, T[k]);
-          }
-        } else {
-          // positive surface mass balance case
-          const double
-            C0     = (G * sqrt(M_PI * H * K)) / (ice_k * sqrt(2.0 * SMB)),
-            gamma0 = sqrt(SMB * H / (2.0 * K));
-
-          for (unsigned int k = 0; k < ks; k++) {
-            const double
-              z    = grid->z(k),
-              Tpmp = EC->melting_temperature(EC->pressure(H - z));
-
-            T[k] = T_surface + C0 * (erf(gamma0) - erf(gamma0 * z / H));
-            T[k] = std::min(Tpmp,T[k]);
-          }
+        for (unsigned int k = 0; k < ks; k++) {
+          const double z = grid->z(k);
+          T[k] = ice_temperature_guess_smb(EC, H, z, T_surface, G, ice_k, K, SMB);
         }
-      } else { // method 2:  does not use SMB
-        const double
-          beta = (4.0/21.0) * (G / (2.0 * ice_k * H * H * H)),
-          alpha = (G / (2.0 * H * ice_k)) - 2.0 * H * H * beta;
+
+      } else { // method 2: a quartic guess; does not use SMB
 
         for (unsigned int k = 0; k < ks; k++) {
-          const double
-            depth = H - grid->z(k),
-            Tpmp  = EC->melting_temperature(EC->pressure(depth)),
-            d2    = depth * depth;
-
-          T[k] = std::min(Tpmp, T_surface + alpha * d2 + beta * d2 * d2);
+          const double z = grid->z(k);
+          T[k] = ice_temperature_guess(EC, H, z, T_surface, G, ice_k);
         }
+
       }
 
       // above ice
@@ -353,6 +328,5 @@ void bootstrap_ice_enthalpy(const IceModelVec2S &ice_thickness,
 
   compute_enthalpy_cold(result, ice_thickness, result);
 }
-
 
 } // end of namespace pism
