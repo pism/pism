@@ -22,6 +22,7 @@
 
 #include "coupler/util/PGivenClimate.hh"
 #include "POModifier.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace ocean {
@@ -82,7 +83,7 @@ private:
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux;
 
-  // const IceModelVec2CellType   m_mask;
+  const IceModelVec2CellType m_mask;
 
   IceModelVec2T   *m_theta_ocean,
                   *m_salinity_ocean;
@@ -157,7 +158,8 @@ private:
                 T_dummy, S_dummy,
                 continental_shelf_depth;
 
-  int      numberOfBasins;
+  int      numberOfBasins,
+           Mx, My, xs, xm, ys, ym, dx, dy;
 };
 
 } // end of namespace ocean
