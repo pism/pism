@@ -396,7 +396,7 @@ protected:
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMage.cc
-  virtual void ageStep(const AgeModelInputs &inputs);
+  virtual void ageStep(const AgeModelInputs &inputs, double dt);
 
   // see iMenergy.cc
   virtual void energyStep();
@@ -406,6 +406,7 @@ protected:
 
   // see iMenthalpy.cc
   virtual void enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
+                                       double dt,
                                        EnergyModelStats &stats);
 
   // see iMgeometry.cc
@@ -477,6 +478,7 @@ protected:
                                           double z, double dz,
                                           double *Texcess, double *bwat);
   virtual void temperatureStep(const EnergyModelInputs &inputs,
+                               double dt,
                                EnergyModelStats &stats);
 
   // see iMutil.cc

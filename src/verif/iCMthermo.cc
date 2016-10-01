@@ -43,6 +43,7 @@ const double IceCompModel::ApforG = 200; // m
 
 /*! Re-implemented so that we can add compensatory strain_heating in Tests F and G. */
 void IceCompModel::temperatureStep(const EnergyModelInputs &inputs,
+                                   double dt,
                                    EnergyModelStats &stats) {
 
   if ((testname == 'F') || (testname == 'G')) {
@@ -51,10 +52,10 @@ void IceCompModel::temperatureStep(const EnergyModelInputs &inputs,
     IceModelVec3 *strain_heating3 = const_cast<IceModelVec3*>(inputs.strain_heating3);
 
     strain_heating3->add(1.0, strain_heating3_comp);      // strain_heating = strain_heating + strain_heating_c
-    IceModel::temperatureStep(inputs, stats);
+    IceModel::temperatureStep(inputs, dt, stats);
     strain_heating3->add(-1.0, strain_heating3_comp); // strain_heating = strain_heating - strain_heating_c
   } else {
-    IceModel::temperatureStep(inputs, stats);
+    IceModel::temperatureStep(inputs, dt, stats);
   }
 }
 

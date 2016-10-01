@@ -80,6 +80,7 @@ protected:
 
   // related to tests F G; see iCMthermo.cc
   virtual void temperatureStep(const EnergyModelInputs &inputs,
+                               double dt,
                                EnergyModelStats &stats);
   void initTestFG();
   void getCompSourcesTestFG();

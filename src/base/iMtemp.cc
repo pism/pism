@@ -133,6 +133,7 @@ This method should be kept because it is worth having alternative physics, and
   times this occurs is reported as a "BPbulge" percentage.
   */
 void IceModel::temperatureStep(const EnergyModelInputs &inputs,
+                               double dt,
                                EnergyModelStats &stats) {
 
   using mask::ocean;
@@ -187,7 +188,7 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
   list.add(m_work3d);
 
   energy::tempSystemCtx system(m_grid->z(), "temperature",
-                               m_grid->dx(), m_grid->dy(), dt_TempAge,
+                               m_grid->dx(), m_grid->dy(), dt,
                                *m_config,
                                m_ice_temperature, u3, v3, w3, strain_heating3);
 
@@ -316,7 +317,7 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
         //   (subglacial water freezes-on); note this rate is calculated
         //   *before* limiting or other nontrivial modelling of bwat,
         //   which is Hydrology's job
-        m_basal_melt_rate(i,j) = (bwatnew - till_water_thickness(i,j)) / dt_TempAge;
+        m_basal_melt_rate(i,j) = (bwatnew - till_water_thickness(i,j)) / dt;
       } // end of the grounded case
     }
   } catch (...) {

@@ -222,6 +222,7 @@ Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references th
 \image html BC-decision-chart.png "Setting the basal boundary condition"
  */
 void IceModel::enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
+                                       double dt,
                                        EnergyModelStats &stats) {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
@@ -250,7 +251,7 @@ void IceModel::enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
     &ice_surface_temp         = *inputs.surface_temp,
     &till_water_thickness     = *inputs.till_water_thickness;
 
-  energy::enthSystemCtx system(m_grid->z(), "enth", m_grid->dx(), m_grid->dy(), dt_TempAge,
+  energy::enthSystemCtx system(m_grid->z(), "enth", m_grid->dx(), m_grid->dy(), dt,
                                *m_config, m_ice_enthalpy, u3, v3, w3, strain_heating3, EC);
 
   const size_t Mz_fine = system.z().size();
@@ -376,7 +377,7 @@ void IceModel::enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
             }
 
             if (omega > 0.01) {                          // FIXME: make "0.01" configurable here
-              double fractiondrained = dc.get_drainage_rate(omega) * dt_TempAge; // pure number
+              double fractiondrained = dc.get_drainage_rate(omega) * dt; // pure number
 
               fractiondrained  = std::min(fractiondrained, omega - 0.01); // only drain down to 0.01
               Hdrainedtotal   += fractiondrained * dz; // always a positive contribution
@@ -489,7 +490,7 @@ void IceModel::enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
           }
 
           // Add drained water from the column to basal melt rate.
-          m_basal_melt_rate(i, j) += (Hdrainedtotal - Hfrozen) / dt_TempAge;
+          m_basal_melt_rate(i, j) += (Hdrainedtotal - Hfrozen) / dt;
         } // end of the grounded case
       } // end of the basal melt rate computation
 

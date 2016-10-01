@@ -44,6 +44,7 @@ protected:
                                      StarStencil<double> &output_velocity,
                                      StarStencil<double> &output_flux);
   virtual void enthalpyAndDrainageStep(const EnergyModelInputs &inputs,
+                                       double dt,
                                        EnergyModelStats &stats);
 private:
   IceModelVec2Int m_no_model_mask;

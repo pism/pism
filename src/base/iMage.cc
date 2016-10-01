@@ -218,7 +218,7 @@ fine_to_coarse() interpolate back and forth between this fine grid and
 the storage grid.  The storage grid may or may not be equally-spaced.  See
 ageSystemCtx::solveThisColumn() for the actual method.
  */
-void IceModel::ageStep(const AgeModelInputs &inputs) {
+void IceModel::ageStep(const AgeModelInputs &inputs, double dt) {
 
   inputs.check();
 
@@ -232,7 +232,7 @@ void IceModel::ageStep(const AgeModelInputs &inputs) {
   IceGrid::ConstPtr grid = m_ice_age.get_grid();
 
   ageSystemCtx system(grid->z(), "age",
-                      grid->dx(), grid->dy(), dt_TempAge,
+                      grid->dx(), grid->dy(), dt,
                       m_ice_age, u3, v3, w3); // linear system to solve in each column
 
   size_t Mz_fine = system.z().size();
