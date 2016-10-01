@@ -380,9 +380,7 @@ protected:
   FluxCounters m_cumulative_fluxes;
   FluxFields m_cumulative_flux_fields;
   unsigned int m_skip_countdown;
-  unsigned int m_CFL_violation_counter;
 
-  // flags
   std::string m_adaptive_timestep_reason;
 
   std::string m_stdout_flags;
@@ -395,7 +393,6 @@ protected:
   virtual double max_timestep_cfl_2d();
   virtual double max_timestep_diffusivity();
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
-  virtual unsigned int countCFLViolations();
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMage.cc
@@ -615,6 +612,10 @@ double total_ice_enthalpy(const IceModelVec3 &ice_enthalpy,
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
+unsigned int count_CFL_violations(const IceModelVec3 &u3,
+                                  const IceModelVec3 &v3,
+                                  const IceModelVec2S &ice_thickness,
+                                  double dt);
 } // end of namespace pism
 
 #endif /* __iceModel_hh */

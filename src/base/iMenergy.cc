@@ -175,9 +175,6 @@ void IceModel::energyStep() {
     }
   }
 
-  // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
-  m_CFL_violation_counter = countCFLViolations();
-
   stats.reduced_accuracy_counter = GlobalSum(m_grid->com, stats.reduced_accuracy_counter);
   if (stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const double bfsacrPRCNT = 100.0 * (stats.reduced_accuracy_counter / (m_grid->Mx() * m_grid->My()));

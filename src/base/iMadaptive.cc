@@ -396,40 +396,42 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 This applies to the horizontal part of the three-dimensional advection problem
 solved by IceModel::ageStep() and the advection, ice-only part of the problem solved by
 temperatureStep().  These methods use a fine vertical grid, and so we consider CFL
-violations on that same fine grid. (FIXME: should we actually use the fine grid?)
+violations on that same fine grid.
 
 Communication is needed to determine total CFL violation count over entire grid.
 It is handled by temperatureAgeStep(), not here.
 */
-unsigned int IceModel::countCFLViolations() {
+unsigned int count_CFL_violations(const IceModelVec3 &u3,
+                                  const IceModelVec3 &v3,
+                                  const IceModelVec2S &ice_thickness,
+                                  double dt) {
+
+
+  IceGrid::ConstPtr grid = u3.get_grid();
 
   const double
-    CFL_x = m_grid->dx() / dt_TempAge,
-    CFL_y = m_grid->dy() / dt_TempAge;
-
-  const IceModelVec3
-    &u3 = m_stress_balance->velocity_u(),
-    &v3 = m_stress_balance->velocity_v();
+    CFL_x = grid->dx() / dt,
+    CFL_y = grid->dy() / dt;
 
   IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
+  list.add(ice_thickness);
   list.add(u3);
   list.add(v3);
 
   unsigned int CFL_violation_count = 0;
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const int fks = m_grid->kBelowHeight(m_ice_thickness(i,j));
+      const int ks = grid->kBelowHeight(ice_thickness(i,j));
 
       const double
         *u = u3.get_column(i, j),
         *v = v3.get_column(i, j);
 
       // check horizontal CFL conditions at each point
-      for (int k = 0; k <= fks; k++) {
+      for (int k = 0; k <= ks; k++) {
         if (fabs(u[k]) > CFL_x) {
           CFL_violation_count += 1;
         }
@@ -443,7 +445,7 @@ unsigned int IceModel::countCFLViolations() {
   }
   loop.check();
 
-  return (unsigned int)GlobalMax(m_grid->com, CFL_violation_count);
+  return (unsigned int)GlobalMax(grid->com, CFL_violation_count);
 }
 
 } // end of namespace pism

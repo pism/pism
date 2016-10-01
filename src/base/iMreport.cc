@@ -160,9 +160,16 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
 void IceModel::summary(bool tempAndAge) {
 
+  const IceModelVec3
+    &u3 = m_stress_balance->velocity_u(),
+    &v3 = m_stress_balance->velocity_v();
+
+  unsigned int n_CFL_violations = count_CFL_violations(u3, v3, m_ice_thickness,
+                                                       dt_TempAge);
+
   // report CFL violations
-  if (m_CFL_violation_counter > 0.0) {
-    const double CFLviolpercent = 100.0 * m_CFL_violation_counter / (m_grid->Mx() * m_grid->My() * m_grid->Mz());
+  if (n_CFL_violations > 0.0) {
+    const double CFLviolpercent = 100.0 * n_CFL_violations / (m_grid->Mx() * m_grid->My() * m_grid->Mz());
     // at default verbosity level, only report CFL viols if above:
     const double CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
     if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT ||
@@ -170,7 +177,7 @@ void IceModel::summary(bool tempAndAge) {
       char tempstr[90] = "";
       snprintf(tempstr,90,
               "  [!CFL#=%d (=%5.2f%% of 3D grid)] ",
-              m_CFL_violation_counter,CFLviolpercent);
+              n_CFL_violations,CFLviolpercent);
       m_stdout_flags = tempstr + m_stdout_flags;
     }
   }
@@ -236,7 +243,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
   const bool do_energy = m_config->get_boolean("energy.enabled");
   const int log10scalevol  = static_cast<int>(m_config->get_double("output.runtime.volume_scale_factor_log10")),
             log10scalearea = static_cast<int>(m_config->get_double("output.runtime.area_scale_factor_log10"));
-  const std::string tunitstr = m_config->get_string("output.runtime.time_unit_name");
+  const std::string time_units = m_config->get_string("output.runtime.time_unit_name");
   const bool use_calendar = m_config->get_boolean("output.runtime.time_use_calendar");
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
@@ -254,7 +261,7 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
                "P         time:       ivol      iarea  max_diffusivity  max_hor_vel\n");
     m_log->message(2,
                "U         %s   %skm^3  %skm^2         m^2 s^-1       m/%s\n",
-               tunitstr.c_str(),volscalestr,areascalestr,tunitstr.c_str());
+               time_units.c_str(),volscalestr,areascalestr,time_units.c_str());
     return;
   }
 
@@ -272,10 +279,9 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
   }
 
   if ((tempAndAge == true) || (!do_energy) || (m_log->get_threshold() > 2)) {
-    char tempstr[90]    = "",
-         velunitstr[90] = "";
+    char tempstr[90]    = "";
 
-    const double major_dt = m_time->convert_time_interval(mass_cont_sub_dtsum, tunitstr);
+    const double major_dt = m_time->convert_time_interval(mass_cont_sub_dtsum, time_units);
     if (mass_cont_sub_counter <= 1) {
       snprintf(tempstr,90, " (dt=%.5f)", major_dt);
     } else {
@@ -292,11 +298,13 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     if (use_calendar) {
       snprintf(tempstr,90, "%12s", m_time->date().c_str());
     } else {
-      snprintf(tempstr,90, "%.3f", m_time->convert_time_interval(m_time->current(), tunitstr));
+      snprintf(tempstr,90, "%.3f", m_time->convert_time_interval(m_time->current(), time_units));
     }
 
-    snprintf(velunitstr,90, "m/%s", tunitstr.c_str());
-    const double maxvel = units::convert(m_sys, m_max_u_speed > m_max_v_speed ? m_max_u_speed : m_max_v_speed, "m second-1", velunitstr);
+
+    std::string velocity_units = "meters / (" + time_units + ")";
+    const double maxvel = units::convert(m_sys, std::max(m_max_u_speed, m_max_v_speed),
+                                         "m second-1", velocity_units);
 
     m_log->message(2,
                "S %s:   %8.5f  %9.5f     %12.5f %12.5f\n",

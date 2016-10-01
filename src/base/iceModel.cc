@@ -235,7 +235,6 @@ double IceModel::dt() const {
 void IceModel::reset_counters() {
   CFLmaxdt     = 0.0;
   CFLmaxdt2D   = 0.0;
-  m_CFL_violation_counter = 0;
   dt_TempAge   = 0.0;
 
   m_max_u_speed = 0.0;

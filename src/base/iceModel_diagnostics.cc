@@ -1707,9 +1707,9 @@ IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m)
 
 void IceModel_max_hor_vel::update(double a, double b) {
 
-  double gmaxu = model->m_max_u_speed, gmaxv = model->m_max_v_speed;
+  double u_max = model->m_max_u_speed, v_max = model->m_max_v_speed;
 
-  m_ts->append(gmaxu > gmaxv ? gmaxu : gmaxv, a, b);
+  m_ts->append(std::max(u_max, v_max), a, b);
 }
 
 IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m)
