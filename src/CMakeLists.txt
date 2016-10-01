@@ -119,6 +119,7 @@ add_library (pism
   base/energy/tempSystem.cc
   base/energy/bootstrapping.cc
   base/iMadaptive.cc
+  base/age/AgeColumnSystem.cc
   base/iMage.cc
   base/iMbootstrap.cc
   base/iMcalving.cc
