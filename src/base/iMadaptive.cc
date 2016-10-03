@@ -45,34 +45,37 @@ Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.
 Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect the output.
  */
-double IceModel::max_timestep_cfl_3d() {
-  double max_dt = m_config->get_double("time_stepping.maximum_time_step", "seconds");
+CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
+                            const IceModelVec2CellType &cell_type,
+                            const IceModelVec3 &u3,
+                            const IceModelVec3 &v3,
+                            const IceModelVec3 &w3) {
 
-  const IceModelVec3
-    &u3 = m_stress_balance->velocity_u(),
-    &v3 = m_stress_balance->velocity_v(),
-    &w3 = m_stress_balance->velocity_w();
+  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  Config::ConstPtr config = grid->ctx()->config();
+
+  double dt_max = config->get_double("time_stepping.maximum_time_step", "seconds");
 
   IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
+  list.add(ice_thickness);
   list.add(u3);
   list.add(v3);
   list.add(w3);
-  list.add(m_cell_type);
+  list.add(cell_type);
 
   // update global max of abs of velocities for CFL; only velocities under surface
   const double
-    one_over_dx = 1.0 / m_grid->dx(),
-    one_over_dy = 1.0 / m_grid->dy();
+    one_over_dx = 1.0 / grid->dx(),
+    one_over_dy = 1.0 / grid->dy();
 
-  double max_u = 0.0, max_v = 0.0, max_w = 0.0;
-  ParallelSection loop(m_grid->com);
+  double u_max = 0.0, v_max = 0.0, w_max = 0.0;
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_cell_type.icy(i, j)) {
-        const int ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
+      if (cell_type.icy(i, j)) {
+        const int ks = grid->kBelowHeight(ice_thickness(i, j));
         const double
           *u = u3.get_column(i, j),
           *v = v3.get_column(i, j),
@@ -80,18 +83,18 @@ double IceModel::max_timestep_cfl_3d() {
 
         for (int k = 0; k <= ks; ++k) {
           const double
-            absu = fabs(u[k]),
-            absv = fabs(v[k]);
-          max_u = std::max(max_u, absu);
-          max_v = std::max(max_v, absv);
-          const double denom = fabs(absu * one_over_dx) + fabs(absv * one_over_dy);
+            u_abs = fabs(u[k]),
+            v_abs = fabs(v[k]);
+          u_max = std::max(u_max, u_abs);
+          v_max = std::max(v_max, v_abs);
+          const double denom = fabs(u_abs * one_over_dx) + fabs(v_abs * one_over_dy);
           if (denom > 0.0) {
-            max_dt = std::min(max_dt, 1.0 / denom);
+            dt_max = std::min(dt_max, 1.0 / denom);
           }
         }
 
         for (int k = 0; k <= ks; ++k) {
-          max_w = std::max(max_w, fabs(w[k]));
+          w_max = std::max(w_max, fabs(w[k]));
         }
       }
     }
@@ -100,11 +103,14 @@ double IceModel::max_timestep_cfl_3d() {
   }
   loop.check();
 
-  m_max_u_speed = GlobalMax(m_grid->com, max_u);
-  m_max_v_speed = GlobalMax(m_grid->com, max_v);
-  m_max_w_speed = GlobalMax(m_grid->com, max_w);
+  CFLData result;
 
-  return GlobalMin(m_grid->com, max_dt);
+  result.u_max = GlobalMax(grid->com, u_max);
+  result.v_max = GlobalMax(grid->com, v_max);
+  result.w_max = GlobalMax(grid->com, w_max);
+  result.dt_max = MaxTimestep(GlobalMin(grid->com, dt_max));
+
+  return result;
 }
 
 
@@ -118,30 +124,50 @@ double IceModel::max_timestep_cfl_3d() {
   That is, because the map-plane mass continuity is advective in the
   sliding case we have a CFL condition.
  */
-double IceModel::max_timestep_cfl_2d() {
-  double max_dt = m_config->get_double("time_stepping.maximum_time_step", "seconds");
+CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
+                            const IceModelVec2CellType &cell_type,
+                            const IceModelVec2V &velocity) {
 
-  const IceModelVec2V &vel = m_stress_balance->advective_velocity();
+  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  Config::ConstPtr config = grid->ctx()->config();
+
+  double dt_max = config->get_double("time_stepping.maximum_time_step", "seconds");
 
   const double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
+    dx = grid->dx(),
+    dy = grid->dy();
 
   IceModelVec::AccessList list;
-  list.add(vel);
-  list.add(m_cell_type);
-  for (Points p(*m_grid); p; p.next()) {
+  list.add(velocity);
+  list.add(cell_type);
+
+  double u_max = 0.0, v_max = 0.0;
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_cell_type.icy(i, j)) {
-      const double denom = fabs(vel(i, j).u) / dx + fabs(vel(i, j).v) / dy;
+    if (cell_type.icy(i, j)) {
+      const double
+        u_abs = fabs(velocity(i, j).u),
+        v_abs = fabs(velocity(i, j).v);
+
+      u_max = std::max(u_max, u_abs);
+      v_max = std::max(v_max, v_abs);
+
+      const double denom = u_abs / dx + v_abs / dy;
       if (denom > 0.0) {
-        max_dt = std::min(max_dt, 1.0 / denom);
+        dt_max = std::min(dt_max, 1.0 / denom);
       }
     }
   }
 
-  return GlobalMin(m_grid->com, max_dt);
+  CFLData result;
+
+  result.u_max = GlobalMax(grid->com, u_max);
+  result.v_max = GlobalMax(grid->com, v_max);
+  result.w_max = 0.0;
+  result.dt_max = MaxTimestep(GlobalMin(grid->com, dt_max));
+
+  return result;
 }
 
 
@@ -291,11 +317,31 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     }
 
     if (m_config->get_boolean("energy.enabled") and update_3d) {
-      dt_restrictions["3D CFL"] = max_timestep_cfl_3d();
+
+      const IceModelVec3
+        &u3 = m_stress_balance->velocity_u(),
+        &v3 = m_stress_balance->velocity_v(),
+        &w3 = m_stress_balance->velocity_w();
+
+      CFLData cfl_3d = max_timestep_cfl_3d(m_ice_thickness, m_cell_type, u3, v3, w3);
+
+      m_max_u_speed = cfl_3d.u_max;
+      m_max_v_speed = cfl_3d.v_max;
+      m_max_w_speed = cfl_3d.w_max;
+
+      if (cfl_3d.dt_max.is_finite()) {
+        dt_restrictions["3D CFL"] = cfl_3d.dt_max.value();
+      }
     }
 
     if (m_config->get_boolean("geometry.update.enabled")) {
-      dt_restrictions["2D CFL"] = max_timestep_cfl_2d();
+      CFLData cfl_2d = max_timestep_cfl_2d(m_ice_thickness, m_cell_type,
+                                           m_stress_balance->advective_velocity());
+
+      if (cfl_2d.dt_max.is_finite()) {
+        dt_restrictions["2D CFL"] = cfl_2d.dt_max.value();
+      }
+
       dt_restrictions["diffusivity"] = max_timestep_diffusivity();
     }
   }

@@ -46,10 +46,9 @@
 #include "base/util/PISMTime.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/util/PISMDiagnostic.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
-
-class MaxTimestep;
 
 namespace ocean {
 class OceanModel;
@@ -142,6 +141,34 @@ public:
   unsigned int low_temperature_counter;
   double liquified_ice_volume;
 };
+
+struct CFLData {
+  MaxTimestep dt_max;
+  double u_max, v_max, w_max;
+};
+
+/*! @brief Compute the max. time step according to the CFL condition (within the volume of the
+    ice). */
+/*!
+ * Returns the maximum time step along with maximum speeds along x, y, and z directions within the
+ * ice. Note that PISM uses semi-implicit methods in energy balance and age models, so this code
+ * does *not* use the w component of the velocity field in the computation of the max. time step.
+ * The maximum of the speed along the z axis is computed for reporting.
+ */
+CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
+                            const IceModelVec2CellType &cell_type,
+                            const IceModelVec3 &u3,
+                            const IceModelVec3 &v3,
+                            const IceModelVec3 &w3);
+
+/*! @brief Compute the max. time step according to the CFL condition (within the ice, 2D). */
+/*!
+ * Returns the maximum time step along with maximum speeds along x and y directions within the
+ * ice.
+ */
+CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
+                            const IceModelVec2CellType &cell_type,
+                            const IceModelVec2V &velocity);
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -386,9 +413,6 @@ protected:
   // see iceModel.cc
   virtual void createVecs();
 
-  // see iMadaptive.cc
-  virtual double max_timestep_cfl_3d();
-  virtual double max_timestep_cfl_2d();
   virtual double max_timestep_diffusivity();
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
