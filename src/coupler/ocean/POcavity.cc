@@ -97,7 +97,7 @@ Cavity::Cavity(IceGrid::ConstPtr g)
 // void Cavity::allocate_POoceanboxmodel() {
 //   PetscErrorCode ierr;
 
-  m_option_prefix   = "-ocean_oceanboxmodel";
+  m_option_prefix   = "-ocean_cavity";
 
   // will be de-allocated by the parent's destructor
   m_theta_ocean    = new IceModelVec2T;
