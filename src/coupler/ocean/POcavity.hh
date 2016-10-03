@@ -81,7 +81,8 @@ protected:
 private:
 
   IceModelVec2S   m_shelfbtemp,
-                  m_shelfbmassflux;
+                  m_shelfbmassflux,
+                  basins;
 
   const IceModelVec2CellType m_mask;
 
@@ -89,8 +90,7 @@ private:
                   *m_salinity_ocean;
 
   IceModelVec2S   *ice_thickness,
-                  *topg,
-                  *basins;  // not owned by this class
+                  *topg;  // not owned by this class
 
   IceModelVec2Int *mask;  // not owned by this class
 
