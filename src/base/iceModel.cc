@@ -610,8 +610,6 @@ void IceModel::step(bool do_mass_continuity,
     update_grounded_cell_fraction();
   }
 
-  double sea_level = m_ocean->sea_level_elevation();
-
   IceModelVec2S &melange_back_pressure = m_work2d[0];
 
   m_ocean->melange_back_pressure_fraction(melange_back_pressure);
@@ -619,7 +617,7 @@ void IceModel::step(bool do_mass_continuity,
   try {
     profiling.begin("stress balance");
     m_stress_balance->update(not updateAtDepth,
-                             sea_level,
+                             m_ocean->sea_level_elevation(),
                              melange_back_pressure);
     profiling.end("stress balance");
   } catch (RuntimeError &e) {

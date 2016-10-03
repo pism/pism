@@ -113,7 +113,7 @@ void IceModel::ageStep(const AgeModelInputs &inputs, double dt) {
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      system.init(i, j, m_ice_thickness(i, j));
+      system.init(i, j, ice_thickness(i, j));
 
       if (system.ks() == 0) {
         // if no ice, set the entire column to zero age

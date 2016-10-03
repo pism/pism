@@ -2136,6 +2136,9 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
                                  ice_thickness, bed_topography, cell_type,
                                  *result, NULL, NULL);
 
+  // All grounded areas have the grounded cell fraction of one, so now we make sure that ice-free
+  // areas get the value of 0 (they are grounded but not covered by a grounded ice sheet).
+
   IceModelVec::AccessList list;
   list.add(cell_type);
   list.add(*result);
