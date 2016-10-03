@@ -75,7 +75,7 @@ public:
 
   void set_icefree_thickness(double threshold) {
     if (threshold < 0.0) {
-      throw RuntimeError::formatted("invalid ice-free thickness threshold: %f", threshold);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid ice-free thickness threshold: %f", threshold);
     }
     m_icefree_thickness = threshold;
   }

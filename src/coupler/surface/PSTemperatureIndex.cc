@@ -114,7 +114,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
     }
 
     if (n_records < 1) {
-      throw RuntimeError::formatted("Can't find '%s' in %s.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in %s.",
                                     short_name.c_str(), file->c_str());
     }
 

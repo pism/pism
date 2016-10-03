@@ -97,7 +97,7 @@ void IceModel::calculateFractureDensity() {
 
   if (fractures.is_set()) {
     if (fractures->size() != 4) {
-      throw RuntimeError("option -fractures requires exactly 4 arguments");
+      throw RuntimeError(PISM_ERROR_LOCATION, "option -fractures requires exactly 4 arguments");
     }
     gamma         = fractures[0];
     initThreshold = fractures[1];

@@ -83,7 +83,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
                            const std::string &glaciological_units,
                            int N) {
   if (N >= m_dof) {
-    throw RuntimeError::formatted("N (%d) >= m_dof (%d)", N, m_dof);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "N (%d) >= m_dof (%d)", N, m_dof);
   }
 
   m_vars[N].set_string("pism_intent", "diagnostic");

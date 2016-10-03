@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -58,7 +58,7 @@ int get_quilt_size(const NC4_Serial &input) {
   std::vector<double> tmp;
   input.get_att_double("x_patch", "mpi_size", tmp);
   if (tmp.size() != 1) {
-    throw pism::RuntimeError("x_patch:mpi_size does not exist or has the wrong length.");
+    throw pism::RuntimeError(PISM_ERROR_LOCATION, "x_patch:mpi_size does not exist or has the wrong length.");
   }
   return static_cast<int>(tmp[0]);
 }
@@ -88,13 +88,13 @@ void patch_geometry(const NC4_Serial &input, int &xs, int &ys,
 
   input.get_att_double("x_patch", "patch_offset", tmp);
   if (tmp.size() != 1) {
-    throw pism::RuntimeError("x_patch:patch_offset does not exist or has the wrong length.");
+    throw pism::RuntimeError(PISM_ERROR_LOCATION, "x_patch:patch_offset does not exist or has the wrong length.");
   }
   xs = (int)tmp[0];
 
   input.get_att_double("y_patch", "patch_offset", tmp);
   if (tmp.size() != 1) {
-    throw pism::RuntimeError("y_patch:patch_offset does not exist or has the wrong length.");
+    throw pism::RuntimeError(PISM_ERROR_LOCATION, "y_patch:patch_offset does not exist or has the wrong length.");
   }
   ys = (int)tmp[0];
 

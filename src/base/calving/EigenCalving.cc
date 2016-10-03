@@ -43,7 +43,7 @@ void EigenCalving::init() {
   m_log->message(2, "* Initializing the 'eigen-calving' mechanism...\n");
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted("-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
                                   m_grid->dx(), m_grid->dy(),
                                   fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));

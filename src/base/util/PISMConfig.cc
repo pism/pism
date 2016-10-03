@@ -48,7 +48,7 @@ double NetCDFConfig::get_double_impl(const std::string &name) const {
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_double(name);
   } else {
-    throw RuntimeError::formatted("parameter '%s' is unset. (Parameters read from '%s'.)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "parameter '%s' is unset. (Parameters read from '%s'.)",
                                   name.c_str(), m_config_filename.c_str());
   }
 
@@ -78,7 +78,7 @@ std::string NetCDFConfig::get_string_impl(const std::string &name) const {
   if (strings.find(name) != strings.end()) {
     return m_data.get_string(name);
   } else {
-    throw RuntimeError::formatted("Parameter '%s' was not set. (Read from '%s'.)\n",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' was not set. (Read from '%s'.)\n",
                                   name.c_str(), m_config_filename.c_str());
   }
 
@@ -134,12 +134,12 @@ bool NetCDFConfig::get_boolean_impl(const std::string &name) const {
       return true;
     }
 
-    throw RuntimeError::formatted("Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
                                   "Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.",
                                   name.c_str(), value.c_str());
   }
 
-  throw RuntimeError::formatted("Parameter '%s' was not set. (Read from '%s'.)",
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' was not set. (Read from '%s'.)",
                                 name.c_str(), m_config_filename.c_str());
 
   return true;                  // will never happen

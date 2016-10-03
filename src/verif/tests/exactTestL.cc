@@ -148,7 +148,7 @@ int getU(const double *r, int N, double *u,
   (void) EPS_ABS;
   (void) EPS_REL;
   (void) ode_method;
-  throw RuntimeError("Test L requires GSL version 1.15 or later.");
+  throw RuntimeError(PISM_ERROR_LOCATION, "Test L requires GSL version 1.15 or later.");
   return 0;
 }
 #endif
@@ -193,19 +193,19 @@ ExactLParameters exactL(const std::vector<double> &r) {
 
   switch (error_code) {
   case TESTL_NOT_DONE:
-    throw RuntimeError::formatted("Test L ERROR: exactL_list() returns 'NOT_DONE' (%d) ...",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Test L ERROR: exactL_list() returns 'NOT_DONE' (%d) ...",
                                   error_code);
     break;
   case TESTL_NOT_DECREASING:
-    throw RuntimeError::formatted("Test L ERROR: exactL_list() returns 'NOT_DECREASING' (%d) ...",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Test L ERROR: exactL_list() returns 'NOT_DECREASING' (%d) ...",
                                   error_code);
     break;
   case TESTL_INVALID_METHOD:
-    throw RuntimeError::formatted("Test L ERROR: exactL_list() returns 'INVALID_METHOD' (%d) ...",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Test L ERROR: exactL_list() returns 'INVALID_METHOD' (%d) ...",
                                   error_code);
     break;
   case TESTL_NO_LIST:
-    throw RuntimeError::formatted("Test L ERROR: exactL_list() returns 'NO_LIST' (%d) ...",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Test L ERROR: exactL_list() returns 'NO_LIST' (%d) ...",
                                   error_code);
     break;
   default:

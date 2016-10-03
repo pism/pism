@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     // Check the validity of the -L option.
     if (compression_level.is_set()) {
       if (compression_level < 0 || compression_level > 9) {
-        throw RuntimeError::formatted("invalid compression level: %d.",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid compression level: %d.",
                                       compression_level.value());
       }
     }

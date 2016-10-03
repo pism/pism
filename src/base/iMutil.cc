@@ -202,7 +202,7 @@ void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
       const int i = p.i(), j = p.j();
 
       if (ice_thickness(i, j) < 0.0) {
-        throw RuntimeError::formatted("Thickness is negative at point i=%d, j=%d", i, j);
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Thickness is negative at point i=%d, j=%d", i, j);
       }
     }
   } catch (...) {
@@ -228,7 +228,7 @@ void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness) {
       const int i = p.i(), j = p.j();
 
       if (ice_thickness(i, j) > Lz) {
-        throw RuntimeError::formatted("Ice thickness (%7.4f m) exceeds the height"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Ice thickness (%7.4f m) exceeds the height"
                                       " of the computational box (%7.4f m) at i=%d, j=%d.",
                                       ice_thickness(i, j), Lz, i, j);
       }

@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 
     // Stop if -eisII G or -eisII H was given.
     if (experiment == "G" or experiment == "H") {
-      throw RuntimeError::formatted("EISMINT II experiment %s is not supported.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "EISMINT II experiment %s is not supported.",
                                     experiment.c_str());
     }
 

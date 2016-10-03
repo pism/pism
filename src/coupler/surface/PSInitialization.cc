@@ -30,7 +30,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in
   : SurfaceModifier(g, in) {
 
   if (in == NULL) {
-    throw RuntimeError("pism::surface::InitializationHelper got a NULL input model");
+    throw RuntimeError(PISM_ERROR_LOCATION, "pism::surface::InitializationHelper got a NULL input model");
   }
 
   // allocate storage

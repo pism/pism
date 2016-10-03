@@ -83,7 +83,7 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
              exists, name_found, found_by_standard_name);
 
   if (!exists) {
-    throw RuntimeError::formatted("Can't find '%s' ('%s') in '%s'.\n",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' ('%s') in '%s'.\n",
                                   name().c_str(), standard_name.c_str(),
                                   nc.inq_filename().c_str());
   }
@@ -91,7 +91,7 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
   dims = nc.inq_vardims(name_found);
 
   if (dims.size() != 1) {
-    throw RuntimeError::formatted("Variable '%s' in '%s' depends on %d dimensions,\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Variable '%s' in '%s' depends on %d dimensions,\n"
                                   "but a time-series variable can only depend on 1 dimension.",
                                   name().c_str(),
                                   nc.inq_filename().c_str(),
@@ -112,7 +112,7 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
     }
   }
   if (!is_increasing) {
-    throw RuntimeError::formatted("dimension '%s' has to be strictly increasing (read from '%s').",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "dimension '%s' has to be strictly increasing (read from '%s').",
                                   tmp_dim.get_name().c_str(), nc.inq_filename().c_str());
   }
 
@@ -135,7 +135,7 @@ void Timeseries::read(const PIO &nc, const Time &time_manager, const Logger &log
   io::read_timeseries(nc, m_variable, time_manager, log, m_values);
 
   if (m_time.size() != m_values.size()) {
-    throw RuntimeError::formatted("variables %s and %s in %s have different numbers of values.",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variables %s and %s in %s have different numbers of values.",
                                   m_dimension.get_name().c_str(),
                                   m_variable.get_name().c_str(),
                                   nc.inq_filename().c_str());
@@ -219,7 +219,7 @@ double Timeseries::operator()(double t) {
     }
 
     if (i % 2 == 0) {
-      throw RuntimeError::formatted("time bounds array in %s does not represent continguous time intervals.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "time bounds array in %s does not represent continguous time intervals.\n"
                                     "(PISM was trying to compute %s at time %3.3f seconds.)",
                                     m_bounds.get_name().c_str(), name().c_str(), t);
     }
@@ -256,7 +256,7 @@ double Timeseries::operator[](unsigned int j) const {
 
 #if (PISM_DEBUG==1)
   if (j >= m_values.size()) {
-    throw RuntimeError::formatted("Timeseries %s: operator[]: invalid argument: size=%d, index=%d",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Timeseries %s: operator[]: invalid argument: size=%d, index=%d",
                                   m_variable.get_name().c_str(), (int)m_values.size(), j);
   }
 #endif
@@ -355,7 +355,7 @@ void DiagnosticTimeseries::append(double V, double /*a*/, double b) {
 void DiagnosticTimeseries::interp(double a, double b) {
 
   if (m_t.empty()) {
-    throw RuntimeError("DiagnosticTimeseries::interp(...): interpolation buffer is empty");
+    throw RuntimeError(PISM_ERROR_LOCATION, "DiagnosticTimeseries::interp(...): interpolation buffer is empty");
   }
 
   if (m_t.size() == 1) {
@@ -367,7 +367,7 @@ void DiagnosticTimeseries::interp(double a, double b) {
   }
 
   if ((b < m_t[0]) || (b > m_t[1])) {
-    throw RuntimeError::formatted("DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
                                   b);
   }
 

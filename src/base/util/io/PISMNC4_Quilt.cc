@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "PISMNC4_Quilt.hh"
 #include <cassert>
 #include "base/util/pism_const.hh"
+#include "base/util/error_handling.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -62,7 +63,7 @@ int NC4_Quilt::open_impl(const std::string &fname, IO_Mode mode) {
   std::string patch_fname = patch_filename(fname, rank).c_str();
 
   int nc_mode = integer_open_mode(mode);
-  stat = nc_open(patch_fname.c_str(), nc_mode, &m_file_id); check(stat);
+  stat = nc_open(patch_fname.c_str(), nc_mode, &m_file_id); check(PISM_ERROR_LOCATION, stat);
 
   return global_stat(stat);
 }
@@ -74,7 +75,7 @@ int NC4_Quilt::create_impl(const std::string &fname) {
   MPI_Comm_rank(m_com, &rank);
   std::string patch_fname = patch_filename(fname, rank);
 
-  stat = nc_create(patch_fname.c_str(), NC_NETCDF4, &m_file_id); check(stat);
+  stat = nc_create(patch_fname.c_str(), NC_NETCDF4, &m_file_id); check(PISM_ERROR_LOCATION, stat);
 
   return global_stat(stat);
 }
@@ -82,7 +83,7 @@ int NC4_Quilt::create_impl(const std::string &fname) {
 int NC4_Quilt::close_impl() {
   int stat;
 
-  stat = nc_close(m_file_id); check(stat);
+  stat = nc_close(m_file_id); check(PISM_ERROR_LOCATION, stat);
 
   m_file_id = -1;
 
@@ -102,10 +103,10 @@ int NC4_Quilt::def_dim_impl(const std::string &name, size_t length) const {
   }
 
   if (length_local > 0) {
-    stat = this->def_dim_impl(name + suffix, length_local); check(stat);
+    stat = this->def_dim_impl(name + suffix, length_local); check(PISM_ERROR_LOCATION, stat);
   }
 
-  stat = NC4File::def_dim_impl(name, length); check(stat);
+  stat = NC4File::def_dim_impl(name, length); check(PISM_ERROR_LOCATION, stat);
 
   return global_stat(stat);
 }
@@ -119,18 +120,18 @@ int NC4_Quilt::def_var_impl(const std::string &name, IO_Type nctype,
   if (name == "x" || name == "y") {
     std::vector<std::string> dims_local;
     dims_local.push_back(name + suffix);
-    stat = this->def_var_impl(name + suffix, nctype, dims_local); check(stat);
+    stat = this->def_var_impl(name + suffix, nctype, dims_local); check(PISM_ERROR_LOCATION, stat);
 
     std::vector<double> buffer(1, name == "x" ? m_xs : m_ys);
     stat = this->put_att_double_impl(name + suffix, "patch_offset", PISM_INT,
-                                     buffer); check(stat);
+                                     buffer); check(PISM_ERROR_LOCATION, stat);
 
     int size;
     MPI_Comm_size(m_com, &size);
     buffer[0] = rank;
-    stat = this->put_att_double_impl(name + suffix, "mpi_rank", PISM_INT, buffer); check(stat);
+    stat = this->put_att_double_impl(name + suffix, "mpi_rank", PISM_INT, buffer); check(PISM_ERROR_LOCATION, stat);
     buffer[0] = size;
-    stat = this->put_att_double_impl(name + suffix, "mpi_size", PISM_INT, buffer); check(stat);
+    stat = this->put_att_double_impl(name + suffix, "mpi_size", PISM_INT, buffer); check(PISM_ERROR_LOCATION, stat);
   }
 
   // Replace "x|y" with "x|y" + suffix (for 2D and 3D variables).
@@ -140,7 +141,7 @@ int NC4_Quilt::def_var_impl(const std::string &name, IO_Type nctype,
     }
   }
 
-  stat = NC4File::def_var_impl(name, nctype, dims); check(stat);
+  stat = NC4File::def_var_impl(name, nctype, dims); check(PISM_ERROR_LOCATION, stat);
 
   return global_stat(stat);
 }
@@ -150,10 +151,10 @@ int NC4_Quilt::put_att_double_impl(const std::string &name, const std::string &a
   int stat;
 
   if (name == "x" || name == "y") {
-    stat = this->put_att_double_impl(name + suffix, att_name, xtype, data); check(stat);
+    stat = this->put_att_double_impl(name + suffix, att_name, xtype, data); check(PISM_ERROR_LOCATION, stat);
   }
 
-  stat = NC4File::put_att_double_impl(name, att_name, xtype, data); check(stat);
+  stat = NC4File::put_att_double_impl(name, att_name, xtype, data); check(PISM_ERROR_LOCATION, stat);
 
   return global_stat(stat);
 }
@@ -163,10 +164,10 @@ int NC4_Quilt::put_att_text_impl(const std::string &name, const std::string &att
   int stat;
 
   if (name == "x" || name == "y") {
-    stat = this->put_att_text_impl(name + suffix, att_name, value); check(stat);
+    stat = this->put_att_text_impl(name + suffix, att_name, value); check(PISM_ERROR_LOCATION, stat);
   }
 
-  stat = NC4File::put_att_text_impl(name, att_name, value); check(stat);
+  stat = NC4File::put_att_text_impl(name, att_name, value); check(PISM_ERROR_LOCATION, stat);
 
   return global_stat(stat);
 }
@@ -210,10 +211,10 @@ int NC4_Quilt::get_put_var_double(const std::string &name,
       correct_start_and_count(name, start, count);
     }
 
-    stat = NC4File::get_put_var_double(name, start, count, imap, data, get, mapped); check(stat);
+    stat = NC4File::get_put_var_double(name, start, count, imap, data, get, mapped); check(PISM_ERROR_LOCATION, stat);
   } else {
     if (name == "x" || name == "y") {
-      stat = NC4File::get_put_var_double(name, start, count, imap, data, get, mapped); check(stat);
+      stat = NC4File::get_put_var_double(name, start, count, imap, data, get, mapped); check(PISM_ERROR_LOCATION, stat);
 
       double *tmp;
       if (name == "x") {
@@ -229,14 +230,14 @@ int NC4_Quilt::get_put_var_double(const std::string &name,
       }
 
       stat = NC4File::get_put_var_double(name + suffix, start, count, imap,
-                                         tmp, get, mapped); check(stat);
+                                         tmp, get, mapped); check(PISM_ERROR_LOCATION, stat);
       return global_stat(stat);
     }
 
     correct_start_and_count(name, start, count);
 
     stat = NC4File::get_put_var_double(name, start, count, imap,
-                                       data, get, mapped); check(stat);
+                                       data, get, mapped); check(PISM_ERROR_LOCATION, stat);
   }
 
   return global_stat(stat);

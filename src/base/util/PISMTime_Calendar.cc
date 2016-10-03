@@ -109,7 +109,7 @@ bool Time_Calendar::process_y(double &result) {
 
   if (y.is_set()) {
     if (y < 0) {
-      throw RuntimeError::formatted("-y %d is not allowed (run length can't be negative)",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-y %d is not allowed (run length can't be negative)",
                                     y.value());
     }
     result = years_to_seconds(y);
@@ -394,7 +394,7 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
   std::istringstream arg(spec);
 
   if (spec.empty() == true) {
-    throw RuntimeError("got an empty date specification");
+    throw RuntimeError(PISM_ERROR_LOCATION, "got an empty date specification");
   }
 
   // If the string starts with "-" then the year is negative. This
@@ -409,7 +409,7 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
 
     // an empty part in the date specification (corresponds to "--")
     if (tmp.empty() == true) {
-      throw RuntimeError::formatted("date specification '%s' is invalid (can't have two '-' in a row)",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date specification '%s' is invalid (can't have two '-' in a row)",
                                     spec.c_str());
     }
 
@@ -417,7 +417,7 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
     char *endptr = NULL;
     long int n = strtol(tmp.c_str(), &endptr, 10);
     if (*endptr != '\0') {
-      throw RuntimeError::formatted("date specification '%s' is invalid ('%s' is not an integer)",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date specification '%s' is invalid ('%s' is not an integer)",
                                     spec.c_str(), tmp.c_str());
     }
 
@@ -427,7 +427,7 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
 
   // wrong number of parts in the YYYY-MM-DD date:
   if (numbers.size() != 3) {
-    throw RuntimeError::formatted("date specification '%s' is invalid (should have 3 parts: YYYY-MM-DD, got %d)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date specification '%s' is invalid (should have 3 parts: YYYY-MM-DD, got %d)",
                                   spec.c_str(), (int)numbers.size());
   }
 
@@ -437,14 +437,14 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
 
   calcalcs_cal *cal = ccs_init_calendar(m_calendar_string.c_str());
   if (cal == NULL) {
-    throw RuntimeError::formatted("calendar string '%s' is invalid", m_calendar_string.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "calendar string '%s' is invalid", m_calendar_string.c_str());
   }
 
   int dummy = 0;
   int errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
   ccs_free_calendar(cal);
   if (errcode != 0) {
-    throw RuntimeError::formatted("date %s is invalid in the %s calendar",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date %s is invalid in the %s calendar",
                                   spec.c_str(), m_calendar_string.c_str());
   }
 
@@ -455,7 +455,7 @@ void Time_Calendar::parse_date(const std::string &input, double *result) const {
     errcode = utInvCalendar2_cal(numbers[0], numbers[1], numbers[2], 0, 0, 0.0,
                                  m_time_units.get(), &time, m_calendar_string.c_str());
     if (errcode != 0) {
-      throw RuntimeError::formatted("cannot convert '%s' to '%s'",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert '%s' to '%s'",
                                     spec.c_str(), m_time_units.format().c_str());
     }
 
@@ -474,7 +474,7 @@ void Time_Calendar::parse_interval_length(const std::string &spec,
 
   // do not allow intervals specified in terms of "fuzzy" units
   if (spec.find("year") != std::string::npos || spec.find("month") != std::string::npos) {
-    throw RuntimeError::formatted("interval length '%s' with the calendar '%s' is not supported",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "interval length '%s' with the calendar '%s' is not supported",
                                   spec.c_str(), m_calendar_string.c_str());
   }
 }
@@ -568,7 +568,7 @@ void Time_Calendar::compute_times(double time_start, double delta, double time_e
   } else if (keyword == "yearly") {
     compute_times_yearly(result);
   } else {
-    throw RuntimeError::formatted("'%s' reporting is not implemented", keyword.c_str());  
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' reporting is not implemented", keyword.c_str());
   }
 }
 

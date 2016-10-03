@@ -51,7 +51,7 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_
   const char *str = epsg_code.c_str();
   long int epsg = strtol(str, &endptr, 10);
   if (endptr == str) {
-    throw RuntimeError::formatted("failed to parse EPSG code at '%s' in PROJ.4 string '%s'",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to parse EPSG code at '%s' in PROJ.4 string '%s'",
                                   epsg_code.c_str(), proj4_string.c_str());
   }
 
@@ -75,7 +75,7 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_
     mapping.set_double("false_easting", 0.0);
     break;
   default:
-    throw RuntimeError::formatted("unknown EPSG code '%d' in PROJ.4 string '%s'",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown EPSG code '%d' in PROJ.4 string '%s'",
                                   (int)epsg, proj4_string.c_str());
   }
 
@@ -99,7 +99,7 @@ void check_consistency_epsg(const MappingInfo &info) {
     VariableMetadata::StringAttrs::const_iterator j;
     for (j = strings.begin(); j != strings.end(); ++j) {
       if (not info.mapping.has_attribute(j->first)) {
-        throw RuntimeError::formatted("inconsistent metadata:\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "PROJ.4 string \"%s\" requires %s = \"%s\",\n"
                                       "but the mapping variable has no %s.",
                                       info.proj4.c_str(),
@@ -110,7 +110,7 @@ void check_consistency_epsg(const MappingInfo &info) {
       std::string string = info.mapping.get_string(j->first);
 
       if (not (string == j->second)) {
-        throw RuntimeError::formatted("inconsistent metadata:\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = \"%s\",\n"
                                       "but the mapping variable has %s = \"%s\".",
                                       info.proj4.c_str(),
@@ -125,7 +125,7 @@ void check_consistency_epsg(const MappingInfo &info) {
     VariableMetadata::DoubleAttrs::const_iterator k;
     for (k = doubles.begin(); k != doubles.end(); ++k) {
       if (not info.mapping.has_attribute(k->first)) {
-        throw RuntimeError::formatted("inconsistent metadata:\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has no %s.",
                                       info.proj4.c_str(),
@@ -136,7 +136,7 @@ void check_consistency_epsg(const MappingInfo &info) {
       double value = info.mapping.get_double(k->first);
 
       if (fabs(value - k->second[0]) > 1e-12) {
-        throw RuntimeError::formatted("inconsistent metadata:\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has %s = %f.",
                                       info.proj4.c_str(),
@@ -344,7 +344,7 @@ static void compute_lon_lat(const std::string &projection, LonLat which,
   (void) which;
   (void) result;
 
-  throw RuntimeError("Cannot compile longitude and latitude."
+  throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compile longitude and latitude."
                      " Please rebuild PISM with PROJ.4.");
 }
 
@@ -355,7 +355,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
   (void) which;
   (void) result;
 
-  throw RuntimeError("Cannot compile longitude and latitude bounds."
+  throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compile longitude and latitude bounds."
                      " Please rebuild PISM with PROJ.4.");
 }
 

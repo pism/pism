@@ -121,7 +121,7 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
     P.periodicity = Y_PERIODIC;
     break;
   default:
-    throw RuntimeError("desired test not implemented\n");
+    throw RuntimeError(PISM_ERROR_LOCATION, "desired test not implemented\n");
   }
 
   P.z = IceGrid::compute_vertical_levels(Lz, Mz, spacing,

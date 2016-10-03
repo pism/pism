@@ -28,6 +28,7 @@
 #include <cstdio>               // stderr, fprintf
 
 #include "base/util/pism_utilities.hh" // join
+#include "base/util/error_handling.hh"
 
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
@@ -114,7 +115,7 @@ int NC3File::enddef_impl() const {
   if (m_rank == 0) {
     //! 50000 (below) means that we allocate ~50Kb for metadata in NetCDF files
     //! created by PISM.
-    stat = nc__enddef(m_file_id, 50000, 4, 0, 4); check(stat);
+    stat = nc__enddef(m_file_id, 50000, 4, 0, 4); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -144,7 +145,7 @@ int NC3File::def_dim_impl(const std::string &name, size_t length) const {
 
   if (m_rank == 0) {
     int dimid;
-    stat = nc_def_dim(m_file_id, name.c_str(), length, &dimid); check(stat);
+    stat = nc_def_dim(m_file_id, name.c_str(), length, &dimid); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -183,9 +184,9 @@ int NC3File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &re
     int dimid;
     size_t length;
 
-    stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &dimid); check(stat);
+    stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &dimid); check(PISM_ERROR_LOCATION, stat);
     if (stat == NC_NOERR) {
-      stat = nc_inq_dimlen(m_file_id, dimid, &length); check(stat);
+      stat = nc_inq_dimlen(m_file_id, dimid, &length); check(PISM_ERROR_LOCATION, stat);
       result = static_cast<unsigned int>(length);
     }
   }
@@ -205,10 +206,10 @@ int NC3File::inq_unlimdim_impl(std::string &result) const {
 
   if (m_rank == 0) {
     int dimid;
-    stat = nc_inq_unlimdim(m_file_id, &dimid); check(stat);
+    stat = nc_inq_unlimdim(m_file_id, &dimid); check(PISM_ERROR_LOCATION, stat);
 
     if (dimid != -1) {
-      stat = nc_inq_dimname(m_file_id, dimid, dimname); check(stat);
+      stat = nc_inq_dimname(m_file_id, dimid, dimname); check(PISM_ERROR_LOCATION, stat);
     }
   }
 
@@ -228,7 +229,7 @@ int NC3File::inq_dimname_impl(int j, std::string &result) const {
   memset(dimname, 0, NC_MAX_NAME);
 
   if (m_rank == 0) {
-    stat = nc_inq_dimname(m_file_id, j, dimname); check(stat);
+    stat = nc_inq_dimname(m_file_id, j, dimname); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -246,7 +247,7 @@ int NC3File::inq_ndims_impl(int &result) const {
   int stat = 0;
 
   if (m_rank == 0) {
-    stat = nc_inq_ndims(m_file_id, &result); check(stat);
+    stat = nc_inq_ndims(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -268,12 +269,12 @@ int NC3File::def_var_impl(const std::string &name, IO_Type nctype, const std::ve
     std::vector<std::string>::const_iterator j;
     for (j = dims.begin(); j != dims.end(); ++j) {
       int dimid;
-      stat = nc_inq_dimid(m_file_id, j->c_str(), &dimid); check(stat);
+      stat = nc_inq_dimid(m_file_id, j->c_str(), &dimid); check(PISM_ERROR_LOCATION, stat);
       dimids.push_back(dimid);
     }
 
     stat = nc_def_var(m_file_id, name.c_str(), pism_type_to_nc_type(nctype),
-                      static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
+                      static_cast<int>(dims.size()), &dimids[0], &varid); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -364,7 +365,7 @@ int NC3File::get_var_double(const std::string &variable_name,
     std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
     int varid;
 
-    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
 
     for (int r = 0; r < com_size; ++r) {
 
@@ -390,10 +391,10 @@ int NC3File::get_var_double(const std::string &variable_name,
 
       if (mapped) {
         stat = nc_get_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                  &processor_0_buffer[0]); check(stat);
+                                  &processor_0_buffer[0]); check(PISM_ERROR_LOCATION, stat);
       } else {
         stat = nc_get_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                  &processor_0_buffer[0]); check(stat);
+                                  &processor_0_buffer[0]); check(PISM_ERROR_LOCATION, stat);
       }
 
       if (r != 0) {
@@ -498,7 +499,7 @@ int NC3File::put_var_double(const std::string &variable_name,
     std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
     int varid;
 
-    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
 
     for (int r = 0; r < com_size; ++r) {
 
@@ -530,10 +531,10 @@ int NC3File::put_var_double(const std::string &variable_name,
 
       if (mapped) {
         stat = nc_put_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                  &processor_0_buffer[0]); check(stat);
+                                  &processor_0_buffer[0]); check(PISM_ERROR_LOCATION, stat);
       } else {
         stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                  &processor_0_buffer[0]); check(stat);
+                                  &processor_0_buffer[0]); check(PISM_ERROR_LOCATION, stat);
       }
 
       if (stat != NC_NOERR) {
@@ -573,7 +574,7 @@ int NC3File::inq_nvars_impl(int &result) const {
   int stat = 0;
 
   if (m_rank == 0) {
-    stat = nc_inq_nvars(m_file_id, &result); check(stat);
+    stat = nc_inq_nvars(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);
   }
   MPI_Barrier(m_com);
   MPI_Bcast(&result, 1, MPI_INT, 0, m_com);
@@ -587,9 +588,9 @@ int NC3File::inq_vardimid_impl(const std::string &variable_name, std::vector<std
   std::vector<int> dimids;
 
   if (m_rank == 0) {
-    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
 
-    stat = nc_inq_varndims(m_file_id, varid, &ndims); check(stat);
+    stat = nc_inq_varndims(m_file_id, varid, &ndims); check(PISM_ERROR_LOCATION, stat);
   }
   MPI_Bcast(&ndims, 1, MPI_INT, 0, m_com);
 
@@ -602,7 +603,7 @@ int NC3File::inq_vardimid_impl(const std::string &variable_name, std::vector<std
   dimids.resize(ndims);
 
   if (m_rank == 0) {
-    stat = nc_inq_vardimid(m_file_id, varid, &dimids[0]); check(stat);
+    stat = nc_inq_vardimid(m_file_id, varid, &dimids[0]); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -612,7 +613,7 @@ int NC3File::inq_vardimid_impl(const std::string &variable_name, std::vector<std
     memset(name, 0, NC_MAX_NAME);
 
     if (m_rank == 0) {
-      stat = nc_inq_dimname(m_file_id, dimids[k], name); check(stat);
+      stat = nc_inq_dimname(m_file_id, dimids[k], name); check(PISM_ERROR_LOCATION, stat);
     }
 
     MPI_Barrier(m_com);
@@ -637,10 +638,10 @@ int NC3File::inq_varnatts_impl(const std::string &variable_name, int &result) co
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
     }
 
-    stat = nc_inq_varnatts(m_file_id, varid, &result); check(stat);
+    stat = nc_inq_varnatts(m_file_id, varid, &result); check(PISM_ERROR_LOCATION, stat);
   }
   MPI_Barrier(m_com);
   MPI_Bcast(&result, 1, MPI_INT, 0, m_com);
@@ -676,7 +677,7 @@ int NC3File::inq_varname_impl(unsigned int j, std::string &result) const {
   memset(varname, 0, NC_MAX_NAME);
 
   if (m_rank == 0) {
-    stat = nc_inq_varname(m_file_id, j, varname); check(stat);
+    stat = nc_inq_varname(m_file_id, j, varname); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -694,8 +695,8 @@ int NC3File::inq_vartype_impl(const std::string &variable_name, IO_Type &result)
 
   if (m_rank == 0) {
     nc_type var_type;
-    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &tmp); check(stat);
-    stat = nc_inq_vartype(m_file_id, tmp, &var_type); check(stat);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &tmp); check(PISM_ERROR_LOCATION, stat);
+    stat = nc_inq_vartype(m_file_id, tmp, &var_type); check(PISM_ERROR_LOCATION, stat);
 
     tmp = var_type;
   }
@@ -726,7 +727,7 @@ int NC3File::get_att_double_impl(const std::string &variable_name, const std::st
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
     }
 
     stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
@@ -736,7 +737,7 @@ int NC3File::get_att_double_impl(const std::string &variable_name, const std::st
     } else if (stat == NC_ENOTATT) {
       len = 0;
     } else {
-      check(stat);
+      check(PISM_ERROR_LOCATION, stat);
       len = 0;
     }
   }
@@ -751,7 +752,7 @@ int NC3File::get_att_double_impl(const std::string &variable_name, const std::st
 
   // Now read data and broadcast stat to see if we succeeded:
   if (m_rank == 0) {
-    stat = nc_get_att_double(m_file_id, varid, att_name.c_str(), &result[0]); check(stat);
+    stat = nc_get_att_double(m_file_id, varid, att_name.c_str(), &result[0]); check(PISM_ERROR_LOCATION, stat);
   }
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
@@ -831,7 +832,7 @@ int NC3File::get_att_text_impl(const std::string &variable_name, const std::stri
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
     }
 
     nc_type nctype;
@@ -839,16 +840,16 @@ int NC3File::get_att_text_impl(const std::string &variable_name, const std::stri
 
     if (stat == NC_NOERR) {
       if (nctype == NC_CHAR) {
-        stat = pism::io::get_att_text(m_file_id, varid, att_name, result); check(stat);
+        stat = pism::io::get_att_text(m_file_id, varid, att_name, result); check(PISM_ERROR_LOCATION, stat);
       } else if (nctype == NC_STRING) {
-        stat = pism::io::get_att_string(m_file_id, varid, att_name, result); check(stat);
+        stat = pism::io::get_att_string(m_file_id, varid, att_name, result); check(PISM_ERROR_LOCATION, stat);
       } else {
         result = "";
       }
     } else if (stat == NC_ENOTATT) {
       result = "";
     } else {
-      check(stat);
+      check(PISM_ERROR_LOCATION, stat);
     }
   }
 
@@ -878,11 +879,11 @@ int NC3File::put_att_double_impl(const std::string &variable_name, const std::st
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
     }
 
     stat = nc_put_att_double(m_file_id, varid, att_name.c_str(),
-                             pism_type_to_nc_type(nctype), data.size(), &data[0]); check(stat);
+                             pism_type_to_nc_type(nctype), data.size(), &data[0]); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -909,10 +910,10 @@ int NC3File::put_att_text_impl(const std::string &variable_name, const std::stri
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
     }
 
-    stat = nc_put_att_text(m_file_id, varid, att_name.c_str(), value.size(), value.c_str()); check(stat);
+    stat = nc_put_att_text(m_file_id, varid, att_name.c_str(), value.size(), value.c_str()); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -936,10 +937,10 @@ int NC3File::inq_attname_impl(const std::string &variable_name, unsigned int n, 
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
     }
 
-    stat = nc_inq_attname(m_file_id, varid, n, name); check(stat);
+    stat = nc_inq_attname(m_file_id, varid, n, name); check(PISM_ERROR_LOCATION, stat);
   }
   MPI_Barrier(m_com);
   MPI_Bcast(name, NC_MAX_NAME, MPI_CHAR, 0, m_com);
@@ -963,7 +964,7 @@ int NC3File::inq_atttype_impl(const std::string &variable_name, const std::strin
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
     }
 
     // In NetCDF 3.6.x nc_type is an enum; in 4.x it is 'typedef int'.
@@ -973,7 +974,7 @@ int NC3File::inq_atttype_impl(const std::string &variable_name, const std::strin
       tmp = NC_NAT;
     } else {
       tmp = static_cast<int>(nctype);
-      check(stat);
+      check(PISM_ERROR_LOCATION, stat);
     }
   }
   MPI_Barrier(m_com);
@@ -990,7 +991,7 @@ int NC3File::set_fill_impl(int fillmode, int &old_modep) const {
   int stat = 0;
 
   if (m_rank == 0) {
-    stat = nc_set_fill(m_file_id, fillmode, &old_modep); check(stat);
+    stat = nc_set_fill(m_file_id, fillmode, &old_modep); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
@@ -1004,7 +1005,7 @@ std::string NC3File::get_format_impl() const {
   int format;
 
   if (m_rank == 0) {
-    int stat = nc_inq_format(m_file_id, &format); check(stat);
+    int stat = nc_inq_format(m_file_id, &format); check(PISM_ERROR_LOCATION, stat);
   }
   MPI_Barrier(m_com);
   MPI_Bcast(&format, 1, MPI_INT, 0, m_com);

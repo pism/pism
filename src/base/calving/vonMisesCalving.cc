@@ -48,7 +48,7 @@ void vonMisesCalving::init() {
                  "* Initializing the 'von Mises calving' mechanism...\n");
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted("-calving vonmises_calving using a non-square grid cell is not implemented (yet);\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-calving vonmises_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
                                   m_grid->dx(), m_grid->dy(),
                                   fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));

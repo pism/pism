@@ -84,7 +84,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
       result.Mbz = 1;
     } else {
       if (Mbz.is_set() ^ Lbz.is_set()) {
-        throw RuntimeError("please specify both -Mbz and -Lbz");
+        throw RuntimeError(PISM_ERROR_LOCATION, "please specify both -Mbz and -Lbz");
       }
 
       result.Lbz = Lbz;

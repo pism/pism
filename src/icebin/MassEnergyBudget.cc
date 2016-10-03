@@ -32,7 +32,7 @@ MassEnergyBudget::MassEnergyBudget()
 void MassEnergyBudget::create(pism::IceGrid::ConstPtr grid, std::string const &prefix,
 	pism::IceModelVecKind ghostedp, unsigned int width)
 {
-	if (all_vecs.size() != 0) throw RuntimeError(
+        if (all_vecs.size() != 0) throw RuntimeError(PISM_ERROR_LOCATION,
         "MassEnergyBudget::create() cannot be called twice, fix your code!");
 	printf("MassEnergyBudget(%p)::create()\n", (void*)this);
 

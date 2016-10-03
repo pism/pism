@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,9 @@
 #include "PISMNCFile.hh"
 
 namespace pism {
+
+class ErrorLocation;
+
 namespace io {
 
 //! \brief PISM's PnetCDF I/O wrapper.
@@ -123,7 +126,7 @@ protected:
 private:
   std::vector<std::string> mpi_io_hints;
   virtual int integer_open_mode(IO_Mode input) const;
-  void check(int return_code) const;
+  void check(const ErrorLocation &where, int return_code) const;
 
   int get_var_double(const std::string &variable_name,
                      const std::vector<unsigned int> &start,

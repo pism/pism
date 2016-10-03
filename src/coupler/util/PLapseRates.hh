@@ -101,7 +101,7 @@ protected:
     m_temp_lapse_rate = T_lapse_rate;
 
     if (not file.is_set()) {
-      throw RuntimeError::formatted("command-line option %s_file is required.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "command-line option %s_file is required.",
                                     m_option_prefix.c_str());
     }
 
@@ -112,7 +112,7 @@ protected:
     }
 
     if (period.value() < 0.0) {
-      throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid %s_period %d (period length cannot be negative)",
                                     m_option_prefix.c_str(), period.value());
     }
     m_bc_period = (unsigned int)period;
@@ -135,7 +135,7 @@ protected:
       }
 
       if (ref_surface_n_records == 0) {
-        throw RuntimeError::formatted("can't find reference surface elevation (usurf) in %s.\n",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find reference surface elevation (usurf) in %s.\n",
                                       file->c_str());
       }
 

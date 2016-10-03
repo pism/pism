@@ -131,7 +131,7 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg,
                                  unsigned int Nx, unsigned int Ny) {
 
   if ((Nx >= m_grid->Mx()) || (Ny >= m_grid->My())) {
-    throw RuntimeError("input Nx, Ny in bed smoother is too large because\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "input Nx, Ny in bed smoother is too large because\n"
                        "domain of smoothing exceeds IceGrid domain");
   }
   m_Nx = Nx;
@@ -305,7 +305,7 @@ void BedSmoother::get_smoothed_thk(const IceModelVec2S &usurf,
       const int i = p.i(), j = p.j();
 
       if (thk(i, j) < 0.0) {
-        throw RuntimeError::formatted("BedSmoother detects negative original thickness\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "BedSmoother detects negative original thickness\n"
                                       "at location (i, j) = (%d, %d) ... ending", i, j);
       } else if (thk(i, j) == 0.0) {
         result(i, j) = 0.0;
@@ -388,7 +388,7 @@ void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S &result) {
         const double Hinv = 1.0 / std::max(H, 1.0);
         double omega = 1.0 + Hinv*Hinv * (m_C2(i, j) + Hinv * (m_C3(i, j) + Hinv*m_C4(i, j)));
         if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
-          throw RuntimeError::formatted("omega is negative for i=%d, j=%d\n"
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "omega is negative for i=%d, j=%d\n"
                                         "in BedSmoother.get_theta() ... ending", i, j);
         }
 

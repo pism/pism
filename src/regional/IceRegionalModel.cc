@@ -116,7 +116,7 @@ void IceRegionalModel::createVecs() {
 void IceRegionalModel::model_state_setup() {
 
   if (m_config->get_boolean("energy.temperature_based")) {
-    throw RuntimeError("pismo does not support the '-energy cold' mode.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "pismo does not support the '-energy cold' mode.");
   }
 
   IceModel::model_state_setup();
@@ -159,7 +159,7 @@ void IceRegionalModel::allocate_stressbalance() {
   } else if (model == "ssa" || model == "ssa+sia") {
     sliding = new SSAFD_Regional(m_grid, EC);
   } else {
-    throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
   }
 
   SSB_Modifier *modifier = NULL;
@@ -170,7 +170,7 @@ void IceRegionalModel::allocate_stressbalance() {
              model == "sia") {
     modifier = new SIAFD_Regional(m_grid, EC);
   } else {
-    throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
@@ -195,7 +195,7 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     } else if (yield_stress_model == "mohr_coulomb") {
       m_basal_yield_stress_model = new RegionalDefaultYieldStress(m_grid, m_subglacial_hydrology);
     } else {
-      throw RuntimeError::formatted("yield stress model '%s' is not supported.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
   }

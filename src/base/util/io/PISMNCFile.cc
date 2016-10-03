@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,9 +59,9 @@ int NCFile::put_att_double_impl(const std::string &variable_name, const std::str
 }
 
 //! \brief Prints an error message; for debugging.
-void NCFile::check(int return_code) const {
+void NCFile::check(const ErrorLocation &where, int return_code) const {
   if (return_code != NC_NOERR) {
-    throw RuntimeError(nc_strerror(return_code));
+    throw RuntimeError(where, nc_strerror(return_code));
   }
 }
 
@@ -152,68 +152,68 @@ int NCFile::def_var_chunking_impl(const std::string &name,
 
 
 void NCFile::open(const std::string &filename, IO_Mode mode) {
-  int stat = this->open_impl(filename, mode); check(stat);
+  int stat = this->open_impl(filename, mode); check(PISM_ERROR_LOCATION, stat);
   m_filename = filename;
   m_define_mode = false;
 }
 
 void NCFile::create(const std::string &filename) {
-  int stat = this->create_impl(filename); check(stat);
+  int stat = this->create_impl(filename); check(PISM_ERROR_LOCATION, stat);
   m_filename = filename;
   m_define_mode = true;
 }
 
 void NCFile::close() {
-  int stat = this->close_impl(); check(stat);
+  int stat = this->close_impl(); check(PISM_ERROR_LOCATION, stat);
   m_filename.clear();
 }
 
 void NCFile::enddef() const {
   if (m_define_mode) {
-    int stat = this->enddef_impl(); check(stat);
+    int stat = this->enddef_impl(); check(PISM_ERROR_LOCATION, stat);
     m_define_mode = false;
   }
 }
 
 void NCFile::redef() const {
   if (not m_define_mode) {
-    int stat = this->redef_impl(); check(stat);
+    int stat = this->redef_impl(); check(PISM_ERROR_LOCATION, stat);
     m_define_mode = true;
   }
 }
 
 void NCFile::def_dim(const std::string &name, size_t length) const {
-  int stat = this->def_dim_impl(name,length); check(stat);
+  int stat = this->def_dim_impl(name,length); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_dimid(const std::string &dimension_name, bool &exists) const {
-  int stat = this->inq_dimid_impl(dimension_name,exists); check(stat);
+  int stat = this->inq_dimid_impl(dimension_name,exists); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
-  int stat = this->inq_dimlen_impl(dimension_name,result); check(stat);
+  int stat = this->inq_dimlen_impl(dimension_name,result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_unlimdim(std::string &result) const {
-  int stat = this->inq_unlimdim_impl(result); check(stat);
+  int stat = this->inq_unlimdim_impl(result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_dimname(int j, std::string &result) const {
-  int stat = this->inq_dimname_impl(j,result); check(stat);
+  int stat = this->inq_dimname_impl(j,result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_ndims(int &result) const {
-  int stat = this->inq_ndims_impl(result); check(stat);
+  int stat = this->inq_ndims_impl(result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::def_var(const std::string &name, IO_Type nctype,
                     const std::vector<std::string> &dims) const {
-  int stat = this->def_var_impl(name, nctype, dims); check(stat);
+  int stat = this->def_var_impl(name, nctype, dims); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::def_var_chunking(const std::string &name,
                               std::vector<size_t> &dimensions) const {
-  int stat = this->def_var_chunking_impl(name, dimensions); check(stat);
+  int stat = this->def_var_chunking_impl(name, dimensions); check(PISM_ERROR_LOCATION, stat);
 }
 
 
@@ -221,14 +221,14 @@ void NCFile::get_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             double *ip) const {
-  int stat = this->get_vara_double_impl(variable_name, start, count, ip); check(stat);
+  int stat = this->get_vara_double_impl(variable_name, start, count, ip); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::put_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const double *op) const {
-  int stat = this->put_vara_double_impl(variable_name, start, count, op); check(stat);
+  int stat = this->put_vara_double_impl(variable_name, start, count, op); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::get_varm_double(const std::string &variable_name,
@@ -236,7 +236,7 @@ void NCFile::get_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap,
                             double *ip) const {
-  int stat = this->get_varm_double_impl(variable_name, start, count, imap, ip); check(stat);
+  int stat = this->get_varm_double_impl(variable_name, start, count, imap, ip); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::put_varm_double(const std::string &variable_name,
@@ -244,63 +244,63 @@ void NCFile::put_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap,
                             const double *op) const {
-  int stat = this->put_varm_double_impl(variable_name, start, count, imap, op); check(stat);
+  int stat = this->put_varm_double_impl(variable_name, start, count, imap, op); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_nvars(int &result) const {
-  int stat = this->inq_nvars_impl(result); check(stat);
+  int stat = this->inq_nvars_impl(result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
-  int stat = this->inq_vardimid_impl(variable_name, result); check(stat);
+  int stat = this->inq_vardimid_impl(variable_name, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_varnatts(const std::string &variable_name, int &result) const {
-  int stat = this->inq_varnatts_impl(variable_name, result); check(stat);
+  int stat = this->inq_varnatts_impl(variable_name, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_varid(const std::string &variable_name, bool &result) const {
-  int stat = this->inq_varid_impl(variable_name, result); check(stat);
+  int stat = this->inq_varid_impl(variable_name, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_varname(unsigned int j, std::string &result) const {
-  int stat = this->inq_varname_impl(j, result); check(stat);
+  int stat = this->inq_varname_impl(j, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_vartype(const std::string &variable_name, IO_Type &result) const {
-  int stat = this->inq_vartype_impl(variable_name, result); check(stat);
+  int stat = this->inq_vartype_impl(variable_name, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
-  int stat = this->get_att_double_impl(variable_name, att_name, result); check(stat);
+  int stat = this->get_att_double_impl(variable_name, att_name, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-  int stat = this->get_att_text_impl(variable_name, att_name, result); check(stat);
+  int stat = this->get_att_text_impl(variable_name, att_name, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const {
-  int stat = this->put_att_double_impl(variable_name, att_name, xtype, data); check(stat);
+  int stat = this->put_att_double_impl(variable_name, att_name, xtype, data); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, double value) const {
-  int stat = this->put_att_double_impl(variable_name, att_name, xtype, value); check(stat);
+  int stat = this->put_att_double_impl(variable_name, att_name, xtype, value); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
-  int stat = this->put_att_text_impl(variable_name, att_name, value); check(stat);
+  int stat = this->put_att_text_impl(variable_name, att_name, value); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
-  int stat = this->inq_attname_impl(variable_name, n, result); check(stat);
+  int stat = this->inq_attname_impl(variable_name, n, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
-  int stat = this->inq_atttype_impl(variable_name, att_name, result); check(stat);
+  int stat = this->inq_atttype_impl(variable_name, att_name, result); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::set_fill(int fillmode, int &old_modep) const {
-  int stat = this->set_fill_impl(fillmode, old_modep); check(stat);
+  int stat = this->set_fill_impl(fillmode, old_modep); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::set_local_extent(unsigned int xs, unsigned int xm,
@@ -309,11 +309,11 @@ void NCFile::set_local_extent(unsigned int xs, unsigned int xm,
 }
 
 void NCFile::move_if_exists(const std::string &filename, int rank_to_use) {
-  int stat = this->move_if_exists_impl(filename, rank_to_use); check(stat);
+  int stat = this->move_if_exists_impl(filename, rank_to_use); check(PISM_ERROR_LOCATION, stat);
 }
 
 void NCFile::remove_if_exists(const std::string &filename, int rank_to_use) {
-  int stat = this->remove_if_exists_impl(filename, rank_to_use); check(stat);
+  int stat = this->remove_if_exists_impl(filename, rank_to_use); check(PISM_ERROR_LOCATION, stat);
 }
 
 } // end of namespace io

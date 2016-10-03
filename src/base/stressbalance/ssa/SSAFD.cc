@@ -36,12 +36,12 @@ namespace stressbalance {
 using namespace pism::mask;
 
 SSAFD::KSPFailure::KSPFailure(const char* reason)
-  : RuntimeError(std::string("SSAFD KSP (linear solver) failed: ") + reason){
+  : RuntimeError(ErrorLocation(), std::string("SSAFD KSP (linear solver) failed: ") + reason){
   // empty
 }
 
 SSAFD::PicardFailure::PicardFailure(const std::string &message)
-  : RuntimeError("SSAFD Picard iterations failed: " + message) {
+  : RuntimeError(ErrorLocation(), "SSAFD Picard iterations failed: " + message) {
   // empty
 }
 
@@ -225,7 +225,7 @@ void SSAFD::init_impl() {
   // The FD solver does not support direct specification of a driving stress;
   // a surface elevation must be explicitly given.
   if (m_surface == NULL) {
-    throw RuntimeError("The finite difference SSA solver requires a surface elevation.\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "The finite difference SSA solver requires a surface elevation.\n"
                        "An explicit driving stress was specified instead and cannot be used.");
   }
 
@@ -756,7 +756,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         if (replace_zero_diagonal_entries) {
           eq1[4] = beta_ice_free_bedrock;
         } else {
-          throw RuntimeError::formatted("first  (X) equation in the SSAFD system:"
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "first  (X) equation in the SSAFD system:"
                                         " zero diagonal entry at a regular (not Dirichlet B.C.)"
                                         " location: i = %d, j = %d\n", i, j);
         }
@@ -765,7 +765,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         if (replace_zero_diagonal_entries) {
           eq2[13] = beta_ice_free_bedrock;
         } else {
-          throw RuntimeError::formatted("second (Y) equation in the SSAFD system:"
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "second (Y) equation in the SSAFD system:"
                                         " zero diagonal entry at a regular (not Dirichlet B.C.)"
                                         " location: i = %d, j = %d\n", i, j);
         }
@@ -898,7 +898,7 @@ void SSAFD::solve() {
       } else {
         // if we reached this, then all strategies above failed
         write_system_petsc("all_strategies_failed");
-        throw RuntimeError("all SSAFD strategies failed");
+        throw RuntimeError(PISM_ERROR_LOCATION, "all SSAFD strategies failed");
       }
     } catch (PicardFailure) {
       // proceed to the next strategy
@@ -1711,7 +1711,7 @@ void SSAFD::write_system_matlab(const std::string &namepart) {
   // petsc calls
   PetscErrorCode ierr = write_system_matlab_c(viewer, file_name, pism_args_string(), year);
   if (ierr != 0) {
-    throw RuntimeError("A PETSc call failed while writing the SSA system."
+    throw RuntimeError(PISM_ERROR_LOCATION, "A PETSc call failed while writing the SSA system."
                        " See stdout output for more.");
   }
 }

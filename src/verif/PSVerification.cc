@@ -154,7 +154,7 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
     update_V();
     break;
   default:
-    throw RuntimeError::formatted("Test %c is not implemented.", m_testname);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Test %c is not implemented.", m_testname);
   }
 
   // convert from [m second-1] to [kg m-2 s-1]
@@ -203,7 +203,7 @@ void Verification::update_ABCDH(double time) {
         accum = exactH(f, time, r).M;
         break;
       default:
-        throw RuntimeError::formatted("test must be A, B, C, D, or H, got %c",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H, got %c",
                                       m_testname);
       }
       m_climatic_mass_balance(i, j) = accum;

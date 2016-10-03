@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,7 @@ String::String(const std::string& option,
                const std::string& description) {
   int errcode = process(option, description, "", DONT_ALLOW_EMPTY);
   if (errcode != 0) {
-    throw RuntimeError::formatted("failed to process option %s", option.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to process option %s", option.c_str());
   }
 }
 
@@ -40,7 +40,7 @@ String::String(const std::string& option,
                ArgumentFlag argument_flag) {
   int errcode = process(option, description, default_value, argument_flag);
   if (errcode != 0) {
-    throw RuntimeError::formatted("failed to process option %s", option.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to process option %s", option.c_str());
   }
 }
 
@@ -77,7 +77,7 @@ int String::process(const std::string& option,
       if (argument_flag == ALLOW_EMPTY) {
         this->set("", true);
       } else {
-        throw RuntimeError::formatted("command line option '%s' requires an argument.",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "command line option '%s' requires an argument.",
                                       option.c_str());
       }
     } else {
@@ -152,7 +152,7 @@ Keyword::Keyword(const std::string& option,
                  const std::string& default_value) {
 
   if (choices.empty()) {
-    throw RuntimeError::formatted("empty choices argument");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "empty choices argument");
   }
 
   std::string list = "[" + choices + "]";
@@ -188,7 +188,7 @@ Keyword::Keyword(const std::string& option,
   if (choices_set.find(word) != choices_set.end()) {
     this->set(word, true);
   } else {
-    throw RuntimeError::formatted("invalid %s argument: '%s'. Please choose one of %s.\n",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid %s argument: '%s'. Please choose one of %s.\n",
                                   option.c_str(), word.c_str(), list.c_str());
   }
 }
@@ -199,7 +199,7 @@ Integer::Integer(const std::string& option,
   Real input(option, description, default_value);
   double result = input;
   if (fabs(result - floor(result)) > 1e-6) {
-    throw RuntimeError::formatted("Can't process '%s': (%f is not an integer).",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't process '%s': (%f is not an integer).",
                                   option.c_str(), result);
   }
   this->set(static_cast<int>(result), input.is_set());
@@ -213,7 +213,7 @@ IntegerList::IntegerList(const std::string& option,
 
   for (unsigned int k = 0; k < input->size(); ++k) {
     if (fabs(input[k] - floor(input[k])) > 1e-6) {
-      throw RuntimeError::formatted("Can't process '%s': (%f is not an integer).",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't process '%s': (%f is not an integer).",
                                     option.c_str(), input[k]);
     }
     result.push_back(static_cast<int>(input[k]));
@@ -240,7 +240,7 @@ Real::Real(const std::string& option,
     char *endptr = NULL;
     double result = strtod(input->c_str(), &endptr);
     if (*endptr != '\0') {
-      throw RuntimeError::formatted("Can't parse '%s %s': (%s is not a number).",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't parse '%s %s': (%s is not a number).",
                                     option.c_str(), input->c_str(), input->c_str());
     }
     this->set(result, true);
@@ -266,7 +266,7 @@ RealList::RealList(const std::string& option,
 
       d = strtod(tmp.c_str(), &endptr);
       if (*endptr != '\0') {
-        throw RuntimeError::formatted("Can't parse %s (%s is not a number).",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't parse %s (%s is not a number).",
                                       tmp.c_str(), tmp.c_str());
       } else {
         result.push_back(d);
@@ -291,7 +291,7 @@ void deprecated(const std::string &old_name, const std::string &new_name) {
   String option(old_name, "no description", "default");
 
   if (option.is_set()) {
-    throw RuntimeError::formatted("command-line option '%s' is deprecated."
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "command-line option '%s' is deprecated."
                                   " Please use '%s' instead.",
                                   old_name.c_str(), new_name.c_str());
   }
@@ -313,7 +313,7 @@ void forbidden(const std::string &name) {
   bool option_is_set = options::Bool(name, "no description");
 
   if (option_is_set) {
-    throw RuntimeError::formatted("command-line option '%s' is not allowed.",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "command-line option '%s' is not allowed.",
                                   name.c_str());
   }
 }

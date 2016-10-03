@@ -56,7 +56,7 @@ void CosineYearlyCycle::init_impl() {
                                "CosineYearlyCycle amplitude scaling input file name");
 
   if (not input_file.is_set()) {
-    throw RuntimeError("Please specify an '-atmosphere yearly_cycle' input file\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "Please specify an '-atmosphere yearly_cycle' input file\n"
                        "using the -atmosphere_yearly_cycle_file option.");
   }
 

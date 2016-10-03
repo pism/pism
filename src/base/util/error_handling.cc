@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,17 +24,26 @@
 
 namespace pism {
 
+ErrorLocation::ErrorLocation()
+  : filename(NULL), line_number(0) {
+  // empty
+}
+
+ErrorLocation::ErrorLocation(const char *name, int line)
+  : filename(name), line_number(line) {
+  // empty
+}
+
 RuntimeError::Hook RuntimeError::sm_hook = NULL;
 
-RuntimeError::RuntimeError(const std::string &message)
-  : std::runtime_error(message) {
+RuntimeError::RuntimeError(const ErrorLocation &location, const std::string &message)
+  : std::runtime_error(message), m_location(location) {
   if (sm_hook != NULL) {
     sm_hook(this);
   }
 }
 
-
-RuntimeError RuntimeError::formatted(const char format[], ...) {
+RuntimeError RuntimeError::formatted(const ErrorLocation &location, const char format[], ...) {
   char buffer[8192];
   va_list argp;
 
@@ -42,7 +51,7 @@ RuntimeError RuntimeError::formatted(const char format[], ...) {
   vsnprintf(buffer, sizeof(buffer), format, argp);
   va_end(argp);
 
-  return RuntimeError(buffer);
+  return RuntimeError(location, buffer);
 }
 
 void RuntimeError::set_hook(Hook new_hook) {
@@ -108,6 +117,13 @@ void RuntimeError::print(MPI_Comm com) {
                        "%s%s\n", while_str.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
     ++j;
   }
+
+  if (m_location.filename != NULL) {
+    padding = std::string(error.size(), ' ');
+    ierr = PetscPrintf(com,
+                       "%sError location: %s, line %d\n",
+                       padding.c_str(), m_location.filename, m_location.line_number); CHKERRCONTINUE(ierr);
+  }
 }
 
 /** Handle fatal PISM errors by printing an informative error message.
@@ -146,7 +162,7 @@ void handle_fatal_errors(MPI_Comm com) {
 void check_c_call(int errcode, int success,
                   const char* function_name, const char *file, int line) {
   if (errcode != success) {
-    throw RuntimeError::formatted("External library function %s failed at %s:%d",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "External library function %s failed at %s:%d",
                                   function_name, file, line);
   }
 }
@@ -194,7 +210,7 @@ void ParallelSection::check() {
   MPI_Allreduce(&success_flag, &success_flag_global, 1, MPI_INT, MPI_LAND, m_com);
 
   if (success_flag_global == 0) {
-    throw RuntimeError("Failure in a parallel section. See error messages above for more.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "Failure in a parallel section. See error messages above for more.");
   }
 }
 

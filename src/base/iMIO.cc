@@ -183,7 +183,7 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     if (m_stress_balance != NULL) {
       m_stress_balance->define_variables(vars, nc, nctype);
     } else {
-      throw RuntimeError("PISM ERROR: stress_balance == NULL");
+      throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: stress_balance == NULL");
     }
 
     if (m_subglacial_hydrology != NULL) {
@@ -193,13 +193,13 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     if (m_surface != NULL) {
       m_surface->define_variables(vars, nc, nctype);
     } else {
-      throw RuntimeError("PISM ERROR: surface == NULL");
+      throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: surface == NULL");
     }
 
     if (m_ocean != NULL) {
       m_ocean->define_variables(vars, nc, nctype);
     } else {
-      throw RuntimeError("PISM ERROR: ocean == NULL");
+      throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: ocean == NULL");
     }
 
     if (m_ocean_kill_calving != NULL) {
@@ -257,7 +257,7 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   if (m_stress_balance != NULL) {
     m_stress_balance->write_variables(vars, nc);
   } else {
-    throw RuntimeError("PISM ERROR: stress_balance == NULL");
+    throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: stress_balance == NULL");
   }
 
   if (m_subglacial_hydrology != NULL) {
@@ -268,12 +268,12 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   if (m_surface != NULL) {
     m_surface->write_variables(vars, nc);
   } else {
-    throw RuntimeError("PISM ERROR: surface == NULL");
+    throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: surface == NULL");
   }
   if (m_ocean != NULL) {
     m_ocean->write_variables(vars, nc);
   } else {
-    throw RuntimeError("PISM ERROR: ocean == NULL");
+    throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: ocean == NULL");
   }
 
   if (m_ocean_kill_calving != NULL) {
@@ -367,7 +367,7 @@ void IceModel::regrid(int dimensions) {
   if (not (dimensions == 0 ||
            dimensions == 2 ||
            dimensions == 3)) {
-    throw RuntimeError("dimensions can only be 0 (all), 2 or 3");
+    throw RuntimeError(PISM_ERROR_LOCATION, "dimensions can only be 0 (all), 2 or 3");
   }
 
   options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
@@ -458,7 +458,7 @@ void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::stri
       Lz = m_grid->Lz();
 
     if (max_thickness >= Lz + 1e-6) {
-      throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
                                     "exceeds the height of the computational domain (%f meters).",
                                     max_thickness, Lz);
     }
@@ -531,7 +531,7 @@ void IceModel::init_enthalpy(const PIO &input_file,
 
     m_ice_enthalpy.metadata() = enthalpy_metadata;
   } else {
-    throw RuntimeError::formatted("neither enthalpy nor temperature was found in '%s'.\n",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "neither enthalpy nor temperature was found in '%s'.\n",
                                   input_file.inq_filename().c_str());
   }
 }
@@ -554,7 +554,7 @@ void IceModel::init_snapshots() {
 
 
   if (save_file.is_set() ^ save_times.is_set()) {
-    throw RuntimeError("you need to specify both -save_file and -save_times to save snapshots.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "you need to specify both -save_file and -save_times to save snapshots.");
   }
 
   if (!save_file.is_set() && !save_times.is_set()) {
@@ -570,7 +570,7 @@ void IceModel::init_snapshots() {
   }
 
   if (m_snapshot_times.size() == 0) {
-    throw RuntimeError("no argument for -save_times option.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "no argument for -save_times option.");
   }
 
   m_save_snapshots = true;

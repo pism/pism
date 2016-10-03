@@ -72,7 +72,7 @@ static void get_all_values(json_t *root, const std::string &path,
       if (json_unpack(value, fmt, &tmp) == 0) {
         accum[parameter] = tmp;
       } else {
-        throw RuntimeError::formatted("failed to json_unpack %s using format %s",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to json_unpack %s using format %s",
                                       parameter.c_str(), fmt);
       }
     } else if (value_type == JSON_OBJECT) {
@@ -87,14 +87,14 @@ static PISMType get_value(json_t *object, const std::string &name,
                           const char *fmt, const char *type_name) {
   json_t *value = find_json_value(object, name);
   if (value == NULL) {
-    throw RuntimeError::formatted("%s was not found", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s was not found", name.c_str());
   }
 
   TMPType tmp;
   if (json_unpack(value, fmt, &tmp) == 0) {
     return tmp;
   } else {
-    throw RuntimeError::formatted("failed to convert %s to a %s", name.c_str(), type_name);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to convert %s to a %s", name.c_str(), type_name);
   }
 }
 
@@ -126,11 +126,11 @@ static void set_value(json_t *data, const std::string &name, json_t *value) {
     if (json_is_object(object)) {
       json_object_set_new(object, key.c_str(), value);
     } else {
-      throw RuntimeError::formatted("cannot set %s: %s is not an object",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot set %s: %s is not an object",
                                     name.c_str(), join(path, ".").c_str());
     }
   } else {
-    throw RuntimeError::formatted("cannot set %s: %s is not found",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot set %s: %s is not found",
                                   name.c_str(), join(path, ".").c_str());
   }
 }
@@ -159,7 +159,7 @@ void ConfigJSON::init_from_file(const std::string &filename) {
   m_data = json_load_file(filename.c_str(), JSON_DECODE_INT_AS_REAL, &error);
 
   if (m_data == NULL) {
-    throw RuntimeError::formatted("Error loading config from '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Error loading config from '%s'"
                                   " at line %d, column %d.",
                                   filename.c_str(), error.line, error.column);
   }
@@ -177,7 +177,7 @@ void ConfigJSON::init_from_string(const std::string &string) {
   m_data = json_loads(string.c_str(), JSON_DECODE_INT_AS_REAL, &error);
 
   if (m_data == NULL) {
-    throw RuntimeError::formatted("Error loading config from '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Error loading config from '%s'"
                                   " at line %d, column %d.",
                                   string.c_str(), error.line, error.column);
   }

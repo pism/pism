@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -114,7 +114,7 @@ void FlowLawFactory::remove(const std::string &name) {
 
 void FlowLawFactory::set_default(const std::string &type) {
   if (m_flow_laws[type] == NULL) {
-    throw RuntimeError::formatted("Selected ice flow law \"%s\" is not available"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Selected ice flow law \"%s\" is not available"
                                   " (prefix=\"%s\").",
                                   type.c_str(), m_prefix.c_str());
   }
@@ -126,7 +126,7 @@ FlowLaw* FlowLawFactory::create() {
   // find the function that can create selected flow law:
   FlowLawCreator r = m_flow_laws[m_type_name];
   if (r == NULL) {
-    throw RuntimeError::formatted("Selected ice flow law \"%s\" is not available,\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Selected ice flow law \"%s\" is not available,\n"
                                   "but we shouldn't be able to get here anyway",
                                   m_type_name.c_str());
   }

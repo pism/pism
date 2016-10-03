@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -54,7 +54,7 @@ void LinearInterpolation::init(const double *input_x, unsigned int input_x_size,
   // input grid points have to be stored in the increasing order
   for (unsigned int i = 0; i < input_x_size - 1; ++i) {
     if (input_x[i] >= input_x[i + 1]) {
-      throw RuntimeError("an input grid for linear interpolation has to be "
+      throw RuntimeError(PISM_ERROR_LOCATION, "an input grid for linear interpolation has to be "
                          "strictly increasing");
     }
   }

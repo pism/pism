@@ -43,13 +43,13 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
 
   // validate Lbz
   if (grid.Lbz <= 0.0) {
-    throw RuntimeError::formatted("Invalid bedrock thermal layer depth: %f m",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Invalid bedrock thermal layer depth: %f m",
                                   grid.Lbz);
   }
 
   // validate Mbz
   if (grid.Mbz < 2) {
-    throw RuntimeError::formatted("Invalid number of layers of the bedrock thermal layer: %d",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Invalid number of layers of the bedrock thermal layer: %d",
                                   grid.Mbz);
   }
 
@@ -209,7 +209,7 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
 
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (dt < 0) {
-    throw RuntimeError("BTU_Full::update() does not allow negative timesteps");
+    throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Full::update() does not allow negative timesteps");
   }
 
   // CHECK: is desired time-interval equal to [t, t+dt] where t = t + dt?
@@ -227,7 +227,7 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
     }
 
     if (not contiguous) {
-      throw RuntimeError::formatted("BTU_Full::update() requires next update to be contiguous with last;\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "BTU_Full::update() requires next update to be contiguous with last;\n"
                                     "  stored:     t = %f s,    dt = %f s\n"
                                     "  desired: t = %f s, dt = %f s",
                                     m_t, m_dt, t, dt); }
@@ -236,7 +236,7 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
   // CHECK: is desired time-step too long?
   MaxTimestep max_dt = max_timestep(t);
   if (max_dt.is_finite() and max_dt.value() < dt) {
-    throw RuntimeError("BTU_Full::update() thinks you asked for too big a timestep.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Full::update() thinks you asked for too big a timestep.");
   }
 
   // o.k., we have checked; we are going to do the desired timestep!
@@ -322,7 +322,7 @@ void BTU_Full::update_flux_through_top_surface() {
 
 const IceModelVec3Custom& BTU_Full::temperature() const {
   if (m_bootstrapping_needed) {
-    throw RuntimeError("bedrock temperature is not available (bootstrapping is needed)");
+    throw RuntimeError(PISM_ERROR_LOCATION, "bedrock temperature is not available (bootstrapping is needed)");
   }
 
   return m_temp;

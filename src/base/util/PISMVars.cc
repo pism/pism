@@ -52,7 +52,7 @@ bool Vars::is_available(const std::string &name) const {
 void Vars::add(const IceModelVec &v, const std::string &name) {
 
   if (m_variables.find(name) != m_variables.end()) {
-    throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add(): an IceModelVec with the name '%s'"
                                   " was added already.",
                                   name.c_str());
   }
@@ -76,7 +76,7 @@ void Vars::add(const IceModelVec &v) {
     if (m_standard_names[standard_name].empty()) {
       m_standard_names[standard_name] = name;
     } else {
-      throw RuntimeError::formatted("Vars::add(): an IceModelVec with the standard_name '%s'"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add(): an IceModelVec with the standard_name '%s'"
                                     " was added already.",
                                     standard_name.c_str());
     }
@@ -85,7 +85,7 @@ void Vars::add(const IceModelVec &v) {
   if (m_variables[name] == NULL) {
     m_variables[name] = &v;
   } else {
-    throw RuntimeError::formatted("Vars::add(): an IceModelVec with the name '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add(): an IceModelVec with the name '%s'"
                                   " was added already.",
                                   name.c_str());
   }
@@ -123,7 +123,7 @@ void Vars::remove(const std::string &name) {
 const IceModelVec* Vars::get(const std::string &name) const {
   const IceModelVec *tmp = get_internal(name);
   if (tmp == NULL) {
-    throw RuntimeError::formatted("variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -156,7 +156,7 @@ const IceModelVec* Vars::get_internal(const std::string &name) const {
 const IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
   const IceModelVec2S *tmp = dynamic_cast<const IceModelVec2S*>(this->get_internal(name));
   if (tmp == NULL) {
-    throw RuntimeError::formatted("2D scalar variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D scalar variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -164,7 +164,7 @@ const IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
 const IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
   const IceModelVec2V *tmp = dynamic_cast<const IceModelVec2V*>(this->get_internal(name));
   if (tmp == NULL) {
-    throw RuntimeError::formatted("2D vector variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D vector variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -172,7 +172,7 @@ const IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
 const IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
   const IceModelVec2Int *tmp = dynamic_cast<const IceModelVec2Int*>(this->get_internal(name));
   if (tmp == NULL) {
-    throw RuntimeError::formatted("2D mask variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D mask variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -180,7 +180,7 @@ const IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
 const IceModelVec2CellType* Vars::get_2d_cell_type(const std::string &name) const {
   const IceModelVec2CellType *tmp = dynamic_cast<const IceModelVec2CellType*>(this->get_internal(name));
   if (tmp == NULL) {
-    throw RuntimeError::formatted("2D cell type variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D cell type variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -188,7 +188,7 @@ const IceModelVec2CellType* Vars::get_2d_cell_type(const std::string &name) cons
 const IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
   const IceModelVec3* tmp = dynamic_cast<const IceModelVec3*>(this->get_internal(name));
   if (tmp == NULL) {
-    throw RuntimeError::formatted("3D scalar variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "3D scalar variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -228,7 +228,7 @@ void Vars::add_shared(VecPtr variable) {
     if (m_standard_names[standard_name].empty()) {
       m_standard_names[standard_name] = name;
     } else {
-      throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the standard_name '%s'"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add_shared(): an IceModelVec with the standard_name '%s'"
                                     " was added already.",
                                     standard_name.c_str());
     }
@@ -237,7 +237,7 @@ void Vars::add_shared(VecPtr variable) {
   if (m_variables_shared.find(name) == m_variables_shared.end()) {
     m_variables_shared[name] = variable;
   } else {
-    throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add_shared(): an IceModelVec with the name '%s'"
                                   " was added already.",
                                   name.c_str());
   }
@@ -247,7 +247,7 @@ void Vars::add_shared(VecPtr variable) {
 void Vars::add_shared(VecPtr variable, const std::string &name) {
 
   if (m_variables_shared.find(name) != m_variables_shared.end()) {
-    throw RuntimeError::formatted("Vars::add_shared(): an IceModelVec with the name '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add_shared(): an IceModelVec with the name '%s'"
                                   " was added already.",
                                   name.c_str());
   }
@@ -279,7 +279,7 @@ bool Vars::is_available_shared(const std::string &name) const {
 IceModelVec::Ptr Vars::get_shared(const std::string &name) const {
   IceModelVec::Ptr tmp = get_internal_shared(name);
   if (not (bool)tmp) {
-    throw RuntimeError::formatted("shared variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -288,7 +288,7 @@ IceModelVec::Ptr Vars::get_shared(const std::string &name) const {
 IceModelVec2S::Ptr Vars::get_2d_scalar_shared(const std::string &name) const {
   IceModelVec2S::Ptr tmp = dynamic_pointer_cast<IceModelVec2S,IceModelVec>(this->get_internal_shared(name));
   if (not (bool)tmp) {
-    throw RuntimeError::formatted("shared 2D scalar variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D scalar variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -297,7 +297,7 @@ IceModelVec2S::Ptr Vars::get_2d_scalar_shared(const std::string &name) const {
 IceModelVec2V::Ptr Vars::get_2d_vector_shared(const std::string &name) const {
   IceModelVec2V::Ptr tmp = dynamic_pointer_cast<IceModelVec2V,IceModelVec>(this->get_internal_shared(name));
   if (not (bool)tmp) {
-    throw RuntimeError::formatted("shared 2D vector variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D vector variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -306,7 +306,7 @@ IceModelVec2V::Ptr Vars::get_2d_vector_shared(const std::string &name) const {
 IceModelVec2Int::Ptr Vars::get_2d_mask_shared(const std::string &name) const {
   IceModelVec2Int::Ptr tmp = dynamic_pointer_cast<IceModelVec2Int,IceModelVec>(this->get_internal_shared(name));
   if (not (bool)tmp) {
-    throw RuntimeError::formatted("shared 2D mask variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D mask variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -314,7 +314,7 @@ IceModelVec2Int::Ptr Vars::get_2d_mask_shared(const std::string &name) const {
 IceModelVec2CellType::Ptr Vars::get_2d_cell_type_shared(const std::string &name) const {
   IceModelVec2CellType::Ptr tmp = dynamic_pointer_cast<IceModelVec2CellType,IceModelVec>(this->get_internal_shared(name));
   if (not (bool)tmp) {
-    throw RuntimeError::formatted("shared 2D mask variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D mask variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
@@ -323,7 +323,7 @@ IceModelVec2CellType::Ptr Vars::get_2d_cell_type_shared(const std::string &name)
 IceModelVec3::Ptr Vars::get_3d_scalar_shared(const std::string &name) const {
   IceModelVec3::Ptr tmp = dynamic_pointer_cast<IceModelVec3,IceModelVec>(this->get_internal_shared(name));
   if (not (bool)tmp) {
-    throw RuntimeError::formatted("shared 3D scalar variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 3D scalar variable '%s' is not available", name.c_str());
   }
   return tmp;
 }

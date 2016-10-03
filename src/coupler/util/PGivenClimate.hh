@@ -120,7 +120,7 @@ protected:
     options::Integer period(m_option_prefix + "_period",
                             "Specifies the length of the climate data period (in years)", 0);
     if (period.value() < 0.0) {
-      throw RuntimeError::formatted("invalid %s_period %d (period length cannot be negative)",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid %s_period %d (period length cannot be negative)",
                                     m_option_prefix.c_str(), period.value());
     }
     m_bc_period = (unsigned int)period;

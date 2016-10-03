@@ -59,7 +59,7 @@ void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
     for (unsigned int k = 0; k < m_Mbz; k++) {
       TestKParameters P = exactK(time, zlevels[k], m_bedrock_is_ice);
       if (P.error_code != 0) {
-        throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "exactK() reports that level %9.7f is below B0 = -1000.0 m",
                                       zlevels[k]);
       }
       Tbcol[k] = P.T;

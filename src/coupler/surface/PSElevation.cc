@@ -66,7 +66,7 @@ void Elevation::init_impl() {
       options::RealList IST("-ice_surface_temp", "ice surface temperature parameterization");
       if (IST.is_set()) {
         if (IST->size() != 4) {
-          throw RuntimeError("option -ice_surface_temp requires an argument"
+          throw RuntimeError(PISM_ERROR_LOCATION, "option -ice_surface_temp requires an argument"
                              " (comma-separated list of 4 numbers)");
         }
         m_T_min   = convert(m_sys, IST[0], "Celsius", "Kelvin");
@@ -89,7 +89,7 @@ void Elevation::init_impl() {
                             "climatic mass balance parameterization");
       if (CMB.is_set()) {
         if (CMB->size() != 5) {
-          throw RuntimeError("-climatic_mass_balance requires an argument"
+          throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance requires an argument"
                              " (comma-separated list of 5 numbers)");
         }
         m_M_min   = convert(m_sys, CMB[0], "m year-1", "m s-1");
@@ -107,7 +107,7 @@ void Elevation::init_impl() {
       m_limits_set = m_limits.is_set();
       if (m_limits.is_set()) {
         if (m_limits->size() != 2) {
-          throw RuntimeError("-climatic_mass_balance_limits requires an argument"
+          throw RuntimeError(PISM_ERROR_LOCATION, "-climatic_mass_balance_limits requires an argument"
                              " (a comma-separated list of 2 numbers)");
         }
         m_M_limit_min = convert(m_sys, m_limits[0], "m year-1", "m s-1");
@@ -234,7 +234,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
         result(i, j) = m_M_limit_max;
       }
       else {
-        throw RuntimeError("Elevation::ice_surface_mass_flux: HOW DID I GET HERE?");
+        throw RuntimeError(PISM_ERROR_LOCATION, "Elevation::ice_surface_mass_flux: HOW DID I GET HERE?");
       }
     }
   } catch (...) {
@@ -270,7 +270,7 @@ void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) {
         result(i, j) = m_T_max;
       }
       else {
-        throw RuntimeError("Elevation::ice_surface_temperature: HOW DID I GET HERE?");
+        throw RuntimeError(PISM_ERROR_LOCATION, "Elevation::ice_surface_temperature: HOW DID I GET HERE?");
       }
     }
   } catch (...) {

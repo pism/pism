@@ -350,7 +350,7 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
   if (flow_law == NULL) {
     flow_law = model->stress_balance()->modifier()->flow_law();
     if (flow_law == NULL) {
-      throw RuntimeError("Can't compute vertically-averaged hardness: no flow law is used.");
+      throw RuntimeError(PISM_ERROR_LOCATION, "Can't compute vertically-averaged hardness: no flow law is used.");
     }
   }
 
@@ -1022,7 +1022,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
         (*result)(i,j) = std::max((*result)(i,j), m_grid->z(k-1));
         (*result)(i,j) = std::min((*result)(i,j), m_grid->z(k));
       } else {
-        throw RuntimeError::formatted("Linear interpolation of the thickness of"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Linear interpolation of the thickness of"
                                       " the basal temperate layer failed:\n"
                                       "(i=%d, j=%d, k=%d, ks=%d)\n",
                                       i, j, k, ks);

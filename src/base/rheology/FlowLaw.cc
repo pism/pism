@@ -35,7 +35,7 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   : m_EC(ec), m_e(1) {
 
   if (not m_EC) {
-    throw RuntimeError("EC is NULL in FlowLaw::FlowLaw()");
+    throw RuntimeError(PISM_ERROR_LOCATION, "EC is NULL in FlowLaw::FlowLaw()");
   }
 
   m_standard_gravity   = config.get_double("constants.standard_gravity");

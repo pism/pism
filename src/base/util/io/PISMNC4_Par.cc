@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMNC4_Par.hh"
+#include "base/util/error_handling.hh"
 
 // netcdf_par.h has to be included *after* mpi.h
 extern "C" {
@@ -68,11 +69,11 @@ int NC4_Par::set_access_mode(int varid, bool mapped) const {
     //
     // See https://bugtracking.unidata.ucar.edu/browse/NCF-152 for the description of the bug we're
     // avoiding here.
-    stat = nc_var_par_access(m_file_id, varid, NC_INDEPENDENT); check(stat);
+    stat = nc_var_par_access(m_file_id, varid, NC_INDEPENDENT); check(PISM_ERROR_LOCATION, stat);
   } else {
     // Use collective parallel access mode because it is faster (and because it
     // works in this case).
-    stat = nc_var_par_access(m_file_id, varid, NC_COLLECTIVE); check(stat);
+    stat = nc_var_par_access(m_file_id, varid, NC_COLLECTIVE); check(PISM_ERROR_LOCATION, stat);
   }
 
   return stat;

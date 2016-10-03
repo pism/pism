@@ -34,7 +34,7 @@ public:
   Proj(const std::string &proj_string) {
     m_proj = pj_init_plus(proj_string.c_str());
     if (m_proj == NULL) {
-      throw RuntimeError::formatted("Failed to initialize projection '%s'.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize projection '%s'.",
                                     proj_string.c_str());
     }
   }

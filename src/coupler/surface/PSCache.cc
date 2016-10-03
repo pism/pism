@@ -80,7 +80,7 @@ void Cache::init_impl() {
                                      update_interval);
 
   if (update_interval <= 0) {
-    throw RuntimeError::formatted("-surface_cache_update_interval has to be strictly positive.");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-surface_cache_update_interval has to be strictly positive.");
   }
 
   m_update_interval_years = update_interval;

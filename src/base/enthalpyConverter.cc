@@ -94,28 +94,35 @@ void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) con
 #if (PISM_DEBUG==1)
   const double T_melting = melting_temperature(P);
   if (T <= 0.0) {
-    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T = %f <= 0 is not a valid absolute temperature",T);
   }
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "water fraction omega=%f not in range [0,1]",omega);
   }
   if (T > T_melting + 1.0e-6) {
-    throw RuntimeError::formatted("T=%f exceeds T_melting=%f; not allowed",T,T_melting);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T=%f exceeds T_melting=%f; not allowed",T,T_melting);
   }
   if ((T < T_melting - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    throw RuntimeError::formatted("T < T_melting AND omega > 0 is contradictory;"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T < T_melting AND omega > 0 is contradictory;"
                                   " got T=%f, T_melting=%f, omega=%f",
                                   T, T_melting, omega);
   }
+#else
+  (void) T;
+  (void) omega;
+  (void) P;
 #endif
 }
 
 void EnthalpyConverter::validate_E_P(double E, double P) const {
 #if (PISM_DEBUG==1)
   if (E >= enthalpy_liquid(P)) {
-    throw RuntimeError::formatted("E=%f J/kg at P=%f Pa equals or exceeds that of liquid water (%f J/kg)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "E=%f J/kg at P=%f Pa equals or exceeds that of liquid water (%f J/kg)",
                                   E, P, enthalpy_liquid(P));
   }
+#else
+  (void) E;
+  (void) P;
 #endif
 }
 

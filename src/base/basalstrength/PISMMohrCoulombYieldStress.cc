@@ -139,7 +139,7 @@ void MohrCoulombYieldStress::init_impl() {
     bool till_is_present = m_config->get_double(hydrology_tillwat_max) > 0.0;
 
     if (not till_is_present) {
-      throw RuntimeError::formatted("The Mohr-Coulomb yield stress model cannot be used without till.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "The Mohr-Coulomb yield stress model cannot be used without till.\n"
                                     "Reset %s or choose a different yield stress model.",
                                     hydrology_tillwat_max.c_str());
     }
@@ -149,7 +149,7 @@ void MohrCoulombYieldStress::init_impl() {
     const std::string flag_name = "basal_yield_stress.add_transportable_water";
     hydrology::Routing *hydrology_routing = dynamic_cast<hydrology::Routing*>(m_hydrology);
     if (m_config->get_boolean(flag_name) == true && hydrology_routing == NULL) {
-      throw RuntimeError::formatted("Flag %s is set.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Flag %s is set.\n"
                                     "Thus the Mohr-Coulomb yield stress model needs a hydrology::Routing\n"
                                     "(or derived like hydrology::Distributed) object with transportable water.\n"
                                     "The current Hydrology instance is not suitable.  Set flag\n"
@@ -172,7 +172,7 @@ void MohrCoulombYieldStress::init_impl() {
   InputOptions opts = process_input_options(m_grid->com);
 
   if (topg_to_phi_option.is_set() and plastic_phi.is_set()) {
-    throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "only one of -plastic_phi and -topg_to_phi is allowed.");
   }
 
   if (topg_to_phi_option.is_set()) {
@@ -427,7 +427,7 @@ void MohrCoulombYieldStress::topg_to_phi() {
                            " based on bedrock elevation (topg)");
 
   if (option.is_set() and option->size() != 4) {
-    throw RuntimeError::formatted("invalid -topg_to_phi arguments: has to be a list"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid -topg_to_phi arguments: has to be a list"
                                   " of 4 numbers, got %d", (int)option->size());
   }
 
@@ -439,11 +439,11 @@ void MohrCoulombYieldStress::topg_to_phi() {
   }
 
   if (phi_min >= phi_max) {
-    throw RuntimeError("invalid -topg_to_phi arguments: phi_min < phi_max is required");
+    throw RuntimeError(PISM_ERROR_LOCATION, "invalid -topg_to_phi arguments: phi_min < phi_max is required");
   }
 
   if (topg_min >= topg_max) {
-    throw RuntimeError("invalid -topg_to_phi arguments: topg_min < topg_max is required");
+    throw RuntimeError(PISM_ERROR_LOCATION, "invalid -topg_to_phi arguments: topg_min < topg_max is required");
   }
 
   const IceModelVec2S &bed_topography = *m_grid->variables().get_2d_scalar("bedrock_altitude");

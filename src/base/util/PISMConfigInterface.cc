@@ -382,7 +382,7 @@ void set_boolean_from_option(Config &config, const std::string &name, const std:
                               config.get_string(flag + "_doc", Config::FORGET_THIS_USE));
 
   if (foo and no_foo) {
-    throw RuntimeError::formatted("Inconsistent command-line options: both -%s and -no_%s are set.\n",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Inconsistent command-line options: both -%s and -no_%s are set.\n",
                                   name.c_str(), name.c_str());
   }
 
@@ -487,7 +487,7 @@ void set_parameter_from_options(Config &config, const std::string &name) {
 
     set_keyword_from_option(config, option, name, choices);
   } else {
-    throw RuntimeError::formatted("parameter type \"%s\" is invalid", type.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "parameter type \"%s\" is invalid", type.c_str());
   }
 }
 
@@ -529,7 +529,7 @@ void set_config_from_options(Config &config) {
         config.set_boolean("energy.enabled", true, Config::USER);
         config.set_boolean("energy.temperature_based", false, Config::USER);
       } else {
-        throw RuntimeError("this can't happen: options::Keyword validates input");
+        throw RuntimeError(PISM_ERROR_LOCATION, "this can't happen: options::Keyword validates input");
       }
     }
   }
@@ -538,7 +538,7 @@ void set_config_from_options(Config &config) {
   options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max");
   if (topg_to_phi.is_set()) {
     if (topg_to_phi->size() != 4) {
-      throw RuntimeError::formatted("option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
                                     (int)topg_to_phi->size());
     }
     config.set_boolean("basal_yield_stress.mohr_coulomb.topg_to_phi.enabled", true);

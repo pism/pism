@@ -83,20 +83,20 @@ SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 
   if (compute_grain_size_using_age) {
     if (not FlowLawUsesGrainSize(m_flow_law)) {
-      throw RuntimeError::formatted("flow law %s does not use grain size "
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "flow law %s does not use grain size "
                                     "but sia.grain_size_age_coupling was set",
                                     m_flow_law->name().c_str());
     }
 
     if (not age_model_enabled) {
-      throw RuntimeError::formatted("SIAFD: age model is not active but\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "SIAFD: age model is not active but\n"
                                     "age is needed for grain-size-based flow law %s",
                                     m_flow_law->name().c_str());
     }
   }
 
   if (e_age_coupling and not age_model_enabled) {
-      throw RuntimeError("SIAFD: age model is not active but\n"
+      throw RuntimeError(PISM_ERROR_LOCATION, "SIAFD: age model is not active but\n"
                          "age is needed for age-dependent flow enhancement");
   }
 
@@ -244,7 +244,7 @@ void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
     surface_gradient_mahaffy(h_x, h_y);
 
   } else {
-    throw RuntimeError::formatted("value of sia.surface_gradient_method, option '-gradient %s', is not valid",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "value of sia.surface_gradient_method, option '-gradient %s', is not valid",
                                   method.c_str());
   }
 }
@@ -1098,7 +1098,7 @@ double SIAFD::grainSizeVostok(double age_seconds) const {
     }
   }
   if ((r == l) || (std::abs(r - l) > 1)) {
-    throw RuntimeError("binary search in grainSizeVostok: oops");
+    throw RuntimeError(PISM_ERROR_LOCATION, "binary search in grainSizeVostok: oops");
   }
   // Linear interpolation on the interval
   return gsAt[l] + (a - ageAt[l]) * (gsAt[r] - gsAt[l]) / (ageAt[r] - ageAt[l]);

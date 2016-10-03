@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,15 +27,29 @@
 
 namespace pism {
 
+class ErrorLocation {
+public:
+  ErrorLocation();
+  ErrorLocation(const char *name, int line);
+  const char *filename;
+  int line_number;
+};
+
+#if PISM_DEBUG==1
+#define PISM_ERROR_LOCATION pism::ErrorLocation(__FILE__, __LINE__)
+#else
+#define PISM_ERROR_LOCATION pism::ErrorLocation()
+#endif
+
 class RuntimeError : public std::runtime_error {
 public:
-  RuntimeError(const std::string &message);
+  RuntimeError(const ErrorLocation &location, const std::string &message);
   ~RuntimeError() throw();
 
   typedef void (*Hook)(RuntimeError*);
 
   //! @brief build a RuntimeError with a formatted message
-  static RuntimeError formatted(const char format[], ...) __attribute__((format(printf, 1, 2)));
+  static RuntimeError formatted(const ErrorLocation &location, const char format[], ...) __attribute__((format(printf, 2, 3)));
 
   static void set_hook(Hook new_hook);
 
@@ -47,6 +61,7 @@ public:
   protected:
   std::vector<std::string> m_context;
   static Hook sm_hook;
+  ErrorLocation m_location;
 };
 
 class ParallelSection {

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -1182,7 +1182,7 @@ void NC4_HDF5::check(int return_code) const {
   if (return_code < 0) {
     H5Eprint(H5E_DEFAULT, stderr);
     H5Eclear(H5E_DEFAULT);
-    throw RuntimeError("HDF5 error; see stderr for more");
+    throw RuntimeError(PISM_ERROR_LOCATION, "HDF5 error; see stderr for more");
   }
 }
 

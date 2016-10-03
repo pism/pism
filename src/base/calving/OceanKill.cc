@@ -54,7 +54,7 @@ void OceanKill::init() {
                                   "Specifies a file to get ocean_kill thickness from");
 
   if (not ocean_kill_file.is_set()) {
-    throw RuntimeError("option -ocean_kill_file is required.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "option -ocean_kill_file is required.");
   }
 
   IceModelVec2S thickness, bed;

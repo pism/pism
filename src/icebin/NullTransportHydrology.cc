@@ -68,7 +68,7 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
                C           = m_config->get_double("hydrology.tillwat_decay_rate");
 
   if (tillwat_max < 0.0) {
-    throw RuntimeError("hydrology::NullTransport: hydrology.tillwat_max is negative.\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "hydrology::NullTransport: hydrology.tillwat_max is negative.\n"
                        "This is not allowed.");
   }
 

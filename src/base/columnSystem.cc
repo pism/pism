@@ -211,7 +211,7 @@ void TridiagonalSystem::solve(unsigned int system_size, std::vector<double> &res
   assert(system_size <= m_max_system_size);
 
   if (m_D[0] == 0.0) {
-    throw RuntimeError("zero pivot at row 1");
+    throw RuntimeError(PISM_ERROR_LOCATION, "zero pivot at row 1");
   }
 
   result.resize(m_max_system_size);
@@ -225,7 +225,7 @@ void TridiagonalSystem::solve(unsigned int system_size, std::vector<double> &res
     b = m_D[k] - m_L[k] * m_work[k];
 
     if (b == 0.0) {
-      throw RuntimeError::formatted("zero pivot at row %d", k + 1);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "zero pivot at row %d", k + 1);
     }
 
     result[k] = (m_rhs[k] - m_L[k] * result[k-1]) / b;
@@ -330,7 +330,7 @@ void columnSystemCtx::init_column(int i, int j,
 #if PISM_DEBUG==1
   // check if m_ks is valid
   if (m_ks >= m_z.size()) {
-    throw RuntimeError::formatted("ks = %d computed at i = %d, j = %d is invalid,\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ks = %d computed at i = %d, j = %d is invalid,\n"
                                   "possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
                                   m_ks, m_i, m_j, ice_thickness, m_dz);
   }

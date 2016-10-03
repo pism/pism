@@ -94,7 +94,7 @@ void ForceThickness::init_impl() {
                              " force-to-thickness mechanism");
 
   if (not input_file.is_set()) {
-    throw RuntimeError("surface model forcing requires the -force_to_thickness_file option.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "surface model forcing requires the -force_to_thickness_file option.");
   }
 
   options::Real ftt_alpha("-force_to_thickness_alpha",
@@ -162,7 +162,7 @@ void ForceThickness::init_impl() {
                input_file->c_str());
     m_ftt_mask.regrid(input_file, CRITICAL);
   } else {
-    throw RuntimeError::formatted("variable 'ftt_mask' was not found in '%s'",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable 'ftt_mask' was not found in '%s'",
                                   input_file->c_str());
   }
 }

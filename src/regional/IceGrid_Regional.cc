@@ -33,19 +33,19 @@ static void validate_range(const std::string &axis,
                            const std::vector<double> &x,
                            double x_min, double x_max) {
   if (x_min >= x_max) {
-    throw RuntimeError::formatted("invalid -%s_range: %s_min >= %s_max (%f >= %f).",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid -%s_range: %s_min >= %s_max (%f >= %f).",
                                   axis.c_str(), axis.c_str(), axis.c_str(),
                                   x_min, x_max);
   }
 
   if (x_min >= x.back()) {
-    throw RuntimeError::formatted("invalid -%s_range: %s_min >= max(%s) (%f >= %f).",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid -%s_range: %s_min >= max(%s) (%f >= %f).",
                                   axis.c_str(), axis.c_str(), axis.c_str(),
                                   x_min, x.back());
   }
 
   if (x_max <= x.front()) {
-    throw RuntimeError::formatted("invalid -%s-range: %s_max <= min(%s) (%f <= %f).",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid -%s-range: %s_max <= min(%s) (%f <= %f).",
                                   axis.c_str(), axis.c_str(), axis.c_str(),
                                   x_max, x.front());
   }
@@ -95,11 +95,11 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
     // parameters using command-line options
 
     if (x_range->size() != 2) {
-      throw RuntimeError("invalid -x_range argument: need 2 numbers.");
+      throw RuntimeError(PISM_ERROR_LOCATION, "invalid -x_range argument: need 2 numbers.");
     }
 
     if (y_range->size() != 2) {
-      throw RuntimeError("invalid -y_range argument: need 2 numbers.");
+      throw RuntimeError(PISM_ERROR_LOCATION, "invalid -y_range argument: need 2 numbers.");
     }
 
     GridParameters input_grid(ctx->config());
@@ -146,7 +146,7 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
     }
 
     if (not grid_info_found) {
-      throw RuntimeError::formatted("no geometry information found in '%s'",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no geometry information found in '%s'",
                                     input_file->c_str());
     }
 
@@ -164,7 +164,7 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
 
     return IceGrid::Ptr(new IceGrid(ctx, input_grid));
   } else if (x_range.is_set() ^ y_range.is_set()) {
-    throw RuntimeError("Please set both -x_range and -y_range.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "Please set both -x_range and -y_range.");
   } else {
     return IceGrid::FromOptions(ctx);
   }

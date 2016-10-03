@@ -105,7 +105,7 @@ std::string reference_date_from_file(const PIO &nc,
                                      const std::string &time_name) {
 
   if (not nc.inq_var(time_name)) {
-    throw RuntimeError::formatted("'%s' variable is not present in '%s'.",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' variable is not present in '%s'.",
                                   time_name.c_str(), nc.inq_filename().c_str());
   }
   std::string time_units = nc.get_att_text(time_name, "units");
@@ -113,7 +113,7 @@ std::string reference_date_from_file(const PIO &nc,
   // Check if the time_units includes a reference date.
   size_t position = time_units.find("since");
   if (position == std::string::npos) {
-    throw RuntimeError::formatted("time units string '%s' does not contain a reference date",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "time units string '%s' does not contain a reference date",
                                   time_units.c_str());
   }
 
@@ -159,7 +159,7 @@ Time::~Time() {
 void Time::init_calendar(const std::string &calendar_string) {
 
   if (not pism_is_valid_calendar_name(calendar_string)) {
-    throw RuntimeError::formatted("unsupported calendar: %s", calendar_string.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unsupported calendar: %s", calendar_string.c_str());
   }
 
   m_calendar_string = calendar_string;
@@ -307,11 +307,11 @@ void Time::init(const Logger &log) {
   bool ye_set = process_ye(ye_seconds);
 
   if (ys_set && ye_set && y_set) {
-    throw RuntimeError("all of -y, -ys, -ye are set.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "all of -y, -ys, -ye are set.");
   }
 
   if (y_set && ye_set) {
-    throw RuntimeError("using -y and -ye together is not allowed.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "using -y and -ye together is not allowed.");
   }
 
   // Set the start year if -ys is set, use the default otherwise.
@@ -323,7 +323,7 @@ void Time::init(const Logger &log) {
 
   if (ye_set == true) {
     if (ye_seconds < m_time_in_seconds) {
-      throw RuntimeError::formatted("-ye (%s) is less than -ys (%s) (or input file year or default).\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-ye (%s) is less than -ys (%s) (or input file year or default).\n"
                                     "PISM cannot run backward in time.",
                                     date(ye_seconds).c_str(), date(m_run_start).c_str());
     }
@@ -498,7 +498,7 @@ void Time::parse_interval_length(const std::string &spec, std::string &keyword, 
     }
 
   } else {
-    throw RuntimeError::formatted("interval length '%s' is invalid", spec.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "interval length '%s' is invalid", spec.c_str());
   }
 }
 
@@ -534,7 +534,7 @@ void Time::parse_range(const std::string &spec, std::vector<double> &result) con
       parse_interval_length(parts[1], keyword, &delta);
       parse_date(parts[2], &time_end);
     } else {
-      throw RuntimeError::formatted("a time range must consist of exactly 3 parts separated by colons (got '%s').",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "a time range must consist of exactly 3 parts separated by colons (got '%s').",
                                     spec.c_str());
     }
   }
@@ -546,13 +546,13 @@ void Time::parse_range(const std::string &spec, std::vector<double> &result) con
 void Time::parse_date(const std::string &spec, double *result) const {
 
   if (spec.empty() == true) {
-    throw RuntimeError("got an empty date specification");
+    throw RuntimeError(PISM_ERROR_LOCATION, "got an empty date specification");
   }
 
   char *endptr = NULL;
   double d = strtod(spec.c_str(), &endptr);
   if (*endptr != '\0') {
-    throw RuntimeError::formatted("date specification '%s' is invalid ('%s' is not an number)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date specification '%s' is invalid ('%s' is not an number)",
                                   spec.c_str(), spec.c_str());
   }
 
@@ -576,12 +576,12 @@ void Time::parse_date(const std::string &spec, double *result) const {
 void Time::compute_times_simple(double time_start, double delta, double time_end,
                                 std::vector<double> &result) const {
   if (time_start >= time_end) {
-    throw RuntimeError::formatted("a >= b in time range a:dt:b (got a = %s, b = %s)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "a >= b in time range a:dt:b (got a = %s, b = %s)",
                                   this->date(time_start).c_str(), this->date(time_end).c_str());
   }
 
   if (delta <= 0) {
-    throw RuntimeError::formatted("dt <= 0 in time range a:dt:b (got dt = %f seconds)", delta);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "dt <= 0 in time range a:dt:b (got dt = %f seconds)", delta);
   }
 
   int k = 0;
@@ -605,7 +605,7 @@ void Time::compute_times(double time_start, double delta, double time_end,
   } else if (keyword == "monthly") {
     delta = years_to_seconds(1.0/12.0);
   } else if (keyword != "simple") {
-    throw RuntimeError::formatted("unknown time range keyword: %s",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown time range keyword: %s",
                                   keyword.c_str());
   }
 

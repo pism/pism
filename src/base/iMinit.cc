@@ -332,12 +332,12 @@ void IceModel::restart_3d(const PIO &input_file, unsigned int last_record) {
 
 
 void IceModel::initialize_2d() {
-  throw RuntimeError("cannot initialize IceModel without an input file");
+  throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
 }
 
 
 void IceModel::initialize_3d() {
-  throw RuntimeError("cannot initialize IceModel without an input file");
+  throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
 }
 
 
@@ -406,11 +406,11 @@ void IceModel::allocate_stressbalance() {
     } else if (method == "fd") {
       sliding = new SSAFD(m_grid, EC);
     } else {
-      throw RuntimeError::formatted("invalid ssa method: %s", method.c_str());
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid ssa method: %s", method.c_str());
     }
 
   } else {
-    throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
   }
 
   SSB_Modifier *modifier = NULL;
@@ -419,7 +419,7 @@ void IceModel::allocate_stressbalance() {
   } else if (model == "prescribed_sliding+sia" || model == "ssa+sia" || model == "sia") {
     modifier = new SIAFD(m_grid, EC);
   } else {
-    throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
@@ -479,7 +479,7 @@ void IceModel::allocate_subglacial_hydrology() {
   } else if (hydrology_model == "distributed") {
     m_subglacial_hydrology = new Distributed(m_grid, m_stress_balance);
   } else {
-    throw RuntimeError::formatted("unknown value for configuration string 'hydrology.model':\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown value for configuration string 'hydrology.model':\n"
                                   "has value '%s'", hydrology_model.c_str());
   }
 }
@@ -505,7 +505,7 @@ void IceModel::allocate_basal_yield_stress() {
     } else if (yield_stress_model == "mohr_coulomb") {
       m_basal_yield_stress_model = new MohrCoulombYieldStress(m_grid, m_subglacial_hydrology);
     } else {
-      throw RuntimeError::formatted("yield stress model '%s' is not supported.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
   }
@@ -639,7 +639,7 @@ void IceModel::misc_setup() {
     std::string output_format = m_config->get_string("output.format");
     if (Mx * My * Mz * sizeof(double) > two_to_thirty_two - 4 and
         (output_format == "netcdf3" or output_format == "pnetcdf")) {
-      throw RuntimeError::formatted("The computational grid is too big to fit in a NetCDF-3 file.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "The computational grid is too big to fit in a NetCDF-3 file.\n"
                                     "Each 3D variable requires %lu Mb.\n"
                                     "Please use '-o_format quilt' or re-build PISM with parallel NetCDF-4 or HDF5\n"
                                     "and use '-o_format netcdf4_parallel' or '-o_format hdf5' to proceed.",
@@ -664,7 +664,7 @@ void IceModel::misc_setup() {
   std::string o_format = m_config->get_string("output.format");
   if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
       m_config->get_string("output.variable_order") != "yxz") {
-    throw RuntimeError("output formats netcdf4_parallel, quilt, and hdf5 require -o_order yxz.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "output formats netcdf4_parallel, quilt, and hdf5 require -o_order yxz.");
   }
 
   // a report on whether PISM-PIK modifications of IceModel are in use

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,7 +61,7 @@ int check_signal() {
 void sigint_handler(int sig) {
   if (sig == SIGINT) {
     if (gSIGINT_is_fatal) {
-      throw pism::RuntimeError("caught signal SIGTERM.");
+      throw pism::RuntimeError(ErrorLocation(), "caught signal SIGTERM.");
     } else {
       PetscPrintf(PETSC_COMM_WORLD, "\nCaught signal SIGTERM, waiting to exit.\n");
       gSignalSet = SIGINT;

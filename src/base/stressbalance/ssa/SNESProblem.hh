@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015 David Maxwell
+// Copyright (C) 2011, 2012, 2014, 2015, 2016 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -177,7 +177,7 @@ void SNESProblem<DOF,U>::solve() {
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason(m_snes, &reason); PISM_CHK(ierr, "SNESGetConvergedReason");
   if (reason < 0) {
-    throw RuntimeError::formatted("SNESProblem %s solve failed to converge (SNES reason %s)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "SNESProblem %s solve failed to converge (SNES reason %s)",
                                   name().c_str(), SNESConvergedReasons[reason]);
   }
 

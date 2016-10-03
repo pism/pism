@@ -252,11 +252,11 @@ void IceCompModel::allocate_couplers() {
 
 void IceCompModel::bootstrap_2d(const PIO &input_file) {
   (void) input_file;
-  throw RuntimeError("pismv (IceCompModel) does not support bootstrapping.");
+  throw RuntimeError(PISM_ERROR_LOCATION, "pismv (IceCompModel) does not support bootstrapping.");
 }
 
 void IceCompModel::bootstrap_3d() {
-  throw RuntimeError("pismv (IceCompModel) does not support bootstrapping.");
+  throw RuntimeError(PISM_ERROR_LOCATION, "pismv (IceCompModel) does not support bootstrapping.");
 }
 
 void IceCompModel::initialize_2d() {
@@ -296,7 +296,7 @@ void IceCompModel::initialize_2d() {
     test_V_init();
     break;
   default:
-    throw RuntimeError("Desired test not implemented by IceCompModel.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "Desired test not implemented by IceCompModel.");
   }
 }
 
@@ -349,7 +349,7 @@ void IceCompModel::initTestABCDH() {
         m_ice_thickness(i, j) = exactH(f, time, r).H;
         break;
       default:
-        throw RuntimeError("test must be A, B, C, D, or H");
+        throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H");
       }
     }
   } catch (...) {
@@ -499,7 +499,7 @@ void IceCompModel::fillSolnTestABCDH() {
         m_ice_thickness(i, j) = exactH(f, time, r).H;
         break;
       default:
-        throw RuntimeError("test must be A, B, C, D, or H");
+        throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H");
       }
     }
   } catch (...) {
@@ -633,7 +633,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         }
         break;
       default:
-        throw RuntimeError("test must be A, B, C, D, F, G, H, K, L, or O");
+        throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, F, G, H, K, L, or O");
       }
 
       if (Hexact > 0) {
@@ -728,7 +728,7 @@ void IceCompModel::additionalAtEndTimestep() {
     fillSolnTestL();
     break;
   default:
-    throw RuntimeError::formatted("unknown testname %c in IceCompModel", testname);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown testname %c in IceCompModel", testname);
   }
 }
 

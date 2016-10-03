@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -79,7 +79,7 @@ public:
   //! Sets the default type name.
   void set_default(std::string name) {
     if (m_models.find(name) == m_models.end()) {
-      throw RuntimeError::formatted("type %s is not registered", name.c_str());
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "type %s is not registered", name.c_str());
     } else {
       m_default_type = name;
     }
@@ -119,7 +119,7 @@ public:
     std::vector<std::string>::iterator j = choices->begin();
 
     if (m_models.find(*j) == m_models.end()) {
-      throw RuntimeError::formatted("%s model \"%s\" is not available.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s model \"%s\" is not available.\n"
                                     "Available models:    %s\n"
                                     "Available modifiers: %s",
                                     m_option.c_str(), j->c_str(),
@@ -133,7 +133,7 @@ public:
     // process remaining arguments:
     while (j != choices->end()) {
       if (m_modifiers.find(*j) == m_modifiers.end()) {
-        throw RuntimeError::formatted("%s modifier \"%s\" is not available.\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s modifier \"%s\" is not available.\n"
                                       "Available modifiers: %s",
                                       m_option.c_str(), j->c_str(), modifier_list.c_str());
       }

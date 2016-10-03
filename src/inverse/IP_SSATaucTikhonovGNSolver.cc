@@ -351,7 +351,7 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::linesearch() {
 TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::solve() {
 
   if (m_target_misfit == 0) {
-    throw RuntimeError::formatted("Call set target misfit prior to calling"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Call set target misfit prior to calling"
                                   " IP_SSATaucTikhonovGNSolver::solve.");
   }
 

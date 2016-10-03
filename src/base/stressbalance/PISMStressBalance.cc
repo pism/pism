@@ -612,7 +612,7 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
   double    dx = grid->dx(), dy = grid->dy();
 
   if (result.get_ndof() != 2) {
-    throw RuntimeError("result.dof() == 2 is required");
+    throw RuntimeError(PISM_ERROR_LOCATION, "result.dof() == 2 is required");
   }
 
   IceModelVec::AccessList list;

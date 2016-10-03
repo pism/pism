@@ -37,34 +37,34 @@ static void check_enthalpy_converter(EnthalpyConverter::Ptr EC,
   struct enth_constants c = enth_get_constants();
 
   if (c.T_melting != config.get_double("constants.fresh_water.melting_point_temperature")) {
-    throw RuntimeError("constants.fresh_water.melting_point_temperature mismatch");
+    throw RuntimeError(PISM_ERROR_LOCATION, "constants.fresh_water.melting_point_temperature mismatch");
   }
 
   if (c.c_i != config.get_double("constants.ice.specific_heat_capacity")) {
-    throw RuntimeError("constants.ice.specific_heat_capacity mismatch");
+    throw RuntimeError(PISM_ERROR_LOCATION, "constants.ice.specific_heat_capacity mismatch");
   }
 
   if (c.c_w != config.get_double("constants.fresh_water.specific_heat_capacity")) {
-    throw RuntimeError("constants.fresh_water.specific_heat_capacity mismatch");
+    throw RuntimeError(PISM_ERROR_LOCATION, "constants.fresh_water.specific_heat_capacity mismatch");
   }
 
   if (c.T_0 != config.get_double("enthalpy_converter.T_reference")) {
-    throw RuntimeError("enthalpy_converter.T_reference mismatch");
+    throw RuntimeError(PISM_ERROR_LOCATION, "enthalpy_converter.T_reference mismatch");
   }
 
   if (c.beta != config.get_double("constants.ice.beta_Clausius_Clapeyron")) {
-    throw RuntimeError("constants.ice.beta_Clausius_Clapeyron mismatch");
+    throw RuntimeError(PISM_ERROR_LOCATION, "constants.ice.beta_Clausius_Clapeyron mismatch");
   }
 
   if (c.L0 != config.get_double("constants.fresh_water.latent_heat_of_fusion")) {
-    throw RuntimeError("constants.fresh_water.latent_heat_of_fusion mismatch");
+    throw RuntimeError(PISM_ERROR_LOCATION, "constants.fresh_water.latent_heat_of_fusion mismatch");
   }
 
   // check that L depends on T_m
   const double depth = 5000.0;
   double T_m = EC->melting_temperature(EC->pressure(depth));
   if (EC->L(T_m) != enth_L(T_m)) {
-    throw RuntimeError("selected enthalpy converter is not compatible with GPBLD3: "
+    throw RuntimeError(PISM_ERROR_LOCATION, "selected enthalpy converter is not compatible with GPBLD3: "
                        "different parameterizations of the latent heat of fusion");
   }
 }
@@ -74,54 +74,54 @@ GPBLD3::GPBLD3(const std::string &prefix, const Config &config, EnthalpyConverte
   m_name = "Glen-Paterson-Budd-Lliboutry-Duval (using a polynomial approximation, optimized for n == 3)";
 
   if (this->exponent() != 3.0) {
-    throw RuntimeError::formatted("Can't use GPBLD3 with Glen exponent %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't use GPBLD3 with Glen exponent %f",
                                   this->exponent());
   }
 
   struct gpbld_constants c = gpbld_get_constants();
 
   if (c.ideal_gas_constant != m_ideal_gas_constant) {
-    throw RuntimeError::formatted("ideal_gas_constant mismatch: %f != %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ideal_gas_constant mismatch: %f != %f",
                                   c.ideal_gas_constant, m_ideal_gas_constant);
   }
 
   if (c.A_cold != m_A_cold) {
-    throw RuntimeError::formatted("A_cold mismatch: %f != %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "A_cold mismatch: %f != %f",
                                   c.A_cold, m_A_cold);
   }
 
   if (c.A_warm != m_A_warm) {
-    throw RuntimeError::formatted("A_warm mismatch: %f != %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "A_warm mismatch: %f != %f",
                                   c.A_warm, m_A_warm);
   }
 
   if (c.Q_cold != m_Q_cold) {
-    throw RuntimeError::formatted("Q_cold mismatch: %f != %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Q_cold mismatch: %f != %f",
                                   c.Q_cold, m_Q_cold);
   }
 
   if (c.Q_warm != m_Q_warm) {
-    throw RuntimeError::formatted("Q_warm mismatch: %f != %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Q_warm mismatch: %f != %f",
                                   c.Q_warm, m_Q_warm);
   }
 
   if (c.T_critical != m_crit_temp) {
-    throw RuntimeError::formatted("T_critical mismatch: %f != %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T_critical mismatch: %f != %f",
                                   c.T_critical, m_crit_temp);
   }
 
   if (c.T_melting != m_T_0) {
-    throw RuntimeError::formatted("T_melting mismatch: %f != %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T_melting mismatch: %f != %f",
                                   c.T_melting, m_T_0);
   }
 
   if (c.water_fraction_coeff != m_water_frac_coeff) {
-    throw RuntimeError::formatted("water_fraction_coeff mismatch: %f != %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "water_fraction_coeff mismatch: %f != %f",
                                   c.water_fraction_coeff, m_water_frac_coeff);
   }
 
   if (c.water_frac_observed_limit != m_water_frac_observed_limit) {
-    throw RuntimeError::formatted("water_frac_observed_limit mismatch: %f != %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "water_frac_observed_limit mismatch: %f != %f",
                                   c.water_frac_observed_limit, m_water_frac_observed_limit);
   }
 

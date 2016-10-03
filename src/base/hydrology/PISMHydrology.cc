@@ -112,7 +112,7 @@ void Hydrology::init() {
     }
 
     if (n_records == 0) {
-      throw RuntimeError::formatted("can't find 'inputtobed' in -hydrology_input_to_bed"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find 'inputtobed' in -hydrology_input_to_bed"
                                     " file with name '%s'",
                                     itb_file->c_str());
     }
@@ -227,12 +227,12 @@ void Hydrology::check_Wtil_bounds() {
       const int i = p.i(), j = p.j();
 
       if (m_Wtil(i,j) < 0.0) {
-        throw RuntimeError::formatted("Hydrology: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Hydrology: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
                                       "at (i,j)=(%d,%d)", m_Wtil(i,j), i, j);
       }
 
       if (m_Wtil(i,j) > tillwat_max) {
-        throw RuntimeError::formatted("Hydrology: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Hydrology: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
                                       "hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)",
                                       m_Wtil(i,j), tillwat_max, i, j);
       }

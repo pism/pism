@@ -34,7 +34,7 @@ AgeModelInputs::AgeModelInputs() {
 
 static void check_input(const IceModelVec *ptr, const char *name) {
   if (ptr == NULL) {
-    throw RuntimeError::formatted("ice age model input %s was not provided", name);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice age model input %s was not provided", name);
   }
 }
 

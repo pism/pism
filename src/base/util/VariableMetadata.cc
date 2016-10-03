@@ -89,7 +89,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
       valid_min = get_double("valid_min"),
       valid_max = get_double("valid_max");
     if ((min < valid_min) or (max > valid_max)) {
-      throw RuntimeError::formatted("some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
                                     "computed min = %e %s, computed max = %e %s",
                                     name, file,
                                     valid_min, valid_max, units, min, units, max, units);
@@ -97,7 +97,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
   } else if (has_attribute("valid_min")) {
     double valid_min = get_double("valid_min");
     if (min < valid_min) {
-      throw RuntimeError::formatted("some values of '%s' in '%s' are less than the valid minimum (%e %s).\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are less than the valid minimum (%e %s).\n"
                                     "computed min = %e %s, computed max = %e %s",
                                     name, file,
                                     valid_min, units, min, units, max, units);
@@ -105,7 +105,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
   } else if (has_attribute("valid_max")) {
     double valid_max = get_double("valid_max");
     if (max > valid_max) {
-      throw RuntimeError::formatted("some values of '%s' in '%s' are greater than the valid maximum (%e %s).\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are greater than the valid maximum (%e %s).\n"
                                     "computed min = %e %s, computed max = %e %s",
                                     name, file,
                                     valid_max, units, min, units, max, units);
@@ -180,7 +180,7 @@ SpatialVariableMetadata::~SpatialVariableMetadata() {
 
 void SpatialVariableMetadata::set_levels(const std::vector<double> &levels) {
   if (levels.size() < 1) {
-    throw RuntimeError("argument \"levels\" has to have length 1 or greater");
+    throw RuntimeError(PISM_ERROR_LOCATION, "argument \"levels\" has to have length 1 or greater");
   }
   m_zlevels = levels;
 }
@@ -311,7 +311,7 @@ double VariableMetadata::get_double(const std::string &name) const {
   if (j != m_doubles.end()) {
     return (j->second)[0];
   } else {
-    throw RuntimeError::formatted("variable \"%s\" does not have a double attribute \"%s\"",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable \"%s\" does not have a double attribute \"%s\"",
                                   get_name().c_str(), name.c_str());
   }
 }
@@ -350,7 +350,7 @@ void VariableMetadata::set_string(const std::string &name, const std::string &va
       glaciological(m_unit_system, value);
 
     if (not units::are_convertible(internal, glaciological)) {
-      throw RuntimeError::formatted("units \"%s\" and \"%s\" are not compatible",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "units \"%s\" and \"%s\" are not compatible",
                                     get_string("units").c_str(), value.c_str());
     }
   } else if (name == "short_name") {

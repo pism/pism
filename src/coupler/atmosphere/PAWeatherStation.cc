@@ -71,7 +71,7 @@ void WeatherStation::init_impl() {
                            " 'precipitation' and 'air_temp'.");
 
   if (not filename.is_set()) {
-    throw RuntimeError::formatted("Command-line option %s is required.", option.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Command-line option %s is required.", option.c_str());
   }
 
   m_log->message(2,

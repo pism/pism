@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -49,7 +49,7 @@ void add_2d(const IceModelVec* const x_in, double alpha,
   V *z = dynamic_cast<V*>(result);
 
   if (x == NULL || y == NULL || z == NULL) {
-    throw RuntimeError("incompatible arguments");
+    throw RuntimeError(PISM_ERROR_LOCATION, "incompatible arguments");
   }
 
   int stencil = 0;
@@ -81,7 +81,7 @@ void copy_2d(const IceModelVec* const source,
   V *z = dynamic_cast<V*>(destination);
 
   if (x == NULL || z == NULL) {
-    throw RuntimeError("incompatible arguments");
+    throw RuntimeError(PISM_ERROR_LOCATION, "incompatible arguments");
   }
 
   int stencil = 0;

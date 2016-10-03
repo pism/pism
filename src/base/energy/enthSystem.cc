@@ -174,7 +174,7 @@ double enthSystemCtx::compute_lambda() {
 void enthSystemCtx::set_surface_dirichlet_bc(double E_surface) {
 #if (PISM_DEBUG==1)
   if ((m_nu < 0.0) || (m_R_cold < 0.0) || (m_R_temp < 0.0)) {
-    throw RuntimeError("setDirichletSurface() should only be called after\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "setDirichletSurface() should only be called after\n"
                        "initAllColumns() in enthSystemCtx");
   }
 #endif
@@ -236,10 +236,10 @@ void enthSystemCtx::set_surface_neumann_bc(double G) {
 
 void enthSystemCtx::checkReadyToSolve() {
   if (m_nu < 0.0 || m_R_cold < 0.0 || m_R_temp < 0.0) {
-    throw RuntimeError("not ready to solve: need initAllColumns() in enthSystemCtx");
+    throw RuntimeError(PISM_ERROR_LOCATION, "not ready to solve: need initAllColumns() in enthSystemCtx");
   }
   if (m_lambda < 0.0) {
-    throw RuntimeError("not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx");
+    throw RuntimeError(PISM_ERROR_LOCATION, "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx");
   }
 }
 
@@ -253,7 +253,7 @@ void enthSystemCtx::set_basal_dirichlet_bc(double Y) {
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
-    throw RuntimeError("setting basal boundary conditions twice in enthSystemCtx");
+    throw RuntimeError(PISM_ERROR_LOCATION, "setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
   m_D0 = 1.0;
@@ -445,7 +445,7 @@ void enthSystemCtx::solve(std::vector<double> &x) {
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
   if (gsl_isnan(m_D0) || gsl_isnan(m_U0) || gsl_isnan(m_B0)) {
-    throw RuntimeError("solveThisColumn() should only be called after\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "solveThisColumn() should only be called after\n"
                        "  setting basal boundary condition in enthSystemCtx");
   }
 #endif

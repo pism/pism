@@ -120,12 +120,12 @@ void SeaRISEGreenland::update_impl(double my_t, double my_dt) {
     &lon_degE = *m_grid->variables().get_2d_scalar("longitude");
 
   if (lat_degN.metadata().has_attribute("missing_at_bootstrap")) {
-    throw RuntimeError("latitude variable was missing at bootstrap;\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "latitude variable was missing at bootstrap;\n"
                        "SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!");
   }
 
   if (lon_degE.metadata().has_attribute("missing_at_bootstrap")) {
-    throw RuntimeError("longitude variable was missing at bootstrap;\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "longitude variable was missing at bootstrap;\n"
                        "SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!");
   }
 

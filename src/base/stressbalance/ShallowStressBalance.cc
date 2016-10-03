@@ -209,7 +209,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
     dy = m_grid->dy();
 
   if (result.get_ndof() != 3) {
-    throw RuntimeError("result.get_dof() == 3 is required");
+    throw RuntimeError(PISM_ERROR_LOCATION, "result.get_dof() == 3 is required");
   }
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
@@ -488,7 +488,7 @@ void PrescribedSliding::init() {
   options::String input_filename("-prescribed_sliding_file",
                                  "name of the file to read velocity fields from");
   if (not input_filename.is_set()) {
-    throw RuntimeError("option -prescribed_sliding_file is required.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "option -prescribed_sliding_file is required.");
   }
 
   m_velocity.regrid(input_filename, CRITICAL);

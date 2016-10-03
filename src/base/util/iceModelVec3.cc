@@ -45,7 +45,7 @@ IceModelVec3D::IceModelVec3D()
   : IceModelVec() {
   m_bsearch_accel = gsl_interp_accel_alloc();
   if (m_bsearch_accel == NULL) {
-    throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
+    throw RuntimeError(PISM_ERROR_LOCATION, "Failed to allocate a GSL interpolation accelerator");
   }
 }
 
@@ -65,7 +65,7 @@ IceModelVec3::~IceModelVec3() {
 IceModelVec3::Ptr IceModelVec3::To3DScalar(IceModelVec::Ptr input) {
   IceModelVec3::Ptr result = dynamic_pointer_cast<IceModelVec3,IceModelVec>(input);
   if (not (bool)result) {
-    throw RuntimeError("dynamic cast failure");
+    throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
   }
   return result;
 }
@@ -135,7 +135,7 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
   check_array_indices(i, j, 0);
 
   if (not isLegalLevel(z)) {
-    throw RuntimeError::formatted("IceModelVec3 getValZ(): level %f is not legal; name = %s",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec3 getValZ(): level %f is not legal; name = %s",
                                   z, m_name.c_str());
   }
 #endif

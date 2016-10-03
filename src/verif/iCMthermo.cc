@@ -218,7 +218,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   double maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
 
   if (testname != 'F' and testname != 'G') {
-    throw RuntimeError("temperature errors only computable for tests F and G");
+    throw RuntimeError(PISM_ERROR_LOCATION, "temperature errors only computable for tests F and G");
   }
 
   const double time = testname == 'F' ? 0.0 : m_time->current();
@@ -267,7 +267,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
                                                       double &gmaxTberr, double &gavTberr) {
 
   if (testname != 'K' and testname != 'O') {
-    throw RuntimeError("ice and bedrock temperature errors only computable for tests K and O");
+    throw RuntimeError(PISM_ERROR_LOCATION, "ice and bedrock temperature errors only computable for tests K and O");
   }
 
   double    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
@@ -278,7 +278,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 
   energy::BTU_Verification *my_btu = dynamic_cast<energy::BTU_Verification*>(m_btu);
   if (my_btu == NULL) {
-    throw RuntimeError("BTU_Verification is required");
+    throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Verification is required");
   }
   const IceModelVec3Custom &bedrock_temp = my_btu->temperature();
 
@@ -307,7 +307,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       }
       break;
     default:
-      throw RuntimeError("ice and bedrock temperature errors only for tests K and O");
+      throw RuntimeError(PISM_ERROR_LOCATION, "ice and bedrock temperature errors only for tests K and O");
   }
 
   IceModelVec::AccessList list;
@@ -348,7 +348,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTerr, double &centerTerr) {
 
   if (testname != 'F' and testname != 'G') {
-    throw RuntimeError("temperature errors only computable for tests F and G");
+    throw RuntimeError(PISM_ERROR_LOCATION, "temperature errors only computable for tests F and G");
   }
 
   double
@@ -408,7 +408,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
   double max_strain_heating_err = 0.0, av_strain_heating_err = 0.0, avcount = 0.0;
 
   if (testname != 'F' and testname != 'G') {
-    throw RuntimeError("strain-heating (strain_heating) errors only computable for tests F and G");
+    throw RuntimeError(PISM_ERROR_LOCATION, "strain-heating (strain_heating) errors only computable for tests F and G");
   }
 
   const double
@@ -536,7 +536,7 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
   double    bmelt, dum1, dum2, dum3, dum4;
 
   if (testname != 'O') {
-    throw RuntimeError("basal melt rate errors are only computable for test O");
+    throw RuntimeError(PISM_ERROR_LOCATION, "basal melt rate errors are only computable for test O");
   }
 
   // we just need one constant from exact solution:
@@ -576,7 +576,7 @@ void IceCompModel::fillTemperatureSolnTestsKO() {
       }
       break;
     default:
-      throw RuntimeError("only fills temperature solutions for tests K and O");
+      throw RuntimeError(PISM_ERROR_LOCATION, "only fills temperature solutions for tests K and O");
   }
 
   // copy column values into 3D arrays
@@ -602,7 +602,7 @@ void IceCompModel::fillTemperatureSolnTestsKO() {
 void IceCompModel::fillBasalMeltRateSolnTestO() {
   double       bmelt, dum1, dum2, dum3, dum4;
   if (testname != 'O') {
-    throw RuntimeError("only fills basal melt rate soln for test O");
+    throw RuntimeError(PISM_ERROR_LOCATION, "only fills basal melt rate soln for test O");
   }
 
   // we just need one constant from exact solution:

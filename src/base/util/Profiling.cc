@@ -90,7 +90,7 @@ void Profiling::begin(const char * name) const {
 void Profiling::end(const char * name) const {
   PetscLogEvent event = 0;
   if (m_events.find(name) == m_events.end()) {
-    throw RuntimeError::formatted("cannot end event \"%s\" because it was not started",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot end event \"%s\" because it was not started",
                                   name);
   } else {
     event = m_events[name];

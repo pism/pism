@@ -271,7 +271,7 @@ void IceModelVec::copy_from_vec(Vec source) {
 void IceModelVec::get_dof(petsc::DM::Ptr da_result, Vec result,
                           unsigned int start, unsigned int count) const {
   if (start >= m_dof) {
-    throw RuntimeError::formatted("invalid argument (start); got %d", start);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid argument (start); got %d", start);
   }
 
   petsc::DMDAVecArrayDOF tmp_res(da_result, result), tmp_v(m_da, m_v);
@@ -297,7 +297,7 @@ void IceModelVec::get_dof(petsc::DM::Ptr da_result, Vec result,
 void IceModelVec::set_dof(petsc::DM::Ptr da_source, Vec source,
                           unsigned int start, unsigned int count) {
   if (start >= m_dof) {
-    throw RuntimeError::formatted("invalid argument (start); got %d", start);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid argument (start); got %d", start);
   }
 
   petsc::DMDAVecArrayDOF tmp_src(da_source, source), tmp_v(m_da, m_v);
@@ -418,7 +418,7 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
   m_grid->ctx()->log()->message(3, "  Regridding %s...\n", m_name.c_str());
 
   if (m_dof != 1) {
-    throw RuntimeError("This method (IceModelVec::regrid_impl)"
+    throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::regrid_impl)"
                        " only supports IceModelVecs with dof == 1.");
   }
 
@@ -443,7 +443,7 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
   m_grid->ctx()->log()->message(3, "  Reading %s...\n", m_name.c_str());
 
   if (m_dof != 1) {
-    throw RuntimeError("This method (IceModelVec::read_impl) only supports"
+    throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::read_impl) only supports"
                        " IceModelVecs with dof == 1.");
   }
 
@@ -498,7 +498,7 @@ const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
 void IceModelVec::write_impl(const PIO &nc) const {
 
   if (m_dof != 1) {
-    throw RuntimeError("This method (IceModelVec::write_impl) only supports"
+    throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::write_impl) only supports"
                        " IceModelVecs with dof == 1");
   }
 
@@ -544,7 +544,7 @@ void IceModelVec::checkCompatibility(const char* func, const IceModelVec &other)
   PetscInt X_size, Y_size;
 
   if (m_dof != other.m_dof) {
-    throw RuntimeError::formatted("IceModelVec::%s(...): operands have different numbers of degrees of freedom",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec::%s(...): operands have different numbers of degrees of freedom",
                                   func);
   }
 
@@ -555,7 +555,7 @@ void IceModelVec::checkCompatibility(const char* func, const IceModelVec &other)
   PISM_CHK(ierr, "VecGetSize");
 
   if (X_size != Y_size) {
-    throw RuntimeError::formatted("IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))",
                                   func, m_name.c_str(), func, other.m_name.c_str());
   }
 }
@@ -565,7 +565,7 @@ void  IceModelVec::begin_access() const {
   assert(m_v != NULL);
 
   if (m_access_counter < 0) {
-    throw RuntimeError("IceModelVec::begin_access(): m_access_counter < 0");
+    throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec::begin_access(): m_access_counter < 0");
   }
 
   if (m_access_counter == 0) {
@@ -588,11 +588,11 @@ void  IceModelVec::end_access() const {
   assert(m_v != NULL);
 
   if (m_array == NULL) {
-    throw RuntimeError("IceModelVec::end_access(): a == NULL (looks like begin_acces() was not called)");
+    throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec::end_access(): a == NULL (looks like begin_acces() was not called)");
   }
 
   if (m_access_counter < 0) {
-    throw RuntimeError("IceModelVec::end_access(): m_access_counter < 0");
+    throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec::end_access(): m_access_counter < 0");
   }
 
 
@@ -705,12 +705,12 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
     (k >= N);
 
   if (out_of_range) {
-    throw RuntimeError::formatted("%s(%d, %d, %d) is out of bounds",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s(%d, %d, %d) is out of bounds",
                                   m_name.c_str(), i, j, k);
   }
 
   if (m_array == NULL) {
-    throw RuntimeError::formatted("%s: begin_access() was not called", m_name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s: begin_access() was not called", m_name.c_str());
   }
 }
 
@@ -777,7 +777,7 @@ std::vector<double> IceModelVec::norm_all(int n) const {
     // otherwise GlobalSum; carefully in NORM_2 case
     switch (type) {
     case NORM_1_AND_2: {
-      throw RuntimeError::formatted("IceModelVec::norm_all(...): NORM_1_AND_2"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec::norm_all(...): NORM_1_AND_2"
                                     " not implemented (called as %s.norm_all(...))",
                                     m_name.c_str());
 
@@ -802,7 +802,7 @@ std::vector<double> IceModelVec::norm_all(int n) const {
       return result;
     }
     default: {
-      throw RuntimeError::formatted("IceModelVec::norm_all(...): unknown norm type"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec::norm_all(...): unknown norm type"
                                     " (called as %s.norm_all(...))",
                                     m_name.c_str());
     }

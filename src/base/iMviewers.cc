@@ -36,7 +36,7 @@ void IceModel::view_field(const IceModelVec *field) {
   unsigned int dims = field->get_ndims();
 
   if (dims != 2) {
-    throw RuntimeError("map-plane views of 3D quantities are not supported.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "map-plane views of 3D quantities are not supported.");
   }
 
   if (field->get_ndof() == 1) {    // scalar fields
@@ -50,7 +50,7 @@ void IceModel::view_field(const IceModelVec *field) {
 
     const IceModelVec2S *v2d = dynamic_cast<const IceModelVec2S*>(field);
     if (v2d == NULL) {
-      throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+      throw RuntimeError(PISM_ERROR_LOCATION, "get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
     }
 
     v2d->view(viewer, petsc::Viewer::Ptr());
@@ -75,7 +75,7 @@ void IceModel::view_field(const IceModelVec *field) {
 
     const IceModelVec2 *v2d = dynamic_cast<const IceModelVec2*>(field);
     if (v2d == NULL) {
-      throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+      throw RuntimeError(PISM_ERROR_LOCATION, "get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
     }
 
     v2d->view(v1, v2);

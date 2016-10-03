@@ -42,7 +42,7 @@ SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
 /*! Determines nu by input strength and current min_thickness. */
 void SSAStrengthExtension::set_notional_strength(double my_nuH) {
   if (my_nuH <= 0.0) {
-    throw RuntimeError::formatted("nuH must be positive, got %f", my_nuH);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "nuH must be positive, got %f", my_nuH);
   }
   m_constant_nu = my_nuH / m_min_thickness;
 }
@@ -51,7 +51,7 @@ void SSAStrengthExtension::set_notional_strength(double my_nuH) {
 /*! Preserves strength (nuH) by also updating using current nu.  */
 void SSAStrengthExtension::set_min_thickness(double my_min_thickness) {
   if (my_min_thickness <= 0.0) {
-    throw RuntimeError::formatted("min_thickness must be positive, got %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "min_thickness must be positive, got %f",
                                   my_min_thickness);
   }
   double nuH = m_constant_nu * m_min_thickness;

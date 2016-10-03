@@ -56,7 +56,7 @@ void IceModel::setFromOptions() {
   // warn about some option combinations
 
   if (m_config->get_double("time_stepping.maximum_time_step") <= 0) {
-    throw RuntimeError("time_stepping.maximum_time_step has to be greater than 0.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "time_stepping.maximum_time_step has to be greater than 0.");
   }
 
   if (not m_config->get_boolean("geometry.update.enabled") &&

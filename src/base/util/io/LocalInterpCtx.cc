@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2015 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2016 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -111,7 +111,7 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
            y_min >= input_y_min - eps and y_max <= input_y_max + eps and
            z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
 
-    throw RuntimeError::formatted("target computational domain not a subset of source (in NetCDF file)\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "target computational domain not a subset of source (in NetCDF file)\n"
                                   "computational domain:\n"
                                   "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n"
                                   "source domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters",

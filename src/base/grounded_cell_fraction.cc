@@ -49,7 +49,7 @@ static inline double gl_position(double mu,
     beta = mu * H1 - (sea_level - b1);
 
   if (alpha - beta == 0.0) {
-    throw RuntimeError("cannot determine grounding line position. Please submit a bug report.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "cannot determine grounding line position. Please submit a bug report.");
   }
 
   double lambda = alpha / (alpha - beta);
@@ -205,7 +205,7 @@ void compute_grounded_cell_fraction(double ice_density,
         }
 
       } else { // end of the "mask::ocean(m.ij)" case
-        throw RuntimeError::formatted("ice is neither grounded nor floating (ocean) at (%d,%d)."
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice is neither grounded nor floating (ocean) at (%d,%d)."
                                       " This should not happen.", i, j);
       }
 

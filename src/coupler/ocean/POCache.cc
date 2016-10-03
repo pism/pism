@@ -74,7 +74,7 @@ void Cache::init_impl() {
                                      update_interval);
 
   if (update_interval <= 0) {
-    throw RuntimeError("-ocean_cache_update_interval has to be strictly positive.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "-ocean_cache_update_interval has to be strictly positive.");
   }
 
   m_update_interval_years = update_interval;

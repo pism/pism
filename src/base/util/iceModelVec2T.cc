@@ -122,7 +122,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
              exists, name_found, found_by_standard_name);
   if (not exists) {
-    throw RuntimeError::formatted("can't find %s (%s) in %s.",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find %s (%s) in %s.",
                                   m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str(),
                                   m_filename.c_str());
   }
@@ -170,7 +170,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         }
       } else {
         // no time bounds attribute
-        throw RuntimeError::formatted("Variable '%s' does not have the time_bounds attribute.\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Variable '%s' does not have the time_bounds attribute.\n"
                                       "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
                                       dimname.c_str(),  m_metadata[0].get_string("long_name").c_str(),
                                       m_metadata[0].get_name().c_str());
@@ -195,7 +195,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   }
 
   if (not is_increasing(m_time)) {
-    throw RuntimeError::formatted("times have to be strictly increasing (read from '%s').",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times have to be strictly increasing (read from '%s').",
                                   m_filename.c_str());
   }
 
@@ -203,7 +203,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
 
   if (m_period != 0) {
     if ((size_t)m_n_records < m_time.size()) {
-      throw RuntimeError("buffer has to be big enough to hold all records of periodic data");
+      throw RuntimeError(PISM_ERROR_LOCATION, "buffer has to be big enough to hold all records of periodic data");
     }
 
     // read periodic data right away (we need to hold it all in memory anyway)
@@ -280,7 +280,7 @@ void IceModelVec2T::update(double t, double dt) {
   // check if all the records necessary to cover this interval fit in the
   // buffer:
   if (n - m + 1 > m_n_records) {
-    throw RuntimeError("IceModelVec2T::update(): timestep is too big");
+    throw RuntimeError(PISM_ERROR_LOCATION, "IceModelVec2T::update(): timestep is too big");
   }
 
   update(m);
@@ -292,7 +292,8 @@ void IceModelVec2T::update(unsigned int start) {
   unsigned int time_size = (int)m_time.size();
 
   if (start >= time_size) {
-    throw RuntimeError::formatted("IceModelVec2T::update(int start): start = %d is invalid", start);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "IceModelVec2T::update(int start): start = %d is invalid", start);
   }
 
   unsigned int missing = std::min(m_n_records, time_size - start);

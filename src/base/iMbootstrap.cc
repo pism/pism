@@ -85,7 +85,7 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
     Range thk_range = m_ice_thickness.range();
 
     if (thk_range.max >= m_grid->Lz() + 1e-6) {
-      throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
                                     "exceeds the height of the computational domain (%f meters).",
                                     thk_range.max, m_grid->Lz());
     }
@@ -119,7 +119,7 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
   Range thk_range = m_ice_thickness.range();
 
   if (thk_range.max > m_grid->Lz()) {
-    throw RuntimeError::formatted("Max. ice thickness (%3.3f m)\n"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
                                   thk_range.max, m_grid->Lz());
   }

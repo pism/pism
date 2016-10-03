@@ -67,7 +67,7 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
   if (nlevels > 1) {
     gsl_interp_accel *accel = gsl_interp_accel_alloc();
     if (accel == NULL) {
-      throw RuntimeError("Failed to allocate a GSL interpolation accelerator");
+      throw RuntimeError(PISM_ERROR_LOCATION, "Failed to allocate a GSL interpolation accelerator");
     }
     for (unsigned int k = 0; k < nlevels; ++k) {
       kbelow[k] = gsl_interp_accel_find(accel, &zlevels_in[0], zlevels_in.size(), zlevels_out[k]);
@@ -171,7 +171,7 @@ static void compute_start_and_count(const PIO& nc,
 
   assert(ndims > 0);
   if (ndims == 0) {
-    throw RuntimeError::formatted("Cannot compute start and count: variable %s is a scalar.",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Cannot compute start and count: variable %s is a scalar.",
                                   short_name.c_str());
   }
 
@@ -635,7 +635,7 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
              variable_exists, name_found, found_by_standard_name);
 
   if (not variable_exists) {
-    throw RuntimeError::formatted("Can't find '%s' (%s) in '%s'.",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' (%s) in '%s'.",
                                   var.get_name().c_str(),
                                   var.get_string("standard_name").c_str(), nc.inq_filename().c_str());
   }
@@ -675,7 +675,7 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
     if (axes.size() != matching_dim_count) {
 
       // Print the error message and stop:
-      throw RuntimeError::formatted("found the %dD variable %s (%s) in '%s' while trying to read\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "found the %dD variable %s (%s) in '%s' while trying to read\n"
                                     "'%s' ('%s'), which is %d-dimensional.",
                                     input_ndims, name_found.c_str(),
                                     join(input_dims, ",").c_str(),
@@ -731,7 +731,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
              exists, name_found, found_by_standard_name);
 
   if (not exists) {
-    throw RuntimeError::formatted("Can't find '%s' in '%s'.",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.",
                                   var.get_name().c_str(),
                                   nc.inq_filename().c_str());
   }
@@ -875,7 +875,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
   } else {                // couldn't find the variable
     if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
       // if it's critical, print an error message and stop
-      throw RuntimeError::formatted("Can't find '%s' in the regridding file '%s'.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in the regridding file '%s'.",
                                     var.get_name().c_str(), nc.inq_filename().c_str());
     }
 
@@ -946,17 +946,17 @@ void read_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
     nc.inq_var(name, standard_name, variable_exists, name_found, found_by_standard_name);
 
     if (not variable_exists) {
-      throw RuntimeError("variable " + name + " is missing");
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " is missing");
     }
 
     std::vector<std::string> dims = nc.inq_vardims(name_found);
     if (dims.size() != 1) {
-      throw RuntimeError("a time-series variable has to be one-dimensional");
+      throw RuntimeError(PISM_ERROR_LOCATION, "a time-series variable has to be one-dimensional");
     }
 
     unsigned int length = nc.inq_dimlen(dimension_name);
     if (length <= 0) {
-      throw RuntimeError("dimension " + dimension_name + " has length zero");
+      throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
 
     data.resize(length);          // memory allocation happens here
@@ -1084,13 +1084,13 @@ void read_time_bounds(const PIO &nc,
 
     // Find the variable:
     if (not nc.inq_var(name)) {
-      throw RuntimeError("variable " + name + " is missing");
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " is missing");
     }
 
     std::vector<std::string> dims = nc.inq_vardims(name);
 
     if (dims.size() != 2) {
-      throw RuntimeError("variable " + name + " has to has two dimensions");
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " has to has two dimensions");
     }
 
     std::string
@@ -1100,13 +1100,13 @@ void read_time_bounds(const PIO &nc,
     // Check that we have 2 vertices (interval end-points) per time record.
     unsigned int length = nc.inq_dimlen(bounds_name);
     if (length != 2) {
-      throw RuntimeError("time-bounds variable " + name + " has to have exactly 2 bounds per time record");
+      throw RuntimeError(PISM_ERROR_LOCATION, "time-bounds variable " + name + " has to have exactly 2 bounds per time record");
     }
 
     // Get the number of time records.
     length = nc.inq_dimlen(dimension_name);
     if (length <= 0) {
-      throw RuntimeError("dimension " + dimension_name + " has length zero");
+      throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
 
     data.resize(2*length);                // memory allocation happens here
@@ -1123,7 +1123,7 @@ void read_time_bounds(const PIO &nc,
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
     // may not have metadata set.)
     if (not nc.inq_var(dimension_name)) {
-      throw RuntimeError("time coordinate variable " + dimension_name + " is missing");
+      throw RuntimeError(PISM_ERROR_LOCATION, "time coordinate variable " + dimension_name + " is missing");
     }
 
     bool input_has_units = false;
@@ -1221,7 +1221,7 @@ void read_attributes(const PIO &nc, const std::string &variable_name, VariableMe
     bool variable_exists = nc.inq_var(variable_name);
 
     if (not variable_exists) {
-      throw RuntimeError::formatted("variable \"%s\" is missing", variable_name.c_str());
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable \"%s\" is missing", variable_name.c_str());
     }
 
     variable.clear_all_strings();

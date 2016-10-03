@@ -208,7 +208,7 @@ void Routing::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
       const int i = p.i(), j = p.j();
 
       if (waterthk(i, j) < 0.0) {
-        throw RuntimeError::formatted("hydrology::Routing: disallowed negative water layer thickness\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "hydrology::Routing: disallowed negative water layer thickness\n"
                                       "waterthk(i, j) = %.6f m at (i, j)=(%d, %d)",
                                       waterthk(i, j), i, j);
       }
@@ -406,7 +406,7 @@ void Routing::conductivity_staggered(IceModelVec2Stag &result,
     rg    = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
 
   if (alpha < 1.0) {
-    throw RuntimeError::formatted("alpha = %f < 1 which is not allowed", alpha);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "alpha = %f < 1 which is not allowed", alpha);
   }
 
   IceModelVec::AccessList list(result);
@@ -490,7 +490,7 @@ void Routing::wall_melt(IceModelVec2S &result) {
 
   // FIXME:  could be scaled with overall factor hydrology_coefficient_wall_melt ?
   if (alpha < 1.0) {
-    throw RuntimeError::formatted("alpha = %f < 1 which is not allowed", alpha);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "alpha = %f < 1 which is not allowed", alpha);
   }
 
   subglacial_water_pressure(m_R);  // yes, it updates ghosts
@@ -737,7 +737,7 @@ void Routing::update_impl(double icet, double icedt) {
   m_dt = icedt;
 
   if (m_config->get_double("hydrology.tillwat_max") < 0.0) {
-    throw RuntimeError("hydrology::Routing: hydrology.tillwat_max is negative.\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "hydrology::Routing: hydrology.tillwat_max is negative.\n"
                        "This is not allowed.");
   }
 

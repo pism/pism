@@ -62,7 +62,7 @@ void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, cons
     // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
     // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
     if (z > 0.00001) {
-      throw RuntimeError("excessToBasalMeltLayer() called with z not at base and negative Texcess");
+      throw RuntimeError(PISM_ERROR_LOCATION, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
     }
     if (*bwat > 0.0) {
       const double thicknessToFreezeOn = - massmelted / (rho * darea);
@@ -283,7 +283,7 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
           }
           Tnew[0] = Tpmp + Texcess;
           if (Tnew[0] > (Tpmp + 0.00001)) {
-            throw RuntimeError("updated temperature came out above Tpmp");
+            throw RuntimeError(PISM_ERROR_LOCATION, "updated temperature came out above Tpmp");
           }
         }
         if (Tnew[0] < T_minimum) {
@@ -327,7 +327,7 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
 
   stats.low_temperature_counter = GlobalSum(m_grid->com, stats.low_temperature_counter);
   if (stats.low_temperature_counter > maxLowTempCount) {
-    throw RuntimeError::formatted("too many low temps: %d", stats.low_temperature_counter);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "too many low temps: %d", stats.low_temperature_counter);
   }
 }
 

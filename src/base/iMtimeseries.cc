@@ -58,7 +58,7 @@ void IceModel::init_timeseries() {
   }
 
   if (ts_file.is_set() ^ times.is_set()) {
-    throw RuntimeError("you need to specity both -ts_file and -ts_times to save diagnostic time-series.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "you need to specity both -ts_file and -ts_times to save diagnostic time-series.");
   }
 
   // If neither -ts_file nor -ts_times is set, we're done.
@@ -77,7 +77,7 @@ void IceModel::init_timeseries() {
   }
 
   if (times->empty()) {
-    throw RuntimeError("no argument for -ts_times option.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "no argument for -ts_times option.");
   }
 
   m_log->message(2, "saving scalar time-series to '%s'; ",
@@ -221,7 +221,7 @@ void IceModel::init_extras() {
   bool append = options::Bool("-extra_append", "append spatial diagnostics");
 
   if (extra_file.is_set() ^ times.is_set()) {
-    throw RuntimeError("you need to specify both -extra_file and -extra_times to save spatial time-series.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "you need to specify both -extra_file and -extra_times to save spatial time-series.");
   }
 
   if (!extra_file.is_set() && !times.is_set()) {
@@ -237,11 +237,11 @@ void IceModel::init_extras() {
   }
 
   if (m_extra_times.size() == 0) {
-    throw RuntimeError("no argument for -extra_times option.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "no argument for -extra_times option.");
   }
 
   if (append and split) {
-    throw RuntimeError("both -extra_split and -extra_append are set.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "both -extra_split and -extra_append are set.");
   }
 
   if (append) {

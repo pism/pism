@@ -40,7 +40,7 @@ namespace pism {
 
 static void check_input(const IceModelVec *ptr, const char *name) {
   if (ptr == NULL) {
-    throw RuntimeError::formatted("energy balance model input %s was not provided", name);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "energy balance model input %s was not provided", name);
   }
 }
 

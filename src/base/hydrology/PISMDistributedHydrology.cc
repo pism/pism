@@ -210,7 +210,7 @@ void Distributed::check_P_bounds(bool enforce_upper) {
       const int i = p.i(), j = p.j();
 
       if (m_P(i,j) < 0.0) {
-        throw RuntimeError::formatted("disallowed negative subglacial water pressure\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "disallowed negative subglacial water pressure\n"
                                       "P = %.6f Pa at (i,j)=(%d,%d)",
                                       m_P(i, j), i, j);
       }
@@ -218,7 +218,7 @@ void Distributed::check_P_bounds(bool enforce_upper) {
       if (enforce_upper) {
         m_P(i,j) = std::min(m_P(i,j), m_Pover(i,j));
       } else if (m_P(i,j) > m_Pover(i,j) + 0.001) {
-        throw RuntimeError::formatted("subglacial water pressure P = %.16f Pa exceeds\n"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "subglacial water pressure P = %.16f Pa exceeds\n"
                                       "overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)",
                                       m_P(i, j), m_Pover(i, j), i, j);
       }

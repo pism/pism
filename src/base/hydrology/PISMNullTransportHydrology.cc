@@ -36,7 +36,7 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
   m_tillwat_decay_rate = m_config->get_double("hydrology.tillwat_decay_rate");
 
   if (m_tillwat_max < 0.0) {
-    throw RuntimeError("hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
+    throw RuntimeError(PISM_ERROR_LOCATION, "hydrology::NullTransport: hydrology_tillwat_max is negative.\n"
                        "This is not allowed.");
   }
 

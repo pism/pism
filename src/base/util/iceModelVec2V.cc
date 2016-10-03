@@ -37,7 +37,7 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
 IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
   IceModelVec2V::Ptr result = dynamic_pointer_cast<IceModelVec2V,IceModelVec>(input);
   if (not (bool)result) {
-    throw RuntimeError("dynamic cast failure");
+    throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
   }
   return result;
 }

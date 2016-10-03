@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,8 @@
 #include "IO_Flags.hh"
 
 namespace pism {
+
+class ErrorLocation;
 
 //! Input and output code (NetCDF wrappers, etc)
 namespace io {
@@ -253,8 +255,9 @@ protected:
 
   std::string get_filename_impl() const;
 
+protected:
   // internal:
-  virtual void check(int return_code) const;
+  virtual void check(const ErrorLocation &where, int return_code) const;
 
 protected:                      // data members
 
