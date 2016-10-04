@@ -1710,9 +1710,9 @@ IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m)
 
 void IceModel_max_hor_vel::update(double a, double b) {
 
-  double u_max = model->m_max_u_speed, v_max = model->m_max_v_speed;
+  CFLData cfl = model->stress_balance()->max_timestep_cfl_3d();
 
-  m_ts->append(std::max(u_max, v_max), a, b);
+  m_ts->append(std::max(cfl.u_max, cfl.v_max), a, b);
 }
 
 IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m)

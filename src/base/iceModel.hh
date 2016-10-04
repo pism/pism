@@ -144,9 +144,6 @@ public:
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
-  // The following classes implement various diagnostic computations.
-  // scalar:
-  friend class IceModel_max_hor_vel;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid::Ptr g, Context::Ptr context);
