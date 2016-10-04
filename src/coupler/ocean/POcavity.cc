@@ -289,6 +289,7 @@ void Cavity::add_vars_to_output_impl(const std::string &keyword, std::set<std::s
   if (keyword != "none" && keyword != "small") {
     result.insert(m_shelfbtemp.get_name());
     result.insert(m_shelfbmassflux.get_name());
+    result.insert(basins.get_name());
   }
 }
 
@@ -305,6 +306,11 @@ void Cavity::define_variables_impl(const std::set<std::string> &vars,
   if (set_contains(vars, m_shelfbmassflux)) {
     m_shelfbmassflux.define(nc, nctype);
   }
+
+  if (set_contains(vars, basins)) {
+    basins.define(nc, nctype);
+  }
+
 }
 
 
