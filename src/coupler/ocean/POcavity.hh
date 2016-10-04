@@ -82,7 +82,22 @@ private:
 
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux,
-                  basins;
+                  basins,
+                  ICERISESmask,
+                  BOXMODELmask,
+                  OCEANMEANmask, //FIXME delete when development finished
+                  DistGL,
+                  DistIF,
+                  Soc,
+                  Soc_base,
+                  Toc,
+                  Toc_base,
+                  Toc_inCelsius,
+                  T_star,
+                  Toc_anomaly,
+                  overturning,
+                  heatflux,
+                  basalmeltrate_shelf;
 
   const IceModelVec2CellType m_mask;
 
@@ -137,22 +152,6 @@ private:
                       mean_overturning_GLbox_vector; // execpt for the overturning...
 
   std::vector< std::vector<double> >  counter_boxes;
-
-  IceModelVec2S ICERISESmask,
-                BOXMODELmask,
-                OCEANMEANmask, //FIXME delete when development finished
-                DistGL,
-                DistIF,
-                Soc,
-                Soc_base,
-                Toc,
-                Toc_base,
-                Toc_inCelsius,
-                T_star,
-                Toc_anomaly,
-                overturning,
-                heatflux,
-                basalmeltrate_shelf;
 
   double        gamma_T, value_C,
                 T_dummy, S_dummy,

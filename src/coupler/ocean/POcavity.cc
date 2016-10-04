@@ -286,10 +286,11 @@ void Cavity::init_impl() {
 void Cavity::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
   PGivenClimate<OceanModifier,OceanModel>::add_vars_to_output_impl(keyword, result);
 
+  // add variable here and in define_variables_impl
+  // if you want it to appear in snapshots
   if (keyword != "none" && keyword != "small") {
     result.insert(m_shelfbtemp.get_name());
     result.insert(m_shelfbmassflux.get_name());
-    result.insert(basins.get_name());
   }
 }
 
@@ -306,12 +307,54 @@ void Cavity::define_variables_impl(const std::set<std::string> &vars,
   if (set_contains(vars, m_shelfbmassflux)) {
     m_shelfbmassflux.define(nc, nctype);
   }
+}
 
-  if (set_contains(vars, basins)) {
-    basins.define(nc, nctype);
+
+void Cavity::shelf_base_temperature_impl(IceModelVec2S &result) const {
+  result.copy_from(m_shelfbtemp);
+}
+
+void Cavity::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
+  result.copy_from(m_shelfbmassflux);
+}
+
+void Cavity::sea_level_elevation_impl(double &result) const {
+  result = m_sea_level;
+}
+
+void Cavity::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
+  result.set(0.0);
+}
+
+
+void Cavity::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
+
+  PGivenClimate<OceanModifier,OceanModel>::write_variables_impl(vars, nc);
+
+  if (set_contains(vars, m_shelfbtemp)) { m_shelfbtemp.write(nc); }
+  if (set_contains(vars, m_shelfbmassflux)) { m_shelfbmassflux.write(nc); }
+  if (set_contains(vars, basins)) { basins.write(nc); }
+  if (set_contains(vars, BOXMODELmask)) { BOXMODELmask.write(nc); }
+  if (set_contains(vars, OCEANMEANmask)) { OCEANMEANmask.write(nc); }
+  if (set_contains(vars, DistGL)) { DistGL.write(nc);}
+  if (set_contains(vars, DistIF)) { DistIF.write(nc); }
+  if (set_contains(vars, Soc)) { Soc.write(nc);  }
+  if (set_contains(vars, Soc_base)) { Soc_base.write(nc);  }
+  if (set_contains(vars, Toc)) { Toc.write(nc);  }
+  if (set_contains(vars, Toc_base)) { Toc_base.write(nc);   }
+  if (set_contains(vars, Toc_inCelsius)) { Toc_inCelsius.write(nc);   }
+  if (set_contains(vars, T_star)) { T_star.write(nc);   }
+  if (set_contains(vars, Toc_anomaly)) { Toc_anomaly.write(nc);  }
+  if (set_contains(vars, overturning)) { overturning.write(nc);  }
+  if (set_contains(vars, heatflux)) { heatflux.write(nc);   }
+  if (set_contains(vars, basalmeltrate_shelf)) {  basalmeltrate_shelf.write(nc);  }
+
+  if (exicerises_set) {
+    if (set_contains(vars, ICERISESmask)) { ICERISESmask.write(nc); }
   }
 
 }
+
 
 
 void Cavity::initBasinsOptions(const Constants &cc) {
@@ -1475,71 +1518,6 @@ void Cavity::basalMeltRateForOtherShelves(const Constants &cc) {
     }
   }
 
-}
-
-void Cavity::shelf_base_temperature_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelfbtemp);
-}
-
-void Cavity::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-  result.copy_from(m_shelfbmassflux);
-}
-
-void Cavity::sea_level_elevation_impl(double &result) const {
-  result = m_sea_level;
-}
-
-void Cavity::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
-  result.set(0.0);
-}
-
-
-void Cavity::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
-
-  PGivenClimate<OceanModifier,OceanModel>::write_variables_impl(vars, nc);
-
-  if (set_contains(vars, m_shelfbtemp)) {
-    m_shelfbtemp.write(nc);
-  }
-
-  if (set_contains(vars, m_shelfbmassflux)) {
-    m_shelfbmassflux.write(nc);
-  }
-
-
-  if (set_contains(vars, BOXMODELmask)) {
-    BOXMODELmask.write(nc);
-  }
-
-
-  if (set_contains(vars, OCEANMEANmask)) {
-    OCEANMEANmask.write(nc);
-  }
-
-  if (exicerises_set) {
-    if (set_contains(vars, ICERISESmask)) {
-      ICERISESmask.write(nc);
-    }
-  }
-
-  if (set_contains(vars, DistGL)) {
-    DistGL.write(nc);
-  }
-
-  if (set_contains(vars, DistIF)) {
-    DistIF.write(nc);
-  }
-
-  if (set_contains(vars, Soc)) {                  Soc.write(nc);  }
-  if (set_contains(vars, Soc_base)) {             Soc_base.write(nc);  }
-  if (set_contains(vars, Toc)) {                  Toc.write(nc);  }
-  if (set_contains(vars, Toc_base)) {             Toc_base.write(nc);   }
-  if (set_contains(vars, Toc_inCelsius)) {        Toc_inCelsius.write(nc);   }
-  if (set_contains(vars, T_star)) {               T_star.write(nc);   }
-  if (set_contains(vars, Toc_anomaly)) {          Toc_anomaly.write(nc);  }
-  if (set_contains(vars, overturning)) {          overturning.write(nc);  }
-  if (set_contains(vars, heatflux)) {             heatflux.write(nc);   }
-  if (set_contains(vars, basalmeltrate_shelf)) {  basalmeltrate_shelf.write(nc);  }
 }
 
 } // end of namespace ocean
