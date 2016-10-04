@@ -238,7 +238,8 @@ void Cavity::init_impl() {
     options::String input_file("-ocean_obm_deltaT",
                          "Specifies the ocean temperature offsets file to use with -ocean_obm_deltaT");
     if (not input_file.is_set()) {
-      throw RuntimeError("Potsdam Cavity model requires an input file through the -ocean_obm_deltaT\n"
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "Potsdam Cavity model requires an input file through the -ocean_obm_deltaT\n"
                          "option if -ocean_obm_deltaT is set.");
     }
 
@@ -1007,7 +1008,8 @@ void Cavity::oceanTemperature(const Constants &cc) {
 
       //! salinity and temperature for grounding line box
       if ( Soc_base(i,j) == 0.0 || Toc_base_vec[shelf_id] == 0.0 ) {
-        throw RuntimeError::formatted("PISM_ERROR: Missing Soc_base and Toc_base for"
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "PISM_ERROR: Missing Soc_base and Toc_base for"
                                       "%d, %d, basin %d \n   Aborting... \n", i, j, shelf_id);
       }
 
@@ -1293,7 +1295,8 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
           k2 = (mean_overturning_in_GLbox + area_iBox*gamma_T_star);
           // in m^3/s
           if (k2==0){
-            throw RuntimeError::formatted("PISM_ERROR: Division by zero! k2=%f at %d, %d\n   "
+            throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                          "PISM_ERROR: Division by zero! k2=%f at %d, %d\n   "
                                           "Aborting... \n", k2, i, j);
           }
           k3 = (k1/(cc.nu*cc.lambda)*cc.a - k1*k1/(cc.nu*cc.lambda*k2)*cc.a);
@@ -1460,7 +1463,8 @@ void Cavity::basalMeltRateForOtherShelves(const Constants &cc) {
       Toc(i,j) = 273.15 + Toc_inCelsius(i,j) + Toc_anomaly(i,j); // in K
     } else { // This must not happen
 
-      throw RuntimeError::formatted("PISM_ERROR: [rank %d] at %d, %d  -- basins(i,j)=%d causes problems.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "PISM_ERROR: [rank %d] at %d, %d  -- basins(i,j)=%d causes problems.\n"
                                     "Aborting... \n",m_grid->rank(), i, j, shelf_id);
     }
   }
