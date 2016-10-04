@@ -121,17 +121,6 @@ public:
   const IceModelVec3 *w3;
 };
 
-class AgeModelInputs {
-public:
-  AgeModelInputs();
-  void check() const;
-
-  const IceModelVec2S *ice_thickness;
-  const IceModelVec3 *u3;
-  const IceModelVec3 *v3;
-  const IceModelVec3 *w3;
-};
-
 class EnergyModelStats {
 public:
   EnergyModelStats();
@@ -141,6 +130,8 @@ public:
   unsigned int low_temperature_counter;
   double liquified_ice_volume;
 };
+
+class AgeModelInputs;
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {

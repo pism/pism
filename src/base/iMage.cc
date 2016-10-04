@@ -22,28 +22,9 @@
 #include "base/util/error_handling.hh"
 #include "base/util/iceModelVec.hh"
 #include "base/age/AgeColumnSystem.hh"
+#include "base/age/AgeModel.hh"
 
 namespace pism {
-
-AgeModelInputs::AgeModelInputs() {
-  ice_thickness = NULL;
-  u3            = NULL;
-  v3            = NULL;
-  w3            = NULL;
-}
-
-static void check_input(const IceModelVec *ptr, const char *name) {
-  if (ptr == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice age model input %s was not provided", name);
-  }
-}
-
-void AgeModelInputs::check() const {
-  check_input(ice_thickness, "ice_thickness");
-  check_input(u3, "u3");
-  check_input(v3, "v3");
-  check_input(w3, "w3");
-}
 
 //! Take a semi-implicit time-step for the age equation.
 /*!

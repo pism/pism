@@ -50,6 +50,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/age/AgeModel.hh"
 
 namespace pism {
 

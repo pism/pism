@@ -21,6 +21,7 @@
 #include "base/util/error_handling.hh"
 #include "base/age/AgeColumnSystem.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/io/PIO.hh"
 
 namespace pism {
 
@@ -180,6 +181,33 @@ void AgeModel::update_impl(double t, double dt) {
   inputs.w3            = &m_stress_balance->velocity_w();
 
   this->update(t, dt, inputs);
+}
+
+void AgeModel::init_impl(const InputOptions &opts) {
+
+  m_log->message(2, "* Initializing the age model...\n");
+
+  PIO input_file(m_grid->com, "guess_mode");
+
+  if (opts.type == INIT_RESTART) {
+    input_file.open(opts.filename, PISM_READONLY);
+
+    if (input_file.inq_var("age")) {
+      m_ice_age.read(input_file, opts.record);
+    } else {
+      m_log->message(2,
+                     "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
+                     "  Setting it to zero...\n",
+                     input_file.inq_filename().c_str());
+      m_ice_age.set(0.0);       // FIXME: should not be 0.0
+    }
+  } else if (opts.type == INIT_BOOTSTRAP) {
+    // FIXME
+  } else {
+    // FIXME
+  }
+
+  regrid("Age Model", m_ice_age, REGRID_WITHOUT_REGRID_VARS);
 }
 
 } // end of namespace pism

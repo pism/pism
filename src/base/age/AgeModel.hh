@@ -47,6 +47,7 @@ public:
   void init(const InputOptions &opts);
 
 protected:
+  void init_impl(const InputOptions &opts);
   MaxTimestep max_timestep_impl(double t);
   void update_impl(double t, double dt);
 
