@@ -170,10 +170,22 @@ MaxTimestep AgeModel::max_timestep_impl(double t) {
   // fix a compiler warning
   (void) t;
 
+  if (m_stress_balance == NULL) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "AgeModel: no stress balance provided."
+                                  " Cannot compute max. time step.");
+  }
+
   return m_stress_balance->max_timestep_cfl_3d().dt_max;
 }
 
 void AgeModel::update_impl(double t, double dt) {
+
+  if (m_stress_balance == NULL) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "AgeModel: no stress balance provided.");
+  }
+
   AgeModelInputs inputs;
   inputs.ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   inputs.u3            = &m_stress_balance->velocity_u();
@@ -195,19 +207,37 @@ void AgeModel::init_impl(const InputOptions &opts) {
     if (input_file.inq_var("age")) {
       m_ice_age.read(input_file, opts.record);
     } else {
+      double initial_age_years = m_config->get_double("age.initial_value", "years");
       m_log->message(2,
                      "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
-                     "  Setting it to zero...\n",
-                     input_file.inq_filename().c_str());
-      m_ice_age.set(0.0);       // FIXME: should not be 0.0
+                     "  Setting it to %f years...\n",
+                     input_file.inq_filename().c_str(), initial_age_years);
+      m_ice_age.set(m_config->get_double("age.initial_value", "years"));
     }
-  } else if (opts.type == INIT_BOOTSTRAP) {
-    // FIXME
   } else {
-    // FIXME
+    m_ice_age.set(m_config->get_double("age.initial_value"));
   }
 
   regrid("Age Model", m_ice_age, REGRID_WITHOUT_REGRID_VARS);
 }
+
+void AgeModel::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+  (void) keyword;
+  result.insert(m_ice_age.metadata().get_name());
+}
+
+void AgeModel::define_variables_impl(const std::set<std::string> &vars,
+                                     const PIO &nc, IO_Type nctype) {
+  if (set_contains(vars, m_ice_age.metadata())) {
+    m_ice_age.define(nc, nctype);
+  }
+}
+
+void AgeModel::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
+  if (set_contains(vars, m_ice_age.metadata())) {
+    m_ice_age.write(nc);
+  }
+}
+
 
 } // end of namespace pism
