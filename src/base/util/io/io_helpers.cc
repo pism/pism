@@ -243,7 +243,7 @@ void define_time(const PIO &nc, const std::string &name, const std::string &cale
     // time
     VariableMetadata time(name, unit_system);
     time.set_string("long_name", "time");
-    time.set_string("time.calendar", calendar);
+    time.set_string("calendar", calendar);
     time.set_string("units", units);
     time.set_string("axis", "T");
 
