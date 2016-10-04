@@ -5,9 +5,11 @@ netcdf pism_config {
     // boolean flags:
 
     pism_config:time_stepping.hit_extra_times_type = "boolean";
+    pism_config:time_stepping.hit_extra_times_option = "extra_force_output_times";
     pism_config:time_stepping.hit_extra_times = "yes";
     pism_config:time_stepping.hit_extra_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times.";
 
+    pism_config:time_stepping.hit_save_times_option = "save_force_output_times";
     pism_config:time_stepping.hit_save_times_type = "boolean";
     pism_config:time_stepping.hit_save_times = "no";
     pism_config:time_stepping.hit_save_times_doc = "Modify the time-stepping mechanism to hit times requested using -save_times.";
