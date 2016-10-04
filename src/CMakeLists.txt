@@ -112,6 +112,7 @@ add_custom_target (touch_pism_revision
 add_library (pism
   base/pism_signal.c
   base/columnSystem.cc
+  base/age/AgeModel.cc
   base/energy/BedThermalUnit.cc
   base/energy/BTU_Full.cc
   base/energy/BTU_Minimal.cc
