@@ -200,7 +200,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   // initialize maximum |u|,|v|,|w| in ice
   m_max_u_speed = 0;
   m_max_v_speed = 0;
-  m_max_w_speed = 0;
 
   m_output_global_attributes.set_string("Conventions", "CF-1.5");
   m_output_global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
@@ -237,7 +236,6 @@ void IceModel::reset_counters() {
 
   m_max_u_speed = 0.0;
   m_max_v_speed = 0.0;
-  m_max_w_speed = 0.0;
 
   m_dt              = 0.0;
   m_skip_countdown   = 0;

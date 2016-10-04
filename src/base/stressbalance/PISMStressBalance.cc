@@ -105,12 +105,44 @@ void StressBalance::update(bool fast, double sea_level,
       profiling.begin("SB vert. vel.");
       this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w);
       profiling.end("SB vert. vel.");
+
+      m_cfl_3d = compute_cfl_3d();
     }
+
+    m_cfl_2d = compute_cfl_2d();
   }
   catch (RuntimeError &e) {
     e.add_context("updating the stress balance");
     throw;
   }
+}
+
+CFLData StressBalance::compute_cfl_2d() {
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
+
+  return ::pism::max_timestep_cfl_2d(ice_thickness,
+                                     cell_type,
+                                     m_shallow_stress_balance->velocity());
+}
+
+CFLData StressBalance::compute_cfl_3d() {
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
+
+  return ::pism::max_timestep_cfl_3d(ice_thickness,
+                                     cell_type,
+                                     m_modifier->velocity_u(),
+                                     m_modifier->velocity_v(),
+                                     m_w);
+}
+
+CFLData StressBalance::max_timestep_cfl_2d() const {
+  return m_cfl_2d;
+}
+
+CFLData StressBalance::max_timestep_cfl_3d() const {
+  return m_cfl_3d;
 }
 
 const IceModelVec2V& StressBalance::advective_velocity() const {

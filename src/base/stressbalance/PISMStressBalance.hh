@@ -21,6 +21,7 @@
 
 #include "base/util/PISMComponent.hh"     // derives from Component
 #include "base/util/iceModelVec.hh"
+#include "base/timestepping.hh"
 
 namespace pism {
 
@@ -75,6 +76,9 @@ public:
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   double max_diffusivity() const;
 
+  CFLData max_timestep_cfl_2d() const;
+  CFLData max_timestep_cfl_3d() const;
+
   // for the energy/age time step:
 
   //! \brief Get components of the the 3D velocity field.
@@ -116,6 +120,11 @@ protected:
                                          const IceModelVec2S *bmr,
                                          IceModelVec3 &result);
   virtual void compute_volumetric_strain_heating();
+
+  CFLData compute_cfl_2d();
+  CFLData compute_cfl_3d();
+
+  CFLData m_cfl_2d, m_cfl_3d;
 
   IceModelVec3 m_w, m_strain_heating;
   const IceModelVec2S *m_basal_melt_rate;
