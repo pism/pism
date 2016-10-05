@@ -49,6 +49,7 @@
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/util/projection.hh"
+#include "base/age/AgeModel.hh"
 
 namespace pism {
 
@@ -172,6 +173,10 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
       m_beddef->define_variables(vars, nc, nctype);
     }
 
+    if (m_age_model != NULL) {
+      m_age_model->define_variables(vars, nc, nctype);
+    }
+
     if (m_btu != NULL) {
       m_btu->define_variables(vars, nc, nctype);
     }
@@ -242,6 +247,10 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   // Write bed-deformation-related variables:
   if (m_beddef != NULL) {
     m_beddef->write_variables(vars, nc);
+  }
+
+  if (m_age_model != NULL) {
+    m_age_model->write_variables(vars, nc);
   }
 
   // Write BedThermalUnit variables:
@@ -354,7 +363,7 @@ void IceModel::write_model_state(const PIO &nc) {
   the NetCDF file specified by `-regrid_file`.
 
   The default, if `-regrid_vars` is not given, is to regrid the 3
-  dimensional quantities `m_ice_age`, `Tb3` and either `m_ice_temperature` or `m_ice_enthalpy`. This is
+  dimensional quantities `Tb3` and either `m_ice_temperature` or `m_ice_enthalpy`. This is
   consistent with one standard purpose of regridding, which is to stick with
   current geometry through the downscaling procedure. Most of the time the user
   should carefully specify which variables to regrid.
@@ -391,12 +400,6 @@ void IceModel::regrid(int dimensions) {
 
   if (regrid_vars->empty()) {
     // defaults if user gives no regrid_vars list
-    regrid_vars->insert("litho_temp");
-
-    if (m_config->get_boolean("age.enabled")) {
-      regrid_vars->insert("age");
-    }
-
     if (m_config->get_boolean("energy.temperature_based")) {
       regrid_vars->insert("temp");
     } else {

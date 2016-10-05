@@ -122,7 +122,6 @@ add_library (pism
   base/timestepping.cc
   base/iMadaptive.cc
   base/age/AgeColumnSystem.cc
-  base/iMage.cc
   base/iMbootstrap.cc
   base/iMcalving.cc
   base/iMenergy.cc

@@ -44,6 +44,7 @@
 #include "base/calving/vonMisesCalving.hh"
 #include "base/calving/FrontalMelt.hh"
 #include "base/util/projection.hh"
+#include "base/age/AgeModel.hh"
 
 #if (PISM_USE_PROJ4==1)
 #include "base/util/Proj.hh"
@@ -192,6 +193,10 @@ void IceModel::list_diagnostics() {
     if (m_beddef != NULL) {
       m_beddef->add_vars_to_output("big", list);
       m_beddef->add_vars_to_output("big_2d", list);
+    }
+
+    if (m_age_model != NULL) {
+      m_age_model->add_vars_to_output("big", list);
     }
 
     if (m_btu != NULL) {

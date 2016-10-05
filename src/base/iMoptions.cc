@@ -37,6 +37,7 @@
 #include "earth/PISMBedDef.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/age/AgeModel.hh"
 
 namespace pism {
 
@@ -139,10 +140,9 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     }
   }
 
-  if (m_config->get_boolean("age.enabled")) {
-    result.insert("age");
-  } else {
-    result.erase("age");
+
+  if (m_age_model != NULL) {
+    m_age_model->add_vars_to_output(keyword, result);
   }
 
   if (m_ocean_kill_calving != NULL) {

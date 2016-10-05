@@ -205,21 +205,23 @@ void AgeModel::init(const InputOptions &opts) {
 
   PIO input_file(m_grid->com, "guess_mode");
 
+  double initial_age_years = m_config->get_double("age.initial_value", "years");
+
   if (opts.type == INIT_RESTART) {
     input_file.open(opts.filename, PISM_READONLY);
 
     if (input_file.inq_var("age")) {
       m_ice_age.read(input_file, opts.record);
     } else {
-      double initial_age_years = m_config->get_double("age.initial_value", "years");
       m_log->message(2,
                      "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
                      "  Setting it to %f years...\n",
-                     input_file.inq_filename().c_str(), initial_age_years);
-      m_ice_age.set(m_config->get_double("age.initial_value", "years"));
+                     opts.filename.c_str(), initial_age_years);
+      m_ice_age.set(m_config->get_double("age.initial_value", "seconds"));
     }
   } else {
-    m_ice_age.set(m_config->get_double("age.initial_value"));
+    m_log->message(2, " - setting initial age to %.4f years\n", initial_age_years);
+    m_ice_age.set(m_config->get_double("age.initial_value", "seconds"));
   }
 
   regrid("Age Model", m_ice_age, REGRID_WITHOUT_REGRID_VARS);
