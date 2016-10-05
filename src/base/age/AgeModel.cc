@@ -166,6 +166,10 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
   m_work.update_ghosts(m_ice_age);
 }
 
+const IceModelVec3 & AgeModel::age() const {
+  return m_ice_age;
+}
+
 MaxTimestep AgeModel::max_timestep_impl(double t) {
   // fix a compiler warning
   (void) t;
@@ -195,7 +199,7 @@ void AgeModel::update_impl(double t, double dt) {
   this->update(t, dt, inputs);
 }
 
-void AgeModel::init_impl(const InputOptions &opts) {
+void AgeModel::init(const InputOptions &opts) {
 
   m_log->message(2, "* Initializing the age model...\n");
 
