@@ -32,11 +32,7 @@ model = PISM.AgeModel(grid, None)
 input_options = PISM.process_input_options(ctx.com)
 model.init(input_options)
 
-inputs = PISM.AgeModelInputs()
-inputs.u3 = u
-inputs.v3 = v
-inputs.w3 = w
-inputs.ice_thickness = ice_thickness
+inputs = PISM.AgeModelInputs(ice_thickness, u, v, w)
 
 dt = PISM.convert(ctx.unit_system, 1, "years", "seconds")
 

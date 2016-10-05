@@ -25,6 +25,14 @@
 
 namespace pism {
 
+AgeModelInputs::AgeModelInputs(const IceModelVec2S *thickness,
+                               const IceModelVec3 *u,
+                               const IceModelVec3 *v,
+                               const IceModelVec3 *w)
+  : ice_thickness(thickness), u3(u), v3(v), w3(w) {
+  // empty
+}
+
 AgeModelInputs::AgeModelInputs() {
   ice_thickness = NULL;
   u3            = NULL;
