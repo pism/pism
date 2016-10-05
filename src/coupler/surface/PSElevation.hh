@@ -21,7 +21,6 @@
 
 #include "coupler/PISMSurface.hh"
 #include "coupler/PISMAtmosphere.hh"
-#include "base/util/VariableMetadata.hh"
 
 namespace pism {
 namespace surface {
@@ -37,14 +36,7 @@ protected:
   virtual void ice_surface_temperature_impl(IceModelVec2S &result);
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype);
 protected:
-  SpatialVariableMetadata m_climatic_mass_balance, m_ice_surface_temp;
   double m_T_min, m_T_max, m_z_T_min, m_z_T_max;
   double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;
 };

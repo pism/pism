@@ -32,16 +32,15 @@ public:
   virtual ~Cache();
 protected:
   virtual void init_impl();
+
   virtual void surface_layer_thickness_impl(IceModelVec2S &result);
   virtual void mass_held_in_surface_layer_impl(IceModelVec2S &result);
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
   virtual void ice_surface_temperature_impl(IceModelVec2S &result);
   virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result);
+
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype);
 protected:
   IceModelVec2S m_mass_flux;
   IceModelVec2S m_temperature;

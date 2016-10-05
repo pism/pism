@@ -111,12 +111,6 @@ void PIK::update_impl(double my_t, double my_dt)
   }
 }
 
-void PIK::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &/*dict*/,
-                                    std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/)
-{
-  // empty (does not have an atmosphere model)
-}
-
 void PIK::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.copy_from(m_climatic_mass_balance);
 }
@@ -127,16 +121,10 @@ void PIK::ice_surface_temperature_impl(IceModelVec2S &result) {
 
 void PIK::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("climatic_mass_balance");
-  result.insert("ice_surface_temp");
-  // does not call atmosphere->add_vars_to_output().
 }
 
 void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   SurfaceModel::define_variables_impl(vars, nc, nctype);
-
-  if (set_contains(vars, "ice_surface_temp")) {
-    m_ice_surface_temp.define(nc, nctype);
-  }
 
   if (set_contains(vars, "climatic_mass_balance")) {
     m_climatic_mass_balance.define(nc, nctype);
@@ -144,9 +132,6 @@ void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc
 }
 
 void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "ice_surface_temp")) {
-    m_ice_surface_temp.write(nc);
-  }
 
   if (set_contains(vars, "climatic_mass_balance")) {
     m_climatic_mass_balance.write(nc);

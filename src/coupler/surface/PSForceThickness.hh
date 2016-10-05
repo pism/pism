@@ -21,7 +21,6 @@
 
 #include "PSModifier.hh"
 #include "base/util/iceModelVec.hh"
-#include "base/util/VariableMetadata.hh"
 
 namespace pism {
 namespace surface {
@@ -35,7 +34,6 @@ public:
 protected:
   virtual void init_impl();
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
   virtual MaxTimestep max_timestep_impl(double my_t);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
@@ -46,7 +44,6 @@ private:
   double m_start_time;
   IceModelVec2S m_target_thickness;
   IceModelVec2S m_ftt_mask;
-  SpatialVariableMetadata m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
 };
 
 } // end of namespace surface

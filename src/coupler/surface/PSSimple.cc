@@ -33,24 +33,8 @@ namespace surface {
 
 ///// Simple PISM surface model.
 Simple::Simple(IceGrid::ConstPtr g)
-  : SurfaceModel(g),
-    m_climatic_mass_balance(m_sys, "climatic_mass_balance"),
-    m_ice_surface_temp(m_sys, "ice_surface_temp") {
-
-  m_climatic_mass_balance.set_string("pism_intent", "diagnostic");
-  m_climatic_mass_balance.set_string("long_name",
-                                   "surface mass balance (accumulation/ablation) rate");
-  m_climatic_mass_balance.set_string("standard_name",
-                                   "land_ice_surface_specific_mass_balance_flux");
-  m_climatic_mass_balance.set_string("units", "kg m-2 s-1");
-  m_climatic_mass_balance.set_string("glaciological_units", "kg m-2 year-1");
-
-  m_ice_surface_temp.set_string("pism_intent", "diagnostic");
-  m_ice_surface_temp.set_string("long_name",
-                              "ice temperature at the ice surface");
-  m_ice_surface_temp.set_string("units", "K");
+  : SurfaceModel(g) {
 }
-
 
 void Simple::init_impl() {
 
@@ -79,66 +63,12 @@ void Simple::update_impl(double my_t, double my_dt) {
   }
 }
 
-
 void Simple::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   m_atmosphere->mean_precipitation(result);
 }
 
 void Simple::ice_surface_temperature_impl(IceModelVec2S &result) {
   m_atmosphere->mean_annual_temp(result);
-}
-
-void Simple::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  SurfaceModel::add_vars_to_output_impl(keyword, result);
-
-  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
-    result.insert("ice_surface_temp");
-    result.insert("climatic_mass_balance");
-  }
-}
-
-void Simple::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_config->get_string("output.variable_order");
-
-  if (set_contains(vars, "ice_surface_temp")) {
-    io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);
-  }
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    io::define_spatial_variable(m_climatic_mass_balance, *m_grid, nc, nctype, order, true);
-  }
-
-  SurfaceModel::define_variables_impl(vars, nc, nctype);
-}
-
-void Simple::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
-  std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, "ice_surface_temp")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-    tmp.metadata() = m_ice_surface_temp;
-
-    ice_surface_temperature(tmp);
-
-    tmp.write(nc);
-
-    vars.erase("ice_surface_temp");
-  }
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-    tmp.metadata() = m_climatic_mass_balance;
-
-    ice_surface_mass_flux(tmp);
-    tmp.write_in_glaciological_units = true;
-    tmp.write(nc);
-
-    vars.erase("climatic_mass_balance");
-  }
-
-  SurfaceModel::write_variables_impl(vars, nc);
 }
 
 } // end of namespace surface

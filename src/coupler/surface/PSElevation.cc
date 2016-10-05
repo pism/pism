@@ -36,10 +36,7 @@ namespace surface {
 
 ///// Elevation-dependent temperature and surface mass balance.
 Elevation::Elevation(IceGrid::ConstPtr g)
-  : SurfaceModel(g),
-    m_climatic_mass_balance(m_sys, "climatic_mass_balance"),
-    m_ice_surface_temp(m_sys, "ice_surface_temp")
-{
+  : SurfaceModel(g) {
   // empty
 }
 
@@ -134,21 +131,6 @@ void Elevation::init_impl() {
              m_z_M_max,
              convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_ELA);
 
-  // SpatialVariableMetadatas storing temperature and surface mass balance metadata
-
-  m_climatic_mass_balance.set_string("pism_intent", "diagnostic");
-  m_climatic_mass_balance.set_string("long_name",
-                                   "surface mass balance (accumulation/ablation) rate");
-  m_climatic_mass_balance.set_string("standard_name",
-                                   "land_ice_surface_specific_mass_balance_flux");
-  m_climatic_mass_balance.set_string("units", "kg m-2 s-1");
-  m_climatic_mass_balance.set_string("glaciological_units", "kg m-2 year-1");
-
-  m_ice_surface_temp.set_string("pism_intent", "diagnostic");
-  m_ice_surface_temp.set_string("long_name",
-                              "ice temperature at the ice surface");
-  m_ice_surface_temp.set_string("units", "K");
-
   // parameterizing the ice surface temperature 'ice_surface_temp'
   m_log->message(2, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
   m_log->message(2,
@@ -193,17 +175,11 @@ void Elevation::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)
   delete input;
 }
 
-void Elevation::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &/*dict*/,
-                                  std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
-  // empty
-}
-
 void Elevation::update_impl(double my_t, double my_dt)
 {
   m_t = my_t;
   m_dt = my_dt;
 }
-
 
 void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
@@ -277,48 +253,6 @@ void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) {
     loop.failed();
   }
   loop.check();
-}
-
-void Elevation::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
-    result.insert("ice_surface_temp");
-    result.insert("climatic_mass_balance");
-  }
-}
-
-void Elevation::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  std::string order = m_config->get_string("output.variable_order");
-  SurfaceModel::define_variables_impl(vars, nc, nctype);
-
-  if (set_contains(vars, "ice_surface_temp")) {
-    io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);
-  }
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    io::define_spatial_variable(m_climatic_mass_balance, *m_grid, nc, nctype, order, true);
-  }
-}
-
-void Elevation::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "ice_surface_temp")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-    tmp.metadata() = m_ice_surface_temp;
-
-    ice_surface_temperature(tmp);
-
-    tmp.write(nc);
-  }
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-    tmp.metadata() = m_climatic_mass_balance;
-
-    ice_surface_mass_flux(tmp);
-    tmp.write_in_glaciological_units = true;
-    tmp.write(nc);
-  }
 }
 
 } // end of namespace surface

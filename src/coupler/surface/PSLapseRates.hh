@@ -36,14 +36,8 @@ protected:
 
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
   virtual void ice_surface_temperature_impl(IceModelVec2S &result);
-
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype);
 protected:
   double m_smb_lapse_rate;
-  SpatialVariableMetadata m_climatic_mass_balance, m_ice_surface_temp;
 };
 
 } // end of namespace surface

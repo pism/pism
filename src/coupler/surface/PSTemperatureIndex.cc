@@ -41,8 +41,7 @@ namespace surface {
 ///// PISM surface model implementing a PDD scheme.
 
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
-  : SurfaceModel(g),
-    m_ice_surface_temp(m_sys, "ice_surface_temp") {
+  : SurfaceModel(g) {
 
   m_mbscheme              = NULL;
   m_faustogreve           = NULL;
@@ -171,11 +170,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                          "snow cover depth (set to zero once a year)",
                          "m", "");
   m_snow_depth.set(0.0);
-
-  m_ice_surface_temp.set_string("pism_intent", "diagnostic");
-  m_ice_surface_temp.set_string("long_name",
-                              "ice temperature at the ice surface");
-  m_ice_surface_temp.set_string("units", "K");
 }
 
 TemperatureIndex::~TemperatureIndex() {
@@ -253,7 +247,6 @@ double TemperatureIndex::compute_next_balance_year_start(double time) {
   }
   return m_grid->ctx()->time()->increment_date(balance_year_start, 1);
 }
-
 
 void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
@@ -435,14 +428,12 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
-
 void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.copy_from(m_climatic_mass_balance);
 }
 
 
 void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) {
-
   m_atmosphere->mean_annual_temp(result);
 }
 
@@ -451,11 +442,6 @@ void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::
   SurfaceModel::add_vars_to_output_impl(keyword, result);
 
   result.insert("snow_depth");
-
-  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
-    result.insert("climatic_mass_balance");
-    result.insert("ice_surface_temp");
-  }
 
   if (keyword == "big" || keyword == "big_2d") {
     result.insert("air_temp_sd");
@@ -466,15 +452,6 @@ void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::
 }
 
 void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-
-  if (set_contains(vars, "ice_surface_temp")) {
-    std::string order = m_config->get_string("output.variable_order");
-    io::define_spatial_variable(m_ice_surface_temp, *m_grid, nc, nctype, order, true);
-  }
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    m_climatic_mass_balance.define(nc, nctype);
-  }
 
   if (set_contains(vars, "air_temp_sd")) {
     m_air_temp_sd.define(nc, nctype);
@@ -501,22 +478,6 @@ void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, 
 
 void TemperatureIndex::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, "ice_surface_temp")) {
-    IceModelVec2S tmp;
-    tmp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-    tmp.metadata() = m_ice_surface_temp;
-
-    ice_surface_temperature(tmp);
-
-    tmp.write(nc);
-    vars.erase("ice_surface_temp");
-  }
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    m_climatic_mass_balance.write(nc);
-    vars.erase("climatic_mass_balance");
-  }
 
   if (set_contains(vars, "air_temp_sd")) {
     m_air_temp_sd.average(m_t, m_dt);
