@@ -50,6 +50,28 @@ void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) {
 
 void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                        std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+  // Don't override diagnostics that are already set.
+
+  if (not dict["climatic_mass_balance"]) {
+    dict["climatic_mass_balance"] = Diagnostic::Ptr(new PS_climatic_mass_balance(this));
+  }
+
+  if (not dict["ice_surface_temp"]) {
+    dict["ice_surface_temp"] = Diagnostic::Ptr(new PS_ice_surface_temp(this));
+  }
+
+  if (not dict["ice_surface_liquid_water_fraction"]) {
+    dict["ice_surface_liquid_water_fraction"] = Diagnostic::Ptr(new PS_liquid_water_fraction(this));
+  }
+
+  if (not dict["surface_layer_mass"]) {
+    dict["surface_layer_mass"] = Diagnostic::Ptr(new PS_surface_layer_mass(this));
+  }
+
+  if (not dict["surface_layer_thickness"]) {
+    dict["surface_layer_thickness"] = Diagnostic::Ptr(new PS_surface_layer_thickness(this));
+  }
+
   if (m_atmosphere) {
     m_atmosphere->get_diagnostics(dict, ts_dict);
   }
@@ -143,6 +165,112 @@ void SurfaceModel::add_vars_to_output_impl(const std::string &keyword, std::set<
   if (m_atmosphere != NULL) {
     m_atmosphere->add_vars_to_output(keyword, result);
   }
+}
+
+PS_climatic_mass_balance::PS_climatic_mass_balance(SurfaceModel *m)
+  : Diag<SurfaceModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "climatic_mass_balance"));
+
+  set_attrs("surface mass balance (accumulation/ablation) rate",
+            "land_ice_surface_specific_mass_balance_flux",
+            "kg m-2 second-1", "kg m-2 year-1", 0);
+}
+
+IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  model->ice_surface_mass_flux(*result);
+
+  return result;
+}
+
+PS_ice_surface_temp::PS_ice_surface_temp(SurfaceModel *m)
+  : Diag<SurfaceModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "ice_surface_temp"));
+
+  set_attrs("ice temperature at the ice surface", "",
+            "Kelvin", "Kelvin", 0);
+}
+
+IceModelVec::Ptr PS_ice_surface_temp::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  model->ice_surface_temperature(*result);
+
+  return result;
+}
+
+PS_liquid_water_fraction::PS_liquid_water_fraction(SurfaceModel *m)
+  : Diag<SurfaceModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "ice_surface_liquid_water_fraction"));
+
+  set_attrs("ice liquid water fraction at the ice surface", "",
+            "1", "1", 0);
+}
+
+IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  model->ice_surface_liquid_water_fraction(*result);
+
+  return result;
+}
+
+PS_surface_layer_mass::PS_surface_layer_mass(SurfaceModel *m)
+  : Diag<SurfaceModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "surface_layer_mass"));
+
+  set_attrs("mass of the surface layer (snow and firn)", "",
+            "kg", "kg", 0);
+}
+
+IceModelVec::Ptr PS_surface_layer_mass::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "surface_layer_mass", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  model->mass_held_in_surface_layer(*result);
+
+  return result;
+}
+
+PS_surface_layer_thickness::PS_surface_layer_thickness(SurfaceModel *m)
+  : Diag<SurfaceModel>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "surface_layer_thickness"));
+
+  set_attrs("thickness of the surface layer (snow and firn)", "",
+            "meters", "meters", 0);
+}
+
+IceModelVec::Ptr PS_surface_layer_thickness::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  model->surface_layer_thickness(*result);
+
+  return result;
 }
 
 } // end of namespace surface
