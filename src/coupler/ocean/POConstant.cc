@@ -32,9 +32,7 @@
 namespace pism {
 namespace ocean {
 Constant::Constant(IceGrid::ConstPtr g)
-  : OceanModel(g),
-    m_shelfbmassflux(m_sys, "shelfbmassflux"),
-    m_shelfbtemp(m_sys, "shelfbtemp") {
+  : OceanModel(g) {
 
   {
     const double
@@ -65,17 +63,6 @@ Constant::Constant(IceGrid::ConstPtr g)
     // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
     m_meltrate = m_meltrate * ice_density;
   }
-
-  m_shelfbmassflux.set_string("pism_intent", "climate_state");
-  m_shelfbmassflux.set_string("long_name",
-                            "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  m_shelfbmassflux.set_string("units", "kg m-2 s-1");
-  m_shelfbmassflux.set_string("glaciological_units", "kg m-2 year-1");
-
-  m_shelfbtemp.set_string("pism_intent", "climate_state");
-  m_shelfbtemp.set_string("long_name",
-                        "absolute temperature at ice shelf base");
-  m_shelfbtemp.set_string("units", "Kelvin");
 }
 
 Constant::~Constant() {
@@ -131,47 +118,5 @@ void Constant::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   result.set(m_meltrate);
 }
 
-void Constant::add_vars_to_output_impl(const std::string&, std::set<std::string> &result) {
-  result.insert(m_shelfbtemp.get_name());
-  result.insert(m_shelfbmassflux.get_name());
-}
-
-void Constant::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                  IO_Type nctype) {
-  std::string order = m_config->get_string("output.variable_order");
-
-  if (set_contains(vars, m_shelfbtemp)) {
-    io::define_spatial_variable(m_shelfbtemp, *m_grid, nc, nctype, order, true);
-  }
-
-  if (set_contains(vars, m_shelfbmassflux)) {
-    io::define_spatial_variable(m_shelfbmassflux, *m_grid, nc, nctype, order, true);
-  }
-}
-
-void Constant::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  IceModelVec2S tmp;
-
-  if (set_contains(vars, m_shelfbtemp)) {
-    if (!tmp.was_created()) {
-      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
-    }
-
-    tmp.metadata() = m_shelfbtemp;
-    shelf_base_temperature(tmp);
-    tmp.write(nc);
-  }
-
-  if (set_contains(vars, m_shelfbmassflux)) {
-    if (!tmp.was_created()) {
-      tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
-    }
-
-    tmp.metadata() = m_shelfbmassflux;
-    tmp.write_in_glaciological_units = true;
-    shelf_base_mass_flux(tmp);
-    tmp.write(nc);
-  }
-}
 } // end of namespape ocean
 } // end of namespace pism

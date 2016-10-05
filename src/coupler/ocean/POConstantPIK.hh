@@ -20,7 +20,6 @@
 #define _POCONSTANTPIK_H_
 
 #include "coupler/PISMOcean.hh"
-#include "base/util/VariableMetadata.hh"
 
 namespace pism {
 namespace ocean {
@@ -45,16 +44,11 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
   virtual void init_impl();
+
   virtual void sea_level_elevation_impl(double &result) const;
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
-protected:
-  SpatialVariableMetadata m_shelfbmassflux, m_shelfbtemp;
 private:
   //! @f$ F_{\text{melt}} @f$ of [@ref Martinetal2011]
   double m_meltfactor;
