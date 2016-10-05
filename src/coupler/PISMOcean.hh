@@ -43,6 +43,10 @@ public:
   void melange_back_pressure_fraction(IceModelVec2S &result) const;
 protected:
   virtual void init_impl() = 0;
+
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const ;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const = 0;
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const = 0;
@@ -50,6 +54,43 @@ protected:
 protected:
   double m_sea_level;
 };
+
+/*! @brief Sea level elevation. */
+class PO_sea_level : public Diag<OceanModel>
+{
+public:
+  PO_sea_level(OceanModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Shelf base temperature. */
+class PO_shelf_base_temperature : public Diag<OceanModel>
+{
+public:
+  PO_shelf_base_temperature(OceanModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Shelf base mass flux. */
+class PO_shelf_base_mass_flux : public Diag<OceanModel>
+{
+public:
+  PO_shelf_base_mass_flux(OceanModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Melange back pressure fraction. */
+class PO_melange_back_pressure_fraction : public Diag<OceanModel>
+{
+public:
+  PO_melange_back_pressure_fraction(OceanModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
 } // end of namespace ocean
 } // end of namespace pism
 
