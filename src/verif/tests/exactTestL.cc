@@ -73,13 +73,13 @@ int funcL(double r, const double u[], double f[], void *params) {
   return GSL_SUCCESS;
 }
 
-#ifdef PISM_USE_ODEIV2
-
 /* exit status could be one of these; returned zero indicates success */
 #define TESTL_NOT_DONE       8966
 #define TESTL_NOT_DECREASING 8967
 #define TESTL_INVALID_METHOD 8968
 #define TESTL_NO_LIST        8969
+
+#ifdef PISM_USE_ODEIV2
 
 /* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
    is believed to be predictable and accurate */
