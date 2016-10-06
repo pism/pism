@@ -166,26 +166,13 @@ void Hydrology::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dic
   dict["wallmelt"]   = Diagnostic::Ptr(new Hydrology_wallmelt(this));
 }
 
-
-void Hydrology::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
-  result.insert("tillwat");
+void Hydrology::define_model_state_impl(const PIO &output) const {
+  m_Wtil.define(output);
 }
 
-
-void Hydrology::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                      IO_Type nctype) {
-  if (set_contains(vars, "tillwat")) {
-    m_Wtil.define(nc, nctype);
-  }
+void Hydrology::write_model_state_impl(const PIO &output) const {
+  m_Wtil.write(output);
 }
-
-
-void Hydrology::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "tillwat")) {
-    m_Wtil.write(nc);
-  }
-}
-
 
 //! Update the overburden pressure from ice thickness.
 /*!

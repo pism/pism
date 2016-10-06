@@ -381,24 +381,12 @@ void SSA::set_initial_guess(const IceModelVec2V &guess) {
 }
 
 
-void SSA::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
-  result.insert("vel_ssa");
+void SSA::define_model_state_impl(const PIO &output) const {
+  m_velocity.define(output);
 }
 
-
-void SSA::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-
-  if (set_contains(vars, "vel_ssa")) {
-    m_velocity.define(nc, nctype);
-  }
-}
-
-
-void SSA::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, "vel_ssa")) {
-    m_velocity.write(nc);
-  }
+void SSA::write_model_state_impl(const PIO &output) const {
+  m_velocity.write(output);
 }
 
 void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,

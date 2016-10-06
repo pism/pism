@@ -76,24 +76,13 @@ void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) {
   }
 }
 
-void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  (void) keyword;
-  result.insert("precipitation");
+
+void PIK::define_model_state_impl(const PIO &output) const {
+  m_precipitation.define(output);
 }
 
-void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                            IO_Type nctype) {
-
-  if (set_contains(vars, "precipitation")) {
-    m_precipitation.define(nc, nctype);
-  }
-}
-
-void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, "precipitation")) {
-    m_precipitation.write(nc);
-  }
+void PIK::write_model_state_impl(const PIO &output) const {
+  m_precipitation.write(output);
 }
 
 void PIK::init_impl() {

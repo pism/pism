@@ -153,29 +153,11 @@ void SurfaceModel::write_model_state_impl(const PIO &output) const {
   }
 }
 
-void SurfaceModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  if (m_atmosphere != NULL) {
-    m_atmosphere->define_variables(vars, nc, nctype);
-  }
-}
-
-void SurfaceModel::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (m_atmosphere != NULL) {
-    m_atmosphere->write_variables(vars, nc);
-  }
-}
-
 MaxTimestep SurfaceModel::max_timestep_impl(double my_t) {
   if (m_atmosphere != NULL) {
     return m_atmosphere->max_timestep(my_t);
   } else {
     return MaxTimestep();
-  }
-}
-
-void SurfaceModel::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (m_atmosphere != NULL) {
-    m_atmosphere->add_vars_to_output(keyword, result);
   }
 }
 

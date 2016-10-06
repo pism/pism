@@ -46,26 +46,6 @@ void FrontalMelt::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &d
   (void) ts_dict;
 }
 
-void FrontalMelt::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
-  // empty
-  (void) vars;
-  (void) nc;
-}
-
-void FrontalMelt::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  // empty
-  (void) keyword;
-  (void) result;
-}
-
-void FrontalMelt::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                        IO_Type nctype) {
-  // empty
-  (void) vars;
-  (void) nc;
-  (void) nctype;
-}
-
 void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
                                        IceModelVec2S &result) {
   (void) mask;

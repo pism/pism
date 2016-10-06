@@ -150,28 +150,15 @@ void Routing::init_bwat() {
 }
 
 
-void Routing::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  Hydrology::add_vars_to_output_impl(keyword, result);
-  result.insert("bwat");
+void Routing::define_model_state_impl(const PIO &output) const {
+  Hydrology::define_model_state_impl(output);
+  m_W.define(output);
 }
 
-
-void Routing::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                                 IO_Type nctype) {
-  Hydrology::define_variables_impl(vars, nc, nctype);
-  if (set_contains(vars, "bwat")) {
-    m_W.define(nc, nctype);
-  }
+void Routing::write_model_state_impl(const PIO &output) const {
+  Hydrology::write_model_state_impl(output);
+  m_W.write(output);
 }
-
-
-void Routing::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  Hydrology::write_variables_impl(vars, nc);
-  if (set_contains(vars, "bwat")) {
-    m_W.write(nc);
-  }
-}
-
 
 void Routing::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                             std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {

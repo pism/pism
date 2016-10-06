@@ -86,20 +86,6 @@ Component::~Component() {
   // empty
 }
 
-void Component::define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                 IO_Type nctype) {
-  this->define_variables_impl(vars, nc, nctype);
-}
-
-void Component::add_vars_to_output(const std::string &keyword,
-                                   std::set<std::string> &result) {
-  this->add_vars_to_output_impl(keyword, result);
-}
-
-void Component::write_variables(const std::set<std::string> &vars, const PIO& nc) {
-  this->write_variables_impl(vars, nc);
-}
-
 void Component::get_diagnostics(std::map<std::string, Diagnostic::Ptr> &dict,
                                 std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
   this->get_diagnostics_impl(dict, ts_dict);

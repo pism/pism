@@ -54,10 +54,6 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double t, double dt);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype);
 protected:
   Timeseries m_precipitation_timeseries, m_air_temp_timeseries;
   std::vector<double> m_precip_values, m_air_temp_values;

@@ -83,25 +83,6 @@ void OceanModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &di
   }
 }
 
-void OceanModel::add_vars_to_output_impl(const std::string &keyword,
-                                         std::set<std::string> &result) {
-  (void) keyword;
-  (void) result;
-}
-
-void OceanModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                       IO_Type nctype) {
-  (void) vars;
-  (void) nc;
-  (void) nctype;
-}
-
-void OceanModel::write_variables_impl(const std::set<std::string> &vars,
-                                      const PIO& nc) {
-  (void) vars;
-  (void) nc;
-}
-
 PO_sea_level::PO_sea_level(OceanModel *m)
   : Diag<OceanModel>(m) {
 

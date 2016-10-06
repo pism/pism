@@ -84,23 +84,5 @@ void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
   ice_thickness.update_ghosts();
 }
 
-
-void CalvingAtThickness::add_vars_to_output_impl(const std::string &/*keyword*/,
-                                                std::set<std::string> &/*result*/) {
-  // empty
-}
-
-void CalvingAtThickness::define_variables_impl(const std::set<std::string> &/*vars*/,
-                                                        const PIO &/*nc*/,
-                                                        IO_Type /*nctype*/) {
-  // empty
-}
-
-void CalvingAtThickness::write_variables_impl(const std::set<std::string> &/*vars*/,
-                                                       const PIO& /*nc*/) {
-  // empty
-}
-
-
 } // end of namespace calving
 } // end of namespace pism

@@ -124,26 +124,37 @@ void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness)
   }
 }
 
-void OceanKill::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big" || keyword == "big_2d") {
-    result.insert(m_ocean_kill_mask.metadata().get_string("short_name"));
-  }
+const IceModelVec2Int& OceanKill::mask() const {
+  return m_ocean_kill_mask;
 }
 
-void OceanKill::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                               IO_Type nctype) {
-
-  if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {
-    m_ocean_kill_mask.define(nc, nctype);
-  }
+void OceanKill::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+  dict["ocean_kill_mask"] = Diagnostic::Ptr(new OceanKill_mask(this));
 }
 
-void OceanKill::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
+OceanKill_mask::OceanKill_mask(OceanKill *m)
+  : Diag<OceanKill>(m) {
 
-  if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {
-    m_ocean_kill_mask.write(nc);
-  }
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "ocean_kill_mask"));
+
+  set_attrs("mask used by the 'ocean kill' calving method ", "",
+            "", "", 0);
 }
+
+IceModelVec::Ptr OceanKill_mask::compute_impl() {
+
+  IceModelVec2Int::Ptr result(new IceModelVec2Int);
+  result->create(m_grid, "ocean_kill_mask", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  result->copy_from(model->mask());
+
+  return result;
+}
+
+
 
 } // end of namespace calving
 } // end of namespace pism

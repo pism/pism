@@ -131,19 +131,6 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
 }
 
-void EigenCalving::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
-  // empty
-}
-
-void EigenCalving::define_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                                  IO_Type /*nctype*/) {
-  // empty
-}
-
-void EigenCalving::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
-  // empty
-}
-
 void EigenCalving::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                         std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
   dict["eigen_calving_rate"] = Diagnostic::Ptr(new CalvingRate(this, "eigen_calving_rate",

@@ -52,10 +52,8 @@ protected:
   void mass_held_in_surface_layer_impl(IceModelVec2S &result);
   void surface_layer_thickness_impl(IceModelVec2S &result);
 
-  void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                             IO_Type nctype);
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
 
 private:
   // store pointers to fields so that we can iterate over them

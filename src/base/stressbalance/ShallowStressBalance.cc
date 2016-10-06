@@ -139,19 +139,6 @@ ZeroSliding::~ZeroSliding() {
   delete m_flow_law;
 }
 
-void ZeroSliding::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
-{
-  // empty
-}
-
-void ZeroSliding::define_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                             IO_Type /*nctype*/) {
-}
-
-void ZeroSliding::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
-}
-
-
 //! \brief Update the trivial shallow stress balance object.
 void ZeroSliding::update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure) {
   (void) sea_level;

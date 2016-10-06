@@ -119,23 +119,14 @@ void PIK::ice_surface_temperature_impl(IceModelVec2S &result) {
   result.copy_from(m_ice_surface_temp);
 }
 
-void PIK::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
-  result.insert("climatic_mass_balance");
+void PIK::define_model_state_impl(const PIO &output) const {
+  m_climatic_mass_balance.define(output);
+  SurfaceModel::define_model_state_impl(output);
 }
 
-void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  SurfaceModel::define_variables_impl(vars, nc, nctype);
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    m_climatic_mass_balance.define(nc, nctype);
-  }
-}
-
-void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    m_climatic_mass_balance.write(nc);
-  }
+void PIK::write_model_state_impl(const PIO &output) const {
+  m_climatic_mass_balance.write(output);
+  SurfaceModel::write_model_state_impl(output);
 }
 
 } // end of namespace surface

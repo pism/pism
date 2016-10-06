@@ -458,82 +458,13 @@ const IceModelVec2S& TemperatureIndex::air_temp_sd() const {
 }
 
 void TemperatureIndex::define_model_state_impl(const PIO &output) const {
+  SurfaceModel::define_model_state_impl(output);
   m_snow_depth.define(output, PISM_DOUBLE);
 }
 
 void TemperatureIndex::write_model_state_impl(const PIO &output) const {
+  SurfaceModel::write_model_state_impl(output);
   m_snow_depth.write(output);
-}
-
-void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-
-  SurfaceModel::add_vars_to_output_impl(keyword, result);
-
-  result.insert("snow_depth");
-
-  if (keyword == "big" || keyword == "big_2d") {
-    result.insert("air_temp_sd");
-    result.insert("saccum");
-    result.insert("smelt");
-    result.insert("srunoff");
-  }
-}
-
-void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-
-  if (set_contains(vars, "air_temp_sd")) {
-    m_air_temp_sd.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "saccum")) {
-    m_accumulation_rate.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "smelt")) {
-    m_melt_rate.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "srunoff")) {
-    m_runoff_rate.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "snow_depth")) {
-    m_snow_depth.define(nc, nctype);
-  }
-
-  SurfaceModel::define_variables_impl(vars, nc, nctype);
-}
-
-void TemperatureIndex::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
-  std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, "air_temp_sd")) {
-    m_air_temp_sd.average(m_t, m_dt);
-    m_air_temp_sd.write(nc);
-    vars.erase("air_temp_sd");
-  }
-
-  if (set_contains(vars, "saccum")) {
-    m_accumulation_rate.write(nc);
-    vars.erase("saccum");
-  }
-
-  if (set_contains(vars, "smelt")) {
-    m_melt_rate.write(nc);
-    vars.erase("smelt");
-  }
-
-  if (set_contains(vars, "srunoff")) {
-    m_runoff_rate.write(nc);
-    vars.erase("srunoff");
-  }
-
-  if (set_contains(vars, "snow_depth")) {
-    m_snow_depth.write(nc);
-    vars.erase("snow_depth");
-  }
-
-  SurfaceModel::write_variables_impl(vars, nc);
 }
 
 void TemperatureIndex::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,

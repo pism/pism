@@ -193,24 +193,12 @@ unsigned int BedThermalUnit::Mz() const {
   return this->Mz_impl();
 }
 
-void BedThermalUnit::add_vars_to_output_impl(const std::string &keyword,
-                                             std::set<std::string> &result) {
-  (void) keyword;
-  result.insert(m_bottom_surface_flux.metadata().get_name());
+void BedThermalUnit::define_model_state_impl(const PIO &output) const {
+  m_bottom_surface_flux.define(output);
 }
 
-void BedThermalUnit::define_variables_impl(const std::set<std::string> &vars,
-                                           const PIO &nc, IO_Type nctype) {
-  if (set_contains(vars, m_bottom_surface_flux.metadata().get_name())) {
-    m_bottom_surface_flux.define(nc, nctype);
-  }
-}
-
-void BedThermalUnit::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, m_bottom_surface_flux.metadata().get_name())) {
-    m_bottom_surface_flux.write(nc);
-  }
+void BedThermalUnit::write_model_state_impl(const PIO &output) const {
+  m_bottom_surface_flux.write(output);
 }
 
 void BedThermalUnit::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,

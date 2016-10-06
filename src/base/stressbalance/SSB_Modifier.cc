@@ -150,26 +150,5 @@ void ConstantInColumn::update(const IceModelVec2V &vel_input, bool fast) {
   m_D_max = 0.0;
 }
 
-void ConstantInColumn::add_vars_to_output_impl(const std::string &keyword,
-                                          std::set<std::string> &result) {
-  (void)keyword;
-  (void)result;
-}
-
-void ConstantInColumn::define_variables_impl(const std::set<std::string> &vars,
-                                        const PIO &nc,
-                                        IO_Type nctype) {
-  (void)vars;
-  (void)nc;
-  (void)nctype;
-}
-
-void ConstantInColumn::write_variables_impl(const std::set<std::string> &vars,
-                                       const PIO &nc) {
-  (void)vars;
-  (void)nc;
-}
-
-
 } // end of namespace stressbalance
 } // end of namespace pism

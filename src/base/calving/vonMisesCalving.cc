@@ -160,19 +160,6 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
   }   // end of loop over grid points
 }
 
-void vonMisesCalving::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
-  // empty
-}
-
-void vonMisesCalving::define_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                            IO_Type /*nctype*/) {
-  // empty
-}
-
-void vonMisesCalving::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
-  // empty
-}
-
 void vonMisesCalving::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
   dict["vonmises_calving_rate"] = Diagnostic::Ptr(new CalvingRate(this, "vonmises_calving_rate",

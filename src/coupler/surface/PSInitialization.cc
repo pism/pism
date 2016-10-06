@@ -143,45 +143,18 @@ void InitializationHelper::surface_layer_thickness_impl(IceModelVec2S &result) {
   result.copy_from(m_surface_layer_thickness);
 }
 
-void InitializationHelper::add_vars_to_output_impl(const std::string &keyword,
-                                             std::set<std::string> &result) {
-  // add all the variables we keep track of
+void InitializationHelper::define_model_state_impl(const PIO &output) const {
   for (unsigned int k = 0; k < m_variables.size(); ++k) {
-    result.insert(m_variables[k]->get_name());
+    m_variables[k]->define(output);
   }
-
-  m_input_model->add_vars_to_output(keyword, result);
+  m_input_model->define_model_state_impl(output);
 }
 
-void InitializationHelper::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                           IO_Type nctype) {
-  // make a copy of the set of variables so that we can modify it
-  std::set<std::string> list = vars;
-
+void InitializationHelper::write_model_state_impl(const PIO &output) const {
   for (unsigned int k = 0; k < m_variables.size(); ++k) {
-    const IceModelVec *variable = m_variables[k];
-    if (set_contains(list, *variable)) {
-      variable->define(nc, nctype);
-      list.erase(variable->get_name());
-    }
+    m_variables[k]->write(output);
   }
-
-  m_input_model->define_variables(list, nc, nctype);
-}
-
-void InitializationHelper::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  // make a copy of the set of variables so that we can modify it
-  std::set<std::string> list = vars;
-
-  for (unsigned int k = 0; k < m_variables.size(); ++k) {
-    const IceModelVec *variable = m_variables[k];
-    if (set_contains(list, *variable)) {
-      variable->write(nc);
-      list.erase(variable->get_name());
-    }
-  }
-
-  m_input_model->write_variables(list, nc);
+  m_input_model->write_model_state_impl(output);
 }
 
 } // end of namespace surface

@@ -137,30 +137,15 @@ void Distributed::init_bwp() {
 }
 
 
-void Distributed::add_vars_to_output_impl(const std::string &keyword,
-                                                   std::set<std::string> &result) {
-  Routing::add_vars_to_output_impl(keyword, result);
-  result.insert("bwp");
+void Distributed::define_model_state_impl(const PIO &output) const {
+  Routing::define_model_state_impl(output);
+  m_P.define(output);
 }
 
-
-void Distributed::define_variables_impl(const std::set<std::string> &vars,
-                                                 const PIO &nc, IO_Type nctype) {
-  Routing::define_variables_impl(vars, nc, nctype);
-  if (set_contains(vars, "bwp")) {
-    m_P.define(nc, nctype);
-  }
+void Distributed::write_model_state_impl(const PIO &output) const {
+  Routing::write_model_state_impl(output);
+  m_P.write(output);
 }
-
-
-void Distributed::write_variables_impl(const std::set<std::string> &vars,
-                                                const PIO &nc) {
-  Routing::write_variables_impl(vars, nc);
-  if (set_contains(vars, "bwp")) {
-    m_P.write(nc);
-  }
-}
-
 
 void Distributed::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                                 std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {

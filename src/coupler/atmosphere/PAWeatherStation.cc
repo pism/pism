@@ -147,24 +147,5 @@ void WeatherStation::temp_time_series_impl(int i, int j, std::vector<double> &re
   result = m_air_temp_values;
 }
 
-void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
-                                             std::set<std::string> &result) {
-  (void) keyword;
-  (void) result;
-}
-
-void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
-                                           const PIO &nc, IO_Type nctype) {
-  (void) vars;
-  (void) nc;
-  (void) nctype;
-}
-
-void WeatherStation::write_variables_impl(const std::set<std::string> &vars,
-                                          const PIO &nc) {
-  (void) vars;
-  (void) nc;
-}
-
 } // end of namespace atmosphere
 } // end of namespace pism

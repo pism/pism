@@ -74,27 +74,6 @@ protected:
     }
   }
 
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
-  {
-    if (m_input_model != NULL) {
-      m_input_model->write_variables(vars, nc);
-    }
-  }
-
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result)
-  {
-    if (m_input_model != NULL) {
-      m_input_model->add_vars_to_output(keyword, result);
-    }
-  }
-
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype) {
-    if (m_input_model != NULL) {
-      m_input_model->define_variables(vars, nc, nctype);
-    }
-  }
-
   virtual void define_model_state_impl(const PIO &output) const {
     if (m_input_model != NULL) {
       m_input_model->define_model_state(output);

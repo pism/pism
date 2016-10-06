@@ -135,27 +135,14 @@ double BTU_Full::depth_impl() const {
   return m_Lbz;
 }
 
-void BTU_Full::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  result.insert(m_temp.metadata().get_name());
-
-  BedThermalUnit::add_vars_to_output_impl(keyword, result);
+void BTU_Full::define_model_state_impl(const PIO &output) const {
+  m_bottom_surface_flux.define(output);
+  m_temp.define(output);
 }
 
-void BTU_Full::define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype) {
-  if (set_contains(vars, m_temp.metadata().get_name())) {
-    m_temp.define(nc, nctype);
-  }
-
-  BedThermalUnit::define_variables_impl(vars, nc, nctype);
-}
-
-void BTU_Full::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, m_temp.metadata().get_name())) {
-    m_temp.write(nc);
-  }
-
-  BedThermalUnit::write_variables_impl(vars, nc);
+void BTU_Full::write_model_state_impl(const PIO &output) const {
+  m_bottom_surface_flux.write(output);
+  m_temp.write(output);
 }
 
 /*! Because the grid for the bedrock thermal layer is equally-spaced, and because

@@ -104,14 +104,7 @@ public:
   
   virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
 
-  //! Writes requested couplings fields to file and/or asks an attached
-  //! model to do so.
 protected:
-  virtual void write_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/);
-  virtual void add_vars_to_output_impl(const std::string &keyword,
-                                       std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                     IO_Type /*nctype*/);
 };
 
 class PrescribedSliding : public ZeroSliding {

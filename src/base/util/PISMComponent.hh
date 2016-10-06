@@ -75,11 +75,9 @@ InputOptions process_input_options(MPI_Comm com);
 
   A PISM component needs to implement the following I/O methods:
 
-  - add_vars_to_output_impl(), which adds variable names to the list of fields that need
-  to be written.
-  - define_variables_impl(), which defines variables to be written and writes variable metadata.
-  - write_variables_impl(), which writes data itself.
-  
+  - define_model_state_impl()
+  - write_model_state_impl()
+
   Why are all these methods needed? In PISM we separate defining and writing
   NetCDF variables because defining all the NetCDF variables before writing
   data is a lot faster than defining a variable, writing it, defining the
@@ -138,12 +136,6 @@ protected:
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
-  virtual void add_vars_to_output_impl(const std::string &keyword,
-                                       std::set<std::string> &result) = 0;
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype) = 0;
-  virtual void write_variables_impl(const std::set<std::string> &vars,
-                                    const PIO& nc) = 0;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in

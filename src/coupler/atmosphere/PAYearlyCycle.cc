@@ -87,24 +87,12 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
   }
 }
 
-void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  (void) keyword;
-  // precipitation is read from a PISM input file, so it is a part of the "model state"
-  result.insert("precipitation");
+void YearlyCycle::define_model_state_impl(const PIO &output) const {
+  m_precipitation.define(output);
 }
 
-
-void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  if (set_contains(vars, "precipitation")) {
-    m_precipitation.define(nc, nctype);
-  }
-}
-
-
-void YearlyCycle::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "precipitation")) {
-    m_precipitation.write(nc);
-  }
+void YearlyCycle::write_model_state_impl(const PIO &output) const {
+  m_precipitation.write(output);
 }
 
 //! Copies the stored precipitation field into result.

@@ -140,23 +140,6 @@ void SIAFD::init() {
   m_bed_state_counter = -1;
 }
 
-void SIAFD::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  (void) keyword;
-  (void) result;
-}
-
-void SIAFD::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                  IO_Type nctype) {
-  (void) vars;
-  (void) nc;
-  (void) nctype;
-}
-
-void SIAFD::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  (void) vars;
-  (void) nc;
-}
-
 //! \brief Do the update; if fast == true, skip the update of 3D velocities and
 //! strain heating.
 void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {

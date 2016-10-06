@@ -310,40 +310,23 @@ MaxTimestep ForceThickness::max_timestep_impl(double my_t) {
   return std::min(input_max_dt, MaxTimestep(max_dt));
 }
 
-//! Adds variables to output files.
-void ForceThickness::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
+
+void ForceThickness::define_model_state_impl(const PIO &output) const {
+  m_ftt_mask.define(output);
+  m_target_thickness.define(output);
+
   if (m_input_model != NULL) {
-    m_input_model->add_vars_to_output(keyword, result);
+    m_input_model->define_model_state(output);
   }
-
-  result.insert("ftt_mask");
-  result.insert("ftt_target_thk");
 }
 
-void ForceThickness::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+void ForceThickness::write_model_state_impl(const PIO &output) const {
+  m_ftt_mask.write(output);
+  m_target_thickness.write(output);
 
-  if (set_contains(vars, "ftt_mask")) {
-    m_ftt_mask.define(nc, nctype);
+  if (m_input_model != NULL) {
+    m_input_model->write_model_state(output);
   }
-
-  if (set_contains(vars, "ftt_target_thk")) {
-    m_target_thickness.define(nc, nctype);
-  }
-
-  m_input_model->define_variables(vars, nc, nctype);
-}
-
-void ForceThickness::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, "ftt_mask")) {
-    m_ftt_mask.write(nc);
-  }
-
-  if (set_contains(vars, "ftt_target_thk")) {
-    m_target_thickness.write(nc);
-  }
-
-  m_input_model->write_variables(vars, nc);
 }
 
 } // end of namespace surface

@@ -61,34 +61,18 @@ void PSFormulas::ice_surface_temperature_impl(IceModelVec2S &result) {
   result.copy_from(m_ice_surface_temp);
 }
 
-void PSFormulas::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  (void) keyword;
-
-  result.insert(m_climatic_mass_balance.get_name());
-  result.insert(m_ice_surface_temp.get_name());
+void PSFormulas::define_model_state_impl(const PIO &output) const {
+  // these are *not* model state, but I want to be able to re-start from a file produced using this
+  // class
+  m_climatic_mass_balance.define(output);
+  m_ice_surface_temp.define(output);
 }
 
-void PSFormulas::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                             IO_Type nctype) {
-
-  if (set_contains(vars, m_climatic_mass_balance)) {
-    m_climatic_mass_balance.define(nc, nctype);
-  }
-
-  if (set_contains(vars, m_ice_surface_temp)) {
-    m_ice_surface_temp.define(nc, nctype);
-  }
-}
-
-void PSFormulas::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, m_climatic_mass_balance)) {
-    m_climatic_mass_balance.write(nc);
-  }
-
-  if (set_contains(vars, m_ice_surface_temp)) {
-    m_ice_surface_temp.write(nc);
-  }
+void PSFormulas::write_model_state_impl(const PIO &output) const {
+  // these are *not* model state, but I want to be able to re-start from a file produced using this
+  // class
+  m_climatic_mass_balance.write(output);
+  m_ice_surface_temp.write(output);
 }
 
 } // end of namespace surface
