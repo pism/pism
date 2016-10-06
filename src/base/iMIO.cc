@@ -16,24 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstring>
-#include <cstdio>
+#include <cstring>              // strncpy
+#include <cstdio>               // snprintf
 
 #include <algorithm>
-#include <sstream>
 #include <set>
 
 #include "iceModel.hh"
 
-#include "base/basalstrength/PISMYieldStress.hh"
-#include "base/calving/CalvingAtThickness.hh"
-#include "base/calving/EigenCalving.hh"
-#include "base/calving/vonMisesCalving.hh"
-#include "base/calving/FloatKill.hh"
-#include "base/calving/OceanKill.hh"
-#include "base/energy/BedThermalUnit.hh"
-#include "base/hydrology/PISMHydrology.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMDiagnostic.hh"
@@ -41,14 +31,13 @@
 #include "base/util/error_handling.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
-#include "coupler/PISMOcean.hh"
-#include "coupler/PISMSurface.hh"
-#include "earth/PISMBedDef.hh"
+
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/util/projection.hh"
+#include "base/util/PISMComponent.hh"
 
 namespace pism {
 
@@ -259,7 +248,7 @@ void IceModel::write_model_state(const PIO &nc) {
   the NetCDF file specified by `-regrid_file`.
 
   The default, if `-regrid_vars` is not given, is to regrid the 3
-  dimensional quantities `m_ice_age`, `Tb3` and either `m_ice_temperature` or `m_ice_enthalpy`. This is
+  dimensional quantities `Tb3` and either `m_ice_temperature` or `m_ice_enthalpy`. This is
   consistent with one standard purpose of regridding, which is to stick with
   current geometry through the downscaling procedure. Most of the time the user
   should carefully specify which variables to regrid.
@@ -296,12 +285,6 @@ void IceModel::regrid(int dimensions) {
 
   if (regrid_vars->empty()) {
     // defaults if user gives no regrid_vars list
-    regrid_vars->insert("litho_temp");
-
-    if (m_config->get_boolean("age.enabled")) {
-      regrid_vars->insert("age");
-    }
-
     if (m_config->get_boolean("energy.temperature_based")) {
       regrid_vars->insert("temp");
     } else {

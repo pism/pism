@@ -260,6 +260,9 @@
 %include pism_SIA.i
 
 %include pism_BedDef.i
+
+%include AgeModel.i
+
 /* The regional model implements some classes derived from SSAFD and
  * SIAFD, so this %include has to appear after %including the rest of
  * PISM's stress balance headers.

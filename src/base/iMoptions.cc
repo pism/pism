@@ -37,6 +37,7 @@
 #include "earth/PISMBedDef.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/age/AgeModel.hh"
 
 namespace pism {
 
@@ -137,12 +138,6 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     if (not list[k].empty()) {
       result.insert(list[k]);
     }
-  }
-
-  if (m_config->get_boolean("age.enabled")) {
-    result.insert("age");
-  } else {
-    result.erase("age");
   }
 
   return result;

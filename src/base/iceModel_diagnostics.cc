@@ -18,31 +18,23 @@
 
 #include <gsl/gsl_math.h>
 
-#include "base/basalstrength/PISMYieldStress.hh"
-#include "base/energy/BedThermalUnit.hh"
-#include "base/hydrology/PISMHydrology.hh"
+#include "iceModel_diagnostics.hh"
+
 #include "base/rheology/FlowLaw.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/stressbalance/SSB_Modifier.hh"
 #include "base/stressbalance/ShallowStressBalance.hh"
-#include "base/util/Mask.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/iceModelVec3Custom.hh"
-#include "base/util/pism_options.hh"
-#include "coupler/PISMOcean.hh"
-#include "coupler/PISMSurface.hh"
-#include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
-#include "iceModel_diagnostics.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/pism_utilities.hh"
+#include "coupler/PISMOcean.hh"
+#include "earth/PISMbedDef.hh"
 
 #include "base/grounded_cell_fraction.hh"
 #include "base/part_grid_threshold_thickness.hh"
-#include "base/calving/EigenCalving.hh"
-#include "base/calving/vonMisesCalving.hh"
-#include "base/calving/FrontalMelt.hh"
 #include "base/util/projection.hh"
 
 #if (PISM_USE_PROJ4==1)

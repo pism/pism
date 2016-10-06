@@ -50,6 +50,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/age/AgeModel.hh"
 
 namespace pism {
 
@@ -187,6 +188,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_ocean   = NULL;
   m_beddef  = NULL;
 
+  m_age_model = NULL;
   m_btu = NULL;
 
   m_iceberg_remover             = NULL;
@@ -245,6 +247,8 @@ void IceModel::reset_counters() {
 
 
 IceModel::~IceModel() {
+
+  delete m_age_model;
 
   delete m_stress_balance;
 
@@ -310,18 +314,6 @@ void IceModel::createVecs() {
     } else {
       m_ice_temperature.metadata().set_string("pism_intent", "diagnostic");
     }
-  }
-
-  // age of ice but only if age will be computed
-  if (m_config->get_boolean("age.enabled")) {
-    m_ice_age.create(m_grid, "age", WITH_GHOSTS, WIDE_STENCIL);
-    // PROPOSED standard_name = land_ice_age
-    m_ice_age.set_attrs("model_state", "age of ice",
-                   "s", "");
-    m_ice_age.metadata().set_string("glaciological_units", "years");
-    m_ice_age.write_in_glaciological_units = true;
-    m_ice_age.metadata().set_double("valid_min", 0.0);
-    m_grid->variables().add(m_ice_age);
   }
 
   // ice upper surface elevation
@@ -567,7 +559,6 @@ During the time-step we perform the following actions:
  */
 void IceModel::step(bool do_mass_continuity,
                     bool do_energy,
-                    bool do_age,
                     bool do_skip) {
 
   const Profiling &profiling = m_ctx->profiling();
@@ -655,7 +646,7 @@ void IceModel::step(bool do_mass_continuity,
   // "-skip" mechanism
 
   //! \li update the age of the ice (if appropriate)
-  if (do_age and updateAtDepth) {
+  if (m_age_model != NULL and updateAtDepth) {
     AgeModelInputs inputs;
     inputs.ice_thickness = &m_ice_thickness;
     inputs.u3            = &m_stress_balance->velocity_u();
@@ -663,7 +654,7 @@ void IceModel::step(bool do_mass_continuity,
     inputs.w3            = &m_stress_balance->velocity_w();
 
     profiling.begin("age");
-    ageStep(inputs, dt_TempAge);
+    m_age_model->update(current_time, dt_TempAge, inputs);
     profiling.end("age");
     m_stdout_flags += "a";
   } else {
@@ -796,7 +787,6 @@ void IceModel::run() {
 
   bool do_mass_conserve = m_config->get_boolean("geometry.update.enabled");
   bool do_energy = m_config->get_boolean("energy.enabled");
-  bool do_age = m_config->get_boolean("age.enabled");
   bool do_skip = m_config->get_boolean("time_stepping.skip.enabled");
 
   int stepcount = m_config->get_boolean("time_stepping.count_steps") ? 0 : -1;
@@ -825,11 +815,11 @@ void IceModel::run() {
 
     m_stdout_flags.erase();  // clear it out
 
-    step(do_mass_conserve, do_energy, do_age, do_skip);
+    step(do_mass_conserve, do_energy, do_skip);
 
     // report a summary for major steps or the last one
     bool updateAtDepth = m_skip_countdown == 0;
-    bool tempAgeStep = updateAtDepth and (do_energy or do_age);
+    bool tempAgeStep = updateAtDepth and (do_energy or m_age_model != NULL);
 
     const bool show_step = tempAgeStep or m_adaptive_timestep_reason == "end of the run";
     summary(show_step);
