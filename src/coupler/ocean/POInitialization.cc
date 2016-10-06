@@ -137,6 +137,7 @@ void InitializationHelper::define_model_state_impl(const PIO &output) const {
   m_melange_back_pressure_fraction.define(output);
   m_shelf_base_mass_flux.define(output);
   m_shelf_base_temperature.define(output);
+  m_melange_back_pressure_fraction.define(output);
 
   io::define_timeseries(m_sea_level_metadata, output, PISM_DOUBLE, true);
 
@@ -147,6 +148,7 @@ void InitializationHelper::write_model_state_impl(const PIO &output) const {
   m_melange_back_pressure_fraction.write(output);
   m_shelf_base_mass_flux.write(output);
   m_shelf_base_temperature.write(output);
+  m_melange_back_pressure_fraction.write(output);
 
   unsigned int t_start = output.inq_dimlen(m_sea_level_metadata.get_dimension_name()) - 1;
   io::write_timeseries(output, m_sea_level_metadata, t_start, m_sea_level_elevation,

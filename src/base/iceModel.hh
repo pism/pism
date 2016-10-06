@@ -224,8 +224,8 @@ public:
                      WRITE_ALL                             = 1 | 2 | 4};
 
   virtual void write_metadata(const PIO &nc, MetadataFlag flag);
-  virtual void write_variables(const PIO &nc, const std::set<std::string> &vars,
-                               IO_Type nctype);
+  virtual void write_diagnostics(const PIO &nc, const std::set<std::string> &vars,
+                                 IO_Type nctype);
 protected:
 
   //! Computational grid

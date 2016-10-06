@@ -462,7 +462,7 @@ void IceModel::write_extras() {
   io::write_timeseries(nc, m_timestamp, time_start, wall_clock_hours);
 
   if (not m_extra_vars.empty()) {
-    write_variables(nc, m_extra_vars, PISM_FLOAT);
+    write_diagnostics(nc, m_extra_vars, PISM_FLOAT);
   } else {
     write_model_state(nc);
   }

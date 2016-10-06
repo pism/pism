@@ -140,10 +140,10 @@ void IceModel::dumpToFile(const std::string &filename) {
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
-void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_input,
-                               IO_Type nctype) {
+void IceModel::write_diagnostics(const PIO &nc, const std::set<std::string> &vars_input,
+                                 IO_Type nctype) {
+
   std::set<std::string> vars = vars_input;
-  const IceModelVec *v;
 
   // Define all the variables:
   {
@@ -151,7 +151,7 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     for (i = vars.begin(); i != vars.end(); ++i) {
 
       if (m_grid->variables().is_available(*i)) {
-        v = m_grid->variables().get(*i);
+        const IceModelVec *v = m_grid->variables().get(*i);
         // It has dedicated storage.
         if (*i == "mask") {
           v->define(nc, PISM_BYTE); // use the default data type
@@ -167,61 +167,6 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
         }
       }
     }
-
-    if (m_beddef != NULL) {
-      m_beddef->define_model_state(nc);
-    }
-
-    if (m_btu != NULL) {
-      m_btu->define_model_state(nc);
-    }
-
-    if (m_basal_yield_stress_model != NULL) {
-      m_basal_yield_stress_model->define_model_state(nc);
-    }
-
-    if (m_stress_balance != NULL) {
-      m_stress_balance->define_model_state(nc);
-    } else {
-      throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: stress_balance == NULL");
-    }
-
-    if (m_subglacial_hydrology != NULL) {
-      m_subglacial_hydrology->define_model_state(nc);
-    }
-
-    if (m_surface != NULL) {
-      m_surface->define_model_state(nc);
-    } else {
-      throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: surface == NULL");
-    }
-
-    if (m_ocean != NULL) {
-      m_ocean->define_model_state(nc);
-    } else {
-      throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: ocean == NULL");
-    }
-
-    if (m_ocean_kill_calving != NULL) {
-      m_ocean_kill_calving->define_model_state(nc);
-    }
-
-    if (m_float_kill_calving != NULL) {
-      m_float_kill_calving->define_model_state(nc);
-    }
-
-    if (m_thickness_threshold_calving != NULL) {
-      m_thickness_threshold_calving->define_model_state(nc);
-    }
-
-    if (m_eigen_calving != NULL) {
-      m_eigen_calving->define_model_state(nc);
-    }
-
-    if (m_vonmises_calving != NULL) {
-      m_vonmises_calving->define_model_state(nc);
-    }
-
   }
   // Write all the IceModel variables:
 
@@ -238,63 +183,6 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     }
   }
   vars = vars_copy;
-
-  // Write bed-deformation-related variables:
-  if (m_beddef != NULL) {
-    m_beddef->write_model_state(nc);
-  }
-
-  // Write BedThermalUnit variables:
-  if (m_btu != NULL) {
-    m_btu->write_model_state(nc);
-  }
-
-  if (m_basal_yield_stress_model != NULL) {
-    m_basal_yield_stress_model->write_model_state(nc);
-  }
-
-  // Write stress balance-related variables:
-  if (m_stress_balance != NULL) {
-    m_stress_balance->write_model_state(nc);
-  } else {
-    throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: stress_balance == NULL");
-  }
-
-  if (m_subglacial_hydrology != NULL) {
-    m_subglacial_hydrology->write_model_state(nc);
-  }
-
-  // Ask boundary models to write their variables:
-  if (m_surface != NULL) {
-    m_surface->write_model_state(nc);
-  } else {
-    throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: surface == NULL");
-  }
-  if (m_ocean != NULL) {
-    m_ocean->write_model_state(nc);
-  } else {
-    throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: ocean == NULL");
-  }
-
-  if (m_ocean_kill_calving != NULL) {
-    m_ocean_kill_calving->write_model_state(nc);
-  }
-
-  if (m_float_kill_calving != NULL) {
-    m_float_kill_calving->write_model_state(nc);
-  }
-
-  if (m_thickness_threshold_calving != NULL) {
-    m_thickness_threshold_calving->write_model_state(nc);
-  }
-
-  if (m_eigen_calving != NULL) {
-    m_eigen_calving->write_model_state(nc);
-  }
-
-  if (m_vonmises_calving != NULL) {
-    m_vonmises_calving->write_model_state(nc);
-  }
 
   // All the remaining names in vars must be of diagnostic quantities.
   for (i = vars.begin(); i != vars.end();) {
@@ -326,7 +214,6 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
   }
 }
 
-
 void IceModel::write_model_state(const PIO &nc) {
   std::string o_size = get_output_size("-o_size");
 
@@ -344,7 +231,25 @@ void IceModel::write_model_state(const PIO &nc) {
 #error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif
 
-  write_variables(nc, m_output_vars, PISM_DOUBLE);
+  // define
+  {
+    std::map<std::string, const Component*>::const_iterator j = m_submodels.begin();
+    while (j != m_submodels.end()) {
+      j->second->define_model_state(nc);
+      ++j;
+    }
+  }
+
+  // write
+  {
+    std::map<std::string, const Component*>::const_iterator j = m_submodels.begin();
+    while (j != m_submodels.end()) {
+      j->second->write_model_state(nc);
+      ++j;
+    }
+  }
+
+  write_diagnostics(nc, m_output_vars, PISM_DOUBLE);
 }
 
 
@@ -660,7 +565,7 @@ void IceModel::write_snapshot() {
 
   io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
 
-  write_variables(nc, m_snapshot_vars, PISM_DOUBLE);
+  write_diagnostics(nc, m_snapshot_vars, PISM_DOUBLE);
 
   {
     // find out how much time passed since the beginning of the run
@@ -746,7 +651,8 @@ void IceModel::write_backup() {
   // Write metadata *before* variables:
   write_metadata(nc, WRITE_ALL);
 
-  write_variables(nc, m_backup_vars, PISM_DOUBLE);
+  write_model_state(nc);
+  write_diagnostics(nc, m_backup_vars, PISM_DOUBLE);
 
   nc.close();
 

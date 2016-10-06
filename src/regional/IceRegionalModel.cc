@@ -198,6 +198,7 @@ void IceRegionalModel::allocate_basal_yield_stress() {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
+    m_submodels["basal yield stress"] = m_basal_yield_stress_model;
   }
 }
 

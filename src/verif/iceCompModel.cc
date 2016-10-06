@@ -199,6 +199,8 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   } else {
     m_btu = new energy::BTU_Minimal(m_grid);
   }
+
+  m_submodels["bedrock thermal layer"] = m_btu;
 }
 
 void IceCompModel::allocate_stressbalance() {
@@ -244,7 +246,10 @@ void IceCompModel::allocate_couplers() {
 
   // Climate will always come from verification test formulas.
   m_surface = new surface::Verification(m_grid, EC, testname);
+  m_submodels["surface process model"] = m_surface;
+
   m_ocean   = new ocean::Constant(m_grid);
+  m_submodels["ocean model"] = m_ocean;
 }
 
 void IceCompModel::bootstrap_2d(const PIO &input_file) {

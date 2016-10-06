@@ -88,7 +88,7 @@ void IceEISModel::allocate_stressbalance() {
 
   // ~StressBalance() will de-allocate my_stress_balance and modifier.
   m_stress_balance = new StressBalance(m_grid, my_stress_balance, modifier);
-
+  m_submodels["stress balance"] = m_stress_balance;
 }
 
 void IceEISModel::allocate_couplers() {
@@ -96,10 +96,12 @@ void IceEISModel::allocate_couplers() {
   // Climate will always come from intercomparison formulas.
   if (m_surface == NULL) {
     m_surface = new surface::InitializationHelper(m_grid, new surface::EISMINTII(m_grid, m_experiment));
+    m_submodels["surface process model"] = m_surface;
   }
 
   if (m_ocean == NULL) {
     m_ocean = new ocean::InitializationHelper(m_grid, new ocean::Constant(m_grid));
+    m_submodels["ocean model"] = m_ocean;
   }
 }
 
