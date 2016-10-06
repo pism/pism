@@ -60,6 +60,10 @@ public:
   void init();
 protected:
   virtual void init_impl();
+
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   virtual MaxTimestep max_timestep_impl(double my_t);
 
   virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);

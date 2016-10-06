@@ -141,6 +141,18 @@ void SurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result)
   result.set(0.0);
 }
 
+void SurfaceModel::define_model_state_impl(const PIO &output) const {
+  if (m_atmosphere != NULL) {
+    m_atmosphere->define_model_state(output);
+  }
+}
+
+void SurfaceModel::write_model_state_impl(const PIO &output) const {
+  if (m_atmosphere != NULL) {
+    m_atmosphere->write_model_state(output);
+  }
+}
+
 void SurfaceModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   if (m_atmosphere != NULL) {
     m_atmosphere->define_variables(vars, nc, nctype);
