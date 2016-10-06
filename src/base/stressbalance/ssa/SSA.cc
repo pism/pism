@@ -228,7 +228,7 @@ surface gradient. When the thickness at a grid point is very small (below \c
 minThickEtaTransform in the procedure), the formula is slightly modified to
 give a lower driving stress. The transformation is not used in floating ice.
  */
-void SSA::compute_driving_stress(IceModelVec2V &result) {
+void SSA::compute_driving_stress(IceModelVec2V &result) const {
   const IceModelVec2S &thk = *m_thickness; // to improve readability (below)
 
   const double n = m_flow_law->exponent(), // frequently n = 3
@@ -390,7 +390,7 @@ void SSA::write_model_state_impl(const PIO &output) const {
 }
 
 void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
 
   ShallowStressBalance::get_diagnostics_impl(dict, ts_dict);
 
@@ -399,7 +399,7 @@ void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
   dict["taud_mag"] = Diagnostic::Ptr(new SSA_taud_mag(this));
 }
 
-SSA_taud::SSA_taud(SSA *m)
+SSA_taud::SSA_taud(const SSA *m)
   : Diag<SSA>(m) {
 
   m_dof = 2;
@@ -431,7 +431,7 @@ IceModelVec::Ptr SSA_taud::compute_impl() {
   return result;
 }
 
-SSA_taud_mag::SSA_taud_mag(SSA *m)
+SSA_taud_mag::SSA_taud_mag(const SSA *m)
   : Diag<SSA>(m) {
 
   // set metadata:

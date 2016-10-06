@@ -35,11 +35,11 @@
 
 namespace pism {
 
-const IceModelVec2S & IceModel::cell_area() {
+const IceModelVec2S & IceModel::cell_area() const {
   return m_cell_area;
 }
 
-const IceModelVec2CellType & IceModel::cell_type_mask() {
+const IceModelVec2CellType & IceModel::cell_type_mask() const {
   return m_cell_type;
 }
 
@@ -517,7 +517,7 @@ double IceModel::ice_area() const {
 }
 
 //! Computes area of basal ice which is temperate, in m^2.
-double IceModel::ice_area_temperate() {
+double IceModel::ice_area_temperate() const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
@@ -551,7 +551,7 @@ double IceModel::ice_area_temperate() {
 }
 
 //! Computes area of basal ice which is cold, in m^2.
-double IceModel::ice_area_cold() {
+double IceModel::ice_area_cold() const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 

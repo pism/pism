@@ -31,7 +31,7 @@ public:
   virtual ~Delta_SL();
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
   virtual void sea_level_elevation_impl(double &result) const;
 };

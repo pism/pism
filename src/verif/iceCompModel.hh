@@ -115,8 +115,8 @@ protected:
   static const double secpera;
 
 private:
-  double f;       // ratio of ice density to bedrock density
-  bool bedrock_is_ice_forK;
+  double m_f;       // ratio of ice density to bedrock density
+  bool m_bedrock_is_ice_forK;
 
   // see iCMthermo.cc
   static const double ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin

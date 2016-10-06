@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,7 +31,7 @@ namespace stressbalance {
 class SSB_beta : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_beta(ShallowStressBalance *m);
+  SSB_beta(const ShallowStressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -40,7 +40,7 @@ protected:
 class SSB_taud : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taud(ShallowStressBalance *m);
+  SSB_taud(const ShallowStressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -50,7 +50,7 @@ protected:
 class SSB_taud_mag : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taud_mag(ShallowStressBalance *m);
+  SSB_taud_mag(const ShallowStressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -59,7 +59,7 @@ protected:
 class SSB_taub : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taub(ShallowStressBalance *m);
+  SSB_taub(const ShallowStressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -69,7 +69,7 @@ protected:
 class SSB_taub_mag : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taub_mag(ShallowStressBalance *m);
+  SSB_taub_mag(const ShallowStressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };

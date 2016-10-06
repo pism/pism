@@ -108,7 +108,7 @@ public:
 
   //! Add pointers to available diagnostic quantities to a dictionary.
   void get_diagnostics(std::map<std::string, Diagnostic::Ptr> &dict,
-                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   IceGrid::ConstPtr grid() const;
 
@@ -120,7 +120,7 @@ protected:
   virtual void write_model_state_impl(const PIO &output) const;
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in
@@ -150,7 +150,7 @@ public:
   virtual ~Component_TS();
 
   //! @brief Reports the maximum time-step the model can take at t.
-  MaxTimestep max_timestep(double t);
+  MaxTimestep max_timestep(double t) const;
 
   //! Update the *state* of a component, if necessary.
   /**
@@ -196,7 +196,7 @@ public:
   void update(double t, double dt);
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) = 0;
+  virtual MaxTimestep max_timestep_impl(double t) const = 0;
   virtual void update_impl(double t, double dt) = 0;
 protected:
   //! Last time used as an argument for the update() method.

@@ -39,7 +39,7 @@ void PBNull::init_impl() {
   m_uplift.set(0.0);
 }
 
-MaxTimestep PBNull::max_timestep_impl(double t) {
+MaxTimestep PBNull::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

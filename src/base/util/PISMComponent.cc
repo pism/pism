@@ -87,12 +87,12 @@ Component::~Component() {
 }
 
 void Component::get_diagnostics(std::map<std::string, Diagnostic::Ptr> &dict,
-                                std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   this->get_diagnostics_impl(dict, ts_dict);
 }
 
 void Component::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   (void)dict;
   (void)ts_dict;
 }
@@ -179,7 +179,7 @@ Component_TS::~Component_TS() {
   // empty
 }
 
-MaxTimestep Component_TS::max_timestep(double t) {
+MaxTimestep Component_TS::max_timestep(double t) const {
   return this->max_timestep_impl(t);
 }
 

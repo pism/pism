@@ -60,7 +60,7 @@ void NullTransport::init() {
   Hydrology::init();
 }
 
-MaxTimestep NullTransport::max_timestep_impl(double t) {
+MaxTimestep NullTransport::max_timestep_impl(double t) const {
   (void) t;
   if (m_diffuse_tillwat) {
     const double
@@ -77,13 +77,13 @@ MaxTimestep NullTransport::max_timestep_impl(double t) {
 }
 
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
-void NullTransport::subglacial_water_thickness(IceModelVec2S &result) {
+void NullTransport::subglacial_water_thickness(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
 
 //! Returns the (trivial) overburden pressure as the pressure of the non-existent transportable water, because this is the least harmful output if this is misused.
-void NullTransport::subglacial_water_pressure(IceModelVec2S &result) {
+void NullTransport::subglacial_water_pressure(IceModelVec2S &result) const {
   overburden_pressure(result);
 }
 

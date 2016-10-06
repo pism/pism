@@ -124,7 +124,7 @@ void Cache::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
   result.copy_from(m_melange_back_pressure_fraction);
 }
 
-MaxTimestep Cache::max_timestep_impl(double t) {
+MaxTimestep Cache::max_timestep_impl(double t) const {
   double dt = m_next_update_time - t;
 
   // if we got very close to the next update time, set time step

@@ -57,7 +57,7 @@ void ConstantYieldStress::init_impl() {
   regrid("ConstantYieldStress", m_basal_yield_stress);
 }
 
-MaxTimestep ConstantYieldStress::max_timestep_impl(double t) {
+MaxTimestep ConstantYieldStress::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

@@ -28,7 +28,7 @@ namespace pism {
 class IceModel_hardav : public Diag<IceModel>
 {
 public:
-  IceModel_hardav(IceModel *m);
+  IceModel_hardav(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -36,7 +36,7 @@ protected:
 class IceModel_land_ice_area_fraction : public Diag<IceModel>
 {
 public:
-  IceModel_land_ice_area_fraction(IceModel *m);
+  IceModel_land_ice_area_fraction(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -44,7 +44,7 @@ protected:
 class IceModel_grounded_ice_sheet_area_fraction : public Diag<IceModel>
 {
 public:
-  IceModel_grounded_ice_sheet_area_fraction(IceModel *m);
+  IceModel_grounded_ice_sheet_area_fraction(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -52,7 +52,7 @@ protected:
 class IceModel_floating_ice_sheet_area_fraction : public Diag<IceModel>
 {
 public:
-  IceModel_floating_ice_sheet_area_fraction(IceModel *m);
+  IceModel_floating_ice_sheet_area_fraction(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -61,7 +61,7 @@ protected:
 class IceModel_rank : public Diag<IceModel>
 {
 public:
-  IceModel_rank(IceModel *m);
+  IceModel_rank(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -70,7 +70,7 @@ protected:
 class IceModel_cts : public Diag<IceModel>
 {
 public:
-  IceModel_cts(IceModel *m);
+  IceModel_cts(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -79,7 +79,7 @@ protected:
 class IceModel_proc_ice_area : public Diag<IceModel>
 {
 public:
-  IceModel_proc_ice_area(IceModel *m);
+  IceModel_proc_ice_area(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -88,7 +88,7 @@ protected:
 class IceModel_temp : public Diag<IceModel>
 {
 public:
-  IceModel_temp(IceModel *m);
+  IceModel_temp(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -98,7 +98,7 @@ protected:
 class IceModel_temp_pa : public Diag<IceModel>
 {
 public:
-  IceModel_temp_pa(IceModel *m);
+  IceModel_temp_pa(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -107,7 +107,7 @@ protected:
 class IceModel_temppabase : public Diag<IceModel>
 {
 public:
-  IceModel_temppabase(IceModel *m);
+  IceModel_temppabase(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -116,7 +116,7 @@ protected:
 class IceModel_enthalpysurf : public Diag<IceModel>
 {
 public:
-  IceModel_enthalpysurf(IceModel *m);
+  IceModel_enthalpysurf(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -125,7 +125,7 @@ protected:
 class IceModel_enthalpybase : public Diag<IceModel>
 {
 public:
-  IceModel_enthalpybase(IceModel *m);
+  IceModel_enthalpybase(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -134,7 +134,7 @@ protected:
 class IceModel_tempbase : public Diag<IceModel>
 {
 public:
-  IceModel_tempbase(IceModel *m);
+  IceModel_tempbase(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -143,7 +143,7 @@ protected:
 class IceModel_tempsurf : public Diag<IceModel>
 {
 public:
-  IceModel_tempsurf(IceModel *m);
+  IceModel_tempsurf(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -152,7 +152,7 @@ protected:
 class IceModel_liqfrac : public Diag<IceModel>
 {
 public:
-  IceModel_liqfrac(IceModel *m);
+  IceModel_liqfrac(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -161,7 +161,7 @@ protected:
 class IceModel_tempicethk : public Diag<IceModel>
 {
 public:
-  IceModel_tempicethk(IceModel *m);
+  IceModel_tempicethk(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -169,7 +169,7 @@ protected:
 class IceModel_tempicethk_basal : public Diag<IceModel>
 {
 public:
-  IceModel_tempicethk_basal(IceModel *m);
+  IceModel_tempicethk_basal(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -177,7 +177,7 @@ protected:
 class IceModel_flux_divergence : public Diag<IceModel>
 {
 public:
-  IceModel_flux_divergence(IceModel *m);
+  IceModel_flux_divergence(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -186,7 +186,7 @@ protected:
 class IceModel_ivol : public TSDiag<IceModel>
 {
 public:
-  IceModel_ivol(IceModel *m);
+  IceModel_ivol(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -194,7 +194,7 @@ public:
 class IceModel_slvol : public TSDiag<IceModel>
 {
 public:
-  IceModel_slvol(IceModel *m);
+  IceModel_slvol(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -202,7 +202,7 @@ public:
 class IceModel_divoldt : public TSDiag<IceModel>
 {
 public:
-  IceModel_divoldt(IceModel *m);
+  IceModel_divoldt(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -210,7 +210,7 @@ public:
 class IceModel_iarea : public TSDiag<IceModel>
 {
 public:
-  IceModel_iarea(IceModel *m);
+  IceModel_iarea(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -218,7 +218,7 @@ public:
 class IceModel_imass : public TSDiag<IceModel>
 {
 public:
-  IceModel_imass(IceModel *m);
+  IceModel_imass(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -226,7 +226,7 @@ public:
 class IceModel_limnsw : public TSDiag<IceModel>
 {
 public:
-  IceModel_limnsw(IceModel *m);
+  IceModel_limnsw(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -234,7 +234,7 @@ public:
 class IceModel_dimassdt : public TSDiag<IceModel>
 {
 public:
-  IceModel_dimassdt(IceModel *m);
+  IceModel_dimassdt(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -242,7 +242,7 @@ public:
 class IceModel_ivoltemp : public TSDiag<IceModel>
 {
 public:
-  IceModel_ivoltemp(IceModel *m);
+  IceModel_ivoltemp(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -250,7 +250,7 @@ public:
 class IceModel_ivolcold : public TSDiag<IceModel>
 {
 public:
-  IceModel_ivolcold(IceModel *m);
+  IceModel_ivolcold(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -258,7 +258,7 @@ public:
 class IceModel_iareatemp : public TSDiag<IceModel>
 {
 public:
-  IceModel_iareatemp(IceModel *m);
+  IceModel_iareatemp(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -266,7 +266,7 @@ public:
 class IceModel_iareacold : public TSDiag<IceModel>
 {
 public:
-  IceModel_iareacold(IceModel *m);
+  IceModel_iareacold(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -274,7 +274,7 @@ public:
 class IceModel_ienthalpy : public TSDiag<IceModel>
 {
 public:
-  IceModel_ienthalpy(IceModel *m);
+  IceModel_ienthalpy(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -282,7 +282,7 @@ public:
 class IceModel_iareag : public TSDiag<IceModel>
 {
 public:
-  IceModel_iareag(IceModel *m);
+  IceModel_iareag(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -290,7 +290,7 @@ public:
 class IceModel_iareaf : public TSDiag<IceModel>
 {
 public:
-  IceModel_iareaf(IceModel *m);
+  IceModel_iareaf(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -298,7 +298,7 @@ public:
 class IceModel_ivolg : public TSDiag<IceModel>
 {
 public:
-  IceModel_ivolg(IceModel *m);
+  IceModel_ivolg(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -306,7 +306,7 @@ public:
 class IceModel_ivolf : public TSDiag<IceModel>
 {
 public:
-  IceModel_ivolf(IceModel *m);
+  IceModel_ivolf(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -314,7 +314,7 @@ public:
 class IceModel_dt : public TSDiag<IceModel>
 {
 public:
-  IceModel_dt(IceModel *m);
+  IceModel_dt(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -322,7 +322,7 @@ public:
 class IceModel_max_diffusivity : public TSDiag<IceModel>
 {
 public:
-  IceModel_max_diffusivity(IceModel *m);
+  IceModel_max_diffusivity(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -330,7 +330,7 @@ public:
 class IceModel_surface_flux : public TSDiag<IceModel>
 {
 public:
-  IceModel_surface_flux(IceModel *m);
+  IceModel_surface_flux(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -338,7 +338,7 @@ public:
 class IceModel_surface_flux_cumulative : public TSDiag<IceModel>
 {
 public:
-  IceModel_surface_flux_cumulative(IceModel *m);
+  IceModel_surface_flux_cumulative(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -346,7 +346,7 @@ public:
 class IceModel_grounded_basal_flux : public TSDiag<IceModel>
 {
 public:
-  IceModel_grounded_basal_flux(IceModel *m);
+  IceModel_grounded_basal_flux(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -354,7 +354,7 @@ public:
 class IceModel_grounded_basal_flux_cumulative : public TSDiag<IceModel>
 {
 public:
-  IceModel_grounded_basal_flux_cumulative(IceModel *m);
+  IceModel_grounded_basal_flux_cumulative(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -362,7 +362,7 @@ public:
 class IceModel_sub_shelf_flux : public TSDiag<IceModel>
 {
 public:
-  IceModel_sub_shelf_flux(IceModel *m);
+  IceModel_sub_shelf_flux(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -370,7 +370,7 @@ public:
 class IceModel_sub_shelf_flux_cumulative : public TSDiag<IceModel>
 {
 public:
-  IceModel_sub_shelf_flux_cumulative(IceModel *m);
+  IceModel_sub_shelf_flux_cumulative(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -379,7 +379,7 @@ public:
 class IceModel_nonneg_flux : public TSDiag<IceModel>
 {
 public:
-  IceModel_nonneg_flux(IceModel *m);
+  IceModel_nonneg_flux(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -388,7 +388,7 @@ public:
 class IceModel_nonneg_flux_cumulative : public TSDiag<IceModel>
 {
 public:
-  IceModel_nonneg_flux_cumulative(IceModel *m);
+  IceModel_nonneg_flux_cumulative(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -396,7 +396,7 @@ public:
 class IceModel_discharge_flux : public TSDiag<IceModel>
 {
 public:
-  IceModel_discharge_flux(IceModel *m);
+  IceModel_discharge_flux(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -404,7 +404,7 @@ public:
 class IceModel_discharge_flux_cumulative : public TSDiag<IceModel>
 {
 public:
-  IceModel_discharge_flux_cumulative(IceModel *m);
+  IceModel_discharge_flux_cumulative(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -412,7 +412,7 @@ public:
 class IceModel_climatic_mass_balance_cumulative : public Diag<IceModel>
 {
 public:
-  IceModel_climatic_mass_balance_cumulative(IceModel *m);
+  IceModel_climatic_mass_balance_cumulative(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -421,7 +421,7 @@ protected:
 class IceModel_dHdt : public Diag<IceModel>
 {
 public:
-  IceModel_dHdt(IceModel *m);
+  IceModel_dHdt(const IceModel *m);
   virtual void update_cumulative();
 protected:
   virtual IceModelVec::Ptr compute_impl();
@@ -434,7 +434,7 @@ protected:
 class IceModel_max_hor_vel : public TSDiag<IceModel>
 {
 public:
-  IceModel_max_hor_vel(IceModel *m);
+  IceModel_max_hor_vel(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -443,7 +443,7 @@ public:
 class IceModel_H_to_Href_flux : public TSDiag<IceModel>
 {
 public:
-  IceModel_H_to_Href_flux(IceModel *m);
+  IceModel_H_to_Href_flux(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -452,7 +452,7 @@ public:
 class IceModel_Href_to_H_flux : public TSDiag<IceModel>
 {
 public:
-  IceModel_Href_to_H_flux(IceModel *m);
+  IceModel_Href_to_H_flux(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -461,7 +461,7 @@ public:
 class IceModel_sum_divQ_flux : public TSDiag<IceModel>
 {
 public:
-  IceModel_sum_divQ_flux(IceModel *m);
+  IceModel_sum_divQ_flux(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -470,7 +470,7 @@ public:
 class IceModel_nonneg_flux_2D_cumulative : public Diag<IceModel>
 {
 public:
-  IceModel_nonneg_flux_2D_cumulative(IceModel *m);
+  IceModel_nonneg_flux_2D_cumulative(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -480,7 +480,7 @@ protected:
 class IceModel_grounded_basal_flux_2D_cumulative : public Diag<IceModel>
 {
 public:
-  IceModel_grounded_basal_flux_2D_cumulative(IceModel *m);
+  IceModel_grounded_basal_flux_2D_cumulative(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -489,7 +489,7 @@ protected:
 class IceModel_floating_basal_flux_2D_cumulative : public Diag<IceModel>
 {
 public:
-  IceModel_floating_basal_flux_2D_cumulative(IceModel *m);
+  IceModel_floating_basal_flux_2D_cumulative(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -498,7 +498,7 @@ protected:
 class IceModel_discharge_flux_2D_cumulative : public Diag<IceModel>
 {
 public:
-  IceModel_discharge_flux_2D_cumulative(IceModel *m);
+  IceModel_discharge_flux_2D_cumulative(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -507,7 +507,7 @@ protected:
 class IceModel_discharge_flux_2D : public Diag<IceModel>
 {
 public:
-  IceModel_discharge_flux_2D(IceModel *m);
+  IceModel_discharge_flux_2D(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
   IceModelVec2S m_last_cumulative_discharge;
@@ -518,7 +518,7 @@ protected:
 class IceModel_surface_mass_balance_average : public Diag<IceModel>
 {
 public:
-  IceModel_surface_mass_balance_average(IceModel *m);
+  IceModel_surface_mass_balance_average(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
   IceModelVec2S m_last_cumulative_SMB;
@@ -529,7 +529,7 @@ protected:
 class IceModel_basal_mass_balance_average : public Diag<IceModel>
 {
 public:
-  IceModel_basal_mass_balance_average(IceModel *m);
+  IceModel_basal_mass_balance_average(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
   IceModelVec2S m_last_cumulative_BMB;
@@ -540,7 +540,7 @@ protected:
 class IceModel_height_above_flotation : public Diag<IceModel>
 {
 public:
-  IceModel_height_above_flotation(IceModel *m);
+  IceModel_height_above_flotation(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -550,7 +550,7 @@ protected:
 class IceModel_ice_mass : public Diag<IceModel>
 {
 public:
-  IceModel_ice_mass(IceModel *m);
+  IceModel_ice_mass(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -559,7 +559,7 @@ protected:
 class IceModel_topg_sl_adjusted : public Diag<IceModel>
 {
 public:
-  IceModel_topg_sl_adjusted(IceModel *m);
+  IceModel_topg_sl_adjusted(const IceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -568,7 +568,7 @@ protected:
 class IceModel_hardness : public Diag<IceModel>
 {
 public:
-  IceModel_hardness(IceModel *m);
+  IceModel_hardness(const IceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -577,7 +577,7 @@ protected:
 class IceModel_lat_lon_bounds : public Diag<IceModel>
 {
 public:
-  IceModel_lat_lon_bounds(IceModel *m,
+  IceModel_lat_lon_bounds(const IceModel *m,
                           const std::string &var_name,
                           const std::string &proj_string);
   ~IceModel_lat_lon_bounds();

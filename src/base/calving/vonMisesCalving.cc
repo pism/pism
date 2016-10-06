@@ -161,7 +161,7 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 }
 
 void vonMisesCalving::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                           std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                           std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   dict["vonmises_calving_rate"] = Diagnostic::Ptr(new CalvingRate(this, "vonmises_calving_rate",
                                                                   "horizontal calving rate due to von Mises calving"));
   (void)ts_dict;

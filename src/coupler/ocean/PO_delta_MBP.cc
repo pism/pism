@@ -54,7 +54,7 @@ void Delta_MBP::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_MBP::max_timestep_impl(double t) {
+MaxTimestep Delta_MBP::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

@@ -95,7 +95,7 @@ protected:
   virtual double depth_impl() const;
   virtual unsigned int Mz_impl() const;
 
-  virtual MaxTimestep max_timestep_impl(double my_t);
+  virtual MaxTimestep max_timestep_impl(double my_t) const;
 
   using BedThermalUnit::update_impl;
   virtual void update_impl(const IceModelVec2S &bedrock_top_temperature,

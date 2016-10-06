@@ -156,7 +156,7 @@ void Hydrology::init() {
 
 
 void Hydrology::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                     std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
+                                     std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) const {
   dict["bwat"]       = Diagnostic::Ptr(new Hydrology_bwat(this));
   dict["bwp"]        = Diagnostic::Ptr(new Hydrology_bwp(this));
   dict["bwprel"]     = Diagnostic::Ptr(new Hydrology_bwprel(this));
@@ -180,7 +180,7 @@ Uses the standard hydrostatic (shallow) approximation of overburden pressure,
   \f[ P_0 = \rho_i g H \f]
 Accesses H=thk from Vars, which points into IceModel.
  */
-void Hydrology::overburden_pressure(IceModelVec2S &result) {
+void Hydrology::overburden_pressure(IceModelVec2S &result) const {
   // FIXME issue #15
   const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("thk");
 
@@ -190,13 +190,13 @@ void Hydrology::overburden_pressure(IceModelVec2S &result) {
 
 
 //! Return the effective thickness of the water stored in till.
-void Hydrology::till_water_thickness(IceModelVec2S &result) {
+void Hydrology::till_water_thickness(IceModelVec2S &result) const {
   result.copy_from(m_Wtil);
 }
 
 
 //! Set the wall melt rate to zero.  (The most basic subglacial hydrologies have no lateral flux or potential gradient.)
-void Hydrology::wall_melt(IceModelVec2S &result) {
+void Hydrology::wall_melt(IceModelVec2S &result) const {
   result.set(0.0);
 }
 

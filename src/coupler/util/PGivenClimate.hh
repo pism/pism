@@ -46,7 +46,7 @@ public:
   }
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) {
+  virtual MaxTimestep max_timestep_impl(double t) const {
     (void) t;
     return MaxTimestep();
   }

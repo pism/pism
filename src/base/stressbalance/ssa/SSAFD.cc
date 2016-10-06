@@ -1780,7 +1780,7 @@ PetscErrorCode SSAFD::write_system_matlab_c(const petsc::Viewer &viewer,
   return 0;
 }
 
-SSAFD_nuH::SSAFD_nuH(SSAFD *m)
+SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
   : Diag<SSAFD>(m) {
 
   // set metadata:
@@ -1809,7 +1809,7 @@ IceModelVec::Ptr SSAFD_nuH::compute_impl() {
 }
 
 void SSAFD::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   SSA::get_diagnostics_impl(dict, ts_dict);
 
   dict["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));

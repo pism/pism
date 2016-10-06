@@ -89,6 +89,7 @@ class BedDef;
 class IceGrid;
 class YieldStress;
 class IceModelVec2CellType;
+class Component;
 
 struct FractureFields {
   FractureFields(IceGrid::ConstPtr grid);
@@ -245,6 +246,9 @@ protected:
 
   //! run statistics
   VariableMetadata m_run_stats;
+
+  //! the list of sub-models, for writing model states and obtaining diagnostics
+  std::map<std::string,const Component*> m_submodels;
 
   hydrology::Hydrology   *m_subglacial_hydrology;
   YieldStress *m_basal_yield_stress_model;
@@ -445,8 +449,8 @@ protected:
                                 double meltfrac, double max_diffusivity);
 
 public:
-  const IceModelVec2S &cell_area();
-  const IceModelVec2CellType &cell_type_mask();
+  const IceModelVec2S &cell_area() const;
+  const IceModelVec2CellType &cell_type_mask() const;
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
@@ -458,9 +462,8 @@ public:
   double ice_area() const;
   double ice_area_grounded() const;
   double ice_area_floating() const;
-  // these are not "const" because they use temporary storage m_work2d
-  double ice_area_temperate();
-  double ice_area_cold();
+  double ice_area_temperate() const;
+  double ice_area_cold() const;
 
 protected:
   // see iMtemp.cc
@@ -481,7 +484,7 @@ protected:
 protected:
   // working space (a convenience)
   static const int m_n_work2d = 2;
-  IceModelVec2S m_work2d[m_n_work2d];
+  mutable IceModelVec2S m_work2d[m_n_work2d];
 
   // 3D working space
   IceModelVec3 m_work3d;

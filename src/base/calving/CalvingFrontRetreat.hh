@@ -61,7 +61,7 @@ protected:
 class CalvingRate : public Diag<CalvingFrontRetreat>
 {
 public:
-  CalvingRate(CalvingFrontRetreat *m,
+  CalvingRate(const CalvingFrontRetreat *m,
               const std::string &name,
               const std::string &long_name);
   IceModelVec::Ptr compute_impl();

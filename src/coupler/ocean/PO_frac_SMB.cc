@@ -56,7 +56,7 @@ void Frac_SMB::init_impl() {
 
 }
 
-MaxTimestep Frac_SMB::max_timestep_impl(double t) {
+MaxTimestep Frac_SMB::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

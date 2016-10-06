@@ -84,7 +84,7 @@ void Constant::init_impl() {
   }
 }
 
-MaxTimestep Constant::max_timestep_impl(double t) {
+MaxTimestep Constant::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

@@ -50,7 +50,7 @@ void Simple::init_impl() {
              "    ice upper surface temperature := 2m air temperature.\n");
 }
 
-MaxTimestep Simple::max_timestep_impl(double t) {
+MaxTimestep Simple::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }
@@ -63,11 +63,11 @@ void Simple::update_impl(double my_t, double my_dt) {
   }
 }
 
-void Simple::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void Simple::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   m_atmosphere->mean_precipitation(result);
 }
 
-void Simple::ice_surface_temperature_impl(IceModelVec2S &result) {
+void Simple::ice_surface_temperature_impl(IceModelVec2S &result) const {
   m_atmosphere->mean_annual_temp(result);
 }
 

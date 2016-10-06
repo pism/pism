@@ -64,7 +64,7 @@ void Verification::init_impl() {
   update(m_grid->ctx()->time()->current(), 0);
 }
 
-MaxTimestep Verification::max_timestep_impl(double t) {
+MaxTimestep Verification::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

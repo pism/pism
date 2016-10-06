@@ -118,7 +118,7 @@ public:
 
   virtual std::string stdout_report() const;
 
-  virtual void compute_driving_stress(IceModelVec2V &taud);
+  virtual void compute_driving_stress(IceModelVec2V &taud) const;
 
 protected:
   virtual void define_model_state_impl(const PIO &output) const;
@@ -127,7 +127,7 @@ protected:
   virtual void init_impl();
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   virtual void solve() = 0;
 

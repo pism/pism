@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -96,7 +96,7 @@ void read_time_bounds(const PIO &nc,
                       const Time &time, const Logger &log, std::vector<double> &data);
 
 void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
-                       size_t t_start, std::vector<double> &data,
+                       size_t t_start, const std::vector<double> &data,
                        IO_Type nctype = PISM_DOUBLE);
 
 void read_attributes(const PIO &nc, const std::string &variable_name, VariableMetadata &variable);

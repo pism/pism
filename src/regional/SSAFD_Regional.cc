@@ -44,7 +44,7 @@ void SSAFD_Regional::init() {
   }
 }
 
-void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
+void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) const {
 
   SSAFD::compute_driving_stress(result);
 

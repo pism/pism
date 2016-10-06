@@ -65,13 +65,13 @@ public:
 
 protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
-  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
-  virtual void surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual void surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual void surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+  virtual void surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+  virtual void surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
   virtual void compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
                                       IceModelVec2Stag &result, bool fast);
@@ -85,17 +85,17 @@ protected:
 
   virtual double grainSizeVostok(double age) const;
 
-  virtual void compute_diffusivity(IceModelVec2S &result);
-  virtual void compute_diffusivity_staggered(IceModelVec2Stag &result);
+  virtual void compute_diffusivity(IceModelVec2S &result) const;
+  virtual void compute_diffusivity_staggered(IceModelVec2Stag &result) const;
 
   bool interglacial(double accumulation_time);
 
   //! temporary storage for eta, theta and the smoothed thickness
-  IceModelVec2S m_work_2d[2];
+  mutable IceModelVec2S m_work_2d[2];
   //! temporary storage for the surface gradient
-  IceModelVec2Stag m_work_2d_stag[2];
+  mutable IceModelVec2Stag m_work_2d_stag[2];
   //! temporary storage for delta on the staggered grid
-  IceModelVec3 m_delta[2];
+  mutable IceModelVec3 m_delta[2];
   //! temporary storage used to store I and strain_heating on the staggered grid
   IceModelVec3 m_work_3d[2];
 

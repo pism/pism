@@ -104,7 +104,7 @@ void EISMINTII::init_impl() {
   initialize_using_formulas();
 }
 
-MaxTimestep EISMINTII::max_timestep_impl(double t) {
+MaxTimestep EISMINTII::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

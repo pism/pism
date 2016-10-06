@@ -43,7 +43,7 @@ protected:
   virtual void init_impl();
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   virtual void pc_setup_bjacobi();
 

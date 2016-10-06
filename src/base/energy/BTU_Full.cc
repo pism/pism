@@ -160,7 +160,7 @@ void BTU_Full::write_model_state_impl(const PIO &output) const {
 
   The above describes the general case where Mbz > 1.
 */
-MaxTimestep BTU_Full::max_timestep_impl(double t) {
+MaxTimestep BTU_Full::max_timestep_impl(double t) const {
   (void) t;
 
   const double dz = vertical_spacing();

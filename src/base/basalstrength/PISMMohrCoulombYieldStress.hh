@@ -42,7 +42,7 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl();
 
   void topg_to_phi();

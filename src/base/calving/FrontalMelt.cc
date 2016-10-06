@@ -40,7 +40,7 @@ void FrontalMelt::init() {
 }
 
 void FrontalMelt::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   dict["frontal_melt_rate"] = Diagnostic::Ptr(new CalvingRate(this, "frontal_melt_rate",
                                                               "horizontal front retreat rate due to melt"));
   (void) ts_dict;

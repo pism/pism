@@ -119,7 +119,7 @@ void Routing::init() {
   m_null_strip_loss_cumulative         = 0.0;
 }
 
-MaxTimestep Routing::max_timestep_impl(double t) {
+MaxTimestep Routing::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }
@@ -161,7 +161,7 @@ void Routing::write_model_state_impl(const PIO &output) const {
 }
 
 void Routing::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   // bwat is state
   dict["bwp"]        = Diagnostic::Ptr(new Hydrology_bwp(this));
   dict["bwprel"]     = Diagnostic::Ptr(new Hydrology_bwprel(this));
@@ -280,13 +280,13 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
 
 
 //! Copies the W variable, the modeled transportable water layer thickness.
-void Routing::subglacial_water_thickness(IceModelVec2S &result) {
+void Routing::subglacial_water_thickness(IceModelVec2S &result) const {
   result.copy_from(m_W);
 }
 
 
 //! Returns the (trivial) overburden pressure as the pressure of the transportable water, because this is the model.
-void Routing::subglacial_water_pressure(IceModelVec2S &result) {
+void Routing::subglacial_water_pressure(IceModelVec2S &result) const {
   overburden_pressure(result);
 }
 
@@ -461,7 +461,7 @@ staggered-versus-regular change.
 
 At the current state of the code, this is a diagnostic calculation only.
  */
-void Routing::wall_melt(IceModelVec2S &result) {
+void Routing::wall_melt(IceModelVec2S &result) const {
 
   const double
     k     = m_config->get_double("hydrology.hydraulic_conductivity"),
@@ -536,16 +536,17 @@ have valid ghosts.
 
 Calls subglacial_water_pressure() method to get water pressure.
  */
-void Routing::velocity_staggered(IceModelVec2Stag &result) {
+void Routing::velocity_staggered(IceModelVec2Stag &result) const {
   const double  rg = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
   double dbdx, dbdy, dPdx, dPdy;
 
-  subglacial_water_pressure(m_R);  // R=P; yes, it updates ghosts
+  IceModelVec2S &pressure = m_R;
+  subglacial_water_pressure(pressure);  // yes, it updates ghosts
 
   const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   IceModelVec::AccessList list;
-  list.add(m_R);
+  list.add(pressure);
   list.add(m_Wstag);
   list.add(m_K);
   list.add(bed);
@@ -555,7 +556,7 @@ void Routing::velocity_staggered(IceModelVec2Stag &result) {
     const int i = p.i(), j = p.j();
 
     if (m_Wstag(i, j, 0) > 0.0) {
-      dPdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
+      dPdx = (pressure(i + 1, j) - pressure(i, j)) / m_dx;
       dbdx = (bed(i + 1, j) - bed(i, j)) / m_dx;
       result(i, j, 0) =  - m_K(i, j, 0) * (dPdx + rg * dbdx);
     } else {
@@ -563,7 +564,7 @@ void Routing::velocity_staggered(IceModelVec2Stag &result) {
     }
 
     if (m_Wstag(i, j, 1) > 0.0) {
-      dPdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
+      dPdy = (pressure(i, j + 1) - pressure(i, j)) / m_dy;
       dbdy = (bed(i, j + 1) - bed(i, j)) / m_dy;
       result(i, j, 1) =  - m_K(i, j, 1) * (dPdy + rg * dbdy);
     } else {
@@ -804,7 +805,7 @@ void Routing::update_impl(double icet, double icedt) {
 }
 
 
-Routing_bwatvel::Routing_bwatvel(Routing *m)
+Routing_bwatvel::Routing_bwatvel(const Routing *m)
   : Diag<Routing>(m) {
 
   // set metadata:

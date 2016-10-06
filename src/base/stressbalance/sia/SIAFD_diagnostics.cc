@@ -24,7 +24,7 @@ namespace pism {
 namespace stressbalance {
 
 void SIAFD::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                 std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
+                                 std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) const {
   dict["diffusivity"]           = Diagnostic::Ptr(new SIAFD_diffusivity(this));
   dict["diffusivity_staggered"] = Diagnostic::Ptr(new SIAFD_diffusivity_staggered(this));
   dict["schoofs_theta"]         = Diagnostic::Ptr(new SIAFD_schoofs_theta(this));
@@ -34,7 +34,7 @@ void SIAFD::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
   dict["h_y"]                   = Diagnostic::Ptr(new SIAFD_h_y(this));
 }
 
-SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m)
+SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
@@ -59,7 +59,7 @@ IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() {
 }
 
 
-SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m)
+SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
@@ -79,7 +79,7 @@ IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() {
   return result;
 }
 
-SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m)
+SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
@@ -105,7 +105,7 @@ IceModelVec::Ptr SIAFD_thksmooth::compute_impl() {
 
 
 
-SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m)
+SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
@@ -125,7 +125,7 @@ IceModelVec::Ptr SIAFD_diffusivity::compute_impl() {
   return result;
 }
 
-SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m)
+SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
@@ -152,7 +152,7 @@ IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() {
   return result;
 }
 
-SIAFD_h_x::SIAFD_h_x(SIAFD *m)
+SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
@@ -183,7 +183,7 @@ IceModelVec::Ptr SIAFD_h_x::compute_impl() {
   return result;
 }
 
-SIAFD_h_y::SIAFD_h_y(SIAFD *m)
+SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:

@@ -32,10 +32,11 @@ public:
 protected:
   virtual void init_impl();
   virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
-  virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
+
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const;
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const;
+  virtual MaxTimestep max_timestep_impl(double t) const;
 protected:
   double m_T_min, m_T_max, m_z_T_min, m_z_T_max;
   double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;

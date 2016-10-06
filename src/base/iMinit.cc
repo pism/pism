@@ -424,6 +424,8 @@ void IceModel::allocate_stressbalance() {
 
   // ~StressBalance() will de-allocate sliding and modifier.
   m_stress_balance = new StressBalance(m_grid, sliding, modifier);
+
+  m_submodels["stress balance"] = m_stress_balance;
 }
 
 void IceModel::allocate_iceberg_remover() {
@@ -443,6 +445,8 @@ void IceModel::allocate_iceberg_remover() {
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
     m_iceberg_remover->init();
+
+    m_submodels["iceberg remover"] = m_iceberg_remover;
   }
 }
 
@@ -456,6 +460,8 @@ void IceModel::allocate_bedrock_thermal_unit() {
   m_log->message(2, "# Allocating a bedrock thermal layer model...\n");
 
   m_btu = energy::BedThermalUnit::FromOptions(m_grid, m_ctx);
+
+  m_submodels["bedrock thermal model"] = m_btu;
 }
 
 //! \brief Decide which subglacial hydrology model to use.
@@ -470,7 +476,7 @@ void IceModel::allocate_subglacial_hydrology() {
   }
 
   m_log->message(2,
-             "# Allocating a subglacial hydrology model...\n");
+                 "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
     m_subglacial_hydrology = new NullTransport(m_grid);
@@ -482,6 +488,8 @@ void IceModel::allocate_subglacial_hydrology() {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown value for configuration string 'hydrology.model':\n"
                                   "has value '%s'", hydrology_model.c_str());
   }
+
+  m_submodels["subglacial hydrology"] = m_subglacial_hydrology;
 }
 
 //! \brief Decide which basal yield stress model to use.
@@ -508,6 +516,8 @@ void IceModel::allocate_basal_yield_stress() {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
+
+    m_submodels["basal yield stress"] = m_basal_yield_stress_model;
   }
 }
 
@@ -564,6 +574,8 @@ void IceModel::allocate_couplers() {
 
     atmosphere = pa.create();
     m_surface->attach_atmosphere_model(atmosphere);
+
+    m_submodels["surface process model"] = m_surface;
   }
 
   if (m_ocean == NULL) {
@@ -571,6 +583,8 @@ void IceModel::allocate_couplers() {
              "# Allocating an ocean model or coupler...\n");
 
     m_ocean = new ocean::InitializationHelper(m_grid, po.create());
+
+    m_submodels["ocean model"] = m_ocean;
   }
 }
 
@@ -688,13 +702,7 @@ void IceModel::misc_setup() {
 //! \brief Initialize calving mechanisms.
 void IceModel::init_calving() {
 
-  std::istringstream arg(m_config->get_string("calving.methods"));
-  std::string method_name;
-  std::set<std::string> methods;
-
-    while (getline(arg, method_name, ',')) {
-      methods.insert(method_name);
-    }
+  std::set<std::string> methods = set_split(m_config->get_string("calving.methods"), ',');
 
   if (methods.find("ocean_kill") != methods.end()) {
 
@@ -704,6 +712,8 @@ void IceModel::init_calving() {
 
     m_ocean_kill_calving->init();
     methods.erase("ocean_kill");
+
+    m_submodels["ocean kill calving"] = m_ocean_kill_calving;
   }
 
   if (methods.find("thickness_calving") != methods.end()) {
@@ -714,6 +724,8 @@ void IceModel::init_calving() {
 
     m_thickness_threshold_calving->init();
     methods.erase("thickness_calving");
+
+    m_submodels["thickness threshold calving"] = m_thickness_threshold_calving;
   }
 
 
@@ -725,6 +737,8 @@ void IceModel::init_calving() {
 
     m_eigen_calving->init();
     methods.erase("eigen_calving");
+
+    m_submodels["eigen calving"] = m_eigen_calving;
   }
 
   if (methods.find("vonmises_calving") != methods.end()) {
@@ -735,6 +749,8 @@ void IceModel::init_calving() {
 
     m_vonmises_calving->init();
     methods.erase("vonmises_calving");
+
+    m_submodels["von Mises calving"] = m_vonmises_calving;
   }
 
   if (methods.find("frontal_melt") != methods.end()) {
@@ -745,6 +761,8 @@ void IceModel::init_calving() {
 
     m_frontal_melt->init();
     methods.erase("frontal_melt");
+
+    m_submodels["frontal melt"] = m_frontal_melt;
   }
 
   if (methods.find("float_kill") != methods.end()) {
@@ -754,6 +772,8 @@ void IceModel::init_calving() {
 
     m_float_kill_calving->init();
     methods.erase("float_kill");
+
+    m_submodels["float kill calving"] = m_float_kill_calving;
   }
 
   std::set<std::string>::iterator j = methods.begin();
@@ -782,18 +802,15 @@ void IceModel::allocate_bed_deformation() {
 
   if (model == "none") {
     m_beddef = new bed::PBNull(m_grid);
-    return;
   }
-
-  if (model == "iso") {
+  else if (model == "iso") {
     m_beddef = new bed::PBPointwiseIsostasy(m_grid);
-    return;
+  }
+  else if (model == "lc") {
+    m_beddef = new bed::PBLingleClark(m_grid);
   }
 
-  if (model == "lc") {
-    m_beddef = new bed::PBLingleClark(m_grid);
-    return;
-  }
+  m_submodels["bed deformation"] = m_beddef;
 }
 
 } // end of namespace pism

@@ -65,7 +65,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   // defaults for IceCompModel:
   testname = mytest;
   exactOnly = false;
-  bedrock_is_ice_forK = false;
+  m_bedrock_is_ice_forK = false;
 
   // Override some defaults from parent class
   m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
@@ -174,7 +174,7 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
       m_config->set_double("energy.bedrock_thermal_density", m_config->get_double("constants.ice.density"));
       m_config->set_double("energy.bedrock_thermal_conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
       m_config->set_double("energy.bedrock_thermal_specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
-      bedrock_is_ice_forK = true;
+      m_bedrock_is_ice_forK = true;
     } else {
       m_log->message(1,
                      "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
@@ -195,7 +195,7 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
 
   if (bed_vertical_grid.Mbz > 1) {
     m_btu = new energy::BTU_Verification(m_grid, bed_vertical_grid,
-                                         testname, bedrock_is_ice_forK);
+                                         testname, m_bedrock_is_ice_forK);
   } else {
     m_btu = new energy::BTU_Minimal(m_grid);
   }
@@ -203,13 +203,9 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
 
 void IceCompModel::allocate_stressbalance() {
 
-  using namespace pism::stressbalance;
-
   if (m_stress_balance != NULL) {
     return;
   }
-
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   IceModel::allocate_stressbalance();
 
@@ -219,7 +215,7 @@ void IceCompModel::allocate_stressbalance() {
     // errors to make sense)
 
     const rheology::FlowLaw *ice = m_stress_balance->modifier()->flow_law();
-
+    EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
     if (not FlowLawIsPatersonBuddCold(ice, *m_config, EC)) {
       m_log->message(1,
                  "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
@@ -231,14 +227,15 @@ void IceCompModel::allocate_bed_deformation() {
 
   IceModel::allocate_bed_deformation();
 
-  f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.lithosphere_density");  // for simple isostasy
+  // for simple isostasy
+  m_f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.lithosphere_density");
 
   std::string bed_def_model = m_config->get_string("bed_deformation.model");
 
   if ((testname == 'H') && bed_def_model != "iso") {
     m_log->message(1,
-               "IceCompModel WARNING: Test H should be run with option\n"
-               "  '-bed_def iso'  for the reported errors to be correct.\n");
+                   "IceCompModel WARNING: Test H should be run with option\n"
+                   "  '-bed_def iso'  for the reported errors to be correct.\n");
   }
 }
 
@@ -346,7 +343,7 @@ void IceCompModel::initTestABCDH() {
         m_ice_thickness(i, j) = exactD(time, r).H;
         break;
       case 'H':
-        m_ice_thickness(i, j) = exactH(f, time, r).H;
+        m_ice_thickness(i, j) = exactH(m_f, time, r).H;
         break;
       default:
         throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H");
@@ -365,7 +362,7 @@ void IceCompModel::initTestABCDH() {
 
     if (testname == 'H') {
       bed_topography.copy_from(m_ice_thickness);
-      bed_topography.scale(-f);
+      bed_topography.scale(-m_f);
     } else {  // flat bed case otherwise
       bed_topography.set(0.0);
     }
@@ -496,7 +493,7 @@ void IceCompModel::fillSolnTestABCDH() {
         m_ice_thickness(i, j) = exactD(time, r).H;
         break;
       case 'H':
-        m_ice_thickness(i, j) = exactH(f, time, r).H;
+        m_ice_thickness(i, j) = exactH(m_f, time, r).H;
         break;
       default:
         throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H");
@@ -515,7 +512,7 @@ void IceCompModel::fillSolnTestABCDH() {
 
     if (testname == 'H') {
       bed_topography.copy_from(m_ice_thickness);
-      bed_topography.scale(-f);
+      bed_topography.scale(-m_f);
     } else {
       bed_topography.set(0.0);
     }
@@ -611,7 +608,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         }
         break;
       case 'H':
-        Hexact = exactH(f, time, r).H;
+        Hexact = exactH(m_f, time, r).H;
         break;
       case 'K':
       case 'O':

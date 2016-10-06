@@ -32,7 +32,7 @@ namespace stressbalance {
 using units::convert;
 
 void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                        std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                        std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
 
   dict["bfrict"]   = Diagnostic::Ptr(new PSB_bfrict(this));
 
@@ -67,7 +67,7 @@ void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> 
   m_modifier->get_diagnostics(dict, ts_dict);
 }
 
-PSB_velbar::PSB_velbar(StressBalance *m)
+PSB_velbar::PSB_velbar(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   m_dof = 2;
@@ -116,7 +116,7 @@ IceModelVec::Ptr PSB_velbar::compute_impl() {
   return result;
 }
 
-PSB_velbar_mag::PSB_velbar_mag(StressBalance *m)
+PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -151,7 +151,7 @@ IceModelVec::Ptr PSB_velbar_mag::compute_impl() {
 }
 
 
-PSB_flux::PSB_flux(StressBalance *m)
+PSB_flux::PSB_flux(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   m_dof = 2;
@@ -241,7 +241,7 @@ IceModelVec::Ptr PSB_flux::compute_impl() {
 }
 
 
-PSB_flux_mag::PSB_flux_mag(StressBalance *m)
+PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -280,7 +280,7 @@ IceModelVec::Ptr PSB_flux_mag::compute_impl() {
   return result;
 }
 
-PSB_velbase_mag::PSB_velbase_mag(StressBalance *m)
+PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -323,7 +323,7 @@ IceModelVec::Ptr PSB_velbase_mag::compute_impl() {
   return result;
 }
 
-PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m)
+PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
   // set metadata:
   m_vars.push_back(SpatialVariableMetadata(m_sys, "velsurf_mag"));
@@ -367,7 +367,7 @@ IceModelVec::Ptr PSB_velsurf_mag::compute_impl() {
 }
 
 
-PSB_velsurf::PSB_velsurf(StressBalance *m)
+PSB_velsurf::PSB_velsurf(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -433,7 +433,7 @@ IceModelVec::Ptr PSB_velsurf::compute_impl() {
   return result;
 }
 
-PSB_wvel::PSB_wvel(StressBalance *m)
+PSB_wvel::PSB_wvel(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -537,7 +537,7 @@ IceModelVec::Ptr PSB_wvel::compute_impl() {
   return this->compute(true);   // fill wvel above the ice with zeros
 }
 
-PSB_wvelsurf::PSB_wvelsurf(StressBalance *m)
+PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -583,7 +583,7 @@ IceModelVec::Ptr PSB_wvelsurf::compute_impl() {
   return result;
 }
 
-PSB_wvelbase::PSB_wvelbase(StressBalance *m)
+PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -627,7 +627,7 @@ IceModelVec::Ptr PSB_wvelbase::compute_impl() {
   return result;
 }
 
-PSB_velbase::PSB_velbase(StressBalance *m)
+PSB_velbase::PSB_velbase(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -692,7 +692,7 @@ IceModelVec::Ptr PSB_velbase::compute_impl() {
 }
 
 
-PSB_bfrict::PSB_bfrict(StressBalance *m)
+PSB_bfrict::PSB_bfrict(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -714,7 +714,7 @@ IceModelVec::Ptr PSB_bfrict::compute_impl() {
 }
 
 
-PSB_uvel::PSB_uvel(StressBalance *m)
+PSB_uvel::PSB_uvel(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -767,7 +767,7 @@ IceModelVec::Ptr PSB_uvel::compute_impl() {
   return result;
 }
 
-PSB_vvel::PSB_vvel(StressBalance *m)
+PSB_vvel::PSB_vvel(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -820,7 +820,7 @@ IceModelVec::Ptr PSB_vvel::compute_impl() {
   return result;
 }
 
-PSB_wvel_rel::PSB_wvel_rel(StressBalance *m)
+PSB_wvel_rel::PSB_wvel_rel(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -875,7 +875,7 @@ IceModelVec::Ptr PSB_wvel_rel::compute_impl() {
 }
 
 
-PSB_strainheat::PSB_strainheat(StressBalance *m)
+PSB_strainheat::PSB_strainheat(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -897,7 +897,7 @@ IceModelVec::Ptr PSB_strainheat::compute_impl() {
   return result;
 }
 
-PSB_strain_rates::PSB_strain_rates(StressBalance *m)
+PSB_strain_rates::PSB_strain_rates(const StressBalance *m)
   : Diag<StressBalance>(m) {
   m_dof = 2;
 
@@ -932,7 +932,7 @@ IceModelVec::Ptr PSB_strain_rates::compute_impl() {
   return result;
 }
 
-PSB_deviatoric_stresses::PSB_deviatoric_stresses(StressBalance *m)
+PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
   : Diag<StressBalance>(m) {
   m_dof = 3;
 
@@ -970,7 +970,7 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() {
   return result;
 }
 
-PSB_pressure::PSB_pressure(StressBalance *m)
+PSB_pressure::PSB_pressure(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -1020,7 +1020,7 @@ IceModelVec::Ptr PSB_pressure::compute_impl() {
 }
 
 
-PSB_tauxz::PSB_tauxz(StressBalance *m)
+PSB_tauxz::PSB_tauxz(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -1084,7 +1084,7 @@ IceModelVec::Ptr PSB_tauxz::compute_impl() {
 }
 
 
-PSB_tauyz::PSB_tauyz(StressBalance *m)
+PSB_tauyz::PSB_tauyz(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -1146,7 +1146,7 @@ IceModelVec::Ptr PSB_tauyz::compute_impl() {
   return result;
 }
 
-PSB_vonmises_stress::PSB_vonmises_stress(StressBalance *m)
+PSB_vonmises_stress::PSB_vonmises_stress(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   /* set metadata: */

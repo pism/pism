@@ -33,7 +33,7 @@ public:
   virtual ~ConstantYieldStress();
 protected:
   virtual void init_impl();
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl();
 
   virtual void define_model_state_impl(const PIO &output) const;

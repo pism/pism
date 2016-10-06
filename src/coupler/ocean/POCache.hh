@@ -31,7 +31,7 @@ public:
   virtual ~Cache();
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(double my_t, double my_dt);
 
   virtual void init_impl();

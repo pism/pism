@@ -99,10 +99,10 @@ protected:
 template <class Model>
 class Diag : public Diagnostic {
 public:
-  Diag(Model *m)
+  Diag(const Model *m)
     : Diagnostic(m->grid()), model(m) {}
 protected:
-  Model *model;
+  const Model *model;
 };
 
 //! @brief PISM's scalar time-series diagnostics.
@@ -153,13 +153,13 @@ protected:
 template <class Model>
 class TSDiag : public TSDiagnostic {
 public:
-  TSDiag(Model *m)
+  TSDiag(const Model *m)
     : TSDiagnostic(m->grid()), model(m) {
     m_time_units = m_grid->ctx()->time()->CF_units_string();
     m_time_dimension_name = m_grid->ctx()->config()->get_string("time.dimension_name");
   }
 protected:
-  Model *model;
+  const Model *model;
   std::string m_time_units, m_time_dimension_name;
 };
 

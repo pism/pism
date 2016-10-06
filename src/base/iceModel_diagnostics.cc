@@ -136,48 +136,11 @@ void IceModel::init_diagnostics() {
   m_ts_diagnostics["Href_to_H_flux"]                     = TSDiagnostic::Ptr(new IceModel_Href_to_H_flux(this));
   m_ts_diagnostics["sum_divQ_flux"]                      = TSDiagnostic::Ptr(new IceModel_sum_divQ_flux(this));
 
-  // Get diagnostics supported by the stress balance object:
-  if (m_stress_balance != NULL) {
-    m_stress_balance->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  // Get diagnostics supported by the surface model:
-  if (m_surface != NULL) {
-    m_surface->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  // Get diagnostics supported by the ocean model:
-  if (m_ocean != NULL) {
-    m_ocean->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  // Get diagnostics supported by the bed deformation model:
-  if (m_beddef != NULL) {
-    m_beddef->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_basal_yield_stress_model != NULL) {
-    m_basal_yield_stress_model->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_subglacial_hydrology != NULL) {
-    m_subglacial_hydrology->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_btu != NULL) {
-    m_btu->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_eigen_calving != NULL) {
-    m_eigen_calving->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_vonmises_calving != NULL) {
-    m_vonmises_calving->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_frontal_melt != NULL) {
-    m_frontal_melt->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  // get diagnostics from submodels
+  std::map<std::string, const Component*>::const_iterator j = m_submodels.begin();
+  while (j != m_submodels.end()) {
+    j->second->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+    ++j;
   }
 }
 
@@ -290,7 +253,7 @@ void IceModel::list_diagnostics() {
 }
 
 
-IceModel_hardav::IceModel_hardav(IceModel *m)
+IceModel_hardav::IceModel_hardav(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -357,7 +320,7 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
 }
 
 
-IceModel_rank::IceModel_rank(IceModel *m)
+IceModel_rank::IceModel_rank(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -384,7 +347,7 @@ IceModelVec::Ptr IceModel_rank::compute_impl() {
 }
 
 
-IceModel_cts::IceModel_cts(IceModel *m)
+IceModel_cts::IceModel_cts(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -405,7 +368,7 @@ IceModelVec::Ptr IceModel_cts::compute_impl() {
   return result;
 }
 
-IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m)
+IceModel_proc_ice_area::IceModel_proc_ice_area(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -444,7 +407,7 @@ IceModelVec::Ptr IceModel_proc_ice_area::compute_impl() {
 }
 
 
-IceModel_temp::IceModel_temp(IceModel *m)
+IceModel_temp::IceModel_temp(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -497,7 +460,7 @@ IceModelVec::Ptr IceModel_temp::compute_impl() {
 }
 
 
-IceModel_temp_pa::IceModel_temp_pa(IceModel *m)
+IceModel_temp_pa::IceModel_temp_pa(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -563,7 +526,7 @@ IceModelVec::Ptr IceModel_temp_pa::compute_impl() {
   return result;
 }
 
-IceModel_temppabase::IceModel_temppabase(IceModel *m)
+IceModel_temppabase::IceModel_temppabase(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -622,7 +585,7 @@ IceModelVec::Ptr IceModel_temppabase::compute_impl() {
   return result;
 }
 
-IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m)
+IceModel_enthalpysurf::IceModel_enthalpysurf(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -667,7 +630,7 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
   return result;
 }
 
-IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m)
+IceModel_enthalpybase::IceModel_enthalpybase(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -692,7 +655,7 @@ IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
 }
 
 
-IceModel_tempbase::IceModel_tempbase(IceModel *m)
+IceModel_tempbase::IceModel_tempbase(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -745,7 +708,7 @@ IceModelVec::Ptr IceModel_tempbase::compute_impl() {
   return result;
 }
 
-IceModel_tempsurf::IceModel_tempsurf(IceModel *m)
+IceModel_tempsurf::IceModel_tempsurf(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -795,7 +758,7 @@ IceModelVec::Ptr IceModel_tempsurf::compute_impl() {
 }
 
 
-IceModel_liqfrac::IceModel_liqfrac(IceModel *m)
+IceModel_liqfrac::IceModel_liqfrac(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -827,7 +790,7 @@ IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
   return result;
 }
 
-IceModel_tempicethk::IceModel_tempicethk(IceModel *m)
+IceModel_tempicethk::IceModel_tempicethk(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -895,7 +858,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
   return result;
 }
 
-IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m)
+IceModel_tempicethk_basal::IceModel_tempicethk_basal(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1002,7 +965,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   return result;
 }
 
-IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m)
+IceModel_flux_divergence::IceModel_flux_divergence(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1023,7 +986,7 @@ IceModelVec::Ptr IceModel_flux_divergence::compute_impl() {
   return result;
 }
 
-IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(IceModel *m)
+IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1046,7 +1009,7 @@ IceModelVec::Ptr IceModel_climatic_mass_balance_cumulative::compute_impl() {
   return result;
 }
 
-IceModel_ivol::IceModel_ivol(IceModel *m)
+IceModel_ivol::IceModel_ivol(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1066,7 +1029,7 @@ void IceModel_ivol::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_slvol::IceModel_slvol(IceModel *m)
+IceModel_slvol::IceModel_slvol(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1086,7 +1049,7 @@ void IceModel_slvol::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_divoldt::IceModel_divoldt(IceModel *m)
+IceModel_divoldt::IceModel_divoldt(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1108,7 +1071,7 @@ void IceModel_divoldt::update(double a, double b) {
 }
 
 
-IceModel_iarea::IceModel_iarea(IceModel *m)
+IceModel_iarea::IceModel_iarea(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1127,7 +1090,7 @@ void IceModel_iarea::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_imass::IceModel_imass(IceModel *m)
+IceModel_imass::IceModel_imass(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1147,7 +1110,7 @@ void IceModel_imass::update(double a, double b) {
 }
 
 
-IceModel_dimassdt::IceModel_dimassdt(IceModel *m)
+IceModel_dimassdt::IceModel_dimassdt(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1168,7 +1131,7 @@ void IceModel_dimassdt::update(double a, double b) {
 }
 
 
-IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m)
+IceModel_ivoltemp::IceModel_ivoltemp(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1188,7 +1151,7 @@ void IceModel_ivoltemp::update(double a, double b) {
 }
 
 
-IceModel_ivolcold::IceModel_ivolcold(IceModel *m)
+IceModel_ivolcold::IceModel_ivolcold(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1207,7 +1170,7 @@ void IceModel_ivolcold::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_iareatemp::IceModel_iareatemp(IceModel *m)
+IceModel_iareatemp::IceModel_iareatemp(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1226,7 +1189,7 @@ void IceModel_iareatemp::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_iareacold::IceModel_iareacold(IceModel *m)
+IceModel_iareacold::IceModel_iareacold(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1245,7 +1208,7 @@ void IceModel_iareacold::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m)
+IceModel_ienthalpy::IceModel_ienthalpy(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1266,7 +1229,7 @@ void IceModel_ienthalpy::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_iareag::IceModel_iareag(IceModel *m)
+IceModel_iareag::IceModel_iareag(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1284,7 +1247,7 @@ void IceModel_iareag::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_iareaf::IceModel_iareaf(IceModel *m)
+IceModel_iareaf::IceModel_iareaf(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1302,7 +1265,7 @@ void IceModel_iareaf::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_dt::IceModel_dt(IceModel *m)
+IceModel_dt::IceModel_dt(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1319,7 +1282,7 @@ void IceModel_dt::update(double a, double b) {
   m_ts->append(model->dt(), a, b);
 }
 
-IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m)
+IceModel_max_diffusivity::IceModel_max_diffusivity(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1336,7 +1299,7 @@ void IceModel_max_diffusivity::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_surface_flux::IceModel_surface_flux(IceModel *m)
+IceModel_surface_flux::IceModel_surface_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1354,7 +1317,7 @@ void IceModel_surface_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().surface, a, b);
 }
 
-IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m)
+IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1369,7 +1332,7 @@ void IceModel_surface_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().surface, a, b);
 }
 
-IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m)
+IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1386,7 +1349,7 @@ void IceModel_grounded_basal_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
 }
 
-IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(IceModel *m)
+IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1402,7 +1365,7 @@ void IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
 }
 
-IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m)
+IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1419,7 +1382,7 @@ void IceModel_sub_shelf_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
-IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel *m)
+IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1435,7 +1398,7 @@ void IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
-IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m)
+IceModel_nonneg_flux::IceModel_nonneg_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1452,7 +1415,7 @@ void IceModel_nonneg_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
 }
 
-IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m)
+IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1468,7 +1431,7 @@ void IceModel_nonneg_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
 }
 
-IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m)
+IceModel_discharge_flux::IceModel_discharge_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1485,7 +1448,7 @@ void IceModel_discharge_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().discharge, a, b);
 }
 
-IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel *m)
+IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1501,7 +1464,7 @@ void IceModel_discharge_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().discharge, a, b);
 }
 
-IceModel_dHdt::IceModel_dHdt(IceModel *m)
+IceModel_dHdt::IceModel_dHdt(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1572,7 +1535,7 @@ void IceModel_dHdt::update_cumulative() {
   m_last_report_time = m_grid->ctx()->time()->current();
 }
 
-IceModel_ivolg::IceModel_ivolg(IceModel *m)
+IceModel_ivolg::IceModel_ivolg(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1610,7 +1573,7 @@ void IceModel_ivolg::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_ivolf::IceModel_ivolf(IceModel *m)
+IceModel_ivolf::IceModel_ivolf(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1659,7 +1622,7 @@ void IceModel_ivolf::update(double a, double b) {
  * reporting time. (It is not the "average over the reporting interval computed using
  * differencing in time", as other rate-of-change diagnostics.)
  */
-IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m)
+IceModel_max_hor_vel::IceModel_max_hor_vel(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1680,7 +1643,7 @@ void IceModel_max_hor_vel::update(double a, double b) {
   m_ts->append(std::max(cfl.u_max, cfl.v_max), a, b);
 }
 
-IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m)
+IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
   // set metadata:
   m_ts = new DiagnosticTimeseries(*m_grid, "H_to_Href_flux", m_time_dimension_name);
@@ -1697,7 +1660,7 @@ void IceModel_H_to_Href_flux::update(double a, double b) {
 }
 
 
-IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m)
+IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
   // set metadata:
   m_ts = new DiagnosticTimeseries(*m_grid, "Href_to_H_flux", m_time_dimension_name);
@@ -1715,7 +1678,7 @@ void IceModel_Href_to_H_flux::update(double a, double b) {
 
 
 
-IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m)
+IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
   // set metadata:
   m_ts = new DiagnosticTimeseries(*m_grid, "sum_divQ_flux", m_time_dimension_name);
@@ -1734,7 +1697,7 @@ void IceModel_sum_divQ_flux::update(double a, double b) {
                a, b);
 }
 
-IceModel_limnsw::IceModel_limnsw(IceModel *m)
+IceModel_limnsw::IceModel_limnsw(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1760,7 +1723,7 @@ void IceModel_limnsw::update(double a, double b) {
 
 
 
-IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel *m)
+IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1785,7 +1748,7 @@ IceModelVec::Ptr IceModel_nonneg_flux_2D_cumulative::compute_impl() {
   return result;
 }
 
-IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(IceModel *m)
+IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1810,7 +1773,7 @@ IceModelVec::Ptr IceModel_grounded_basal_flux_2D_cumulative::compute_impl() {
   return result;
 }
 
-IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(IceModel *m)
+IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1835,7 +1798,7 @@ IceModelVec::Ptr IceModel_floating_basal_flux_2D_cumulative::compute_impl() {
 }
 
 
-IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(IceModel *m)
+IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1860,7 +1823,7 @@ IceModelVec::Ptr IceModel_discharge_flux_2D_cumulative::compute_impl() {
   return result;
 }
 
-IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(IceModel *m)
+IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1919,7 +1882,7 @@ IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
   return result;
 }
 
-IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
+IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(const IceModel *m,
                                                  const std::string &var_name,
                                                  const std::string &proj_string)
   : Diag<IceModel>(m) {
@@ -1986,7 +1949,7 @@ IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
   return result;
 }
 
-IceModel_land_ice_area_fraction::IceModel_land_ice_area_fraction(IceModel *m)
+IceModel_land_ice_area_fraction::IceModel_land_ice_area_fraction(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars.push_back(SpatialVariableMetadata(m_sys, land_ice_area_fraction_name));
   set_attrs("fraction of a grid cell covered by ice (grounded or floating)",
@@ -2070,7 +2033,7 @@ IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
   return result;
 }
 
-IceModel_grounded_ice_sheet_area_fraction::IceModel_grounded_ice_sheet_area_fraction(IceModel *m)
+IceModel_grounded_ice_sheet_area_fraction::IceModel_grounded_ice_sheet_area_fraction(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars.push_back(SpatialVariableMetadata(m_sys, grounded_ice_sheet_area_fraction_name));
   set_attrs("fraction of a grid cell covered by grounded ice",
@@ -2124,7 +2087,7 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
   return result;
 }
 
-IceModel_floating_ice_sheet_area_fraction::IceModel_floating_ice_sheet_area_fraction(IceModel *m)
+IceModel_floating_ice_sheet_area_fraction::IceModel_floating_ice_sheet_area_fraction(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars.push_back(SpatialVariableMetadata(m_sys, floating_ice_sheet_area_fraction_name));
   set_attrs("fraction of a grid cell covered by floating ice",
@@ -2149,7 +2112,7 @@ IceModelVec::Ptr IceModel_floating_ice_sheet_area_fraction::compute_impl() {
   return result;
 }
 
-IceModel_surface_mass_balance_average::IceModel_surface_mass_balance_average(IceModel *m)
+IceModel_surface_mass_balance_average::IceModel_surface_mass_balance_average(const IceModel *m)
   : Diag<IceModel>(m) {
   // set metadata:
   m_vars.push_back(SpatialVariableMetadata(m_sys, "surface_mass_balance_average"));
@@ -2206,7 +2169,7 @@ IceModelVec::Ptr IceModel_surface_mass_balance_average::compute_impl() {
   return result;
 }
 
-IceModel_basal_mass_balance_average::IceModel_basal_mass_balance_average(IceModel *m)
+IceModel_basal_mass_balance_average::IceModel_basal_mass_balance_average(const IceModel *m)
   : Diag<IceModel>(m) {
   // set metadata:
   m_vars.push_back(SpatialVariableMetadata(m_sys, "basal_mass_balance_average"));
@@ -2267,7 +2230,7 @@ IceModelVec::Ptr IceModel_basal_mass_balance_average::compute_impl() {
   return result;
 }
 
-IceModel_height_above_flotation::IceModel_height_above_flotation(IceModel *m)
+IceModel_height_above_flotation::IceModel_height_above_flotation(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -2329,7 +2292,7 @@ IceModelVec::Ptr IceModel_height_above_flotation::compute_impl() {
   return result;
 }
 
-IceModel_ice_mass::IceModel_ice_mass(IceModel *m)
+IceModel_ice_mass::IceModel_ice_mass(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -2399,7 +2362,7 @@ IceModelVec::Ptr IceModel_ice_mass::compute_impl() {
   return result;
 }
 
-IceModel_topg_sl_adjusted::IceModel_topg_sl_adjusted(IceModel *m)
+IceModel_topg_sl_adjusted::IceModel_topg_sl_adjusted(const IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
@@ -2422,7 +2385,7 @@ IceModelVec::Ptr IceModel_topg_sl_adjusted::compute_impl() {
   return result;
 }
 
-IceModel_hardness::IceModel_hardness(IceModel *m)
+IceModel_hardness::IceModel_hardness(const IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */

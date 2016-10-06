@@ -29,7 +29,7 @@ namespace stressbalance {
 class PSB_velbar : public Diag<StressBalance>
 {
 public:
-  PSB_velbar(StressBalance *m);
+  PSB_velbar(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -39,7 +39,7 @@ protected:
 class PSB_velbar_mag : public Diag<StressBalance>
 {
 public:
-  PSB_velbar_mag(StressBalance *m);
+  PSB_velbar_mag(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -49,7 +49,7 @@ protected:
 class PSB_flux : public Diag<StressBalance>
 {
 public:
-  PSB_flux(StressBalance *m);
+  PSB_flux(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -59,7 +59,7 @@ protected:
 class PSB_flux_mag : public Diag<StressBalance>
 {
 public:
-  PSB_flux_mag(StressBalance *m);
+  PSB_flux_mag(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -69,7 +69,7 @@ protected:
 class PSB_velbase_mag : public Diag<StressBalance>
 {
 public:
-  PSB_velbase_mag(StressBalance *m);
+  PSB_velbase_mag(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -79,7 +79,7 @@ protected:
 class PSB_velsurf_mag : public Diag<StressBalance>
 {
 public:
-  PSB_velsurf_mag(StressBalance *m);
+  PSB_velsurf_mag(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -88,7 +88,7 @@ protected:
 class PSB_velsurf : public Diag<StressBalance>
 {
 public:
-  PSB_velsurf(StressBalance *m);
+  PSB_velsurf(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -108,7 +108,7 @@ protected:
 class PSB_wvel : public Diag<StressBalance>
 {
 public:
-  PSB_wvel(StressBalance *m);
+  PSB_wvel(const StressBalance *m);
   virtual IceModelVec::Ptr compute(bool zero_above_ice);
 protected:
   virtual IceModelVec::Ptr compute_impl();
@@ -118,7 +118,7 @@ protected:
 class PSB_wvelsurf : public Diag<StressBalance>
 {
 public:
-  PSB_wvelsurf(StressBalance *m);
+  PSB_wvelsurf(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -127,7 +127,7 @@ protected:
 class PSB_wvelbase : public Diag<StressBalance>
 {
 public:
-  PSB_wvelbase(StressBalance *m);
+  PSB_wvelbase(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -136,7 +136,7 @@ protected:
 class PSB_velbase : public Diag<StressBalance>
 {
 public:
-  PSB_velbase(StressBalance *m);
+  PSB_velbase(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -145,7 +145,7 @@ protected:
 class PSB_bfrict : public Diag<StressBalance>
 {
 public:
-  PSB_bfrict(StressBalance *m);
+  PSB_bfrict(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -154,7 +154,7 @@ protected:
 class PSB_uvel : public Diag<StressBalance>
 {
 public:
-  PSB_uvel(StressBalance *m);
+  PSB_uvel(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -163,7 +163,7 @@ protected:
 class PSB_vvel : public Diag<StressBalance>
 {
 public:
-  PSB_vvel(StressBalance *m);
+  PSB_vvel(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -173,7 +173,7 @@ protected:
 class PSB_wvel_rel : public Diag<StressBalance>
 {
 public:
-  PSB_wvel_rel(StressBalance *m);
+  PSB_wvel_rel(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -182,7 +182,7 @@ protected:
 class PSB_strainheat : public Diag<StressBalance>
 {
 public:
-  PSB_strainheat(StressBalance *m);
+  PSB_strainheat(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -191,7 +191,7 @@ protected:
 class PSB_strain_rates : public Diag<StressBalance>
 {
 public:
-  PSB_strain_rates(StressBalance *m);
+  PSB_strain_rates(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -200,7 +200,7 @@ protected:
 class PSB_deviatoric_stresses : public Diag<StressBalance>
 {
 public:
-  PSB_deviatoric_stresses(StressBalance *m);
+  PSB_deviatoric_stresses(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -209,7 +209,7 @@ protected:
 class PSB_pressure : public Diag<StressBalance>
 {
 public:
-  PSB_pressure(StressBalance *m);
+  PSB_pressure(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -218,7 +218,7 @@ protected:
 class PSB_tauxz : public Diag<StressBalance>
 {
 public:
-  PSB_tauxz(StressBalance *m);
+  PSB_tauxz(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -227,7 +227,7 @@ protected:
 class PSB_tauyz : public Diag<StressBalance>
 {
 public:
-  PSB_tauyz(StressBalance *m);
+  PSB_tauyz(const StressBalance *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -236,7 +236,7 @@ protected:
 class PSB_vonmises_stress : public Diag<StressBalance>
 {
 public:
-  PSB_vonmises_stress(StressBalance *m);
+  PSB_vonmises_stress(const StressBalance *m);
   IceModelVec::Ptr compute_impl();
 };
 

@@ -202,7 +202,7 @@ void BedThermalUnit::write_model_state_impl(const PIO &output) const {
 }
 
 void BedThermalUnit::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   dict["hfgeoubed"] = Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this));
   (void)ts_dict;
 }
@@ -232,7 +232,7 @@ const IceModelVec2S& BedThermalUnit::flux_through_bottom_surface() const {
   return m_bottom_surface_flux;
 }
 
-BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(BedThermalUnit *m)
+BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m)
   : Diag<BedThermalUnit>(m) {
   m_vars.push_back(SpatialVariableMetadata(m_sys, "hfgeoubed"));
   set_attrs("upward geothermal flux at ground (top of the bedrock) level",

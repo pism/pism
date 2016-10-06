@@ -33,7 +33,7 @@ public:
   ~Verification();
 private:
   void init_impl();
-  MaxTimestep max_timestep_impl(double t);
+  MaxTimestep max_timestep_impl(double t) const;
   void update_impl(PetscReal t, PetscReal dt);
   int m_testname;
   EnthalpyConverter::Ptr m_EC;

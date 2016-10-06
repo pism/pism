@@ -81,7 +81,7 @@ void PIK::init_impl() {
                  "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
 }
 
-MaxTimestep PIK::max_timestep_impl(double t) {
+MaxTimestep PIK::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }
@@ -111,11 +111,11 @@ void PIK::update_impl(double my_t, double my_dt)
   }
 }
 
-void PIK::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void PIK::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_climatic_mass_balance);
 }
 
-void PIK::ice_surface_temperature_impl(IceModelVec2S &result) {
+void PIK::ice_surface_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_ice_surface_temp);
 }
 

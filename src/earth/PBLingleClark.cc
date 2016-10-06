@@ -109,7 +109,7 @@ void PBLingleClark::init_impl() {
   this->init_with_inputs_impl(m_topg, m_uplift, *ice_thickness);
 }
 
-MaxTimestep PBLingleClark::max_timestep_impl(double t) {
+MaxTimestep PBLingleClark::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

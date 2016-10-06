@@ -31,7 +31,7 @@ public:
   Constant(IceGrid::ConstPtr g);
   virtual ~Constant();
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(double my_t, double my_dt);
   virtual void init_impl();
   virtual void sea_level_elevation_impl(double &result) const;

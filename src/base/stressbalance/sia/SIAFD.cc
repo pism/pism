@@ -210,7 +210,7 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
   \param[out] h_x the X-component of the surface gradient, on the staggered grid
   \param[out] h_y the Y-component of the surface gradient, on the staggered grid
 */
-void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
 
   const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
 
@@ -233,7 +233,7 @@ void SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
 }
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
-void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
@@ -312,7 +312,7 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
-void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
   const IceModelVec2S &h = *m_grid->variables().get_2d_scalar("surface_altitude");
@@ -389,7 +389,7 @@ void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
  * words, a purely local computation would require width=3 stencil of surface,
  * mask, and bed fields.)
  */
-void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience
@@ -792,7 +792,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
  * \f$\delta\f$.
  * \param[out] result The diffusivity of the SIA flow.
  */
-void SIAFD::compute_diffusivity(IceModelVec2S &result) {
+void SIAFD::compute_diffusivity(IceModelVec2S &result) const {
   IceModelVec2Stag &D_stag = m_work_2d_stag[0];
 
   this->compute_diffusivity_staggered(D_stag);
@@ -806,7 +806,7 @@ void SIAFD::compute_diffusivity(IceModelVec2S &result) {
  * \brief Computes the diffusivity of the SIA mass continuity equation on the
  * staggered grid (for debugging).
  */
-void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
+void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) const {
 
   const IceModelVec2S
     &h = *m_grid->variables().get_2d_scalar("surface_altitude"),

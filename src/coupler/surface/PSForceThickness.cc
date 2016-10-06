@@ -254,7 +254,7 @@ $PISM_DO $cmd
 The script also has a run with no forcing, one with forcing at a lower alpha value,
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
  */
-void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
 
   // get the surface mass balance result from the next level up
   m_input_model->ice_surface_mass_flux(result);
@@ -303,7 +303,7 @@ Equivalently (since \f$\alpha \Delta t>0\f$),
 Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
-MaxTimestep ForceThickness::max_timestep_impl(double my_t) {
+MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
   double max_dt = units::convert(m_sys, 2.0 / m_alpha, "years", "seconds");
   MaxTimestep input_max_dt = m_input_model->max_timestep(my_t);
 

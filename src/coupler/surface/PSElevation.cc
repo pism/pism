@@ -165,7 +165,7 @@ void Elevation::init_impl() {
              convert(m_sys, m_M_limit_max, "m s-1", "m year-1"), m_z_M_max);
 }
 
-MaxTimestep Elevation::max_timestep_impl(double t) {
+MaxTimestep Elevation::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }
@@ -181,7 +181,7 @@ void Elevation::update_impl(double my_t, double my_dt)
   m_dt = my_dt;
 }
 
-void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
@@ -222,7 +222,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) {
   result.scale(m_config->get_double("constants.ice.density"));
 }
 
-void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) {
+void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) const {
 
   const IceModelVec2S *usurf = m_grid->variables().get_2d_scalar("surface_altitude");
 

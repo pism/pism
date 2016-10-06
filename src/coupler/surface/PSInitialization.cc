@@ -123,23 +123,23 @@ void InitializationHelper::update_impl(double t, double dt) {
   m_input_model->surface_layer_thickness(m_surface_layer_thickness);
 }
 
-void InitializationHelper::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void InitializationHelper::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_ice_surface_mass_flux);
 }
 
-void InitializationHelper::ice_surface_temperature_impl(IceModelVec2S &result) {
+void InitializationHelper::ice_surface_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_ice_surface_temperature);
 }
 
-void InitializationHelper::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
+void InitializationHelper::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const {
   result.copy_from(m_ice_surface_liquid_water_fraction);
 }
 
-void InitializationHelper::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
+void InitializationHelper::mass_held_in_surface_layer_impl(IceModelVec2S &result) const {
   result.copy_from(m_mass_held_in_surface_layer);
 }
 
-void InitializationHelper::surface_layer_thickness_impl(IceModelVec2S &result) {
+void InitializationHelper::surface_layer_thickness_impl(IceModelVec2S &result) const {
   result.copy_from(m_surface_layer_thickness);
 }
 

@@ -86,7 +86,7 @@ void StuffAsAnomaly::init_impl() {
   }
 }
 
-MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) {
+MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }
@@ -131,11 +131,11 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
   }
 }
 
-void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_mass_flux);
 }
 
-void StuffAsAnomaly::ice_surface_temperature_impl(IceModelVec2S &result) {
+void StuffAsAnomaly::ice_surface_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_temp);
 }
 

@@ -36,36 +36,36 @@ void AtmosphereModel::init() {
   this->init_impl();
 }
 
-void AtmosphereModel::mean_precipitation(IceModelVec2S &result) {
+void AtmosphereModel::mean_precipitation(IceModelVec2S &result) const {
   this->mean_precipitation_impl(result);
 }
 
-void AtmosphereModel::mean_annual_temp(IceModelVec2S &result) {
+void AtmosphereModel::mean_annual_temp(IceModelVec2S &result) const {
   this->mean_annual_temp_impl(result);
 }
 
-void AtmosphereModel::begin_pointwise_access() {
+void AtmosphereModel::begin_pointwise_access() const {
   this->begin_pointwise_access_impl();
 }
 
-void AtmosphereModel::end_pointwise_access() {
+void AtmosphereModel::end_pointwise_access() const {
   this->end_pointwise_access_impl();
 }
 
-void AtmosphereModel::init_timeseries(const std::vector<double> &ts) {
+void AtmosphereModel::init_timeseries(const std::vector<double> &ts) const {
   this->init_timeseries_impl(ts);
 }
 
-void AtmosphereModel::precip_time_series(int i, int j, std::vector<double> &result) {
+void AtmosphereModel::precip_time_series(int i, int j, std::vector<double> &result) const {
   this->precip_time_series_impl(i, j, result);
 }
 
-void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result) {
+void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result) const {
   this->temp_time_series_impl(i, j, result);
 }
 
 void AtmosphereModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                           std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                           std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   // Don't override diagnostics that are already set.
 
   if (not dict["air_temp_snapshot"]) {
@@ -84,7 +84,7 @@ void AtmosphereModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr
   (void) ts_dict;
 }
 
-PA_air_temp_snapshot::PA_air_temp_snapshot(AtmosphereModel *m)
+PA_air_temp_snapshot::PA_air_temp_snapshot(const AtmosphereModel *m)
   : Diag<AtmosphereModel>(m) {
 
   /* set metadata: */
@@ -128,7 +128,7 @@ IceModelVec::Ptr PA_air_temp_snapshot::compute_impl() {
   return result;
 }
 
-PA_air_temp::PA_air_temp(AtmosphereModel *m)
+PA_air_temp::PA_air_temp(const AtmosphereModel *m)
   : Diag<AtmosphereModel>(m) {
 
   /* set metadata: */
@@ -149,7 +149,7 @@ IceModelVec::Ptr PA_air_temp::compute_impl() {
   return result;
 }
 
-PA_precipitation::PA_precipitation(AtmosphereModel *m)
+PA_precipitation::PA_precipitation(const AtmosphereModel *m)
   : Diag<AtmosphereModel>(m) {
 
   /* set metadata: */

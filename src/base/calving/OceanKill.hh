@@ -44,7 +44,7 @@ public:
 
 protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   IceModelVec2Int m_ocean_kill_mask;
 };
@@ -53,7 +53,7 @@ protected:
 class OceanKill_mask : public Diag<OceanKill>
 {
 public:
-  OceanKill_mask(OceanKill *m);
+  OceanKill_mask(const OceanKill *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };

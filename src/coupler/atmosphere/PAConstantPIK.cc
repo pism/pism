@@ -46,31 +46,31 @@ PIK::PIK(IceGrid::ConstPtr g)
   m_air_temp.set_time_independent(true);
 }
 
-void PIK::mean_precipitation_impl(IceModelVec2S &result) {
+void PIK::mean_precipitation_impl(IceModelVec2S &result) const {
   result.copy_from(m_precipitation);
 }
 
-void PIK::mean_annual_temp_impl(IceModelVec2S &result) {
+void PIK::mean_annual_temp_impl(IceModelVec2S &result) const {
   result.copy_from(m_air_temp);
 }
 
-void PIK::begin_pointwise_access_impl() {
+void PIK::begin_pointwise_access_impl() const {
   m_precipitation.begin_access();
   m_air_temp.begin_access();
 }
 
-void PIK::end_pointwise_access_impl() {
+void PIK::end_pointwise_access_impl() const {
   m_precipitation.end_access();
   m_air_temp.end_access();
 }
 
-void PIK::temp_time_series_impl(int i, int j, std::vector<double> &result) {
+void PIK::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_air_temp(i,j);
   }
 }
 
-void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) {
+void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
@@ -107,7 +107,7 @@ void PIK::init_impl() {
   }
 }
 
-MaxTimestep PIK::max_timestep_impl(double t) {
+MaxTimestep PIK::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }
@@ -131,7 +131,7 @@ void PIK::update_impl(double, double) {
   }
 }
 
-void PIK::init_timeseries_impl(const std::vector<double> &ts) {
+void PIK::init_timeseries_impl(const std::vector<double> &ts) const {
   m_ts_times = ts;
 }
 

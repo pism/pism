@@ -85,7 +85,7 @@ public:
 protected:
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);
-  MaxTimestep max_timestep_impl(double t);
+  MaxTimestep max_timestep_impl(double t) const;
   void init_impl();
 };
 
@@ -95,7 +95,7 @@ public:
   PBPointwiseIsostasy(IceGrid::ConstPtr g); 
   virtual ~PBPointwiseIsostasy();
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);

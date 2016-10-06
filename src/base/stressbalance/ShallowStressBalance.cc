@@ -118,7 +118,7 @@ const IceModelVec2S& ShallowStressBalance::basal_frictional_heating() {
 
 
 void ShallowStressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                           std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
+                                           std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) const {
   dict["beta"]     = Diagnostic::Ptr(new SSB_beta(this));
   dict["taub"]     = Diagnostic::Ptr(new SSB_taub(this));
   dict["taub_mag"] = Diagnostic::Ptr(new SSB_taub_mag(this));
@@ -278,7 +278,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
   }
 }
 
-SSB_taud::SSB_taud(ShallowStressBalance *m)
+SSB_taud::SSB_taud(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
   m_dof = 2;
@@ -337,7 +337,7 @@ IceModelVec::Ptr SSB_taud::compute_impl() {
   return result;
 }
 
-SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m)
+SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
@@ -364,7 +364,7 @@ IceModelVec::Ptr SSB_taud_mag::compute_impl() {
   return result;
 }
 
-SSB_taub::SSB_taub(ShallowStressBalance *m)
+SSB_taub::SSB_taub(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
   m_dof = 2;
 
@@ -418,7 +418,7 @@ IceModelVec::Ptr SSB_taub::compute_impl() {
   return result;
 }
 
-SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m)
+SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
@@ -481,7 +481,7 @@ void PrescribedSliding::init() {
   m_velocity.regrid(input_filename, CRITICAL);
 }
 
-SSB_beta::SSB_beta(ShallowStressBalance *m)
+SSB_beta::SSB_beta(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
   // set metadata:
   m_vars.push_back(SpatialVariableMetadata(m_sys, "beta"));

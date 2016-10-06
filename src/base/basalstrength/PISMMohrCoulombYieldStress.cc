@@ -258,7 +258,7 @@ void MohrCoulombYieldStress::init_impl() {
   }
 }
 
-MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) {
+MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

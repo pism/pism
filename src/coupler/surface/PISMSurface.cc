@@ -44,12 +44,12 @@ SurfaceModel::~SurfaceModel() {
   delete m_atmosphere;
 }
 
-void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) {
+void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) const {
   this->ice_surface_mass_flux_impl(result);
 }
 
 void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   // Don't override diagnostics that are already set.
 
   if (not dict["climatic_mass_balance"]) {
@@ -103,11 +103,11 @@ void SurfaceModel::init_impl() {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-void SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
+void SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) const {
   this->mass_held_in_surface_layer_impl(result);
 }
 
-void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
+void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
@@ -118,26 +118,26 @@ void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-void SurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
+void SurfaceModel::surface_layer_thickness(IceModelVec2S &result) const {
   this->surface_layer_thickness_impl(result);
 }
 
-void SurfaceModel::surface_layer_thickness_impl(IceModelVec2S &result) {
+void SurfaceModel::surface_layer_thickness_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
-void SurfaceModel::ice_surface_temperature(IceModelVec2S &result) {
+void SurfaceModel::ice_surface_temperature(IceModelVec2S &result) const {
   this->ice_surface_temperature_impl(result);
 }
 //! \brief Returns the liquid water fraction of the ice at the top ice surface.
 /*!
  * Most PISM surface models return 0.
  */
-void SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+void SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) const {
   this->ice_surface_liquid_water_fraction_impl(result);
 }
 
-void SurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
+void SurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
@@ -153,7 +153,7 @@ void SurfaceModel::write_model_state_impl(const PIO &output) const {
   }
 }
 
-MaxTimestep SurfaceModel::max_timestep_impl(double my_t) {
+MaxTimestep SurfaceModel::max_timestep_impl(double my_t) const {
   if (m_atmosphere != NULL) {
     return m_atmosphere->max_timestep(my_t);
   } else {
@@ -161,7 +161,7 @@ MaxTimestep SurfaceModel::max_timestep_impl(double my_t) {
   }
 }
 
-PS_climatic_mass_balance::PS_climatic_mass_balance(SurfaceModel *m)
+PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -183,7 +183,7 @@ IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() {
   return result;
 }
 
-PS_ice_surface_temp::PS_ice_surface_temp(SurfaceModel *m)
+PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -204,7 +204,7 @@ IceModelVec::Ptr PS_ice_surface_temp::compute_impl() {
   return result;
 }
 
-PS_liquid_water_fraction::PS_liquid_water_fraction(SurfaceModel *m)
+PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -225,7 +225,7 @@ IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() {
   return result;
 }
 
-PS_surface_layer_mass::PS_surface_layer_mass(SurfaceModel *m)
+PS_surface_layer_mass::PS_surface_layer_mass(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -246,7 +246,7 @@ IceModelVec::Ptr PS_surface_layer_mass::compute_impl() {
   return result;
 }
 
-PS_surface_layer_thickness::PS_surface_layer_thickness(SurfaceModel *m)
+PS_surface_layer_thickness::PS_surface_layer_thickness(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */

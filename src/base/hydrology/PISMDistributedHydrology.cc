@@ -148,7 +148,7 @@ void Distributed::write_model_state_impl(const PIO &output) const {
 }
 
 void Distributed::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                                std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                                std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   // bwat is state
   // bwp is state
   dict["bwprel"]           = Diagnostic::Ptr(new Hydrology_bwprel(this));
@@ -172,7 +172,7 @@ void Distributed::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &d
 
 
 //! Copies the P state variable which is the modeled water pressure.
-void Distributed::subglacial_water_pressure(IceModelVec2S &result) {
+void Distributed::subglacial_water_pressure(IceModelVec2S &result) const {
   result.copy_from(m_P);
 }
 
@@ -484,7 +484,7 @@ void Distributed::update_impl(double icet, double icedt) {
 }
 
 
-Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(Distributed *m)
+Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(const Distributed *m)
   : Diag<Distributed>(m) {
   m_vars.push_back(SpatialVariableMetadata(m_sys,
                                      "hydrovelbase_mag"));

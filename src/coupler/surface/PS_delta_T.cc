@@ -57,12 +57,12 @@ void Delta_T::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_T::max_timestep_impl(double t) {
+MaxTimestep Delta_T::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }
 
-void Delta_T::ice_surface_temperature_impl(IceModelVec2S &result) {
+void Delta_T::ice_surface_temperature_impl(IceModelVec2S &result) const {
   m_input_model->ice_surface_temperature(result);
   offset_data(result);
 }

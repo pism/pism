@@ -109,22 +109,22 @@ public:
   friend class Hydrology_hydroinput;
 
   // all Hydrology models have a Wtil state variable, which this returns
-  virtual void till_water_thickness(IceModelVec2S &result);
+  virtual void till_water_thickness(IceModelVec2S &result) const;
 
   // this diagnostic method returns the standard shallow approximation
-  virtual void overburden_pressure(IceModelVec2S &result);
+  virtual void overburden_pressure(IceModelVec2S &result) const;
 
   // this diagnostic method returns zero in the base class
-  virtual void wall_melt(IceModelVec2S &result);
+  virtual void wall_melt(IceModelVec2S &result) const;
 
   // these methods MUST be implemented in the derived class
-  virtual void subglacial_water_thickness(IceModelVec2S &result) = 0;
-  virtual void subglacial_water_pressure(IceModelVec2S &result) = 0;
+  virtual void subglacial_water_thickness(IceModelVec2S &result) const = 0;
+  virtual void subglacial_water_pressure(IceModelVec2S &result) const = 0;
 
 protected:
   virtual void update_impl(double icet, double icedt) = 0;
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -168,13 +168,13 @@ public:
   virtual void init();
 
   //! Sets result to 0.
-  virtual void subglacial_water_thickness(IceModelVec2S &result);
+  virtual void subglacial_water_thickness(IceModelVec2S &result) const;
 
   //! Returns the overburden pressure in hope it is harmless.
-  virtual void subglacial_water_pressure(IceModelVec2S &result);
+  virtual void subglacial_water_pressure(IceModelVec2S &result) const;
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   //! Solves an implicit step of a highly-simplified ODE.
   virtual void update_impl(double icet, double icedt);
 
@@ -260,17 +260,18 @@ public:
   friend class MCHydrology_null_strip_loss_cumulative;
   friend class MCHydrology_null_strip_loss;
 
-  virtual void wall_melt(IceModelVec2S &result);
+  virtual void wall_melt(IceModelVec2S &result) const;
 
-  virtual void subglacial_water_thickness(IceModelVec2S &result);
+  virtual void subglacial_water_thickness(IceModelVec2S &result) const;
 
-  virtual void subglacial_water_pressure(IceModelVec2S &result);
+  virtual void subglacial_water_pressure(IceModelVec2S &result) const;
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double icet, double icedt);
+
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -286,7 +287,8 @@ protected:
     m_K,// edge-centered (staggered) values of nonlinear conductivity
     m_Q;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S m_Wnew, m_Wtilnew, m_Pover, m_R;
+  IceModelVec2S m_Wnew, m_Wtilnew, m_Pover;
+  mutable IceModelVec2S m_R;
 
   double m_stripwidth; // width in m of strip around margin where V and W are set to zero;
   // if negative then the strip mechanism is inactive inactive
@@ -310,7 +312,7 @@ protected:
   virtual void subglacial_hydraulic_potential(IceModelVec2S &result);
 
   virtual void conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
-  virtual void velocity_staggered(IceModelVec2Stag &result);
+  virtual void velocity_staggered(IceModelVec2Stag &result) const;
   friend class Routing_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
   virtual void advective_fluxes(IceModelVec2Stag &result);
 
@@ -349,12 +351,12 @@ public:
 
   friend class Distributed_hydrovelbase_mag;
 
-  virtual void subglacial_water_pressure(IceModelVec2S &result);
+  virtual void subglacial_water_pressure(IceModelVec2S &result) const;
 
 protected:
   virtual void update_impl(double icet, double icedt);
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;

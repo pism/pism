@@ -77,14 +77,14 @@ void SeaRISEGreenland::init_impl() {
   }
 }
 
-void SeaRISEGreenland::precip_time_series_impl(int i, int j, std::vector<double> &result) {
+void SeaRISEGreenland::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
 }
 
-MaxTimestep SeaRISEGreenland::max_timestep_impl(double t) {
+MaxTimestep SeaRISEGreenland::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

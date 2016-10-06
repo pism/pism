@@ -26,9 +26,15 @@ IBIceModel::~IBIceModel() {
 
 void IBIceModel::allocate_subglacial_hydrology() {
   printf("BEGIN IBIceModel::allocate_subglacial_hydrology()\n");
-  if (pism::IceModel::m_subglacial_hydrology)
+
+  if (pism::IceModel::m_subglacial_hydrology) {
     return; // indicates it has already been allocated
+  }
+
   m_subglacial_hydrology = new pism::icebin::NullTransportHydrology(m_grid);
+
+  m_submodels["subglacial hydrology"] = m_subglacial_hydrology;
+
   printf("END IBIceModel::allocate_subglacial_hydrology()\n");
 }
 
@@ -36,7 +42,6 @@ void IBIceModel::allocate_subglacial_hydrology() {
 void IBIceModel::allocate_couplers() {
   // Initialize boundary models:
   atmosphere::Factory pa(m_grid);
-  surface::Factory ps(m_grid);
   ocean::Factory po(m_grid);
   atmosphere::AtmosphereModel *atmosphere;
 
@@ -48,12 +53,16 @@ void IBIceModel::allocate_couplers() {
 
     atmosphere = pa.create();
     m_surface->attach_atmosphere_model(atmosphere);
+
+    m_submodels["surface process model"] = m_surface;
   }
 
   if (m_ocean == NULL) {
     m_log->message(2, "# Allocating an ocean model or coupler...\n");
 
-    m_ocean                = po.create();
+    m_ocean = po.create();
+
+    m_submodels["ocean model"] = m_ocean;
   }
 }
 

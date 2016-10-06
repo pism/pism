@@ -45,7 +45,7 @@ public:
   }
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double my_t)
+  virtual MaxTimestep max_timestep_impl(double my_t) const
   {
     if (m_input_model != NULL) {
       return m_input_model->max_timestep(my_t);
@@ -64,7 +64,7 @@ protected:
   }
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict)
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const
   {
     // give the model class a chance to add diagnostics
     Model::get_diagnostics_impl(dict, ts_dict);

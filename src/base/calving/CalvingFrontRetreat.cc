@@ -297,7 +297,7 @@ const IceModelVec2S& CalvingFrontRetreat::calving_rate() const {
   return m_horizontal_calving_rate;
 }
 
-CalvingRate::CalvingRate(CalvingFrontRetreat *m,
+CalvingRate::CalvingRate(const CalvingFrontRetreat *m,
                          const std::string &name,
                          const std::string &long_name)
   : Diag<CalvingFrontRetreat>(m) {

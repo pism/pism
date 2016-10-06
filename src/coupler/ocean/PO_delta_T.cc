@@ -55,7 +55,7 @@ void Delta_T::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_T::max_timestep_impl(double t) {
+MaxTimestep Delta_T::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }

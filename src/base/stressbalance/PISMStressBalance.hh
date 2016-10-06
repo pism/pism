@@ -108,7 +108,7 @@ public:
   const SSB_Modifier* modifier() const;
 protected:
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;

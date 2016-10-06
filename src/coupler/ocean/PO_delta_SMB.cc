@@ -56,7 +56,7 @@ void Delta_SMB::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_SMB::max_timestep_impl(double t) {
+MaxTimestep Delta_SMB::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep();
 }
