@@ -457,6 +457,14 @@ const IceModelVec2S& TemperatureIndex::air_temp_sd() const {
   return m_air_temp_sd;
 }
 
+void TemperatureIndex::define_model_state_impl(const PIO &output) const {
+  m_snow_depth.define(output, PISM_DOUBLE);
+}
+
+void TemperatureIndex::write_model_state_impl(const PIO &output) const {
+  m_snow_depth.write(output);
+}
+
 void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
 
   SurfaceModel::add_vars_to_output_impl(keyword, result);
