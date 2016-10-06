@@ -145,39 +145,6 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     result.erase("age");
   }
 
-  if (m_ocean_kill_calving != NULL) {
-    m_ocean_kill_calving->add_vars_to_output(keyword, result);
-  }
-
-  if (m_beddef != NULL) {
-    m_beddef->add_vars_to_output(keyword, result);
-  }
-
-  if (m_btu != NULL) {
-    m_btu->add_vars_to_output(keyword, result);
-  }
-
-  if (m_basal_yield_stress_model != NULL) {
-    m_basal_yield_stress_model->add_vars_to_output(keyword, result);
-  }
-
-  // Ask the stress balance module to add more variables:
-  if (m_stress_balance != NULL) {
-    m_stress_balance->add_vars_to_output(keyword, result);
-  }
-
-  if (m_subglacial_hydrology != NULL) {
-    m_subglacial_hydrology->add_vars_to_output(keyword, result);
-  }
-
-  // Ask ocean and surface models to add more variables to the list:
-  if (m_ocean != NULL) {
-    m_ocean->add_vars_to_output(keyword, result);
-  }
-
-  if (m_surface != NULL) {
-    m_surface->add_vars_to_output(keyword, result);
-  }
   return result;
 }
 

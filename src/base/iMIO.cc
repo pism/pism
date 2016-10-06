@@ -169,57 +169,57 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
     }
 
     if (m_beddef != NULL) {
-      m_beddef->define_variables(vars, nc, nctype);
+      m_beddef->define_model_state(nc);
     }
 
     if (m_btu != NULL) {
-      m_btu->define_variables(vars, nc, nctype);
+      m_btu->define_model_state(nc);
     }
 
     if (m_basal_yield_stress_model != NULL) {
-      m_basal_yield_stress_model->define_variables(vars, nc, nctype);
+      m_basal_yield_stress_model->define_model_state(nc);
     }
 
     if (m_stress_balance != NULL) {
-      m_stress_balance->define_variables(vars, nc, nctype);
+      m_stress_balance->define_model_state(nc);
     } else {
       throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: stress_balance == NULL");
     }
 
     if (m_subglacial_hydrology != NULL) {
-      m_subglacial_hydrology->define_variables(vars, nc, nctype);
+      m_subglacial_hydrology->define_model_state(nc);
     }
 
     if (m_surface != NULL) {
-      m_surface->define_variables(vars, nc, nctype);
+      m_surface->define_model_state(nc);
     } else {
       throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: surface == NULL");
     }
 
     if (m_ocean != NULL) {
-      m_ocean->define_variables(vars, nc, nctype);
+      m_ocean->define_model_state(nc);
     } else {
       throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: ocean == NULL");
     }
 
     if (m_ocean_kill_calving != NULL) {
-      m_ocean_kill_calving->define_variables(vars, nc, nctype);
+      m_ocean_kill_calving->define_model_state(nc);
     }
 
     if (m_float_kill_calving != NULL) {
-      m_float_kill_calving->define_variables(vars, nc, nctype);
+      m_float_kill_calving->define_model_state(nc);
     }
 
     if (m_thickness_threshold_calving != NULL) {
-      m_thickness_threshold_calving->define_variables(vars, nc, nctype);
+      m_thickness_threshold_calving->define_model_state(nc);
     }
 
     if (m_eigen_calving != NULL) {
-      m_eigen_calving->define_variables(vars, nc, nctype);
+      m_eigen_calving->define_model_state(nc);
     }
 
     if (m_vonmises_calving != NULL) {
-      m_vonmises_calving->define_variables(vars, nc, nctype);
+      m_vonmises_calving->define_model_state(nc);
     }
 
   }
@@ -241,59 +241,59 @@ void IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_
 
   // Write bed-deformation-related variables:
   if (m_beddef != NULL) {
-    m_beddef->write_variables(vars, nc);
+    m_beddef->write_model_state(nc);
   }
 
   // Write BedThermalUnit variables:
   if (m_btu != NULL) {
-    m_btu->write_variables(vars, nc);
+    m_btu->write_model_state(nc);
   }
 
   if (m_basal_yield_stress_model != NULL) {
-    m_basal_yield_stress_model->write_variables(vars, nc);
+    m_basal_yield_stress_model->write_model_state(nc);
   }
 
   // Write stress balance-related variables:
   if (m_stress_balance != NULL) {
-    m_stress_balance->write_variables(vars, nc);
+    m_stress_balance->write_model_state(nc);
   } else {
     throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: stress_balance == NULL");
   }
 
   if (m_subglacial_hydrology != NULL) {
-    m_subglacial_hydrology->write_variables(vars, nc);
+    m_subglacial_hydrology->write_model_state(nc);
   }
 
   // Ask boundary models to write their variables:
   if (m_surface != NULL) {
-    m_surface->write_variables(vars, nc);
+    m_surface->write_model_state(nc);
   } else {
     throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: surface == NULL");
   }
   if (m_ocean != NULL) {
-    m_ocean->write_variables(vars, nc);
+    m_ocean->write_model_state(nc);
   } else {
     throw RuntimeError(PISM_ERROR_LOCATION, "PISM ERROR: ocean == NULL");
   }
 
   if (m_ocean_kill_calving != NULL) {
-    m_ocean_kill_calving->write_variables(vars, nc);
+    m_ocean_kill_calving->write_model_state(nc);
   }
 
   if (m_float_kill_calving != NULL) {
-    m_float_kill_calving->write_variables(vars, nc);
+    m_float_kill_calving->write_model_state(nc);
   }
 
   if (m_thickness_threshold_calving != NULL) {
-    m_thickness_threshold_calving->write_variables(vars, nc);
+    m_thickness_threshold_calving->write_model_state(nc);
   }
 
   if (m_eigen_calving != NULL) {
-    m_eigen_calving->write_variables(vars, nc);
+    m_eigen_calving->write_model_state(nc);
   }
 
   if (m_vonmises_calving != NULL) {
-    m_vonmises_calving->write_variables(vars, nc);
+    m_vonmises_calving->write_model_state(nc);
   }
 
   // All the remaining names in vars must be of diagnostic quantities.

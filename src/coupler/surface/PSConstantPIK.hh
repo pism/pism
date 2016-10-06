@@ -37,12 +37,18 @@ class PIK : public SurfaceModel {
 public:
   PIK(IceGrid::ConstPtr g);
 protected:
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   virtual void init_impl();
   virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
+
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
   virtual void ice_surface_temperature_impl(IceModelVec2S &result);
+
   virtual MaxTimestep max_timestep_impl(double t);
-  virtual void update_impl(double my_t, double my_dt);
+  virtual void update_impl(double t, double dt);
+
 protected:
   IceModelVec2S m_climatic_mass_balance;
   IceModelVec2S m_ice_surface_temp;

@@ -189,41 +189,6 @@ void IceModel::list_diagnostics() {
   {
     std::set<std::string> list = m_grid->variables().keys();
 
-    if (m_beddef != NULL) {
-      m_beddef->add_vars_to_output("big", list);
-      m_beddef->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_btu != NULL) {
-      m_btu->add_vars_to_output("big", list);
-      m_btu->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_basal_yield_stress_model != NULL) {
-      m_basal_yield_stress_model->add_vars_to_output("big", list);
-      m_basal_yield_stress_model->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_subglacial_hydrology != NULL) {
-      m_subglacial_hydrology->add_vars_to_output("big", list);
-      m_subglacial_hydrology->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_stress_balance != NULL) {
-      m_stress_balance->add_vars_to_output("big", list);
-      m_stress_balance->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_ocean != NULL) {
-      m_ocean->add_vars_to_output("big", list);
-      m_ocean->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_surface != NULL) {
-      m_surface->add_vars_to_output("big", list);
-      m_surface->add_vars_to_output("big_2d", list);
-    }
-
     for (unsigned int d = 3; d > 1; --d) {
 
       m_log->message(1,

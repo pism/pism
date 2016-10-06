@@ -33,9 +33,12 @@ class YearlyCycle : public AtmosphereModel {
 public:
   YearlyCycle(IceGrid::ConstPtr g);
   virtual ~YearlyCycle();
-public:
+
   virtual void mean_july_temp(IceModelVec2S &result);
 protected:
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   virtual void init_impl();
 
   virtual void mean_precipitation_impl(IceModelVec2S &result);

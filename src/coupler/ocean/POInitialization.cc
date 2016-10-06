@@ -134,7 +134,7 @@ void InitializationHelper::shelf_base_mass_flux_impl(IceModelVec2S &result) cons
 
 
 void InitializationHelper::define_model_state_impl(const PIO &output) const {
-  m_melange_back_pressure.define(output);
+  m_melange_back_pressure_fraction.define(output);
   m_shelf_base_mass_flux.define(output);
   m_shelf_base_temperature.define(output);
 
@@ -144,12 +144,13 @@ void InitializationHelper::define_model_state_impl(const PIO &output) const {
 }
 
 void InitializationHelper::write_model_state_impl(const PIO &output) const {
-  m_melange_back_pressure.write(output);
+  m_melange_back_pressure_fraction.write(output);
   m_shelf_base_mass_flux.write(output);
   m_shelf_base_temperature.write(output);
 
-  unsigned int t_start = nc.inq_dimlen(m_sea_level_metadata.get_dimension_name()) - 1;
-  io::write_timeseries(nc, m_sea_level_metadata, t_start, m_sea_level_elevation, PISM_DOUBLE);
+  unsigned int t_start = output.inq_dimlen(m_sea_level_metadata.get_dimension_name()) - 1;
+  io::write_timeseries(output, m_sea_level_metadata, t_start, m_sea_level_elevation,
+                       PISM_DOUBLE);
 
   m_input_model->write_model_state(output);
 }

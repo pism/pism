@@ -106,21 +106,6 @@ public:
   Component(IceGrid::ConstPtr g);
   virtual ~Component();
 
-  //! \brief Adds more variable names to result (to let sub-models respect
-  //! -o_size or -save_size).
-  /*!
-    Keyword can be one of "small", "medium", "big_2d", or "big".
-  */
-  void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-
-  //! Defines requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-
-  //! Writes requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  void write_variables(const std::set<std::string> &vars, const PIO& nc);
-
   //! Add pointers to available diagnostic quantities to a dictionary.
   void get_diagnostics(std::map<std::string, Diagnostic::Ptr> &dict,
                        std::map<std::string, TSDiagnostic::Ptr> &ts_dict);

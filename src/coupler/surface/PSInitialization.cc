@@ -147,14 +147,14 @@ void InitializationHelper::define_model_state_impl(const PIO &output) const {
   for (unsigned int k = 0; k < m_variables.size(); ++k) {
     m_variables[k]->define(output);
   }
-  m_input_model->define_model_state_impl(output);
+  m_input_model->define_model_state(output);
 }
 
 void InitializationHelper::write_model_state_impl(const PIO &output) const {
   for (unsigned int k = 0; k < m_variables.size(); ++k) {
     m_variables[k]->write(output);
   }
-  m_input_model->write_model_state_impl(output);
+  m_input_model->write_model_state(output);
 }
 
 } // end of namespace surface

@@ -41,6 +41,8 @@ class InitializationHelper : public OceanModifier {
 public:
   InitializationHelper(IceGrid::ConstPtr g, OceanModel* in);
 protected:
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
 
   void update_impl(double t, double dt);
   void init_impl();

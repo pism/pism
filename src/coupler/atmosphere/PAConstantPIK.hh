@@ -28,16 +28,25 @@ namespace atmosphere {
 class PIK : public AtmosphereModel {
 public:
   PIK(IceGrid::ConstPtr g);
+protected:
   virtual void init_impl();
+
   virtual void mean_precipitation_impl(IceModelVec2S &result);
   virtual void mean_annual_temp_impl(IceModelVec2S &result);
+
   virtual void begin_pointwise_access_impl();
   virtual void end_pointwise_access_impl();
+
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
+
   virtual void init_timeseries_impl(const std::vector<double> &ts);
-protected:
+
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   virtual MaxTimestep max_timestep_impl(double t);
+
   virtual void update_impl(double my_t, double my_dt);
 protected:
   IceModelVec2S m_precipitation, m_air_temp;

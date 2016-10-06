@@ -304,38 +304,12 @@ void IceModel::init_extras() {
   }
 
   if (vars.is_set()) {
-    m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
     m_extra_vars = vars;
+    m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
   } else {
-    m_log->message(2, "PISM WARNING: -extra_vars was not set."
-               " Writing model_state, mapping and climate_steady variables...\n");
-
-    std::set<std::string> vars_set = m_grid->variables().keys();
-
-    std::set<std::string>::iterator i;
-    for (i = vars_set.begin(); i != vars_set.end(); ++i) {
-      const SpatialVariableMetadata &m = m_grid->variables().get(*i)->metadata();
-
-      std::string intent = m.get_string("pism_intent");
-
-      if (intent == "model_state" ||
-          intent == "mapping"     ||
-          intent == "climate_steady") {
-        m_extra_vars.insert(*i);
-      }
-    }
-
-    std::set<std::string> list;
-    if (m_stress_balance) {
-      m_stress_balance->add_vars_to_output("small", m_extra_vars);
-    }
+    m_log->message(2, "PISM WARNING: -extra_vars was not set. Writing the model state...\n");
 
   } // end of the else clause after "if (extra_vars_set)"
-
-  if (m_extra_vars.size() == 0) {
-    m_log->message(2,
-               "PISM WARNING: no variables list after -extra_vars ... writing empty file ...\n");
-  }
 }
 
 //! Write spatially-variable diagnostic quantities.
@@ -487,7 +461,11 @@ void IceModel::write_extras() {
 
   io::write_timeseries(nc, m_timestamp, time_start, wall_clock_hours);
 
-  write_variables(nc, m_extra_vars, PISM_FLOAT);
+  if (not m_extra_vars.empty()) {
+    write_variables(nc, m_extra_vars, PISM_FLOAT);
+  } else {
+    write_model_state(nc);
+  }
 
   nc.close();
 

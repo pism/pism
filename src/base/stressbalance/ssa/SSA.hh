@@ -121,6 +121,9 @@ public:
   virtual void compute_driving_stress(IceModelVec2V &taud);
 
 protected:
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   virtual void init_impl();
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,

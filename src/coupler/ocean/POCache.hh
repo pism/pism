@@ -33,9 +33,7 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
+
   virtual void init_impl();
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
   virtual void sea_level_elevation_impl(double &result) const;

@@ -51,6 +51,22 @@ protected:
     return MaxTimestep();
   }
 
+  virtual void define_model_state_impl(const PIO &output) const {
+    std::map<std::string, IceModelVec2T*>::const_iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      k->second->define(output);
+      ++k;
+    }
+  }
+
+  virtual void write_model_state_impl(const PIO &output) const {
+    std::map<std::string, IceModelVec2T*>::const_iterator k = m_fields.begin();
+    while(k != m_fields.end()) {
+      k->second->write(output);
+      ++k;
+    }
+  }
+
   void process_options()
   {
     options::String file(m_option_prefix + "_file",
