@@ -94,6 +94,18 @@ protected:
       m_input_model->define_variables(vars, nc, nctype);
     }
   }
+
+  virtual void define_model_state_impl(const PIO &output) const {
+    if (m_input_model != NULL) {
+      m_input_model->define_model_state(output);
+    }
+  }
+
+  virtual void write_model_state_impl(const PIO &output) const {
+    if (m_input_model != NULL) {
+      m_input_model->write_model_state(output);
+    }
+  }
 protected:
   Model *m_input_model;
 };  

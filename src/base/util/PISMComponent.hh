@@ -129,7 +129,13 @@ public:
 
   IceGrid::ConstPtr grid() const;
 
+  void define_model_state(const PIO &output) const;
+  void write_model_state(const PIO &output) const;
+
 protected:
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
   virtual void add_vars_to_output_impl(const std::string &keyword,

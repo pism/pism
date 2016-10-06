@@ -115,6 +115,33 @@ IceGrid::ConstPtr Component::grid() const {
   return m_grid;
 }
 
+/*! @brief Define model state variables in an output file. */
+/*!
+ * This is needed to allow defining all the variables in an output file before any data is written
+ * (an optimization needed to get decent performance writing NetCDF-3).
+ */
+void Component::define_model_state(const PIO &output) const {
+  this->define_model_state_impl(output);
+}
+
+/*! @brief Write model state variables to an output file. */
+void Component::write_model_state(const PIO &output) const {
+  // define variables, if needed (this is a no-op if they are already defined)
+  this->define_model_state(output);
+
+  this->write_model_state_impl(output);
+}
+
+/*! @brief The default (empty implementation). */
+void Component::define_model_state_impl(const PIO &output) const {
+  (void) output;
+}
+
+/*! @brief The default (empty implementation). */
+void Component::write_model_state_impl(const PIO &output) const {
+  (void) output;
+}
+
 /**
  * Regrid a variable by processing -regrid_file and -regrid_vars.
  *
