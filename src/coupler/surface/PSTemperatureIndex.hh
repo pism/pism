@@ -45,7 +45,17 @@ class TemperatureIndex : public SurfaceModel {
 public:
   TemperatureIndex(IceGrid::ConstPtr g);
   virtual ~TemperatureIndex();
+
+  const IceModelVec2S& surface_accumulation() const;
+  const IceModelVec2S& surface_melt() const;
+  const IceModelVec2S& surface_runoff() const;
+  const IceModelVec2S& snow_depth() const;
+  const IceModelVec2S& air_temp_sd() const;
+
 protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+
   virtual void init_impl();
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
   virtual void ice_surface_temperature_impl(IceModelVec2S &result);
@@ -91,6 +101,51 @@ protected:
   bool m_sd_use_param, m_sd_file_set;
   int m_sd_period, m_sd_period_years;
   double m_sd_ref_time, m_sd_param_a, m_sd_param_b;
+};
+
+/*! @brief Surface accumulation rate. */
+class PDD_saccum : public Diag<TemperatureIndex>
+{
+public:
+  PDD_saccum(TemperatureIndex *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Surface melt rate. */
+class PDD_smelt : public Diag<TemperatureIndex>
+{
+public:
+  PDD_smelt(TemperatureIndex *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Surface runoff rate. */
+class PDD_srunoff : public Diag<TemperatureIndex>
+{
+public:
+  PDD_srunoff(TemperatureIndex *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Snow cover depth. */
+class PDD_snow_depth : public Diag<TemperatureIndex>
+{
+public:
+  PDD_snow_depth(TemperatureIndex *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Standard deviation of near-surface air temperature. */
+class PDD_air_temp_sd : public Diag<TemperatureIndex>
+{
+public:
+  PDD_air_temp_sd(TemperatureIndex *m);
+protected:
+  IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace surface

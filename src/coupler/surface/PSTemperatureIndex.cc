@@ -437,6 +437,26 @@ void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) {
   m_atmosphere->mean_annual_temp(result);
 }
 
+const IceModelVec2S& TemperatureIndex::surface_accumulation() const {
+  return m_accumulation_rate;
+}
+
+const IceModelVec2S& TemperatureIndex::surface_melt() const {
+  return m_melt_rate;
+}
+
+const IceModelVec2S& TemperatureIndex::surface_runoff() const {
+  return m_runoff_rate;
+}
+
+const IceModelVec2S& TemperatureIndex::snow_depth() const {
+  return m_snow_depth;
+}
+
+const IceModelVec2S& TemperatureIndex::air_temp_sd() const {
+  return m_air_temp_sd;
+}
+
 void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
 
   SurfaceModel::add_vars_to_output_impl(keyword, result);
@@ -507,6 +527,132 @@ void TemperatureIndex::write_variables_impl(const std::set<std::string> &vars_in
 
   SurfaceModel::write_variables_impl(vars, nc);
 }
+
+void TemperatureIndex::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+
+  SurfaceModel::get_diagnostics_impl(dict, ts_dict);
+
+  if (not dict["saccum"]) {
+    dict["saccum"] = Diagnostic::Ptr(new PDD_saccum(this));
+  }
+  if (not dict["smelt"]) {
+    dict["smelt"] = Diagnostic::Ptr(new PDD_smelt(this));
+  }
+  if (not dict["srunoff"]) {
+    dict["srunoff"] = Diagnostic::Ptr(new PDD_srunoff(this));
+  }
+  if (not dict["air_temp_sd"]) {
+    dict["air_temp_sd"] = Diagnostic::Ptr(new PDD_air_temp_sd(this));
+  }
+}
+
+PDD_saccum::PDD_saccum(TemperatureIndex *m)
+  : Diag<TemperatureIndex>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "saccum"));
+
+  set_attrs("instantaneous surface accumulation rate (precipitation minus rain)", "",
+            "kg m-2 s-1", "kg m-2 year-1", 0);
+}
+
+IceModelVec::Ptr PDD_saccum::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "saccum", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  result->copy_from(model->surface_accumulation());
+
+  return result;
+}
+
+PDD_smelt::PDD_smelt(TemperatureIndex *m)
+  : Diag<TemperatureIndex>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "smelt"));
+
+  set_attrs("instantaneous surface melt rate", "",
+            "kg m-2 s-1", "kg m-2 year-1", 0);
+}
+
+IceModelVec::Ptr PDD_smelt::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "smelt", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  result->copy_from(model->surface_melt());
+
+  return result;
+}
+
+PDD_srunoff::PDD_srunoff(TemperatureIndex *m)
+  : Diag<TemperatureIndex>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "srunoff"));
+
+  set_attrs("instantaneous surface meltwater runoff rate", "",
+            "kg m-2 s-1", "kg m-2 year-1", 0);
+}
+
+IceModelVec::Ptr PDD_srunoff::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "srunoff", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  result->copy_from(model->surface_runoff());
+
+  return result;
+}
+
+PDD_snow_depth::PDD_snow_depth(TemperatureIndex *m)
+  : Diag<TemperatureIndex>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "snow_depth"));
+
+  set_attrs("snow cover depth (set to zero once a year)", "",
+            "m", "m", 0);
+}
+
+IceModelVec::Ptr PDD_snow_depth::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "snow_depth", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  result->copy_from(model->snow_depth());
+
+  return result;
+}
+
+PDD_air_temp_sd::PDD_air_temp_sd(TemperatureIndex *m)
+  : Diag<TemperatureIndex>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "air_temp_sd"));
+
+  set_attrs("standard deviation of near-surface air temperature", "",
+            "Kelvin", "Kelvin", 0);
+}
+
+IceModelVec::Ptr PDD_air_temp_sd::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "air_temp_sd", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  result->copy_from(model->air_temp_sd());
+
+  return result;
+}
+
+
 
 } // end of namespace surface
 } // end of namespace pism
