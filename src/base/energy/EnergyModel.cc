@@ -25,6 +25,9 @@
 #include "utilities.hh"
 #include "base/enthalpyConverter.hh"
 #include "bootstrapping.hh"
+#include "base/util/pism_utilities.hh"
+#include "base/util/error_handling.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace energy {
@@ -176,7 +179,33 @@ void EnergyModel::init(const InputOptions &opts) {
 }
 
 void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
+  // reset standard out flags at the beginning of every time step
+  m_stdout_flags = "";
+
   this->update_impl(t, dt, inputs);
+
+  // globalize m_stats and update m_stdout_flags
+  {
+    char buffer[50] = "";
+
+    m_stats.reduced_accuracy_counter = GlobalSum(m_grid->com, m_stats.reduced_accuracy_counter);
+    if (m_stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
+      const double reduced_accuracy_percentage = 100.0 * (m_stats.reduced_accuracy_counter / (m_grid->Mx() * m_grid->My()));
+      const double reporting_threshold = 5.0; // only report if above 5%
+
+      if (reduced_accuracy_percentage > reporting_threshold and m_log->get_threshold() > 2) {
+        snprintf(buffer, 50, "  [BPsacr=%.4f%%] ", reduced_accuracy_percentage);
+        m_stdout_flags = buffer + m_stdout_flags;
+      }
+    }
+
+    m_stats.bulge_counter = GlobalSum(m_grid->com, m_stats.bulge_counter);
+    if (m_stats.bulge_counter > 0) {
+      // count of when advection bulges are limited; frequently it is identically zero
+      snprintf(buffer, 50, " BULGE=%d ", m_stats.bulge_counter);
+      m_stdout_flags = buffer + m_stdout_flags;
+    }
+  }
 }
 
 void EnergyModel::update_impl(double t, double dt) {
@@ -197,6 +226,10 @@ MaxTimestep EnergyModel::max_timestep_impl(double t) const {
   }
 
   return m_stress_balance->max_timestep_cfl_3d().dt_max;
+}
+
+const std::string& EnergyModel::stdout_flags() const {
+  return m_stdout_flags;
 }
 
 const EnergyModelStats& EnergyModel::stats() const {

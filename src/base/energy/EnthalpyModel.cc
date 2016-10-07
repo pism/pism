@@ -17,11 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EnergyModel.hh"
+#include "EnthalpyModel.hh"
 
 #include "base/enthalpyConverter.hh"
 #include "base/DrainageCalculator.hh"
 #include "base/energy/enthSystem.hh"
+#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace energy {

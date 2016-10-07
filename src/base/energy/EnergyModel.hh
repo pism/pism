@@ -23,13 +23,14 @@
 #include "base/util/PISMComponent.hh"
 
 #include "base/util/iceModelVec.hh"
-#include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
 
 namespace stressbalance {
 class StressBalance;
 }
+
+class IceModelVec2CellType;
 
 namespace energy {
 
@@ -75,6 +76,8 @@ public:
   const EnergyModelStats& stats() const;
   const IceModelVec3 & enthalpy() const;
   const IceModelVec2S & basal_melt_rate() const;
+
+  const std::string& stdout_flags() const;
 protected:
   void update_impl(double t, double dt);
   MaxTimestep max_timestep_impl(double t) const;
@@ -93,35 +96,9 @@ protected:
 
   EnergyModelStats m_stats;
 
+private:
+  std::string m_stdout_flags;
   stressbalance::StressBalance *m_stress_balance;
-};
-
-class EnthalpyModel : public EnergyModel {
-public:
-  EnthalpyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
-
-protected:
-  void init_impl(const InputOptions &opts);
-  void update_impl(double t, double dt, const EnergyModelInputs &inputs);
-};
-
-class TemperatureModel : public EnergyModel {
-public:
-  TemperatureModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
-
-  const IceModelVec3 & temperature() const;
-protected:
-  void init_impl(const InputOptions &opts);
-  void update_impl(double t, double dt, const EnergyModelInputs &inputs);
-
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
-
-  void column_drainage(const double rho, const double c, const double L,
-                       const double z, const double dz,
-                       double *Texcess, double *bwat) const;
-
-  IceModelVec3 m_ice_temperature;
 };
 
 } // end of namespace energy
