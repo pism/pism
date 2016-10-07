@@ -36,6 +36,7 @@
 #include "base/grounded_cell_fraction.hh"
 #include "base/part_grid_threshold_thickness.hh"
 #include "base/util/projection.hh"
+#include "base/energy/utilities.hh"
 
 #if (PISM_USE_PROJ4==1)
 #include "base/util/Proj.hh"
@@ -355,7 +356,7 @@ IceModelVec::Ptr IceModel_cts::compute_impl() {
   result->create(m_grid, "cts", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  compute_cts(model->ice_enthalpy(), model->ice_thickness(), *result);
+  energy::compute_cts(model->ice_enthalpy(), model->ice_thickness(), *result);
 
   return result;
 }
@@ -774,9 +775,9 @@ IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
   if (cold_mode) {
     result->set(0.0);
   } else {
-    compute_liquid_water_fraction(model->ice_enthalpy(),
-                                  model->ice_thickness(),
-                                  *result);
+    energy::compute_liquid_water_fraction(model->ice_enthalpy(),
+                                          model->ice_thickness(),
+                                          *result);
   }
 
   return result;
@@ -1214,9 +1215,9 @@ IceModel_ienthalpy::IceModel_ienthalpy(const IceModel *m)
 
 void IceModel_ienthalpy::update(double a, double b) {
 
-  double value = total_ice_enthalpy(model->ice_enthalpy(),
-                                    model->ice_thickness(),
-                                    model->cell_area());
+  double value = energy::total_ice_enthalpy(model->ice_enthalpy(),
+                                            model->ice_thickness(),
+                                            model->cell_area());
 
   m_ts->append(value, a, b);
 }

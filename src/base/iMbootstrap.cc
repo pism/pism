@@ -32,7 +32,7 @@
 #include "coupler/PISMSurface.hh"
 #include "enthalpyConverter.hh"
 #include "base/energy/BedThermalUnit.hh"
-#include "base/energy/bootstrapping.hh"
+#include "base/energy/utilities.hh"
 
 namespace pism {
 
@@ -135,190 +135,25 @@ void IceModel::bootstrap_3d() {
 
   if (m_config->get_boolean("energy.temperature_based")) {
     // set ice temperature:
-    bootstrap_ice_temperature(m_ice_thickness,
-                              m_ice_surface_temp,
-                              m_climatic_mass_balance,
-                              m_btu->flux_through_top_surface(),
-                              m_ice_temperature);
+    energy::bootstrap_ice_temperature(m_ice_thickness,
+                                      m_ice_surface_temp,
+                                      m_climatic_mass_balance,
+                                      m_btu->flux_through_top_surface(),
+                                      m_ice_temperature);
 
     // use temperature to initialize enthalpy:
-    compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
+    energy::compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
 
     m_log->message(2, " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
   } else {
     // enthalpy mode
 
-    bootstrap_ice_enthalpy(m_ice_thickness,
-                           m_ice_surface_temp,
-                           m_climatic_mass_balance,
-                           m_btu->flux_through_top_surface(),
-                           m_ice_enthalpy);
+    energy::bootstrap_ice_enthalpy(m_ice_thickness,
+                                   m_ice_surface_temp,
+                                   m_climatic_mass_balance,
+                                   m_btu->flux_through_top_surface(),
+                                   m_ice_enthalpy);
   }
-}
-
-//! Create a temperature field within the ice from provided ice thickness, surface temperature, surface mass balance, and geothermal flux.
-/*!
-In bootstrapping we need to determine initial values for the temperature within
-the ice (and the bedrock).  There are various data available at bootstrapping,
-but not the 3D temperature field needed as initial values for the temperature.  Here
-we take a "guess" based on an assumption of steady state and a simple model of
-the vertical velocity in the column.  The rule is certainly heuristic but it
-seems to work well anyway.
-
-The result is *not* the temperature field which is in steady state with the ice
-dynamics.  Spinup is most-definitely needed in many applications.  Such spinup
-usually starts from the temperature field computed by this procedure and then
-runs for a long time (e.g. \f$10^4\f$ to \f$10^6\f$ years), possibly with fixed
-geometry, to get closer to thermomechanically-coupled equilibrium.
-
-Consider a horizontal grid point.  Suppose the surface temperature
-\f$T_s\f$, surface mass balance \f$m\f$, and geothermal flux \f$g\f$ are given at that location.
-Within the column denote the temperature by \f$T(z)\f$ at height \f$z\f$ above
-the base of the ice.  Suppose the column of ice has height \f$H\f$, the ice
-thickness.
-
-There are two alternative bootstrap methods determined by the configuration parameter
-`config.get_double("bootstrapping.temperature_heuristic"))`. Allowed values are `"smb"` and
-`"quartic_guess"`.
-
-1. If the `smb` method is chosen, which is the default, and if \f$m>0\f$,
-then the method sets the ice
-temperature to the solution of the steady problem [\ref Paterson]
-  \f[\rho_i c w \frac{\partial T}{\partial z} = k_i \frac{\partial^2 T}{\partial z^2} \qquad \text{with boundary conditions} \qquad T(H) = T_s \quad \text{and} \quad \frac{\partial T}{\partial z}(0) = - \frac{g}{k_i}, \f]
-where the vertical velocity is linear between the surface value \f$w=-m\f$ and
-a velocity of zero at the base:
-  \f[w(z) = - m z / H.\f]
-(Note that because \f$m>0\f$, this vertical velocity is downward.)
-This is a two-point boundary value problem for a linear ODE.  In fact, if
-\f$K = k_i / (\rho_i c)\f$ then we can write the ODE as
-  \f[K T'' + \frac{m z}{H} T' = 0.\f]
-Then let
-  \f[C_0 = \frac{g \sqrt{\pi H K}}{k_i \sqrt{2 m}}, \qquad \gamma_0 = \sqrt{\frac{mH}{2K}}.\f]
-(Note \f$\gamma_0\f$ is, up to a constant, the square root of the Peclet number
-[\ref Paterson]; compare [\ref vanderWeletal2013].)  The solution to the
-two-point boundary value problem is then
-  \f[T(z) = T_s + C_0 \left(\operatorname{erf}(\gamma_0) - \operatorname{erf}\left(\gamma_0 \frac{z}{H}\right)\right).\f]
-If `usesmb` is true and \f$m \le 0\f$, then the velocity in the column, relative
-to the base, is taken to be zero.  Thus the solution is
-  \f[ T(z) = \frac{g}{k_i} \left( H - z \right) + T_s, \f]
-a straight line whose slope is determined by the geothermal flux and whose value
-at the ice surface is the surface temperature, \f$T(H) = T_s\f$.
-2. If the `quartic_guess` method is chosen, the "quartic guess" formula which was in older
-versions of PISM is used.  Namely, within the ice we set
-\f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
-where \f$\alpha,\beta\f$ are chosen so that
-\f[\frac{\partial T}{\partial z}\Big|_{z=0} = - \frac{g}{k_i} \qquad \text{and} \qquad \frac{\partial T}{\partial z}\Big|_{z=H/4} = - \frac{g}{2 k_i}.\f]
-The purpose of the second condition is that when ice is advecting downward then
-the temperature gradient is much larger in roughly the bottom quarter of the
-ice column.  However, without the surface mass balance, much less the solution
-of the stress balance equations, we cannot estimate the vertical velocity, so
-we make such a rough guess.
-
-In either case the temperature within the ice is not allowed to exceed the
-pressure-melting temperature.
-
-We set \f$T(z)=T_s\f$ above the top of the ice.
-
-This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
-temperature is used by BedThermalUnit::bootstrap() to determine a
-bootstrap temperature profile in the bedrock.
-*/
-void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &ice_surface_temp,
-                               const IceModelVec2S &surface_mass_balance,
-                               const IceModelVec2S &basal_heat_flux,
-                               IceModelVec3 &result) {
-
-  IceGrid::ConstPtr      grid   = result.get_grid();
-  Context::ConstPtr      ctx    = grid->ctx();
-  Config::ConstPtr       config = ctx->config();
-  Logger::ConstPtr       log    = ctx->log();
-  EnthalpyConverter::Ptr EC     = ctx->enthalpy_converter();
-
-  const bool use_smb  = config->get_string("bootstrapping.temperature_heuristic") == "smb";
-
-  if (use_smb) {
-    log->message(2,
-                 " - filling 3D ice temperatures using surface temperature"
-                 " (and mass balance for velocity estimate)\n");
-
-  } else {
-    log->message(2,
-                 " - filling 3D ice temperatures using surface temperature"
-                 " (and a quartic guess without SMB)\n");
-  }
-
-  const double
-    ice_k       = config->get_double("constants.ice.thermal_conductivity"),
-    ice_density = config->get_double("constants.ice.density"),
-    ice_c       = config->get_double("constants.ice.specific_heat_capacity"),
-    K           = ice_k / (ice_density * ice_c);
-
-  IceModelVec::AccessList list;
-  list.add(ice_surface_temp);
-  list.add(surface_mass_balance);
-  list.add(ice_thickness);
-  list.add(basal_heat_flux);
-  list.add(result);
-
-  ParallelSection loop(grid->com);
-  try {
-    for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      const double
-        T_surface = ice_surface_temp(i, j),
-        H         = ice_thickness(i, j),
-        G         = basal_heat_flux(i, j);
-
-      const unsigned int ks = grid->kBelowHeight(H);
-
-      double *T = result.get_column(i, j);
-
-      // within ice
-      if (use_smb) { // method 1:  includes surface mass balance in estimate
-
-        // Convert SMB from "kg m-2 s-1" to "m second-1".
-        const double SMB = surface_mass_balance(i, j) / ice_density;
-
-        for (unsigned int k = 0; k < ks; k++) {
-          const double z = grid->z(k);
-          T[k] = ice_temperature_guess_smb(EC, H, z, T_surface, G, ice_k, K, SMB);
-        }
-
-      } else { // method 2: a quartic guess; does not use SMB
-
-        for (unsigned int k = 0; k < ks; k++) {
-          const double z = grid->z(k);
-          T[k] = ice_temperature_guess(EC, H, z, T_surface, G, ice_k);
-        }
-
-      }
-
-      // above ice
-      for (unsigned int k = ks; k < grid->Mz(); k++) {
-        T[k] = T_surface;
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  result.update_ghosts();
-}
-
-void bootstrap_ice_enthalpy(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &ice_surface_temp,
-                            const IceModelVec2S &surface_mass_balance,
-                            const IceModelVec2S &basal_heat_flux,
-                            IceModelVec3 &result) {
-
-  bootstrap_ice_temperature(ice_thickness, ice_surface_temp,
-                            surface_mass_balance, basal_heat_flux,
-                            result);
-
-  compute_enthalpy_cold(result, ice_thickness, result);
 }
 
 } // end of namespace pism

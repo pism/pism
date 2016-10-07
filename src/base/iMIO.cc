@@ -38,6 +38,7 @@
 #include "base/util/pism_utilities.hh"
 #include "base/util/projection.hh"
 #include "base/util/PISMComponent.hh"
+#include "base/energy/utilities.hh"
 
 namespace pism {
 
@@ -409,12 +410,12 @@ void IceModel::init_enthalpy(const PIO &input_file,
       m_log->message(2,
                      "* Computing enthalpy using ice temperature,"
                      "  liquid water fraction and thickness...\n");
-      compute_enthalpy(temp, liqfrac, m_ice_thickness, m_ice_enthalpy);
+      energy::compute_enthalpy(temp, liqfrac, m_ice_thickness, m_ice_enthalpy);
     } else {
       m_log->message(2,
                      "* Computing enthalpy using ice temperature and thickness "
                      "and assuming zero liquid water fraction...\n");
-      compute_enthalpy_cold(temp, m_ice_thickness, m_ice_enthalpy);
+      energy::compute_enthalpy_cold(temp, m_ice_thickness, m_ice_enthalpy);
     }
 
     m_ice_enthalpy.metadata() = enthalpy_metadata;

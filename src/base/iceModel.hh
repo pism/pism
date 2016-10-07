@@ -79,6 +79,8 @@ class FrontalMelt;
 
 namespace energy {
 class BedThermalUnit;
+class EnergyModelInputs;
+class EnergyModelStats;
 }
 
 namespace bed {
@@ -103,35 +105,6 @@ struct FractureFields {
   IceModelVec2S toughness;
 };
 
-class EnergyModelInputs {
-public:
-  EnergyModelInputs();
-  void check() const;
-
-  const IceModelVec2CellType *cell_type;
-  const IceModelVec2S *basal_frictional_heating;
-  const IceModelVec2S *basal_heat_flux;
-  const IceModelVec2S *ice_thickness;
-  const IceModelVec2S *surface_liquid_fraction;
-  const IceModelVec2S *shelf_base_temp;
-  const IceModelVec2S *surface_temp;
-  const IceModelVec2S *till_water_thickness;
-
-  const IceModelVec3 *strain_heating3;
-  const IceModelVec3 *u3;
-  const IceModelVec3 *v3;
-  const IceModelVec3 *w3;
-};
-
-class EnergyModelStats {
-public:
-  EnergyModelStats();
-
-  unsigned int bulge_counter;
-  unsigned int reduced_accuracy_counter;
-  unsigned int low_temperature_counter;
-  double liquified_ice_volume;
-};
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -387,9 +360,8 @@ protected:
   virtual void combine_basal_melt_rate();
 
   // see iMenthalpy.cc
-  virtual void enthalpyStep(const EnergyModelInputs &inputs,
-                            double dt,
-                            EnergyModelStats &stats);
+  virtual void enthalpyStep(const energy::EnergyModelInputs &inputs, double dt,
+                            energy::EnergyModelStats &stats);
 
   // see iMgeometry.cc
   virtual void enforce_consistency_of_geometry();
@@ -458,9 +430,8 @@ protected:
   virtual void excessToFromBasalMeltLayer(double rho, double c, double L,
                                           double z, double dz,
                                           double *Texcess, double *bwat);
-  virtual void temperatureStep(const EnergyModelInputs &inputs,
-                               double dt,
-                               EnergyModelStats &stats);
+  virtual void temperatureStep(const energy::EnergyModelInputs &inputs, double dt,
+                               energy::EnergyModelStats &stats);
 
   // see iMutil.cc
   virtual int endOfTimeStepHook();
@@ -558,39 +529,6 @@ protected:
 private:
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
-
-void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &ice_surface_temp,
-                               const IceModelVec2S &surface_mass_balance,
-                               const IceModelVec2S &basal_heat_flux,
-                               IceModelVec3 &result);
-
-void bootstrap_ice_enthalpy(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &ice_surface_temp,
-                            const IceModelVec2S &surface_mass_balance,
-                            const IceModelVec2S &basal_heat_flux,
-                            IceModelVec3 &result);
-
-void compute_enthalpy(const IceModelVec3 &temperature,
-                      const IceModelVec3 &liquid_water_fraction,
-                      const IceModelVec2S &ice_thickness,
-                      IceModelVec3 &result);
-
-void compute_enthalpy_cold(const IceModelVec3 &temperature,
-                           const IceModelVec2S &ice_thickness,
-                           IceModelVec3 &result);
-
-void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
-                                   const IceModelVec2S &ice_thickness,
-                                   IceModelVec3 &result);
-
-void compute_cts(const IceModelVec3 &enthalpy,
-                 const IceModelVec2S &ice_thickness,
-                 IceModelVec3 &result);
-
-double total_ice_enthalpy(const IceModelVec3 &ice_enthalpy,
-                          const IceModelVec2S &ice_thickness,
-                          const IceModelVec2S &cell_area);
 
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);

@@ -113,6 +113,10 @@ add_library (pism
   base/pism_signal.c
   base/columnSystem.cc
   base/age/AgeModel.cc
+  base/energy/utilities.cc
+  base/energy/EnergyModel.cc
+  base/energy/EnthalpyModel.cc
+  base/energy/TemperatureModel.cc
   base/energy/BedThermalUnit.cc
   base/energy/BTU_Full.cc
   base/energy/BTU_Minimal.cc

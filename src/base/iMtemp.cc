@@ -32,6 +32,7 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/energy/EnergyModel.hh"
 
 namespace pism {
 
@@ -132,9 +133,9 @@ This method should be kept because it is worth having alternative physics, and
   the column minus the bulge maximum (15 K) if it is below that level.  The number of
   times this occurs is reported as a "BPbulge" percentage.
   */
-void IceModel::temperatureStep(const EnergyModelInputs &inputs,
+void IceModel::temperatureStep(const energy::EnergyModelInputs &inputs,
                                double dt,
-                               EnergyModelStats &stats) {
+                               energy::EnergyModelStats &stats) {
 
   using mask::ocean;
 

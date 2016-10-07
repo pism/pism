@@ -35,53 +35,10 @@
 
 #include "base/hydrology/PISMHydrology.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
+#include "base/energy/EnergyModel.hh"
+#include "base/energy/utilities.hh"
 
 namespace pism {
-
-static void check_input(const IceModelVec *ptr, const char *name) {
-  if (ptr == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "energy balance model input %s was not provided", name);
-  }
-}
-
-EnergyModelInputs::EnergyModelInputs() {
-  basal_frictional_heating = NULL;
-  basal_heat_flux          = NULL;
-  cell_type                = NULL;
-  ice_thickness            = NULL;
-  surface_liquid_fraction  = NULL;
-  shelf_base_temp          = NULL;
-  surface_temp             = NULL;
-  till_water_thickness     = NULL;
-
-  strain_heating3          = NULL;
-  u3                       = NULL;
-  v3                       = NULL;
-  w3                       = NULL;
-}
-
-void EnergyModelInputs::check() const {
-  check_input(cell_type,                "cell_type");
-  check_input(basal_frictional_heating, "basal_frictional_heating");
-  check_input(basal_heat_flux,          "basal_heat_flux");
-  check_input(ice_thickness,            "ice_thickness");
-  check_input(surface_liquid_fraction,  "surface_liquid_fraction");
-  check_input(shelf_base_temp,          "shelf_base_temp");
-  check_input(surface_temp,             "surface_temp");
-  check_input(till_water_thickness,     "till_water_thickness");
-
-  check_input(strain_heating3, "strain_heating3");
-  check_input(u3, "u3");
-  check_input(v3, "v3");
-  check_input(w3, "w3");
-}
-
-EnergyModelStats::EnergyModelStats() {
-  bulge_counter = 0;
-  reduced_accuracy_counter = 0;
-  low_temperature_counter = 0;
-  liquified_ice_volume = 0.0;
-}
 
 //! \file iMenergy.cc Methods of IceModel which address conservation of energy.
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
@@ -104,7 +61,7 @@ void IceModel::energyStep() {
 
   const Profiling &profiling = m_ctx->profiling();
 
-  EnergyModelStats stats;
+  energy::EnergyModelStats stats;
 
   // operator-splitting occurs here (ice and bedrock energy updates are split):
   //   tell BedThermalUnit* btu that we have an ice base temp; it will return
@@ -117,7 +74,7 @@ void IceModel::energyStep() {
   m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("BTU");
 
-  EnergyModelInputs inputs;
+  energy::EnergyModelInputs inputs;
   {
     m_surface->ice_surface_temperature(m_ice_surface_temp);
     m_surface->ice_surface_liquid_water_fraction(m_liqfrac_surface);
@@ -156,7 +113,7 @@ void IceModel::energyStep() {
     // compute_enthalpy_cold() updates ghosts of m_ice_enthalpy using
     // update_ghosts(). Is not optimized because this
     // (energy.temperature_based) is a rare case.
-    compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
+    energy::compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
 
   } else {
     // new enthalpy values go in m_work3d

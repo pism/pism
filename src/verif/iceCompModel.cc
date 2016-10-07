@@ -50,6 +50,7 @@
 #include "base/util/pism_utilities.hh"
 #include "BTU_Verification.hh"
 #include "base/energy/BTU_Minimal.hh"
+#include "base/energy/utilities.hh"
 
 namespace pism {
 
@@ -306,7 +307,7 @@ void IceCompModel::initialize_3d() {
 
   strain_heating3_comp.set(0.0);
 
-  compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
+  energy::compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
 }
 
 void IceCompModel::initTestABCDH() {

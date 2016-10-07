@@ -37,6 +37,7 @@
 #include "earth/PISMBedDef.hh"
 
 #include "base/energy/BedThermalUnit.hh"
+#include "base/energy/utilities.hh"
 
 namespace pism {
 
@@ -190,25 +191,25 @@ void IceEISModel::initialize_3d() {
 
   if (m_config->get_boolean("energy.temperature_based")) {
     // set ice temperature:
-    bootstrap_ice_temperature(m_ice_thickness,
-                              m_ice_surface_temp,
-                              m_climatic_mass_balance,
-                              m_btu->flux_through_top_surface(),
-                              m_ice_temperature);
+    energy::bootstrap_ice_temperature(m_ice_thickness,
+                                      m_ice_surface_temp,
+                                      m_climatic_mass_balance,
+                                      m_btu->flux_through_top_surface(),
+                                      m_ice_temperature);
 
     // use temperature to initialize enthalpy:
-    compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
+    energy::compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
 
     m_log->message(2,
                    " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
   } else {
     // enthalpy mode
 
-    bootstrap_ice_enthalpy(m_ice_thickness,
-                           m_ice_surface_temp,
-                           m_climatic_mass_balance,
-                           m_btu->flux_through_top_surface(),
-                           m_ice_enthalpy);
+    energy::bootstrap_ice_enthalpy(m_ice_thickness,
+                                   m_ice_surface_temp,
+                                   m_climatic_mass_balance,
+                                   m_btu->flux_through_top_surface(),
+                                   m_ice_enthalpy);
   }
 }
 

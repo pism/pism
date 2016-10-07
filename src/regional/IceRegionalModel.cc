@@ -309,9 +309,9 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
   //
 }
 
-void IceRegionalModel::enthalpyStep(const EnergyModelInputs &inputs,
+void IceRegionalModel::enthalpyStep(const energy::EnergyModelInputs &inputs,
                                     double dt,
-                                    EnergyModelStats &stats) {
+                                    energy::EnergyModelStats &stats) {
 
   IceModel::enthalpyStep(inputs, dt, stats);
 

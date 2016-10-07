@@ -22,6 +22,7 @@
 #include "base/energy/bootstrapping.hh"
 
 namespace pism {
+namespace energy {
 
 double ice_temperature_guess(EnthalpyConverter::Ptr EC,
                              double H, double z, double T_surface,
@@ -59,4 +60,5 @@ double ice_temperature_guess_smb(EnthalpyConverter::Ptr EC,
   }
 }
 
+} // end of namespace energy
 } // end of namespace pism

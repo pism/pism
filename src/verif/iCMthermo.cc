@@ -31,6 +31,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/pism_utilities.hh"
 #include "BTU_Verification.hh"
+#include "base/energy/EnergyModel.hh"
 
 namespace pism {
 
@@ -41,9 +42,9 @@ const double IceCompModel::LforFG = 750000; // m
 const double IceCompModel::ApforG = 200; // m
 
 /*! Re-implemented so that we can add compensatory strain_heating in Tests F and G. */
-void IceCompModel::temperatureStep(const EnergyModelInputs &inputs,
+void IceCompModel::temperatureStep(const energy::EnergyModelInputs &inputs,
                                    double dt,
-                                   EnergyModelStats &stats) {
+                                   energy::EnergyModelStats &stats) {
 
   if ((testname == 'F') || (testname == 'G')) {
     // FIXME: This code messes with the strain heating field owned by
