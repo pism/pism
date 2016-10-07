@@ -117,6 +117,10 @@ protected:
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
 
+  void column_drainage(const double rho, const double c, const double L,
+                       const double z, const double dz,
+                       double *Texcess, double *bwat) const;
+
   IceModelVec3 m_ice_temperature;
 };
 
