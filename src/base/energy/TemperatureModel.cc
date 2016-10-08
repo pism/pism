@@ -283,8 +283,8 @@ void TemperatureModel::update_impl(double t, double dt, const EnergyModelInputs 
   // copy to m_ice_temperature, updating ghosts
   m_work.update_ghosts(m_ice_temperature);
 
-  // set ice enthalpy (and its ghosts)
-  compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
+  // Set ice enthalpy in place. EnergyModel::update will scatter ghosts
+  compute_enthalpy_cold(m_work, ice_thickness, m_work);
 }
 
 void TemperatureModel::define_model_state_impl(const PIO &output) const {

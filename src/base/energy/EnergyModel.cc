@@ -184,6 +184,8 @@ void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
 
   this->update_impl(t, dt, inputs);
 
+  m_work.update_ghosts(m_ice_enthalpy);
+
   // globalize m_stats and update m_stdout_flags
   {
     char buffer[50] = "";

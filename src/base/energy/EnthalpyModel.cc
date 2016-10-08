@@ -321,8 +321,6 @@ void EnthalpyModel::update_impl(double t, double dt, const EnergyModelInputs &in
 
   // FIXME: use cell areas
   m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->dx() * m_grid->dy();
-
-  m_work.update_ghosts(m_ice_enthalpy);
 }
 
 } // end of namespace energy
