@@ -25,6 +25,7 @@
 namespace pism {
 namespace energy {
 
+/*! @brief The enthalpy-based energy balance model. */
 class EnthalpyModel : public EnergyModel {
 public:
   EnthalpyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
@@ -33,6 +34,17 @@ protected:
   void init_impl(const InputOptions &opts);
   void update_impl(double t, double dt, const EnergyModelInputs &inputs);
 };
+
+/*! @brief The "dummy" energy balance model. Reads in enthalpy from a file, but does not update it. */
+class DummyEnergyModel : public EnthalpyModel {
+public:
+  DummyEnergyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
+
+protected:
+  void init_impl(const InputOptions &opts);
+  void update_impl(double t, double dt, const EnergyModelInputs &inputs);
+};
+
 
 } // end of namespace energy
 } // end of namespace pism

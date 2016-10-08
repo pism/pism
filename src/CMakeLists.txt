@@ -115,6 +115,7 @@ add_library (pism
   base/age/AgeModel.cc
   base/energy/utilities.cc
   base/energy/EnergyModel.cc
+  base/energy/DummyEnergyModel.cc
   base/energy/EnthalpyModel.cc
   base/energy/TemperatureModel.cc
   base/energy/BedThermalUnit.cc
