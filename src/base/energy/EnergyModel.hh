@@ -70,11 +70,23 @@ public:
 
   void restart(const PIO &input_file, int record);
 
+  /*! @brief Bootstrapping using heuristics. */
+  /*!
+   * Bootstrap by reading 2d fields (currently the basal melt rate) from a file and filling 3D
+   * fields using heuristics.
+   */
   void bootstrap(const PIO &input_file,
                  const IceModelVec2S &ice_thickness,
                  const IceModelVec2S &surface_temperature,
                  const IceModelVec2S &climatic_mass_balance,
                  const IceModelVec2S &basal_heat_flux);
+
+  /*! @brief Initialize using formulas (for runs using synthetic data). */
+  void initialize(const IceModelVec2S &basal_melt_rate,
+                  const IceModelVec2S &ice_thickness,
+                  const IceModelVec2S &surface_temperature,
+                  const IceModelVec2S &climatic_mass_balance,
+                  const IceModelVec2S &basal_heat_flux);
 
   using Component_TS::update;
   void update(double t, double dt, const EnergyModelInputs &inputs);
@@ -95,6 +107,12 @@ protected:
                               const IceModelVec2S &surface_temperature,
                               const IceModelVec2S &climatic_mass_balance,
                               const IceModelVec2S &basal_heat_flux) = 0;
+
+  virtual void initialize_impl(const IceModelVec2S &basal_melt_rate,
+                               const IceModelVec2S &ice_thickness,
+                               const IceModelVec2S &surface_temperature,
+                               const IceModelVec2S &climatic_mass_balance,
+                               const IceModelVec2S &basal_heat_flux) = 0;
 
   virtual void update_impl(double t, double dt, const EnergyModelInputs &inputs) = 0;
 

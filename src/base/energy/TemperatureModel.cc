@@ -68,6 +68,20 @@ void TemperatureModel::bootstrap_impl(const PIO &input_file,
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
+void TemperatureModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
+                                       const IceModelVec2S &ice_thickness,
+                                       const IceModelVec2S &surface_temperature,
+                                       const IceModelVec2S &climatic_mass_balance,
+                                       const IceModelVec2S &basal_heat_flux) {
+
+  m_basal_melt_rate.copy_from(basal_melt_rate);
+
+  bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
+                            basal_heat_flux, m_ice_enthalpy);
+
+  compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
+}
+
 void TemperatureModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
   // current time does not matter here
   (void) t;

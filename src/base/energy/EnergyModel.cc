@@ -187,6 +187,19 @@ void EnergyModel::bootstrap(const PIO &input_file,
                        climatic_mass_balance, basal_heat_flux);
 }
 
+void EnergyModel::initialize(const IceModelVec2S &basal_melt_rate,
+                             const IceModelVec2S &ice_thickness,
+                             const IceModelVec2S &surface_temperature,
+                             const IceModelVec2S &climatic_mass_balance,
+                             const IceModelVec2S &basal_heat_flux) {
+  this->initialize_impl(basal_melt_rate,
+                        ice_thickness,
+                        surface_temperature,
+                        climatic_mass_balance,
+                        basal_heat_flux);
+}
+
+
 void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
   // reset standard out flags at the beginning of every time step
   m_stdout_flags = "";
