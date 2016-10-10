@@ -22,6 +22,7 @@
 #include "base/util/pism_utilities.hh"
 #include "base/energy/utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
+#include "base/util/PISMVars.hh"
 
 namespace pism {
 namespace energy {
@@ -36,49 +37,35 @@ TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
   m_ice_temperature.metadata().set_double("valid_min", 0.0);
 }
 
-void TemperatureModel::init_impl(const InputOptions &opts) {
-
+const IceModelVec3 & TemperatureModel::temperature() const {
+  return m_ice_temperature;
 }
 
-//! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
-void TemperatureModel::column_drainage(const double rho, const double c, const double L,
-                                       const double z, const double dz,
-                                       double *Texcess, double *bwat) const {
+void TemperatureModel::restart_impl(const PIO &input_file, int record) {
 
-  const double
-    darea      = m_grid->dx() * m_grid->dy(),
-    dvol       = darea * dz,
-    dE         = rho * c * (*Texcess) * dvol,
-    massmelted = dE / L;
+  m_basal_melt_rate.read(input_file, record);
+  m_ice_temperature.read(input_file, record);
 
-  if (*Texcess >= 0.0) {
-    // T is at or above pressure-melting temp, so temp needs to be set to
-    // pressure-melting; a fraction of excess energy is turned into melt water at base
-    // note massmelted is POSITIVE!
-    const double FRACTION_TO_BASE
-                         = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
-    // note: ice-equiv thickness:
-    *bwat += (FRACTION_TO_BASE * massmelted) / (rho * darea);
-    *Texcess = 0.0;
-  } else {  // neither Texcess nor bwat needs to change if Texcess < 0.0
-    // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
-    // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
-    if (z > 0.00001) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
-    }
-    if (*bwat > 0.0) {
-      const double thicknessToFreezeOn = - massmelted / (rho * darea);
-      if (thicknessToFreezeOn <= *bwat) { // the water *is* available to freeze on
-        *bwat -= thicknessToFreezeOn;
-        *Texcess = 0.0;
-      } else { // only refreeze bwat thickness of water; update Texcess
-        *bwat = 0.0;
-        const double dTemp = L * (*bwat) / (c * dz);
-        *Texcess += dTemp;
-      }
-    }
-    // note: if *bwat == 0 and Texcess < 0.0 then Texcess unmolested; temp will go down
-  }
+  regrid("Enthalpy-based energy balance model", m_basal_melt_rate);
+  regrid("Enthalpy-based energy balance model", m_ice_temperature);
+
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
+}
+
+void TemperatureModel::bootstrap_impl(const PIO &input_file,
+                                      const IceModelVec2S &ice_thickness,
+                                      const IceModelVec2S &surface_temperature,
+                                      const IceModelVec2S &climatic_mass_balance,
+                                      const IceModelVec2S &basal_heat_flux) {
+
+  m_basal_melt_rate.regrid(input_file, OPTIONAL,
+                           m_config->get_double("bootstrapping.defaults.bmelt"));
+
+  bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
+                            basal_heat_flux, m_ice_temperature);
+
+  compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
 void TemperatureModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
@@ -297,6 +284,47 @@ void TemperatureModel::write_model_state_impl(const PIO &output) const {
   m_ice_temperature.write(output);
   m_basal_melt_rate.write(output);
   // ice enthalpy is not a part of the model state
+}
+
+//! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
+void TemperatureModel::column_drainage(const double rho, const double c, const double L,
+                                       const double z, const double dz,
+                                       double *Texcess, double *bwat) const {
+
+  const double
+    darea      = m_grid->dx() * m_grid->dy(),
+    dvol       = darea * dz,
+    dE         = rho * c * (*Texcess) * dvol,
+    massmelted = dE / L;
+
+  if (*Texcess >= 0.0) {
+    // T is at or above pressure-melting temp, so temp needs to be set to
+    // pressure-melting; a fraction of excess energy is turned into melt water at base
+    // note massmelted is POSITIVE!
+    const double FRACTION_TO_BASE
+                         = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
+    // note: ice-equiv thickness:
+    *bwat += (FRACTION_TO_BASE * massmelted) / (rho * darea);
+    *Texcess = 0.0;
+  } else {  // neither Texcess nor bwat needs to change if Texcess < 0.0
+    // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
+    // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
+    if (z > 0.00001) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
+    }
+    if (*bwat > 0.0) {
+      const double thicknessToFreezeOn = - massmelted / (rho * darea);
+      if (thicknessToFreezeOn <= *bwat) { // the water *is* available to freeze on
+        *bwat -= thicknessToFreezeOn;
+        *Texcess = 0.0;
+      } else { // only refreeze bwat thickness of water; update Texcess
+        *bwat = 0.0;
+        const double dTemp = L * (*bwat) / (c * dz);
+        *Texcess += dTemp;
+      }
+    }
+    // note: if *bwat == 0 and Texcess < 0.0 then Texcess unmolested; temp will go down
+  }
 }
 
 } // end of namespace energy

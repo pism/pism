@@ -23,6 +23,7 @@
 #include "base/DrainageCalculator.hh"
 #include "base/energy/enthSystem.hh"
 #include "base/util/IceModelVec2CellType.hh"
+#include "utilities.hh"
 
 namespace pism {
 namespace energy {
@@ -33,8 +34,26 @@ EnthalpyModel::EnthalpyModel(IceGrid::ConstPtr grid,
   // empty
 }
 
-void EnthalpyModel::init_impl(const InputOptions &opts) {
+void EnthalpyModel::restart_impl(const PIO &input_file, int record) {
 
+  m_basal_melt_rate.read(input_file, record);
+  m_ice_enthalpy.read(input_file, record);
+
+  regrid("Enthalpy-based energy balance model", m_basal_melt_rate);
+  regrid("Enthalpy-based energy balance model", m_ice_enthalpy);
+}
+
+void EnthalpyModel::bootstrap_impl(const PIO &input_file,
+                                   const IceModelVec2S &ice_thickness,
+                                   const IceModelVec2S &surface_temperature,
+                                   const IceModelVec2S &climatic_mass_balance,
+                                   const IceModelVec2S &basal_heat_flux) {
+
+  m_basal_melt_rate.regrid(input_file, OPTIONAL,
+                           m_config->get_double("bootstrapping.defaults.bmelt"));
+
+  bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
+                         basal_heat_flux, m_ice_enthalpy);
 }
 
 void EnthalpyModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
@@ -321,6 +340,16 @@ void EnthalpyModel::update_impl(double t, double dt, const EnergyModelInputs &in
 
   // FIXME: use cell areas
   m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->dx() * m_grid->dy();
+}
+
+void EnthalpyModel::define_model_state_impl(const PIO &output) const {
+  m_ice_enthalpy.define(output);
+  m_basal_melt_rate.define(output);
+}
+
+void EnthalpyModel::write_model_state_impl(const PIO &output) const {
+  m_ice_enthalpy.write(output);
+  m_basal_melt_rate.write(output);
 }
 
 } // end of namespace energy

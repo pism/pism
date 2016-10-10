@@ -31,8 +31,18 @@ public:
   EnthalpyModel_Regional(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
 protected:
-  void init_impl(const InputOptions &opts);
+  virtual void restart_impl(const PIO &input_file, int record);
+
+  virtual void bootstrap_impl(const PIO &input_file,
+                              const IceModelVec2S &ice_thickness,
+                              const IceModelVec2S &surface_temperature,
+                              const IceModelVec2S &climatic_mass_balance,
+                              const IceModelVec2S &basal_heat_flux);
+
   void update_impl(double t, double dt, const EnergyModelInputs &inputs);
+
+  IceModelVec2Int *m_no_model_mask;
+  IceModelVec2S m_basal_melt_rate_stored;
 };
 
 } // end of namespace energy

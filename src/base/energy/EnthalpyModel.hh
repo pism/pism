@@ -31,8 +31,18 @@ public:
   EnthalpyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
 protected:
-  void init_impl(const InputOptions &opts);
-  void update_impl(double t, double dt, const EnergyModelInputs &inputs);
+  virtual void restart_impl(const PIO &input_file, int record);
+
+  virtual void bootstrap_impl(const PIO &input_file,
+                              const IceModelVec2S &ice_thickness,
+                              const IceModelVec2S &surface_temperature,
+                              const IceModelVec2S &climatic_mass_balance,
+                              const IceModelVec2S &basal_heat_flux);
+
+  virtual void update_impl(double t, double dt, const EnergyModelInputs &inputs);
+
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
 };
 
 /*! @brief The "dummy" energy balance model. Reads in enthalpy from a file, but does not update it. */
@@ -41,10 +51,16 @@ public:
   DummyEnergyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
 protected:
-  void init_impl(const InputOptions &opts);
+  void restart_impl(const PIO &input_file, int record);
+
+  void bootstrap_impl(const PIO &input_file,
+                      const IceModelVec2S &ice_thickness,
+                      const IceModelVec2S &surface_temperature,
+                      const IceModelVec2S &climatic_mass_balance,
+                      const IceModelVec2S &basal_heat_flux);
+
   void update_impl(double t, double dt, const EnergyModelInputs &inputs);
 };
-
 
 } // end of namespace energy
 } // end of namespace pism

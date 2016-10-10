@@ -173,18 +173,30 @@ void EnergyModel::init_enthalpy(const PIO &input_file, bool do_regrid, int recor
   }
 }
 
+void EnergyModel::restart(const PIO &input_file, int record) {
+  this->restart_impl(input_file, record);
+}
 
-void EnergyModel::init(const InputOptions &opts) {
-  this->init_impl(opts);
+void EnergyModel::bootstrap(const PIO &input_file,
+                            const IceModelVec2S &ice_thickness,
+                            const IceModelVec2S &surface_temperature,
+                            const IceModelVec2S &climatic_mass_balance,
+                            const IceModelVec2S &basal_heat_flux) {
+  this->bootstrap_impl(input_file,
+                       ice_thickness, surface_temperature,
+                       climatic_mass_balance, basal_heat_flux);
 }
 
 void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
   // reset standard out flags at the beginning of every time step
   m_stdout_flags = "";
 
-  this->update_impl(t, dt, inputs);
+  {
+    // this call should fill m_work with new values of enthalpy
+    this->update_impl(t, dt, inputs);
 
-  m_work.update_ghosts(m_ice_enthalpy);
+    m_work.update_ghosts(m_ice_enthalpy);
+  }
 
   // globalize m_stats and update m_stdout_flags
   {
@@ -218,7 +230,7 @@ void EnergyModel::update_impl(double t, double dt) {
 }
 
 MaxTimestep EnergyModel::max_timestep_impl(double t) const {
-  // fix a compiler warning
+  // silence a compiler warning
   (void) t;
 
   if (m_stress_balance == NULL) {
@@ -244,16 +256,6 @@ const IceModelVec3 & EnergyModel::enthalpy() const {
 
 const IceModelVec2S & EnergyModel::basal_melt_rate() const {
   return m_basal_melt_rate;
-}
-
-void EnergyModel::define_model_state_impl(const PIO &output) const {
-  m_ice_enthalpy.define(output);
-  m_basal_melt_rate.define(output);
-}
-
-void EnergyModel::write_model_state_impl(const PIO &output) const {
-  m_ice_enthalpy.write(output);
-  m_basal_melt_rate.write(output);
 }
 
 } // end of namespace energy

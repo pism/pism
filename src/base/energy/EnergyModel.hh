@@ -68,7 +68,13 @@ class EnergyModel : public Component_TS {
 public:
   EnergyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
-  void init(const InputOptions &opts);
+  void restart(const PIO &input_file, int record);
+
+  void bootstrap(const PIO &input_file,
+                 const IceModelVec2S &ice_thickness,
+                 const IceModelVec2S &surface_temperature,
+                 const IceModelVec2S &climatic_mass_balance,
+                 const IceModelVec2S &basal_heat_flux);
 
   using Component_TS::update;
   void update(double t, double dt, const EnergyModelInputs &inputs);
@@ -79,14 +85,21 @@ public:
 
   const std::string& stdout_flags() const;
 protected:
-  void update_impl(double t, double dt);
-  MaxTimestep max_timestep_impl(double t) const;
+  virtual void update_impl(double t, double dt);
+  virtual MaxTimestep max_timestep_impl(double t) const;
 
-  virtual void init_impl(const InputOptions &opts) = 0;
+  virtual void restart_impl(const PIO &input_file, int record) = 0;
+
+  virtual void bootstrap_impl(const PIO &input_file,
+                              const IceModelVec2S &ice_thickness,
+                              const IceModelVec2S &surface_temperature,
+                              const IceModelVec2S &climatic_mass_balance,
+                              const IceModelVec2S &basal_heat_flux) = 0;
+
   virtual void update_impl(double t, double dt, const EnergyModelInputs &inputs) = 0;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  virtual void define_model_state_impl(const PIO &output) const = 0;
+  virtual void write_model_state_impl(const PIO &output) const = 0;
 
   void init_enthalpy(const PIO &input_file, bool regrid, int record);
 protected:

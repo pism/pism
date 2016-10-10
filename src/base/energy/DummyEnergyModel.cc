@@ -28,9 +28,25 @@ DummyEnergyModel::DummyEnergyModel(IceGrid::ConstPtr grid,
   // empty
 }
 
-void DummyEnergyModel::init_impl(const InputOptions &opts) {
-  EnthalpyModel::init_impl(opts);
-  // FIXME: print a message stating that this is the dummy model
+void DummyEnergyModel::restart_impl(const PIO &input_file, int record) {
+  EnthalpyModel::restart_impl(input_file, record);
+
+  m_log->message(2,
+                 "NOTE: this \"energy balance\" model holds enthalpy\n"
+                 "      and basal melt rate constant in time.\n");
+}
+
+void DummyEnergyModel::bootstrap_impl(const PIO &input_file,
+                                   const IceModelVec2S &ice_thickness,
+                                   const IceModelVec2S &surface_temperature,
+                                   const IceModelVec2S &climatic_mass_balance,
+                                   const IceModelVec2S &basal_heat_flux) {
+  EnthalpyModel::bootstrap_impl(input_file,
+                                ice_thickness, surface_temperature,
+                                climatic_mass_balance, basal_heat_flux);
+  m_log->message(2,
+                 "NOTE: this \"energy balance\" model holds enthalpy\n"
+                 "      and basal melt rate constant in time.\n");
 }
 
 void DummyEnergyModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {

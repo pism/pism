@@ -31,7 +31,14 @@ public:
 
   const IceModelVec3 & temperature() const;
 protected:
-  void init_impl(const InputOptions &opts);
+  void restart_impl(const PIO &input_file, int record);
+
+  void bootstrap_impl(const PIO &input_file,
+                      const IceModelVec2S &ice_thickness,
+                      const IceModelVec2S &surface_temperature,
+                      const IceModelVec2S &climatic_mass_balance,
+                      const IceModelVec2S &basal_heat_flux);
+
   void update_impl(double t, double dt, const EnergyModelInputs &inputs);
 
   void define_model_state_impl(const PIO &output) const;
