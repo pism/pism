@@ -38,6 +38,16 @@ urlcolor=blue     % only if colorlinks=true
   /Keywords (PISM ice sheet modeling climate forcing)
 }
 
+\makeatletter
+\DeclareOldFontCommand{\rm}{\normalfont\rmfamily}{\mathrm}
+\DeclareOldFontCommand{\sf}{\normalfont\sffamily}{\mathsf}
+\DeclareOldFontCommand{\tt}{\normalfont\ttfamily}{\mathtt}
+\DeclareOldFontCommand{\bf}{\normalfont\bfseries}{\mathbf}
+\DeclareOldFontCommand{\it}{\normalfont\itshape}{\mathit}
+\DeclareOldFontCommand{\sl}{\normalfont\slshape}{\@nomath\sl}
+\DeclareOldFontCommand{\sc}{\normalfont\scshape}{\@nomath\sc}
+\makeatother
+
 \begin{document}
 
 \begin{titlepage}
@@ -605,7 +615,7 @@ is negligible and heat from firn processes is ignored.
 \end{center}
 
 \begin{center}
-  \bf This is the default choice.
+  \textbf{This is the default choice.}
 \end{center}
 
 This model~component was created to force PISM with sampled (possibly periodic)
@@ -1139,7 +1149,7 @@ See also section \ref{sec:ocean-cache}.
 \end{center}
 
 \begin{center}
-  \bf This is the default choice.
+  \textbf{This is the default choice.}
 \end{center}
 
 Command-line options:
@@ -1470,7 +1480,7 @@ The sub-shelf ice temperature is used as a Dirichlet boundary condition in the e
 \end{center}
 
 \begin{center}
-  \bf This is the default choice.
+  \textbf{This is the default choice.}
 \end{center}
 
 This ocean model~component implements boundary conditions at the ice/ocean interface that are constant \textbf{both} in space and time.
