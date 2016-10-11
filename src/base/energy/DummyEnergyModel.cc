@@ -32,8 +32,7 @@ void DummyEnergyModel::restart_impl(const PIO &input_file, int record) {
   EnthalpyModel::restart_impl(input_file, record);
 
   m_log->message(2,
-                 "NOTE: this \"energy balance\" model holds enthalpy\n"
-                 "      and basal melt rate constant in time.\n");
+                 "NOTE: this \"energy balance\" model holds enthalpy and basal melt rate constant in time.\n");
 }
 
 void DummyEnergyModel::bootstrap_impl(const PIO &input_file,
@@ -45,8 +44,7 @@ void DummyEnergyModel::bootstrap_impl(const PIO &input_file,
                                 ice_thickness, surface_temperature,
                                 climatic_mass_balance, basal_heat_flux);
   m_log->message(2,
-                 "NOTE: this \"energy balance\" model holds enthalpy\n"
-                 "      and basal melt rate constant in time.\n");
+                 "NOTE: this \"energy balance\" model holds enthalpy and basal melt rate constant in time.\n");
 }
 
 void DummyEnergyModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
