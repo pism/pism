@@ -105,6 +105,58 @@ void TemperatureModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
+//! Takes a semi-implicit time-step for the temperature equation.
+/*!
+This method should be kept because it is worth having alternative physics, and
+  so that older results can be reproduced.  In particular, this method is
+  documented by papers [\ref BBL,\ref BBssasliding].   The new browser page
+  \ref bombproofenth essentially documents the cold-ice-BOMBPROOF method here, but
+  the newer enthalpy-based method is slightly different and (we hope) a superior
+  implementation of the conservation of energy principle.
+
+  The conservation of energy equation written in terms of temperature is
+  \f[ \rho c_p(T) \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma,\f]
+  where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shallow approximation
+  of the full 3D conservation of energy.  Note \f$dT/dt\f$ stands for the material
+  derivative, so advection is included.  Here \f$\rho\f$ is the density of ice,
+  \f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
+  strain heating (with SI units of \f$J/(\text{s} \text{m}^3) = \text{W}\,\text{m}^{-3}\f$).
+
+  We handle horizontal advection explicitly by first-order upwinding.  We handle
+  vertical advection implicitly by centered differencing when possible, and retreat to
+  implicit first-order upwinding when necessary.  There is a CFL condition
+  for the horizontal explicit upwinding [\ref MortonMayers].  We report
+  any CFL violations, but they are designed to not occur.
+
+  The vertical conduction term is always handled implicitly (%i.e. by backward Euler).
+
+    We work from the bottom of the column upward in building the system to solve
+    (in the semi-implicit time-stepping scheme).  The excess energy above pressure melting
+    is converted to melt-water, and that a fraction of this melt water is transported to
+    the ice base according to the scheme in excessToFromBasalMeltLayer().
+
+    The method uses equally-spaced calculation but the columnSystemCtx
+    methods coarse_to_fine(), fine_to_coarse() interpolate
+    back-and-forth from this equally-spaced computational grid to the
+    (usually) non-equally spaced storage grid.
+
+    An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
+
+    In this procedure two scalar fields are modified: basal_melt_rate and m_work3d.
+    But basal_melt_rate will never need to communicate ghosted values (horizontal stencil
+    neighbors).  The ghosted values for m_ice_temperature are updated from the values in m_work3d in the
+    communication done by energyStep().
+
+  The (older) scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
+  still an extreme and rare fjord situation which causes trouble.  For example, it
+  occurs in one column of ice in one fjord perhaps only once
+  in a 200ka simulation of the whole sheet, in my (ELB) experience modeling the Greenland
+  ice sheet.  It causes the discretized advection bulge to give temperatures below that
+  of the coldest ice anywhere, a continuum impossibility.  So as a final protection
+  there is a "bulge limiter" which sets the temperature to the surface temperature of
+  the column minus the bulge maximum (15 K) if it is below that level.  The number of
+  times this occurs is reported as a "BPbulge" percentage.
+  */
 void TemperatureModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
   // current time does not matter here
   (void) t;
@@ -365,4 +417,4 @@ void TemperatureModel::column_drainage(const double rho, const double c, const d
 }
 
 } // end of namespace energy
-} // end of namespace pism
+} // end of namespace

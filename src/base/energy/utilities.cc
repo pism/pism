@@ -107,10 +107,7 @@ void compute_temperature(const IceModelVec3 &enthalpy,
   result.update_ghosts();
 }
 
-//! Compute m_ice_enthalpy from temperature m_ice_temperature and liquid fraction.
-/*!
-Because m_ice_enthalpy gets set, does ghost communication to finish.
- */
+//! Compute `result` (enthalpy) from `temperature` and liquid fraction.
 void compute_enthalpy(const IceModelVec3 &temperature,
                       const IceModelVec3 &liquid_water_fraction,
                       const IceModelVec2S &ice_thickness,
