@@ -316,7 +316,12 @@ void IceCompModel::initTestABCDH() {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  m_ice_temperature.set(T0);
+  IceModelVec3 ice_temperature;
+  ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
+  ice_temperature.set(T0);
+  m_ice_temperature.copy_from(ice_temperature);
+
+
   m_cell_type.set(MASK_GROUNDED);
 
   IceModelVec::AccessList list(m_ice_thickness);
@@ -396,7 +401,10 @@ void IceCompModel::initTestL() {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  m_ice_temperature.set(T0);
+  IceModelVec3 ice_temperature;
+  ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
+  ice_temperature.set(T0);
+  m_ice_temperature.copy_from(ice_temperature);
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order

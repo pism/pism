@@ -66,9 +66,12 @@ void IceCompModel::initTestFG() {
   bed_topography.set(0.0);
   m_beddef->set_elevation(bed_topography);
 
+  IceModelVec3 ice_temperature;
+  ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
+
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
-  list.add(m_ice_temperature);
+  list.add(ice_temperature);
 
   const double time = testname == 'F' ? 0.0 : m_time->current();
   const double A    = testname == 'F' ? 0.0 : ApforG;
@@ -81,17 +84,17 @@ void IceCompModel::initTestFG() {
 
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
       m_ice_thickness(i, j) = 0.0;
-      m_ice_temperature.set_column(i, j, Tmin + ST * r);
+      ice_temperature.set_column(i, j, Tmin + ST * r);
     } else {
       TestFGParameters P = exactFG(time, r, m_grid->z(), A);
       m_ice_thickness(i, j) = P.H;
-      m_ice_temperature.set_column(i, j, &P.T[0]);
+      ice_temperature.set_column(i, j, &P.T[0]);
     }
   }
 
   m_ice_thickness.update_ghosts();
 
-  m_ice_temperature.update_ghosts();
+  m_ice_temperature.copy_from(ice_temperature);
 
   m_ice_surface_elevation.copy_from(m_ice_thickness);
 }
@@ -480,6 +483,9 @@ void IceCompModel::initTestsKO() {
   m_ice_thickness.set(3000.0);
   m_ice_surface_elevation.copy_from(m_ice_thickness);
 
+  IceModelVec3 ice_temperature;
+  ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
+
   {
     std::vector<double> Tcol(m_grid->Mz());
 
@@ -501,14 +507,14 @@ void IceCompModel::initTestsKO() {
     }
 
     // copy column values into 3D arrays
-    IceModelVec::AccessList list(m_ice_temperature);
+    IceModelVec::AccessList list(ice_temperature);
 
     ParallelSection loop(m_grid->com);
     try {
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        m_ice_temperature.set_column(i, j, &Tcol[0]);
+        ice_temperature.set_column(i, j, &Tcol[0]);
       }
     } catch (...) {
       loop.failed();
@@ -516,7 +522,7 @@ void IceCompModel::initTestsKO() {
     loop.check();
 
     // communicate T
-    m_ice_temperature.update_ghosts();
+    m_ice_temperature.copy_from(ice_temperature);
   }
 }
 
