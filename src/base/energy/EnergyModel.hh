@@ -92,8 +92,12 @@ public:
   void update(double t, double dt, const EnergyModelInputs &inputs);
 
   const EnergyModelStats& stats() const;
-  const IceModelVec3 & enthalpy() const;
-  const IceModelVec2S & basal_melt_rate() const;
+  const IceModelVec3 & get_enthalpy() const;
+  const IceModelVec2S & get_basal_melt_rate() const;
+
+  // setters (for testing and debugging)
+  void set_enthalpy(const IceModelVec3 &input);
+  void set_basal_melt_rate(const IceModelVec2S &input);
 
   const std::string& stdout_flags() const;
 protected:

@@ -104,11 +104,11 @@ for M in [PISM.EnthalpyModel, PISM.DummyEnergyModel, PISM.TemperatureModel]:
 
     print model.stdout_flags()
     stats = model.stats()
-    enthalpy = model.enthalpy()
-    bmr = model.basal_melt_rate()
+    enthalpy = model.get_enthalpy()
+    bmr = model.get_basal_melt_rate()
 
     try:
-        temperature = model.temperature()
+        temperature = model.get_temperature()
     except:
         pass
 

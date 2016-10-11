@@ -29,7 +29,9 @@ class TemperatureModel : public EnergyModel {
 public:
   TemperatureModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
-  const IceModelVec3 & temperature() const;
+  const IceModelVec3 & get_temperature() const;
+
+  void set_temperature(const IceModelVec3 &input, const IceModelVec2S &ice_thickness);
 protected:
   void restart_impl(const PIO &input_file, int record);
 
