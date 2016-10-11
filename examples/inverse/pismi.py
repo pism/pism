@@ -459,16 +459,7 @@ def run():
 
     # Prep the output file from the grid so that we can save zeta to it during the runs.
     if not append_mode:
-        pio = PISM.PIO(grid.com, "netcdf3")
-        pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
-        PISM.define_time(pio,
-                         grid.ctx().config().get_string("time.dimension_name"),
-                         grid.ctx().config().get_string("time.calendar"),
-                         grid.ctx().time().units_string(),
-                         grid.ctx().unit_system())
-        PISM.append_time(pio,
-                         grid.ctx().config().get_string("time.dimension_name"),
-                         grid.ctx().time().current())
+        pio = PISM.util.prepare_output(output_filename)
         pio.close()
     zeta.write(output_filename)
 

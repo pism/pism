@@ -282,17 +282,8 @@ if __name__ == "__main__":
         exit(0)
 
     # Setup the output file.
-    pio = PISM.PIO(grid.com, "netcdf3")
-    pio.open(output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio,
-                     grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().config().get_string("time.calendar"),
-                     grid.ctx().time().units_string(),
-                     grid.ctx().unit_system())
-    PISM.append_time(pio,
-                     grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().time().current())
-    pio.close()
+    pio = PISM.util.prepare_output(output_file)
+
     zeta0.write(output_file)
 
     # Send the true yeild stress through the forward problem to

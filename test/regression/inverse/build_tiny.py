@@ -121,16 +121,7 @@ if __name__ == '__main__':
             if (i == 0) or (i == grid.Mx() - 1) or (j == 0) or (j == grid.My() - 1):
                 no_model_mask[i, j] = 1
 
-    pio = PISM.PIO(grid.com, "netcdf3")
-    pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio,
-                     grid.ctx().config().get_string("time.dimension_name"),
-                     "365_day",
-                     "seconds since 1-1-1",
-                     grid.ctx().unit_system())
-    PISM.append_time(pio,
-                     grid.ctx().config().get_string("time.dimension_name"),
-                     0.0)
+    pio = PISM.util.prepare_output(output_filename)
     pio.close()
     vecs.writeall(output_filename)
     PISM.util.writeProvenance(output_filename)

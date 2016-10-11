@@ -111,22 +111,6 @@ def initialize(model):
                      climatic_mass_balance,
                      basal_heat_flux)
 
-def prepare_file(filename):
-    pio = PISM.PIO(ctx.com, "netcdf3")
-    pio.open(filename, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio,
-                     ctx.config.get_string("time.dimension_name"),
-                     ctx.config.get_string("time.calendar"),
-                     ctx.time.units_string(),
-                     ctx.unit_system)
-    PISM.append_time(pio,
-                     ctx.config.get_string("time.dimension_name"),
-                     ctx.time.current())
-
-    return pio
-
-setup()
-
 def test_interface():
     "Use the EnergyModel interface to make sure the code runs."
     for M in [PISM.EnthalpyModel, PISM.DummyEnergyModel, PISM.TemperatureModel]:
@@ -145,7 +129,7 @@ def test_interface():
         except:
             pass
 
-        pio = prepare_file("energy_model_state.nc")
+        pio = PISM.util.prepare_output("energy_model_state.nc")
 
         print "* Saving the model state..."
         model.write_model_state(pio)
@@ -168,7 +152,7 @@ def test_temp_restart_from_enth():
 
     initialize(enth_model)
 
-    pio = prepare_file("enth_model_state.nc")
+    pio = PISM.util.prepare_output("enth_model_state.nc")
     enth_model.write_model_state(pio)
 
     temp_model.restart(pio, 0)
@@ -179,11 +163,14 @@ def test_enth_restart_from_temp():
 
     initialize(temp_model)
 
-    pio = prepare_file("temp_model_state.nc")
+    pio = PISM.util.prepare_output("temp_model_state.nc")
     temp_model.write_model_state(pio)
 
     enth_model.restart(pio, 0)
 
 
+setup()
+
+test_interface()
 test_temp_restart_from_enth()
 test_enth_restart_from_temp()
