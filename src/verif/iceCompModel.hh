@@ -48,7 +48,6 @@ public:
 
 protected:
   // related to all (or most) tests
-  bool exactOnly;
   int testname;
   virtual void additionalAtStartTimestep();
   virtual void additionalAtEndTimestep();
@@ -61,10 +60,6 @@ protected:
 
   // related to tests A B C D H
   void initTestABCDH();
-  void fillSolnTestABCDH();  // only used with exactOnly == true
-  
-  // related to test E
-  void fillSolnTestE();  // only used with exactOnly == true
 
   // test E only
   void computeBasalVelocityErrors(double &exactmaxspeed,
@@ -76,7 +71,6 @@ protected:
   // related to test L
   IceModelVec2S   vHexactL;
   void initTestL();
-  void fillSolnTestL();  // only used with exactOnly == true
 
   // related to tests F G; see iCMthermo.cc
   virtual void temperatureStep(const energy::EnergyModelInputs &inputs,
@@ -84,7 +78,7 @@ protected:
                                energy::EnergyModelStats &stats);
   void initTestFG();
   void getCompSourcesTestFG();
-  void fillSolnTestFG();  // only used with exactOnly == true
+
   // tests F and G
   void computeTemperatureErrors(double &gmaxTerr, double &gavTerr);
   // tests F and G
@@ -100,9 +94,7 @@ protected:
 
   // related to tests K and O; see iCMthermo.cc
   void initTestsKO();
-  void fillTemperatureSolnTestsKO();  // used in initialzation
-  //   and with exactOnly == true
-  void fillBasalMeltRateSolnTestO();  // used only with exactOnly == true
+
  // tests K and O only
   void computeIceBedrockTemperatureErrors(double &gmaxTerr, double &gavTerr,
                                                     double &gmaxTberr, double &gavTberr);

@@ -65,7 +65,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
 
   // defaults for IceCompModel:
   testname = mytest;
-  exactOnly = false;
+
   m_bedrock_is_ice_forK = false;
 
   // Override some defaults from parent class
@@ -101,14 +101,6 @@ void IceCompModel::createVecs() {
 void IceCompModel::setFromOptions() {
 
   m_log->message(2, "starting Test %c ...\n", testname);
-
-  /* This switch turns off actual numerical evolution and simply reports the
-     exact solution. */
-  bool flag = options::Bool("-eo", "exact only");
-  if (flag) {
-    exactOnly = true;
-    m_log->message(1, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
-  }
 
   // These ifs are here (and not in the constructor or later) because
   // testname actually comes from a command-line *and* because command-line
@@ -471,71 +463,6 @@ void IceCompModel::reset_thickness_test_A() {
   m_ice_thickness.update_ghosts();
 }
 
-
-
-void IceCompModel::fillSolnTestABCDH() {
-
-  const double time = m_time->current();
-
-  IceModelVec::AccessList list(m_ice_thickness);
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double r = radius(*m_grid, i, j);
-      switch (testname) {
-      case 'A':
-        m_ice_thickness(i, j) = exactA(r).H;
-        break;
-      case 'B':
-        m_ice_thickness(i, j) = exactB(time, r).H;
-        break;
-      case 'C':
-        m_ice_thickness(i, j) = exactC(time, r).H;
-        break;
-      case 'D':
-        m_ice_thickness(i, j) = exactD(time, r).H;
-        break;
-      case 'H':
-        m_ice_thickness(i, j) = exactH(m_f, time, r).H;
-        break;
-      default:
-        throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H");
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  m_ice_thickness.update_ghosts();
-
-  {
-    IceModelVec2S bed_topography;
-    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-
-    if (testname == 'H') {
-      bed_topography.copy_from(m_ice_thickness);
-      bed_topography.scale(-m_f);
-    } else {
-      bed_topography.set(0.0);
-    }
-    m_beddef->set_elevation(bed_topography);
-  }
-}
-
-
-void IceCompModel::fillSolnTestL() {
-
-  vHexactL.update_ghosts();
-  m_ice_thickness.copy_from(vHexactL);
-
-  // note bed was filled at initialization and hasn't changed
-}
-
-
 void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
                                          double &gdomeHexact, double &volerr,
                                          double &areaerr, double &gmaxHerr,
@@ -688,50 +615,8 @@ void IceCompModel::additionalAtStartTimestep() {
 
 
 void IceCompModel::additionalAtEndTimestep() {
-
   if (testname == 'A') {
     reset_thickness_test_A();
-  }
-
-  // do nothing at the end of the time step unless the user has asked for the
-  // exact solution to overwrite the numerical solution
-  if (not exactOnly) {
-    return;
-  }
-
-  // because user wants exact solution, fill gridded values from exact formulas;
-  // important notes:
-  //     (1) the numerical computation *has* already occurred, in run(),
-  //           and we just overwrite it with the exact solution here
-  //     (2) certain diagnostic quantities like dHdt are computed numerically,
-  //           and not overwritten here; while velbar_mag,velsurf_mag,flux_mag,wsurf are diagnostic
-  //           quantities recomputed at the end of the run for writing into
-  //           NetCDF, in particular dHdt is not recomputed before being written
-  //           into the output file, so it is actually numerical
-  switch (testname) {
-  case 'A':
-  case 'B':
-  case 'C':
-  case 'D':
-  case 'H':
-    fillSolnTestABCDH();
-    break;
-  case 'F':
-  case 'G':
-    fillSolnTestFG(); // see iCMthermo.cc
-    break;
-  case 'K':
-    fillTemperatureSolnTestsKO(); // see iCMthermo.cc
-    break;
-  case 'O':
-    fillTemperatureSolnTestsKO(); // see iCMthermo.cc
-    fillBasalMeltRateSolnTestO(); // see iCMthermo.cc
-    break;
-  case 'L':
-    fillSolnTestL();
-    break;
-  default:
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown testname %c in IceCompModel", testname);
   }
 }
 
