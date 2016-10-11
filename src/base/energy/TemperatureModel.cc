@@ -77,7 +77,7 @@ void TemperatureModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
   m_basal_melt_rate.copy_from(basal_melt_rate);
 
   bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
-                            basal_heat_flux, m_ice_enthalpy);
+                            basal_heat_flux, m_ice_temperature);
 
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
