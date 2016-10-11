@@ -214,12 +214,11 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       }
       break;
     case 'O':
-      double dum1, dum2, dum3, dum4;
       for (unsigned int k = 0; k < m_grid->Mz(); k++) {
-        exactO(m_grid->z(k), &Tex[k], &dum1, &dum2, &dum3, &dum4);
+        Tex[k] = exactO(m_grid->z(k)).TT;
       }
       for (unsigned int k = 0; k < Mbz; k++) {
-        exactO(zblevels[k], &Tbex[k], &dum1, &dum2, &dum3, &dum4);
+        Tbex[k] = exactO(zblevels[k]).TT;
       }
       break;
     default:
@@ -449,14 +448,13 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
 
 void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gminbmelterr) {
   double    maxbmelterr = -9.99e40, minbmelterr = 9.99e40, err;
-  double    bmelt, dum1, dum2, dum3, dum4;
 
   if (testname != 'O') {
     throw RuntimeError(PISM_ERROR_LOCATION, "basal melt rate errors are only computable for test O");
   }
 
   // we just need one constant from exact solution:
-  exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt);
+  double bmelt = exactO(0.0).bmelt;
 
   IceModelVec::AccessList list(m_basal_melt_rate);
 
@@ -483,7 +481,6 @@ void IceCompModel::initTestsKO() {
   m_ice_surface_elevation.copy_from(m_ice_thickness);
 
   {
-    double dum1, dum2, dum3, dum4;
     std::vector<double> Tcol(m_grid->Mz());
 
     // evaluate exact solution in a column; all columns are the same
@@ -496,7 +493,7 @@ void IceCompModel::initTestsKO() {
       break;
     case 'O':
       for (unsigned int k=0; k<m_grid->Mz(); k++) {
-        exactO(m_grid->z(k), &Tcol[k], &dum1, &dum2, &dum3, &dum4);
+        Tcol[k] = exactO(m_grid->z(k)).TT;
       }
       break;
     default:

@@ -48,7 +48,6 @@ void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
 
   std::vector<double> Tbcol(m_Mbz),
     zlevels = m_temp.get_levels();
-  double dum1, dum2, dum3, dum4;
 
   double time = m_grid->ctx()->time()->current();
 
@@ -67,7 +66,7 @@ void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
     break;
   case 'O':
     for (unsigned int k = 0; k < m_Mbz; k++) {
-      exactO(zlevels[k], &Tbcol[k], &dum1, &dum2, &dum3, &dum4);
+      Tbcol[k] = exactO(zlevels[k]).TT;
     }
     break;
   }
