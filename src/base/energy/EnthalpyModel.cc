@@ -19,8 +19,8 @@
 
 #include "EnthalpyModel.hh"
 
+#include "DrainageCalculator.hh"
 #include "base/enthalpyConverter.hh"
-#include "base/DrainageCalculator.hh"
 #include "base/energy/enthSystem.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/util/io/PIO.hh"

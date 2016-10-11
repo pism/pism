@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "iceModel.hh"
-#include "DrainageCalculator.hh"
+#include "energy/DrainageCalculator.hh"
 #include "base/energy/BedThermalUnit.hh"
 #include "base/energy/enthSystem.hh"
 #include "base/energy/EnergyModel.hh"
