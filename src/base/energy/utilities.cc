@@ -73,6 +73,40 @@ void compute_enthalpy_cold(const IceModelVec3 &temperature,
   result.update_ghosts();
 }
 
+void compute_temperature(const IceModelVec3 &enthalpy,
+                         const IceModelVec2S &ice_thickness,
+                         IceModelVec3 &result) {
+
+  IceGrid::ConstPtr grid = result.get_grid();
+  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+
+  IceModelVec::AccessList list;
+  list.add(enthalpy);
+  list.add(ice_thickness);
+  list.add(result);
+
+  const unsigned int Mz = grid->Mz();
+  const std::vector<double> &z = grid->z();
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double
+      *E = enthalpy.get_column(i, j),
+      H  = ice_thickness(i, j);
+    double *T = result.get_column(i, j);
+
+    for (unsigned int k = 0; k < Mz; ++k) {
+      const double depth = H - z[k]; // FIXME issue #15
+      T[k] = EC->temperature(E[k], EC->pressure(depth));
+    }
+  }
+
+  result.inc_state_counter();
+
+  result.update_ghosts();
+}
+
 //! Compute m_ice_enthalpy from temperature m_ice_temperature and liquid fraction.
 /*!
 Because m_ice_enthalpy gets set, does ghost communication to finish.
@@ -334,13 +368,13 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
 
   if (use_smb) {
     log->message(2,
-                 " - filling 3D ice temperatures using surface temperature"
-                 " (and mass balance for velocity estimate)\n");
+                 " - Filling 3D ice temperatures using surface temperature"
+                 " (and mass balance for velocity estimate)...\n");
 
   } else {
     log->message(2,
-                 " - filling 3D ice temperatures using surface temperature"
-                 " (and a quartic guess without SMB)\n");
+                 " - Filling 3D ice temperatures using surface temperature"
+                 " (and a quartic guess without SMB)...\n");
   }
 
   const double

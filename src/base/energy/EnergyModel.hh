@@ -123,7 +123,12 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const = 0;
   virtual void write_model_state_impl(const PIO &output) const = 0;
 
+  /*! @brief Initialize enthalpy by reading it from a file, or by reading temperature and liquid
+      water fraction, or by reading the temperature field alone. */
   void init_enthalpy(const PIO &input_file, bool regrid, int record);
+
+  /*! @brief Regrid enthalpy from the -regrid_file. */
+  void regrid_enthalpy();
 protected:
   IceModelVec3 m_ice_enthalpy;
   IceModelVec3 m_work;

@@ -29,7 +29,7 @@ EnthalpyModel_Regional::EnthalpyModel_Regional(IceGrid::ConstPtr grid,
   : EnthalpyModel(grid, stress_balance) {
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of bmelt instead.
-  m_basal_melt_rate_stored.create(m_grid, "bmr_stored", WITH_GHOSTS, 2);
+  m_basal_melt_rate_stored.create(m_grid, "bmr_stored", WITHOUT_GHOSTS);
   m_basal_melt_rate_stored.set_attrs("internal",
                                      "time-independent basal melt rate in the no-model-strip",
                                      "m s-1", "");
@@ -52,6 +52,22 @@ void EnthalpyModel_Regional::bootstrap_impl(const PIO &input_file,
 
   m_basal_melt_rate_stored.copy_from(m_basal_melt_rate);
 }
+
+void EnthalpyModel_Regional::initialize_impl(const IceModelVec2S &basal_melt_rate,
+                                             const IceModelVec2S &ice_thickness,
+                                             const IceModelVec2S &surface_temperature,
+                                             const IceModelVec2S &climatic_mass_balance,
+                                             const IceModelVec2S &basal_heat_flux) {
+
+  EnthalpyModel::initialize_impl(basal_melt_rate,
+                                 ice_thickness,
+                                 surface_temperature,
+                                 climatic_mass_balance,
+                                 basal_heat_flux);
+
+  m_basal_melt_rate_stored.copy_from(m_basal_melt_rate);
+}
+
 
 void EnthalpyModel_Regional::update_impl(double t, double dt,
                                          const EnergyModelInputs &inputs) {

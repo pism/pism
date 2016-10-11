@@ -23,6 +23,7 @@
 #include "base/DrainageCalculator.hh"
 #include "base/energy/enthSystem.hh"
 #include "base/util/IceModelVec2CellType.hh"
+#include "base/util/io/PIO.hh"
 #include "utilities.hh"
 
 namespace pism {
@@ -36,11 +37,14 @@ EnthalpyModel::EnthalpyModel(IceGrid::ConstPtr grid,
 
 void EnthalpyModel::restart_impl(const PIO &input_file, int record) {
 
-  m_basal_melt_rate.read(input_file, record);
-  m_ice_enthalpy.read(input_file, record);
+  m_log->message(2, "* Restarting the enthalpy-based energy balance model from %s...\n",
+                 input_file.inq_filename().c_str());
 
-  regrid("Enthalpy-based energy balance model", m_basal_melt_rate);
-  regrid("Enthalpy-based energy balance model", m_ice_enthalpy);
+  m_basal_melt_rate.read(input_file, record);
+  init_enthalpy(input_file, false, record);
+
+  regrid("Energy balance model", m_basal_melt_rate);
+  regrid_enthalpy();
 }
 
 void EnthalpyModel::bootstrap_impl(const PIO &input_file,
@@ -49,11 +53,17 @@ void EnthalpyModel::bootstrap_impl(const PIO &input_file,
                                    const IceModelVec2S &climatic_mass_balance,
                                    const IceModelVec2S &basal_heat_flux) {
 
+  m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model from %s...\n",
+                 input_file.inq_filename().c_str());
+
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
                            m_config->get_double("bootstrapping.defaults.bmelt"));
 
   bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
                          basal_heat_flux, m_ice_enthalpy);
+
+  regrid("Energy balance model", m_basal_melt_rate);
+  regrid_enthalpy();
 }
 
 void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
@@ -62,10 +72,15 @@ void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
                                     const IceModelVec2S &climatic_mass_balance,
                                     const IceModelVec2S &basal_heat_flux) {
 
+  m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model...\n");
+
   m_basal_melt_rate.copy_from(basal_melt_rate);
 
   bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
                          basal_heat_flux, m_ice_enthalpy);
+
+  regrid("Energy balance model", m_basal_melt_rate);
+  regrid_enthalpy();
 }
 
 void EnthalpyModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {

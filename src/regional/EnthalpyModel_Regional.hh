@@ -39,6 +39,12 @@ protected:
                               const IceModelVec2S &climatic_mass_balance,
                               const IceModelVec2S &basal_heat_flux);
 
+  virtual void initialize_impl(const IceModelVec2S &basal_melt_rate,
+                               const IceModelVec2S &ice_thickness,
+                               const IceModelVec2S &surface_temperature,
+                               const IceModelVec2S &climatic_mass_balance,
+                               const IceModelVec2S &basal_heat_flux);
+
   void update_impl(double t, double dt, const EnergyModelInputs &inputs);
 
   IceModelVec2Int *m_no_model_mask;

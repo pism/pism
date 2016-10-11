@@ -23,6 +23,7 @@
 #include "base/energy/utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/io/PIO.hh"
 
 namespace pism {
 namespace energy {
@@ -50,13 +51,23 @@ void TemperatureModel::set_temperature(const IceModelVec3 &input, const IceModel
 
 void TemperatureModel::restart_impl(const PIO &input_file, int record) {
 
+  m_log->message(2, "* Restarting the temperature-based energy balance model from %s...\n",
+                 input_file.inq_filename().c_str());
+
   m_basal_melt_rate.read(input_file, record);
-  m_ice_temperature.read(input_file, record);
+
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+  if (input_file.inq_var(m_ice_temperature.metadata().get_name())) {
+    m_ice_temperature.read(input_file, record);
+  } else {
+    init_enthalpy(input_file, false, record);
+    compute_temperature(m_ice_enthalpy, ice_thickness, m_ice_temperature);
+  }
 
   regrid("Enthalpy-based energy balance model", m_basal_melt_rate);
   regrid("Enthalpy-based energy balance model", m_ice_temperature);
 
-  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
@@ -65,6 +76,9 @@ void TemperatureModel::bootstrap_impl(const PIO &input_file,
                                       const IceModelVec2S &surface_temperature,
                                       const IceModelVec2S &climatic_mass_balance,
                                       const IceModelVec2S &basal_heat_flux) {
+
+  m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
+                 input_file.inq_filename().c_str());
 
   m_basal_melt_rate.regrid(input_file, OPTIONAL,
                            m_config->get_double("bootstrapping.defaults.bmelt"));
@@ -80,6 +94,8 @@ void TemperatureModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
                                        const IceModelVec2S &surface_temperature,
                                        const IceModelVec2S &climatic_mass_balance,
                                        const IceModelVec2S &basal_heat_flux) {
+
+  m_log->message(2, "* Bootstrapping the temperature-based energy balance model...\n");
 
   m_basal_melt_rate.copy_from(basal_melt_rate);
 

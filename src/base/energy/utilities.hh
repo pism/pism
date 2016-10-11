@@ -27,6 +27,10 @@ class IceModelVec3;
 
 namespace energy {
 
+void compute_temperature(const IceModelVec3 &enthalpy,
+                         const IceModelVec2S &ice_thickness,
+                         IceModelVec3 &result);
+
 void compute_enthalpy(const IceModelVec3 &temperature,
                       const IceModelVec3 &liquid_water_fraction,
                       const IceModelVec2S &ice_thickness,
