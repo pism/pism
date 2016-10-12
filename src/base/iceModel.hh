@@ -148,7 +148,7 @@ public:
   virtual void run();
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
-  virtual void step(bool do_mass_continuity, bool do_energy, bool do_skip);
+  virtual void step(bool do_mass_continuity, bool do_skip);
   void reset_counters();
 
   // see iMbootstrap.cc

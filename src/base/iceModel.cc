@@ -530,7 +530,6 @@ void IceModel::createVecs() {
 During the time-step we perform the following actions:
  */
 void IceModel::step(bool do_mass_continuity,
-                    bool do_energy,
                     bool do_skip) {
 
   const Profiling &profiling = m_ctx->profiling();
@@ -549,9 +548,7 @@ void IceModel::step(bool do_mass_continuity,
   // stability criterion; note *lots* of communication is avoided by skipping
   // SSA (and temp/age)
 
-  const bool
-    updateAtDepth  = (m_skip_countdown == 0),
-    do_energy_step = updateAtDepth and do_energy;
+  const bool updateAtDepth  = (m_skip_countdown == 0);
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth and m_basal_yield_stress_model) {
@@ -593,6 +590,7 @@ void IceModel::step(bool do_mass_continuity,
                   o_file.c_str());
     throw;
   }
+
 
   m_stdout_flags += m_stress_balance->stdout_report();
 
@@ -636,7 +634,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the enthalpy (or temperature) field according to the conservation of
   //!  energy model based (especially) on the new velocity field; see
   //!  energyStep()
-  if (do_energy_step) { // do the energy step
+  if (updateAtDepth) { // do the energy step
     profiling.begin("energy");
     energyStep();
     profiling.end("energy");
@@ -718,7 +716,7 @@ void IceModel::step(bool do_mass_continuity,
   // Done with the step; now adopt the new time.
   m_time->step(m_dt);
 
-  if (do_energy_step) {
+  if (updateAtDepth) {
     t_TempAge = m_time->current();
     dt_TempAge = 0.0;
   }
@@ -787,7 +785,7 @@ void IceModel::run() {
 
     m_stdout_flags.erase();  // clear it out
 
-    step(do_mass_conserve, do_energy, do_skip);
+    step(do_mass_conserve, do_skip);
 
     // report a summary for major steps or the last one
     bool updateAtDepth = m_skip_countdown == 0;
