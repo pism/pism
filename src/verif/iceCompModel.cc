@@ -59,14 +59,9 @@ const double IceCompModel::secpera = 3.15569259747e7;
 using units::convert;
 
 IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
-  : IceModel(g, context) {
+  : IceModel(g, context), testname(mytest), m_bedrock_is_ice_forK(false) {
 
-  // note lots of defaults are set by the IceModel constructor
-
-  // defaults for IceCompModel:
-  testname = mytest;
-
-  m_bedrock_is_ice_forK = false;
+  m_log->message(2, "starting Test %c ...\n", testname);
 
   // Override some defaults from parent class
   m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
@@ -77,6 +72,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   m_config->set_boolean("geometry.update.enabled", true);
   m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
 
+  // flow law settings
   switch (testname) {
   case 'A':
   case 'B':
@@ -108,26 +104,6 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
       break;
     }
   }
-}
-
-void IceCompModel::createVecs() {
-
-  IceModel::createVecs();
-
-  vHexactL.create(m_grid, "HexactL", WITH_GHOSTS, 2);
-
-  strain_heating3_comp.create(m_grid,"strain_heating_comp", WITHOUT_GHOSTS);
-  strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
-                                 "W m-3", "");
-}
-
-void IceCompModel::setFromOptions() {
-
-  m_log->message(2, "starting Test %c ...\n", testname);
-
-  // These ifs are here (and not in the constructor or later) because
-  // testname actually comes from a command-line *and* because command-line
-  // options should be able to override parameter values set here.
 
   if (testname == 'H') {
     m_config->set_string("bed_deformation.model", "iso");
@@ -172,8 +148,17 @@ void IceCompModel::setFromOptions() {
   }
 
   m_config->set_boolean("energy.temperature_based", true);
+}
 
-  IceModel::setFromOptions();
+void IceCompModel::createVecs() {
+
+  IceModel::createVecs();
+
+  vHexactL.create(m_grid, "HexactL", WITH_GHOSTS, 2);
+
+  strain_heating3_comp.create(m_grid,"strain_heating_comp", WITHOUT_GHOSTS);
+  strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
+                                 "W m-3", "");
 }
 
 void IceCompModel::allocate_bedrock_thermal_unit() {

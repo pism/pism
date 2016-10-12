@@ -31,7 +31,6 @@ public:
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:
-  virtual void setFromOptions();
   virtual void createVecs();
   virtual void allocate_stressbalance();
   virtual void allocate_bedrock_thermal_unit();
