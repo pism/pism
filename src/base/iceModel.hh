@@ -291,9 +291,6 @@ protected:
   double t_TempAge;
   //! enthalpy/temperature and age time-steps
   double dt_TempAge;
-  // global maximums on 3D grid of abs value of vel components
-  double m_max_u_speed;
-  double m_max_v_speed;
 
   struct FluxCounters {
     FluxCounters();

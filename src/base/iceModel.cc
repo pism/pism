@@ -201,10 +201,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_vonmises_calving            = NULL;
   m_frontal_melt                = NULL;
 
-  // initialize maximum |u|,|v|,|w| in ice
-  m_max_u_speed = 0;
-  m_max_v_speed = 0;
-
   m_output_global_attributes.set_string("Conventions", "CF-1.5");
   m_output_global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
@@ -237,9 +233,6 @@ double IceModel::dt() const {
 
 void IceModel::reset_counters() {
   dt_TempAge   = 0.0;
-
-  m_max_u_speed = 0.0;
-  m_max_v_speed = 0.0;
 
   m_dt              = 0.0;
   m_skip_countdown   = 0;

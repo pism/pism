@@ -306,8 +306,10 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     }
 
 
+
+    const CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
     std::string velocity_units = "meters / (" + time_units + ")";
-    const double maxvel = units::convert(m_sys, std::max(m_max_u_speed, m_max_v_speed),
+    const double maxvel = units::convert(m_sys, std::max(cfl.u_max, cfl.v_max),
                                          "m second-1", velocity_units);
 
     m_log->message(2,
