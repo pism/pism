@@ -109,7 +109,6 @@ by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived cl
  */
 void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
 
-  const bool update_3d = (m_skip_countdown == 0);
   const double current_time = m_time->current();
   const double time_to_end = m_time->end() - current_time;
 
@@ -199,25 +198,11 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       }
     }
 
-    if (m_config->get_boolean("energy.enabled") and update_3d) {
-      CFLData cfl = m_stress_balance->max_timestep_cfl_3d();
-
-      m_max_u_speed = cfl.u_max;
-      m_max_v_speed = cfl.v_max;
-
-      if (cfl.dt_max.is_finite()) {
-        dt_restrictions["3D CFL"] = cfl.dt_max.value();
-      }
-    }
-
     if (m_config->get_boolean("geometry.update.enabled")) {
       CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
 
-      m_max_u_speed = cfl.u_max;
-      m_max_v_speed = cfl.v_max;
-
       if (cfl.dt_max.is_finite()) {
-        dt_restrictions["2D CFL"] = cfl.dt_max.value();
+        dt_restrictions["mass continuity (2D CFL)"] = cfl.dt_max.value();
       }
 
       dt_restrictions["diffusivity"] = max_timestep_diffusivity();
