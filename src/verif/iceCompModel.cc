@@ -77,13 +77,36 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   m_config->set_boolean("geometry.update.enabled", true);
   m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
 
-  if (testname == 'V') {
-    m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-    const double softness = pow(1.9e8, -m_config->get_double("stress_balance.sia.Glen_exponent"));
-    m_config->set_double("flow_law.isothermal_Glen.ice_softness", softness);
-  } else {
-    // Set the default for IceCompModel:
-    m_config->set_string("stress_balance.sia.flow_law", "arr");
+  switch (testname) {
+  case 'A':
+  case 'B':
+  case 'C':
+  case 'D':
+  case 'H':
+    {
+      m_config->set_string("stress_balance.sia.flow_law", "isothermal_glen");
+      m_config->set_double("flow_law.isothermal_Glen.ice_softness", 1.0e-16 / secpera);
+      break;
+    }
+  case 'V':
+    {
+      m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+      const double
+        hardness = 1.9e8,
+        softness = pow(hardness,
+                       -m_config->get_double("stress_balance.ssa.Glen_exponent"));
+      m_config->set_double("flow_law.isothermal_Glen.ice_softness", softness);
+      break;
+    }
+  case 'F':
+  case 'G':
+  case 'K':
+  case 'O':
+  default:
+    {
+      m_config->set_string("stress_balance.sia.flow_law", "arr");
+      break;
+    }
   }
 }
 
@@ -108,8 +131,9 @@ void IceCompModel::setFromOptions() {
 
   if (testname == 'H') {
     m_config->set_string("bed_deformation.model", "iso");
-  } else
+  } else {
     m_config->set_string("bed_deformation.model", "none");
+  }
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K') || (testname == 'O')) {
     m_config->set_boolean("energy.enabled", true);
@@ -203,19 +227,6 @@ void IceCompModel::allocate_stressbalance() {
   }
 
   IceModel::allocate_stressbalance();
-
-  if (testname != 'V') {
-    // check on whether the options (already checked) chose the right
-    // FlowLaw for verification (we need to have the right flow law for
-    // errors to make sense)
-
-    const rheology::FlowLaw *ice = m_stress_balance->modifier()->flow_law();
-    EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
-    if (not FlowLawIsPatersonBuddCold(ice, *m_config, EC)) {
-      m_log->message(1,
-                 "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
-    }
-  }
 }
 
 void IceCompModel::allocate_bed_deformation() {
@@ -292,22 +303,8 @@ void IceCompModel::initialize_2d() {
 }
 
 void IceCompModel::initTestABCDH() {
-  double     A0, T0;
-
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
-
-  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, EC);
 
   const double time = m_time->current();
-
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
-  // set all temps to this constant
-  A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = tgaIce.tempFromSoftness(A0);
-
-  IceModelVec3 ice_temperature;
-  ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
-  ice_temperature.set(T0);
 
   m_cell_type.set(MASK_GROUNDED);
 
@@ -346,9 +343,6 @@ void IceCompModel::initTestABCDH() {
 
   m_ice_thickness.update_ghosts();
 
-  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  m->set_temperature(ice_temperature, m_ice_thickness);
-
   {
     IceModelVec2S bed_topography;
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
@@ -378,22 +372,7 @@ struct rgridReverseSort {
 };
 
 void IceCompModel::initTestL() {
-  double     A0, T0;
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
-
-  assert(testname == 'L');
-
-  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, EC);
-
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
-  // set all temps to this constant
-  A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = tgaIce.tempFromSoftness(A0);
-
-  IceModelVec3 ice_temperature;
-  ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
-  ice_temperature.set(T0);
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order
@@ -438,9 +417,6 @@ void IceCompModel::initTestL() {
     m_ice_thickness.update_ghosts();
     m_beddef->set_elevation(bed_topography);
   }
-
-  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  m->set_temperature(ice_temperature, m_ice_thickness);
 
   // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
   vHexactL.copy_from(m_ice_thickness);
@@ -660,8 +636,7 @@ void IceCompModel::reportErrors() {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   const rheology::FlowLaw* flow_law = m_stress_balance->modifier()->flow_law();
-  if ((testname == 'F' or testname == 'G') and
-      testname != 'V' and
+  if ((testname == 'F' or testname == 'G' or testname == 'K' or testname == 'O') and
       not FlowLawIsPatersonBuddCold(flow_law, *m_config, EC)) {
     m_log->message(1,
                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
