@@ -232,6 +232,8 @@ void IceModel::model_state_setup() {
       }
     case INIT_BOOTSTRAP:
       {
+        m_surface->ice_surface_temperature(m_ice_surface_temp);
+        m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
         m_energy_model->bootstrap(input_file,
                                   m_ice_thickness,
                                   m_ice_surface_temp,
@@ -243,6 +245,8 @@ void IceModel::model_state_setup() {
     default:
       {
         m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
+        m_surface->ice_surface_temperature(m_ice_surface_temp);
+        m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
         m_energy_model->initialize(m_basal_melt_rate,
                                    m_ice_thickness,
                                    m_ice_surface_temp,
@@ -251,6 +255,7 @@ void IceModel::model_state_setup() {
 
       }
     }
+    m_grid->variables().add(m_energy_model->get_enthalpy());
   }
 
   // miscellaneous steps
@@ -324,28 +329,9 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
   }
 }
 
-/*! @brief Initialize 3D fields managed by IceModel. */
-/*!
- * This method should go away once we isolate the "energy balance" sub-model.
- */
-void IceModel::restart_3d(const PIO &input_file, unsigned int last_record) {
-
-  // Initialize the enthalpy field by reading from a file or by using
-  // temperature and liquid water fraction, or by using temperature
-  // and assuming that the ice is cold.
-  init_enthalpy(input_file, false, last_record);
-}
-
-
 void IceModel::initialize_2d() {
   throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
 }
-
-
-void IceModel::initialize_3d() {
-  throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
-}
-
 
 void IceModel::reset_cumulative_fluxes() {
   // 2D
@@ -592,10 +578,11 @@ void IceModel::allocate_submodels() {
   allocate_stressbalance();
 
   // this has to happen *after* allocate_stressbalance()
-  allocate_age_model();
-
-  // this has to happen *after* allocate_stressbalance()
-  allocate_subglacial_hydrology();
+  {
+    allocate_age_model();
+    allocate_energy_model();
+    allocate_subglacial_hydrology();
+  }
 
   // this has to happen *after* allocate_subglacial_hydrology()
   allocate_basal_yield_stress();

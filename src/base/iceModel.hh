@@ -169,10 +169,8 @@ public:
 
   // see iMIO.cc
   virtual void restart_2d(const PIO &input_file, unsigned int record);
-  virtual void restart_3d(const PIO &input_file, unsigned int record);
 
   virtual void initialize_2d() __attribute__((noreturn));
-  virtual void initialize_3d() __attribute__((noreturn));
 
   void initialize_cumulative_fluxes(const PIO &input_file);
   void reset_cumulative_fluxes();

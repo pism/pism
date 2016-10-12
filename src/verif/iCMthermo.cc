@@ -33,6 +33,9 @@
 #include "base/util/pism_utilities.hh"
 #include "BTU_Verification.hh"
 #include "base/energy/TemperatureModel.hh"
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMOcean.hh"
+#include "base/hydrology/PISMHydrology.hh"
 
 namespace pism {
 
@@ -90,7 +93,7 @@ void IceCompModel::energyStep() {
     strain_heating3_comp.add(1.0, *inputs.strain_heating3);
 
     // Use the result.
-    inputs.strain_heating3 = strain_heating3_comp;
+    inputs.strain_heating3 = &strain_heating3_comp;
   }
 
   m_energy_model->update(t_TempAge, dt_TempAge, inputs);
@@ -99,6 +102,7 @@ void IceCompModel::energyStep() {
 }
 
 void IceCompModel::initTestFG() {
+  strain_heating3_comp.set(0.0);
 
   IceModelVec2S bed_topography;
   bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
@@ -106,7 +110,8 @@ void IceCompModel::initTestFG() {
   m_beddef->set_elevation(bed_topography);
 
   IceModelVec3 ice_temperature;
-  ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
+  // ghosted to match TemperatureModel::m_ice_temperature
+  ice_temperature.create(m_grid, "temp", WITH_GHOSTS, 1);
 
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
@@ -538,7 +543,8 @@ void IceCompModel::initTestsKO() {
   m_ice_surface_elevation.copy_from(m_ice_thickness);
 
   IceModelVec3 ice_temperature;
-  ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
+  // ghosted to match TemperatureModel::m_ice_temperature
+  ice_temperature.create(m_grid, "temp", WITH_GHOSTS, 1);
 
   {
     std::vector<double> Tcol(m_grid->Mz());

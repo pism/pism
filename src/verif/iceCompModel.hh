@@ -41,7 +41,6 @@ public:
   virtual void bootstrap_2d(const PIO &input_file) __attribute__((noreturn));
 
   virtual void initialize_2d();
-  virtual void initialize_3d();
 
   void reportErrors();
 

@@ -291,10 +291,6 @@ void IceCompModel::initialize_2d() {
   }
 }
 
-void IceCompModel::initialize_3d() {
-  strain_heating3_comp.set(0.0);
-}
-
 void IceCompModel::initTestABCDH() {
   double     A0, T0;
 

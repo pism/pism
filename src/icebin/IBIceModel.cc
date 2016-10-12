@@ -4,6 +4,7 @@
 #include <base/enthalpyConverter.hh>
 #include <base/util/io/PIO.hh>
 #include <base/util/io/io_helpers.hh>
+#include "base/energy/EnergyModel.hh"
 
 #include <icebin/IBIceModel.hh>
 #include <icebin/IBSurfaceModel.hh>
@@ -230,7 +231,7 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
   // -------------- internal_advection
   const int ks             = m_grid->kBelowHeight(m_ice_thickness(i, j));
   // Approximate, we will use the enthalpy of the top layer...
-  double specific_enth_top = m_energy_model->get_enthalpy().get_column()[ks];
+  double specific_enth_top = m_energy_model->get_enthalpy().get_column(i, j)[ks];
 
   mass = -(divQ_SIA + divQ_SSA) * _meter_per_s_to_kg_per_m2;
 
@@ -431,9 +432,9 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
   //   getInternalColumn() is allocated already
   double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->get_enthalpy();
+  const IceModelVec3 *ice_enthalpy = &m_energy_model->get_enthalpy();
 
-  AccessList access{ &ice_thickness, &ice_enthalpy, &enth2, &mass2 };
+  AccessList access{ &m_ice_thickness, ice_enthalpy, &enth2, &mass2 };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       enth2(i, j) = 0;
@@ -443,7 +444,7 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
       // are considered "ice-free"
       if (m_ice_thickness(i, j) > 0) {
         const int ks       = m_grid->kBelowHeight(m_ice_thickness(i, j));
-        double const *Enth = ice_enthalpy.get_column(i, j);
+        double const *Enth = ice_enthalpy->get_column(i, j);
         for (int k = 0; k < ks; ++k) {
           double dz = (m_grid->z(k + 1) - m_grid->z(k));
           enth2(i, j) += Enth[k] * dz; // m J / kg
