@@ -57,6 +57,8 @@ public:
   DummyEnergyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
 protected:
+  MaxTimestep max_timestep_impl(double t) const;
+
   void restart_impl(const PIO &input_file, int record);
 
   void bootstrap_impl(const PIO &input_file,

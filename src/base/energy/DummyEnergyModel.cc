@@ -18,6 +18,7 @@
  */
 
 #include "EnthalpyModel.hh"
+#include "base/util/MaxTimestep.hh"
 
 namespace pism {
 namespace energy {
@@ -53,6 +54,14 @@ void DummyEnergyModel::update_impl(double t, double dt, const EnergyModelInputs 
   (void) inputs;
 }
 
-} // end of namespace energy
+MaxTimestep DummyEnergyModel::max_timestep_impl(double t) const {
+  // silence a compiler warning
+  (void) t;
 
+  // no time step restriction
+  return MaxTimestep();
+}
+
+
+} // end of namespace energy
 } // end of namespace pism
