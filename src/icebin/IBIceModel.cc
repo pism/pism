@@ -229,8 +229,8 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
 
   // -------------- internal_advection
   const int ks             = m_grid->kBelowHeight(m_ice_thickness(i, j));
-  double *Enth             = m_ice_enthalpy.get_column(i, j);
-  double specific_enth_top = Enth[ks]; // Approximate, we will use the enthalpy of the top layer...
+  // Approximate, we will use the enthalpy of the top layer...
+  double specific_enth_top = m_energy_model->get_enthalpy().get_column()[ks];
 
   mass = -(divQ_SIA + divQ_SSA) * _meter_per_s_to_kg_per_m2;
 
@@ -351,35 +351,18 @@ void IBIceModel::prepare_outputs(double t0) {
   // ice_surface_enth & ice_surfac_enth_depth
   prepare_initial_outputs();
 
-// ------ Write it out
-#if 0
-    // This is not really needed, since Icebin also writes out
-    // the same fields.
-    PIO nc(m_grid, m_grid->m_config.get_string("output.format"));
-    nc.open((params.output_dir / "post_energy.nc").c_str(), PISM_READWRITE);    // append to file
-    nc.append_time(m_config.get_string("time.dimension_name"), t1);
-    m_ice_enthalpy.write(nc, PISM_DOUBLE);
-    ice_thickness.write(nc, PISM_DOUBLE);
-    ice_surface_temp.write(nc, PISM_DOUBLE);
-    PSConstantICEBIN *surface = ps_constant_icebin();
-    surface->effective_surface_temp.write(nc, PISM_DOUBLE);
-    for (auto ii = rate.all_vecs.begin(); ii != rate.all_vecs.end(); ++ii) {
-        ii->vec.write(nc, PISM_DOUBLE);
-    }
-    nc.close();
-#endif
-
   printf("END IBIceModel::prepare_outputs()\n");
 }
 
 void IBIceModel::prepare_initial_outputs() {
   double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
 
-  // --------- ice_surface_enth from m_ice_enthalpy
-  AccessList access{ &m_ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_ice_thickness };
+  const IceModelVec3 &ice_enthalpy = m_energy_model->get_enthalpy();
+
+  AccessList access{ &ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_ice_thickness };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
-      double const *Enth = m_ice_enthalpy.get_column(i, j);
+      double const *Enth = ice_enthalpy.get_column(i, j);
 
       // Top Layer
       int const ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
@@ -432,26 +415,6 @@ void IBIceModel::misc_setup() {
   for (; base_ii != base.all_vecs.end(); ++base_ii, ++cur_ii) {
     base_ii->vec.copy_from(cur_ii->vec);
   }
-
-#if 0
-    // ---------- Create the netCDF output file
-    std::unique_ptr<PIO> nc;
-    std::string ofname = (params.output_dir / "post_energy.nc").string();
-    prepare_nc(ofname, nc);
-
-    // -------- Define MethEnth structres in netCDF file
-    m_ice_enthalpy.define(*nc, PISM_DOUBLE);
-    ice_thickness.define(*nc, PISM_DOUBLE);
-    ice_surface_temp.define(*nc, PISM_DOUBLE);
-    PSConstantICEBIN *surface = ps_constant_icebin();
-    surface->effective_surface_temp.define(*nc, PISM_DOUBLE);
-    for (auto ii = rate.all_vecs.begin(); ii != rate.all_vecs.end(); ++ii) {
-        ii->vec.define(*nc, PISM_DOUBLE);
-    }
-
-    // --------- Close and return
-    nc->close();
-#endif
 }
 
 /** Sums over columns to compute enthalpy on 2D m_grid->
@@ -467,7 +430,10 @@ the idea from IceModel::get_threshold_thickness(...) (iMpartm_grid->cc).  */
 void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &mass2) {
   //   getInternalColumn() is allocated already
   double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
-  AccessList access{ &m_ice_thickness, &m_ice_enthalpy, &enth2, &mass2 };
+
+  const IceModelVec3 &ice_enthalpy = m_energy_model->get_enthalpy();
+
+  AccessList access{ &ice_thickness, &ice_enthalpy, &enth2, &mass2 };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       enth2(i, j) = 0;
@@ -477,7 +443,7 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
       // are considered "ice-free"
       if (m_ice_thickness(i, j) > 0) {
         const int ks       = m_grid->kBelowHeight(m_ice_thickness(i, j));
-        double const *Enth = m_ice_enthalpy.get_column(i, j); // do NOT delete this pointer: space returned by
+        double const *Enth = ice_enthalpy.get_column(i, j);
         for (int k = 0; k < ks; ++k) {
           double dz = (m_grid->z(k + 1) - m_grid->z(k));
           enth2(i, j) += Enth[k] * dz; // m J / kg
@@ -494,7 +460,7 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
 }
 
 
-/** Merges surface temperature derived from m_ice_enthalpy into any NaN values
+/** Merges surface temperature derived from the energy balance model into any NaN values
 in the vector provided.
 @param deltah IN: Input from Icebin (change in enthalpy of each m_grid
     cell over the timestep) [W m-2].
@@ -515,8 +481,10 @@ void IBIceModel::construct_surface_temp(
 
   double ice_density = m_config->get_double("constants.ice.density");
 
+  const IceModelVec3 &ice_enthalpy = m_energy_model->get_enthalpy();
+
   {
-    AccessList access{ &m_ice_enthalpy, &deltah, &m_ice_thickness, &surface_temp };
+    AccessList access{ &ice_enthalpy, &deltah, &m_ice_thickness, &surface_temp };
 
     // First time around, set effective_surface_temp to top temperature
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
@@ -524,7 +492,7 @@ void IBIceModel::construct_surface_temp(
         double &surface_temp_ij(surface_temp(i, j));
         double const &deltah_ij(deltah(i, j));
 
-        double const *Enth = m_ice_enthalpy.get_column(i, j);
+        double const *Enth = ice_enthalpy.get_column(i, j);
 
         // Enthalpy at top of ice sheet
         const int ks      = m_grid->kBelowHeight(m_ice_thickness(i, j));

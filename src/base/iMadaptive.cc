@@ -36,6 +36,7 @@
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/age/AgeModel.hh"
+#include "base/energy/EnergyModel.hh"
 
 namespace pism {
 
@@ -167,6 +168,13 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       MaxTimestep btu_dt = m_btu->max_timestep(current_time);
       if (btu_dt.is_finite()) {
         dt_restrictions["BTU"] = btu_dt.value();
+      }
+    }
+
+    if (m_energy_model != NULL) {
+      MaxTimestep energy_model_dt = m_energy_model->max_timestep(current_time);
+      if (energy_model_dt.is_finite()) {
+        dt_restrictions["energy balance model"] = energy_model_dt.value();
       }
     }
 

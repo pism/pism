@@ -44,19 +44,6 @@ namespace pism {
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
 
 //! Manage the solution of the energy equation, and related parallel communication.
-/*!
-  This method updates three fields:
-  - IceModelVec3 m_ice_enthalpy
-  - IceModelVec2 basal_melt_rate
-  - IceModelVec2 vHmelt
-  That is, energyStep() is in charge of calling other methods that actually update, and
-  then it is in charge of doing the ghost communication as needed.  If
-  energy.temperature_based == true, then energyStep() must also update this field
-  - IceModelVec3 m_ice_temperature
-
-  Normally calls the method enthalpyStep().  Calls temperatureStep() if
-  energy.temperature_based == true.
-*/
 void IceModel::energyStep() {
 
   const Profiling &profiling = m_ctx->profiling();
@@ -101,56 +88,9 @@ void IceModel::energyStep() {
     inputs.check();             // make sure all data members were set
   }
 
-  if (m_config->get_boolean("energy.temperature_based")) {
-    // new temperature values go in vTnew; also updates Hmelt:
-    profiling.begin("temp step");
-    temperatureStep(inputs, dt_TempAge, stats);
-    profiling.end("temp step");
+  m_energy_model->update(t_TempAge, dt_TempAge, inputs);
 
-    // need to update ghosts of temperature for the next time step
-    m_work3d.update_ghosts(m_ice_temperature);
-
-    // compute_enthalpy_cold() updates ghosts of m_ice_enthalpy using
-    // update_ghosts(). Is not optimized because this
-    // (energy.temperature_based) is a rare case.
-    energy::compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
-
-  } else {
-    // new enthalpy values go in m_work3d
-
-    profiling.begin("enth step");
-    enthalpyStep(inputs, dt_TempAge, stats);
-    profiling.end("enth step");
-
-    m_work3d.update_ghosts(m_ice_enthalpy);
-
-    stats.liquified_ice_volume = GlobalSum(m_grid->com, stats.liquified_ice_volume);
-    if (stats.liquified_ice_volume > 0.0) {
-      m_log->message(1,
-                 "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
-                 stats.liquified_ice_volume / 1.0e9);
-    }
-  }
-
-  stats.reduced_accuracy_counter = GlobalSum(m_grid->com, stats.reduced_accuracy_counter);
-  if (stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
-    const double bfsacrPRCNT = 100.0 * (stats.reduced_accuracy_counter / (m_grid->Mx() * m_grid->My()));
-    const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
-    if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
-        m_log->get_threshold() > 2) {
-      char tempstr[50] = "";
-      snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
-      m_stdout_flags = tempstr + m_stdout_flags;
-    }
-  }
-
-  stats.bulge_counter = GlobalSum(m_grid->com, stats.bulge_counter);
-  if (stats.bulge_counter > 0) {
-    // count of when advection bulges are limited; frequently it is identically zero
-    char tempstr[50] = "";
-    snprintf(tempstr,50, " BULGE=%d ", stats.bulge_counter);
-    m_stdout_flags = tempstr + m_stdout_flags;
-  }
+  m_stdout_flags = m_energy_model->stdout_flags() + m_stdout_flags;
 }
 
 //! @brief Combine basal melt rate in grounded and floating areas.
@@ -181,9 +121,12 @@ void IceModel::combine_basal_melt_rate() {
 
   double ice_density = m_config->get_double("constants.ice.density");
 
+  const IceModelVec2S &M_grounded = m_energy_model->get_basal_melt_rate();
+
   list.add(m_cell_type);
-  list.add(m_basal_melt_rate);
+  list.add(M_grounded);
   list.add(m_shelfbmassflux);
+  list.add(m_basal_melt_rate);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -191,7 +134,6 @@ void IceModel::combine_basal_melt_rate() {
     double lambda = 1.0;      // 1.0 corresponds to the grounded case
     // Note: here we convert shelf base mass flux from [kg m-2 s-1] to [m s-1]:
     const double
-      M_grounded   = m_basal_melt_rate(i,j),
       M_shelf_base = m_shelfbmassflux(i,j) / ice_density;
 
     // Use the fractional floatation mask to adjust the basal melt
@@ -201,12 +143,11 @@ void IceModel::combine_basal_melt_rate() {
     } else if (m_cell_type.ocean(i,j)) {
       lambda = 0.0;
     }
-    m_basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
+    m_basal_melt_rate(i,j) = lambda * M_grounded(i, j) + (1.0 - lambda) * M_shelf_base;
   }
 }
 
-//! \brief Extract from enthalpy field (m_ice_enthalpy) the temperature which the top of
-//! the bedrock thermal layer will see.
+//! @brief Compute the temperature seen by the top of the bedrock thermal layer.
 void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double
     T0                     = m_config->get_double("constants.fresh_water.melting_point_temperature"),
@@ -221,7 +162,7 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double sea_level = m_ocean->sea_level_elevation();
 
   // start by grabbing 2D enthalpy field at z=0; converted to temperature if needed, below
-  m_ice_enthalpy.getHorSlice(result, 0.0);
+  m_energy_model->get_enthalpy().getHorSlice(result, 0.0);
 
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 

@@ -143,10 +143,7 @@ void compute_enthalpy(const IceModelVec3 &temperature,
   result.inc_state_counter();
 }
 
-//! Compute the liquid fraction corresponding to m_ice_enthalpy, and put in a global IceModelVec3 provided by user.
-/*!
-Does not communicate ghosts for IceModelVec3 result
- */
+//! Compute the liquid fraction corresponding to enthalpy and ice_thickness.
 void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
                                    const IceModelVec2S &ice_thickness,
                                    IceModelVec3 &result) {
@@ -187,8 +184,8 @@ void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
   result.inc_state_counter();
 }
 
-//! @brief Compute the CTS field, CTS = E/E_s(p), from m_ice_enthalpy, and put
-//! in a global IceModelVec3 provided by user.
+//! @brief Compute the CTS field, CTS = E/E_s(p), from `ice_enthalpy` and `ice_thickness`, and put
+//! in `result`.
 /*!
  * The actual cold-temperate transition surface (CTS) is the level set CTS = 1.
  *
@@ -232,7 +229,7 @@ void compute_cts(const IceModelVec3 &ice_enthalpy,
 
 //! Computes the total ice enthalpy in J.
 /*!
-  Units of the specific enthalpy field \f$E=\f$(IceModelVec3::m_ice_enthalpy) are J kg-1.  We integrate
+  Units of the specific enthalpy field are J kg-1.  We integrate
   \f$E(t,x,y,z)\f$ over the entire ice fluid region \f$\Omega(t)\f$, multiplying
   by the density to get units of energy:
   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]

@@ -39,7 +39,6 @@ public:
   virtual void allocate_couplers();
 
   virtual void bootstrap_2d(const PIO &input_file) __attribute__((noreturn));
-  virtual void bootstrap_3d() __attribute__((noreturn));
 
   virtual void initialize_2d();
   virtual void initialize_3d();
@@ -49,7 +48,7 @@ public:
 protected:
   // related to all (or most) tests
   int testname;
-  virtual void additionalAtStartTimestep();
+
   virtual void additionalAtEndTimestep();
   // all tests except K
   void computeGeometryErrors(double &gvolexact, double &gareaexact, double &gdomeHexact,
@@ -73,9 +72,7 @@ protected:
   void initTestL();
 
   // related to tests F G; see iCMthermo.cc
-  virtual void temperatureStep(const energy::EnergyModelInputs &inputs,
-                               double dt,
-                               energy::EnergyModelStats &stats);
+  virtual void energyStep();
   void initTestFG();
   void getCompSourcesTestFG();
 

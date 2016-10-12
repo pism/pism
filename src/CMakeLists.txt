@@ -130,7 +130,6 @@ add_library (pism
   base/iMbootstrap.cc
   base/iMcalving.cc
   base/iMenergy.cc
-  base/iMenthalpy.cc
   base/iMfractures.cc
   base/iMgeometry.cc
   base/grounded_cell_fraction.cc
@@ -139,7 +138,6 @@ add_library (pism
   base/iMoptions.cc
   base/iMpartgrid.cc
   base/iMreport.cc
-  base/iMtemp.cc
   base/iMtimeseries.cc
   base/iMutil.cc
   base/iMcell_areas.cc

@@ -75,9 +75,6 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
     m_latitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  m_basal_melt_rate.regrid(input_file, OPTIONAL,
-                           m_config->get_double("bootstrapping.defaults.bmelt"));
-
   m_ice_thickness.regrid(input_file, OPTIONAL,
                          m_config->get_double("bootstrapping.defaults.ice_thickness"));
   // check the range of the ice thickness
@@ -122,37 +119,6 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
                                   thk_range.max, m_grid->Lz());
-  }
-}
-
-//! Fill 3D fields using heuristics.
-void IceModel::bootstrap_3d() {
-
-  {
-    m_surface->ice_surface_temperature(m_ice_surface_temp);
-    m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
-  }
-
-  if (m_config->get_boolean("energy.temperature_based")) {
-    // set ice temperature:
-    energy::bootstrap_ice_temperature(m_ice_thickness,
-                                      m_ice_surface_temp,
-                                      m_climatic_mass_balance,
-                                      m_btu->flux_through_top_surface(),
-                                      m_ice_temperature);
-
-    // use temperature to initialize enthalpy:
-    energy::compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
-
-    m_log->message(2, " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
-  } else {
-    // enthalpy mode
-
-    energy::bootstrap_ice_enthalpy(m_ice_thickness,
-                                   m_ice_surface_temp,
-                                   m_climatic_mass_balance,
-                                   m_btu->flux_through_top_surface(),
-                                   m_ice_enthalpy);
   }
 }
 

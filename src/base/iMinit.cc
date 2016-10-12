@@ -59,6 +59,8 @@
 #include "base/util/projection.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/age/AgeModel.hh"
+#include "base/energy/EnthalpyModel.hh"
+#include "base/energy/TemperatureModel.hh"
 
 namespace pism {
 
@@ -220,21 +222,35 @@ void IceModel::model_state_setup() {
     m_grid->variables().add(m_age_model->age());
   }
 
-  // Initialize 3D (energy balance) parts of IceModel.
+  // Initialize the energy balance sub-model.
   {
     switch (input.type) {
     case INIT_RESTART:
-      restart_3d(input_file, input.record);
-      break;
+      {
+        m_energy_model->restart(input_file, input.record);
+        break;
+      }
     case INIT_BOOTSTRAP:
-      bootstrap_3d();
-      break;
+      {
+        m_energy_model->bootstrap(input_file,
+                                  m_ice_thickness,
+                                  m_ice_surface_temp,
+                                  m_climatic_mass_balance,
+                                  m_btu->flux_through_top_surface());
+        break;
+      }
     case INIT_OTHER:
     default:
-      initialize_3d();
-    }
+      {
+        m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
+        m_energy_model->initialize(m_basal_melt_rate,
+                                   m_ice_thickness,
+                                   m_ice_surface_temp,
+                                   m_climatic_mass_balance,
+                                   m_btu->flux_through_top_surface());
 
-    regrid(3);
+      }
+    }
   }
 
   // miscellaneous steps
@@ -458,6 +474,28 @@ void IceModel::allocate_age_model() {
     m_submodels["age model"] = m_age_model;
   }
 }
+
+void IceModel::allocate_energy_model() {
+
+  if (m_energy_model != NULL) {
+    return;
+  }
+
+  m_log->message(2, "# Allocating an energy balance model...\n");
+
+  if (m_config->get_boolean("energy.enabled")) {
+    if (m_config->get_boolean("energy.temperature_based")) {
+      m_energy_model = new energy::TemperatureModel(m_grid, m_stress_balance);
+    } else {
+      m_energy_model = new energy::EnthalpyModel(m_grid, m_stress_balance);
+    }
+  } else {
+    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance);
+  }
+
+  m_submodels["energy balance model"] = m_energy_model;
+}
+
 
 //! \brief Decide which bedrock thermal unit to use.
 void IceModel::allocate_bedrock_thermal_unit() {

@@ -50,7 +50,7 @@
 #include "base/util/pism_utilities.hh"
 #include "BTU_Verification.hh"
 #include "base/energy/BTU_Minimal.hh"
-#include "base/energy/utilities.hh"
+#include "base/energy/TemperatureModel.hh"
 
 namespace pism {
 
@@ -250,22 +250,18 @@ void IceCompModel::bootstrap_2d(const PIO &input_file) {
   throw RuntimeError(PISM_ERROR_LOCATION, "pismv (IceCompModel) does not support bootstrapping.");
 }
 
-void IceCompModel::bootstrap_3d() {
-  throw RuntimeError(PISM_ERROR_LOCATION, "pismv (IceCompModel) does not support bootstrapping.");
-}
-
 void IceCompModel::initialize_2d() {
   m_log->message(3, "initializing Test %c from formulas ...\n",testname);
 
   // all have no uplift
-  IceModelVec2S bed_uplift;
-  bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
-  bed_uplift.set(0);
-  m_beddef->set_uplift(bed_uplift);
+  IceModelVec2S zero;
+  zero.create(m_grid, "temporary", WITHOUT_GHOSTS);
+  zero.set(0.0);
+  m_beddef->set_uplift(zero);
 
   // this is the correct initialization for Test O (and every other
   // test; they all generate zero basal melt rate)
-  m_basal_melt_rate.set(0.0);
+  m_energy_model->set_basal_melt_rate(zero);
 
   // Test-specific initialization:
   switch (testname) {
@@ -296,10 +292,7 @@ void IceCompModel::initialize_2d() {
 }
 
 void IceCompModel::initialize_3d() {
-
   strain_heating3_comp.set(0.0);
-
-  energy::compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
 }
 
 void IceCompModel::initTestABCDH() {
@@ -319,8 +312,6 @@ void IceCompModel::initTestABCDH() {
   IceModelVec3 ice_temperature;
   ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
   ice_temperature.set(T0);
-  m_ice_temperature.copy_from(ice_temperature);
-
 
   m_cell_type.set(MASK_GROUNDED);
 
@@ -358,6 +349,9 @@ void IceCompModel::initTestABCDH() {
   loop.check();
 
   m_ice_thickness.update_ghosts();
+
+  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
+  m->set_temperature(ice_temperature, m_ice_thickness);
 
   {
     IceModelVec2S bed_topography;
@@ -404,7 +398,6 @@ void IceCompModel::initTestL() {
   IceModelVec3 ice_temperature;
   ice_temperature.create(m_grid, "temp", WITHOUT_GHOSTS);
   ice_temperature.set(T0);
-  m_ice_temperature.copy_from(ice_temperature);
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order
@@ -449,6 +442,9 @@ void IceCompModel::initTestL() {
     m_ice_thickness.update_ghosts();
     m_beddef->set_elevation(bed_topography);
   }
+
+  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
+  m->set_temperature(ice_temperature, m_ice_thickness);
 
   // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
   vHexactL.copy_from(m_ice_thickness);
@@ -613,14 +609,6 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   gdomeH = GlobalMax(m_grid->com, domeH);
   centerHerr = fabs(gdomeH - gdomeHexact);
 }
-
-
-void IceCompModel::additionalAtStartTimestep() {
-  if (testname == 'F' || testname == 'G') {
-    getCompSourcesTestFG();
-  }
-}
-
 
 void IceCompModel::additionalAtEndTimestep() {
   if (testname == 'A') {

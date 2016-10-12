@@ -51,6 +51,7 @@
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/age/AgeModel.hh"
+#include "base/energy/EnergyModel.hh"
 
 namespace pism {
 
@@ -190,6 +191,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
 
   m_age_model = NULL;
   m_btu = NULL;
+  m_energy_model = NULL;
 
   m_iceberg_remover             = NULL;
   m_ocean_kill_calving          = NULL;
@@ -261,6 +263,7 @@ IceModel::~IceModel() {
   delete m_subglacial_hydrology;
   delete m_basal_yield_stress_model;
   delete m_btu;
+  delete m_energy_model;
 
   delete m_fracture;
 
@@ -291,30 +294,6 @@ void IceModel::createVecs() {
   // variables. The main (and only) principle here is using standard names from
   // the CF conventions; see
   // http://cf-pcmdi.llnl.gov/documents/cf-standard-names
-
-  {
-    m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
-    // POSSIBLE standard name = land_ice_enthalpy
-    m_ice_enthalpy.set_attrs("model_state",
-                             "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                             "J kg-1", "");
-    m_grid->variables().add(m_ice_enthalpy);
-  }
-
-  if (m_config->get_boolean("energy.temperature_based")) {
-    // ice temperature
-    m_ice_temperature.create(m_grid, "temp", WITH_GHOSTS);
-    m_ice_temperature.set_attrs("model_state",
-                 "ice temperature", "K", "land_ice_temperature");
-    m_ice_temperature.metadata().set_double("valid_min", 0.0);
-    m_grid->variables().add(m_ice_temperature);
-
-    if (m_config->get_boolean("energy.enabled")) {
-      m_ice_enthalpy.metadata().set_string("pism_intent", "diagnostic");
-    } else {
-      m_ice_temperature.metadata().set_string("pism_intent", "diagnostic");
-    }
-  }
 
   // ice upper surface elevation
   m_ice_surface_elevation.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
@@ -934,12 +913,13 @@ const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
   return m_btu;
 }
 
-const IceModelVec3& IceModel::ice_enthalpy() const {
-  return m_ice_enthalpy;
-}
-
 const IceModelVec2S& IceModel::ice_thickness() const {
   return m_ice_thickness;
 }
+
+const energy::EnergyModel* IceModel::energy_balance_model() const {
+  return m_energy_model;
+}
+
 
 } // end of namespace pism

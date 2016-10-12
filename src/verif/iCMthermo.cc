@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
+#include <cassert>
 
 #include "tests/exactTestsFG.hh"
 #include "tests/exactTestK.h"
@@ -31,7 +32,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/pism_utilities.hh"
 #include "BTU_Verification.hh"
-#include "base/energy/EnergyModel.hh"
+#include "base/energy/TemperatureModel.hh"
 
 namespace pism {
 
@@ -41,22 +42,60 @@ const double IceCompModel::Tmin   = 223.15; // K
 const double IceCompModel::LforFG = 750000; // m
 const double IceCompModel::ApforG = 200; // m
 
-/*! Re-implemented so that we can add compensatory strain_heating in Tests F and G. */
-void IceCompModel::temperatureStep(const energy::EnergyModelInputs &inputs,
-                                   double dt,
-                                   energy::EnergyModelStats &stats) {
+void IceCompModel::energyStep() {
+
+  energy::EnergyModelStats stats;
+
+  // operator-splitting occurs here (ice and bedrock energy updates are split):
+  //   tell BedThermalUnit* btu that we have an ice base temp; it will return
+  //   the z=0 value of geothermal flux when called inside temperatureStep() or
+  //   enthalpyStep()
+  IceModelVec2S &bedtoptemp = m_work2d[0];
+  get_bed_top_temp(bedtoptemp);
+
+  m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
+
+  energy::EnergyModelInputs inputs;
+  {
+    m_surface->ice_surface_temperature(m_ice_surface_temp);
+    m_surface->ice_surface_liquid_water_fraction(m_liqfrac_surface);
+
+    m_ocean->shelf_base_temperature(m_shelfbtemp);
+
+    IceModelVec2S &till_water_thickness = m_work2d[0];
+    m_subglacial_hydrology->till_water_thickness(till_water_thickness);
+
+    inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
+    inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
+    inputs.cell_type                = &m_cell_type;                       // geometry
+    inputs.ice_thickness            = &m_ice_thickness;                   // geometry
+    inputs.shelf_base_temp          = &m_shelfbtemp;                      // ocean model
+    inputs.surface_liquid_fraction  = &m_liqfrac_surface;                 // surface model
+    inputs.surface_temp             = &m_ice_surface_temp;                // surface model
+    inputs.till_water_thickness     = &till_water_thickness;              // hydrology model
+
+    inputs.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
+    inputs.u3                       = &m_stress_balance->velocity_u();
+    inputs.v3                       = &m_stress_balance->velocity_v();
+    inputs.w3                       = &m_stress_balance->velocity_w();
+
+    inputs.check();             // make sure all data members were set
+  }
 
   if ((testname == 'F') || (testname == 'G')) {
-    // FIXME: This code messes with the strain heating field owned by
-    // stress_balance. This is BAD.
-    IceModelVec3 *strain_heating3 = const_cast<IceModelVec3*>(inputs.strain_heating3);
+    // Compute compensatory strain heating (fills strain_heating3_comp).
+    getCompSourcesTestFG();
 
-    strain_heating3->add(1.0, strain_heating3_comp);      // strain_heating = strain_heating + strain_heating_c
-    IceModel::temperatureStep(inputs, dt, stats);
-    strain_heating3->add(-1.0, strain_heating3_comp); // strain_heating = strain_heating - strain_heating_c
-  } else {
-    IceModel::temperatureStep(inputs, dt, stats);
+    // Add computed strain heating to the compensatory part.
+    strain_heating3_comp.add(1.0, *inputs.strain_heating3);
+
+    // Use the result.
+    inputs.strain_heating3 = strain_heating3_comp;
   }
+
+  m_energy_model->update(t_TempAge, dt_TempAge, inputs);
+
+  m_stdout_flags = m_energy_model->stdout_flags() + m_stdout_flags;
 }
 
 void IceCompModel::initTestFG() {
@@ -94,7 +133,9 @@ void IceCompModel::initTestFG() {
 
   m_ice_thickness.update_ghosts();
 
-  m_ice_temperature.copy_from(ice_temperature);
+  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
+  assert(m != NULL);
+  m->set_temperature(ice_temperature, m_ice_thickness);
 
   m_ice_surface_elevation.copy_from(m_ice_thickness);
 }
@@ -143,9 +184,12 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   const double time = testname == 'F' ? 0.0 : m_time->current();
   const double A    = testname == 'F' ? 0.0 : ApforG;
 
+  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
+  const IceModelVec3 &ice_temperature = m->get_temperature();
+
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
-  list.add(m_ice_temperature);
+  list.add(ice_temperature);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -153,7 +197,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
       const int i = p.i(), j = p.j();
 
       const double r = radius(*m_grid, i, j);
-      const double *T = m_ice_temperature.get_column(i, j);
+      const double *T = ice_temperature.get_column(i, j);
 
       // only evaluate error if inside sheet and not at central
       // singularity
@@ -228,8 +272,11 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       throw RuntimeError(PISM_ERROR_LOCATION, "ice and bedrock temperature errors only for tests K and O");
   }
 
+  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
+  const IceModelVec3 &ice_temperature = m->get_temperature();
+
   IceModelVec::AccessList list;
-  list.add(m_ice_temperature);
+  list.add(ice_temperature);
   list.add(bedrock_temp);
 
   for (Points p(*m_grid); p; p.next()) {
@@ -242,7 +289,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       avbcount += 1.0;
       avTberr += Tberr;
     }
-    T = m_ice_temperature.get_column(i, j);
+    T = ice_temperature.get_column(i, j);
     for (unsigned int k = 0; k < m_grid->Mz(); k++) {
       const double Terr = fabs(T[k] - Tex[k]);
       maxTerr = std::max(maxTerr, Terr);
@@ -280,7 +327,10 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
   const double A    = testname == 'F' ? 0.0 : ApforG;
   std::vector<double> z(1, 0.0);
 
-  IceModelVec::AccessList list(m_ice_temperature);
+  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
+  const IceModelVec3 &ice_temperature = m->get_temperature();
+
+  IceModelVec::AccessList list(ice_temperature);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -295,7 +345,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
         Texact = exactFG(time, r, z, A).T[0];
       }
 
-      const double Tbase = m_ice_temperature.get_column(i,j)[0];
+      const double Tbase = ice_temperature.get_column(i,j)[0];
       if (i == ((int)m_grid->Mx() - 1) / 2 and
           j == ((int)m_grid->My() - 1) / 2) {
         domeT      = Tbase;
@@ -450,7 +500,9 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
 
 
 void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gminbmelterr) {
-  double    maxbmelterr = -9.99e40, minbmelterr = 9.99e40, err;
+  double
+    maxbmelterr = -9.99e40,
+    minbmelterr = 9.99e40;
 
   if (testname != 'O') {
     throw RuntimeError(PISM_ERROR_LOCATION, "basal melt rate errors are only computable for test O");
@@ -459,12 +511,14 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
   // we just need one constant from exact solution:
   double bmelt = exactO(0.0).bmelt;
 
-  IceModelVec::AccessList list(m_basal_melt_rate);
+  const IceModelVec2S &basal_melt_rate = m_energy_model->get_basal_melt_rate();
+
+  IceModelVec::AccessList list(basal_melt_rate);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    err = fabs(m_basal_melt_rate(i, j) - bmelt);
+    double err = fabs(basal_melt_rate(i, j) - bmelt);
     maxbmelterr = std::max(maxbmelterr, err);
     minbmelterr = std::min(minbmelterr, err);
   }
@@ -521,8 +575,8 @@ void IceCompModel::initTestsKO() {
     }
     loop.check();
 
-    // communicate T
-    m_ice_temperature.copy_from(ice_temperature);
+    energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
+    m->set_temperature(ice_temperature, m_ice_thickness);
   }
 }
 

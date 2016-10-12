@@ -143,7 +143,7 @@ public:
     the first coupling timestep (eg, ice surface enthalpy) */
   void prepare_initial_outputs();
 
-  /** Merges surface temperature derived from m_ice_enthalpy into any NaN values
+  /** Merges surface temperature derived from the energy balance model into any NaN values
     in the vector provided.
     @param deltah IN: Input from Icebin (change in enthalpy of each grid
         cell over the timestep) [W m-2].

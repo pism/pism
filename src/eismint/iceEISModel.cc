@@ -154,8 +154,8 @@ void generate_mound_topography(IceModelVec2S &result) {
 void IceEISModel::initialize_2d() {
 
   m_log->message(2,
-             "initializing variables from EISMINT II experiment %c formulas... \n",
-             m_experiment);
+                 "initializing variables from EISMINT II experiment %c formulas... \n",
+                 m_experiment);
 
   IceModelVec2S tmp;
   tmp.create(m_grid, "topg", WITHOUT_GHOSTS);
@@ -179,38 +179,7 @@ void IceEISModel::initialize_2d() {
     m_beddef->set_uplift(tmp);
   }
 
-  m_basal_melt_rate.set(0.0);
   m_ice_thickness.set(0.0); // start with zero ice
-}
-
-void IceEISModel::initialize_3d() {
-  {
-    m_surface->ice_surface_temperature(m_ice_surface_temp);
-    m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
-  }
-
-  if (m_config->get_boolean("energy.temperature_based")) {
-    // set ice temperature:
-    energy::bootstrap_ice_temperature(m_ice_thickness,
-                                      m_ice_surface_temp,
-                                      m_climatic_mass_balance,
-                                      m_btu->flux_through_top_surface(),
-                                      m_ice_temperature);
-
-    // use temperature to initialize enthalpy:
-    energy::compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
-
-    m_log->message(2,
-                   " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
-  } else {
-    // enthalpy mode
-
-    energy::bootstrap_ice_enthalpy(m_ice_thickness,
-                                   m_ice_surface_temp,
-                                   m_climatic_mass_balance,
-                                   m_btu->flux_through_top_surface(),
-                                   m_ice_enthalpy);
-  }
 }
 
 } // end of namespace pism

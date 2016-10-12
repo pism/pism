@@ -81,6 +81,7 @@ namespace energy {
 class BedThermalUnit;
 class EnergyModelInputs;
 class EnergyModelStats;
+class EnergyModel;
 }
 
 namespace bed {
@@ -125,6 +126,7 @@ public:
   virtual void allocate_age_model();
   virtual void allocate_bed_deformation();
   virtual void allocate_bedrock_thermal_unit();
+  virtual void allocate_energy_model();
   virtual void allocate_subglacial_hydrology();
   virtual void allocate_basal_yield_stress();
   virtual void allocate_couplers();
@@ -151,7 +153,6 @@ public:
 
   // see iMbootstrap.cc
   virtual void bootstrap_2d(const PIO &input_file);
-  virtual void bootstrap_3d();
 
   // see iMoptions.cc
   virtual void setFromOptions();
@@ -218,6 +219,7 @@ protected:
   YieldStress *m_basal_yield_stress_model;
 
   energy::BedThermalUnit *m_btu;
+  energy::EnergyModel *m_energy_model;
 
   AgeModel *m_age_model;
 
@@ -283,11 +285,6 @@ protected:
   
   //! mask to determine grounding line position
   IceModelVec2S m_gl_mask;
-
-  //! absolute temperature of ice; K (ghosted)
-  IceModelVec3 m_ice_temperature;
-  //! enthalpy; J / kg (ghosted)
-  IceModelVec3 m_ice_enthalpy;
 
   // parameters
   //! mass continuity time step, s
@@ -359,10 +356,6 @@ protected:
 
   virtual void combine_basal_melt_rate();
 
-  // see iMenthalpy.cc
-  virtual void enthalpyStep(const energy::EnergyModelInputs &inputs, double dt,
-                            energy::EnergyModelStats &stats);
-
   // see iMgeometry.cc
   virtual void enforce_consistency_of_geometry();
   virtual void cell_interface_fluxes(bool dirichlet_bc,
@@ -390,7 +383,6 @@ protected:
   virtual void regrid_variables(const PIO &regrid_file,
                                 const std::set<std::string> &regrid_vars,
                                 unsigned int ndims);
-  virtual void init_enthalpy(const PIO &input_file, bool regrid, int record);
 
   // see iMfractures.cc
   virtual void calculateFractureDensity();
@@ -426,13 +418,6 @@ public:
   double ice_area_cold() const;
 
 protected:
-  // see iMtemp.cc
-  virtual void excessToFromBasalMeltLayer(double rho, double c, double L,
-                                          double z, double dz,
-                                          double *Texcess, double *bwat);
-  virtual void temperatureStep(const energy::EnergyModelInputs &inputs, double dt,
-                               energy::EnergyModelStats &stats);
-
   // see iMutil.cc
   virtual int endOfTimeStepHook();
   virtual void stampHistoryCommand();
@@ -455,8 +440,8 @@ public:
   const ocean::OceanModel* ocean_model() const;
   const bed::BedDef* bed_model() const;
   const energy::BedThermalUnit* bedrock_thermal_model() const;
+  const energy::EnergyModel* energy_balance_model() const;
 
-  const IceModelVec3& ice_enthalpy() const;
   const IceModelVec2S& ice_thickness() const;
 protected:
 

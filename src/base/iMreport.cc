@@ -33,6 +33,7 @@
 #include "enthalpyConverter.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/age/AgeModel.hh"
+#include "base/energy/EnergyModel.hh"
 
 namespace pism {
 
@@ -58,14 +59,14 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
   double result = 0.0, meltarea = 0.0;
   const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3; // area unit (km^2)
 
-  IceModelVec2S &Enthbase = m_work2d[0];
-  // use m_ice_enthalpy to get stats
-  m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
+  IceModelVec2S &E_basal = m_work2d[0];
+
+  m_energy_model->get_enthalpy().getHorSlice(E_basal, 0.0);  // z=0 slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
   list.add(m_ice_thickness);
-  list.add(Enthbase);
+  list.add(E_basal);
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -73,7 +74,7 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
 
       if (m_cell_type.icy(i, j)) {
         // accumulate area of base which is at melt point
-        if (EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
+        if (EC->is_temperate_relaxed(E_basal(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
           meltarea += a;
         }
       }
@@ -418,11 +419,13 @@ double  IceModel::ice_volume_temperate() const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
+  const IceModelVec3 &ice_enthalpy = m_energy_model->get_enthalpy();
+
   double volume = 0.0;
 
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
-  list.add(m_ice_enthalpy);
+  list.add(ice_enthalpy);
   list.add(m_cell_area);
 
   ParallelSection loop(m_grid->com);
@@ -434,7 +437,7 @@ double  IceModel::ice_volume_temperate() const {
       // considered "ice-free"
       if (m_ice_thickness(i,j) > 0) {
         const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
-        const double *Enth = m_ice_enthalpy.get_column(i,j);
+        const double *Enth = ice_enthalpy.get_column(i,j);
         const double A = m_cell_area(i, j);
 
         for (int k = 0; k < ks; ++k) {
@@ -462,11 +465,13 @@ double IceModel::ice_volume_cold() const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
+  const IceModelVec3 &ice_enthalpy = m_energy_model->get_enthalpy();
+
   double volume = 0.0;
 
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
-  list.add(m_ice_enthalpy);
+  list.add(ice_enthalpy);
   list.add(m_cell_area);
 
   ParallelSection loop(m_grid->com);
@@ -478,7 +483,7 @@ double IceModel::ice_volume_cold() const {
       // are considered "ice-free"
       if (m_ice_thickness(i,j) > 0) {
         const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
-        const double *Enth = m_ice_enthalpy.get_column(i,j);
+        const double *Enth = ice_enthalpy.get_column(i,j);
         const double A = m_cell_area(i, j);
 
         for (int k=0; k<ks; ++k) {
@@ -525,13 +530,13 @@ double IceModel::ice_area_temperate() const {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   double area = 0.0;
-  IceModelVec2S &Enthbase = m_work2d[0];
+  IceModelVec2S &E_basal = m_work2d[0];
 
-  m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
+  m_energy_model->get_enthalpy().getHorSlice(E_basal, 0.0);  // z=0 enthalpy slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
-  list.add(Enthbase);
+  list.add(E_basal);
   list.add(m_ice_thickness);
   list.add(m_cell_area);
   ParallelSection loop(m_grid->com);
@@ -540,7 +545,7 @@ double IceModel::ice_area_temperate() const {
       const int i = p.i(), j = p.j();
 
       if (m_cell_type.icy(i, j) and
-          EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
+          EC->is_temperate_relaxed(E_basal(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
         area += m_cell_area(i,j);
       }
     }
@@ -561,7 +566,7 @@ double IceModel::ice_area_cold() const {
   double area = 0.0;
   IceModelVec2S &Enthbase = m_work2d[0];
 
-  m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
+  m_energy_model->get_enthalpy().getHorSlice(Enthbase, 0.0);  // z=0 enthalpy slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);

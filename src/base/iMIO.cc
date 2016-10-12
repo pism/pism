@@ -243,16 +243,10 @@ void IceModel::write_model_state(const PIO &nc) {
 }
 
 
-//! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
+//! Manage regridding based on user options.
 /*!
   For each variable selected by option `-regrid_vars`, we regrid it onto the current grid from
   the NetCDF file specified by `-regrid_file`.
-
-  The default, if `-regrid_vars` is not given, is to regrid the 3
-  dimensional quantities `Tb3` and either `m_ice_temperature` or `m_ice_enthalpy`. This is
-  consistent with one standard purpose of regridding, which is to stick with
-  current geometry through the downscaling procedure. Most of the time the user
-  should carefully specify which variables to regrid.
 
   This `dimensions` argument can be 2 (regrid 2D variables only), 3 (3D
   only) and 0 (everything).
@@ -282,15 +276,6 @@ void IceModel::regrid(int dimensions) {
                dimensions, regrid_filename->c_str());
   } else {
     m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
-  }
-
-  if (regrid_vars->empty()) {
-    // defaults if user gives no regrid_vars list
-    if (m_config->get_boolean("energy.temperature_based")) {
-      regrid_vars->insert("temp");
-    } else {
-      regrid_vars->insert("enthalpy");
-    }
   }
 
   {
@@ -331,13 +316,6 @@ void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::stri
       continue;
     }
 
-    if (*i == "enthalpy") {
-      init_enthalpy(regrid_file,
-                    true,       // regrid
-                    0);         // record index (ignored)
-      continue;
-    }
-
     v->regrid(regrid_file, CRITICAL);
   }
 
@@ -351,77 +329,6 @@ void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::stri
                                     "exceeds the height of the computational domain (%f meters).",
                                     max_thickness, Lz);
     }
-  }
-}
-
-/**
- * Initialize enthalpy from a file that does not contain it using "temp" and "liqfrac".
- *
- * @param input_file input file
- *
- * @param do_regrid use regridding if 'true', otherwise assume that the
- *                  input file has the same grid
- * @param last_record the record to use when 'do_regrid==false'.
- *
- */
-void IceModel::init_enthalpy(const PIO &input_file,
-                             bool do_regrid, int last_record) {
-
-  const bool
-    enthalpy_exists = input_file.inq_var("enthalpy"),
-    temp_exists     = input_file.inq_var("temp"),
-    liqfrac_exists  = input_file.inq_var("liqfrac");
-
-  if (enthalpy_exists) {
-    if (do_regrid) {
-      m_ice_enthalpy.regrid(input_file, CRITICAL);
-    } else {
-      m_ice_enthalpy.read(input_file, last_record);
-    }
-  } else if (temp_exists) {
-    IceModelVec3
-      &temp    = m_work3d,
-      &liqfrac = m_ice_enthalpy;
-
-    SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
-    temp.set_name("temp");
-    temp.metadata(0).set_name("temp");
-    temp.set_attrs("temporary", "ice temperature", "Kelvin",
-                   "land_ice_temperature");
-
-    if (do_regrid) {
-      temp.regrid(input_file, CRITICAL);
-    } else {
-      temp.read(input_file, last_record);
-    }
-
-    if (liqfrac_exists and not m_config->get_boolean("energy.temperature_based")) {
-      liqfrac.set_name("liqfrac");
-      liqfrac.metadata(0).set_name("liqfrac");
-      liqfrac.set_attrs("temporary", "ice liquid water fraction",
-                        "1", "");
-
-      if (do_regrid) {
-        liqfrac.regrid(input_file, CRITICAL);
-      } else {
-        liqfrac.read(input_file, last_record);
-      }
-
-      m_log->message(2,
-                     "* Computing enthalpy using ice temperature,"
-                     "  liquid water fraction and thickness...\n");
-      energy::compute_enthalpy(temp, liqfrac, m_ice_thickness, m_ice_enthalpy);
-    } else {
-      m_log->message(2,
-                     "* Computing enthalpy using ice temperature and thickness "
-                     "and assuming zero liquid water fraction...\n");
-      energy::compute_enthalpy_cold(temp, m_ice_thickness, m_ice_enthalpy);
-    }
-
-    m_ice_enthalpy.metadata() = enthalpy_metadata;
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "neither enthalpy nor temperature was found in '%s'.\n",
-                                  input_file.inq_filename().c_str());
   }
 }
 
