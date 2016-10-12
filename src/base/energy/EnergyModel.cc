@@ -153,6 +153,7 @@ void EnergyModel::init_enthalpy(const PIO &input_file, bool do_regrid, int recor
         liqfrac.read(input_file, record);
       }
 
+      m_ice_enthalpy.set_name(enthalpy_metadata.get_name());
       m_ice_enthalpy.metadata() = enthalpy_metadata;
 
       m_log->message(2,
