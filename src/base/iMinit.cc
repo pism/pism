@@ -247,7 +247,7 @@ void IceModel::model_state_setup() {
 
       }
     }
-    m_grid->variables().add(m_energy_model->get_enthalpy());
+    m_grid->variables().add(m_energy_model->enthalpy());
   }
 
   // this has to go after we add enthalpy to m_grid->variables()

@@ -287,20 +287,12 @@ const EnergyModelStats& EnergyModel::stats() const {
   return m_stats;
 }
 
-const IceModelVec3 & EnergyModel::get_enthalpy() const {
+const IceModelVec3 & EnergyModel::enthalpy() const {
   return m_ice_enthalpy;
 }
 
-const IceModelVec2S & EnergyModel::get_basal_melt_rate() const {
+const IceModelVec2S & EnergyModel::basal_melt_rate() const {
   return m_basal_melt_rate;
-}
-
-void EnergyModel::set_enthalpy(const IceModelVec3 &input) {
-  m_ice_enthalpy.copy_from(input);
-}
-
-void EnergyModel::set_basal_melt_rate(const IceModelVec2S &input){
-  m_basal_melt_rate.copy_from(input);
 }
 
 

@@ -61,7 +61,7 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
 
   IceModelVec2S &E_basal = m_work2d[0];
 
-  m_energy_model->get_enthalpy().getHorSlice(E_basal, 0.0);  // z=0 slice
+  m_energy_model->enthalpy().getHorSlice(E_basal, 0.0);  // z=0 slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
@@ -421,7 +421,7 @@ double  IceModel::ice_volume_temperate() const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->get_enthalpy();
+  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
 
   double volume = 0.0;
 
@@ -467,7 +467,7 @@ double IceModel::ice_volume_cold() const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->get_enthalpy();
+  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
 
   double volume = 0.0;
 
@@ -534,7 +534,7 @@ double IceModel::ice_area_temperate() const {
   double area = 0.0;
   IceModelVec2S &E_basal = m_work2d[0];
 
-  m_energy_model->get_enthalpy().getHorSlice(E_basal, 0.0);  // z=0 enthalpy slice
+  m_energy_model->enthalpy().getHorSlice(E_basal, 0.0);  // z=0 enthalpy slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
@@ -568,7 +568,7 @@ double IceModel::ice_area_cold() const {
   double area = 0.0;
   IceModelVec2S &Enthbase = m_work2d[0];
 
-  m_energy_model->get_enthalpy().getHorSlice(Enthbase, 0.0);  // z=0 enthalpy slice
+  m_energy_model->enthalpy().getHorSlice(Enthbase, 0.0);  // z=0 enthalpy slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);

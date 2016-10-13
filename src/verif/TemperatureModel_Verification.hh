@@ -17,48 +17,35 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef TEMPERATUREMODEL_H
-#define TEMPERATUREMODEL_H
+#ifndef TEMPERATUREMODEL_VERIFICATION_H
+#define TEMPERATUREMODEL_VERIFICATION_H
 
-#include "EnergyModel.hh"
+#include "base/energy/TemperatureModel.hh"
 
 namespace pism {
 namespace energy {
 
-class TemperatureModel : public EnergyModel {
+/*! @brief Temperature-based energy balance model with verification-specific initialization code. */
+class TemperatureModel_Verification : public TemperatureModel {
 public:
-  TemperatureModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
-
-  const IceModelVec3 & temperature() const;
-
-protected:
-  void restart_impl(const PIO &input_file, int record);
-
-  void bootstrap_impl(const PIO &input_file,
-                      const IceModelVec2S &ice_thickness,
-                      const IceModelVec2S &surface_temperature,
-                      const IceModelVec2S &climatic_mass_balance,
-                      const IceModelVec2S &basal_heat_flux);
+  TemperatureModel_Verification(IceGrid::ConstPtr grid,
+                                stressbalance::StressBalance *stress_balance,
+                                int testname, bool bedrock_is_ice);
 
   void initialize_impl(const IceModelVec2S &basal_melt_rate,
                        const IceModelVec2S &ice_thickness,
                        const IceModelVec2S &surface_temperature,
                        const IceModelVec2S &climatic_mass_balance,
                        const IceModelVec2S &basal_heat_flux);
+private:
+  void initTestFG();
+  void initTestsKO();
 
-  void update_impl(double t, double dt, const EnergyModelInputs &inputs);
-
-  void define_model_state_impl(const PIO &output) const;
-  void write_model_state_impl(const PIO &output) const;
-
-  void column_drainage(const double rho, const double c, const double L,
-                       const double z, const double dz,
-                       double *Texcess, double *bwat) const;
-
-  IceModelVec3 m_ice_temperature;
+  int m_testname;
+  bool m_bedrock_is_ice;
 };
 
 } // end of namespace energy
 } // end of namespace pism
 
-#endif /* TEMPERATUREMODEL_H */
+#endif /* TEMPERATUREMODEL_VERIFICATION_H */

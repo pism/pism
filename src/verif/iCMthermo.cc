@@ -109,13 +109,8 @@ void IceCompModel::initTestFG() {
   bed_topography.set(0.0);
   m_beddef->set_elevation(bed_topography);
 
-  IceModelVec3 ice_temperature;
-  // ghosted to match TemperatureModel::m_ice_temperature
-  ice_temperature.create(m_grid, "temp", WITH_GHOSTS, 1);
-
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
-  list.add(ice_temperature);
 
   const double time = testname == 'F' ? 0.0 : m_time->current();
   const double A    = testname == 'F' ? 0.0 : ApforG;
@@ -128,23 +123,23 @@ void IceCompModel::initTestFG() {
 
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
       m_ice_thickness(i, j) = 0.0;
-      ice_temperature.set_column(i, j, Tmin + ST * r);
     } else {
-      TestFGParameters P = exactFG(time, r, m_grid->z(), A);
-      m_ice_thickness(i, j) = P.H;
-      ice_temperature.set_column(i, j, &P.T[0]);
+      m_ice_thickness(i, j) = exactFG(time, r, m_grid->z(), A).H;
     }
   }
 
   m_ice_thickness.update_ghosts();
-
-  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  assert(m != NULL);
-  m->set_temperature(ice_temperature, m_ice_thickness);
-
-  m_ice_surface_elevation.copy_from(m_ice_thickness);
 }
 
+void IceCompModel::initTestsKO() {
+
+  IceModelVec2S bed_topography;
+  bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
+  bed_topography.set(0);
+  m_beddef->set_elevation(bed_topography);
+
+  m_ice_thickness.set(3000.0);
+}
 
 void IceCompModel::getCompSourcesTestFG() {
 
@@ -190,7 +185,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   const double A    = testname == 'F' ? 0.0 : ApforG;
 
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->get_temperature();
+  const IceModelVec3 &ice_temperature = m->temperature();
 
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
@@ -257,11 +252,11 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   switch (testname) {
     case 'K':
       for (unsigned int k = 0; k < m_grid->Mz(); k++) {
-        TestKParameters K = exactK(m_time->current(), m_grid->z(k), m_bedrock_is_ice_forK == true);
+        TestKParameters K = exactK(m_time->current(), m_grid->z(k), m_bedrock_is_ice_forK);
         Tex[k] = K.T;
       }
       for (unsigned int k = 0; k < Mbz; k++) {
-        TestKParameters K = exactK(m_time->current(), zblevels[k], m_bedrock_is_ice_forK == true);
+        TestKParameters K = exactK(m_time->current(), zblevels[k], m_bedrock_is_ice_forK);
         Tbex[k] = K.T;
       }
       break;
@@ -278,7 +273,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   }
 
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->get_temperature();
+  const IceModelVec3 &ice_temperature = m->temperature();
 
   IceModelVec::AccessList list;
   list.add(ice_temperature);
@@ -333,7 +328,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
   std::vector<double> z(1, 0.0);
 
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->get_temperature();
+  const IceModelVec3 &ice_temperature = m->temperature();
 
   IceModelVec::AccessList list(ice_temperature);
 
@@ -516,7 +511,7 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
   // we just need one constant from exact solution:
   double bmelt = exactO(0.0).bmelt;
 
-  const IceModelVec2S &basal_melt_rate = m_energy_model->get_basal_melt_rate();
+  const IceModelVec2S &basal_melt_rate = m_energy_model->basal_melt_rate();
 
   IceModelVec::AccessList list(basal_melt_rate);
 
@@ -530,60 +525,6 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
 
   gmaxbmelterr = GlobalMax(m_grid->com, maxbmelterr);
   gminbmelterr = GlobalMin(m_grid->com, minbmelterr);
-}
-
-void IceCompModel::initTestsKO() {
-
-  IceModelVec2S bed_topography;
-  bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-  bed_topography.set(0);
-  m_beddef->set_elevation(bed_topography);
-
-  m_ice_thickness.set(3000.0);
-  m_ice_surface_elevation.copy_from(m_ice_thickness);
-
-  IceModelVec3 ice_temperature;
-  // ghosted to match TemperatureModel::m_ice_temperature
-  ice_temperature.create(m_grid, "temp", WITH_GHOSTS, 1);
-
-  {
-    std::vector<double> Tcol(m_grid->Mz());
-
-    // evaluate exact solution in a column; all columns are the same
-    switch (testname) {
-    case 'K':
-      for (unsigned int k=0; k<m_grid->Mz(); k++) {
-        TestKParameters K = exactK(m_time->current(), m_grid->z(k), m_bedrock_is_ice_forK == true);
-        Tcol[k] = K.T;
-      }
-      break;
-    case 'O':
-      for (unsigned int k=0; k<m_grid->Mz(); k++) {
-        Tcol[k] = exactO(m_grid->z(k)).TT;
-      }
-      break;
-    default:
-      throw RuntimeError(PISM_ERROR_LOCATION, "only fills temperature solutions for tests K and O");
-    }
-
-    // copy column values into 3D arrays
-    IceModelVec::AccessList list(ice_temperature);
-
-    ParallelSection loop(m_grid->com);
-    try {
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        ice_temperature.set_column(i, j, &Tcol[0]);
-      }
-    } catch (...) {
-      loop.failed();
-    }
-    loop.check();
-
-    energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-    m->set_temperature(ice_temperature, m_ice_thickness);
-  }
 }
 
 } // end of namespace pism

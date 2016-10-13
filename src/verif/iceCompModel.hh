@@ -32,10 +32,10 @@ public:
   
   // re-defined steps of init() sequence:
   virtual void createVecs();
-  virtual void allocate_stressbalance();
   virtual void allocate_bedrock_thermal_unit();
   virtual void allocate_bed_deformation();
   virtual void allocate_couplers();
+  virtual void allocate_energy_model();
 
   virtual void bootstrap_2d(const PIO &input_file) __attribute__((noreturn));
 

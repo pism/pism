@@ -38,16 +38,9 @@ TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
   m_ice_temperature.metadata().set_double("valid_min", 0.0);
 }
 
-const IceModelVec3 & TemperatureModel::get_temperature() const {
+const IceModelVec3 & TemperatureModel::temperature() const {
   return m_ice_temperature;
 }
-
-void TemperatureModel::set_temperature(const IceModelVec3 &input, const IceModelVec2S &ice_thickness) {
-  m_ice_temperature.copy_from(input);
-
-  compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
-}
-
 
 void TemperatureModel::restart_impl(const PIO &input_file, int record) {
 

@@ -121,7 +121,7 @@ void IceModel::combine_basal_melt_rate() {
 
   double ice_density = m_config->get_double("constants.ice.density");
 
-  const IceModelVec2S &M_grounded = m_energy_model->get_basal_melt_rate();
+  const IceModelVec2S &M_grounded = m_energy_model->basal_melt_rate();
 
   list.add(m_cell_type);
   list.add(M_grounded);
@@ -162,7 +162,7 @@ void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double sea_level = m_ocean->sea_level_elevation();
 
   // start by grabbing 2D enthalpy field at z=0; converted to temperature if needed, below
-  m_energy_model->get_enthalpy().getHorSlice(result, 0.0);
+  m_energy_model->enthalpy().getHorSlice(result, 0.0);
 
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 

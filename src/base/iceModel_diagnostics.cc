@@ -282,7 +282,7 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
 
   const IceModelVec2CellType &cell_type = model->cell_type_mask();
 
-  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->get_enthalpy();
+  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
@@ -357,7 +357,7 @@ IceModelVec::Ptr IceModel_cts::compute_impl() {
   result->create(m_grid, "cts", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  energy::compute_cts(model->energy_balance_model()->get_enthalpy(), model->ice_thickness(), *result);
+  energy::compute_cts(model->energy_balance_model()->enthalpy(), model->ice_thickness(), *result);
 
   return result;
 }
@@ -598,7 +598,7 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
 
   // compute levels corresponding to 1 m below the ice surface:
 
-  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->get_enthalpy();
+  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
@@ -641,7 +641,7 @@ IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
   result->create(m_grid, "enthalpybase", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  model->energy_balance_model()->get_enthalpy().getHorSlice(*result, 0.0);  // z=0 slice
+  model->energy_balance_model()->enthalpy().getHorSlice(*result, 0.0);  // z=0 slice
 
   result->mask_by(model->ice_thickness(), m_fill_value);
 
@@ -776,7 +776,7 @@ IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
   if (cold_mode) {
     result->set(0.0);
   } else {
-    energy::compute_liquid_water_fraction(model->energy_balance_model()->get_enthalpy(),
+    energy::compute_liquid_water_fraction(model->energy_balance_model()->enthalpy(),
                                           model->ice_thickness(),
                                           *result);
   }
@@ -803,7 +803,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->cell_type_mask();
-  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->get_enthalpy();
+  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
@@ -876,7 +876,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   const IceModelVec2CellType &cell_type = model->cell_type_mask();
-  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->get_enthalpy();
+  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
@@ -1216,7 +1216,7 @@ IceModel_ienthalpy::IceModel_ienthalpy(const IceModel *m)
 
 void IceModel_ienthalpy::update(double a, double b) {
 
-  double value = energy::total_ice_enthalpy(model->energy_balance_model()->get_enthalpy(),
+  double value = energy::total_ice_enthalpy(model->energy_balance_model()->enthalpy(),
                                             model->ice_thickness(),
                                             model->cell_area());
 
@@ -2401,7 +2401,7 @@ IceModelVec::Ptr IceModel_hardness::compute_impl() {
 
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
-  const IceModelVec3  &ice_enthalpy  = model->energy_balance_model()->get_enthalpy();
+  const IceModelVec3  &ice_enthalpy  = model->energy_balance_model()->enthalpy();
   const IceModelVec2S &ice_thickness = model->ice_thickness();
 
   const rheology::FlowLaw *flow_law = model->stress_balance()->modifier()->flow_law();

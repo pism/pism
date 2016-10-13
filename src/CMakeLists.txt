@@ -205,6 +205,7 @@ set_source_files_properties (base/util/pism_default_config.cc
 
 # Verification tests.
 add_library (pismverif OBJECT
+  verif/TemperatureModel_Verification.cc
   verif/iCMthermo.cc
   verif/iceCompModel.cc
   verif/PSVerification.cc

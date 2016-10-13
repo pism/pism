@@ -50,7 +50,7 @@
 #include "base/util/pism_utilities.hh"
 #include "BTU_Verification.hh"
 #include "base/energy/BTU_Minimal.hh"
-#include "base/energy/TemperatureModel.hh"
+#include "TemperatureModel_Verification.hh"
 
 namespace pism {
 
@@ -173,7 +173,7 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   if (biiSet) {
     if (testname == 'K') {
       m_log->message(1,
-                 "setting material properties of bedrock to those of ice in Test K\n");
+                     "setting material properties of bedrock to those of ice in Test K\n");
       m_config->set_double("energy.bedrock_thermal_density", m_config->get_double("constants.ice.density"));
       m_config->set_double("energy.bedrock_thermal_conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
       m_config->set_double("energy.bedrock_thermal_specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
@@ -206,14 +206,21 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   m_submodels["bedrock thermal layer"] = m_btu;
 }
 
-void IceCompModel::allocate_stressbalance() {
+void IceCompModel::allocate_energy_model() {
 
-  if (m_stress_balance != NULL) {
+  if (m_energy_model != NULL) {
     return;
   }
 
-  IceModel::allocate_stressbalance();
+  m_log->message(2, "# Allocating an energy balance model...\n");
+
+  // this switch changes Test K to make material properties for bedrock the same as for ice
+  bool bedrock_is_ice = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
+  m_energy_model = new energy::TemperatureModel_Verification(m_grid, m_stress_balance, testname, bedrock_is_ice);
+
+  m_submodels["energy balance model"] = m_energy_model;
 }
+
 
 void IceCompModel::allocate_bed_deformation() {
 
@@ -255,10 +262,6 @@ void IceCompModel::initialize_2d() {
   zero.create(m_grid, "temporary", WITHOUT_GHOSTS);
   zero.set(0.0);
   m_beddef->set_uplift(zero);
-
-  // this is the correct initialization for Test O (and every other
-  // test; they all generate zero basal melt rate)
-  m_energy_model->set_basal_melt_rate(zero);
 
   // Test-specific initialization:
   switch (testname) {
