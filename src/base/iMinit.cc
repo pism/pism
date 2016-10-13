@@ -175,14 +175,6 @@ void IceModel::model_state_setup() {
   // elevation-based parameterizations of surface temperature and/or mass balance).
   m_surface->init();
 
-  if (m_stress_balance) {
-    m_stress_balance->init();
-
-    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
-      m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
-    }
-  }
-
   if (m_subglacial_hydrology) {
     m_subglacial_hydrology->init();
   }
@@ -256,6 +248,15 @@ void IceModel::model_state_setup() {
       }
     }
     m_grid->variables().add(m_energy_model->get_enthalpy());
+  }
+
+  // this has to go after we add enthalpy to m_grid->variables()
+  if (m_stress_balance) {
+    m_stress_balance->init();
+
+    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
+      m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
+    }
   }
 
   // miscellaneous steps
