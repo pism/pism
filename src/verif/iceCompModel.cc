@@ -358,12 +358,13 @@ struct rgridReverseSort {
 
 void IceCompModel::initTestL() {
 
+  m_log->message(2, "* Initializing ice thickness and bed topography for test L...\n");
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order
   const int MM = m_grid->xm() * m_grid->ym();
 
-  std::vector<rgrid> rrv(MM);  // destructor at end of scope
+  std::vector<rgrid> rrv(MM);
   int k = 0;
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
