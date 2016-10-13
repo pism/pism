@@ -388,16 +388,16 @@ void IceModel::allocate_stressbalance() {
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(m_grid, EC);
+    sliding = new ZeroSliding(m_grid);
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(m_grid, EC);
+    sliding = new PrescribedSliding(m_grid);
   } else if (model == "ssa" || model == "ssa+sia") {
     std::string method = m_config->get_string("stress_balance.ssa.method");
 
     if (method == "fem") {
-      sliding = new SSAFEM(m_grid, EC);
+      sliding = new SSAFEM(m_grid);
     } else if (method == "fd") {
-      sliding = new SSAFD(m_grid, EC);
+      sliding = new SSAFD(m_grid);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid ssa method: %s", method.c_str());
     }
@@ -408,9 +408,9 @@ void IceModel::allocate_stressbalance() {
 
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(m_grid, EC);
+    modifier = new ConstantInColumn(m_grid);
   } else if (model == "prescribed_sliding+sia" || model == "ssa+sia" || model == "sia") {
-    modifier = new SIAFD(m_grid, EC);
+    modifier = new SIAFD(m_grid);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
   }

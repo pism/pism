@@ -36,8 +36,8 @@ namespace stressbalance {
  *
  *
  */
-SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SSA(g, e),
+SSAFEM::SSAFEM(IceGrid::ConstPtr g)
+  : SSA(g),
     m_gc(*m_config),
     m_element_index(*g),
     m_element(*g),
@@ -122,8 +122,8 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
                                 "", ""); // no units or standard name
 }
 
-SSA* SSAFEMFactory(IceGrid::ConstPtr g, EnthalpyConverter::Ptr ec) {
-  return new SSAFEM(g, ec);
+SSA* SSAFEMFactory(IceGrid::ConstPtr g) {
+  return new SSAFEM(g);
 }
 
 SSAFEM::~SSAFEM() {

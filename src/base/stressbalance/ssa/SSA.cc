@@ -70,8 +70,8 @@ double SSAStrengthExtension::get_min_thickness() const {
 }
 
 
-SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : ShallowStressBalance(g, e)
+SSA::SSA(IceGrid::ConstPtr g)
+  : ShallowStressBalance(g)
 {
   m_thickness = NULL;
   m_tauc = NULL;

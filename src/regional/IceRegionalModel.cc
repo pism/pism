@@ -143,22 +143,22 @@ void IceRegionalModel::allocate_stressbalance() {
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(m_grid, EC);
+    sliding = new ZeroSliding(m_grid);
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(m_grid, EC);
+    sliding = new PrescribedSliding(m_grid);
   } else if (model == "ssa" || model == "ssa+sia") {
-    sliding = new SSAFD_Regional(m_grid, EC);
+    sliding = new SSAFD_Regional(m_grid);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
   }
 
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(m_grid, EC);
+    modifier = new ConstantInColumn(m_grid);
   } else if (model == "prescribed_sliding+sia" ||
              model == "ssa+sia" ||
              model == "sia") {
-    modifier = new SIAFD_Regional(m_grid, EC);
+    modifier = new SIAFD_Regional(m_grid);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
   }

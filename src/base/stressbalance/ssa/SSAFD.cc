@@ -45,8 +45,8 @@ SSAFD::PicardFailure::PicardFailure(const std::string &message)
   // empty
 }
 
-SSA* SSAFDFactory(IceGrid::ConstPtr g, EnthalpyConverter::Ptr ec) {
-  return new SSAFD(g, ec);
+SSA* SSAFDFactory(IceGrid::ConstPtr g) {
+  return new SSAFD(g);
 }
 
 /*!
@@ -57,8 +57,8 @@ linear systems
   \f[ A x = b \f]
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
-SSAFD::SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SSA(g, e) {
+SSAFD::SSAFD(IceGrid::ConstPtr g)
+  : SSA(g) {
   m_b.create(m_grid, "right_hand_side", WITHOUT_GHOSTS);
 
   m_velocity_old.create(m_grid, "velocity_old", WITH_GHOSTS);

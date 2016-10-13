@@ -24,8 +24,8 @@ namespace pism {
 
 namespace stressbalance {
 
-SSAFD_Regional::SSAFD_Regional(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SSAFD(g, e) {
+SSAFD_Regional::SSAFD_Regional(IceGrid::ConstPtr g)
+  : SSAFD(g) {
   // empty
 }
 

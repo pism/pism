@@ -33,7 +33,7 @@ namespace stressbalance {
 class SSAFD : public SSA
 {
 public:
-  SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+  SSAFD(IceGrid::ConstPtr g);
   virtual ~SSAFD();
 
   virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
@@ -124,7 +124,7 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid::ConstPtr , EnthalpyConverter::Ptr);
+SSA * SSAFDFactory(IceGrid::ConstPtr grid);
 
 } // end of namespace stressbalance
 } // end of namespace pism

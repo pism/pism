@@ -29,7 +29,7 @@ namespace stressbalance {
 //! simulations.
 class SIAFD_Regional : public SIAFD {
 public:
-  SIAFD_Regional(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+  SIAFD_Regional(IceGrid::ConstPtr g);
   virtual ~SIAFD_Regional();
   virtual void init();
 protected:

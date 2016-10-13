@@ -36,8 +36,8 @@
 namespace pism {
 namespace stressbalance {
 
-SIAFD::SIAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SSB_Modifier(g, e) {
+SIAFD::SIAFD(IceGrid::ConstPtr g)
+  : SSB_Modifier(g) {
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 

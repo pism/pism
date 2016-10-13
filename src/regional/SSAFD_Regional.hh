@@ -30,7 +30,7 @@ namespace stressbalance {
 //! simulations.
 class SSAFD_Regional : public SSAFD {
 public:
-  SSAFD_Regional(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+  SSAFD_Regional(IceGrid::ConstPtr g);
   virtual ~SSAFD_Regional();
   virtual void init();
   virtual void compute_driving_stress(IceModelVec2V &taud) const;
