@@ -22,6 +22,7 @@
 #include "verif/tests/exactTestsFG.hh"
 #include "verif/tests/exactTestK.h"
 #include "verif/tests/exactTestO.h"
+#include "base/energy/utilities.hh"
 
 namespace pism {
 namespace energy {
@@ -62,6 +63,12 @@ void TemperatureModel_Verification::initialize_impl(const IceModelVec2S &basal_m
     TemperatureModel::initialize_impl(m_basal_melt_rate, ice_thickness, surface_temperature,
                                       climatic_mass_balance, basal_heat_flux);
   }
+
+  m_ice_temperature.update_ghosts();
+  m_basal_melt_rate.update_ghosts();
+
+  // this will update ghosts of m_ice_enthalpy
+  compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
 void TemperatureModel_Verification::initTestFG() {

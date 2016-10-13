@@ -58,8 +58,8 @@ void TemperatureModel::restart_impl(const PIO &input_file, int record) {
     compute_temperature(m_ice_enthalpy, ice_thickness, m_ice_temperature);
   }
 
-  regrid("Enthalpy-based energy balance model", m_basal_melt_rate);
-  regrid("Enthalpy-based energy balance model", m_ice_temperature);
+  regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+  regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
 
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
@@ -79,6 +79,9 @@ void TemperatureModel::bootstrap_impl(const PIO &input_file,
   bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
                             basal_heat_flux, m_ice_temperature);
 
+  regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+  regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
+
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
@@ -94,6 +97,9 @@ void TemperatureModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
 
   bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
                             basal_heat_flux, m_ice_temperature);
+
+  regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+  regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
 
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }

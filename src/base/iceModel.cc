@@ -346,10 +346,9 @@ void IceModel::createVecs() {
 
   // basal melt rate
   m_basal_melt_rate.create(m_grid, "bmelt", WITHOUT_GHOSTS);
-  // ghosted to allow the "redundant" computation of tauc
-  m_basal_melt_rate.set_attrs("model_state",
-                            "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
-                            "m s-1", "land_ice_basal_melt_rate");
+  m_basal_melt_rate.set_attrs("internal",
+                              "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
+                              "m s-1", "land_ice_basal_melt_rate");
   m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
   m_basal_melt_rate.write_in_glaciological_units = true;
   m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");

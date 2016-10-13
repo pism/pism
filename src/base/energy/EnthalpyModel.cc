@@ -43,7 +43,7 @@ void EnthalpyModel::restart_impl(const PIO &input_file, int record) {
   m_basal_melt_rate.read(input_file, record);
   init_enthalpy(input_file, false, record);
 
-  regrid("Energy balance model", m_basal_melt_rate);
+  regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
   regrid_enthalpy();
 }
 
@@ -62,7 +62,7 @@ void EnthalpyModel::bootstrap_impl(const PIO &input_file,
   bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
                          basal_heat_flux, m_ice_enthalpy);
 
-  regrid("Energy balance model", m_basal_melt_rate);
+  regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
   regrid_enthalpy();
 }
 
@@ -79,7 +79,7 @@ void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
   bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
                          basal_heat_flux, m_ice_enthalpy);
 
-  regrid("Energy balance model", m_basal_melt_rate);
+  regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
   regrid_enthalpy();
 }
 
