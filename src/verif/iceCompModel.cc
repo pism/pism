@@ -79,6 +79,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   case 'C':
   case 'D':
   case 'H':
+  case 'L':
     {
       m_config->set_string("stress_balance.sia.flow_law", "isothermal_glen");
       m_config->set_double("flow_law.isothermal_Glen.ice_softness", 1.0e-16 / secpera);
