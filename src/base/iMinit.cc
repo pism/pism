@@ -216,6 +216,9 @@ void IceModel::model_state_setup() {
 
   // Initialize the energy balance sub-model.
   {
+    IceModelVec2S &ice_surface_temperature = m_work2d[0];
+    IceModelVec2S &climatic_mass_balance   = m_work2d[1];
+
     switch (input.type) {
     case INIT_RESTART:
       {
@@ -224,12 +227,12 @@ void IceModel::model_state_setup() {
       }
     case INIT_BOOTSTRAP:
       {
-        m_surface->ice_surface_temperature(m_ice_surface_temp);
-        m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
+        m_surface->ice_surface_temperature(ice_surface_temperature);
+        m_surface->ice_surface_mass_flux(climatic_mass_balance);
         m_energy_model->bootstrap(input_file,
                                   m_ice_thickness,
-                                  m_ice_surface_temp,
-                                  m_climatic_mass_balance,
+                                  ice_surface_temperature,
+                                  climatic_mass_balance,
                                   m_btu->flux_through_top_surface());
         break;
       }
@@ -237,12 +240,12 @@ void IceModel::model_state_setup() {
     default:
       {
         m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
-        m_surface->ice_surface_temperature(m_ice_surface_temp);
-        m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
+        m_surface->ice_surface_temperature(ice_surface_temperature);
+        m_surface->ice_surface_mass_flux(climatic_mass_balance);
         m_energy_model->initialize(m_basal_melt_rate,
                                    m_ice_thickness,
-                                   m_ice_surface_temp,
-                                   m_climatic_mass_balance,
+                                   ice_surface_temperature,
+                                   climatic_mass_balance,
                                    m_btu->flux_through_top_surface());
 
       }

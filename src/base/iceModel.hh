@@ -249,16 +249,6 @@ protected:
   IceModelVec2S m_latitude;
   //! accumulated mass advected to a partially filled grid cell
   IceModelVec2S m_Href;
-  //! accumulation/ablation rate; no ghosts
-  IceModelVec2S m_climatic_mass_balance;
-  //! ice temperature at the ice surface but below firn; no ghosts
-  IceModelVec2S m_ice_surface_temp;
-  //! ice liquid water fraction at the top surface of the ice
-  IceModelVec2S m_liqfrac_surface;
-  //! ice temperature at the shelf base; no ghosts
-  IceModelVec2S m_shelfbtemp;
-  //! ice mass flux into the ocean at the shelf base; no ghosts
-  IceModelVec2S m_shelfbmassflux;
   //! cell areas (computed using the WGS84 datum)
   IceModelVec2S m_cell_area;
   //! flux divergence
@@ -347,7 +337,6 @@ protected:
 
   // see iMenergy.cc
   virtual void energyStep();
-  virtual void get_bed_top_temp(IceModelVec2S &result);
 
   virtual void combine_basal_melt_rate();
 
@@ -422,7 +411,7 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const int m_n_work2d = 2;
+  static const int m_n_work2d = 4;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
   // 3D working space
@@ -517,6 +506,15 @@ unsigned int count_CFL_violations(const IceModelVec3 &u3,
                                   const IceModelVec3 &v3,
                                   const IceModelVec2S &ice_thickness,
                                   double dt);
+
+void bedrock_surface_temperature(double sea_level,
+                                 const IceModelVec2CellType &cell_type,
+                                 const IceModelVec2S &bed_topography,
+                                 const IceModelVec2S &ice_thickness,
+                                 const IceModelVec2S &basal_enthalpy,
+                                 const IceModelVec2S &ice_surface_temperature,
+                                 IceModelVec2S &result);
+
 } // end of namespace pism
 
 #endif /* __iceModel_hh */

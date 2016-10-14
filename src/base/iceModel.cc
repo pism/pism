@@ -382,45 +382,6 @@ void IceModel::createVecs() {
     m_grid->variables().add(m_Href);
   }
 
-  if (m_config->get_boolean("fracture_density.enabled")) {
-
-    m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,
-                        2, // stencil width, has to match or exceed the "offset" in eigenCalving
-                        2);
-
-    m_strain_rates.metadata(0).set_name("eigen1");
-    m_strain_rates.set_attrs("internal",
-                           "major principal component of horizontal strain-rate",
-                           "second-1", "", 0);
-
-    m_strain_rates.metadata(1).set_name("eigen2");
-    m_strain_rates.set_attrs("internal",
-                           "minor principal component of horizontal strain-rate",
-                           "second-1", "", 1);
-  }
-
-  if (m_config->get_boolean("fracture_density.enabled")) {
-
-    m_deviatoric_stresses.create(m_grid, "sigma", WITH_GHOSTS,
-                               2, // stencil width
-                               3);
-
-    m_deviatoric_stresses.metadata(0).set_name("sigma_xx");
-    m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric stress in x direction",
-                                  "Pa", "", 0);
-
-    m_deviatoric_stresses.metadata(1).set_name("sigma_yy");
-    m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric stress in y direction",
-                                  "Pa", "", 1);
-
-    m_deviatoric_stresses.metadata(2).set_name("sigma_xy");
-    m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric shear stress",
-                                  "Pa", "", 2);
-  }
-
   if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
     // bc_locations
     m_ssa_dirichlet_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
@@ -466,53 +427,42 @@ void IceModel::createVecs() {
   m_cell_area.write_in_glaciological_units = true;
   m_grid->variables().add(m_cell_area);
 
-  // fields owned by IceModel but filled by SurfaceModel *surface:
-  // mean annual net ice equivalent surface mass balance rate
-  m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-  m_climatic_mass_balance.set_attrs("climate_from_SurfaceModel",  // FIXME: can we do better?
-                                  "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                  "kg m-2 s-1",
-                                  "land_ice_surface_specific_mass_balance_flux");
-  m_climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_climatic_mass_balance.write_in_glaciological_units = true;
-  m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
-
-  // annual mean air temperature at "ice surface", at level below all firn
-  //   processes (e.g. "10 m" or ice temperatures)
-  m_ice_surface_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-  m_ice_surface_temp.set_attrs("climate_from_SurfaceModel",  // FIXME: can we do better?
-                             "annual average ice surface temperature, below firn processes",
-                             "K",
-                             "");
-
-  m_liqfrac_surface.create(m_grid, "liqfrac_surface", WITHOUT_GHOSTS);
-  m_liqfrac_surface.set_attrs("climate_from_SurfaceModel",
-                            "liquid water fraction at the top surface of the ice",
-                            "1", "");
-  // grid.variables().add(liqfrac_surface);
-
-  // ice mass balance rate at the base of the ice shelf; sign convention for
-  //   vshelfbasemass matches standard sign convention for basal melt rate of
-  //   grounded ice
-  m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS); // no ghosts; NO HOR. DIFF.!
-  m_shelfbmassflux.set_attrs("climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                           "m s-1", "");
-  // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
-  // rescales from m second-1 to m year-1 when writing to NetCDF and std out:
-  m_shelfbmassflux.write_in_glaciological_units = true;
-  m_shelfbmassflux.metadata().set_string("glaciological_units", "m year-1");
-  // do not add; boundary models are in charge here
-  // grid.variables().add(shelfbmassflux);
-
-  // ice boundary tempature at the base of the ice shelf
-  m_shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS); // no ghosts; NO HOR. DIFF.!
-  m_shelfbtemp.set_attrs("climate_state", "absolute temperature at ice shelf base",
-                       "K", "");
-  // PROPOSED standard name = ice_shelf_basal_temperature
-  // do not add; boundary models are in charge here
-  // grid.variables().add(shelfbtemp);
-
   if (m_config->get_boolean("fracture_density.enabled")) {
+    {
+      m_deviatoric_stresses.create(m_grid, "sigma", WITH_GHOSTS,
+                                   2, // stencil width
+                                   3);
+
+      m_deviatoric_stresses.metadata(0).set_name("sigma_xx");
+      m_deviatoric_stresses.set_attrs("internal",
+                                      "deviatoric stress in x direction",
+                                      "Pa", "", 0);
+
+      m_deviatoric_stresses.metadata(1).set_name("sigma_yy");
+      m_deviatoric_stresses.set_attrs("internal",
+                                      "deviatoric stress in y direction",
+                                      "Pa", "", 1);
+
+      m_deviatoric_stresses.metadata(2).set_name("sigma_xy");
+      m_deviatoric_stresses.set_attrs("internal",
+                                      "deviatoric shear stress",
+                                      "Pa", "", 2);
+    }
+    {
+      m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,
+                            2, // stencil width, has to match or exceed the "offset" in eigenCalving
+                            2);
+
+      m_strain_rates.metadata(0).set_name("eigen1");
+      m_strain_rates.set_attrs("internal",
+                               "major principal component of horizontal strain-rate",
+                               "second-1", "", 0);
+
+      m_strain_rates.metadata(1).set_name("eigen2");
+      m_strain_rates.set_attrs("internal",
+                               "minor principal component of horizontal strain-rate",
+                               "second-1", "", 1);
+    }
     m_fracture = new FractureFields(m_grid);
 
     m_grid->variables().add(m_fracture->toughness);

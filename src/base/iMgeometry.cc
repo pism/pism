@@ -445,8 +445,9 @@ void IceModel::massContExplicitStep() {
     ice_density              = m_config->get_double("constants.ice.density"),
     meter_per_s_to_kg_per_m2 = m_dt * ice_density;
 
+  IceModelVec2S &climatic_mass_balance = m_work2d[2];
   assert(m_surface != NULL);
-  m_surface->ice_surface_mass_flux(m_climatic_mass_balance);
+  m_surface->ice_surface_mass_flux(climatic_mass_balance);
 
   IceModelVec2S &H_new = m_work2d[0];
   H_new.copy_from(m_ice_thickness);
@@ -467,7 +468,7 @@ void IceModel::massContExplicitStep() {
   list.add(m_basal_melt_rate);
   list.add(Qdiff);
   list.add(vel_advective);
-  list.add(m_climatic_mass_balance);
+  list.add(climatic_mass_balance);
   list.add(m_cell_type);
   list.add(H_new);
 
@@ -518,7 +519,7 @@ void IceModel::massContExplicitStep() {
       // Source terms:
       // Note: here we convert surface mass balance from [kg m-2 s-1] to [m s-1]:
       double
-        surface_mass_balance = m_climatic_mass_balance(i, j) / ice_density, // units: [m s-1]
+        surface_mass_balance = climatic_mass_balance(i, j) / ice_density, // units: [m s-1]
         basal_melt_rate      = 0.0, // units: [m s-1]
         H_to_Href_flux       = 0.0, // units: [m]
         Href_to_H_flux       = 0.0, // units: [m]
