@@ -161,6 +161,57 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
   return result;
 }
 
+//! Because of the -skip mechanism it is still possible that we can have CFL violations: count them.
+/*! This applies to the horizontal part of the 3D advection problem solved by AgeModel and the
+horizontal part of the 3D convection-diffusion problems solved by EnthalpyModel and
+TemperatureModel.
+*/
+unsigned int count_CFL_violations(const IceModelVec3 &u3,
+                                  const IceModelVec3 &v3,
+                                  const IceModelVec2S &ice_thickness,
+                                  double dt) {
+
+
+  IceGrid::ConstPtr grid = u3.get_grid();
+
+  const double
+    CFL_x = grid->dx() / dt,
+    CFL_y = grid->dy() / dt;
+
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(u3);
+  list.add(v3);
+
+  unsigned int CFL_violation_count = 0;
+  ParallelSection loop(grid->com);
+  try {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      const int ks = grid->kBelowHeight(ice_thickness(i,j));
+
+      const double
+        *u = u3.get_column(i, j),
+        *v = v3.get_column(i, j);
+
+      // check horizontal CFL conditions at each point
+      for (int k = 0; k <= ks; k++) {
+        if (fabs(u[k]) > CFL_x) {
+          CFL_violation_count += 1;
+        }
+        if (fabs(v[k]) > CFL_y) {
+          CFL_violation_count += 1;
+        }
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return (unsigned int)GlobalMax(grid->com, CFL_violation_count);
+}
 
 void IceModel::summary(bool tempAndAge) {
 

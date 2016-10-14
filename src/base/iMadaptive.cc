@@ -16,27 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petscvec.h>
-#include <sstream>
-#include <algorithm>
+#include <sstream>              // stringstream
+#include <algorithm>            // std::sort
 
 #include "iceModel.hh"
-#include "base/calving/EigenCalving.hh"
-#include "base/calving/vonMisesCalving.hh"
-#include "base/energy/BedThermalUnit.hh"
-#include "base/hydrology/PISMHydrology.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
-#include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMTime.hh"
-#include "base/util/error_handling.hh"
-#include "coupler/PISMOcean.hh"
-#include "coupler/PISMSurface.hh"
 #include "base/util/MaxTimestep.hh"
-#include "base/util/pism_utilities.hh"
-#include "base/age/AgeModel.hh"
-#include "base/energy/EnergyModel.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/util/PISMComponent.hh" // ...->max_timestep()
 
 namespace pism {
 
@@ -204,63 +193,6 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       skip_counter_result = 1;
     }
   }
-}
-
-
-//! Because of the -skip mechanism it is still possible that we can have CFL violations: count them.
-/*!
-This applies to the horizontal part of the three-dimensional advection problem
-solved by AgeModel and the advection, ice-only part of the problem solved by
-temperatureStep().
-
-Communication is needed to determine total CFL violation count over entire grid.
-It is handled by temperatureAgeStep(), not here.
-*/
-unsigned int count_CFL_violations(const IceModelVec3 &u3,
-                                  const IceModelVec3 &v3,
-                                  const IceModelVec2S &ice_thickness,
-                                  double dt) {
-
-
-  IceGrid::ConstPtr grid = u3.get_grid();
-
-  const double
-    CFL_x = grid->dx() / dt,
-    CFL_y = grid->dy() / dt;
-
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(u3);
-  list.add(v3);
-
-  unsigned int CFL_violation_count = 0;
-  ParallelSection loop(grid->com);
-  try {
-    for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      const int ks = grid->kBelowHeight(ice_thickness(i,j));
-
-      const double
-        *u = u3.get_column(i, j),
-        *v = v3.get_column(i, j);
-
-      // check horizontal CFL conditions at each point
-      for (int k = 0; k <= ks; k++) {
-        if (fabs(u[k]) > CFL_x) {
-          CFL_violation_count += 1;
-        }
-        if (fabs(v[k]) > CFL_y) {
-          CFL_violation_count += 1;
-        }
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  return (unsigned int)GlobalMax(grid->com, CFL_violation_count);
 }
 
 } // end of namespace pism

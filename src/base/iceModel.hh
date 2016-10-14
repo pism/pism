@@ -498,11 +498,6 @@ private:
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
-unsigned int count_CFL_violations(const IceModelVec3 &u3,
-                                  const IceModelVec3 &v3,
-                                  const IceModelVec2S &ice_thickness,
-                                  double dt);
-
 void bedrock_surface_temperature(double sea_level,
                                  const IceModelVec2CellType &cell_type,
                                  const IceModelVec2S &bed_topography,
