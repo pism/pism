@@ -137,11 +137,13 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
     assert(dt > 0.0);
   }
 
+  MaxTimestep cache_dt(dt, "ocean cache");
+
   MaxTimestep input_max_timestep = m_input_model->max_timestep(t);
-  if (input_max_timestep.is_finite()) {
-    return std::min(input_max_timestep, MaxTimestep(dt));
+  if (input_max_timestep.finite()) {
+    return std::min(input_max_timestep, cache_dt);
   } else {
-    return MaxTimestep(dt);
+    return cache_dt;
   }
 }
 

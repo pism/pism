@@ -41,7 +41,7 @@ protected:
                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   void compute_calving_rate(const IceModelVec2CellType &mask,
-                            IceModelVec2S &result);
+                            IceModelVec2S &result) const;
 
 protected:
   double m_K;

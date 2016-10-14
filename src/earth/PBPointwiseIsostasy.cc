@@ -48,7 +48,7 @@ void PBPointwiseIsostasy::init_impl() {
 
 MaxTimestep PBPointwiseIsostasy::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("bed_def iso");
 }
 
 //! Updates the pointwise isostasy model.

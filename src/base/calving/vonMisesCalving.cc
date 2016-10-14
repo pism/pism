@@ -63,7 +63,7 @@ void vonMisesCalving::init() {
   See equation (26) in [\ref Winkelmannetal2011].
 */
 void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
-                                           IceModelVec2S &result) {
+                                           IceModelVec2S &result) const {
 
   using std::max;
 

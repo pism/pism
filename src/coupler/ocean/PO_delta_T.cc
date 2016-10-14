@@ -57,7 +57,7 @@ void Delta_T::init_impl() {
 
 MaxTimestep Delta_T::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("ocean delta_T");
 }
 
 void Delta_T::shelf_base_temperature_impl(IceModelVec2S &result) const {

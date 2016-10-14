@@ -330,7 +330,7 @@ protected:
   // see iceModel.cc
   virtual void createVecs();
 
-  virtual double max_timestep_diffusivity();
+  virtual MaxTimestep max_timestep_diffusivity();
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 

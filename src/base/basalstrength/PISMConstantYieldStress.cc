@@ -59,7 +59,7 @@ void ConstantYieldStress::init_impl() {
 
 MaxTimestep ConstantYieldStress::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("constant yield stress");
 }
 
 void ConstantYieldStress::define_model_state_impl(const PIO &output) const {

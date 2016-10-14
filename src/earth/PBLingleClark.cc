@@ -111,7 +111,7 @@ void PBLingleClark::init_impl() {
 
 MaxTimestep PBLingleClark::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("bed_def lc");
 }
 
 void PBLingleClark::correct_topg() {

@@ -89,7 +89,7 @@ void WeatherStation::init_impl() {
 
 MaxTimestep WeatherStation::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere weather_station");
 }
 
 void WeatherStation::update_impl(double t, double dt) {

@@ -157,7 +157,7 @@ MaxTimestep SurfaceModel::max_timestep_impl(double my_t) const {
   if (m_atmosphere != NULL) {
     return m_atmosphere->max_timestep(my_t);
   } else {
-    return MaxTimestep();
+    return MaxTimestep("surface model");
   }
 }
 

@@ -121,7 +121,7 @@ void Routing::init() {
 
 MaxTimestep Routing::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("routing hydrology");
 }
 
 

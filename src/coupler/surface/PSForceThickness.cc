@@ -307,7 +307,7 @@ MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
   double max_dt = units::convert(m_sys, 2.0 / m_alpha, "years", "seconds");
   MaxTimestep input_max_dt = m_input_model->max_timestep(my_t);
 
-  return std::min(input_max_dt, MaxTimestep(max_dt));
+  return std::min(input_max_dt, MaxTimestep(max_dt, "surface forcing"));
 }
 
 

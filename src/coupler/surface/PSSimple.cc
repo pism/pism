@@ -52,7 +52,11 @@ void Simple::init_impl() {
 
 MaxTimestep Simple::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  if (m_atmosphere) {
+    return m_atmosphere->max_timestep(t);
+  } else {
+    return MaxTimestep("surface simple");
+  }
 }
 
 void Simple::update_impl(double my_t, double my_dt) {

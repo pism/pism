@@ -57,7 +57,7 @@ void Delta_P::init_impl() {
 
 MaxTimestep Delta_P::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere delta_P");
 }
 
 void Delta_P::init_timeseries_impl(const std::vector<double> &ts) const {

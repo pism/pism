@@ -47,13 +47,14 @@ void FrontalMelt::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &d
 }
 
 void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
-                                       IceModelVec2S &result) {
+                                       IceModelVec2S &result) const {
   (void) mask;
   (void) result;
 
   GeometryCalculator gc(*m_config);
 
-  m_ocean->shelf_base_mass_flux(m_shelf_base_mass_flux);
+  IceModelVec2S &shelf_base_mass_flux = m_tmp;
+  m_ocean->shelf_base_mass_flux(shelf_base_mass_flux);
 
   const IceModelVec2S
     &bed_elevation     = *m_grid->variables().get_2d_scalar("bedrock_altitude"),
@@ -68,7 +69,7 @@ void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
 
   IceModelVec::AccessList list;
   list.add(mask);
-  list.add(m_shelf_base_mass_flux);
+  list.add(shelf_base_mass_flux);
   list.add(bed_elevation);
   list.add(surface_elevation);
   list.add(ice_thickness);
@@ -93,7 +94,7 @@ void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
         const double H_submerged = (mask::grounded(m) ? std::max(sea_level - bed, 0.0) :
                                     alpha * H_threshold);
 
-        result(i, j) = (H_submerged / H_threshold) * m_shelf_base_mass_flux(i, j) / ice_density;
+        result(i, j) = (H_submerged / H_threshold) * shelf_base_mass_flux(i, j) / ice_density;
       } else {
         result(i, j) = 0.0;
       }

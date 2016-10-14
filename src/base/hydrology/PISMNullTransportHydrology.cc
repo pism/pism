@@ -70,9 +70,9 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
       T   = m_diffusion_time,
       K   = L * L / (2.0 * T);
 
-    return MaxTimestep(dx2 * dy2 / (2.0 * K * (dx2 + dy2)));
+    return MaxTimestep(dx2 * dy2 / (2.0 * K * (dx2 + dy2)), "null-transport hydrology");
   } else {
-    return MaxTimestep();
+    return MaxTimestep("null-transport hydrology");
   }
 }
 

@@ -59,7 +59,7 @@ void Delta_T::init_impl() {
 
 MaxTimestep Delta_T::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("surface delta_T");
 }
 
 void Delta_T::ice_surface_temperature_impl(IceModelVec2S &result) const {

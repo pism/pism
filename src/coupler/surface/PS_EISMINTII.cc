@@ -106,7 +106,7 @@ void EISMINTII::init_impl() {
 
 MaxTimestep EISMINTII::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("surface EISMINT-II");
 }
 
 void EISMINTII::initialize_using_formulas() {

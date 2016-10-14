@@ -86,7 +86,7 @@ void SeaRISEGreenland::precip_time_series_impl(int i, int j, std::vector<double>
 
 MaxTimestep SeaRISEGreenland::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere searise_greenland");
 }
 
 //! \brief Updates mean annual and mean July near-surface air temperatures.

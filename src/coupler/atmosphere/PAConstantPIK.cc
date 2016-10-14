@@ -109,7 +109,7 @@ void PIK::init_impl() {
 
 MaxTimestep PIK::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere PIK");
 }
 
 void PIK::update_impl(double, double) {

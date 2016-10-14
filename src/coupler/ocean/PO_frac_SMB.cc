@@ -58,7 +58,7 @@ void Frac_SMB::init_impl() {
 
 MaxTimestep Frac_SMB::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("ocean frac_SMB");
 }
 
 void Frac_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {

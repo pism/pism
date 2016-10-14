@@ -59,7 +59,7 @@ MaxTimestep DummyEnergyModel::max_timestep_impl(double t) const {
   (void) t;
 
   // no time step restriction
-  return MaxTimestep();
+  return MaxTimestep("dummy energy model");
 }
 
 

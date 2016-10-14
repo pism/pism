@@ -91,7 +91,7 @@ void IBSurfaceModel::init_impl() {
 
 MaxTimestep IBSurfaceModel::max_timestep_impl(double t) const {
   (void)t;
-  return MaxTimestep();
+  return MaxTimestep("surface icebin");
 }
 
 void IBSurfaceModel::update_impl(double my_t, double my_dt) {

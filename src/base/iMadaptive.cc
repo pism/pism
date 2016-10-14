@@ -50,7 +50,7 @@ dx^2/maxD (if dx=dy).
 
 Reference: [\ref MortonMayers] pp 62--63.
  */
-double IceModel::max_timestep_diffusivity() {
+MaxTimestep IceModel::max_timestep_diffusivity() {
   double D_max = m_stress_balance->max_diffusivity();
 
   if (D_max > 0.0) {
@@ -60,9 +60,11 @@ double IceModel::max_timestep_diffusivity() {
       adaptive_timestepping_ratio = m_config->get_double("time_stepping.adaptive_ratio"),
       grid_factor                 = 1.0 / (dx*dx) + 1.0 / (dy*dy);
 
-    return adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
+    return MaxTimestep(adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor),
+                       "diffusivity");
   } else {
-    return m_config->get_double("time_stepping.maximum_time_step", "seconds");
+    return MaxTimestep(m_config->get_double("time_stepping.maximum_time_step", "seconds"),
+                       "max time step");
   }
 }
 
@@ -110,124 +112,48 @@ by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived cl
 void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
 
   const double current_time = m_time->current();
-  const double time_to_end = m_time->end() - current_time;
 
-  // FIXME: we should probably create a std::vector<const Component_TS*>
-  // (or similar) and iterate over that instead.
-  std::map<std::string, double> dt_restrictions;
+  // get time-stepping restrictions from sub-models
+  std::vector<MaxTimestep> restrictions;
+  {
+    std::map<std::string, const Component*>::const_iterator k = m_submodels.begin();
+    for (; k != m_submodels.end(); ++k) {
+      const Component_TS* m = dynamic_cast<const Component_TS*>(k->second);
+      if (m != NULL) {
+        restrictions.push_back(m->max_timestep(current_time));
+      }
+    }
+  }
 
   // Always consider the maximum allowed time-step length.
   if (m_config->get_double("time_stepping.maximum_time_step") > 0.0) {
-    dt_restrictions["max"] = m_config->get_double("time_stepping.maximum_time_step", "seconds");
+    restrictions.push_back(MaxTimestep(m_config->get_double("time_stepping.maximum_time_step",
+                                                            "seconds"),
+                                       "max"));
   }
 
   // Never go past the end of a run.
+  const double time_to_end = m_time->end() - current_time;
   if (time_to_end > 0.0) {
-    dt_restrictions["end of the run"] = time_to_end;
+    restrictions.push_back(MaxTimestep(time_to_end, "end of the run"));
   }
 
-  //! Always apply the time-step restriction from the
-  //! -ts_{times,file,vars} mechanism (the user asked for it).
-  MaxTimestep ts_dt = ts_max_timestep(current_time);
-  if (ts_dt.is_finite()) {
-    dt_restrictions["-ts_... reporting"] = ts_dt.value();
-  }
-
-  //! Always apply the time-step restriction from the
-  //! -extra_{times,file,vars} mechanism (the user asked for it).
-  MaxTimestep extras_dt = extras_max_timestep(current_time);
-  if (extras_dt.is_finite()) {
-    dt_restrictions["-extra_... reporting"] = extras_dt.value();
-  }
-
-  MaxTimestep save_dt = save_max_timestep(current_time);
-  if (save_dt.is_finite()) {
-    dt_restrictions["-save_... reporting"] = save_dt.value();
-  }
-
+  // reporting
   {
-    // Query sub-models, which might add time-step restrictions.
-
-    MaxTimestep surface_dt = m_surface->max_timestep(current_time);
-    if (surface_dt.is_finite()) {
-      dt_restrictions["surface"] = surface_dt.value();
-    }
-
-    MaxTimestep ocean_dt = m_ocean->max_timestep(current_time);
-    if (ocean_dt.is_finite()) {
-      dt_restrictions["ocean"] = ocean_dt.value();
-    }
-
-    MaxTimestep hydrology_dt = m_subglacial_hydrology->max_timestep(current_time);
-    if (hydrology_dt.is_finite()) {
-      dt_restrictions["hydrology"] = hydrology_dt.value();
-    }
-
-    if (m_btu != NULL) {
-      MaxTimestep btu_dt = m_btu->max_timestep(current_time);
-      if (btu_dt.is_finite()) {
-        dt_restrictions["BTU"] = btu_dt.value();
-      }
-    }
-
-    if (m_energy_model != NULL) {
-      MaxTimestep energy_model_dt = m_energy_model->max_timestep(current_time);
-      if (energy_model_dt.is_finite()) {
-        dt_restrictions["energy balance model"] = energy_model_dt.value();
-      }
-    }
-
-    if (m_age_model != NULL) {
-      MaxTimestep age_dt = m_age_model->max_timestep(current_time);
-      if (age_dt.is_finite()) {
-        dt_restrictions["age"] = age_dt.value();
-      }
-    }
-
-    if (m_eigen_calving != NULL) {
-      MaxTimestep eigencalving_dt = m_eigen_calving->max_timestep();
-      if (eigencalving_dt.is_finite()) {
-        dt_restrictions["eigencalving"] = eigencalving_dt.value();
-      }
-    }
-
-    if (m_vonmises_calving != NULL) {
-      MaxTimestep vonmisescalving_dt = m_vonmises_calving->max_timestep();
-      if (vonmisescalving_dt.is_finite()) {
-        dt_restrictions["von Mises calving"] = vonmisescalving_dt.value();
-      }
-    }
-
-    if (m_config->get_boolean("geometry.update.enabled")) {
-      CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
-
-      if (cfl.dt_max.is_finite()) {
-        dt_restrictions["mass continuity (2D CFL)"] = cfl.dt_max.value();
-      }
-
-      dt_restrictions["diffusivity"] = max_timestep_diffusivity();
-    }
+    restrictions.push_back(ts_max_timestep(current_time));
+    restrictions.push_back(extras_max_timestep(current_time));
+    restrictions.push_back(save_max_timestep(current_time));
   }
 
-  // find the smallest of the max. time-steps reported by boundary models:
-  {
-    std::map<std::string, double>::const_iterator j = dt_restrictions.begin();
-    if (dt_restrictions["max"] > 0.0) {
-      m_adaptive_timestep_reason = "max";
-    } else {
-      m_adaptive_timestep_reason = j->first;
-    }
-    dt_result = dt_restrictions[m_adaptive_timestep_reason];
-    while (j != dt_restrictions.end()) {
-      if (j->second < dt_result) {
-        dt_result = j->second;
-        m_adaptive_timestep_reason = j->first;
-      }
-      ++j;
-    }
+  // mass continuity stability criteria
+  if (m_config->get_boolean("geometry.update.enabled")) {
+    CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
+
+    restrictions.push_back(MaxTimestep(cfl.dt_max.value(), "2D CFL"));
+    restrictions.push_back(max_timestep_diffusivity());
   }
 
-  // Hit multiples of X years, if requested (this has to go last):
+  // Hit multiples of X years, if requested.
   {
     const int timestep_hit_multiples = static_cast<int>(m_config->get_double("time_stepping.hit_multiples"));
     if (timestep_hit_multiples > 0) {
@@ -244,47 +170,39 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
         m_timestep_hit_multiples_last_time = next_time;
 
         std::stringstream str;
-        str << "(hit multiples of " << timestep_hit_multiples << " years; overrides " << m_adaptive_timestep_reason << ")";
-        m_adaptive_timestep_reason = str.str();
+        str << "hit multiples of " << timestep_hit_multiples << " years";
+
+        restrictions.push_back(MaxTimestep(next_time - current_time, str.str()));
+
       }
     }
   }
 
+  // sort time step restrictions to find the strictest one
+  std::sort(restrictions.begin(), restrictions.end());
 
-  if (dt_restrictions["diffusivity"] > 0.0) {
-    double dt_diffusivity = dt_restrictions["diffusivity"];
+  // note that restrictions has at least 2 elements
+  // the first element is the max time step we can take
+  MaxTimestep dt_max = restrictions[0];
+  MaxTimestep dt_other = restrictions[1];
+  dt_result = dt_max.value();
+  m_adaptive_timestep_reason = (dt_max.description() +
+                                " (overrides " + dt_other.description() + ")");
 
-    // remove the max. time-step corresponding to the diffusivity
-    // stability criterion and find the smallest one again:
-    dt_restrictions.erase("diffusivity");
-    std::map<std::string, double>::const_iterator j = dt_restrictions.begin();
-    double dt_other = j->second;
-    std::string other_reason = j->first;
-    while (j != dt_restrictions.end()) {
-      if (j->second < dt_other) {
-        dt_other = j->second;
-        other_reason = j->first;
-      }
-      ++j;
+  // the "skipping" mechanism
+  {
+    if (dt_max.description() == "diffusivity" and skip_counter_result == 0) {
+      skip_counter_result = skip_counter(dt_other.value(), dt_max.value());
     }
 
-    if (dt_diffusivity < dt_other) {
-      m_adaptive_timestep_reason += " (overrides " + other_reason + ")";
+    // "max" and "end of the run" limit the "big" time-step (in
+    // the context of the "skipping" mechanism), so we might need to
+    // reset the skip_counter_result to 1.
+    if ((m_adaptive_timestep_reason == "max" ||
+         m_adaptive_timestep_reason == "end of the run") &&
+        skip_counter_result > 1) {
+      skip_counter_result = 1;
     }
-
-    if (skip_counter_result == 0) {
-      skip_counter_result = skip_counter(dt_other, dt_diffusivity);
-    }
-  }
-
-  // "max", "internal (derived class)", and "end of the run" limit the "big" time-step (in
-  // the context of the "skipping" mechanism), so we might need to
-  // reset the skip_counter_result to 1.
-  if ((m_adaptive_timestep_reason == "max" ||
-       m_adaptive_timestep_reason == "internal (derived class)" ||
-       m_adaptive_timestep_reason == "end of the run") &&
-      skip_counter_result > 1) {
-    skip_counter_result = 1;
   }
 }
 

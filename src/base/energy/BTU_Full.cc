@@ -165,7 +165,7 @@ MaxTimestep BTU_Full::max_timestep_impl(double t) const {
 
   const double dz = vertical_spacing();
   // max dt from stability; in seconds
-  return MaxTimestep(dz * dz / (2.0 * m_D));
+  return MaxTimestep(dz * dz / (2.0 * m_D), "bedrock thermal layer");
 }
 
 
@@ -222,7 +222,7 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
 
   // CHECK: is desired time-step too long?
   MaxTimestep max_dt = max_timestep(t);
-  if (max_dt.is_finite() and max_dt.value() < dt) {
+  if (max_dt.finite() and max_dt.value() < dt) {
     throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Full::update() thinks you asked for too big a timestep.");
   }
 

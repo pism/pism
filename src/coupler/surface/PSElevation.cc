@@ -167,7 +167,7 @@ void Elevation::init_impl() {
 
 MaxTimestep Elevation::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("surface 'elevation'");
 }
 
 void Elevation::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input)

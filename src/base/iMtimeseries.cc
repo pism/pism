@@ -477,7 +477,8 @@ void IceModel::write_extras() {
   profiling.end("extra_file reporting");
 }
 
-static MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t) {
+static MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
+                                          const std::string &description) {
 
   const size_t N = times.size();
   if (t >= times.back()) {
@@ -498,12 +499,12 @@ static MaxTimestep reporting_max_timestep(const std::vector<double> &times, doub
   // second long
   if (dt < 1.0) {
     if (j + 2 < N) {
-      return MaxTimestep(times[j + 2] - t);
+      return MaxTimestep(times[j + 2] - t, description);
     } else {
-      return MaxTimestep();
+      return MaxTimestep(description);
     }
   } else {
-    return MaxTimestep(dt);
+    return MaxTimestep(dt, description);
   }
 }
 
@@ -512,10 +513,10 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not m_save_extra) or
       (not m_config->get_boolean("time_stepping.hit_extra_times"))) {
-    return MaxTimestep();
+    return MaxTimestep("reporting (-extra_times)");
   }
 
-  return reporting_max_timestep(m_extra_times, my_t);
+  return reporting_max_timestep(m_extra_times, my_t, "reporting (-extra_times)");
 }
 
 //! Computes the maximum time-step we can take and still hit all `-extra_times`.
@@ -523,10 +524,10 @@ MaxTimestep IceModel::save_max_timestep(double my_t) {
 
   if ((not m_save_snapshots) or
       (not m_config->get_boolean("time_stepping.hit_save_times"))) {
-    return MaxTimestep();
+    return MaxTimestep("reporting (-save_times)");
   }
 
-  return reporting_max_timestep(m_snapshot_times, my_t);
+  return reporting_max_timestep(m_snapshot_times, my_t, "reporting (-save_times)");
 }
 
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.
@@ -534,10 +535,10 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
   if ((not m_save_ts) or
       (not m_config->get_boolean("time_stepping.hit_ts_times"))) {
-    return MaxTimestep();
+    return MaxTimestep("reporting (-ts_times)");
   }
 
-  return reporting_max_timestep(m_ts_times, my_t);
+  return reporting_max_timestep(m_ts_times, my_t, "reporting (-ts_times)");
 }
 
 //! Flush scalar time-series.

@@ -188,7 +188,7 @@ MaxTimestep AgeModel::max_timestep_impl(double t) const {
                                   " Cannot compute max. time step.");
   }
 
-  return m_stress_balance->max_timestep_cfl_3d().dt_max;
+  return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "age model");
 }
 
 void AgeModel::update_impl(double t, double dt) {

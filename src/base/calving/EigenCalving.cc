@@ -58,7 +58,7 @@ void EigenCalving::init() {
   See equation (26) in [\ref Winkelmannetal2011].
 */
 void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
-                                        IceModelVec2S &result) {
+                                        IceModelVec2S &result) const {
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;

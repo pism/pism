@@ -208,7 +208,7 @@ void init_step(Component_TS &model, const Time& time) {
     max_dt = MaxTimestep(1.0);
   }
 
-  assert(max_dt.is_finite() == true);
+  assert(max_dt.finite() == true);
 
   model.update(now, max_dt.value());
 }

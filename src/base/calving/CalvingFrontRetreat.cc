@@ -29,7 +29,7 @@
 namespace pism {
 
 CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
-  : Component(g) {
+  : Component_TS(g) {
 
   m_tmp.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
   m_tmp.set_attrs("internal", "additional mass loss at points near the calving front",
@@ -65,7 +65,8 @@ CalvingFrontRetreat::~CalvingFrontRetreat() {
  *
  * @return 0 on success
  */
-MaxTimestep CalvingFrontRetreat::max_timestep() {
+MaxTimestep CalvingFrontRetreat::max_timestep_impl(double t) const {
+  (void) t;
 
   if (not m_restrict_timestep) {
     return MaxTimestep();
@@ -83,15 +84,15 @@ MaxTimestep CalvingFrontRetreat::max_timestep() {
 
   m_mask.copy_from(mask);
 
-  compute_calving_rate(m_mask, m_horizontal_calving_rate);
+  IceModelVec2S &horizontal_calving_rate = m_tmp;
+  compute_calving_rate(m_mask, horizontal_calving_rate);
 
-  IceModelVec::AccessList list;
-  list.add(m_horizontal_calving_rate);
+  IceModelVec::AccessList list(horizontal_calving_rate);
 
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    const double C = m_horizontal_calving_rate(i, j);
+    const double C = horizontal_calving_rate(i, j);
 
     if (C > 0.0) {
       N_calving_cells   += 1;
@@ -292,6 +293,14 @@ void CalvingFrontRetreat::update(double dt,
   // update mask again
   gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
 }
+
+void CalvingFrontRetreat::update_impl(double t, double dt) {
+  (void) t;
+  (void) dt;
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "update(t, dt) is not implemented");
+}
+
 
 const IceModelVec2S& CalvingFrontRetreat::calving_rate() const {
   return m_horizontal_calving_rate;

@@ -88,7 +88,7 @@ void StuffAsAnomaly::init_impl() {
 
 MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("surface turn_into_anomaly");
 }
 
 void StuffAsAnomaly::update_impl(double my_t, double my_dt) {

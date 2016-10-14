@@ -55,7 +55,7 @@ void Frac_P::init_impl() {
 
 MaxTimestep Frac_P::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere frac_P");
 }
 
 void Frac_P::init_timeseries_impl(const std::vector<double> &ts) const {

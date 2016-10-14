@@ -58,7 +58,7 @@ void PaleoPrecip::init_impl() {
 
 MaxTimestep PaleoPrecip::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere paleo_precip");
 }
 
 void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {

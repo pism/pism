@@ -260,7 +260,7 @@ void MohrCoulombYieldStress::init_impl() {
 
 MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("Mohr-Coulomb yield stress");
 }
 
 void MohrCoulombYieldStress::set_till_friction_angle(const IceModelVec2S &input) {

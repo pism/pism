@@ -76,7 +76,7 @@ void Verification::write_model_state_impl(const PIO &output) const {
 
 MaxTimestep Verification::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("verification surface model");
 }
 
 /** Initialize climate inputs of tests K and O.

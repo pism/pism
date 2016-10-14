@@ -23,33 +23,57 @@ namespace pism {
 
 // Time step restrictions
 MaxTimestep::MaxTimestep()
-  : m_is_finite(false), m_value(0.0) {
+  : m_finite(false), m_value(0.0) {
   // empty
 }
 
 MaxTimestep::MaxTimestep(double v)
-  : m_is_finite(true), m_value(v) {
+  : m_finite(true), m_value(v) {
   // empty
 }
 
-bool MaxTimestep::is_finite() const {
-  return m_is_finite;
+MaxTimestep::MaxTimestep(const std::string &new_description)
+  : m_finite(false), m_value(0.0), m_description(new_description) {
+  // empty
+}
+
+MaxTimestep::MaxTimestep(double v, const std::string &new_description)
+  : m_finite(true), m_value(v), m_description(new_description) {
+  // empty
+}
+
+bool MaxTimestep::finite() const {
+  return m_finite;
+}
+
+bool MaxTimestep::infinite() const {
+  return not m_finite;
 }
 
 double MaxTimestep::value() const {
   return m_value;
 }
 
+std::string MaxTimestep::description() const {
+  return m_description;
+}
+
 bool operator==(const MaxTimestep &a, const MaxTimestep &b) {
-  return (a.is_finite() == b.is_finite()) and (a.value() == b.value());
+  if (a.finite() and b.finite()) {
+    return a.value() == b.value();
+  } else if (a.infinite() and b.infinite()) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool operator<(const MaxTimestep &a, const MaxTimestep &b) {
-  if (a.is_finite() and b.is_finite()) {
+  if (a.finite() and b.finite()) {
     return a.value() < b.value();
-  } else if (a.is_finite()) {
+  } else if (a.finite()) {
     return true;
-  } else if (b.is_finite()) {
+  } else if (b.finite()) {
     return false;
   } else {
     return false;
