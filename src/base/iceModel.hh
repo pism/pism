@@ -133,7 +133,6 @@ public:
   virtual void allocate_iceberg_remover();
 
   virtual void model_state_setup();
-  virtual void allocate_internal_objects();
   virtual void misc_setup();
   virtual void init_diagnostics();
   virtual void init_calving();
@@ -413,9 +412,6 @@ protected:
   // working space (a convenience)
   static const int m_n_work2d = 4;
   mutable IceModelVec2S m_work2d[m_n_work2d];
-
-  // 3D working space
-  IceModelVec3 m_work3d;
 
   stressbalance::StressBalance *m_stress_balance;
 

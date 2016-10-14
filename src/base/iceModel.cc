@@ -213,6 +213,19 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_fracture = NULL;
 
   reset_counters();
+
+  // allocate temporary storage
+  {
+    const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+
+    // various internal quantities
+    // 2d work vectors
+    for (int j = 0; j < m_n_work2d; j++) {
+      char namestr[30];
+      snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
+      m_work2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
+    }
+  }
 }
 
 IceModel::FluxCounters IceModel::cumulative_fluxes() const {
@@ -809,9 +822,6 @@ void IceModel::init() {
 
   //! 4) Allocate PISM components modeling some physical processes.
   allocate_submodels();
-
-  //! 5) Allocate work vectors:
-  allocate_internal_objects();
 
   //! 6) Initialize coupler models and fill the model state variables
   //! (from a PISM output file, from a bootstrapping file using some

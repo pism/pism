@@ -141,9 +141,9 @@ This method should be kept because it is worth having alternative physics, and
 
     An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
-    In this procedure two scalar fields are modified: basal_melt_rate and m_work3d.
+    In this procedure two scalar fields are modified: basal_melt_rate and m_work.
     But basal_melt_rate will never need to communicate ghosted values (horizontal stencil
-    neighbors).  The ghosted values for m_ice_temperature are updated from the values in m_work3d in the
+    neighbors).  The ghosted values for m_ice_temperature are updated from the values in m_work in the
     communication done by energyStep().
 
   The (older) scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is

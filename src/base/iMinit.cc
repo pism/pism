@@ -629,26 +629,6 @@ void IceModel::allocate_couplers() {
   }
 }
 
-
-//! Allocates work vectors.
-void IceModel::allocate_internal_objects() {
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
-
-  // various internal quantities
-  // 2d work vectors
-  for (int j = 0; j < m_n_work2d; j++) {
-    char namestr[30];
-    snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
-    m_work2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
-  }
-
-  // 3d work vectors
-  m_work3d.create(m_grid,"work_vector_3d",WITHOUT_GHOSTS);
-  m_work3d.set_attrs("internal",
-                    "e.g. new values of temperature or age or enthalpy during time step",
-                    "", "");
-}
-
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
 void IceModel::misc_setup() {
 
