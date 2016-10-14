@@ -58,11 +58,6 @@ protected:
   // related to tests A B C D H
   void initTestABCDH();
 
-  // test E only
-  void computeBasalVelocityErrors(double &exactmaxspeed,
-                                            double &gmaxvecerr, double &gavvecerr,
-                                            double &gmaxuberr, double &gmaxvberr);
-
   void reset_thickness_test_A();
 
   // related to test L
