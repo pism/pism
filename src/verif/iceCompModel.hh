@@ -45,7 +45,7 @@ public:
 
 protected:
   // related to all (or most) tests
-  int testname;
+  int m_testname;
 
   virtual void additionalAtEndTimestep();
   // all tests except K
@@ -66,7 +66,7 @@ protected:
   void reset_thickness_test_A();
 
   // related to test L
-  IceModelVec2S   vHexactL;
+  IceModelVec2S m_HexactL;
   void initTestL();
 
   // related to tests F G; see iCMthermo.cc
@@ -85,7 +85,7 @@ protected:
   void computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
                                               double &gmaxWerr, double &gavWerr); // scalar errors
   
-  IceModelVec3   strain_heating3_comp;
+  IceModelVec3 m_strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc
   void initTestsKO();
@@ -99,17 +99,15 @@ protected:
   // using Van der Veen's exact solution to test CFBC and the part-grid code
   void test_V_init();
 
-  static const double secpera;
-
 private:
   double m_f;       // ratio of ice density to bedrock density
   bool m_bedrock_is_ice_forK;
 
   // see iCMthermo.cc
-  static const double ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
-  static const double Tmin;    // K;       minimum temperature (at center)
-  static const double LforFG;  // m;  exact radius of tests F&G ice sheet
-  static const double ApforG;  // m;  magnitude A_p of annular perturbation for test G;
+  static const double m_ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
+  static const double m_Tmin;    // K;       minimum temperature (at center)
+  static const double m_LforFG;  // m;  exact radius of tests F&G ice sheet
+  static const double m_ApforG;  // m;  magnitude A_p of annular perturbation for test G;
   // period t_p is set internally to 2000 years
 };
 

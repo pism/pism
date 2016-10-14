@@ -117,9 +117,7 @@ void TemperatureModel_Verification::initTestsKO() {
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      m_ice_temperature.set_column(i, j, &T_column[0]);
+      m_ice_temperature.set_column(p.i(), p.j(), &T_column[0]);
     }
   } catch (...) {
     loop.failed();
