@@ -31,8 +31,6 @@
 
 namespace pism {
 
-// FIXME: remove unused commented-out code.
-
 //! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
 
 void IceModel::calculateFractureDensity() {

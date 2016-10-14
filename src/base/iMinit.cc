@@ -566,17 +566,6 @@ void IceModel::allocate_basal_yield_stress() {
  */
 void IceModel::allocate_submodels() {
 
-  // FIXME: someday we will have an "energy balance" sub-model...
-  if (m_config->get_boolean("energy.enabled") == true) {
-    if (not m_config->get_boolean("energy.temperature_based")) {
-      m_log->message(2,
-                 "* Using the enthalpy-based energy balance model...\n");
-    } else {
-      m_log->message(2,
-                 "* Using the temperature-based energy balance model...\n");
-    }
-  }
-
   allocate_iceberg_remover();
 
   allocate_stressbalance();
