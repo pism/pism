@@ -27,8 +27,7 @@
 namespace pism {
 namespace ocean {
 
-class Cavity : public PGivenClimate<OceanModifier,OceanModel>
-{
+class Cavity : public PGivenClimate<OceanModifier,OceanModel> {
 public:
   Cavity(IceGrid::ConstPtr g);
   virtual ~Cavity();
@@ -54,7 +53,6 @@ public:
   };
 
 protected:
-
   virtual void update_impl(double my_t, double my_dt);
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
@@ -66,20 +64,17 @@ protected:
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 
+  std::vector<IceModelVec*> m_variables;
   Timeseries *delta_T;
   double delta_T_factor;
   double temp_anomaly;
-
-
-  bool
-  ocean_oceanboxmodel_deltaT_set,
-        omeans_set,
-        roundbasins_set,
-        continental_shelf_depth_set,
-        exicerises_set;
+  bool ocean_oceanboxmodel_deltaT_set,
+       omeans_set,
+       roundbasins_set,
+       continental_shelf_depth_set,
+       exicerises_set;
 
 private:
-
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux,
                   basins,
@@ -99,13 +94,14 @@ private:
                   heatflux,
                   basalmeltrate_shelf;
 
-  const IceModelVec2CellType m_mask;
+  // const IceModelVec2CellType m_mask;
 
   IceModelVec2T   *m_theta_ocean,
                   *m_salinity_ocean;
 
-  IceModelVec2S   *ice_thickness,
-                  *topg;  // not owned by this class
+  // The following are declared within POcavity.cc
+  // IceModelVec2S   *ice_thickness;
+                  // *topg;  // not owned by this class
 
   IceModelVec2Int *mask;  // not owned by this class
 
@@ -137,15 +133,15 @@ private:
                     imask_exclude,
                     imask_unidentified;
 
-  PetscScalar     counter_box_unidentified,
-                  counter_floating,
-                  numberOfBoxes; // number of OBM-Boxes, there is one more box where Beckmann-Goose is computed..
+  double counter_box_unidentified,
+         counter_floating,
+          // number of OBM-Boxes, there is one more box where Beckmann-Goose is computed..
+         numberOfBoxes;
 
   std::vector<double> Toc_base_vec,
                       Soc_base_vec,
                       gamma_T_star_vec,
                       C_vec,
-
                       mean_salinity_boundary_vector, //FIXME rename these, used at all boundaries
                       mean_temperature_boundary_vector,
                       mean_meltrate_boundary_vector,

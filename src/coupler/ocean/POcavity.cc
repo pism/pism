@@ -109,6 +109,8 @@ Cavity::Cavity(IceGrid::ConstPtr g)
 
   process_options();
 
+  exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in ocean cavity model");
+
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
 
@@ -135,27 +137,29 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   m_shelfbtemp.set_attrs("climate_forcing",
                               "absolute temperature at ice shelf base",
                               "Kelvin", "");
+  m_variables.push_back(&m_shelfbtemp);
 
   m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
   m_shelfbmassflux.set_attrs("climate_forcing",
                                   "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
                                   "kg m-2 s-1", "");
   m_shelfbmassflux.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  m_variables.push_back(&m_shelfbmassflux);
 
-  //////////////////////////////////////////////////////////////////////////
-
-  // mask to identify the ocean boxes
   basins.create(m_grid, "basins", WITH_GHOSTS);
   basins.set_attrs("model_state", "basins for ocean cavitiy model","", "");
+  m_variables.push_back(&basins);
 
   // mask to identify the ocean boxes
   BOXMODELmask.create(m_grid, "BOXMODELmask", WITH_GHOSTS);
   BOXMODELmask.set_attrs("model_state", "mask displaying ocean box model grid","", "");
+  m_variables.push_back(&BOXMODELmask);
 
   // mask to identify the grounded ice rises
   ICERISESmask.create(m_grid, "ICERISESmask", WITH_GHOSTS);
   ICERISESmask.set_attrs("model_state", "mask displaying ice rises","", "");
-  exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in ocean cavity model");
+  m_variables.push_back(&ICERISESmask);
+
   // mask displaying continental shelf - region where mean salinity and ocean temperature is calculated
   OCEANMEANmask.create(m_grid, "OCEANMEANmask", WITH_GHOSTS);
   OCEANMEANmask.set_attrs("model_state", "mask displaying ocean region for parameter input","", "");
@@ -163,43 +167,57 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   // mask with distance (in boxes) to grounding line
   DistGL.create(m_grid, "DistGL", WITH_GHOSTS);
   DistGL.set_attrs("model_state", "mask displaying distance to grounding line","", "");
+  m_variables.push_back(&DistGL);
+
   // mask with distance (in boxes) to ice front
   DistIF.create(m_grid, "DistIF", WITH_GHOSTS);
   DistIF.set_attrs("model_state", "mask displaying distance to ice shelf calving front","", "");
+  m_variables.push_back(&DistIF);
 
   // salinity
   Soc.create(m_grid, "Soc", WITHOUT_GHOSTS);
   Soc.set_attrs("model_state", "ocean salinity field","", "ocean salinity field");  //NOTE unit=psu
+  m_variables.push_back(&Soc);
 
   Soc_base.create(m_grid, "Soc_base", WITHOUT_GHOSTS);
   Soc_base.set_attrs("model_state", "ocean base salinity field","", "ocean base salinity field");  //NOTE unit=psu
+  m_variables.push_back(&Soc_base);
 
   // temperature
   Toc.create(m_grid, "Toc", WITHOUT_GHOSTS);
   Toc.set_attrs("model_state", "ocean temperature field","K", "ocean temperature field");
+  m_variables.push_back(&Toc);
 
   Toc_base.create(m_grid, "Toc_base", WITHOUT_GHOSTS);
   Toc_base.set_attrs("model_state", "ocean base temperature","K", "ocean base temperature");
+  m_variables.push_back(&Toc_base);
 
   Toc_inCelsius.create(m_grid, "Toc_inCelsius", WITHOUT_GHOSTS);
   Toc_inCelsius.set_attrs("model_state", "ocean box model temperature field","degree C", "ocean box model temperature field");
+  m_variables.push_back(&Toc_inCelsius);
 
   T_star.create(m_grid, "T_star", WITHOUT_GHOSTS);
   T_star.set_attrs("model_state", "T_star field","degree C", "T_star field");
+  m_variables.push_back(&T_star);
 
   Toc_anomaly.create(m_grid, "Toc_anomaly", WITHOUT_GHOSTS);
   Toc_anomaly.set_attrs("model_state", "ocean temperature anomaly","K", "ocean temperature anomaly");
+  m_variables.push_back(&Toc_anomaly);
 
   overturning.create(m_grid, "overturning", WITHOUT_GHOSTS);
   overturning.set_attrs("model_state", "cavity overturning","m^3 s-1", "cavity overturning"); // no CF standard_name?
+  m_variables.push_back(&overturning);
 
   heatflux.create(m_grid, "ocean heat flux", WITHOUT_GHOSTS);
   heatflux.set_attrs("climate_state", "ocean heat flux", "W/m^2", "");
+  m_variables.push_back(&heatflux);
 
   basalmeltrate_shelf.create(m_grid, "basal melt rate from ocean box model", WITHOUT_GHOSTS);
   basalmeltrate_shelf.set_attrs("climate_state", "basal melt rate from ocean box model", "m/s", "");
   //FIXME unit in field is kg m-2 a-1, but the written unit is m per a
   basalmeltrate_shelf.metadata().set_string("glaciological_units", "m year-1");
+  m_variables.push_back(&basalmeltrate_shelf);
+
 }
 
 Cavity::~Cavity() {
@@ -208,11 +226,39 @@ Cavity::~Cavity() {
 
 void Cavity::init_impl() {
 
-  m_log->message(2,
-       "* Initializing the Potsdam Cavity Model for the ocean ...\n");
+  m_log->message(2, "* Initializing the Potsdam Cavity Model for the ocean ...\n");
+
+
+  InputOptions opts = process_input_options(m_grid->com);
+
+  const double theta_std = -1.;
+  const double sal_std = 35.;
+
+  switch (opts.type) {
+  case INIT_RESTART:
+    m_theta_ocean->read(opts.filename, opts.record);
+    m_salinity_ocean->read(opts.filename, opts.record);
+    break;
+  case INIT_BOOTSTRAP:
+    m_theta_ocean->regrid(opts.filename, OPTIONAL, theta_std);
+    m_salinity_ocean->regrid(opts.filename, OPTIONAL, sal_std);
+    break;
+  case INIT_OTHER:
+  default:
+    m_theta_ocean->set(theta_std);
+    m_salinity_ocean->set(sal_std);
+    // FIXME: what to do here
+  }
+
+  regrid("PotsdamCavityModel", m_theta_ocean);
+  regrid("PotsdamCavityModel", m_salinity_ocean);
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
+  // ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  // topg = m_grid->variables().get_2d_scalar("bedrock_altitude");
+  // mask = m_grid->variables().get_2d_mask("mask");
+  // basins = m_grid->variables().get_2d_scalar("drainage_basins"); // if option drainageBasins
   // NOTE: to delete. Should be read later directly
   // ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   // if (ice_thickness == NULL) {SETERRQ( 1, "ERROR: ice thickness is not available");}
@@ -294,21 +340,20 @@ void Cavity::add_vars_to_output_impl(const std::string &keyword, std::set<std::s
   }
 }
 
-
 void Cavity::define_variables_impl(const std::set<std::string> &vars,
                                            const PIO &nc, IO_Type nctype) {
 
   PGivenClimate<OceanModifier,OceanModel>::define_variables_impl(vars, nc, nctype);
 
-  if (set_contains(vars, m_shelfbtemp)) {
-    m_shelfbtemp.define(nc, nctype);
+  for (unsigned int k = 0; k < m_variables.size(); ++k) {
+    IceModelVec *v = m_variables[k];
+    std::string name = v->metadata().get_string("short_name");
+    if (set_contains(vars, name)) {
+      v->define(nc, nctype);
+    }
   }
 
-  if (set_contains(vars, m_shelfbmassflux)) {
-    m_shelfbmassflux.define(nc, nctype);
-  }
 }
-
 
 void Cavity::shelf_base_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelfbtemp);
@@ -331,31 +376,15 @@ void Cavity::write_variables_impl(const std::set<std::string> &vars, const PIO& 
 
   PGivenClimate<OceanModifier,OceanModel>::write_variables_impl(vars, nc);
 
-  if (set_contains(vars, m_shelfbtemp)) { m_shelfbtemp.write(nc); }
-  if (set_contains(vars, m_shelfbmassflux)) { m_shelfbmassflux.write(nc); }
-  if (set_contains(vars, basins)) { basins.write(nc); }
-  if (set_contains(vars, BOXMODELmask)) { BOXMODELmask.write(nc); }
-  if (set_contains(vars, OCEANMEANmask)) { OCEANMEANmask.write(nc); }
-  if (set_contains(vars, DistGL)) { DistGL.write(nc);}
-  if (set_contains(vars, DistIF)) { DistIF.write(nc); }
-  if (set_contains(vars, Soc)) { Soc.write(nc);  }
-  if (set_contains(vars, Soc_base)) { Soc_base.write(nc);  }
-  if (set_contains(vars, Toc)) { Toc.write(nc);  }
-  if (set_contains(vars, Toc_base)) { Toc_base.write(nc);   }
-  if (set_contains(vars, Toc_inCelsius)) { Toc_inCelsius.write(nc);   }
-  if (set_contains(vars, T_star)) { T_star.write(nc);   }
-  if (set_contains(vars, Toc_anomaly)) { Toc_anomaly.write(nc);  }
-  if (set_contains(vars, overturning)) { overturning.write(nc);  }
-  if (set_contains(vars, heatflux)) { heatflux.write(nc);   }
-  if (set_contains(vars, basalmeltrate_shelf)) {  basalmeltrate_shelf.write(nc);  }
-
-  if (exicerises_set) {
-    if (set_contains(vars, ICERISESmask)) { ICERISESmask.write(nc); }
+  for (unsigned int k = 0; k < m_variables.size(); ++k) {
+    IceModelVec *v = m_variables[k];
+    std::string name = v->metadata().get_string("short_name");
+    if (set_contains(vars, name)) {
+      v->write(nc);
+    }
   }
 
 }
-
-
 
 void Cavity::initBasinsOptions(const Constants &cc) {
 
