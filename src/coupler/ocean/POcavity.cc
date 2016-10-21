@@ -606,12 +606,12 @@ void Cavity::computeOCEANMEANS() {
 
   m_log->message(4, "0b2: in computeOCEANMEANS routine \n");
 
-  double *lm_count = new double[numberOfBasins]; //count cells to take mean over for each basin
-  double *m_count = new double[numberOfBasins];
-  double *lm_Sval = new double[numberOfBasins]; //add salinity for each basin
-  double *lm_Tval = new double[numberOfBasins]; //add temperature for each basin
-  double *m_Tval = new double[numberOfBasins];
-  double *m_Sval = new double[numberOfBasins];
+  std::vector<double> lm_count(numberOfBasins); //count cells to take mean over for each basin
+  std::vector<double> m_count(numberOfBasins);
+  std::vector<double> lm_Sval(numberOfBasins); //add salinity for each basin
+  std::vector<double> lm_Tval(numberOfBasins); //add temperature for each basin
+  std::vector<double> m_Tval(numberOfBasins);
+  std::vector<double> m_Sval(numberOfBasins);
 
   for(int k=0;k<numberOfBasins;k++){
     m_count[k]=0.0;
@@ -814,10 +814,10 @@ void Cavity::identifyBOXMODELmask() {
 
   // Find the maximal DistGL and DistIF
   // FIXME! this could already be done in routine where DistGL and DistIF are computed
-  double *max_distGL = new double[numberOfBasins];
-  double *max_distIF = new double[numberOfBasins];
-  double *lmax_distGL = new double[numberOfBasins];
-  double *lmax_distIF = new double[numberOfBasins];
+  std::vector<double> max_distGL(numberOfBasins);
+  std::vector<double> max_distIF(numberOfBasins);
+  std::vector<double> lmax_distGL(numberOfBasins);
+  std::vector<double> lmax_distIF(numberOfBasins);
 
   const IceModelVec2CellType &m_mask = *m_grid->variables().get_2d_cell_type("mask");
 
@@ -851,7 +851,7 @@ void Cavity::identifyBOXMODELmask() {
 
 
   // Define the number of boxes for each basin
-  int *lnumberOfBoxes_perBasin = new int[numberOfBasins];
+  std::vector<int> lnumberOfBoxes_perBasin(numberOfBasins);
 
   int n_min = 1; //
   double max_distGL_ref = 500000; // meter
@@ -936,7 +936,6 @@ void Cavity::identifyBOXMODELmask() {
 
   // Compute the number of cells per box and basin. Later: Include this in the loop above to save time...
   const int nBoxes = numberOfBoxes+2;
-  // double lcounter_boxes = new double[numberOfBasins][nBoxes];
   std::vector<std::vector<int> > lcounter_boxes(
     numberOfBasins, std::vector<int>(nBoxes));
   for (int k=0;k<numberOfBasins;k++){
@@ -1057,11 +1056,11 @@ void Cavity::basalMeltRateForGroundingLineBox(const Constants &cc) {
 
   m_log->message(4, "B1 : in basal melt rate gl rountine\n");
 
-  double *lcounter_edge_of_GLbox_vector = new double[numberOfBasins];
-  double *lmean_salinity_GLbox_vector = new double[numberOfBasins];
-  double *lmean_temperature_GLbox_vector = new double[numberOfBasins];
-  double *lmean_meltrate_GLbox_vector = new double[numberOfBasins];
-  double *lmean_overturning_GLbox_vector = new double[numberOfBasins];
+  std::vector<double> lcounter_edge_of_GLbox_vector(numberOfBasins);
+  std::vector<double> lmean_salinity_GLbox_vector(numberOfBasins);
+  std::vector<double> lmean_temperature_GLbox_vector(numberOfBasins);
+  std::vector<double> lmean_meltrate_GLbox_vector(numberOfBasins);
+  std::vector<double> lmean_overturning_GLbox_vector(numberOfBasins);
 
   for (int k=0;k<numberOfBasins;k++){
     lcounter_edge_of_GLbox_vector[k]=0.0;
@@ -1228,10 +1227,10 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
     m_log->message(2, "B2 : iBox =%d, numberOfBoxes=%d \n", iBox, numberOfBoxes);
 
 
-    double *lcounter_edge_of_ibox_vector = new double[numberOfBasins];     // to compute means at boundary for the current box
-    double *lmean_salinity_ibox_vector = new double[numberOfBasins];
-    double *lmean_temperature_ibox_vector = new double[numberOfBasins];
-    double *lmean_meltrate_ibox_vector = new double[numberOfBasins];
+    std::vector<double> lcounter_edge_of_ibox_vector(numberOfBasins);     // to compute means at boundary for the current box
+    std::vector<double> lmean_salinity_ibox_vector(numberOfBasins);
+    std::vector<double> lmean_temperature_ibox_vector(numberOfBasins);
+    std::vector<double> lmean_meltrate_ibox_vector(numberOfBasins);
 
     for (int k=0;k<numberOfBasins;k++){
       lcounter_edge_of_ibox_vector[k]=0.0;
