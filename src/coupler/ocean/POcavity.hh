@@ -118,6 +118,7 @@ private:
   void basalMeltRateForIceFrontBox(const Constants &constants);
   void basalMeltRateForOtherShelves(const Constants &constants);
 
+  // FIXME: move these declarations where they are also be initiated?
   static const int  box_unidentified,
                     box_noshelf,
                     box_GL,
@@ -132,12 +133,13 @@ private:
                     imask_inner,
                     imask_outer,
                     imask_exclude,
-                    imask_unidentified;
+                    imask_unidentified,
+                    numberOfBoxes;
 
   double counter_box_unidentified,
-         counter_floating,
+         counter_floating;
           // number of OBM-Boxes, there is one more box where Beckmann-Goose is computed..
-         numberOfBoxes;
+         // numberOfBoxes; // FIXME: Why should these be doubles and not ints?
 
   std::vector<double> Toc_base_vec,
                       Soc_base_vec,

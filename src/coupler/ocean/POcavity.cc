@@ -68,6 +68,9 @@ Cavity::Constants::Constants(const Config &config) {
 }
 
 // TODO: move to POCavity.hh
+
+const int Cavity::numberOfBoxes = 5;
+
 const int Cavity::box_unidentified = -99;     // This should never show up in the .nc-files.
 const int Cavity::box_neighboring  = -1;      // This should never show up in the .nc-files.
 const int Cavity::box_noshelf      = 0;
@@ -405,14 +408,14 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   Constants cc(*m_config);
 
-  if ((delta_T != NULL) && ocean_oceanboxmodel_deltaT_set) {
-    temp_anomaly = (*delta_T)(my_t + 0.5*my_dt);
-    m_log->message(4, "0a : set global temperature anomaly = %.3f\n", temp_anomaly);
-  }
+  // if ((delta_T != NULL) && ocean_oceanboxmodel_deltaT_set) {
+  //   temp_anomaly = (*delta_T)(my_t + 0.5*my_dt);
+  //   m_log->message(4, "0a : set global temperature anomaly = %.3f\n", temp_anomaly);
+  // }
 
   // POBMConstants cc(config);
   initBasinsOptions(cc);
-  // roundBasins();
+  roundBasins();
   if (omeans_set){
     m_log->message(4, "0c : reading mean salinity and temperatures\n");
   } else {
@@ -570,7 +573,7 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
     //inputmask.endGhostComm();
     inputmask.update_ghosts();
 
-    double all_inner_identified = GlobalSum(m_grid->com, linner_identified);
+    all_inner_identified = GlobalSum(m_grid->com, linner_identified);
 
   }
 
@@ -603,12 +606,12 @@ void Cavity::computeOCEANMEANS() {
 
   m_log->message(4, "0b2: in computeOCEANMEANS routine \n");
 
-  double lm_count[numberOfBasins]; //count cells to take mean over for each basin
-  double m_count[numberOfBasins];
-  double lm_Sval[numberOfBasins]; //add salinity for each basin
-  double lm_Tval[numberOfBasins]; //add temperature for each basin
-  double m_Tval[numberOfBasins];
-  double m_Sval[numberOfBasins];
+  double *lm_count = new double[numberOfBasins]; //count cells to take mean over for each basin
+  double *m_count = new double[numberOfBasins];
+  double *lm_Sval = new double[numberOfBasins]; //add salinity for each basin
+  double *lm_Tval = new double[numberOfBasins]; //add temperature for each basin
+  double *m_Tval = new double[numberOfBasins];
+  double *m_Sval = new double[numberOfBasins];
 
   for(int k=0;k<numberOfBasins;k++){
     m_count[k]=0.0;
@@ -666,7 +669,7 @@ void Cavity::computeOCEANMEANS() {
 
 
 void Cavity::extentOfIceShelves() {
-  PetscErrorCode ierr;
+
   m_log->message(4, "A1b: in extent of ice shelves rountine\n");
 
   double currentLabelGL = 1; // to find DistGL, 1 if floating and directly adjacent to a grounded cell
@@ -811,10 +814,10 @@ void Cavity::identifyBOXMODELmask() {
 
   // Find the maximal DistGL and DistIF
   // FIXME! this could already be done in routine where DistGL and DistIF are computed
-  double  max_distGL[numberOfBasins];
-  double  max_distIF[numberOfBasins];
-  double lmax_distGL[numberOfBasins];
-  double lmax_distIF[numberOfBasins];
+  double *max_distGL = new double[numberOfBasins];
+  double *max_distIF = new double[numberOfBasins];
+  double *lmax_distGL = new double[numberOfBasins];
+  double *lmax_distIF = new double[numberOfBasins];
 
   const IceModelVec2CellType &m_mask = *m_grid->variables().get_2d_cell_type("mask");
 
@@ -848,12 +851,12 @@ void Cavity::identifyBOXMODELmask() {
 
 
   // Define the number of boxes for each basin
-  int lnumberOfBoxes_perBasin[numberOfBasins];
+  int *lnumberOfBoxes_perBasin = new int[numberOfBasins];
 
   int n_min = 1; //
   double max_distGL_ref = 500000; // meter
   double zeta = 0.5;
-  numberOfBoxes = 5; // FIXME Do we want this to be a chosable parameter?
+  // numberOfBoxes = 5; // FIXME Do we want this to be a chosable parameter?
 
   for (int l=0;l<numberOfBasins;l++){
     lnumberOfBoxes_perBasin[l] = 0;
@@ -932,9 +935,10 @@ void Cavity::identifyBOXMODELmask() {
   //m_log->message(2, "Number of Boxes=%.0f, lnumberOfBoxes = %.0f\n", numberOfBoxes, lnumberOfBoxes);
 
   // Compute the number of cells per box and basin. Later: Include this in the loop above to save time...
-  int nBoxes = static_cast<int>(round(numberOfBoxes+2));
-  double lcounter_boxes[numberOfBasins][nBoxes];
-
+  const int nBoxes = numberOfBoxes+2;
+  // double lcounter_boxes = new double[numberOfBasins][nBoxes];
+  std::vector<std::vector<int> > lcounter_boxes(
+    numberOfBasins, std::vector<int>(nBoxes));
   for (int k=0;k<numberOfBasins;k++){
     for (int l=0;l<nBoxes;l++){
       lcounter_boxes[k][l]=0;
@@ -1053,11 +1057,11 @@ void Cavity::basalMeltRateForGroundingLineBox(const Constants &cc) {
 
   m_log->message(4, "B1 : in basal melt rate gl rountine\n");
 
-  double lcounter_edge_of_GLbox_vector[numberOfBasins],
-              lmean_salinity_GLbox_vector[numberOfBasins],
-              lmean_temperature_GLbox_vector[numberOfBasins],
-              lmean_meltrate_GLbox_vector[numberOfBasins],
-              lmean_overturning_GLbox_vector[numberOfBasins];
+  double *lcounter_edge_of_GLbox_vector = new double[numberOfBasins];
+  double *lmean_salinity_GLbox_vector = new double[numberOfBasins];
+  double *lmean_temperature_GLbox_vector = new double[numberOfBasins];
+  double *lmean_meltrate_GLbox_vector = new double[numberOfBasins];
+  double *lmean_overturning_GLbox_vector = new double[numberOfBasins];
 
   for (int k=0;k<numberOfBasins;k++){
     lcounter_edge_of_GLbox_vector[k]=0.0;
@@ -1221,13 +1225,13 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
 
   //! Iterate over all Boxes > 1=GF_Box
   for (int iBox=2; iBox <nBoxes; ++iBox) {
-    m_log->message(2, "B2 : iBox =%d, numberOfBoxes=%0.f \n", iBox, numberOfBoxes);
+    m_log->message(2, "B2 : iBox =%d, numberOfBoxes=%d \n", iBox, numberOfBoxes);
 
 
-    double lcounter_edge_of_ibox_vector[numberOfBasins],     // to compute means at boundary for the current box
-           lmean_salinity_ibox_vector[numberOfBasins],
-           lmean_temperature_ibox_vector[numberOfBasins],
-           lmean_meltrate_ibox_vector[numberOfBasins];
+    double *lcounter_edge_of_ibox_vector = new double[numberOfBasins];     // to compute means at boundary for the current box
+    double *lmean_salinity_ibox_vector = new double[numberOfBasins];
+    double *lmean_temperature_ibox_vector = new double[numberOfBasins];
+    double *lmean_meltrate_ibox_vector = new double[numberOfBasins];
 
     for (int k=0;k<numberOfBasins;k++){
       lcounter_edge_of_ibox_vector[k]=0.0;
