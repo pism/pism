@@ -103,9 +103,11 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   // will be de-allocated by the parent's destructor
   m_theta_ocean    = new IceModelVec2T;
   m_salinity_ocean = new IceModelVec2T;
+  basins = new IceModelVec2T;
 
   m_fields["theta_ocean"]     = m_theta_ocean;
   m_fields["salinity_ocean"]  = m_salinity_ocean;
+  m_fields["cavity_basins"]   = basins;
 
   process_options();
 
@@ -146,9 +148,9 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   m_shelfbmassflux.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_variables.push_back(&m_shelfbmassflux);
 
-  basins.create(m_grid, "basins", WITH_GHOSTS);
-  basins.set_attrs("model_state", "basins for ocean cavitiy model","", "");
-  m_variables.push_back(&basins);
+  basins->create(m_grid, "basins");
+  basins->set_attrs("climate_forcing", "basins for ocean cavitiy model","", "");
+  // m_variables.push_back(&basins);
 
   // mask to identify the ocean boxes
   BOXMODELmask.create(m_grid, "BOXMODELmask", WITH_GHOSTS);
@@ -229,29 +231,29 @@ void Cavity::init_impl() {
   m_log->message(2, "* Initializing the Potsdam Cavity Model for the ocean ...\n");
 
 
-  InputOptions opts = process_input_options(m_grid->com);
+  // InputOptions opts = process_input_options(m_grid->com);
 
-  const double theta_std = -1.;
-  const double sal_std = 35.;
+  // const double theta_std = -1.;
+  // const double sal_std = 35.;
 
-  switch (opts.type) {
-  case INIT_RESTART:
-    m_theta_ocean->read(opts.filename, opts.record);
-    m_salinity_ocean->read(opts.filename, opts.record);
-    break;
-  case INIT_BOOTSTRAP:
-    m_theta_ocean->regrid(opts.filename, OPTIONAL, theta_std);
-    m_salinity_ocean->regrid(opts.filename, OPTIONAL, sal_std);
-    break;
-  case INIT_OTHER:
-  default:
-    m_theta_ocean->set(theta_std);
-    m_salinity_ocean->set(sal_std);
-    // FIXME: what to do here
-  }
+  // switch (opts.type) {
+  //   case INIT_RESTART:
+  //     m_theta_ocean->read(opts.filename, opts.record);
+  //     m_salinity_ocean->read(opts.filename, opts.record);
+  //     break;
+  //   case INIT_BOOTSTRAP:
+  //     m_theta_ocean->regrid(opts.filename, OPTIONAL, theta_std);
+  //     m_salinity_ocean->regrid(opts.filename, OPTIONAL, sal_std);
+  //     break;
+  //   case INIT_OTHER:
+  //   default:
+  //     m_theta_ocean->set(theta_std);
+  //     m_salinity_ocean->set(sal_std);
+  //     // FIXME: what to do here
+  // }
 
-  regrid("PotsdamCavityModel", m_theta_ocean);
-  regrid("PotsdamCavityModel", m_salinity_ocean);
+  // regrid("PotsdamCavityModel", m_theta_ocean,REGRID_WITHOUT_REGRID_VARS);
+  // regrid("PotsdamCavityModel", m_salinity_ocean,REGRID_WITHOUT_REGRID_VARS);
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -274,53 +276,58 @@ void Cavity::init_impl() {
 
   // option for scalar forcing of ocean temperature
   // PISMOptionsIsSet("-ocean_obm_deltaT", ocean_oceanboxmodel_deltaT_set);
-  ocean_oceanboxmodel_deltaT_set = options::Bool("-ocean_obm_deltaT",
-      "TODO: description of option -ocean_obm_deltaT");
 
-  if (ocean_oceanboxmodel_deltaT_set) {
-    bool delta_T_set;
-    // std::string delta_T_file;
 
-    options::String input_file("-ocean_obm_deltaT",
-                         "Specifies the ocean temperature offsets file to use with -ocean_obm_deltaT");
-    if (not input_file.is_set()) {
-      throw RuntimeError(PISM_ERROR_LOCATION,
-                         "Potsdam Cavity model requires an input file through the -ocean_obm_deltaT\n"
-                         "option if -ocean_obm_deltaT is set.");
-    }
+  // ocean_oceanboxmodel_deltaT_set = options::Bool("-ocean_obm_deltaT",
+  //     "TODO: description of option -ocean_obm_deltaT");
 
-    m_log->message(2,
-                      "  reading delta_T data from forcing file %s for -ocean_obm_deltaT actions ...\n",
-                      input_file->c_str());
+  // if (ocean_oceanboxmodel_deltaT_set) {
+  //   bool delta_T_set;
+  //   // std::string delta_T_file;
 
-    delta_T = new Timeseries(*m_grid, "delta_T", m_config->get_string("time_dimension_name"));
-    delta_T->metadata().set_string("units", "Kelvin");
-    delta_T->metadata().set_string("long_name", "ocean temperature offsets");
-    delta_T->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  //   options::String input_file("-ocean_obm_deltaT",
+  //                        "Specifies the ocean temperature offsets file to use with -ocean_obm_deltaT");
+  //   if (not input_file.is_set()) {
+  //     throw RuntimeError(PISM_ERROR_LOCATION,
+  //                        "Potsdam Cavity model requires an input file through the -ocean_obm_deltaT\n"
+  //                        "option if -ocean_obm_deltaT is set.");
+  //   }
 
-    PIO nc(m_grid->com, "netcdf3");
-    nc.open(input_file, PISM_READONLY);
-    delta_T->read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
-    nc.close();
+  //   m_log->message(2,
+  //                     "  reading delta_T data from forcing file %s for -ocean_obm_deltaT actions ...\n",
+  //                     input_file->c_str());
 
-    // bool delta_T_factor_set;
-    delta_T_factor=1.0;
-    delta_T_factor = options::Real("-ocean_obm_factor","delta T factor for ocean cavity model",
-                                   delta_T_factor);
+  //   delta_T = new Timeseries(*m_grid, "delta_T", m_config->get_string("time_dimension_name"));
+  //   delta_T->metadata().set_string("units", "Kelvin");
+  //   delta_T->metadata().set_string("long_name", "ocean temperature offsets");
+  //   delta_T->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
 
-  }
+  //   PIO nc(m_grid->com, "netcdf3");
+  //   nc.open(input_file, PISM_READONLY);
+  //   delta_T->read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
+  //   nc.close();
 
-  // TODO: option ocean_means does not work yet, resulting in a runtime error
-  omeans_set = options::Bool("-ocean_means", "TODO: decribe this option");
+  //   // bool delta_T_factor_set;
+  //   delta_T_factor=1.0;
+  //   delta_T_factor = options::Real("-ocean_obm_factor","delta T factor for ocean cavity model",
+  //                                  delta_T_factor);
 
-  if (not omeans_set){
-    m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
-    m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
-  }
+  // }
+
+  // // TODO: option ocean_means does not work yet, resulting in a runtime error
+  // omeans_set = options::Bool("-ocean_means", "TODO: decribe this option");
+
+  // if (not omeans_set){
+  m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
+  m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
+  basins->init(m_filename, m_bc_period, m_bc_reference_time);
+  // }
 
   // read time-independent data right away:
-  if (m_theta_ocean->get_n_records() == 1 && m_salinity_ocean->get_n_records() == 1) {
-    update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+  if (m_theta_ocean->get_n_records() == 1 &&
+      m_salinity_ocean->get_n_records() == 1 &&
+      basins->get_n_records() == 1) {
+        update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 
   // NOTE: moved to update_impl
@@ -492,7 +499,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   // POBMConstants cc(config);
   initBasinsOptions(cc);
-  roundBasins();
+  // roundBasins();
   if (omeans_set){
     m_log->message(4, "0c : reading mean salinity and temperatures\n");
   } else {
@@ -529,16 +536,16 @@ void Cavity::roundBasins() {
   roundbasins_set = options::Bool("-round_basins", "TODO: describe option round_basins");
 
   IceModelVec::AccessList list;
-  list.add(basins);
+  list.add(*basins);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double id_fractional = basins(i,j),
-                id_fr_ne = basins(i+1,j+1),
-                id_fr_nw = basins(i-1,j+1),
-                id_fr_sw = basins(i-1,j-1),
-                id_fr_se = basins(i+1,j-1);
+    double id_fractional = (*basins)(i,j),
+                id_fr_ne = (*basins)(i+1,j+1),
+                id_fr_nw = (*basins)(i-1,j+1),
+                id_fr_sw = (*basins)(i-1,j-1),
+                id_fr_se = (*basins)(i+1,j-1);
 
     int     id_rounded = static_cast<int>(round(id_fractional)),
               id_ro_ne = static_cast<int>(round(id_fr_ne)),
@@ -568,7 +575,7 @@ void Cavity::roundBasins() {
     } else { // if -round_basins not set
       id = id_rounded;
     }
-    basins(i,j)=id; // id should never be -1!
+    (*basins)(i,j)=id; // id should never be -1!
 
   }
 
@@ -702,14 +709,14 @@ void Cavity::computeOCEANMEANS() {
   IceModelVec::AccessList list;
   list.add(*m_theta_ocean);
   list.add(*m_salinity_ocean);
-  list.add(basins);
+  list.add(*basins);
   list.add(OCEANMEANmask);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (OCEANMEANmask(i,j) == imask_inner ){
-      int shelf_id =basins(i,j);
+      int shelf_id =(*basins)(i,j);
       lm_count[shelf_id]+=1;
       lm_Sval[shelf_id]+=(*m_salinity_ocean)(i,j);
       lm_Tval[shelf_id]+=(*m_theta_ocean)(i,j);
@@ -746,11 +753,11 @@ void Cavity::computeOCEANMEANS() {
 
 
 void Cavity::extentOfIceShelves() {
-	PetscErrorCode ierr;
-	m_log->message(4, "A1b: in extent of ice shelves rountine\n");
+  PetscErrorCode ierr;
+  m_log->message(4, "A1b: in extent of ice shelves rountine\n");
 
-	double currentLabelGL = 1; // to find DistGL, 1 iff floating and directly adjacent to a grounded cell
-	double currentLabelIF = 1; // to find DistIF, 1 iff floating and directly adjacent to an ocean cell
+  double currentLabelGL = 1; // to find DistGL, 1 if floating and directly adjacent to a grounded cell
+  double currentLabelIF = 1; // to find DistIF, 1 if floating and directly adjacent to an ocean cell
 
   double global_continue_loop = 1;
   double local_continue_loop  = 0;
@@ -760,7 +767,7 @@ void Cavity::extentOfIceShelves() {
   IceModelVec::AccessList list;
   list.add(m_mask);
   list.add(DistIF);
-  list.add(basins);
+  list.add(*basins);
   list.add(DistGL);
 
 	// mask->begin_access();
@@ -901,7 +908,7 @@ void Cavity::identifyBOXMODELmask() {
   for(int k=0;k<numberOfBasins;k++){ max_distGL[k]=0.0; max_distIF[k]=0.0;lmax_distGL[k]=0.0; lmax_distIF[k]=0.0;}
 
   IceModelVec::AccessList list;
-  list.add(basins);
+  list.add(*basins);
   list.add(DistGL);
   list.add(DistIF);
   list.add(BOXMODELmask);
@@ -909,7 +916,7 @@ void Cavity::identifyBOXMODELmask() {
 
   for (Points p(*m_grid); p; p.next()) {
   const int i = p.i(), j = p.j();
-    int shelf_id = basins(i,j);
+    int shelf_id = (*basins)(i,j);
 
     if ( DistGL(i,j)> lmax_distGL[shelf_id] ) {
       lmax_distGL[shelf_id] = DistGL(i,j);
@@ -947,7 +954,7 @@ void Cavity::identifyBOXMODELmask() {
   // Define the BOXMODELmask
 
   // IceModelVec::AccessList list;
-  // list.add(basins);
+  // list.add(*basins);
   // list.add(DistGL);
   // list.add(DistIF);
 
@@ -958,7 +965,7 @@ void Cavity::identifyBOXMODELmask() {
     const int i = p.i(), j = p.j();
 
     if (m_mask(i,j)==maskfloating && DistGL(i,j)>0 && DistIF(i,j)>0 && BOXMODELmask(i,j)==0){
-      int shelf_id = basins(i,j);
+      int shelf_id = (*basins)(i,j);
       int n = lnumberOfBoxes_perBasin[shelf_id];
       double r = DistGL(i,j)*1.0/(DistGL(i,j)*1.0+DistIF(i,j)*1.0); // relative distance between grounding line and ice front
 
@@ -1029,7 +1036,7 @@ void Cavity::identifyBOXMODELmask() {
     const int i = p.i(), j = p.j();
     int box_id = static_cast<int>(round(BOXMODELmask(i,j)));
     if (box_id > 0){ // floating
-      int shelf_id = basins(i,j);
+      int shelf_id = (*basins)(i,j);
       lcounter_boxes[shelf_id][box_id]++;
     }
   }
@@ -1062,7 +1069,7 @@ void Cavity::oceanTemperature(const Constants &cc) {
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
-  list.add(basins);
+  list.add(*basins);
   list.add(Soc_base);
   list.add(Toc_base);
   list.add(Toc_anomaly);
@@ -1080,7 +1087,7 @@ void Cavity::oceanTemperature(const Constants &cc) {
 
 
     if (m_mask(i,j)==maskfloating){
-      int shelf_id = basins(i,j);
+      int shelf_id = (*basins)(i,j);
       Toc_base(i,j) = 273.15 + Toc_base_vec[shelf_id];
       Soc_base(i,j) =  Soc_base_vec[shelf_id];
 
@@ -1151,7 +1158,7 @@ void Cavity::basalMeltRateForGroundingLineBox(const Constants &cc) {
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
-  list.add(basins);
+  list.add(*basins);
   list.add(BOXMODELmask);
   list.add(T_star);
   list.add(Toc_base);
@@ -1171,7 +1178,7 @@ void Cavity::basalMeltRateForGroundingLineBox(const Constants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int shelf_id = basins(i,j);
+    int shelf_id = (*basins)(i,j);
 
     // Make sure everything is at default values at the beginning of each timestep
     T_star(i,j) = 0.0; // in °C
@@ -1320,7 +1327,7 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
     // TODO: do we really need all these variables as full fields?
     IceModelVec::AccessList list;
     list.add(*ice_thickness);
-    list.add(basins);
+    list.add(*basins);
     list.add(BOXMODELmask);
     list.add(T_star);
     list.add(Toc_base);
@@ -1337,7 +1344,7 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      int shelf_id = basins(i,j);
+      int shelf_id = (*basins)(i,j);
 
       if (BOXMODELmask(i,j)==iBox && shelf_id > 0.0){
 
@@ -1502,7 +1509,7 @@ void Cavity::basalMeltRateForOtherShelves(const Constants &cc) {
   // TODO: do we really need all these variables as full fields?
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
-  list.add(basins);
+  list.add(*basins);
   list.add(BOXMODELmask);
   list.add(Toc_base);
   list.add(Toc_anomaly);
@@ -1515,7 +1522,7 @@ void Cavity::basalMeltRateForOtherShelves(const Constants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int shelf_id = basins(i,j);
+    int shelf_id = (*basins)(i,j);
 
     if (shelf_id == 0) { // boundary of computational domain
 

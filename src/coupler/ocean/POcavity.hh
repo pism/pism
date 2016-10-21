@@ -77,7 +77,7 @@ protected:
 private:
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux,
-                  basins,
+                  // basins,
                   ICERISESmask,
                   BOXMODELmask,
                   OCEANMEANmask, //FIXME delete when development finished
@@ -97,7 +97,8 @@ private:
   // const IceModelVec2CellType m_mask;
 
   IceModelVec2T   *m_theta_ocean,
-                  *m_salinity_ocean;
+                  *m_salinity_ocean,
+                  *basins;
 
   // The following are declared within POcavity.cc
   // IceModelVec2S   *ice_thickness;
