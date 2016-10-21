@@ -228,100 +228,13 @@ Cavity::~Cavity() {
 
 void Cavity::init_impl() {
 
-  m_log->message(2, "* Initializing the Potsdam Cavity Model for the ocean ...\n");
-
-
-  // InputOptions opts = process_input_options(m_grid->com);
-
-  // const double theta_std = -1.;
-  // const double sal_std = 35.;
-
-  // switch (opts.type) {
-  //   case INIT_RESTART:
-  //     m_theta_ocean->read(opts.filename, opts.record);
-  //     m_salinity_ocean->read(opts.filename, opts.record);
-  //     break;
-  //   case INIT_BOOTSTRAP:
-  //     m_theta_ocean->regrid(opts.filename, OPTIONAL, theta_std);
-  //     m_salinity_ocean->regrid(opts.filename, OPTIONAL, sal_std);
-  //     break;
-  //   case INIT_OTHER:
-  //   default:
-  //     m_theta_ocean->set(theta_std);
-  //     m_salinity_ocean->set(sal_std);
-  //     // FIXME: what to do here
-  // }
-
-  // regrid("PotsdamCavityModel", m_theta_ocean,REGRID_WITHOUT_REGRID_VARS);
-  // regrid("PotsdamCavityModel", m_salinity_ocean,REGRID_WITHOUT_REGRID_VARS);
-
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  // ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  // topg = m_grid->variables().get_2d_scalar("bedrock_altitude");
-  // mask = m_grid->variables().get_2d_mask("mask");
-  // basins = m_grid->variables().get_2d_scalar("drainage_basins"); // if option drainageBasins
-  // NOTE: to delete. Should be read later directly
-  // ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  // if (ice_thickness == NULL) {SETERRQ( 1, "ERROR: ice thickness is not available");}
+  m_log->message(2, "* Initializing the Potsdam Cavity Model for the ocean ...\n");
 
-  // topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  // if (topg == NULL) SETERRQ( 1, "ERROR: bedrock topography is not available");
-
-  // mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  // if (!mask) { SETERRQ( 1, "ERROR: mask is not available"); }
-
-  // basins = dynamic_cast<IceModelVec2S*>(vars.get("drainage_basins")); //if option drainageBasins set
-  // if (!basins) { SETERRQ( 1, "ERROR: drainage basins is not available"); }
-
-  // option for scalar forcing of ocean temperature
-  // PISMOptionsIsSet("-ocean_obm_deltaT", ocean_oceanboxmodel_deltaT_set);
-
-
-  // ocean_oceanboxmodel_deltaT_set = options::Bool("-ocean_obm_deltaT",
-  //     "TODO: description of option -ocean_obm_deltaT");
-
-  // if (ocean_oceanboxmodel_deltaT_set) {
-  //   bool delta_T_set;
-  //   // std::string delta_T_file;
-
-  //   options::String input_file("-ocean_obm_deltaT",
-  //                        "Specifies the ocean temperature offsets file to use with -ocean_obm_deltaT");
-  //   if (not input_file.is_set()) {
-  //     throw RuntimeError(PISM_ERROR_LOCATION,
-  //                        "Potsdam Cavity model requires an input file through the -ocean_obm_deltaT\n"
-  //                        "option if -ocean_obm_deltaT is set.");
-  //   }
-
-  //   m_log->message(2,
-  //                     "  reading delta_T data from forcing file %s for -ocean_obm_deltaT actions ...\n",
-  //                     input_file->c_str());
-
-  //   delta_T = new Timeseries(*m_grid, "delta_T", m_config->get_string("time_dimension_name"));
-  //   delta_T->metadata().set_string("units", "Kelvin");
-  //   delta_T->metadata().set_string("long_name", "ocean temperature offsets");
-  //   delta_T->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-
-  //   PIO nc(m_grid->com, "netcdf3");
-  //   nc.open(input_file, PISM_READONLY);
-  //   delta_T->read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
-  //   nc.close();
-
-  //   // bool delta_T_factor_set;
-  //   delta_T_factor=1.0;
-  //   delta_T_factor = options::Real("-ocean_obm_factor","delta T factor for ocean cavity model",
-  //                                  delta_T_factor);
-
-  // }
-
-  // // TODO: option ocean_means does not work yet, resulting in a runtime error
-  // omeans_set = options::Bool("-ocean_means", "TODO: decribe this option");
-
-  // if (not omeans_set){
   m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
   m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
   basins->init(m_filename, m_bc_period, m_bc_reference_time);
-  // }
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 &&
