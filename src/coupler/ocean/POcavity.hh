@@ -117,7 +117,7 @@ private:
   void basalMeltRateForGroundingLineBox(const Constants &constants);
   void basalMeltRateForIceFrontBox(const Constants &constants);
   void basalMeltRateForOtherShelves(const Constants &constants);
-
+  double most_frequent_element(const std::vector<double>&);
   // FIXME: move these declarations where they are also be initiated?
   static const int  box_unidentified,
                     box_noshelf,

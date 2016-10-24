@@ -246,6 +246,8 @@ void Cavity::init_impl() {
         update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 
+  roundBasins();
+
   // NOTE: moved to update_impl
   // POBMConstants cc(config);
   // initBasinsOptions(cc);
@@ -415,7 +417,6 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   // POBMConstants cc(config);
   initBasinsOptions(cc);
-  roundBasins();
   if (omeans_set){
     m_log->message(4, "0c : reading mean salinity and temperatures\n");
   } else {
@@ -445,13 +446,31 @@ void Cavity::update_impl(double my_t, double my_dt) {
   m_shelfbmassflux.copy_from(basalmeltrate_shelf); //TODO Check if scaling with ice density
 }
 
+  double Cavity::most_frequent_element(std::vector<double> const& v)
+  {   // Precondition: v is not empty
+      std::map<double, double> frequencyMap;
+      int maxFrequency = 0;
+      double mostFrequentElement = 0;
+      for (double x : v)
+      {
+          double f = ++frequencyMap[x];
+          if (f > maxFrequency)
+          {
+              maxFrequency = f;
+              mostFrequentElement = x;
+          }
+      }
+
+      return mostFrequentElement;
+  }
+
 //! Round basin mask non integer values to an integral value of the next neigbor
 void Cavity::roundBasins() {
-  //FIXME: THIS routine should be applied once in init, and roundbasins should be stored as field
 
-  roundbasins_set = options::Bool("-round_basins", "TODO: describe option round_basins");
+  //FIXME: THIS routine should be applied once in init, and roundbasins should be stored as field (assumed the basins do not change with time).
 
-  double id_fractional, id_fr_ne, id_fr_nw, id_fr_sw, id_fr_se;
+  double id_fractional;
+  std::vector<double> neighbours = {0,0,0,0};
 
   IceModelVec::AccessList list;
   list.add(*basins);
@@ -462,50 +481,29 @@ void Cavity::roundBasins() {
     // do not consider domain boundaries (they should be far from the shelves.)
     if ((i==0) | (j==0) | (i>(Mx-2)) | (j>(My-2))){
       id_fractional = 0.;
-      id_fr_ne = 0.;
-      id_fr_nw = 0.;
-      id_fr_sw = 0.;
-      id_fr_se = 0.;
     } else {
       id_fractional = (*basins)(i,j);
-      id_fr_ne = (*basins)(i+1,j+1);
-      id_fr_nw = (*basins)(i-1,j+1);
-      id_fr_sw = (*basins)(i-1,j-1);
-      id_fr_se = (*basins)(i+1,j-1);
-    }
+      neighbours[0] = (*basins)(i+1,j+1);
+      neighbours[1] = (*basins)(i-1,j+1);
+      neighbours[2] = (*basins)(i-1,j-1);
+      neighbours[3] = (*basins)(i+1,j-1);
 
-    int     id_rounded = static_cast<int>(round(id_fractional)),
-              id_ro_ne = static_cast<int>(round(id_fr_ne)),
-              id_ro_nw = static_cast<int>(round(id_fr_nw)),
-              id_ro_sw = static_cast<int>(round(id_fr_sw)),
-              id_ro_se = static_cast<int>(round(id_fr_se)),
-              id = -1;
+      // check if this is an interpolated number:
+      // first condition: not an integer
+      // second condition: has no neighbour with same value
+      if ((id_fractional != round(id_fractional)) ||
+          ((id_fractional != neighbours[0]) &&
+          (id_fractional != neighbours[1]) &&
+          (id_fractional != neighbours[2]) &&
+          (id_fractional != neighbours[3]))){
 
-    if (roundbasins_set){
-
-      if( PetscAbs(id_fractional - static_cast<float>(id_rounded)) > 0.0){ //if id_fractional differs from integer value
-
-        if (id_fr_sw == static_cast<float>(id_ro_sw) && id_fr_sw != 0){
-          id = id_ro_sw;
-        } else if (id_fr_se == static_cast<float>(id_ro_se) && id_fr_se != 0){
-          id = id_ro_se;
-        } else if (id_fr_nw == static_cast<float>(id_ro_nw) && id_fr_nw != 0){
-          id = id_ro_nw;
-        } else if (id_fr_ne == static_cast<float>(id_ro_ne) && id_fr_ne != 0){
-          id = id_ro_ne;
-        } else { //if no neigbour has an integer id
-          id = id_rounded;
-        }
-      } else { // if id_rounded == id_fractional
-        id = id_rounded;
+        double most_frequent_neighbour = most_frequent_element(neighbours);
+        (*basins)(i,j) = most_frequent_neighbour;
+        // m_log->message(2, "most frequent: %f at %d,%d\n",most_frequent_neighbour,i,j);
       }
-    } else { // if -round_basins not set
-      id = id_rounded;
     }
-    (*basins)(i,j)=id; // id should never be -1!
 
   }
-
 }
 
 //! Identify
