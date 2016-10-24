@@ -451,17 +451,28 @@ void Cavity::roundBasins() {
 
   roundbasins_set = options::Bool("-round_basins", "TODO: describe option round_basins");
 
+  double id_fractional, id_fr_ne, id_fr_nw, id_fr_sw, id_fr_se;
+
   IceModelVec::AccessList list;
   list.add(*basins);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double id_fractional = (*basins)(i,j),
-                id_fr_ne = (*basins)(i+1,j+1),
-                id_fr_nw = (*basins)(i-1,j+1),
-                id_fr_sw = (*basins)(i-1,j-1),
-                id_fr_se = (*basins)(i+1,j-1);
+    // do not consider domain boundaries (they should be far from the shelves.)
+    if ((i==0) | (j==0) | (i>(Mx-2)) | (j>(My-2))){
+      id_fractional = 0.;
+      id_fr_ne = 0.;
+      id_fr_nw = 0.;
+      id_fr_sw = 0.;
+      id_fr_se = 0.;
+    } else {
+      id_fractional = (*basins)(i,j);
+      id_fr_ne = (*basins)(i+1,j+1);
+      id_fr_nw = (*basins)(i-1,j+1);
+      id_fr_sw = (*basins)(i-1,j-1);
+      id_fr_se = (*basins)(i+1,j-1);
+    }
 
     int     id_rounded = static_cast<int>(round(id_fractional)),
               id_ro_ne = static_cast<int>(round(id_fr_ne)),
