@@ -246,8 +246,6 @@ void Cavity::init_impl() {
         update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 
-  roundBasins();
-
   // NOTE: moved to update_impl
   // POBMConstants cc(config);
   // initBasinsOptions(cc);
@@ -388,7 +386,6 @@ void Cavity::initBasinsOptions(const Constants &cc) {
                                    "continental shelf depth for ocean cavity model",
                                    continental_shelf_depth);
 
-    // PISMOptionsReal("-continental_shelf_depth","-continental_shelf_depth", continental_shelf_depth, continental_shelf_depth_set);
     if (cont_shelf_depth.is_set()) {
       m_log->message(5,
       "  Depth of continental shelf for computation of temperature and salinity input\n"
@@ -410,12 +407,10 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   Constants cc(*m_config);
 
-  // if ((delta_T != NULL) && ocean_oceanboxmodel_deltaT_set) {
-  //   temp_anomaly = (*delta_T)(my_t + 0.5*my_dt);
-  //   m_log->message(4, "0a : set global temperature anomaly = %.3f\n", temp_anomaly);
-  // }
+  // FIXME: this should go to init_mpl to save cpu, but we need to make sure
+  // that the once updated basin mask is stored and not overwritten.
+  round_basins();
 
-  // POBMConstants cc(config);
   initBasinsOptions(cc);
   if (omeans_set){
     m_log->message(4, "0c : reading mean salinity and temperatures\n");
@@ -446,7 +441,8 @@ void Cavity::update_impl(double my_t, double my_dt) {
   m_shelfbmassflux.copy_from(basalmeltrate_shelf); //TODO Check if scaling with ice density
 }
 
-  double Cavity::most_frequent_element(std::vector<double> const& v)
+// To be used solely in round_basins()
+double Cavity::most_frequent_element(std::vector<double> const& v)
   {   // Precondition: v is not empty
       std::map<double, double> frequencyMap;
       int maxFrequency = 0;
@@ -465,7 +461,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
   }
 
 //! Round basin mask non integer values to an integral value of the next neigbor
-void Cavity::roundBasins() {
+void Cavity::round_basins() {
 
   //FIXME: THIS routine should be applied once in init, and roundbasins should be stored as field (assumed the basins do not change with time).
 
