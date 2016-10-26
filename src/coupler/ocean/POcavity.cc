@@ -23,6 +23,7 @@
 #include "POcavity.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/iceModelVec.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMConfigInterface.hh"
 
@@ -106,11 +107,11 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   // will be de-allocated by the parent's destructor
   m_theta_ocean    = new IceModelVec2T;
   m_salinity_ocean = new IceModelVec2T;
-  basins = new IceModelVec2T;
+  // basins = new IceModelVec2T;
 
   m_fields["theta_ocean"]     = m_theta_ocean;
   m_fields["salinity_ocean"]  = m_salinity_ocean;
-  m_fields["cavity_basins"]   = basins;
+  // m_fields["cavity_basins"]   = basins;
 
   process_options();
 
@@ -151,9 +152,14 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   m_shelfbmassflux.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_variables.push_back(&m_shelfbmassflux);
 
-  basins->create(m_grid, "basins");
-  basins->set_attrs("climate_forcing", "basins for ocean cavitiy model","", "");
+  // basins->create(m_grid, "basins");
+  // basins->set_attrs("climate_forcing", "basins for ocean cavitiy model","", "");
   // m_variables.push_back(&basins);
+
+  cbasins.create(m_grid, "basins", WITH_GHOSTS);
+  cbasins.set_attrs("climate_forcing","mask determines basins for ocean cavity model",
+                    "", "");
+  m_variables.push_back(&cbasins);
 
   // mask to identify the ocean boxes
   BOXMODELmask.create(m_grid, "BOXMODELmask", WITH_GHOSTS);
@@ -237,12 +243,36 @@ void Cavity::init_impl() {
 
   m_theta_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
   m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
-  basins->init(m_filename, m_bc_period, m_bc_reference_time);
+  // basins->init(m_filename, m_bc_period, m_bc_reference_time);
+
+  InputOptions opts = process_input_options(m_grid->com);
+
+  const double theta_ocean_std = -1.0;
+
+  // m_log->message(2, "a min=%f,max=%f\n",cbasins.min(),cbasins.max());
+
+
+  switch (opts.type) {
+  case INIT_RESTART:
+    cbasins.read(m_filename, m_bc_period);
+    break;
+  case INIT_BOOTSTRAP:
+    cbasins.regrid(m_filename, OPTIONAL, theta_ocean_std);
+    break;
+  case INIT_OTHER:
+  default:
+    // Set the constant value.
+    cbasins.set(theta_ocean_std);
+  }
+
+  regrid("OceanCavityModel", cbasins);
+
+  m_log->message(2, "b min=%f,max=%f\n",cbasins.min(),cbasins.max());
+
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 &&
-      m_salinity_ocean->get_n_records() == 1 &&
-      basins->get_n_records() == 1) {
+      m_salinity_ocean->get_n_records() == 1) {
         update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 
@@ -407,18 +437,18 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   Constants cc(*m_config);
 
-  // FIXME: this should go to init_mpl to save cpu, but we need to make sure
-  // that the once updated basin mask is stored and not overwritten.
+  // FIXME: this should go to init_mpl to save cpu, but we first need to
+  // make sure that the once updated basin mask is stored and not overwritten.
   round_basins();
 
   initBasinsOptions(cc);
-  if (omeans_set){
-    m_log->message(4, "0c : reading mean salinity and temperatures\n");
-  } else {
-    m_log->message(4, "0c : calculating mean salinity and temperatures\n");
-    identifyMASK(OCEANMEANmask,"ocean");
-    computeOCEANMEANS();
-  }
+  // if (omeans_set){
+  //   m_log->message(4, "0c : reading mean salinity and temperatures\n");
+  // } else {
+    // m_log->message(4, "0c : calculating mean salinity and temperatures\n");
+  identifyMASK(OCEANMEANmask,"ocean");
+  computeOCEANMEANS();
+  // }
 
   //geometry of ice shelves and temperatures
   m_log->message(4, "A  : calculating shelf_base_temperature\n");
@@ -442,7 +472,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
 }
 
 // To be used solely in round_basins()
-double Cavity::most_frequent_element(std::vector<double> const& v)
+double Cavity::most_frequent_element(const std::vector<double> &v)
   {   // Precondition: v is not empty
       std::map<double, double> frequencyMap;
       int maxFrequency = 0;
@@ -460,7 +490,7 @@ double Cavity::most_frequent_element(std::vector<double> const& v)
       return mostFrequentElement;
   }
 
-//! Round basin mask non integer values to an integral value of the next neigbor
+//! Round basin mask non integer values to an integral value of the next neighbor
 void Cavity::round_basins() {
 
   //FIXME: THIS routine should be applied once in init, and roundbasins should be stored as field (assumed the basins do not change with time).
@@ -469,7 +499,7 @@ void Cavity::round_basins() {
   std::vector<double> neighbours = {0,0,0,0};
 
   IceModelVec::AccessList list;
-  list.add(*basins);
+  list.add(cbasins);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -478,11 +508,11 @@ void Cavity::round_basins() {
     if ((i==0) | (j==0) | (i>(Mx-2)) | (j>(My-2))){
       id_fractional = 0.;
     } else {
-      id_fractional = (*basins)(i,j);
-      neighbours[0] = (*basins)(i+1,j+1);
-      neighbours[1] = (*basins)(i-1,j+1);
-      neighbours[2] = (*basins)(i-1,j-1);
-      neighbours[3] = (*basins)(i+1,j-1);
+      id_fractional = (cbasins)(i,j);
+      neighbours[0] = (cbasins)(i+1,j+1);
+      neighbours[1] = (cbasins)(i-1,j+1);
+      neighbours[2] = (cbasins)(i-1,j-1);
+      neighbours[3] = (cbasins)(i+1,j-1);
 
       // check if this is an interpolated number:
       // first condition: not an integer
@@ -494,9 +524,10 @@ void Cavity::round_basins() {
           (id_fractional != neighbours[3]))){
 
         double most_frequent_neighbour = most_frequent_element(neighbours);
-        (*basins)(i,j) = most_frequent_neighbour;
+        (cbasins)(i,j) = most_frequent_neighbour;
         // m_log->message(2, "most frequent: %f at %d,%d\n",most_frequent_neighbour,i,j);
       }
+      (cbasins)(i,j) = i + j;
     }
 
   }
@@ -630,14 +661,14 @@ void Cavity::computeOCEANMEANS() {
   IceModelVec::AccessList list;
   list.add(*m_theta_ocean);
   list.add(*m_salinity_ocean);
-  list.add(*basins);
+  list.add(cbasins);
   list.add(OCEANMEANmask);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (OCEANMEANmask(i,j) == imask_inner ){
-      int shelf_id =(*basins)(i,j);
+      int shelf_id =(cbasins)(i,j);
       lm_count[shelf_id]+=1;
       lm_Sval[shelf_id]+=(*m_salinity_ocean)(i,j);
       lm_Tval[shelf_id]+=(*m_theta_ocean)(i,j);
@@ -688,7 +719,7 @@ void Cavity::extentOfIceShelves() {
   IceModelVec::AccessList list;
   list.add(m_mask);
   list.add(DistIF);
-  list.add(*basins);
+  list.add(cbasins);
   list.add(DistGL);
 
 	// mask->begin_access();
@@ -829,7 +860,7 @@ void Cavity::identifyBOXMODELmask() {
   for(int k=0;k<numberOfBasins;k++){ max_distGL[k]=0.0; max_distIF[k]=0.0;lmax_distGL[k]=0.0; lmax_distIF[k]=0.0;}
 
   IceModelVec::AccessList list;
-  list.add(*basins);
+  list.add(cbasins);
   list.add(DistGL);
   list.add(DistIF);
   list.add(BOXMODELmask);
@@ -837,7 +868,7 @@ void Cavity::identifyBOXMODELmask() {
 
   for (Points p(*m_grid); p; p.next()) {
   const int i = p.i(), j = p.j();
-    int shelf_id = (*basins)(i,j);
+    int shelf_id = (cbasins)(i,j);
 
     if ( DistGL(i,j)> lmax_distGL[shelf_id] ) {
       lmax_distGL[shelf_id] = DistGL(i,j);
@@ -875,7 +906,7 @@ void Cavity::identifyBOXMODELmask() {
   // Define the BOXMODELmask
 
   // IceModelVec::AccessList list;
-  // list.add(*basins);
+  // list.add(cbasins);
   // list.add(DistGL);
   // list.add(DistIF);
 
@@ -886,7 +917,7 @@ void Cavity::identifyBOXMODELmask() {
     const int i = p.i(), j = p.j();
 
     if (m_mask(i,j)==maskfloating && DistGL(i,j)>0 && DistIF(i,j)>0 && BOXMODELmask(i,j)==0){
-      int shelf_id = (*basins)(i,j);
+      int shelf_id = (cbasins)(i,j);
       int n = lnumberOfBoxes_perBasin[shelf_id];
       double r = DistGL(i,j)*1.0/(DistGL(i,j)*1.0+DistIF(i,j)*1.0); // relative distance between grounding line and ice front
 
@@ -957,7 +988,7 @@ void Cavity::identifyBOXMODELmask() {
     const int i = p.i(), j = p.j();
     int box_id = static_cast<int>(round(BOXMODELmask(i,j)));
     if (box_id > 0){ // floating
-      int shelf_id = (*basins)(i,j);
+      int shelf_id = (cbasins)(i,j);
       lcounter_boxes[shelf_id][box_id]++;
     }
   }
@@ -990,7 +1021,7 @@ void Cavity::oceanTemperature(const Constants &cc) {
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
-  list.add(*basins);
+  list.add(cbasins);
   list.add(Soc_base);
   list.add(Toc_base);
   list.add(Toc_anomaly);
@@ -1008,7 +1039,7 @@ void Cavity::oceanTemperature(const Constants &cc) {
 
 
     if (m_mask(i,j)==maskfloating){
-      int shelf_id = (*basins)(i,j);
+      int shelf_id = (cbasins)(i,j);
       Toc_base(i,j) = 273.15 + Toc_base_vec[shelf_id];
       Soc_base(i,j) =  Soc_base_vec[shelf_id];
 
@@ -1079,7 +1110,7 @@ void Cavity::basalMeltRateForGroundingLineBox(const Constants &cc) {
 
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
-  list.add(*basins);
+  list.add(cbasins);
   list.add(BOXMODELmask);
   list.add(T_star);
   list.add(Toc_base);
@@ -1099,7 +1130,7 @@ void Cavity::basalMeltRateForGroundingLineBox(const Constants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int shelf_id = (*basins)(i,j);
+    int shelf_id = (cbasins)(i,j);
 
     // Make sure everything is at default values at the beginning of each timestep
     T_star(i,j) = 0.0; // in °C
@@ -1248,7 +1279,7 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
     // TODO: do we really need all these variables as full fields?
     IceModelVec::AccessList list;
     list.add(*ice_thickness);
-    list.add(*basins);
+    list.add(cbasins);
     list.add(BOXMODELmask);
     list.add(T_star);
     list.add(Toc_base);
@@ -1265,7 +1296,7 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      int shelf_id = (*basins)(i,j);
+      int shelf_id = (cbasins)(i,j);
 
       if (BOXMODELmask(i,j)==iBox && shelf_id > 0.0){
 
@@ -1430,7 +1461,7 @@ void Cavity::basalMeltRateForOtherShelves(const Constants &cc) {
   // TODO: do we really need all these variables as full fields?
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
-  list.add(*basins);
+  list.add(cbasins);
   list.add(BOXMODELmask);
   list.add(Toc_base);
   list.add(Toc_anomaly);
@@ -1443,7 +1474,7 @@ void Cavity::basalMeltRateForOtherShelves(const Constants &cc) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int shelf_id = (*basins)(i,j);
+    int shelf_id = (cbasins)(i,j);
 
     if (shelf_id == 0) { // boundary of computational domain
 

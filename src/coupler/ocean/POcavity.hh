@@ -23,6 +23,7 @@
 #include "coupler/util/PGivenClimate.hh"
 #include "POModifier.hh"
 #include "base/util/IceModelVec2CellType.hh"
+// #include "base/util/iceModelVec.hh"
 
 namespace pism {
 namespace ocean {
@@ -77,7 +78,7 @@ protected:
 private:
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux,
-                  // basins,
+                  cbasins,
                   ICERISESmask,
                   BOXMODELmask,
                   OCEANMEANmask, //FIXME delete when development finished
