@@ -229,6 +229,10 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   basalmeltrate_shelf.metadata().set_string("glaciological_units", "m year-1");
   m_variables.push_back(&basalmeltrate_shelf);
 
+  // Initialize this early so that we can check the validity of the "basins" mask read from a file
+  // in Cavity::init_impl(). This number is hard-wired, so I don't think it matters that it did not
+  // come from Cavity::Constants.
+  numberOfBasins = 20;
 }
 
 Cavity::~Cavity() {
@@ -245,30 +249,21 @@ void Cavity::init_impl() {
   m_salinity_ocean->init(m_filename, m_bc_period, m_bc_reference_time);
   // basins->init(m_filename, m_bc_period, m_bc_reference_time);
 
-  InputOptions opts = process_input_options(m_grid->com);
-
-  const double theta_ocean_std = -1.0;
-
   // m_log->message(2, "a min=%f,max=%f\n",cbasins.min(),cbasins.max());
 
+  cbasins.regrid(m_filename, CRITICAL);
 
-  switch (opts.type) {
-  case INIT_RESTART:
-    cbasins.read(m_filename, m_bc_period);
-    break;
-  case INIT_BOOTSTRAP:
-    cbasins.regrid(m_filename, OPTIONAL, theta_ocean_std);
-    break;
-  case INIT_OTHER:
-  default:
-    // Set the constant value.
-    cbasins.set(theta_ocean_std);
+  Range basins_range = cbasins.range();
+  if (basins_range.min < 0 or basins_range.max > numberOfBasins - 1) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Some basin numbers in %s read from %s are invalid:"
+                                  "allowed range is [0, %d], found [%d, %d]",
+                                  cbasins.get_name().c_str(), m_filename.c_str(),
+                                  numberOfBasins - 1,
+                                  (int)basins_range.min, (int)basins_range.max);
   }
 
-  regrid("OceanCavityModel", cbasins);
-
   m_log->message(2, "b min=%f,max=%f\n",cbasins.min(),cbasins.max());
-
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 &&
