@@ -522,7 +522,6 @@ void Cavity::round_basins() {
         (cbasins)(i,j) = most_frequent_neighbour;
         // m_log->message(2, "most frequent: %f at %d,%d\n",most_frequent_neighbour,i,j);
       }
-      (cbasins)(i,j) = i + j;
     }
 
   }
