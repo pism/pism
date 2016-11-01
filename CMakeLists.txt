@@ -160,6 +160,9 @@ endif()
 # Set Pism_EXTERNAL_LIBS and include directories.
 pism_set_dependencies()
 
+# Make sure that PetscScalar is double (not complex<double>.)
+pism_check_petsc_scalar_type()
+
 if (Pism_BUILD_PYTHON_BINDINGS)
   find_package(Python REQUIRED)
   find_package(PETSc4Py REQUIRED)
