@@ -70,9 +70,6 @@ macro(pism_latex_document name src figs run_bibtex)
 endmacro()
 
 if (PDFLATEX_COMPILER)
-  # Installation manual:
-  add_subdirectory(installation)
-
   # User's Manual:
   add_subdirectory(manual)
 
