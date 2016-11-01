@@ -17,7 +17,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <netcdf.h>
+#include <fftw3.h>
+#include <gsl/gsl_version.h>
+#if (PISM_USE_PROJ4==1)
+#include "base/util/Proj.hh"
+#endif
+
 #include "pism_utilities.hh"
+#include "pism_const.hh"
 #include "error_handling.hh"
 
 #include <sstream>
@@ -108,6 +116,38 @@ double GlobalMax(MPI_Comm comm, double local) {
 double GlobalSum(MPI_Comm comm, double local) {
   double result;
   GlobalSum(comm, &local, &result, 1);
+  return result;
+}
+
+std::string version() {
+  char buffer[TEMPORARY_STRING_LENGTH];
+  std::string result;
+
+  snprintf(buffer, sizeof(buffer), "PISM (%s)\n", PISM_Revision);
+  result += buffer;
+
+  PetscGetVersion(buffer, TEMPORARY_STRING_LENGTH);
+  result += buffer;
+  result += "\n";
+
+  snprintf(buffer, sizeof(buffer), "PETSc configuration: %s\n",
+           PISM_PETSC_CONFIGURE_FLAGS);
+  result += buffer;
+
+  snprintf(buffer, sizeof(buffer), "NetCDF %s.\n", nc_inq_libvers());
+  result += buffer;
+
+  snprintf(buffer, sizeof(buffer), "FFTW %s.\n", fftw_version);
+  result += buffer;
+
+  snprintf(buffer, sizeof(buffer), "GSL %s.\n", GSL_VERSION);
+  result += buffer;
+
+#if (PISM_USE_PROJ4==1)
+  snprintf(buffer, sizeof(buffer), "PROJ.4 %s.\n", pj_release);
+  result += buffer;
+#endif
+
   return result;
 }
 

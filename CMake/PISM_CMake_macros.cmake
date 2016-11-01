@@ -334,3 +334,8 @@ macro(pism_check_petsc_scalar_type)
       "PETSc configured with --with-scalar-type=complex cannot be used to build PISM.")
   endif()
 endmacro()
+
+macro(pism_set_petsc_configure_flags)
+  pism_petsc_get_variable("CONFIGURE_OPTIONS" PISM_PETSC_CONFIGURE_FLAGS)
+  add_definitions("-DPISM_PETSC_CONFIGURE_FLAGS=\"${PISM_PETSC_CONFIGURE_FLAGS}\"")
+endmacro()
