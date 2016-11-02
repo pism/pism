@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <mpi.h>
 #include <netcdf.h>
 #include <fftw3.h>
 #include <gsl/gsl_version.h>
@@ -137,8 +138,12 @@ std::string version() {
   result += buffer;
   result += "\n";
 
-  snprintf(buffer, sizeof(buffer), "PETSc configuration: %s\n",
+  snprintf(buffer, sizeof(buffer), "PETSc configure: %s\n",
            PISM_PETSC_CONFIGURE_FLAGS);
+  result += buffer;
+
+  int string_length = TEMPORARY_STRING_LENGTH;
+  MPI_Get_library_version(buffer, &string_length);
   result += buffer;
 
   snprintf(buffer, sizeof(buffer), "NetCDF %s.\n", nc_inq_libvers());

@@ -20,6 +20,7 @@
 #include <cassert>
 
 #include "pism_options.hh"
+#include "pism_utilities.hh"
 #include "VariableMetadata.hh"
 #include "PISMConfigInterface.hh"
 
@@ -61,6 +62,7 @@ bool show_usage_check_req_opts(const Logger &log,
   log.message(2, "%s %s\n", execname.c_str(), PISM_Revision);
 
   if (options::Bool("-version", "stop after printing print PISM version")) {
+    log.message(2, pism::version());
     return terminate;
   }
 
