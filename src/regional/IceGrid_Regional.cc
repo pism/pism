@@ -113,8 +113,7 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
     names.push_back("topg");
     bool grid_info_found = false;
 
-    PIO file(ctx->com(), "netcdf3");
-    file.open(input_file, PISM_READONLY); // will be closed automatically
+    PIO file(ctx->com(), "netcdf3", input_file, PISM_READONLY);
     for (unsigned int i = 0; i < names.size(); ++i) {
 
       grid_info_found = file.inq_var(names[i]);

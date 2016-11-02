@@ -99,10 +99,8 @@ void Hydrology::init() {
 
     unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
 
-    PIO nc(m_grid->com, "netcdf3");
-    nc.open(itb_file, PISM_READONLY);
+    PIO nc(m_grid->com, "netcdf3", itb_file, PISM_READONLY);
     unsigned int n_records = nc.inq_nrecords("inputtobed", "", m_sys);
-    nc.close();
 
     // if -..._period is not set, make n_records the minimum of the
     // buffer size and the number of available records. Otherwise try

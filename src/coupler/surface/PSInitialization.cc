@@ -91,13 +91,11 @@ void InitializationHelper::init_impl() {
     m_log->message(2, "* Reading effective surface model outputs from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    PIO file(m_grid->com, "guess_mode");
-    file.open(opts.filename, PISM_READONLY);
+    PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
     const unsigned int last_record = file.inq_nrecords() - 1;
     for (unsigned int k = 0; k < m_variables.size(); ++k) {
       m_variables[k]->read(file, last_record);
     }
-    file.close();
   } else {
     m_log->message(2, "* Performing a 'fake' surface model time-step for bootstrapping...\n");
 

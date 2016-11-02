@@ -295,8 +295,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
   global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
   // Find the number of records in this file:
-  PIO nc(m_grid->com, "netcdf3");      // OK to use NetCDF3.
-  nc.open(filename, mode);
+  PIO nc(m_grid->com, "netcdf3", filename, mode);      // OK to use NetCDF3.
   start = nc.inq_dimlen("N");
 
   io::write_global_attributes(nc, global_attributes);
@@ -365,8 +364,8 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output.format"));
-  pio.open(filename, PISM_READWRITE_MOVE);
+  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+          filename, PISM_READWRITE_MOVE);
   io::define_time(pio, m_config->get_string("time.dimension_name"),
                   m_grid->ctx()->time()->calendar(),
                   m_grid->ctx()->time()->CF_units_string(),

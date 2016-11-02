@@ -88,12 +88,10 @@ protected:
                         "  reading %s data from forcing file %s...\n",
                         m_offset->name().c_str(), file->c_str());
 
-    PIO nc(g->com, "netcdf3");
-    nc.open(file, PISM_READONLY);
+    PIO nc(g->com, "netcdf3", file, PISM_READONLY);
     {
       m_offset->read(nc, *g->ctx()->time(), *g->ctx()->log());
     }
-    nc.close();
   }
 
   //! Apply the current forcing as an offset.

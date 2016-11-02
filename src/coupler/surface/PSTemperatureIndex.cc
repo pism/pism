@@ -100,10 +100,10 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
     std::string short_name = "air_temp_sd";
     unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
 
-    PIO nc(m_grid->com, "netcdf3");
-    nc.open(file, PISM_READONLY);
-    n_records = nc.inq_nrecords(short_name, "", m_grid->ctx()->unit_system());
-    nc.close();
+    {
+      PIO nc(m_grid->com, "netcdf3", file, PISM_READONLY);
+      n_records = nc.inq_nrecords(short_name, "", m_grid->ctx()->unit_system());
+    }
 
     // If -..._period is not set, make ..._n_records the minimum of the
     // buffer size and the number of available records. Otherwise try

@@ -241,8 +241,7 @@ if __name__ == '__main__':
         final_velocity.add(PISM.convert(sys, 1.0, "m/year", "m/second"),
                            u_noise)
 
-    pio = PISM.PIO(grid.com, "netcdf3")
-    pio.open(output_file_name, PISM.PISM_READWRITE_MOVE)
+    pio = PISM.PIO(grid.com, "netcdf3", output_file_name, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio,
                      grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().config().get_string("time.calendar"),

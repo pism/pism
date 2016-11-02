@@ -115,10 +115,9 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
-  PIO nc(m_grid->com, "guess_mode");
+  PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
   std::string name_found;
   bool exists, found_by_standard_name;
-  nc.open(m_filename, PISM_READONLY);
   nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
              exists, name_found, found_by_standard_name);
   if (not exists) {
@@ -198,8 +197,6 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times have to be strictly increasing (read from '%s').",
                                   m_filename.c_str());
   }
-
-  nc.close();
 
   if (m_period != 0) {
     if ((size_t)m_n_records < m_time.size()) {
@@ -343,8 +340,7 @@ void IceModelVec2T::update(unsigned int start) {
     m_report_range = true;
   }
 
-  PIO nc(m_grid->com, "guess_mode");
-  nc.open(m_filename, PISM_READONLY);
+  PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
 
   for (unsigned int j = 0; j < missing; ++j) {
     {
@@ -360,8 +356,6 @@ void IceModelVec2T::update(unsigned int start) {
 
     set_record(kept + j);
   }
-
-  nc.close();
 }
 
 //! Discard the first N records, shifting the rest of them towards the "beginning".

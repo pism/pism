@@ -17,31 +17,30 @@ VecBundleWriter::VecBundleWriter(pism::IceGrid::Ptr _grid, std::string const &_f
 }
 
 void VecBundleWriter::init() {
-  pism::PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"));
+  pism::PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+               fname, PISM_READWRITE_MOVE);
 
-  nc.open(fname, PISM_READWRITE_MOVE);
-  io::define_time(nc, m_grid->ctx()->config()->get_string("time.dimension_name"), m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->CF_units_string(), m_grid->ctx()->unit_system());
+  io::define_time(nc,
+                  m_grid->ctx()->config()->get_string("time.dimension_name"),
+                  m_grid->ctx()->time()->calendar(),
+                  m_grid->ctx()->time()->CF_units_string(),
+                  m_grid->ctx()->unit_system());
 
   for (pism::IceModelVec const *vec : vecs) {
     vec->define(nc, PISM_DOUBLE);
   }
-
-  // --------- Close and return
-  nc.close();
 }
 
 /** Dump the value of the Vectors at curent PISM simulation time. */
 void VecBundleWriter::write(double time_s) {
-  pism::PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"));
+  pism::PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+               fname.c_str(), PISM_READWRITE); // append to file
 
-  nc.open(fname.c_str(), PISM_READWRITE); // append to file
   io::append_time(nc, m_grid->ctx()->config()->get_string("time.dimension_name"), time_s);
 
   for (pism::IceModelVec const *vec : vecs) {
     vec->write(nc);
   }
-  nc.close();
 }
 
 } // end of namespace icebin

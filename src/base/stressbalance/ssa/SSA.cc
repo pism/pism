@@ -170,8 +170,7 @@ void SSA::init_impl() {
                                                 "don't read the initial guess");
 
     if (read_initial_guess) {
-      PIO input_file(m_grid->com, "guess_mode");
-      input_file.open(opts.filename, PISM_READONLY);
+      PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
       bool u_ssa_found = input_file.inq_var("u_ssa");
       bool v_ssa_found = input_file.inq_var("v_ssa");
       unsigned int start = input_file.inq_nrecords() - 1;

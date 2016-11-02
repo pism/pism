@@ -64,13 +64,8 @@ Config::~Config() {
 
 void Config::read(MPI_Comm com, const std::string &file) {
 
-  PIO nc(com, "netcdf3"); // OK to use netcdf3
-
-  nc.open(file, PISM_READONLY);
-
+  PIO nc(com, "netcdf3", file, PISM_READONLY); // OK to use netcdf3
   this->read(nc);
-
-  nc.close();
 }
 
 void Config::read(const PIO &nc) {
@@ -85,15 +80,11 @@ void Config::write(const PIO &nc) const {
 
 void Config::write(MPI_Comm com, const std::string &file, bool append) const {
 
-  PIO nc(com, "netcdf3"); // OK to use netcdf3
-
   IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
-  nc.open(file, mode);
+  PIO nc(com, "netcdf3", file, mode); // OK to use netcdf3
 
   this->write(nc);
-
-  nc.close();
 }
 
 //! \brief Returns the name of the file used to initialize the database.

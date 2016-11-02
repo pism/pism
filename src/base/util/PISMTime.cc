@@ -45,20 +45,15 @@ std::string calendar_from_options(MPI_Comm com, const Config &config) {
   // "calendar" attribute is found.
   options::String time_file("-time_file", "name of the file specifying the run duration");
   if (time_file.is_set()) {
-    PIO nc(com, "netcdf3");    // OK to use netcdf3
+    PIO nc(com, "netcdf3", time_file, PISM_READONLY);    // OK to use netcdf3
 
-    nc.open(time_file, PISM_READONLY);
-    {
-      std::string time_name = config.get_string("time.dimension_name");
-      bool time_exists = nc.inq_var(time_name);
-      if (time_exists) {
-        std::string tmp = nc.get_att_text(time_name, "calendar");
-        if (not tmp.empty()) {
-          result = tmp;
-        }
+    std::string time_name = config.get_string("time.dimension_name");
+    if (nc.inq_var(time_name)) {
+      std::string tmp = nc.get_att_text(time_name, "calendar");
+      if (not tmp.empty()) {
+        result = tmp;
       }
     }
-    nc.close();
   }
   return result;
 }
@@ -90,11 +85,8 @@ void initialize_time(MPI_Comm com, const std::string &dimension_name,
   options::String input_file("-i", "Specifies a PISM input file");
 
   if (input_file.is_set()) {
-    PIO nc(com, "netcdf3");     // OK to use netcdf3
-
-    nc.open(input_file, PISM_READONLY);
+    PIO nc(com, "netcdf3", input_file, PISM_READONLY);     // OK to use netcdf3
     time.init_from_input_file(nc, dimension_name, log);
-    nc.close();
   }
 
   time.init(log);

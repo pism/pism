@@ -97,8 +97,7 @@ void BTU_Full::init_impl(const InputOptions &opts) {
     const int temp_revision = m_temp.get_state_counter();
 
     if (opts.type == INIT_RESTART) {
-      PIO input_file(m_grid->com, "guess_mode");
-      input_file.open(opts.filename, PISM_READONLY);
+      PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
 
       if (input_file.inq_var("litho_temp")) {
         m_temp.read(input_file, opts.record);

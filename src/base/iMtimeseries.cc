@@ -98,8 +98,7 @@ void IceModel::init_timeseries() {
     }
   }
 
-  PIO nc(m_grid->com, "netcdf3");      // Use NetCDF-3 to write time-series.
-  nc.open(ts_file, mode);
+  PIO nc(m_grid->com, "netcdf3", ts_file, mode);      // Use NetCDF-3 to write time-series.
 
   if (append) {
     m_old_ts_file_history = nc.get_att_text("PISM_GLOBAL", "history");
@@ -245,15 +244,14 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO nc(m_grid->com, m_config->get_string("output.format"));
-    std::string time_name = m_config->get_string("time.dimension_name");
-
-    nc.open(m_extra_filename, PISM_READONLY);
+    PIO nc(m_grid->com, m_config->get_string("output.format"), m_extra_filename, PISM_READONLY);
 
     m_old_extra_file_history = nc.get_att_text("PISM_GLOBAL", "history");
 
+    std::string time_name = m_config->get_string("time.dimension_name");
     if (nc.inq_var(time_name)) {
       double time_max;
+
       nc.inq_dim_limits(time_name, NULL, &time_max);
 
       while (m_next_extra + 1 < m_extra_times.size() && m_extra_times[m_next_extra + 1] < time_max) {
@@ -429,19 +427,14 @@ void IceModel::write_extras() {
   // find out how much time passed since the beginning of the run
   double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
 
-  PIO nc(m_grid->com, m_config->get_string("output.format"));
+  // default behavior is to move the file aside if it exists already; option allows appending
+  bool append = options::Bool("-extra_append", "append -extra_file output");
+  IO_Mode mode = m_extra_file_is_ready or append ? PISM_READWRITE : PISM_READWRITE_MOVE;
+
+  PIO nc(m_grid->com, m_config->get_string("output.format"), filename, mode);
 
   if (not m_extra_file_is_ready) {
-    // default behavior is to move the file aside if it exists already; option allows appending
-    bool append = options::Bool("-extra_append", "append -extra_file output");
-
-    IO_Mode mode = PISM_READWRITE;
-    if (not append) {
-      mode = PISM_READWRITE_MOVE;
-    }
-
     // Prepare the file:
-    nc.open(filename, mode);
     io::define_time(nc, m_config->get_string("time.dimension_name"),
                     m_time->calendar(),
                     m_time->CF_units_string(),
@@ -450,9 +443,6 @@ void IceModel::write_extras() {
                     "bounds", "time_bounds");
 
     m_extra_file_is_ready = true;
-  } else {
-    // In this case the extra file should be present.
-    nc.open(filename, PISM_READWRITE);
   }
 
   // write metadata to the file *every time* we update it, but avoid prepending history.
@@ -575,8 +565,7 @@ void IceModel::flush_timeseries() {
 
   // update metadata in the time series output file
   if (m_save_ts) {
-    PIO nc(m_grid->com, "netcdf3");
-    nc.open(m_ts_filename, PISM_READWRITE);
+    PIO nc(m_grid->com, "netcdf3", m_ts_filename, PISM_READWRITE);
 
     write_metadata(nc, WRITE_RUN_STATS);
     // write global attributes, but avoid prepending history every time

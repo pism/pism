@@ -400,12 +400,11 @@ void DiagnosticTimeseries::interp(double a, double b) {
 }
 
 void DiagnosticTimeseries::init(const std::string &filename) {
-  PIO nc(m_com, "netcdf3"); // OK to use netcdf3
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
   if (io::file_exists(m_com, filename)) {
-    nc.open(filename, PISM_READONLY);
+    PIO nc(m_com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
     len = nc.inq_dimlen(m_dimension.get_name());
     if (len > 0) {
       // read the last value and initialize v_previous and v[0]
@@ -419,7 +418,6 @@ void DiagnosticTimeseries::init(const std::string &filename) {
         m_v_previous = tmp[0];
       }
     }
-    nc.close();
   }
 
   output_filename = filename;
@@ -429,7 +427,6 @@ void DiagnosticTimeseries::init(const std::string &filename) {
 
 //! Writes data to a file.
 void DiagnosticTimeseries::flush() {
-  PIO nc(m_com, "netcdf3"); // OK to use netcdf3
   unsigned int len = 0;
 
   // return cleanly if this DiagnosticTimeseries object was created but never
@@ -442,7 +439,7 @@ void DiagnosticTimeseries::flush() {
     return;
   }
 
-  nc.open(output_filename, PISM_READWRITE);
+  PIO nc(m_com, "netcdf3", output_filename, PISM_READWRITE); // OK to use netcdf3
   len = nc.inq_dimlen(m_dimension.get_name());
 
   if (len > 0) {
@@ -467,8 +464,6 @@ void DiagnosticTimeseries::flush() {
   m_time.clear();
   m_values.clear();
   m_time_bounds.clear();
-
-  nc.close();
 }
 
 void DiagnosticTimeseries::reset() {

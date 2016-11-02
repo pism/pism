@@ -81,8 +81,7 @@ void InitializationHelper::init_impl() {
     m_log->message(2, "* Reading effective ocean model outputs from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    PIO file(m_grid->com, "guess_mode");
-    file.open(opts.filename, PISM_READONLY);
+    PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
     const unsigned int last_record = file.inq_nrecords() - 1;
 
     m_melange_back_pressure_fraction.read(file, last_record);

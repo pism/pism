@@ -53,9 +53,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
 
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
-    PIO input_file(ctx->com(), "guess_mode");
-
-    input_file.open(opts.filename, PISM_READONLY);
+    PIO input_file(ctx->com(), "guess_mode", opts.filename, PISM_READONLY);
 
     if (input_file.inq_var("litho_temp")) {
       grid_info info(input_file, "litho_temp", ctx->unit_system(),

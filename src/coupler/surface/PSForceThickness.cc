@@ -105,11 +105,8 @@ void ForceThickness::init_impl() {
 
   // input_file now contains name of -force_to_thickness file; now check
   // it is really there; and regrid the target thickness
-  PIO nc(m_grid->com, "guess_mode");
-  bool mask_exists = false;
-  nc.open(input_file, PISM_READONLY);
-  mask_exists = nc.inq_var("ftt_mask");
-  nc.close();
+  PIO nc(m_grid->com, "guess_mode", input_file, PISM_READONLY);
+  bool mask_exists = nc.inq_var("ftt_mask");
 
   m_log->message(2,
              "    reading target thickness 'thk' from %s ...\n"

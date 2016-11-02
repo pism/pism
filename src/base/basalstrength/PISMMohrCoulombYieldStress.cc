@@ -182,11 +182,8 @@ void MohrCoulombYieldStress::init_impl() {
 
     if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
 
-      PIO nc(m_grid->com, "guess_mode");
-
-      nc.open(opts.filename, PISM_READONLY);
+      PIO nc(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
       bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_name());
-      nc.close();
 
       if (tillphi_present) {
         m_log->message(2,

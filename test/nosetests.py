@@ -165,8 +165,7 @@ def grid_from_file_test():
     enthalpy.set(80e3)
 
     output_file = "test_grid_from_file.nc"
-    pio = PISM.PIO(grid.com, "netcdf3")
-    pio.open(output_file, PISM.PISM_READWRITE_MOVE)
+    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().config().get_string("time.calendar"),
                      grid.ctx().time().units_string(),
@@ -178,7 +177,7 @@ def grid_from_file_test():
 
     enthalpy.write(output_file)
 
-    pio.open(output_file, PISM.PISM_READONLY)
+    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
     grid2 = PISM.IceGrid.FromFile(grid.ctx(), pio, "enthalpy", PISM.NOT_PERIODIC)
     pio.close()
 
@@ -382,8 +381,7 @@ def modelvecs_test():
 
     # test write()
     output_file = "test_ModelVecs.nc"
-    pio = PISM.PIO(grid.com, "netcdf3")
-    pio.open(output_file, PISM.PISM_READWRITE_MOVE)
+    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
     PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
                      grid.ctx().config().get_string("time.calendar"),
                      grid.ctx().time().units_string(),
@@ -448,8 +446,7 @@ def util_test():
     grid = create_dummy_grid()
 
     output_file = "test_pism_util.nc"
-    pio = PISM.PIO(grid.com, "netcdf3")
-    pio.open(output_file, PISM.PISM_READWRITE_MOVE)
+    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
     pio.close()
 
     PISM.util.writeProvenance(output_file)
@@ -467,12 +464,10 @@ def util_test():
 def logging_test():
     "Test the PISM.logging module"
     grid = create_dummy_grid()
-    pio = PISM.PIO(grid.com, "netcdf3")
 
     import PISM.logging as L
 
-    pio.open("log.nc", PISM.PISM_READWRITE_MOVE)
-    pio.close()
+    PISM.PIO(grid.com, "netcdf3", "log.nc", PISM.PISM_READWRITE_MOVE)
     c = L.CaptureLogger("log.nc")
 
     L.clear_loggers()
@@ -495,8 +490,7 @@ def logging_test():
     c.write()                   # default arguments
     c.readOldLog()
 
-    pio.open("other_log.nc", PISM.PISM_READWRITE_MOVE)
-    pio.close()
+    PISM.PIO(grid.com, "netcdf3", "other_log.nc", PISM.PISM_READWRITE_MOVE)
     c.write("other_log.nc", "other_log")  # non-default arguments
 
 
@@ -1043,11 +1037,16 @@ netcdf string_attribute_test {
         os.remove(basename + ".nc")
         os.remove(basename + ".cdl")
 
-    def compare(pio):
-        pio.open(basename + ".nc", PISM.PISM_READONLY)
+    def compare(backend):
+        try:
+            pio = PISM.PIO(PISM.PETSc.COMM_WORLD, backend, basename + ".nc", PISM.PISM_READONLY)
+        except:
+            # Don't fail if backend creation failed: PISM may not have
+            # been compiled with parallel I/O enabled.
+            return
+
         read_string = pio.get_att_text("PISM_GLOBAL", "string_attribute")
         read_text = pio.get_att_text("PISM_GLOBAL", "text_attribute")
-        pio.close()
 
         # check that written and read strings are the same
         print "written string: '%s'" % attribute
@@ -1056,29 +1055,9 @@ netcdf string_attribute_test {
         assert read_string == attribute
         assert read_text == attribute
 
-    def netcdf3():
-        # try reading this attribute
-        pio = PISM.PIO(PISM.PETSc.COMM_WORLD, "netcdf3")
-
-        print "\nTesting pism::io::NC3File::get_att_text_impl()..."
-        compare(pio)
-
-    def netcdf4_parallel():
-        # try reading this attribute
-        try:
-            # try creating a netcdf4_parallel backend, stop the test
-            # (without failing) if this fails -- PISM may not have
-            # been compiled with parallel NetCDF-4.
-            pio = PISM.PIO(PISM.PETSc.COMM_WORLD, "netcdf4_parallel")
-        except:
-            return
-
-        print "\nTesting pism::io::NC4File::get_att_text_impl()..."
-        compare(pio)
-
     setup()
 
-    netcdf3()
-    netcdf4_parallel()
+    compare("netcdf3")
+    compare("netcdf4_parallel")
 
     teardown()

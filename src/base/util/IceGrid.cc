@@ -260,8 +260,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
                                const std::vector<std::string> &var_names,
                                Periodicity periodicity) {
 
-  PIO file(ctx->com(), "netcdf3");
-  file.open(filename, PISM_READONLY); // will be closed automatically
+  PIO file(ctx->com(), "netcdf3", filename, PISM_READONLY);
 
   for (unsigned int k = 0; k < var_names.size(); ++k) {
     if (file.inq_var(var_names[k])) {
@@ -1199,10 +1198,8 @@ GridParameters::GridParameters(Context::Ptr ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                Periodicity p) {
-  PIO nc(ctx->com(), "netcdf3");
-  nc.open(filename, PISM_READONLY);
+  PIO nc(ctx->com(), "netcdf3", filename, PISM_READONLY);
   init_from_file(ctx, nc, variable_name, p);
-  nc.close();
 }
 
 
@@ -1337,8 +1334,8 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
     names.push_back("topg");
     bool grid_info_found = false;
 
-    PIO nc(ctx->com(), "netcdf3");
-    nc.open(input_file, PISM_READONLY); // will be closed automatically
+    PIO nc(ctx->com(), "netcdf3", input_file, PISM_READONLY);
+
     for (unsigned int i = 0; i < names.size(); ++i) {
 
       grid_info_found = nc.inq_var(names[i]);

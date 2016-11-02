@@ -211,9 +211,7 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
   try {
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    PIO nc(m_com, "netcdf3"); // OK to use netcdf3
-
-    nc.open(filename, PISM_READONLY); // will be closed automatically
+    PIO nc(m_com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
 
     // Set the calendar name from file.
     std::string new_calendar = nc.get_att_text(time_name, "calendar");

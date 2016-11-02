@@ -423,9 +423,8 @@ int main(int argc, char *argv[]) {
                  ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
-    PIO pio(grid->com, "netcdf3");
+    PIO pio(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
 
-    pio.open(output_file, PISM_READWRITE_MOVE);
     io::define_time(pio, config->get_string("time.dimension_name"),
                     grid->ctx()->time()->calendar(),
                     grid->ctx()->time()->CF_units_string(),

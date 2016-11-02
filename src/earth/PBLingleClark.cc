@@ -126,8 +126,7 @@ void PBLingleClark::correct_topg() {
     return;
   }
 
-  PIO nc(m_grid->com, "guess_mode");
-  nc.open(regrid_file, PISM_READONLY);
+  PIO nc(m_grid->com, "guess_mode", regrid_file, PISM_READONLY);
   bool topg_initial_exists = nc.inq_var("topg_initial");
   bool topg_exists = nc.inq_var("topg");
   nc.close();

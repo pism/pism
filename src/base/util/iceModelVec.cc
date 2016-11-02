@@ -474,11 +474,8 @@ void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
   name to find the variable to read attributes from.
  */
 void IceModelVec::read_attributes(const std::string &filename, int N) {
-  PIO nc(m_grid->com, "netcdf3");     // OK to use netcdf3
-
-  nc.open(filename, PISM_READONLY);
+  PIO nc(m_grid->com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
   io::read_attributes(nc, metadata(N).get_name(), metadata(N));
-  nc.close();
 }
 
 
@@ -520,9 +517,9 @@ void IceModelVec::write_impl(const PIO &nc) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void IceModelVec::dump(const char filename[]) const {
-  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"));
+  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+         filename, PISM_READWRITE_CLOBBER);
 
-  nc.open(filename, PISM_READWRITE_CLOBBER);
   io::define_time(nc,
                   m_grid->ctx()->config()->get_string("time.dimension_name"),
                   m_grid->ctx()->time()->calendar(),
@@ -533,8 +530,6 @@ void IceModelVec::dump(const char filename[]) const {
 
   define(nc, PISM_DOUBLE);
   write(nc);
-
-  nc.close();
 }
 
 //! Checks if two IceModelVecs have compatible sizes, dimensions and numbers of degrees of freedom.
@@ -813,45 +808,29 @@ std::vector<double> IceModelVec::norm_all(int n) const {
 }
 
 void IceModelVec::write(const std::string &filename) const {
-
-  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"));
-
   // We expect the file to be present and ready to write into.
-  nc.open(filename, PISM_READWRITE);
+  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+         filename, PISM_READWRITE);
 
   this->write(nc);
-
-  nc.close();
 }
 
 void IceModelVec::read(const std::string &filename, unsigned int time) {
-
-  PIO nc(m_grid->com, "guess_mode");
-
-  nc.open(filename, PISM_READONLY);
-
+  PIO nc(m_grid->com, "guess_mode", filename, PISM_READONLY);
   this->read(nc, time);
-
-  nc.close();
 }
 
 void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
                                    double default_value) {
-
-  PIO nc(m_grid->com, "guess_mode");
-
-  nc.open(filename, PISM_READONLY);
+  PIO nc(m_grid->com, "guess_mode", filename, PISM_READONLY);
 
   try {
     this->regrid(nc, flag, default_value);
   } catch (RuntimeError &e) {
     e.add_context("regridding '%s' from '%s'",
                   this->get_name().c_str(), filename.c_str());
-    nc.close();
     throw;
   }
-
-  nc.close();
 }
 
 /** Read a field from a file, interpolating onto the current grid.

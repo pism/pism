@@ -231,10 +231,10 @@ int main(int argc, char *argv[]) {
     std::set<std::string> vars;
     btu->add_vars_to_output("big", vars); // "write everything you can"
 
-    PIO pio(grid->com, grid->ctx()->config()->get_string("output.format"));
+    PIO pio(grid->com, grid->ctx()->config()->get_string("output.format"),
+            outname, PISM_READWRITE_MOVE);
 
     std::string time_name = config->get_string("time.dimension_name");
-    pio.open(outname, PISM_READWRITE_MOVE);
     io::define_time(pio, time_name, ctx->time()->calendar(),
                     ctx->time()->CF_units_string(), ctx->unit_system());
     io::append_time(pio, time_name, ctx->time()->end());
@@ -244,8 +244,6 @@ int main(int argc, char *argv[]) {
 
     bedtoptemp.write(pio);
     heat_flux_at_ice_base.write(pio);
-
-    pio.close();
 
     log->message(2, "done.\n");
   }

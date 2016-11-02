@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,12 +37,10 @@ enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 class PIO
 {
 public:
-  PIO(MPI_Comm com, const std::string &mode);
+  PIO(MPI_Comm com, const std::string &backend, const std::string &filename, IO_Mode mode);
   ~PIO();
 
   MPI_Comm com() const;
-
-  void open(const std::string &filename, IO_Mode mode);
 
   void close();
 
@@ -136,6 +134,8 @@ public:
 private:
   struct Impl;
   Impl *m_impl;
+
+  void open(const std::string &filename, IO_Mode mode);
 
   void detect_mode(const std::string &filename);
 

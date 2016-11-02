@@ -102,15 +102,17 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   }
 }
 
-PIO::PIO(MPI_Comm c, const string &mode)
+PIO::PIO(MPI_Comm com, const std::string &backend, const std::string &filename, IO_Mode mode)
   : m_impl(new Impl) {
-  m_impl->com  = c;
-  m_impl->backend_type = mode;
-  m_impl->nc   = create_backend(m_impl->com, m_impl->backend_type);
+  m_impl->com          = com;
+  m_impl->backend_type = backend;
+  m_impl->nc           = create_backend(m_impl->com, m_impl->backend_type);
 
-  if (mode != "guess_mode" && not m_impl->nc) {
+  if (backend != "guess_mode" && not m_impl->nc) {
     throw RuntimeError(PISM_ERROR_LOCATION, "failed to allocate an I/O backend (class PIO)");
   }
+
+  this->open(filename, mode);
 }
 
 PIO::~PIO() {

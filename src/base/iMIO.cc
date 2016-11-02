@@ -114,17 +114,14 @@ void IceModel::write_metadata(const PIO &nc, MetadataFlag flag) {
 void IceModel::dumpToFile(const std::string &filename) {
   const Profiling &profiling = m_ctx->profiling();
 
-  PIO nc(m_grid->com, m_config->get_string("output.format"));
-
   profiling.begin("model state dump");
 
-  // Prepare the file
-  std::string time_name = m_config->get_string("time.dimension_name");
-  nc.open(filename, PISM_READWRITE_MOVE);
+  PIO nc(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
 
   // Write metadata *before* everything else:
   write_metadata(nc, WRITE_ALL);
 
+  std::string time_name = m_config->get_string("time.dimension_name");
   io::define_time(nc, time_name, m_time->calendar(),
                   m_time->CF_units_string(),
                   m_sys);
@@ -405,8 +402,7 @@ void IceModel::regrid(int dimensions) {
   }
 
   {
-    PIO regrid_file(m_grid->com, "guess_mode");
-    regrid_file.open(regrid_filename, PISM_READONLY);
+    PIO regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
 
     if (dimensions == 0) {
       regrid_variables(regrid_file, regrid_vars, 2);
@@ -639,20 +635,17 @@ void IceModel::write_snapshot() {
              filename, m_time->date().c_str(),
              m_time->date(saving_after).c_str());
 
-  PIO nc(m_grid->com, m_config->get_string("output.format"));
+  IO_Mode mode = m_snapshots_file_is_ready ? PISM_READWRITE : PISM_READWRITE_MOVE;
+  PIO nc(m_grid->com, m_config->get_string("output.format"), filename, mode);
 
   if (not m_snapshots_file_is_ready) {
     // Prepare the snapshots file:
-    nc.open(filename, PISM_READWRITE_MOVE);
     io::define_time(nc, m_config->get_string("time.dimension_name"),
-                m_time->calendar(),
-                m_time->CF_units_string(),
-                m_sys);
+                    m_time->calendar(),
+                    m_time->CF_units_string(),
+                    m_sys);
 
     m_snapshots_file_is_ready = true;
-  } else {
-    // In this case the snapshot file is should be present.
-    nc.open(filename, PISM_READWRITE);
   }
 
   // write metadata to the file *every time* we update it
@@ -733,10 +726,10 @@ void IceModel::write_backup() {
 
   stampHistory(tmp);
 
-  PIO nc(m_grid->com, m_config->get_string("output.format"));
+  PIO nc(m_grid->com, m_config->get_string("output.format"),
+         m_backup_filename, PISM_READWRITE_MOVE);
 
   // write metadata:
-  nc.open(m_backup_filename, PISM_READWRITE_MOVE);
   io::define_time(nc, m_config->get_string("time.dimension_name"),
               m_time->calendar(),
               m_time->CF_units_string(),
@@ -747,8 +740,6 @@ void IceModel::write_backup() {
   write_metadata(nc, WRITE_ALL);
 
   write_variables(nc, m_backup_vars, PISM_DOUBLE);
-
-  nc.close();
 
   // Also flush time-series:
   flush_timeseries();

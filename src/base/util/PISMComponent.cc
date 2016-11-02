@@ -60,13 +60,13 @@ InputOptions process_input_options(MPI_Comm com) {
 
   // get the index of the last record in the input file
   if (input_filename.is_set()) {
-    PIO input_file(com, "guess_mode");
-    unsigned int last_record = 0;
-
-    input_file.open(input_filename, PISM_READONLY);
+    PIO input_file(com, "guess_mode", input_filename, PISM_READONLY);
 
     // Find the index of the last record in the input file.
-    last_record = input_file.inq_nrecords() - 1;
+    unsigned int last_record = input_file.inq_nrecords();
+    if (last_record > 0) {
+      last_record -= 1;
+    }
 
     result.record = last_record;
   } else {
