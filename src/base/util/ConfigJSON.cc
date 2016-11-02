@@ -17,9 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <iostream>             // FIXME: this is just for error messages.
 #include <vector>
-#include <cassert>              // assert
 #include <cstdlib>              // free
 
 #include "ConfigJSON.hh"

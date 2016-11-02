@@ -335,7 +335,10 @@ macro(pism_check_petsc_scalar_type)
   endif()
 endmacro()
 
-macro(pism_set_petsc_configure_flags)
+# Set version information that will be embedded in output files.
+macro(pism_set_version_info)
   pism_petsc_get_variable("CONFIGURE_OPTIONS" PISM_PETSC_CONFIGURE_FLAGS)
   add_definitions("-DPISM_PETSC_CONFIGURE_FLAGS=\"${PISM_PETSC_CONFIGURE_FLAGS}\"")
+
+  add_definitions("-DPISM_CMAKE_VERSION=\"${CMAKE_VERSION}\"")
 endmacro()

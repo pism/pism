@@ -24,6 +24,10 @@
 #include "base/util/Proj.hh"
 #endif
 
+#if (PISM_USE_JANSSON==1)
+#include <jansson.h>
+#endif
+
 #include "pism_utilities.hh"
 #include "pism_const.hh"
 #include "error_handling.hh"
@@ -126,6 +130,9 @@ std::string version() {
   snprintf(buffer, sizeof(buffer), "PISM (%s)\n", PISM_Revision);
   result += buffer;
 
+  snprintf(buffer, sizeof(buffer), "CMake %s.\n", PISM_CMAKE_VERSION);
+  result += buffer;
+
   PetscGetVersion(buffer, TEMPORARY_STRING_LENGTH);
   result += buffer;
   result += "\n";
@@ -145,6 +152,11 @@ std::string version() {
 
 #if (PISM_USE_PROJ4==1)
   snprintf(buffer, sizeof(buffer), "PROJ.4 %s.\n", pj_release);
+  result += buffer;
+#endif
+
+#if (PISM_USE_JANSSON==1)
+  snprintf(buffer, sizeof(buffer), "Jansson %s.\n", JANSSON_VERSION);
   result += buffer;
 #endif
 

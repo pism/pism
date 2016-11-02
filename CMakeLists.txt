@@ -162,7 +162,7 @@ pism_set_dependencies()
 
 # Make sure that PetscScalar is double (not complex<double>.)
 pism_check_petsc_scalar_type()
-pism_set_petsc_configure_flags()
+pism_set_version_info()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
   find_package(Python REQUIRED)
