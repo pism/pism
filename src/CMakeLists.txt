@@ -275,8 +275,20 @@ endif (Pism_BUILD_EXTRA_EXECS)
 
 
 # ------------ Header Files
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/ DESTINATION include
-          FILES_MATCHING PATTERN "*.hh")
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
+  DESTINATION include/pism
+  FILES_MATCHING
+  PATTERN "*.hh"
+  PATTERN "*.h"
+  PATTERN "calcalcs" EXCLUDE
+  PATTERN "pismmerge" EXCLUDE
+  PATTERN "pythonbindings" EXCLUDE
+  PATTERN "vdt" EXCLUDE
+  PATTERN "doc" EXCLUDE
+  PATTERN "figs" EXCLUDE
+  PATTERN "ssa/tests" EXCLUDE
+  PATTERN "verif/tests/fortran" EXCLUDE
+  )
 
 add_subdirectory (calcalcs)
 add_subdirectory (base/rheology)
