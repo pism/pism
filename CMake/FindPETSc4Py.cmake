@@ -14,7 +14,12 @@ execute_process(
   OUTPUT_VARIABLE PETSC4PY_INCLUDES
   RESULT_VARIABLE PETSC4PY_NOT_FOUND)
 
+execute_process(
+  COMMAND ${PYTHON_EXECUTABLE} -c "import petsc4py; from sys import stdout; stdout.write(petsc4py.__version__)"
+  OUTPUT_VARIABLE PETSC4PY_VERSION
+  RESULT_VARIABLE PETSC4PY_NOT_FOUND)
+
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (PETSc4Py DEFAULT_MSG PETSC4PY_INCLUDES)
 
-mark_as_advanced(PETSC4PY_INCLUDES)
+mark_as_advanced(PETSC4PY_INCLUDES PETSC4PY_VERSION)

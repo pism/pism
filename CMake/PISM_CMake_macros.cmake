@@ -341,4 +341,9 @@ macro(pism_set_version_info)
   add_definitions("-DPISM_PETSC_CONFIGURE_FLAGS=\"${PISM_PETSC_CONFIGURE_FLAGS}\"")
 
   add_definitions("-DPISM_CMAKE_VERSION=\"${CMAKE_VERSION}\"")
+
+  if (Pism_BUILD_PYTHON_BINDINGS)
+    add_definitions("-DPISM_SWIG_VERSION=\"${SWIG_VERSION}\"")
+    add_definitions("-DPISM_PETSC4PY_VERSION=\"${PETSC4PY_VERSION}\"")
+  endif()
 endmacro()

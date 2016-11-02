@@ -165,6 +165,16 @@ std::string version() {
   result += buffer;
 #endif
 
+#ifdef PISM_SWIG_VERSION
+  snprintf(buffer, sizeof(buffer), "SWIG %s.\n", PISM_SWIG_VERSION);
+  result += buffer;
+#endif
+
+#ifdef PISM_PETSC4PY_VERSION
+  snprintf(buffer, sizeof(buffer), "petsc4py %s.\n", PISM_PETSC4PY_VERSION);
+  result += buffer;
+#endif
+
   return result;
 }
 
