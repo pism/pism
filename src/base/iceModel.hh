@@ -496,6 +496,10 @@ public:
 
   const IceModelVec3& ice_enthalpy() const;
   const IceModelVec2S& ice_thickness() const;
+  const IceModelVec2S& ice_surface_elevation() const
+    { return m_ice_surface_elevation; }
+  const IceModelVec2CellType& cell_type() const
+    { return m_cell_type; }
 protected:
 
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
