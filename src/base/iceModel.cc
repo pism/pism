@@ -952,4 +952,17 @@ const IceModelVec2S& IceModel::ice_thickness() const {
   return m_ice_thickness;
 }
 
+const IceModelVec2S & IceModel::cell_area() {
+  return m_cell_area;
+}
+
+const IceModelVec2CellType & IceModel::cell_type() const {
+  return m_cell_type;
+}
+
+const IceModelVec2S& IceModel::ice_surface_elevation() const {
+  return m_ice_surface_elevation;
+}
+
+
 } // end of namespace pism
