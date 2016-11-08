@@ -126,7 +126,7 @@ endmacro()
 
 macro(pism_find_prerequisites)
   # PETSc
-  find_package (PETSc)
+  find_package (PETSc REQUIRED)
   if (DEFINED PETSC_VERSION)
 
     # FindPETSc.cmake does not put PETSC_VERSION into the CMake cache,
@@ -163,7 +163,7 @@ macro(pism_find_prerequisites)
 
   # Optional libraries
   if (Pism_USE_PNETCDF)
-    find_package (PNetCDF)
+    find_package (PNetCDF REQUIRED)
   endif()
 
   if (Pism_USE_PARALLEL_HDF5)
@@ -177,7 +177,7 @@ macro(pism_find_prerequisites)
   endif()
 
   if (Pism_USE_PROJ4)
-    find_package (PROJ4)
+    find_package (PROJ4 REQUIRED)
   endif()
 
   # Use TAO included in PETSc 3.5.
@@ -201,7 +201,7 @@ macro(pism_find_prerequisites)
   endif()
 
   if (Pism_USE_JANSSON)
-    find_package(Jansson)
+    find_package(Jansson REQUIRED)
 
     if (NOT JANSSON_FOUND)
       set(pism_jansson_dir ${Pism_BINARY_DIR}/jansson)
