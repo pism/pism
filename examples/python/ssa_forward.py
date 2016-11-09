@@ -41,7 +41,7 @@ if __name__ == '__main__':
     * -i is required
   """
 
-    PISM.show_usage_check_req_opts(com, "ssa_forward", ["-i"], usage)
+    PISM.show_usage_check_req_opts(context.log, "ssa_forward", ["-i"], usage)
 
     input_file, input_file_set = PISM.optionsStringWasSet("-i", "input file with PISM model data")
     if not input_file_set:
