@@ -486,5 +486,72 @@ double SSA::ocean_pressure_difference(bool shelf, bool dry_mode, double H, doubl
   }
 }
 
+SSA_calving_front_pressure_difference::SSA_calving_front_pressure_difference(SSA *m)
+  : Diag<SSA>(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "ocean_pressure_difference"));
+  m_vars[0].set_double("_FillValue", m_fill_value);
+
+  set_attrs("ocean pressure difference at calving fronts", "",
+            "", "", 0);
+}
+
+IceModelVec::Ptr SSA_calving_front_pressure_difference::compute_impl() {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "ocean_pressure_difference", WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+
+  IceModelVec2CellType mask;
+  mask.create(m_grid, "mask", WITH_GHOSTS);
+
+  const IceModelVec2S &H   = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const double sea_level = 0.0;  // FIXME: use real sea level
+
+  {
+    const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
+    GeometryCalculator gc(*m_config);
+    gc.set_icefree_thickness(H_threshold);
+
+    gc.compute_mask(sea_level, bed, H, mask);
+  }
+
+  const double
+    rho_ice   = m_config->get_double("constants.ice.density"),
+    rho_ocean = m_config->get_double("constants.sea_water.density"),
+    g         = m_config->get_double("constants.standard_gravity");
+
+  const bool dry_mode = m_config->get_boolean("ocean.always_grounded");
+
+  IceModelVec::AccessList list;
+  list.add(H);
+  list.add(bed);
+  list.add(mask);
+  list.add(*result);
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
+        (*result)(i, j) = model->ocean_pressure_difference(mask.ocean(i, j), dry_mode,
+                                                           H(i, j), bed(i, j), sea_level,
+                                                           rho_ice, rho_ocean, g);
+      } else {
+        (*result)(i, j) = m_fill_value;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+
+  return result;
+}
+
 } // end of namespace stressbalance
 } // end of namespace pism

@@ -120,6 +120,8 @@ public:
 
   virtual void compute_driving_stress(IceModelVec2V &taud);
 
+  double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
+                                   double rho_ice, double rho_ocean, double g);
 protected:
   virtual void init_impl();
 
@@ -131,9 +133,6 @@ protected:
                                      const PIO &nc, IO_Type nctype);
 
   virtual void solve() = 0;
-
-  double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
-                                   double rho_ice, double rho_ocean, double g);
 
   IceModelVec2CellType m_mask;
   const IceModelVec2S *m_thickness;
