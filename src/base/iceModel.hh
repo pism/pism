@@ -346,7 +346,9 @@ protected:
   virtual void adjust_flow(StarStencil<int> mask,
                            StarStencil<double> &SSA_velocity,
                            StarStencil<double> &SIA_flux);
-  virtual void massContExplicitStep(double dt);
+  virtual void massContExplicitStep(double dt,
+                                    const IceModelVec2Stag &diffusive_flux,
+                                    const IceModelVec2V &advective_velocity);
   virtual void update_grounded_cell_fraction();
   virtual void do_calving();
   virtual void Href_cleanup();

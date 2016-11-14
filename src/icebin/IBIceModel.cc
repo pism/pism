@@ -155,7 +155,9 @@ void IBIceModel::energyStep() {
   printf("END IBIceModel::energyStep(time=%f)\n", t_TempAge);
 }
 
-void IBIceModel::massContExplicitStep(double dt) {
+void IBIceModel::massContExplicitStep(double dt,
+                                      const IceModelVec2Stag &diffusive_flux,
+                                      const IceModelVec2V &advective_velocity) {
 
   printf("BEGIN IBIceModel::MassContExplicitStep()\n");
 
@@ -170,7 +172,7 @@ void IBIceModel::massContExplicitStep(double dt) {
     AccessList access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
                        &cur.internal_advection, &cur.href_to_h,     &cur.nonneg_rule };
 
-    super::massContExplicitStep(dt);
+    super::massContExplicitStep(dt, diffusive_flux, advective_velocity);
   }
 
   // =========== AFTER the Mass Continuity Step

@@ -36,7 +36,9 @@ protected:
   virtual void createVecs();
   virtual void allocate_stressbalance();
   virtual void allocate_basal_yield_stress();
-  virtual void massContExplicitStep(double dt);
+  virtual void massContExplicitStep(double dt,
+                                    const IceModelVec2Stag &diffusive_flux,
+                                    const IceModelVec2V &advective_velocity);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      StarStencil<Vector2> input_velocity,

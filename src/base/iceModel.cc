@@ -623,8 +623,11 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
+
     profiling.begin("mass transport");
-    massContExplicitStep(m_dt);
+    massContExplicitStep(m_dt,
+                         m_stress_balance->diffusive_flux(),
+                         m_stress_balance->advective_velocity());
     enforce_consistency_of_geometry(); // update h and mask
     profiling.end("mass transport");
 

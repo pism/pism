@@ -70,7 +70,9 @@ protected:
   virtual void createVecs();
 
 public:
-  virtual void massContExplicitStep(double dt);
+  virtual void massContExplicitStep(double dt,
+                                    const IceModelVec2Stag &diffusive_flux,
+                                    const IceModelVec2V &advective_velocity);
   virtual void accumulateFluxes_massContExplicitStep(int i, int j,
                                                      double surface_mass_balance, // [m s-1] ice equivalent (from PISM)
                                                      double meltrate_grounded,    // [m s-1] ice equivalent

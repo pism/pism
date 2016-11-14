@@ -263,13 +263,15 @@ void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
 }
 
 
-void IceRegionalModel::massContExplicitStep(double dt) {
+void IceRegionalModel::massContExplicitStep(double dt,
+                                    const IceModelVec2Stag &diffusive_flux,
+                                    const IceModelVec2V &advective_velocity) {
 
   // This ensures that no_model_mask is available in
   // IceRegionalModel::cell_interface_fluxes() below.
   IceModelVec::AccessList list(m_no_model_mask);
 
-  IceModel::massContExplicitStep(dt);
+  IceModel::massContExplicitStep(dt, diffusive_flux, advective_velocity);
 }
 
 void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,

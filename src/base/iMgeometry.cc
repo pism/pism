@@ -432,7 +432,9 @@ balance contribution (to reduce clutter). Please see the commit 26330a7 and
 earlier. (CK)
 
 */
-void IceModel::massContExplicitStep(double dt) {
+void IceModel::massContExplicitStep(double dt,
+                                    const IceModelVec2Stag &diffusive_flux,
+                                    const IceModelVec2V &advective_velocity) {
 
   FluxCounters local, total;
 
@@ -454,10 +456,6 @@ void IceModel::massContExplicitStep(double dt) {
 
   IceModelVec2S &H_residual = m_work2d[1];
 
-  const IceModelVec2Stag &Qdiff = m_stress_balance->diffusive_flux();
-
-  const IceModelVec2V &vel_advective = m_stress_balance->advective_velocity();
-
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
   IceModelVec::AccessList list;
@@ -466,8 +464,8 @@ void IceModel::massContExplicitStep(double dt) {
   list.add(m_ice_surface_elevation);
   list.add(bed_topography);
   list.add(m_basal_melt_rate);
-  list.add(Qdiff);
-  list.add(vel_advective);
+  list.add(diffusive_flux);
+  list.add(advective_velocity);
   list.add(climatic_mass_balance);
   list.add(m_cell_type);
   list.add(H_new);
@@ -531,7 +529,7 @@ void IceModel::massContExplicitStep(double dt) {
 
       StarStencil<double> Q, v;
       cell_interface_fluxes(dirichlet_bc, i, j,
-                            vel_advective.star(i, j), Qdiff.star(i, j),
+                            advective_velocity.star(i, j), diffusive_flux.star(i, j),
                             v, Q);
 
       // Compute divergence terms:
