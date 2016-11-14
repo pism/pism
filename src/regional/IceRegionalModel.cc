@@ -263,13 +263,13 @@ void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
 }
 
 
-void IceRegionalModel::massContExplicitStep() {
+void IceRegionalModel::massContExplicitStep(double dt) {
 
   // This ensures that no_model_mask is available in
   // IceRegionalModel::cell_interface_fluxes() below.
   IceModelVec::AccessList list(m_no_model_mask);
 
-  IceModel::massContExplicitStep();
+  IceModel::massContExplicitStep(dt);
 }
 
 void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,

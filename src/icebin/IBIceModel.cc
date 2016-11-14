@@ -155,12 +155,12 @@ void IBIceModel::energyStep() {
   printf("END IBIceModel::energyStep(time=%f)\n", t_TempAge);
 }
 
-void IBIceModel::massContExplicitStep() {
+void IBIceModel::massContExplicitStep(double dt) {
 
   printf("BEGIN IBIceModel::MassContExplicitStep()\n");
 
   _ice_density              = m_config->get_double("constants.ice.density");
-  _meter_per_s_to_kg_per_m2 = m_dt * _ice_density;
+  _meter_per_s_to_kg_per_m2 = dt * _ice_density;
 
 
   // =========== The Mass Continuity Step Itself
@@ -170,7 +170,7 @@ void IBIceModel::massContExplicitStep() {
     AccessList access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
                        &cur.internal_advection, &cur.href_to_h,     &cur.nonneg_rule };
 
-    super::massContExplicitStep();
+    super::massContExplicitStep(dt);
   }
 
   // =========== AFTER the Mass Continuity Step

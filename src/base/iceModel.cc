@@ -624,7 +624,7 @@ void IceModel::step(bool do_mass_continuity,
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
     profiling.begin("mass transport");
-    massContExplicitStep();
+    massContExplicitStep(m_dt);
     enforce_consistency_of_geometry(); // update h and mask
     profiling.end("mass transport");
 

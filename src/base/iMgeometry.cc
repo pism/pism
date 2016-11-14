@@ -432,7 +432,7 @@ balance contribution (to reduce clutter). Please see the commit 26330a7 and
 earlier. (CK)
 
 */
-void IceModel::massContExplicitStep() {
+void IceModel::massContExplicitStep(double dt) {
 
   FluxCounters local, total;
 
@@ -443,7 +443,7 @@ void IceModel::massContExplicitStep() {
     dx                       = m_grid->dx(),
     dy                       = m_grid->dy(),
     ice_density              = m_config->get_double("constants.ice.density"),
-    meter_per_s_to_kg_per_m2 = m_dt * ice_density;
+    meter_per_s_to_kg_per_m2 = dt * ice_density;
 
   IceModelVec2S &climatic_mass_balance = m_work2d[2];
   assert(m_surface != NULL);
@@ -509,7 +509,7 @@ void IceModel::massContExplicitStep() {
       // fluxes during the current time-step.
       const double
         meter_to_kg       = m_cell_area(i,j) * ice_density,
-        meter_per_s_to_kg = meter_to_kg * m_dt;
+        meter_per_s_to_kg = meter_to_kg * dt;
 
       // Divergence terms:
       double
@@ -556,7 +556,7 @@ void IceModel::massContExplicitStep() {
         if (do_part_grid && m_cell_type.next_to_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
-          H_to_Href_flux  = -(divQ_SSA + divQ_SIA) * m_dt;
+          H_to_Href_flux  = -(divQ_SSA + divQ_SIA) * dt;
           m_Href(i, j)    += H_to_Href_flux;
 
           if (m_Href(i, j) < 0) {
@@ -623,7 +623,7 @@ void IceModel::massContExplicitStep() {
       m_flux_divergence(i, j) = divQ_SIA + divQ_SSA;
 
       // mass transport
-      H_new(i, j) += - m_dt * (divQ_SIA + divQ_SSA) + Href_to_H_flux;
+      H_new(i, j) += - dt * (divQ_SIA + divQ_SSA) + Href_to_H_flux;
 
       if (H_new(i, j) < 0.0) {
         nonneg_rule_flux += -H_new(i, j);
@@ -636,25 +636,25 @@ void IceModel::massContExplicitStep() {
       }
 
       // surface mass balance
-      if (H_new(i, j) + m_dt * surface_mass_balance < 0.0) {
+      if (H_new(i, j) + dt * surface_mass_balance < 0.0) {
         // applying the surface mass balance results in negative thickness
         //
         // modify the surface mass balance so that the resulting thickness is zero
-        surface_mass_balance = - H_new(i, j) / m_dt;
+        surface_mass_balance = - H_new(i, j) / dt;
         H_new(i, j)          = 0.0;
       } else {
-        H_new(i, j) += m_dt * surface_mass_balance;
+        H_new(i, j) += dt * surface_mass_balance;
       }
 
       // basal mass balance
-      if (H_new(i, j) - m_dt * basal_melt_rate < 0.0) {
+      if (H_new(i, j) - dt * basal_melt_rate < 0.0) {
         // applying the basal melt rate results in negative thickness
         //
         // modify the basal melt rate so that the resulting thickness is zero
-        basal_melt_rate = H_new(i, j) / m_dt;
+        basal_melt_rate = H_new(i, j) / dt;
         H_new(i, j)     = 0.0;
       } else {
-        H_new(i, j) += - m_dt * basal_melt_rate;
+        H_new(i, j) += - dt * basal_melt_rate;
       }
 
       // surface_mass_balance has the units of [m s-1]; convert to [kg m-2]
