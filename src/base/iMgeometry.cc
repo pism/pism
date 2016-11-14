@@ -540,12 +540,12 @@ void IceModel::massContExplicitStep() {
         // divQ_SIA = - D grad h
         divQ_SIA = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
 
+        StarStencil<double> H = m_ice_thickness.star(i, j);
+
         // Plug flow part (i.e. basal sliding; from SSA): upwind by staggered grid
         // PIK method;  this is   \nabla \cdot [(u, v) H]
-        divQ_SSA += (v.e * (v.e > 0 ? m_ice_thickness(i, j) : m_ice_thickness(i + 1, j))
-                     - v.w * (v.w > 0 ? m_ice_thickness(i - 1, j) : m_ice_thickness(i, j))) / dx;
-        divQ_SSA += (v.n * (v.n > 0 ? m_ice_thickness(i, j) : m_ice_thickness(i, j + 1))
-                     - v.s * (v.s > 0 ? m_ice_thickness(i, j - 1) : m_ice_thickness(i, j))) / dy;
+        divQ_SSA += (v.e * (v.e > 0 ? H.ij : H.e) - v.w * (v.w > 0 ? H.w : H.ij)) / dx;
+        divQ_SSA += (v.n * (v.n > 0 ? H.ij : H.n) - v.s * (v.s > 0 ? H.s : H.ij)) / dy;
       }
 
       // Set source terms
