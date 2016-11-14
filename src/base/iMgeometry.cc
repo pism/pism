@@ -478,12 +478,10 @@ void IceModel::massContExplicitStep(double dt,
 
   if (do_part_grid) {
     list.add(m_Href);
-    if (do_redist) {
-      list.add(H_residual);
-      // FIXME: next line causes mass loss if max_loopcount in redistResiduals()
-      //        was not sufficient to zero-out H_residual already
-      H_residual.set(0.0);
-    }
+    list.add(H_residual);
+    // FIXME: next line causes mass loss if max_loopcount in redistResiduals()
+    //        was not sufficient to zero-out H_residual already
+    H_residual.set(0.0);
   }
   const bool dirichlet_bc = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
   if (dirichlet_bc) {
@@ -580,13 +578,9 @@ void IceModel::massContExplicitStep(double dt,
 
           if (coverage_ratio >= 1.0) {
             // A partially filled grid cell is now considered to be full.
-            if (do_redist) {
-              H_residual(i, j) = m_Href(i, j) - H_threshold; // residual ice thickness
-            }
-
-            m_Href(i, j)    = 0.0;
-            Href_to_H_flux = H_threshold;
-
+            H_residual(i, j)     = m_Href(i, j) - H_threshold; // residual ice thickness
+            m_Href(i, j)          = 0.0;
+            Href_to_H_flux       = H_threshold;
             // A cell that became "full" experiences both SMB and basal melt.
           } else {
             // A not-full partially-filled cell experiences neither.
@@ -712,7 +706,7 @@ void IceModel::massContExplicitStep(double dt,
   H_new.update_ghosts(m_ice_thickness);
 
   // distribute residual ice mass if desired
-  if (do_redist) {
+  if (do_part_grid) {
     residual_redistribution(H_residual);
   }
 
