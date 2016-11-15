@@ -39,12 +39,14 @@ protected:
   virtual void massContExplicitStep(double dt,
                                     const IceModelVec2Stag &diffusive_flux,
                                     const IceModelVec2V &advective_velocity);
-  virtual void cell_interface_fluxes(bool dirichlet_bc,
-                                     int i, int j,
-                                     StarStencil<Vector2> input_velocity,
-                                     StarStencil<double> input_flux,
-                                     StarStencil<double> &output_velocity,
-                                     StarStencil<double> &output_flux);
+  virtual void cell_interface_fluxes(int i, int j,
+                                     StarStencil<int> cell_type,
+                                     StarStencil<int> bc_mask,
+                                     StarStencil<Vector2> bc_velocity,
+                                     StarStencil<Vector2> in_SSA_velocity,
+                                     StarStencil<double> in_SIA_flux,
+                                     StarStencil<double> &out_SSA_velocity,
+                                     StarStencil<double> &out_SIA_flux);
 private:
   IceModelVec2Int m_no_model_mask;
   IceModelVec2S   m_usurf_stored, m_thk_stored;

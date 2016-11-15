@@ -236,38 +236,39 @@ void IceModel::adjust_flow(StarStencil<int> mask,
  *
  * 2) Adjust the flow using the mask by calling adjust_flow().
  *
- * @param[in] dirichlet_bc true if Dirichlet B.C. are set.
  * @param[in] i i-index of the current cell
  * @param[in] j j-index of the current cell
+ * @param[in] cell_type cell type mask
+ * @param[in] bc_mask Dirichlet B.C. mask
+ * @param[in] bc_velocity Dirichlet B.C. values
  * @param[in] in_SSA_velocity SSA velocity on the regular grid in the neighborhood of i,j
  * @param[in] in_SIA_flux SIA flux on the staggered grid (at interfaces of the cell i,j)
  * @param[out] out_SSA_velocity SSA velocities through interfaces of the cell i,j
  * @param[out] out_SIA_flux SIA flux through interfaces of the cell i,j
  */
-void IceModel::cell_interface_fluxes(bool dirichlet_bc,
-                                     int i, int j,
+void IceModel::cell_interface_fluxes(int i, int j,
+                                     StarStencil<int> cell_type,
+                                     StarStencil<int> bc_mask,
+                                     StarStencil<Vector2> bc_velocity,
                                      StarStencil<Vector2> in_SSA_velocity,
                                      StarStencil<double> in_SIA_flux,
                                      StarStencil<double> &out_SSA_velocity,
                                      StarStencil<double> &out_SIA_flux) {
 
-  StarStencil<int> mask = m_cell_type.int_star(i,j);
-  Direction dirs[4] = {North, East, South, West};
+  // i and j are not used here, but a re-implementation in a derived class may need them
+  (void) i;
+  (void) j;
 
-  StarStencil<int> bc_mask;
-  StarStencil<Vector2> bc_velocity;
-  if (dirichlet_bc) {
-    bc_mask = m_ssa_dirichlet_bc_mask.int_star(i,j);
-    bc_velocity = m_ssa_dirichlet_bc_values.star(i,j);
-  }
+  Direction dirs[4] = {North, East, South, West};
 
   out_SSA_velocity.ij = 0.0;
   out_SIA_flux.ij = 0.0;
 
   for (int n = 0; n < 4; ++n) {
     Direction direction = dirs[n];
-    int mask_current = mask.ij,
-      mask_neighbor = mask[direction];
+    const int
+      mask_current  = cell_type.ij,
+      mask_neighbor = cell_type[direction];
 
     // The in_SIA_flux is already on the staggered grid, so we can just
     // copy it to out_SIA_flux:
@@ -309,8 +310,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
     }
 
     // The Dirichlet B.C. case:
-    if (dirichlet_bc) {
-
+    {
       if (bc_mask.ij == 1 && bc_mask[direction] == 1) {
 
         // Case 1: both sides of the interface are B.C. locations: average from
@@ -345,11 +345,9 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
       }
 
     } // end of "if (dirichlet_bc)"
-
   } // end of the loop over neighbors
 
-  adjust_flow(mask, out_SSA_velocity, out_SIA_flux);
-
+  adjust_flow(cell_type, out_SSA_velocity, out_SIA_flux);
 }
 
 
@@ -473,7 +471,6 @@ void IceModel::massContExplicitStep(double dt,
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool
     do_part_grid             = m_config->get_boolean("geometry.part_grid.enabled"),
-    do_redist                = do_part_grid,
     reduce_frontal_thickness = m_config->get_boolean("geometry.part_grid.reduce_frontal_thickness");
 
   if (do_part_grid) {
@@ -483,6 +480,7 @@ void IceModel::massContExplicitStep(double dt,
     //        was not sufficient to zero-out H_residual already
     H_residual.set(0.0);
   }
+
   const bool dirichlet_bc = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
   if (dirichlet_bc) {
     list.add(m_ssa_dirichlet_bc_mask);
@@ -525,8 +523,22 @@ void IceModel::massContExplicitStep(double dt,
         basal_melt_rate = m_basal_melt_rate(i, j);
       }
 
-      StarStencil<double> Q, v;
-      cell_interface_fluxes(dirichlet_bc, i, j,
+      StarStencil<int> cell_type = m_cell_type.int_star(i, j);
+
+      StarStencil<double>  H = m_ice_thickness.star(i, j);
+      StarStencil<double>  Q, v;
+      StarStencil<int>     bc_mask;
+      StarStencil<Vector2> bc_velocity;
+
+      if (dirichlet_bc) {
+        bc_mask     = m_ssa_dirichlet_bc_mask.int_star(i, j);
+        bc_velocity = m_ssa_dirichlet_bc_values.star(i, j);
+      } else {
+        bc_mask.set(0);
+        // bc_velocity is not used
+      }
+
+      cell_interface_fluxes(i, j, cell_type, bc_mask, bc_velocity,
                             advective_velocity.star(i, j), diffusive_flux.star(i, j),
                             v, Q);
 
@@ -536,15 +548,11 @@ void IceModel::massContExplicitStep(double dt,
         // divQ_SIA = - D grad h
         divQ_SIA = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
 
-        StarStencil<double> H = m_ice_thickness.star(i, j);
-
         // Plug flow part (i.e. basal sliding; from SSA): upwind by staggered grid
         // PIK method;  this is   \nabla \cdot [(u, v) H]
         divQ_SSA += (v.e * (v.e > 0 ? H.ij : H.e) - v.w * (v.w > 0 ? H.w : H.ij)) / dx;
         divQ_SSA += (v.n * (v.n > 0 ? H.ij : H.n) - v.s * (v.s > 0 ? H.s : H.ij)) / dy;
       }
-
-      // Set source terms
 
       if (m_cell_type.ice_free_ocean(i, j)) {
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
@@ -565,10 +573,9 @@ void IceModel::massContExplicitStep(double dt,
             m_Href(i, j) = 0;
           }
 
-          double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
-                                                             m_ice_thickness.star(i, j),
+          double H_threshold = part_grid_threshold_thickness(cell_type, H,
                                                              m_ice_surface_elevation.star(i, j),
-                                                             bed_topography(i,j),
+                                                             bed_topography(i, j),
                                                              dx,
                                                              reduce_frontal_thickness);
           double coverage_ratio = 1.0;
@@ -604,7 +611,7 @@ void IceModel::massContExplicitStep(double dt,
       } // end of "if (ice_free_ocean)"
 
       // Dirichlet BC case (should go last to override previous settings):
-      if (dirichlet_bc && m_ssa_dirichlet_bc_mask.as_int(i,j) == 1) {
+      if (bc_mask.ij) {
         surface_mass_balance = 0.0;
         basal_melt_rate      = 0.0;
         Href_to_H_flux       = 0.0;
@@ -661,7 +668,7 @@ void IceModel::massContExplicitStep(double dt,
       // time-series accounting:
       {
         // all these are in units of [kg]
-        if (m_cell_type.grounded(i,j)) {
+        if (m_cell_type.grounded(i, j)) {
           local.grounded_basal += - basal_melt_rate * meter_per_s_to_kg;
         } else {
           local.sub_shelf      += - basal_melt_rate * meter_per_s_to_kg;

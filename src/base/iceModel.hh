@@ -337,8 +337,10 @@ protected:
 
   // see iMgeometry.cc
   virtual void enforce_consistency_of_geometry();
-  virtual void cell_interface_fluxes(bool dirichlet_bc,
-                                     int i, int j,
+  virtual void cell_interface_fluxes(int i, int j,
+                                     StarStencil<int> cell_type,
+                                     StarStencil<int> bc_mask,
+                                     StarStencil<Vector2> bc_values,
                                      StarStencil<Vector2> input_velocity,
                                      StarStencil<double> input_flux,
                                      StarStencil<double> &output_velocity,

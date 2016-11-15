@@ -274,18 +274,18 @@ void IceRegionalModel::massContExplicitStep(double dt,
   IceModel::massContExplicitStep(dt, diffusive_flux, advective_velocity);
 }
 
-void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
-                                             int i, int j,
+void IceRegionalModel::cell_interface_fluxes(int i, int j,
+                                             StarStencil<int> cell_type,
+                                             StarStencil<int> bc_mask,
+                                             StarStencil<Vector2> bc_velocity,
                                              StarStencil<Vector2> input_velocity,
                                              StarStencil<double> input_flux,
                                              StarStencil<double> &output_velocity,
                                              StarStencil<double> &output_flux) {
 
-  IceModel::cell_interface_fluxes(dirichlet_bc, i, j,
-                                  input_velocity,
-                                  input_flux,
-                                  output_velocity,
-                                  output_flux);
+  IceModel::cell_interface_fluxes(i, j, cell_type, bc_mask, bc_velocity,
+                                  input_velocity, input_flux,
+                                  output_velocity, output_flux);
 
   StarStencil<int> nmm = m_no_model_mask.int_star(i,j);
   Direction dirs[4] = {North, East, South, West};
@@ -298,7 +298,6 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
       output_flux[direction] = 0.0;
     }
   }
-  //
 }
 
 } // end of namespace pism
