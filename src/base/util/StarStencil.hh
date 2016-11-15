@@ -27,6 +27,15 @@ enum Direction {North = 0, East, South, West};
 template <typename T>
 struct StarStencil {
   T ij, e, w, n, s;
+
+  StarStencil() {
+    // empty
+  }
+
+  StarStencil(T value) {
+    set(value);
+  }
+
   void set(T input) {
     ij = e = w = n = s = input;
   }
