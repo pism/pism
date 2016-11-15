@@ -436,18 +436,11 @@ void IceModel::massContExplicitStep(double dt,
 
   FluxCounters local, total;
 
-  const bool
-    include_bmr_in_continuity = m_config->get_boolean("geometry.update.use_basal_melt_rate");
-
   const double
     dx                       = m_grid->dx(),
     dy                       = m_grid->dy(),
     ice_density              = m_config->get_double("constants.ice.density"),
     meter_per_s_to_kg_per_m2 = dt * ice_density;
-
-  IceModelVec2S &climatic_mass_balance = m_work2d[2];
-  assert(m_surface != NULL);
-  m_surface->mass_flux(climatic_mass_balance);
 
   IceModelVec2S &H_new = m_work2d[0];
   H_new.copy_from(m_ice_thickness);
@@ -461,10 +454,8 @@ void IceModel::massContExplicitStep(double dt,
   list.add(m_ice_thickness);
   list.add(m_ice_surface_elevation);
   list.add(bed_topography);
-  list.add(m_basal_melt_rate);
   list.add(diffusive_flux);
   list.add(advective_velocity);
-  list.add(climatic_mass_balance);
   list.add(m_cell_type);
   list.add(H_new);
 
@@ -487,10 +478,7 @@ void IceModel::massContExplicitStep(double dt,
     list.add(m_ssa_dirichlet_bc_values);
   }
 
-  list.add(m_cumulative_flux_fields.climatic_mass_balance);
   list.add(m_cumulative_flux_fields.nonneg);
-  list.add(m_cumulative_flux_fields.basal_grounded);
-  list.add(m_cumulative_flux_fields.basal_floating);
   list.add(m_flux_divergence);
 
   ParallelSection loop(m_grid->com);
@@ -513,29 +501,20 @@ void IceModel::massContExplicitStep(double dt,
       // Source terms:
       // Note: here we convert surface mass balance from [kg m-2 s-1] to [m s-1]:
       double
-        surface_mass_balance = climatic_mass_balance(i, j) / ice_density, // units: [m s-1]
-        basal_melt_rate      = 0.0, // units: [m s-1]
         H_to_Href_flux       = 0.0, // units: [m]
         Href_to_H_flux       = 0.0, // units: [m]
         nonneg_rule_flux     = 0.0; // units: [m]
 
-      if (include_bmr_in_continuity) {
-        basal_melt_rate = m_basal_melt_rate(i, j);
-      }
-
       StarStencil<int> cell_type = m_cell_type.int_star(i, j);
 
       StarStencil<double>  H = m_ice_thickness.star(i, j);
-      StarStencil<double>  Q, v;
-      StarStencil<int>     bc_mask;
+      StarStencil<double>  Q(0.0), v(0.0);
+      StarStencil<int>     bc_mask(0);
       StarStencil<Vector2> bc_velocity;
 
       if (dirichlet_bc) {
         bc_mask     = m_ssa_dirichlet_bc_mask.int_star(i, j);
         bc_velocity = m_ssa_dirichlet_bc_values.star(i, j);
-      } else {
-        bc_mask.set(0);
-        // bc_velocity is not used
       }
 
       cell_interface_fluxes(i, j, cell_type, bc_mask, bc_velocity,
@@ -589,10 +568,6 @@ void IceModel::massContExplicitStep(double dt,
             m_Href(i, j)          = 0.0;
             Href_to_H_flux       = H_threshold;
             // A cell that became "full" experiences both SMB and basal melt.
-          } else {
-            // A not-full partially-filled cell experiences neither.
-            surface_mass_balance = 0.0;
-            basal_melt_rate      = 0.0;
           }
 
           // In this case the SSA flux goes into the Href variable and does not
@@ -602,21 +577,14 @@ void IceModel::massContExplicitStep(double dt,
           divQ_SIA                = 0.0;
           divQ_SSA                = 0.0;
 
-        } else { // end of "if (part_grid...)
-
-          // Standard ice-free ocean case:
-          surface_mass_balance = 0.0;
-          basal_melt_rate      = 0.0;
         }
       } // end of "if (ice_free_ocean)"
 
       // Dirichlet BC case (should go last to override previous settings):
       if (bc_mask.ij) {
-        surface_mass_balance = 0.0;
-        basal_melt_rate      = 0.0;
-        Href_to_H_flux       = 0.0;
-        divQ_SIA             = 0.0;
-        divQ_SSA             = 0.0;
+        Href_to_H_flux = 0.0;
+        divQ_SIA       = 0.0;
+        divQ_SSA       = 0.0;
       }
 
       m_flux_divergence(i, j) = divQ_SIA + divQ_SSA;
@@ -634,52 +602,112 @@ void IceModel::massContExplicitStep(double dt,
         H_new(i, j) = 0.0;
       }
 
+      // time-series accounting:
+      {
+        // all these are in units of [kg]
+        local.sum_divQ_SIA += - divQ_SIA       * meter_per_s_to_kg;
+        local.sum_divQ_SSA += - divQ_SSA       * meter_per_s_to_kg;
+        local.nonneg_rule  += nonneg_rule_flux * meter_to_kg;
+        local.H_to_Href    += - H_to_Href_flux * meter_to_kg;
+        local.Href_to_H    += Href_to_H_flux   * meter_to_kg;
+      }
+
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  // update m_cell_type
+  {
+    const double thickness_threshold = m_config->get_double("geometry.ice_free_thickness_standard");
+    const double sea_level = m_ocean->sea_level_elevation();
+
+    GeometryCalculator gc(*m_config);
+    gc.set_icefree_thickness(thickness_threshold);
+
+    gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
+  }
+
+  IceModelVec2S &climatic_mass_balance = m_work2d[2];
+  m_surface->mass_flux(climatic_mass_balance);
+
+  const bool
+    use_basal_melt_rate = m_config->get_boolean("geometry.update.use_basal_melt_rate");
+
+  list.add(climatic_mass_balance);
+  list.add(m_basal_melt_rate);
+  list.add(m_cumulative_flux_fields.climatic_mass_balance);
+  list.add(m_cumulative_flux_fields.basal_grounded);
+  list.add(m_cumulative_flux_fields.basal_floating);
+
+  loop.reset();
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      // These constants are used to convert ice equivalent
+      // thicknesses and thickening rates to kg, for accounting of
+      // fluxes during the current time-step.
+      const double
+        meter_to_kg       = m_cell_area(i,j) * ice_density,
+        meter_per_s_to_kg = meter_to_kg * dt;
+
+      // Source terms:
+      // Note: here we convert surface mass balance from [kg m-2 s-1] to [m s-1]:
+      double surface_mass_balance = climatic_mass_balance(i, j) / ice_density;
+
+      // basal_melt_rate is in [m s-1]. Note the negative sign converting the melt rate into mass
+      // balance.
+      double basal_mass_balance   = use_basal_melt_rate ? -m_basal_melt_rate(i, j) : 0.0;
+
+      const int bc_mask = dirichlet_bc ? m_ssa_dirichlet_bc_mask.as_int(i, j) : 0;
+
+      // Don't modify ice thickness at Dirichlet B.C. locations and in the ice-free ocean.
+      if (bc_mask == 1 or m_cell_type.ice_free_ocean(i, j)) {
+        surface_mass_balance = 0.0;
+        basal_mass_balance      = 0.0;
+      }
+
       // surface mass balance
       if (H_new(i, j) + dt * surface_mass_balance < 0.0) {
         // applying the surface mass balance results in negative thickness
         //
         // modify the surface mass balance so that the resulting thickness is zero
-        surface_mass_balance = - H_new(i, j) / dt;
+        surface_mass_balance = -H_new(i, j) / dt;
         H_new(i, j)          = 0.0;
       } else {
         H_new(i, j) += dt * surface_mass_balance;
       }
 
       // basal mass balance
-      if (H_new(i, j) - dt * basal_melt_rate < 0.0) {
-        // applying the basal melt rate results in negative thickness
+      if (H_new(i, j) + dt * basal_mass_balance < 0.0) {
+        // applying the basal mass balance results in negative thickness
         //
-        // modify the basal melt rate so that the resulting thickness is zero
-        basal_melt_rate = H_new(i, j) / dt;
-        H_new(i, j)     = 0.0;
+        // modify the basal mass balance so that the resulting thickness is zero
+        basal_mass_balance  = -H_new(i, j) / dt;
+        H_new(i, j)         = 0.0;
       } else {
-        H_new(i, j) += - dt * basal_melt_rate;
+        H_new(i, j) += dt * basal_mass_balance;
       }
 
       // surface_mass_balance has the units of [m s-1]; convert to [kg m-2]
       m_cumulative_flux_fields.climatic_mass_balance(i, j) += surface_mass_balance * meter_per_s_to_kg_per_m2;
 
-      // basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
-      m_cumulative_flux_fields.basal_grounded(i, j) += -basal_melt_rate * meter_per_s_to_kg_per_m2;
+      // basal_mass_balance has the units of [m s-1]; convert to [kg m-2]
+      m_cumulative_flux_fields.basal_grounded(i, j) += basal_mass_balance * meter_per_s_to_kg_per_m2;
 
-      // basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
-      m_cumulative_flux_fields.basal_floating(i, j) += -basal_melt_rate * meter_per_s_to_kg_per_m2;
+      // basal_mass_balance has the units of [m s-1]; convert to [kg m-2]
+      m_cumulative_flux_fields.basal_floating(i, j) += basal_mass_balance * meter_per_s_to_kg_per_m2;
 
       // time-series accounting:
       {
-        // all these are in units of [kg]
         if (m_cell_type.grounded(i, j)) {
-          local.grounded_basal += - basal_melt_rate * meter_per_s_to_kg;
+          local.grounded_basal += basal_mass_balance * meter_per_s_to_kg;
         } else {
-          local.sub_shelf      += - basal_melt_rate * meter_per_s_to_kg;
+          local.sub_shelf      += basal_mass_balance * meter_per_s_to_kg;
         }
-
-        local.surface      += surface_mass_balance * meter_per_s_to_kg;
-        local.sum_divQ_SIA += - divQ_SIA           * meter_per_s_to_kg;
-        local.sum_divQ_SSA += - divQ_SSA           * meter_per_s_to_kg;
-        local.nonneg_rule  += nonneg_rule_flux     * meter_to_kg;
-        local.H_to_Href    += - H_to_Href_flux     * meter_to_kg;
-        local.Href_to_H    += Href_to_H_flux       * meter_to_kg;
+        local.surface += surface_mass_balance * meter_per_s_to_kg;
       }
 
     }
