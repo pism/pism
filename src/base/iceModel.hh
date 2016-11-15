@@ -351,6 +351,16 @@ protected:
   virtual void massContExplicitStep(double dt,
                                     const IceModelVec2Stag &diffusive_flux,
                                     const IceModelVec2V &advective_velocity);
+  void apply_surface_and_basal_mass_balance(double dt,
+                                            const IceModelVec2S &cell_area,
+                                            const IceModelVec2S &climatic_mass_balance,
+                                            const IceModelVec2S &basal_melt_rate,
+                                            const IceModelVec2CellType &cell_type,
+                                            const IceModelVec2Int *bc_mask,
+                                            IceModelVec2S &H,
+                                            FluxCounters &fluxes_scalar,
+                                            FluxFields &fluxes_2d);
+
   virtual void update_grounded_cell_fraction();
   virtual void do_calving();
   virtual void Href_cleanup();
