@@ -159,22 +159,17 @@ protected:
     }
 
     const IceModelVec2S
-      *surface = Mod::m_grid->variables().get_2d_scalar("surface_altitude"),
-      *thk     = Mod::m_grid->variables().get_2d_scalar("land_ice_thickness");
+      &surface = *Mod::m_grid->variables().get_2d_scalar("surface_altitude");
 
     IceModelVec::AccessList list;
-    list.add(*thk);
-    list.add(*surface);
+    list.add(surface);
     list.add(m_reference_surface);
     list.add(result);
 
     for (Points p(*Mod::m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if ((*thk)(i,j) > 0) {
-        const double correction = lapse_rate * ((*surface)(i,j) - m_reference_surface(i,j));
-        result(i,j) -= correction;
-      }
+      result(i, j) -= lapse_rate * (surface(i,j) - m_reference_surface(i, j));
     }
   }
 protected:
