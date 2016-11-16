@@ -48,6 +48,8 @@ urlcolor=blue     % only if colorlinks=true
 \DeclareOldFontCommand{\sc}{\normalfont\scshape}{\@nomath\sc}
 \makeatother
 
+\newcommand{\massfluxunits}{\mbox{[kg m-2 s-1]}}
+
 \begin{document}
 
 \begin{titlepage}
@@ -608,7 +610,7 @@ is negligible and heat from firn processes is ignored.
     Command-line option: & \texttt{-surface~given}
     \index[options]{SA@\surface!\texttt{given}}\\
     NetCDF variables: & \variable{ice_surface_temp}, \\
-    &\variable{climatic_mass_balance} [kg/m$^2$/s]\\
+    &\variable{climatic_mass_balance} \massfluxunits \\
     C++ class: & \class{PSGivenClimate}\\
     \bottomrule
   \end{tabular}
@@ -923,7 +925,7 @@ data period in years.)
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-surface~pik} \index[options]{SA@\surface!\texttt{pik}} \\
-    NetCDF variables: & \variable{climatic_mass_balance} [kg/m$^2$/s],\\
+    NetCDF variables: & \variable{climatic_mass_balance} \massfluxunits,\\
     &\variable{lat} (latitude), [degrees north]\\
     C++ class: & \class{PSConstantPIK}\\
     \bottomrule
@@ -1070,7 +1072,7 @@ In addition to this one can specify a multiplicative factor $C$ used in areas wh
     \toprule
     Command-line option: & \texttt{-surface~...,anomaly} \index[options]{SB@\surfacemods!\texttt{anomaly}} \\
     NetCDF variables: & \variable{ice_surface_temp_anomaly}, \\
-    &\variable{climatic_mass_balance_anomaly} \mbox{[kg/m$^2$/s]}\\
+    &\variable{climatic_mass_balance_anomaly} \massfluxunits\\
     C++ class: & \class{PSAnomaly}\\
     \bottomrule
   \end{tabular}
@@ -1142,7 +1144,7 @@ See also section \ref{sec:ocean-cache}.
     \toprule
     Command-line option: & \texttt{-atmosphere~given} \index[options]{\atmosphere!\texttt{given}} \\
     NetCDF variables: & \variable{air_temp}, \\
-    &\variable{precipitation} [m/s ice equivalent]\\
+    &\variable{precipitation} \massfluxunits \\
     C++ class: & \class{PAGivenClimate}\\
     \bottomrule
   \end{tabular}
@@ -1182,7 +1184,7 @@ model~component (\texttt{-surface~given}).
     \index[options]{\atmosphere!\texttt{yearly_cycle}} \\
     NetCDF variables: & \variable{air_temp_mean_annual},\\
     &\variable{air_temp_mean_july},\\
-    &\variable{precipitation} \mbox{[m/s ice equivalent]}\\
+    &\variable{precipitation} \massfluxunits \\
     &\variable{amplitude_scaling} \\
     C++ class: & \class{PACosineYearlyCycle}\\
     \bottomrule
@@ -1208,7 +1210,7 @@ Optionally a time-dependent scalar amplitude scaling $A(t)$ can be used. Specify
     \toprule
     Command-line option: & \texttt{-atmosphere~searise_greenland} \index[options]{\atmosphere!\texttt{searise_greenland}} \\
     NetCDF variables: & \variable{lon}, \variable{lat},
-    \variable{precipitation} \mbox{[m/s ice equivalent]}\\
+    \variable{precipitation} \massfluxunits \\
     C++ class: & \class{PASeariseGreenland}\\
     \bottomrule
   \end{tabular}
@@ -1256,7 +1258,7 @@ section~\ref{sec:surface-pik}.
     Command-line options: & \texttt{-atmosphere~one_station},\\
                           & \texttt{-atmosphere_one_station_file}\\
     NetCDF variables:     & \variable{air_temp} [Kelvin],\\
-                          & \variable{precipitation} [m / s ice equivalent]\\
+                          & \variable{precipitation} \massfluxunits \\
     C++ class:            & \class{PAWeatherStation}\\
     \bottomrule
   \end{tabular}
@@ -1308,7 +1310,7 @@ Please make sure that \variable{delta_T} has the units of
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-atmosphere~...,delta_P} \index[options]{\atmospheremods!\texttt{delta_P}} \\
-    NetCDF variables: & \variable{delta_P} \mbox{[m/s ice equivalent]}\\
+    NetCDF variables: & \variable{delta_P} \massfluxunits \\
     C++ class: & \class{PA_delta_P}\\
     \bottomrule
   \end{tabular}
@@ -1430,7 +1432,7 @@ precipitation using elevation lapse rates. It uses the following options.
     \toprule
     Command-line option: & \texttt{-atmosphere~...,anomaly} \index[options]{\atmospheremods!\texttt{anomaly}} \\
     NetCDF variables: & \variable{air_temp_anomaly}, \\
-    &\variable{precipitation_anomaly} [m/s ice equivalent]\\
+    &\variable{precipitation_anomaly} \massfluxunits \\
     C++ class: & \class{PAAnomaly}\\
     \bottomrule
   \end{tabular}
@@ -1498,7 +1500,7 @@ Alternatively, the sub-shelf melt rate in meters per year can be set using the \
     \toprule
     Command-line option: & \texttt{-ocean~given}
     \index[options]{OA@\ocean!\texttt{given}} \\
-    NetCDF variables: & \variable{shelfbtemp}  \mbox{[degrees Kelvin]}, \variable{shelfbmassflux}  \mbox{[kg m-2 s-1]}\\
+    NetCDF variables: & \variable{shelfbtemp}  \mbox{[degrees Kelvin]}, \variable{shelfbmassflux}  \massfluxunits \\
     C++ class: & \class{POGivenClimate}\\
     \bottomrule
   \end{tabular}
@@ -1631,7 +1633,7 @@ It takes the following command-line options:
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-ocean~...,delta_SMB} \index[options]{OB@\oceanmods!\texttt{delta_SMB}} \\
-    NetCDF variables: & \variable{delta_SMB} [kg m-2 s-1]\\
+    NetCDF variables: & \variable{delta_SMB} \massfluxunits\\
     C++ class: & \class{PO_delta_SMB}\\
     \bottomrule
   \end{tabular}
