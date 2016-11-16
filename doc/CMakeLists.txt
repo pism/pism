@@ -86,7 +86,6 @@ if (PDFLATEX_COMPILER)
     install (FILES
       "${CMAKE_CURRENT_BINARY_DIR}/manual/pism_manual.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/forcing/pism_forcing.pdf"
-      "${CMAKE_CURRENT_BINARY_DIR}/installation/pism_installation.pdf"
       DESTINATION ${Pism_DOC_DIR})
 
   endif ()                      # if Pism_DOC_DIR

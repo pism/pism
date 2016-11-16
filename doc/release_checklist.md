@@ -3,7 +3,8 @@
 1.  [ ] Create a new `stableXX` branch, if needed.
 2.  [ ] Merge, if needed.
 3.  [ ] Set `Pism_BRANCH` in `CMakeLists.txt`
-4.  [ ] Replace `0.x` with `0.x+1` in docs
+4.  [ ] Replace `0.x` with `0.x+1` in docs.
+7.  [ ] Update links to `INSTALL.md` in docs.
 5.  [ ] Update `CHANGES.md`.
 6.  [ ] Tag.
 ```

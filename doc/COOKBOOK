@@ -4,7 +4,7 @@ FIXME: this cookbook for maintaining PISM should maybe be totally removed
 
 2)  Which files do I need to keep up-to-date at www.pism-docs.org for stable docs?
 
-  These files: pism_manual.pdf, pism_installation.pdf, pism_forcing.pdf.
+  These files: pism_manual.pdf, pism_forcing.pdf.
   And a recent version of the source code browser, next.
 
 3)  How do I upload a recent version of the (development) source code browser?
