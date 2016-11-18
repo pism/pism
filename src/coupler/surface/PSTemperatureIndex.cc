@@ -38,6 +38,35 @@
 namespace pism {
 namespace surface {
 
+// Diagnostic classes.
+
+/*! @brief Surface accumulation averaged over reporting intervals. */
+class PDD_saccum_average : public Diag_average<TemperatureIndex>
+{
+public:
+  PDD_saccum_average(TemperatureIndex *m);
+protected:
+  const IceModelVec2S &cumulative_value() const;
+};
+
+/*! @brief Surface melt averaged over reporting intervals. */
+class PDD_smelt_average : public Diag_average<TemperatureIndex>
+{
+public:
+  PDD_smelt_average(TemperatureIndex *m);
+protected:
+  const IceModelVec2S &cumulative_value() const;
+};
+
+/*! @brief Surface runoff averaged over reporting intervals. */
+class PDD_srunoff_average : public Diag_average<TemperatureIndex>
+{
+public:
+  PDD_srunoff_average(TemperatureIndex *m);
+protected:
+  const IceModelVec2S &cumulative_value() const;
+};
+
 ///// PISM surface model implementing a PDD scheme.
 
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
@@ -165,6 +194,23 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_runoff_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_runoff_rate.write_in_glaciological_units = true;
 
+  {
+    m_cumulative_accumulation.create(m_grid, "saccum_cumulative", WITHOUT_GHOSTS);
+    m_cumulative_accumulation.set_attrs("diagnostic",
+                                       "cumulative surface accumulation"
+                                       " (precipitation minus rain)",
+                                       "kg m-2", "");
+
+    m_cumulative_melt.create(m_grid, "smelt_cumulative", WITHOUT_GHOSTS);
+    m_cumulative_melt.set_attrs("diagnostic", "cumulative surface melt",
+                               "kg m-2", "");
+
+    m_cumulative_runoff.create(m_grid, "srunoff_cumulative", WITHOUT_GHOSTS);
+    m_cumulative_runoff.set_attrs("diagnostic",
+                                 "cumulative surface meltwater runoff",
+                                 "kg m-2", "");
+  }
+
   m_snow_depth.create(m_grid, "snow_depth", WITHOUT_GHOSTS);
   m_snow_depth.set_attrs("diagnostic",
                          "snow cover depth (set to zero once a year)",
@@ -228,6 +274,10 @@ void TemperatureIndex::init_impl() {
   m_snow_depth.regrid(input_file, OPTIONAL, 0.0);
 
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
+
+  m_cumulative_accumulation.set(0.0);
+  m_cumulative_melt.set(0.0);
+  m_cumulative_runoff.set(0.0);
 }
 
 MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) {
@@ -317,6 +367,9 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   list.add(m_melt_rate);
   list.add(m_runoff_rate);
   list.add(m_snow_depth);
+  list.add(m_cumulative_accumulation);
+  list.add(m_cumulative_melt);
+  list.add(m_cumulative_runoff);
 
   const double ice_density = m_config->get_double("constants.ice.density");
 
@@ -407,11 +460,19 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
                            m_snow_depth(i,j), m_melt_rate(i,j), m_runoff_rate(i,j),
                            m_climatic_mass_balance(i,j));
         }
+
         // convert from [m during the current time-step] to kg m-2 s-1
         m_accumulation_rate(i,j)     *= (ice_density/m_dt);
         m_melt_rate(i,j)             *= (ice_density/m_dt);
         m_runoff_rate(i,j)           *= (ice_density/m_dt);
         m_climatic_mass_balance(i,j) *= (ice_density/m_dt);
+      }
+
+      // update cumulative quantities
+      {
+        m_cumulative_accumulation(i, j) += m_accumulation_rate(i, j) * m_dt;
+        m_cumulative_melt(i, j)         += m_melt_rate(i, j) * m_dt;
+        m_cumulative_runoff(i, j)       += m_runoff_rate(i, j) * m_dt;
       }
 
       if (mask.ocean(i,j)) {
@@ -435,6 +496,18 @@ void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
 
 void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) {
   m_atmosphere->mean_annual_temp(result);
+}
+
+const IceModelVec2S& TemperatureIndex::cumulative_surface_accumulation() const {
+  return m_cumulative_accumulation;
+}
+
+const IceModelVec2S& TemperatureIndex::cumulative_surface_melt() const {
+  return m_cumulative_melt;
+}
+
+const IceModelVec2S& TemperatureIndex::cumulative_surface_runoff() const {
+  return m_cumulative_runoff;
 }
 
 const IceModelVec2S& TemperatureIndex::surface_accumulation() const {
@@ -550,6 +623,15 @@ void TemperatureIndex::get_diagnostics_impl(std::map<std::string, Diagnostic::Pt
   if (not dict["srunoff"]) {
     dict["srunoff"] = Diagnostic::Ptr(new PDD_srunoff(this));
   }
+  if (not dict["saccum_average"]) {
+    dict["saccum_average"] = Diagnostic::Ptr(new PDD_saccum_average(this));
+  }
+  if (not dict["smelt_average"]) {
+    dict["smelt_average"] = Diagnostic::Ptr(new PDD_smelt_average(this));
+  }
+  if (not dict["srunoff_average"]) {
+    dict["srunoff_average"] = Diagnostic::Ptr(new PDD_srunoff_average(this));
+  }
   if (not dict["air_temp_sd"]) {
     dict["air_temp_sd"] = Diagnostic::Ptr(new PDD_air_temp_sd(this));
   }
@@ -660,7 +742,56 @@ IceModelVec::Ptr PDD_air_temp_sd::compute_impl() {
   return result;
 }
 
+PDD_saccum_average::PDD_saccum_average(TemperatureIndex *m)
+  : Diag_average(m) {
 
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "saccum_average"));
+
+  set_attrs("surface accumulation averaged over reporting intervals", "",
+            "kg m-2 s-1", "kg m-2 year-1", 0);
+  double fill_value = units::convert(m_sys, m_fill_value,
+                                     "kg year-1", "kg second-1");
+  m_vars[0].set_double("_FillValue", fill_value);
+}
+
+const IceModelVec2S & PDD_saccum_average::cumulative_value() const {
+  return model->cumulative_surface_accumulation();
+}
+
+PDD_smelt_average::PDD_smelt_average(TemperatureIndex *m)
+  : Diag_average(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "smelt_average"));
+
+  set_attrs("surface melt averaged over reporting intervals", "",
+            "kg m-2 s-1", "kg m-2 year-1", 0);
+  double fill_value = units::convert(m_sys, m_fill_value,
+                                     "kg year-1", "kg second-1");
+  m_vars[0].set_double("_FillValue", fill_value);
+}
+
+const IceModelVec2S & PDD_smelt_average::cumulative_value() const {
+  return model->cumulative_surface_melt();
+}
+
+PDD_srunoff_average::PDD_srunoff_average(TemperatureIndex *m)
+  : Diag_average(m) {
+
+  /* set metadata: */
+  m_vars.push_back(SpatialVariableMetadata(m_sys, "srunoff_average"));
+
+  set_attrs("surface runoff averaged over reporting intervals", "",
+            "kg m-2 s-1", "kg m-2 year-1", 0);
+  double fill_value = units::convert(m_sys, m_fill_value,
+                                     "kg year-1", "kg second-1");
+  m_vars[0].set_double("_FillValue", fill_value);
+}
+
+const IceModelVec2S & PDD_srunoff_average::cumulative_value() const {
+  return model->cumulative_surface_runoff();
+}
 
 } // end of namespace surface
 } // end of namespace pism

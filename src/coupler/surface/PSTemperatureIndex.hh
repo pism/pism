@@ -52,6 +52,10 @@ public:
   const IceModelVec2S& snow_depth() const;
   const IceModelVec2S& air_temp_sd() const;
 
+  const IceModelVec2S& cumulative_surface_accumulation() const;
+  const IceModelVec2S& cumulative_surface_melt() const;
+  const IceModelVec2S& cumulative_surface_runoff() const;
+
 protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -99,6 +103,10 @@ protected:
   //! snow depth (reset once a year)
   IceModelVec2S m_snow_depth;
   IceModelVec2T m_air_temp_sd;
+
+  IceModelVec2S m_cumulative_accumulation;
+  IceModelVec2S m_cumulative_melt;
+  IceModelVec2S m_cumulative_runoff;
 
   bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
   bool m_sd_use_param, m_sd_file_set;
