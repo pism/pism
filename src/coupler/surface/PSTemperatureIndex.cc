@@ -743,7 +743,7 @@ IceModelVec::Ptr PDD_air_temp_sd::compute_impl() {
 }
 
 PDD_saccum_average::PDD_saccum_average(TemperatureIndex *m)
-  : Diag_average(m) {
+  : Diag_average<TemperatureIndex>(m) {
 
   /* set metadata: */
   m_vars.push_back(SpatialVariableMetadata(m_sys, "saccum_average"));
@@ -760,7 +760,7 @@ const IceModelVec2S & PDD_saccum_average::cumulative_value() const {
 }
 
 PDD_smelt_average::PDD_smelt_average(TemperatureIndex *m)
-  : Diag_average(m) {
+  : Diag_average<TemperatureIndex>(m) {
 
   /* set metadata: */
   m_vars.push_back(SpatialVariableMetadata(m_sys, "smelt_average"));
@@ -777,7 +777,7 @@ const IceModelVec2S & PDD_smelt_average::cumulative_value() const {
 }
 
 PDD_srunoff_average::PDD_srunoff_average(TemperatureIndex *m)
-  : Diag_average(m) {
+  : Diag_average<TemperatureIndex>(m) {
 
   /* set metadata: */
   m_vars.push_back(SpatialVariableMetadata(m_sys, "srunoff_average"));
