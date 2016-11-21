@@ -163,6 +163,11 @@ void BedDef::init_impl() {
     }
   }
 
+  std::string correction_file = m_config->get_string("bed_deformation.bed_topography_delta_file");
+  if (not correction_file.empty()) {
+    apply_topg_offset(correction_file);
+  }
+
   // process -regrid_file and -regrid_vars
   regrid("bed deformation", m_topg);
   regrid("bed deformation", m_uplift);
@@ -170,6 +175,22 @@ void BedDef::init_impl() {
   // this should be the last thing we do here
   m_topg_initial.copy_from(m_topg);
   m_topg_last.copy_from(m_topg);
+}
+
+/*!
+ * Apply a correction to the bed topography by reading topg_delta from filename.
+ */
+void BedDef::apply_topg_offset(const std::string &filename) {
+  m_log->message(2, "  Adding a bed topography correction read in from %s...\n",
+                 filename.c_str());
+
+  IceModelVec2S topg_delta;
+  topg_delta.create(m_grid, "topg_delta", WITHOUT_GHOSTS);
+  topg_delta.set_attrs("internal", "bed topography correction", "meters", "");
+
+  topg_delta.regrid(filename, CRITICAL);
+
+  m_topg.add(1.0, topg_delta);
 }
 
 //! Compute bed uplift (dt_beddef is in seconds).

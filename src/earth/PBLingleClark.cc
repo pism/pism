@@ -95,10 +95,10 @@ void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
 void PBLingleClark::init_impl() {
-  BedDef::init_impl();
-
   m_log->message(2,
              "* Initializing the Lingle-Clark bed deformation model...\n");
+
+  BedDef::init_impl();
 
   // Correct bed elevation.
   if (m_config->get_boolean("bed_deformation.lc.regrid_bed_special")) {

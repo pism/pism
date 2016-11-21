@@ -225,6 +225,11 @@ netcdf pism_config {
     pism_config:bed_deformation.update_interval_type = "scalar";
     pism_config:bed_deformation.update_interval_units = "years";
 
+    pism_config:bed_deformation.bed_topography_delta_file = "";
+    pism_config:bed_deformation.bed_topography_delta_file_option = "topg_delta_file";
+    pism_config:bed_deformation.bed_topography_delta_file_doc = "The name of the file to read the topg_delta from. This field is added to the bed topography during initialization.";
+    pism_config:bed_deformation.bed_topography_delta_file_type = "string";
+
     pism_config:bootstrapping.defaults.bed = 1.0;
     pism_config:bootstrapping.defaults.bed_doc = "bed elevation value to use if topg (bedrock_altitude) variable is absent in bootstrapping file";
     pism_config:bootstrapping.defaults.bed_type = "scalar";

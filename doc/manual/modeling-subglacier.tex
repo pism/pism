@@ -270,9 +270,17 @@ Here are minimal example runs to compare these models:
 $ mpiexec -n 4 pisms -eisII A -y 8000 -o eisIIA_nobd.nc
 $ mpiexec -n 4 pisms -eisII A -bed_def iso -y 8000 -o eisIIA_bdiso.nc
 $ mpiexec -n 4 pisms -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
-\end{verbatim}
+\end{verbatim}                  % balance $ to make emacs happy
 Compare the \texttt{topg}, \texttt{usurf}, and \texttt{dbdt} variables in the resulting output files.  See also the comparison done in \cite{BLKfastearth}.
 
+Use the \intextoption{topg_delta_file} option to apply a correction to the bed topography field read in from an input file. This sets the bed topography $b$ at the beginning of a run as follows:
+\begin{equation}
+  \label{eq:bedcorrection}
+  b = b_{0} + \Delta b.
+\end{equation}
+Here $b_{0}$ is the bed topography (\texttt{topg}) read in from an input file and $\Delta b$ is the \texttt{topg_delta} field read in from the file specified using this option.
+
+A correction like this can be used to get a bed topography field at the end of a paleo-climate run that is closer to observed present day topography. The correction is computed by performing a ``preliminary'' run and subtracting modeled bed topography from present day observations. A subsequent run with this correction should produce a bed elevations that are closer to observed values.
 
 \subsection{Parameterization of bed roughness in the SIA} \label{subsect:bedsmooth} \index{Parameterization of bed roughness}
 \optsection{Parameterization of bed roughness}

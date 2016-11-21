@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -57,6 +57,8 @@ protected:
   virtual void init_with_inputs_impl(const IceModelVec2S &bed_elevation,
                                      const IceModelVec2S &bed_uplift,
                                      const IceModelVec2S &ice_thickness);
+  virtual void apply_topg_offset(const std::string &filename);
+
   virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
   virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
