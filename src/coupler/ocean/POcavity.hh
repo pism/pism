@@ -66,9 +66,7 @@ protected:
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 
   std::vector<IceModelVec*> m_variables;
-  Timeseries *delta_T;
-  double delta_T_factor;
-  double temp_anomaly;
+
   bool ocean_oceanboxmodel_deltaT_set,
        omeans_set,
        roundbasins_set,
@@ -81,7 +79,7 @@ private:
                   cbasins,
                   ICERISESmask,
                   BOXMODELmask,
-                  OCEANMEANmask, //FIXME delete when development finished
+                  OCEANMEANmask, 
                   DistGL,
                   DistIF,
                   Soc,
@@ -90,7 +88,6 @@ private:
                   Toc_base,
                   Toc_inCelsius,
                   T_star,
-                  Toc_anomaly,
                   overturning,
                   heatflux,
                   basalmeltrate_shelf;
