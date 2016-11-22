@@ -163,14 +163,14 @@ void BedDef::init_impl() {
     }
   }
 
+  // process -regrid_file and -regrid_vars
+  regrid("bed deformation", m_topg);
+  regrid("bed deformation", m_uplift);
+
   std::string correction_file = m_config->get_string("bed_deformation.bed_topography_delta_file");
   if (not correction_file.empty()) {
     apply_topg_offset(correction_file);
   }
-
-  // process -regrid_file and -regrid_vars
-  regrid("bed deformation", m_topg);
-  regrid("bed deformation", m_uplift);
 
   // this should be the last thing we do here
   m_topg_initial.copy_from(m_topg);
