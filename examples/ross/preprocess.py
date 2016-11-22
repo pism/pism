@@ -27,15 +27,13 @@ def run(commands):
 
 def preprocess_ice_velocity():
     """
-    Download and preprocess the ~95Mb Antarctic ice velocity dataset from NASA MEASURES project
+    Download and preprocess the ~332Mb Antarctic ice velocity dataset from NASA MEASURES project
     http://nsidc.org/data/nsidc-0484.html
     """
-    url = "ftp://anonymous@sidads.colorado.edu/pub/DATASETS/nsidc0484_MEASURES_antarc_vel_V01/900m/"
-    input_filename = "antarctica_ice_velocity.nc"
+    url = " ftp://n5eil01u.ecs.nsidc.org/SAN/MEASURES/NSIDC-0484.001/1996.01.01/"
+    input_filename = "antarctica_ice_velocity_900m.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
-
-    commands = ["wget -nc %s%s.gz" % (url, input_filename),  # NSIDC supports compression on demand!
-                "gunzip %s.gz" % input_filename,
+    commands = ["wget -nc %s%s" % (url, input_filename),  # NSIDC supports compression on demand!
                 "ncrename -d nx,x -d ny,y -O %s %s" % (input_filename, input_filename)
                 ]
 
