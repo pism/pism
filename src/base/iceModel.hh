@@ -99,6 +99,12 @@ struct FractureFields {
   IceModelVec2S flow_enhancement;
   IceModelVec2S age;
   IceModelVec2S toughness;
+
+  //! major and minor principal components of horizontal strain-rate tensor (temporary storage)
+  IceModelVec2 strain_rates;
+
+  //! components of horizontal stress tensor along axes and shear stress (temporary storage)
+  IceModelVec2 deviatoric_stresses;
 };
 
 class EnergyModelInputs {
@@ -297,10 +303,6 @@ protected:
   FractureFields *m_fracture;
 
 protected:
-
-  IceModelVec2 m_strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
-  
-  IceModelVec2 m_deviatoric_stresses; //!< components of horizontal stress tensor along axes and shear stress
 
   //! \brief mask for flow type with values ice_free_bedrock, grounded_ice, floating_ice,
   //! ice_free_ocean

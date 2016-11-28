@@ -42,13 +42,15 @@ void IceModel::calculateFractureDensity() {
 
   // get SSA velocities and related strain rates and stresses
   const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
-  stressbalance::compute_2D_principal_strain_rates(ssa_velocity, m_cell_type, m_strain_rates);
-  m_stress_balance->compute_2D_stresses(ssa_velocity, m_cell_type, m_deviatoric_stresses);
+  IceModelVec2 &strain_rates = m_fracture->strain_rates;
+  IceModelVec2 &deviatoric_stresses = m_fracture->deviatoric_stresses;
+  stressbalance::compute_2D_principal_strain_rates(ssa_velocity, m_cell_type, strain_rates);
+  m_stress_balance->compute_2D_stresses(ssa_velocity, m_cell_type, deviatoric_stresses);
 
   IceModelVec::AccessList list;
   list.add(ssa_velocity);
-  list.add(m_strain_rates);
-  list.add(m_deviatoric_stresses);
+  list.add(strain_rates);
+  list.add(deviatoric_stresses);
 
   list.add(m_ice_thickness);
   list.add(D);
@@ -168,9 +170,9 @@ void IceModel::calculateFractureDensity() {
     ///von mises criterion
 
     double
-      txx    = m_deviatoric_stresses(i, j, 0),
-      tyy    = m_deviatoric_stresses(i, j, 1),
-      txy    = m_deviatoric_stresses(i, j, 2),
+      txx    = deviatoric_stresses(i, j, 0),
+      tyy    = deviatoric_stresses(i, j, 1),
+      txy    = deviatoric_stresses(i, j, 2),
       T1     = 0.5 * (txx + tyy) + sqrt(0.25 * PetscSqr(txx - tyy) + PetscSqr(txy)), //Pa
       T2     = 0.5 * (txx + tyy) - sqrt(0.25 * PetscSqr(txx - tyy) + PetscSqr(txy)), //Pa
       sigmat = sqrt(PetscSqr(T1) + PetscSqr(T2) - T1 * T2);
@@ -234,13 +236,13 @@ void IceModel::calculateFractureDensity() {
     //////////////////////////////////////////////////////////////////////////////
 
     //fracture density
-    double fdnew = gamma * (m_strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
+    double fdnew = gamma * (strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
     if (sigmat > initThreshold) {
       D_new(i, j) += fdnew * m_dt;
     }
 
     //healing
-    double fdheal = gammaheal * (m_strain_rates(i, j, 0) - healThreshold);
+    double fdheal = gammaheal * (strain_rates(i, j, 0) - healThreshold);
     if (m_ice_thickness(i, j) > 0.0) {
       if (constant_healing) {
         fdheal = gammaheal * (-healThreshold);
@@ -249,7 +251,7 @@ void IceModel::calculateFractureDensity() {
         } else {
           D_new(i, j) += fdheal * m_dt;
         }
-      } else if (m_strain_rates(i, j, 0) < healThreshold) {
+      } else if (strain_rates(i, j, 0) < healThreshold) {
         if (fracture_weighted_healing) {
           D_new(i, j) += fdheal * m_dt * (1 - D(i, j));
         } else {
@@ -284,7 +286,7 @@ void IceModel::calculateFractureDensity() {
 
       // fracture healing rate
       if (m_ice_thickness(i, j) > 0.0) {
-        if (constant_healing || (m_strain_rates(i, j, 0) < healThreshold)) {
+        if (constant_healing || (strain_rates(i, j, 0) < healThreshold)) {
           if (fracture_weighted_healing) {
             m_fracture->healing_rate(i, j) = fdheal * (1 - D(i, j));
           } else {

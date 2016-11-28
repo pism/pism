@@ -89,6 +89,39 @@ FractureFields::FractureFields(IceGrid::ConstPtr grid) {
 
   toughness.create(grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL);
   toughness.set_attrs("model_state", "fracture toughness", "Pa", "");
+
+  strain_rates.create(grid, "strain_rates", WITH_GHOSTS,
+                      2, // stencil width, has to match or exceed the "offset" in eigenCalving
+                      2);
+
+  strain_rates.metadata(0).set_name("eigen1");
+  strain_rates.set_attrs("internal",
+                         "major principal component of horizontal strain-rate",
+                         "second-1", "", 0);
+
+  strain_rates.metadata(1).set_name("eigen2");
+  strain_rates.set_attrs("internal",
+                         "minor principal component of horizontal strain-rate",
+                         "second-1", "", 1);
+
+  deviatoric_stresses.create(grid, "sigma", WITH_GHOSTS,
+                             2, // stencil width
+                             3);
+
+  deviatoric_stresses.metadata(0).set_name("sigma_xx");
+  deviatoric_stresses.set_attrs("internal",
+                                "deviatoric stress in x direction",
+                                "Pa", "", 0);
+
+  deviatoric_stresses.metadata(1).set_name("sigma_yy");
+  deviatoric_stresses.set_attrs("internal",
+                                "deviatoric stress in y direction",
+                                "Pa", "", 1);
+
+  deviatoric_stresses.metadata(2).set_name("sigma_xy");
+  deviatoric_stresses.set_attrs("internal",
+                                "deviatoric shear stress",
+                                "Pa", "", 2);
 }
 
 IceModel::FluxFields::FluxFields(IceGrid::ConstPtr grid) {
@@ -417,45 +450,6 @@ void IceModel::createVecs() {
     m_Href.set_attrs("model_state", "temporary ice thickness at calving front boundary",
                     "m", "");
     m_grid->variables().add(m_Href);
-  }
-
-  if (m_config->get_boolean("fracture_density.enabled")) {
-
-    m_strain_rates.create(m_grid, "strain_rates", WITH_GHOSTS,
-                        2, // stencil width, has to match or exceed the "offset" in eigenCalving
-                        2);
-
-    m_strain_rates.metadata(0).set_name("eigen1");
-    m_strain_rates.set_attrs("internal",
-                           "major principal component of horizontal strain-rate",
-                           "second-1", "", 0);
-
-    m_strain_rates.metadata(1).set_name("eigen2");
-    m_strain_rates.set_attrs("internal",
-                           "minor principal component of horizontal strain-rate",
-                           "second-1", "", 1);
-  }
-
-  if (m_config->get_boolean("fracture_density.enabled")) {
-
-    m_deviatoric_stresses.create(m_grid, "sigma", WITH_GHOSTS,
-                               2, // stencil width
-                               3);
-
-    m_deviatoric_stresses.metadata(0).set_name("sigma_xx");
-    m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric stress in x direction",
-                                  "Pa", "", 0);
-
-    m_deviatoric_stresses.metadata(1).set_name("sigma_yy");
-    m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric stress in y direction",
-                                  "Pa", "", 1);
-
-    m_deviatoric_stresses.metadata(2).set_name("sigma_xy");
-    m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric shear stress",
-                                  "Pa", "", 2);
   }
 
   if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
