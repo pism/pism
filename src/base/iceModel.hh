@@ -444,17 +444,16 @@ public:
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
-  double ice_volume() const;
-  double ice_volume_not_displacing_seawater() const;
-  double sealevel_volume() const;
-  double ice_volume_temperate() const;
-  double ice_volume_cold() const;
-  double ice_area() const;
-  double ice_area_grounded() const;
-  double ice_area_floating() const;
-  // these are not "const" because they use temporary storage m_work2d
-  double ice_area_temperate();
-  double ice_area_cold();
+  double ice_volume(double thickness_threshold) const;
+  double ice_volume_not_displacing_seawater(double thickness_threshold) const;
+  double sealevel_volume(double thickness_threshold) const;
+  double ice_volume_temperate(double thickness_threshold) const;
+  double ice_volume_cold(double thickness_threshold) const;
+  double ice_area(double thickness_threshold) const;
+  double ice_area_grounded(double thickness_threshold) const;
+  double ice_area_floating(double thickness_threshold) const;
+  double ice_area_temperate(double thickness_threshold) const;
+  double ice_area_cold(double thickness_threshold) const;
 
 protected:
   // see iMtemp.cc
@@ -600,7 +599,8 @@ void compute_cts(const IceModelVec3 &enthalpy,
                  const IceModelVec2S &ice_thickness,
                  IceModelVec3 &result);
 
-double total_ice_enthalpy(const IceModelVec3 &ice_enthalpy,
+double total_ice_enthalpy(double thickness_threshold,
+                          const IceModelVec3 &ice_enthalpy,
                           const IceModelVec2S &ice_thickness,
                           const IceModelVec2S &cell_area);
 

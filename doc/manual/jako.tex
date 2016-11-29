@@ -135,7 +135,7 @@ The grid has spacing of 1\,km, so our computational domain is a 620\,km by 425\,
 
 The boundary condition fields in \texttt{g5km_bc.nc}, from the whole ice sheet model result  \texttt{g5km_gridseq.nc}, may or may not, depending on modeller intent, be spun-up adequately for the purposes of the regional model.  For instance, the intention may be to study equilibrium states with model settings special to the region.  Here, however we assume that some regional spin-up is needed, if for no other reason that the geometry used here (from the SeaRISE 1km data set) differs from that in the whole ice sheet model state.
 
-We will get first an equilibrium 5\,km regional model, and then do a century run of a 2\,km model based on that.  While determining ``equilibrium'' requires a decision, of course, a standard satisfied here is that the ice volume in the region changes by less than 0.1 percent in the final 100 model years.  See \texttt{ivol} in \texttt{ts_spunjako_0.nc} below.
+We will get first an equilibrium 5\,km regional model, and then do a century run of a 2\,km model based on that.  While determining ``equilibrium'' requires a decision, of course, a standard satisfied here is that the ice volume in the region changes by less than 0.1 percent in the final 100 model years.  See \texttt{volume_glacierized} in \texttt{ts_spunjako_0.nc} below.
 
 The 5\,km grid\footnote{Calculate \texttt{620/5 + 1} and \texttt{425/5 + 1}, for example.} uses \texttt{-Mx 125 -My 86}.  So now we do a basic run using 4 MPI processes:
 \begin{quote}\small

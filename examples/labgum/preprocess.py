@@ -59,6 +59,9 @@ def create_config():
         "geometry.ice_free_thickness_standard" : 1e-8,
         "geometry.ice_free_thickness_standard_doc" : "m; only if the fluid is less than this is a cell marked as ice free",
 
+        "output.ice_free_thickness_standard" : 1e-8,
+        "output.ice_free_thickness_standard_doc" : "fluid layer exceeding this thickness is included in computations of areas and volumes",
+
         "time_stepping.adaptive_ratio" : 0.08,
         "time_stepping.adaptive_ratio_doc" : "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?",
 
@@ -69,8 +72,10 @@ def create_config():
         "ice_softness_doc" : "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
     }
 
-    for k,v in attrs.iteritems()
-        config.setncattr(k, v)
+    keys = attrs.keys()
+    keys.sort()
+    for k in keys:
+        config.setncattr(k, attrs[k])
 
     nc.close()
 

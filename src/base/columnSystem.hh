@@ -164,11 +164,11 @@ protected:
 
   double m_dx, m_dy, m_dz, m_dt;
 
-  //! u-component if the ice velocity
+  //! u-component of the ice velocity
   std::vector<double> m_u;
-  //! v-component if the ice velocity
+  //! v-component of the ice velocity
   std::vector<double> m_v;
-  //! w-component if the ice velocity
+  //! w-component of the ice velocity
   std::vector<double> m_w;
   //! levels of the fine vertical grid
   std::vector<double> m_z;

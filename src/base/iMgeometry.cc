@@ -425,7 +425,7 @@ the time-step.*  Multiplying by dt will \b not necessarily give the
 corresponding change from the beginning to the end of the time-step.
 
 FIXME:  The calving rate can be computed by post-processing:
-dimassdt = surface_ice_flux + basal_ice_flux + sub_shelf_ice_flux + discharge_flux_mass_rate + nonneg_rule_flux
+mass_rate_of_change = surface_ice_flux + basal_ice_flux + sub_shelf_ice_flux + discharge_flux_mass_rate + nonneg_rule_flux
 
 Removed commented-out code using the coverage ratio to compute the surface mass
 balance contribution (to reduce clutter). Please see the commit 26330a7 and

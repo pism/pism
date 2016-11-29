@@ -6,9 +6,9 @@ in the "Getting Started" section of the User's Manual.
 """
 
 # example from grid-sequencing example:
-#   $ ./tsshow.py ivol ivol-gridseq.png ts_g20km_10ka_hy.nc '20 km for 10 ka' ts_g10km_gridseq.nc '10 km for 2 ka' ts_g5km_gridseq.nc '5 km for 200 a'
+#   $ ./tsshow.py volume_glacierized volume_glacierized-gridseq.png ts_g20km_10ka_hy.nc '20 km for 10 ka' ts_g10km_gridseq.nc '10 km for 2 ka' ts_g5km_gridseq.nc '5 km for 200 a'
 # example from paramstudy/:
-#   $ ../tsshow.py ivol ivol-param.png ts_p10km_q0.1_e1.nc '(0.1,1)' ts_p10km_q0.5_e1.nc '(0.5,1)' ts_p10km_q1.0_e1.nc '(1.0,1)' ts_p10km_q0.1_e3.nc '(0.1,3)' ts_p10km_q0.5_e3.nc '(0.5,3)' ts_p10km_q1.0_e3.nc '(1.0,3)' ts_p10km_q0.1_e6.nc '(0.1,6)' ts_p10km_q0.5_e6.nc '(0.5,6)' ts_p10km_q1.0_e6.nc '(1.0,6)'
+#   $ ../tsshow.py volume_glacierized volume_glacierized-param.png ts_p10km_q0.1_e1.nc '(0.1,1)' ts_p10km_q0.5_e1.nc '(0.5,1)' ts_p10km_q1.0_e1.nc '(1.0,1)' ts_p10km_q0.1_e3.nc '(0.1,3)' ts_p10km_q0.5_e3.nc '(0.5,3)' ts_p10km_q1.0_e3.nc '(1.0,3)' ts_p10km_q0.1_e6.nc '(0.1,6)' ts_p10km_q0.5_e6.nc '(0.5,6)' ts_p10km_q1.0_e6.nc '(1.0,6)'
 
 from numpy import *
 import pylab as plt
@@ -29,7 +29,7 @@ if len(sys.argv) < 5:
     print
     print "where strings LABEL1 ... LABELn go in the legend"
     print "example:"
-    print "   $ python tsshow.py ivol foo.png ts_g20km.nc '20 km' ts_g10km.nc '10 km'"
+    print "   $ python tsshow.py volume_glacierized foo.png ts_g20km.nc '20 km' ts_g10km.nc '10 km'"
     sys.exit(1)
 
 field = sys.argv[1]

@@ -512,7 +512,8 @@ void IceModel::enthalpyStep(const EnergyModelInputs &inputs,
   by the density to get units of energy:
   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
 */
-double total_ice_enthalpy(const IceModelVec3 &ice_enthalpy,
+double total_ice_enthalpy(double thickness_threshold,
+                          const IceModelVec3 &ice_enthalpy,
                           const IceModelVec2S &ice_thickness,
                           const IceModelVec2S &cell_area) {
   double enthalpy_sum = 0.0;
@@ -531,10 +532,9 @@ double total_ice_enthalpy(const IceModelVec3 &ice_enthalpy,
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double H = ice_thickness(i,j);
+      const double H = ice_thickness(i, j);
 
-      // count all ice, including cells which have so little they are considered "ice-free"
-      if (H > 0) {
+      if (H >= thickness_threshold) {
         const int ks = grid->kBelowHeight(H);
 
         const double

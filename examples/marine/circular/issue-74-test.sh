@@ -5,7 +5,7 @@
 # (https://github.com/pism/pism/issues/74), i.e. that when -calving float_kill
 # is used the sub-shelf ice flux reported by PISM (the
 # sub_shelf_ice_flux variable) can be non-zero even when the total
-# area of the floating ice (variable iareaf) is zero.
+# area of the floating ice (variable area_glacierized_shelf) is zero.
 
 # This is due to the fact that during time-stepping the sub-shelf ice
 # flux is computed before calving is applied. This error has an O(dt)

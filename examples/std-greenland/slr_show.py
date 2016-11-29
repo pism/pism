@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2011-2012, 2014 The PISM Authors
+# Copyright (C) 2011-2012, 2014, 2016 The PISM Authors
 
 # script to generate figure: results from SeaRISE experiments
 # usage:  if UAFX_G_D3_C?_??.nc are result NetCDF files then do
@@ -68,16 +68,16 @@ nc0.close()
 if (t_units.split()[0] == ('seconds' or 's')):
     t /= 3.15569259747e7
 
-ivol = zeros((len(t), n))
+volume_glacierized = zeros((len(t), n))
 ivolshift = zeros((len(t), n - 1))
 
 for j in range(n):
     nc = CDF(NCNAMES[j], 'r')
-    ivol[:, j] = nc.variables['ivol'][t_a:t_e]
+    volume_glacierized[:, j] = nc.variables['volume_glacierized'][t_a:t_e]
     nc.close()
 
 for j in range(n - 1):
-    ivolshift[:, j] = ivol[:, j + 1] - ivol[:, 0]
+    ivolshift[:, j] = volume_glacierized[:, j + 1] - volume_glacierized[:, 0]
 
 # "2,850,000 km3 of ice were to melt, global sea levels would rise 7.2 m"
 scale = 7.2 / 2.850e6

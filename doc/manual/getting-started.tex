@@ -102,17 +102,17 @@ $ ncview ex_g20km_10ka.nc
 \end{verbatim}
 We see that \texttt{ex_g20km_10ka.nc} contains growing ``movies'' of the fields chosen by the \texttt{-extra_vars} option.  A frame of the ice thickness field \texttt{thk} is shown in Figure \ref{fig:growing} (left).
 
-The time-series file \texttt{ts_g20km_10ka.nc} is also growing.  It contains spatially-averaged ``scalar'' diagnostics like the total ice volume or the ice-sheet-wide maximum velocity (variable \texttt{ivol} and \texttt{max_hor_vel}, respectively).  It can be viewed
+The time-series file \texttt{ts_g20km_10ka.nc} is also growing.  It contains spatially-averaged ``scalar'' diagnostics like the total ice volume or the ice-sheet-wide maximum velocity (variable \texttt{volume_glacierized} and \texttt{max_hor_vel}, respectively).  It can be viewed
 \begin{verbatim}
 $ ncview ts_g20km_10ka.nc
 \end{verbatim}
-The growing time series for \texttt{ivol} is shown in Figure \ref{fig:growing} (right).  Recall that our intention was to generate a minimal model of the Greenland ice sheet in approximate steady-state with a steady (constant-in-time) climate.  The measurable steadiness of the \texttt{ivol} time series is a possible standard for steady state \cite[for example]{EISMINT00}.
+The growing time series for \texttt{volume_glacierized} is shown in Figure \ref{fig:growing} (right).  Recall that our intention was to generate a minimal model of the Greenland ice sheet in approximate steady-state with a steady (constant-in-time) climate.  The measurable steadiness of the \texttt{volume_glacierized} time series is a possible standard for steady state \cite[for example]{EISMINT00}.
 
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[height=5.0in,keepaspectratio=true]{ex-growing-thk-g20km}
   \qquad \includegraphics[height=5.0in,keepaspectratio=true]{ts-growing-ivol-g20km}}
-\caption{Two views produced by \texttt{ncview} during a PISM model run.  Left: \texttt{thk}, the ice sheet thickness, a space-dependent field, from file \texttt{ex_g20km_10ka.nc}.  Right: \texttt{ivol}, the total ice sheet volume time-series, from file \texttt{ts_g20km_10ka.nc}.}
+\caption{Two views produced by \texttt{ncview} during a PISM model run.  Left: \texttt{thk}, the ice sheet thickness, a space-dependent field, from file \texttt{ex_g20km_10ka.nc}.  Right: \texttt{volume_glacierized}, the total ice sheet volume time-series, from file \texttt{ts_g20km_10ka.nc}.}
 \label{fig:growing}
 \end{figure}
 
@@ -202,14 +202,14 @@ This run might take 4 to 6 hours.  However, supposing you have a larger parallel
 \label{fig:secondoutputfiner}
 \end{figure}
 
-Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig:secondoutputfiner}.  Figure \ref{fig:csurfvsobserved} also compares observed velocity to the model results from 20\,km and 10\,km grids.  As a different comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{ivol} for 20\,km and 10\,km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-averaged quantity, the \texttt{ivol} difference from 20\,km and 10\,km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20\,km to 10\,km.
+Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig:secondoutputfiner}.  Figure \ref{fig:csurfvsobserved} also compares observed velocity to the model results from 20\,km and 10\,km grids.  As a different comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{volume_glacierized} for 20\,km and 10\,km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-averaged quantity, the \texttt{volume_glacierized} difference from 20\,km and 10\,km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20\,km to 10\,km.
 
 Roughly speaking, the reader should only consider trusting those model results which are demonstrated to be robust across a range of model parameters, and, in particular, which are shown to be relatively-stable among relatively-high resolution results for a particular case.  Using a supercomputer is justified merely to confirm that lower-resolution runs were already ``getting'' a given feature or result.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=4.0in,keepaspectratio=true]{ivol-both-g20km-g10km}
-\caption{Time series of modeled ice sheet volume \texttt{ivol} on 20km and 10km grids.  The present-day ice sheet has volume about $2.9\times 10^6\,\text{km}^3$ \cite{BamberLayberryGogenini}, the initial value seen in both runs.}
+\caption{Time series of modeled ice sheet volume \texttt{volume_glacierized} on 20km and 10km grids.  The present-day ice sheet has volume about $2.9\times 10^6\,\text{km}^3$ \cite{BamberLayberryGogenini}, the initial value seen in both runs.}
 \label{fig:ivolboth}
 \end{figure}
 
@@ -235,7 +235,7 @@ $ PISM_DO=echo PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
 \begin{figure}[ht]
 \centering
 \includegraphics[width=4.5in,keepaspectratio=true]{ivol-const-paleo}
-\caption{Time series of modeled ice sheet volume \texttt{ivol} from constant-climate (blue; \texttt{ts_g20km_10ka_hy.nc}) and paleo-climate (red; \texttt{ts_g20km_25ka_paleo.nc}) spinup runs.  Note that the paleo-climate run started with the ice geometry at the end of the constant-climate run.}
+\caption{Time series of modeled ice sheet volume \texttt{volume_glacierized} from constant-climate (blue; \texttt{ts_g20km_10ka_hy.nc}) and paleo-climate (red; \texttt{ts_g20km_25ka_paleo.nc}) spinup runs.  Note that the paleo-climate run started with the ice geometry at the end of the constant-climate run.}
 \label{fig:ivolconstpaleo}
 \end{figure}
 
@@ -262,13 +262,13 @@ The fields \texttt{usurf}, \texttt{velsurf_mag}, and \texttt{velbase_mag} from f
 \begin{figure}[ht]
 \centering
 \includegraphics[width=4.5in,keepaspectratio=true]{ivoltemp-const-paleo}
-\caption{Time series of temperate ice volume \texttt{ivoltemp} from constant-climate (blue; \texttt{ts_g20km_10ka_hy.nc}) and paleo-climate (red; \texttt{ts_g20km_25ka_paleo.nc}) spinup runs.  The cold of the last ice age affects the fraction of temperate ice.  Note different volume scale compared to that in Figure \ref{fig:ivolconstpaleo}; only about 1\% of ice is temperate (by volume).}
+\caption{Time series of temperate ice volume \texttt{volume_glacierized_temperate} from constant-climate (blue; \texttt{ts_g20km_10ka_hy.nc}) and paleo-climate (red; \texttt{ts_g20km_25ka_paleo.nc}) spinup runs.  The cold of the last ice age affects the fraction of temperate ice.  Note different volume scale compared to that in Figure \ref{fig:ivolconstpaleo}; only about 1\% of ice is temperate (by volume).}
 \label{fig:ivoltempconstpaleo}
 \end{figure}
 
-To see the difference between runs more clearly, Figure \ref{fig:ivolconstpaleo} compares the time-series variable \texttt{ivol}.  We see the effect of option \verb|-regrid_file g20km_10ka_hy.nc -regrid_vars ...,thk,...|, which implies that the paleo-climate run starts with the ice geometry from the end of the constant-climate run.
+To see the difference between runs more clearly, Figure \ref{fig:ivolconstpaleo} compares the time-series variable \texttt{volume_glacierized}.  We see the effect of option \verb|-regrid_file g20km_10ka_hy.nc -regrid_vars ...,thk,...|, which implies that the paleo-climate run starts with the ice geometry from the end of the constant-climate run.
 
-Another time-series comparison, of the variable \verb|ivoltemp|, the total volume of temperate (at 0$^\circ$C) ice, appears in Figure \ref{fig:ivoltempconstpaleo}.  The paleo-climate run shows the cold period from $\approx -25$ ka to $\approx -12$ ka.  Both constant-climate and paleo-climate runs then come into rough equilibrium in the holocene.  The bootstrapping artifact, seen at the start of the constant-climate run, which disappears in less than 1000 years, is avoided in the paleo-climate run by starting with the constant-climate end-state.  The reader is encouraged to examine the diagnostic files \texttt{ts_g20km_25ka_paleo.nc} and \texttt{ex_g20km_25ka_paleo.nc} to find more evidence of the (modeled) climate impact on the ice dynamics.
+Another time-series comparison, of the variable \verb|volume_glacierized_temperate|, the total volume of temperate (at 0$^\circ$C) ice, appears in Figure \ref{fig:ivoltempconstpaleo}.  The paleo-climate run shows the cold period from $\approx -25$ ka to $\approx -12$ ka.  Both constant-climate and paleo-climate runs then come into rough equilibrium in the holocene.  The bootstrapping artifact, seen at the start of the constant-climate run, which disappears in less than 1000 years, is avoided in the paleo-climate run by starting with the constant-climate end-state.  The reader is encouraged to examine the diagnostic files \texttt{ts_g20km_25ka_paleo.nc} and \texttt{ex_g20km_25ka_paleo.nc} to find more evidence of the (modeled) climate impact on the ice dynamics.
 
 
 \subsection{Getting serious I: grid sequencing}  \label{subsect:gridseq}  
@@ -331,7 +331,7 @@ Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Gr
 \begin{figure}[ht]
 \centering
 \includegraphics[width=4.5in,keepaspectratio=true]{ivol-gridseq}
-\caption{Time series of ice volume \texttt{ivol} from the three runs in our grid sequencing example: 20\,km for 10\,ka = \texttt{ts_g20km_10ka_hy.nc}, 10\,km for 2\,ka = \texttt{ts_g10km_gridseq.nc}, and 5\,km for 200\,a = \texttt{ts_g5km_gridseq.nc}.}
+\caption{Time series of ice volume \texttt{volume_glacierized} from the three runs in our grid sequencing example: 20\,km for 10\,ka = \texttt{ts_g20km_10ka_hy.nc}, 10\,km for 2\,ka = \texttt{ts_g10km_gridseq.nc}, and 5\,km for 200\,a = \texttt{ts_g5km_gridseq.nc}.}
 \label{fig:ivolgridseq}
 \end{figure}
 
@@ -403,7 +403,7 @@ The reader should inspect a few of these scripts.  They are all very similar, of
 \centering
 \includegraphics[width=4.5in,keepaspectratio=true]{ivol-param}
 
-\caption{Time series of ice volume \texttt{ivol} from nine runs in our parameter study example, with parameter choices $(q,e)$ given.}
+\caption{Time series of ice volume \texttt{volume_glacierized} from nine runs in our parameter study example, with parameter choices $(q,e)$ given.}
 \label{fig:ivolparamstudy}
 \end{figure}
 

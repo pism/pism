@@ -133,7 +133,7 @@ Run `plot.py --help` for a list of command-line options. You can also produce pl
 
 will create geometry profile *and* ice flux plots for all matched files.
 
-Also, note that the variable `iareag` in `ts_ABC1_1a_M1_A1.nc` and similar
+Also, note that the variable `area_glacierized_grounded` in `ts_ABC1_1a_M1_A1.nc` and similar
 allows one to see time-dependent changes in the grounding line location
 because grounded ice area is proportional to the distance from the divide to the
 grounding line.

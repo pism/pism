@@ -167,7 +167,9 @@ public:
   typedef PISM_SHARED_PTR(TSDiagnostic) Ptr;
 
   TSDiagnostic(IceGrid::ConstPtr g)
-    : m_grid(g), m_sys(g->ctx()->unit_system()), m_ts(NULL) {
+    : m_grid(g),
+      m_config(g->ctx()->config()),
+      m_sys(g->ctx()->unit_system()), m_ts(NULL) {
   }
 
   virtual ~TSDiagnostic() {
@@ -201,6 +203,8 @@ public:
 protected:
   //! the grid
   IceGrid::ConstPtr m_grid;
+  //! Configuration flags and parameters
+  const Config::ConstPtr m_config;
   //! the unit system
   const units::System::Ptr m_sys;
   DiagnosticTimeseries *m_ts;

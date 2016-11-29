@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2013--2015 The PISM Authors
+# Copyright (C) 2013--2016 The PISM Authors
 
 # This is just a helper script to make running EISMINT II experiments easier.
 # It adds suggested diagnostics which help compare to the published experiments.
@@ -61,6 +61,6 @@ cmd="$PISM_MPIDO $NN pisms -eisII $EXP $GRIDORINPUT -ys 0 -y $DUR \
  -skip -skip_max $SKIP -o $ROOT.nc -extra_file ex_$ROOT.nc \
  -extra_vars thk,temppabase,velsurf_mag,velbar_mag,flux_mag,diffusivity,bmelt,taud_mag \
  -extra_times 1000:1000:$DUR -ts_file ts_$ROOT.nc \
- -ts_times 0:100:$DUR -ts_vars ivol,iarea,iareatemp,iareacold"
+ -ts_times 0:100:$DUR"
 $PISM_DO $cmd
 
