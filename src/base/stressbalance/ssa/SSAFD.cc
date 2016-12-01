@@ -97,8 +97,6 @@ SSAFD::SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
   m_view_nuh = false;
   m_nuh_viewer_size = 300;
 
-  m_dump_system_matlab = false;
-
   m_fracture_density = NULL;
   m_melange_back_pressure = NULL;
 
@@ -242,13 +240,6 @@ void SSAFD::init_impl() {
     m_log->message(2,
                "  using PISM-PIK calving-front stress boundary condition ...\n");
   }
-
-  // option to save linear system in Matlab-readable ASCII format at end of each
-  // numerical solution of SSA equations; can be given with or without filename prefix
-  // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get
-  // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
-  m_dump_system_matlab = options::Bool("-ssafd_matlab",
-                                     "Save linear system in Matlab-readable ASCII format");
 
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;
@@ -903,10 +894,6 @@ void SSAFD::solve() {
     } catch (PicardFailure) {
       // proceed to the next strategy
     }
-  }
-
-  if (m_dump_system_matlab) {
-    write_system_matlab("");
   }
 
   // Post-process velocities if the user asked for it:
@@ -1689,95 +1676,6 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
 
   ierr = VecView(m_b.get_vec(), viewer);
   PISM_CHK(ierr, "VecView");
-}
-
-//! \brief Write the SSA system to an .m (MATLAB) file (for debugging).
-void SSAFD::write_system_matlab(const std::string &namepart) {
-
-  std::string prefix = options::String("-ssafd_matlab",
-                                       "Save the linear system to an ASCII .m file. Sets the file prefix.",
-                                       "SSAFD_" + namepart);
-
-  double year = units::convert(m_sys, m_grid->ctx()->time()->current(), "seconds", "years");
-  char file_name[TEMPORARY_STRING_LENGTH];
-  snprintf(file_name, TEMPORARY_STRING_LENGTH, "%s_y%.0f.m", prefix.c_str(), year);
-
-  m_log->message(2, 
-             "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
-             file_name);
-
-  petsc::Viewer viewer(m_grid->com);
-
-  // petsc calls
-  PetscErrorCode ierr = write_system_matlab_c(viewer, file_name, pism_args_string(), year);
-  if (ierr != 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "A PETSc call failed while writing the SSA system."
-                       " See stdout output for more.");
-  }
-}
-
-//! PETSc calls (internals of write_system_matlab()), packaged to simplify error handling.
-/**
- * @note This method should contain **C function calls only** or calls
- *       that **will not throw**. Each call should be followed by
- *       `CHKERRQ(ierr)`.
- */
-PetscErrorCode SSAFD::write_system_matlab_c(const petsc::Viewer &viewer,
-                                            const std::string &file_name,
-                                            const std::string &cmdstr,
-                                            double year) {
-  PetscErrorCode ierr;
-
-  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
-  ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
-
-  ierr = PetscViewerFileSetName(viewer, file_name.c_str()); CHKERRQ(ierr);
-
-  // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
-  ierr = PetscViewerASCIIPrintf(viewer,
-    "%% A PISM linear system report for the finite difference implementation\n"
-    "%% of the SSA stress balance from this run:\n"
-    "%%   '%s'\n"
-    "%% Writes matrix A (sparse), and vectors uv and rhs, for the linear\n"
-    "%% system which was solved at the last step of the nonlinear iteration:\n"
-    "%%    A * uv = rhs.\n"
-    "%% Also writes the year, the coordinates x,y, their gridded versions\n"
-    "%% xx,yy, and the thickness (thk) and surface elevation (usurf).\n"
-    "%% Also writes i-offsetvalues of vertically-integrated viscosity\n"
-    "%% (nuH_0 = nu * H), and j-offset version of same thing (nuH_1 = nu * H);\n"
-    "%% these are on the staggered grid.\n",
-                                cmdstr.c_str()); CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(viewer, "\n\necho off\n"); CHKERRQ(ierr);
-
-  // matrix
-  ierr = PetscObjectSetName((PetscObject)((Mat)m_A), "A"); CHKERRQ(ierr);
-  ierr = MatView(m_A, viewer); CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(viewer, "clear zzz\n\n"); CHKERRQ(ierr);
-
-  // right hand side
-  ierr = PetscObjectSetName((PetscObject) m_b.get_vec(), "rhs"); CHKERRQ(ierr);
-  ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
-
-  // solution
-  ierr = PetscObjectSetName((PetscObject) m_velocity_global.get_vec(), "uv"); CHKERRQ(ierr);
-  ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
-
-  // save coordinates (for viewing, primarily)
-  ierr = PetscViewerASCIIPrintf(viewer, "\nyear=%10.6f;\n", year); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "x=%12.3f + (0:%d)*%12.3f;\n"
-                                "y=%12.3f + (0:%d)*%12.3f;\n",
-                                -m_grid->Lx(), m_grid->Mx() - 1, m_grid->dx(),
-                                -m_grid->Ly(), m_grid->My() - 1, m_grid->dy()); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer, "[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(viewer, "echo on\n"); CHKERRQ(ierr);
-
-  ierr = PetscViewerPopFormat(viewer); CHKERRQ(ierr);
-
-  return 0;
 }
 
 SSAFD_nuH::SSAFD_nuH(SSAFD *m)

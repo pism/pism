@@ -76,13 +76,6 @@ protected:
 
   virtual void write_system_petsc(const std::string &namepart);
 
-  virtual void write_system_matlab(const std::string &namepart);
-private:
-  PetscErrorCode write_system_matlab_c(const petsc::Viewer &viewer,
-                                       const std::string &file_name,
-                                       const std::string &cmdstr,
-                                       double year);
-protected:
   virtual void update_nuH_viewers();
 
   virtual void set_diagonal_matrix_entry(Mat A, int i, int j,
@@ -109,8 +102,6 @@ protected:
   bool m_view_nuh;
   petsc::Viewer::Ptr m_nuh_viewer;
   int m_nuh_viewer_size;
-
-  bool m_dump_system_matlab;
 
   class KSPFailure : public RuntimeError {
   public:
