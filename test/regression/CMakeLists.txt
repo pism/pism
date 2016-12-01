@@ -124,6 +124,10 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
         pism_python_test (Python:Verification:SSAFEM_plug_flow ssa/ssafem_test_plug.sh)
 
+        pism_python_test (Python:Verification:test_V_SSAFD_CFBC ssa/ssa_test_cfbc_fd.sh)
+
+        pism_python_test (Python:Verification:test_V_SSAFEM_CFBC ssa/ssa_test_cfbc_fem.sh)
+
         pism_python_test (Python:sia_forward.py test_33.sh)
 
 # Inversion regression tests.  We run the appropriate ones if we can find

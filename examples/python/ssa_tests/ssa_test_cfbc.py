@@ -48,14 +48,11 @@ Q0 = V0 * H0
 Hc1 = 4. * C / Q0
 Hc2 = 1. / (H0 ** 4)
 
-
 def H_exact(x):
     return (Hc1 * x + Hc2) ** (-1 / 4.)
 
-
 def u_exact(x):
     return Q0 / H_exact(x)
-
 
 class test_cfbc(PISM.ssa.SSAExactTestCase):
 
@@ -69,15 +66,14 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
     def _initPhysics(self):
         config = self.config
-        config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", True)
-        config.set_boolean("stress_balance.calving_front_stress_bc", True)
 
-        config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
+        config.set_double("flow_law.isothermal_Glen.ice_softness",
+                          pow(1.9e8, -config.get_double("stress_balance.ssa.Glen_exponent")))
+        config.set_boolean("stress_balance.ssa.compute_surface_gradient_inward", False)
+        config.set_boolean("stress_balance.calving_front_stress_bc", True)
+        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
 
         enthalpyconverter = PISM.EnthalpyConverter(config)
-
-        config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
-        config.set_double("flow_law.isothermal_Glen.ice_softness", pow(1.9e8, -config.get_double("stress_balance.ssa.Glen_exponent")))
 
         self.modeldata.setPhysics(enthalpyconverter)
 
@@ -104,11 +100,12 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         ocean_rho = self.config.get_double("constants.sea_water.density")
         ice_rho = self.config.get_double("constants.ice.density")
 
+        x_min = grid.x(0)
         with PISM.vec.Access(comm=[thickness, surface, bc_mask, vel_bc, ice_mask]):
             for (i, j) in grid.points():
                 x = grid.x(i)
-                if x <= 0:
-                    thickness[i, j] = H_exact(x + self.grid.Lx())
+                if i != grid.Mx() - 1:
+                    thickness[i, j] = H_exact(x - x_min)
                     ice_mask[i, j] = PISM.MASK_FLOATING
                 else:
                     thickness[i, j] = 0
@@ -126,8 +123,9 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
                     vel_bc[i, j].v = 0.
 
     def exactSolution(self, i, j, x, y):
-        if x <= 0:
-            u = u_exact(x + self.grid.Lx())
+        x_min = self.grid.x(0)
+        if i != self.grid.Mx() - 1:
+            u = u_exact(x - x_min)
         else:
             u = 0
         return [u, 0]
