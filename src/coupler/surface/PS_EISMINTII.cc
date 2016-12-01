@@ -111,14 +111,13 @@ MaxTimestep EISMINTII::max_timestep_impl(double t) {
 
 void EISMINTII::initialize_using_formulas() {
 
-  PetscScalar cx = m_grid->Lx(), cy = m_grid->Ly();
+  // center of the accumulation and surface temperature patterns
+  double cx = 0.0, cy = 0.0;
   if (m_experiment == 'E') {
-    // shift center
     cx += 100.0e3;
     cy += 100.0e3;
   }
 
-  // now fill in accum and surface temp
   IceModelVec::AccessList list;
   list.add(m_ice_surface_temp);
   list.add(m_climatic_mass_balance);
@@ -126,16 +125,16 @@ void EISMINTII::initialize_using_formulas() {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // r is distance from center of grid; if E then center is shifted (above)
-    const double r = sqrt(PetscSqr(-cx + m_grid->dx()*i)
-                          + PetscSqr(-cy + m_grid->dy()*j));
-    // set accumulation from formula (7) in (Payne et al 2000)
+    const double r = sqrt(PetscSqr(m_grid->x(i) - cx) + PetscSqr(m_grid->y(j) - cy));
+
+    // accumulation (formula (7) in [Payne et al 2000])
     m_climatic_mass_balance(i,j) = std::min(m_M_max, m_S_b * (m_R_el-r));
-    // set surface temperature
-    m_ice_surface_temp(i,j) = m_T_min + m_S_T * r;  // formula (8) in (Payne et al 2000)
+
+    // surface temperature (formula (8) in [Payne et al 2000])
+    m_ice_surface_temp(i,j) = m_T_min + m_S_T * r;
   }
 
-  // convert from [m second-1] to [kg m-2 s-1]
+  // convert from "m second-1" to "kg m-2 s-1"
   m_climatic_mass_balance.scale(m_config->get_double("constants.ice.density"));
 }
 

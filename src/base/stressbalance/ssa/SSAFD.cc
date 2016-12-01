@@ -1606,7 +1606,7 @@ void SSAFD::update_nuH_viewers() {
 
   if (not m_nuh_viewer) {
     m_nuh_viewer.reset(new petsc::Viewer(m_grid->com, "nuH", m_nuh_viewer_size,
-                                       m_grid->Lx(), m_grid->Ly()));
+                                         m_grid->Lx(), m_grid->Ly()));
   }
 
   tmp.view(m_nuh_viewer, petsc::Viewer::Ptr());

@@ -98,11 +98,11 @@ void SSATestCaseCFBC::initializeGrid(int Mx, int My) {
 
 void SSATestCaseCFBC::initializeSSAModel() {
 
-  m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(1.9e8, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
+  m_config->set_double("flow_law.isothermal_Glen.ice_softness",
+                       pow(1.9e8, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
   m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", false);
   m_config->set_boolean("stress_balance.calving_front_stress_bc", true);
   m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-  m_config->set_string("output.variable_order", "zyx");
 
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 }
@@ -126,13 +126,15 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   double ocean_rho = m_config->get_double("constants.sea_water.density"),
     ice_rho = m_config->get_double("constants.ice.density");
 
+  const double x_min = m_grid->x(0);
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double x = m_grid->x(i);
 
     if (i != (int)m_grid->Mx() - 1) {
-      m_thickness(i, j) = H_exact(V0, H0, C, x + m_grid->Lx());
+      m_thickness(i, j) = H_exact(V0, H0, C, x - x_min);
       m_ice_mask(i, j)  = MASK_FLOATING;
     } else {
       m_thickness(i, j) = 0;
@@ -170,8 +172,10 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
 void SSATestCaseCFBC::exactSolution(int i, int /*j*/,
                                     double x, double /*y*/,
                                     double *u, double *v) {
+  const double x_min = m_grid->x(0);
+
   if (i != (int)m_grid->Mx() - 1) {
-    *u = u_exact(V0, H0, C, x + m_grid->Lx());
+    *u = u_exact(V0, H0, C, x - x_min);
   } else {
     *u = 0;
   }

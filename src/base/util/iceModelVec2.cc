@@ -407,7 +407,7 @@ void IceModelVec2::view(int viewer_size) const {
 
     if (not m_map_viewers[c_name]) {
       m_map_viewers[c_name].reset(new petsc::Viewer(m_grid->com, title, viewer_size,
-                                           m_grid->Lx(), m_grid->Ly()));
+                                                    m_grid->Lx(), m_grid->Ly()));
     }
 
     viewers[j] = m_map_viewers[c_name];
