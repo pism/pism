@@ -137,7 +137,7 @@ if (Pism_GPROF_FLAGS)
 endif ()
 
 # Check if the C++ compiler has shared_ptr in std.
-pism_check_shared_ptr()
+#pism_check_shared_ptr()    # This is broken
 if (Pism_USE_TR1)
   message(STATUS "Using '#include <tr1/memory> and std::tr1::shared_ptr<...>.")
   message(STATUS "Adding -DPISM_USE_TR1=1 to compiler flags.")
