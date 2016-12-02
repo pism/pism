@@ -58,6 +58,7 @@
 #include "base/util/io/io_helpers.hh"
 #include "base/util/projection.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/age/AgeModel.hh"
 
 namespace pism {
 
@@ -218,7 +219,12 @@ void IceModel::model_state_setup() {
     m_btu->init(input);
   }
 
-  // Initialize 3D (age and energy balance) parts of IceModel.
+  if (m_age_model != NULL) {
+    m_age_model->init(input);
+    m_grid->variables().add(m_age_model->age());
+  }
+
+  // Initialize 3D (energy balance) parts of IceModel.
   {
     switch (input.type) {
     case INIT_RESTART:
@@ -269,10 +275,9 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
         intent == "mapping"     ||
         intent == "climate_steady") {
 
-      // skip "age", "enthalpy", and "Href" for now: we'll take care
+      // skip "enthalpy" and "Href" for now: we'll take care
       // of them a little later
       if (short_name == "enthalpy" ||
-          short_name == "age"      ||
           short_name == "Href") {
         continue;
       }
@@ -298,24 +303,9 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
 
 /*! @brief Initialize 3D fields managed by IceModel. */
 /*!
- * This method should go away once we isolate "age" and "energy balance" sub-models.
+ * This method should go away once we isolate the "energy balance" sub-model.
  */
 void IceModel::restart_3d(const PIO &input_file, unsigned int last_record) {
-
-  // read the age field if present, otherwise set to zero
-  if (m_config->get_boolean("age.enabled")) {
-    bool age_exists = input_file.inq_var("age");
-
-    if (age_exists) {
-      m_ice_age.read(input_file, last_record);
-    } else {
-      m_log->message(2,
-                     "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
-                     "  Setting it to zero...\n",
-                     input_file.inq_filename().c_str());
-      m_ice_age.set(0.0);
-    }
-  }
 
   // Initialize the enthalpy field by reading from a file or by using
   // temperature and liquid water fraction, or by using temperature
@@ -439,6 +429,24 @@ void IceModel::allocate_iceberg_remover() {
   }
 }
 
+void IceModel::allocate_age_model() {
+
+  if (m_age_model != NULL) {
+    return;
+  }
+
+  if (m_config->get_boolean("age.enabled")) {
+    m_log->message(2, "# Allocating an ice age model...\n");
+
+    if (m_stress_balance == NULL) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Cannot allocate an age model: m_stress_balance == NULL.");
+    }
+
+    m_age_model = new AgeModel(m_grid, m_stress_balance);
+  }
+}
+
 //! \brief Decide which bedrock thermal unit to use.
 void IceModel::allocate_bedrock_thermal_unit() {
 
@@ -526,6 +534,9 @@ void IceModel::allocate_submodels() {
   allocate_iceberg_remover();
 
   allocate_stressbalance();
+
+  // this has to happen *after* allocate_stressbalance()
+  allocate_age_model();
 
   // this has to happen *after* allocate_stressbalance()
   allocate_subglacial_hydrology();

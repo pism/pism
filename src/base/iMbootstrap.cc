@@ -124,14 +124,6 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
 //! Fill 3D fields using heuristics.
 void IceModel::bootstrap_3d() {
 
-  // set the initial age of the ice if appropriate
-  if (m_config->get_boolean("age.enabled")) {
-    m_log->message(2, " - setting initial age to %.4f years\n",
-                   m_config->get_double("age.initial_value"));
-
-    m_ice_age.set(m_config->get_double("age.initial_value", "seconds"));
-  }
-
   {
     m_surface->ice_surface_temperature(m_ice_surface_temp);
     m_surface->ice_surface_mass_flux(m_climatic_mass_balance);

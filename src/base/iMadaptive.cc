@@ -35,6 +35,7 @@
 #include "coupler/PISMSurface.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/age/AgeModel.hh"
 
 namespace pism {
 
@@ -169,6 +170,13 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       }
     }
 
+    if (m_age_model != NULL) {
+      MaxTimestep age_dt = m_age_model->max_timestep(current_time);
+      if (age_dt.is_finite()) {
+        dt_restrictions["age"] = age_dt.value();
+      }
+    }
+
     if (m_eigen_calving != NULL) {
       MaxTimestep eigencalving_dt = m_eigen_calving->max_timestep();
       if (eigencalving_dt.is_finite()) {
@@ -291,9 +299,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
 //! Because of the -skip mechanism it is still possible that we can have CFL violations: count them.
 /*!
 This applies to the horizontal part of the three-dimensional advection problem
-solved by IceModel::ageStep() and the advection, ice-only part of the problem solved by
-temperatureStep().  These methods use a fine vertical grid, and so we consider CFL
-violations on that same fine grid.
+solved by AgeModel and the advection, ice-only part of the problem solved by
+temperatureStep().
 
 Communication is needed to determine total CFL violation count over entire grid.
 It is handled by temperatureAgeStep(), not here.

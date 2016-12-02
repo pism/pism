@@ -32,6 +32,7 @@
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/age/AgeModel.hh"
 
 namespace pism {
 
@@ -98,17 +99,19 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
   double result = -1.0;  // result value if not age.enabled
 
-  if (not m_config->get_boolean("age.enabled")) {
+  if (m_age_model == NULL) {
     return result;  // leave now
   }
 
   const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3, // area unit (km^2)
     currtime = m_time->current(); // seconds
 
+  const IceModelVec3 &ice_age = m_age_model->age();
+
   IceModelVec::AccessList list;
   list.add(m_cell_type);
   list.add(m_ice_thickness);
-  list.add(m_ice_age);
+  list.add(ice_age);
 
   const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
   double original_ice_volume = 0.0;
@@ -121,7 +124,7 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
       if (m_cell_type.icy(i, j)) {
         // accumulate volume of ice which is original
-        double *age = m_ice_age.get_column(i, j);
+        const double *age = ice_age.get_column(i, j);
         const int  ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
         for (int k = 1; k <= ks; k++) {
           // ice in segment is original if it is as old as one year less than current time

@@ -88,6 +88,7 @@ class BedDef;
 // forward declarations
 class IceGrid;
 class YieldStress;
+class AgeModel;
 class IceModelVec2CellType;
 
 struct FractureFields {
@@ -127,17 +128,6 @@ public:
   const IceModelVec3 *w3;
 };
 
-class AgeModelInputs {
-public:
-  AgeModelInputs();
-  void check() const;
-
-  const IceModelVec2S *ice_thickness;
-  const IceModelVec3 *u3;
-  const IceModelVec3 *v3;
-  const IceModelVec3 *w3;
-};
-
 class EnergyModelStats {
 public:
   EnergyModelStats();
@@ -164,6 +154,7 @@ public:
 
   virtual void allocate_submodels();
   virtual void allocate_stressbalance();
+  virtual void allocate_age_model();
   virtual void allocate_bed_deformation();
   virtual void allocate_bedrock_thermal_unit();
   virtual void allocate_subglacial_hydrology();
@@ -187,7 +178,7 @@ public:
   virtual void run();
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
-  virtual void step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
+  virtual void step(bool do_mass_continuity, bool do_energy, bool do_skip);
   void reset_counters();
 
   // see iMbootstrap.cc
@@ -257,6 +248,8 @@ protected:
 
   energy::BedThermalUnit *m_btu;
 
+  AgeModel *m_age_model;
+
   calving::IcebergRemover     *m_iceberg_remover;
   calving::OceanKill          *m_ocean_kill_calving;
   calving::FloatKill          *m_float_kill_calving;
@@ -320,8 +313,6 @@ protected:
   IceModelVec3 m_ice_temperature;
   //! enthalpy; J / kg (ghosted)
   IceModelVec3 m_ice_enthalpy;
-  //! age of ice; s (ghosted because it is averaged onto the staggered-grid)
-  IceModelVec3 m_ice_age;
 
   // parameters
   //! mass continuity time step, s
@@ -380,9 +371,6 @@ protected:
   virtual double max_timestep_diffusivity();
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
-
-  // see iMage.cc
-  virtual void ageStep(const AgeModelInputs &inputs, double dt);
 
   // see iMenergy.cc
   virtual void energyStep();
