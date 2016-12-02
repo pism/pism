@@ -170,13 +170,12 @@ void Timeseries::report_range(const Logger &log) {
 }
 
 //! Write timeseries data to a NetCDF file `filename`.
-void Timeseries::write(const PIO &nc) {
+void Timeseries::write(const PIO &nc) const {
   // write the dimensional variable; this call should go first
   io::write_timeseries(nc, m_dimension, 0, m_time);
   io::write_timeseries(nc, m_variable, 0, m_values);
 
   if (m_use_bounds) {
-    set_bounds_units();
     io::write_time_bounds(nc, m_bounds, 0, m_time_bounds);
   }
 }
@@ -200,11 +199,11 @@ void Timeseries::scale(double scaling_factor) {
   Uses time bounds if present (interpreting data as piecewise-constant) and
   uses linear interpolation otherwise.
  */
-double Timeseries::operator()(double t) {
+double Timeseries::operator()(double t) const {
 
   // piecewise-constant case:
   if (m_use_bounds) {
-    std::vector<double>::iterator j;
+    std::vector<double>::const_iterator j;
 
     j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t); // binary search
 
@@ -228,7 +227,7 @@ double Timeseries::operator()(double t) {
   }
 
   // piecewise-linear case:
-  std::vector<double>::iterator end = m_time.end(), j;
+  std::vector<double>::const_iterator end = m_time.end(), j;
   
   j = lower_bound(m_time.begin(), end, t); // binary search
 
@@ -266,7 +265,7 @@ double Timeseries::operator[](unsigned int j) const {
 
 //! \brief Compute an average of a time-series over interval (t,t+dt) using
 //! trapezoidal rule with N sub-intervals.
-double Timeseries::average(double t, double dt, unsigned int N) {
+double Timeseries::average(double t, double dt, unsigned int N) const {
   std::vector<double> V(N+1);
  
   for (unsigned int i = 0; i < N+1; ++i) {
@@ -306,7 +305,7 @@ TimeseriesMetadata& Timeseries::dimension_metadata() {
 /*!
   This length is changed by read() and append().
  */
-int Timeseries::length() {
+int Timeseries::length() const {
   return (int)m_values.size();
 }
 

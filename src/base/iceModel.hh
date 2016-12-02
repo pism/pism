@@ -79,6 +79,9 @@ class FrontalMelt;
 
 namespace energy {
 class BedThermalUnit;
+class EnergyModelInputs;
+class EnergyModelStats;
+class EnergyModel;
 }
 
 namespace bed {
@@ -90,6 +93,7 @@ class IceGrid;
 class YieldStress;
 class AgeModel;
 class IceModelVec2CellType;
+class Component;
 
 struct FractureFields {
   FractureFields(IceGrid::ConstPtr grid);
@@ -108,35 +112,6 @@ struct FractureFields {
   IceModelVec2 deviatoric_stresses;
 };
 
-class EnergyModelInputs {
-public:
-  EnergyModelInputs();
-  void check() const;
-
-  const IceModelVec2CellType *cell_type;
-  const IceModelVec2S *basal_frictional_heating;
-  const IceModelVec2S *basal_heat_flux;
-  const IceModelVec2S *ice_thickness;
-  const IceModelVec2S *surface_liquid_fraction;
-  const IceModelVec2S *shelf_base_temp;
-  const IceModelVec2S *surface_temp;
-  const IceModelVec2S *till_water_thickness;
-
-  const IceModelVec3 *strain_heating3;
-  const IceModelVec3 *u3;
-  const IceModelVec3 *v3;
-  const IceModelVec3 *w3;
-};
-
-class EnergyModelStats {
-public:
-  EnergyModelStats();
-
-  unsigned int bulge_counter;
-  unsigned int reduced_accuracy_counter;
-  unsigned int low_temperature_counter;
-  double liquified_ice_volume;
-};
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -157,13 +132,13 @@ public:
   virtual void allocate_age_model();
   virtual void allocate_bed_deformation();
   virtual void allocate_bedrock_thermal_unit();
+  virtual void allocate_energy_model();
   virtual void allocate_subglacial_hydrology();
   virtual void allocate_basal_yield_stress();
   virtual void allocate_couplers();
   virtual void allocate_iceberg_remover();
 
   virtual void model_state_setup();
-  virtual void allocate_internal_objects();
   virtual void misc_setup();
   virtual void init_diagnostics();
   virtual void init_calving();
@@ -178,12 +153,11 @@ public:
   virtual void run();
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
-  virtual void step(bool do_mass_continuity, bool do_energy, bool do_skip);
+  virtual void step(bool do_mass_continuity, bool do_skip);
   void reset_counters();
 
   // see iMbootstrap.cc
   virtual void bootstrap_2d(const PIO &input_file);
-  virtual void bootstrap_3d();
 
   // see iMoptions.cc
   virtual void setFromOptions();
@@ -200,10 +174,8 @@ public:
 
   // see iMIO.cc
   virtual void restart_2d(const PIO &input_file, unsigned int record);
-  virtual void restart_3d(const PIO &input_file, unsigned int record);
 
   virtual void initialize_2d() __attribute__((noreturn));
-  virtual void initialize_3d() __attribute__((noreturn));
 
   void initialize_cumulative_fluxes(const PIO &input_file);
   void reset_cumulative_fluxes();
@@ -220,8 +192,8 @@ public:
                      WRITE_ALL                             = 1 | 2 | 4};
 
   virtual void write_metadata(const PIO &nc, MetadataFlag flag);
-  virtual void write_variables(const PIO &nc, const std::set<std::string> &vars,
-                               IO_Type nctype);
+  virtual void write_diagnostics(const PIO &nc, const std::set<std::string> &vars,
+                                 IO_Type nctype);
 protected:
 
   //! Computational grid
@@ -243,10 +215,14 @@ protected:
   //! run statistics
   VariableMetadata m_run_stats;
 
+  //! the list of sub-models, for writing model states and obtaining diagnostics
+  std::map<std::string,const Component*> m_submodels;
+
   hydrology::Hydrology   *m_subglacial_hydrology;
   YieldStress *m_basal_yield_stress_model;
 
   energy::BedThermalUnit *m_btu;
+  energy::EnergyModel *m_energy_model;
 
   AgeModel *m_age_model;
 
@@ -278,16 +254,6 @@ protected:
   IceModelVec2S m_latitude;
   //! accumulated mass advected to a partially filled grid cell
   IceModelVec2S m_Href;
-  //! accumulation/ablation rate; no ghosts
-  IceModelVec2S m_climatic_mass_balance;
-  //! ice temperature at the ice surface but below firn; no ghosts
-  IceModelVec2S m_ice_surface_temp;
-  //! ice liquid water fraction at the top surface of the ice
-  IceModelVec2S m_liqfrac_surface;
-  //! ice temperature at the shelf base; no ghosts
-  IceModelVec2S m_shelfbtemp;
-  //! ice mass flux into the ocean at the shelf base; no ghosts
-  IceModelVec2S m_shelfbmassflux;
   //! cell areas (computed using the WGS84 datum)
   IceModelVec2S m_cell_area;
   //! flux divergence
@@ -309,11 +275,6 @@ protected:
   //! mask to determine grounding line position
   IceModelVec2S m_gl_mask;
 
-  //! absolute temperature of ice; K (ghosted)
-  IceModelVec3 m_ice_temperature;
-  //! enthalpy; J / kg (ghosted)
-  IceModelVec3 m_ice_enthalpy;
-
   // parameters
   //! mass continuity time step, s
   double m_dt;
@@ -321,9 +282,6 @@ protected:
   double t_TempAge;
   //! enthalpy/temperature and age time-steps
   double dt_TempAge;
-  // global maximums on 3D grid of abs value of vel components
-  double m_max_u_speed;
-  double m_max_v_speed;
 
   struct FluxCounters {
     FluxCounters();
@@ -368,20 +326,14 @@ protected:
   // see iceModel.cc
   virtual void createVecs();
 
-  virtual double max_timestep_diffusivity();
+  virtual MaxTimestep max_timestep_diffusivity();
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMenergy.cc
   virtual void energyStep();
-  virtual void get_bed_top_temp(IceModelVec2S &result);
 
   virtual void combine_basal_melt_rate();
-
-  // see iMenthalpy.cc
-  virtual void enthalpyStep(const EnergyModelInputs &inputs,
-                            double dt,
-                            EnergyModelStats &stats);
 
   // see iMgeometry.cc
   virtual void enforce_consistency_of_geometry();
@@ -410,7 +362,6 @@ protected:
   virtual void regrid_variables(const PIO &regrid_file,
                                 const std::set<std::string> &regrid_vars,
                                 unsigned int ndims);
-  virtual void init_enthalpy(const PIO &input_file, bool regrid, int record);
 
   // see iMfractures.cc
   virtual void calculateFractureDensity();
@@ -444,14 +395,6 @@ public:
   double ice_area_cold(double thickness_threshold) const;
 
 protected:
-  // see iMtemp.cc
-  virtual void excessToFromBasalMeltLayer(double rho, double c, double L,
-                                          double z, double dz,
-                                          double *Texcess, double *bwat);
-  virtual void temperatureStep(const EnergyModelInputs &inputs,
-                               double dt,
-                               EnergyModelStats &stats);
-
   // see iMutil.cc
   virtual int endOfTimeStepHook();
   virtual void stampHistoryCommand();
@@ -461,11 +404,8 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const int m_n_work2d = 2;
-  IceModelVec2S m_work2d[m_n_work2d];
-
-  // 3D working space
-  IceModelVec3 m_work3d;
+  static const int m_n_work2d = 4;
+  mutable IceModelVec2S m_work2d[m_n_work2d];
 
   stressbalance::StressBalance *m_stress_balance;
 
@@ -474,12 +414,12 @@ public:
   const ocean::OceanModel* ocean_model() const;
   const bed::BedDef* bed_model() const;
   const energy::BedThermalUnit* bedrock_thermal_model() const;
+  const energy::EnergyModel* energy_balance_model() const;
 
-  const IceModelVec3& ice_enthalpy() const;
   const IceModelVec2S& ice_thickness() const;
   const IceModelVec2S& ice_surface_elevation() const;
   const IceModelVec2CellType& cell_type() const;
-  const IceModelVec2S &cell_area();
+  const IceModelVec2S &cell_area() const;
 
   FluxCounters cumulative_fluxes() const;
   const IceModelVec2S& flux_divergence() const;
@@ -558,47 +498,17 @@ private:
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
 
-void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &ice_surface_temp,
-                               const IceModelVec2S &surface_mass_balance,
-                               const IceModelVec2S &basal_heat_flux,
-                               IceModelVec3 &result);
-
-void bootstrap_ice_enthalpy(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &ice_surface_temp,
-                            const IceModelVec2S &surface_mass_balance,
-                            const IceModelVec2S &basal_heat_flux,
-                            IceModelVec3 &result);
-
-void compute_enthalpy(const IceModelVec3 &temperature,
-                      const IceModelVec3 &liquid_water_fraction,
-                      const IceModelVec2S &ice_thickness,
-                      IceModelVec3 &result);
-
-void compute_enthalpy_cold(const IceModelVec3 &temperature,
-                           const IceModelVec2S &ice_thickness,
-                           IceModelVec3 &result);
-
-void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
-                                   const IceModelVec2S &ice_thickness,
-                                   IceModelVec3 &result);
-
-void compute_cts(const IceModelVec3 &enthalpy,
-                 const IceModelVec2S &ice_thickness,
-                 IceModelVec3 &result);
-
-double total_ice_enthalpy(double thickness_threshold,
-                          const IceModelVec3 &ice_enthalpy,
-                          const IceModelVec2S &ice_thickness,
-                          const IceModelVec2S &cell_area);
-
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
-unsigned int count_CFL_violations(const IceModelVec3 &u3,
-                                  const IceModelVec3 &v3,
-                                  const IceModelVec2S &ice_thickness,
-                                  double dt);
+void bedrock_surface_temperature(double sea_level,
+                                 const IceModelVec2CellType &cell_type,
+                                 const IceModelVec2S &bed_topography,
+                                 const IceModelVec2S &ice_thickness,
+                                 const IceModelVec2S &basal_enthalpy,
+                                 const IceModelVec2S &ice_surface_temperature,
+                                 IceModelVec2S &result);
+
 } // end of namespace pism
 
 #endif /* __iceModel_hh */

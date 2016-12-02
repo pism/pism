@@ -50,22 +50,16 @@
 #include "base/util/pism_utilities.hh"
 #include "BTU_Verification.hh"
 #include "base/energy/BTU_Minimal.hh"
+#include "TemperatureModel_Verification.hh"
 
 namespace pism {
-
-const double IceCompModel::secpera = 3.15569259747e7;
 
 using units::convert;
 
 IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
-  : IceModel(g, context) {
+  : IceModel(g, context), m_testname(mytest), m_bedrock_is_ice_forK(false) {
 
-  // note lots of defaults are set by the IceModel constructor
-
-  // defaults for IceCompModel:
-  testname = mytest;
-  exactOnly = false;
-  bedrock_is_ice_forK = false;
+  m_log->message(2, "starting Test %c ...\n", m_testname);
 
   // Override some defaults from parent class
   m_config->set_double("stress_balance.sia.enhancement_factor", 1.0);
@@ -76,49 +70,48 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   m_config->set_boolean("geometry.update.enabled", true);
   m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
 
-  if (testname == 'V') {
-    m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-    const double softness = pow(1.9e8, -m_config->get_double("stress_balance.sia.Glen_exponent"));
-    m_config->set_double("flow_law.isothermal_Glen.ice_softness", softness);
-  } else {
-    // Set the default for IceCompModel:
-    m_config->set_string("stress_balance.sia.flow_law", "arr");
+  // flow law settings
+  switch (m_testname) {
+  case 'A':
+  case 'B':
+  case 'C':
+  case 'D':
+  case 'H':
+  case 'L':
+    {
+      m_config->set_string("stress_balance.sia.flow_law", "isothermal_glen");
+      const double year = convert(m_sys, 1.0, "year", "seconds");
+      m_config->set_double("flow_law.isothermal_Glen.ice_softness", 1.0e-16 / year);
+      break;
+    }
+  case 'V':
+    {
+      m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+      const double
+        hardness = 1.9e8,
+        softness = pow(hardness,
+                       -m_config->get_double("stress_balance.ssa.Glen_exponent"));
+      m_config->set_double("flow_law.isothermal_Glen.ice_softness", softness);
+      break;
+    }
+  case 'F':
+  case 'G':
+  case 'K':
+  case 'O':
+  default:
+    {
+      m_config->set_string("stress_balance.sia.flow_law", "arr");
+      break;
+    }
   }
-}
 
-void IceCompModel::createVecs() {
-
-  IceModel::createVecs();
-
-  vHexactL.create(m_grid, "HexactL", WITH_GHOSTS, 2);
-
-  strain_heating3_comp.create(m_grid,"strain_heating_comp", WITHOUT_GHOSTS);
-  strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
-                                 "W m-3", "");
-}
-
-void IceCompModel::setFromOptions() {
-
-  m_log->message(2, "starting Test %c ...\n", testname);
-
-  /* This switch turns off actual numerical evolution and simply reports the
-     exact solution. */
-  bool flag = options::Bool("-eo", "exact only");
-  if (flag) {
-    exactOnly = true;
-    m_log->message(1, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
-  }
-
-  // These ifs are here (and not in the constructor or later) because
-  // testname actually comes from a command-line *and* because command-line
-  // options should be able to override parameter values set here.
-
-  if (testname == 'H') {
+  if (m_testname == 'H') {
     m_config->set_string("bed_deformation.model", "iso");
-  } else
+  } else {
     m_config->set_string("bed_deformation.model", "none");
+  }
 
-  if ((testname == 'F') || (testname == 'G') || (testname == 'K') || (testname == 'O')) {
+  if ((m_testname == 'F') || (m_testname == 'G') || (m_testname == 'K') || (m_testname == 'O')) {
     m_config->set_boolean("energy.enabled", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
@@ -131,14 +124,14 @@ void IceCompModel::setFromOptions() {
   m_config->set_boolean("ocean.always_grounded", true);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
-  if ((testname == 'K') || (testname == 'O')) {
+  if ((m_testname == 'K') || (m_testname == 'O')) {
     m_config->set_boolean("energy.allow_temperature_above_melting", false);
   } else {
     // note temps are generally allowed to go above pressure melting in verify
     m_config->set_boolean("energy.allow_temperature_above_melting", true);
   }
 
-  if (testname == 'V') {
+  if (m_testname == 'V') {
     // no sub-shelf melting
     m_config->set_boolean("geometry.update.use_basal_melt_rate", false);
 
@@ -155,8 +148,17 @@ void IceCompModel::setFromOptions() {
   }
 
   m_config->set_boolean("energy.temperature_based", true);
+}
 
-  IceModel::setFromOptions();
+void IceCompModel::createVecs() {
+
+  IceModel::createVecs();
+
+  m_HexactL.create(m_grid, "HexactL", WITH_GHOSTS, 2);
+
+  m_strain_heating3_comp.create(m_grid,"strain_heating_comp", WITHOUT_GHOSTS);
+  m_strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
+                                 "W m-3", "");
 }
 
 void IceCompModel::allocate_bedrock_thermal_unit() {
@@ -168,20 +170,20 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   // this switch changes Test K to make material properties for bedrock the same as for ice
   bool biiSet = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
   if (biiSet) {
-    if (testname == 'K') {
+    if (m_testname == 'K') {
       m_log->message(1,
-                 "setting material properties of bedrock to those of ice in Test K\n");
+                     "setting material properties of bedrock to those of ice in Test K\n");
       m_config->set_double("energy.bedrock_thermal_density", m_config->get_double("constants.ice.density"));
       m_config->set_double("energy.bedrock_thermal_conductivity", m_config->get_double("constants.ice.thermal_conductivity"));
       m_config->set_double("energy.bedrock_thermal_specific_heat_capacity", m_config->get_double("constants.ice.specific_heat_capacity"));
-      bedrock_is_ice_forK = true;
+      m_bedrock_is_ice_forK = true;
     } else {
       m_log->message(1,
                      "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
     }
   }
 
-  if (testname != 'K') {
+  if (m_testname != 'K') {
     // now make bedrock have same material properties as ice
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
@@ -195,50 +197,43 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
 
   if (bed_vertical_grid.Mbz > 1) {
     m_btu = new energy::BTU_Verification(m_grid, bed_vertical_grid,
-                                         testname, bedrock_is_ice_forK);
+                                         m_testname, m_bedrock_is_ice_forK);
   } else {
     m_btu = new energy::BTU_Minimal(m_grid);
   }
+
+  m_submodels["bedrock thermal layer"] = m_btu;
 }
 
-void IceCompModel::allocate_stressbalance() {
+void IceCompModel::allocate_energy_model() {
 
-  using namespace pism::stressbalance;
-
-  if (m_stress_balance != NULL) {
+  if (m_energy_model != NULL) {
     return;
   }
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+  m_log->message(2, "# Allocating an energy balance model...\n");
 
-  IceModel::allocate_stressbalance();
+  // this switch changes Test K to make material properties for bedrock the same as for ice
+  bool bedrock_is_ice = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
+  m_energy_model = new energy::TemperatureModel_Verification(m_grid, m_stress_balance, m_testname, bedrock_is_ice);
 
-  if (testname != 'V') {
-    // check on whether the options (already checked) chose the right
-    // FlowLaw for verification (we need to have the right flow law for
-    // errors to make sense)
-
-    const rheology::FlowLaw *ice = m_stress_balance->modifier()->flow_law();
-
-    if (not FlowLawIsPatersonBuddCold(ice, *m_config, EC)) {
-      m_log->message(1,
-                 "WARNING: SIA flow law should be '-sia_flow_law arr' for the selected pismv test.\n");
-    }
-  }
+  m_submodels["energy balance model"] = m_energy_model;
 }
+
 
 void IceCompModel::allocate_bed_deformation() {
 
   IceModel::allocate_bed_deformation();
 
-  f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.lithosphere_density");  // for simple isostasy
+  // for simple isostasy
+  m_f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.lithosphere_density");
 
   std::string bed_def_model = m_config->get_string("bed_deformation.model");
 
-  if ((testname == 'H') && bed_def_model != "iso") {
+  if ((m_testname == 'H') && bed_def_model != "iso") {
     m_log->message(1,
-               "IceCompModel WARNING: Test H should be run with option\n"
-               "  '-bed_def iso'  for the reported errors to be correct.\n");
+                   "IceCompModel WARNING: Test H should be run with option\n"
+                   "  '-bed_def iso'  for the reported errors to be correct.\n");
   }
 }
 
@@ -246,8 +241,11 @@ void IceCompModel::allocate_couplers() {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   // Climate will always come from verification test formulas.
-  m_surface = new surface::Verification(m_grid, EC, testname);
+  m_surface = new surface::Verification(m_grid, EC, m_testname);
+  m_submodels["surface process model"] = m_surface;
+
   m_ocean   = new ocean::Constant(m_grid);
+  m_submodels["ocean model"] = m_ocean;
 }
 
 void IceCompModel::bootstrap_2d(const PIO &input_file) {
@@ -255,25 +253,17 @@ void IceCompModel::bootstrap_2d(const PIO &input_file) {
   throw RuntimeError(PISM_ERROR_LOCATION, "pismv (IceCompModel) does not support bootstrapping.");
 }
 
-void IceCompModel::bootstrap_3d() {
-  throw RuntimeError(PISM_ERROR_LOCATION, "pismv (IceCompModel) does not support bootstrapping.");
-}
-
 void IceCompModel::initialize_2d() {
-  m_log->message(3, "initializing Test %c from formulas ...\n",testname);
+  m_log->message(3, "initializing Test %c from formulas ...\n",m_testname);
 
   // all have no uplift
-  IceModelVec2S bed_uplift;
-  bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
-  bed_uplift.set(0);
-  m_beddef->set_uplift(bed_uplift);
-
-  // this is the correct initialization for Test O (and every other
-  // test; they all generate zero basal melt rate)
-  m_basal_melt_rate.set(0.0);
+  IceModelVec2S zero;
+  zero.create(m_grid, "temporary", WITHOUT_GHOSTS);
+  zero.set(0.0);
+  m_beddef->set_uplift(zero);
 
   // Test-specific initialization:
-  switch (testname) {
+  switch (m_testname) {
   case 'A':
   case 'B':
   case 'C':
@@ -300,28 +290,10 @@ void IceCompModel::initialize_2d() {
   }
 }
 
-void IceCompModel::initialize_3d() {
-
-  strain_heating3_comp.set(0.0);
-
-  compute_enthalpy_cold(m_ice_temperature, m_ice_thickness, m_ice_enthalpy);
-}
-
 void IceCompModel::initTestABCDH() {
-  double     A0, T0;
-
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
-
-  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, EC);
 
   const double time = m_time->current();
 
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
-  // set all temps to this constant
-  A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = tgaIce.tempFromSoftness(A0);
-
-  m_ice_temperature.set(T0);
   m_cell_type.set(MASK_GROUNDED);
 
   IceModelVec::AccessList list(m_ice_thickness);
@@ -332,7 +304,7 @@ void IceCompModel::initTestABCDH() {
       const int i = p.i(), j = p.j();
 
       const double r = radius(*m_grid, i, j);
-      switch (testname) {
+      switch (m_testname) {
       case 'A':
         m_ice_thickness(i, j) = exactA(r).H;
         break;
@@ -346,7 +318,7 @@ void IceCompModel::initTestABCDH() {
         m_ice_thickness(i, j) = exactD(time, r).H;
         break;
       case 'H':
-        m_ice_thickness(i, j) = exactH(f, time, r).H;
+        m_ice_thickness(i, j) = exactH(m_f, time, r).H;
         break;
       default:
         throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H");
@@ -363,9 +335,9 @@ void IceCompModel::initTestABCDH() {
     IceModelVec2S bed_topography;
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
 
-    if (testname == 'H') {
+    if (m_testname == 'H') {
       bed_topography.copy_from(m_ice_thickness);
-      bed_topography.scale(-f);
+      bed_topography.scale(-m_f);
     } else {  // flat bed case otherwise
       bed_topography.set(0.0);
     }
@@ -388,26 +360,14 @@ struct rgridReverseSort {
 };
 
 void IceCompModel::initTestL() {
-  double     A0, T0;
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
-
-  assert(testname == 'L');
-
-  rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, EC);
-
-  // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
-  // set all temps to this constant
-  A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
-  T0 = tgaIce.tempFromSoftness(A0);
-
-  m_ice_temperature.set(T0);
+  m_log->message(2, "* Initializing ice thickness and bed topography for test L...\n");
 
   // setup to evaluate test L; requires solving an ODE numerically
   //   using sorted list of radii, sorted in decreasing radius order
   const int MM = m_grid->xm() * m_grid->ym();
 
-  std::vector<rgrid> rrv(MM);  // destructor at end of scope
+  std::vector<rgrid> rrv(MM);
   int k = 0;
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -448,7 +408,7 @@ void IceCompModel::initTestL() {
   }
 
   // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
-  vHexactL.copy_from(m_ice_thickness);
+  m_HexactL.copy_from(m_ice_thickness);
 }
 
 //! \brief Tests A and E have a thickness B.C. (ice_thickness == 0 outside a circle of radius 750km).
@@ -467,71 +427,6 @@ void IceCompModel::reset_thickness_test_A() {
 
   m_ice_thickness.update_ghosts();
 }
-
-
-
-void IceCompModel::fillSolnTestABCDH() {
-
-  const double time = m_time->current();
-
-  IceModelVec::AccessList list(m_ice_thickness);
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double r = radius(*m_grid, i, j);
-      switch (testname) {
-      case 'A':
-        m_ice_thickness(i, j) = exactA(r).H;
-        break;
-      case 'B':
-        m_ice_thickness(i, j) = exactB(time, r).H;
-        break;
-      case 'C':
-        m_ice_thickness(i, j) = exactC(time, r).H;
-        break;
-      case 'D':
-        m_ice_thickness(i, j) = exactD(time, r).H;
-        break;
-      case 'H':
-        m_ice_thickness(i, j) = exactH(f, time, r).H;
-        break;
-      default:
-        throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H");
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  m_ice_thickness.update_ghosts();
-
-  {
-    IceModelVec2S bed_topography;
-    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-
-    if (testname == 'H') {
-      bed_topography.copy_from(m_ice_thickness);
-      bed_topography.scale(-f);
-    } else {
-      bed_topography.set(0.0);
-    }
-    m_beddef->set_elevation(bed_topography);
-  }
-}
-
-
-void IceCompModel::fillSolnTestL() {
-
-  vHexactL.update_ghosts();
-  m_ice_thickness.copy_from(vHexactL);
-
-  // note bed was filled at initialization and hasn't changed
-}
-
 
 void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
                                          double &gdomeHexact, double &volerr,
@@ -555,8 +450,8 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     etaerr = 0.0;
 
   IceModelVec::AccessList list(m_ice_thickness);
-  if (testname == 'L') {
-    list.add(vHexactL);
+  if (m_testname == 'L') {
+    list.add(m_HexactL);
   }
 
   double
@@ -579,7 +474,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         vol += a * m_ice_thickness(i,j) * 1e-3;
       }
       double xx = m_grid->x(i), r = radius(*m_grid, i,j);
-      switch (testname) {
+      switch (m_testname) {
       case 'A':
         Hexact = exactA(r).H;
         break;
@@ -593,7 +488,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         Hexact = exactD(time, r).H;
         break;
       case 'F':
-        if (r > LforFG - 1.0) {  // outside of sheet
+        if (r > m_LforFG - 1.0) {  // outside of sheet
           Hexact=0.0;
         } else {
           r=std::max(r,1.0);
@@ -602,23 +497,23 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         }
         break;
       case 'G':
-        if (r > LforFG -1.0) {  // outside of sheet
+        if (r > m_LforFG -1.0) {  // outside of sheet
           Hexact=0.0;
         } else {
           r=std::max(r,1.0);
           std::vector<double> z(1, 0.0);
-          Hexact = exactFG(time, r, z, ApforG).H;
+          Hexact = exactFG(time, r, z, m_ApforG).H;
         }
         break;
       case 'H':
-        Hexact = exactH(f, time, r).H;
+        Hexact = exactH(m_f, time, r).H;
         break;
       case 'K':
       case 'O':
         Hexact = 3000.0;
         break;
       case 'L':
-        Hexact = vHexactL(i,j);
+        Hexact = m_HexactL(i,j);
         break;
       case 'V':
         {
@@ -676,59 +571,9 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   centerHerr = fabs(gdomeH - gdomeHexact);
 }
 
-
-void IceCompModel::additionalAtStartTimestep() {
-  if (testname == 'F' || testname == 'G') {
-    getCompSourcesTestFG();
-  }
-}
-
-
 void IceCompModel::additionalAtEndTimestep() {
-
-  if (testname == 'A') {
+  if (m_testname == 'A') {
     reset_thickness_test_A();
-  }
-
-  // do nothing at the end of the time step unless the user has asked for the
-  // exact solution to overwrite the numerical solution
-  if (not exactOnly) {
-    return;
-  }
-
-  // because user wants exact solution, fill gridded values from exact formulas;
-  // important notes:
-  //     (1) the numerical computation *has* already occurred, in run(),
-  //           and we just overwrite it with the exact solution here
-  //     (2) certain diagnostic quantities like dHdt are computed numerically,
-  //           and not overwritten here; while velbar_mag,velsurf_mag,flux_mag,wsurf are diagnostic
-  //           quantities recomputed at the end of the run for writing into
-  //           NetCDF, in particular dHdt is not recomputed before being written
-  //           into the output file, so it is actually numerical
-  switch (testname) {
-  case 'A':
-  case 'B':
-  case 'C':
-  case 'D':
-  case 'H':
-    fillSolnTestABCDH();
-    break;
-  case 'F':
-  case 'G':
-    fillSolnTestFG(); // see iCMthermo.cc
-    break;
-  case 'K':
-    fillTemperatureSolnTestsKO(); // see iCMthermo.cc
-    break;
-  case 'O':
-    fillTemperatureSolnTestsKO(); // see iCMthermo.cc
-    fillBasalMeltRateSolnTestO(); // see iCMthermo.cc
-    break;
-  case 'L':
-    fillSolnTestL();
-    break;
-  default:
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown testname %c in IceCompModel", testname);
   }
 }
 
@@ -788,12 +633,12 @@ void IceCompModel::reportErrors() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  if ((testname == 'F' or testname == 'G') and testname != 'V' and
+  if ((m_testname == 'F' or m_testname == 'G') and m_testname != 'V' and
       not FlowLawIsPatersonBuddCold(flow_law, *m_config, EC)) {
     m_log->message(1,
                    "pismv WARNING: flow law must be cold part of Paterson-Budd ('-siafd_flow_law arr')\n"
                    "   for reported errors in test %c to be meaningful!\n",
-                   testname);
+                   m_testname);
   }
 
   m_log->message(1,
@@ -801,7 +646,7 @@ void IceCompModel::reportErrors() {
 
 
   // geometry (thickness, vol) errors if appropriate; reported in m except for relmaxETA
-  if ((testname != 'K') && (testname != 'O')) {
+  if ((m_testname != 'K') && (m_testname != 'O')) {
     computeGeometryErrors(volexact,areaexact,domeHexact,
                           volerr,areaerr,maxHerr,avHerr,maxetaerr,centerHerr);
     m_log->message(1,
@@ -813,7 +658,7 @@ void IceCompModel::reportErrors() {
   }
 
   // temperature errors for F and G
-  if ((testname == 'F') || (testname == 'G')) {
+  if ((m_testname == 'F') || (m_testname == 'G')) {
     computeTemperatureErrors(maxTerr, avTerr);
     computeBasalTemperatureErrors(basemaxTerr, baseavTerr, basecenterTerr);
     m_log->message(1,
@@ -821,7 +666,7 @@ void IceCompModel::reportErrors() {
     m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
                maxTerr, avTerr, basemaxTerr, baseavTerr);
 
-  } else if ((testname == 'K') || (testname == 'O')) {
+  } else if ((m_testname == 'K') || (m_testname == 'O')) {
     computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr);
     m_log->message(1,
                "temp      :        maxT         avT       maxTb        avTb\n");
@@ -831,7 +676,7 @@ void IceCompModel::reportErrors() {
   }
 
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
-  if ((testname == 'F') || (testname == 'G')) {
+  if ((m_testname == 'F') || (m_testname == 'G')) {
     compute_strain_heating_errors(max_strain_heating_error, av_strain_heating_error);
     m_log->message(1,
                "Sigma     :      maxSig       avSig\n");
@@ -840,7 +685,7 @@ void IceCompModel::reportErrors() {
   }
 
   // surface velocity errors if exact values are available; reported in m year-1
-  if ((testname == 'F') || (testname == 'G')) {
+  if ((m_testname == 'F') || (m_testname == 'G')) {
     computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr);
     m_log->message(1,
                "surf vels :     maxUvec      avUvec        maxW         avW\n");
@@ -853,7 +698,7 @@ void IceCompModel::reportErrors() {
   }
 
   // basal melt rate errors if appropriate; reported in m year-1
-  if (testname == 'O') {
+  if (m_testname == 'O') {
     computeBasalMeltRateErrors(maxbmelterr, minbmelterr);
     if (maxbmelterr != minbmelterr) {
       m_log->message(1,
@@ -906,9 +751,9 @@ void IceCompModel::reportErrors() {
     // Always write the test name:
     err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
     err.set_name("test");
-    io::write_timeseries(nc, err, (size_t)start, (double)testname, PISM_BYTE);
+    io::write_timeseries(nc, err, (size_t)start, (double)m_testname, PISM_BYTE);
 
-    if ((testname != 'K') && (testname != 'O')) {
+    if ((m_testname != 'K') && (m_testname != 'O')) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("relative_volume");
       err.set_string("units", "percent");
@@ -931,7 +776,7 @@ void IceCompModel::reportErrors() {
       io::write_timeseries(nc, err, (size_t)start, avHerr);
     }
 
-    if ((testname == 'F') || (testname == 'G')) {
+    if ((m_testname == 'F') || (m_testname == 'G')) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_temperature");
       err.set_string("units", "Kelvin");
@@ -980,7 +825,7 @@ void IceCompModel::reportErrors() {
       io::write_timeseries(nc, err, (size_t)start, avWerr);
     }
 
-    if ((testname == 'K') || (testname == 'O')) {
+    if ((m_testname == 'K') || (m_testname == 'O')) {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_temperature");
       err.set_string("units", "Kelvin");
@@ -1000,7 +845,7 @@ void IceCompModel::reportErrors() {
       io::write_timeseries(nc, err, (size_t)start, avTberr);
     }
 
-    if (testname == 'O') {
+    if (m_testname == 'O') {
       err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
       err.set_name("maximum_basal_melt_rate");
       err.set_string("units", "m second-1");

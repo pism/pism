@@ -36,7 +36,7 @@ namespace stressbalance {
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier : public Component {
 public:
-  SSB_Modifier(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+  SSB_Modifier(IceGrid::ConstPtr g);
   virtual ~SSB_Modifier();
 
   virtual void init();
@@ -70,7 +70,7 @@ protected:
 //! The trivial Shallow Stress Balance modifier.
 class ConstantInColumn : public SSB_Modifier {
 public:
-  ConstantInColumn(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+  ConstantInColumn(IceGrid::ConstPtr g);
   virtual ~ConstantInColumn();
 
   virtual void init();
@@ -78,10 +78,6 @@ public:
   virtual void update(const IceModelVec2V &vel_input, bool fast);
 
 protected:
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                IO_Type nctype);
 };
 
 } // end of namespace stressbalance

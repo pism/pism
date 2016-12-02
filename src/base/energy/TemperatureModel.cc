@@ -1,84 +1,108 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
-//
-// This file is part of PISM.
-//
-// PISM is free software; you can redistribute it and/or modify it under the
-// terms of the GNU General Public License as published by the Free Software
-// Foundation; either version 3 of the License, or (at your option) any later
-// version.
-//
-// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-// details.
-//
-// You should have received a copy of the GNU General Public License
-// along with PISM; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+/* Copyright (C) 2016 PISM Authors
+ *
+ * This file is part of PISM.
+ *
+ * PISM is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PISM; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 
-#include <cassert>
-
-#include "iceModel.hh"
-
-#include "base/energy/BedThermalUnit.hh"
+#include "temperatureModel.hh"
 #include "base/energy/tempSystem.hh"
-#include "base/hydrology/PISMHydrology.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/Mask.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/pism_options.hh"
-#include "coupler/PISMOcean.hh"
-#include "coupler/PISMSurface.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/energy/utilities.hh"
+#include "base/util/IceModelVec2CellType.hh"
+#include "base/util/PISMVars.hh"
+#include "base/util/io/PIO.hh"
 
 namespace pism {
+namespace energy {
 
-//! \file iMtemp.cc Methods of IceModel which implement the cold-ice, temperature-based formulation of conservation of energy.
+TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
+                                   stressbalance::StressBalance *stress_balance)
+  : EnergyModel(grid, stress_balance) {
 
-
-//! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
-void IceModel::excessToFromBasalMeltLayer(const double rho, const double c, const double L,
-                                          const double z, const double dz,
-                                          double *Texcess, double *bwat) {
-
-  const double
-    darea      = m_grid->dx() * m_grid->dy(),
-    dvol       = darea * dz,
-    dE         = rho * c * (*Texcess) * dvol,
-    massmelted = dE / L;
-
-  if (*Texcess >= 0.0) {
-    // T is at or above pressure-melting temp, so temp needs to be set to
-    // pressure-melting; a fraction of excess energy is turned into melt water at base
-    // note massmelted is POSITIVE!
-    const double FRACTION_TO_BASE
-                         = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
-    // note: ice-equiv thickness:
-    *bwat += (FRACTION_TO_BASE * massmelted) / (rho * darea);
-    *Texcess = 0.0;
-  } else {  // neither Texcess nor bwat needs to change if Texcess < 0.0
-    // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
-    // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
-    if (z > 0.00001) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
-    }
-    if (*bwat > 0.0) {
-      const double thicknessToFreezeOn = - massmelted / (rho * darea);
-      if (thicknessToFreezeOn <= *bwat) { // the water *is* available to freeze on
-        *bwat -= thicknessToFreezeOn;
-        *Texcess = 0.0;
-      } else { // only refreeze bwat thickness of water; update Texcess
-        *bwat = 0.0;
-        const double dTemp = L * (*bwat) / (c * dz);
-        *Texcess += dTemp;
-      }
-    }
-    // note: if *bwat == 0 and Texcess < 0.0 then Texcess unmolested; temp will go down
-  }
+  m_ice_temperature.create(m_grid, "temp", WITH_GHOSTS);
+  m_ice_temperature.set_attrs("model_state",
+                              "ice temperature", "K", "land_ice_temperature");
+  m_ice_temperature.metadata().set_double("valid_min", 0.0);
 }
 
+const IceModelVec3 & TemperatureModel::temperature() const {
+  return m_ice_temperature;
+}
+
+void TemperatureModel::restart_impl(const PIO &input_file, int record) {
+
+  m_log->message(2, "* Restarting the temperature-based energy balance model from %s...\n",
+                 input_file.inq_filename().c_str());
+
+  m_basal_melt_rate.read(input_file, record);
+
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+  if (input_file.inq_var(m_ice_temperature.metadata().get_name())) {
+    m_ice_temperature.read(input_file, record);
+  } else {
+    init_enthalpy(input_file, false, record);
+    compute_temperature(m_ice_enthalpy, ice_thickness, m_ice_temperature);
+  }
+
+  regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+  regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
+
+  compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
+}
+
+void TemperatureModel::bootstrap_impl(const PIO &input_file,
+                                      const IceModelVec2S &ice_thickness,
+                                      const IceModelVec2S &surface_temperature,
+                                      const IceModelVec2S &climatic_mass_balance,
+                                      const IceModelVec2S &basal_heat_flux) {
+
+  m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
+                 input_file.inq_filename().c_str());
+
+  m_basal_melt_rate.regrid(input_file, OPTIONAL,
+                           m_config->get_double("bootstrapping.defaults.bmelt"));
+
+  bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
+                            basal_heat_flux, m_ice_temperature);
+
+  regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+  regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
+
+  compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
+}
+
+void TemperatureModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
+                                       const IceModelVec2S &ice_thickness,
+                                       const IceModelVec2S &surface_temperature,
+                                       const IceModelVec2S &climatic_mass_balance,
+                                       const IceModelVec2S &basal_heat_flux) {
+
+  m_log->message(2, "* Bootstrapping the temperature-based energy balance model...\n");
+
+  m_basal_melt_rate.copy_from(basal_melt_rate);
+
+  bootstrap_ice_temperature(ice_thickness, surface_temperature, climatic_mass_balance,
+                            basal_heat_flux, m_ice_temperature);
+
+  regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+  regrid("Temperature-based energy balance model", m_ice_temperature, REGRID_WITHOUT_REGRID_VARS);
+
+  compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
+}
 
 //! Takes a semi-implicit time-step for the temperature equation.
 /*!
@@ -117,9 +141,9 @@ This method should be kept because it is worth having alternative physics, and
 
     An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
-    In this procedure two scalar fields are modified: basal_melt_rate and m_work3d.
+    In this procedure two scalar fields are modified: basal_melt_rate and m_work.
     But basal_melt_rate will never need to communicate ghosted values (horizontal stencil
-    neighbors).  The ghosted values for m_ice_temperature are updated from the values in m_work3d in the
+    neighbors).  The ghosted values for m_ice_temperature are updated from the values in m_work in the
     communication done by energyStep().
 
   The (older) scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
@@ -132,9 +156,9 @@ This method should be kept because it is worth having alternative physics, and
   the column minus the bulge maximum (15 K) if it is below that level.  The number of
   times this occurs is reported as a "BPbulge" percentage.
   */
-void IceModel::temperatureStep(const EnergyModelInputs &inputs,
-                               double dt,
-                               EnergyModelStats &stats) {
+void TemperatureModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
+  // current time does not matter here
+  (void) t;
 
   using mask::ocean;
 
@@ -185,7 +209,7 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
 
   list.add(m_basal_melt_rate);
   list.add(m_ice_temperature);
-  list.add(m_work3d);
+  list.add(m_work);
 
   energy::tempSystemCtx system(m_grid->z(), "temperature",
                                m_grid->dx(), m_grid->dy(), dt,
@@ -220,7 +244,7 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
       if (ks > 0) { // if there are enough points in ice to bother ...
 
         if (system.lambda() < 1.0) {
-          stats.reduced_accuracy_counter += 1; // count columns with lambda < 1
+          m_stats.reduced_accuracy_counter += 1; // count columns with lambda < 1
         }
 
         // set boundary values for tridiagonal system
@@ -246,7 +270,7 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
           if (x[k] > Tpmp) {
             Tnew[k] = Tpmp;
             double Texcess = x[k] - Tpmp; // always positive
-            excessToFromBasalMeltLayer(ice_density, ice_c, L, z_fine[k], dz, &Texcess, &bwatnew);
+            column_drainage(ice_density, ice_c, L, z_fine[k], dz, &Texcess, &bwatnew);
             // Texcess  will always come back zero here; ignore it
           } else {
             Tnew[k] = x[k];
@@ -259,11 +283,11 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
                       Tnew[k], i, j, k, m_grid->rank(), mask,
                       units::convert(m_sys, system.w(k), "m second-1", "m year-1"));
 
-          stats.low_temperature_counter++;
+          m_stats.low_temperature_counter++;
         }
         if (Tnew[k] < T_surface - bulge_max) {
           Tnew[k] = T_surface - bulge_max;
-          stats.bulge_counter += 1;
+          m_stats.bulge_counter += 1;
         }
       }
 
@@ -277,9 +301,9 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
           if (ocean(mask)) {
             // when floating, only half a segment has had its temperature raised
             // above Tpmp
-            excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
+            column_drainage(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
           } else {
-            excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, dz, &Texcess, &bwatnew);
+            column_drainage(ice_density, ice_c, L, 0.0, dz, &Texcess, &bwatnew);
           }
           Tnew[0] = Tpmp + Texcess;
           if (Tnew[0] > (Tpmp + 0.00001)) {
@@ -293,11 +317,11 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
                       Tnew[0],i,j,m_grid->rank(), mask,
                       units::convert(m_sys, system.w(0), "m second-1", "m year-1"));
 
-          stats.low_temperature_counter++;
+          m_stats.low_temperature_counter++;
         }
         if (Tnew[0] < T_surface - bulge_max) {
           Tnew[0] = T_surface - bulge_max;
-          stats.bulge_counter += 1;
+          m_stats.bulge_counter += 1;
         }
       }
 
@@ -306,8 +330,8 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
         Tnew[k] = T_surface;
       }
 
-      // transfer column into m_work3d; communication later
-      system.fine_to_coarse(Tnew, i, j, m_work3d);
+      // transfer column into m_work; communication later
+      system.fine_to_coarse(Tnew, i, j, m_work);
 
       // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
       if (ocean(mask)) {
@@ -325,11 +349,71 @@ void IceModel::temperatureStep(const EnergyModelInputs &inputs,
   }
   loop.check();
 
-  stats.low_temperature_counter = GlobalSum(m_grid->com, stats.low_temperature_counter);
-  if (stats.low_temperature_counter > maxLowTempCount) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "too many low temps: %d", stats.low_temperature_counter);
+  m_stats.low_temperature_counter = GlobalSum(m_grid->com, m_stats.low_temperature_counter);
+  if (m_stats.low_temperature_counter > maxLowTempCount) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "too many low temps: %d",
+                                  m_stats.low_temperature_counter);
+  }
+
+  // copy to m_ice_temperature, updating ghosts
+  m_work.update_ghosts(m_ice_temperature);
+
+  // Set ice enthalpy in place. EnergyModel::update will scatter ghosts
+  compute_enthalpy_cold(m_work, ice_thickness, m_work);
+}
+
+void TemperatureModel::define_model_state_impl(const PIO &output) const {
+  m_ice_temperature.define(output);
+  m_basal_melt_rate.define(output);
+  // ice enthalpy is not a part of the model state
+}
+
+void TemperatureModel::write_model_state_impl(const PIO &output) const {
+  m_ice_temperature.write(output);
+  m_basal_melt_rate.write(output);
+  // ice enthalpy is not a part of the model state
+}
+
+//! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
+void TemperatureModel::column_drainage(const double rho, const double c, const double L,
+                                       const double z, const double dz,
+                                       double *Texcess, double *bwat) const {
+
+  const double
+    darea      = m_grid->dx() * m_grid->dy(),
+    dvol       = darea * dz,
+    dE         = rho * c * (*Texcess) * dvol,
+    massmelted = dE / L;
+
+  if (*Texcess >= 0.0) {
+    // T is at or above pressure-melting temp, so temp needs to be set to
+    // pressure-melting; a fraction of excess energy is turned into melt water at base
+    // note massmelted is POSITIVE!
+    const double FRACTION_TO_BASE
+                         = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
+    // note: ice-equiv thickness:
+    *bwat += (FRACTION_TO_BASE * massmelted) / (rho * darea);
+    *Texcess = 0.0;
+  } else {  // neither Texcess nor bwat needs to change if Texcess < 0.0
+    // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
+    // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
+    if (z > 0.00001) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
+    }
+    if (*bwat > 0.0) {
+      const double thicknessToFreezeOn = - massmelted / (rho * darea);
+      if (thicknessToFreezeOn <= *bwat) { // the water *is* available to freeze on
+        *bwat -= thicknessToFreezeOn;
+        *Texcess = 0.0;
+      } else { // only refreeze bwat thickness of water; update Texcess
+        *bwat = 0.0;
+        const double dTemp = L * (*bwat) / (c * dz);
+        *Texcess += dTemp;
+      }
+    }
+    // note: if *bwat == 0 and Texcess < 0.0 then Texcess unmolested; temp will go down
   }
 }
 
-
-} // end of namespace pism
+} // end of namespace energy
+} // end of namespace

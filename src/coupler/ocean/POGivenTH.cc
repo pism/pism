@@ -118,42 +118,6 @@ void GivenTH::init_impl() {
   }
 }
 
-void GivenTH::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  PGivenClimate<OceanModifier,OceanModel>::add_vars_to_output_impl(keyword, result);
-
-  if (keyword != "none" && keyword != "small") {
-    result.insert(m_shelfbtemp.get_name());
-    result.insert(m_shelfbmassflux.get_name());
-  }
-}
-
-void GivenTH::define_variables_impl(const std::set<std::string> &vars,
-                                           const PIO &nc, IO_Type nctype) {
-
-  PGivenClimate<OceanModifier,OceanModel>::define_variables_impl(vars, nc, nctype);
-
-  if (set_contains(vars, m_shelfbtemp)) {
-    m_shelfbtemp.define(nc, nctype);
-  }
-
-  if (set_contains(vars, m_shelfbmassflux)) {
-    m_shelfbmassflux.define(nc, nctype);
-  }
-}
-
-void GivenTH::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
-
-  PGivenClimate<OceanModifier,OceanModel>::write_variables_impl(vars, nc);
-
-  if (set_contains(vars, m_shelfbtemp)) {
-    m_shelfbtemp.write(nc);
-  }
-
-  if (set_contains(vars, m_shelfbmassflux)) {
-    m_shelfbmassflux.write(nc);
-  }
-}
-
 void GivenTH::shelf_base_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelfbtemp);
 }

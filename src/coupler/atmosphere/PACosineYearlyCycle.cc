@@ -96,9 +96,9 @@ void CosineYearlyCycle::init_impl() {
   }
 }
 
-MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) {
+MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere cosine_yearly_cycle");
 }
 
 void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
@@ -106,7 +106,7 @@ void CosineYearlyCycle::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 }
 
-void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) {
+void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
 
   YearlyCycle::init_timeseries_impl(ts);
 

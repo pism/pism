@@ -70,8 +70,8 @@ double SSAStrengthExtension::get_min_thickness() const {
 }
 
 
-SSA::SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : ShallowStressBalance(g, e)
+SSA::SSA(IceGrid::ConstPtr g)
+  : ShallowStressBalance(g)
 {
   m_thickness = NULL;
   m_tauc = NULL;
@@ -227,7 +227,7 @@ surface gradient. When the thickness at a grid point is very small (below \c
 minThickEtaTransform in the procedure), the formula is slightly modified to
 give a lower driving stress. The transformation is not used in floating ice.
  */
-void SSA::compute_driving_stress(IceModelVec2V &result) {
+void SSA::compute_driving_stress(IceModelVec2V &result) const {
   const IceModelVec2S &thk = *m_thickness; // to improve readability (below)
 
   const double n = m_flow_law->exponent(), // frequently n = 3
@@ -380,28 +380,16 @@ void SSA::set_initial_guess(const IceModelVec2V &guess) {
 }
 
 
-void SSA::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
-  result.insert("vel_ssa");
+void SSA::define_model_state_impl(const PIO &output) const {
+  m_velocity.define(output);
 }
 
-
-void SSA::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-
-  if (set_contains(vars, "vel_ssa")) {
-    m_velocity.define(nc, nctype);
-  }
-}
-
-
-void SSA::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, "vel_ssa")) {
-    m_velocity.write(nc);
-  }
+void SSA::write_model_state_impl(const PIO &output) const {
+  m_velocity.write(output);
 }
 
 void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
 
   ShallowStressBalance::get_diagnostics_impl(dict, ts_dict);
 
@@ -410,7 +398,7 @@ void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
   dict["taud_mag"] = Diagnostic::Ptr(new SSA_taud_mag(this));
 }
 
-SSA_taud::SSA_taud(SSA *m)
+SSA_taud::SSA_taud(const SSA *m)
   : Diag<SSA>(m) {
 
   m_dof = 2;
@@ -442,7 +430,7 @@ IceModelVec::Ptr SSA_taud::compute_impl() {
   return result;
 }
 
-SSA_taud_mag::SSA_taud_mag(SSA *m)
+SSA_taud_mag::SSA_taud_mag(const SSA *m)
   : Diag<SSA>(m) {
 
   // set metadata:
@@ -472,7 +460,7 @@ IceModelVec::Ptr SSA_taud_mag::compute_impl() {
 //! Evaluate the ocean pressure difference term in the calving-front BC.
 double SSA::ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
                                       double sea_level, double rho_ice, double rho_ocean,
-                                      double g) {
+                                      double g) const {
   if (shelf) {
     // floating shelf
     return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;

@@ -51,10 +51,10 @@ unsigned int BTU_Minimal::Mz_impl() const {
   return 0;
 }
 
-MaxTimestep BTU_Minimal::max_timestep_impl(double t) {
+MaxTimestep BTU_Minimal::max_timestep_impl(double t) const {
   (void) t;
   // no time step restriction
-  return MaxTimestep();
+  return MaxTimestep("minimal thermal bedrock layer");
 }
 
 void BTU_Minimal::update_impl(const IceModelVec2S &bedrock_top_temperature, double t, double dt) {

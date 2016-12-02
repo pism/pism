@@ -56,9 +56,9 @@ void Delta_SMB::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_SMB::max_timestep_impl(double t) {
+MaxTimestep Delta_SMB::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("ocean delta_SMB");
 }
 
 void Delta_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {

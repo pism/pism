@@ -37,7 +37,7 @@ public:
   virtual ~Delta_MBP();
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const;
 };

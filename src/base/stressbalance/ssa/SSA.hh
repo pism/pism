@@ -72,7 +72,7 @@ private:
   Subclasses of SSA should provide an associated function pointer matching the
   SSAFactory typedef */
 class SSA;
-typedef SSA * (*SSAFactory)(IceGrid::ConstPtr , EnthalpyConverter::Ptr);
+typedef SSA * (*SSAFactory)(IceGrid::ConstPtr);
 
 
 //! PISM's SSA solver.
@@ -107,7 +107,7 @@ typedef SSA * (*SSAFactory)(IceGrid::ConstPtr , EnthalpyConverter::Ptr);
 */
 class SSA : public ShallowStressBalance {
 public:
-  SSA(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+  SSA(IceGrid::ConstPtr g);
   virtual ~SSA();
 
   SSAStrengthExtension *strength_extension;
@@ -118,19 +118,18 @@ public:
 
   virtual std::string stdout_report() const;
 
-  virtual void compute_driving_stress(IceModelVec2V &taud);
+  virtual void compute_driving_stress(IceModelVec2V &taud) const;
 
   double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
-                                   double rho_ice, double rho_ocean, double g);
+                                   double rho_ice, double rho_ocean, double g) const;
 protected:
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   virtual void init_impl();
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
   virtual void solve() = 0;
 

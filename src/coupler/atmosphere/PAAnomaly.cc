@@ -85,31 +85,31 @@ void Anomaly::update_impl(double my_t, double my_dt) {
 }
 
 
-void Anomaly::mean_precipitation_impl(IceModelVec2S &result) {
+void Anomaly::mean_precipitation_impl(IceModelVec2S &result) const {
   m_input_model->mean_precipitation(result);
 
   result.add(1.0, *m_precipitation_anomaly);
 }
 
-void Anomaly::mean_annual_temp_impl(IceModelVec2S &result) {
+void Anomaly::mean_annual_temp_impl(IceModelVec2S &result) const {
   m_input_model->mean_annual_temp(result);
 
   result.add(1.0, *m_air_temp_anomaly);
 }
 
-void Anomaly::begin_pointwise_access_impl() {
+void Anomaly::begin_pointwise_access_impl() const {
   m_input_model->begin_pointwise_access();
   m_air_temp_anomaly->begin_access();
   m_precipitation_anomaly->begin_access();
 }
 
-void Anomaly::end_pointwise_access_impl() {
+void Anomaly::end_pointwise_access_impl() const {
   m_input_model->end_pointwise_access();
   m_precipitation_anomaly->end_access();
   m_air_temp_anomaly->end_access();
 }
 
-void Anomaly::init_timeseries_impl(const std::vector<double> &ts) {
+void Anomaly::init_timeseries_impl(const std::vector<double> &ts) const {
   PAModifier::init_timeseries_impl(ts);
 
   m_air_temp_anomaly->init_interpolation(ts);
@@ -117,7 +117,7 @@ void Anomaly::init_timeseries_impl(const std::vector<double> &ts) {
   m_precipitation_anomaly->init_interpolation(ts);
 }
 
-void Anomaly::temp_time_series_impl(int i, int j, std::vector<double> &result) {
+void Anomaly::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->temp_time_series(i, j, result);
 
   m_temp_anomaly.reserve(m_ts_times.size());
@@ -128,7 +128,7 @@ void Anomaly::temp_time_series_impl(int i, int j, std::vector<double> &result) {
   }
 }
 
-void Anomaly::precip_time_series_impl(int i, int j, std::vector<double> &result) {
+void Anomaly::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
 
   m_mass_flux_anomaly.reserve(m_ts_times.size());

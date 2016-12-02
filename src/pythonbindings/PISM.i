@@ -244,6 +244,8 @@
 
 %include pism_ColumnSystem.i
 
+%include EnergyModel.i
+
 /* SSAForwardRunFromInputFile sets up a yield stress model, which
  * requires a hydrology model.
  */

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,8 +24,8 @@ namespace pism {
 
 namespace stressbalance {
 
-SIAFD_Regional::SIAFD_Regional(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SIAFD(g, e) {
+SIAFD_Regional::SIAFD_Regional(IceGrid::ConstPtr g)
+  : SIAFD(g) {
   // empty
 }
 
@@ -40,7 +40,7 @@ void SIAFD_Regional::init() {
   m_log->message(2, "  using the regional version of the SIA solver...\n");
 }
 
-void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
 
   SIAFD::compute_surface_gradient(h_x, h_y);
 

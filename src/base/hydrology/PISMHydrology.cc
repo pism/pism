@@ -154,7 +154,7 @@ void Hydrology::init() {
 
 
 void Hydrology::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                     std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
+                                     std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) const {
   dict["bwat"]       = Diagnostic::Ptr(new Hydrology_bwat(this));
   dict["bwp"]        = Diagnostic::Ptr(new Hydrology_bwp(this));
   dict["bwprel"]     = Diagnostic::Ptr(new Hydrology_bwprel(this));
@@ -164,26 +164,13 @@ void Hydrology::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dic
   dict["wallmelt"]   = Diagnostic::Ptr(new Hydrology_wallmelt(this));
 }
 
-
-void Hydrology::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
-  result.insert("tillwat");
+void Hydrology::define_model_state_impl(const PIO &output) const {
+  m_Wtil.define(output);
 }
 
-
-void Hydrology::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                      IO_Type nctype) {
-  if (set_contains(vars, "tillwat")) {
-    m_Wtil.define(nc, nctype);
-  }
+void Hydrology::write_model_state_impl(const PIO &output) const {
+  m_Wtil.write(output);
 }
-
-
-void Hydrology::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "tillwat")) {
-    m_Wtil.write(nc);
-  }
-}
-
 
 //! Update the overburden pressure from ice thickness.
 /*!
@@ -191,7 +178,7 @@ Uses the standard hydrostatic (shallow) approximation of overburden pressure,
   \f[ P_0 = \rho_i g H \f]
 Accesses H=thk from Vars, which points into IceModel.
  */
-void Hydrology::overburden_pressure(IceModelVec2S &result) {
+void Hydrology::overburden_pressure(IceModelVec2S &result) const {
   // FIXME issue #15
   const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("thk");
 
@@ -201,13 +188,13 @@ void Hydrology::overburden_pressure(IceModelVec2S &result) {
 
 
 //! Return the effective thickness of the water stored in till.
-void Hydrology::till_water_thickness(IceModelVec2S &result) {
+void Hydrology::till_water_thickness(IceModelVec2S &result) const {
   result.copy_from(m_Wtil);
 }
 
 
 //! Set the wall melt rate to zero.  (The most basic subglacial hydrologies have no lateral flux or potential gradient.)
-void Hydrology::wall_melt(IceModelVec2S &result) {
+void Hydrology::wall_melt(IceModelVec2S &result) const {
   result.set(0.0);
 }
 

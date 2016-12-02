@@ -58,16 +58,17 @@ public:
 
 protected:
   virtual void init_impl();
-  virtual void init_timeseries_impl(const std::vector<double> &ts);
 
-  virtual void mean_precipitation_impl(IceModelVec2S &result);
+  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
 
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
+  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
 
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+
+  virtual MaxTimestep max_timestep_impl(double t) const;
 protected:
   double m_precipexpfactor;
-  std::vector<double> m_scaling_values;
+  mutable std::vector<double> m_scaling_values;
 };
 
 } // end of namespace atmosphere

@@ -33,8 +33,13 @@ public:
   ~Verification();
 private:
   void init_impl();
-  MaxTimestep max_timestep_impl(double t);
   void update_impl(PetscReal t, PetscReal dt);
+
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
+
+  MaxTimestep max_timestep_impl(double t) const;
+
   int m_testname;
   EnthalpyConverter::Ptr m_EC;
   void update_ABCDH(double t);

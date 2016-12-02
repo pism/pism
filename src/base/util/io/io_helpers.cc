@@ -1161,7 +1161,7 @@ void read_time_bounds(const PIO &nc,
 }
 
 void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
-                       size_t t_start, std::vector<double> &data, IO_Type nctype) {
+                       size_t t_start, const std::vector<double> &data, IO_Type nctype) {
   std::string name = metadata.get_name();
   try {
     bool variable_exists = nc.inq_var(name);

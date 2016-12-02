@@ -35,7 +35,7 @@ protected:
   double vertical_spacing_impl() const;
   double depth_impl() const;
   unsigned int Mz_impl() const;
-  MaxTimestep max_timestep_impl(double t);
+  MaxTimestep max_timestep_impl(double t) const;
 
   using BedThermalUnit::update_impl;
   void update_impl(const IceModelVec2S &bedrock_top_temperature, double t, double dt);

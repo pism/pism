@@ -34,7 +34,7 @@ public:
   virtual ~Frac_SMB();
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 };

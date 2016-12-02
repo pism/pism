@@ -50,16 +50,25 @@ bool ends_with(const std::string &str, const std::string &suffix) {
   return false;
 }
 
-//! Concatenate `strings`, inserting `separator` between elements.
-std::string join(const std::vector<std::string> &strings, const std::string &separator) {
-  std::vector<std::string>::const_iterator j = strings.begin();
+template <class T>
+std::string join_impl(const T& input, const std::string& separator) {
+  typename T::const_iterator j = input.begin();
   std::string result = *j;
   ++j;
-  while (j != strings.end()) {
+  while (j != input.end()) {
     result += separator + *j;
     ++j;
   }
   return result;
+}
+
+//! Concatenate `strings`, inserting `separator` between elements.
+std::string join(const std::vector<std::string> &strings, const std::string &separator) {
+  return join_impl(strings, separator);
+}
+
+std::string set_join(const std::set<std::string> &input, const std::string& separator) {
+  return join_impl(input, separator);
 }
 
 //! Transform a `separator`-separated list (a string) into a vector of strings.
@@ -70,6 +79,18 @@ std::vector<std::string> split(const std::string &input, char separator) {
 
   while (getline(input_list, token, separator)) {
     result.push_back(token);
+  }
+  return result;
+}
+
+//! Transform a `separator`-separated list (a string) into a vector of strings.
+std::set<std::string> set_split(const std::string &input, char separator) {
+  std::istringstream input_list(input);
+  std::string token;
+  std::set<std::string> result;
+
+  while (getline(input_list, token, separator)) {
+    result.insert(token);
   }
   return result;
 }

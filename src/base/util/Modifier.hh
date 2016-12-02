@@ -45,7 +45,7 @@ public:
   }
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double my_t)
+  virtual MaxTimestep max_timestep_impl(double my_t) const
   {
     if (m_input_model != NULL) {
       return m_input_model->max_timestep(my_t);
@@ -64,34 +64,13 @@ protected:
   }
 
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict)
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const
   {
     // give the model class a chance to add diagnostics
     Model::get_diagnostics_impl(dict, ts_dict);
 
     if (m_input_model != NULL) {
       m_input_model->get_diagnostics(dict, ts_dict);
-    }
-  }
-
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc)
-  {
-    if (m_input_model != NULL) {
-      m_input_model->write_variables(vars, nc);
-    }
-  }
-
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result)
-  {
-    if (m_input_model != NULL) {
-      m_input_model->add_vars_to_output(keyword, result);
-    }
-  }
-
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype) {
-    if (m_input_model != NULL) {
-      m_input_model->define_variables(vars, nc, nctype);
     }
   }
 

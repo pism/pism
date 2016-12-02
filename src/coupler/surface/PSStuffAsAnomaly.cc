@@ -86,9 +86,9 @@ void StuffAsAnomaly::init_impl() {
   }
 }
 
-MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) {
+MaxTimestep StuffAsAnomaly::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("surface turn_into_anomaly");
 }
 
 void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
@@ -131,64 +131,13 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
   }
 }
 
-void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_mass_flux);
 }
 
-void StuffAsAnomaly::ice_surface_temperature_impl(IceModelVec2S &result) {
+void StuffAsAnomaly::ice_surface_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_temp);
 }
-
-void StuffAsAnomaly::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (m_input_model != NULL) {
-    m_input_model->add_vars_to_output(keyword, result);
-  }
-
-  result.insert("ice_surface_temp");
-  result.insert("climatic_mass_balance");
-}
-
-void StuffAsAnomaly::define_variables_impl(const std::set<std::string> &vars_input,
-                                                  const PIO &nc, IO_Type nctype) {
-  std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, "ice_surface_temp")) {
-    m_temp.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    m_mass_flux.define(nc, nctype);
-  }
-
-  // ensure that no one overwrites these two
-  vars.erase("ice_surface_temp");
-  vars.erase("climatic_mass_balance");
-
-  if (m_input_model != NULL) {
-    m_input_model->define_variables(vars, nc, nctype);
-  }
-}
-
-void StuffAsAnomaly::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
-  std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, "ice_surface_temp")) {
-    m_temp.write(nc);
-  }
-
-  if (set_contains(vars, "climatic_mass_balance")) {
-    m_mass_flux.write(nc);
-  }
-
-  // ensure that no one overwrites these two
-  vars.erase("ice_surface_temp");
-  vars.erase("climatic_mass_balance");
-
-  if (m_input_model != NULL) {
-    m_input_model->write_variables(vars, nc);
-  }
-}
-
 
 } // end of namespace surface
 } // end of namespace pism

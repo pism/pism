@@ -290,7 +290,6 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     // set default verbosity
-    units::System::Ptr unit_system(new units::System);
     Context::Ptr ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();
 
@@ -388,8 +387,8 @@ int main(int argc, char *argv[]) {
     // We use SIA_Nonsliding and not SIAFD here because we need the z-component
     // of the ice velocity, which is computed using incompressibility of ice in
     // StressBalance::compute_vertical_velocity().
-    SIAFD *sia = new SIAFD(grid, EC);
-    ZeroSliding *no_sliding = new ZeroSliding(grid, EC);
+    SIAFD *sia = new SIAFD(grid);
+    ZeroSliding *no_sliding = new ZeroSliding(grid);
 
     StressBalance stress_balance(grid, no_sliding, sia);
 
@@ -419,7 +418,7 @@ int main(int argc, char *argv[]) {
 
     const IceModelVec3 &sigma = stress_balance.volumetric_strain_heating();
 
-    reportErrors(*grid, unit_system,
+    reportErrors(*grid, ctx->unit_system(),
                  ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
@@ -428,7 +427,7 @@ int main(int argc, char *argv[]) {
     io::define_time(pio, config->get_string("time.dimension_name"),
                     grid->ctx()->time()->calendar(),
                     grid->ctx()->time()->CF_units_string(),
-                    unit_system);
+                    ctx->unit_system());
     io::append_time(pio, config->get_string("time.dimension_name"), 0.0);
     pio.close();
 

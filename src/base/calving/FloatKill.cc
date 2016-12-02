@@ -77,19 +77,5 @@ void FloatKill::update(IceModelVec2CellType &mask, IceModelVec2S &ice_thickness)
   ice_thickness.update_ghosts();
 }
 
-void FloatKill::add_vars_to_output_impl(const std::string &/*keyword*/,
-                                       std::set<std::string> &/*result*/) {
-  // empty
-}
-
-void FloatKill::define_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                               IO_Type /*nctype*/) {
-  // empty
-}
-
-void FloatKill::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
-  // empty
-}
-
 } // end of namespace calving
 } // end of namespace pism

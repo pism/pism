@@ -1,210 +1,87 @@
-// Copyright (C) 2009-2016 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
-//
-// This file is part of PISM.
-//
-// PISM is free software; you can redistribute it and/or modify it under the
-// terms of the GNU General Public License as published by the Free Software
-// Foundation; either version 3 of the License, or (at your option) any later
-// version.
-//
-// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-// details.
-//
-// You should have received a copy of the GNU General Public License
-// along with PISM; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+/* Copyright (C) 2016 PISM Authors
+ *
+ * This file is part of PISM.
+ *
+ * PISM is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PISM; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 
-#include "iceModel.hh"
+#include "EnthalpyModel.hh"
+
 #include "DrainageCalculator.hh"
-#include "base/energy/BedThermalUnit.hh"
+#include "base/enthalpyConverter.hh"
 #include "base/energy/enthSystem.hh"
-#include "base/hydrology/PISMHydrology.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/Mask.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/pism_options.hh"
-#include "coupler/PISMOcean.hh"
-#include "coupler/PISMSurface.hh"
-#include "enthalpyConverter.hh"
+#include "base/util/IceModelVec2CellType.hh"
+#include "base/util/io/PIO.hh"
+#include "utilities.hh"
 #include "base/util/pism_utilities.hh"
 
 namespace pism {
+namespace energy {
 
-//! \file iMenthalpy.cc Methods of IceModel which implement the enthalpy formulation of conservation of energy.
-
-
-//! Compute m_ice_enthalpy from temperature m_ice_temperature by assuming the ice has zero liquid fraction.
-/*!
-First this method makes sure the temperatures is at most the pressure-melting
-value, before computing the enthalpy for that temperature, using zero liquid
-fraction.
-
-Because of how EnthalpyConverter::pressure() works, the energy
-content in the air is set to the value that ice would have if it a chunk of it
-occupied the air; the atmosphere actually has much lower energy content.  It is
-done this way for regularity (i.e. dEnth/dz computations).
-*/
-void compute_enthalpy_cold(const IceModelVec3 &temperature,
-                           const IceModelVec2S &ice_thickness,
-                           IceModelVec3 &result) {
-
-  IceGrid::ConstPtr grid = result.get_grid();
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
-
-  IceModelVec::AccessList list;
-  list.add(temperature);
-  list.add(result);
-  list.add(ice_thickness);
-
-  const unsigned int Mz = grid->Mz();
-  const std::vector<double> &z = grid->z();
-
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    const double *Tij = temperature.get_column(i,j);
-    double *Enthij = result.get_column(i,j);
-
-    for (unsigned int k = 0; k < Mz; ++k) {
-      const double depth = ice_thickness(i, j) - z[k]; // FIXME issue #15
-      Enthij[k] = EC->enthalpy_permissive(Tij[k], 0.0, EC->pressure(depth));
-    }
-  }
-
-  result.inc_state_counter();
-
-  result.update_ghosts();
+EnthalpyModel::EnthalpyModel(IceGrid::ConstPtr grid,
+                             stressbalance::StressBalance *stress_balance)
+  : EnergyModel(grid, stress_balance) {
+  // empty
 }
 
+void EnthalpyModel::restart_impl(const PIO &input_file, int record) {
 
-//! Compute m_ice_enthalpy from temperature m_ice_temperature and liquid fraction.
-/*!
-Because m_ice_enthalpy gets set, does ghost communication to finish.
- */
-void compute_enthalpy(const IceModelVec3 &temperature,
-                      const IceModelVec3 &liquid_water_fraction,
-                      const IceModelVec2S &ice_thickness,
-                      IceModelVec3 &result) {
+  m_log->message(2, "* Restarting the enthalpy-based energy balance model from %s...\n",
+                 input_file.inq_filename().c_str());
 
-  IceGrid::ConstPtr grid = result.get_grid();
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+  m_basal_melt_rate.read(input_file, record);
+  init_enthalpy(input_file, false, record);
 
-  IceModelVec::AccessList list;
-  list.add(temperature);
-  list.add(liquid_water_fraction);
-  list.add(ice_thickness);
-  list.add(result);
-
-  const unsigned int Mz = grid->Mz();
-  const std::vector<double> &z = grid->z();
-
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    const double *T     = temperature.get_column(i,j);
-    const double *omega = liquid_water_fraction.get_column(i,j);
-    double       *E     = result.get_column(i,j);
-
-    for (unsigned int k = 0; k < Mz; ++k) {
-      const double depth = ice_thickness(i,j) - z[k]; // FIXME issue #15
-      E[k] = EC->enthalpy_permissive(T[k], omega[k], EC->pressure(depth));
-    }
-  }
-
-  result.update_ghosts();
-
-  result.inc_state_counter();
+  regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+  regrid_enthalpy();
 }
 
-//! Compute the liquid fraction corresponding to m_ice_enthalpy, and put in a global IceModelVec3 provided by user.
-/*!
-Does not communicate ghosts for IceModelVec3 result
- */
-void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
+void EnthalpyModel::bootstrap_impl(const PIO &input_file,
                                    const IceModelVec2S &ice_thickness,
-                                   IceModelVec3 &result) {
+                                   const IceModelVec2S &surface_temperature,
+                                   const IceModelVec2S &climatic_mass_balance,
+                                   const IceModelVec2S &basal_heat_flux) {
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model from %s...\n",
+                 input_file.inq_filename().c_str());
 
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+  m_basal_melt_rate.regrid(input_file, OPTIONAL,
+                           m_config->get_double("bootstrapping.defaults.bmelt"));
 
-  result.set_name("liqfrac");
-  result.metadata(0).set_name("liqfrac");
-  result.set_attrs("diagnostic",
-                   "liquid water fraction in ice (between 0 and 1)",
-                   "1", "", 0);
+  bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
+                         basal_heat_flux, m_ice_enthalpy);
 
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(enthalpy);
-  list.add(ice_thickness);
-
-  ParallelSection loop(grid->com);
-  try {
-    for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      const double *Enthij = enthalpy.get_column(i,j);
-      double *omegaij = result.get_column(i,j);
-
-      for (unsigned int k=0; k < grid->Mz(); ++k) {
-        const double depth = ice_thickness(i,j) - grid->z(k); // FIXME issue #15
-        omegaij[k] = EC->water_fraction(Enthij[k],EC->pressure(depth));
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  result.inc_state_counter();
+  regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+  regrid_enthalpy();
 }
 
-//! @brief Compute the CTS field, CTS = E/E_s(p), from m_ice_enthalpy, and put
-//! in a global IceModelVec3 provided by user.
-/*!
- * The actual cold-temperate transition surface (CTS) is the level set CTS = 1.
- *
- * Does not communicate ghosts for IceModelVec3 result.
- */
-void compute_cts(const IceModelVec3 &ice_enthalpy,
-                 const IceModelVec2S &ice_thickness,
-                 IceModelVec3 &result) {
+void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
+                                    const IceModelVec2S &ice_thickness,
+                                    const IceModelVec2S &surface_temperature,
+                                    const IceModelVec2S &climatic_mass_balance,
+                                    const IceModelVec2S &basal_heat_flux) {
 
-  IceGrid::ConstPtr grid = result.get_grid();
-  EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
+  m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model...\n");
 
-  result.set_name("cts");
-  result.metadata(0).set_name("cts");
-  result.set_attrs("diagnostic",
-                   "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
-                   "", "", 0);
+  m_basal_melt_rate.copy_from(basal_melt_rate);
 
-  IceModelVec::AccessList list;
-  list.add(ice_enthalpy);
-  list.add(ice_thickness);
-  list.add(result);
+  bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
+                         basal_heat_flux, m_ice_enthalpy);
 
-  const unsigned int Mz = grid->Mz();
-  const std::vector<double> &z = grid->z();
-
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    double *CTS  = result.get_column(i,j);
-    const double *enthalpy = ice_enthalpy.get_column(i,j);
-
-    for (unsigned int k = 0; k < Mz; ++k) {
-      const double depth = ice_thickness(i,j) - z[k]; // FIXME issue #15
-      CTS[k] = enthalpy[k] / EC->enthalpy_cts(EC->pressure(depth));
-    }
-  }
-
-  result.inc_state_counter();
+  regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
+  regrid_enthalpy();
 }
 
 //! Update ice enthalpy field based on conservation of energy.
@@ -212,7 +89,7 @@ void compute_cts(const IceModelVec3 &ice_enthalpy,
 This method is documented by the page \ref bombproofenth and by [\ref
 AschwandenBuelerKhroulevBlatter].
 
-This method updates IceModelVec3 m_work3d = vEnthnew and IceModelVec2S basal_melt_rate.
+This method updates IceModelVec3 m_work and IceModelVec2S basal_melt_rate.
 No communication of ghosts is done for any of these fields.
 
 We use an instance of enthSystemCtx.
@@ -221,19 +98,22 @@ Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references th
 
 \image html BC-decision-chart.png "Setting the basal boundary condition"
  */
-void IceModel::enthalpyStep(const EnergyModelInputs &inputs,
-                            double dt,
-                            EnergyModelStats &stats) {
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+void EnthalpyModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
+  // current time does not matter here
+  (void) t;
+
+  EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
   const double
-    ice_density = m_config->get_double("constants.ice.density"),              // kg m-3
+    ice_density  = m_config->get_double("constants.ice.density"),          // kg m-3
     bulgeEnthMax = m_config->get_double("energy.enthalpy_cold_bulge_max"); // J kg-1
 
   energy::DrainageCalculator dc(*m_config);
 
   inputs.check();
+
+  // give them names that a bit shorter...
   const IceModelVec3
     &strain_heating3 = *inputs.strain_heating3,
     &u3              = *inputs.u3,
@@ -276,7 +156,7 @@ void IceModel::enthalpyStep(const EnergyModelInputs &inputs,
 
   list.add(m_basal_melt_rate);
   list.add(m_ice_enthalpy);
-  list.add(m_work3d);
+  list.add(m_work);
 
   unsigned int liquifiedCount = 0;
 
@@ -301,7 +181,7 @@ void IceModel::enthalpyStep(const EnergyModelInputs &inputs,
 
       // deal completely with columns with no ice; enthalpy and basal_melt_rate need setting
       if (ice_free_column) {
-        m_work3d.set_column(i, j, Enth_ks);
+        m_work.set_column(i, j, Enth_ks);
         // The floating basal melt rate will be set later; cover this
         // case and set to zero for now. Also, there is no basal melt
         // rate on ice free land and ice free ocean
@@ -310,7 +190,7 @@ void IceModel::enthalpyStep(const EnergyModelInputs &inputs,
       } // end of if (ice_free_column)
 
       if (system.lambda() < 1.0) {
-        stats.reduced_accuracy_counter += 1; // count columns with lambda < 1
+        m_stats.reduced_accuracy_counter += 1; // count columns with lambda < 1
       }
 
       const bool
@@ -392,7 +272,7 @@ void IceModel::enthalpyStep(const EnergyModelInputs &inputs,
           if (Enthnew[k] < lowerEnthLimit) {
             // Count grid points which have very large cold limit advection bulge... enthalpy not
             // too low.
-            stats.bulge_counter += 1;
+            m_stats.bulge_counter += 1;
             Enthnew[k] = lowerEnthLimit;
           }
         }
@@ -494,7 +374,7 @@ void IceModel::enthalpyStep(const EnergyModelInputs &inputs,
         } // end of the grounded case
       } // end of the basal melt rate computation
 
-      system.fine_to_coarse(Enthnew, i, j, m_work3d);
+      system.fine_to_coarse(Enthnew, i, j, m_work);
     }
   } catch (...) {
     loop.failed();
@@ -502,59 +382,7 @@ void IceModel::enthalpyStep(const EnergyModelInputs &inputs,
   loop.check();
 
   // FIXME: use cell areas
-  stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->dx() * m_grid->dy();
-}
-
-//! Computes the total ice enthalpy in J.
-/*!
-  Units of the specific enthalpy field \f$E=\f$(IceModelVec3::m_ice_enthalpy) are J kg-1.  We integrate
-  \f$E(t,x,y,z)\f$ over the entire ice fluid region \f$\Omega(t)\f$, multiplying
-  by the density to get units of energy:
-  \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
-*/
-double total_ice_enthalpy(double thickness_threshold,
-                          const IceModelVec3 &ice_enthalpy,
-                          const IceModelVec2S &ice_thickness,
-                          const IceModelVec2S &cell_area) {
-  double enthalpy_sum = 0.0;
-
-  IceGrid::ConstPtr grid = ice_enthalpy.get_grid();
-  Config::ConstPtr config = grid->ctx()->config();
-
-  const std::vector<double> &z = grid->z();
-
-  IceModelVec::AccessList list;
-  list.add(ice_enthalpy);
-  list.add(ice_thickness);
-  list.add(cell_area);
-  ParallelSection loop(grid->com);
-  try {
-    for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      const double H = ice_thickness(i, j);
-
-      if (H >= thickness_threshold) {
-        const int ks = grid->kBelowHeight(H);
-
-        const double
-          *E   = ice_enthalpy.get_column(i, j),
-          area = cell_area(i, j);
-
-        for (int k = 0; k < ks; ++k) {
-          enthalpy_sum += area * E[k] * (z[k+1] - z[k]);
-        }
-        enthalpy_sum += area * E[ks] * (H - z[ks]);
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  enthalpy_sum *= config->get_double("constants.ice.density");
-
-  return GlobalSum(grid->com, enthalpy_sum);
+  m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->dx() * m_grid->dy();
 }
 
 /*
@@ -601,4 +429,15 @@ double total_ice_enthalpy(double thickness_threshold,
 \end{tikzpicture}
  */
 
+void EnthalpyModel::define_model_state_impl(const PIO &output) const {
+  m_ice_enthalpy.define(output);
+  m_basal_melt_rate.define(output);
+}
+
+void EnthalpyModel::write_model_state_impl(const PIO &output) const {
+  m_ice_enthalpy.write(output);
+  m_basal_melt_rate.write(output);
+}
+
+} // end of namespace energy
 } // end of namespace pism

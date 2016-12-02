@@ -89,9 +89,9 @@ void IBSurfaceModel::init_impl() {
   _initialized = true;
 }
 
-MaxTimestep IBSurfaceModel::max_timestep_impl(double t) {
+MaxTimestep IBSurfaceModel::max_timestep_impl(double t) const {
   (void)t;
-  return MaxTimestep();
+  return MaxTimestep("surface icebin");
 }
 
 void IBSurfaceModel::update_impl(double my_t, double my_dt) {
@@ -104,53 +104,34 @@ void IBSurfaceModel::update_impl(double my_t, double my_dt) {
 }
 
 void IBSurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> & /*dict*/,
-                                          std::map<std::string, TSDiagnostic::Ptr> & /*ts_dict*/) {
+                                          std::map<std::string, TSDiagnostic::Ptr> & /*ts_dict*/) const {
   // empty (does not have an atmosphere model)
 }
 
-void IBSurfaceModel::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void IBSurfaceModel::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(icebin_massxfer);
 }
 
-void IBSurfaceModel::ice_surface_temperature_impl(IceModelVec2S &result) {
+void IBSurfaceModel::ice_surface_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(surface_temp);
 }
 
-void IBSurfaceModel::add_vars_to_output_impl(const std::string & /*keyword*/, std::set<std::string> &result) {
-  result.insert("icebin_wflux");
-  result.insert("icebin_deltah");
-  result.insert("icebin_massxfer");
-  result.insert("icebin_enthxfer");
-  result.insert("surface_temp");
-  // does not call atmosphere->add_vars_to_output().
+void IBSurfaceModel::define_model_state_impl(const PIO &output) const {
+  SurfaceModel::define_model_state_impl(output);
+  icebin_enthxfer.define(output);
+  icebin_wflux.define(output);
+  icebin_deltah.define(output);
+  icebin_massxfer.define(output);
+  surface_temp.define(output);
 }
 
-void IBSurfaceModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  SurfaceModel::define_variables_impl(vars, nc, nctype);
-
-  if (set_contains(vars, "icebin_enthxfer"))
-    icebin_enthxfer.define(nc, nctype);
-  if (set_contains(vars, "icebin_wflux"))
-    icebin_wflux.define(nc, nctype);
-  if (set_contains(vars, "icebin_deltah"))
-    icebin_deltah.define(nc, nctype);
-  if (set_contains(vars, "icebin_massxfer"))
-    icebin_massxfer.define(nc, nctype);
-  if (set_contains(vars, "surface_temp"))
-    surface_temp.define(nc, nctype);
-}
-
-void IBSurfaceModel::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "icebin_enthxfer"))
-    icebin_enthxfer.write(nc);
-  if (set_contains(vars, "icebin_wflux"))
-    icebin_wflux.write(nc);
-  if (set_contains(vars, "icebin_deltah"))
-    icebin_deltah.write(nc);
-  if (set_contains(vars, "icebin_massxfer"))
-    icebin_massxfer.write(nc);
-  if (set_contains(vars, "surface_temp"))
-    surface_temp.write(nc);
+void IBSurfaceModel::write_model_state_impl(const PIO &output) const {
+  SurfaceModel::write_model_state_impl(output);
+  icebin_enthxfer.write(output);
+  icebin_wflux.write(output);
+  icebin_deltah.write(output);
+  icebin_massxfer.write(output);
+  surface_temp.write(output);
 }
 
 } // end of namespace surface

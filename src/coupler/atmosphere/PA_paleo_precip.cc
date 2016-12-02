@@ -56,12 +56,12 @@ void PaleoPrecip::init_impl() {
   init_internal();
 }
 
-MaxTimestep PaleoPrecip::max_timestep_impl(double t) {
+MaxTimestep PaleoPrecip::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere paleo_precip");
 }
 
-void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) {
+void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {
   PAModifier::init_timeseries_impl(ts);
 
   size_t N = ts.size();
@@ -72,12 +72,12 @@ void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) {
   }
 }
 
-void PaleoPrecip::mean_precipitation_impl(IceModelVec2S &result) {
+void PaleoPrecip::mean_precipitation_impl(IceModelVec2S &result) const {
   m_input_model->mean_precipitation(result);
   result.scale(exp(m_precipexpfactor * m_current_forcing));
 }
 
-void PaleoPrecip::precip_time_series_impl(int i, int j, std::vector<double> &result) {
+void PaleoPrecip::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {

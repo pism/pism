@@ -148,18 +148,5 @@ void IcebergRemover::update(IceModelVec2CellType &mask,
   ice_thickness.update_ghosts();
 }
 
-void IcebergRemover::add_vars_to_output_impl(const std::string &, std::set<std::string> &) {
-  // empty
-}
-
-void IcebergRemover::define_variables_impl(const std::set<std::string> &, const PIO &,
-                                                IO_Type) {
-  // empty
-}
-
-void IcebergRemover::write_variables_impl(const std::set<std::string> &, const PIO&) {
-  // empty
-}
-
 } // end of namespace calving
 } // end of namespace pism

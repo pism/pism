@@ -141,12 +141,11 @@ protected:
 
   void update_impl(double my_t, double my_dt);
 
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype);  
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 protected:
   //! upward heat flux through the bottom surface of the bed thermal layer
   IceModelVec2S m_bottom_surface_flux;
@@ -157,7 +156,7 @@ protected:
 
 class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
 public:
-  BTU_geothermal_flux_at_ground_level(BedThermalUnit *m);
+  BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };

@@ -32,16 +32,16 @@ public:
   virtual ~Frac_P();
 
   virtual void init_impl();
-  virtual void init_timeseries_impl(const std::vector<double> &ts);
+  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
 
-  virtual void mean_precipitation_impl(IceModelVec2S &result);
+  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
 
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
 protected:
-  std::vector<double> m_offset_values;
+  mutable std::vector<double> m_offset_values;
 };
 
 } // end of namespace atmosphere

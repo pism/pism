@@ -63,18 +63,28 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)
 
     list(APPEND PISM_Python_deps
+      AgeModel.i
+      EnergyModel.i
       petsc_version.i
+      pism_BedDef.i
       pism_ColumnSystem.i
+      pism_DM.i
+      pism_FlowLaw.i
+      pism_Hydrology.i
       pism_IceGrid.i
       pism_IceModelVec.i
       pism_PIO.i
       pism_SIA.i
       pism_SSA.i
       pism_Timeseries.i
+      pism_VariableMetadata.i
       pism_Vars.i
+      pism_Vec.i
       pism_exception.i
       pism_inverse.i
+      pism_ocean.i
       pism_options.i
+      pism_verification.i
       )
 
     if(Pism_USE_TAO)

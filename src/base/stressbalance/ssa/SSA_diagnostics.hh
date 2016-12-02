@@ -31,7 +31,7 @@ namespace stressbalance {
 class SSA_taud_mag : public Diag<SSA>
 {
 public:
-  SSA_taud_mag(SSA *m);
+  SSA_taud_mag(const SSA *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -44,7 +44,7 @@ protected:
 class SSA_taud : public Diag<SSA>
 {
 public:
-  SSA_taud(SSA *m);
+  SSA_taud(const SSA *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };

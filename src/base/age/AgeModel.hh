@@ -52,13 +52,11 @@ public:
 
   const IceModelVec3 & age() const;
 protected:
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype);
-
-  MaxTimestep max_timestep_impl(double t);
   void update_impl(double t, double dt);
+
+  MaxTimestep max_timestep_impl(double t) const;
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
 
   IceModelVec3 m_ice_age;
   IceModelVec3 m_work;

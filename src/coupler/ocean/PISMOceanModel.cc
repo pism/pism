@@ -66,7 +66,7 @@ void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) cons
 }
 
 void OceanModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                      std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                      std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   (void) ts_dict;
 
   if (not dict["sea_level"]) {
@@ -83,26 +83,7 @@ void OceanModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &di
   }
 }
 
-void OceanModel::add_vars_to_output_impl(const std::string &keyword,
-                                         std::set<std::string> &result) {
-  (void) keyword;
-  (void) result;
-}
-
-void OceanModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                       IO_Type nctype) {
-  (void) vars;
-  (void) nc;
-  (void) nctype;
-}
-
-void OceanModel::write_variables_impl(const std::set<std::string> &vars,
-                                      const PIO& nc) {
-  (void) vars;
-  (void) nc;
-}
-
-PO_sea_level::PO_sea_level(OceanModel *m)
+PO_sea_level::PO_sea_level(const OceanModel *m)
   : Diag<OceanModel>(m) {
 
   /* set metadata: */
@@ -123,7 +104,7 @@ IceModelVec::Ptr PO_sea_level::compute_impl() {
   return result;
 }
 
-PO_shelf_base_temperature::PO_shelf_base_temperature(OceanModel *m)
+PO_shelf_base_temperature::PO_shelf_base_temperature(const OceanModel *m)
   : Diag<OceanModel>(m) {
 
   /* set metadata: */
@@ -144,7 +125,7 @@ IceModelVec::Ptr PO_shelf_base_temperature::compute_impl() {
   return result;
 }
 
-PO_shelf_base_mass_flux::PO_shelf_base_mass_flux(OceanModel *m)
+PO_shelf_base_mass_flux::PO_shelf_base_mass_flux(const OceanModel *m)
   : Diag<OceanModel>(m) {
 
   /* set metadata: */
@@ -165,7 +146,7 @@ IceModelVec::Ptr PO_shelf_base_mass_flux::compute_impl() {
   return result;
 }
 
-PO_melange_back_pressure_fraction::PO_melange_back_pressure_fraction(OceanModel *m)
+PO_melange_back_pressure_fraction::PO_melange_back_pressure_fraction(const OceanModel *m)
   : Diag<OceanModel>(m) {
 
   /* set metadata: */

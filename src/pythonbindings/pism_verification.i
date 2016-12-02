@@ -10,6 +10,7 @@
 #include "verif/tests/exactTestsIJ.h"
 #include "verif/tests/exactTestK.h"
 #include "verif/tests/exactTestL.hh"
+#include "verif/tests/exactTestO.h"
 %}
 
 %include "verif/tests/exactTestsFG.hh"
@@ -17,3 +18,4 @@
 %include "verif/tests/exactTestsIJ.h"
 %include "verif/tests/exactTestK.h"
 %include "verif/tests/exactTestL.hh"
+%include "verif/tests/exactTestO.h"

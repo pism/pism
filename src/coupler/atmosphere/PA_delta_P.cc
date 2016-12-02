@@ -55,12 +55,12 @@ void Delta_P::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_P::max_timestep_impl(double t) {
+MaxTimestep Delta_P::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere delta_P");
 }
 
-void Delta_P::init_timeseries_impl(const std::vector<double> &ts) {
+void Delta_P::init_timeseries_impl(const std::vector<double> &ts) const {
   PAModifier::init_timeseries_impl(ts);
 
   m_offset_values.resize(m_ts_times.size());
@@ -69,12 +69,12 @@ void Delta_P::init_timeseries_impl(const std::vector<double> &ts) {
   }
 }
 
-void Delta_P::mean_precipitation_impl(IceModelVec2S &result) {
+void Delta_P::mean_precipitation_impl(IceModelVec2S &result) const {
   m_input_model->mean_precipitation(result);
   offset_data(result);
 }
 
-void Delta_P::precip_time_series_impl(int i, int j, std::vector<double> &result) {
+void Delta_P::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
   
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {

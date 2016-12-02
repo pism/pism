@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2015 PISM Authors
+// Copyright (C) 2012-2016 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,7 @@ namespace hydrology {
 class Hydrology_bwat : public Diag<Hydrology>
 {
 public:
-  Hydrology_bwat(Hydrology *m);
+  Hydrology_bwat(const Hydrology *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -55,7 +55,7 @@ protected:
 class Hydrology_bwp : public Diag<Hydrology>
 {
 public:
-  Hydrology_bwp(Hydrology *m);
+  Hydrology_bwp(const Hydrology *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -65,7 +65,7 @@ protected:
 class Hydrology_bwprel : public Diag<Hydrology>
 {
 public:
-  Hydrology_bwprel(Hydrology *m);
+  Hydrology_bwprel(const Hydrology *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -75,7 +75,7 @@ protected:
 class Hydrology_effbwp : public Diag<Hydrology>
 {
 public:
-  Hydrology_effbwp(Hydrology *m);
+  Hydrology_effbwp(const Hydrology *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -85,7 +85,7 @@ protected:
 class Hydrology_hydrobmelt : public Diag<Hydrology>
 {
 public:
-  Hydrology_hydrobmelt(Hydrology *m);
+  Hydrology_hydrobmelt(const Hydrology *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -95,7 +95,7 @@ protected:
 class Hydrology_hydroinput : public Diag<Hydrology>
 {
 public:
-  Hydrology_hydroinput(Hydrology *m);
+  Hydrology_hydroinput(const Hydrology *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -105,7 +105,7 @@ protected:
 class Hydrology_wallmelt : public Diag<Hydrology>
 {
 public:
-  Hydrology_wallmelt(Hydrology *m);
+  Hydrology_wallmelt(const Hydrology *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -116,7 +116,7 @@ protected:
 class Routing_bwatvel : public Diag<Routing>
 {
 public:
-  Routing_bwatvel(Routing *m);
+  Routing_bwatvel(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -126,7 +126,7 @@ protected:
 class Distributed_hydrovelbase_mag : public Diag<Distributed>
 {
 public:
-  Distributed_hydrovelbase_mag(Distributed *m);
+  Distributed_hydrovelbase_mag(const Distributed *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -139,7 +139,7 @@ protected:
 class MCHydrology_ice_free_land_loss_cumulative : public TSDiag<Routing>
 {
 public:
-  MCHydrology_ice_free_land_loss_cumulative(Routing *m);
+  MCHydrology_ice_free_land_loss_cumulative(const Routing *m);
   virtual void update(double a, double b);
 };
 
@@ -147,7 +147,7 @@ public:
 class MCHydrology_ice_free_land_loss : public TSDiag<Routing>
 {
 public:
-  MCHydrology_ice_free_land_loss(Routing *m);
+  MCHydrology_ice_free_land_loss(const Routing *m);
   virtual void update(double a, double b);
 };
 
@@ -155,7 +155,7 @@ public:
 class MCHydrology_ocean_loss_cumulative : public TSDiag<Routing>
 {
 public:
-  MCHydrology_ocean_loss_cumulative(Routing *m);
+  MCHydrology_ocean_loss_cumulative(const Routing *m);
   virtual void update(double a, double b);
 };
 
@@ -163,7 +163,7 @@ public:
 class MCHydrology_ocean_loss : public TSDiag<Routing>
 {
 public:
-  MCHydrology_ocean_loss(Routing *m);
+  MCHydrology_ocean_loss(const Routing *m);
   virtual void update(double a, double b);
 };
 
@@ -171,7 +171,7 @@ public:
 class MCHydrology_negative_thickness_gain_cumulative : public TSDiag<Routing>
 {
 public:
-  MCHydrology_negative_thickness_gain_cumulative(Routing *m);
+  MCHydrology_negative_thickness_gain_cumulative(const Routing *m);
   virtual void update(double a, double b);
 };
 
@@ -179,7 +179,7 @@ public:
 class MCHydrology_negative_thickness_gain : public TSDiag<Routing>
 {
 public:
-  MCHydrology_negative_thickness_gain(Routing *m);
+  MCHydrology_negative_thickness_gain(const Routing *m);
   virtual void update(double a, double b);
 };
 
@@ -187,7 +187,7 @@ public:
 class MCHydrology_null_strip_loss_cumulative : public TSDiag<Routing>
 {
 public:
-  MCHydrology_null_strip_loss_cumulative(Routing *m);
+  MCHydrology_null_strip_loss_cumulative(const Routing *m);
   virtual void update(double a, double b);
 };
 
@@ -195,7 +195,7 @@ public:
 class MCHydrology_null_strip_loss : public TSDiag<Routing>
 {
 public:
-  MCHydrology_null_strip_loss(Routing *m);
+  MCHydrology_null_strip_loss(const Routing *m);
   virtual void update(double a, double b);
 };
 

@@ -46,9 +46,9 @@ void PBPointwiseIsostasy::init_impl() {
   m_thk_last.copy_from(*ice_thickness);
 }
 
-MaxTimestep PBPointwiseIsostasy::max_timestep_impl(double t) {
+MaxTimestep PBPointwiseIsostasy::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("bed_def iso");
 }
 
 //! Updates the pointwise isostasy model.

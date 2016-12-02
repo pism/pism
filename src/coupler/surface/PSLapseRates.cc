@@ -63,12 +63,12 @@ void LapseRates::init_impl() {
                                     "(kg m-2) year-1 / km", "(kg m-2) second-1 / m");
 }
 
-void LapseRates::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void LapseRates::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   m_input_model->ice_surface_mass_flux(result);
   lapse_rate_correction(result, m_smb_lapse_rate);
 }
 
-void LapseRates::ice_surface_temperature_impl(IceModelVec2S &result) {
+void LapseRates::ice_surface_temperature_impl(IceModelVec2S &result) const {
   m_input_model->ice_surface_temperature(result);
   lapse_rate_correction(result, m_temp_lapse_rate);
 }

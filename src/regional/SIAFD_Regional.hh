@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,11 +29,11 @@ namespace stressbalance {
 //! simulations.
 class SIAFD_Regional : public SIAFD {
 public:
-  SIAFD_Regional(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+  SIAFD_Regional(IceGrid::ConstPtr g);
   virtual ~SIAFD_Regional();
   virtual void init();
 protected:
-  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 };
 
 } // end of namespace stressbalance

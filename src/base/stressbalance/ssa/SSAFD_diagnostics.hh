@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ namespace stressbalance {
 class SSAFD_nuH : public Diag<SSAFD>
 {
 public:
-  SSAFD_nuH(SSAFD *m);
+  SSAFD_nuH(const SSAFD *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };

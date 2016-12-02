@@ -54,9 +54,9 @@ void PIK::init_impl() {
                              m_meltfactor);
 }
 
-MaxTimestep PIK::max_timestep_impl(double t) {
+MaxTimestep PIK::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("ocean PIK");
 }
 
 void PIK::update_impl(double my_t, double my_dt) {

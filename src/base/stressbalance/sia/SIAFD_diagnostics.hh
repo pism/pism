@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,7 +34,7 @@ namespace stressbalance {
 class SIAFD_schoofs_theta : public Diag<SIAFD>
 {
 public:
-  SIAFD_schoofs_theta(SIAFD *m);
+  SIAFD_schoofs_theta(const SIAFD *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -47,7 +47,7 @@ protected:
 class SIAFD_topgsmooth : public Diag<SIAFD>
 {
 public:
-  SIAFD_topgsmooth(SIAFD *m);
+  SIAFD_topgsmooth(const SIAFD *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -60,7 +60,7 @@ protected:
 class SIAFD_thksmooth : public Diag<SIAFD>
 {
 public:
-  SIAFD_thksmooth(SIAFD *m);
+  SIAFD_thksmooth(const SIAFD *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -69,7 +69,7 @@ protected:
 class SIAFD_diffusivity : public Diag<SIAFD>
 {
 public:
-  SIAFD_diffusivity(SIAFD *m);
+  SIAFD_diffusivity(const SIAFD *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -78,7 +78,7 @@ protected:
 class SIAFD_diffusivity_staggered : public Diag<SIAFD>
 {
 public:
-  SIAFD_diffusivity_staggered(SIAFD *m);
+  SIAFD_diffusivity_staggered(const SIAFD *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -88,7 +88,7 @@ protected:
 class SIAFD_h_x : public Diag<SIAFD>
 {
 public:
-  SIAFD_h_x(SIAFD *m);
+  SIAFD_h_x(const SIAFD *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -98,7 +98,7 @@ protected:
 class SIAFD_h_y : public Diag<SIAFD>
 {
 public:
-  SIAFD_h_y(SIAFD *m);
+  SIAFD_h_y(const SIAFD *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };

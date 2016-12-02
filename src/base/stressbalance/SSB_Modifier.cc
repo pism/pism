@@ -26,8 +26,8 @@
 namespace pism {
 namespace stressbalance {
 
-SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : Component(g), m_EC(e) {
+SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
+  : Component(g), m_EC(g->ctx()->enthalpy_converter()) {
 
   m_D_max = 0.0;
 
@@ -96,8 +96,8 @@ void ConstantInColumn::init() {
   SSB_Modifier::init();
 }
 
-ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SSB_Modifier(g, e)
+ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g)
+  : SSB_Modifier(g)
 {
   rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
 
@@ -149,27 +149,6 @@ void ConstantInColumn::update(const IceModelVec2V &vel_input, bool fast) {
   m_diffusive_flux.set(0.0);
   m_D_max = 0.0;
 }
-
-void ConstantInColumn::add_vars_to_output_impl(const std::string &keyword,
-                                          std::set<std::string> &result) {
-  (void)keyword;
-  (void)result;
-}
-
-void ConstantInColumn::define_variables_impl(const std::set<std::string> &vars,
-                                        const PIO &nc,
-                                        IO_Type nctype) {
-  (void)vars;
-  (void)nc;
-  (void)nctype;
-}
-
-void ConstantInColumn::write_variables_impl(const std::set<std::string> &vars,
-                                       const PIO &nc) {
-  (void)vars;
-  (void)nc;
-}
-
 
 } // end of namespace stressbalance
 } // end of namespace pism

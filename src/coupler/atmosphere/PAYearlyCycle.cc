@@ -87,42 +87,30 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
   }
 }
 
-void YearlyCycle::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  (void) keyword;
-  // precipitation is read from a PISM input file, so it is a part of the "model state"
-  result.insert("precipitation");
+void YearlyCycle::define_model_state_impl(const PIO &output) const {
+  m_precipitation.define(output);
 }
 
-
-void YearlyCycle::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  if (set_contains(vars, "precipitation")) {
-    m_precipitation.define(nc, nctype);
-  }
-}
-
-
-void YearlyCycle::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "precipitation")) {
-    m_precipitation.write(nc);
-  }
+void YearlyCycle::write_model_state_impl(const PIO &output) const {
+  m_precipitation.write(output);
 }
 
 //! Copies the stored precipitation field into result.
-void YearlyCycle::mean_precipitation_impl(IceModelVec2S &result) {
+void YearlyCycle::mean_precipitation_impl(IceModelVec2S &result) const {
   result.copy_from(m_precipitation);
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-void YearlyCycle::mean_annual_temp_impl(IceModelVec2S &result) {
+void YearlyCycle::mean_annual_temp_impl(IceModelVec2S &result) const {
   result.copy_from(m_air_temp_mean_annual);
 }
 
 //! Copies the stored mean July near-surface air temperature field into result.
-void YearlyCycle::mean_july_temp(IceModelVec2S &result) {
+void YearlyCycle::mean_july_temp(IceModelVec2S &result) const {
   result.copy_from(m_air_temp_mean_july);
 }
 
-void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) {
+void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
   // constants related to the standard yearly cycle
   const double
     julyday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
@@ -139,32 +127,32 @@ void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) {
   }
 }
 
-void YearlyCycle::precip_time_series_impl(int i, int j, std::vector<double> &result) {
+void YearlyCycle::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
 }
 
-void YearlyCycle::temp_time_series_impl(int i, int j, std::vector<double> &result) {
+void YearlyCycle::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
   }
 }
 
-void YearlyCycle::begin_pointwise_access_impl() {
+void YearlyCycle::begin_pointwise_access_impl() const {
   m_air_temp_mean_annual.begin_access();
   m_air_temp_mean_july.begin_access();
   m_precipitation.begin_access();
 }
 
-void YearlyCycle::end_pointwise_access_impl() {
+void YearlyCycle::end_pointwise_access_impl() const {
   m_air_temp_mean_annual.end_access();
   m_air_temp_mean_july.end_access();
   m_precipitation.end_access();
 }
 void YearlyCycle::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
   AtmosphereModel::get_diagnostics_impl(dict, ts_dict);
 
   if (not dict["air_temp_mean_july"]) {
@@ -172,7 +160,7 @@ void YearlyCycle::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &d
   }
 }
 
-PA_mean_july_temp::PA_mean_july_temp(YearlyCycle *m)
+PA_mean_july_temp::PA_mean_july_temp(const YearlyCycle *m)
   : Diag<YearlyCycle>(m) {
 
   /* set metadata: */

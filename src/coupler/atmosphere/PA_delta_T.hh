@@ -32,12 +32,13 @@ public:
   virtual ~Delta_T() {}
 protected:
   virtual void init_impl();
-  virtual void init_timeseries_impl(const std::vector<double> &ts);
-  virtual void mean_annual_temp_impl(IceModelVec2S &result);
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
-  virtual MaxTimestep max_timestep_impl(double t);
+
+  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
+  virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
+  virtual MaxTimestep max_timestep_impl(double t) const;
 protected:
-  std::vector<double> m_offset_values;
+  mutable std::vector<double> m_offset_values;
 };
 
 

@@ -38,10 +38,10 @@ public:
   virtual ~StressCalving();
 
 protected:
-  void update_strain_rates();
+  void update_strain_rates() const;
 
 protected:
-  IceModelVec2 m_strain_rates;
+  mutable IceModelVec2 m_strain_rates;
   const int m_stencil_width;
   stressbalance::StressBalance *m_stress_balance;
 };

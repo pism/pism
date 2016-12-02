@@ -85,9 +85,9 @@ void WeatherStation::init_impl() {
   }
 }
 
-MaxTimestep WeatherStation::max_timestep_impl(double t) {
+MaxTimestep WeatherStation::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere weather_station");
 }
 
 void WeatherStation::update_impl(double t, double dt) {
@@ -95,7 +95,7 @@ void WeatherStation::update_impl(double t, double dt) {
   m_dt = dt;
 }
 
-void WeatherStation::mean_precipitation_impl(IceModelVec2S &result) {
+void WeatherStation::mean_precipitation_impl(IceModelVec2S &result) const {
   const double one_week = 7 * 24 * 60 * 60;
 
   unsigned int N = (unsigned int)(ceil(m_dt / one_week)); // one point per week
@@ -103,7 +103,7 @@ void WeatherStation::mean_precipitation_impl(IceModelVec2S &result) {
   result.set(m_precipitation_timeseries.average(m_t, m_dt, N));
 }
 
-void WeatherStation::mean_annual_temp_impl(IceModelVec2S &result) {
+void WeatherStation::mean_annual_temp_impl(IceModelVec2S &result) const {
   const double one_week = 7 * 24 * 60 * 60;
 
   unsigned int N = (unsigned int)(ceil(m_dt / one_week)); // one point per week
@@ -111,15 +111,15 @@ void WeatherStation::mean_annual_temp_impl(IceModelVec2S &result) {
   result.set(m_air_temp_timeseries.average(m_t, m_dt, N));
 }
 
-void WeatherStation::begin_pointwise_access_impl() {
+void WeatherStation::begin_pointwise_access_impl() const {
   // empty
 }
 
-void WeatherStation::end_pointwise_access_impl() {
+void WeatherStation::end_pointwise_access_impl() const {
   // empty
 }
 
-void WeatherStation::init_timeseries_impl(const std::vector<double> &ts) {
+void WeatherStation::init_timeseries_impl(const std::vector<double> &ts) const {
   size_t N = ts.size();
 
   m_precip_values.resize(N);
@@ -131,37 +131,18 @@ void WeatherStation::init_timeseries_impl(const std::vector<double> &ts) {
   }
 }
 
-void WeatherStation::precip_time_series_impl(int i, int j, std::vector<double> &result) {
+void WeatherStation::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   (void)i;
   (void)j;
 
   result = m_precip_values;
 }
 
-void WeatherStation::temp_time_series_impl(int i, int j, std::vector<double> &result) {
+void WeatherStation::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
   (void)i;
   (void)j;
 
   result = m_air_temp_values;
-}
-
-void WeatherStation::add_vars_to_output_impl(const std::string &keyword,
-                                             std::set<std::string> &result) {
-  (void) keyword;
-  (void) result;
-}
-
-void WeatherStation::define_variables_impl(const std::set<std::string> &vars,
-                                           const PIO &nc, IO_Type nctype) {
-  (void) vars;
-  (void) nc;
-  (void) nctype;
-}
-
-void WeatherStation::write_variables_impl(const std::set<std::string> &vars,
-                                          const PIO &nc) {
-  (void) vars;
-  (void) nc;
 }
 
 } // end of namespace atmosphere

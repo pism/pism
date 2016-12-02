@@ -5,13 +5,7 @@
  */
 
 %{
-#include "base/energy/enthSystem.hh"
 #include "base/util/ColumnInterpolation.hh"
 %}
-
-/* wrap the enthalpy solver to make testing easier */
-%include "base/columnSystem.hh"
-%rename(get_lambda) pism::energy::enthSystemCtx::lambda;
-%include "base/energy/enthSystem.hh"
 
 %include "base/util/ColumnInterpolation.hh"

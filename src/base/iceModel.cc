@@ -51,6 +51,7 @@
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/age/AgeModel.hh"
+#include "base/energy/EnergyModel.hh"
 
 namespace pism {
 
@@ -223,6 +224,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
 
   m_age_model = NULL;
   m_btu = NULL;
+  m_energy_model = NULL;
 
   m_iceberg_remover             = NULL;
   m_ocean_kill_calving          = NULL;
@@ -231,10 +233,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_eigen_calving               = NULL;
   m_vonmises_calving            = NULL;
   m_frontal_melt                = NULL;
-
-  // initialize maximum |u|,|v|,|w| in ice
-  m_max_u_speed = 0;
-  m_max_v_speed = 0;
 
   m_output_global_attributes.set_string("Conventions", "CF-1.5");
   m_output_global_attributes.set_string("source", pism::version());
@@ -248,6 +246,19 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_fracture = NULL;
 
   reset_counters();
+
+  // allocate temporary storage
+  {
+    const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
+
+    // various internal quantities
+    // 2d work vectors
+    for (int j = 0; j < m_n_work2d; j++) {
+      char namestr[30];
+      snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
+      m_work2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
+    }
+  }
 }
 
 IceModel::FluxCounters IceModel::cumulative_fluxes() const {
@@ -268,9 +279,6 @@ double IceModel::dt() const {
 
 void IceModel::reset_counters() {
   dt_TempAge   = 0.0;
-
-  m_max_u_speed = 0.0;
-  m_max_v_speed = 0.0;
 
   m_dt              = 0.0;
   m_skip_countdown   = 0;
@@ -294,6 +302,7 @@ IceModel::~IceModel() {
   delete m_subglacial_hydrology;
   delete m_basal_yield_stress_model;
   delete m_btu;
+  delete m_energy_model;
 
   delete m_fracture;
 
@@ -324,30 +333,6 @@ void IceModel::createVecs() {
   // variables. The main (and only) principle here is using standard names from
   // the CF conventions; see
   // http://cf-pcmdi.llnl.gov/documents/cf-standard-names
-
-  {
-    m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
-    // POSSIBLE standard name = land_ice_enthalpy
-    m_ice_enthalpy.set_attrs("model_state",
-                             "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                             "J kg-1", "");
-    m_grid->variables().add(m_ice_enthalpy);
-  }
-
-  if (m_config->get_boolean("energy.temperature_based")) {
-    // ice temperature
-    m_ice_temperature.create(m_grid, "temp", WITH_GHOSTS);
-    m_ice_temperature.set_attrs("model_state",
-                 "ice temperature", "K", "land_ice_temperature");
-    m_ice_temperature.metadata().set_double("valid_min", 0.0);
-    m_grid->variables().add(m_ice_temperature);
-
-    if (m_config->get_boolean("energy.enabled")) {
-      m_ice_enthalpy.metadata().set_string("pism_intent", "diagnostic");
-    } else {
-      m_ice_temperature.metadata().set_string("pism_intent", "diagnostic");
-    }
-  }
 
   // ice upper surface elevation
   m_ice_surface_elevation.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
@@ -407,10 +392,9 @@ void IceModel::createVecs() {
 
   // basal melt rate
   m_basal_melt_rate.create(m_grid, "bmelt", WITHOUT_GHOSTS);
-  // ghosted to allow the "redundant" computation of tauc
-  m_basal_melt_rate.set_attrs("model_state",
-                            "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
-                            "m s-1", "land_ice_basal_melt_rate");
+  m_basal_melt_rate.set_attrs("internal",
+                              "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
+                              "m s-1", "land_ice_basal_melt_rate");
   m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
   m_basal_melt_rate.write_in_glaciological_units = true;
   m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
@@ -489,52 +473,6 @@ void IceModel::createVecs() {
   m_cell_area.write_in_glaciological_units = true;
   m_grid->variables().add(m_cell_area);
 
-  // fields owned by IceModel but filled by SurfaceModel *surface:
-  // mean annual net ice equivalent surface mass balance rate
-  m_climatic_mass_balance.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
-  m_climatic_mass_balance.set_attrs("climate_from_SurfaceModel",  // FIXME: can we do better?
-                                  "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                  "kg m-2 s-1",
-                                  "land_ice_surface_specific_mass_balance_flux");
-  m_climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_climatic_mass_balance.write_in_glaciological_units = true;
-  m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
-
-  // annual mean air temperature at "ice surface", at level below all firn
-  //   processes (e.g. "10 m" or ice temperatures)
-  m_ice_surface_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
-  m_ice_surface_temp.set_attrs("climate_from_SurfaceModel",  // FIXME: can we do better?
-                             "annual average ice surface temperature, below firn processes",
-                             "K",
-                             "");
-
-  m_liqfrac_surface.create(m_grid, "liqfrac_surface", WITHOUT_GHOSTS);
-  m_liqfrac_surface.set_attrs("climate_from_SurfaceModel",
-                            "liquid water fraction at the top surface of the ice",
-                            "1", "");
-  // grid.variables().add(liqfrac_surface);
-
-  // ice mass balance rate at the base of the ice shelf; sign convention for
-  //   vshelfbasemass matches standard sign convention for basal melt rate of
-  //   grounded ice
-  m_shelfbmassflux.create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS); // no ghosts; NO HOR. DIFF.!
-  m_shelfbmassflux.set_attrs("climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                           "m s-1", "");
-  // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
-  // rescales from m second-1 to m year-1 when writing to NetCDF and std out:
-  m_shelfbmassflux.write_in_glaciological_units = true;
-  m_shelfbmassflux.metadata().set_string("glaciological_units", "m year-1");
-  // do not add; boundary models are in charge here
-  // grid.variables().add(shelfbmassflux);
-
-  // ice boundary tempature at the base of the ice shelf
-  m_shelfbtemp.create(m_grid, "shelfbtemp", WITHOUT_GHOSTS); // no ghosts; NO HOR. DIFF.!
-  m_shelfbtemp.set_attrs("climate_state", "absolute temperature at ice shelf base",
-                       "K", "");
-  // PROPOSED standard name = ice_shelf_basal_temperature
-  // do not add; boundary models are in charge here
-  // grid.variables().add(shelfbtemp);
-
   if (m_config->get_boolean("fracture_density.enabled")) {
     m_fracture = new FractureFields(m_grid);
 
@@ -552,7 +490,6 @@ void IceModel::createVecs() {
 During the time-step we perform the following actions:
  */
 void IceModel::step(bool do_mass_continuity,
-                    bool do_energy,
                     bool do_skip) {
 
   const Profiling &profiling = m_ctx->profiling();
@@ -571,9 +508,7 @@ void IceModel::step(bool do_mass_continuity,
   // stability criterion; note *lots* of communication is avoided by skipping
   // SSA (and temp/age)
 
-  const bool
-    updateAtDepth  = (m_skip_countdown == 0),
-    do_energy_step = updateAtDepth and do_energy;
+  const bool updateAtDepth  = (m_skip_countdown == 0);
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth and m_basal_yield_stress_model) {
@@ -615,6 +550,7 @@ void IceModel::step(bool do_mass_continuity,
                   o_file.c_str());
     throw;
   }
+
 
   m_stdout_flags += m_stress_balance->stdout_report();
 
@@ -658,7 +594,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the enthalpy (or temperature) field according to the conservation of
   //!  energy model based (especially) on the new velocity field; see
   //!  energyStep()
-  if (do_energy_step) { // do the energy step
+  if (updateAtDepth) { // do the energy step
     profiling.begin("energy");
     energyStep();
     profiling.end("energy");
@@ -740,7 +676,7 @@ void IceModel::step(bool do_mass_continuity,
   // Done with the step; now adopt the new time.
   m_time->step(m_dt);
 
-  if (do_energy_step) {
+  if (updateAtDepth) {
     t_TempAge = m_time->current();
     dt_TempAge = 0.0;
   }
@@ -809,7 +745,7 @@ void IceModel::run() {
 
     m_stdout_flags.erase();  // clear it out
 
-    step(do_mass_conserve, do_energy, do_skip);
+    step(do_mass_conserve, do_skip);
 
     // report a summary for major steps or the last one
     bool updateAtDepth = m_skip_countdown == 0;
@@ -863,14 +799,6 @@ void IceModel::init() {
 
   profiling.begin("initialization");
 
-  // Build PISM with -DPISM_WAIT_FOR_GDB=1 and run with -wait_for_gdb to
-  // make it wait for a connection.
-#ifdef PISM_WAIT_FOR_GDB
-  bool wait_for_gdb = options::Bool("-wait_for_gdb", "wait for GDB to attach");
-  if (wait_for_gdb.is_set()) {
-    pism_wait_for_gdb(grid.com, 0);
-  }
-#endif
   //! The IceModel initialization sequence is this:
 
   //! 1) Initialize model time:
@@ -884,9 +812,6 @@ void IceModel::init() {
 
   //! 4) Allocate PISM components modeling some physical processes.
   allocate_submodels();
-
-  //! 5) Allocate work vectors:
-  allocate_internal_objects();
 
   //! 6) Initialize coupler models and fill the model state variables
   //! (from a PISM output file, from a bootstrapping file using some
@@ -928,15 +853,11 @@ const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
   return m_btu;
 }
 
-const IceModelVec3& IceModel::ice_enthalpy() const {
-  return m_ice_enthalpy;
-}
-
 const IceModelVec2S& IceModel::ice_thickness() const {
   return m_ice_thickness;
 }
 
-const IceModelVec2S & IceModel::cell_area() {
+const IceModelVec2S & IceModel::cell_area() const {
   return m_cell_area;
 }
 
@@ -948,5 +869,8 @@ const IceModelVec2S& IceModel::ice_surface_elevation() const {
   return m_ice_surface_elevation;
 }
 
+const energy::EnergyModel* IceModel::energy_balance_model() const {
+  return m_energy_model;
+}
 
 } // end of namespace pism

@@ -165,21 +165,14 @@ def grid_from_file_test():
     enthalpy.set(80e3)
 
     output_file = "test_grid_from_file.nc"
-    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().config().get_string("time.calendar"),
-                     grid.ctx().time().units_string(),
-                     grid.ctx().unit_system())
-    PISM.append_time(pio,
-                     grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().time().current())
-    pio.close()
+    pio = PISM.util.prepare_output(output_file)
 
-    enthalpy.write(output_file)
+    enthalpy.write(pio)
 
     pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
+
     grid2 = PISM.IceGrid.FromFile(grid.ctx(), pio, "enthalpy", PISM.NOT_PERIODIC)
-    pio.close()
+
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
@@ -381,14 +374,7 @@ def modelvecs_test():
 
     # test write()
     output_file = "test_ModelVecs.nc"
-    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().config().get_string("time.calendar"),
-                     grid.ctx().time().units_string(),
-                     grid.ctx().unit_system())
-    PISM.append_time(pio,
-                     grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().time().current())
+    pio = PISM.util.prepare_output(output_file)
     pio.close()
 
     vecs.write(output_file)

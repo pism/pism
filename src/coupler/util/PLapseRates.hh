@@ -45,14 +45,14 @@ public:
   }
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) {
+  virtual MaxTimestep max_timestep_impl(double t) const {
     // "Periodize" the climate:
     t = Mod::m_grid->ctx()->time()->mod(t - m_bc_reference_time, m_bc_period);
 
     MaxTimestep input_max_dt = Mod::m_input_model->max_timestep(t);
     MaxTimestep surface_max_dt = m_reference_surface.max_timestep(t);
 
-    if (input_max_dt.is_finite()) {
+    if (input_max_dt.finite()) {
       return std::min(surface_max_dt, input_max_dt);
     } else {
       return surface_max_dt;
@@ -153,7 +153,7 @@ protected:
     m_reference_surface.init(file, m_bc_period, m_bc_reference_time);
   }
 
-  void lapse_rate_correction(IceModelVec2S &result, double lapse_rate) {
+  void lapse_rate_correction(IceModelVec2S &result, double lapse_rate) const {
     if (fabs(lapse_rate) < 1e-12) {
       return;
     }
@@ -173,7 +173,9 @@ protected:
     }
   }
 protected:
-  IceModelVec2T m_reference_surface;
+  // "mutable" is needed here because some methods (average, interp) change the state of an
+  // "IceModelVec2T"
+  mutable IceModelVec2T m_reference_surface;
   unsigned int m_bc_period;
   double m_bc_reference_time,          // in seconds
     m_temp_lapse_rate;

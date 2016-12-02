@@ -40,6 +40,10 @@ std::string join(const std::vector<std::string> &strings, const std::string &sep
 
 std::vector<std::string> split(const std::string &input, char separator);
 
+std::set<std::string> set_split(const std::string &input, char separator);
+
+std::string set_join(const std::set<std::string> &input, const std::string& separator);
+
 // set
 bool set_contains(const std::set<std::string> &S, const std::string &name);
 

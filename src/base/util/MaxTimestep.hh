@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,8 @@
 #ifndef _MAXTIMESTEP_H_
 #define _MAXTIMESTEP_H_
 
+#include <string>
+
 namespace pism {
 
 //! @brief Combines the max. time step with the flag indicating if a
@@ -33,13 +35,22 @@ public:
   MaxTimestep();
   //! Create an instance corresponding to a max time step of `value`.
   MaxTimestep(double value);
+
+  MaxTimestep(const std::string &new_description);
+  //! Create an instance and provide a description.
+  MaxTimestep(double value, const std::string &new_description);
   //! Convert to `bool` to check if a time step restriction is "active".
-  bool is_finite() const;
+  bool finite() const;
+  bool infinite() const;
+
   //! Get the value of the maximum time step.
   double value() const;
+
+  std::string description() const;
 private:
-  bool m_is_finite;
+  bool m_finite;
   double m_value;
+  std::string m_description;
 };
 
 //! Greater than operator for MaxTimestep.

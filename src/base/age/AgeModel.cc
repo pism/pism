@@ -178,7 +178,7 @@ const IceModelVec3 & AgeModel::age() const {
   return m_ice_age;
 }
 
-MaxTimestep AgeModel::max_timestep_impl(double t) {
+MaxTimestep AgeModel::max_timestep_impl(double t) const {
   // fix a compiler warning
   (void) t;
 
@@ -188,7 +188,7 @@ MaxTimestep AgeModel::max_timestep_impl(double t) {
                                   " Cannot compute max. time step.");
   }
 
-  return m_stress_balance->max_timestep_cfl_3d().dt_max;
+  return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "age model");
 }
 
 void AgeModel::update_impl(double t, double dt) {
@@ -211,12 +211,11 @@ void AgeModel::init(const InputOptions &opts) {
 
   m_log->message(2, "* Initializing the age model...\n");
 
-  PIO input_file(m_grid->com, "guess_mode");
 
   double initial_age_years = m_config->get_double("age.initial_value", "years");
 
   if (opts.type == INIT_RESTART) {
-    input_file.open(opts.filename, PISM_READONLY);
+    PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
 
     if (input_file.inq_var("age")) {
       m_ice_age.read(input_file, opts.record);
@@ -235,23 +234,12 @@ void AgeModel::init(const InputOptions &opts) {
   regrid("Age Model", m_ice_age, REGRID_WITHOUT_REGRID_VARS);
 }
 
-void AgeModel::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  (void) keyword;
-  result.insert(m_ice_age.metadata().get_name());
+void AgeModel::define_model_state_impl(const PIO &output) const {
+  m_ice_age.define(output);
 }
 
-void AgeModel::define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype) {
-  if (set_contains(vars, m_ice_age.metadata())) {
-    m_ice_age.define(nc, nctype);
-  }
+void AgeModel::write_model_state_impl(const PIO &output) const {
+  m_ice_age.write(output);
 }
-
-void AgeModel::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, m_ice_age.metadata())) {
-    m_ice_age.write(nc);
-  }
-}
-
 
 } // end of namespace pism

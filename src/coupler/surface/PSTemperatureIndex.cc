@@ -44,7 +44,7 @@ namespace surface {
 class PDD_saccum_average : public Diag_average<TemperatureIndex>
 {
 public:
-  PDD_saccum_average(TemperatureIndex *m);
+  PDD_saccum_average(const TemperatureIndex *m);
 protected:
   const IceModelVec2S &cumulative_value() const;
 };
@@ -53,7 +53,7 @@ protected:
 class PDD_smelt_average : public Diag_average<TemperatureIndex>
 {
 public:
-  PDD_smelt_average(TemperatureIndex *m);
+  PDD_smelt_average(const TemperatureIndex *m);
 protected:
   const IceModelVec2S &cumulative_value() const;
 };
@@ -62,7 +62,7 @@ protected:
 class PDD_srunoff_average : public Diag_average<TemperatureIndex>
 {
 public:
-  PDD_srunoff_average(TemperatureIndex *m);
+  PDD_srunoff_average(const TemperatureIndex *m);
 protected:
   const IceModelVec2S &cumulative_value() const;
 };
@@ -280,7 +280,7 @@ void TemperatureIndex::init_impl() {
   m_cumulative_runoff.set(0.0);
 }
 
-MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) {
+MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) const {
   return m_atmosphere->max_timestep(my_t);
 }
 
@@ -489,12 +489,12 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
-void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_climatic_mass_balance);
 }
 
 
-void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) {
+void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) const {
   m_atmosphere->mean_annual_temp(result);
 }
 
@@ -531,86 +531,17 @@ const IceModelVec2S& TemperatureIndex::air_temp_sd() const {
 }
 
 void TemperatureIndex::define_model_state_impl(const PIO &output) const {
+  SurfaceModel::define_model_state_impl(output);
   m_snow_depth.define(output, PISM_DOUBLE);
 }
 
 void TemperatureIndex::write_model_state_impl(const PIO &output) const {
+  SurfaceModel::write_model_state_impl(output);
   m_snow_depth.write(output);
 }
 
-void TemperatureIndex::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-
-  SurfaceModel::add_vars_to_output_impl(keyword, result);
-
-  result.insert("snow_depth");
-
-  if (keyword == "big" || keyword == "big_2d") {
-    result.insert("air_temp_sd");
-    result.insert("saccum");
-    result.insert("smelt");
-    result.insert("srunoff");
-  }
-}
-
-void TemperatureIndex::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-
-  if (set_contains(vars, "air_temp_sd")) {
-    m_air_temp_sd.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "saccum")) {
-    m_accumulation_rate.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "smelt")) {
-    m_melt_rate.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "srunoff")) {
-    m_runoff_rate.define(nc, nctype);
-  }
-
-  if (set_contains(vars, "snow_depth")) {
-    m_snow_depth.define(nc, nctype);
-  }
-
-  SurfaceModel::define_variables_impl(vars, nc, nctype);
-}
-
-void TemperatureIndex::write_variables_impl(const std::set<std::string> &vars_input, const PIO &nc) {
-  std::set<std::string> vars = vars_input;
-
-  if (set_contains(vars, "air_temp_sd")) {
-    m_air_temp_sd.average(m_t, m_dt);
-    m_air_temp_sd.write(nc);
-    vars.erase("air_temp_sd");
-  }
-
-  if (set_contains(vars, "saccum")) {
-    m_accumulation_rate.write(nc);
-    vars.erase("saccum");
-  }
-
-  if (set_contains(vars, "smelt")) {
-    m_melt_rate.write(nc);
-    vars.erase("smelt");
-  }
-
-  if (set_contains(vars, "srunoff")) {
-    m_runoff_rate.write(nc);
-    vars.erase("srunoff");
-  }
-
-  if (set_contains(vars, "snow_depth")) {
-    m_snow_depth.write(nc);
-    vars.erase("snow_depth");
-  }
-
-  SurfaceModel::write_variables_impl(vars, nc);
-}
-
 void TemperatureIndex::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
 
   SurfaceModel::get_diagnostics_impl(dict, ts_dict);
 
@@ -637,7 +568,7 @@ void TemperatureIndex::get_diagnostics_impl(std::map<std::string, Diagnostic::Pt
   }
 }
 
-PDD_saccum::PDD_saccum(TemperatureIndex *m)
+PDD_saccum::PDD_saccum(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
@@ -658,7 +589,7 @@ IceModelVec::Ptr PDD_saccum::compute_impl() {
   return result;
 }
 
-PDD_smelt::PDD_smelt(TemperatureIndex *m)
+PDD_smelt::PDD_smelt(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
@@ -679,7 +610,7 @@ IceModelVec::Ptr PDD_smelt::compute_impl() {
   return result;
 }
 
-PDD_srunoff::PDD_srunoff(TemperatureIndex *m)
+PDD_srunoff::PDD_srunoff(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
@@ -700,7 +631,7 @@ IceModelVec::Ptr PDD_srunoff::compute_impl() {
   return result;
 }
 
-PDD_snow_depth::PDD_snow_depth(TemperatureIndex *m)
+PDD_snow_depth::PDD_snow_depth(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
@@ -721,7 +652,7 @@ IceModelVec::Ptr PDD_snow_depth::compute_impl() {
   return result;
 }
 
-PDD_air_temp_sd::PDD_air_temp_sd(TemperatureIndex *m)
+PDD_air_temp_sd::PDD_air_temp_sd(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
@@ -742,7 +673,7 @@ IceModelVec::Ptr PDD_air_temp_sd::compute_impl() {
   return result;
 }
 
-PDD_saccum_average::PDD_saccum_average(TemperatureIndex *m)
+PDD_saccum_average::PDD_saccum_average(const TemperatureIndex *m)
   : Diag_average<TemperatureIndex>(m) {
 
   /* set metadata: */
@@ -759,7 +690,7 @@ const IceModelVec2S & PDD_saccum_average::cumulative_value() const {
   return model->cumulative_surface_accumulation();
 }
 
-PDD_smelt_average::PDD_smelt_average(TemperatureIndex *m)
+PDD_smelt_average::PDD_smelt_average(const TemperatureIndex *m)
   : Diag_average<TemperatureIndex>(m) {
 
   /* set metadata: */
@@ -776,7 +707,7 @@ const IceModelVec2S & PDD_smelt_average::cumulative_value() const {
   return model->cumulative_surface_melt();
 }
 
-PDD_srunoff_average::PDD_srunoff_average(TemperatureIndex *m)
+PDD_srunoff_average::PDD_srunoff_average(const TemperatureIndex *m)
   : Diag_average<TemperatureIndex>(m) {
 
   /* set metadata: */

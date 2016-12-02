@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,17 +38,24 @@ public:
   OceanKill(IceGrid::ConstPtr g);
   virtual ~OceanKill();
 
-  virtual void init();
+  void init();
   void update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
-
+  const IceModelVec2Int& mask() const;
 
 protected:
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype);
-protected:
+  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
+                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+
   IceModelVec2Int m_ocean_kill_mask;
+};
+
+/*! @brief Ocean kill mask. */
+class OceanKill_mask : public Diag<OceanKill>
+{
+public:
+  OceanKill_mask(const OceanKill *m);
+protected:
+  IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace calving
