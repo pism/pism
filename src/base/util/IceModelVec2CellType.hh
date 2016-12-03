@@ -29,8 +29,8 @@ namespace pism {
 class IceModelVec2CellType : public IceModelVec2Int {
 public:
 
-  typedef PISM_SHARED_PTR(IceModelVec2CellType) Ptr;
-  typedef PISM_SHARED_PTR(const IceModelVec2CellType) ConstPtr;
+  typedef std::shared_ptr<IceModelVec2CellType> Ptr;
+  typedef std::shared_ptr<const IceModelVec2CellType> ConstPtr;
   
   inline bool ocean(int i, int j) const {
     return mask::ocean(as_int(i, j));

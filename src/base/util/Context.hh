@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,11 +20,10 @@
 #ifndef _CONTEXT_H_
 #define _CONTEXT_H_
 
+#include <memory>
 #include <string>
 
 #include <mpi.h>
-
-#include "pism_memory.hh"
 
 namespace pism {
 
@@ -40,17 +39,17 @@ class Logger;
 
 class Context {
 public:
-  typedef PISM_SHARED_PTR(units::System) UnitsSystemPtr;
-  typedef PISM_SHARED_PTR(Config) ConfigPtr;
-  typedef PISM_SHARED_PTR(const Config) ConstConfigPtr;
-  typedef PISM_SHARED_PTR(EnthalpyConverter) EnthalpyConverterPtr;
-  typedef PISM_SHARED_PTR(Time) TimePtr;
-  typedef PISM_SHARED_PTR(const Time) ConstTimePtr;
-  typedef PISM_SHARED_PTR(Logger) LoggerPtr;
-  typedef PISM_SHARED_PTR(const Logger) ConstLoggerPtr;
+  typedef std::shared_ptr<units::System> UnitsSystemPtr;
+  typedef std::shared_ptr<Config> ConfigPtr;
+  typedef std::shared_ptr<const Config> ConstConfigPtr;
+  typedef std::shared_ptr<EnthalpyConverter> EnthalpyConverterPtr;
+  typedef std::shared_ptr<Time> TimePtr;
+  typedef std::shared_ptr<const Time> ConstTimePtr;
+  typedef std::shared_ptr<Logger> LoggerPtr;
+  typedef std::shared_ptr<const Logger> ConstLoggerPtr;
 
-  typedef PISM_SHARED_PTR(Context) Ptr;
-  typedef PISM_SHARED_PTR(const Context) ConstPtr;
+  typedef std::shared_ptr<Context> Ptr;
+  typedef std::shared_ptr<const Context> ConstPtr;
 
   Context(MPI_Comm c, UnitsSystemPtr sys,
           ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,

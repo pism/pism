@@ -20,8 +20,8 @@
 #define _PISMTIME_H_
 
 #include <vector>
+#include <memory>
 
-#include "pism_memory.hh"
 #include "pism_const.hh"
 #include "PISMUnits.hh"
 #include "base/util/PISMConfigInterface.hh"
@@ -73,8 +73,8 @@ public:
        units::System::Ptr units_system);
   virtual ~Time();
 
-  typedef PISM_SHARED_PTR(Time) Ptr;
-  typedef PISM_SHARED_PTR(const Time) ConstPtr;
+  typedef std::shared_ptr<Time> Ptr;
+  typedef std::shared_ptr<const Time> ConstPtr;
 
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,10 +19,10 @@
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
-#include <mpi.h>
 #include <string>
+#include <memory>
 
-#include "pism_memory.hh"
+#include <mpi.h>
 
 namespace pism {
 
@@ -42,8 +42,8 @@ public:
   Logger(MPI_Comm com, int threshold);
   virtual ~Logger();
 
-  typedef PISM_SHARED_PTR(Logger) Ptr;
-  typedef PISM_SHARED_PTR(const Logger) ConstPtr;
+  typedef std::shared_ptr<Logger> Ptr;
+  typedef std::shared_ptr<const Logger> ConstPtr;
 
   //! Print a message to the log.
   /** Does nothing if `threshold` is greater than the value provided to the constructor or set using

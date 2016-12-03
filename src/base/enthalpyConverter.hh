@@ -20,8 +20,7 @@
 #define __enthalpyConverter_hh
 
 #include <vector>
-
-#include "base/util/pism_memory.hh"
+#include <memory>
 
 namespace pism {
 
@@ -54,7 +53,7 @@ public:
   EnthalpyConverter(const Config &config);
   virtual ~EnthalpyConverter();
 
-  typedef PISM_SHARED_PTR(EnthalpyConverter) Ptr;
+  typedef std::shared_ptr<EnthalpyConverter> Ptr;
 
   bool is_temperate(double E, double P) const;
   bool is_temperate_relaxed(double E, double P) const;

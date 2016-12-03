@@ -57,7 +57,7 @@ public:
   Diagnostic(IceGrid::ConstPtr g);
   virtual ~Diagnostic();
 
-  typedef PISM_SHARED_PTR(Diagnostic) Ptr;
+  typedef std::shared_ptr<Diagnostic> Ptr;
 
   virtual void update_cumulative();
 
@@ -164,7 +164,7 @@ protected:
 //! @brief PISM's scalar time-series diagnostics.
 class TSDiagnostic {
 public:
-  typedef PISM_SHARED_PTR(TSDiagnostic) Ptr;
+  typedef std::shared_ptr<TSDiagnostic> Ptr;
 
   TSDiagnostic(IceGrid::ConstPtr g)
     : m_grid(g),

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,10 +20,10 @@
 #ifndef _PISMUNITS_H_
 #define _PISMUNITS_H_
 
-#include <udunits2.h>
 #include <string>
+#include <memory>
 
-#include "pism_memory.hh"
+#include <udunits2.h>
 
 namespace pism {
 
@@ -46,10 +46,10 @@ namespace units {
 class System {
 public:
   System(const std::string &path = "");
-  typedef PISM_SHARED_PTR(System) Ptr;
+  typedef std::shared_ptr<System> Ptr;
 private:
   friend class Unit;
-  PISM_SHARED_PTR(ut_system) m_system;
+  std::shared_ptr<ut_system> m_system;
   System(const System &);
   System& operator=(System const &);
 };

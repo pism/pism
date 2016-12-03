@@ -16,16 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petscdraw.h>
-
 #include <cstring>
 #include <cstdlib>
-#include <petscdmda.h>
 
 #include <cassert>
 
-#include "pism_memory.hh"
-using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
+#include <memory>
+using std::dynamic_pointer_cast;
+
+#include <petscdraw.h>
+#include <petscdmda.h>
 
 #include "base/util/io/PIO.hh"
 #include "iceModelVec.hh"

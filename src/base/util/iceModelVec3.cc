@@ -16,16 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
 #include <sstream>
 #include <cstring>
 #include <cstdlib>
-#include <petscdmda.h>
-
 #include <cassert>
 
-#include "pism_memory.hh"
-using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
+#include <memory>
+using std::dynamic_pointer_cast;
+
+#include <gsl/gsl_math.h>
+#include <petscdmda.h>
 
 #include "base/util/io/PIO.hh"
 #include "iceModelVec.hh"
@@ -277,12 +277,7 @@ Computes output = A*output + B*sum_columns(input) + C
 void IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B) const {
   const unsigned int Mz = m_grid->Mz();
 
-#ifdef PISM_CXX11
   AccessList access{this, &output};
-#else
-  AccessList access(*this);
-  access.add(output);
-#endif
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

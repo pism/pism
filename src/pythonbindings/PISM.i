@@ -72,10 +72,6 @@
 %include std_set.i
 %include std_map.i
 
-%include "base/util/pism_memory.hh"
-#ifdef PISM_USE_TR1
-#define SWIG_SHARED_PTR_SUBNAMESPACE tr1
-#endif
 %include <std_shared_ptr.i>
 
 %template(SizetVector) std::vector<size_t>;

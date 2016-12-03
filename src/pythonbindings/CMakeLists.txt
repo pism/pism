@@ -91,10 +91,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TAO" APPEND)
     endif()
 
-    if(Pism_USE_TR1)
-      set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TR1" APPEND)
-    endif()
-
     if(Pism_USE_JANSSON)
       set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_JANSSON" APPEND)
     endif()

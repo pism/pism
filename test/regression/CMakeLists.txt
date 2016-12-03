@@ -84,7 +84,9 @@ pism_test (distributed_hydrology test_29.py)
 
 pism_test (initialization_without_enthalpy test_31.sh)
 
-pism_test (epsg_code_processing test_epsg_processing.py)
+if (Pism_USE_PROJ4)
+  pism_test (epsg_code_processing test_epsg_processing.py)
+endif()
 
 if(Pism_BUILD_EXTRA_EXECS)
   # These tests require special executables. They are disabled unless

@@ -19,14 +19,12 @@
 #ifndef __IceModelVec_hh
 #define __IceModelVec_hh
 
+#include <initializer_list>
+#include <memory>
+
 #include <petscvec.h>
 #include <gsl/gsl_interp.h>
 
-#ifdef PISM_CXX11
-#include <initializer_list>
-#endif
-
-#include "pism_memory.hh"
 #include "VariableMetadata.hh"
 #include "base/util/petscwrappers/Viewer.hh"
 #include "Vector2.hh"
@@ -58,9 +56,7 @@ public:
 class AccessList {
 public:
   AccessList();
-#ifdef PISM_CXX11
   AccessList(std::initializer_list<const PetscAccessible *> vecs);
-#endif
   AccessList(const PetscAccessible &v);
   ~AccessList();
   void add(const PetscAccessible &v);
@@ -196,8 +192,8 @@ public:
   IceModelVec();
   virtual ~IceModelVec();
 
-  typedef PISM_SHARED_PTR(IceModelVec) Ptr;
-  typedef PISM_SHARED_PTR(const IceModelVec) ConstPtr;
+  typedef std::shared_ptr<IceModelVec> Ptr;
+  typedef std::shared_ptr<const IceModelVec> ConstPtr;
 
 
   virtual bool was_created() const;
@@ -334,8 +330,8 @@ class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
 
-  typedef PISM_SHARED_PTR(IceModelVec2) Ptr;
-  typedef PISM_SHARED_PTR(const IceModelVec2) ConstPtr;
+  typedef std::shared_ptr<IceModelVec2> Ptr;
+  typedef std::shared_ptr<const IceModelVec2> ConstPtr;
 
   static Ptr To2D(IceModelVec::Ptr input);
 
@@ -399,8 +395,8 @@ class IceModelVec2S : public IceModelVec2 {
 public:
   IceModelVec2S();
 
-  typedef PISM_SHARED_PTR(IceModelVec2S) Ptr;
-  typedef PISM_SHARED_PTR(const IceModelVec2S) ConstPtr;
+  typedef std::shared_ptr<IceModelVec2S> Ptr;
+  typedef std::shared_ptr<const IceModelVec2S> ConstPtr;
 
   static Ptr To2DScalar(IceModelVec::Ptr input);
 
@@ -449,8 +445,8 @@ protected:
 class IceModelVec2Int : public IceModelVec2S {
 public:
 
-  typedef PISM_SHARED_PTR(IceModelVec2Int) Ptr;
-  typedef PISM_SHARED_PTR(const IceModelVec2Int) ConstPtr;
+  typedef std::shared_ptr<IceModelVec2Int> Ptr;
+  typedef std::shared_ptr<const IceModelVec2Int> ConstPtr;
 
   inline int as_int(int i, int j) const;
   inline StarStencil<int> int_star(int i, int j) const;
@@ -464,8 +460,8 @@ public:
   IceModelVec2V();
   ~IceModelVec2V();
 
-  typedef PISM_SHARED_PTR(IceModelVec2V) Ptr;
-  typedef PISM_SHARED_PTR(const IceModelVec2V) ConstPtr;
+  typedef std::shared_ptr<IceModelVec2V> Ptr;
+  typedef std::shared_ptr<const IceModelVec2V> ConstPtr;
 
   static Ptr ToVector(IceModelVec::Ptr input);
 
@@ -489,8 +485,8 @@ class IceModelVec2Stag : public IceModelVec2 {
 public:
   IceModelVec2Stag();
 
-  typedef PISM_SHARED_PTR(IceModelVec2Stag) Ptr;
-  typedef PISM_SHARED_PTR(const IceModelVec2Stag) ConstPtr;
+  typedef std::shared_ptr<IceModelVec2Stag> Ptr;
+  typedef std::shared_ptr<const IceModelVec2Stag> ConstPtr;
 
   static Ptr ToStaggered(IceModelVec::Ptr input);
 
@@ -539,8 +535,8 @@ public:
   IceModelVec3();
   virtual ~IceModelVec3();
 
-  typedef PISM_SHARED_PTR(IceModelVec3) Ptr;
-  typedef PISM_SHARED_PTR(const IceModelVec3) ConstPtr;
+  typedef std::shared_ptr<IceModelVec3> Ptr;
+  typedef std::shared_ptr<const IceModelVec3> ConstPtr;
 
   static Ptr To3DScalar(IceModelVec::Ptr input);
 
