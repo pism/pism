@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef _WRAPPER_H_
 #define _WRAPPER_H_
 
-#include "base/util/pism_memory.hh"
+#include <memory>
 
 namespace pism {
 namespace petsc {
@@ -28,8 +28,8 @@ namespace petsc {
 template<typename T>
 class Wrapper {
 public:
-  typedef PISM_SHARED_PTR(Wrapper) Ptr;
-  typedef PISM_WEAK_PTR(Wrapper) WeakPtr;
+  typedef std::shared_ptr<Wrapper> Ptr;
+  typedef std::weak_ptr<Wrapper> WeakPtr;
 
   operator T() const {
     return m_value;

@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <memory>
+
 #include <gsl/gsl_interp.h>
 
 #include "io_helpers.hh"
@@ -28,7 +30,6 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/io/LocalInterpCtx.hh"
 #include "base/util/PISMTime.hh"
-#include "base/util/pism_memory.hh"
 #include "base/util/Logger.hh"
 #include "base/util/projection.hh"
 
@@ -441,7 +442,7 @@ static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &va
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     std::vector<unsigned int> start, count, imap;
 
-    PISM_SHARED_PTR(LocalInterpCtx) lic(get_interp_context(nc, var_name, grid, zlevels_out));
+    std::shared_ptr<LocalInterpCtx> lic(get_interp_context(nc, var_name, grid, zlevels_out));
     assert((bool)lic);
 
     double *buffer = &(lic->buffer[0]);
@@ -491,7 +492,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     std::vector<unsigned int> start, count, imap;
 
-    PISM_SHARED_PTR(LocalInterpCtx) lic(get_interp_context(nc, var_name, grid, zlevels_out));
+    std::shared_ptr<LocalInterpCtx> lic(get_interp_context(nc, var_name, grid, zlevels_out));
     assert((bool)lic);
 
     double *buffer = &(lic->buffer[0]);

@@ -107,8 +107,8 @@ public:
 
   virtual ~BedThermalUnit();
 
-  typedef PISM_SHARED_PTR(BedThermalUnit) Ptr;
-  typedef PISM_SHARED_PTR(const BedThermalUnit) ConstPtr;
+  typedef std::shared_ptr<BedThermalUnit> Ptr;
+  typedef std::shared_ptr<const BedThermalUnit> ConstPtr;
 
   void init(const InputOptions &opts);
 

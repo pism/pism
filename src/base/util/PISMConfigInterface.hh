@@ -20,13 +20,14 @@
 #ifndef _PISMCONFIGINTERFACE_H_
 #define _PISMCONFIGINTERFACE_H_
 
+#include <memory>
 #include <set>
 #include <map>
 #include <string>
+
 #include <mpi.h>
 
 #include "PISMUnits.hh"
-#include "pism_memory.hh"
 
 namespace pism {
 
@@ -36,8 +37,8 @@ class Logger;
 //! A class for storing and accessing PISM configuration flags and parameters.
 class Config {
 public:
-  typedef PISM_SHARED_PTR(Config) Ptr;
-  typedef PISM_SHARED_PTR(const Config) ConstPtr;
+  typedef std::shared_ptr<Config> Ptr;
+  typedef std::shared_ptr<const Config> ConstPtr;
 
   Config(units::System::Ptr unit_system);
   virtual ~Config();

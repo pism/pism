@@ -19,12 +19,12 @@
 #ifndef TERMINATIONREASON_HH_JW17MC8V
 #define TERMINATIONREASON_HH_JW17MC8V
 
-#include <petscsnes.h>
-#include <petscksp.h>
 #include <string>
 #include <sstream>
+#include <memory>
 
-#include "pism_memory.hh"
+#include <petscsnes.h>
+#include <petscksp.h>
 
 namespace pism {
 
@@ -32,7 +32,7 @@ class TerminationReason {
 public:
   TerminationReason() :m_reason(0) {};
   
-  typedef PISM_SHARED_PTR(TerminationReason) Ptr;
+  typedef std::shared_ptr<TerminationReason> Ptr;
   
   virtual int reason() {
     return m_reason;

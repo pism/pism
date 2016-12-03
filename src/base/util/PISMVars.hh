@@ -22,8 +22,7 @@
 #include <map>
 #include <set>
 #include <string>
-
-#include "pism_memory.hh"
+#include <memory>
 
 namespace pism {
 
@@ -53,12 +52,12 @@ public:
 
   std::set<std::string> keys() const;
 
-  typedef PISM_SHARED_PTR(IceModelVec) VecPtr;
-  typedef PISM_SHARED_PTR(IceModelVec2S) Vec2SPtr;
-  typedef PISM_SHARED_PTR(IceModelVec2V) Vec2VPtr;
-  typedef PISM_SHARED_PTR(IceModelVec2Int) Vec2IntPtr;
-  typedef PISM_SHARED_PTR(IceModelVec2CellType) Vec2CellTypePtr;
-  typedef PISM_SHARED_PTR(IceModelVec3) Vec3Ptr;
+  typedef std::shared_ptr<IceModelVec> VecPtr;
+  typedef std::shared_ptr<IceModelVec2S> Vec2SPtr;
+  typedef std::shared_ptr<IceModelVec2V> Vec2VPtr;
+  typedef std::shared_ptr<IceModelVec2Int> Vec2IntPtr;
+  typedef std::shared_ptr<IceModelVec2CellType> Vec2CellTypePtr;
+  typedef std::shared_ptr<IceModelVec3> Vec3Ptr;
 
   void add_shared(VecPtr);
   void add_shared(VecPtr, const std::string &name);

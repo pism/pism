@@ -19,6 +19,9 @@
 #include <cassert>
 #include <cstdio>
 #include <deque>
+#include <memory>
+using std::shared_ptr;
+
 #include <petscvec.h>
 
 #include "PIO.hh"
@@ -42,9 +45,6 @@
 #if (PISM_USE_HDF5==1)
 #include "PISMNC4_HDF5.hh"
 #endif
-
-#include "base/util/pism_memory.hh"
-using PISM_SHARED_PTR_NSPACE::shared_ptr;
 
 #include "base/util/error_handling.hh"
 

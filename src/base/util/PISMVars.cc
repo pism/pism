@@ -16,16 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <memory>
+using std::dynamic_pointer_cast;
+
 #include "PISMVars.hh"
 #include "VariableMetadata.hh"
 #include "iceModelVec.hh"
 #include "IceModelVec2CellType.hh"
-
-
 #include "error_handling.hh"
-
-#include "pism_memory.hh"
-using PISM_SHARED_PTR_NSPACE::dynamic_pointer_cast;
 
 namespace pism {
 

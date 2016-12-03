@@ -19,11 +19,12 @@
 #ifndef _PISMNCWRAPPER_H_
 #define _PISMNCWRAPPER_H_
 
-#include <mpi.h>
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "base/util/pism_memory.hh"
+#include <mpi.h>
+
 #include "IO_Flags.hh"
 
 namespace pism {
@@ -55,7 +56,7 @@ namespace io {
 class NCFile
 {
 public:
-  typedef PISM_SHARED_PTR(NCFile) Ptr;
+  typedef std::shared_ptr<NCFile> Ptr;
 
   NCFile(MPI_Comm com);
   virtual ~NCFile();

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,8 @@
 #ifndef _ICEMODELVEC3CUSTOM_H_
 #define _ICEMODELVEC3CUSTOM_H_
 
-#include "pism_memory.hh"
+#include <memory>
+
 #include "iceModelVec.hh"
 
 namespace pism {
@@ -40,8 +41,8 @@ public:
   IceModelVec3Custom();
   virtual ~IceModelVec3Custom();
 
-  typedef PISM_SHARED_PTR(IceModelVec3Custom) Ptr;
-  typedef PISM_SHARED_PTR(const IceModelVec3Custom) ConstPtr;
+  typedef std::shared_ptr<IceModelVec3Custom> Ptr;
+  typedef std::shared_ptr<const IceModelVec3Custom> ConstPtr;
 
   virtual void create(IceGrid::ConstPtr mygrid,
                       const std::string &short_name,

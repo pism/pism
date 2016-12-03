@@ -19,12 +19,12 @@
 #ifndef _PCFACTORY_H_
 #define _PCFACTORY_H_
 
+#include <memory>
 #include <map>
 
 #include "base/util/IceGrid.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
-#include "base/util/pism_memory.hh"
 #include "base/util/pism_options.hh"
 
 namespace pism {
@@ -69,8 +69,8 @@ public:
     }
   };
 
-  typedef PISM_SHARED_PTR(ModelCreator) ModelCreatorPtr;
-  typedef PISM_SHARED_PTR(ModifierCreator) ModifierCreatorPtr;
+  typedef std::shared_ptr<ModelCreator> ModelCreatorPtr;
+  typedef std::shared_ptr<ModifierCreator> ModifierCreatorPtr;
 
   PCFactory<Model,Modifier>(IceGrid::ConstPtr g)
   : m_grid(g) {}

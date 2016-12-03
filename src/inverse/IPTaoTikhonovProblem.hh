@@ -16,13 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 #ifndef IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 #define IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 
+#include <memory>
 #include <cassert>
 
-#include "base/util/pism_memory.hh"
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
 #include "base/util/PISMConfigInterface.hh"
@@ -47,7 +46,7 @@ template<class ForwardProblem> class IPTaoTikhonovProblem;
  */
 template<class ForwardProblem> class IPTaoTikhonovProblemListener {
 public:
-  typedef PISM_SHARED_PTR(IPTaoTikhonovProblemListener) Ptr;
+  typedef std::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
 
 
   typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;
