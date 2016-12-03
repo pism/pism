@@ -1,13 +1,14 @@
-cmake_minimum_required (VERSION 2.8.8) # 2.8.8 was released on April 19, 2012
+cmake_minimum_required (VERSION 3.0)
 project (Pism C CXX)
 
-if (NOT ${CMAKE_VERSION} VERSION_LESS 3.0.0)
-  message(STATUS "CMAKE_VERSION >= 3.0.0. Setting policy 0026 behavior to 'old'...")
-  # This has to do with the way we compute dependencies of PISM's
-  # Python bindings. Enabling the "old" behavior allows us to support
-  # both old and new (>= 3.0) CMake versions.
-  cmake_policy(SET CMP0026 OLD)
-endif()
+# Require C++11 compiler support.
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# This has to do with the way we compute dependencies of PISM's Python
+# bindings. Enabling the "old" behavior allows us to support both old
+# and new (>= 3.0) CMake versions.
+cmake_policy(SET CMP0026 OLD)
 
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
@@ -49,21 +50,6 @@ option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try tu
 option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
-option (Pism_USE_TR1 "If 'ON', #include <tr1/memory>, otherwise #include <memory>." OFF)
-option (Pism_CXX11 "Set compilers to C++11 mode.  Required to build IceBin." OFF)
-
-if (Pism_CXX11)
-  set(CMAKE_CXX_STANDARD 11)
-  add_definitions (-DPISM_CXX11=1)
-
-  # Old CMake versions don't know about C++ standards.
-  if (${CMAKE_VERSION} VERSION_LESS 3.0.0)
-    if (NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
-      message (STATUS "Adding -std=c++11 to C++ compiler flags.")
-      set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
-    endif()
-  endif()
-endif()
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 pism_use_rpath()
@@ -135,17 +121,6 @@ if (Pism_GPROF_FLAGS)
   set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
   set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
 endif ()
-
-# Check if the C++ compiler has shared_ptr in std.
-pism_check_shared_ptr()
-if (Pism_USE_TR1)
-  message(STATUS "Using '#include <tr1/memory> and std::tr1::shared_ptr<...>.")
-  message(STATUS "Adding -DPISM_USE_TR1=1 to compiler flags.")
-  add_definitions (-DPISM_USE_TR1=1)
-else()
-  message(STATUS "Using '#include <memory> and std::shared_ptr<...>.")
-endif()
-mark_as_advanced (Pism_USE_TR1)
 
 if (Pism_USE_JANSSON)
   add_definitions (-DPISM_USE_JANSSON=1)

@@ -918,13 +918,11 @@ AccessList::~AccessList() {
   }
 }
 
-#ifdef PISM_CXX11
 AccessList::AccessList(std::initializer_list<const PetscAccessible *> vecs) {
   for (auto j : vecs) {
     add(*j);
   }
 }
-#endif
 
 AccessList::AccessList(const PetscAccessible &vec) {
   add(vec);

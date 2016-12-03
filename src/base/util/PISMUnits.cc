@@ -53,7 +53,7 @@ System::System(const std::string &path) {
   }
   ut_set_error_message_handler(ut_write_to_stderr);
 
-  m_system = PISM_SHARED_PTR(ut_system)(tmp, ut_system_deleter());
+  m_system = std::shared_ptr<ut_system>(tmp, ut_system_deleter());
 }
 
 //! \brief Convert a quantity from unit1 to unit2.

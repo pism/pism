@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -76,8 +76,8 @@ public:
                 units::System::Ptr unit_system);
   ~DefaultConfig();
 
-  typedef PISM_SHARED_PTR(DefaultConfig) Ptr;
-  typedef PISM_SHARED_PTR(const DefaultConfig) ConstPtr;
+  typedef std::shared_ptr<DefaultConfig> Ptr;
+  typedef std::shared_ptr<const DefaultConfig> ConstPtr;
 
   //! Initialize (use default path if no option was set).
   void init_with_default(const Logger &log);

@@ -103,7 +103,7 @@ void IceModel::model_state_setup() {
 
   const bool use_input_file = input.type == INIT_BOOTSTRAP or input.type == INIT_RESTART;
 
-  PISM_SHARED_PTR(PIO) input_file;
+  std::shared_ptr<PIO> input_file;
 
   if (use_input_file) {
     input_file.reset(new PIO(m_grid->com, "guess_mode", input.filename, PISM_READONLY));
