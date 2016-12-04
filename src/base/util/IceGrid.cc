@@ -733,6 +733,12 @@ void IceGrid::compute_point_neighbors(double X, double Y,
   }
 }
 
+std::vector<int> IceGrid::compute_point_neighbors(double X, double Y) const {
+  int i_left, i_right, j_bottom, j_top;
+  this->compute_point_neighbors(X, Y, i_left, i_right, j_bottom, j_top);
+  return {i_left, i_right, j_bottom, j_top};
+}
+
 //! \brief Compute 4 interpolation weights necessary for linear interpolation
 //! from the current grid. See compute_point_neighbors for the ordering of
 //! neighbors.
@@ -753,13 +759,10 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
     beta  = (Y - m_impl->y[j_bottom]) / (m_impl->y[j_top] - m_impl->y[j_bottom]);
   }
 
-  std::vector<double> result(4);
-  result[0] = alpha * beta;
-  result[1] = (1 - alpha) * beta;
-  result[2] = (1 - alpha) * (1 - beta);
-  result[3] = alpha * (1 - beta);
-
-  return result;
+  return {alpha * beta,
+      (1 - alpha) * beta,
+      (1 - alpha) * (1 - beta),
+      alpha * (1 - beta)};
 }
 
 // Computes the hash corresponding to the DM with given dof and stencil_width.

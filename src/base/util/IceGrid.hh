@@ -233,6 +233,7 @@ public:
   void compute_point_neighbors(double X, double Y,
                                int &i_left, int &i_right,
                                int &j_bottom, int &j_top) const;
+  std::vector<int> compute_point_neighbors(double X, double Y) const;
   std::vector<double> compute_interp_weights(double x, double y) const;
 
   unsigned int kBelowHeight(double height) const;
