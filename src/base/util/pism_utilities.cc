@@ -52,7 +52,7 @@ bool ends_with(const std::string &str, const std::string &suffix) {
 
 template <class T>
 std::string join_impl(const T& input, const std::string& separator) {
-  typename T::const_iterator j = input.begin();
+  auto j = input.begin();
   std::string result = *j;
   ++j;
   while (j != input.end()) {

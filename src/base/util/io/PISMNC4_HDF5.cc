@@ -674,9 +674,8 @@ int NC4_HDF5::def_var_impl(const std::string &name, IO_Type xtype, const std::ve
 
   std::vector<hsize_t> extent, max_extent, chunk;
 
-  std::vector<std::string>::const_iterator j;
-  for (j = dims.begin(); j != dims.end(); ++j) {
-    hid_t dim_id = H5Dopen(m_hdf5_file_id, j->c_str(), H5P_DEFAULT);
+  for (auto d : dims) {
+    hid_t dim_id = H5Dopen(m_hdf5_file_id, d.c_str(), H5P_DEFAULT);
     hid_t ds_id = H5Dget_space(dim_id);
 
     int variable_rank = H5Sget_simple_extent_ndims(ds_id);
@@ -689,12 +688,12 @@ int NC4_HDF5::def_var_impl(const std::string &name, IO_Type xtype, const std::ve
     extent.push_back(dim_extent);
     max_extent.push_back(dim_maxextent);
 
-    if (*j == "x") {
+    if (d == "x") {
       int max_xm = 0;
       assert(m_xm > 0);
       MPI_Allreduce(&m_xm, &max_xm, 1, MPI_INT, MPI_MAX, m_com);
       chunk.push_back(max_xm);
-    } else if (*j == "y") {
+    } else if (d == "y") {
       int max_ym = 0;
       assert(m_ym > 0);
       MPI_Allreduce(&m_ym, &max_ym, 1, MPI_INT, MPI_MAX, m_com);

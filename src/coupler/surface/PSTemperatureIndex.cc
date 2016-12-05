@@ -572,7 +572,7 @@ PDD_saccum::PDD_saccum(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "saccum"));
+  m_vars = {SpatialVariableMetadata(m_sys, "saccum")};
 
   set_attrs("instantaneous surface accumulation rate (precipitation minus rain)", "",
             "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -593,7 +593,7 @@ PDD_smelt::PDD_smelt(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "smelt"));
+  m_vars = {SpatialVariableMetadata(m_sys, "smelt")};
 
   set_attrs("instantaneous surface melt rate", "",
             "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -614,7 +614,7 @@ PDD_srunoff::PDD_srunoff(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "srunoff"));
+  m_vars = {SpatialVariableMetadata(m_sys, "srunoff")};
 
   set_attrs("instantaneous surface meltwater runoff rate", "",
             "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -635,7 +635,7 @@ PDD_snow_depth::PDD_snow_depth(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "snow_depth"));
+  m_vars = {SpatialVariableMetadata(m_sys, "snow_depth")};
 
   set_attrs("snow cover depth (set to zero once a year)", "",
             "m", "m", 0);
@@ -656,7 +656,7 @@ PDD_air_temp_sd::PDD_air_temp_sd(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "air_temp_sd"));
+  m_vars = {SpatialVariableMetadata(m_sys, "air_temp_sd")};
 
   set_attrs("standard deviation of near-surface air temperature", "",
             "Kelvin", "Kelvin", 0);
@@ -677,7 +677,7 @@ PDD_saccum_average::PDD_saccum_average(const TemperatureIndex *m)
   : Diag_average<TemperatureIndex>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "saccum_average"));
+  m_vars = {SpatialVariableMetadata(m_sys, "saccum_average")};
 
   set_attrs("surface accumulation averaged over reporting intervals", "",
             "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -694,7 +694,7 @@ PDD_smelt_average::PDD_smelt_average(const TemperatureIndex *m)
   : Diag_average<TemperatureIndex>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "smelt_average"));
+  m_vars = {SpatialVariableMetadata(m_sys, "smelt_average")};
 
   set_attrs("surface melt averaged over reporting intervals", "",
             "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -711,7 +711,7 @@ PDD_srunoff_average::PDD_srunoff_average(const TemperatureIndex *m)
   : Diag_average<TemperatureIndex>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "srunoff_average"));
+  m_vars = {SpatialVariableMetadata(m_sys, "srunoff_average")};
 
   set_attrs("surface runoff averaged over reporting intervals", "",
             "kg m-2 s-1", "kg m-2 year-1", 0);

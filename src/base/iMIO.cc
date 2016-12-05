@@ -134,20 +134,19 @@ void IceModel::write_diagnostics(const PIO &nc, const std::set<std::string> &var
 
   // Define all the variables:
   {
-    std::set<std::string>::iterator i;
-    for (i = vars.begin(); i != vars.end(); ++i) {
+    for (auto var : vars) {
 
-      if (m_grid->variables().is_available(*i)) {
-        const IceModelVec *v = m_grid->variables().get(*i);
+      if (m_grid->variables().is_available(var)) {
+        const IceModelVec *v = m_grid->variables().get(var);
         // It has dedicated storage.
-        if (*i == "mask") {
+        if (var == "mask") {
           v->define(nc, PISM_BYTE); // use the default data type
         } else {
           v->define(nc, nctype);
         }
       } else {
         // It might be a diagnostic quantity
-        Diagnostic::Ptr diag = m_diagnostics[*i];
+        Diagnostic::Ptr diag = m_diagnostics[var];
 
         if (diag) {
           diag->define(nc);
@@ -158,47 +157,27 @@ void IceModel::write_diagnostics(const PIO &nc, const std::set<std::string> &var
   // Write all the IceModel variables:
 
   // Make a copy to avoid modifying the container we're iterating over.
-  std::set<std::string> vars_copy = vars;
-  std::set<std::string>::iterator i;
-  for (i = vars.begin(); i != vars.end(); ++i) {
-    if (m_grid->variables().is_available(*i)) {
-      m_grid->variables().get(*i)->write(nc);
+  auto vars_copy = vars;
+  for (auto var : vars) {
+    if (m_grid->variables().is_available(var)) {
+      m_grid->variables().get(var)->write(nc);
 
       // note that it only erases variables that were found (and
       // saved)
-      vars_copy.erase(*i);
-    }
-  }
-  vars = vars_copy;
-
-  // All the remaining names in vars must be of diagnostic quantities.
-  for (i = vars.begin(); i != vars.end();) {
-    Diagnostic::Ptr diag = m_diagnostics[*i];
-
-    if (not diag) {
-      ++i;
+      vars_copy.erase(var);
     } else {
-      IceModelVec::Ptr v_diagnostic = diag->compute();
+      Diagnostic::Ptr diag = m_diagnostics[var];
 
-      v_diagnostic->write_in_glaciological_units = true;
-      v_diagnostic->write(nc);
+      if (diag) {
+        IceModelVec::Ptr v_diagnostic = diag->compute();
 
-      vars.erase(i++);
+        v_diagnostic->write_in_glaciological_units = true;
+        v_diagnostic->write(nc);
+        vars_copy.erase(var);
+      }
     }
   }
-
-  // FIXME: we need a way of figuring out if a sub-model did or did not write
-  // something.
-
-  if (not vars.empty()) {
-    int threshold = 3;
-    m_log->message(threshold,
-               "PISM WARNING: the following variables were *not* written by PISM core (IceModel): ");
-    for (i = vars.begin(); i != vars.end(); ++i) {
-      m_log->message(threshold, "%s ", i->c_str());
-    }
-    m_log->message(threshold, "\n");
-  }
+  // FIXME: collect names of unknown diagnostics
 }
 
 void IceModel::write_model_state(const PIO &nc) {
@@ -219,21 +198,13 @@ void IceModel::write_model_state(const PIO &nc) {
 #endif
 
   // define
-  {
-    std::map<std::string, const Component*>::const_iterator j = m_submodels.begin();
-    while (j != m_submodels.end()) {
-      j->second->define_model_state(nc);
-      ++j;
-    }
+  for (auto m : m_submodels) {
+    m.second->define_model_state(nc);
   }
 
   // write
-  {
-    std::map<std::string, const Component*>::const_iterator j = m_submodels.begin();
-    while (j != m_submodels.end()) {
-      j->second->write_model_state(nc);
-      ++j;
-    }
+  for (auto m : m_submodels) {
+    m.second->write_model_state(nc);
   }
 
   write_diagnostics(nc, m_output_vars, PISM_DOUBLE);
@@ -290,15 +261,14 @@ void IceModel::regrid(int dimensions) {
 void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::string> &vars,
                                 unsigned int ndims) {
 
-  std::set<std::string>::iterator i;
-  for (i = vars.begin(); i != vars.end(); ++i) {
+  for (auto var : vars) {
 
-    if (not m_grid->variables().is_available(*i)) {
+    if (not m_grid->variables().is_available(var)) {
       continue;
     }
 
     // FIXME: remove const_cast. This is bad.
-    IceModelVec *v = const_cast<IceModelVec*>(m_grid->variables().get(*i));
+    IceModelVec *v = const_cast<IceModelVec*>(m_grid->variables().get(var));
     SpatialVariableMetadata &m = v->metadata();
 
     if (v->get_ndims() != ndims) {
@@ -308,7 +278,7 @@ void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::stri
     std::string pism_intent = m.get_string("pism_intent");
     if (pism_intent != "model_state") {
       m_log->message(2, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
-                 i->c_str());
+                     var.c_str());
       continue;
     }
 

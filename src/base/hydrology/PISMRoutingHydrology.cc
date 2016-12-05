@@ -810,8 +810,8 @@ Routing_bwatvel::Routing_bwatvel(const Routing *m)
 
   // set metadata:
   m_dof = 2;
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "bwatvel[0]"));
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "bwatvel[1]"));
+  m_vars = {SpatialVariableMetadata(m_sys, "bwatvel[0]"),
+            SpatialVariableMetadata(m_sys, "bwatvel[1]")};
 
   set_attrs("velocity of water in subglacial layer, i-offset", "",
             "m s-1", "m year-1", 0);

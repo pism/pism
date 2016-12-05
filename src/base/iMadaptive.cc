@@ -105,9 +105,8 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
   // get time-stepping restrictions from sub-models
   std::vector<MaxTimestep> restrictions;
   {
-    std::map<std::string, const Component*>::const_iterator k = m_submodels.begin();
-    for (; k != m_submodels.end(); ++k) {
-      const Component_TS* m = dynamic_cast<const Component_TS*>(k->second);
+    for (auto s : m_submodels) {
+      const Component_TS* m = dynamic_cast<const Component_TS*>(s.second);
       if (m != NULL) {
         restrictions.push_back(m->max_timestep(current_time));
       }

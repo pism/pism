@@ -91,10 +91,8 @@ void IceModel::init_timeseries() {
     m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
     m_ts_vars = vars;
   } else {
-    std::map<std::string,TSDiagnostic::Ptr>::iterator j = m_ts_diagnostics.begin();
-    while (j != m_ts_diagnostics.end()) {
-      m_ts_vars.insert(j->first);
-      ++j;
+    for (auto d : m_ts_diagnostics) {
+      m_ts_vars.insert(d.first);
     }
   }
 
@@ -129,10 +127,8 @@ void IceModel::init_timeseries() {
 
 
   // set the output file:
-  std::map<std::string,TSDiagnostic::Ptr>::iterator j = m_ts_diagnostics.begin();
-  while (j != m_ts_diagnostics.end()) {
-    (j->second)->init(ts_file);
-    ++j;
+  for (auto d : m_ts_diagnostics) {
+    d.second->init(ts_file);
   }
 
   // ignore times before (and including) the beginning of the run:
@@ -173,8 +169,8 @@ void IceModel::write_timeseries() {
     return;
   }
 
-  for (std::set<std::string>::iterator j = m_ts_vars.begin(); j != m_ts_vars.end(); ++j) {
-    TSDiagnostic::Ptr diag = m_ts_diagnostics[*j];
+  for (auto d : m_ts_vars) {
+    TSDiagnostic::Ptr diag = m_ts_diagnostics[d];
 
     if (diag) {
       diag->update(m_time->current() - m_dt, m_time->current());
@@ -191,8 +187,8 @@ void IceModel::write_timeseries() {
       continue;
     }
 
-    for (std::set<std::string>::iterator j = m_ts_vars.begin(); j != m_ts_vars.end(); ++j) {
-      TSDiagnostic::Ptr diag = m_ts_diagnostics[*j];
+    for (auto d : m_ts_vars) {
+      TSDiagnostic::Ptr diag = m_ts_diagnostics[d];
 
       if (diag) {
         diag->save(m_ts_times[m_current_ts - 1], m_ts_times[m_current_ts]);
@@ -351,14 +347,12 @@ void IceModel::write_extras() {
     // store cumulative quantities that may be needed to compute rates of
     // change.
 
-    std::set<std::string>::iterator j = m_extra_vars.begin();
-    while(j != m_extra_vars.end()) {
-      Diagnostic::Ptr diag = m_diagnostics[*j];
+    for (auto v : m_extra_vars) {
+      Diagnostic::Ptr diag = m_diagnostics[v];
 
       if (diag) {
         diag->update_cumulative();
       }
-      ++j;
     }
 
     // This line re-initializes last_extra (the correct value is not known at
@@ -534,8 +528,8 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
 //! Flush scalar time-series.
 void IceModel::flush_timeseries() {
   // flush all the time-series buffers:
-  for (std::set<std::string>::iterator j = m_ts_vars.begin(); j != m_ts_vars.end(); ++j) {
-    TSDiagnostic::Ptr diag = m_ts_diagnostics[*j];
+  for (auto d : m_ts_vars) {
+    TSDiagnostic::Ptr diag = m_ts_diagnostics[d];
 
     if (diag) {
       diag->flush();

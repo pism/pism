@@ -93,23 +93,16 @@ std::string Config::filename() const {
 }
 
 void Config::import_from(const Config &other) {
-  Doubles doubles = other.all_doubles();
-  Strings strings = other.all_strings();
-  Booleans booleans = other.all_booleans();
-
-  Doubles::const_iterator i;
-  for (i = doubles.begin(); i != doubles.end(); ++i) {
-    this->set_double(i->first, i->second, USER);
+  for (auto d : other.all_doubles()) {
+    this->set_double(d.first, d.second, USER);
   }
 
-  Strings::const_iterator j;
-  for (j = strings.begin(); j != strings.end(); ++j) {
-    this->set_string(j->first, j->second, USER);
+  for (auto s : other.all_strings()) {
+    this->set_string(s.first, s.second, USER);
   }
 
-  Booleans::const_iterator k;
-  for (k = booleans.begin(); k != booleans.end(); ++k) {
-    this->set_boolean(k->first, k->second, USER);
+  for (auto b : other.all_booleans()) {
+    this->set_boolean(b.first, b.second, USER);
   }
 }
 
@@ -241,21 +234,20 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
              "###\n");
 
   Config::Strings strings = config.all_strings();
-  Config::Strings::const_iterator s;
 
   // find max. name size
   size_t max_name_size = 0;
-  for (s = strings.begin(); s != strings.end(); ++s) {
-    if (special_parameter(s->first)) {
+  for (auto s : strings) {
+    if (special_parameter(s.first)) {
       continue;
     }
-    max_name_size = std::max(max_name_size, s->first.size());
+    max_name_size = std::max(max_name_size, s.first.size());
   }
 
   // print strings
-  for (s = strings.begin(); s != strings.end(); ++s) {
-    std::string name  = s->first;
-    std::string value = s->second;
+  for (auto s : strings) {
+    std::string name  = s.first;
+    std::string value = s.second;
 
     if (value.empty() or special_parameter(name)) {
       continue;
@@ -276,18 +268,16 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
              "### Doubles:\n"
              "###\n");
 
-  Config::Doubles doubles = config.all_doubles();
-  Config::Doubles::const_iterator d;
-
   // find max. name size
   max_name_size = 0;
-  for (d = doubles.begin(); d != doubles.end(); ++d) {
-    max_name_size = std::max(max_name_size, d->first.size());
+  for (auto d : config.all_doubles()) {
+    max_name_size = std::max(max_name_size, d.first.size());
   }
   // print doubles
-  for (d = doubles.begin(); d != doubles.end(); ++d) {
-    std::string name  = d->first;
-    double value = d->second;
+  for (auto d : config.all_doubles()) {
+    std::string name  = d.first;
+    double      value = d.second;
+
     std::string units = strings[name + "_units"]; // will be empty if not set
     std::string padding(max_name_size - name.size(), ' ');
 
@@ -303,18 +293,16 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
              "### Booleans:\n"
              "###\n");
 
-  Config::Booleans booleans = config.all_booleans();
-  Config::Booleans::const_iterator b;
-
   // find max. name size
   max_name_size = 0;
-  for (b = booleans.begin(); b != booleans.end(); ++b) {
-    max_name_size = std::max(max_name_size, b->first.size());
+  for (auto b : config.all_booleans()) {
+    max_name_size = std::max(max_name_size, b.first.size());
   }
+
   // print booleans
-  for (b = booleans.begin(); b != booleans.end(); ++b) {
-    std::string name  = b->first;
-    std::string value = b->second ? "true" : "false";
+  for (auto b : config.all_booleans()) {
+    std::string name  = b.first;
+    std::string value = b.second ? "true" : "false";
     std::string padding(max_name_size - name.size(), ' ');
 
     log.message(v, "  %s%s = %s\n", name.c_str(), padding.c_str(), value.c_str());
@@ -334,17 +322,16 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
     verbosity_threshhold = log.get_threshold();
   }
 
-  std::set<std::string>::const_iterator k;
-  for (k = parameters_set.begin(); k != parameters_set.end(); ++k) {
+  for (auto p : parameters_set) {
 
-    if (ends_with(*k, "_doc")) {
+    if (ends_with(p, "_doc")) {
       continue;
     }
 
-    if (parameters_used.find(*k) == parameters_used.end()) {
+    if (parameters_used.find(p) == parameters_used.end()) {
       log.message(verbosity_threshhold,
                   "PISM WARNING: flag or parameter \"%s\" was set but was not used!\n",
-                  k->c_str());
+                  p.c_str());
 
     }
   }
@@ -483,23 +470,16 @@ void set_parameter_from_options(Config &config, const std::string &name) {
 }
 
 void set_config_from_options(Config &config) {
-
-  Config::Doubles doubles = config.all_doubles();
-  Config::Doubles::const_iterator i = doubles.begin();
-  for (; i != doubles.end(); ++i) {
-    set_parameter_from_options(config, i->first);
+  for (auto d : config.all_doubles()) {
+    set_parameter_from_options(config, d.first);
   }
 
-  Config::Strings strings = config.all_strings();
-  Config::Strings::const_iterator j = strings.begin();
-  for (; j != strings.end(); ++j) {
-    set_parameter_from_options(config, j->first);
+  for (auto s : config.all_strings()) {
+    set_parameter_from_options(config, s.first);
   }
 
-  Config::Booleans booleans = config.all_booleans();
-  Config::Booleans::const_iterator k = booleans.begin();
-  for (; k != booleans.end(); ++k) {
-    set_parameter_from_options(config, k->first);
+  for (auto b : config.all_booleans()) {
+    set_parameter_from_options(config, b.first);
   }
 
   // Energy modeling

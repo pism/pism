@@ -294,9 +294,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
                   "         Using 2 levels and Lz of %3.3fm\n",
                   var_name.c_str(), file.inq_filename().c_str(), Lz);
 
-      p.z.clear();
-      p.z.push_back(0);
-      p.z.push_back(Lz);
+      p.z = {0.0, Lz};
     }
 
     // override periodicity
@@ -733,6 +731,12 @@ void IceGrid::compute_point_neighbors(double X, double Y,
   }
 }
 
+std::vector<int> IceGrid::compute_point_neighbors(double X, double Y) const {
+  int i_left, i_right, j_bottom, j_top;
+  this->compute_point_neighbors(X, Y, i_left, i_right, j_bottom, j_top);
+  return {i_left, i_right, j_bottom, j_top};
+}
+
 //! \brief Compute 4 interpolation weights necessary for linear interpolation
 //! from the current grid. See compute_point_neighbors for the ordering of
 //! neighbors.
@@ -753,13 +757,10 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
     beta  = (Y - m_impl->y[j_bottom]) / (m_impl->y[j_top] - m_impl->y[j_bottom]);
   }
 
-  std::vector<double> result(4);
-  result[0] = alpha * beta;
-  result[1] = (1 - alpha) * beta;
-  result[2] = (1 - alpha) * (1 - beta);
-  result[3] = alpha * (1 - beta);
-
-  return result;
+  return {alpha * beta,
+      (1 - alpha) * beta,
+      (1 - alpha) * (1 - beta),
+      alpha * (1 - beta)};
 }
 
 // Computes the hash corresponding to the DM with given dof and stencil_width.
@@ -1316,39 +1317,32 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
     options::ignored(*log, "-z_spacing");
 
     // get grid from a PISM input file
-    std::vector<std::string> names;
-    names.push_back("enthalpy");
-    names.push_back("temp");
-
-    return IceGrid::FromFile(ctx, input_file, names, p);
+    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, p);
   } else if (input_file.is_set() and bootstrap) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
     GridParameters input_grid(ctx->config());
 
-    std::vector<std::string> names;
-    names.push_back("land_ice_thickness");
-    names.push_back("bedrock_altitude");
-    names.push_back("thk");
-    names.push_back("topg");
+    std::vector<std::string> names = {"land_ice_thickness", "bedrock_altitude",
+                                      "thk", "topg"};
     bool grid_info_found = false;
 
     PIO nc(ctx->com(), "netcdf3", input_file, PISM_READONLY);
 
-    for (unsigned int i = 0; i < names.size(); ++i) {
+    for (auto name : names) {
 
-      grid_info_found = nc.inq_var(names[i]);
+      grid_info_found = nc.inq_var(name);
       if (not grid_info_found) {
-        // Failed to find using a short name. Try using names[i] as a
+        // Failed to find using a short name. Try using name as a
         // standard name...
         std::string dummy1;
         bool dummy2;
-        nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
+        nc.inq_var("dummy", name, grid_info_found, dummy1, dummy2);
       }
 
       if (grid_info_found) {
-        input_grid = GridParameters(ctx, nc, names[i], p);
+        input_grid = GridParameters(ctx, nc, name, p);
         break;
       }
     }

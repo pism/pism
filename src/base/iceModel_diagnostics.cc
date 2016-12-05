@@ -139,10 +139,8 @@ void IceModel::init_diagnostics() {
   m_ts_diagnostics["sum_divQ_flux"]                      = TSDiagnostic::Ptr(new IceModel_sum_divQ_flux(this));
 
   // get diagnostics from submodels
-  std::map<std::string, const Component*>::const_iterator j = m_submodels.begin();
-  while (j != m_submodels.end()) {
-    j->second->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-    ++j;
+  for (auto m : m_submodels) {
+    m.second->get_diagnostics(m_diagnostics, m_ts_diagnostics);
   }
 }
 
@@ -160,12 +158,11 @@ void IceModel::list_diagnostics() {
                      "======== Available %dD quantities with dedicated storage ========\n",
                      d);
 
-      std::set<std::string>::iterator j;
-      for (j = list.begin(); j != list.end(); ++j) {
+      for (auto s : list) {
         const IceModelVec *v = NULL;
 
-        if (m_grid->variables().is_available(*j)) {
-          v = m_grid->variables().get(*j);
+        if (m_grid->variables().is_available(s)) {
+          v = m_grid->variables().get(s);
         }
 
         if (v != NULL && v->get_ndims() == d) {
@@ -197,12 +194,11 @@ void IceModel::list_diagnostics() {
                    "======== Available %dD diagnostic quantities ========\n",
                    d);
 
-    std::map<std::string, Diagnostic::Ptr>::iterator j = m_diagnostics.begin();
-    while (j != m_diagnostics.end()) {
-      Diagnostic::Ptr diag = j->second;
+    for (auto f : m_diagnostics) {
+      Diagnostic::Ptr diag = f.second;
 
       std::string
-        name                = j->first,
+        name                = f.first,
         units               = diag->get_metadata().get_string("units"),
         glaciological_units = diag->get_metadata().get_string("glaciological_units");
 
@@ -224,21 +220,19 @@ void IceModel::list_diagnostics() {
 
         m_log->message(1, "\n");
       }
-
-      ++j;
-    }
+    } // end of the loop over diagnostics
   }
 
   // scalar time-series
   m_log->message(1, "======== Available time-series ========\n");
 
-  std::map<std::string, TSDiagnostic::Ptr>::iterator j = m_ts_diagnostics.begin();
-  while (j != m_ts_diagnostics.end()) {
-    TSDiagnostic::Ptr diag = j->second;
+  for (auto d : m_ts_diagnostics) {
+    TSDiagnostic::Ptr diag = d.second;
 
-    std::string name = j->first,
-      long_name = diag->get_string("long_name"),
-      units = diag->get_string("units"),
+    std::string
+      name                = d.first,
+      long_name           = diag->get_string("long_name"),
+      units               = diag->get_string("units"),
       glaciological_units = diag->get_string("glaciological_units");
 
     if (not glaciological_units.empty()) {
@@ -249,8 +243,6 @@ void IceModel::list_diagnostics() {
                    "   Name: %s [%s]\n"
                    "      -  %s\n\n",
                    name.c_str(), units.c_str(), long_name.c_str());
-
-    ++j;
   }
 }
 
@@ -259,7 +251,7 @@ IceModel_hardav::IceModel_hardav(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "hardav"));
+  m_vars = {SpatialVariableMetadata(m_sys, "hardav")};
 
   // choice to use SSA power; see #285
   const double power = 1.0 / m_config->get_double("stress_balance.ssa.Glen_exponent");
@@ -326,7 +318,7 @@ IceModel_rank::IceModel_rank(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "rank"));
+  m_vars = {SpatialVariableMetadata(m_sys, "rank")};
 
   set_attrs("processor rank", "", "1", "", 0);
   m_vars[0].set_time_independent(true);
@@ -353,7 +345,7 @@ IceModel_cts::IceModel_cts(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "cts", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "cts", m_grid->z())};
 
   set_attrs("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1", "",
             "", "", 0);
@@ -374,7 +366,7 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "proc_ice_area"));
+  m_vars = {SpatialVariableMetadata(m_sys, "proc_ice_area")};
 
   set_attrs("number of cells containing ice in a processor's domain", "",
             "", "", 0);
@@ -413,7 +405,7 @@ IceModel_temp::IceModel_temp(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "temp", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "temp", m_grid->z())};
 
   set_attrs("ice temperature", "land_ice_temperature", "K", "K", 0);
   m_vars[0].set_double("valid_min", 0);
@@ -466,7 +458,7 @@ IceModel_temp_pa::IceModel_temp_pa(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "temp_pa", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "temp_pa", m_grid->z())};
 
   set_attrs("pressure-adjusted ice temperature (degrees above pressure-melting point)", "",
             "deg_C", "deg_C", 0);
@@ -532,7 +524,7 @@ IceModel_temppabase::IceModel_temppabase(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "temppabase"));
+  m_vars = {SpatialVariableMetadata(m_sys, "temppabase")};
 
   set_attrs("pressure-adjusted ice temperature at the base of ice", "",
             "Celsius", "Celsius", 0);
@@ -591,7 +583,7 @@ IceModel_enthalpysurf::IceModel_enthalpysurf(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "enthalpysurf"));
+  m_vars = {SpatialVariableMetadata(m_sys, "enthalpysurf")};
 
   set_attrs("ice enthalpy at 1m below the ice surface", "",
             "J kg-1", "J kg-1", 0);
@@ -636,7 +628,7 @@ IceModel_enthalpybase::IceModel_enthalpybase(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "enthalpybase"));
+  m_vars = {SpatialVariableMetadata(m_sys, "enthalpybase")};
 
   set_attrs("ice enthalpy at the base of ice", "",
             "J kg-1", "J kg-1", 0);
@@ -661,7 +653,7 @@ IceModel_tempbase::IceModel_tempbase(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "tempbase"));
+  m_vars = {SpatialVariableMetadata(m_sys, "tempbase")};
 
   set_attrs("ice temperature at the base of ice", "",
             "K", "K", 0);
@@ -714,7 +706,7 @@ IceModel_tempsurf::IceModel_tempsurf(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "tempsurf"));
+  m_vars = {SpatialVariableMetadata(m_sys, "tempsurf")};
 
   set_attrs("ice temperature at 1m below the ice surface", "",
             "K", "K", 0);
@@ -764,8 +756,8 @@ IceModel_liqfrac::IceModel_liqfrac(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys,
-                                           "liqfrac", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys,
+                                           "liqfrac", m_grid->z())};
 
   set_attrs("liquid water fraction in ice (between 0 and 1)", "",
             "1", "1", 0);
@@ -796,8 +788,8 @@ IceModel_tempicethk::IceModel_tempicethk(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys,
-                                           "tempicethk"));
+  m_vars = {SpatialVariableMetadata(m_sys,
+                                           "tempicethk")};
 
   set_attrs("temperate ice thickness (total column content)", "",
             "m", "m", 0);
@@ -864,8 +856,8 @@ IceModel_tempicethk_basal::IceModel_tempicethk_basal(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys,
-                                           "tempicethk_basal"));
+  m_vars = {SpatialVariableMetadata(m_sys,
+                                           "tempicethk_basal")};
 
   set_attrs("thickness of the basal layer of temperate ice", "",
             "m", "m", 0);
@@ -971,7 +963,7 @@ IceModel_flux_divergence::IceModel_flux_divergence(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "flux_divergence"));
+  m_vars = {SpatialVariableMetadata(m_sys, "flux_divergence")};
 
   set_attrs("flux divergence", "", "m s-1", "m year-1", 0);
 }
@@ -992,8 +984,7 @@ IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumula
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys,
-                                           "climatic_mass_balance_cumulative"));
+  m_vars = {SpatialVariableMetadata(m_sys, "climatic_mass_balance_cumulative")};
 
   set_attrs("cumulative ice-equivalent climatic mass balance", "",
             "kg m-2", "kg m-2", 0);
@@ -1614,7 +1605,7 @@ IceModel_dHdt::IceModel_dHdt(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "dHdt"));
+  m_vars = {SpatialVariableMetadata(m_sys, "dHdt")};
 
   set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
             "m s-1", "m year-1", 0);
@@ -1870,8 +1861,7 @@ IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(const Ice
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys,
-                                           "nonneg_flux_cumulative"));
+  m_vars = {SpatialVariableMetadata(m_sys, "nonneg_flux_cumulative")};
 
   set_attrs("cumulative non-negative rule (thk >= 0) flux",
             "",                 // no standard name
@@ -1895,8 +1885,7 @@ IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumu
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys,
-                                           "grounded_basal_flux_cumulative"));
+  m_vars = {SpatialVariableMetadata(m_sys, "grounded_basal_flux_cumulative")};
 
   set_attrs("cumulative grounded basal flux",
             "",                 // no standard name
@@ -1920,7 +1909,7 @@ IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumu
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "floating_basal_flux_cumulative"));
+  m_vars = {SpatialVariableMetadata(m_sys, "floating_basal_flux_cumulative")};
 
   set_attrs("cumulative floating basal flux",
             "",                 // no standard name
@@ -1945,8 +1934,7 @@ IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(con
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys,
-                                           "discharge_flux_cumulative"));
+  m_vars = {SpatialVariableMetadata(m_sys, "discharge_flux_cumulative")};
 
   set_attrs("cumulative ice discharge (calving) flux",
             "",                 // no standard name
@@ -1970,7 +1958,7 @@ IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "discharge_flux"));
+  m_vars = {SpatialVariableMetadata(m_sys, "discharge_flux")};
 
   set_attrs("average ice discharge (calving) flux over reporting interval",
             "",                 // no standard name
@@ -2038,7 +2026,7 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(const IceModel *m,
     levels[k] = k;
   }
 
-  m_vars.push_back(SpatialVariableMetadata(m_sys, m_var_name + "_bnds", levels));
+  m_vars = {SpatialVariableMetadata(m_sys, m_var_name + "_bnds", levels)};
   m_vars[0].get_z().set_name("nv4");
   m_vars[0].get_z().clear_all_strings();
   m_vars[0].get_z().clear_all_doubles();
@@ -2091,7 +2079,7 @@ IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
 
 IceModel_land_ice_area_fraction::IceModel_land_ice_area_fraction(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_sys, land_ice_area_fraction_name));
+  m_vars = {SpatialVariableMetadata(m_sys, land_ice_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by ice (grounded or floating)",
             "",                 // no standard name
             "1", "1", 0);
@@ -2175,7 +2163,7 @@ IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
 
 IceModel_grounded_ice_sheet_area_fraction::IceModel_grounded_ice_sheet_area_fraction(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_sys, grounded_ice_sheet_area_fraction_name));
+  m_vars = {SpatialVariableMetadata(m_sys, grounded_ice_sheet_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by grounded ice",
             "",                 // no standard name
             "1", "1", 0);
@@ -2229,7 +2217,7 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
 
 IceModel_floating_ice_sheet_area_fraction::IceModel_floating_ice_sheet_area_fraction(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars.push_back(SpatialVariableMetadata(m_sys, floating_ice_sheet_area_fraction_name));
+  m_vars = {SpatialVariableMetadata(m_sys, floating_ice_sheet_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by floating ice",
             "",                 // no standard name
             "1", "1", 0);
@@ -2255,7 +2243,7 @@ IceModelVec::Ptr IceModel_floating_ice_sheet_area_fraction::compute_impl() {
 IceModel_surface_mass_balance_average::IceModel_surface_mass_balance_average(const IceModel *m)
   : Diag<IceModel>(m) {
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "surface_mass_balance_average"));
+  m_vars = {SpatialVariableMetadata(m_sys, "surface_mass_balance_average")};
 
   set_attrs("average surface mass flux over reporting interval",
             "",                 // no standard name
@@ -2312,7 +2300,7 @@ IceModelVec::Ptr IceModel_surface_mass_balance_average::compute_impl() {
 IceModel_basal_mass_balance_average::IceModel_basal_mass_balance_average(const IceModel *m)
   : Diag<IceModel>(m) {
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "basal_mass_balance_average"));
+  m_vars = {SpatialVariableMetadata(m_sys, "basal_mass_balance_average")};
 
   set_attrs("average basal mass flux over reporting interval",
             "",                 // no standard name
@@ -2374,8 +2362,7 @@ IceModel_height_above_flotation::IceModel_height_above_flotation(const IceModel 
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys,
-                                           "height_above_flotation"));
+  m_vars = {SpatialVariableMetadata(m_sys, "height_above_flotation")};
 
   set_attrs("the height above flotation", "",
             "m", "m", 0);
@@ -2436,7 +2423,7 @@ IceModel_ice_mass::IceModel_ice_mass(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "ice_mass"));
+  m_vars = {SpatialVariableMetadata(m_sys, "ice_mass")};
 
   set_attrs("mass per cell",
             "",                 // no standard name
@@ -2506,7 +2493,7 @@ IceModel_topg_sl_adjusted::IceModel_topg_sl_adjusted(const IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "topg_sl_adjusted"));
+  m_vars = {SpatialVariableMetadata(m_sys, "topg_sl_adjusted")};
 
   set_attrs("sea-level adjusted bed topography (zero is at sea level)", "",
             "meters", "meters", 0);
@@ -2529,7 +2516,7 @@ IceModel_hardness::IceModel_hardness(const IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "hardness", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "hardness", m_grid->z())};
 
   const double power = 1.0 / m_config->get_double("stress_balance.sia.Glen_exponent");
   char unitstr[TEMPORARY_STRING_LENGTH];
@@ -2589,8 +2576,7 @@ IceModel_viscosity::IceModel_viscosity(IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "effective_viscosity",
-                                           m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "effective_viscosity", m_grid->z())};
 
   set_attrs("effective viscosity of ice", "",
             "Pascal second", "kPascal second", 0);

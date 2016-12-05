@@ -101,9 +101,8 @@ void RuntimeError::print(MPI_Comm com) {
   padding = std::string(while_str.size() + 1, ' '); // 1 extra space
 
   // loop over "context" messages
-  std::vector<std::string>::const_iterator j = m_context.begin();
-  while (j != m_context.end()) {
-    message = *j;
+  for (auto j : m_context) {
+    message = j;
 
     // replace newlines with newlines plus padding
     k = message.find("\n", 0);
@@ -115,7 +114,6 @@ void RuntimeError::print(MPI_Comm com) {
     // print a "context" message
     ierr = PetscPrintf(com,
                        "%s%s\n", while_str.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
-    ++j;
   }
 
   if (m_location.filename != NULL) {

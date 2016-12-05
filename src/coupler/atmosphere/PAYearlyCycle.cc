@@ -164,7 +164,7 @@ PA_mean_july_temp::PA_mean_july_temp(const YearlyCycle *m)
   : Diag<YearlyCycle>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "air_temp_mean_july"));
+  m_vars = {SpatialVariableMetadata(m_sys, "air_temp_mean_july")};
 
   set_attrs("mean July near-surface air temperature used in the cosine yearly cycle", "",
             "Kelvin", "Kelvin", 0);

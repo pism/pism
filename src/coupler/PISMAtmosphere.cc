@@ -88,7 +88,7 @@ PA_air_temp_snapshot::PA_air_temp_snapshot(const AtmosphereModel *m)
   : Diag<AtmosphereModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "air_temp_snapshot"));
+  m_vars = {SpatialVariableMetadata(m_sys, "air_temp_snapshot")};
 
   set_attrs("instantaneous value of the near-surface air temperature",
             "",                 // no standard name
@@ -132,7 +132,7 @@ PA_air_temp::PA_air_temp(const AtmosphereModel *m)
   : Diag<AtmosphereModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "effective_air_temp"));
+  m_vars = {SpatialVariableMetadata(m_sys, "effective_air_temp")};
 
   set_attrs("effective mean-annual near-surface air temperature", "",
             "Kelvin", "Kelvin", 0);
@@ -153,7 +153,7 @@ PA_precipitation::PA_precipitation(const AtmosphereModel *m)
   : Diag<AtmosphereModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "effective_precipitation"));
+  m_vars = {SpatialVariableMetadata(m_sys, "effective_precipitation")};
 
   set_attrs("effective precipitation rate",
             "",                 // no standard name, as far as I know

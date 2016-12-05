@@ -95,53 +95,49 @@ void check_consistency_epsg(const MappingInfo &info) {
   } else {
     // Check if the "info.mapping" variable in the input file matches the EPSG code.
     // Check strings.
-    VariableMetadata::StringAttrs strings = epsg_mapping.get_all_strings();
-    VariableMetadata::StringAttrs::const_iterator j;
-    for (j = strings.begin(); j != strings.end(); ++j) {
-      if (not info.mapping.has_attribute(j->first)) {
+    for (auto s : epsg_mapping.get_all_strings()) {
+      if (not info.mapping.has_attribute(s.first)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "PROJ.4 string \"%s\" requires %s = \"%s\",\n"
                                       "but the mapping variable has no %s.",
                                       info.proj4.c_str(),
-                                      j->first.c_str(), j->second.c_str(),
-                                      j->first.c_str());
+                                      s.first.c_str(), s.second.c_str(),
+                                      s.first.c_str());
       }
 
-      std::string string = info.mapping.get_string(j->first);
+      std::string string = info.mapping.get_string(s.first);
 
-      if (not (string == j->second)) {
+      if (not (string == s.second)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = \"%s\",\n"
                                       "but the mapping variable has %s = \"%s\".",
                                       info.proj4.c_str(),
-                                      j->first.c_str(), j->second.c_str(),
-                                      j->first.c_str(),
+                                      s.first.c_str(), s.second.c_str(),
+                                      s.first.c_str(),
                                       string.c_str());
       }
     }
 
     // Check doubles
-    VariableMetadata::DoubleAttrs doubles = epsg_mapping.get_all_doubles();
-    VariableMetadata::DoubleAttrs::const_iterator k;
-    for (k = doubles.begin(); k != doubles.end(); ++k) {
-      if (not info.mapping.has_attribute(k->first)) {
+    for (auto d : epsg_mapping.get_all_doubles()) {
+      if (not info.mapping.has_attribute(d.first)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has no %s.",
                                       info.proj4.c_str(),
-                                      k->first.c_str(), k->second[0],
-                                      k->first.c_str());
+                                      d.first.c_str(), d.second[0],
+                                      d.first.c_str());
       }
 
-      double value = info.mapping.get_double(k->first);
+      double value = info.mapping.get_double(d.first);
 
-      if (fabs(value - k->second[0]) > 1e-12) {
+      if (fabs(value - d.second[0]) > 1e-12) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has %s = %f.",
                                       info.proj4.c_str(),
-                                      k->first.c_str(), k->second[0],
-                                      k->first.c_str(),
+                                      d.first.c_str(), d.second[0],
+                                      d.first.c_str(),
                                       value);
       }
     }

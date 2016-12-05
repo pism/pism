@@ -110,11 +110,11 @@ const std::string& StringList::operator[](size_t index) const {
 }
 
 std::string StringList::to_string() {
-  std::vector<std::string>::const_iterator j = m_value.begin();
+  auto j = m_value.begin();
   std::stringstream buffer;
   buffer << *j;
   ++j;
-  while(j != m_value.end()) {
+  while (j != m_value.end()) {
     buffer << "," << *j;
     ++j;
   }
@@ -135,7 +135,7 @@ StringSet::StringSet(const std::string& option,
 }
 
 std::string StringSet::to_string() {
-  std::set<std::string>::const_iterator j = m_value.begin();
+  auto j = m_value.begin();
   std::stringstream buffer;
   buffer << *j;
   ++j;
