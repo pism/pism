@@ -130,10 +130,9 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
     variables += "," + m_config->get_string("output.sizes.big");
   }
 
-  std::vector<std::string> list = split(variables, ',');
-  for (unsigned int k = 0; k < list.size(); ++k) {
-    if (not list[k].empty()) {
-      result.insert(list[k]);
+  for (auto name : split(variables, ',')) {
+    if (not name.empty()) {
+      result.insert(name);
     }
   }
 

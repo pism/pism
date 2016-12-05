@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <map>
+#include <numeric>
 #include <petscsys.h>
 #include <gsl/gsl_interp.h>
 
@@ -262,9 +263,9 @@ IceGrid::Ptr IceGrid::FromFile(Context::Ptr ctx,
 
   PIO file(ctx->com(), "netcdf3", filename, PISM_READONLY);
 
-  for (unsigned int k = 0; k < var_names.size(); ++k) {
-    if (file.inq_var(var_names[k])) {
-      return FromFile(ctx, file, var_names[k], periodicity);
+  for (auto name : var_names) {
+    if (file.inq_var(name)) {
+      return FromFile(ctx, file, name, periodicity);
     }
   }
 
@@ -1059,8 +1060,7 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
       }
     }
 
-    for (unsigned int i = 0; i < dims.size(); ++i) {
-      std::string dimname = dims[i];
+    for (auto dimname : dims) {
 
       AxisType dimtype = file.inq_dimtype(dimname, unit_system);
 
@@ -1274,21 +1274,11 @@ void GridParameters::validate() const {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "last z level is negative: %f", z.back());
   }
 
-  unsigned int sum = 0;
-  for (unsigned int k = 0; k < procs_x.size(); ++k) {
-    sum += procs_x[k];
-  }
-
-  if (sum != Mx) {
+  if (std::accumulate(procs_x.begin(), procs_x.end(), 0.0) != Mx) {
     throw RuntimeError(PISM_ERROR_LOCATION, "procs_x don't sum up to Mx");
   }
 
-  sum = 0;
-  for (unsigned int k = 0; k < procs_y.size(); ++k) {
-    sum += procs_y[k];
-  }
-
-  if (sum != My) {
+  if (std::accumulate(procs_y.begin(), procs_y.end(), 0.0) != My) {
     throw RuntimeError(PISM_ERROR_LOCATION, "procs_y don't sum up to My");
   }
 }
@@ -1360,15 +1350,18 @@ IceGrid::Ptr IceGrid::FromOptions(Context::Ptr ctx) {
 
     IceGrid::Ptr result(new IceGrid(ctx, input_grid));
 
+    units::System::Ptr sys = ctx->unit_system();
+    units::Converter km(sys, "m", "km");
+
     // report on resulting computational box
     log->message(2,
                  "  setting computational box for ice from '%s' and\n"
                  "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
                  input_file->c_str(),
-                 (result->x0() - result->Lx())/1000.0,
-                 (result->x0() + result->Lx())/1000.0,
-                 (result->y0() - result->Ly())/1000.0,
-                 (result->y0() + result->Ly())/1000.0,
+                 km(result->x0() - result->Lx()),
+                 km(result->x0() + result->Lx()),
+                 km(result->y0() - result->Ly()),
+                 km(result->y0() + result->Ly()),
                  result->Lz());
 
     return result;

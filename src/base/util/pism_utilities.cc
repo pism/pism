@@ -83,7 +83,7 @@ std::vector<std::string> split(const std::string &input, char separator) {
   return result;
 }
 
-//! Transform a `separator`-separated list (a string) into a vector of strings.
+//! Transform a `separator`-separated list (a string) into a set of strings.
 std::set<std::string> set_split(const std::string &input, char separator) {
   std::istringstream input_list(input);
   std::string token;
