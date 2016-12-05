@@ -26,6 +26,8 @@ using pism::StarStencil;
 %shared_ptr(pism::IceModelVec3D)
 %shared_ptr(pism::IceModelVec3)
 
+%ignore pism::AccessList::AccessList(std::initializer_list<const PetscAccessible *>);
+
 %ignore pism::IceModelVec2S::get_array;
 %ignore pism::IceModelVec2V::get_array;
 
