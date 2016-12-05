@@ -266,10 +266,9 @@ int NC3File::def_var_impl(const std::string &name, IO_Type nctype, const std::ve
     std::vector<int> dimids;
     int varid;
 
-    std::vector<std::string>::const_iterator j;
-    for (j = dims.begin(); j != dims.end(); ++j) {
+    for (auto d : dims) {
       int dimid;
-      stat = nc_inq_dimid(m_file_id, j->c_str(), &dimid); check(PISM_ERROR_LOCATION, stat);
+      stat = nc_inq_dimid(m_file_id, d.c_str(), &dimid); check(PISM_ERROR_LOCATION, stat);
       dimids.push_back(dimid);
     }
 

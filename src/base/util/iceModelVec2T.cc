@@ -227,7 +227,6 @@ void IceModelVec2T::init_constant(double value) {
 
 //! Read some data to make sure that the interval (t, t + dt) is covered.
 void IceModelVec2T::update(double t, double dt) {
-  std::vector<double>::iterator i, j;
   unsigned int m, n, last;
 
   if (m_time_bounds.size() == 0) {
@@ -254,10 +253,10 @@ void IceModelVec2T::update(double t, double dt) {
   }
 
   // i will point to the smallest t so that t >= t 
-  i = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t);
+  auto i = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t);
 
   // j will point to the smallest t so that t >= t + dt
-  j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t + dt);
+  auto j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t + dt);
 
   // some of the the interval (t, t + dt) is outside of the
   // time interval available in the file (on the right)
@@ -411,8 +410,7 @@ void IceModelVec2T::get_record(int n) {
  */
 MaxTimestep IceModelVec2T::max_timestep(double t) {
   // only allow going to the next record
-  std::vector<double>::iterator l = upper_bound(m_time_bounds.begin(),
-                                                m_time_bounds.end(), t);
+  auto l = upper_bound(m_time_bounds.begin(), m_time_bounds.end(), t);
   if (l != m_time_bounds.end()) {
     double tmp = *l - t;
 

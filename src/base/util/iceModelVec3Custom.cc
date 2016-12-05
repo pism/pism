@@ -74,10 +74,8 @@ void IceModelVec3Custom::create(IceGrid::ConstPtr mygrid,
                                                m_name, m_zlevels));
   m_metadata[0].get_z().set_name(z_name);
 
-  std::map<std::string, std::string>::const_iterator j = z_attrs.begin();
-  while (j != z_attrs.end()) {
-    m_metadata[0].get_z().set_string(j->first, j->second);
-    ++j;
+  for (auto z_attr : z_attrs) {
+    m_metadata[0].get_z().set_string(z_attr.first, z_attr.second);
   }
 }
 

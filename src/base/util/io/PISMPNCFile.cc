@@ -183,10 +183,9 @@ int PNCFile::def_var_impl(const std::string &name, IO_Type nctype, const std::ve
   std::vector<int> dimids;
   int stat, varid;
 
-  std::vector<std::string>::const_iterator j;
-  for (j = dims.begin(); j != dims.end(); ++j) {
+  for (auto d : dims) {
     int dimid = -1;
-    stat = ncmpi_inq_dimid(m_file_id, j->c_str(), &dimid); check(PISM_ERROR_LOCATION, stat);
+    stat = ncmpi_inq_dimid(m_file_id, d.c_str(), &dimid); check(PISM_ERROR_LOCATION, stat);
     dimids.push_back(dimid);
   }
 
@@ -633,9 +632,8 @@ int PNCFile::put_var_double(const std::string &variable_name,
 
 void PNCFile::init_hints() {
 
-  std::vector<std::string>::iterator j = mpi_io_hints.begin();
-  while (j != mpi_io_hints.end()) {
-    std::istringstream arg(*j);
+  for (auto hint : mpi_io_hints) {
+    std::istringstream arg(hint);
     std::vector<std::string> words;
     std::string word;
     while (getline(arg, word, ':')) {
@@ -654,13 +652,10 @@ void PNCFile::init_hints() {
       MPI_Comm_rank(m_com, &rank);
       if (rank == 0) {
         printf("PISM WARNING: invalid MPI I/O hint: %s. Ignoring it...\n",
-               j->c_str());
+               hint.c_str());
       }
     }
-
-    ++j;
   }
-
 }
 
 std::string PNCFile::get_format_impl() const {

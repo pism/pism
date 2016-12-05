@@ -303,7 +303,7 @@ CalvingRate::CalvingRate(CalvingFrontRetreat *m,
   : Diag<CalvingFrontRetreat>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, name));
+  m_vars = {SpatialVariableMetadata(m_sys, name)};
 
   set_attrs(long_name, "",
             "m second-1", "m year-1", 0);

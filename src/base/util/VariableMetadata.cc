@@ -259,7 +259,7 @@ const VariableMetadata& SpatialVariableMetadata::get_z() const {
 //! for the "units" attribute.
 bool VariableMetadata::has_attribute(const std::string &name) const {
 
-  std::map<std::string,std::string>::const_iterator j = m_strings.find(name);
+  auto j = m_strings.find(name);
   if (j != m_strings.end()) {
     if (name != "units" && (j->second).empty()) {
       return false;
@@ -307,7 +307,7 @@ std::string VariableMetadata::get_name() const {
 
 //! Get a single-valued scalar attribute.
 double VariableMetadata::get_double(const std::string &name) const {
-  std::map<std::string,std::vector<double> >::const_iterator j = m_doubles.find(name);
+  auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return (j->second)[0];
   } else {
@@ -318,7 +318,7 @@ double VariableMetadata::get_double(const std::string &name) const {
 
 //! Get an array-of-doubles attribute.
 std::vector<double> VariableMetadata::get_doubles(const std::string &name) const {
-  std::map<std::string,std::vector<double> >::const_iterator j = m_doubles.find(name);
+  auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return j->second;
   } else {
@@ -369,7 +369,7 @@ std::string VariableMetadata::get_string(const std::string &name) const {
      return get_name();
   }
 
-  std::map<std::string,std::string>::const_iterator j = m_strings.find(name);
+  auto j = m_strings.find(name);
   if (j != m_strings.end()) {
     return j->second;
   } else {
@@ -380,23 +380,21 @@ std::string VariableMetadata::get_string(const std::string &name) const {
 void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_threshold) const {
 
   const VariableMetadata::StringAttrs &strings = this->get_all_strings();
-  VariableMetadata::StringAttrs::const_iterator s;
   const VariableMetadata::DoubleAttrs &doubles = this->get_all_doubles();
-  VariableMetadata::DoubleAttrs::const_iterator d;
 
   // Find the maximum name length so that we can pad output below:
   size_t max_name_length = 0;
-  for (s = strings.begin(); s != strings.end(); ++s) {
-    max_name_length = std::max(max_name_length, s->first.size());
+  for (auto s : strings) {
+    max_name_length = std::max(max_name_length, s.first.size());
   }
-  for (d = doubles.begin(); d != doubles.end(); ++d) {
-    max_name_length = std::max(max_name_length, d->first.size());
+  for (auto d : doubles) {
+    max_name_length = std::max(max_name_length, d.first.size());
   }
 
   // Print text attributes:
-  for (s = strings.begin(); s != strings.end(); ++s) {
-    std::string name  = s->first;
-    std::string value = s->second;
+  for (auto s : strings) {
+    std::string name  = s.first;
+    std::string value = s.second;
     std::string padding(max_name_length - name.size(), ' ');
 
     if (value.empty()) {
@@ -408,9 +406,9 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
   }
 
   // Print double attributes:
-  for (d = doubles.begin(); d != doubles.end(); ++d) {
-    std::string name  = d->first;
-    std::vector<double> values = d->second;
+  for (auto d : doubles) {
+    std::string name  = d.first;
+    std::vector<double> values = d.second;
     std::string padding(max_name_length - name.size(), ' ');
 
     if (values.empty()) {

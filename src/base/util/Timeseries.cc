@@ -204,9 +204,7 @@ double Timeseries::operator()(double t) {
 
   // piecewise-constant case:
   if (m_use_bounds) {
-    std::vector<double>::iterator j;
-
-    j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t); // binary search
+    auto j = lower_bound(m_time_bounds.begin(), m_time_bounds.end(), t); // binary search
 
     if (j == m_time_bounds.end()) {
       return m_values.back(); // out of range (on the right)
@@ -228,9 +226,9 @@ double Timeseries::operator()(double t) {
   }
 
   // piecewise-linear case:
-  std::vector<double>::iterator end = m_time.end(), j;
+  auto end = m_time.end();
   
-  j = lower_bound(m_time.begin(), end, t); // binary search
+  auto j = lower_bound(m_time.begin(), end, t); // binary search
 
   if (j == end) {
     return m_values.back(); // out of range (on the right)

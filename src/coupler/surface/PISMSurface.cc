@@ -183,7 +183,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "climatic_mass_balance"));
+  m_vars = {SpatialVariableMetadata(m_sys, "climatic_mass_balance")};
 
   set_attrs("surface mass balance (accumulation/ablation) rate",
             "land_ice_surface_specific_mass_balance_flux",
@@ -205,7 +205,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "ice_surface_temp"));
+  m_vars = {SpatialVariableMetadata(m_sys, "ice_surface_temp")};
 
   set_attrs("ice temperature at the ice surface", "",
             "Kelvin", "Kelvin", 0);
@@ -226,7 +226,7 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "ice_surface_liquid_water_fraction"));
+  m_vars = {SpatialVariableMetadata(m_sys, "ice_surface_liquid_water_fraction")};
 
   set_attrs("ice liquid water fraction at the ice surface", "",
             "1", "1", 0);
@@ -247,7 +247,7 @@ PS_surface_layer_mass::PS_surface_layer_mass(SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "surface_layer_mass"));
+  m_vars = {SpatialVariableMetadata(m_sys, "surface_layer_mass")};
 
   set_attrs("mass of the surface layer (snow and firn)", "",
             "kg", "kg", 0);
@@ -268,7 +268,7 @@ PS_surface_layer_thickness::PS_surface_layer_thickness(SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "surface_layer_thickness"));
+  m_vars = {SpatialVariableMetadata(m_sys, "surface_layer_thickness")};
 
   set_attrs("thickness of the surface layer (snow and firn)", "",
             "meters", "meters", 0);

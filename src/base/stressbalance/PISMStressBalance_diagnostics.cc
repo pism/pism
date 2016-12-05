@@ -73,8 +73,8 @@ PSB_velbar::PSB_velbar(StressBalance *m)
   m_dof = 2;
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "ubar"));
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "vbar"));
+  m_vars = {SpatialVariableMetadata(m_sys, "ubar"),
+            SpatialVariableMetadata(m_sys, "vbar")};
 
   set_attrs("vertical mean of horizontal ice velocity in the X direction",
             "land_ice_vertical_mean_x_velocity",
@@ -120,7 +120,7 @@ PSB_velbar_mag::PSB_velbar_mag(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "velbar_mag"));
+  m_vars = {SpatialVariableMetadata(m_sys, "velbar_mag")};
 
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m second-1", "m year-1", 0);
@@ -157,8 +157,8 @@ PSB_flux::PSB_flux(StressBalance *m)
   m_dof = 2;
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "uflux"));
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "vflux"));
+  m_vars = {SpatialVariableMetadata(m_sys, "uflux"),
+            SpatialVariableMetadata(m_sys, "vflux")};
 
   set_attrs("Vertically integrated horizontal flux of ice in the X direction",
             "",                 // no CF standard name
@@ -245,7 +245,7 @@ PSB_flux_mag::PSB_flux_mag(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "flux_mag"));
+  m_vars = {SpatialVariableMetadata(m_sys, "flux_mag")};
 
   set_attrs("magnitude of vertically-integrated horizontal flux of ice", "",
             "m2 s-1", "m2 year-1", 0);
@@ -284,7 +284,7 @@ PSB_velbase_mag::PSB_velbase_mag(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "velbase_mag"));
+  m_vars = {SpatialVariableMetadata(m_sys, "velbase_mag")};
 
   set_attrs("magnitude of horizontal velocity of ice at base of ice", "",
             "m s-1", "m year-1", 0);
@@ -326,7 +326,7 @@ IceModelVec::Ptr PSB_velbase_mag::compute_impl() {
 PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m)
   : Diag<StressBalance>(m) {
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "velsurf_mag"));
+  m_vars = {SpatialVariableMetadata(m_sys, "velsurf_mag")};
 
   set_attrs("magnitude of horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
@@ -373,8 +373,8 @@ PSB_velsurf::PSB_velsurf(StressBalance *m)
   // set metadata:
   m_dof = 2;
 
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "uvelsurf"));
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "vvelsurf"));
+  m_vars = {SpatialVariableMetadata(m_sys, "uvelsurf"),
+            SpatialVariableMetadata(m_sys, "vvelsurf")};
 
   set_attrs("x-component of the horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
@@ -437,8 +437,7 @@ PSB_wvel::PSB_wvel(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "wvel",
-                                           m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "wvel", m_grid->z())};
 
   set_attrs("vertical velocity of ice, relative to geoid", "",
             "m s-1", "m year-1", 0);
@@ -541,7 +540,7 @@ PSB_wvelsurf::PSB_wvelsurf(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "wvelsurf"));
+  m_vars = {SpatialVariableMetadata(m_sys, "wvelsurf")};
 
   set_attrs("vertical velocity of ice at ice surface, relative to the geoid", "",
             "m s-1", "m year-1", 0);
@@ -587,7 +586,7 @@ PSB_wvelbase::PSB_wvelbase(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "wvelbase"));
+  m_vars = {SpatialVariableMetadata(m_sys, "wvelbase")};
 
   set_attrs("vertical velocity of ice at the base of ice, relative to the geoid", "",
             "m s-1", "m year-1", 0);
@@ -633,8 +632,8 @@ PSB_velbase::PSB_velbase(StressBalance *m)
   // set metadata:
   m_dof = 2;
 
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "uvelbase"));
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "vvelbase"));
+  m_vars = {SpatialVariableMetadata(m_sys, "uvelbase"),
+            SpatialVariableMetadata(m_sys, "vvelbase")};
 
   set_attrs("x-component of the horizontal velocity of ice at the base of ice", "",
             "m s-1", "m year-1", 0);
@@ -696,7 +695,7 @@ PSB_bfrict::PSB_bfrict(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "bfrict"));
+  m_vars = {SpatialVariableMetadata(m_sys, "bfrict")};
 
   set_attrs("basal frictional heating", "",
             "W m-2", "W m-2", 0);
@@ -718,7 +717,7 @@ PSB_uvel::PSB_uvel(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "uvel", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "uvel", m_grid->z())};
 
   set_attrs("horizontal velocity of ice in the X direction", "land_ice_x_velocity",
             "m s-1", "m year-1", 0);
@@ -771,7 +770,7 @@ PSB_vvel::PSB_vvel(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "vvel", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "vvel", m_grid->z())};
 
   set_attrs("horizontal velocity of ice in the Y direction", "land_ice_y_velocity",
             "m s-1", "m year-1", 0);
@@ -824,7 +823,7 @@ PSB_wvel_rel::PSB_wvel_rel(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "wvel_rel", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "wvel_rel", m_grid->z())};
 
   set_attrs("vertical velocity of ice, relative to base of ice directly below", "",
             "m s-1", "m year-1", 0);
@@ -879,7 +878,7 @@ PSB_strainheat::PSB_strainheat(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "strainheat", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "strainheat", m_grid->z())};
 
   set_attrs("rate of strain heating in ice (dissipation heating)", "",
             "W m-3", "mW m-3", 0);
@@ -902,8 +901,8 @@ PSB_strain_rates::PSB_strain_rates(StressBalance *m)
   m_dof = 2;
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "eigen1"));
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "eigen2"));
+  m_vars = {SpatialVariableMetadata(m_sys, "eigen1"),
+            SpatialVariableMetadata(m_sys, "eigen2")};
 
   set_attrs("first eigenvalue of the horizontal, vertically-integrated strain rate tensor",
             "", "s-1", "s-1", 0);
@@ -937,9 +936,9 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(StressBalance *m)
   m_dof = 3;
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "sigma_xx"));
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "sigma_yy"));
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "sigma_xy"));
+  m_vars = {SpatialVariableMetadata(m_sys, "sigma_xx"),
+            SpatialVariableMetadata(m_sys, "sigma_yy"),
+            SpatialVariableMetadata(m_sys, "sigma_xy")};
 
   set_attrs("deviatoric stress in X direction", "", "Pa", "Pa", 0);
   set_attrs("deviatoric stress in Y direction", "", "Pa", "Pa", 1);
@@ -974,8 +973,7 @@ PSB_pressure::PSB_pressure(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "pressure",
-                                           m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "pressure", m_grid->z())};
 
   set_attrs("pressure in ice (hydrostatic)", "", "Pa", "Pa", 0);
 }
@@ -1024,7 +1022,7 @@ PSB_tauxz::PSB_tauxz(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "tauxz", m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "tauxz", m_grid->z())};
 
   set_attrs("shear stress xz component (in shallow ice approximation SIA)", "",
             "Pa", "Pa", 0);
@@ -1088,8 +1086,7 @@ PSB_tauyz::PSB_tauyz(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "tauyz",
-                                           m_grid->z()));
+  m_vars = {SpatialVariableMetadata(m_sys, "tauyz", m_grid->z())};
 
   set_attrs("shear stress yz component (in shallow ice approximation SIA)", "",
             "Pa", "Pa", 0);
@@ -1150,7 +1147,7 @@ PSB_vonmises_stress::PSB_vonmises_stress(StressBalance *m)
   : Diag<StressBalance>(m) {
 
   /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "vonmises_stress"));
+  m_vars = {SpatialVariableMetadata(m_sys, "vonmises_stress")};
 
   set_attrs("tensile von Mises stress",
             "",                 // no standard name

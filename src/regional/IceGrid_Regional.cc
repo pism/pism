@@ -104,31 +104,26 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
 
     GridParameters input_grid(ctx->config());
 
-    std::vector<std::string> names;
-    names.push_back("enthalpy");
-    names.push_back("temp");
-    names.push_back("land_ice_thickness");
-    names.push_back("bedrock_altitude");
-    names.push_back("thk");
-    names.push_back("topg");
+    std::vector<std::string> names = {"enthalpy", "temp", "land_ice_thickness",
+                                      "bedrock_altitude", "thk", "topg"};
     bool grid_info_found = false;
 
     PIO file(ctx->com(), "netcdf3", input_file, PISM_READONLY);
-    for (unsigned int i = 0; i < names.size(); ++i) {
+    for (auto name : names) {
 
-      grid_info_found = file.inq_var(names[i]);
+      grid_info_found = file.inq_var(name);
       if (not grid_info_found) {
         std::string dummy1;
         bool dummy2;
-        // Failed to find using a short name. Try using names[i] as a
+        // Failed to find using a short name. Try using name as a
         // standard name...
-        file.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
+        file.inq_var("dummy", name, grid_info_found, dummy1, dummy2);
       }
 
       if (grid_info_found) {
-        input_grid = GridParameters(ctx, file, names[i], p);
+        input_grid = GridParameters(ctx, file, name, p);
 
-        grid_info full = grid_info(file, names[i], ctx->unit_system(), p);
+        grid_info full = grid_info(file, name, ctx->unit_system(), p);
 
         // x direction
         subset_extent("x", full.x, x_range[0], x_range[1],

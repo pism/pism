@@ -89,14 +89,13 @@ Most viewers are updated by this routine, but some other are updated elsewhere.
 void IceModel::update_viewers() {
 
   // map-plane viewers
-  std::set<std::string>::iterator i;
-  for (i = m_map_viewers.begin(); i != m_map_viewers.end(); ++i) {
+  for (auto v : m_map_viewers) {
 
-    if (m_grid->variables().is_available(*i)) {
-      this->view_field(m_grid->variables().get(*i));
+    if (m_grid->variables().is_available(v)) {
+      this->view_field(m_grid->variables().get(v));
     } else {
       // if not found, try to compute:
-      Diagnostic::Ptr diag = m_diagnostics[*i];
+      Diagnostic::Ptr diag = m_diagnostics[v];
 
       if (diag) {
         this->view_field(diag->compute().get());

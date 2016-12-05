@@ -1684,8 +1684,8 @@ SSAFD_nuH::SSAFD_nuH(SSAFD *m)
   // set metadata:
   m_dof = 2;
 
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "nuH[0]"));
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "nuH[1]"));
+  m_vars = {SpatialVariableMetadata(m_sys, "nuH[0]"),
+            SpatialVariableMetadata(m_sys, "nuH[1]")};
 
   set_attrs("ice thickness times effective viscosity, i-offset", "",
             "Pa s m", "kPa s m", 0);

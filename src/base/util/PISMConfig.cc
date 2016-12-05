@@ -56,12 +56,10 @@ double NetCDFConfig::get_double_impl(const std::string &name) const {
 }
 
 Config::Doubles NetCDFConfig::all_doubles_impl() const {
-  const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
   Doubles result;
 
-  VariableMetadata::DoubleAttrs::const_iterator j;
-  for (j = doubles.begin(); j != doubles.end(); ++j) {
-    result[j->first] = (j->second)[0];
+  for (auto d : m_data.get_all_doubles()) {
+    result[d.first] = d.second[0];
   }
   return result;
 }
@@ -89,12 +87,11 @@ Config::Strings NetCDFConfig::all_strings_impl() const {
   VariableMetadata::StringAttrs strings = m_data.get_all_strings();
   Strings result;
 
-  VariableMetadata::StringAttrs::const_iterator j, k;
-  for (j = strings.begin(); j != strings.end(); ++j) {
-    std::string name = j->first;
-    std::string value = j->second;
+  for (auto s : strings) {
+    std::string name = s.first;
+    std::string value = s.second;
 
-    k = strings.find(name + "_type");
+    auto k = strings.find(name + "_type");
     if (k != strings.end() and k->second == "boolean") {
       // Booleans are stored as strings. Skip them.
       continue;
@@ -121,7 +118,7 @@ static bool string_is_true(const std::string &value) {
 
 bool NetCDFConfig::get_boolean_impl(const std::string &name) const {
   const VariableMetadata::StringAttrs& strings = m_data.get_all_strings();
-  VariableMetadata::StringAttrs::const_iterator j = strings.find(name);
+  auto j = strings.find(name);
   if (j != strings.end()) {
 
     const std::string &value = j->second;
@@ -146,13 +143,11 @@ bool NetCDFConfig::get_boolean_impl(const std::string &name) const {
 }
 
 Config::Booleans NetCDFConfig::all_booleans_impl() const {
-  const VariableMetadata::StringAttrs& strings = m_data.get_all_strings();
   Booleans result;
 
-  VariableMetadata::StringAttrs::const_iterator j;
-  for (j = strings.begin(); j != strings.end(); ++j) {
-    std::string name = j->first;
-    std::string value = j->second;
+  for (auto b : m_data.get_all_strings()) {
+    std::string name = b.first;
+    std::string value = b.second;
 
     if (string_is_true(value)) {
       result[name] = true;

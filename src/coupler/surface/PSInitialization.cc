@@ -69,13 +69,11 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in
   }
 
   // collect pointers
-  {
-    m_variables.push_back(&m_ice_surface_mass_flux);
-    m_variables.push_back(&m_ice_surface_temperature);
-    m_variables.push_back(&m_ice_surface_liquid_water_fraction);
-    m_variables.push_back(&m_mass_held_in_surface_layer);
-    m_variables.push_back(&m_surface_layer_thickness);
-  }
+  m_variables = {&m_ice_surface_mass_flux,
+                 &m_ice_surface_temperature,
+                 &m_ice_surface_liquid_water_fraction,
+                 &m_mass_held_in_surface_layer,
+                 &m_surface_layer_thickness};
 }
 
 void InitializationHelper::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *in) {

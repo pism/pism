@@ -312,9 +312,7 @@ static bool use_mapped_io(const PIO &nc,
 
   std::vector<std::string> dimnames = nc.inq_vardims(var_name);
 
-  std::vector<AxisType> storage, memory;
-  memory.push_back(Y_AXIS);
-  memory.push_back(X_AXIS);
+  std::vector<AxisType> storage, memory = {Y_AXIS, X_AXIS};
 
   for (unsigned int j = 0; j < dimnames.size(); ++j) {
     AxisType dimtype = nc.inq_dimtype(dimnames[j], unit_system);
@@ -657,9 +655,8 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
     size_t matching_dim_count = 0; // number of matching dimensions
 
     input_dims = nc.inq_vardims(name_found);
-    std::vector<std::string>::iterator j = input_dims.begin();
-    while (j != input_dims.end()) {
-      AxisType tmp = nc.inq_dimtype(*j, var.unit_system());
+    for (auto d : input_dims) {
+      AxisType tmp = nc.inq_dimtype(d, var.unit_system());
 
       if (tmp != T_AXIS) {
         ++input_ndims;
@@ -668,10 +665,7 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
       if (axes.find(tmp) != axes.end()) {
         ++matching_dim_count;
       }
-
-      ++j;
     }
-
 
     if (axes.size() != matching_dim_count) {
 
@@ -1061,13 +1055,9 @@ void define_time_bounds(const TimeBoundsMetadata& var,
     nc.def_dim(bounds_name, 2);
   }
 
-  std::vector<std::string> dims;
-  dims.push_back(dimension_name);
-  dims.push_back(bounds_name);
-
   nc.redef();
 
-  nc.def_var(name, nctype, dims);
+  nc.def_var(name, nctype, {dimension_name, bounds_name});
 
   write_attributes(nc, var, nctype, true);
 }
@@ -1320,12 +1310,10 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
     }
 
     // Write text attributes:
-    const VariableMetadata::StringAttrs &strings = variable.get_all_strings();
-    VariableMetadata::StringAttrs::const_iterator i;
-    for (i = strings.begin(); i != strings.end(); ++i) {
+    for (auto s : variable.get_all_strings()) {
       std::string
-        name  = i->first,
-        value = i->second;
+        name  = s.first,
+        value = s.second;
 
       if (name == "units" or
           name == "glaciological_units" or
@@ -1337,11 +1325,9 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
     }
 
     // Write double attributes:
-    const VariableMetadata::DoubleAttrs &doubles = variable.get_all_doubles();
-    VariableMetadata::DoubleAttrs::const_iterator j;
-    for (j = doubles.begin(); j != doubles.end(); ++j) {
-      std::string name  = j->first;
-      std::vector<double> values = j->second;
+    for (auto d : variable.get_all_doubles()) {
+      std::string name  = d.first;
+      std::vector<double> values = d.second;
 
       if (name == "valid_min"   or
           name == "valid_max"   or

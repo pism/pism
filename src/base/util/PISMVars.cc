@@ -128,17 +128,17 @@ const IceModelVec* Vars::get(const std::string &name) const {
 
 const IceModelVec* Vars::get_internal(const std::string &name) const {
 
-  std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
+  auto j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {
     std::string short_name = j->second;
 
-    std::map<std::string,const IceModelVec*>::const_iterator k = m_variables.find(short_name);
+    auto k = m_variables.find(short_name);
     if (k != m_variables.end()) {
       return k->second;
     }
   }
 
-  std::map<std::string,const IceModelVec*>::const_iterator k = m_variables.find(name);
+  auto k = m_variables.find(name);
   if (k != m_variables.end()) {
     return (k->second);
   }
@@ -202,14 +202,13 @@ const IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
 std::set<std::string> Vars::keys() const {
 
   std::set<std::string> result;
-  std::map<std::string,const IceModelVec*>::const_iterator i;
-  for (i = m_variables.begin(); i != m_variables.end(); ++i) {
-    result.insert(i->first);
+
+  for (auto v : m_variables) {
+    result.insert(v.first);
   }
 
-  std::map<std::string,VecPtr>::const_iterator j;
-  for (j = m_variables_shared.begin(); j != m_variables_shared.end(); ++j) {
-    result.insert(j->first);
+  for (auto v : m_variables_shared) {
+    result.insert(v.first);
   }
 
   return result;
@@ -340,11 +339,11 @@ std::set<std::string> Vars::keys_shared() const {
 
 IceModelVec::Ptr Vars::get_internal_shared(const std::string &name) const {
 
-  std::map<std::string,std::string>::const_iterator j = m_standard_names.find(name);
+  auto j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {
     std::string short_name = j->second;
 
-    std::map<std::string,IceModelVec::Ptr>::const_iterator k = m_variables_shared.find(short_name);
+    auto k = m_variables_shared.find(short_name);
     if (k != m_variables_shared.end()) {
       return k->second;
     } else {
@@ -352,7 +351,7 @@ IceModelVec::Ptr Vars::get_internal_shared(const std::string &name) const {
     }
   }
 
-  std::map<std::string,IceModelVec::Ptr>::const_iterator k = m_variables_shared.find(name);
+  auto k = m_variables_shared.find(name);
   if (k != m_variables_shared.end()) {
     return (k->second);
   }

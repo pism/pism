@@ -52,7 +52,7 @@ bool ends_with(const std::string &str, const std::string &suffix) {
 
 //! Concatenate `strings`, inserting `separator` between elements.
 std::string join(const std::vector<std::string> &strings, const std::string &separator) {
-  std::vector<std::string>::const_iterator j = strings.begin();
+  auto j = strings.begin();
   std::string result = *j;
   ++j;
   while (j != strings.end()) {

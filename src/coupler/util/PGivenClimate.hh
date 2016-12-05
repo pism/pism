@@ -38,10 +38,8 @@ public:
     : Model(g, in) {}
 
   virtual ~PGivenClimate() {
-    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
-    while(k != m_fields.end()) {
-      delete k->second;
-      ++k;
+    for (auto f : m_fields) {
+      delete f.second;
     }
   }
 

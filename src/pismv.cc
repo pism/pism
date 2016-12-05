@@ -137,11 +137,7 @@ IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
     Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
 
     // get grid from a PISM input file
-    std::vector<std::string> names;
-    names.push_back("enthalpy");
-    names.push_back("temp");
-
-    return IceGrid::FromFile(ctx, input_file, names, p);
+    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, p);
   } else {
     // use defaults set by pismv_grid_defaults()
     GridParameters P = pismv_grid_defaults(ctx->config(), testname);
