@@ -47,6 +47,29 @@ std::string set_join(const std::set<std::string> &input, const std::string& sepa
 // set
 bool set_contains(const std::set<std::string> &S, const std::string &name);
 
+/*! Helper template function for computing set unions.
+ * Ensures that elements of a take precedence. For example, if
+ *
+ * a = {{1, 2}, {3, 4}}
+ * b = {{1, 4}, {5, 6}}
+ *
+ * combine(a, b) will use the pair {1, 2} from a, not {1, 4} from b.
+ *
+ * This behavior relies on the fact that std::map::insert({a, b}) is a no-op if a key equivalent to
+ * a is already present.
+ *
+ * This is similar to a set union, but it is not symmetric. (I would expect set_union(a, b) to be
+ * the same as set_union(b, a)).
+ */
+template<typename T>
+T combine(const T &a, const T&b) {
+  T result = a;
+  for (const auto &element : b) {
+    result.insert(element);
+  }
+  return result;
+}
+
 // parallel
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op);
 
