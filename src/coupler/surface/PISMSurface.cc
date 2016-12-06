@@ -29,6 +29,7 @@
 #include "base/util/pism_options.hh"
 #include "base/util/iceModelVec.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {
@@ -48,32 +49,27 @@ void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) const {
   this->ice_surface_mass_flux_impl(result);
 }
 
-void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
-  // Don't override diagnostics that are already set.
-
-  if (not dict["climatic_mass_balance"]) {
-    dict["climatic_mass_balance"] = Diagnostic::Ptr(new PS_climatic_mass_balance(this));
-  }
-
-  if (not dict["ice_surface_temp"]) {
-    dict["ice_surface_temp"] = Diagnostic::Ptr(new PS_ice_surface_temp(this));
-  }
-
-  if (not dict["ice_surface_liquid_water_fraction"]) {
-    dict["ice_surface_liquid_water_fraction"] = Diagnostic::Ptr(new PS_liquid_water_fraction(this));
-  }
-
-  if (not dict["surface_layer_mass"]) {
-    dict["surface_layer_mass"] = Diagnostic::Ptr(new PS_surface_layer_mass(this));
-  }
-
-  if (not dict["surface_layer_thickness"]) {
-    dict["surface_layer_thickness"] = Diagnostic::Ptr(new PS_surface_layer_thickness(this));
-  }
+std::map<std::string, Diagnostic::Ptr> SurfaceModel::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"climatic_mass_balance",             Diagnostic::Ptr(new PS_climatic_mass_balance(this))},
+    {"ice_surface_temp",                  Diagnostic::Ptr(new PS_ice_surface_temp(this))},
+    {"ice_surface_liquid_water_fraction", Diagnostic::Ptr(new PS_liquid_water_fraction(this))},
+    {"surface_layer_mass",                Diagnostic::Ptr(new PS_surface_layer_mass(this))},
+    {"surface_layer_thickness",           Diagnostic::Ptr(new PS_surface_layer_thickness(this))}
+  };
 
   if (m_atmosphere) {
-    m_atmosphere->get_diagnostics(dict, ts_dict);
+    result = pism::combine(result, m_atmosphere->diagnostics());
+  }
+
+  return result;
+}
+
+std::map<std::string, TSDiagnostic::Ptr> SurfaceModel::ts_diagnostics_impl() const {
+  if (m_atmosphere) {
+    return m_atmosphere->ts_diagnostics();
+  } else {
+    return {};
   }
 }
 

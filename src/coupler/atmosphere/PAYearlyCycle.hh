@@ -53,8 +53,7 @@ protected:
 
   virtual void update_impl(double my_t, double my_dt) = 0;
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 protected:
   void init_internal(const std::string &input_filename, bool regrid,
                                unsigned int start);

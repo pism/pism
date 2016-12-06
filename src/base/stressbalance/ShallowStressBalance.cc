@@ -117,13 +117,15 @@ const IceModelVec2S& ShallowStressBalance::basal_frictional_heating() {
 }
 
 
-void ShallowStressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                           std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) const {
-  dict["beta"]     = Diagnostic::Ptr(new SSB_beta(this));
-  dict["taub"]     = Diagnostic::Ptr(new SSB_taub(this));
-  dict["taub_mag"] = Diagnostic::Ptr(new SSB_taub_mag(this));
-  dict["taud"]     = Diagnostic::Ptr(new SSB_taud(this));
-  dict["taud_mag"] = Diagnostic::Ptr(new SSB_taud_mag(this));
+std::map<std::string, Diagnostic::Ptr> ShallowStressBalance::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"beta",     Diagnostic::Ptr(new SSB_beta(this))},
+    {"taub",     Diagnostic::Ptr(new SSB_taub(this))},
+    {"taub_mag", Diagnostic::Ptr(new SSB_taub_mag(this))},
+    {"taud",     Diagnostic::Ptr(new SSB_taud(this))},
+    {"taud_mag", Diagnostic::Ptr(new SSB_taud_mag(this))}
+  };
+  return result;
 }
 
 

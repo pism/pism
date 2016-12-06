@@ -77,8 +77,7 @@ public:
 protected:
   virtual void init_impl();
   
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   double m_sea_level;
   IceBasalResistancePlasticLaw *m_basal_sliding_law;

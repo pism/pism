@@ -76,8 +76,8 @@ protected:
 
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const = 0;
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 protected:
   atmosphere::AtmosphereModel *m_atmosphere;
 };

@@ -1706,11 +1706,12 @@ IceModelVec::Ptr SSAFD_nuH::compute_impl() {
   return result;
 }
 
-void SSAFD::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
-  SSA::get_diagnostics_impl(dict, ts_dict);
+std::map<std::string, Diagnostic::Ptr> SSAFD::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = SSA::diagnostics_impl();
 
-  dict["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
+  result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
+
+  return result;
 }
 
 const IceModelVec2Stag & SSAFD::integrated_viscosity() const {

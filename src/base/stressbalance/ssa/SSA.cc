@@ -388,14 +388,14 @@ void SSA::write_model_state_impl(const PIO &output) const {
   m_velocity.write(output);
 }
 
-void SSA::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
-
-  ShallowStressBalance::get_diagnostics_impl(dict, ts_dict);
+std::map<std::string, Diagnostic::Ptr> SSA::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = ShallowStressBalance::diagnostics_impl();
 
   // replace these diagnostics
-  dict["taud"] = Diagnostic::Ptr(new SSA_taud(this));
-  dict["taud_mag"] = Diagnostic::Ptr(new SSA_taud_mag(this));
+  result["taud"] = Diagnostic::Ptr(new SSA_taud(this));
+  result["taud_mag"] = Diagnostic::Ptr(new SSA_taud_mag(this));
+
+  return result;
 }
 
 SSA_taud::SSA_taud(const SSA *m)

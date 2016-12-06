@@ -107,8 +107,8 @@ public:
   virtual ~Component();
 
   //! Add pointers to available diagnostic quantities to a dictionary.
-  void get_diagnostics(std::map<std::string, Diagnostic::Ptr> &dict,
-                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  std::map<std::string, Diagnostic::Ptr> diagnostics() const;
+  std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics() const;
 
   IceGrid::ConstPtr grid() const;
 
@@ -119,8 +119,8 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in

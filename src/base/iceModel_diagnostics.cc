@@ -141,7 +141,8 @@ void IceModel::init_diagnostics() {
 
   // get diagnostics from submodels
   for (auto m : m_submodels) {
-    m.second->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+    m_diagnostics = pism::combine(m_diagnostics, m.second->diagnostics());
+    m_ts_diagnostics = pism::combine(m_ts_diagnostics, m.second->ts_diagnostics());
   }
 }
 

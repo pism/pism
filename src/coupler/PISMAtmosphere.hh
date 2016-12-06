@@ -67,8 +67,7 @@ protected:
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 protected:
   mutable std::vector<double> m_ts_times;
 };

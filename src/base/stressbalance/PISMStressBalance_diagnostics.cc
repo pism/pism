@@ -23,6 +23,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/pism_utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/rheology/FlowLaw.hh"
 
@@ -31,40 +32,42 @@ namespace stressbalance {
 
 using units::convert;
 
-void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                        std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
+std::map<std::string, Diagnostic::Ptr> StressBalance::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"bfrict",              Diagnostic::Ptr(new PSB_bfrict(this))},
+    {"velbar_mag",          Diagnostic::Ptr(new PSB_velbar_mag(this))},
+    {"flux",                Diagnostic::Ptr(new PSB_flux(this))},
+    {"flux_mag",            Diagnostic::Ptr(new PSB_flux_mag(this))},
+    {"velbase_mag",         Diagnostic::Ptr(new PSB_velbase_mag(this))},
+    {"velsurf_mag",         Diagnostic::Ptr(new PSB_velsurf_mag(this))},
+    {"uvel",                Diagnostic::Ptr(new PSB_uvel(this))},
+    {"vvel",                Diagnostic::Ptr(new PSB_vvel(this))},
+    {"strainheat",          Diagnostic::Ptr(new PSB_strainheat(this))},
+    {"velbar",              Diagnostic::Ptr(new PSB_velbar(this))},
+    {"velbase",             Diagnostic::Ptr(new PSB_velbase(this))},
+    {"velsurf",             Diagnostic::Ptr(new PSB_velsurf(this))},
+    {"wvel",                Diagnostic::Ptr(new PSB_wvel(this))},
+    {"wvelbase",            Diagnostic::Ptr(new PSB_wvelbase(this))},
+    {"wvelsurf",            Diagnostic::Ptr(new PSB_wvelsurf(this))},
+    {"wvel_rel",            Diagnostic::Ptr(new PSB_wvel_rel(this))},
+    {"strain_rates",        Diagnostic::Ptr(new PSB_strain_rates(this))},
+    {"vonmises_stress",     Diagnostic::Ptr(new PSB_vonmises_stress(this))},
+    {"deviatoric_stresses", Diagnostic::Ptr(new PSB_deviatoric_stresses(this))},
+    {"pressure",            Diagnostic::Ptr(new PSB_pressure(this))},
+    {"tauxz",               Diagnostic::Ptr(new PSB_tauxz(this))},
+    {"tauyz",               Diagnostic::Ptr(new PSB_tauyz(this))}
+  };
 
-  dict["bfrict"]   = Diagnostic::Ptr(new PSB_bfrict(this));
+  // add diagnostics from the shallow stress balance and the "modifier"
+  result = pism::combine(result, m_shallow_stress_balance->diagnostics());
+  result = pism::combine(result, m_modifier->diagnostics());
 
-  dict["velbar_mag"]     = Diagnostic::Ptr(new PSB_velbar_mag(this));
-  dict["flux"]           = Diagnostic::Ptr(new PSB_flux(this));
-  dict["flux_mag"]       = Diagnostic::Ptr(new PSB_flux_mag(this));
-  dict["velbase_mag"]    = Diagnostic::Ptr(new PSB_velbase_mag(this));
-  dict["velsurf_mag"]    = Diagnostic::Ptr(new PSB_velsurf_mag(this));
+  return result;
+}
 
-  dict["uvel"]     = Diagnostic::Ptr(new PSB_uvel(this));
-  dict["vvel"]     = Diagnostic::Ptr(new PSB_vvel(this));
-
-  dict["strainheat"] = Diagnostic::Ptr(new PSB_strainheat(this));
-
-  dict["velbar"]   = Diagnostic::Ptr(new PSB_velbar(this));
-  dict["velbase"]  = Diagnostic::Ptr(new PSB_velbase(this));
-  dict["velsurf"]  = Diagnostic::Ptr(new PSB_velsurf(this));
-
-  dict["wvel"]     = Diagnostic::Ptr(new PSB_wvel(this));
-  dict["wvelbase"] = Diagnostic::Ptr(new PSB_wvelbase(this));
-  dict["wvelsurf"] = Diagnostic::Ptr(new PSB_wvelsurf(this));
-  dict["wvel_rel"] = Diagnostic::Ptr(new PSB_wvel_rel(this));
-  dict["strain_rates"] = Diagnostic::Ptr(new PSB_strain_rates(this));
-  dict["vonmises_stress"] = Diagnostic::Ptr(new PSB_vonmises_stress(this));
-  dict["deviatoric_stresses"] = Diagnostic::Ptr(new PSB_deviatoric_stresses(this));
-
-  dict["pressure"] = Diagnostic::Ptr(new PSB_pressure(this));
-  dict["tauxz"] = Diagnostic::Ptr(new PSB_tauxz(this));
-  dict["tauyz"] = Diagnostic::Ptr(new PSB_tauyz(this));
-
-  m_shallow_stress_balance->get_diagnostics(dict, ts_dict);
-  m_modifier->get_diagnostics(dict, ts_dict);
+std::map<std::string, TSDiagnostic::Ptr> StressBalance::ts_diagnostics_impl() const {
+  return pism::combine(m_shallow_stress_balance->ts_diagnostics(),
+                       m_modifier->ts_diagnostics());
 }
 
 PSB_velbar::PSB_velbar(const StressBalance *m)

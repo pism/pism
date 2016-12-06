@@ -64,24 +64,13 @@ void AtmosphereModel::temp_time_series(int i, int j, std::vector<double> &result
   this->temp_time_series_impl(i, j, result);
 }
 
-void AtmosphereModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                           std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
-  // Don't override diagnostics that are already set.
-
-  if (not dict["air_temp_snapshot"]) {
-    dict["air_temp_snapshot"] = Diagnostic::Ptr(new PA_air_temp_snapshot(this));
-  }
-
-  if (not dict["effective_air_temp"]) {
-    dict["effective_air_temp"] = Diagnostic::Ptr(new PA_air_temp(this));
-  }
-
-  if (not dict["effective_precipitation"]) {
-    dict["effective_precipitation"] = Diagnostic::Ptr(new PA_precipitation(this));
-  }
-
-  // no scalar diagnostics
-  (void) ts_dict;
+std::map<std::string, Diagnostic::Ptr> AtmosphereModel::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"air_temp_snapshot",       Diagnostic::Ptr(new PA_air_temp_snapshot(this))},
+    {"effective_air_temp",      Diagnostic::Ptr(new PA_air_temp(this))},
+    {"effective_precipitation", Diagnostic::Ptr(new PA_precipitation(this))},
+  };
+  return result;
 }
 
 PA_air_temp_snapshot::PA_air_temp_snapshot(const AtmosphereModel *m)

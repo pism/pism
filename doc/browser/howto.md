@@ -331,18 +331,18 @@ This allows us to have the same interface for both 2D and 3D diagnostics.
 #### "Register" the new diagnostic.
 
 To make the new diagnostic field available (i.e. to be able to use the new
-`PA_foo_bar` class), implement `PA_foo::get_diagnostics_impl()`.
+`PA_foo_bar` class), implement `PA_foo::diagnostics_impl()` or `PA_foo::ts_diagnostics_impl()`.
 
 ~~~
-void PA_foo::get_diagnostics_impl(map<string, PISMDiagnostic*> &dict) {
-  dict["bar"] = new PA_foo_bar(this, grid, *variables);
+std::map<std::string, Diagnostic::Ptr> PA_foo_bar::diagnostics_impl() const {
+  return {{"name", Diagnostic::Ptr(new PA_foo_bar(this))}};
 }
 ~~~
 
 Note that if you are implementing this method in a "modifier" of a surface
 model, you need to remember to call
 ~~~
-input_model->get_diagnostics(dict);
+input_model->get_diagnostics();
 ~~~
 @note PISM's handling of scalar diagnostic quantities is different and should
 be improved.

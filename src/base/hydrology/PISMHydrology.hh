@@ -123,8 +123,7 @@ public:
 
 protected:
   virtual void update_impl(double icet, double icedt) = 0;
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -270,8 +269,8 @@ protected:
   virtual void update_impl(double icet, double icedt);
 
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -355,8 +354,9 @@ public:
 
 protected:
   virtual void update_impl(double icet, double icedt);
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;

@@ -48,8 +48,6 @@ protected:
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const;
   virtual void ice_surface_temperature_impl(IceModelVec2S &result) const;
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
 
 protected:
   bool _initialized;

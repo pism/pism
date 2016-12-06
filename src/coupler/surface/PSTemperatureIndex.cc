@@ -540,32 +540,20 @@ void TemperatureIndex::write_model_state_impl(const PIO &output) const {
   m_snow_depth.write(output);
 }
 
-void TemperatureIndex::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
+std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"saccum",          Diagnostic::Ptr(new PDD_saccum(this))},
+    {"smelt",           Diagnostic::Ptr(new PDD_smelt(this))},
+    {"srunoff",         Diagnostic::Ptr(new PDD_srunoff(this))},
+    {"saccum_average",  Diagnostic::Ptr(new PDD_saccum_average(this))},
+    {"smelt_average",   Diagnostic::Ptr(new PDD_smelt_average(this))},
+    {"srunoff_average", Diagnostic::Ptr(new PDD_srunoff_average(this))},
+    {"air_temp_sd",     Diagnostic::Ptr(new PDD_air_temp_sd(this))}
+  };
 
-  SurfaceModel::get_diagnostics_impl(dict, ts_dict);
+  result = pism::combine(result, SurfaceModel::diagnostics_impl());
 
-  if (not dict["saccum"]) {
-    dict["saccum"] = Diagnostic::Ptr(new PDD_saccum(this));
-  }
-  if (not dict["smelt"]) {
-    dict["smelt"] = Diagnostic::Ptr(new PDD_smelt(this));
-  }
-  if (not dict["srunoff"]) {
-    dict["srunoff"] = Diagnostic::Ptr(new PDD_srunoff(this));
-  }
-  if (not dict["saccum_average"]) {
-    dict["saccum_average"] = Diagnostic::Ptr(new PDD_saccum_average(this));
-  }
-  if (not dict["smelt_average"]) {
-    dict["smelt_average"] = Diagnostic::Ptr(new PDD_smelt_average(this));
-  }
-  if (not dict["srunoff_average"]) {
-    dict["srunoff_average"] = Diagnostic::Ptr(new PDD_srunoff_average(this));
-  }
-  if (not dict["air_temp_sd"]) {
-    dict["air_temp_sd"] = Diagnostic::Ptr(new PDD_air_temp_sd(this));
-  }
+  return result;
 }
 
 PDD_saccum::PDD_saccum(const TemperatureIndex *m)

@@ -65,22 +65,14 @@ void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) cons
   result.set(0.0);
 }
 
-void OceanModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                      std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
-  (void) ts_dict;
-
-  if (not dict["sea_level"]) {
-    dict["sea_level"] = Diagnostic::Ptr(new PO_sea_level(this));
-  }
-  if (not dict["shelfbtemp"]) {
-    dict["shelfbtemp"] = Diagnostic::Ptr(new PO_shelf_base_temperature(this));
-  }
-  if (not dict["shelfbmassflux"]) {
-    dict["shelfbmassflux"] = Diagnostic::Ptr(new PO_shelf_base_mass_flux(this));
-  }
-  if (not dict["melange_back_pressure_fraction"]) {
-    dict["melange_back_pressure_fraction"] = Diagnostic::Ptr(new PO_melange_back_pressure_fraction(this));
-  }
+std::map<std::string, Diagnostic::Ptr> OceanModel::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"sea_level",                      Diagnostic::Ptr(new PO_sea_level(this))},
+    {"shelfbtemp",                     Diagnostic::Ptr(new PO_shelf_base_temperature(this))},
+    {"shelfbmassflux",                 Diagnostic::Ptr(new PO_shelf_base_mass_flux(this))},
+    {"melange_back_pressure_fraction", Diagnostic::Ptr(new PO_melange_back_pressure_fraction(this))}
+  };
+  return result;
 }
 
 PO_sea_level::PO_sea_level(const OceanModel *m)

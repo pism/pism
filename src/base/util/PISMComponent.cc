@@ -86,15 +86,20 @@ Component::~Component() {
   // empty
 }
 
-void Component::get_diagnostics(std::map<std::string, Diagnostic::Ptr> &dict,
-                                std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
-  this->get_diagnostics_impl(dict, ts_dict);
+std::map<std::string, Diagnostic::Ptr> Component::diagnostics() const {
+  return this->diagnostics_impl();
 }
 
-void Component::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
-  (void)dict;
-  (void)ts_dict;
+std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics() const {
+  return this->ts_diagnostics_impl();
+}
+
+std::map<std::string, Diagnostic::Ptr> Component::diagnostics_impl() const {
+  return {};
+}
+
+std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics_impl() const {
+  return {};
 }
 
 IceGrid::ConstPtr Component::grid() const {

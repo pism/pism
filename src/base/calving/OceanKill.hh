@@ -43,8 +43,7 @@ public:
   const IceModelVec2Int& mask() const;
 
 protected:
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   IceModelVec2Int m_ocean_kill_mask;
 };

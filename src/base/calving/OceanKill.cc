@@ -128,10 +128,8 @@ const IceModelVec2Int& OceanKill::mask() const {
   return m_ocean_kill_mask;
 }
 
-void OceanKill::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
-  (void) ts_dict;
-  dict["ocean_kill_mask"] = Diagnostic::Ptr(new OceanKill_mask(this));
+std::map<std::string, Diagnostic::Ptr> OceanKill::diagnostics_impl() const {
+  return {{"ocean_kill_mask", Diagnostic::Ptr(new OceanKill_mask(this))}};
 }
 
 OceanKill_mask::OceanKill_mask(const OceanKill *m)

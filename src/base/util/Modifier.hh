@@ -21,6 +21,7 @@
 #define _MODIFIER_H_
 
 #include "base/util/MaxTimestep.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 //! \brief This template allows creating Component_TS (AtmosphereModel,
@@ -63,15 +64,28 @@ protected:
     }
   }
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const
   {
     // give the model class a chance to add diagnostics
-    Model::get_diagnostics_impl(dict, ts_dict);
+    std::map<std::string, Diagnostic::Ptr> result = Model::diagnostics_impl();
 
+    // add diagnostics from an input model, if it exists
     if (m_input_model != NULL) {
-      m_input_model->get_diagnostics(dict, ts_dict);
+      result = pism::combine(result, m_input_model->diagnostics());
     }
+    return result;
+  }
+
+  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const
+  {
+    // give the model class a chance to add diagnostics
+    std::map<std::string, TSDiagnostic::Ptr> result = Model::ts_diagnostics_impl();
+
+    // add diagnostics from an input model, if it exists
+    if (m_input_model != NULL) {
+      result = pism::combine(result, m_input_model->ts_diagnostics());
+    }
+    return result;
   }
 
   virtual void define_model_state_impl(const PIO &output) const {

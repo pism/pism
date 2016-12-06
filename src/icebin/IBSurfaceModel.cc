@@ -103,11 +103,6 @@ void IBSurfaceModel::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 }
 
-void IBSurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> & /*dict*/,
-                                          std::map<std::string, TSDiagnostic::Ptr> & /*ts_dict*/) const {
-  // empty (does not have an atmosphere model)
-}
-
 void IBSurfaceModel::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(icebin_massxfer);
 }

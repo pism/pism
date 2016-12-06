@@ -153,15 +153,17 @@ void Hydrology::init() {
 }
 
 
-void Hydrology::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                     std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) const {
-  dict["bwat"]       = Diagnostic::Ptr(new Hydrology_bwat(this));
-  dict["bwp"]        = Diagnostic::Ptr(new Hydrology_bwp(this));
-  dict["bwprel"]     = Diagnostic::Ptr(new Hydrology_bwprel(this));
-  dict["effbwp"]     = Diagnostic::Ptr(new Hydrology_effbwp(this));
-  dict["hydrobmelt"] = Diagnostic::Ptr(new Hydrology_hydrobmelt(this));
-  dict["hydroinput"] = Diagnostic::Ptr(new Hydrology_hydroinput(this));
-  dict["wallmelt"]   = Diagnostic::Ptr(new Hydrology_wallmelt(this));
+std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"bwat",       Diagnostic::Ptr(new Hydrology_bwat(this))},
+    {"bwp",        Diagnostic::Ptr(new Hydrology_bwp(this))},
+    {"bwprel",     Diagnostic::Ptr(new Hydrology_bwprel(this))},
+    {"effbwp",     Diagnostic::Ptr(new Hydrology_effbwp(this))},
+    {"hydrobmelt", Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
+    {"hydroinput", Diagnostic::Ptr(new Hydrology_hydroinput(this))},
+    {"wallmelt",   Diagnostic::Ptr(new Hydrology_wallmelt(this))},
+  };
+  return result;
 }
 
 void Hydrology::define_model_state_impl(const PIO &output) const {

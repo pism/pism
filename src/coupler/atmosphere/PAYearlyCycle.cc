@@ -151,13 +151,12 @@ void YearlyCycle::end_pointwise_access_impl() const {
   m_air_temp_mean_july.end_access();
   m_precipitation.end_access();
 }
-void YearlyCycle::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const {
-  AtmosphereModel::get_diagnostics_impl(dict, ts_dict);
+std::map<std::string, Diagnostic::Ptr> YearlyCycle::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = AtmosphereModel::diagnostics_impl();
 
-  if (not dict["air_temp_mean_july"]) {
-    dict["air_temp_mean_july"] = Diagnostic::Ptr(new PA_mean_july_temp(this));
-  }
+  result["air_temp_mean_july"] = Diagnostic::Ptr(new PA_mean_july_temp(this));
+
+  return result;
 }
 
 PA_mean_july_temp::PA_mean_july_temp(const YearlyCycle *m)

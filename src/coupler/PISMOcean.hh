@@ -44,8 +44,7 @@ public:
 protected:
   virtual void init_impl() = 0;
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict) const;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   virtual void melange_back_pressure_fraction_impl(IceModelVec2S &result) const ;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const = 0;
