@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2008 Ed Bueler
+   Copyright (C) 2008, 2016 Ed Bueler
   
    This file is part of PISM.
   
@@ -45,18 +45,20 @@ extern "C"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int exactM(double r,
-           double *alpha, double *Drr,
-           const double EPS_ABS, const double EPS_REL, const int ode_method);
+struct TestMParameters {
+  int error_code;         /* GSL_SUCCESS = 0 if successful */
+  double alpha;           /* (m s^-1;  always positive) */
+  double Drr;             /* = alpha'(r) (s^-1; radial strain rate) */
+};
+
+struct TestMParameters exactM(double r,
+                              double EPS_ABS, double EPS_REL, int ode_method);
    /* input    : r                             (m;   r >= 0)
-      output   : alpha(r)                      (m s^-1;  always positive)
-                 Drr = alpha'(r)               (s^-1; radial strain rate)
       numerical: EPS_ABS                       (=1.0e-12 recommended)
                  EPS_REL                       (=0.0     recommended)
                  ode_method                    (=1       recommended; =Runge-Kutta-Cash-Karp)
-
-      return value = GSL_SUCCESS = 0 if successful
    */
+
 
 #ifdef __cplusplus
 }

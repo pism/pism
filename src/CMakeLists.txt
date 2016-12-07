@@ -217,6 +217,8 @@ add_library (pismverif OBJECT
   verif/tests/exactTestsABCD.c
   verif/tests/exactTestsFG.cc
   verif/tests/exactTestsIJ.c
+  verif/tests/exactTestM.c
+  verif/tests/exactTestN.c
 )
 
 # Main executables:

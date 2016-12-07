@@ -11,6 +11,8 @@
 #include "verif/tests/exactTestK.h"
 #include "verif/tests/exactTestL.hh"
 #include "verif/tests/exactTestO.h"
+#include "verif/tests/exactTestM.h"
+#include "verif/tests/exactTestN.h"
 %}
 
 %include "verif/tests/exactTestsFG.hh"
@@ -19,3 +21,5 @@
 %include "verif/tests/exactTestK.h"
 %include "verif/tests/exactTestL.hh"
 %include "verif/tests/exactTestO.h"
+%include "verif/tests/exactTestM.h"
+%include "verif/tests/exactTestN.h"
