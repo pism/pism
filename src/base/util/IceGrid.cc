@@ -758,10 +758,10 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
     beta  = (Y - m_impl->y[j_bottom]) / (m_impl->y[j_top] - m_impl->y[j_bottom]);
   }
 
-  return {alpha * beta,
-      (1 - alpha) * beta,
-      (1 - alpha) * (1 - beta),
-      alpha * (1 - beta)};
+  return {(1.0 - alpha) * (1.0 - beta),
+      alpha * (1.0 - beta),
+      alpha * beta,
+      (1.0 - alpha) * beta};
 }
 
 // Computes the hash corresponding to the DM with given dof and stencil_width.
