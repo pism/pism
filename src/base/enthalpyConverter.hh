@@ -116,6 +116,20 @@ protected:
 
   Note: Any instance of FlowLaw uses an EnthalpyConverter; this is
   the one used in cold mode verification code.
+
+
+  This is the special enthalpy converter that is used in
+  temperature-based verification tests only.
+
+  In these tests ice temperatures in an exact solution may exceed the
+  pressure-melting temperature, but we still want to pretend that this
+  ice is "cold" to ensure that the map from enthalpy to temperature is
+  one-to-one. (Normally enthalpy is mapped to the (temperature, water
+  fraction) pair; here water fraction is zero, so enthalpy <-->
+  (temperature, 0.)
+
+  So, I had to pick a threshold (melting) temperature that is above
+  all ice temperatures.  10^6K was chosen.
 */
 class ColdEnthalpyConverter : public EnthalpyConverter {
 public:
