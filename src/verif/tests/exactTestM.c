@@ -59,6 +59,7 @@ double dF_M(double x, double alpha, double r, double Q) {
 
 
 int funcM_ode_G(double r, const double alpha[], double f[], void* params) {
+  (void) params;
   /*   RHS G for differential equation:
           alpha' = G(alpha,r)      
      but where we solve this equation to find alpha':
