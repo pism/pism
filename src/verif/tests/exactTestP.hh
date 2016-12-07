@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2012-2013 Ed Bueler
+   Copyright (C) 2012-2013, 2016 Ed Bueler
 
    This file is part of PISM.
 
@@ -21,14 +21,14 @@
 #ifndef __exactTestP_h
 #define __exactTestP_h 1
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include <vector>
+#include <string>
+
+namespace pism {
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! exactTestP is a C implementation of a nearly-exact solution to the 'distributed'
+! exactTestP is a C++ implementation of a nearly-exact solution to the 'distributed'
 ! subglacial hydrology model described in the draft manuscript
 !
 !    Ed Bueler & Ward van Pelt (2013) "A distributed model of subglacial
@@ -37,7 +37,6 @@ extern "C"
 ! This nearly-exact solution requires solving an ODE numerically.
 ! Only the steady water thickness solution W(r) is computed here.  The
 ! pressure P can be computed by the formula P(W) which applies in steady state.
-! See simpleP.c.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
@@ -51,32 +50,32 @@ extern "C"
 #define TESTP_W_BELOW_WCRIT       78465
 #define TESTP_INVALID_METHOD      78466
 #define TESTP_NOT_DONE            78467
-
-int exactP(double r, double *h, double *magvb, double *Wcrit, double *W, double *P,
-           const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* Input r in meters,  0 <= r.
-      ode_method = 1  : rk8pd is Runge-Kutta Prince-Dormand (8,9) [default]
-                   2  : rk2   is Runge-Kutta (2,3)
-                   3  : rkf45 is Runge-Kutta-Felberg (4,5)
-                   4  : rkck  is Runge-Kutta Cash-Karp (4,5)
-      None of these are implicit.  The Jacobian has not been implemented.
-      Returns h (m), magvb (m s-1), W_c (m), W (m), P (Pa). */
-
-
-/* exit status of exactP_list() could be one of the above or one of these or zero for success */
 #define TESTP_NO_LIST             78482
 #define TESTP_LIST_NOT_DECREASING 78483
+#define TESTP_OLD_GSL             78484
 
-int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W, double *P,
-                const double EPS_ABS, const double EPS_REL, const int ode_method);
-   /* 1. assumes N values r[0] > r[1] > ... > r[N-1] >= 0  (_decreasing_)
-      2. assumes r, h, magvb, Wcrit, W are _allocated_ length N arrays  */
+struct TestPParameters {
+  TestPParameters(int N)
+    : r(N), h(N), magvb(N), Wcrit(N), W(N), P(N) {
+    error_code = 0;
+  }
 
-int error_message_testP(int status);
+  int error_code;
+  std::string error_message;
+  std::vector<double> r, h, magvb, Wcrit, W, P;
+};
 
-#ifdef __cplusplus
-}
-#endif
+
+TestPParameters exactP(const std::vector<double> &r,
+                       double EPS_ABS, double EPS_REL, int ode_method);
+/* Input r in meters, assumes that values in are decreasing (r[0] > r[1] > ... > r[N-1] >= 0).
+   ode_method = 1  : rk8pd is Runge-Kutta Prince-Dormand (8,9) [default]
+                2  : rk2   is Runge-Kutta (2,3)
+                3  : rkf45 is Runge-Kutta-Felberg (4,5)
+                4  : rkck  is Runge-Kutta Cash-Karp (4,5)
+   None of these are implicit.  The Jacobian has not been implemented.
+   Returns h (m), magvb (m s-1), W_c (m), W (m), P (Pa). */
+
+} // end of namespace pism
 
 #endif  /* __exactTestP_h */
-

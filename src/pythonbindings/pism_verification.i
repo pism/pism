@@ -13,6 +13,7 @@
 #include "verif/tests/exactTestO.h"
 #include "verif/tests/exactTestM.h"
 #include "verif/tests/exactTestN.h"
+#include "verif/tests/exactTestP.hh"
 %}
 
 %include "verif/tests/exactTestsFG.hh"
@@ -23,3 +24,4 @@
 %include "verif/tests/exactTestO.h"
 %include "verif/tests/exactTestM.h"
 %include "verif/tests/exactTestN.h"
+%include "verif/tests/exactTestP.hh"
