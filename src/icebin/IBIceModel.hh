@@ -18,6 +18,8 @@
 #include <icebin/MassEnergyBudget.hh>
 #include <icebin/NullTransportHydrology.hh>
 
+// Stuff defined in the icebin library
+// (NOT a dependency of ours)
 namespace icebin {
 namespace gpism {
 class IceModel_PISM;
