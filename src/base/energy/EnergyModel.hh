@@ -57,6 +57,7 @@ public:
 class EnergyModelStats {
 public:
   EnergyModelStats();
+  void reset();
 
   unsigned int bulge_counter;
   unsigned int reduced_accuracy_counter;

@@ -72,11 +72,16 @@ void EnergyModelInputs::check() const {
 }
 
 EnergyModelStats::EnergyModelStats() {
-  bulge_counter = 0;
-  reduced_accuracy_counter = 0;
-  low_temperature_counter = 0;
-  liquified_ice_volume = 0.0;
+  reset();
 }
+
+void EnergyModelStats::reset() {
+  bulge_counter            = 0;
+  reduced_accuracy_counter = 0;
+  low_temperature_counter  = 0;
+  liquified_ice_volume     = 0.0;
+}
+
 
 EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
                          stressbalance::StressBalance *stress_balance)
@@ -226,6 +231,7 @@ void EnergyModel::initialize(const IceModelVec2S &basal_melt_rate,
 void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
   // reset standard out flags at the beginning of every time step
   m_stdout_flags = "";
+  m_stats.reset();
 
   {
     // this call should fill m_work with new values of enthalpy
@@ -255,6 +261,9 @@ void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
       snprintf(buffer, 50, " BULGE=%d ", m_stats.bulge_counter);
       m_stdout_flags = buffer + m_stdout_flags;
     }
+
+    m_stats.low_temperature_counter = GlobalSum(m_grid->com, m_stats.low_temperature_counter);
+    m_stats.liquified_ice_volume    = GlobalSum(m_grid->com, m_stats.liquified_ice_volume);
   }
 }
 
