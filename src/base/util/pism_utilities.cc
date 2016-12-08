@@ -127,6 +127,20 @@ void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
   GlobalReduce(comm, local, result, count, MPI_SUM);
 }
 
+unsigned int GlobalSum(MPI_Comm comm, unsigned int input) {
+  unsigned int result;
+  int err = MPI_Allreduce(&input, &result, 1, MPI_UNSIGNED, MPI_SUM, comm);
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
+  return result;
+}
+
+int GlobalSum(MPI_Comm comm, int input) {
+  int result;
+  int err = MPI_Allreduce(&input, &result, 1, MPI_INT, MPI_SUM, comm);
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
+  return result;
+}
+
 double GlobalMin(MPI_Comm comm, double local) {
   double result;
   GlobalMin(comm, &local, &result, 1);

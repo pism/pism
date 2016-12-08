@@ -85,6 +85,10 @@ double GlobalMax(MPI_Comm comm, double local);
 
 double GlobalSum(MPI_Comm comm, double local);
 
+unsigned int GlobalSum(MPI_Comm comm, unsigned int input);
+
+int GlobalSum(MPI_Comm comm, int input);
+
 std::string version();
 
 } // end of namespace pism
