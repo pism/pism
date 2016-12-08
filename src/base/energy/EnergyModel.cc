@@ -72,14 +72,26 @@ void EnergyModelInputs::check() const {
 }
 
 EnergyModelStats::EnergyModelStats() {
-  reset();
-}
-
-void EnergyModelStats::reset() {
   bulge_counter            = 0;
   reduced_accuracy_counter = 0;
   low_temperature_counter  = 0;
   liquified_ice_volume     = 0.0;
+}
+
+EnergyModelStats& EnergyModelStats::operator+=(const EnergyModelStats &other) {
+  bulge_counter            += other.bulge_counter;
+  reduced_accuracy_counter += other.reduced_accuracy_counter;
+  low_temperature_counter  += other.low_temperature_counter;
+  liquified_ice_volume     += other.liquified_ice_volume;
+  return *this;
+}
+
+
+void EnergyModelStats::sum(MPI_Comm com) {
+  bulge_counter            = GlobalSum(com, bulge_counter);
+  reduced_accuracy_counter = GlobalSum(com, reduced_accuracy_counter);
+  low_temperature_counter  = GlobalSum(com, low_temperature_counter);
+  liquified_ice_volume     = GlobalSum(com, liquified_ice_volume);
 }
 
 
@@ -231,7 +243,7 @@ void EnergyModel::initialize(const IceModelVec2S &basal_melt_rate,
 void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
   // reset standard out flags at the beginning of every time step
   m_stdout_flags = "";
-  m_stats.reset();
+  m_stats = EnergyModelStats();
 
   {
     // this call should fill m_work with new values of enthalpy
@@ -244,7 +256,8 @@ void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
   {
     char buffer[50] = "";
 
-    m_stats.reduced_accuracy_counter = GlobalSum(m_grid->com, m_stats.reduced_accuracy_counter);
+    m_stats.sum(m_grid->com);
+    m_cumulative_stats += m_stats;
     if (m_stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
       const double reduced_accuracy_percentage = 100.0 * (m_stats.reduced_accuracy_counter / (m_grid->Mx() * m_grid->My()));
       const double reporting_threshold = 5.0; // only report if above 5%
@@ -255,15 +268,11 @@ void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
       }
     }
 
-    m_stats.bulge_counter = GlobalSum(m_grid->com, m_stats.bulge_counter);
     if (m_stats.bulge_counter > 0) {
       // count of when advection bulges are limited; frequently it is identically zero
       snprintf(buffer, 50, " BULGE=%d ", m_stats.bulge_counter);
       m_stdout_flags = buffer + m_stdout_flags;
     }
-
-    m_stats.low_temperature_counter = GlobalSum(m_grid->com, m_stats.low_temperature_counter);
-    m_stats.liquified_ice_volume    = GlobalSum(m_grid->com, m_stats.liquified_ice_volume);
   }
 }
 
@@ -295,6 +304,14 @@ const EnergyModelStats& EnergyModel::stats() const {
   return m_stats;
 }
 
+const EnergyModelStats& EnergyModel::cumulative_stats() const {
+  return m_cumulative_stats;
+}
+
+void EnergyModel::reset_cumulative_stats() {
+  m_cumulative_stats = EnergyModelStats();
+}
+
 const IceModelVec3 & EnergyModel::enthalpy() const {
   return m_ice_enthalpy;
 }
@@ -303,6 +320,36 @@ const IceModelVec2S & EnergyModel::basal_melt_rate() const {
   return m_basal_melt_rate;
 }
 
+/*! @brief Total volume of liquified ice. */
+class EnergyModel_liquified_ice_volume : public TSDiag<EnergyModel> {
+public:
+  EnergyModel_liquified_ice_volume(const EnergyModel *m);
+protected:
+  void update(double a, double b);
+};
+
+EnergyModel_liquified_ice_volume::EnergyModel_liquified_ice_volume(const EnergyModel *m)
+  : TSDiag<EnergyModel>(m) {
+
+  // set metadata
+  m_ts = new DiagnosticTimeseries(*m_grid, "liquified_ice_volume", m_time_dimension_name);
+
+  m_ts->metadata().set_string("units", "m3");
+  m_ts->dimension_metadata().set_string("units", m_time_units);
+
+  m_ts->metadata().set_string("long_name",
+                              "total volume of ice liquified during a reporting interval");
+}
+
+void EnergyModel_liquified_ice_volume::update(double a, double b) {
+  m_ts->append(model->cumulative_stats().liquified_ice_volume, a, b);
+}
+
+std::map<std::string, TSDiagnostic::Ptr> EnergyModel::ts_diagnostics_impl() const {
+  return {
+    {"liquified_ice_volume", TSDiagnostic::Ptr(new EnergyModel_liquified_ice_volume(this))}
+  };
+}
 
 } // end of namespace energy
 

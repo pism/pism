@@ -23,6 +23,8 @@
 #include "iceModel.hh"
 
 #include "base/stressbalance/PISMStressBalance.hh"
+#include "base/energy/EnergyModel.hh"
+
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/PISMTime.hh"
@@ -195,6 +197,7 @@ void IceModel::write_timeseries() {
       }
     }
   }
+  m_energy_model->reset_cumulative_stats();
 }
 
 
@@ -503,7 +506,7 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
   return reporting_max_timestep(m_extra_times, my_t, "reporting (-extra_times)");
 }
 
-//! Computes the maximum time-step we can take and still hit all `-extra_times`.
+//! Computes the maximum time-step we can take and still hit all `-save_times`.
 MaxTimestep IceModel::save_max_timestep(double my_t) {
 
   if ((not m_save_snapshots) or
@@ -553,7 +556,6 @@ void IceModel::flush_timeseries() {
 
     nc.close();
   }
-
 }
 
 } // end of namespace pism
