@@ -5,6 +5,13 @@ project (Pism C CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Looks like CMAKE_CXX_STANDARD does not support Intel C++ compilers
+# yet...
+if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  message (STATUS "Adding -std=c++11 to C++ compiler flags for Intel compilers.")
+  set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
+endif()
+
 # This has to do with the way we compute dependencies of PISM's Python
 # bindings. Enabling the "old" behavior allows us to support both old
 # and new (>= 3.0) CMake versions.
