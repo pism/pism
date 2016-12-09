@@ -122,7 +122,8 @@ int NC4_Quilt::def_var_impl(const std::string &name, IO_Type nctype,
     dims_local.push_back(name + suffix);
     stat = this->def_var_impl(name + suffix, nctype, dims_local); check(PISM_ERROR_LOCATION, stat);
 
-    std::vector<double> buffer(1, name == "x" ? m_xs : m_ys);
+    std::vector<double> buffer;
+    buffer.push_back(name == "x" ? m_xs : m_ys);
     stat = this->put_att_double_impl(name + suffix, "patch_offset", PISM_INT,
                                      buffer); check(PISM_ERROR_LOCATION, stat);
 
