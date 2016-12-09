@@ -160,6 +160,7 @@ macro(pism_find_prerequisites)
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
   find_package (FFTW REQUIRED)
+  find_package (HDF5 COMPONENTS C HL)
 
   # Optional libraries
   if (Pism_USE_PNETCDF)
@@ -167,7 +168,10 @@ macro(pism_find_prerequisites)
   endif()
 
   if (Pism_USE_PARALLEL_HDF5)
-    find_package (HDF5 COMPONENTS C HL)
+
+    if (NOT HDF5_FOUND)
+      message(FATAL_ERROR "HDF-5 is required.")
+    endif()
 
     if(NOT HDF5_IS_PARALLEL)
       set (Pism_USE_PARALLEL_HDF5 OFF CACHE BOOL "Enables parallel HDF5 I/O." FORCE)
@@ -250,7 +254,9 @@ macro(pism_set_dependencies)
     ${FFTW_LIBRARIES}
     ${GSL_LIBRARIES}
     ${NETCDF_LIBRARIES}
-    ${MPI_C_LIBRARIES})
+    ${MPI_C_LIBRARIES}
+    ${HDF5_LIBRARIES}
+    ${HDF5_HL_LIBRARIES})
 
   # optional libraries
   if (Pism_USE_JANSSON)
@@ -273,7 +279,6 @@ macro(pism_set_dependencies)
   # We want to use the latter.)
   if (Pism_USE_PARALLEL_HDF5)
     include_directories (BEFORE ${HDF5_C_INCLUDE_DIR})
-    list (APPEND Pism_EXTERNAL_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
   endif()
 
   # Hide distracting CMake variables
