@@ -40,7 +40,7 @@ namespace surface {
 class PS_climatic_mass_balance : public Diag<SurfaceModel>
 {
 public:
-  PS_climatic_mass_balance(SurfaceModel *m);
+  PS_climatic_mass_balance(const SurfaceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -49,7 +49,7 @@ protected:
 class PS_ice_surface_temp : public Diag<SurfaceModel>
 {
 public:
-  PS_ice_surface_temp(SurfaceModel *m);
+  PS_ice_surface_temp(const SurfaceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -58,16 +58,16 @@ protected:
 class PS_liquid_water_fraction : public Diag<SurfaceModel>
 {
 public:
-  PS_liquid_water_fraction(SurfaceModel *m);
+  PS_liquid_water_fraction(const SurfaceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
 
 /*! @brief Mass of the surface layer (snow and firn). */
-class PS_surface_layer_mass : public Diag<SurfaceModel>
+class PS_layer_mass : public Diag<SurfaceModel>
 {
 public:
-  PS_surface_layer_mass(SurfaceModel *m);
+  PS_layer_mass(const SurfaceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -76,7 +76,7 @@ protected:
 class PS_layer_thickness : public Diag<SurfaceModel>
 {
 public:
-  PS_layer_thickness(SurfaceModel *m);
+  PS_layer_thickness(const SurfaceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -101,8 +101,8 @@ std::map<std::string, Diagnostic::Ptr> SurfaceModel::diagnostics_impl() const {
     {"climatic_mass_balance",             Diagnostic::Ptr(new PS_climatic_mass_balance(this))},
     {"ice_surface_temp",                  Diagnostic::Ptr(new PS_ice_surface_temp(this))},
     {"ice_surface_liquid_water_fraction", Diagnostic::Ptr(new PS_liquid_water_fraction(this))},
-    {"surface_layer_mass",                Diagnostic::Ptr(new PS_surface_layer_mass(this))},
-    {"surface_layer_thickness",           Diagnostic::Ptr(new PS_surface_layer_thickness(this))}
+    {"surface_layer_mass",                Diagnostic::Ptr(new PS_layer_mass(this))},
+    {"surface_layer_thickness",           Diagnostic::Ptr(new PS_layer_thickness(this))}
   };
 
   if (m_atmosphere) {
@@ -268,7 +268,7 @@ IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() {
   return result;
 }
 
-PS_surface_layer_mass::PS_surface_layer_mass(const SurfaceModel *m)
+PS_layer_mass::PS_layer_mass(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -278,7 +278,7 @@ PS_surface_layer_mass::PS_surface_layer_mass(const SurfaceModel *m)
             "kg", "kg", 0);
 }
 
-IceModelVec::Ptr PS_surface_layer_mass::compute_impl() {
+IceModelVec::Ptr PS_layer_mass::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "surface_layer_mass", WITHOUT_GHOSTS);
@@ -289,7 +289,7 @@ IceModelVec::Ptr PS_surface_layer_mass::compute_impl() {
   return result;
 }
 
-PS_surface_layer_thickness::PS_surface_layer_thickness(const SurfaceModel *m)
+PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -299,7 +299,7 @@ PS_surface_layer_thickness::PS_surface_layer_thickness(const SurfaceModel *m)
             "meters", "meters", 0);
 }
 
-IceModelVec::Ptr PS_surface_layer_thickness::compute_impl() {
+IceModelVec::Ptr PS_layer_thickness::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS);

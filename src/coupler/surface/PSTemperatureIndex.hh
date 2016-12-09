@@ -46,15 +46,15 @@ public:
   TemperatureIndex(IceGrid::ConstPtr g);
   virtual ~TemperatureIndex();
 
-  const IceModelVec2S& surface_accumulation() const;
-  const IceModelVec2S& surface_melt() const;
-  const IceModelVec2S& surface_runoff() const;
+  const IceModelVec2S& accumulation() const;
+  const IceModelVec2S& melt() const;
+  const IceModelVec2S& runoff() const;
   const IceModelVec2S& snow_depth() const;
   const IceModelVec2S& air_temp_sd() const;
 
-  const IceModelVec2S& cumulative_surface_accumulation() const;
-  const IceModelVec2S& cumulative_surface_melt() const;
-  const IceModelVec2S& cumulative_surface_runoff() const;
+  const IceModelVec2S& cumulative_accumulation() const;
+  const IceModelVec2S& cumulative_melt() const;
+  const IceModelVec2S& cumulative_runoff() const;
 
 protected:
   virtual void init_impl();

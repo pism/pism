@@ -498,27 +498,27 @@ void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) const
   m_atmosphere->mean_annual_temp(result);
 }
 
-const IceModelVec2S& TemperatureIndex::cumulative_surface_accumulation() const {
+const IceModelVec2S& TemperatureIndex::cumulative_accumulation() const {
   return m_cumulative_accumulation;
 }
 
-const IceModelVec2S& TemperatureIndex::cumulative_surface_melt() const {
+const IceModelVec2S& TemperatureIndex::cumulative_melt() const {
   return m_cumulative_melt;
 }
 
-const IceModelVec2S& TemperatureIndex::cumulative_surface_runoff() const {
+const IceModelVec2S& TemperatureIndex::cumulative_runoff() const {
   return m_cumulative_runoff;
 }
 
-const IceModelVec2S& TemperatureIndex::surface_accumulation() const {
+const IceModelVec2S& TemperatureIndex::accumulation() const {
   return m_accumulation_rate;
 }
 
-const IceModelVec2S& TemperatureIndex::surface_melt() const {
+const IceModelVec2S& TemperatureIndex::melt() const {
   return m_melt_rate;
 }
 
-const IceModelVec2S& TemperatureIndex::surface_runoff() const {
+const IceModelVec2S& TemperatureIndex::runoff() const {
   return m_runoff_rate;
 }
 
@@ -572,7 +572,7 @@ IceModelVec::Ptr PDD_saccum::compute_impl() {
   result->create(m_grid, "saccum", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  result->copy_from(model->surface_accumulation());
+  result->copy_from(model->accumulation());
 
   return result;
 }
@@ -593,7 +593,7 @@ IceModelVec::Ptr PDD_smelt::compute_impl() {
   result->create(m_grid, "smelt", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  result->copy_from(model->surface_melt());
+  result->copy_from(model->melt());
 
   return result;
 }
@@ -614,7 +614,7 @@ IceModelVec::Ptr PDD_srunoff::compute_impl() {
   result->create(m_grid, "srunoff", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  result->copy_from(model->surface_runoff());
+  result->copy_from(model->runoff());
 
   return result;
 }
@@ -675,7 +675,7 @@ PDD_saccum_average::PDD_saccum_average(const TemperatureIndex *m)
 }
 
 const IceModelVec2S & PDD_saccum_average::cumulative_value() const {
-  return model->cumulative_surface_accumulation();
+  return model->cumulative_accumulation();
 }
 
 PDD_smelt_average::PDD_smelt_average(const TemperatureIndex *m)
@@ -692,7 +692,7 @@ PDD_smelt_average::PDD_smelt_average(const TemperatureIndex *m)
 }
 
 const IceModelVec2S & PDD_smelt_average::cumulative_value() const {
-  return model->cumulative_surface_melt();
+  return model->cumulative_melt();
 }
 
 PDD_srunoff_average::PDD_srunoff_average(const TemperatureIndex *m)
@@ -709,7 +709,7 @@ PDD_srunoff_average::PDD_srunoff_average(const TemperatureIndex *m)
 }
 
 const IceModelVec2S & PDD_srunoff_average::cumulative_value() const {
-  return model->cumulative_surface_runoff();
+  return model->cumulative_runoff();
 }
 
 } // end of namespace surface
