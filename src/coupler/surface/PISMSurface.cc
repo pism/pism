@@ -34,6 +34,53 @@
 namespace pism {
 namespace surface {
 
+// SurfaceModel diagnostics (these don't need to be in the header)
+
+/*! @brief Climatic mass balance */
+class PS_climatic_mass_balance : public Diag<SurfaceModel>
+{
+public:
+  PS_climatic_mass_balance(SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Ice surface temperature. */
+class PS_ice_surface_temp : public Diag<SurfaceModel>
+{
+public:
+  PS_ice_surface_temp(SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Ice liquid water fraction at the ice surface. */
+class PS_liquid_water_fraction : public Diag<SurfaceModel>
+{
+public:
+  PS_liquid_water_fraction(SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Mass of the surface layer (snow and firn). */
+class PS_surface_layer_mass : public Diag<SurfaceModel>
+{
+public:
+  PS_surface_layer_mass(SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Surface layer (snow and firn) thickness. */
+class PS_layer_thickness : public Diag<SurfaceModel>
+{
+public:
+  PS_layer_thickness(SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
 ///// PISMSurfaceModel base class:
 
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr g)
