@@ -7,9 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Looks like CMAKE_CXX_STANDARD does not support Intel C++ compilers
 # yet...
-if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-  message (STATUS "Adding -std=c++11 to C++ compiler flags for Intel compilers.")
-  set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Intel" AND NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+    message (STATUS "Adding -std=c++11 to C++ compiler flags for Intel compilers.")
+    set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
+  endif()
 endif()
 
 # This has to do with the way we compute dependencies of PISM's Python
