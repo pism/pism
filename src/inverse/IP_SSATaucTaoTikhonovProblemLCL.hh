@@ -129,7 +129,7 @@ protected:
 
   IP_SSATaucForwardProblem &m_ssaforward;
 
-  std::auto_ptr<IPTwoBlockVec> m_x;
+  std::unique_ptr<IPTwoBlockVec> m_x;
 
   DesignVec m_dGlobal;
   DesignVec::Ptr m_d;
