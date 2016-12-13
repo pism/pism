@@ -80,6 +80,7 @@ private:
                   ICERISESmask,
                   BOXMODELmask,
                   OCEANMEANmask, 
+                  OCEANmask,
                   DistGL,
                   DistIF,
                   Soc,
