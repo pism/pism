@@ -113,7 +113,7 @@ void Cache::update_impl(double t, double dt) {
   }
 }
 
-MaxTimestep Cache::max_timestep_impl(double t) {
+MaxTimestep Cache::max_timestep_impl(double t) const {
   double dt = m_next_update_time - t;
 
   // if we got very close to the next update time, set time step
@@ -128,31 +128,33 @@ MaxTimestep Cache::max_timestep_impl(double t) {
 
   assert(m_input_model != NULL);
 
+  MaxTimestep cache_dt(dt, "surface cache");
+
   MaxTimestep input_max_timestep = m_input_model->max_timestep(t);
-  if (input_max_timestep.is_finite()) {
-    return std::min(input_max_timestep, MaxTimestep(dt));
+  if (input_max_timestep.finite()) {
+    return std::min(input_max_timestep, cache_dt);
   } else {
-    return MaxTimestep(dt);
+    return cache_dt;
   }
 }
 
-void Cache::ice_surface_mass_flux_impl(IceModelVec2S &result) {
+void Cache::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_mass_flux);
 }
 
-void Cache::ice_surface_temperature_impl(IceModelVec2S &result) {
+void Cache::ice_surface_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_temperature);
 }
 
-void Cache::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
+void Cache::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const {
   result.copy_from(m_liquid_water_fraction);
 }
 
-void Cache::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
+void Cache::mass_held_in_surface_layer_impl(IceModelVec2S &result) const {
   result.copy_from(m_mass_held_in_surface_layer);
 }
 
-void Cache::surface_layer_thickness_impl(IceModelVec2S &result) {
+void Cache::surface_layer_thickness_impl(IceModelVec2S &result) const {
   result.copy_from(m_surface_layer_thickness);
 }
 

@@ -329,9 +329,8 @@ IceModelVec3::Ptr Vars::get_3d_scalar_shared(const std::string &name) const {
 std::set<std::string> Vars::keys_shared() const {
 
   std::set<std::string> result;
-  std::map<std::string,IceModelVec::Ptr>::const_iterator i;
-  for (i = m_variables_shared.begin(); i != m_variables_shared.end(); ++i) {
-    result.insert(i->first);
+  for (auto v : m_variables_shared) {
+    result.insert(v.first);
   }
 
   return result;

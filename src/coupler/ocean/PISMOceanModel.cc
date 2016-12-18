@@ -65,44 +65,17 @@ void OceanModel::melange_back_pressure_fraction_impl(IceModelVec2S &result) cons
   result.set(0.0);
 }
 
-void OceanModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                      std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-  (void) ts_dict;
-
-  if (not dict["sea_level"]) {
-    dict["sea_level"] = Diagnostic::Ptr(new PO_sea_level(this));
-  }
-  if (not dict["shelfbtemp"]) {
-    dict["shelfbtemp"] = Diagnostic::Ptr(new PO_shelf_base_temperature(this));
-  }
-  if (not dict["shelfbmassflux"]) {
-    dict["shelfbmassflux"] = Diagnostic::Ptr(new PO_shelf_base_mass_flux(this));
-  }
-  if (not dict["melange_back_pressure_fraction"]) {
-    dict["melange_back_pressure_fraction"] = Diagnostic::Ptr(new PO_melange_back_pressure_fraction(this));
-  }
+std::map<std::string, Diagnostic::Ptr> OceanModel::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"sea_level",                      Diagnostic::Ptr(new PO_sea_level(this))},
+    {"shelfbtemp",                     Diagnostic::Ptr(new PO_shelf_base_temperature(this))},
+    {"shelfbmassflux",                 Diagnostic::Ptr(new PO_shelf_base_mass_flux(this))},
+    {"melange_back_pressure_fraction", Diagnostic::Ptr(new PO_melange_back_pressure_fraction(this))}
+  };
+  return result;
 }
 
-void OceanModel::add_vars_to_output_impl(const std::string &keyword,
-                                         std::set<std::string> &result) {
-  (void) keyword;
-  (void) result;
-}
-
-void OceanModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                       IO_Type nctype) {
-  (void) vars;
-  (void) nc;
-  (void) nctype;
-}
-
-void OceanModel::write_variables_impl(const std::set<std::string> &vars,
-                                      const PIO& nc) {
-  (void) vars;
-  (void) nc;
-}
-
-PO_sea_level::PO_sea_level(OceanModel *m)
+PO_sea_level::PO_sea_level(const OceanModel *m)
   : Diag<OceanModel>(m) {
 
   /* set metadata: */
@@ -123,7 +96,7 @@ IceModelVec::Ptr PO_sea_level::compute_impl() {
   return result;
 }
 
-PO_shelf_base_temperature::PO_shelf_base_temperature(OceanModel *m)
+PO_shelf_base_temperature::PO_shelf_base_temperature(const OceanModel *m)
   : Diag<OceanModel>(m) {
 
   /* set metadata: */
@@ -144,7 +117,7 @@ IceModelVec::Ptr PO_shelf_base_temperature::compute_impl() {
   return result;
 }
 
-PO_shelf_base_mass_flux::PO_shelf_base_mass_flux(OceanModel *m)
+PO_shelf_base_mass_flux::PO_shelf_base_mass_flux(const OceanModel *m)
   : Diag<OceanModel>(m) {
 
   /* set metadata: */
@@ -165,7 +138,7 @@ IceModelVec::Ptr PO_shelf_base_mass_flux::compute_impl() {
   return result;
 }
 
-PO_melange_back_pressure_fraction::PO_melange_back_pressure_fraction(OceanModel *m)
+PO_melange_back_pressure_fraction::PO_melange_back_pressure_fraction(const OceanModel *m)
   : Diag<OceanModel>(m) {
 
   /* set metadata: */

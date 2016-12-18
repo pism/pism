@@ -31,26 +31,22 @@ public:
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:
-  virtual void setFromOptions();
   virtual void createVecs();
-  virtual void allocate_stressbalance();
   virtual void allocate_bedrock_thermal_unit();
   virtual void allocate_bed_deformation();
   virtual void allocate_couplers();
+  virtual void allocate_energy_model();
 
   virtual void bootstrap_2d(const PIO &input_file) __attribute__((noreturn));
-  virtual void bootstrap_3d() __attribute__((noreturn));
 
   virtual void initialize_2d();
-  virtual void initialize_3d();
 
   void reportErrors();
 
 protected:
   // related to all (or most) tests
-  bool exactOnly;
-  int testname;
-  virtual void additionalAtStartTimestep();
+  int m_testname;
+
   virtual void additionalAtEndTimestep();
   // all tests except K
   void computeGeometryErrors(double &gvolexact, double &gareaexact, double &gdomeHexact,
@@ -61,30 +57,18 @@ protected:
 
   // related to tests A B C D H
   void initTestABCDH();
-  void fillSolnTestABCDH();  // only used with exactOnly == true
-  
-  // related to test E
-  void fillSolnTestE();  // only used with exactOnly == true
-
-  // test E only
-  void computeBasalVelocityErrors(double &exactmaxspeed,
-                                            double &gmaxvecerr, double &gavvecerr,
-                                            double &gmaxuberr, double &gmaxvberr);
 
   void reset_thickness_test_A();
 
   // related to test L
-  IceModelVec2S   vHexactL;
+  IceModelVec2S m_HexactL;
   void initTestL();
-  void fillSolnTestL();  // only used with exactOnly == true
 
   // related to tests F G; see iCMthermo.cc
-  virtual void temperatureStep(const EnergyModelInputs &inputs,
-                               double dt,
-                               EnergyModelStats &stats);
+  virtual void energyStep();
   void initTestFG();
   void getCompSourcesTestFG();
-  void fillSolnTestFG();  // only used with exactOnly == true
+
   // tests F and G
   void computeTemperatureErrors(double &gmaxTerr, double &gavTerr);
   // tests F and G
@@ -96,13 +80,11 @@ protected:
   void computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
                                               double &gmaxWerr, double &gavWerr); // scalar errors
   
-  IceModelVec3   strain_heating3_comp;
+  IceModelVec3 m_strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc
   void initTestsKO();
-  void fillTemperatureSolnTestsKO();  // used in initialzation
-  //   and with exactOnly == true
-  void fillBasalMeltRateSolnTestO();  // used only with exactOnly == true
+
  // tests K and O only
   void computeIceBedrockTemperatureErrors(double &gmaxTerr, double &gavTerr,
                                                     double &gmaxTberr, double &gavTberr);
@@ -112,17 +94,15 @@ protected:
   // using Van der Veen's exact solution to test CFBC and the part-grid code
   void test_V_init();
 
-  static const double secpera;
-
 private:
-  double f;       // ratio of ice density to bedrock density
-  bool bedrock_is_ice_forK;
+  double m_f;       // ratio of ice density to bedrock density
+  bool m_bedrock_is_ice_forK;
 
   // see iCMthermo.cc
-  static const double ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
-  static const double Tmin;    // K;       minimum temperature (at center)
-  static const double LforFG;  // m;  exact radius of tests F&G ice sheet
-  static const double ApforG;  // m;  magnitude A_p of annular perturbation for test G;
+  static const double m_ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
+  static const double m_Tmin;    // K;       minimum temperature (at center)
+  static const double m_LforFG;  // m;  exact radius of tests F&G ice sheet
+  static const double m_ApforG;  // m;  magnitude A_p of annular perturbation for test G;
   // period t_p is set internally to 2000 years
 };
 

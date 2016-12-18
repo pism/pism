@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,7 @@ public:
   ~EISMINTII();
 protected:
   void init_impl();
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   void update_impl(PetscReal t, PetscReal dt);
   void initialize_using_formulas();
   int m_experiment;

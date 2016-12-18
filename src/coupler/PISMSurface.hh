@@ -46,93 +46,43 @@ public:
   SurfaceModel(IceGrid::ConstPtr g);
   virtual ~SurfaceModel();
 
-  // the interface:
-  void ice_surface_mass_flux(IceModelVec2S &result);
-
-  void ice_surface_temperature(IceModelVec2S &result);
-  void ice_surface_liquid_water_fraction(IceModelVec2S &result);
-
-  void mass_held_in_surface_layer(IceModelVec2S &result);
-  void surface_layer_thickness(IceModelVec2S &result);
+  void init();
 
   void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
 
-  void init();
+  // the interface:
+  void ice_surface_mass_flux(IceModelVec2S &result) const;
+
+  void ice_surface_temperature(IceModelVec2S &result) const;
+  void ice_surface_liquid_water_fraction(IceModelVec2S &result) const;
+
+  void mass_held_in_surface_layer(IceModelVec2S &result) const;
+  void surface_layer_thickness(IceModelVec2S &result) const;
 protected:
   virtual void init_impl();
+
+  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual MaxTimestep max_timestep_impl(double my_t);
+  virtual MaxTimestep max_timestep_impl(double my_t) const;
 
-  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
+  virtual void surface_layer_thickness_impl(IceModelVec2S &result) const;
+  virtual void mass_held_in_surface_layer_impl(IceModelVec2S &result) const;
 
-  virtual void surface_layer_thickness_impl(IceModelVec2S &result);
-  virtual void mass_held_in_surface_layer_impl(IceModelVec2S &result);
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const = 0;
+  virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const;
 
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result) = 0;  
-  virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result);
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const = 0;
 
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) = 0;
-
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype);
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 protected:
   atmosphere::AtmosphereModel *m_atmosphere;
-};
-
-/*! @brief Climatic mass balance */
-class PS_climatic_mass_balance : public Diag<SurfaceModel>
-{
-public:
-  PS_climatic_mass_balance(SurfaceModel *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Ice surface temperature. */
-class PS_ice_surface_temp : public Diag<SurfaceModel>
-{
-public:
-  PS_ice_surface_temp(SurfaceModel *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Ice liquid water fraction at the ice surface. */
-class PS_liquid_water_fraction : public Diag<SurfaceModel>
-{
-public:
-  PS_liquid_water_fraction(SurfaceModel *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Mass of the surface layer (snow and firn). */
-class PS_surface_layer_mass : public Diag<SurfaceModel>
-{
-public:
-  PS_surface_layer_mass(SurfaceModel *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Surface layer (snow and firn) thickness. */
-class PS_surface_layer_thickness : public Diag<SurfaceModel>
-{
-public:
-  PS_surface_layer_thickness(SurfaceModel *m);
-protected:
-  IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace surface
 } // end of namespace pism
 
 #endif  // __PISMSurfaceModel_hh
-

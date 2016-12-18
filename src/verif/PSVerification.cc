@@ -64,9 +64,19 @@ void Verification::init_impl() {
   update(m_grid->ctx()->time()->current(), 0);
 }
 
-MaxTimestep Verification::max_timestep_impl(double t) {
+void Verification::define_model_state_impl(const PIO &output) const {
+  m_climatic_mass_balance.define(output);
+  m_ice_surface_temp.define(output);
+}
+
+void Verification::write_model_state_impl(const PIO &output) const {
+  m_climatic_mass_balance.write(output);
+  m_ice_surface_temp.write(output);
+}
+
+MaxTimestep Verification::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("verification surface model");
 }
 
 /** Initialize climate inputs of tests K and O.

@@ -119,9 +119,9 @@ void Routing::init() {
   m_null_strip_loss_cumulative         = 0.0;
 }
 
-MaxTimestep Routing::max_timestep_impl(double t) {
+MaxTimestep Routing::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("routing hydrology");
 }
 
 
@@ -150,50 +150,41 @@ void Routing::init_bwat() {
 }
 
 
-void Routing::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  Hydrology::add_vars_to_output_impl(keyword, result);
-  result.insert("bwat");
+void Routing::define_model_state_impl(const PIO &output) const {
+  Hydrology::define_model_state_impl(output);
+  m_W.define(output);
 }
 
-
-void Routing::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                                 IO_Type nctype) {
-  Hydrology::define_variables_impl(vars, nc, nctype);
-  if (set_contains(vars, "bwat")) {
-    m_W.define(nc, nctype);
-  }
+void Routing::write_model_state_impl(const PIO &output) const {
+  Hydrology::write_model_state_impl(output);
+  m_W.write(output);
 }
 
-
-void Routing::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  Hydrology::write_variables_impl(vars, nc);
-  if (set_contains(vars, "bwat")) {
-    m_W.write(nc);
-  }
+std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"bwp", Diagnostic::Ptr(new Hydrology_bwp(this))},
+    {"bwprel", Diagnostic::Ptr(new Hydrology_bwprel(this))},
+    {"effbwp", Diagnostic::Ptr(new Hydrology_effbwp(this))},
+    {"hydrobmelt", Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
+    {"hydroinput", Diagnostic::Ptr(new Hydrology_hydroinput(this))},
+    {"wallmelt", Diagnostic::Ptr(new Hydrology_wallmelt(this))},
+    {"bwatvel", Diagnostic::Ptr(new Routing_bwatvel(this))}
+  };
+  return result;
 }
 
-
-void Routing::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-  // bwat is state
-  dict["bwp"]        = Diagnostic::Ptr(new Hydrology_bwp(this));
-  dict["bwprel"]     = Diagnostic::Ptr(new Hydrology_bwprel(this));
-  dict["effbwp"]     = Diagnostic::Ptr(new Hydrology_effbwp(this));
-  dict["hydrobmelt"] = Diagnostic::Ptr(new Hydrology_hydrobmelt(this));
-  dict["hydroinput"] = Diagnostic::Ptr(new Hydrology_hydroinput(this));
-  dict["wallmelt"]   = Diagnostic::Ptr(new Hydrology_wallmelt(this));
-  // add diagnostic that only makes sense if transport is modeled
-  dict["bwatvel"]    = Diagnostic::Ptr(new Routing_bwatvel(this));
-
-  // add mass-conservation time-series diagnostics
-  ts_dict["hydro_ice_free_land_loss_cumulative"]      = TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss_cumulative(this));
-  ts_dict["hydro_ice_free_land_loss"]                 = TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this));
-  ts_dict["hydro_ocean_loss_cumulative"]              = TSDiagnostic::Ptr(new MCHydrology_ocean_loss_cumulative(this));
-  ts_dict["hydro_ocean_loss"]                         = TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this));
-  ts_dict["hydro_negative_thickness_gain_cumulative"] = TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain_cumulative(this));
-  ts_dict["hydro_negative_thickness_gain"]            = TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this));
-  ts_dict["hydro_null_strip_loss_cumulative"]         = TSDiagnostic::Ptr(new MCHydrology_null_strip_loss_cumulative(this));
-  ts_dict["hydro_null_strip_loss"]                    = TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this));
+std::map<std::string, TSDiagnostic::Ptr> Routing::ts_diagnostics_impl() const {
+  std::map<std::string, TSDiagnostic::Ptr> result = {
+    {"hydro_ice_free_land_loss_cumulative",      TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss_cumulative(this))},
+    {"hydro_ice_free_land_loss",                 TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
+    {"hydro_ocean_loss_cumulative",              TSDiagnostic::Ptr(new MCHydrology_ocean_loss_cumulative(this))},
+    {"hydro_ocean_loss",                         TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
+    {"hydro_negative_thickness_gain_cumulative", TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain_cumulative(this))},
+    {"hydro_negative_thickness_gain",            TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},
+    {"hydro_null_strip_loss_cumulative",         TSDiagnostic::Ptr(new MCHydrology_null_strip_loss_cumulative(this))},
+    {"hydro_null_strip_loss",                    TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this))}
+  };
+  return result;
 }
 
 
@@ -293,13 +284,13 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
 
 
 //! Copies the W variable, the modeled transportable water layer thickness.
-void Routing::subglacial_water_thickness(IceModelVec2S &result) {
+void Routing::subglacial_water_thickness(IceModelVec2S &result) const {
   result.copy_from(m_W);
 }
 
 
 //! Returns the (trivial) overburden pressure as the pressure of the transportable water, because this is the model.
-void Routing::subglacial_water_pressure(IceModelVec2S &result) {
+void Routing::subglacial_water_pressure(IceModelVec2S &result) const {
   overburden_pressure(result);
 }
 
@@ -474,7 +465,7 @@ staggered-versus-regular change.
 
 At the current state of the code, this is a diagnostic calculation only.
  */
-void Routing::wall_melt(IceModelVec2S &result) {
+void Routing::wall_melt(IceModelVec2S &result) const {
 
   const double
     k     = m_config->get_double("hydrology.hydraulic_conductivity"),
@@ -549,16 +540,17 @@ have valid ghosts.
 
 Calls subglacial_water_pressure() method to get water pressure.
  */
-void Routing::velocity_staggered(IceModelVec2Stag &result) {
+void Routing::velocity_staggered(IceModelVec2Stag &result) const {
   const double  rg = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
   double dbdx, dbdy, dPdx, dPdy;
 
-  subglacial_water_pressure(m_R);  // R=P; yes, it updates ghosts
+  IceModelVec2S &pressure = m_R;
+  subglacial_water_pressure(pressure);  // yes, it updates ghosts
 
   const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   IceModelVec::AccessList list;
-  list.add(m_R);
+  list.add(pressure);
   list.add(m_Wstag);
   list.add(m_K);
   list.add(bed);
@@ -568,7 +560,7 @@ void Routing::velocity_staggered(IceModelVec2Stag &result) {
     const int i = p.i(), j = p.j();
 
     if (m_Wstag(i, j, 0) > 0.0) {
-      dPdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
+      dPdx = (pressure(i + 1, j) - pressure(i, j)) / m_dx;
       dbdx = (bed(i + 1, j) - bed(i, j)) / m_dx;
       result(i, j, 0) =  - m_K(i, j, 0) * (dPdx + rg * dbdx);
     } else {
@@ -576,7 +568,7 @@ void Routing::velocity_staggered(IceModelVec2Stag &result) {
     }
 
     if (m_Wstag(i, j, 1) > 0.0) {
-      dPdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
+      dPdy = (pressure(i, j + 1) - pressure(i, j)) / m_dy;
       dbdy = (bed(i, j + 1) - bed(i, j)) / m_dy;
       result(i, j, 1) =  - m_K(i, j, 1) * (dPdy + rg * dbdy);
     } else {
@@ -817,7 +809,7 @@ void Routing::update_impl(double icet, double icedt) {
 }
 
 
-Routing_bwatvel::Routing_bwatvel(Routing *m)
+Routing_bwatvel::Routing_bwatvel(const Routing *m)
   : Diag<Routing>(m) {
 
   // set metadata:

@@ -101,10 +101,10 @@ protected:
 template <class Model>
 class Diag : public Diagnostic {
 public:
-  Diag(Model *m)
+  Diag(const Model *m)
     : Diagnostic(m->grid()), model(m) {}
 protected:
-  Model *model;
+  const Model *model;
 };
 
 /*! @brief Helper class for computing time averages of 2D quantities. */
@@ -112,7 +112,7 @@ template <class M>
 class Diag_average : public Diag<M>
 {
 public:
-  Diag_average(M *m)
+  Diag_average(const M *m)
     : Diag<M>(m) {
     m_last_value.create(Diagnostic::m_grid, "last_value_of_cumulative_quantity", WITHOUT_GHOSTS);
     m_last_report_time = GSL_NAN;
@@ -213,13 +213,13 @@ protected:
 template <class Model>
 class TSDiag : public TSDiagnostic {
 public:
-  TSDiag(Model *m)
+  TSDiag(const Model *m)
     : TSDiagnostic(m->grid()), model(m) {
     m_time_units = m_grid->ctx()->time()->CF_units_string();
     m_time_dimension_name = m_grid->ctx()->config()->get_string("time.dimension_name");
   }
 protected:
-  Model *model;
+  const Model *model;
   std::string m_time_units, m_time_dimension_name;
 };
 

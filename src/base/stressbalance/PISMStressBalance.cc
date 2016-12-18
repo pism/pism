@@ -597,24 +597,15 @@ const SSB_Modifier* StressBalance::modifier() const {
   return m_modifier;
 }
 
-void StressBalance::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                               IO_Type nctype) {
 
-  m_shallow_stress_balance->define_variables(vars, nc, nctype);
-  m_modifier->define_variables(vars, nc, nctype);
+void StressBalance::define_model_state_impl(const PIO &output) const {
+  m_shallow_stress_balance->define_model_state(output);
+  m_modifier->define_model_state(output);
 }
 
-
-void StressBalance::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  m_shallow_stress_balance->write_variables(vars, nc);
-  m_modifier->write_variables(vars, nc);
-}
-
-void StressBalance::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-
-  m_shallow_stress_balance->add_vars_to_output(keyword, result);
-  m_modifier->add_vars_to_output(keyword, result);
+void StressBalance::write_model_state_impl(const PIO &output) const {
+  m_shallow_stress_balance->write_model_state(output);
+  m_modifier->write_model_state(output);
 }
 
 //! \brief Compute eigenvalues of the horizontal, vertically-integrated strain rate tensor.

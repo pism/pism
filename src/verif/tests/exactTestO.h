@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2011 Ed Bueler
+   Copyright (C) 2011, 2016 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -40,8 +40,15 @@ Also fills these z-independent quantities:
      bmelt = exact solution for melt rate (ice-equivalent m s-1) at base (z=0)
  */
 
-int exactO(const double z, double *TT, double *Tm, double *qice, double *qbed, 
-           double *bmelt);
+struct TestOParameters {
+  double TT;
+  double Tm;
+  double qice;
+  double qbed;
+  double bmelt;
+};
+
+struct TestOParameters exactO(double z);
 
 #ifdef __cplusplus
 }

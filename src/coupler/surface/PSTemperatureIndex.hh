@@ -46,32 +46,29 @@ public:
   TemperatureIndex(IceGrid::ConstPtr g);
   virtual ~TemperatureIndex();
 
-  const IceModelVec2S& surface_accumulation() const;
-  const IceModelVec2S& surface_melt() const;
-  const IceModelVec2S& surface_runoff() const;
+  const IceModelVec2S& accumulation() const;
+  const IceModelVec2S& melt() const;
+  const IceModelVec2S& runoff() const;
   const IceModelVec2S& snow_depth() const;
   const IceModelVec2S& air_temp_sd() const;
 
-  const IceModelVec2S& cumulative_surface_accumulation() const;
-  const IceModelVec2S& cumulative_surface_melt() const;
-  const IceModelVec2S& cumulative_surface_runoff() const;
+  const IceModelVec2S& cumulative_accumulation() const;
+  const IceModelVec2S& cumulative_melt() const;
+  const IceModelVec2S& cumulative_runoff() const;
 
 protected:
+  virtual void init_impl();
+  virtual void update_impl(double my_t, double my_dt);
+
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  virtual void init_impl();
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
-  virtual MaxTimestep max_timestep_impl(double t);
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype);  
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const;
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const;
+  virtual MaxTimestep max_timestep_impl(double t) const;
+
   double compute_next_balance_year_start(double time);
 protected:
   LocalMassBalance *m_mbscheme;         //!< mass balance scheme to use
@@ -118,7 +115,7 @@ protected:
 class PDD_saccum : public Diag<TemperatureIndex>
 {
 public:
-  PDD_saccum(TemperatureIndex *m);
+  PDD_saccum(const TemperatureIndex *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -127,7 +124,7 @@ protected:
 class PDD_smelt : public Diag<TemperatureIndex>
 {
 public:
-  PDD_smelt(TemperatureIndex *m);
+  PDD_smelt(const TemperatureIndex *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -136,7 +133,7 @@ protected:
 class PDD_srunoff : public Diag<TemperatureIndex>
 {
 public:
-  PDD_srunoff(TemperatureIndex *m);
+  PDD_srunoff(const TemperatureIndex *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -145,7 +142,7 @@ protected:
 class PDD_snow_depth : public Diag<TemperatureIndex>
 {
 public:
-  PDD_snow_depth(TemperatureIndex *m);
+  PDD_snow_depth(const TemperatureIndex *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -154,7 +151,7 @@ protected:
 class PDD_air_temp_sd : public Diag<TemperatureIndex>
 {
 public:
-  PDD_air_temp_sd(TemperatureIndex *m);
+  PDD_air_temp_sd(const TemperatureIndex *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,7 +35,7 @@ public:
   virtual ~PBLingleClark();
 
 protected:
-  MaxTimestep max_timestep_impl(double t);
+  MaxTimestep max_timestep_impl(double t) const;
   void init_impl();
   void init_with_inputs_impl(const IceModelVec2S &bed_elevation,
                              const IceModelVec2S &bed_uplift,

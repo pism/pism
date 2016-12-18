@@ -39,9 +39,9 @@ void PBNull::init_impl() {
   m_uplift.set(0.0);
 }
 
-MaxTimestep PBNull::max_timestep_impl(double t) {
+MaxTimestep PBNull::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("bed_def none");
 }
 
 void PBNull::update_with_thickness_impl(const IceModelVec2S &ice_thickness,

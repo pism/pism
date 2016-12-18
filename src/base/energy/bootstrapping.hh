@@ -24,6 +24,11 @@
 
 namespace pism {
 
+class IceModelVec2S;
+class IceModelVec3;
+
+namespace energy {
+
 /*!
  * A heuristic formula for the temperature distribution within a column of ice. Used during
  * bootstrapping. A simple quartic guess.
@@ -57,6 +62,7 @@ double ice_temperature_guess_smb(EnthalpyConverter::Ptr EC,
                                  double H, double z, double T_surface,
                                  double G, double ice_k, double K, double SMB);
 
+} // end of namespace energy
 } // end of namespace pism
 
 #endif /* BOOTSTRAPPING_H */

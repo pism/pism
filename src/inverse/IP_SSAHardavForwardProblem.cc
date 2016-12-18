@@ -31,9 +31,9 @@
 namespace pism {
 namespace inverse {
 
-IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e,
+IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
                                                        IPDesignVariableParameterization &tp)
-  : SSAFEM(g, e),
+  : SSAFEM(g),
     m_zeta(NULL),
     m_fixed_design_locations(NULL),
     m_design_param(tp),

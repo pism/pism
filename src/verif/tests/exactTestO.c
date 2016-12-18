@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2011, 2013, 2014 Ed Bueler
+   Copyright (C) 2011, 2013, 2014, 2016 Ed Bueler
   
    This file is part of PISM.
   
@@ -81,7 +81,7 @@ a verification test by setting temperature at different elevations within
 the ice and bedrock, and when doing the verification itself by checking against
 the exact `bmelt` value.
  */
-int exactO(const double z, double *TT, double *Tm, double *qice, double *qbed, double *bmelt) {
+int exactO_old(double z, double *TT, double *Tm, double *qice, double *qbed, double *bmelt) {
 
   double P_base;
 
@@ -109,4 +109,10 @@ int exactO(const double z, double *TT, double *Tm, double *qice, double *qbed, d
   return 0;
 }
 
+struct TestOParameters exactO(double z) {
+  struct TestOParameters result;
 
+  exactO_old(z, &result.TT, &result.Tm, &result.qice, &result.qbed, &result.bmelt);
+
+  return result;
+}

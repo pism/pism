@@ -46,54 +46,43 @@ PIK::PIK(IceGrid::ConstPtr g)
   m_air_temp.set_time_independent(true);
 }
 
-void PIK::mean_precipitation_impl(IceModelVec2S &result) {
+void PIK::mean_precipitation_impl(IceModelVec2S &result) const {
   result.copy_from(m_precipitation);
 }
 
-void PIK::mean_annual_temp_impl(IceModelVec2S &result) {
+void PIK::mean_annual_temp_impl(IceModelVec2S &result) const {
   result.copy_from(m_air_temp);
 }
 
-void PIK::begin_pointwise_access_impl() {
+void PIK::begin_pointwise_access_impl() const {
   m_precipitation.begin_access();
   m_air_temp.begin_access();
 }
 
-void PIK::end_pointwise_access_impl() {
+void PIK::end_pointwise_access_impl() const {
   m_precipitation.end_access();
   m_air_temp.end_access();
 }
 
-void PIK::temp_time_series_impl(int i, int j, std::vector<double> &result) {
+void PIK::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_air_temp(i,j);
   }
 }
 
-void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) {
+void PIK::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
 }
 
-void PIK::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  (void) keyword;
-  result.insert("precipitation");
+
+void PIK::define_model_state_impl(const PIO &output) const {
+  m_precipitation.define(output);
 }
 
-void PIK::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                            IO_Type nctype) {
-
-  if (set_contains(vars, "precipitation")) {
-    m_precipitation.define(nc, nctype);
-  }
-}
-
-void PIK::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, "precipitation")) {
-    m_precipitation.write(nc);
-  }
+void PIK::write_model_state_impl(const PIO &output) const {
+  m_precipitation.write(output);
 }
 
 void PIK::init_impl() {
@@ -118,9 +107,9 @@ void PIK::init_impl() {
   }
 }
 
-MaxTimestep PIK::max_timestep_impl(double t) {
+MaxTimestep PIK::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("atmosphere PIK");
 }
 
 void PIK::update_impl(double, double) {
@@ -142,7 +131,7 @@ void PIK::update_impl(double, double) {
   }
 }
 
-void PIK::init_timeseries_impl(const std::vector<double> &ts) {
+void PIK::init_timeseries_impl(const std::vector<double> &ts) const {
   m_ts_times = ts;
 }
 

@@ -29,9 +29,57 @@
 #include "base/util/pism_options.hh"
 #include "base/util/iceModelVec.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {
+
+// SurfaceModel diagnostics (these don't need to be in the header)
+
+/*! @brief Climatic mass balance */
+class PS_climatic_mass_balance : public Diag<SurfaceModel>
+{
+public:
+  PS_climatic_mass_balance(const SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Ice surface temperature. */
+class PS_ice_surface_temp : public Diag<SurfaceModel>
+{
+public:
+  PS_ice_surface_temp(const SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Ice liquid water fraction at the ice surface. */
+class PS_liquid_water_fraction : public Diag<SurfaceModel>
+{
+public:
+  PS_liquid_water_fraction(const SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Mass of the surface layer (snow and firn). */
+class PS_layer_mass : public Diag<SurfaceModel>
+{
+public:
+  PS_layer_mass(const SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
+
+/*! @brief Surface layer (snow and firn) thickness. */
+class PS_layer_thickness : public Diag<SurfaceModel>
+{
+public:
+  PS_layer_thickness(const SurfaceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl();
+};
 
 ///// PISMSurfaceModel base class:
 
@@ -44,36 +92,31 @@ SurfaceModel::~SurfaceModel() {
   delete m_atmosphere;
 }
 
-void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) {
+void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) const {
   this->ice_surface_mass_flux_impl(result);
 }
 
-void SurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                       std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-  // Don't override diagnostics that are already set.
-
-  if (not dict["climatic_mass_balance"]) {
-    dict["climatic_mass_balance"] = Diagnostic::Ptr(new PS_climatic_mass_balance(this));
-  }
-
-  if (not dict["ice_surface_temp"]) {
-    dict["ice_surface_temp"] = Diagnostic::Ptr(new PS_ice_surface_temp(this));
-  }
-
-  if (not dict["ice_surface_liquid_water_fraction"]) {
-    dict["ice_surface_liquid_water_fraction"] = Diagnostic::Ptr(new PS_liquid_water_fraction(this));
-  }
-
-  if (not dict["surface_layer_mass"]) {
-    dict["surface_layer_mass"] = Diagnostic::Ptr(new PS_surface_layer_mass(this));
-  }
-
-  if (not dict["surface_layer_thickness"]) {
-    dict["surface_layer_thickness"] = Diagnostic::Ptr(new PS_surface_layer_thickness(this));
-  }
+std::map<std::string, Diagnostic::Ptr> SurfaceModel::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"climatic_mass_balance",             Diagnostic::Ptr(new PS_climatic_mass_balance(this))},
+    {"ice_surface_temp",                  Diagnostic::Ptr(new PS_ice_surface_temp(this))},
+    {"ice_surface_liquid_water_fraction", Diagnostic::Ptr(new PS_liquid_water_fraction(this))},
+    {"surface_layer_mass",                Diagnostic::Ptr(new PS_layer_mass(this))},
+    {"surface_layer_thickness",           Diagnostic::Ptr(new PS_layer_thickness(this))}
+  };
 
   if (m_atmosphere) {
-    m_atmosphere->get_diagnostics(dict, ts_dict);
+    result = pism::combine(result, m_atmosphere->diagnostics());
+  }
+
+  return result;
+}
+
+std::map<std::string, TSDiagnostic::Ptr> SurfaceModel::ts_diagnostics_impl() const {
+  if (m_atmosphere) {
+    return m_atmosphere->ts_diagnostics();
+  } else {
+    return {};
   }
 }
 
@@ -103,11 +146,11 @@ void SurfaceModel::init_impl() {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-void SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
+void SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) const {
   this->mass_held_in_surface_layer_impl(result);
 }
 
-void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
+void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
@@ -118,26 +161,26 @@ void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) {
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-void SurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
+void SurfaceModel::surface_layer_thickness(IceModelVec2S &result) const {
   this->surface_layer_thickness_impl(result);
 }
 
-void SurfaceModel::surface_layer_thickness_impl(IceModelVec2S &result) {
+void SurfaceModel::surface_layer_thickness_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
-void SurfaceModel::ice_surface_temperature(IceModelVec2S &result) {
+void SurfaceModel::ice_surface_temperature(IceModelVec2S &result) const {
   this->ice_surface_temperature_impl(result);
 }
 //! \brief Returns the liquid water fraction of the ice at the top ice surface.
 /*!
  * Most PISM surface models return 0.
  */
-void SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+void SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) const {
   this->ice_surface_liquid_water_fraction_impl(result);
 }
 
-void SurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
+void SurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
@@ -153,33 +196,15 @@ void SurfaceModel::write_model_state_impl(const PIO &output) const {
   }
 }
 
-void SurfaceModel::define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  if (m_atmosphere != NULL) {
-    m_atmosphere->define_variables(vars, nc, nctype);
-  }
-}
-
-void SurfaceModel::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (m_atmosphere != NULL) {
-    m_atmosphere->write_variables(vars, nc);
-  }
-}
-
-MaxTimestep SurfaceModel::max_timestep_impl(double my_t) {
+MaxTimestep SurfaceModel::max_timestep_impl(double my_t) const {
   if (m_atmosphere != NULL) {
     return m_atmosphere->max_timestep(my_t);
   } else {
-    return MaxTimestep();
+    return MaxTimestep("surface model");
   }
 }
 
-void SurfaceModel::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  if (m_atmosphere != NULL) {
-    m_atmosphere->add_vars_to_output(keyword, result);
-  }
-}
-
-PS_climatic_mass_balance::PS_climatic_mass_balance(SurfaceModel *m)
+PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -201,7 +226,7 @@ IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() {
   return result;
 }
 
-PS_ice_surface_temp::PS_ice_surface_temp(SurfaceModel *m)
+PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -222,7 +247,7 @@ IceModelVec::Ptr PS_ice_surface_temp::compute_impl() {
   return result;
 }
 
-PS_liquid_water_fraction::PS_liquid_water_fraction(SurfaceModel *m)
+PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -243,7 +268,7 @@ IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() {
   return result;
 }
 
-PS_surface_layer_mass::PS_surface_layer_mass(SurfaceModel *m)
+PS_layer_mass::PS_layer_mass(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -253,7 +278,7 @@ PS_surface_layer_mass::PS_surface_layer_mass(SurfaceModel *m)
             "kg", "kg", 0);
 }
 
-IceModelVec::Ptr PS_surface_layer_mass::compute_impl() {
+IceModelVec::Ptr PS_layer_mass::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "surface_layer_mass", WITHOUT_GHOSTS);
@@ -264,7 +289,7 @@ IceModelVec::Ptr PS_surface_layer_mass::compute_impl() {
   return result;
 }
 
-PS_surface_layer_thickness::PS_surface_layer_thickness(SurfaceModel *m)
+PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
@@ -274,7 +299,7 @@ PS_surface_layer_thickness::PS_surface_layer_thickness(SurfaceModel *m)
             "meters", "meters", 0);
 }
 
-IceModelVec::Ptr PS_surface_layer_thickness::compute_impl() {
+IceModelVec::Ptr PS_layer_thickness::compute_impl() {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS);

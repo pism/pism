@@ -20,7 +20,6 @@
 
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <gsl/gsl_errno.h>
@@ -28,36 +27,35 @@
 
 #include <gsl/gsl_version.h>
 #if (defined GSL_MAJOR_VERSION) && (defined GSL_MINOR_VERSION) && \
-  (GSL_MAJOR_VERSION >= 1) && (GSL_MINOR_VERSION >= 15)
+  ((GSL_MAJOR_VERSION >= 1 && GSL_MINOR_VERSION >= 15) || (GSL_MAJOR_VERSION >= 2))
 #define PISM_USE_ODEIV2 1
 #include <gsl/gsl_odeiv2.h>
 #endif
 
-#include "exactTestP.h"
+#include "exactTestP.hh"
 
-#define SperA    31556926.0    /* seconds per year; 365.2422 days */
-#define g        9.81          /* m s-2 */
-#define rhoi     910.0         /* kg m-3 */
-#define rhow     1000.0        /* kg m-3 */
+namespace pism {
 
-/* major model parameters: */
-#define Aglen    3.1689e-24    /* Pa-3 s-1 */
-#define k        (0.01/(rhow*g))   /* FIXME:  this is extremely low but it matches what we were using */
-#define alpha    1.0           /* [pure] */
-#define beta     2.0           /* [pure] */
-#define Wr       1.0           /* m */
-#define c1       0.500         /* m-1 */
-#define c2       0.040         /* [pure] */
+static const double SperA = 31556926.0; // seconds per year; 365.2422 days
+static const double g     = 9.81;       // m s-2
+static const double rhoi  = 910.0;      // kg m-3
+static const double rhow  = 1000.0;     // kg m-3
 
-/* specific to exact solution */
-#define m0       ((0.20/SperA)*rhow)  /* kg m-2 s-1; = 20 cm year-1 */
-#define h0       500.0         /* m */
-#define v0       (100.0/SperA) /* m s-1 */
-#define R1       5000.0        /* m */
+// major model parameters:
+static const double Aglen = 3.1689e-24;      // Pa-3 s-1
+static const double k     = (0.01/(rhow*g)); // FIXME:  this is extremely low but it matches what we were using
+static const double Wr    = 1.0;             // m
+static const double c1    = 0.500;           // m-1
+static const double c2    = 0.040;           // [pure]
 
+// specific to exact solution
+static const double m0 = ((0.20/SperA)*rhow); // kg m-2 s-1; = 20 cm year-1
+static const double h0 = 500.0;               // m
+static const double v0 = (100.0/SperA);       // m s-1
+static const double R1 = 5000.0;              // m
 
 int getsb(double r, double *sb, double *dsbdr) {
-  double CC, CZ, CD, zz;
+  double CC;
   if (r < R1) {
     *sb    = 0.0;
     *dsbdr = 0.0;
@@ -92,7 +90,7 @@ int funcP(double r, const double W[], double f[], void *params) {
 
   double sb, dsb, dPo, tmp1, omega0, numer, denom;
 
-  if (params == NULL) {} /* quash warning "unused parameters" */
+  (void) params; /* quash warning "unused parameters" */
 
   if (r < 0.0) {
     f[0] = 0.0;  /* place-holder */
@@ -141,9 +139,9 @@ EPS_ABS = 1e-12, EPS_REL=0.0, method = RK Dormand-Prince O(8)/O(9)
 is believed for now to be predictable and accurate.  Note hstart is negative
 so that the ODE solver does negative steps.  Assumes
    0 <= r[N-1] <= r[N-2] <= ... <= r[1] <= r[0] <= L.                            */
-int getW(double *r, int N, double *W,
+int getW(const double *r, int N, double *W,
          const double EPS_ABS, const double EPS_REL, const int ode_method) {
-   int i, count;
+   int count;
    int status = TESTP_NOT_DONE;
    double rr, hstart;
    const gsl_odeiv2_step_type* Tpossible[4];
@@ -159,7 +157,6 @@ int getW(double *r, int N, double *W,
    if ((ode_method > 0) && (ode_method < 5))
      T = Tpossible[ode_method-1];
    else {
-     printf("INVALID ode_method in getW(): must be 1,2,3,4\n");
      return TESTP_INVALID_METHOD;
    }
 
@@ -174,7 +171,6 @@ int getW(double *r, int N, double *W,
      while (rr > r[count]) {
        status = gsl_odeiv2_driver_apply(d, &rr, r[count], &(W[count]));
        if (status != GSL_SUCCESS) {
-         printf("gsl_odeiv2_driver_apply() returned status = %d\n",status);
          break;
        }
        if (W[count] > Wr) {
@@ -190,58 +186,21 @@ int getW(double *r, int N, double *W,
 }
 
 #else
-int getW(double *r, int N, double *W,
+int getW(const double *r, int N, double *W,
          const double EPS_ABS, const double EPS_REL, const int ode_method) {
   (void) r;
-  (void) N;
-  (void) W;
   (void) EPS_ABS;
   (void) EPS_REL;
   (void) ode_method;
-  assert(0 && "Test P requires GSL version 1.15 or later.");
+
+  for (int j = 0; j < N; ++j) {
+    W[j] = 0;
+  }
+  return TESTP_OLD_GSL;
 }
 #endif
 
-int exactP(double r, double *h, double *magvb, double *Wcrit, double *W, double *P,
-           const double EPS_ABS, const double EPS_REL, const int ode_method) {
-
-  int status;
-  if (r < 0.0) return TESTP_R_NEGATIVE;
-  if (r > TESTP_L) {
-    *h     = 0.0;
-    *magvb = 0.0;
-    *Wcrit = 0.0;
-    *W     = 0.0;
-    *P     = 0.0;
-    return 0;
-  }
-
-  *h = h0 * (1.0 - (r/TESTP_R0) * (r/TESTP_R0));
-  if (r > R1)
-    *magvb = v0 * pow((r - R1)/(TESTP_L - R1),5.0);
-  else
-    *magvb = 0.0;
-  *Wcrit = criticalW(r);
-
-  if (r == TESTP_L) {
-    *W = initialconditionW();
-    *P = psteady(*W, *magvb, rhoi * g * (*h));
-    return 0;
-  } else {
-    status = getW(&r,1,W,EPS_ABS,EPS_REL,ode_method);
-    if (status) {
-      *P = 0;
-      return status;
-    } else {
-      *P = psteady(*W, *magvb, rhoi * g * (*h));
-      return 0;
-    }
-  }
-}
-
-
-
-int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, double *W, double *P,
+int exactP_list(const double *r, int N, double *h, double *magvb, double *Wcrit, double *W, double *P,
                 const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
   int i, M, status;
@@ -249,8 +208,6 @@ int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, doubl
   if (N < 1) return TESTP_NO_LIST;
   for (i = 0; i<N; i++) {
     if ((i > 0) && (r[i] > r[i-1])) {
-      printf("error:  r[%d] = %.18e > r[%d] = %.18e\n",i,r[i],i-1,r[i-1]);
-      printf("   ... so list not decreasing ... returning error code ...\n");
       return TESTP_LIST_NOT_DECREASING;
     }
     if (r[i] < 0.0)  return TESTP_R_NEGATIVE;
@@ -286,36 +243,51 @@ int exactP_list(double *r, int N, double *h, double *magvb, double *Wcrit, doubl
       P[i] = psteady(W[i], magvb[i], rhoi * g * h[i]);
     return 0;
   }
-
 }
 
+TestPParameters exactP(const std::vector<double> &r,
+                       double EPS_ABS, double EPS_REL, int ode_method) {
+  TestPParameters result(r.size());
+  result.r = r;
 
-int error_message_testP(int status) {
-  switch (status) {
-    case TESTP_R_NEGATIVE:
-      printf("error in Test P: r < 0\n");
-      break;
-    case TESTP_W_EXCEEDS_WR:
-      printf("error in Test P: W > W_r\n");
-      break;
-    case TESTP_W_BELOW_WCRIT:
-      printf("error in Test P: W < W_crit\n");
-      break;
-    case TESTP_INVALID_METHOD:
-      printf("error in Test P: invalid choice for ODE method\n");
-      break;
-    case TESTP_NOT_DONE:
-      printf("error in Test P: ODE integrator not done\n");
-      break;
-    case TESTP_NO_LIST:
-      printf("error in Test P: no list of r values at input to exactP_list()\n");
-      break;
-    case TESTP_LIST_NOT_DECREASING:
-      printf("error in Test P: input list of r values to exactP_list() is not decreasing\n");
-      break;
-    default:
-      if (status > 0) printf("unknown error status in Test P\n");
+  result.error_code = exactP_list(&r[0], r.size(),
+                                  &result.h[0],
+                                  &result.magvb[0],
+                                  &result.Wcrit[0],
+                                  &result.W[0],
+                                  &result.P[0],
+                                  EPS_ABS, EPS_REL, ode_method);
+
+  switch (result.error_code) {
+  case 0:
+    result.error_message = "success";
+    break;
+  case TESTP_R_NEGATIVE:
+    result.error_message = "error: r < 0";
+    break;
+  case TESTP_W_EXCEEDS_WR:
+    result.error_message = "error: W > W_r";
+    break;
+  case TESTP_W_BELOW_WCRIT:
+    result.error_message = "error: W < W_crit";
+    break;
+  case TESTP_INVALID_METHOD:
+    result.error_message = "error: invalid choice for ODE method";
+    break;
+  case TESTP_NOT_DONE:
+    result.error_message = "error: ODE integrator not done";
+    break;
+  case TESTP_NO_LIST:
+    result.error_message = "error: no list of r values at input to exactP_list()";
+    break;
+  case TESTP_LIST_NOT_DECREASING:
+    result.error_message = "error: input list of r values to exactP_list() is not decreasing";
+    break;
+  default:
+    result.error_message = "unknown error code";
   }
-  return 0;
+
+  return result;
 }
 
+} // end of namespace pism

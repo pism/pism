@@ -60,7 +60,7 @@ StressCalving::~StressCalving() {
  * extend past the ice margin corresponding to the *beginning* of the
  * time-step.
  */
-void StressCalving::update_strain_rates() {
+void StressCalving::update_strain_rates() const {
   const IceModelVec2V        &ssa_velocity = m_stress_balance->advective_velocity();
   const IceModelVec2CellType &mask         = *m_grid->variables().get_2d_cell_type("mask");
   stressbalance::compute_2D_principal_strain_rates(ssa_velocity, mask, m_strain_rates);

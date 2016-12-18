@@ -23,6 +23,8 @@
 #include "iceModel.hh"
 
 #include "base/stressbalance/PISMStressBalance.hh"
+#include "base/energy/EnergyModel.hh"
+
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/PISMTime.hh"
@@ -195,6 +197,7 @@ void IceModel::write_timeseries() {
       }
     }
   }
+  m_energy_model->reset_cumulative_stats();
 }
 
 
@@ -298,35 +301,12 @@ void IceModel::init_extras() {
   }
 
   if (vars.is_set()) {
-    m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
     m_extra_vars = vars;
+    m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
   } else {
-    m_log->message(2, "PISM WARNING: -extra_vars was not set."
-               " Writing model_state, mapping and climate_steady variables...\n");
-
-    for (auto var : m_grid->variables().keys()) {
-      const SpatialVariableMetadata &m = m_grid->variables().get(var)->metadata();
-
-      std::string intent = m.get_string("pism_intent");
-
-      if (intent == "model_state" ||
-          intent == "mapping"     ||
-          intent == "climate_steady") {
-        m_extra_vars.insert(var);
-      }
-    }
-
-    std::set<std::string> list;
-    if (m_stress_balance) {
-      m_stress_balance->add_vars_to_output("small", m_extra_vars);
-    }
+    m_log->message(2, "PISM WARNING: -extra_vars was not set. Writing the model state...\n");
 
   } // end of the else clause after "if (extra_vars_set)"
-
-  if (m_extra_vars.size() == 0) {
-    m_log->message(2,
-               "PISM WARNING: no variables list after -extra_vars ... writing empty file ...\n");
-  }
 }
 
 //! Write spatially-variable diagnostic quantities.
@@ -468,7 +448,11 @@ void IceModel::write_extras() {
 
   io::write_timeseries(nc, m_timestamp, time_start, wall_clock_hours);
 
-  write_variables(nc, m_extra_vars, PISM_FLOAT);
+  if (not m_extra_vars.empty()) {
+    write_diagnostics(nc, m_extra_vars, PISM_FLOAT);
+  } else {
+    write_model_state(nc);
+  }
 
   nc.close();
 
@@ -480,7 +464,8 @@ void IceModel::write_extras() {
   profiling.end("extra_file reporting");
 }
 
-static MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t) {
+static MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
+                                          const std::string &description) {
 
   const size_t N = times.size();
   if (t >= times.back()) {
@@ -501,12 +486,12 @@ static MaxTimestep reporting_max_timestep(const std::vector<double> &times, doub
   // second long
   if (dt < 1.0) {
     if (j + 2 < N) {
-      return MaxTimestep(times[j + 2] - t);
+      return MaxTimestep(times[j + 2] - t, description);
     } else {
-      return MaxTimestep();
+      return MaxTimestep(description);
     }
   } else {
-    return MaxTimestep(dt);
+    return MaxTimestep(dt, description);
   }
 }
 
@@ -515,21 +500,21 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not m_save_extra) or
       (not m_config->get_boolean("time_stepping.hit_extra_times"))) {
-    return MaxTimestep();
+    return MaxTimestep("reporting (-extra_times)");
   }
 
-  return reporting_max_timestep(m_extra_times, my_t);
+  return reporting_max_timestep(m_extra_times, my_t, "reporting (-extra_times)");
 }
 
-//! Computes the maximum time-step we can take and still hit all `-extra_times`.
+//! Computes the maximum time-step we can take and still hit all `-save_times`.
 MaxTimestep IceModel::save_max_timestep(double my_t) {
 
   if ((not m_save_snapshots) or
       (not m_config->get_boolean("time_stepping.hit_save_times"))) {
-    return MaxTimestep();
+    return MaxTimestep("reporting (-save_times)");
   }
 
-  return reporting_max_timestep(m_snapshot_times, my_t);
+  return reporting_max_timestep(m_snapshot_times, my_t, "reporting (-save_times)");
 }
 
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.
@@ -537,10 +522,10 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
   if ((not m_save_ts) or
       (not m_config->get_boolean("time_stepping.hit_ts_times"))) {
-    return MaxTimestep();
+    return MaxTimestep("reporting (-ts_times)");
   }
 
-  return reporting_max_timestep(m_ts_times, my_t);
+  return reporting_max_timestep(m_ts_times, my_t, "reporting (-ts_times)");
 }
 
 //! Flush scalar time-series.
@@ -571,7 +556,6 @@ void IceModel::flush_timeseries() {
 
     nc.close();
   }
-
 }
 
 } // end of namespace pism

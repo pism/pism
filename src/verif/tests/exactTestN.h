@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2010, 2014 Ed Bueler
+   Copyright (C) 2010, 2014, 2016 Ed Bueler
   
    This file is part of PISM.
   
@@ -34,27 +34,31 @@ extern "C"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int params_exactN(double *H0, double *L0, double *xc,
-                  double *a, double *Hela, double *k,
-                  double *H_xc, double *T_xc);
-   /* outputs: H0   = dome thickness (m)
-               L0   = full flow-line length from dome to margin where H->0 (m)
-               xc   = in Bueler interpretation, the location of the calving front (m)
-               a    = surface mass balance lapse rate, with elevation (s-1)
-               Hela = elevation of equilibrium line (m)
-               k    = coefficient for sliding
-               H_xc = thickness at calving front
-               T_xc = vertically-integrated longitudinal stress at calving front */
+struct TestNConstants {
+  double H0;    /* = dome thickness (m) */
+  double L0;    /* = full flow-line length from dome to margin where H->0 (m) */
+  double xc;    /* = in Bueler interpretation, the location of the calving front (m) */
+  double a;     /* = surface mass balance lapse rate, with elevation (s-1) */
+  double H_ela; /* = elevation of equilibrium line (m) */
+  double k;     /* = coefficient for sliding */
+  double H_xc;  /* = thickness at calving front */
+  double T_xc;  /* = vertically-integrated longitudinal stress at calving front */
+};
 
-int exactN(double x, double *H, double *hx, double *u, double *M, double *B, double *beta);
+struct TestNConstants exactNConstants();
+
+struct TestNParameters {
+  int error_code;
+  double H;               /* (m; ice thickness) */
+  double h_x;             /* (; surface slope) */
+  double u;               /* (m s-1; ice horizontal velocity) */
+  double M;               /* (m s-1; surface mass balance) */
+  double B;               /* (Pa s^(1/3); ice hardness) */
+  double beta;            /* (Pa s m-1; linear sliding coefficient) */
+};
+
+struct TestNParameters exactN(double x);
    /* input    : x                   (m; 0.0 <= x <= L0)
-
-      output   : H = H(x)            (m; ice thickness)
-                 hx = h_x(x)         (; surface slope)
-                 u = u(x)            (m s-1; ice horizontal velocity)
-                 M = M(x)            (m s-1; surface mass balance)
-                 B = B(x)            (Pa s^(1/3); ice hardness)
-                 beta = beta(x)      (Pa s m-1; linear sliding coefficient)
 
       Assumes n = 3.
       

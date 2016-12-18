@@ -48,8 +48,11 @@ public:
 
   void set_elevation(const IceModelVec2S &input);
   void set_uplift(const IceModelVec2S &input);
-  
+
 protected:
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   void update_impl(double my_t, double my_dt);
   virtual void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                           double my_t, double my_dt) = 0;
@@ -59,10 +62,6 @@ protected:
                                      const IceModelVec2S &ice_thickness);
   virtual void apply_topg_offset(const std::string &filename);
 
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype);
   void compute_uplift(double dt_beddef);
 protected:
   //! time of the last bed deformation update
@@ -87,17 +86,17 @@ public:
 protected:
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);
-  MaxTimestep max_timestep_impl(double t);
+  MaxTimestep max_timestep_impl(double t) const;
   void init_impl();
 };
 
 //! Pointwide isostasy bed deformation model.
 class PBPointwiseIsostasy : public BedDef {
 public:
-  PBPointwiseIsostasy(IceGrid::ConstPtr g); 
+  PBPointwiseIsostasy(IceGrid::ConstPtr g);
   virtual ~PBPointwiseIsostasy();
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);

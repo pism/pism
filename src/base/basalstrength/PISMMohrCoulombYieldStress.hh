@@ -38,12 +38,12 @@ public:
   void set_till_friction_angle(const IceModelVec2S &input);
 protected:
   virtual void init_impl();
-  virtual MaxTimestep max_timestep_impl(double t);
+
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl();
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype);
 
   void topg_to_phi();
   void tauc_to_phi();

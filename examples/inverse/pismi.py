@@ -263,8 +263,8 @@ def run():
     WIDE_STENCIL = int(config.get_double("grid.max_stencil_width"))
 
     usage = \
-        """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model] 
-                [-inv_design design_var] [-inv_method meth] 
+        """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model]
+                [-inv_design design_var] [-inv_method meth]
     where:
     -i            IN.nc       is input file in NetCDF format: contains PISM-written model state
     -o            OUT.nc      is output file in NetCDF format to be overwritten
@@ -458,15 +458,7 @@ def run():
 
     # Prep the output file from the grid so that we can save zeta to it during the runs.
     if not append_mode:
-        pio = PISM.PIO(grid.com, "netcdf3", output_filename, PISM.PISM_READWRITE_MOVE)
-        PISM.define_time(pio,
-                         grid.ctx().config().get_string("time.dimension_name"),
-                         grid.ctx().config().get_string("time.calendar"),
-                         grid.ctx().time().units_string(),
-                         grid.ctx().unit_system())
-        PISM.append_time(pio,
-                         grid.ctx().config().get_string("time.dimension_name"),
-                         grid.ctx().time().current())
+        pio = PISM.util.prepare_output(output_filename)
         pio.close()
     zeta.write(output_filename)
 

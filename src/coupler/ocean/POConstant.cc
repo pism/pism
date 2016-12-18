@@ -84,9 +84,9 @@ void Constant::init_impl() {
   }
 }
 
-MaxTimestep Constant::max_timestep_impl(double t) {
+MaxTimestep Constant::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("ocean constant");
 }
 
 void Constant::sea_level_elevation_impl(double &result) const{

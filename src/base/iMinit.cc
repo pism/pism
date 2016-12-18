@@ -58,6 +58,9 @@
 #include "base/util/io/io_helpers.hh"
 #include "base/util/projection.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/age/AgeModel.hh"
+#include "base/energy/EnthalpyModel.hh"
+#include "base/energy/TemperatureModel.hh"
 
 namespace pism {
 
@@ -176,14 +179,6 @@ void IceModel::model_state_setup() {
   // elevation-based parameterizations of surface temperature and/or mass balance).
   m_surface->init();
 
-  if (m_stress_balance) {
-    m_stress_balance->init();
-
-    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
-      m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
-    }
-  }
-
   if (m_subglacial_hydrology) {
     m_subglacial_hydrology->init();
   }
@@ -218,21 +213,57 @@ void IceModel::model_state_setup() {
     m_btu->init(input);
   }
 
-  // Initialize 3D (age and energy balance) parts of IceModel.
+  if (m_age_model != NULL) {
+    m_age_model->init(input);
+    m_grid->variables().add(m_age_model->age());
+  }
+
+  // Initialize the energy balance sub-model.
   {
+    IceModelVec2S &ice_surface_temperature = m_work2d[0];
+    IceModelVec2S &climatic_mass_balance   = m_work2d[1];
+
     switch (input.type) {
     case INIT_RESTART:
-      restart_3d(*input_file, input.record);
-      break;
+      {
+        m_energy_model->restart(*input_file, input.record);
+        break;
+      }
     case INIT_BOOTSTRAP:
-      bootstrap_3d();
-      break;
+      {
+        m_surface->ice_surface_temperature(ice_surface_temperature);
+        m_surface->ice_surface_mass_flux(climatic_mass_balance);
+        m_energy_model->bootstrap(*input_file,
+                                  m_ice_thickness,
+                                  ice_surface_temperature,
+                                  climatic_mass_balance,
+                                  m_btu->flux_through_top_surface());
+        break;
+      }
     case INIT_OTHER:
     default:
-      initialize_3d();
-    }
+      {
+        m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
+        m_surface->ice_surface_temperature(ice_surface_temperature);
+        m_surface->ice_surface_mass_flux(climatic_mass_balance);
+        m_energy_model->initialize(m_basal_melt_rate,
+                                   m_ice_thickness,
+                                   ice_surface_temperature,
+                                   climatic_mass_balance,
+                                   m_btu->flux_through_top_surface());
 
-    regrid(3);
+      }
+    }
+    m_grid->variables().add(m_energy_model->enthalpy());
+  }
+
+  // this has to go after we add enthalpy to m_grid->variables()
+  if (m_stress_balance) {
+    m_stress_balance->init();
+
+    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
+      m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
+    }
   }
 
   // miscellaneous steps
@@ -265,10 +296,9 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
         intent == "mapping"     ||
         intent == "climate_steady") {
 
-      // skip "age", "enthalpy", and "Href" for now: we'll take care
+      // skip "enthalpy" and "Href" for now: we'll take care
       // of them a little later
       if (short_name == "enthalpy" ||
-          short_name == "age"      ||
           short_name == "Href") {
         continue;
       }
@@ -292,43 +322,9 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
   }
 }
 
-/*! @brief Initialize 3D fields managed by IceModel. */
-/*!
- * This method should go away once we isolate "age" and "energy balance" sub-models.
- */
-void IceModel::restart_3d(const PIO &input_file, unsigned int last_record) {
-
-  // read the age field if present, otherwise set to zero
-  if (m_config->get_boolean("age.enabled")) {
-    bool age_exists = input_file.inq_var("age");
-
-    if (age_exists) {
-      m_ice_age.read(input_file, last_record);
-    } else {
-      m_log->message(2,
-                     "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
-                     "  Setting it to zero...\n",
-                     input_file.inq_filename().c_str());
-      m_ice_age.set(0.0);
-    }
-  }
-
-  // Initialize the enthalpy field by reading from a file or by using
-  // temperature and liquid water fraction, or by using temperature
-  // and assuming that the ice is cold.
-  init_enthalpy(input_file, false, last_record);
-}
-
-
 void IceModel::initialize_2d() {
   throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
 }
-
-
-void IceModel::initialize_3d() {
-  throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
-}
-
 
 void IceModel::reset_cumulative_fluxes() {
   // 2D
@@ -384,16 +380,16 @@ void IceModel::allocate_stressbalance() {
 
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(m_grid, EC);
+    sliding = new ZeroSliding(m_grid);
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(m_grid, EC);
+    sliding = new PrescribedSliding(m_grid);
   } else if (model == "ssa" || model == "ssa+sia") {
     std::string method = m_config->get_string("stress_balance.ssa.method");
 
     if (method == "fem") {
-      sliding = new SSAFEM(m_grid, EC);
+      sliding = new SSAFEM(m_grid);
     } else if (method == "fd") {
-      sliding = new SSAFD(m_grid, EC);
+      sliding = new SSAFD(m_grid);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid ssa method: %s", method.c_str());
     }
@@ -404,15 +400,17 @@ void IceModel::allocate_stressbalance() {
 
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(m_grid, EC);
+    modifier = new ConstantInColumn(m_grid);
   } else if (model == "prescribed_sliding+sia" || model == "ssa+sia" || model == "sia") {
-    modifier = new SIAFD(m_grid, EC);
+    modifier = new SIAFD(m_grid);
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
   m_stress_balance = new StressBalance(m_grid, sliding, modifier);
+
+  m_submodels["stress balance"] = m_stress_balance;
 }
 
 void IceModel::allocate_iceberg_remover() {
@@ -432,8 +430,51 @@ void IceModel::allocate_iceberg_remover() {
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
     m_iceberg_remover->init();
+
+    m_submodels["iceberg remover"] = m_iceberg_remover;
   }
 }
+
+void IceModel::allocate_age_model() {
+
+  if (m_age_model != NULL) {
+    return;
+  }
+
+  if (m_config->get_boolean("age.enabled")) {
+    m_log->message(2, "# Allocating an ice age model...\n");
+
+    if (m_stress_balance == NULL) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Cannot allocate an age model: m_stress_balance == NULL.");
+    }
+
+    m_age_model = new AgeModel(m_grid, m_stress_balance);
+    m_submodels["age model"] = m_age_model;
+  }
+}
+
+void IceModel::allocate_energy_model() {
+
+  if (m_energy_model != NULL) {
+    return;
+  }
+
+  m_log->message(2, "# Allocating an energy balance model...\n");
+
+  if (m_config->get_boolean("energy.enabled")) {
+    if (m_config->get_boolean("energy.temperature_based")) {
+      m_energy_model = new energy::TemperatureModel(m_grid, m_stress_balance);
+    } else {
+      m_energy_model = new energy::EnthalpyModel(m_grid, m_stress_balance);
+    }
+  } else {
+    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance);
+  }
+
+  m_submodels["energy balance model"] = m_energy_model;
+}
+
 
 //! \brief Decide which bedrock thermal unit to use.
 void IceModel::allocate_bedrock_thermal_unit() {
@@ -445,6 +486,8 @@ void IceModel::allocate_bedrock_thermal_unit() {
   m_log->message(2, "# Allocating a bedrock thermal layer model...\n");
 
   m_btu = energy::BedThermalUnit::FromOptions(m_grid, m_ctx);
+
+  m_submodels["bedrock thermal model"] = m_btu;
 }
 
 //! \brief Decide which subglacial hydrology model to use.
@@ -459,7 +502,7 @@ void IceModel::allocate_subglacial_hydrology() {
   }
 
   m_log->message(2,
-             "# Allocating a subglacial hydrology model...\n");
+                 "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
     m_subglacial_hydrology = new NullTransport(m_grid);
@@ -471,6 +514,8 @@ void IceModel::allocate_subglacial_hydrology() {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown value for configuration string 'hydrology.model':\n"
                                   "has value '%s'", hydrology_model.c_str());
   }
+
+  m_submodels["subglacial hydrology"] = m_subglacial_hydrology;
 }
 
 //! \brief Decide which basal yield stress model to use.
@@ -497,6 +542,8 @@ void IceModel::allocate_basal_yield_stress() {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
+
+    m_submodels["basal yield stress"] = m_basal_yield_stress_model;
   }
 }
 
@@ -508,23 +555,16 @@ void IceModel::allocate_basal_yield_stress() {
  */
 void IceModel::allocate_submodels() {
 
-  // FIXME: someday we will have an "energy balance" sub-model...
-  if (m_config->get_boolean("energy.enabled") == true) {
-    if (not m_config->get_boolean("energy.temperature_based")) {
-      m_log->message(2,
-                 "* Using the enthalpy-based energy balance model...\n");
-    } else {
-      m_log->message(2,
-                 "* Using the temperature-based energy balance model...\n");
-    }
-  }
-
   allocate_iceberg_remover();
 
   allocate_stressbalance();
 
   // this has to happen *after* allocate_stressbalance()
-  allocate_subglacial_hydrology();
+  {
+    allocate_age_model();
+    allocate_energy_model();
+    allocate_subglacial_hydrology();
+  }
 
   // this has to happen *after* allocate_subglacial_hydrology()
   allocate_basal_yield_stress();
@@ -553,6 +593,8 @@ void IceModel::allocate_couplers() {
 
     atmosphere = pa.create();
     m_surface->attach_atmosphere_model(atmosphere);
+
+    m_submodels["surface process model"] = m_surface;
   }
 
   if (m_ocean == NULL) {
@@ -560,27 +602,9 @@ void IceModel::allocate_couplers() {
              "# Allocating an ocean model or coupler...\n");
 
     m_ocean = new ocean::InitializationHelper(m_grid, po.create());
+
+    m_submodels["ocean model"] = m_ocean;
   }
-}
-
-
-//! Allocates work vectors.
-void IceModel::allocate_internal_objects() {
-  const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
-
-  // various internal quantities
-  // 2d work vectors
-  for (int j = 0; j < m_n_work2d; j++) {
-    char namestr[30];
-    snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
-    m_work2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
-  }
-
-  // 3d work vectors
-  m_work3d.create(m_grid,"work_vector_3d",WITHOUT_GHOSTS);
-  m_work3d.set_attrs("internal",
-                    "e.g. new values of temperature or age or enthalpy during time step",
-                    "", "");
 }
 
 //! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
@@ -676,13 +700,7 @@ void IceModel::misc_setup() {
 //! \brief Initialize calving mechanisms.
 void IceModel::init_calving() {
 
-  std::istringstream arg(m_config->get_string("calving.methods"));
-  std::string method_name;
-  std::set<std::string> methods;
-
-    while (getline(arg, method_name, ',')) {
-      methods.insert(method_name);
-    }
+  std::set<std::string> methods = set_split(m_config->get_string("calving.methods"), ',');
 
   if (methods.find("ocean_kill") != methods.end()) {
 
@@ -692,6 +710,8 @@ void IceModel::init_calving() {
 
     m_ocean_kill_calving->init();
     methods.erase("ocean_kill");
+
+    m_submodels["ocean kill calving"] = m_ocean_kill_calving;
   }
 
   if (methods.find("thickness_calving") != methods.end()) {
@@ -702,6 +722,8 @@ void IceModel::init_calving() {
 
     m_thickness_threshold_calving->init();
     methods.erase("thickness_calving");
+
+    m_submodels["thickness threshold calving"] = m_thickness_threshold_calving;
   }
 
 
@@ -713,6 +735,8 @@ void IceModel::init_calving() {
 
     m_eigen_calving->init();
     methods.erase("eigen_calving");
+
+    m_submodels["eigen calving"] = m_eigen_calving;
   }
 
   if (methods.find("vonmises_calving") != methods.end()) {
@@ -723,6 +747,8 @@ void IceModel::init_calving() {
 
     m_vonmises_calving->init();
     methods.erase("vonmises_calving");
+
+    m_submodels["von Mises calving"] = m_vonmises_calving;
   }
 
   if (methods.find("frontal_melt") != methods.end()) {
@@ -733,6 +759,8 @@ void IceModel::init_calving() {
 
     m_frontal_melt->init();
     methods.erase("frontal_melt");
+
+    m_submodels["frontal melt"] = m_frontal_melt;
   }
 
   if (methods.find("float_kill") != methods.end()) {
@@ -742,19 +770,14 @@ void IceModel::init_calving() {
 
     m_float_kill_calving->init();
     methods.erase("float_kill");
+
+    m_submodels["float kill calving"] = m_float_kill_calving;
   }
 
-  std::set<std::string>::iterator j = methods.begin();
-  std::string unused;
-  while (j != methods.end()) {
-    unused += (*j + ",");
-    ++j;
-  }
-
-  if (not unused.empty()) {
+  if (not methods.empty()) {
     m_log->message(2,
-               "PISM ERROR: calving method(s) [%s] are unknown and are ignored.\n",
-               unused.c_str());
+                   "PISM ERROR: calving method(s) [%s] are unknown and are ignored.\n",
+                   set_join(methods, ",").c_str());
   }
 }
 
@@ -770,18 +793,15 @@ void IceModel::allocate_bed_deformation() {
 
   if (model == "none") {
     m_beddef = new bed::PBNull(m_grid);
-    return;
   }
-
-  if (model == "iso") {
+  else if (model == "iso") {
     m_beddef = new bed::PBPointwiseIsostasy(m_grid);
-    return;
+  }
+  else if (model == "lc") {
+    m_beddef = new bed::PBLingleClark(m_grid);
   }
 
-  if (model == "lc") {
-    m_beddef = new bed::PBLingleClark(m_grid);
-    return;
-  }
+  m_submodels["bed deformation"] = m_beddef;
 }
 
 } // end of namespace pism

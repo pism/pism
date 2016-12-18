@@ -134,27 +134,14 @@ double BTU_Full::depth_impl() const {
   return m_Lbz;
 }
 
-void BTU_Full::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  result.insert(m_temp.metadata().get_name());
-
-  BedThermalUnit::add_vars_to_output_impl(keyword, result);
+void BTU_Full::define_model_state_impl(const PIO &output) const {
+  m_bottom_surface_flux.define(output);
+  m_temp.define(output);
 }
 
-void BTU_Full::define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype) {
-  if (set_contains(vars, m_temp.metadata().get_name())) {
-    m_temp.define(nc, nctype);
-  }
-
-  BedThermalUnit::define_variables_impl(vars, nc, nctype);
-}
-
-void BTU_Full::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, m_temp.metadata().get_name())) {
-    m_temp.write(nc);
-  }
-
-  BedThermalUnit::write_variables_impl(vars, nc);
+void BTU_Full::write_model_state_impl(const PIO &output) const {
+  m_bottom_surface_flux.write(output);
+  m_temp.write(output);
 }
 
 /*! Because the grid for the bedrock thermal layer is equally-spaced, and because
@@ -172,12 +159,12 @@ void BTU_Full::write_variables_impl(const std::set<std::string> &vars, const PIO
 
   The above describes the general case where Mbz > 1.
 */
-MaxTimestep BTU_Full::max_timestep_impl(double t) {
+MaxTimestep BTU_Full::max_timestep_impl(double t) const {
   (void) t;
 
   const double dz = vertical_spacing();
   // max dt from stability; in seconds
-  return MaxTimestep(dz * dz / (2.0 * m_D));
+  return MaxTimestep(dz * dz / (2.0 * m_D), "bedrock thermal layer");
 }
 
 
@@ -234,7 +221,7 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
 
   // CHECK: is desired time-step too long?
   MaxTimestep max_dt = max_timestep(t);
-  if (max_dt.is_finite() and max_dt.value() < dt) {
+  if (max_dt.finite() and max_dt.value() < dt) {
     throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Full::update() thinks you asked for too big a timestep.");
   }
 

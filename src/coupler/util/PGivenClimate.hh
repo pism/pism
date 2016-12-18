@@ -44,57 +44,20 @@ public:
   }
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) {
+  virtual MaxTimestep max_timestep_impl(double t) const {
     (void) t;
     return MaxTimestep();
   }
 
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
-    while(k != m_fields.end()) {
-
-      if (set_contains(vars, k->first)) {
-        (k->second)->write(nc);
-      }
-
-      ++k;
-    }
-
-    if (Model::m_input_model != NULL) {
-      Model::m_input_model->write_variables(vars, nc);
+  virtual void define_model_state_impl(const PIO &output) const {
+    for (auto f : m_fields) {
+      f.second->define(output);
     }
   }
 
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result)
-  {
-    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
-    while(k != m_fields.end()) {
-      result.insert(k->first);
-      ++k;
-    }
-
-    if (Model::m_input_model != NULL) {
-      Model::m_input_model->add_vars_to_output(keyword, result);
-    }
-
-  }
-
-  virtual void define_variables_impl(const std::set<std::string> &vars_input,
-                                     const PIO &nc, IO_Type nctype)
-  {
-    std::set<std::string> vars = vars_input;
-    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
-    while(k != m_fields.end()) {
-      if (set_contains(vars, k->first)) {
-        (k->second)->define(nc, nctype);
-        vars.erase(k->first);
-      }
-      ++k;
-    }
-
-    if (Model::m_input_model != NULL) {
-      Model::m_input_model->define_variables(vars, nc, nctype);
+  virtual void write_model_state_impl(const PIO &output) const {
+    for (auto f : m_fields) {
+      f.second->write(output);
     }
   }
 
@@ -138,10 +101,9 @@ protected:
 
     PIO nc(Model::m_grid->com, "netcdf3", m_filename, PISM_READONLY);
 
-    std::map<std::string, IceModelVec2T*>::const_iterator k = m_fields.begin();
-    while(k != m_fields.end()) {
+    for (auto f : m_fields) {
       unsigned int n_records = 0;
-      const std::string &short_name = k->first;
+      const std::string &short_name = f.first;
       std::string standard_name;
       if (standard_names.find(short_name) != standard_names.end()) {
         standard_name = standard_names.find(short_name)->second;
@@ -166,11 +128,10 @@ protected:
         n_records = 1;
       }
 
-      (k->second)->set_n_records(n_records);
+      f.second->set_n_records(n_records);
 
-      (k->second)->set_n_evaluations_per_year((unsigned int)Model::m_config->get_double("climate_forcing.evaluations_per_year"));
+      f.second->set_n_evaluations_per_year((unsigned int)Model::m_config->get_double("climate_forcing.evaluations_per_year"));
 
-      ++k;
     }
 
     nc.close();
@@ -193,11 +154,8 @@ protected:
       Model::m_input_model->update(Model::m_t, Model::m_dt);
     }
 
-    std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
-    while(k != m_fields.end()) {
-      (k->second)->update(Model::m_t, Model::m_dt);
-
-      ++k;
+    for (auto f : m_fields) {
+      f.second->update(Model::m_t, Model::m_dt);
     }
   }
 protected:

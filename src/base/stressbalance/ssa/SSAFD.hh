@@ -33,7 +33,7 @@ namespace stressbalance {
 class SSAFD : public SSA
 {
 public:
-  SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e);
+  SSAFD(IceGrid::ConstPtr g);
   virtual ~SSAFD();
 
   virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
@@ -42,8 +42,7 @@ public:
 protected:
   virtual void init_impl();
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   virtual void pc_setup_bjacobi();
 
@@ -115,7 +114,7 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid::ConstPtr , EnthalpyConverter::Ptr);
+SSA * SSAFDFactory(IceGrid::ConstPtr grid);
 
 } // end of namespace stressbalance
 } // end of namespace pism

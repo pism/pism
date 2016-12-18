@@ -153,7 +153,7 @@ void SSATestCase::init(int Mx, int My, SSAFactory ssafactory) {
   buildSSACoefficients();
 
   // Allocate the actual SSA solver.
-  m_ssa = ssafactory(m_grid, m_enthalpyconverter);
+  m_ssa = ssafactory(m_grid);
   m_ssa->init(); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.

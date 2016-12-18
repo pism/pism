@@ -32,9 +32,9 @@ public:
   virtual ~CosineYearlyCycle();
 
   virtual void init_impl();
-  virtual void init_timeseries_impl(const std::vector<double> &ts);
+  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(double my_t, double my_dt);
   Timeseries *m_A;                 // amplitude scaling
 };

@@ -32,7 +32,7 @@ namespace pism {
 /*! The retreat rate may correspond to frontal melting or calving. Requires the "part_grid"
     mechanism.
  */
-class CalvingFrontRetreat : public Component {
+class CalvingFrontRetreat : public Component_TS {
 public:
   CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width);
   virtual ~CalvingFrontRetreat();
@@ -44,16 +44,19 @@ public:
               IceModelVec2S &Href,
               IceModelVec2S &ice_thickness);
 
-  MaxTimestep max_timestep();
-
   const IceModelVec2S& calving_rate() const;
 
 protected:
-  virtual void compute_calving_rate(const IceModelVec2CellType &mask,
-                                    IceModelVec2S &result) = 0;
+  void update_impl(double t, double dt);
 
-  IceModelVec2CellType m_mask;
-  IceModelVec2S m_tmp, m_horizontal_calving_rate, m_surface_topography;
+  MaxTimestep max_timestep_impl(double t) const ;
+
+  virtual void compute_calving_rate(const IceModelVec2CellType &mask,
+                                    IceModelVec2S &result) const = 0;
+
+  mutable IceModelVec2CellType m_mask;
+  mutable IceModelVec2S m_tmp;
+  IceModelVec2S m_horizontal_calving_rate, m_surface_topography;
   bool m_restrict_timestep;
 };
 
@@ -61,7 +64,7 @@ protected:
 class CalvingRate : public Diag<CalvingFrontRetreat>
 {
 public:
-  CalvingRate(CalvingFrontRetreat *m,
+  CalvingRate(const CalvingFrontRetreat *m,
               const std::string &name,
               const std::string &long_name);
   IceModelVec::Ptr compute_impl();

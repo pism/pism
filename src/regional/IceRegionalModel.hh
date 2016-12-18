@@ -43,12 +43,9 @@ protected:
                                      StarStencil<double> input_flux,
                                      StarStencil<double> &output_velocity,
                                      StarStencil<double> &output_flux);
-  virtual void enthalpyStep(const EnergyModelInputs &inputs,
-                            double dt,
-                            EnergyModelStats &stats);
 private:
   IceModelVec2Int m_no_model_mask;
-  IceModelVec2S   m_usurf_stored, m_thk_stored, m_bmr_stored;
+  IceModelVec2S   m_usurf_stored, m_thk_stored;
 };
 
 } // end of namespace pism

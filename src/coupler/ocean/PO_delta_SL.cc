@@ -57,9 +57,9 @@ void Delta_SL::init_impl() {
   init_internal();
 }
 
-MaxTimestep Delta_SL::max_timestep_impl(double t) {
+MaxTimestep Delta_SL::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("ocean delta_SL");
 }
 
 void Delta_SL::sea_level_elevation_impl(double &result) const {

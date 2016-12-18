@@ -255,36 +255,23 @@ void MohrCoulombYieldStress::init_impl() {
   }
 }
 
-MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) {
+MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("Mohr-Coulomb yield stress");
 }
 
 void MohrCoulombYieldStress::set_till_friction_angle(const IceModelVec2S &input) {
   m_till_phi.copy_from(input);
 }
 
-void MohrCoulombYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/,
-                                                     std::set<std::string> &result) {
-  result.insert("tillphi");
+
+void MohrCoulombYieldStress::define_model_state_impl(const PIO &output) const {
+  m_till_phi.define(output);
 }
 
-
-void MohrCoulombYieldStress::define_variables_impl(const std::set<std::string> &vars,
-                                                   const PIO &nc, IO_Type nctype) {
-  if (set_contains(vars, "tillphi")) {
-    m_till_phi.define(nc, nctype);
-  }
+void MohrCoulombYieldStress::write_model_state_impl(const PIO &output) const {
+  m_till_phi.write(output);
 }
-
-
-void MohrCoulombYieldStress::write_variables_impl(const std::set<std::string> &vars,
-                                                  const PIO &nc) {
-  if (set_contains(vars, "tillphi")) {
-    m_till_phi.write(nc);
-  }
-}
-
 
 //! Update the till yield stress for use in the pseudo-plastic till basal stress
 //! model.  See also IceBasalResistancePlasticLaw.

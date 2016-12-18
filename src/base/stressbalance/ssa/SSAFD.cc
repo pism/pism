@@ -45,8 +45,8 @@ SSAFD::PicardFailure::PicardFailure(const std::string &message)
   // empty
 }
 
-SSA* SSAFDFactory(IceGrid::ConstPtr g, EnthalpyConverter::Ptr ec) {
-  return new SSAFD(g, ec);
+SSA* SSAFDFactory(IceGrid::ConstPtr g) {
+  return new SSAFD(g);
 }
 
 /*!
@@ -57,8 +57,8 @@ linear systems
   \f[ A x = b \f]
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
-SSAFD::SSAFD(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : SSA(g, e) {
+SSAFD::SSAFD(IceGrid::ConstPtr g)
+  : SSA(g) {
   m_b.create(m_grid, "right_hand_side", WITHOUT_GHOSTS);
 
   m_velocity_old.create(m_grid, "velocity_old", WITH_GHOSTS);
@@ -1663,7 +1663,7 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
 
   // write a file with a fixed filename; avoid zillions of files
   std::string filename = "SSAFD_" + namepart + ".petsc";
-  m_log->message(1, 
+  m_log->message(1,
              "  writing linear system to PETSc binary file %s ...\n", filename.c_str());
 
   petsc::Viewer viewer;       // will be destroyed automatically
@@ -1678,7 +1678,7 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
   PISM_CHK(ierr, "VecView");
 }
 
-SSAFD_nuH::SSAFD_nuH(SSAFD *m)
+SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
   : Diag<SSAFD>(m) {
 
   // set metadata:
@@ -1706,11 +1706,12 @@ IceModelVec::Ptr SSAFD_nuH::compute_impl() {
   return result;
 }
 
-void SSAFD::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                            std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-  SSA::get_diagnostics_impl(dict, ts_dict);
+std::map<std::string, Diagnostic::Ptr> SSAFD::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = SSA::diagnostics_impl();
 
-  dict["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
+  result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
+
+  return result;
 }
 
 const IceModelVec2Stag & SSAFD::integrated_viscosity() const {

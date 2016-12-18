@@ -165,21 +165,14 @@ def grid_from_file_test():
     enthalpy.set(80e3)
 
     output_file = "test_grid_from_file.nc"
-    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().config().get_string("time.calendar"),
-                     grid.ctx().time().units_string(),
-                     grid.ctx().unit_system())
-    PISM.append_time(pio,
-                     grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().time().current())
-    pio.close()
+    pio = PISM.util.prepare_output(output_file)
 
-    enthalpy.write(output_file)
+    enthalpy.write(pio)
 
     pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
+
     grid2 = PISM.IceGrid.FromFile(grid.ctx(), pio, "enthalpy", PISM.NOT_PERIODIC)
-    pio.close()
+
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
@@ -381,14 +374,7 @@ def modelvecs_test():
 
     # test write()
     output_file = "test_ModelVecs.nc"
-    pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READWRITE_MOVE)
-    PISM.define_time(pio, grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().config().get_string("time.calendar"),
-                     grid.ctx().time().units_string(),
-                     grid.ctx().unit_system())
-    PISM.append_time(pio,
-                     grid.ctx().config().get_string("time.dimension_name"),
-                     grid.ctx().time().current())
+    pio = PISM.util.prepare_output(output_file)
     pio.close()
 
     vecs.write(output_file)
@@ -1061,3 +1047,44 @@ netcdf string_attribute_test {
     compare("netcdf4_parallel")
 
     teardown()
+
+def interpolation_weights_test():
+    "Test 2D interpolation weights."
+
+    def interp2d(grid, F, x, y):
+        i_left, i_right, j_bottom, j_top = grid.compute_point_neighbors(x, y)
+        w = grid.compute_interp_weights(x, y);
+
+        i = [i_left, i_right, i_right, i_left]
+        j = [j_bottom, j_bottom, j_top, j_top]
+
+        result = 0.0
+        for k in range(4):
+            result += w[k] * F[j[k], i[k]]
+
+        return result;
+
+    Mx = 100
+    My = 200
+    Lx = 20
+    Ly = 10
+
+    grid = PISM.IceGrid_Shallow(PISM.Context().ctx,
+                                Lx, Ly, 0, 0, Mx, My,
+                                PISM.NOT_PERIODIC)
+
+    x = grid.x()
+    y = grid.y()
+    X,Y = np.meshgrid(x,y)
+    Z = 2 * X + 3 * Y
+
+    N = 1000
+    np.random.seed(1)
+    x_pts = np.random.rand(N) * (2 * Lx) - Lx
+    y_pts = np.random.rand(N) * (2 * Ly) - Ly
+    # a linear function should be recovered perfectly
+    exact = 2 * x_pts + 3 * y_pts
+
+    result = np.array([interp2d(grid, Z, x_pts[k], y_pts[k]) for k in range(N)])
+
+    np.testing.assert_almost_equal(result, exact)

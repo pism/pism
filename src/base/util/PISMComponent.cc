@@ -86,29 +86,20 @@ Component::~Component() {
   // empty
 }
 
-void Component::define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                 IO_Type nctype) {
-  this->define_variables_impl(vars, nc, nctype);
+std::map<std::string, Diagnostic::Ptr> Component::diagnostics() const {
+  return this->diagnostics_impl();
 }
 
-void Component::add_vars_to_output(const std::string &keyword,
-                                   std::set<std::string> &result) {
-  this->add_vars_to_output_impl(keyword, result);
+std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics() const {
+  return this->ts_diagnostics_impl();
 }
 
-void Component::write_variables(const std::set<std::string> &vars, const PIO& nc) {
-  this->write_variables_impl(vars, nc);
+std::map<std::string, Diagnostic::Ptr> Component::diagnostics_impl() const {
+  return {};
 }
 
-void Component::get_diagnostics(std::map<std::string, Diagnostic::Ptr> &dict,
-                                std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-  this->get_diagnostics_impl(dict, ts_dict);
-}
-
-void Component::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                     std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-  (void)dict;
-  (void)ts_dict;
+std::map<std::string, TSDiagnostic::Ptr> Component::ts_diagnostics_impl() const {
+  return {};
 }
 
 IceGrid::ConstPtr Component::grid() const {
@@ -193,7 +184,7 @@ Component_TS::~Component_TS() {
   // empty
 }
 
-MaxTimestep Component_TS::max_timestep(double t) {
+MaxTimestep Component_TS::max_timestep(double t) const {
   return this->max_timestep_impl(t);
 }
 
@@ -222,7 +213,7 @@ void init_step(Component_TS &model, const Time& time) {
     max_dt = MaxTimestep(1.0);
   }
 
-  assert(max_dt.is_finite() == true);
+  assert(max_dt.finite() == true);
 
   model.update(now, max_dt.value());
 }

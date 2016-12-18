@@ -57,33 +57,18 @@ void ConstantYieldStress::init_impl() {
   regrid("ConstantYieldStress", m_basal_yield_stress);
 }
 
-MaxTimestep ConstantYieldStress::max_timestep_impl(double t) {
+MaxTimestep ConstantYieldStress::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep();
+  return MaxTimestep("constant yield stress");
 }
 
-
-void ConstantYieldStress::add_vars_to_output_impl(const std::string &/*keyword*/,
-                                                  std::set<std::string> &result) {
-  result.insert("tauc");
+void ConstantYieldStress::define_model_state_impl(const PIO &output) const {
+  m_basal_yield_stress.define(output);
 }
 
-
-void ConstantYieldStress::define_variables_impl(const std::set<std::string> &vars,
-                                                const PIO &nc, IO_Type nctype) {
-  if (set_contains(vars, "tauc")) {
-    m_basal_yield_stress.define(nc, nctype);
-  }
+void ConstantYieldStress::write_model_state_impl(const PIO &output) const {
+  m_basal_yield_stress.write(output);
 }
-
-
-void ConstantYieldStress::write_variables_impl(const std::set<std::string> &vars,
-                                               const PIO &nc) {
-  if (set_contains(vars, "tauc")) {
-    m_basal_yield_stress.write(nc);
-  }
-}
-
 
 void ConstantYieldStress::update_impl() {
   // empty

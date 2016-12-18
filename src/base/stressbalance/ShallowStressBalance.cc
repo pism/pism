@@ -35,8 +35,8 @@ namespace stressbalance {
 
 using pism::mask::ice_free;
 
-ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(e) {
+ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
+  : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(g->ctx()->enthalpy_converter()) {
 
   m_bc_values = NULL;
   m_bc_mask = NULL;
@@ -117,18 +117,20 @@ const IceModelVec2S& ShallowStressBalance::basal_frictional_heating() {
 }
 
 
-void ShallowStressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                           std::map<std::string, TSDiagnostic::Ptr> &/*ts_dict*/) {
-  dict["beta"]     = Diagnostic::Ptr(new SSB_beta(this));
-  dict["taub"]     = Diagnostic::Ptr(new SSB_taub(this));
-  dict["taub_mag"] = Diagnostic::Ptr(new SSB_taub_mag(this));
-  dict["taud"]     = Diagnostic::Ptr(new SSB_taud(this));
-  dict["taud_mag"] = Diagnostic::Ptr(new SSB_taud_mag(this));
+std::map<std::string, Diagnostic::Ptr> ShallowStressBalance::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"beta",     Diagnostic::Ptr(new SSB_beta(this))},
+    {"taub",     Diagnostic::Ptr(new SSB_taub(this))},
+    {"taub_mag", Diagnostic::Ptr(new SSB_taub_mag(this))},
+    {"taud",     Diagnostic::Ptr(new SSB_taud(this))},
+    {"taud_mag", Diagnostic::Ptr(new SSB_taud_mag(this))}
+  };
+  return result;
 }
 
 
-ZeroSliding::ZeroSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : ShallowStressBalance(g, e) {
+ZeroSliding::ZeroSliding(IceGrid::ConstPtr g)
+  : ShallowStressBalance(g) {
 
   // Use the SIA flow law.
   rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
@@ -138,19 +140,6 @@ ZeroSliding::ZeroSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
 ZeroSliding::~ZeroSliding() {
   delete m_flow_law;
 }
-
-void ZeroSliding::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
-{
-  // empty
-}
-
-void ZeroSliding::define_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                             IO_Type /*nctype*/) {
-}
-
-void ZeroSliding::write_variables_impl(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
-}
-
 
 //! \brief Update the trivial shallow stress balance object.
 void ZeroSliding::update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure) {
@@ -291,7 +280,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
   }
 }
 
-SSB_taud::SSB_taud(ShallowStressBalance *m)
+SSB_taud::SSB_taud(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
   m_dof = 2;
@@ -350,7 +339,7 @@ IceModelVec::Ptr SSB_taud::compute_impl() {
   return result;
 }
 
-SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m)
+SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
@@ -377,7 +366,7 @@ IceModelVec::Ptr SSB_taud_mag::compute_impl() {
   return result;
 }
 
-SSB_taub::SSB_taub(ShallowStressBalance *m)
+SSB_taub::SSB_taub(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
   m_dof = 2;
 
@@ -431,7 +420,7 @@ IceModelVec::Ptr SSB_taub::compute_impl() {
   return result;
 }
 
-SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m)
+SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
@@ -464,8 +453,8 @@ IceModelVec::Ptr SSB_taub_mag::compute_impl() {
  *
  * The only use I can think of right now is testing.
  */
-PrescribedSliding::PrescribedSliding(IceGrid::ConstPtr g, EnthalpyConverter::Ptr e)
-  : ZeroSliding(g, e) {
+PrescribedSliding::PrescribedSliding(IceGrid::ConstPtr g)
+  : ZeroSliding(g) {
   // empty
 }
 
@@ -494,7 +483,7 @@ void PrescribedSliding::init() {
   m_velocity.regrid(input_filename, CRITICAL);
 }
 
-SSB_beta::SSB_beta(ShallowStressBalance *m)
+SSB_beta::SSB_beta(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "beta")};

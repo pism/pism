@@ -42,25 +42,21 @@ public:
 
 protected:
   virtual void init_impl();
-
-  virtual void mean_precipitation_impl(IceModelVec2S &result);
-  virtual void mean_annual_temp_impl(IceModelVec2S &result);
-
-  virtual void begin_pointwise_access_impl();
-  virtual void end_pointwise_access_impl();
-  virtual void init_timeseries_impl(const std::vector<double> &ts);
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values);
-
-  virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double t, double dt);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO& nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                                     IO_Type nctype);
+
+  virtual void mean_precipitation_impl(IceModelVec2S &result) const;
+  virtual void mean_annual_temp_impl(IceModelVec2S &result) const;
+
+  virtual void begin_pointwise_access_impl() const;
+  virtual void end_pointwise_access_impl() const;
+  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
+
+  virtual MaxTimestep max_timestep_impl(double t) const;
 protected:
   Timeseries m_precipitation_timeseries, m_air_temp_timeseries;
-  std::vector<double> m_precip_values, m_air_temp_values;
+  mutable std::vector<double> m_precip_values, m_air_temp_values;
 };
 
 } // end of namespace atmosphere

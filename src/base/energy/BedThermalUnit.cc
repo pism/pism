@@ -191,30 +191,16 @@ unsigned int BedThermalUnit::Mz() const {
   return this->Mz_impl();
 }
 
-void BedThermalUnit::add_vars_to_output_impl(const std::string &keyword,
-                                             std::set<std::string> &result) {
-  (void) keyword;
-  result.insert(m_bottom_surface_flux.metadata().get_name());
+void BedThermalUnit::define_model_state_impl(const PIO &output) const {
+  m_bottom_surface_flux.define(output);
 }
 
-void BedThermalUnit::define_variables_impl(const std::set<std::string> &vars,
-                                           const PIO &nc, IO_Type nctype) {
-  if (set_contains(vars, m_bottom_surface_flux.metadata().get_name())) {
-    m_bottom_surface_flux.define(nc, nctype);
-  }
+void BedThermalUnit::write_model_state_impl(const PIO &output) const {
+  m_bottom_surface_flux.write(output);
 }
 
-void BedThermalUnit::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-
-  if (set_contains(vars, m_bottom_surface_flux.metadata().get_name())) {
-    m_bottom_surface_flux.write(nc);
-  }
-}
-
-void BedThermalUnit::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                          std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-  dict["hfgeoubed"] = Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this));
-  (void)ts_dict;
+std::map<std::string, Diagnostic::Ptr> BedThermalUnit::diagnostics_impl() const {
+  return {{"hfgeoubed", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
 }
 
 void BedThermalUnit::update_impl(double t, double dt) {
@@ -242,7 +228,7 @@ const IceModelVec2S& BedThermalUnit::flux_through_bottom_surface() const {
   return m_bottom_surface_flux;
 }
 
-BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(BedThermalUnit *m)
+BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m)
   : Diag<BedThermalUnit>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "hfgeoubed")};
   set_attrs("upward geothermal flux at ground (top of the bedrock) level",

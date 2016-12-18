@@ -19,7 +19,7 @@ set -e -x
 $MPIEXEC -n 2 $PISM_PATH/pisms -energy enthalpy -y 6500 $opts -o foo-23.nc
 
 # bootstrap from it, re-gridding all the variables we can
-$PISM_PATH/pismr -i foo-23.nc -bootstrap -regrid_file foo-23.nc -y 0 -no_temp $opts -o bar-23.nc
+$PISM_PATH/pismr -i foo-23.nc -bootstrap -regrid_file foo-23.nc -y 0 $opts -o bar-23.nc
 
 set +e
 

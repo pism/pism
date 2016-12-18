@@ -33,7 +33,7 @@ public:
   virtual ~Delta_T();
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl();
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
 };

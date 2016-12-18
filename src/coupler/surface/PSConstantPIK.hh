@@ -38,15 +38,17 @@ public:
   PIK(IceGrid::ConstPtr g);
 protected:
   virtual void init_impl();
+  virtual void update_impl(double t, double dt);
   virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
-  virtual MaxTimestep max_timestep_impl(double t);
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars,
-                                     const PIO &nc, IO_Type nctype);
+
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
+  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const;
+  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const;
+
+  virtual MaxTimestep max_timestep_impl(double t) const;
+
 protected:
   IceModelVec2S m_climatic_mass_balance;
   IceModelVec2S m_ice_surface_temp;

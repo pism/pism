@@ -18,32 +18,26 @@
 
 #include <gsl/gsl_math.h>
 
-#include "base/basalstrength/PISMYieldStress.hh"
-#include "base/energy/BedThermalUnit.hh"
-#include "base/hydrology/PISMHydrology.hh"
+#include "iceModel_diagnostics.hh"
+
 #include "base/rheology/FlowLaw.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/stressbalance/SSB_Modifier.hh"
 #include "base/stressbalance/ShallowStressBalance.hh"
-#include "base/util/Mask.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/iceModelVec3Custom.hh"
-#include "base/util/pism_options.hh"
-#include "coupler/PISMOcean.hh"
-#include "coupler/PISMSurface.hh"
-#include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
-#include "iceModel_diagnostics.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/pism_utilities.hh"
+#include "coupler/PISMOcean.hh"
+#include "earth/PISMbedDef.hh"
 
 #include "base/grounded_cell_fraction.hh"
 #include "base/part_grid_threshold_thickness.hh"
-#include "base/calving/EigenCalving.hh"
-#include "base/calving/vonMisesCalving.hh"
-#include "base/calving/FrontalMelt.hh"
 #include "base/util/projection.hh"
+#include "base/energy/utilities.hh"
+#include "base/energy/EnergyModel.hh"
 
 #if (PISM_USE_PROJ4==1)
 #include "base/util/Proj.hh"
@@ -58,134 +52,97 @@ static const char* floating_ice_sheet_area_fraction_name = "sftflf";
 
 void IceModel::init_diagnostics() {
 
-  // Add IceModel diagnostics:
-  m_diagnostics["cts"]              = Diagnostic::Ptr(new IceModel_cts(this));
-  m_diagnostics["enthalpybase"]     = Diagnostic::Ptr(new IceModel_enthalpybase(this));
-  m_diagnostics["enthalpysurf"]     = Diagnostic::Ptr(new IceModel_enthalpysurf(this));
-  m_diagnostics["hardav"]           = Diagnostic::Ptr(new IceModel_hardav(this));
-  m_diagnostics["hardness"]         = Diagnostic::Ptr(new IceModel_hardness(this));
-  m_diagnostics["liqfrac"]          = Diagnostic::Ptr(new IceModel_liqfrac(this));
-  m_diagnostics["proc_ice_area"]    = Diagnostic::Ptr(new IceModel_proc_ice_area(this));
-  m_diagnostics["rank"]             = Diagnostic::Ptr(new IceModel_rank(this));
-  m_diagnostics["temp"]             = Diagnostic::Ptr(new IceModel_temp(this));
-  m_diagnostics["temp_pa"]          = Diagnostic::Ptr(new IceModel_temp_pa(this));
-  m_diagnostics["tempbase"]         = Diagnostic::Ptr(new IceModel_tempbase(this));
-  m_diagnostics["tempicethk"]       = Diagnostic::Ptr(new IceModel_tempicethk(this));
-  m_diagnostics["tempicethk_basal"] = Diagnostic::Ptr(new IceModel_tempicethk_basal(this));
-  m_diagnostics["temppabase"]       = Diagnostic::Ptr(new IceModel_temppabase(this));
-  m_diagnostics["tempsurf"]         = Diagnostic::Ptr(new IceModel_tempsurf(this));
-  m_diagnostics["dHdt"]             = Diagnostic::Ptr(new IceModel_dHdt(this));
-  m_diagnostics["effective_viscosity"] = Diagnostic::Ptr(new IceModel_viscosity(this));
-
-  m_diagnostics[land_ice_area_fraction_name]           = Diagnostic::Ptr(new IceModel_land_ice_area_fraction(this));
-  m_diagnostics[grounded_ice_sheet_area_fraction_name] = Diagnostic::Ptr(new IceModel_grounded_ice_sheet_area_fraction(this));
-  m_diagnostics[floating_ice_sheet_area_fraction_name] = Diagnostic::Ptr(new IceModel_floating_ice_sheet_area_fraction(this));
-
-  m_diagnostics["flux_divergence"]                  = Diagnostic::Ptr(new IceModel_flux_divergence(this));
-  m_diagnostics["climatic_mass_balance_cumulative"] = Diagnostic::Ptr(new IceModel_climatic_mass_balance_cumulative(this));
-  m_diagnostics["nonneg_flux_cumulative"]           = Diagnostic::Ptr(new IceModel_nonneg_flux_2D_cumulative(this));
-  m_diagnostics["grounded_basal_flux_cumulative"]   = Diagnostic::Ptr(new IceModel_grounded_basal_flux_2D_cumulative(this));
-  m_diagnostics["floating_basal_flux_cumulative"]   = Diagnostic::Ptr(new IceModel_floating_basal_flux_2D_cumulative(this));
-  m_diagnostics["discharge_flux_cumulative"]        = Diagnostic::Ptr(new IceModel_discharge_flux_2D_cumulative(this));
-  m_diagnostics["discharge_flux"]                   = Diagnostic::Ptr(new IceModel_discharge_flux_2D(this));
-
-  m_diagnostics["surface_mass_balance_average"] = Diagnostic::Ptr(new IceModel_surface_mass_balance_average(this));
-  m_diagnostics["basal_mass_balance_average"]   = Diagnostic::Ptr(new IceModel_basal_mass_balance_average(this));
-  m_diagnostics["height_above_flotation"]       = Diagnostic::Ptr(new IceModel_height_above_flotation(this));
-  m_diagnostics["ice_mass"]                     = Diagnostic::Ptr(new IceModel_ice_mass(this));
-  m_diagnostics["topg_sl_adjusted"]             = Diagnostic::Ptr(new IceModel_topg_sl_adjusted(this));
+  typedef Diagnostic::Ptr f;   // "f" for "field"
+  m_diagnostics = {
+    {"cts",                                 f(new IceModel_cts(this))},
+    {"enthalpybase",                        f(new IceModel_enthalpybase(this))},
+    {"enthalpysurf",                        f(new IceModel_enthalpysurf(this))},
+    {"hardav",                              f(new IceModel_hardav(this))},
+    {"hardness",                            f(new IceModel_hardness(this))},
+    {"liqfrac",                             f(new IceModel_liqfrac(this))},
+    {"proc_ice_area",                       f(new IceModel_proc_ice_area(this))},
+    {"rank",                                f(new IceModel_rank(this))},
+    {"temp",                                f(new IceModel_temp(this))},
+    {"temp_pa",                             f(new IceModel_temp_pa(this))},
+    {"tempbase",                            f(new IceModel_tempbase(this))},
+    {"tempicethk",                          f(new IceModel_tempicethk(this))},
+    {"tempicethk_basal",                    f(new IceModel_tempicethk_basal(this))},
+    {"temppabase",                          f(new IceModel_temppabase(this))},
+    {"tempsurf",                            f(new IceModel_tempsurf(this))},
+    {"dHdt",                                f(new IceModel_dHdt(this))},
+    {"effective_viscosity",                 f(new IceModel_viscosity(this))},
+    {land_ice_area_fraction_name,           f(new IceModel_land_ice_area_fraction(this))},
+    {grounded_ice_sheet_area_fraction_name, f(new IceModel_grounded_ice_sheet_area_fraction(this))},
+    {floating_ice_sheet_area_fraction_name, f(new IceModel_floating_ice_sheet_area_fraction(this))},
+    {"flux_divergence",                     f(new IceModel_flux_divergence(this))},
+    {"climatic_mass_balance_cumulative",    f(new IceModel_climatic_mass_balance_cumulative(this))},
+    {"nonneg_flux_cumulative",              f(new IceModel_nonneg_flux_2D_cumulative(this))},
+    {"grounded_basal_flux_cumulative",      f(new IceModel_grounded_basal_flux_2D_cumulative(this))},
+    {"floating_basal_flux_cumulative",      f(new IceModel_floating_basal_flux_2D_cumulative(this))},
+    {"discharge_flux_cumulative",           f(new IceModel_discharge_flux_2D_cumulative(this))},
+    {"discharge_flux",                      f(new IceModel_discharge_flux_2D(this))},
+    {"surface_mass_balance_average",        f(new IceModel_surface_mass_balance_average(this))},
+    {"basal_mass_balance_average",          f(new IceModel_basal_mass_balance_average(this))},
+    {"height_above_flotation",              f(new IceModel_height_above_flotation(this))},
+    {"ice_mass",                            f(new IceModel_ice_mass(this))},
+    {"topg_sl_adjusted",                    f(new IceModel_topg_sl_adjusted(this))}
+  };
 
 #if (PISM_USE_PROJ4==1)
   std::string proj4 = m_grid->get_mapping_info().proj4;
   if (not proj4.empty()) {
-    m_diagnostics["lat_bnds"] = Diagnostic::Ptr(new IceModel_lat_lon_bounds(this, "lat", proj4));
-    m_diagnostics["lon_bnds"] = Diagnostic::Ptr(new IceModel_lat_lon_bounds(this, "lon", proj4));
+    m_diagnostics["lat_bnds"] = f(new IceModel_lat_lon_bounds(this, "lat", proj4));
+    m_diagnostics["lon_bnds"] = f(new IceModel_lat_lon_bounds(this, "lon", proj4));
   }
 #endif
 
-  m_ts_diagnostics["volume_glacierized"]                   = TSDiagnostic::Ptr(new IceModel_volume_glacierized(this));
-  m_ts_diagnostics["volume_nonglacierized"]                = TSDiagnostic::Ptr(new IceModel_volume_nonglacierized(this));
-  m_ts_diagnostics["slvol"]                                = TSDiagnostic::Ptr(new IceModel_slvol(this));
-  m_ts_diagnostics["volume_rate_of_change_glacierized"]    = TSDiagnostic::Ptr(new IceModel_volume_rate_of_change_glacierized(this));
-  m_ts_diagnostics["volume_rate_of_change_nonglacierized"] = TSDiagnostic::Ptr(new IceModel_volume_rate_of_change_nonglacierized(this));
-  m_ts_diagnostics["area_glacierized"]                     = TSDiagnostic::Ptr(new IceModel_area_glacierized(this));
-  m_ts_diagnostics["mass_glacierized"]                     = TSDiagnostic::Ptr(new IceModel_mass_glacierized(this));
-  m_ts_diagnostics["mass_nonglacierized"]                  = TSDiagnostic::Ptr(new IceModel_mass_nonglacierized(this));
-  m_ts_diagnostics["mass_rate_of_change_glacierized"]      = TSDiagnostic::Ptr(new IceModel_mass_rate_of_change_glacierized(this));
-  m_ts_diagnostics["mass_rate_of_change_nonglacierized"]   = TSDiagnostic::Ptr(new IceModel_mass_rate_of_change_nonglacierized(this));
-  m_ts_diagnostics["volume_glacierized_temperate"]         = TSDiagnostic::Ptr(new IceModel_volume_glacierized_temperate(this));
-  m_ts_diagnostics["volume_nonglacierized_temperate"]      = TSDiagnostic::Ptr(new IceModel_volume_nonglacierized_temperate(this));
-  m_ts_diagnostics["volume_glacierized_cold"]              = TSDiagnostic::Ptr(new IceModel_volume_glacierized_cold(this));
-  m_ts_diagnostics["volume_nonglacierized_cold"]           = TSDiagnostic::Ptr(new IceModel_volume_nonglacierized_cold(this));
-  m_ts_diagnostics["volume_glacierized_grounded"]          = TSDiagnostic::Ptr(new IceModel_volume_glacierized_grounded(this));
-  m_ts_diagnostics["volume_glacierized_shelf"]             = TSDiagnostic::Ptr(new IceModel_volume_glacierized_shelf(this));
-  m_ts_diagnostics["area_glacierized_temperate_base"]      = TSDiagnostic::Ptr(new IceModel_area_glacierized_temperate_base(this));
-  m_ts_diagnostics["area_glacierized_cold_base"]           = TSDiagnostic::Ptr(new IceModel_area_glacierized_cold_base(this));
-  m_ts_diagnostics["area_glacierized_grounded"]            = TSDiagnostic::Ptr(new IceModel_area_glacierized_grounded(this));
-  m_ts_diagnostics["area_glacierized_shelf"]               = TSDiagnostic::Ptr(new IceModel_area_glacierized_shelf(this));
-  m_ts_diagnostics["dt"]                                   = TSDiagnostic::Ptr(new IceModel_dt(this));
-  m_ts_diagnostics["max_diffusivity"]                      = TSDiagnostic::Ptr(new IceModel_max_diffusivity(this));
-  m_ts_diagnostics["enthalpy_glacierized"]                 = TSDiagnostic::Ptr(new IceModel_enthalpy_glacierized(this));
-  m_ts_diagnostics["enthalpy_nonglacierized"]              = TSDiagnostic::Ptr(new IceModel_enthalpy_nonglacierized(this));
-  m_ts_diagnostics["max_hor_vel"]                          = TSDiagnostic::Ptr(new IceModel_max_hor_vel(this));
-  m_ts_diagnostics["limnsw"]                               = TSDiagnostic::Ptr(new IceModel_limnsw(this));
+  typedef TSDiagnostic::Ptr s; // "s" for "scalar"
+  m_ts_diagnostics = {
+    {"volume_glacierized",                   s(new IceModel_volume_glacierized(this))},
+    {"volume_nonglacierized",                s(new IceModel_volume_nonglacierized(this))},
+    {"slvol",                                s(new IceModel_slvol(this))},
+    {"volume_rate_of_change_glacierized",    s(new IceModel_volume_rate_of_change_glacierized(this))},
+    {"volume_rate_of_change_nonglacierized", s(new IceModel_volume_rate_of_change_nonglacierized(this))},
+    {"area_glacierized",                     s(new IceModel_area_glacierized(this))},
+    {"mass_glacierized",                     s(new IceModel_mass_glacierized(this))},
+    {"mass_nonglacierized",                  s(new IceModel_mass_nonglacierized(this))},
+    {"mass_rate_of_change_glacierized",      s(new IceModel_mass_rate_of_change_glacierized(this))},
+    {"mass_rate_of_change_nonglacierized",   s(new IceModel_mass_rate_of_change_nonglacierized(this))},
+    {"volume_glacierized_temperate",         s(new IceModel_volume_glacierized_temperate(this))},
+    {"volume_nonglacierized_temperate",      s(new IceModel_volume_nonglacierized_temperate(this))},
+    {"volume_glacierized_cold",              s(new IceModel_volume_glacierized_cold(this))},
+    {"volume_nonglacierized_cold",           s(new IceModel_volume_nonglacierized_cold(this))},
+    {"volume_glacierized_grounded",          s(new IceModel_volume_glacierized_grounded(this))},
+    {"volume_glacierized_shelf",             s(new IceModel_volume_glacierized_shelf(this))},
+    {"area_glacierized_temperate_base",      s(new IceModel_area_glacierized_temperate_base(this))},
+    {"area_glacierized_cold_base",           s(new IceModel_area_glacierized_cold_base(this))},
+    {"area_glacierized_grounded",            s(new IceModel_area_glacierized_grounded(this))},
+    {"area_glacierized_shelf",               s(new IceModel_area_glacierized_shelf(this))},
+    {"dt",                                   s(new IceModel_dt(this))},
+    {"max_diffusivity",                      s(new IceModel_max_diffusivity(this))},
+    {"enthalpy_glacierized",                 s(new IceModel_enthalpy_glacierized(this))},
+    {"enthalpy_nonglacierized",              s(new IceModel_enthalpy_nonglacierized(this))},
+    {"max_hor_vel",                          s(new IceModel_max_hor_vel(this))},
+    {"limnsw",                               s(new IceModel_limnsw(this))},
+    {"surface_ice_flux",                     s(new IceModel_surface_flux(this))},
+    {"surface_ice_flux_cumulative",          s(new IceModel_surface_flux_cumulative(this))},
+    {"grounded_basal_ice_flux",              s(new IceModel_grounded_basal_flux(this))},
+    {"grounded_basal_ice_flux_cumulative",   s(new IceModel_grounded_basal_flux_cumulative(this))},
+    {"sub_shelf_ice_flux",                   s(new IceModel_sub_shelf_flux(this))},
+    {"sub_shelf_ice_flux_cumulative",        s(new IceModel_sub_shelf_flux_cumulative(this))},
+    {"nonneg_rule_flux",                     s(new IceModel_nonneg_flux(this))},
+    {"nonneg_rule_flux_cumulative",          s(new IceModel_nonneg_flux_cumulative(this))},
+    {"discharge_flux",                       s(new IceModel_discharge_flux(this))},
+    {"discharge_flux_cumulative",            s(new IceModel_discharge_flux_cumulative(this))},
+    {"H_to_Href_flux",                       s(new IceModel_H_to_Href_flux(this))},
+    {"Href_to_H_flux",                       s(new IceModel_Href_to_H_flux(this))},
+    {"sum_divQ_flux",                        s(new IceModel_sum_divQ_flux(this))}
+  };
 
-  m_ts_diagnostics["surface_ice_flux"]                   = TSDiagnostic::Ptr(new IceModel_surface_flux(this));
-  m_ts_diagnostics["surface_ice_flux_cumulative"]        = TSDiagnostic::Ptr(new IceModel_surface_flux_cumulative(this));
-  m_ts_diagnostics["grounded_basal_ice_flux"]            = TSDiagnostic::Ptr(new IceModel_grounded_basal_flux(this));
-  m_ts_diagnostics["grounded_basal_ice_flux_cumulative"] = TSDiagnostic::Ptr(new IceModel_grounded_basal_flux_cumulative(this));
-  m_ts_diagnostics["sub_shelf_ice_flux"]                 = TSDiagnostic::Ptr(new IceModel_sub_shelf_flux(this));
-  m_ts_diagnostics["sub_shelf_ice_flux_cumulative"]      = TSDiagnostic::Ptr(new IceModel_sub_shelf_flux_cumulative(this));
-  m_ts_diagnostics["nonneg_rule_flux"]                   = TSDiagnostic::Ptr(new IceModel_nonneg_flux(this));
-  m_ts_diagnostics["nonneg_rule_flux_cumulative"]        = TSDiagnostic::Ptr(new IceModel_nonneg_flux_cumulative(this));
-  m_ts_diagnostics["discharge_flux"]                     = TSDiagnostic::Ptr(new IceModel_discharge_flux(this));
-  m_ts_diagnostics["discharge_flux_cumulative"]          = TSDiagnostic::Ptr(new IceModel_discharge_flux_cumulative(this));
-  m_ts_diagnostics["H_to_Href_flux"]                     = TSDiagnostic::Ptr(new IceModel_H_to_Href_flux(this));
-  m_ts_diagnostics["Href_to_H_flux"]                     = TSDiagnostic::Ptr(new IceModel_Href_to_H_flux(this));
-  m_ts_diagnostics["sum_divQ_flux"]                      = TSDiagnostic::Ptr(new IceModel_sum_divQ_flux(this));
-
-  // Get diagnostics supported by the stress balance object:
-  if (m_stress_balance != NULL) {
-    m_stress_balance->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  // Get diagnostics supported by the surface model:
-  if (m_surface != NULL) {
-    m_surface->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  // Get diagnostics supported by the ocean model:
-  if (m_ocean != NULL) {
-    m_ocean->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  // Get diagnostics supported by the bed deformation model:
-  if (m_beddef != NULL) {
-    m_beddef->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_basal_yield_stress_model != NULL) {
-    m_basal_yield_stress_model->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_subglacial_hydrology != NULL) {
-    m_subglacial_hydrology->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_btu != NULL) {
-    m_btu->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_eigen_calving != NULL) {
-    m_eigen_calving->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_vonmises_calving != NULL) {
-    m_vonmises_calving->get_diagnostics(m_diagnostics, m_ts_diagnostics);
-  }
-
-  if (m_frontal_melt != NULL) {
-    m_frontal_melt->get_diagnostics(m_diagnostics, m_ts_diagnostics);
+  // get diagnostics from submodels
+  for (auto m : m_submodels) {
+    m_diagnostics = pism::combine(m_diagnostics, m.second->diagnostics());
+    m_ts_diagnostics = pism::combine(m_ts_diagnostics, m.second->ts_diagnostics());
   }
 }
 
@@ -196,41 +153,6 @@ void IceModel::list_diagnostics() {
   // quantities with dedicated storage
   {
     std::set<std::string> list = m_grid->variables().keys();
-
-    if (m_beddef != NULL) {
-      m_beddef->add_vars_to_output("big", list);
-      m_beddef->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_btu != NULL) {
-      m_btu->add_vars_to_output("big", list);
-      m_btu->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_basal_yield_stress_model != NULL) {
-      m_basal_yield_stress_model->add_vars_to_output("big", list);
-      m_basal_yield_stress_model->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_subglacial_hydrology != NULL) {
-      m_subglacial_hydrology->add_vars_to_output("big", list);
-      m_subglacial_hydrology->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_stress_balance != NULL) {
-      m_stress_balance->add_vars_to_output("big", list);
-      m_stress_balance->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_ocean != NULL) {
-      m_ocean->add_vars_to_output("big", list);
-      m_ocean->add_vars_to_output("big_2d", list);
-    }
-
-    if (m_surface != NULL) {
-      m_surface->add_vars_to_output("big", list);
-      m_surface->add_vars_to_output("big_2d", list);
-    }
 
     for (unsigned int d = 3; d > 1; --d) {
 
@@ -327,7 +249,7 @@ void IceModel::list_diagnostics() {
 }
 
 
-IceModel_hardav::IceModel_hardav(IceModel *m)
+IceModel_hardav::IceModel_hardav(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -362,7 +284,7 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
 
   const IceModelVec2CellType &cell_type = model->cell_type();
 
-  const IceModelVec3& ice_enthalpy = model->ice_enthalpy();
+  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
@@ -394,7 +316,7 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
 }
 
 
-IceModel_rank::IceModel_rank(IceModel *m)
+IceModel_rank::IceModel_rank(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -421,7 +343,7 @@ IceModelVec::Ptr IceModel_rank::compute_impl() {
 }
 
 
-IceModel_cts::IceModel_cts(IceModel *m)
+IceModel_cts::IceModel_cts(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -437,12 +359,12 @@ IceModelVec::Ptr IceModel_cts::compute_impl() {
   result->create(m_grid, "cts", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  compute_cts(model->ice_enthalpy(), model->ice_thickness(), *result);
+  energy::compute_cts(model->energy_balance_model()->enthalpy(), model->ice_thickness(), *result);
 
   return result;
 }
 
-IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m)
+IceModel_proc_ice_area::IceModel_proc_ice_area(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -481,7 +403,7 @@ IceModelVec::Ptr IceModel_proc_ice_area::compute_impl() {
 }
 
 
-IceModel_temp::IceModel_temp(IceModel *m)
+IceModel_temp::IceModel_temp(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -534,7 +456,7 @@ IceModelVec::Ptr IceModel_temp::compute_impl() {
 }
 
 
-IceModel_temp_pa::IceModel_temp_pa(IceModel *m)
+IceModel_temp_pa::IceModel_temp_pa(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -600,7 +522,7 @@ IceModelVec::Ptr IceModel_temp_pa::compute_impl() {
   return result;
 }
 
-IceModel_temppabase::IceModel_temppabase(IceModel *m)
+IceModel_temppabase::IceModel_temppabase(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -659,7 +581,7 @@ IceModelVec::Ptr IceModel_temppabase::compute_impl() {
   return result;
 }
 
-IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m)
+IceModel_enthalpysurf::IceModel_enthalpysurf(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -678,7 +600,7 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
 
   // compute levels corresponding to 1 m below the ice surface:
 
-  const IceModelVec3& ice_enthalpy = model->ice_enthalpy();
+  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
@@ -704,7 +626,7 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
   return result;
 }
 
-IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m)
+IceModel_enthalpybase::IceModel_enthalpybase(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -721,7 +643,7 @@ IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
   result->create(m_grid, "enthalpybase", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  model->ice_enthalpy().getHorSlice(*result, 0.0);  // z=0 slice
+  model->energy_balance_model()->enthalpy().getHorSlice(*result, 0.0);  // z=0 slice
 
   result->mask_by(model->ice_thickness(), m_fill_value);
 
@@ -729,7 +651,7 @@ IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
 }
 
 
-IceModel_tempbase::IceModel_tempbase(IceModel *m)
+IceModel_tempbase::IceModel_tempbase(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -782,7 +704,7 @@ IceModelVec::Ptr IceModel_tempbase::compute_impl() {
   return result;
 }
 
-IceModel_tempsurf::IceModel_tempsurf(IceModel *m)
+IceModel_tempsurf::IceModel_tempsurf(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -832,7 +754,7 @@ IceModelVec::Ptr IceModel_tempsurf::compute_impl() {
 }
 
 
-IceModel_liqfrac::IceModel_liqfrac(IceModel *m)
+IceModel_liqfrac::IceModel_liqfrac(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -856,15 +778,15 @@ IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
   if (cold_mode) {
     result->set(0.0);
   } else {
-    compute_liquid_water_fraction(model->ice_enthalpy(),
-                                  model->ice_thickness(),
-                                  *result);
+    energy::compute_liquid_water_fraction(model->energy_balance_model()->enthalpy(),
+                                          model->ice_thickness(),
+                                          *result);
   }
 
   return result;
 }
 
-IceModel_tempicethk::IceModel_tempicethk(IceModel *m)
+IceModel_tempicethk::IceModel_tempicethk(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -883,7 +805,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->cell_type();
-  const IceModelVec3& ice_enthalpy = model->ice_enthalpy();
+  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
@@ -932,7 +854,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
   return result;
 }
 
-IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m)
+IceModel_tempicethk_basal::IceModel_tempicethk_basal(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -956,7 +878,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   const IceModelVec2CellType &cell_type = model->cell_type();
-  const IceModelVec3& ice_enthalpy = model->ice_enthalpy();
+  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list;
@@ -1039,7 +961,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   return result;
 }
 
-IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m)
+IceModel_flux_divergence::IceModel_flux_divergence(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1060,7 +982,7 @@ IceModelVec::Ptr IceModel_flux_divergence::compute_impl() {
   return result;
 }
 
-IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(IceModel *m)
+IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1122,7 +1044,7 @@ void IceModel_volume_nonglacierized::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_slvol::IceModel_slvol(IceModel *m)
+IceModel_slvol::IceModel_slvol(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1416,10 +1338,10 @@ IceModel_enthalpy_glacierized::IceModel_enthalpy_glacierized(IceModel *m)
 
 void IceModel_enthalpy_glacierized::update(double a, double b) {
 
-  double value = total_ice_enthalpy(m_config->get_double("output.ice_free_thickness_standard"),
-                                    model->ice_enthalpy(),
-                                    model->ice_thickness(),
-                                    model->cell_area());
+  double value = energy::total_ice_enthalpy(m_config->get_double("output.ice_free_thickness_standard"),
+                                            model->energy_balance_model()->enthalpy(),
+                                            model->ice_thickness(),
+                                            model->cell_area());
 
   m_ts->append(value, a, b);
 }
@@ -1438,10 +1360,10 @@ IceModel_enthalpy_nonglacierized::IceModel_enthalpy_nonglacierized(IceModel *m)
 
 void IceModel_enthalpy_nonglacierized::update(double a, double b) {
 
-  double value = total_ice_enthalpy(0.0,
-                                    model->ice_enthalpy(),
-                                    model->ice_thickness(),
-                                    model->cell_area());
+  double value = energy::total_ice_enthalpy(0.0,
+                                            model->energy_balance_model()->enthalpy(),
+                                            model->ice_thickness(),
+                                            model->cell_area());
 
   m_ts->append(value, a, b);
 }
@@ -1482,7 +1404,7 @@ void IceModel_area_glacierized_shelf::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_dt::IceModel_dt(IceModel *m)
+IceModel_dt::IceModel_dt(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1499,7 +1421,7 @@ void IceModel_dt::update(double a, double b) {
   m_ts->append(model->dt(), a, b);
 }
 
-IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m)
+IceModel_max_diffusivity::IceModel_max_diffusivity(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1516,7 +1438,7 @@ void IceModel_max_diffusivity::update(double a, double b) {
   m_ts->append(value, a, b);
 }
 
-IceModel_surface_flux::IceModel_surface_flux(IceModel *m)
+IceModel_surface_flux::IceModel_surface_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1534,7 +1456,7 @@ void IceModel_surface_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().surface, a, b);
 }
 
-IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m)
+IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1549,7 +1471,7 @@ void IceModel_surface_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().surface, a, b);
 }
 
-IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m)
+IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1566,7 +1488,7 @@ void IceModel_grounded_basal_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
 }
 
-IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(IceModel *m)
+IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1582,7 +1504,7 @@ void IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
 }
 
-IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m)
+IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1599,7 +1521,7 @@ void IceModel_sub_shelf_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
-IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel *m)
+IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1615,7 +1537,7 @@ void IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
-IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m)
+IceModel_nonneg_flux::IceModel_nonneg_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1632,7 +1554,7 @@ void IceModel_nonneg_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
 }
 
-IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m)
+IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1648,7 +1570,7 @@ void IceModel_nonneg_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
 }
 
-IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m)
+IceModel_discharge_flux::IceModel_discharge_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1665,7 +1587,7 @@ void IceModel_discharge_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().discharge, a, b);
 }
 
-IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel *m)
+IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1681,7 +1603,7 @@ void IceModel_discharge_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().discharge, a, b);
 }
 
-IceModel_dHdt::IceModel_dHdt(IceModel *m)
+IceModel_dHdt::IceModel_dHdt(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1843,7 +1765,7 @@ void IceModel_volume_glacierized_shelf::update(double a, double b) {
  * reporting time. (It is not the "average over the reporting interval computed using
  * differencing in time", as other rate-of-change diagnostics.)
  */
-IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m)
+IceModel_max_hor_vel::IceModel_max_hor_vel(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1864,7 +1786,7 @@ void IceModel_max_hor_vel::update(double a, double b) {
   m_ts->append(std::max(cfl.u_max, cfl.v_max), a, b);
 }
 
-IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m)
+IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
   // set metadata:
   m_ts = new DiagnosticTimeseries(*m_grid, "H_to_Href_flux", m_time_dimension_name);
@@ -1880,7 +1802,7 @@ void IceModel_H_to_Href_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().H_to_Href, a, b);
 }
 
-IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m)
+IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
   // set metadata:
   m_ts = new DiagnosticTimeseries(*m_grid, "Href_to_H_flux", m_time_dimension_name);
@@ -1896,7 +1818,7 @@ void IceModel_Href_to_H_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().Href_to_H, a, b);
 }
 
-IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m)
+IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
   // set metadata:
   m_ts = new DiagnosticTimeseries(*m_grid, "sum_divQ_flux", m_time_dimension_name);
@@ -1915,7 +1837,7 @@ void IceModel_sum_divQ_flux::update(double a, double b) {
                a, b);
 }
 
-IceModel_limnsw::IceModel_limnsw(IceModel *m)
+IceModel_limnsw::IceModel_limnsw(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
   // set metadata:
@@ -1937,7 +1859,7 @@ void IceModel_limnsw::update(double a, double b) {
   m_ts->append(ice_mass, a, b);
 }
 
-IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel *m)
+IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1961,7 +1883,7 @@ IceModelVec::Ptr IceModel_nonneg_flux_2D_cumulative::compute_impl() {
   return result;
 }
 
-IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(IceModel *m)
+IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -1985,7 +1907,7 @@ IceModelVec::Ptr IceModel_grounded_basal_flux_2D_cumulative::compute_impl() {
   return result;
 }
 
-IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(IceModel *m)
+IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -2010,7 +1932,7 @@ IceModelVec::Ptr IceModel_floating_basal_flux_2D_cumulative::compute_impl() {
 }
 
 
-IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(IceModel *m)
+IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -2034,7 +1956,7 @@ IceModelVec::Ptr IceModel_discharge_flux_2D_cumulative::compute_impl() {
   return result;
 }
 
-IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(IceModel *m)
+IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -2093,7 +2015,7 @@ IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
   return result;
 }
 
-IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m,
+IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(const IceModel *m,
                                                  const std::string &var_name,
                                                  const std::string &proj_string)
   : Diag<IceModel>(m) {
@@ -2157,7 +2079,7 @@ IceModelVec::Ptr IceModel_lat_lon_bounds::compute_impl() {
   return result;
 }
 
-IceModel_land_ice_area_fraction::IceModel_land_ice_area_fraction(IceModel *m)
+IceModel_land_ice_area_fraction::IceModel_land_ice_area_fraction(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, land_ice_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by ice (grounded or floating)",
@@ -2241,7 +2163,7 @@ IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
   return result;
 }
 
-IceModel_grounded_ice_sheet_area_fraction::IceModel_grounded_ice_sheet_area_fraction(IceModel *m)
+IceModel_grounded_ice_sheet_area_fraction::IceModel_grounded_ice_sheet_area_fraction(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, grounded_ice_sheet_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by grounded ice",
@@ -2295,7 +2217,7 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
   return result;
 }
 
-IceModel_floating_ice_sheet_area_fraction::IceModel_floating_ice_sheet_area_fraction(IceModel *m)
+IceModel_floating_ice_sheet_area_fraction::IceModel_floating_ice_sheet_area_fraction(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, floating_ice_sheet_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by floating ice",
@@ -2320,7 +2242,7 @@ IceModelVec::Ptr IceModel_floating_ice_sheet_area_fraction::compute_impl() {
   return result;
 }
 
-IceModel_surface_mass_balance_average::IceModel_surface_mass_balance_average(IceModel *m)
+IceModel_surface_mass_balance_average::IceModel_surface_mass_balance_average(const IceModel *m)
   : Diag<IceModel>(m) {
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "surface_mass_balance_average")};
@@ -2377,7 +2299,7 @@ IceModelVec::Ptr IceModel_surface_mass_balance_average::compute_impl() {
   return result;
 }
 
-IceModel_basal_mass_balance_average::IceModel_basal_mass_balance_average(IceModel *m)
+IceModel_basal_mass_balance_average::IceModel_basal_mass_balance_average(const IceModel *m)
   : Diag<IceModel>(m) {
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "basal_mass_balance_average")};
@@ -2438,7 +2360,7 @@ IceModelVec::Ptr IceModel_basal_mass_balance_average::compute_impl() {
   return result;
 }
 
-IceModel_height_above_flotation::IceModel_height_above_flotation(IceModel *m)
+IceModel_height_above_flotation::IceModel_height_above_flotation(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -2499,7 +2421,7 @@ IceModelVec::Ptr IceModel_height_above_flotation::compute_impl() {
   return result;
 }
 
-IceModel_ice_mass::IceModel_ice_mass(IceModel *m)
+IceModel_ice_mass::IceModel_ice_mass(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
@@ -2569,7 +2491,7 @@ IceModelVec::Ptr IceModel_ice_mass::compute_impl() {
   return result;
 }
 
-IceModel_topg_sl_adjusted::IceModel_topg_sl_adjusted(IceModel *m)
+IceModel_topg_sl_adjusted::IceModel_topg_sl_adjusted(const IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
@@ -2592,7 +2514,7 @@ IceModelVec::Ptr IceModel_topg_sl_adjusted::compute_impl() {
   return result;
 }
 
-IceModel_hardness::IceModel_hardness(IceModel *m)
+IceModel_hardness::IceModel_hardness(const IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
@@ -2614,7 +2536,7 @@ IceModelVec::Ptr IceModel_hardness::compute_impl() {
 
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
-  const IceModelVec3  &ice_enthalpy  = model->ice_enthalpy();
+  const IceModelVec3  &ice_enthalpy  = model->energy_balance_model()->enthalpy();
   const IceModelVec2S &ice_thickness = model->ice_thickness();
 
   const rheology::FlowLaw *flow_law = model->stress_balance()->modifier()->flow_law();
@@ -2686,7 +2608,7 @@ IceModelVec::Ptr IceModel_viscosity::compute_impl() {
   const IceModelVec2S &ice_thickness = model->ice_thickness();
 
   const IceModelVec3
-    &ice_enthalpy     = model->ice_enthalpy(),
+    &ice_enthalpy     = model->energy_balance_model()->enthalpy(),
     &U                = model->stress_balance()->velocity_u(),
     &V                = model->stress_balance()->velocity_v(),
     &W_without_ghosts = model->stress_balance()->velocity_w();

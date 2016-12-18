@@ -73,10 +73,10 @@ bool show_usage_check_req_opts(const Logger &log,
 
   // go through list of required options, and if not given, fail
   bool req_absent = false;
-  for (size_t k = 0; k < required_options.size(); ++k) {
-    if (not options::Bool(required_options[k], "a required option")) {
+  for (auto opt : required_options) {
+    if (not options::Bool(opt, "a required option")) {
       req_absent = true;
-      log.error("PISM ERROR: option %s required\n", required_options[k].c_str());
+      log.error("PISM ERROR: option %s required\n", opt.c_str());
     }
   }
 

@@ -37,12 +37,12 @@ public:
   ~PSFormulas();
 protected:
   void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
-  void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  void ice_surface_temperature_impl(IceModelVec2S &result);
-  void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  void define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                             IO_Type nctype);
+
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
+  void ice_surface_mass_flux_impl(IceModelVec2S &result) const;
+  void ice_surface_temperature_impl(IceModelVec2S &result) const;
 protected:
   IceModelVec2S m_climatic_mass_balance;
   IceModelVec2S m_ice_surface_temp;

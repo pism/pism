@@ -22,6 +22,7 @@
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "base/util/Logger.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace options {
@@ -94,15 +95,8 @@ StringList::StringList(const std::string& option,
                        const std::string& description,
                        const std::string& default_value) {
   String input(option, description, default_value, DONT_ALLOW_EMPTY);
-  std::vector<std::string> result;
 
-  std::string token;
-  std::istringstream arg(input);
-  while (getline(arg, token, ',')) {
-    result.push_back(token);
-  }
-
-  this->set(result, input.is_set());
+  this->set(split(input, ','), input.is_set());
 }
 
 const std::string& StringList::operator[](size_t index) const {
@@ -110,15 +104,7 @@ const std::string& StringList::operator[](size_t index) const {
 }
 
 std::string StringList::to_string() {
-  auto j = m_value.begin();
-  std::stringstream buffer;
-  buffer << *j;
-  ++j;
-  while (j != m_value.end()) {
-    buffer << "," << *j;
-    ++j;
-  }
-  return buffer.str();
+  return join(m_value, ",");
 }
 
 StringSet::StringSet(const std::string& option,
@@ -127,23 +113,15 @@ StringSet::StringSet(const std::string& option,
   StringList input(option, description, default_value);
   std::set<std::string> result;
 
-  for (unsigned int k = 0; k < input->size(); ++k) {
-    result.insert(input[k]);
+  for (auto s : input.value()) {
+    result.insert(s);
   }
 
   this->set(result, input.is_set());
 }
 
 std::string StringSet::to_string() {
-  auto j = m_value.begin();
-  std::stringstream buffer;
-  buffer << *j;
-  ++j;
-  while(j != m_value.end()) {
-    buffer << "," << *j;
-    ++j;
-  }
-  return buffer.str();
+  return set_join(m_value, ",");
 }
 
 Keyword::Keyword(const std::string& option,
@@ -175,14 +153,7 @@ Keyword::Keyword(const std::string& option,
 
   // transform a comma-separated list of choices into a set of
   // choices:
-  std::set<std::string> choices_set;
-  {  
-    std::string token;
-    std::istringstream arg(choices);
-    while (getline(arg, token, ',')) {
-      choices_set.insert(token);
-    }
-  }
+  auto choices_set = set_split(choices, ',');
 
   // use the choice if it is valid and stop if it is not
   if (choices_set.find(word) != choices_set.end()) {

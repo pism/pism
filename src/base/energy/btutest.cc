@@ -228,9 +228,6 @@ int main(int argc, char *argv[]) {
                  max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
-    std::set<std::string> vars;
-    btu->add_vars_to_output("big", vars); // "write everything you can"
-
     PIO pio(grid->com, grid->ctx()->config()->get_string("output.format"),
             outname, PISM_READWRITE_MOVE);
 
@@ -239,8 +236,7 @@ int main(int argc, char *argv[]) {
                     ctx->time()->CF_units_string(), ctx->unit_system());
     io::append_time(pio, time_name, ctx->time()->end());
 
-    btu->define_variables(vars, pio, PISM_DOUBLE);
-    btu->write_variables(vars, pio);
+    btu->write_model_state(pio);
 
     bedtoptemp.write(pio);
     heat_flux_at_ice_base.write(pio);

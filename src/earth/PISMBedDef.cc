@@ -83,21 +83,12 @@ const IceModelVec2S& BedDef::uplift() const {
 }
 
 
-void BedDef::add_vars_to_output_impl(const std::string &/*keyword*/, std::set<std::string> &result) {
-  result.insert("topg_initial");
+void BedDef::define_model_state_impl(const PIO &output) const {
+  m_topg_initial.define(output);
 }
 
-void BedDef::define_variables_impl(const std::set<std::string> &vars, const PIO &nc,
-                              IO_Type nctype) {
-  if (set_contains(vars, "topg_initial")) {
-    m_topg_initial.define(nc, nctype);
-  }
-}
-
-void BedDef::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
-  if (set_contains(vars, "topg_initial")) {
-    m_topg_initial.write(nc);
-  }
+void BedDef::write_model_state_impl(const PIO &output) const {
+  m_topg_initial.write(output);
 }
 
 void BedDef::init() {

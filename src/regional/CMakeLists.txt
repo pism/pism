@@ -5,6 +5,7 @@ add_library (pismregional OBJECT
   RegionalDefaultYieldStress.cc
   IceRegionalModel.cc
   IceGrid_Regional.cc
+  EnthalpyModel_Regional.cc
   )
 
 # Outlet glacier 

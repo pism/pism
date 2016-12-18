@@ -32,6 +32,8 @@
 #include "earth/PISMBedDef.hh"
 #include "enthalpyConverter.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/age/AgeModel.hh"
+#include "base/energy/EnergyModel.hh"
 
 namespace pism {
 
@@ -49,14 +51,14 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
   double result = 0.0, meltarea = 0.0;
   const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3; // area unit (km^2)
 
-  IceModelVec2S &Enthbase = m_work2d[0];
-  // use m_ice_enthalpy to get stats
-  m_ice_enthalpy.getHorSlice(Enthbase, 0.0);  // z=0 slice
+  IceModelVec2S &E_basal = m_work2d[0];
+
+  m_energy_model->enthalpy().getHorSlice(E_basal, 0.0);  // z=0 slice
 
   IceModelVec::AccessList list;
   list.add(m_cell_type);
   list.add(m_ice_thickness);
-  list.add(Enthbase);
+  list.add(E_basal);
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -64,7 +66,7 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
 
       if (m_cell_type.icy(i, j)) {
         // accumulate area of base which is at melt point
-        if (EC->is_temperate_relaxed(Enthbase(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
+        if (EC->is_temperate_relaxed(E_basal(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
           meltarea += a;
         }
       }
@@ -98,17 +100,19 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
   double result = -1.0;  // result value if not age.enabled
 
-  if (not m_config->get_boolean("age.enabled")) {
+  if (m_age_model == NULL) {
     return result;  // leave now
   }
 
   const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3, // area unit (km^2)
     currtime = m_time->current(); // seconds
 
+  const IceModelVec3 &ice_age = m_age_model->age();
+
   IceModelVec::AccessList list;
   list.add(m_cell_type);
   list.add(m_ice_thickness);
-  list.add(m_ice_age);
+  list.add(ice_age);
 
   const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
   double original_ice_volume = 0.0;
@@ -121,7 +125,7 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
       if (m_cell_type.icy(i, j)) {
         // accumulate volume of ice which is original
-        double *age = m_ice_age.get_column(i, j);
+        const double *age = ice_age.get_column(i, j);
         const int  ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
         for (int k = 1; k <= ks; k++) {
           // ice in segment is original if it is as old as one year less than current time
@@ -149,6 +153,57 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
   return result;
 }
 
+//! Because of the -skip mechanism it is still possible that we can have CFL violations: count them.
+/*! This applies to the horizontal part of the 3D advection problem solved by AgeModel and the
+horizontal part of the 3D convection-diffusion problems solved by EnthalpyModel and
+TemperatureModel.
+*/
+unsigned int count_CFL_violations(const IceModelVec3 &u3,
+                                  const IceModelVec3 &v3,
+                                  const IceModelVec2S &ice_thickness,
+                                  double dt) {
+
+
+  IceGrid::ConstPtr grid = u3.get_grid();
+
+  const double
+    CFL_x = grid->dx() / dt,
+    CFL_y = grid->dy() / dt;
+
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(u3);
+  list.add(v3);
+
+  unsigned int CFL_violation_count = 0;
+  ParallelSection loop(grid->com);
+  try {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      const int ks = grid->kBelowHeight(ice_thickness(i,j));
+
+      const double
+        *u = u3.get_column(i, j),
+        *v = v3.get_column(i, j);
+
+      // check horizontal CFL conditions at each point
+      for (int k = 0; k <= ks; k++) {
+        if (fabs(u[k]) > CFL_x) {
+          CFL_violation_count += 1;
+        }
+        if (fabs(v[k]) > CFL_y) {
+          CFL_violation_count += 1;
+        }
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return (unsigned int)GlobalMax(grid->com, CFL_violation_count);
+}
 
 void IceModel::summary(bool tempAndAge) {
 
@@ -294,8 +349,10 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
     }
 
 
+
+    const CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
     std::string velocity_units = "meters / (" + time_units + ")";
-    const double maxvel = units::convert(m_sys, std::max(m_max_u_speed, m_max_v_speed),
+    const double maxvel = units::convert(m_sys, std::max(cfl.u_max, cfl.v_max),
                                          "m second-1", velocity_units);
 
     m_log->message(2,
@@ -401,11 +458,13 @@ double  IceModel::ice_volume_temperate(double thickness_threshold) const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
+  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+
   double volume = 0.0;
 
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
-  list.add(m_ice_enthalpy);
+  list.add(ice_enthalpy);
   list.add(m_cell_area);
 
   ParallelSection loop(m_grid->com);
@@ -415,7 +474,7 @@ double  IceModel::ice_volume_temperate(double thickness_threshold) const {
 
       if (m_ice_thickness(i,j) >= thickness_threshold) {
         const int ks = m_grid->kBelowHeight(m_ice_thickness(i,j));
-        const double *Enth = m_ice_enthalpy.get_column(i,j);
+        const double *Enth = ice_enthalpy.get_column(i,j);
         const double A = m_cell_area(i, j);
 
         for (int k = 0; k < ks; ++k) {
@@ -443,11 +502,13 @@ double IceModel::ice_volume_cold(double thickness_threshold) const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
+  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+
   double volume = 0.0;
 
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
-  list.add(m_ice_enthalpy);
+  list.add(ice_enthalpy);
   list.add(m_cell_area);
 
   ParallelSection loop(m_grid->com);
@@ -461,7 +522,7 @@ double IceModel::ice_volume_cold(double thickness_threshold) const {
       // are considered "ice-free"
       if (thickness >= thickness_threshold) {
         const int ks = m_grid->kBelowHeight(thickness);
-        const double *Enth = m_ice_enthalpy.get_column(i, j);
+        const double *Enth = ice_enthalpy.get_column(i, j);
         const double A = m_cell_area(i, j);
 
         for (int k=0; k<ks; ++k) {
@@ -507,11 +568,13 @@ double IceModel::ice_area_temperate(double thickness_threshold) const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
+  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+
   double area = 0.0;
 
   IceModelVec::AccessList list;
   list.add(m_ice_thickness);
-  list.add(m_ice_enthalpy);
+  list.add(ice_enthalpy);
   list.add(m_cell_area);
   ParallelSection loop(m_grid->com);
   try {
@@ -520,7 +583,7 @@ double IceModel::ice_area_temperate(double thickness_threshold) const {
 
       const double
         thickness = m_ice_thickness(i, j),
-        basal_enthalpy = m_ice_enthalpy.get_column(i, j)[0];
+        basal_enthalpy = ice_enthalpy.get_column(i, j)[0];
 
       if (thickness >= thickness_threshold and
           EC->is_temperate_relaxed(basal_enthalpy, EC->pressure(thickness))) { // FIXME issue #15
@@ -541,10 +604,12 @@ double IceModel::ice_area_cold(double thickness_threshold) const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
+  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+
   double area = 0.0;
 
   IceModelVec::AccessList list;
-  list.add(m_ice_enthalpy);
+  list.add(ice_enthalpy);
   list.add(m_ice_thickness);
   list.add(m_cell_area);
   ParallelSection loop(m_grid->com);
@@ -554,7 +619,7 @@ double IceModel::ice_area_cold(double thickness_threshold) const {
 
       const double
         thickness = m_ice_thickness(i, j),
-        basal_enthalpy = m_ice_enthalpy.get_column(i, j)[0];
+        basal_enthalpy = ice_enthalpy.get_column(i, j)[0];
 
       if (thickness >= thickness_threshold and
           not EC->is_temperate_relaxed(basal_enthalpy, EC->pressure(thickness))) { // FIXME issue #15

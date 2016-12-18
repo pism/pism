@@ -137,57 +137,48 @@ void Distributed::init_bwp() {
 }
 
 
-void Distributed::add_vars_to_output_impl(const std::string &keyword,
-                                                   std::set<std::string> &result) {
-  Routing::add_vars_to_output_impl(keyword, result);
-  result.insert("bwp");
+void Distributed::define_model_state_impl(const PIO &output) const {
+  Routing::define_model_state_impl(output);
+  m_P.define(output);
 }
 
-
-void Distributed::define_variables_impl(const std::set<std::string> &vars,
-                                                 const PIO &nc, IO_Type nctype) {
-  Routing::define_variables_impl(vars, nc, nctype);
-  if (set_contains(vars, "bwp")) {
-    m_P.define(nc, nctype);
-  }
+void Distributed::write_model_state_impl(const PIO &output) const {
+  Routing::write_model_state_impl(output);
+  m_P.write(output);
 }
 
-
-void Distributed::write_variables_impl(const std::set<std::string> &vars,
-                                                const PIO &nc) {
-  Routing::write_variables_impl(vars, nc);
-  if (set_contains(vars, "bwp")) {
-    m_P.write(nc);
-  }
+std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"bwprel",           Diagnostic::Ptr(new Hydrology_bwprel(this))},
+    {"effbwp",           Diagnostic::Ptr(new Hydrology_effbwp(this))},
+    {"hydrobmelt",       Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
+    {"hydroinput",       Diagnostic::Ptr(new Hydrology_hydroinput(this))},
+    {"wallmelt",         Diagnostic::Ptr(new Hydrology_wallmelt(this))},
+    {"bwatvel",          Diagnostic::Ptr(new Routing_bwatvel(this))},
+    {"hydrovelbase_mag", Diagnostic::Ptr(new Distributed_hydrovelbase_mag(this))}
+  };
+  return result;
 }
 
-
-void Distributed::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                                std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
-  // bwat is state
-  // bwp is state
-  dict["bwprel"]           = Diagnostic::Ptr(new Hydrology_bwprel(this));
-  dict["effbwp"]           = Diagnostic::Ptr(new Hydrology_effbwp(this));
-  dict["hydrobmelt"]       = Diagnostic::Ptr(new Hydrology_hydrobmelt(this));
-  dict["hydroinput"]       = Diagnostic::Ptr(new Hydrology_hydroinput(this));
-  dict["wallmelt"]         = Diagnostic::Ptr(new Hydrology_wallmelt(this));
-  dict["bwatvel"]          = Diagnostic::Ptr(new Routing_bwatvel(this));
-  dict["hydrovelbase_mag"] = Diagnostic::Ptr(new Distributed_hydrovelbase_mag(this));
-
-  // add mass-conservation time-series diagnostics
-  ts_dict["hydro_ice_free_land_loss_cumulative"]      = TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss_cumulative(this));
-  ts_dict["hydro_ice_free_land_loss"]                 = TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this));
-  ts_dict["hydro_ocean_loss_cumulative"]              = TSDiagnostic::Ptr(new MCHydrology_ocean_loss_cumulative(this));
-  ts_dict["hydro_ocean_loss"]                         = TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this));
-  ts_dict["hydro_negative_thickness_gain_cumulative"] = TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain_cumulative(this));
-  ts_dict["hydro_negative_thickness_gain"]            = TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this));
-  ts_dict["hydro_null_strip_loss_cumulative"]         = TSDiagnostic::Ptr(new MCHydrology_null_strip_loss_cumulative(this));
-  ts_dict["hydro_null_strip_loss"]                    = TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this));
+std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() const {
+  std::map<std::string, TSDiagnostic::Ptr> result = {
+    // add mass-conservation time-series diagnostics
+    {"hydro_ice_free_land_loss_cumulative",      TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss_cumulative(this))},
+    {"hydro_ice_free_land_loss",                 TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
+    {"hydro_ocean_loss_cumulative",              TSDiagnostic::Ptr(new MCHydrology_ocean_loss_cumulative(this))},
+    {"hydro_ocean_loss",                         TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
+    {"hydro_negative_thickness_gain_cumulative", TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain_cumulative(this))},
+    {"hydro_negative_thickness_gain",            TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},
+    {"hydro_null_strip_loss_cumulative",         TSDiagnostic::Ptr(new MCHydrology_null_strip_loss_cumulative(this))},
+    {"hydro_null_strip_loss",                    TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this))}
+  };
+  return result;
 }
+
 
 
 //! Copies the P state variable which is the modeled water pressure.
-void Distributed::subglacial_water_pressure(IceModelVec2S &result) {
+void Distributed::subglacial_water_pressure(IceModelVec2S &result) const {
   result.copy_from(m_P);
 }
 
@@ -499,7 +490,7 @@ void Distributed::update_impl(double icet, double icedt) {
 }
 
 
-Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(Distributed *m)
+Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(const Distributed *m)
   : Diag<Distributed>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "hydrovelbase_mag")};
   set_attrs("the version of velbase_mag seen by the 'distributed' hydrology model",

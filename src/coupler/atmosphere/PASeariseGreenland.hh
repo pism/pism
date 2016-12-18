@@ -35,9 +35,9 @@ public:
   virtual ~SeaRISEGreenland();
 
   virtual void init_impl();
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values);
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 protected:
-  virtual MaxTimestep max_timestep_impl(double t);
+  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(double my_t, double my_dt);
 };
 

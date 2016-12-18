@@ -112,6 +112,12 @@ add_custom_target (touch_pism_revision
 add_library (pism
   base/pism_signal.c
   base/columnSystem.cc
+  base/age/AgeModel.cc
+  base/energy/utilities.cc
+  base/energy/EnergyModel.cc
+  base/energy/DummyEnergyModel.cc
+  base/energy/EnthalpyModel.cc
+  base/energy/TemperatureModel.cc
   base/energy/BedThermalUnit.cc
   base/energy/BTU_Full.cc
   base/energy/BTU_Minimal.cc
@@ -121,11 +127,9 @@ add_library (pism
   base/timestepping.cc
   base/iMadaptive.cc
   base/age/AgeColumnSystem.cc
-  base/iMage.cc
   base/iMbootstrap.cc
   base/iMcalving.cc
   base/iMenergy.cc
-  base/iMenthalpy.cc
   base/iMfractures.cc
   base/iMgeometry.cc
   base/grounded_cell_fraction.cc
@@ -134,7 +138,6 @@ add_library (pism
   base/iMoptions.cc
   base/iMpartgrid.cc
   base/iMreport.cc
-  base/iMtemp.cc
   base/iMtimeseries.cc
   base/iMutil.cc
   base/iMcell_areas.cc
@@ -202,6 +205,7 @@ set_source_files_properties (base/util/pism_default_config.cc
 
 # Verification tests.
 add_library (pismverif OBJECT
+  verif/TemperatureModel_Verification.cc
   verif/iCMthermo.cc
   verif/iceCompModel.cc
   verif/PSVerification.cc
@@ -213,6 +217,9 @@ add_library (pismverif OBJECT
   verif/tests/exactTestsABCD.c
   verif/tests/exactTestsFG.cc
   verif/tests/exactTestsIJ.c
+  verif/tests/exactTestM.c
+  verif/tests/exactTestN.c
+  verif/tests/exactTestP.cc
 )
 
 # Main executables:

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2008, 2014 Ed Bueler
+   Copyright (C) 2008, 2014, 2016 Ed Bueler
   
    This file is part of PISM.
   
@@ -59,6 +59,7 @@ double dF_M(double x, double alpha, double r, double Q) {
 
 
 int funcM_ode_G(double r, const double alpha[], double f[], void* params) {
+  (void) params;
   /*   RHS G for differential equation:
           alpha' = G(alpha,r)      
      but where we solve this equation to find alpha':
@@ -91,9 +92,9 @@ int funcM_ode_G(double r, const double alpha[], double f[], void* params) {
 
 /* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
  is believed to be predictable and accurate; returns GSL_SUCCESS=0 if success */
-int exactM(double r,
-           double *alpha, double *Drr,
-           const double EPS_ABS, const double EPS_REL, const int ode_method) {
+int exactM_old(double r,
+               double *alpha, double *Drr,
+               const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
    double ug = 100.0 / SperA;  /* velocity across grounding line is 100 m/a */
    double DrrRg, xx, xA, nu, aa, rr, myalf, step;
@@ -173,3 +174,10 @@ int exactM(double r,
    return status;
 }
 
+struct TestMParameters exactM(double r,
+                              double EPS_ABS, double EPS_REL, int ode_method) {
+  struct TestMParameters result;
+  result.error_code = exactM_old(r, &result.alpha, &result.Drr,
+                                 EPS_ABS, EPS_REL, ode_method);
+  return result;
+}

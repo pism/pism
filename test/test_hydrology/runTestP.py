@@ -5,9 +5,9 @@ import numpy as np
 from argparse import ArgumentParser
 
 try:
-    from exactP import exactP_list
+    from PISM import exactP
 except:
-    stderr.write("Please build the exactP module by running 'make exactP'.\n")
+    stderr.write("Please build PISM's Python bindings'.\n")
     exit(1)
 
 try:
@@ -39,8 +39,8 @@ def generate_config():
     pism_overrides = nc.createVariable("pism_overrides", 'b')
 
     attrs = {
-        "constants.ice.softness" : 3.1689e-24,
-        "constants.ice.softness_doc" : "Pa-3 s-1; ice softness; NOT DEFAULT",
+        "flow_law.isothermal_Glen.ice_softness" : 3.1689e-24,
+        "flow_law.isothermal_Glen.ice_softness_doc" : "Pa-3 s-1; ice softness; NOT DEFAULT",
 
         "hydrology.hydraulic_conductivity" : 1.0e-2 / (1000.0 * 9.81),
         "hydrology.hydraulic_conductivity_doc" : "= k; NOT DEFAULT",
@@ -66,8 +66,10 @@ def generate_config():
         "basal_yield_stress.constant.value" : 1e6,
         "basal_yield_stress.constant.value_doc" : "set default to 'high tauc'",
     }
-    for k,v in attrs.iteritems():
-        pism_overrides.setncattr(k, v)
+    keys = attrs.keys()
+    keys.sort()
+    for k in keys:
+        pism_overrides.setncattr(k, attrs[k])
 
     nc.close()
 
@@ -133,13 +135,13 @@ def compute_sorted_radii(xx, yy):
 
 
 def generate_pism_input(x, y, xx, yy):
-    stderr.write("calling exactP_list() ...\n")
+    stderr.write("calling exactP() ...\n")
 
     EPS_ABS = 1.0e-12
     EPS_REL = 1.0e-15
 
-    # Wrapping r[:]['r'] in np.array() forces NumPy to make a C-contiguous copy.
-    h_r, magvb_r, _, W_r, P_r = exactP_list(np.array(r[:]['r']), EPS_ABS, EPS_REL, 1)
+    p = exactP(r[:]['r'], EPS_ABS, EPS_REL, 1)
+    h_r, magvb_r, W_r, P_r = p.h, p.magvb, p.W, p.P
 
     stderr.write("creating gridded variables ...\n")
     # put on grid

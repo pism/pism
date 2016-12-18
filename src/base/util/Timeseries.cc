@@ -161,7 +161,7 @@ void Timeseries::report_range(const Logger &log) {
 
   std::string spacer(m_variable.get_name().size(), ' ');
 
-  log.message(2, 
+  log.message(2,
              "  FOUND  %s / %-60s\n"
              "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
              m_variable.get_name().c_str(),
@@ -170,13 +170,12 @@ void Timeseries::report_range(const Logger &log) {
 }
 
 //! Write timeseries data to a NetCDF file `filename`.
-void Timeseries::write(const PIO &nc) {
+void Timeseries::write(const PIO &nc) const {
   // write the dimensional variable; this call should go first
   io::write_timeseries(nc, m_dimension, 0, m_time);
   io::write_timeseries(nc, m_variable, 0, m_values);
 
   if (m_use_bounds) {
-    set_bounds_units();
     io::write_time_bounds(nc, m_bounds, 0, m_time_bounds);
   }
 }
@@ -200,7 +199,7 @@ void Timeseries::scale(double scaling_factor) {
   Uses time bounds if present (interpreting data as piecewise-constant) and
   uses linear interpolation otherwise.
  */
-double Timeseries::operator()(double t) {
+double Timeseries::operator()(double t) const {
 
   // piecewise-constant case:
   if (m_use_bounds) {
@@ -227,7 +226,7 @@ double Timeseries::operator()(double t) {
 
   // piecewise-linear case:
   auto end = m_time.end();
-  
+
   auto j = lower_bound(m_time.begin(), end, t); // binary search
 
   if (j == end) {
@@ -242,7 +241,7 @@ double Timeseries::operator()(double t) {
 
   double dt = m_time[i] - m_time[i - 1];
   double dv = m_values[i] - m_values[i - 1];
-  
+
   return m_values[i - 1] + (t - m_time[i - 1]) / dt * dv;
 }
 
@@ -264,9 +263,9 @@ double Timeseries::operator[](unsigned int j) const {
 
 //! \brief Compute an average of a time-series over interval (t,t+dt) using
 //! trapezoidal rule with N sub-intervals.
-double Timeseries::average(double t, double dt, unsigned int N) {
+double Timeseries::average(double t, double dt, unsigned int N) const {
   std::vector<double> V(N+1);
- 
+
   for (unsigned int i = 0; i < N+1; ++i) {
     double t_i = t + (dt / N) * i;
     V[i] = (*this)(t_i);
@@ -304,7 +303,7 @@ TimeseriesMetadata& Timeseries::dimension_metadata() {
 /*!
   This length is changed by read() and append().
  */
-int Timeseries::length() {
+int Timeseries::length() const {
   return (int)m_values.size();
 }
 
@@ -369,7 +368,7 @@ void DiagnosticTimeseries::interp(double a, double b) {
                                   b);
   }
 
-  double 
+  double
     // compute the "cumulative" quantity using linear interpolation
     v_current = m_v[0] + (b - m_t[0]) / (m_t[1] - m_t[0]) * (m_v[1] - m_v[0]),
     // the value to report
@@ -450,7 +449,7 @@ void DiagnosticTimeseries::flush() {
   }
 
   if (len == (unsigned int)m_start) {
-    io::write_timeseries(nc, m_dimension, m_start, m_time);  
+    io::write_timeseries(nc, m_dimension, m_start, m_time);
 
     set_bounds_units();
     io::write_time_bounds(nc, m_bounds, m_start, m_time_bounds);

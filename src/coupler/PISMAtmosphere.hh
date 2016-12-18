@@ -38,46 +38,45 @@ public:
   void init();
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
-  void mean_precipitation(IceModelVec2S &result);
+  void mean_precipitation(IceModelVec2S &result) const;
 
   //! \brief Sets result to the mean annual near-surface air temperature, in degrees Kelvin.
-  void mean_annual_temp(IceModelVec2S &result);
+  void mean_annual_temp(IceModelVec2S &result) const;
 
-  void begin_pointwise_access();
-  void end_pointwise_access();
-  void init_timeseries(const std::vector<double> &ts);
+  void begin_pointwise_access() const;
+  void end_pointwise_access() const;
+  void init_timeseries(const std::vector<double> &ts) const;
   //! \brief Sets a pre-allocated N-element array "result" to the time-series of
   //! ice-equivalent precipitation (m/s) at the point i,j on the grid.
   //!
   //! See temp_time_series() for more.
-  void precip_time_series(int i, int j, std::vector<double> &result);
+  void precip_time_series(int i, int j, std::vector<double> &result) const;
 
   //! \brief Sets a pre-allocated N-element array "result" to the time-series
   //! of near-surface air temperature (degrees Kelvin) at the point i,j on the
   //! grid. Times (in years) are specified in ts. NB! Has to be surrounded by
   //! begin_pointwise_access() and end_pointwise_access()
-  void temp_time_series(int i, int j, std::vector<double> &result);
+  void temp_time_series(int i, int j, std::vector<double> &result) const;
 protected:
   virtual void init_impl() = 0;
-  virtual void mean_precipitation_impl(IceModelVec2S &result) = 0;
-  virtual void mean_annual_temp_impl(IceModelVec2S &result) = 0;
-  virtual void begin_pointwise_access_impl() = 0;
-  virtual void end_pointwise_access_impl() = 0;
-  virtual void init_timeseries_impl(const std::vector<double> &ts) = 0;
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) = 0;
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) = 0;
+  virtual void mean_precipitation_impl(IceModelVec2S &result) const = 0;
+  virtual void mean_annual_temp_impl(IceModelVec2S &result) const = 0;
+  virtual void begin_pointwise_access_impl() const = 0;
+  virtual void end_pointwise_access_impl() const = 0;
+  virtual void init_timeseries_impl(const std::vector<double> &ts) const = 0;
+  virtual void precip_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
+  virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const = 0;
 
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 protected:
-  std::vector<double> m_ts_times;
+  mutable std::vector<double> m_ts_times;
 };
 
 /*! @brief Instantaneous near-surface air temperature. */
 class PA_air_temp_snapshot : public Diag<AtmosphereModel>
 {
 public:
-  PA_air_temp_snapshot(AtmosphereModel *m);
+  PA_air_temp_snapshot(const AtmosphereModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -86,7 +85,7 @@ protected:
 class PA_air_temp : public Diag<AtmosphereModel>
 {
 public:
-  PA_air_temp(AtmosphereModel *m);
+  PA_air_temp(const AtmosphereModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
@@ -95,7 +94,7 @@ protected:
 class PA_precipitation : public Diag<AtmosphereModel>
 {
 public:
-  PA_precipitation(AtmosphereModel *m);
+  PA_precipitation(const AtmosphereModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };

@@ -23,6 +23,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/pism_utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/rheology/FlowLaw.hh"
 
@@ -31,43 +32,45 @@ namespace stressbalance {
 
 using units::convert;
 
-void StressBalance::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                        std::map<std::string, TSDiagnostic::Ptr> &ts_dict) {
+std::map<std::string, Diagnostic::Ptr> StressBalance::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"bfrict",              Diagnostic::Ptr(new PSB_bfrict(this))},
+    {"velbar_mag",          Diagnostic::Ptr(new PSB_velbar_mag(this))},
+    {"flux",                Diagnostic::Ptr(new PSB_flux(this))},
+    {"flux_mag",            Diagnostic::Ptr(new PSB_flux_mag(this))},
+    {"velbase_mag",         Diagnostic::Ptr(new PSB_velbase_mag(this))},
+    {"velsurf_mag",         Diagnostic::Ptr(new PSB_velsurf_mag(this))},
+    {"uvel",                Diagnostic::Ptr(new PSB_uvel(this))},
+    {"vvel",                Diagnostic::Ptr(new PSB_vvel(this))},
+    {"strainheat",          Diagnostic::Ptr(new PSB_strainheat(this))},
+    {"velbar",              Diagnostic::Ptr(new PSB_velbar(this))},
+    {"velbase",             Diagnostic::Ptr(new PSB_velbase(this))},
+    {"velsurf",             Diagnostic::Ptr(new PSB_velsurf(this))},
+    {"wvel",                Diagnostic::Ptr(new PSB_wvel(this))},
+    {"wvelbase",            Diagnostic::Ptr(new PSB_wvelbase(this))},
+    {"wvelsurf",            Diagnostic::Ptr(new PSB_wvelsurf(this))},
+    {"wvel_rel",            Diagnostic::Ptr(new PSB_wvel_rel(this))},
+    {"strain_rates",        Diagnostic::Ptr(new PSB_strain_rates(this))},
+    {"vonmises_stress",     Diagnostic::Ptr(new PSB_vonmises_stress(this))},
+    {"deviatoric_stresses", Diagnostic::Ptr(new PSB_deviatoric_stresses(this))},
+    {"pressure",            Diagnostic::Ptr(new PSB_pressure(this))},
+    {"tauxz",               Diagnostic::Ptr(new PSB_tauxz(this))},
+    {"tauyz",               Diagnostic::Ptr(new PSB_tauyz(this))}
+  };
 
-  dict["bfrict"]   = Diagnostic::Ptr(new PSB_bfrict(this));
+  // add diagnostics from the shallow stress balance and the "modifier"
+  result = pism::combine(result, m_shallow_stress_balance->diagnostics());
+  result = pism::combine(result, m_modifier->diagnostics());
 
-  dict["velbar_mag"]     = Diagnostic::Ptr(new PSB_velbar_mag(this));
-  dict["flux"]           = Diagnostic::Ptr(new PSB_flux(this));
-  dict["flux_mag"]       = Diagnostic::Ptr(new PSB_flux_mag(this));
-  dict["velbase_mag"]    = Diagnostic::Ptr(new PSB_velbase_mag(this));
-  dict["velsurf_mag"]    = Diagnostic::Ptr(new PSB_velsurf_mag(this));
-
-  dict["uvel"]     = Diagnostic::Ptr(new PSB_uvel(this));
-  dict["vvel"]     = Diagnostic::Ptr(new PSB_vvel(this));
-
-  dict["strainheat"] = Diagnostic::Ptr(new PSB_strainheat(this));
-
-  dict["velbar"]   = Diagnostic::Ptr(new PSB_velbar(this));
-  dict["velbase"]  = Diagnostic::Ptr(new PSB_velbase(this));
-  dict["velsurf"]  = Diagnostic::Ptr(new PSB_velsurf(this));
-
-  dict["wvel"]     = Diagnostic::Ptr(new PSB_wvel(this));
-  dict["wvelbase"] = Diagnostic::Ptr(new PSB_wvelbase(this));
-  dict["wvelsurf"] = Diagnostic::Ptr(new PSB_wvelsurf(this));
-  dict["wvel_rel"] = Diagnostic::Ptr(new PSB_wvel_rel(this));
-  dict["strain_rates"] = Diagnostic::Ptr(new PSB_strain_rates(this));
-  dict["vonmises_stress"] = Diagnostic::Ptr(new PSB_vonmises_stress(this));
-  dict["deviatoric_stresses"] = Diagnostic::Ptr(new PSB_deviatoric_stresses(this));
-
-  dict["pressure"] = Diagnostic::Ptr(new PSB_pressure(this));
-  dict["tauxz"] = Diagnostic::Ptr(new PSB_tauxz(this));
-  dict["tauyz"] = Diagnostic::Ptr(new PSB_tauyz(this));
-
-  m_shallow_stress_balance->get_diagnostics(dict, ts_dict);
-  m_modifier->get_diagnostics(dict, ts_dict);
+  return result;
 }
 
-PSB_velbar::PSB_velbar(StressBalance *m)
+std::map<std::string, TSDiagnostic::Ptr> StressBalance::ts_diagnostics_impl() const {
+  return pism::combine(m_shallow_stress_balance->ts_diagnostics(),
+                       m_modifier->ts_diagnostics());
+}
+
+PSB_velbar::PSB_velbar(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   m_dof = 2;
@@ -116,7 +119,7 @@ IceModelVec::Ptr PSB_velbar::compute_impl() {
   return result;
 }
 
-PSB_velbar_mag::PSB_velbar_mag(StressBalance *m)
+PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -151,7 +154,7 @@ IceModelVec::Ptr PSB_velbar_mag::compute_impl() {
 }
 
 
-PSB_flux::PSB_flux(StressBalance *m)
+PSB_flux::PSB_flux(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   m_dof = 2;
@@ -241,7 +244,7 @@ IceModelVec::Ptr PSB_flux::compute_impl() {
 }
 
 
-PSB_flux_mag::PSB_flux_mag(StressBalance *m)
+PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -280,7 +283,7 @@ IceModelVec::Ptr PSB_flux_mag::compute_impl() {
   return result;
 }
 
-PSB_velbase_mag::PSB_velbase_mag(StressBalance *m)
+PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -323,7 +326,7 @@ IceModelVec::Ptr PSB_velbase_mag::compute_impl() {
   return result;
 }
 
-PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m)
+PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
   : Diag<StressBalance>(m) {
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "velsurf_mag")};
@@ -367,7 +370,7 @@ IceModelVec::Ptr PSB_velsurf_mag::compute_impl() {
 }
 
 
-PSB_velsurf::PSB_velsurf(StressBalance *m)
+PSB_velsurf::PSB_velsurf(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -433,7 +436,7 @@ IceModelVec::Ptr PSB_velsurf::compute_impl() {
   return result;
 }
 
-PSB_wvel::PSB_wvel(StressBalance *m)
+PSB_wvel::PSB_wvel(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -536,7 +539,7 @@ IceModelVec::Ptr PSB_wvel::compute_impl() {
   return this->compute(true);   // fill wvel above the ice with zeros
 }
 
-PSB_wvelsurf::PSB_wvelsurf(StressBalance *m)
+PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -582,7 +585,7 @@ IceModelVec::Ptr PSB_wvelsurf::compute_impl() {
   return result;
 }
 
-PSB_wvelbase::PSB_wvelbase(StressBalance *m)
+PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -626,7 +629,7 @@ IceModelVec::Ptr PSB_wvelbase::compute_impl() {
   return result;
 }
 
-PSB_velbase::PSB_velbase(StressBalance *m)
+PSB_velbase::PSB_velbase(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -691,7 +694,7 @@ IceModelVec::Ptr PSB_velbase::compute_impl() {
 }
 
 
-PSB_bfrict::PSB_bfrict(StressBalance *m)
+PSB_bfrict::PSB_bfrict(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -713,7 +716,7 @@ IceModelVec::Ptr PSB_bfrict::compute_impl() {
 }
 
 
-PSB_uvel::PSB_uvel(StressBalance *m)
+PSB_uvel::PSB_uvel(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -766,7 +769,7 @@ IceModelVec::Ptr PSB_uvel::compute_impl() {
   return result;
 }
 
-PSB_vvel::PSB_vvel(StressBalance *m)
+PSB_vvel::PSB_vvel(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -819,7 +822,7 @@ IceModelVec::Ptr PSB_vvel::compute_impl() {
   return result;
 }
 
-PSB_wvel_rel::PSB_wvel_rel(StressBalance *m)
+PSB_wvel_rel::PSB_wvel_rel(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -874,7 +877,7 @@ IceModelVec::Ptr PSB_wvel_rel::compute_impl() {
 }
 
 
-PSB_strainheat::PSB_strainheat(StressBalance *m)
+PSB_strainheat::PSB_strainheat(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -896,7 +899,7 @@ IceModelVec::Ptr PSB_strainheat::compute_impl() {
   return result;
 }
 
-PSB_strain_rates::PSB_strain_rates(StressBalance *m)
+PSB_strain_rates::PSB_strain_rates(const StressBalance *m)
   : Diag<StressBalance>(m) {
   m_dof = 2;
 
@@ -931,7 +934,7 @@ IceModelVec::Ptr PSB_strain_rates::compute_impl() {
   return result;
 }
 
-PSB_deviatoric_stresses::PSB_deviatoric_stresses(StressBalance *m)
+PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
   : Diag<StressBalance>(m) {
   m_dof = 3;
 
@@ -969,7 +972,7 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() {
   return result;
 }
 
-PSB_pressure::PSB_pressure(StressBalance *m)
+PSB_pressure::PSB_pressure(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -1018,7 +1021,7 @@ IceModelVec::Ptr PSB_pressure::compute_impl() {
 }
 
 
-PSB_tauxz::PSB_tauxz(StressBalance *m)
+PSB_tauxz::PSB_tauxz(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -1082,7 +1085,7 @@ IceModelVec::Ptr PSB_tauxz::compute_impl() {
 }
 
 
-PSB_tauyz::PSB_tauyz(StressBalance *m)
+PSB_tauyz::PSB_tauyz(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
@@ -1143,7 +1146,7 @@ IceModelVec::Ptr PSB_tauyz::compute_impl() {
   return result;
 }
 
-PSB_vonmises_stress::PSB_vonmises_stress(StressBalance *m)
+PSB_vonmises_stress::PSB_vonmises_stress(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   /* set metadata: */
