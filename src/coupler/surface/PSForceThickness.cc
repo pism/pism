@@ -251,10 +251,10 @@ $PISM_DO $cmd
 The script also has a run with no forcing, one with forcing at a lower alpha value,
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
  */
-void ForceThickness::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
+void ForceThickness::mass_flux_impl(IceModelVec2S &result) const {
 
   // get the surface mass balance result from the next level up
-  m_input_model->ice_surface_mass_flux(result);
+  m_input_model->mass_flux(result);
 
   if (m_t < m_start_time) {
     return;

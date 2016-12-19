@@ -111,11 +111,11 @@ void PIK::update_impl(double my_t, double my_dt)
   }
 }
 
-void PIK::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
+void PIK::mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_climatic_mass_balance);
 }
 
-void PIK::ice_surface_temperature_impl(IceModelVec2S &result) const {
+void PIK::temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_ice_surface_temp);
 }
 

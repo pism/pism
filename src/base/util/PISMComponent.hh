@@ -174,16 +174,16 @@ public:
    * may get called twice at the beginning of the run.
    *
    * Other interface methods
-   * (SurfaceModel::ice_surface_temperature() is an example)
+   * (SurfaceModel::temperature() is an example)
    * should use cached values if the corresponding computation is
    * expensive. Methods like
-   * SurfaceModel::ice_surface_temperature() might be called
+   * SurfaceModel::temperature() might be called
    * multiple times per time-step.
    *
    * TemperatureIndex is an example of a component that does a
    * fairly expensive computation in TemperatureIndex::update() and
    * uses cached values in
-   * TemperatureIndex::ice_surface_mass_flux_impl().
+   * TemperatureIndex::mass_flux_impl().
    *
    * *Who* calls this depends on the kind of the component in
    * question, but all calls originate from IceModel::step() and the

@@ -51,13 +51,13 @@ public:
   void attach_atmosphere_model(atmosphere::AtmosphereModel *input);
 
   // the interface:
-  void ice_surface_mass_flux(IceModelVec2S &result) const;
+  void mass_flux(IceModelVec2S &result) const;
 
-  void ice_surface_temperature(IceModelVec2S &result) const;
-  void ice_surface_liquid_water_fraction(IceModelVec2S &result) const;
+  void temperature(IceModelVec2S &result) const;
+  void liquid_water_fraction(IceModelVec2S &result) const;
 
-  void mass_held_in_surface_layer(IceModelVec2S &result) const;
-  void surface_layer_thickness(IceModelVec2S &result) const;
+  void layer_mass(IceModelVec2S &result) const;
+  void layer_thickness(IceModelVec2S &result) const;
 protected:
   virtual void init_impl();
 
@@ -68,13 +68,13 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
-  virtual void surface_layer_thickness_impl(IceModelVec2S &result) const;
-  virtual void mass_held_in_surface_layer_impl(IceModelVec2S &result) const;
+  virtual void layer_thickness_impl(IceModelVec2S &result) const;
+  virtual void layer_mass_impl(IceModelVec2S &result) const;
 
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const = 0;
-  virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const;
+  virtual void temperature_impl(IceModelVec2S &result) const = 0;
+  virtual void liquid_water_fraction_impl(IceModelVec2S &result) const;
 
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const = 0;
+  virtual void mass_flux_impl(IceModelVec2S &result) const = 0;
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
   virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;

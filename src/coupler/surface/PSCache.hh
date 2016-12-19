@@ -34,11 +34,11 @@ protected:
   virtual void init_impl();
   virtual void update_impl(double my_t, double my_dt);
 
-  virtual void surface_layer_thickness_impl(IceModelVec2S &result) const;
-  virtual void mass_held_in_surface_layer_impl(IceModelVec2S &result) const;
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const;
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const;
-  virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const;
+  virtual void layer_thickness_impl(IceModelVec2S &result) const;
+  virtual void layer_mass_impl(IceModelVec2S &result) const;
+  virtual void mass_flux_impl(IceModelVec2S &result) const;
+  virtual void temperature_impl(IceModelVec2S &result) const;
+  virtual void liquid_water_fraction_impl(IceModelVec2S &result) const;
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 protected:

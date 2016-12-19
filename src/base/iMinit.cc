@@ -231,8 +231,8 @@ void IceModel::model_state_setup() {
       }
     case INIT_BOOTSTRAP:
       {
-        m_surface->ice_surface_temperature(ice_surface_temperature);
-        m_surface->ice_surface_mass_flux(climatic_mass_balance);
+        m_surface->temperature(ice_surface_temperature);
+        m_surface->mass_flux(climatic_mass_balance);
         m_energy_model->bootstrap(*input_file,
                                   m_ice_thickness,
                                   ice_surface_temperature,
@@ -244,8 +244,8 @@ void IceModel::model_state_setup() {
     default:
       {
         m_basal_melt_rate.set(m_config->get_double("bootstrapping.defaults.bmelt"));
-        m_surface->ice_surface_temperature(ice_surface_temperature);
-        m_surface->ice_surface_mass_flux(climatic_mass_balance);
+        m_surface->temperature(ice_surface_temperature);
+        m_surface->mass_flux(climatic_mass_balance);
         m_energy_model->initialize(m_basal_melt_rate,
                                    m_ice_thickness,
                                    ice_surface_temperature,

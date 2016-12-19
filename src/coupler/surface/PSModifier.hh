@@ -49,38 +49,38 @@ protected:
     }
   }
 
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const
+  virtual void mass_flux_impl(IceModelVec2S &result) const
   {
     if (m_input_model != NULL) {
-      m_input_model->ice_surface_mass_flux(result);
+      m_input_model->mass_flux(result);
     }
   }
 
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const
+  virtual void temperature_impl(IceModelVec2S &result) const
   {
     if (m_input_model != NULL) {
-      m_input_model->ice_surface_temperature(result);
+      m_input_model->temperature(result);
     }
   }
 
-  virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const
+  virtual void liquid_water_fraction_impl(IceModelVec2S &result) const
   {
     if (m_input_model != NULL) {
-      m_input_model->ice_surface_liquid_water_fraction(result);
+      m_input_model->liquid_water_fraction(result);
     }
   }
 
-  virtual void mass_held_in_surface_layer_impl(IceModelVec2S &result) const
+  virtual void layer_mass_impl(IceModelVec2S &result) const
   {
     if (m_input_model != NULL) {
-      m_input_model->mass_held_in_surface_layer(result);
+      m_input_model->layer_mass(result);
     }
   }
 
-  virtual void surface_layer_thickness_impl(IceModelVec2S &result) const
+  virtual void layer_thickness_impl(IceModelVec2S &result) const
   {
     if (m_input_model != NULL) {
-      m_input_model->surface_layer_thickness(result);
+      m_input_model->layer_thickness(result);
     }
   }
 };

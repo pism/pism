@@ -92,8 +92,8 @@ SurfaceModel::~SurfaceModel() {
   delete m_atmosphere;
 }
 
-void SurfaceModel::ice_surface_mass_flux(IceModelVec2S &result) const {
-  this->ice_surface_mass_flux_impl(result);
+void SurfaceModel::mass_flux(IceModelVec2S &result) const {
+  this->mass_flux_impl(result);
 }
 
 std::map<std::string, Diagnostic::Ptr> SurfaceModel::diagnostics_impl() const {
@@ -146,11 +146,11 @@ void SurfaceModel::init_impl() {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-void SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) const {
-  this->mass_held_in_surface_layer_impl(result);
+void SurfaceModel::layer_mass(IceModelVec2S &result) const {
+  this->layer_mass_impl(result);
 }
 
-void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) const {
+void SurfaceModel::layer_mass_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
@@ -161,26 +161,26 @@ void SurfaceModel::mass_held_in_surface_layer_impl(IceModelVec2S &result) const 
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-void SurfaceModel::surface_layer_thickness(IceModelVec2S &result) const {
-  this->surface_layer_thickness_impl(result);
+void SurfaceModel::layer_thickness(IceModelVec2S &result) const {
+  this->layer_thickness_impl(result);
 }
 
-void SurfaceModel::surface_layer_thickness_impl(IceModelVec2S &result) const {
+void SurfaceModel::layer_thickness_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
-void SurfaceModel::ice_surface_temperature(IceModelVec2S &result) const {
-  this->ice_surface_temperature_impl(result);
+void SurfaceModel::temperature(IceModelVec2S &result) const {
+  this->temperature_impl(result);
 }
 //! \brief Returns the liquid water fraction of the ice at the top ice surface.
 /*!
  * Most PISM surface models return 0.
  */
-void SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) const {
-  this->ice_surface_liquid_water_fraction_impl(result);
+void SurfaceModel::liquid_water_fraction(IceModelVec2S &result) const {
+  this->liquid_water_fraction_impl(result);
 }
 
-void SurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const {
+void SurfaceModel::liquid_water_fraction_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
@@ -221,7 +221,7 @@ IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() {
   result->create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  model->ice_surface_mass_flux(*result);
+  model->mass_flux(*result);
 
   return result;
 }
@@ -242,7 +242,7 @@ IceModelVec::Ptr PS_ice_surface_temp::compute_impl() {
   result->create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  model->ice_surface_temperature(*result);
+  model->temperature(*result);
 
   return result;
 }
@@ -263,7 +263,7 @@ IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() {
   result->create(m_grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  model->ice_surface_liquid_water_fraction(*result);
+  model->liquid_water_fraction(*result);
 
   return result;
 }
@@ -284,7 +284,7 @@ IceModelVec::Ptr PS_layer_mass::compute_impl() {
   result->create(m_grid, "surface_layer_mass", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  model->mass_held_in_surface_layer(*result);
+  model->layer_mass(*result);
 
   return result;
 }
@@ -305,7 +305,7 @@ IceModelVec::Ptr PS_layer_thickness::compute_impl() {
   result->create(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  model->surface_layer_thickness(*result);
+  model->layer_thickness(*result);
 
   return result;
 }

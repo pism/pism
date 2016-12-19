@@ -447,7 +447,7 @@ void IceModel::massContExplicitStep() {
 
   IceModelVec2S &climatic_mass_balance = m_work2d[2];
   assert(m_surface != NULL);
-  m_surface->ice_surface_mass_flux(climatic_mass_balance);
+  m_surface->mass_flux(climatic_mass_balance);
 
   IceModelVec2S &H_new = m_work2d[0];
   H_new.copy_from(m_ice_thickness);

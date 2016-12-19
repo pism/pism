@@ -34,8 +34,8 @@ public:
 protected:
   virtual void init_impl();
 
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const;
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const;
+  virtual void mass_flux_impl(IceModelVec2S &result) const;
+  virtual void temperature_impl(IceModelVec2S &result) const;
 protected:
   double m_smb_lapse_rate;
 };

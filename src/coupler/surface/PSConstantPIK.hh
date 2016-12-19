@@ -44,8 +44,8 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const;
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const;
+  virtual void mass_flux_impl(IceModelVec2S &result) const;
+  virtual void temperature_impl(IceModelVec2S &result) const;
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 

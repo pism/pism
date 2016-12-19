@@ -105,11 +105,11 @@ void Cache::update_impl(double t, double dt) {
     m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                                m_update_interval_years);
 
-    m_input_model->ice_surface_mass_flux(m_mass_flux);
-    m_input_model->ice_surface_temperature(m_temperature);
-    m_input_model->ice_surface_liquid_water_fraction(m_liquid_water_fraction);
-    m_input_model->mass_held_in_surface_layer(m_mass_held_in_surface_layer);
-    m_input_model->surface_layer_thickness(m_surface_layer_thickness);
+    m_input_model->mass_flux(m_mass_flux);
+    m_input_model->temperature(m_temperature);
+    m_input_model->liquid_water_fraction(m_liquid_water_fraction);
+    m_input_model->layer_mass(m_mass_held_in_surface_layer);
+    m_input_model->layer_thickness(m_surface_layer_thickness);
   }
 }
 
@@ -138,23 +138,23 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   }
 }
 
-void Cache::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
+void Cache::mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_mass_flux);
 }
 
-void Cache::ice_surface_temperature_impl(IceModelVec2S &result) const {
+void Cache::temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_temperature);
 }
 
-void Cache::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) const {
+void Cache::liquid_water_fraction_impl(IceModelVec2S &result) const {
   result.copy_from(m_liquid_water_fraction);
 }
 
-void Cache::mass_held_in_surface_layer_impl(IceModelVec2S &result) const {
+void Cache::layer_mass_impl(IceModelVec2S &result) const {
   result.copy_from(m_mass_held_in_surface_layer);
 }
 
-void Cache::surface_layer_thickness_impl(IceModelVec2S &result) const {
+void Cache::layer_thickness_impl(IceModelVec2S &result) const {
   result.copy_from(m_surface_layer_thickness);
 }
 

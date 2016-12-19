@@ -102,8 +102,8 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
 
   if (m_input_model != NULL) {
     m_input_model->update(m_t, m_dt);
-    m_input_model->ice_surface_temperature(m_temp);
-    m_input_model->ice_surface_mass_flux(m_mass_flux);
+    m_input_model->temperature(m_temp);
+    m_input_model->mass_flux(m_mass_flux);
 
     // if we are at the beginning of the run...
     if (m_t < m_grid->ctx()->time()->start() + 1) { // this is goofy, but time-steps are
@@ -131,11 +131,11 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
   }
 }
 
-void StuffAsAnomaly::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
+void StuffAsAnomaly::mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_mass_flux);
 }
 
-void StuffAsAnomaly::ice_surface_temperature_impl(IceModelVec2S &result) const {
+void StuffAsAnomaly::temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_temp);
 }
 

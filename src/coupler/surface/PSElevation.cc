@@ -181,7 +181,7 @@ void Elevation::update_impl(double my_t, double my_dt)
   m_dt = my_dt;
 }
 
-void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
+void Elevation::mass_flux_impl(IceModelVec2S &result) const {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
@@ -210,7 +210,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
         result(i, j) = m_M_limit_max;
       }
       else {
-        throw RuntimeError(PISM_ERROR_LOCATION, "Elevation::ice_surface_mass_flux: HOW DID I GET HERE?");
+        throw RuntimeError(PISM_ERROR_LOCATION, "Elevation::mass_flux: HOW DID I GET HERE?");
       }
     }
   } catch (...) {
@@ -222,7 +222,7 @@ void Elevation::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
   result.scale(m_config->get_double("constants.ice.density"));
 }
 
-void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) const {
+void Elevation::temperature_impl(IceModelVec2S &result) const {
 
   const IceModelVec2S *usurf = m_grid->variables().get_2d_scalar("surface_altitude");
 
@@ -246,7 +246,7 @@ void Elevation::ice_surface_temperature_impl(IceModelVec2S &result) const {
         result(i, j) = m_T_max;
       }
       else {
-        throw RuntimeError(PISM_ERROR_LOCATION, "Elevation::ice_surface_temperature: HOW DID I GET HERE?");
+        throw RuntimeError(PISM_ERROR_LOCATION, "Elevation::temperature: HOW DID I GET HERE?");
       }
     }
   } catch (...) {

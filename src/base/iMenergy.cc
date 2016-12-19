@@ -59,7 +59,7 @@ void IceModel::energyStep() {
   IceModelVec2S &bedtoptemp              = m_work2d[1];
   IceModelVec2S &basal_enthalpy          = m_work2d[2];
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
-  m_surface->ice_surface_temperature(ice_surface_temperature);
+  m_surface->temperature(ice_surface_temperature);
   bedrock_surface_temperature(m_ocean->sea_level_elevation(),
                               m_cell_type,
                               m_beddef->bed_elevation(),
@@ -78,7 +78,7 @@ void IceModel::energyStep() {
     IceModelVec2S &till_water_thickness              = m_work2d[2];
     IceModelVec2S &shelf_base_temperature            = m_work2d[3];
 
-    m_surface->ice_surface_liquid_water_fraction(ice_surface_liquid_water_fraction);
+    m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
 
     m_ocean->shelf_base_temperature(shelf_base_temperature);
 

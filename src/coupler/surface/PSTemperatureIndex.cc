@@ -489,12 +489,12 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
-void TemperatureIndex::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
+void TemperatureIndex::mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_climatic_mass_balance);
 }
 
 
-void TemperatureIndex::ice_surface_temperature_impl(IceModelVec2S &result) const {
+void TemperatureIndex::temperature_impl(IceModelVec2S &result) const {
   m_atmosphere->mean_annual_temp(result);
 }
 

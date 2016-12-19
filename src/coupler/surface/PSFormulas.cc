@@ -53,11 +53,11 @@ void PSFormulas::attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input
   delete input;
 }
 
-void PSFormulas::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
+void PSFormulas::mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_climatic_mass_balance);
 }
 
-void PSFormulas::ice_surface_temperature_impl(IceModelVec2S &result) const {
+void PSFormulas::temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_ice_surface_temp);
 }
 

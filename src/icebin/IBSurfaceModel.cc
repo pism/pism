@@ -103,11 +103,11 @@ void IBSurfaceModel::update_impl(double my_t, double my_dt) {
   m_dt = my_dt;
 }
 
-void IBSurfaceModel::ice_surface_mass_flux_impl(IceModelVec2S &result) const {
+void IBSurfaceModel::mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(icebin_massxfer);
 }
 
-void IBSurfaceModel::ice_surface_temperature_impl(IceModelVec2S &result) const {
+void IBSurfaceModel::temperature_impl(IceModelVec2S &result) const {
   result.copy_from(surface_temp);
 }
 

@@ -38,7 +38,7 @@ public:
   virtual ~Delta_T();
 protected:
   virtual void init_impl();
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const;
+  virtual void temperature_impl(IceModelVec2S &result) const;
   virtual MaxTimestep max_timestep_impl(double t) const;
 };
 

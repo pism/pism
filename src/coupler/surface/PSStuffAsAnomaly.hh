@@ -36,8 +36,8 @@ protected:
   virtual void init_impl();
   virtual void update_impl(double my_t, double my_dt);
 
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result) const;
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result) const;
+  virtual void mass_flux_impl(IceModelVec2S &result) const;
+  virtual void temperature_impl(IceModelVec2S &result) const;
   virtual MaxTimestep max_timestep_impl(double t) const;
 
 protected:
