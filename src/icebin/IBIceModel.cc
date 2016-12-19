@@ -314,56 +314,9 @@ void IBIceModel::reset_rate() {
       }
     }
   }
-
-
-#if 0
-rate.geothermal_flux.begin_access();
-printf("GG rate.geothermal_flux(%d, %d) = %f (%p)\n", m_grid->xs, m_grid->xs, rate.geothermal_flux(m_grid->xs, m_grid->xs), &rate.geothermal_flux(m_grid->xs, m_grid->xs));
-rate.geothermal_flux.end_access();
-
-cur.geothermal_flux.begin_access();
-printf("GG cur.geothermal_flux(%d, %d) = %f (%p)\n", m_grid->xs, m_grid->xs, cur.geothermal_flux(m_grid->xs, m_grid->xs), &cur.geothermal_flux(m_grid->xs, m_grid->xs));
-cur.geothermal_flux.end_access();
-
-base.geothermal_flux.begin_access();
-printf("GG base.geothermal_flux(%d, %d) = %f (%p)\n", m_grid->xs, m_grid->xs, base.geothermal_flux(m_grid->xs, m_grid->xs), &base.geothermal_flux(m_grid->xs, m_grid->xs));
-base.geothermal_flux.end_access();
-#endif
 }
 
-/** @param t0 Time of last time we coupled. */
-void IBIceModel::prepare_outputs(double t0) {
-  printf("BEGIN IBIceModel::prepare_outputs()\n");
-
-  // ------ Difference between now and the last time we were called
-  double t1 = enthalpy_t(); // Current time of the enthalpy portion of ice model.
-  set_rate(t1 - t0);
-
-  // ice_surface_enth & ice_surfac_enth_depth
-  prepare_initial_outputs();
-
-// ------ Write it out
-#if 0
-    // This is not really needed, since Icebin also writes out
-    // the same fields.
-    PIO nc(m_grid, m_grid->m_config.get_string("output.format"));
-    nc.open((params.output_dir / "post_energy.nc").c_str(), PISM_READWRITE);    // append to file
-    nc.append_time(m_config.get_string("time.dimension_name"), t1);
-    m_ice_enthalpy.write(nc, PISM_DOUBLE);
-    ice_thickness.write(nc, PISM_DOUBLE);
-    ice_surface_temp.write(nc, PISM_DOUBLE);
-    PSConstantICEBIN *surface = ps_constant_icebin();
-    surface->effective_surface_temp.write(nc, PISM_DOUBLE);
-    for (auto ii = rate.all_vecs.begin(); ii != rate.all_vecs.end(); ++ii) {
-        ii->vec.write(nc, PISM_DOUBLE);
-    }
-    nc.close();
-#endif
-
-  printf("END IBIceModel::prepare_outputs()\n");
-}
-
-void IBIceModel::prepare_initial_outputs() {
+void IBIceModel::prepare_outputs(double time_s) {
   double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
 
   // --------- ice_surface_enth from m_ice_enthalpy
