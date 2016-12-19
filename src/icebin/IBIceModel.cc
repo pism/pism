@@ -4,7 +4,6 @@
 #include <base/enthalpyConverter.hh>
 #include <base/util/io/PIO.hh>
 #include <base/util/io/io_helpers.hh>
-#include "base/energy/EnergyModel.hh"
 
 #include <icebin/IBIceModel.hh>
 #include <icebin/IBSurfaceModel.hh>
@@ -27,15 +26,8 @@ IBIceModel::~IBIceModel() {
 
 void IBIceModel::allocate_subglacial_hydrology() {
   printf("BEGIN IBIceModel::allocate_subglacial_hydrology()\n");
-
-  if (pism::IceModel::m_subglacial_hydrology) {
-    return; // indicates it has already been allocated
-  }
-
+  if (pism::IceModel::m_subglacial_hydrology) return; // indicates it has already been allocated
   m_subglacial_hydrology = new pism::icebin::NullTransportHydrology(m_grid);
-
-  m_submodels["subglacial hydrology"] = m_subglacial_hydrology;
-
   printf("END IBIceModel::allocate_subglacial_hydrology()\n");
 }
 
@@ -43,6 +35,7 @@ void IBIceModel::allocate_subglacial_hydrology() {
 void IBIceModel::allocate_couplers() {
   // Initialize boundary models:
   atmosphere::Factory pa(m_grid);
+  surface::Factory ps(m_grid);
   ocean::Factory po(m_grid);
   atmosphere::AtmosphereModel *atmosphere;
 
@@ -54,16 +47,12 @@ void IBIceModel::allocate_couplers() {
 
     atmosphere = pa.create();
     m_surface->attach_atmosphere_model(atmosphere);
-
-    m_submodels["surface process model"] = m_surface;
   }
 
   if (m_ocean == NULL) {
     m_log->message(2, "# Allocating an ocean model or coupler...\n");
 
     m_ocean = po.create();
-
-    m_submodels["ocean model"] = m_ocean;
   }
 }
 
@@ -155,14 +144,12 @@ void IBIceModel::energyStep() {
   printf("END IBIceModel::energyStep(time=%f)\n", t_TempAge);
 }
 
-void IBIceModel::massContExplicitStep(double dt,
-                                      const IceModelVec2Stag &diffusive_flux,
-                                      const IceModelVec2V &advective_velocity) {
+void IBIceModel::massContExplicitStep() {
 
   printf("BEGIN IBIceModel::MassContExplicitStep()\n");
 
   _ice_density              = m_config->get_double("constants.ice.density");
-  _meter_per_s_to_kg_per_m2 = dt * _ice_density;
+  _meter_per_s_to_kg_per_m2 = m_dt * _ice_density;
 
 
   // =========== The Mass Continuity Step Itself
@@ -172,7 +159,7 @@ void IBIceModel::massContExplicitStep(double dt,
     AccessList access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
                        &cur.internal_advection, &cur.href_to_h,     &cur.nonneg_rule };
 
-    super::massContExplicitStep(dt, diffusive_flux, advective_velocity);
+    super::massContExplicitStep();
   }
 
   // =========== AFTER the Mass Continuity Step
@@ -233,7 +220,8 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
   // -------------- internal_advection
   const int ks             = m_grid->kBelowHeight(m_ice_thickness(i, j));
   // Approximate, we will use the enthalpy of the top layer...
-  double specific_enth_top = m_energy_model->enthalpy().get_column(i, j)[ks];
+  double *Enth             = m_ice_enthalpy.get_column(i, j);
+  double specific_enth_top = Enth[ks]; // Approximate, we will use the enthalpy of the top layer...
 
   mass = -(divQ_SIA + divQ_SSA) * _meter_per_s_to_kg_per_m2;
 
@@ -327,7 +315,6 @@ void IBIceModel::reset_rate() {
     }
   }
 
-
 #if 0
 rate.geothermal_flux.begin_access();
 printf("GG rate.geothermal_flux(%d, %d) = %f (%p)\n", m_grid->xs, m_grid->xs, rate.geothermal_flux(m_grid->xs, m_grid->xs), &rate.geothermal_flux(m_grid->xs, m_grid->xs));
@@ -360,12 +347,11 @@ void IBIceModel::prepare_outputs(double t0) {
 void IBIceModel::prepare_initial_outputs() {
   double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
-
-  AccessList access{ &ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_ice_thickness };
+  // --------- ice_surface_enth from m_ice_enthalpy
+  AccessList access{ &m_ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_ice_thickness };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
-      double const *Enth = ice_enthalpy.get_column(i, j);
+      double const *Enth = m_ice_enthalpy.get_column(i, j);
 
       // Top Layer
       int const ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
@@ -433,10 +419,7 @@ the idea from IceModel::get_threshold_thickness(...) (iMpartm_grid->cc).  */
 void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &mass2) {
   //   getInternalColumn() is allocated already
   double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
-
-  const IceModelVec3 *ice_enthalpy = &m_energy_model->enthalpy();
-
-  AccessList access{ &m_ice_thickness, ice_enthalpy, &enth2, &mass2 };
+  AccessList access{ &m_ice_thickness, &m_ice_enthalpy, &enth2, &mass2 };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       enth2(i, j) = 0;
@@ -446,7 +429,7 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
       // are considered "ice-free"
       if (m_ice_thickness(i, j) > 0) {
         const int ks       = m_grid->kBelowHeight(m_ice_thickness(i, j));
-        double const *Enth = ice_enthalpy->get_column(i, j);
+        double const *Enth = m_ice_enthalpy.get_column(i, j); // do NOT delete this pointer: space returned by
         for (int k = 0; k < ks; ++k) {
           double dz = (m_grid->z(k + 1) - m_grid->z(k));
           enth2(i, j) += Enth[k] * dz; // m J / kg
@@ -484,10 +467,8 @@ void IBIceModel::construct_surface_temp(
 
   double ice_density = m_config->get_double("constants.ice.density");
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
-
   {
-    AccessList access{ &ice_enthalpy, &deltah, &m_ice_thickness, &surface_temp };
+    AccessList access{ &m_ice_enthalpy, &deltah, &m_ice_thickness, &surface_temp };
 
     // First time around, set effective_surface_temp to top temperature
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
@@ -495,7 +476,7 @@ void IBIceModel::construct_surface_temp(
         double &surface_temp_ij(surface_temp(i, j));
         double const &deltah_ij(deltah(i, j));
 
-        double const *Enth = ice_enthalpy.get_column(i, j);
+        double const *Enth = m_ice_enthalpy.get_column(i, j);
 
         // Enthalpy at top of ice sheet
         const int ks      = m_grid->kBelowHeight(m_ice_thickness(i, j));

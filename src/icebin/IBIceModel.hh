@@ -22,7 +22,7 @@
 // (NOT a dependency of ours)
 namespace icebin {
 namespace gpism {
-class IceModel_PISM;
+class IceCoupler_PISM;
 }
 }
 
@@ -46,7 +46,7 @@ IBIceModel.
 */
 
 class IBIceModel : public pism::IceModel {
-  friend class ::icebin::gpism::IceModel_PISM;
+  friend class ::icebin::gpism::IceCoupler_PISM;
 
 public:
   typedef pism::IceModel super;
