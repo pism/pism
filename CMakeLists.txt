@@ -4,6 +4,7 @@ project (Pism C CXX)
 # Require C++11 compiler support.
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Looks like CMAKE_CXX_STANDARD does not support Intel C++ compilers
 # yet...
