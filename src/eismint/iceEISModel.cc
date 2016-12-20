@@ -84,11 +84,11 @@ void IceEISModel::allocate_stressbalance() {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  ShallowStressBalance *my_stress_balance = new ZeroSliding(m_grid);
+  ShallowStressBalance *shallow_stress_balance = new ZeroSliding(m_grid);
   SSB_Modifier *modifier = new SIAFD(m_grid);
 
-  // ~StressBalance() will de-allocate my_stress_balance and modifier.
-  m_stress_balance = new StressBalance(m_grid, my_stress_balance, modifier);
+  // ~StressBalance() will de-allocate shallow_stress_balance and modifier.
+  m_stress_balance = new StressBalance(m_grid, shallow_stress_balance, modifier);
   m_submodels["stress balance"] = m_stress_balance;
 }
 
