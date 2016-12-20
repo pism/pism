@@ -25,6 +25,12 @@
 
 namespace pism {
 
+CFLData::CFLData() {
+  u_max = 0.0;
+  v_max = 0.0;
+  w_max = 0.0;
+}
+
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!
 Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.

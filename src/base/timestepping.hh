@@ -30,6 +30,7 @@ class IceModelVec2V;
 class IceModelVec3;
 
 struct CFLData {
+  CFLData();
   MaxTimestep dt_max;
   double u_max, v_max, w_max;
 };
