@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "temperatureModel.hh"
+#include "TemperatureModel.hh"
 #include "base/energy/tempSystem.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/energy/utilities.hh"

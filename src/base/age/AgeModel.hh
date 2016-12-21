@@ -20,7 +20,7 @@
 #ifndef AGEMODEL_H
 #define AGEMODEL_H
 
-#include "base/util/IceModelVec.hh"
+#include "base/util/iceModelVec.hh"
 #include "base/util/PISMComponent.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 

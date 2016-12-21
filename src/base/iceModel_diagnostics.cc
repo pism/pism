@@ -31,7 +31,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/pism_utilities.hh"
 #include "coupler/PISMOcean.hh"
-#include "earth/PISMbedDef.hh"
+#include "earth/PISMBedDef.hh"
 
 #include "base/grounded_cell_fraction.hh"
 #include "base/part_grid_threshold_thickness.hh"
