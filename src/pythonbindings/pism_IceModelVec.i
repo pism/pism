@@ -1,18 +1,8 @@
 %{
 /* Using directives needed to compile IceModelVec wrappers. */  
-using pism::IceGrid;
-using pism::petsc::DM;
-using pism::IO_Type;
-using pism::RegriddingFlag;
-using pism::SpatialVariableMetadata;
-using pism::petsc::Viewer;
-using pism::Profiling; 
-using pism::Vars;
-using pism::units::Unit;
-using pism::units::System;
-using pism::Vector2;
-using pism::StarStencil;
 #include "base/util/IceModelVec2CellType.hh"
+
+using namespace pism;
 %}
 
 %shared_ptr(pism::PetscAccessible)
