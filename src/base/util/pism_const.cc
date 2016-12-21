@@ -28,7 +28,6 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <cstring>
-#include <cassert>
 
 #include "pism_const.hh"
 #include "pism_utilities.hh"

@@ -19,7 +19,6 @@
 
 #include "exactTestL.hh"
 
-#include <cassert>
 #include <cstdlib>
 #include <cmath>
 #include <gsl/gsl_errno.h>

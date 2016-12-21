@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <algorithm>
+#include <algorithm>            // min_element and max_element
 #include <gsl/gsl_math.h>
 
 #include "Timeseries.hh"

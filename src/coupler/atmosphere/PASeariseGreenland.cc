@@ -29,7 +29,6 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/PISMTime.hh"
-#include <cassert>
 #include "base/util/PISMConfigInterface.hh"
 
 #include "base/util/error_handling.hh"

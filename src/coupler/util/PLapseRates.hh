@@ -19,8 +19,6 @@
 #ifndef _PLAPSERATES_H_
 #define _PLAPSERATES_H_
 
-#include <cassert>
-
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMTime.hh"

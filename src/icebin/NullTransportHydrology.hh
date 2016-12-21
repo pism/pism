@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include <assert.h>
-
 #include <base/hydrology/PISMHydrology.hh>
 #include <base/stressbalance/PISMStressBalance.hh>
 #include <base/util/PISMComponent.hh>

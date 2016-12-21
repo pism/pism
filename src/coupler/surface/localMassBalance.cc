@@ -21,7 +21,6 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_math.h>       // M_PI
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
-#include <cassert>
 #include <algorithm>
 
 #include "base/util/pism_const.hh"

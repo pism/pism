@@ -18,6 +18,7 @@
  */
 
 #include <memory>
+#include <cassert>
 
 #include <gsl/gsl_interp.h>
 

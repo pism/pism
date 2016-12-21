@@ -16,8 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cassert>
-
 #include "IP_SSAHardavForwardProblem.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/util/IceGrid.hh"

@@ -20,7 +20,6 @@
 #define IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 
 #include <memory>
-#include <cassert>
 
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"

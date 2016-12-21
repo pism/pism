@@ -19,7 +19,6 @@
 
 #include <cmath>
 #include <petscdmda.h>
-#include <cassert>
 
 #include "iceModel.hh"
 #include "base/calving/CalvingAtThickness.hh"

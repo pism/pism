@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <cassert>
 
 #include "pism_options.hh"
 #include "pism_utilities.hh"

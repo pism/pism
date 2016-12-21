@@ -17,8 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <petscsys.h>
 #include <cstdlib>
+#include <cassert>
+
+#include <petscsys.h>
 
 #include "iceModel.hh"
 

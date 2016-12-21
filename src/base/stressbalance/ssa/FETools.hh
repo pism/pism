@@ -23,6 +23,8 @@
 #ifndef _FETOOLS_H_
 #define _FETOOLS_H_
 
+#include <cassert>
+
 #include <petscmat.h>
 
 #include "base/util/Vector2.hh"

@@ -18,7 +18,6 @@
 
 #include <sstream>
 #include <set>
-#include <cassert>
 #include <algorithm>
 
 #include "VariableMetadata.hh"
