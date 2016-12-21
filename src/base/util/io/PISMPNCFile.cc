@@ -131,7 +131,7 @@ int PNCFile::inq_dimlen_impl(const std::string &dimension_name, unsigned int &re
   int stat, dimid = -1;
   MPI_Offset len;
 
-  stat = ncmpi_inq_dimid(m_file_id, dimension_name.c_str(), &dimid);
+  stat = ncmpi_inq_dimid(m_file_id, dimension_name.c_str(), &dimid); check(PISM_ERROR_LOCATION, stat);
 
   stat = ncmpi_inq_dimlen(m_file_id, dimid, &len); check(PISM_ERROR_LOCATION, stat);
 

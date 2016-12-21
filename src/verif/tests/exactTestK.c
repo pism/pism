@@ -153,9 +153,9 @@ double coscross(double alpha, void *params) {
 where H and B are heights and A, Z are defined in terms of material
 constants */
 int print_alpha_k(const int N) {
-  int status, iter, k, max_iter = 200;
-  double Z, A;
-  double alpha, alpha_lo, alpha_hi, temp_lo;
+  int status = 0, iter = 0, k = 0, max_iter = 200;
+  double Z = 0.0, A = 0.0;
+  double alpha = 0.0, alpha_lo = 0.0, alpha_hi = 0.0, temp_lo = 0.0;
   const gsl_root_fsolver_type *solvT;
   gsl_root_fsolver *solv;
   gsl_function F;
@@ -168,35 +168,42 @@ int print_alpha_k(const int N) {
   params.HZBdiff = H0 - Z * B0;
 
   F.function = &coscross;
-  F.params = &params;
-  solvT = gsl_root_fsolver_brent;  /* faster than bisection but still bracketing */
-  solv = gsl_root_fsolver_alloc(solvT);
+  F.params   = &params;
+  solvT      = gsl_root_fsolver_brent; /* faster than bisection but still bracketing */
+  solv       = gsl_root_fsolver_alloc(solvT);
 
   for (k = 0; k < N; k++) {
     /* these numbers bracket exactly one solution */
     alpha_lo = ((double)(k) * M_PI) / params.HZBsum;
     alpha_hi = ((double)(k + 1) * M_PI) / params.HZBsum;
     gsl_root_fsolver_set(solv, &F, alpha_lo, alpha_hi);
-     
+
     iter = 0;
     do {
       iter++;
+
       status = gsl_root_fsolver_iterate(solv);
-      alpha = gsl_root_fsolver_root(solv);
+      if (status != GSL_SUCCESS) {
+        goto cleanup;
+      }
+
+      alpha    = gsl_root_fsolver_root(solv);
       alpha_lo = gsl_root_fsolver_x_lower(solv);
       alpha_hi = gsl_root_fsolver_x_upper(solv);
-      temp_lo = (alpha_lo > 0) ? alpha_lo : (alpha_hi/2.0);
+      temp_lo  = (alpha_lo > 0) ? alpha_lo : (alpha_hi/2.0);
+
       status = gsl_root_test_interval(temp_lo, alpha_hi, 0, ALPHA_RELTOL);
     } while ((status == GSL_CONTINUE) && (iter < max_iter));
+
     if (iter >= max_iter) {
-      printf("!!!ERROR: root finding iteration reached maximum iterations; QUITING!\n");
-      return ITER_MAXED_OUT;
+      printf("!!!ERROR: root finding iteration reached maximum iterations; QUITTING!\n");
+      goto cleanup;
     }
+
     printf("%19.15e,\n",alpha);
-    /* DEBUG: printf("%19.15e  (in orig bracket [%19.15e,%19.15e])\n",alpha,
-              (double(k) * pi) / params.HZBsum, (double(k+1) * pi) / params.HZBsum); */
   }
-  
+
+ cleanup:
   gsl_root_fsolver_free(solv);
   return status;
 }

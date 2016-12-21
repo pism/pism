@@ -305,6 +305,10 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
     return;
   }
 
+  // make a copy of the pointer to convince clang static analyzer that its value does not
+  // change during the call
+  FaustoGrevePDDObject *fausto_greve = m_faustogreve;
+
   m_t  = my_t;
   m_dt = my_dt;
 
@@ -335,7 +339,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
 
   IceModelVec::AccessList list(mask);
 
-  if (m_faustogreve != NULL) {
+  if (fausto_greve != NULL) {
     surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
     latitude         = m_grid->variables().get_2d_scalar("latitude");
     longitude        = m_grid->variables().get_2d_scalar("longitude");
@@ -343,7 +347,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
     list.add(*latitude);
     list.add(*longitude);
     list.add(*surface_altitude);
-    m_faustogreve->update_temp_mj(*surface_altitude, *latitude, *longitude);
+    fausto_greve->update_temp_mj(*surface_altitude, *latitude, *longitude);
   }
 
   const double
@@ -400,11 +404,11 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
         }
       }
 
-      if (m_faustogreve != NULL) {
+      if (fausto_greve != NULL) {
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-        m_faustogreve->setDegreeDayFactors(i, j, (*surface_altitude)(i, j),
-                                           (*latitude)(i, j), (*longitude)(i, j), ddf);
+        fausto_greve->setDegreeDayFactors(i, j, (*surface_altitude)(i, j),
+                                          (*latitude)(i, j), (*longitude)(i, j), ddf);
       }
 
       // apply standard deviation lapse rate on top of prescribed values
