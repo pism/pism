@@ -39,6 +39,7 @@ class IceModelVec;
 enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};
 
 struct InputOptions {
+  InputOptions(InitializationType t, const std::string &file, unsigned int index);
   //! initialization type
   InitializationType type;
   //! name of the input file (if applicable)

@@ -33,11 +33,18 @@
 
 namespace pism {
 
+InputOptions::InputOptions(InitializationType t, const std::string &file, unsigned int index) {
+  type     = t;
+  filename = file;
+  record   = index;
+}
+
 /*! Process command-line options -i and -bootstrap.
  *
  */
 InputOptions process_input_options(MPI_Comm com) {
-  InputOptions result;
+  InitializationType type   = INIT_OTHER;
+  unsigned int       record = 0;
 
   options::String input_filename("-i", "Specifies the PISM input file");
   bool bootstrap_is_set = options::Bool("-bootstrap", "enable bootstrapping heuristics");
@@ -45,17 +52,15 @@ InputOptions process_input_options(MPI_Comm com) {
   const bool bootstrap = input_filename.is_set() and bootstrap_is_set;
   const bool restart   = input_filename.is_set() and not bootstrap_is_set;
 
-  result.filename = input_filename;
-
   if (restart) {
     // re-start a run by initializing from an input file
-    result.type = INIT_RESTART;
+    type = INIT_RESTART;
   } else if (bootstrap) {
     // initialize from an input file using bootstrapping heuristics
-    result.type = INIT_BOOTSTRAP;
+    type = INIT_BOOTSTRAP;
   } else {
     // other types of initialization (usually from formulas)
-    result.type = INIT_OTHER;
+    type = INIT_OTHER;
   }
 
   // get the index of the last record in the input file
@@ -68,12 +73,12 @@ InputOptions process_input_options(MPI_Comm com) {
       last_record -= 1;
     }
 
-    result.record = last_record;
+    record = last_record;
   } else {
-    result.record = 0;
+    record = 0;
   }
 
-  return result;
+  return InputOptions(type, input_filename, record);
 }
 
 Component::Component(IceGrid::ConstPtr g)
