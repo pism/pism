@@ -403,6 +403,8 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
 }
 
 void IceModel::initialize_2d() {
+  // This method should NOT have the "noreturn" attribute. (This attribute does not mix with virtual
+  // methods).
   throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
 }
 

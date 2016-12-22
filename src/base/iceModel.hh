@@ -174,8 +174,7 @@ public:
 
   // see iMIO.cc
   virtual void restart_2d(const PIO &input_file, unsigned int record);
-
-  virtual void initialize_2d() __attribute__((noreturn));
+  virtual void initialize_2d();
 
   void initialize_cumulative_fluxes(const PIO &input_file);
   void reset_cumulative_fluxes();
@@ -271,7 +270,7 @@ protected:
   IceModelVec2Int m_ssa_dirichlet_bc_mask;
   //! Dirichlet boundary velocities
   IceModelVec2V m_ssa_dirichlet_bc_values;
-  
+
   //! mask to determine grounding line position
   IceModelVec2S m_gl_mask;
 
@@ -526,4 +525,3 @@ void bedrock_surface_temperature(double sea_level,
 } // end of namespace pism
 
 #endif /* __iceModel_hh */
-

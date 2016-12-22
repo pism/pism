@@ -277,6 +277,8 @@ void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
 }
 
 void EnergyModel::update_impl(double t, double dt) {
+  // This method should NOT have the "noreturn" attribute. (This attribute does not mix with virtual
+  // methods).
   (void) t;
   (void) dt;
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,

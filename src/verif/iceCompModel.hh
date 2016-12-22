@@ -37,7 +37,8 @@ public:
   virtual void allocate_couplers();
   virtual void allocate_energy_model();
 
-  virtual void bootstrap_2d(const PIO &input_file) __attribute__((noreturn));
+  // NB! not virtual
+  void bootstrap_2d(const PIO &input_file) __attribute__((noreturn));
 
   virtual void initialize_2d();
 
