@@ -45,6 +45,7 @@ protected:
                                const IceModelVec2S &climatic_mass_balance,
                                const IceModelVec2S &basal_heat_flux);
 
+  using EnergyModel::update_impl;
   virtual void update_impl(double t, double dt, const EnergyModelInputs &inputs);
 
   virtual void define_model_state_impl(const PIO &output) const;
@@ -67,6 +68,7 @@ protected:
                       const IceModelVec2S &climatic_mass_balance,
                       const IceModelVec2S &basal_heat_flux);
 
+  using EnergyModel::update_impl;
   void update_impl(double t, double dt, const EnergyModelInputs &inputs);
 };
 

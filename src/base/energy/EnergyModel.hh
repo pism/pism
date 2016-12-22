@@ -103,6 +103,7 @@ public:
 
   const std::string& stdout_flags() const;
 protected:
+
   virtual void update_impl(double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
 
