@@ -191,9 +191,7 @@ void Distributed::check_P_bounds(bool enforce_upper) {
 
   overburden_pressure(m_Pover);
 
-  IceModelVec::AccessList list;
-  list.add(m_P);
-  list.add(m_Pover);
+  IceModelVec::AccessList list{&m_P, &m_Pover};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -239,11 +237,7 @@ void Distributed::P_from_W_steady(IceModelVec2S &result) {
 
   overburden_pressure(m_Pover);
 
-  IceModelVec::AccessList list;
-  list.add(m_W);
-  list.add(m_Pover);
-  list.add(m_velbase_mag);
-  list.add(result);
+  IceModelVec::AccessList list{&m_W, &m_Pover, &m_velbase_mag, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -408,19 +402,8 @@ void Distributed::update_impl(double icet, double icedt) {
 
     const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-    IceModelVec::AccessList list;
-    list.add(m_P);
-    list.add(m_W);
-    list.add(m_Wtil);
-    list.add(m_Wtilnew);
-    list.add(m_velbase_mag);
-    list.add(m_Wstag);
-    list.add(m_K);
-    list.add(m_Q);
-    list.add(m_total_input);
-    list.add(mask);
-    list.add(m_Pover);
-    list.add(m_Pnew);
+    IceModelVec::AccessList list{&m_P, &m_W, &m_Wtil, &m_Wtilnew, &m_velbase_mag, &m_Wstag,
+        &m_K, &m_Q, &m_total_input, &mask, &m_Pover, &m_Pnew};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();

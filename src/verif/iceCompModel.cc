@@ -393,9 +393,7 @@ void IceCompModel::initTestL() {
     IceModelVec2S bed_topography;
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
 
-    IceModelVec::AccessList list;
-    list.add(m_ice_thickness);
-    list.add(bed_topography);
+    IceModelVec::AccessList list{&m_ice_thickness, &bed_topography};
 
     for (k = 0; k < MM; k++) {
       m_ice_thickness(rrv[k].i, rrv[k].j)  = L.H[k];
@@ -897,10 +895,8 @@ void IceCompModel::test_V_init() {
   double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"),
     upstream_thk = 600.0;
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(m_ssa_dirichlet_bc_mask);
-  list.add(m_ssa_dirichlet_bc_values);
+  IceModelVec::AccessList list{&m_ice_thickness, &m_ssa_dirichlet_bc_mask,
+      &m_ssa_dirichlet_bc_values};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

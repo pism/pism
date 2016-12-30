@@ -73,8 +73,7 @@ void TemperatureModel_Verification::initialize_impl(const IceModelVec2S &basal_m
 
 void TemperatureModel_Verification::initTestFG() {
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_temperature);
+  IceModelVec::AccessList list{&m_ice_temperature};
 
   const double time = m_testname == 'F' ? 0.0 : m_grid->ctx()->time()->current();
   const double A    = m_testname == 'F' ? 0.0 : ApforG;

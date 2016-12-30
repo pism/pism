@@ -57,9 +57,7 @@ void FloatKill::init() {
  */
 void FloatKill::update(IceModelVec2CellType &mask, IceModelVec2S &ice_thickness) {
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(ice_thickness);
+  IceModelVec::AccessList list{&mask, &ice_thickness};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

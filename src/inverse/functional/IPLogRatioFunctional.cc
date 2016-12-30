@@ -37,8 +37,7 @@ void IPLogRatioFunctional::normalize(double scale) {
 
   double w = 1.0;
 
-  IceModelVec::AccessList list;
-  list.add(m_u_observed);
+  IceModelVec::AccessList list(m_u_observed);
 
   if (m_weights) {
     list.add(*m_weights);
@@ -70,10 +69,7 @@ void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
 
   double w = 1.;
 
-  IceModelVec::AccessList list;
-  list.add(x);
-
-  list.add(m_u_observed);
+  IceModelVec::AccessList list{&x, &m_u_observed};
 
   if (m_weights) {
     list.add(*m_weights);
@@ -105,10 +101,7 @@ void IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)
 
   double w = 1.;
 
-  IceModelVec::AccessList list;
-  list.add(x);
-  list.add(gradient);
-  list.add(m_u_observed);
+  IceModelVec::AccessList list{&x, &gradient, &m_u_observed};
 
   if (m_weights) {
     list.add(*m_weights);

@@ -96,8 +96,7 @@ void SSATestCaseI::initializeSSACoefficients() {
   m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
   m_config->set_double("stress_balance.ssa.epsilon", 0.0);  // don't use this lower bound
 
-  IceModelVec::AccessList list;
-  list.add(m_tauc);
+  IceModelVec::AccessList list{&m_tauc, &m_bc_values, &m_bc_mask, &m_surface, &m_bed};
 
   double standard_gravity = m_config->get_double("constants.standard_gravity"),
     ice_rho = m_config->get_double("constants.ice.density");
@@ -112,10 +111,6 @@ void SSATestCaseI::initializeSSACoefficients() {
   }
   m_tauc.update_ghosts();
 
-  list.add(m_bc_values);
-  list.add(m_bc_mask);
-  list.add(m_surface);
-  list.add(m_bed);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

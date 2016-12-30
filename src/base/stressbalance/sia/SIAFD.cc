@@ -248,8 +248,7 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) c
     &H = *m_grid->variables().get_2d_scalar("land_ice_thickness"),
     &b = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
-  IceModelVec::AccessList list(eta);
-  list.add(H);
+  IceModelVec::AccessList list{&eta, &H, &h_x, &h_y, &b};
 
   unsigned int GHOSTS = eta.get_stencil_width();
   assert(H.get_stencil_width() >= GHOSTS);
@@ -259,10 +258,6 @@ void SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) c
 
     eta(i,j) = pow(H(i,j), etapow);
   }
-
-  list.add(h_x);
-  list.add(h_y);
-  list.add(b);
 
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
@@ -318,10 +313,7 @@ void SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_
 
   const IceModelVec2S &h = *m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec::AccessList list;
-  list.add(h_x);
-  list.add(h_y);
-  list.add(h);
+  IceModelVec::AccessList list{&h_x, &h_y, &h};
 
   // h_x and h_y have to have ghosts
   assert(h_x.get_stencil_width() >= 1);
@@ -403,15 +395,7 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list;
-  list.add(h_x);
-  list.add(h_y);
-  list.add(w_i);
-  list.add(w_j);
-
-  list.add(h);
-  list.add(mask);
-  list.add(b);
+  IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask, &b};
 
   assert(b.get_stencil_width()    >= 2);
   assert(mask.get_stencil_width() >= 2);
@@ -601,13 +585,9 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
   m_bed_smoother->get_smoothed_thk(h, H, mask, thk_smooth);
 
-  IceModelVec::AccessList list;
-  list.add(theta);
-  list.add(thk_smooth);
-  list.add(result);
+  const IceModelVec3 &enthalpy = *m_grid->variables().get_3d_scalar("enthalpy");
 
-  list.add(h_x);
-  list.add(h_y);
+  IceModelVec::AccessList list{&theta, &thk_smooth, &result, &h_x, &h_y, &enthalpy};
 
   const IceModelVec3 *age = NULL;
   if (use_age) {
@@ -619,9 +599,6 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
     list.add(m_delta[0]);
     list.add(m_delta[1]);
   }
-
-  const IceModelVec3 &enthalpy = *m_grid->variables().get_3d_scalar("enthalpy");
-  list.add(enthalpy);
 
   assert(theta.get_stencil_width()      >= 2);
   assert(thk_smooth.get_stencil_width() >= 2);
@@ -820,11 +797,7 @@ void SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) const {
 
   const std::vector<double> &z = m_grid->z();
 
-  IceModelVec::AccessList list;
-  list.add(thk_smooth);
-  list.add(m_delta[0]);
-  list.add(m_delta[1]);
-  list.add(D_stag);
+  IceModelVec::AccessList list{&thk_smooth, &m_delta[0], &m_delta[1], &D_stag};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -892,12 +865,7 @@ void SIAFD::compute_I() {
 
   m_bed_smoother->get_smoothed_thk(h, H, mask, thk_smooth);
 
-  IceModelVec::AccessList list;
-  list.add(m_delta[0]);
-  list.add(m_delta[1]);
-  list.add(I[0]);
-  list.add(I[1]);
-  list.add(thk_smooth);
+  IceModelVec::AccessList list{&m_delta[0], &m_delta[1], &I[0], &I[1], &thk_smooth};
 
   assert(I[0].get_stencil_width()     >= 1);
   assert(I[1].get_stencil_width()     >= 1);
@@ -974,16 +942,7 @@ void SIAFD::compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x, const Ic
   // after the compute_I() call work_3d[0,1] contains I on the staggered grid
   IceModelVec3 *I = m_work_3d;
 
-  IceModelVec::AccessList list;
-  list.add(u_out);
-  list.add(v_out);
-
-  list.add(h_x);
-  list.add(h_y);
-  list.add(vel_input);
-
-  list.add(I[0]);
-  list.add(I[1]);
+  IceModelVec::AccessList list{&u_out, &v_out, &h_x, &h_y, &vel_input, &I[0], &I[1]};
 
   const unsigned int Mz = m_grid->Mz();
 

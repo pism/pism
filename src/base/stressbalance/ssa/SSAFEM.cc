@@ -276,12 +276,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
 void SSAFEM::cache_inputs() {
   const std::vector<double> &z = m_grid->z();
 
-  IceModelVec::AccessList list;
-  list.add(m_coefficients);
-  list.add(*m_ice_enthalpy);
-  list.add(*m_thickness);
-  list.add(*m_bed);
-  list.add(*m_tauc);
+  IceModelVec::AccessList list{&m_coefficients, m_ice_enthalpy, m_thickness, m_bed, m_tauc};
 
   bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
   if (use_explicit_driving_stress) {
@@ -578,10 +573,7 @@ void SSAFEM::cache_residual_cfbc() {
     return;
   }
 
-  IceModelVec::AccessList list(m_node_type);
-  list.add(*m_thickness);
-  list.add(*m_bed);
-  list.add(m_boundary_integral);
+  IceModelVec::AccessList list{&m_node_type, m_thickness, m_bed, &m_boundary_integral};
 
   // Iterate over the elements.
   const int
@@ -700,13 +692,11 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  IceModelVec::AccessList list(m_node_type);
-  list.add(m_coefficients);
+  IceModelVec::AccessList list{&m_node_type, &m_coefficients, &m_boundary_integral};
 
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
   // to set it using ElementMap::add_residual_contribution() because that would lead to
   // double-counting. Also note that without CFBC m_boundary_integral is exactly zero.
-  list.add(m_boundary_integral);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -920,8 +910,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   PetscErrorCode ierr = MatZeroEntries(Jac);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list(m_node_type);
-  list.add(m_coefficients);
+  IceModelVec::AccessList list{&m_node_type, &m_coefficients};
 
   // Start access to Dirichlet data if present.
   fem::DirichletData_Vector dirichlet_data(m_bc_mask, m_bc_values, m_dirichletScale);

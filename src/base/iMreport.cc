@@ -109,10 +109,7 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
 
   const IceModelVec3 &ice_age = m_age_model->age();
 
-  IceModelVec::AccessList list;
-  list.add(m_cell_type);
-  list.add(m_ice_thickness);
-  list.add(ice_age);
+  IceModelVec::AccessList list{&m_cell_type, &m_ice_thickness, &ice_age};
 
   const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
   double original_ice_volume = 0.0;
@@ -170,10 +167,7 @@ unsigned int count_CFL_violations(const IceModelVec3 &u3,
     CFL_x = grid->dx() / dt,
     CFL_y = grid->dy() / dt;
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(u3);
-  list.add(v3);
+  IceModelVec::AccessList list{&ice_thickness, &u3, &v3};
 
   unsigned int CFL_violation_count = 0;
   ParallelSection loop(grid->com);
@@ -369,13 +363,11 @@ void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
 
 //! Computes the ice volume, in m^3.
 double IceModel::ice_volume(double thickness_threshold) const {
-  IceModelVec::AccessList list;
-  list.add(m_cell_area);
+  IceModelVec::AccessList list{&m_cell_area, &m_ice_thickness};
 
   double volume = 0.0;
 
   {
-    list.add(m_ice_thickness);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -409,11 +401,7 @@ double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) 
   assert(m_beddef != NULL);
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
-  IceModelVec::AccessList list;
-  list.add(m_cell_type);
-  list.add(m_ice_thickness);
-  list.add(bed_topography);
-  list.add(m_cell_area);
+  IceModelVec::AccessList list{&m_cell_type, &m_ice_thickness, &bed_topography, &m_cell_area};
 
   double volume = 0.0;
 
@@ -462,11 +450,7 @@ double  IceModel::ice_volume_temperate(double thickness_threshold) const {
 
   double volume = 0.0;
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(ice_enthalpy);
-  list.add(m_cell_area);
-
+  IceModelVec::AccessList list{&m_ice_thickness, &ice_enthalpy, &m_cell_area};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -506,10 +490,7 @@ double IceModel::ice_volume_cold(double thickness_threshold) const {
 
   double volume = 0.0;
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(ice_enthalpy);
-  list.add(m_cell_area);
+  IceModelVec::AccessList list{&m_ice_thickness, &ice_enthalpy, &m_cell_area};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -549,9 +530,7 @@ double IceModel::ice_volume_cold(double thickness_threshold) const {
 double IceModel::ice_area(double thickness_threshold) const {
   double area = 0.0;
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(m_cell_area);
+  IceModelVec::AccessList list{&m_ice_thickness, &m_cell_area};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -572,10 +551,7 @@ double IceModel::ice_area_temperate(double thickness_threshold) const {
 
   double area = 0.0;
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(ice_enthalpy);
-  list.add(m_cell_area);
+  IceModelVec::AccessList list{&m_ice_thickness, &ice_enthalpy, &m_cell_area};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -608,10 +584,7 @@ double IceModel::ice_area_cold(double thickness_threshold) const {
 
   double area = 0.0;
 
-  IceModelVec::AccessList list;
-  list.add(ice_enthalpy);
-  list.add(m_ice_thickness);
-  list.add(m_cell_area);
+  IceModelVec::AccessList list{&ice_enthalpy, &m_ice_thickness, &m_cell_area};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -639,10 +612,7 @@ double IceModel::ice_area_cold(double thickness_threshold) const {
 double IceModel::ice_area_grounded(double thickness_threshold) const {
   double area = 0.0;
 
-  IceModelVec::AccessList list;
-  list.add(m_cell_type);
-  list.add(m_ice_thickness);
-  list.add(m_cell_area);
+  IceModelVec::AccessList list{&m_cell_type, &m_ice_thickness, &m_cell_area};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -658,10 +628,7 @@ double IceModel::ice_area_grounded(double thickness_threshold) const {
 double IceModel::ice_area_floating(double thickness_threshold) const {
   double area = 0.0;
 
-  IceModelVec::AccessList list;
-  list.add(m_cell_type);
-  list.add(m_ice_thickness);
-  list.add(m_cell_area);
+  IceModelVec::AccessList list{&m_cell_type, &m_ice_thickness, &m_cell_area};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

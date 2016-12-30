@@ -120,10 +120,7 @@ void IceModel::Href_cleanup() {
     return;
   }
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(m_Href);
-  list.add(m_cell_type);
+  IceModelVec::AccessList list{&m_ice_thickness, &m_Href, &m_cell_type};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -160,14 +157,8 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
   const bool use_Href = Href.was_created() and Href_old.was_created();
   double total_discharge = 0.0;
 
-  IceModelVec::AccessList list;
-  list.add(thickness);
-  list.add(thickness_old);
-  list.add(m_cell_type);
-  list.add(m_cell_area);
-
-
-  list.add(m_cumulative_flux_fields.discharge);
+  IceModelVec::AccessList list{&thickness, &thickness_old, &m_cell_type, &m_cell_area,
+      &m_cumulative_flux_fields.discharge};
 
   if (use_Href) {
     list.add(Href);

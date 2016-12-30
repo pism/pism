@@ -236,10 +236,7 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
 
   std::vector<double> Tbnew(m_Mbz);
 
-  IceModelVec::AccessList list;
-  list.add(m_temp);
-  list.add(m_bottom_surface_flux);
-  list.add(bedrock_top_temperature);
+  IceModelVec::AccessList list{&m_temp, &m_bottom_surface_flux, &bedrock_top_temperature};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -297,9 +294,7 @@ void BTU_Full::update_flux_through_top_surface() {
   double dz = this->vertical_spacing();
   const int k0  = m_Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
-  IceModelVec::AccessList list;
-  list.add(m_temp);
-  list.add(m_top_surface_flux);
+  IceModelVec::AccessList list{&m_temp, &m_top_surface_flux};
 
   if (m_Mbz >= 3) {
 
@@ -340,10 +335,7 @@ void BTU_Full::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
   double dz = this->vertical_spacing();
   const int k0 = m_Mbz - 1; // Tb[k0] = ice/bedrock interface temp
 
-  IceModelVec::AccessList list;
-  list.add(bedrock_top_temperature);
-  list.add(m_bottom_surface_flux);
-  list.add(m_temp);
+  IceModelVec::AccessList list{&bedrock_top_temperature, &m_bottom_surface_flux, &m_temp};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

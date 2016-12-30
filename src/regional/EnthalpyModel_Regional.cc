@@ -79,12 +79,8 @@ void EnthalpyModel_Regional::update_impl(double t, double dt,
   const IceModelVec2Int &no_model_mask = *m_grid->variables().get_2d_mask("no_model_mask");
 
   // The call above sets m_work; ghosts are comminucated later (in EnergyModel::update()).
-  IceModelVec::AccessList list;
-  list.add(no_model_mask);
-  list.add(m_work);
-  list.add(m_ice_enthalpy);
-  list.add(m_basal_melt_rate);
-  list.add(m_basal_melt_rate_stored);
+  IceModelVec::AccessList list{&no_model_mask, &m_work, &m_ice_enthalpy,
+      &m_basal_melt_rate, &m_basal_melt_rate_stored};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

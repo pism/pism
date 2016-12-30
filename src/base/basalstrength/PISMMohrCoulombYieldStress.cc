@@ -342,16 +342,11 @@ void MohrCoulombYieldStress::update_impl() {
   const IceModelVec2CellType &mask           = *m_grid->variables().get_2d_cell_type("mask");
   const IceModelVec2S        &bed_topography = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
-  IceModelVec::AccessList list;
+  IceModelVec::AccessList list{&m_tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
+      &bed_topography, &m_Po};
   if (addtransportable == true) {
     list.add(m_bwat);
   }
-  list.add(m_tillwat);
-  list.add(m_till_phi);
-  list.add(m_basal_yield_stress);
-  list.add(mask);
-  list.add(bed_topography);
-  list.add(m_Po);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -434,9 +429,7 @@ void MohrCoulombYieldStress::topg_to_phi() {
 
   double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
-  IceModelVec::AccessList list;
-  list.add(bed_topography);
-  list.add(m_till_phi);
+  IceModelVec::AccessList list{&bed_topography, &m_till_phi};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -472,12 +465,7 @@ void MohrCoulombYieldStress::tauc_to_phi() {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(m_basal_yield_stress);
-  list.add(m_tillwat);
-  list.add(m_Po);
-  list.add(m_till_phi);
+  IceModelVec::AccessList list{&mask, &m_basal_yield_stress, &m_tillwat, &m_Po, &m_till_phi};
 
   // make sure that we have enough ghosts:
   unsigned int GHOSTS = m_till_phi.get_stencil_width();

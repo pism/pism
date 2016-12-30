@@ -241,12 +241,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) const {
   bool compute_surf_grad_inward_ssa = m_config->get_boolean("stress_balance.ssa.compute_surface_gradient_inward");
   bool use_eta = (m_config->get_string("stress_balance.sia.surface_gradient_method") == "eta");
 
-  IceModelVec::AccessList list;
-  list.add(*m_surface);
-  list.add(*m_bed);
-  list.add(m_mask);
-  list.add(thk);
-  list.add(result);
+  IceModelVec::AccessList list{m_surface, m_bed, &m_mask, &thk, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -513,11 +508,7 @@ IceModelVec::Ptr SSA_calving_front_pressure_difference::compute_impl() {
 
   const bool dry_mode = m_config->get_boolean("ocean.always_grounded");
 
-  IceModelVec::AccessList list;
-  list.add(H);
-  list.add(bed);
-  list.add(mask);
-  list.add(*result);
+  IceModelVec::AccessList list{&H, &bed, &mask, result.get()};
 
   ParallelSection loop(m_grid->com);
   try {

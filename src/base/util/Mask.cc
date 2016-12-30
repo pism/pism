@@ -33,10 +33,8 @@ void GeometryCalculator::compute_mask(double sea_level,
                                       const IceModelVec2S &bed,
                                       const IceModelVec2S &thickness,
                                       IceModelVec2Int &result) const {
-  IceModelVec::AccessList list;
-  list.add(bed);
-  list.add(thickness);
-  list.add(result);
+  IceModelVec::AccessList list{&bed, &thickness, &result};
+
   const IceGrid &grid = *bed.get_grid();
 
   const unsigned int stencil = result.get_stencil_width();
@@ -54,10 +52,8 @@ void GeometryCalculator::compute_surface(double sea_level,
                                          const IceModelVec2S &bed,
                                          const IceModelVec2S &thickness,
                                          IceModelVec2S &result) const {
-  IceModelVec::AccessList list;
-  list.add(bed);
-  list.add(thickness);
-  list.add(result);
+  IceModelVec::AccessList list{&bed, &thickness, &result};
+
   const IceGrid &grid = *bed.get_grid();
 
   const unsigned int stencil = result.get_stencil_width();

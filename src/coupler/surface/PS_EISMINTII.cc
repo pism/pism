@@ -118,9 +118,7 @@ void EISMINTII::initialize_using_formulas() {
     cy += 100.0e3;
   }
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_surface_temp);
-  list.add(m_climatic_mass_balance);
+  IceModelVec::AccessList list{&m_ice_surface_temp, &m_climatic_mass_balance};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

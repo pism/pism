@@ -50,11 +50,7 @@ void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec
   const int Mx = m_grid->Mx(), My = m_grid->My();
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
-  IceModelVec::AccessList list;
-  list.add(h_x);
-  list.add(h_y);
-  list.add(nmm);
-  list.add(hst);
+  IceModelVec::AccessList list{&h_x, &h_y, &nmm, &hst};
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -192,8 +192,7 @@ std::map<std::string, TSDiagnostic::Ptr> Routing::ts_diagnostics_impl() const {
 
 //! Check thk >= 0 and fails with message if not satisfied.
 void Routing::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
-  IceModelVec::AccessList list;
-  list.add(waterthk);
+  IceModelVec::AccessList list{&waterthk};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -237,10 +236,7 @@ void Routing::boundary_mass_changes(IceModelVec2S &newthk,
   const IceModelVec2S        &cellarea = *m_grid->variables().get_2d_scalar("cell_area");
   const IceModelVec2CellType &mask     = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list;
-  list.add(newthk);
-  list.add(cellarea);
-  list.add(mask);
+  IceModelVec::AccessList list{&newthk, &cellarea, &mask};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -317,10 +313,7 @@ void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
   // now mask: psi = P_o if ocean
   overburden_pressure(m_Pover);
 
-  IceModelVec::AccessList list;
-  list.add(m_Pover);
-  list.add(mask);
-  list.add(result);
+  IceModelVec::AccessList list{&m_Pover, &mask, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -339,10 +332,7 @@ void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(m_W);
-  list.add(result);
+  IceModelVec::AccessList list{&mask, &m_W, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -490,10 +480,7 @@ void Routing::wall_melt(IceModelVec2S &result) const {
   m_R.add(rg, *bed); // R  <-- P + rhow g b
   m_R.update_ghosts();
 
-  IceModelVec::AccessList list;
-  list.add(m_R);
-  list.add(m_W);
-  list.add(result);
+  IceModelVec::AccessList list{&m_R, &m_W, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -551,12 +538,7 @@ void Routing::velocity_staggered(IceModelVec2Stag &result) const {
 
   const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
-  IceModelVec::AccessList list;
-  list.add(pressure);
-  list.add(m_Wstag);
-  list.add(m_K);
-  list.add(bed);
-  list.add(result);
+  IceModelVec::AccessList list{&pressure, &m_Wstag, &m_K, &bed, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -597,10 +579,7 @@ The field W must have valid ghost values, but V does not need them.
 FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
  */
 void Routing::advective_fluxes(IceModelVec2Stag &result) {
-  IceModelVec::AccessList list;
-  list.add(m_W);
-  list.add(m_V);
-  list.add(result);
+  IceModelVec::AccessList list{&m_W, &m_V, &result};
 
   assert(m_W.get_stencil_width() >= 1);
 
@@ -656,10 +635,7 @@ void Routing::raw_update_Wtil(double hdt) {
     tillwat_max = m_config->get_double("hydrology.tillwat_max"),
     C           = m_config->get_double("hydrology.tillwat_decay_rate");
 
-  IceModelVec::AccessList list;
-  list.add(m_Wtil);
-  list.add(m_Wtilnew);
-  list.add(m_total_input);
+  IceModelVec::AccessList list{&m_Wtil, &m_Wtilnew, &m_total_input};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -677,15 +653,8 @@ void Routing::raw_update_W(double hdt) {
     wuy = 1.0 / (m_dy * m_dy),
     rg  = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
 
-  IceModelVec::AccessList list;
-  list.add(m_W);
-  list.add(m_Wtil);
-  list.add(m_Wtilnew);
-  list.add(m_Wstag);
-  list.add(m_K);
-  list.add(m_Q);
-  list.add(m_total_input);
-  list.add(m_Wnew);
+  IceModelVec::AccessList list{&m_W, &m_Wtil, &m_Wtilnew, &m_Wstag, &m_K, &m_Q,
+      &m_total_input, &m_Wnew};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -59,9 +59,7 @@ void IcebergRemover::update(IceModelVec2CellType &mask,
   {
     m_iceberg_mask.set(0.0);
 
-    IceModelVec::AccessList list;
-    list.add(mask);
-    list.add(m_iceberg_mask);
+    IceModelVec::AccessList list{&mask, &m_iceberg_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -110,10 +108,7 @@ void IcebergRemover::update(IceModelVec2CellType &mask,
   // correct ice thickness and the cell type mask using the resulting
   // "iceberg" mask:
   {
-    IceModelVec::AccessList list;
-    list.add(ice_thickness);
-    list.add(mask);
-    list.add(m_iceberg_mask);
+    IceModelVec::AccessList list{&ice_thickness, &mask, &m_iceberg_mask};
 
     if (m_grid->variables().is_available("bc_mask")) {
       const IceModelVec2Int &bc_mask = *m_grid->variables().get_2d_mask("bc_mask");

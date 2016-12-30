@@ -251,13 +251,6 @@ void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
   bool   use_const   = m_config->get_boolean("hydrology.use_const_bmelt");
   double const_bmelt = m_config->get_double("hydrology.const_bmelt");
 
-  IceModelVec::AccessList list;
-  if (m_inputtobed != NULL) {
-    m_inputtobed->update(hydro_t, hydro_dt);
-    m_inputtobed->interp(hydro_t + hydro_dt/2.0);
-    list.add(*m_inputtobed);
-  }
-
   const IceModelVec2S        &bmelt = *m_grid->variables().get_2d_scalar("bmelt");
   const IceModelVec2CellType &mask  = *m_grid->variables().get_2d_cell_type("mask");
 
@@ -265,9 +258,12 @@ void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
     m_bmelt_local.copy_from(bmelt);
   }
 
-  list.add(m_bmelt_local);
-  list.add(mask);
-  list.add(result);
+  IceModelVec::AccessList list{&m_bmelt_local, &mask, &result};
+  if (m_inputtobed != NULL) {
+    m_inputtobed->update(hydro_t, hydro_dt);
+    m_inputtobed->interp(hydro_t + hydro_dt/2.0);
+    list.add(*m_inputtobed);
+  }
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

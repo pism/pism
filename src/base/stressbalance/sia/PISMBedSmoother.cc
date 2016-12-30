@@ -286,13 +286,7 @@ void BedSmoother::get_smoothed_thk(const IceModelVec2S &usurf,
                                    const IceModelVec2CellType &mask,
                                    IceModelVec2S &result) {
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(m_maxtl);
-  list.add(result);
-  list.add(thk);
-  list.add(m_topgsmooth);
-  list.add(usurf);
+  IceModelVec::AccessList list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
 
   unsigned int GHOSTS = result.get_stencil_width();
   assert(mask.get_stencil_width()       >= GHOSTS);
@@ -361,14 +355,7 @@ void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S &result) {
     return;
   }
 
-  IceModelVec::AccessList list;
-  list.add(m_C2);
-  list.add(m_C3);
-  list.add(m_C4);
-  list.add(m_maxtl);
-  list.add(result);
-  list.add(m_topgsmooth);
-  list.add(usurf);
+  IceModelVec::AccessList list{&m_C2, &m_C3, &m_C4, &m_maxtl, &result, &m_topgsmooth, &usurf};
 
   unsigned int GHOSTS = result.get_stencil_width();
   assert(m_C2.get_stencil_width()         >= GHOSTS);

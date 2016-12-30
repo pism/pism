@@ -229,8 +229,7 @@ void Verification::update_FG(double time) {
   const double t = m_testname == 'F' ? 0.0 : time;
   const double A = m_testname == 'F' ? 0.0 : ApforG;
 
-  IceModelVec::AccessList list(m_climatic_mass_balance);
-  list.add(m_ice_surface_temp);
+  IceModelVec::AccessList list{&m_climatic_mass_balance, &m_ice_surface_temp};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

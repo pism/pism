@@ -116,8 +116,7 @@ void IceCompModel::initTestFG() {
   bed_topography.set(0.0);
   m_beddef->set_elevation(bed_topography);
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
+  IceModelVec::AccessList list{&m_ice_thickness};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
@@ -156,8 +155,7 @@ void IceCompModel::getCompSourcesTestFG() {
 
   // before temperature and flow step, set strain_heating_c from exact values
 
-  IceModelVec::AccessList list;
-  list.add(m_strain_heating3_comp);
+  IceModelVec::AccessList list{&m_strain_heating3_comp};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
@@ -194,9 +192,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
   const IceModelVec3 &ice_temperature = m->temperature();
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(ice_temperature);
+  IceModelVec::AccessList list{&m_ice_thickness, &ice_temperature};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -282,9 +278,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
   const IceModelVec3 &ice_temperature = m->temperature();
 
-  IceModelVec::AccessList list;
-  list.add(ice_temperature);
-  list.add(bedrock_temp);
+  IceModelVec::AccessList list{&ice_temperature, &bedrock_temp};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -392,9 +386,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
 
   const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(strain_heating3);
+  IceModelVec::AccessList list{&m_ice_thickness, &strain_heating3};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
@@ -451,11 +443,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
     &v3 = m_stress_balance->velocity_v(),
     &w3 = m_stress_balance->velocity_w();
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_thickness);
-  list.add(u3);
-  list.add(v3);
-  list.add(w3);
+  IceModelVec::AccessList list{&m_ice_thickness, &u3, &v3, &w3};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;

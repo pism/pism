@@ -361,11 +361,7 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
     &lat_degN = lat,
     &lon_degE = lon;
 
-  IceModelVec::AccessList list;
-  list.add(h);
-  list.add(lat_degN);
-  list.add(lon_degE);
-  list.add(m_temp_mj);
+  IceModelVec::AccessList list{&h, &lat_degN, &lon_degE, &m_temp_mj};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

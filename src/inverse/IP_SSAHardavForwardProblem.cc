@@ -109,8 +109,7 @@ void IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta) {
   m_design_param.convertToDesignVariable(*m_zeta, m_hardav);
 
   // Cache hardav at the quadrature points.
-  IceModelVec::AccessList list(m_hardav);
-  list.add(m_coefficients);
+  IceModelVec::AccessList list{&m_coefficients, &m_hardav};
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -225,10 +224,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  IceModelVec::AccessList list;
-  list.add(m_coefficients);
-  list.add(*m_zeta);
-  list.add(u);
+  IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
   IceModelVec2S *dzeta_local;
   if (dzeta.get_stencil_width() > 0) {
@@ -414,10 +410,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   const unsigned int Nq     = m_quadrature.n();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  IceModelVec::AccessList list;
-  list.add(m_coefficients);
-  list.add(*m_zeta);
-  list.add(u);
+  IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
   IceModelVec2V *du_local;
   if (du.get_stencil_width() > 0) {

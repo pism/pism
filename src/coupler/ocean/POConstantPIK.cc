@@ -77,9 +77,8 @@ void PIK::shelf_base_temperature_impl(IceModelVec2S &result) const {
 
   const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec::AccessList list;
-  list.add(H);
-  list.add(result);
+  IceModelVec::AccessList list{&H, &result};
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * H(i,j); // FIXME task #7297
@@ -106,9 +105,8 @@ void PIK::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
 
   const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec::AccessList list;
-  list.add(H);
-  list.add(result);
+  IceModelVec::AccessList list{&H, &result};
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

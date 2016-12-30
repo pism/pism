@@ -336,7 +336,9 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
     *latitude         = NULL,
     *longitude        = NULL;
 
-  IceModelVec::AccessList list(mask);
+  IceModelVec::AccessList list{&mask, &m_air_temp_sd, &m_climatic_mass_balance, &m_accumulation_rate,
+      &m_melt_rate, &m_runoff_rate, &m_snow_depth, &m_cumulative_accumulation,
+      &m_cumulative_melt, &m_cumulative_runoff};
 
   if (fausto_greve != NULL) {
     surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
@@ -363,16 +365,6 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   m_atmosphere->init_timeseries(ts);
 
   m_atmosphere->begin_pointwise_access();
-  list.add(m_air_temp_sd);
-  list.add(m_climatic_mass_balance);
-
-  list.add(m_accumulation_rate);
-  list.add(m_melt_rate);
-  list.add(m_runoff_rate);
-  list.add(m_snow_depth);
-  list.add(m_cumulative_accumulation);
-  list.add(m_cumulative_melt);
-  list.add(m_cumulative_runoff);
 
   const double ice_density = m_config->get_double("constants.ice.density");
 

@@ -127,20 +127,14 @@ void IceModel::combine_basal_melt_rate() {
   const bool sub_gl = (m_config->get_boolean("geometry.grounded_cell_fraction") and
                        m_config->get_boolean("energy.basal_melt.use_grounded_cell_fraction"));
 
-  IceModelVec::AccessList list;
+  const IceModelVec2S &M_grounded = m_energy_model->basal_melt_rate();
 
+  IceModelVec::AccessList list{&m_cell_type, &M_grounded, &shelf_base_mass_flux, &m_basal_melt_rate};
   if (sub_gl) {
     list.add(m_gl_mask);
   }
 
   double ice_density = m_config->get_double("constants.ice.density");
-
-  const IceModelVec2S &M_grounded = m_energy_model->basal_melt_rate();
-
-  list.add(m_cell_type);
-  list.add(M_grounded);
-  list.add(shelf_base_mass_flux);
-  list.add(m_basal_melt_rate);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -181,13 +175,8 @@ void bedrock_surface_temperature(double sea_level,
 
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(bed_topography);
-  list.add(ice_thickness);
-  list.add(ice_surface_temperature);
-  list.add(basal_enthalpy);
-  list.add(result);
+  IceModelVec::AccessList list{&cell_type, &bed_topography, &ice_thickness,
+      &ice_surface_temperature, &basal_enthalpy, &result};
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {

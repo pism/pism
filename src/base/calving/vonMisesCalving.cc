@@ -76,13 +76,8 @@ void vonMisesCalving::compute_calving_rate(const IceModelVec2CellType &mask,
   const IceModelVec3  *enthalpy      = m_grid->variables().get_3d_scalar("enthalpy");
   const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec::AccessList list;
-  list.add(*enthalpy);
-  list.add(ice_thickness);
-  list.add(mask);
-  list.add(ssa_velocity);
-  list.add(m_strain_rates);
-  list.add(result);
+  IceModelVec::AccessList list{enthalpy, &ice_thickness, &mask, &ssa_velocity,
+      &m_strain_rates, &result};
 
   const double *z = &m_grid->z()[0];
   const rheology::FlowLaw*

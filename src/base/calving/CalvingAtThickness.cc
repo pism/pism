@@ -64,11 +64,7 @@ void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
   // this call fills ghosts of m_old_mask
   m_old_mask.copy_from(pism_mask);
 
-  IceModelVec::AccessList list;
-  list.add(pism_mask);
-  list.add(ice_thickness);
-  list.add(m_old_mask);
-
+  IceModelVec::AccessList list{&pism_mask, &ice_thickness, &m_old_mask};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

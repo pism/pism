@@ -164,12 +164,8 @@ void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V 
                                                             const IceModelVec2CellType &mask,
                                                             IceModelVec2S &result) const {
 
-  IceModelVec::AccessList list;
-  list.add(V);
-  list.add(result);
-  list.add(tauc);
-  list.add(mask);
-  
+  IceModelVec::AccessList list{&V, &result, &tauc, &mask};
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -203,10 +199,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
   double hardness = pow(m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
                         -1.0 / m_config->get_double("stress_balance.ssa.Glen_exponent"));
 
-  IceModelVec::AccessList list;
-  list.add(V);
-  list.add(result);
-  list.add(mask);
+  IceModelVec::AccessList list{&V, &result, &mask};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -316,10 +309,7 @@ IceModelVec::Ptr SSB_taud::compute_impl() {
   double standard_gravity = m_config->get_double("constants.standard_gravity"),
     ice_density = m_config->get_double("constants.ice.density");
 
-  IceModelVec::AccessList list;
-  list.add(*result);
-  list.add(*surface);
-  list.add(*thickness);
+  IceModelVec::AccessList list{surface, thickness, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -397,11 +387,7 @@ IceModelVec::Ptr SSB_taub::compute_impl() {
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
-  IceModelVec::AccessList list;
-  list.add(*result);
-  list.add(*tauc);
-  list.add(velocity);
-  list.add(mask);
+  IceModelVec::AccessList list{tauc, &velocity, &mask, result.get()};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -503,10 +489,7 @@ IceModelVec::Ptr SSB_beta::compute_impl() {
 
   const IceModelVec2V &velocity = model->velocity();
 
-  IceModelVec::AccessList list;
-  list.add(*result);
-  list.add(*tauc);
-  list.add(velocity);
+  IceModelVec::AccessList list{tauc, &velocity, result.get()};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

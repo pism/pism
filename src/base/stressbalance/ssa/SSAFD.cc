@@ -290,9 +290,7 @@ void SSAFD::assemble_rhs() {
   // get driving stress components
   compute_driving_stress(m_taud);
 
-  IceModelVec::AccessList list;
-  list.add(m_taud);
-  list.add(m_b);
+  IceModelVec::AccessList list{&m_taud, &m_b};
 
   if (m_bc_values && m_bc_mask) {
     list.add(*m_bc_values);
@@ -488,11 +486,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list;
-  list.add(m_nuH);
-  list.add(*m_tauc);
-  list.add(vel);
-  list.add(m_mask);
+  IceModelVec::AccessList list{&m_nuH, m_tauc, &vel, &m_mask};
 
   if (m_bc_values && m_bc_mask) {
     list.add(*m_bc_mask);
@@ -1176,11 +1170,7 @@ void SSAFD::compute_hardav_staggered() {
 
   std::vector<double> E(m_grid->Mz());
 
-  IceModelVec::AccessList list;
-  list.add(*m_thickness);
-  list.add(*m_ice_enthalpy);
-  list.add(m_hardness);
-  list.add(m_mask);
+  IceModelVec::AccessList list{m_thickness, m_ice_enthalpy, &m_hardness, &m_mask};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1269,9 +1259,7 @@ void SSAFD::fracture_induced_softening() {
     epsilon = m_config->get_double("fracture_density.softening_lower_limit"),
     n_glen  = m_flow_law->exponent();
 
-  IceModelVec::AccessList list;
-  list.add(m_hardness);
-  list.add(*m_fracture_density);
+  IceModelVec::AccessList list{&m_hardness, m_fracture_density};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1338,15 +1326,11 @@ thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
 */
 void SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
-                                            double nuH_regularization) {
+                                  double nuH_regularization) {
 
   IceModelVec2V &uv = m_velocity; // shortcut
 
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(uv);
-  list.add(m_hardness);
-  list.add(*m_thickness);
+  IceModelVec::AccessList list{&result, &uv, &m_hardness, m_thickness};
 
   double ssa_enhancement_factor = m_flow_law->enhancement_factor(),
     n_glen = m_flow_law->exponent(),
@@ -1431,10 +1415,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  IceModelVec::AccessList list;
-  list.add(m_mask);
-  list.add(m_work);
-  list.add(m_velocity);
+  IceModelVec::AccessList list{&m_mask, &m_work, &m_velocity};
 
   assert(m_velocity.get_stencil_width() >= 2);
   assert(m_mask.get_stencil_width()    >= 2);
@@ -1576,9 +1557,7 @@ void SSAFD::update_nuH_viewers() {
                 "log10 of (viscosity * thickness)",
                 "Pa s m", "");
 
-  IceModelVec::AccessList list;
-  list.add(m_nuH);
-  list.add(tmp);
+  IceModelVec::AccessList list{&m_nuH, &tmp};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

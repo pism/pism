@@ -69,10 +69,7 @@ void EigenCalving::compute_calving_rate(const IceModelVec2CellType &mask,
 
   update_strain_rates();
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(result);
-  list.add(m_strain_rates);
+  IceModelVec::AccessList list{&mask, &result, &m_strain_rates};
 
   // Compute the horizontal calving rate
   for (Points pt(*m_grid); pt; pt.next()) {

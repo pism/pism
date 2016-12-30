@@ -159,10 +159,7 @@ protected:
     const IceModelVec2S
       &surface = *Mod::m_grid->variables().get_2d_scalar("surface_altitude");
 
-    IceModelVec::AccessList list;
-    list.add(surface);
-    list.add(m_reference_surface);
-    list.add(result);
+    IceModelVec::AccessList list{&surface, &m_reference_surface, &result};
 
     for (Points p(*Mod::m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();

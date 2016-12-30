@@ -85,8 +85,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   double b_e[Nk];
   double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
 
-  IceModelVec::AccessList list(a);
-  list.add(b);
+  IceModelVec::AccessList list{&a, &b};
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
@@ -141,8 +140,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
 
   double gradient_e[Nk];
 
-  IceModelVec::AccessList list(x);
-  list.add(gradient);
+  IceModelVec::AccessList list{&x, &gradient};
 
   // An Nq by Nk array of test function values.
   const fem::Germs *test = m_quadrature.test_function_values();

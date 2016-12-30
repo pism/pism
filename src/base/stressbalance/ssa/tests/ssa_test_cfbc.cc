@@ -116,12 +116,7 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
   m_ice_enthalpy.set(enth0);
 
-  IceModelVec::AccessList list;
-  list.add(m_thickness);
-  list.add(m_surface);
-  list.add(m_bc_mask);
-  list.add(m_bc_values);
-  list.add(m_ice_mask);
+  IceModelVec::AccessList list{&m_thickness, &m_surface, &m_bc_mask, &m_bc_values, &m_ice_mask};
 
   double ocean_rho = m_config->get_double("constants.sea_water.density"),
     ice_rho = m_config->get_double("constants.ice.density");

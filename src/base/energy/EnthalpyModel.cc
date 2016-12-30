@@ -138,25 +138,10 @@ void EnthalpyModel::update_impl(double t, double dt, const EnergyModelInputs &in
   const double dz = system.dz();
   std::vector<double> Enthnew(Mz_fine); // new enthalpy in column
 
-  IceModelVec::AccessList list;
-
-  list.add(ice_surface_temp);
-  list.add(shelf_base_temp);
-  list.add(surface_liquid_fraction);
-  list.add(ice_thickness);
-  list.add(basal_frictional_heating);
-  list.add(basal_heat_flux);
-  list.add(till_water_thickness);
-  list.add(cell_type);
-
-  list.add(u3);
-  list.add(v3);
-  list.add(w3);
-  list.add(strain_heating3);
-
-  list.add(m_basal_melt_rate);
-  list.add(m_ice_enthalpy);
-  list.add(m_work);
+  IceModelVec::AccessList list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
+      &ice_thickness, &basal_frictional_heating, &basal_heat_flux, &till_water_thickness,
+      &cell_type, &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_enthalpy,
+      &m_work};
 
   unsigned int liquifiedCount = 0;
 

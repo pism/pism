@@ -76,9 +76,7 @@ IceModelVec::Ptr Hydrology_bwprel::compute_impl() {
   model->subglacial_water_pressure(*result);
   model->overburden_pressure(Po);
 
-  IceModelVec::AccessList list;
-  list.add(*result);
-  list.add(Po);
+  IceModelVec::AccessList list{result.get(), &Po};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

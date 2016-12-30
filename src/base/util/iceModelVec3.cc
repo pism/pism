@@ -186,8 +186,7 @@ void  IceModelVec3::getHorSlice(Vec &gslice, double z) const {
  * coordinate system, not in reality.
  */
 void  IceModelVec3::getHorSlice(IceModelVec2S &gslice, double z) const {
-  IceModelVec::AccessList list(*this);
-  list.add(gslice);
+  IceModelVec::AccessList list{this, &gslice};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -205,9 +204,7 @@ void  IceModelVec3::getHorSlice(IceModelVec2S &gslice, double z) const {
 //! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to an IceModelVec2S gsurf.
 void IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
                                     const IceModelVec2S &H) const {
-  IceModelVec::AccessList list(*this);
-  list.add(surface_values);
-  list.add(H);
+  IceModelVec::AccessList list{this, &surface_values, &H};
 
   ParallelSection loop(m_grid->com);
   try {

@@ -66,13 +66,8 @@ void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
     ice_density = m_config->get_double("constants.ice.density"),
     alpha       = ice_density / m_config->get_double("constants.sea_water.density");
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(shelf_base_mass_flux);
-  list.add(bed_elevation);
-  list.add(surface_elevation);
-  list.add(ice_thickness);
-  list.add(result);
+  IceModelVec::AccessList list{&mask, &shelf_base_mass_flux,
+      &bed_elevation, &surface_elevation, &ice_thickness, &result};
 
   ParallelSection loop(m_grid->com);
   try {

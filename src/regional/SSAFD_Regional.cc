@@ -54,11 +54,7 @@ void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) const {
     *usurfstore = m_grid->variables().get_2d_scalar("usurfstore"),
     *thkstore   = m_grid->variables().get_2d_scalar("thkstore");
 
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(nmm);
-  list.add(*usurfstore);
-  list.add(*thkstore);
+  IceModelVec::AccessList list{&result, &nmm, usurfstore, thkstore};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

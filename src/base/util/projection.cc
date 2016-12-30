@@ -266,8 +266,8 @@ static void compute_lon_lat(const std::string &projection,
 
   IceGrid::ConstPtr grid = result.get_grid();
 
-  IceModelVec::AccessList list;
-  list.add(result);
+  IceModelVec::AccessList list{&result};
+
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -298,8 +298,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
   double x_offsets[] = {-dx2, dx2, dx2, -dx2};
   double y_offsets[] = {-dy2, -dy2, dy2, dy2};
 
-  IceModelVec::AccessList list;
-  list.add(result);
+  IceModelVec::AccessList list{&result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -146,11 +146,7 @@ void compute_grounded_cell_fraction(double ice_density,
 
   const double mu = ice_density / ocean_density;
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(bed_topography);
-  list.add(mask);
-  list.add(result);
+  IceModelVec::AccessList list{&ice_thickness, &bed_topography, &mask, &result};
 
   if (result_x != NULL) {
     list.add(*result_x);

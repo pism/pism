@@ -194,22 +194,9 @@ void TemperatureModel::update_impl(double t, double dt, const EnergyModelInputs 
     &ice_surface_temp         = *inputs.surface_temp,
     &till_water_thickness     = *inputs.till_water_thickness;
 
-  IceModelVec::AccessList list;
-  list.add(ice_surface_temp);
-  list.add(shelf_base_temp);
-  list.add(ice_thickness);
-  list.add(cell_type);
-  list.add(basal_heat_flux);
-  list.add(till_water_thickness);
-  list.add(basal_frictional_heating);
-  list.add(u3);
-  list.add(v3);
-  list.add(w3);
-  list.add(strain_heating3);
-
-  list.add(m_basal_melt_rate);
-  list.add(m_ice_temperature);
-  list.add(m_work);
+  IceModelVec::AccessList list{&ice_surface_temp, &shelf_base_temp, &ice_thickness,
+      &cell_type, &basal_heat_flux, &till_water_thickness, &basal_frictional_heating,
+      &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_temperature, &m_work};
 
   energy::tempSystemCtx system(m_grid->z(), "temperature",
                                m_grid->dx(), m_grid->dy(), dt,

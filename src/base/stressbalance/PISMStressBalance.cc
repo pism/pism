@@ -222,11 +222,7 @@ void StressBalance::compute_vertical_velocity(const IceModelVec3 &u,
 
   const bool use_upstream_fd = m_config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
 
-  IceModelVec::AccessList list;
-  list.add(u);
-  list.add(v);
-  list.add(result);
-  list.add(mask);
+  IceModelVec::AccessList list{&u, &v, &mask, &result};
 
   if (basal_melt_rate) {
     list.add(*basal_melt_rate);
@@ -463,13 +459,7 @@ void StressBalance::compute_volumetric_strain_heating() {
     exponent = 0.5 * (1.0 / n + 1.0),
     e_to_a_power = pow(enhancement_factor,-1.0/n);
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(*enthalpy);
-  list.add(m_strain_heating);
-  list.add(*thickness);
-  list.add(u);
-  list.add(v);
+  IceModelVec::AccessList list{&mask, enthalpy, &m_strain_heating, thickness, &u, &v};
 
   const std::vector<double> &z = m_grid->z();
   const unsigned int Mz = m_grid->Mz();
@@ -638,10 +628,7 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
     throw RuntimeError(PISM_ERROR_LOCATION, "result.dof() == 2 is required");
   }
 
-  IceModelVec::AccessList list;
-  list.add(V);
-  list.add(result);
-  list.add(mask);
+  IceModelVec::AccessList list{&V, &mask, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

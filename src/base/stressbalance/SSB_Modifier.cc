@@ -129,10 +129,7 @@ void ConstantInColumn::update(const IceModelVec2V &vel_input, bool fast) {
   }
 
   // horizontal velocity and its maximum:
-  IceModelVec::AccessList list;
-  list.add(m_u);
-  list.add(m_v);
-  list.add(vel_input);
+  IceModelVec::AccessList list{&m_u, &m_v, &vel_input};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -115,11 +115,7 @@ void SSATestCaseConst::initializeSSACoefficients() {
   m_thickness.set(H0);
   m_tauc.set(tauc0);
 
-  IceModelVec::AccessList list;
-  list.add(m_bc_values);
-  list.add(m_bc_mask);
-  list.add(m_bed);
-  list.add(m_surface);
+  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask, &m_bed, &m_surface};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

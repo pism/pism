@@ -117,10 +117,7 @@ void NullTransport::update_impl(double t, double dt) {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(m_Wtil);
-  list.add(m_total_input);
+  IceModelVec::AccessList list{&mask, &m_Wtil, &m_total_input};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -152,10 +149,7 @@ void NullTransport::diffuse_till_water(double dt) {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(m_Wtil);
-  list.add(m_Wtil_old);
+  IceModelVec::AccessList list{&mask, &m_Wtil, &m_Wtil_old};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

@@ -38,15 +38,12 @@ void IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
-  IceModelVec::AccessList list;
-  list.add(x);
+  IceModelVec::AccessList list{&x, &m_ice_mask};
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
-
-  list.add(m_ice_mask);
 
   // Loop through all LOCAL elements.
   const int
@@ -96,19 +93,15 @@ void IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   double a_e[Nk];
   double a_q[Nq_max], dadx_q[Nq_max], dady_q[Nq_max];
 
-  IceModelVec::AccessList list;
-  list.add(a);
+  IceModelVec::AccessList list{&a, &b, &m_ice_mask};
 
   double b_e[Nk];
   double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
-  list.add(b);
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
-
-  list.add(m_ice_mask);
 
   // Loop through all LOCAL elements.
   const int
@@ -165,11 +158,9 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
-  IceModelVec::AccessList list;
-  list.add(x);
+  IceModelVec::AccessList list{&x, &gradient, &m_ice_mask};
 
   double gradient_e[Nk];
-  list.add(gradient);
 
   // An Nq by Nk array of test function values.
   const fem::Germs *test = m_quadrature.test_function_values();
@@ -178,8 +169,6 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   const double* W = m_quadrature.weights();
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
-
-  list.add(m_ice_mask);
 
   // Loop through all local and ghosted elements.
   const int
@@ -245,8 +234,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   fem::DirichletData_Scalar zeroLocs(m_dirichletIndices, NULL);
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_mask);
+  IceModelVec::AccessList list(m_ice_mask);
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).

@@ -112,9 +112,8 @@ void SSATestCaseExp::initializeSSACoefficients() {
   // Set boundary conditions (Dirichlet all the way around).
   m_bc_mask.set(0.0);
 
-  IceModelVec::AccessList list;
-  list.add(m_bc_values);
-  list.add(m_bc_mask);
+  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask};
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

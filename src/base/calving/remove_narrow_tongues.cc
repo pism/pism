@@ -62,9 +62,7 @@ void remove_narrow_tongues(const IceModelVec2CellType &mask,
 
   IceGrid::ConstPtr grid = mask.get_grid();
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(ice_thickness);
+  IceModelVec::AccessList list{&mask, &ice_thickness};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

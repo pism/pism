@@ -56,10 +56,7 @@ void add_2d(const IceModelVec* const x_in, double alpha,
   bool scatter = false;
   compute_params(x, y, z, stencil, scatter);
 
-  IceModelVec::AccessList list;
-  list.add(*x);
-  list.add(*y);
-  list.add(*z);
+  IceModelVec::AccessList list{x, y, z};
   for (PointsWithGhosts p(*z->get_grid(), stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -88,9 +85,8 @@ void copy_2d(const IceModelVec* const source,
   bool scatter = false;
   compute_params(x, x, z, stencil, scatter);
 
-  IceModelVec::AccessList list;
-  list.add(*x);
-  list.add(*z);
+  IceModelVec::AccessList list{x, z};
+
   for (PointsWithGhosts p(*z->get_grid(), stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 

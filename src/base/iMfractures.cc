@@ -45,16 +45,10 @@ void IceModel::calculateFractureDensity() {
   stressbalance::compute_2D_principal_strain_rates(ssa_velocity, m_cell_type, strain_rates);
   m_stress_balance->compute_2D_stresses(ssa_velocity, m_cell_type, deviatoric_stresses);
 
-  IceModelVec::AccessList list;
-  list.add(ssa_velocity);
-  list.add(strain_rates);
-  list.add(deviatoric_stresses);
+  IceModelVec::AccessList list{&ssa_velocity, &strain_rates, &deviatoric_stresses,
+      &m_ice_thickness, &D, &D_new, &m_cell_type};
 
-  list.add(m_ice_thickness);
-  list.add(D);
   D_new.copy_from(D);
-  list.add(D_new);
-  list.add(m_cell_type);
 
   const bool dirichlet_bc = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
   if (dirichlet_bc) {
@@ -69,8 +63,8 @@ void IceModel::calculateFractureDensity() {
     list.add(m_fracture->flow_enhancement);
     list.add(m_fracture->toughness);
     list.add(A);
-    A_new.copy_from(A);
     list.add(A_new);
+    A_new.copy_from(A);
   }
 
   //options

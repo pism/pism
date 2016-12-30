@@ -188,9 +188,8 @@ void Elevation::mass_flux_impl(IceModelVec2S &result) const {
   // get access to ice upper surface elevation
   const IceModelVec2S *usurf = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(*usurf);
+  IceModelVec::AccessList list{&result, usurf};
+
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -226,9 +225,8 @@ void Elevation::temperature_impl(IceModelVec2S &result) const {
 
   const IceModelVec2S *usurf = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(*usurf);
+  IceModelVec::AccessList list{&result, &*usurf};
+
   double dTdz = (m_T_max - m_T_min)/(m_z_T_max - m_z_T_min);
   ParallelSection loop(m_grid->com);
   try {

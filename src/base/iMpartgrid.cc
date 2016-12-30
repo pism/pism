@@ -79,11 +79,9 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
 
   // First step: distribute residual ice thickness
   {
-    IceModelVec::AccessList list; // will be destroyed at the end of the block
-    list.add(m_cell_type);
-    list.add(m_ice_thickness);
-    list.add(m_Href);
-    list.add(H_residual);
+    // will be destroyed at the end of the block
+    IceModelVec::AccessList list{&m_cell_type, &m_ice_thickness, &m_Href, &H_residual};
+
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -156,11 +154,9 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
   // Second step: we need to redistribute residual ice volume if
   // neighbors which gained redistributed ice also become full.
   {
-    IceModelVec::AccessList list;   // will be destroyed at the end of the block
-    list.add(m_ice_thickness);
-    list.add(m_ice_surface_elevation);
-    list.add(bed_topography);
-    list.add(m_cell_type);
+    // will be destroyed at the end of the block
+    IceModelVec::AccessList list{&m_ice_thickness, &m_ice_surface_elevation,
+        &bed_topography, &m_cell_type};
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 

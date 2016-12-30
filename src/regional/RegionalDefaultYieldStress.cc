@@ -45,9 +45,7 @@ const IceModelVec2S& RegionalDefaultYieldStress::basal_material_yield_stress() {
   const IceModelVec2Int &nmm = *m_grid->variables().get_2d_mask("no_model_mask");
 
   // now set tauc to a big value in no_model_strip
-  IceModelVec::AccessList list;
-  list.add(nmm);
-  list.add(m_basal_yield_stress);
+  IceModelVec::AccessList list{&nmm, &m_basal_yield_stress};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

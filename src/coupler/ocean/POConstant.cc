@@ -101,9 +101,8 @@ void Constant::shelf_base_temperature_impl(IceModelVec2S &result) const {
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec::AccessList list;
-  list.add(*ice_thickness);
-  list.add(result);
+  IceModelVec::AccessList list{ice_thickness, &result};
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME issue #15

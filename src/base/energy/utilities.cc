@@ -48,10 +48,7 @@ void compute_enthalpy_cold(const IceModelVec3 &temperature,
   IceGrid::ConstPtr grid = result.get_grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list;
-  list.add(temperature);
-  list.add(result);
-  list.add(ice_thickness);
+  IceModelVec::AccessList list{&temperature, &result, &ice_thickness};
 
   const unsigned int Mz = grid->Mz();
   const std::vector<double> &z = grid->z();
@@ -80,10 +77,7 @@ void compute_temperature(const IceModelVec3 &enthalpy,
   IceGrid::ConstPtr grid = result.get_grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list;
-  list.add(enthalpy);
-  list.add(ice_thickness);
-  list.add(result);
+  IceModelVec::AccessList list{&enthalpy, &ice_thickness, &result};
 
   const unsigned int Mz = grid->Mz();
   const std::vector<double> &z = grid->z();
@@ -116,11 +110,7 @@ void compute_enthalpy(const IceModelVec3 &temperature,
   IceGrid::ConstPtr grid = result.get_grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list;
-  list.add(temperature);
-  list.add(liquid_water_fraction);
-  list.add(ice_thickness);
-  list.add(result);
+  IceModelVec::AccessList list{&temperature, &liquid_water_fraction, &ice_thickness, &result};
 
   const unsigned int Mz = grid->Mz();
   const std::vector<double> &z = grid->z();
@@ -158,10 +148,7 @@ void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
                    "liquid water fraction in ice (between 0 and 1)",
                    "1", "", 0);
 
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(enthalpy);
-  list.add(ice_thickness);
+  IceModelVec::AccessList list{&result, &enthalpy, &ice_thickness};
 
   ParallelSection loop(grid->com);
   try {
@@ -204,10 +191,7 @@ void compute_cts(const IceModelVec3 &ice_enthalpy,
                    "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
                    "", "", 0);
 
-  IceModelVec::AccessList list;
-  list.add(ice_enthalpy);
-  list.add(ice_thickness);
-  list.add(result);
+  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &result};
 
   const unsigned int Mz = grid->Mz();
   const std::vector<double> &z = grid->z();
@@ -245,10 +229,7 @@ double total_ice_enthalpy(double thickness_threshold,
 
   const std::vector<double> &z = grid->z();
 
-  IceModelVec::AccessList list;
-  list.add(ice_enthalpy);
-  list.add(ice_thickness);
-  list.add(cell_area);
+  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &cell_area};
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
@@ -377,12 +358,8 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
     ice_c       = config->get_double("constants.ice.specific_heat_capacity"),
     K           = ice_k / (ice_density * ice_c);
 
-  IceModelVec::AccessList list;
-  list.add(ice_surface_temp);
-  list.add(surface_mass_balance);
-  list.add(ice_thickness);
-  list.add(basal_heat_flux);
-  list.add(result);
+  IceModelVec::AccessList list{&ice_surface_temp, &surface_mass_balance,
+      &ice_thickness, &basal_heat_flux, &result};
 
   ParallelSection loop(grid->com);
   try {

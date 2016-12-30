@@ -100,10 +100,7 @@ void PIK::update_impl(double my_t, double my_dt)
     &usurf = *m_grid->variables().get_2d_scalar("surface_altitude"),
     &lat   = *m_grid->variables().get_2d_scalar("latitude");
 
-  IceModelVec::AccessList list;
-  list.add(m_ice_surface_temp);
-  list.add(usurf);
-  list.add(lat);
+  IceModelVec::AccessList list{&m_ice_surface_temp, &usurf, &lat};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

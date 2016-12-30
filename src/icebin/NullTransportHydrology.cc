@@ -74,11 +74,8 @@ void NullTransportHydrology::update_impl(double icet, double icedt) {
 
   const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(m_Wtil);
-  list.add(m_total_input);
-  list.add(basal_runoff_sum); // ICEBIN ADDITION
+  IceModelVec::AccessList list{&cell_type, &m_Wtil, &m_total_input,
+      &basal_runoff_sum}; // ICEBIN ADDITION
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

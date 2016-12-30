@@ -288,11 +288,7 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(ice_enthalpy);
-  list.add(ice_thickness);
-  list.add(*result);
+  IceModelVec::AccessList list{&cell_type, &ice_enthalpy, &ice_thickness, result.get()};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -333,8 +329,7 @@ IceModelVec::Ptr IceModel_rank::compute_impl() {
   result->create(m_grid, "rank", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  IceModelVec::AccessList list;
-  list.add(*result);
+  IceModelVec::AccessList list{result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     (*result)(p.i(),p.j()) = m_grid->rank();
@@ -387,9 +382,7 @@ IceModelVec::Ptr IceModel_proc_ice_area::compute_impl() {
 
   int ice_filled_cells = 0;
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(thickness);
+  IceModelVec::AccessList list{&cell_type, &thickness};
   for (Points p(*m_grid); p; p.next()) {
     if (cell_type.icy(p.i(), p.j())) {
       ice_filled_cells += 1;
@@ -431,10 +424,7 @@ IceModelVec::Ptr IceModel_temp::compute_impl() {
   double *Tij;
   const double *Enthij; // columns of these values
 
-  IceModelVec::AccessList list;
-  list.add(*result);
-  list.add(*enthalpy);
-  list.add(*thickness);
+  IceModelVec::AccessList list{result.get(), enthalpy, thickness};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -487,10 +477,7 @@ IceModelVec::Ptr IceModel_temp_pa::compute_impl() {
   double *Tij;
   const double *Enthij; // columns of these values
 
-  IceModelVec::AccessList list;
-  list.add(*result);
-  list.add(*enthalpy);
-  list.add(*thickness);
+  IceModelVec::AccessList list{result.get(), enthalpy, thickness};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -549,10 +536,7 @@ IceModelVec::Ptr IceModel_temppabase::compute_impl() {
 
   const double *Enthij; // columns of these values
 
-  IceModelVec::AccessList list;
-  list.add(*result);
-  list.add(*enthalpy);
-  list.add(*thickness);
+  IceModelVec::AccessList list{result.get(), enthalpy, thickness};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -604,9 +588,7 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(*result);
+  IceModelVec::AccessList list{&ice_thickness, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -678,10 +660,7 @@ IceModelVec::Ptr IceModel_tempbase::compute_impl() {
 
   const IceModelVec2CellType &cell_type = model->cell_type();
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(*result);
-  list.add(*thickness);
+  IceModelVec::AccessList list{&cell_type, result.get(), thickness};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -728,9 +707,7 @@ IceModelVec::Ptr IceModel_tempsurf::compute_impl() {
   // result contains surface enthalpy; note that it is allocated by
   // IceModel_enthalpysurf::compute().
 
-  IceModelVec::AccessList list;
-  list.add(*result);
-  list.add(*thickness);
+  IceModelVec::AccessList list{result.get(), thickness};
 
   double depth = 1.0,
     pressure = EC->pressure(depth);
@@ -809,11 +786,7 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(*result);
-  list.add(ice_enthalpy);
-  list.add(ice_thickness);
+  IceModelVec::AccessList list{&cell_type, result.get(), &ice_enthalpy, &ice_thickness};
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
@@ -882,11 +855,7 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(*result);
-  list.add(ice_thickness);
-  list.add(ice_enthalpy);
+  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &ice_enthalpy};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1641,10 +1610,7 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
   } else {
     const IceModelVec2S& ice_thickness = model->ice_thickness();
 
-    IceModelVec::AccessList list;
-    list.add(*result);
-    list.add(m_last_ice_thickness);
-    list.add(ice_thickness);
+    IceModelVec::AccessList list{result.get(), &m_last_ice_thickness, &ice_thickness};
 
     double dt = m_grid->ctx()->time()->current() - m_last_report_time;
     for (Points p(*m_grid); p; p.next()) {
@@ -1663,9 +1629,7 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
 void IceModel_dHdt::update_cumulative() {
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(m_last_ice_thickness);
+  IceModelVec::AccessList list{&ice_thickness, &m_last_ice_thickness};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1697,10 +1661,7 @@ void IceModel_volume_glacierized_grounded::update(double a, double b) {
 
   const double thickness_threshold = m_config->get_double("output.ice_free_thickness_standard");
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(cell_type);
-  list.add(cell_area);
+  IceModelVec::AccessList list{&ice_thickness, &cell_type, &cell_area};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1737,10 +1698,7 @@ void IceModel_volume_glacierized_shelf::update(double a, double b) {
 
   const double thickness_threshold = m_config->get_double("output.ice_free_thickness_standard");
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(cell_type);
-  list.add(cell_area);
+  IceModelVec::AccessList list{&ice_thickness, &cell_type, &cell_area};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1996,10 +1954,7 @@ IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
                                              "Gt year-1", "kg second-1");
     result->set(fill_value);
   } else {
-    IceModelVec::AccessList list;
-    list.add(*result);
-    list.add(m_last_cumulative_discharge);
-    list.add(cumulative_discharge);
+    IceModelVec::AccessList list{result.get(), &m_last_cumulative_discharge, &cumulative_discharge};
 
     double dt = current_time - m_last_report_time;
     for (Points p(*m_grid); p; p.next()) {
@@ -2103,12 +2058,8 @@ IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
 
   const IceModelVec2CellType &cell_type = model->cell_type();
 
-  IceModelVec::AccessList list;
-  list.add(thickness);
-  list.add(surface_elevation);
-  list.add(bed_topography);
-  list.add(cell_type);
-  list.add(*result);
+  IceModelVec::AccessList list{&thickness, &surface_elevation, &bed_topography, &cell_type,
+      result.get()};
 
   const bool do_part_grid = m_config->get_boolean("geometry.part_grid.enabled");
   const IceModelVec2S *Href = NULL;
@@ -2198,9 +2149,7 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
   // All grounded areas have the grounded cell fraction of one, so now we make sure that ice-free
   // areas get the value of 0 (they are grounded but not covered by a grounded ice sheet).
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(*result);
+  IceModelVec::AccessList list{&cell_type, result.get()};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -2280,10 +2229,7 @@ IceModelVec::Ptr IceModel_surface_mass_balance_average::compute_impl() {
                                              "kg year-1", "kg second-1");
     result->set(fill_value);
   } else {
-    IceModelVec::AccessList list;
-    list.add(*result);
-    list.add(m_last_cumulative_SMB);
-    list.add(cumulative_SMB);
+    IceModelVec::AccessList list{result.get(), &m_last_cumulative_SMB, &cumulative_SMB};
 
     double dt = current_time - m_last_report_time;
     for (Points p(*m_grid); p; p.next()) {
@@ -2338,11 +2284,8 @@ IceModelVec::Ptr IceModel_basal_mass_balance_average::compute_impl() {
                                              "kg year-1", "kg second-1");
     result->set(fill_value);
   } else {
-    IceModelVec::AccessList list;
-    list.add(*result);
-    list.add(m_last_cumulative_BMB);
-    list.add(cumulative_grounded_BMB);
-    list.add(cumulative_floating_BMB);
+    IceModelVec::AccessList list{result.get(), &m_last_cumulative_BMB, &cumulative_grounded_BMB,
+        &cumulative_floating_BMB};
 
     double dt = current_time - m_last_report_time;
     for (Points p(*m_grid); p; p.next()) {
@@ -2391,11 +2334,7 @@ IceModelVec::Ptr IceModel_height_above_flotation::compute_impl() {
     &ice_thickness  = *variables.get_2d_scalar("land_ice_thickness"),
     &bed_topography = *variables.get_2d_scalar("bedrock_altitude");
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(*result);
-  list.add(ice_thickness);
-  list.add(bed_topography);
+  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &bed_topography};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -2451,11 +2390,7 @@ IceModelVec::Ptr IceModel_ice_mass::compute_impl() {
     &ice_thickness = *variables.get_2d_scalar("land_ice_thickness"),
     &cell_area     = *variables.get_2d_scalar("cell_area");
 
-  IceModelVec::AccessList list;
-  list.add(cell_type);
-  list.add(*result);
-  list.add(ice_thickness);
-  list.add(cell_area);
+  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &cell_area};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -2542,10 +2477,7 @@ IceModelVec::Ptr IceModel_hardness::compute_impl() {
 
   const rheology::FlowLaw *flow_law = model->stress_balance()->modifier()->flow_law();
 
-  IceModelVec::AccessList list;
-  list.add(ice_enthalpy);
-  list.add(ice_thickness);
-  list.add(*result);
+  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, result.get()};
 
   const unsigned int Mz = m_grid->Mz();
 
@@ -2624,14 +2556,7 @@ IceModelVec::Ptr IceModel_viscosity::compute_impl() {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list;
-  list.add(U);
-  list.add(V);
-  list.add(W);
-  list.add(ice_enthalpy);
-  list.add(ice_thickness);
-  list.add(mask);
-  list.add(*result);
+  IceModelVec::AccessList list{&U, &V, &W, &ice_enthalpy, &ice_thickness, &mask, result.get()};
 
   ParallelSection loop(m_grid->com);
   try {

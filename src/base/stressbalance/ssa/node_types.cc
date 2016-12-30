@@ -67,8 +67,7 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
   const IceModelVec2S &H     = ice_thickness;
   const double        &H_min = thickness_threshold;
 
-  IceModelVec::AccessList list(H);
-  list.add(result);
+  IceModelVec::AccessList list{&H, &result};
 
   ParallelSection loop(grid->com);
   try {

@@ -180,14 +180,8 @@ void CalvingFrontRetreat::update(double dt,
 
   m_tmp.set(0.0);
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(bed_topography);
-  list.add(mask);
-  list.add(Href);
-  list.add(m_tmp);
-  list.add(m_horizontal_calving_rate);
-  list.add(m_surface_topography);
+  IceModelVec::AccessList list{&ice_thickness, &bed_topography, &mask, &Href,
+      &m_tmp, &m_horizontal_calving_rate, &m_surface_topography};
 
   // Prepare to loop over neighbors: directions
   const Direction dirs[] = {North, East, South, West};

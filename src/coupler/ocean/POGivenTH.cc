@@ -147,12 +147,8 @@ void GivenTH::update_impl(double my_t, double my_dt) {
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec::AccessList list;
-  list.add(*ice_thickness);
-  list.add(*m_theta_ocean);
-  list.add(*m_salinity_ocean);
-  list.add(m_shelfbtemp);
-  list.add(m_shelfbmassflux);
+  IceModelVec::AccessList list{ice_thickness, m_theta_ocean, m_salinity_ocean,
+      &m_shelfbtemp, &m_shelfbmassflux};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

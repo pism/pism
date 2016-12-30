@@ -448,15 +448,9 @@ void IceModel::massContExplicitStep(double dt,
 
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
-  IceModelVec::AccessList list;
-  list.add(m_cell_area);
-  list.add(m_ice_thickness);
-  list.add(m_ice_surface_elevation);
-  list.add(bed_topography);
-  list.add(diffusive_flux);
-  list.add(advective_velocity);
-  list.add(m_cell_type);
-  list.add(H_new);
+  IceModelVec::AccessList list{&m_cell_area, &m_ice_thickness, &m_ice_surface_elevation,
+      &bed_topography, &diffusive_flux, &advective_velocity, &m_cell_type, &H_new,
+      &m_cumulative_flux_fields.nonneg, &m_flux_divergence};
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool
@@ -476,9 +470,6 @@ void IceModel::massContExplicitStep(double dt,
     list.add(m_ssa_dirichlet_bc_mask);
     list.add(m_ssa_dirichlet_bc_values);
   }
-
-  list.add(m_cumulative_flux_fields.nonneg);
-  list.add(m_flux_divergence);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -697,15 +688,9 @@ void IceModel::apply_surface_and_basal_mass_balance(double dt,
   const bool
     use_basal_melt_rate = m_config->get_boolean("geometry.update.use_basal_melt_rate");
 
-  IceModelVec::AccessList list;
-  list.add(cell_area);
-  list.add(climatic_mass_balance);
-  list.add(basal_melt_rate);
-  list.add(cell_type);
-  list.add(ice_thickness);
-  list.add(fluxes_2d.climatic_mass_balance);
-  list.add(fluxes_2d.basal_grounded);
-  list.add(fluxes_2d.basal_floating);
+  IceModelVec::AccessList list{&cell_area, &climatic_mass_balance, &basal_melt_rate,
+      &cell_type, &ice_thickness, &fluxes_2d.climatic_mass_balance,
+      &fluxes_2d.basal_grounded, &fluxes_2d.basal_floating};
 
   if (bc_mask) {
     list.add(*bc_mask);

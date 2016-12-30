@@ -125,13 +125,7 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
   size_t Mz_fine = system.z().size();
   std::vector<double> x(Mz_fine);   // space for solution
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(u3);
-  list.add(v3);
-  list.add(w3);
-  list.add(m_ice_age);
-  list.add(m_work);
+  IceModelVec::AccessList list{&ice_thickness, &u3, &v3, &w3, &m_ice_age, &m_work};
 
   unsigned int Mz = m_grid->Mz();
 

@@ -78,10 +78,7 @@ void OceanKill::init() {
     bed.regrid(ocean_kill_file, CRITICAL);
   }
 
-  IceModelVec::AccessList list;
-  list.add(m_ocean_kill_mask);
-  list.add(thickness);
-  list.add(bed);
+  IceModelVec::AccessList list{&m_ocean_kill_mask, &thickness, &bed};
 
   GeometryCalculator gc(*m_config);
 
@@ -105,10 +102,7 @@ void OceanKill::init() {
 
 // Updates mask and ice thickness, including ghosts.
 void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
-  IceModelVec::AccessList list;
-  list.add(m_ocean_kill_mask);
-  list.add(pism_mask);
-  list.add(ice_thickness);
+  IceModelVec::AccessList list{&m_ocean_kill_mask, &pism_mask, &ice_thickness};
 
   unsigned int GHOSTS = pism_mask.get_stencil_width();
   assert(m_ocean_kill_mask.get_stencil_width() >= GHOSTS);

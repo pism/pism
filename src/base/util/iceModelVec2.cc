@@ -247,9 +247,7 @@ void IceModelVec2S::get_from_proc0(Vec onp0) {
  */
 void IceModelVec2S::set_to_magnitude(const IceModelVec2S &v_x,
                                      const IceModelVec2S &v_y) {
-  IceModelVec::AccessList list(*this);
-  list.add(v_x);
-  list.add(v_y);
+  IceModelVec::AccessList list{this, &v_x, &v_y};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -262,9 +260,7 @@ void IceModelVec2S::set_to_magnitude(const IceModelVec2S &v_x,
 }
 
 void IceModelVec2S::set_to_magnitude(const IceModelVec2V &input) {
-  IceModelVec::AccessList list;
-  list.add(*this);
-  list.add(input);
+  IceModelVec::AccessList list{this, &input};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -275,8 +271,7 @@ void IceModelVec2S::set_to_magnitude(const IceModelVec2V &input) {
 
 //! Masks out all the areas where \f$ M \le 0 \f$ by setting them to `fill`. 
 void IceModelVec2S::mask_by(const IceModelVec2S &M, double fill) {
-  IceModelVec::AccessList list(*this);
-  list.add(M);
+  IceModelVec::AccessList list{this, &M};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -680,8 +675,7 @@ void IceModelVec2Stag::create(IceGrid::ConstPtr grid, const std::string &short_n
  * The current IceModelVec needs to have ghosts.
  */
 void IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) const {
-  IceModelVec::AccessList list(*this);
-  list.add(result);
+  IceModelVec::AccessList list{this, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -697,8 +691,7 @@ void IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) const {
  * The current IceModelVec needs to have ghosts.
  */
 void IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) const {
-  IceModelVec::AccessList list(*this);
-  list.add(result);
+  IceModelVec::AccessList list{this, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

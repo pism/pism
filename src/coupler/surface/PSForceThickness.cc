@@ -268,12 +268,7 @@ void ForceThickness::mass_flux_impl(IceModelVec2S &result) const {
   const IceModelVec2S        &H    = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list;
-  list.add(mask);
-  list.add(H);
-  list.add(m_target_thickness);
-  list.add(m_ftt_mask);
-  list.add(result);
+  IceModelVec::AccessList list{&mask, &H, &m_target_thickness, &m_ftt_mask, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

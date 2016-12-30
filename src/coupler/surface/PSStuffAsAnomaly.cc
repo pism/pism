@@ -114,14 +114,8 @@ void StuffAsAnomaly::update_impl(double my_t, double my_dt) {
     }
   }
 
-  IceModelVec::AccessList list;
-  list.add(m_mass_flux);
-  list.add(m_mass_flux_0);
-  list.add(m_mass_flux_input);
-
-  list.add(m_temp);
-  list.add(m_temp_0);
-  list.add(m_temp_input);
+  IceModelVec::AccessList list{&m_mass_flux, &m_mass_flux_0, &m_mass_flux_input,
+      &m_temp, &m_temp_0, &m_temp_input};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -36,8 +36,8 @@ void IPMeanSquareFunctional2V::normalize(double scale) {
   double value = 0;
 
   if (m_weights) {
-    IceModelVec::AccessList list;
-    list.add(*m_weights);
+    IceModelVec::AccessList list{m_weights};
+
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -58,8 +58,7 @@ void IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT)  {
   // The value of the objective
   double value = 0;
 
-  IceModelVec::AccessList list;
-  list.add(x);
+  IceModelVec::AccessList list{&x};
 
   if (m_weights) {
     list.add(*m_weights);
@@ -87,9 +86,7 @@ void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *O
   // The value of the objective
   double value = 0;
 
-  IceModelVec::AccessList list;
-  list.add(a);
-  list.add(b);
+  IceModelVec::AccessList list{&a, &b};
 
   if (m_weights) {
     list.add(*m_weights);
@@ -117,9 +114,7 @@ void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *O
 void IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
   gradient.set(0);
 
-  IceModelVec::AccessList list;
-  list.add(x);
-  list.add(gradient);
+  IceModelVec::AccessList list{&x, &gradient};
 
   if (m_weights) {
     list.add(*m_weights);
@@ -200,9 +195,7 @@ void IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *O
   // The value of the objective
   double value = 0;
 
-  IceModelVec::AccessList list;
-  list.add(a);
-  list.add(b);
+  IceModelVec::AccessList list{&a, &b};
 
   if (m_weights) {
     list.add(*m_weights);
@@ -227,9 +220,7 @@ void IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *O
 void IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient)  {
   gradient.set(0);
 
-  IceModelVec::AccessList list;
-  list.add(x);
-  list.add(gradient);
+  IceModelVec::AccessList list{&x, &gradient};
 
   if (m_weights) {
     list.add(*m_weights);

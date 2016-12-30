@@ -200,8 +200,7 @@ void SSATestCase::report(const std::string &testname) {
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
 
-  IceModelVec::AccessList list;
-  list.add(vel_ssa);
+  IceModelVec::AccessList list{&vel_ssa};
 
   double exactvelmax = 0, gexactvelmax = 0;
   for (Points p(*m_grid); p; p.next()) {

@@ -134,10 +134,7 @@ protected:
                                                "year-1", "second-1");
       result->set(fill_value);
     } else {
-      IceModelVec::AccessList list;
-      list.add(*result);
-      list.add(m_last_value);
-      list.add(value);
+      IceModelVec::AccessList list{result.get(), &m_last_value, &value};
 
       const double dt = current_time - m_last_report_time;
 

@@ -62,9 +62,7 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
     ice_rho   = grid.ctx()->config()->get_double("constants.ice.density"),
     ice_c     = grid.ctx()->config()->get_double("constants.ice.specific_heat_capacity");
 
-  IceModelVec::AccessList list;
-  list.add(thickness);
-  list.add(strain_heating);
+  IceModelVec::AccessList list{&thickness, &strain_heating};
 
   ParallelSection loop(grid.com);
   try {
@@ -119,11 +117,7 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
 
   const double LforFG = 750000; // m
 
-  IceModelVec::AccessList list;
-  list.add(ice_thickness);
-  list.add(u3);
-  list.add(v3);
-  list.add(w3);
+  IceModelVec::AccessList list{&ice_thickness, &u3, &v3, &w3};
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -164,10 +158,7 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
                                            const IceModelVec3 &temperature,
                                            IceModelVec3 &enthalpy) {
 
-  IceModelVec::AccessList list;
-  list.add(temperature);
-  list.add(enthalpy);
-  list.add(thickness);
+  IceModelVec::AccessList list{&temperature, &enthalpy, &thickness};
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -204,9 +195,7 @@ static void setInitStateF(IceGrid &grid,
   bed.set(0.0);
   mask.set(MASK_GROUNDED);
 
-  IceModelVec::AccessList list;
-  list.add(thickness);
-  list.add(enthalpy);
+  IceModelVec::AccessList list{&thickness, &enthalpy};
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
