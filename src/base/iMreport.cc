@@ -51,25 +51,22 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
   double result = 0.0, meltarea = 0.0;
-  const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3; // area unit (km^2)
 
-  IceModelVec2S &E_basal = m_work2d[0];
+  const IceModelVec3 &enthalpy = m_energy_model->enthalpy();
 
-  m_energy_model->enthalpy().getHorSlice(E_basal, 0.0);  // z=0 slice
-
-  IceModelVec::AccessList list;
-  list.add(m_cell_type);
-  list.add(m_ice_thickness);
-  list.add(E_basal);
+  IceModelVec::AccessList list{&enthalpy, &m_cell_type, &m_cell_area, &m_ice_thickness};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_cell_type.icy(i, j)) {
+        const double
+          E_basal  = enthalpy.get_column(i, j)[0],
+          pressure = EC->pressure(m_ice_thickness(i,j)); // FIXME issue #15
         // accumulate area of base which is at melt point
-        if (EC->is_temperate_relaxed(E_basal(i,j), EC->pressure(m_ice_thickness(i,j)))) { // FIXME issue #15
-          meltarea += a;
+        if (EC->is_temperate_relaxed(E_basal, pressure)) {
+          meltarea += m_cell_area(i, j);
         }
       }
     }
@@ -78,7 +75,8 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
   }
   loop.check();
 
-
+  // convert from m2 to km2
+  meltarea = units::convert(m_sys, meltarea, "m2", "km2");
   // communication
   result = GlobalSum(m_grid->com, meltarea);
 
