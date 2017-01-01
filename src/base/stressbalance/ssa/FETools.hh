@@ -76,36 +76,41 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
   0 o---------o 1
   ~~~
 
-  For each vertex \f$k\f$ there is an element basis function \f$\phi_k\f$ that is bilinear, equals 1 at
+  For each vertex \f$k\in\{0,1,2,3\}\f$ there is an element basis function \f$\phi_k\f$ that is bilinear, equals 1 at
   vertex \f$k\f$, and equals 0 at the remaining vertices.
 
-  For each node \f$(i',j')\f$ in the physical domain there is a basis function that equals 1 at
-  vertex \f$(i',j')\f$, equals zero at all other vertices, and that on element \f$(i,j)\f$
-  can be written as \f$\phi_k\circ F_{i,j}^{-1}\f$ for some index \f$k\f$.
-
-  A (scalar) finite element function \f$f\f$ on the domain is then a linear combination
+  For each node \f$(i,j)\f$ in the physical domain there is a basis function \f$\psi_{ij}\f$ that equals 1 at
+  vertex \f$(i,j)\f$, and equals zero at all other vertices, and that on element \f$E_{i'j'}\f$
+  can be written as \f$\phi_k\circ F_{i',j'}^{-1}\f$ for some index \f$k\f$:
   \f[
-  f_h = \sum_{i,j} c_{ij}\psi_{ij}.
+  \psi_{ij}\Big|_{E_{i'j'}} = \phi_k\circ F_{i',j'}^{-1}.
   \f]
 
-  Let \f$G(w,\psi)\f$ denote the weak form of the PDE under consideration. For example, for the
+  The hat functions \f$\psi_{ij}\f$ form a basis of the function space of piecewise-linear functions.
+  A (scalar) piecewise-linear function \f$v=v(x,y)\f$ on the domain is a linear combination
+  \f[
+  v = \sum_{i,j} c_{ij}\psi_{ij}.
+  \f]
+
+  Let \f$G(w,v)\f$ denote the weak form of the PDE under consideration. For example, for the
   scalar Poisson equation \f$-\Delta w = f\f$,
-
   \f[
-  G(w,\psi) = \int_\Omega \nabla w \cdot \nabla \psi -f\psi\;dx.
+  G(w,v) = \int_\Omega \nabla w \cdot \nabla v -f v \;dx.
   \f]
+  The SSA weak form is more complicated, in particular because there is dimension 2 at each vertex,
+  corresponding to x- and y-velocity components, but it is in many ways like the Poisson weak form.
 
-  In the continuous problem we seek to find a trial function \f$w\f$ such that \f$G(w,\psi)=0\f$ for
-  all suitable test functions \f$\psi\f$. In the discrete problem, we seek a finite element function
+  In the continuous problem we seek to find a trial function \f$w\f$ such that \f$G(w,v)=0\f$ for
+  all suitable test functions \f$v\f$.
+
+  In the discrete problem, we seek a finite element function
   \f$w_h\f$ such that \f$G(w_h,\psi_{ij})=0\f$ for all suitable indices \f$(i,j)\f$. For realistic
-  problems, the integral given by \f$G\f$ cannot be evaluated exactly, but is approximated with some
+  problems, the integral defining \f$G\f$ cannot be evaluated exactly, but is approximated with some
   \f$G_h\f$ that arises from numerical quadrature rule: integration on an element \f$E\f$ is
   approximated with
-
   \f[
-  \int_E f dx \approx \sum_{q} f(x_q) w_q
+  \int_E f dx \approx \sum_{q} f(x_q) j_q
   \f]
-
   for certain points \f$x_q\f$ and weights \f$j_q\f$ (specific details are found in Quadrature).
 
   The unknown \f$w_h\f$ is represented by an IceVec, \f$w_h=\sum_{ij} c_{ij} \psi_{ij}\f$ where
@@ -135,9 +140,9 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
   - Evaluate the local test functions (again values and derivatives) at the quadrature points.
     (Quadrature)
 
-  - Obtain the quadrature weights $j_q$ for the element (Quadrature)
+  - Obtain the quadrature weights \f$j_q\f$ for the element (Quadrature)
 
-  - Compute the values of the integrand \f$g(\hat w_h,\psi_k)\f$ at each quadrature point (call
+  - Compute the values of the integrand \f$G(\hat w_h,\psi_k)\f$ at each quadrature point (call
     these \f$g_{qk}\f$) and form the weighted sums \f$y_k=\sum_{q} j_q g_{qk}\f$.
 
   - Each sum \f$y_k\f$ is the contribution of the current element to a residual entry \f$r_{ij}\f$,
@@ -156,7 +161,7 @@ static const unsigned int MAX_QUADRATURE_SIZE = 9;
 
   The classes in this module are not intended to be a fancy finite element package. Their purpose is
   to clarify the steps that occur in the computation of residuals and Jacobians in SSAFEM, and to
-  isolate and consolodate the hard steps so that they are not scattered about the code.
+  isolate and consolidate the hard steps so that they are not scattered about the code.
 */
 
 //! Struct for gathering the value and derivative of a function at a point.
@@ -232,7 +237,7 @@ typedef Germ Germs[q1::n_chi];
   q1::n_chi (%i.e. four) scalars or vectors, one for each vertex of the element.
 
   The ElementMap is also (perhaps awkwardly) overloaded to mediate transfering locally computed
-  contributions to residual and Jacobian matricies to their global counterparts.
+  contributions to residual and Jacobian matrices to their global counterparts.
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
