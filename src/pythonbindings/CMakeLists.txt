@@ -63,6 +63,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)
 
     list(APPEND PISM_Python_deps
+      geometry.i
       AgeModel.i
       EnergyModel.i
       petsc_version.i
