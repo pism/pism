@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -370,11 +370,12 @@ void IceModel::createVecs() {
   m_cell_type.create(m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
   m_cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                   "", "");
-  std::vector<double> mask_values(4);
-  mask_values[0] = MASK_ICE_FREE_BEDROCK;
-  mask_values[1] = MASK_GROUNDED;
-  mask_values[2] = MASK_FLOATING;
-  mask_values[3] = MASK_ICE_FREE_OCEAN;
+  std::vector<double> mask_values = {
+    MASK_ICE_FREE_BEDROCK,
+    MASK_GROUNDED,
+    MASK_FLOATING,
+    MASK_ICE_FREE_OCEAN};
+
   m_cell_type.metadata().set_doubles("flag_values", mask_values);
   m_cell_type.metadata().set_string("flag_meanings",
                               "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
