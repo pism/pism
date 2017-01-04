@@ -35,6 +35,31 @@ namespace pism {
 //! FEM (Finite Element Method) utilities
 namespace fem {
 
+namespace q0 {
+/*!
+ * Piecewise-constant shape functions.
+ */
+Germ chi(unsigned int k, const QuadPoint &pt) {
+  assert(k < q0::n_chi);
+
+  Germ result;
+
+  if ((k == 0 and pt.xi <= 0.0 and pt.eta <= 0.0) or
+      (k == 1 and pt.xi > 0.0 and pt.eta <= 0.0) or
+      (k == 2 and pt.xi > 0.0 and pt.eta > 0.0) or
+      (k == 3 and pt.xi <= 0.0 and pt.eta > 0.0)) {
+    result.val = 1.0;
+  } else {
+    result.val = 0.0;
+  }
+
+  result.dx  = 0.0;
+  result.dy  = 0.0;
+
+  return result;
+}
+} // end of namespace q0
+
 namespace q1 {
 
 //! Q1 basis functions on the reference element with nodes (-1,-1), (1,-1), (1,1), (-1,1).
@@ -53,28 +78,6 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
   return result;
 }
 
-/*!
- * Piecewise-constant shape functions.
- */
-Germ chi_0(unsigned int k, const QuadPoint &pt) {
-  assert(k < q1::n_chi);
-
-  Germ result;
-
-  if ((k == 0 and pt.xi <= 0.0 and pt.eta <= 0.0) or
-      (k == 1 and pt.xi > 0.0 and pt.eta <= 0.0) or
-      (k == 2 and pt.xi > 0.0 and pt.eta > 0.0) or
-      (k == 3 and pt.xi <= 0.0 and pt.eta > 0.0)) {
-    result.val = 1.0;
-  } else {
-    result.val = 0.0;
-  }
-
-  result.dx  = 0.0;
-  result.dy  = 0.0;
-
-  return result;
-}
 
 const Vector2* outward_normals() {
   static const Vector2 n[] = {Vector2( 0.0, -1.0),  // south
