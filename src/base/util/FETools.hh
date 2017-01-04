@@ -461,9 +461,9 @@ protected:
   physical element and its inverse, which are used to convert partial derivatives with respect to
   xi, eta to partial derivatives with respect to x and y.
  */
-class Q1Quadrature : public Quadrature {
+class UniformQxQuadrature : public Quadrature {
 protected:
-  Q1Quadrature(unsigned int size, double dx, double dy, double L);
+  UniformQxQuadrature(unsigned int size, double dx, double dy, double L);
 };
 
 //! Numerical integration of finite element functions.
@@ -503,7 +503,7 @@ protected:
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class Q1Quadrature4 : public Q1Quadrature {
+class Q1Quadrature4 : public UniformQxQuadrature {
 public:
   Q1Quadrature4(double dx, double dy, double L=1.0);
 private:
@@ -511,7 +511,7 @@ private:
 };
 
 //! The 9-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
-class Q1Quadrature9 : public Q1Quadrature {
+class Q1Quadrature9 : public UniformQxQuadrature {
 public:
   Q1Quadrature9(double dx, double dy, double L=1.0);
 private:
@@ -519,7 +519,7 @@ private:
 };
 
 //! The 16-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
-class Q1Quadrature16 : public Q1Quadrature {
+class Q1Quadrature16 : public UniformQxQuadrature {
 public:
   Q1Quadrature16(double dx, double dy, double L=1.0);
 private:

@@ -270,7 +270,7 @@ Quadrature::Quadrature(unsigned int N)
   }
 }
 
-Q1Quadrature::Q1Quadrature(unsigned int size, double dx, double dy, double scaling)
+UniformQxQuadrature::UniformQxQuadrature(unsigned int size, double dx, double dy, double scaling)
   : Quadrature(size) {
   // We use uniform Cartesian coordinates, so the Jacobian is constant and diagonal on every
   // element.
@@ -345,7 +345,7 @@ static Germ apply_jacobian_inverse(const double J_inv[2][2], const Germ &f) {
 
 //! Two-by-two Gaussian quadrature on a rectangle.
 Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
-  : Q1Quadrature(m_size, dx, dy, L) {
+  : UniformQxQuadrature(m_size, dx, dy, L) {
 
   // coordinates and weights of the 2-point 1D Gaussian quadrature
   const double
@@ -362,7 +362,7 @@ Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
 }
 
 Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
-  : Q1Quadrature(m_size, dx, dy, L) {
+  : UniformQxQuadrature(m_size, dx, dy, L) {
   // The quadrature points on the reference square.
 
   const double
@@ -384,7 +384,7 @@ Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
 }
 
 Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
-  : Q1Quadrature(m_size, dx, dy, L) {
+  : UniformQxQuadrature(m_size, dx, dy, L) {
   // The quadrature points on the reference square.
   const double
     A          = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
