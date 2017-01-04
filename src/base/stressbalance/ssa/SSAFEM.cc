@@ -826,8 +826,8 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
         }   // q (quadrature points)
 
         m_element.add_residual_contribution(residual, residual_global);
-      } // j-loop
-    } // i-loop
+      } // i-loop
+    } // j-loop
   } catch (...) {
     loop.failed();
   }
