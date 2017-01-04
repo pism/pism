@@ -248,9 +248,9 @@ void compute_grounded_cell_fraction(double ice_density, double ocean_density,
   fem::ElementMap element(*grid);
 
   // The quadrature used to approximate the integral.
-  fem::Q1Quadrature4 Q0(dx, dy, 1.0);
+  fem::Q1Quadrature100 Q0(dx, dy, 1.0);
   // Quadrature-point values of the basis functions used to approximate the integrand.
-  fem::Q1Quadrature4 Q1(dx, dy, 1.0);
+  fem::Q1Quadrature100 Q1(dx, dy, 1.0);
 
   const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq = Q1.n();
