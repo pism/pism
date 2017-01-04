@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown nd Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017 Jed Brown nd Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -191,6 +191,8 @@ const int n_chi = 4;
 const int n_sides = 4;
 //! Evaluate a Q1 shape function and its derivatives with respect to xi and eta.
 Germ chi(unsigned int k, const QuadPoint &p);
+//! Evaluate a piecewise-constant shape function and its derivatives.
+Germ chi_0(unsigned int k, const QuadPoint &p);
 
 //! Nodes incident to a side. Used to extract nodal values and add contributions.
 const unsigned int incident_nodes[n_sides][2] = {

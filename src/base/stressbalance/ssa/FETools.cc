@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -49,6 +49,29 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
   result.val = 0.25 * (1.0 + xi[k] * pt.xi) * (1.0 + eta[k] * pt.eta);
   result.dx  = 0.25 * xi[k] * (1.0 + eta[k] * pt.eta);
   result.dy  = 0.25 * eta[k] * (1.0 + xi[k] * pt.xi);
+
+  return result;
+}
+
+/*!
+ * Piecewise-constant shape functions.
+ */
+Germ chi_0(unsigned int k, const QuadPoint &pt) {
+  assert(k < q1::n_chi);
+
+  Germ result;
+
+  if ((k == 0 and pt.xi <= 0.0 and pt.eta <= 0.0) or
+      (k == 1 and pt.xi > 0.0 and pt.eta <= 0.0) or
+      (k == 2 and pt.xi > 0.0 and pt.eta > 0.0) or
+      (k == 3 and pt.xi <= 0.0 and pt.eta > 0.0)) {
+    result.val = 1.0;
+  } else {
+    result.val = 0.0;
+  }
+
+  result.dx  = 0.0;
+  result.dy  = 0.0;
 
   return result;
 }
