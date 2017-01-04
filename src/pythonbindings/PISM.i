@@ -58,6 +58,7 @@
 
 #include "base/util/projection.hh"
 #include "base/energy/bootstrapping.hh"
+#include "base/util/node_types.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -282,7 +283,8 @@
 %ignore pism::fem::p1::chi;
 %ignore pism::fem::p1::n_sides;
 %ignore pism::fem::p1::incident_nodes;
-%include "base/stressbalance/ssa/FETools.hh"
+%include "base/util/FETools.hh"
+%include "base/util/node_types.hh"
 
 %include pism_inverse.i
 

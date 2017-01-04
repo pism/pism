@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _SSAFEM_H_
 
 #include "SSA.hh"
-#include "FETools.hh"
+#include "base/util/FETools.hh"
 #include "base/util/petscwrappers/SNES.hh"
 #include "base/util/TerminationReason.hh"
 #include "base/util/Mask.hh"

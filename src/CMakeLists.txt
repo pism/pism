@@ -8,6 +8,8 @@ set(PISM_PARALLEL_IO_FLAGS "")
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
   base/Geometry.cc
+  base/util/FETools.cc
+  base/util/node_types.cc
   base/util/petscwrappers/PetscInitializer.cc
   base/util/petscwrappers/DM.cc
   base/util/petscwrappers/IS.cc

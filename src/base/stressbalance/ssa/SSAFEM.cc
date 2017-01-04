@@ -18,7 +18,7 @@
 
 #include "base/util/IceGrid.hh"
 #include "SSAFEM.hh"
-#include "FETools.hh"
+#include "base/util/FETools.hh"
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/rheology/FlowLaw.hh"
@@ -26,7 +26,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/PISMVars.hh"
 
-#include "node_types.hh"
+#include "base/util/node_types.hh"
 
 namespace pism {
 namespace stressbalance {

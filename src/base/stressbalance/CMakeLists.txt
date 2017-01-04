@@ -3,8 +3,6 @@ add_library (pismstressbalance OBJECT
   PISMStressBalance_diagnostics.cc
   ShallowStressBalance.cc
   SSB_Modifier.cc
-  ssa/FETools.cc
-  ssa/node_types.cc
   ssa/SSA.cc
   ssa/SSAFD.cc
   ssa/SSAFEM.cc
