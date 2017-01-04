@@ -17,11 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "Geometry.hh"
+
 #include "base/util/iceModelVec.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/util/Mask.hh"
-
-#include "Geometry.hh"
+#include "base/grounded_cell_fraction.hh"
 
 namespace pism {
 
@@ -97,8 +98,47 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
                                     "m", "surface_altitude");
 }
 
-void Geometry::ensure_consistency() {
-  // FIXME
+void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
+  IceGrid::ConstPtr grid = m_ice_thickness.get_grid();
+  Config::ConstPtr config = grid->ctx()->config();
+
+  IceModelVec::AccessList list{&m_sea_level_elevation, &m_bed_elevation,
+      &m_ice_thickness, &m_cell_type, &m_ice_surface_elevation};
+
+  // compute cell type and surface elevation
+  {
+    GeometryCalculator gc(*config);
+    gc.set_icefree_thickness(ice_free_thickness_threshold);
+
+    ParallelSection loop(grid->com);
+    try {
+      for (Points p(*grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        int mask = 0;
+        gc.compute(m_sea_level_elevation(i, j), m_bed_elevation(i, j), m_ice_thickness(i, j),
+                   &mask, &m_ice_surface_elevation(i, j));
+        m_cell_type(i, j) = mask;
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
+  }
+
+  const double
+    ice_density = config->get_double("constants.ice.density"),
+    ocean_density = config->get_double("constants.sea_water.density"),
+    sea_level = 0;              // FIXME: use the 2D field
+
+  compute_grounded_cell_fraction(ice_density,
+                                 ocean_density,
+                                 sea_level,
+                                 m_ice_thickness,
+                                 m_bed_elevation,
+                                 m_cell_type,
+                                 m_cell_grounded_fraction,
+                                 NULL, NULL);
 }
 
 IceModelVec2S& Geometry::cell_area() {

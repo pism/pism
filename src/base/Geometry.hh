@@ -20,6 +20,10 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
+#include "base/util/IceGrid.hh"
+#include "base/util/iceModelVec.hh"
+#include "base/util/IceModelVec2CellType.hh"
+
 namespace pism {
 
 class Geometry {
@@ -30,7 +34,7 @@ public:
    * Ensures consistency of ice geometry by re-computing cell type, cell grounded fraction, and ice
    * surface elevation.
    */
-  void ensure_consistency();
+  void ensure_consistency(double ice_free_thickness_threshold);
 
   IceModelVec2S& cell_area();
   IceModelVec2S& latitude();
