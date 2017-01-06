@@ -256,8 +256,6 @@ const int ElementMap::m_j_offset[4] = {0, 0, 1, 1};
 Quadrature::Quadrature(unsigned int N)
   : m_Nq(N) {
 
-  assert(N <= fem::MAX_QUADRATURE_SIZE);
-
   m_W = (double*) malloc(m_Nq * sizeof(double));
   if (m_W == NULL) {
     throw std::runtime_error("Failed to allocate a Quadrature instance");
