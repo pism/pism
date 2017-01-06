@@ -268,6 +268,14 @@ Quadrature::Quadrature(unsigned int N)
   }
 }
 
+Germ Quadrature::test_function_values(unsigned int q, unsigned int k) const {
+  return m_germs[q][k];
+}
+
+double Quadrature::weights(unsigned int q) const {
+  return m_W[q];
+}
+
 UniformQxQuadrature::UniformQxQuadrature(unsigned int size, double dx, double dy, double scaling)
   : Quadrature(size) {
   // We use uniform Cartesian coordinates, so the Jacobian is constant and diagonal on every

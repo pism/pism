@@ -25,6 +25,8 @@
 
 #include <cassert>
 
+#include <vector>
+
 #include <petscmat.h>
 
 #include "base/util/Vector2.hh"
@@ -435,6 +437,10 @@ public:
   const double* weights() const {
     return m_W;
   }
+
+  Germ test_function_values(unsigned int q, unsigned int k) const;
+  double weights(unsigned int q) const;
+
 protected:
   //! Number of quadrature points.
   const unsigned int m_Nq;
