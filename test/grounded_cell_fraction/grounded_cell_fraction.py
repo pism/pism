@@ -38,7 +38,10 @@ def allocate_storage(grid):
     gl_mask_y = PISM.model.createGroundingLineMask(grid)
     gl_mask_y.set_name("gl_mask_y")
 
-    return ice_thickness, bed_topography, surface, mask, gl_mask, gl_mask_x, gl_mask_y
+    sea_level = PISM.model.createIceThicknessVec(grid)
+    sea_level.set_name("sea_level")
+
+    return ice_thickness, bed_topography, surface, mask, gl_mask, gl_mask_x, gl_mask_y, sea_level
 
 def compute_mask(sea_level, bed_topography, ice_thickness, mask, surface):
     gc = PISM.GeometryCalculator(ctx.config)
@@ -79,12 +82,14 @@ def init(mu, L, sea_level, vec, type="box"):
 
     vec.update_ghosts()
 
-def floatation_mask_test():
+def grounded_cell_fraction_test():
 
     # allocation
     grid = allocate_grid(ctx)
 
-    ice_thickness, bed_topography, surface, mask, gl_mask, gl_mask_x, gl_mask_y = allocate_storage(grid)
+    ice_thickness, bed_topography, surface, mask, gl_mask, gl_mask_x, gl_mask_y, _ = allocate_storage(grid)
+
+    bed_topography.set(0.0)
 
     # initialization
     sea_level = 500.0
@@ -94,7 +99,7 @@ def floatation_mask_test():
         compute_mask(sea_level, bed_topography, ice_thickness, mask, surface)
 
         # computation of gl_mask
-        PISM.compute_floatation_mask(ice_density, ocean_density, sea_level,
+        PISM.compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
                                      ice_thickness, bed_topography, mask, gl_mask,
                                      gl_mask_x, gl_mask_y)
 
@@ -105,4 +110,30 @@ def floatation_mask_test():
         print_vec(gl_mask_y)
         print_vec(gl_mask)
 
-floatation_mask_test()
+def new_grounded_cell_fraction_test():
+
+    # allocation
+    grid = allocate_grid(ctx)
+
+    ice_thickness, bed_topography, _, _, gl_mask, _, _, sea_level = allocate_storage(grid)
+
+    # initialization
+    bed_topography.set(0.0)
+    sl = 500.0
+    sea_level.set(sl)
+    for L in [0.0, 0.25, 0.5, 0.75, 1.0]:
+        init(mu, L, sl, ice_thickness, "box")
+
+        # computation of gl_mask
+        PISM.compute_grounded_cell_fraction(ice_density, ocean_density,
+                                            sea_level,
+                                            ice_thickness,
+                                            bed_topography,
+                                            gl_mask)
+
+        # inspection / comparison
+        print "L = %f" % L
+        print_vec(gl_mask)
+
+grounded_cell_fraction_test()
+new_grounded_cell_fraction_test()
