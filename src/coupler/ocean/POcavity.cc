@@ -395,8 +395,8 @@ void Cavity::initBasinsOptions(const Constants &cc) {
         Soc_base_vec[k] = cc.S_dummy; //dummy
       }
 
-      gamma_T_star_vec[k]= gamma_T;
-      C_vec[k]           = value_C;
+      gamma_T_star_vec[k]= gamma_T; // FIXME remove, only one GammaT for all basins
+      C_vec[k]           = value_C; // FIXME remove, only one C for all basins
   }
 
   m_log->message(5, "     Using %d drainage basins and default values: \n"
@@ -1262,30 +1262,23 @@ void Cavity::basalMeltRateForGroundingLineBox(const Constants &cc) {
 
 
 
-// NEW Routine to compute bmr
-// !! all other boxes
-//! Compute the basal melt / refreezing rates for each shelf cell bordering the ice front box
+
+//! Iteratively over i=2,..,n: Compute the basal melt / refreezing rates for each shelf cell bordering the Box i
 
 void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename routine!!
 
-  m_log->message(4, "B2 : in bm other shelves rountine\n");
+  m_log->message(4, "B2 : in bm other boxes rountine\n");
 
-  int nBoxes = static_cast<int>(round(numberOfBoxes+1)); // do not include the Beckmann-Goose Box!
+  int nBoxes = static_cast<int>(round(numberOfBoxes+1)); // do not include the Beckmann-Goose (=last) Box 
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  //! Iterate over all Boxes > 1=GF_Box
+  //! Iterate over all Boxes i for i > 1
   for (int iBox=2; iBox <nBoxes; ++iBox) {
     m_log->message(2, "B2 : iBox =%d, numberOfBoxes=%d \n", iBox, numberOfBoxes);
 
-    double countk4=0,
-           lcountk4=0,
-           countGl0=0,
-           lcountGl0=0,
-           countSqr=0,
-           lcountSqr=0;
-           //countMean0=0,
-           //lcountMean0=0;
+    double countGl0=0,
+           lcountGl0=0;
 
     std::vector<double> lcounter_edge_of_ibox_vector(numberOfBasins);     // to compute means at boundary for the current box
     std::vector<double> lmean_salinity_ibox_vector(numberOfBasins);
@@ -1293,10 +1286,10 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
     std::vector<double> lmean_meltrate_ibox_vector(numberOfBasins);
 
     for (int k=0;k<numberOfBasins;k++){
-      lcounter_edge_of_ibox_vector[k]=0.0;
-      lmean_salinity_ibox_vector[k]=0.0;
+      lcounter_edge_of_ibox_vector[k] =0.0;
+      lmean_salinity_ibox_vector[k]   =0.0;
       lmean_temperature_ibox_vector[k]=0.0;
-      lmean_meltrate_ibox_vector[k]=0.0;
+      lmean_meltrate_ibox_vector[k]   =0.0;
     }
 
     // TODO: does this need to be within the loop over boxes?
@@ -1323,94 +1316,46 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
 
       if (BOXMODELmask(i,j)==iBox && shelf_id > 0.0){
 
-        const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-        T_star(i,j) = cc.a*Soc_base(i,j) + cc.b - cc.c*pressure - (Toc_base(i,j) - 273.15);  // in °C
-
         double  gamma_T_star,area_iBox,mean_salinity_in_boundary,mean_temperature_in_boundary,mean_meltrate_in_boundary,mean_overturning_in_GLbox;
 
-        gamma_T_star = gamma_T_star_vec[shelf_id];
-        area_iBox = (counter_boxes[shelf_id][iBox] * dx * dy);
-
         // FIXME RENAME THESE in GENERAL
-        mean_salinity_in_boundary = mean_salinity_boundary_vector[shelf_id];
-        mean_temperature_in_boundary = mean_temperature_boundary_vector[shelf_id]; // note: in degree Celsius, mean over Toc_inCelsius
-        mean_meltrate_in_boundary = mean_meltrate_boundary_vector[shelf_id];
-        mean_overturning_in_GLbox = mean_overturning_GLbox_vector[shelf_id]; // !!!leave this one with the grounding line box
+        mean_salinity_in_boundary     = mean_salinity_boundary_vector[shelf_id];
+        mean_temperature_in_boundary  = mean_temperature_boundary_vector[shelf_id]; // note: in degree Celsius, mean over Toc_inCelsius
+        mean_meltrate_in_boundary     = mean_meltrate_boundary_vector[shelf_id];
+        mean_overturning_in_GLbox     = mean_overturning_GLbox_vector[shelf_id]; // !!!leave this one with the grounding line box
+
+        const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
+        T_star(i,j) = cc.a*mean_salinity_in_boundary + cc.b - cc.c*pressure - mean_temperature_in_boundary;  // in °C
+
+        
+        gamma_T_star = gamma_T_star_vec[shelf_id];
+        area_iBox = (counter_boxes[shelf_id][iBox] * dx * dy); //FIXME adjust with projection?
 
 
         if (mean_salinity_in_boundary==0 || mean_overturning_in_GLbox ==0) { // if there are no boundary values from the box before
           // This should not happen any more since we use distIF and distGL, so every cell within a OBM-Box has to be reachable from IF and GL
-          //m_log->message(5, "!!!! GLBOX =0 , basin = %d at %d,%d, \n   ", shelf_id,i,j);
           m_log->message(2, "!!!! ATTENTION, this should not happen(?) by the definition of the boxes, problem at %d,%d, basin=%d \n", i,j, shelf_id);
           BOXMODELmask(i,j) = numberOfBoxes+1;
           lcountGl0+=1;
 
         } else {
-          // compute melt rates with OBM
+          // compute melt rates 
 
-          double k1,k2,k3,k4,k5;
 
-          k1 = (area_iBox*gamma_T_star);
-          // in (m^2*m/s)= m^3/s
-          k2 = (mean_overturning_in_GLbox + area_iBox*gamma_T_star);
-          // in m^3/s
-          if (k2==0){
-            throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                          "PISM_ERROR: Division by zero! k2=%f at %d, %d\n   "
-                                          "Aborting... \n", k2, i, j);
-          }
-          k3 = (k1/(cc.nu*cc.lambda)*cc.a - k1*k1/(cc.nu*cc.lambda*k2)*cc.a);
-          // in m^3/(s*°C)*°C/psu - m^6/(s^2*°C*m^3/s)*°C/psu = m^3/(s*psu)
-          k4 = (-mean_overturning_in_GLbox + k1/(cc.nu*cc.lambda)*cc.b - k1/(cc.nu*cc.lambda)*cc.c*pressure - k1/(cc.nu*cc.lambda)*mean_overturning_in_GLbox/k2*mean_temperature_in_boundary - k1*k1/(cc.nu*cc.lambda*k2)*cc.b + k1*k1/(cc.nu*cc.lambda*k2)*cc.c*pressure);
-          // in m^3/s
-          k5 = mean_overturning_in_GLbox*mean_salinity_in_boundary;
-          // m^3/s*psu
+          double g1, g2;
+          g1 = (area_iBox*gamma_T_star);
+          g2 = g1 / (cc.nu*cc.lambda);
 
-          //m_log->message(2, grid.com,"!!!! ACF=%.3e, AGL=%.3e, MS=%.3f, MM=%.3f, MO=%.3f, basin = %d at %d,%d, \n   ",  area_CFbox,area_GLbox,mean_salinity_in_boundary,mean_meltrate_in_boundary,mean_overturning_in_GLbox,shelf_id,i,j);
-          //m_log->message(2, grid.com,"!!!! k1=%.3f, k2=%.3f, k3=%.3f, k4=%.3f, k5=%.3f, k6=%.3f, basin = %d at %d,%d, \n   ",k1,k2,k3,k4,k5,k6,shelf_id,i,j);
+          //! temperature for Box i > 1
+          Toc_inCelsius(i,j) = mean_temperature_in_boundary + g1 * T_star(i,j)/(mean_overturning_in_GLbox + g1 - g2*cc.a*mean_salinity_in_boundary); // degC
+          
+          //! salinity for Box i > 1
+          Soc(i,j) = mean_salinity_in_boundary - mean_salinity_in_boundary * (mean_temperature_in_boundary - Toc_inCelsius(i,j))/(cc.nu*cc.lambda); // psu FIXME: add term in denominator? Then also above in GL box + mean_temperature_in_boundary - Toc_inCelsius(i,j))
 
-          //! salinity for calving front box
-          if (k3 == 0.0) {
-            //m_log->message(5, grid.com,"PISM_ERROR: Division by zero! k3=%f at %d, %d\n   Aborting... \n", k3, i, j);
-            //m_log->message(5, grid.com,"PISM_ERROR: Probably mean_overturning_in_GLbox = %f is zero, check if there is a grounding line box in basin %d , \n   ", mean_overturning_in_GLbox, shelf_id);
-            //PISMEnd();
-            // In this case, there is no solution for the melt rates, we compute melt rates following Beckmann-Goose
-            lcountk4+=1;
-            BOXMODELmask(i,j) = numberOfBoxes+1;
-            continue;
-          }
-
-          if ((0.25*k4*k4/(k3*k3) -k5/k3) < 0.0) {
-            // In this case, there is no solution for the melt rates, we compute melt rates following Beckmann-Goose
-            //m_log->message(5, grid.com,"PISM_ERROR: Square-root is negative! %f at %d, %d\n...with 0.25*k5^2/k3^2 - k4/k3 =%f \n   Aborting... \n", (0.25*k5*k5/(k3*k3) -k4/k3)) ;
-            //PISMEnd();
-            lcountSqr+=1;
-            BOXMODELmask(i,j) = numberOfBoxes+1;
-            continue;
-          }
-
-          // salinity for calving front box
-          Soc(i,j) = - 0.5*k4/k3 + (sqrt(0.25*k4*k4/(k3*k3) - k5/k3) ); // in psu // Plus or minus???
-
-          //! temperature for calving front box
-          // NOTE Careful, Toc_base(i,j) is in K, Toc_inCelsius(i,j) NEEDS to be in °C!
-          Toc_inCelsius(i,j) = 1/k2 *(mean_overturning_in_GLbox*mean_temperature_in_boundary + area_iBox*gamma_T_star*(cc.a*Soc(i,j) + cc.b - cc.c*pressure));
-
-          //! basal melt rate for calving front box
+          //! basal melt rate for Box i > 1
           basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - Toc_inCelsius(i,j)); // in m/s
 
-          // FIXME: I think that we do not need this, because this is captured by the case countGl0 
-          //        actually, this might even be wrong, since mean melt rate or temperature at previous boundary could be 0
-          // if (mean_salinity_in_boundary == 0.0 || mean_temperature_in_boundary == 0.0 || mean_meltrate_in_boundary == 0.0 || mean_overturning_in_GLbox == 0.0){
-          //   // NEW: THIS SHOULD NOT HAPPEN ANY MORE, since every cell can be reached from GL (distGL taken into account)
-          //   // In this case, there is no solution for the melt rates, we compute melt rates following Beckmann-Goose
-          //   // this must not occur since there must always be a GL_box neighbor
-          //   //m_log->message(5, grid.com, "PISM_ERROR: DETECTION CFBOX: There is no neighbouring grounding line box for this calving front box at %d,%d! \nThis will lead to a zero k4 and in turn to NaN in Soc, Toc_inCelsius and basalmeltrate_shelf. After the next massContExplicitStep(), H will be NaN, too! This will cause ks in temperatureStep() to be NaN and lead to a Segmentation Violation! \nIn particular: basin_id=%d, BOXMODELmask=%f, H=%f, T_star=%f, \narea_GLbox=%e, area_CFbox=%e, mean_salinity_in_GLbox=%f, mean_meltrate_in_GLbox=%e, mean_overturning_in_GLbox=%e, \nk1=%e,k2=%e,k3=%e,k4=%e,k5=%e,k6=%e, \nToc_base=%f, Toc_anomaly=%f, Toc_inCelsius=%f, Toc=%f, Soc_base=%f, Soc=%f, basalmeltrate_shelf=%e \n   Aborting... \n", i,j, shelf_id, BOXMODELmask(i,j), (*ice_thickness)(i,j), T_star(i,j), area_GLbox,area_CFbox,mean_salinity_in_GLbox,mean_meltrate_in_GLbox,mean_overturning_in_GLbox,k1,k2,k3,k4,k5,k6, Toc_base(i,j), Toc_anomaly(i,j), Toc_inCelsius(i,j), Toc(i,j), Soc_base(i,j), Soc(i,j), basalmeltrate_shelf(i,j));
-          //   //PISMEnd();
-          //   lcountMean0+=1;
-          //   BOXMODELmask(i,j) = numberOfBoxes+1;
-          //   continue;
-          // }
+
           // compute means at boundary to next box
           if (BOXMODELmask(i-1,j)==(iBox+1) || BOXMODELmask(i+1,j)==(iBox+1) || BOXMODELmask(i,j-1)==(iBox+1) || BOXMODELmask(i,j+1)==(iBox+1)){
             // i.e., if this cell is from the current Box and one of the neighbours is from the next higher box - It is important to only take the border of the current box
@@ -1444,33 +1389,15 @@ void Cavity::basalMeltRateForIceFrontBox(const Constants &cc) { //FIXME rename r
       m_log->message(2, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, melt=%.3e, over=%.1e \n", k,counter_edge_of_ibox_vector,mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],mean_meltrate_boundary_vector[k],mean_overturning_GLbox_vector[k]) ;
     } // basins
 
-    // FIXME is das der richtige Ort?
-    countk4 = GlobalSum(m_grid->com, lcountk4);
+    // ! cells with no input, should not happen:
     countGl0 = GlobalSum(m_grid->com, lcountGl0);
-    countSqr = GlobalSum(m_grid->com, lcountSqr);
-    //countMean0 = GlobalSum(m_grid->com, lcountMean0);
-
-    if (countk4 > 0) {
-      m_log->message(2, "B2!: PISM_WARNING: box %d, k4 is zero in %.0f case(s)!\n",iBox, countk4);
-    }
     if (countGl0 > 0) {
       m_log->message(2, "B2!: PISM_WARNING: box %d, no boundary data from previous box in %.0f case(s)!\n",iBox,countGl0);
     }
-    if (countSqr > 0) {
-      m_log->message(2, "B2!: PISM_WARNING: box %d, square root is negative in %.0f case(s)!\n",iBox,countSqr);
-    }
-    // if (countMean0 > 0) {
-    //   m_log->message(2, "B2!: PISM_WARNING: box %d, mean of salinity, meltrate or overturning is zero at boundary to previous box in %.0f case(s)!\n",iBox,countMean0);
-    // }
 
   } // iBox
 
 }
-
-
-
-// END OF NEW
-
 
 
 
