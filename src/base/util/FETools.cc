@@ -412,46 +412,44 @@ Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
 }
 
 
-//! @brief 100-point (10x10) uniform (*not* Gaussian) quadrature for integrating discontinuous
+//! @brief 1e4-point (100x100) uniform (*not* Gaussian) quadrature for integrating discontinuous
 //! functions.
-Q0Quadrature100::Q0Quadrature100(double dx, double dy, double L)
+Q0Quadrature1e4::Q0Quadrature1e4(double dx, double dy, double L)
   : UniformQxQuadrature(m_size, dx, dy, L) {
-  const unsigned int N = 10;
-  assert(N * N == m_size);
+  assert(m_size_1d * m_size_1d == m_size);
 
-  double xi[N], w[N];
-  const double dxi = 2.0 / N;
-  for (unsigned int k = 0; k < N; ++k) {
+  double xi[m_size_1d], w[m_size_1d];
+  const double dxi = 2.0 / m_size_1d;
+  for (unsigned int k = 0; k < m_size_1d; ++k) {
     xi[k] = -1.0 + dxi*(k + 0.5);
-    w[k]  = 2.0 / N;
+    w[k]  = 2.0 / m_size_1d;
   }
 
   QuadPoint points[m_size];
   double W[m_size];
 
-  tensor_product_quadrature(N, xi, w, points, W);
+  tensor_product_quadrature(m_size_1d, xi, w, points, W);
 
   initialize(q0::chi, q0::n_chi, points, W);
 }
 
-//! @brief 100-point (10x10) uniform (*not* Gaussian) quadrature for integrating discontinuous
+//! @brief 1e4-point (100x100) uniform (*not* Gaussian) quadrature for integrating discontinuous
 //! functions.
-Q1Quadrature100::Q1Quadrature100(double dx, double dy, double L)
+Q1Quadrature1e4::Q1Quadrature1e4(double dx, double dy, double L)
   : UniformQxQuadrature(m_size, dx, dy, L) {
-  const unsigned int N = 10;
-  assert(N * N == m_size);
+  assert(m_size_1d * m_size_1d == m_size);
 
-  double xi[N], w[N];
-  const double dxi = 2.0 / N;
-  for (unsigned int k = 0; k < N; ++k) {
+  double xi[m_size_1d], w[m_size_1d];
+  const double dxi = 2.0 / m_size_1d;
+  for (unsigned int k = 0; k < m_size_1d; ++k) {
     xi[k] = -1.0 + dxi*(k + 0.5);
-    w[k]  = 2.0 / N;
+    w[k]  = 2.0 / m_size_1d;
   }
 
   QuadPoint points[m_size];
   double W[m_size];
 
-  tensor_product_quadrature(N, xi, w, points, W);
+  tensor_product_quadrature(m_size_1d, xi, w, points, W);
 
   initialize(q1::chi, q1::n_chi, points, W);
 }

@@ -535,18 +535,20 @@ private:
   static const unsigned int m_size = 16;
 };
 
-class Q0Quadrature100 : public UniformQxQuadrature {
+class Q0Quadrature1e4 : public UniformQxQuadrature {
 public:
-  Q0Quadrature100(double dx, double dy, double L=1.0);
+  Q0Quadrature1e4(double dx, double dy, double L=1.0);
 private:
-  static const unsigned int m_size = 100;
+  static const unsigned int m_size_1d = 100;
+  static const unsigned int m_size = m_size_1d * m_size_1d;
 };
 
-class Q1Quadrature100 : public UniformQxQuadrature {
+class Q1Quadrature1e4 : public UniformQxQuadrature {
 public:
-  Q1Quadrature100(double dx, double dy, double L=1.0);
+  Q1Quadrature1e4(double dx, double dy, double L=1.0);
 private:
-  static const unsigned int m_size = 100;
+  static const unsigned int m_size_1d = 100;
+  static const unsigned int m_size = m_size_1d * m_size_1d;
 };
 
 //! Quadratures on a P1 element.
