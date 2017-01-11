@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -248,9 +248,9 @@ void compute_grounded_cell_fraction(double ice_density, double ocean_density,
   fem::ElementMap element(*grid);
 
   // The quadrature used to approximate the integral.
-  fem::Q1Quadrature100 Q0(dx, dy, 1.0);
+  fem::Q0Quadrature1e4 Q0(dx, dy, 1.0);
   // Quadrature-point values of the basis functions used to approximate the integrand.
-  fem::Q1Quadrature100 Q1(dx, dy, 1.0);
+  fem::Q1Quadrature1e4 Q1(dx, dy, 1.0);
 
   const unsigned int Nk = fem::q1::n_chi;
   const unsigned int Nq = Q1.n();
@@ -267,7 +267,7 @@ void compute_grounded_cell_fraction(double ice_density, double ocean_density,
     ym = element_index.ym;
 
   // An Nq by Nk array of test function values.
-  const fem::Germs *psi = Q1.test_function_values();
+  const fem::Germs *psi = Q0.test_function_values();
 
   const double alpha = ice_density / ocean_density;
 
@@ -282,9 +282,9 @@ void compute_grounded_cell_fraction(double ice_density, double ocean_density,
         // Initialize the map from global to element degrees of freedom.
         element.reset(i, j);
 
-        element.nodal_values(sea_level, sl_nodal);
+        element.nodal_values(sea_level,      sl_nodal);
         element.nodal_values(bed_topography, b_nodal);
-        element.nodal_values(ice_thickness, H_nodal);
+        element.nodal_values(ice_thickness,  H_nodal);
 
         for (unsigned int k = 0; k < Nk; ++k) {
           M[k] = gc.mask(sl_nodal[k], b_nodal[k], H_nodal[k]);
@@ -296,6 +296,11 @@ void compute_grounded_cell_fraction(double ice_density, double ocean_density,
         const bool fully_grounded = (mask::grounded(M[0]) and mask::grounded(M[1]) and
                                      mask::grounded(M[2]) and mask::grounded(M[3]));
 
+        // zero out contributions in preparation
+        for (unsigned int k = 0; k < Nk; k++) {
+          grounded_area[k] = 0.0;
+        }
+
         if (fully_grounded) {
           // contribute 1/4 to all the cell-centered cells corresponding to the nodes of this
           // element
@@ -304,15 +309,7 @@ void compute_grounded_cell_fraction(double ice_density, double ocean_density,
           }
         } else if (fully_floating) {
           // no contribution
-          for (unsigned int k = 0; k < Nk; k++) {
-            grounded_area[k] = 0.0;
-          }
         } else {
-          // zero out contributions in preparation
-          for (unsigned int k = 0; k < Nk; k++) {
-            grounded_area[k] = 0.0;
-          }
-
           quadrature_point_values(Q1, sl_nodal, &sl[0]);
           quadrature_point_values(Q1, b_nodal,  &b[0]);
           quadrature_point_values(Q1, H_nodal,  &H[0]);
