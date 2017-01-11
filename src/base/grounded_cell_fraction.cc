@@ -333,7 +333,7 @@ void compute_grounded_cell_fraction(double ice_density, double ocean_density,
           }   // q (quadrature points)
         }
 
-        element.add_residual_contribution(grounded_fraction, result);
+        element.add_contribution(grounded_area, result);
       } // i-loop
     }   // j-loop
   } catch (...) {

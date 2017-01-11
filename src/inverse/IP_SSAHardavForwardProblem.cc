@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -345,7 +345,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
             du_e[k].v += W[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
           }
         } // q
-        m_element.add_residual_contribution(du_e, du_a);
+        m_element.add_contribution(du_e, du_a);
       } // j
     } // i
   } catch (...) {
@@ -518,7 +518,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
           }
         } // q
 
-        m_element.add_residual_contribution(dzeta_e, dzeta_a);
+        m_element.add_contribution(dzeta_e, dzeta_a);
       } // j
     } // i
   } catch (...) {

@@ -242,7 +242,7 @@ void ElementMap::mark_col_invalid(int k) {
  *  mark_row_invalid() and mark_col_invalid() are ignored. (Just as they
  *  should be.)
  */
-void ElementMap::add_jacobian_contribution(const double *K, Mat J) const {
+void ElementMap::add_contribution(const double *K, Mat J) const {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
                                                    fem::q1::n_chi, m_row,
                                                    fem::q1::n_chi, m_col,

@@ -284,11 +284,13 @@ public:
   /*! @brief Get nodal values of an integer mask. */
   void nodal_values(const IceModelVec2Int &x_global, int *result) const;
 
-  /*! @brief Add the values of element-local residual contributions `y` to the global residual
-    vector `y_global`. */
-  /*! The element-local residual should be an array of Nk values.*/
+  /*! @brief Add the values of element-local contributions `y` to the global vector `y_global`. */
+  /*! The element-local array `local` should be an array of Nk values.
+   *
+   * Use this to add residual contributions.
+   */
   template<typename T>
-  void add_residual_contribution(const T *residual, T** y_global) const {
+  void add_contribution(const T *local, T** y_global) const {
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
       if (m_row[k].k == 1) {
         // skip rows marked as "invalid"
@@ -297,12 +299,12 @@ public:
       const int
         i = m_row[k].i,
         j = m_row[k].j;
-      y_global[j][i] += residual[k];   // note the indexing order
+      y_global[j][i] += local[k];   // note the indexing order
     }
   }
 
   template<class C, typename T>
-  void add_residual_contribution(const T *residual, C& y_global) const {
+  void add_contribution(const T *local, C& y_global) const {
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
       if (m_row[k].k == 1) {
         // skip rows marked as "invalid"
@@ -311,7 +313,7 @@ public:
       const int
         i = m_row[k].i,
         j = m_row[k].j;
-      y_global(i, j) += residual[k];   // note the indexing order
+      y_global(i, j) += local[k];   // note the indexing order
     }
   }
 
@@ -326,7 +328,8 @@ public:
     j = m_j + m_j_offset[k];
   }
 
-  void add_jacobian_contribution(const double *K, Mat J) const;
+  /*! @brief Add Jacobian contributions. */
+  void add_contribution(const double *K, Mat J) const;
 
 private:
   //! Constant for marking invalid row/columns.

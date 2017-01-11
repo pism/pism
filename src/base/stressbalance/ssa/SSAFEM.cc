@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -663,7 +663,7 @@ void SSAFEM::cache_residual_cfbc() {
 
         } // loop over element sides
 
-        m_element.add_residual_contribution(&I[0], m_boundary_integral);
+        m_element.add_contribution(&I[0], m_boundary_integral);
 
       } // i-loop
     } // j-loop
@@ -695,7 +695,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   IceModelVec::AccessList list{&m_node_type, &m_coefficients, &m_boundary_integral};
 
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
-  // to set it using ElementMap::add_residual_contribution() because that would lead to
+  // to set it using ElementMap::add_contribution() because that would lead to
   // double-counting. Also note that without CFBC m_boundary_integral is exactly zero.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -782,7 +782,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
             // values.
             dirichlet_data.enforce(m_element, velocity_nodal);
             // mark Dirichlet nodes in m_element so that they are not touched by
-            // add_residual_contribution() below
+            // add_contribution() below
             dirichlet_data.constrain(m_element);
           }
 
@@ -825,7 +825,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           } // k (test functions)
         }   // q (quadrature points)
 
-        m_element.add_residual_contribution(residual, residual_global);
+        m_element.add_contribution(residual, residual_global);
       } // i-loop
     } // j-loop
   } catch (...) {
@@ -1057,7 +1057,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
             } // l
           } // k
         } // q
-        m_element.add_jacobian_contribution(&K[0][0], Jac);
+        m_element.add_contribution(&K[0][0], Jac);
       } // j
     } // i
   } catch (...) {
