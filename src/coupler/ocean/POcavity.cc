@@ -32,12 +32,12 @@ namespace ocean {
 
 Cavity::Constants::Constants(const Config &config) {
 
-  numberOfBasins = 20;
+  numberOfBasins = 20; // standard value for Antarctic basin mask
 
-  continental_shelf_depth = -800;
+  continental_shelf_depth = -800; // threshold between deep ocean and continental shelf
 
-  T_dummy = -1.5; // standard value for ocean temperature around Antarctica (check!)
-  S_dummy = 34.5; // standard value for ocean salinity around Antarctica (check!)
+  T_dummy = -1.5; // value for ocean temperature around Antarctica if no other data available FIXME Check
+  S_dummy = 34.5; // value for ocean salinity around Antarctica if no other data available FIXME Check
 
   earth_grav = config.get_double("constants.standard_gravity");
   rhoi       = config.get_double("constants.ice.density");
@@ -45,7 +45,7 @@ Cavity::Constants::Constants(const Config &config) {
   rho_star   = 1033;                  // kg/m^3
   nu         = rhoi / rho_star;       // no unit
 
-  latentHeat = config.get_double("constants.fresh_water.latent_heat_of_fusion");
+  latentHeat = config.get_double("constants.fresh_water.latent_heat_of_fusion"); //Joule / kg
   c_p_ocean  = 3974.0;       // J/(K*kg), specific heat capacity of ocean mixed layer
   lambda     = latentHeat / c_p_ocean;   // °C, NOTE K vs °C
 
@@ -56,10 +56,10 @@ Cavity::Constants::Constants(const Config &config) {
   alpha      = 7.5e-5;       // 1/°C, NOTE K vs °C
   beta       = 7.7e-4;       // 1/psu
 
-  gamma_T    = 1e-6;
-  value_C    = 5e6;
+  gamma_T    = 1e-6;        // m/s FIXME check!
+  value_C    = 5e6;         // kg−1 s−1 FIXME check!
 
-  // other ice shelves
+  // for shelf cells where normal box model is not calculated, compare POConstantPIK
   gamma_T_o    = 1.0e-4; //config.get("gamma_T"); //1e-4;
   // m/s, thermal exchange velocity for Beckmann-Goose parameterization
   meltFactor   = 0.002;     // FIXME add to pism_config, check value
@@ -68,8 +68,7 @@ Cavity::Constants::Constants(const Config &config) {
 
 }
 
-// TODO: move to POCavity.hh
-
+// maximum number of boxes (applies for big ice shelves)
 const int Cavity::numberOfBoxes = 5;
 
 const int Cavity::box1           = 1;       // ocean box covering the grounding line region
@@ -80,6 +79,7 @@ const int Cavity::maskfloating = MASK_FLOATING;
 const int Cavity::maskocean    = MASK_ICE_FREE_OCEAN;
 const int Cavity::maskgrounded = MASK_GROUNDED;
 
+// used in IdentifyMask 
 const int Cavity::imask_inner        = 2;
 const int Cavity::imask_outer        = 0;
 const int Cavity::imask_exclude      = 1;
@@ -89,15 +89,6 @@ const int Cavity::imask_unidentified = -1;
 
 Cavity::Cavity(IceGrid::ConstPtr g)
   : PGivenClimate<OceanModifier,OceanModel>(g, NULL) {
-// {
-//   PetscErrorCode allocate_POoceanboxmodel(); CHKERRCONTINUE(ierr);
-//   if (ierr != 0)
-//     PISMEnd();
-// }
-
-
-// void Cavity::allocate_POoceanboxmodel() {
-//   PetscErrorCode ierr;
 
   m_option_prefix   = "-ocean_cavity";
 
@@ -110,7 +101,7 @@ Cavity::Cavity(IceGrid::ConstPtr g)
 
   process_options();
 
-  exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in ocean cavity model");
+  exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in ocean cavity model"); // FIXME set always?
 
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
@@ -154,7 +145,7 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   BOXMODELmask.set_attrs("model_state", "mask displaying ocean box model grid","", "");
   m_variables.push_back(&BOXMODELmask);
 
-  // mask to identify the grounded ice rises
+  // mask to identify the ice rises
   ICERISESmask.create(m_grid, "ICERISESmask", WITH_GHOSTS);
   ICERISESmask.set_attrs("model_state", "mask displaying ice rises","", "");
   m_variables.push_back(&ICERISESmask);
@@ -164,11 +155,10 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   OCEANMEANmask.set_attrs("model_state", "mask displaying ocean region for parameter input","", "");
   m_variables.push_back(&OCEANMEANmask);
 
-  // mask displaying open ocean - ice-free regions below sea-level without 'holes' in ice shelves
+  // mask displaying open ocean - ice-free regions below sea-level except 'holes' in ice shelves
   OCEANmask.create(m_grid, "OCEANmask", WITH_GHOSTS);
   OCEANmask.set_attrs("model_state", "mask displaying open ocean","", "");
   m_variables.push_back(&OCEANmask);
-
 
   // mask with distance (in boxes) to grounding line
   DistGL.create(m_grid, "DistGL", WITH_GHOSTS);
@@ -180,28 +170,33 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   DistIF.set_attrs("model_state", "mask displaying distance to ice shelf calving front","", "");
   m_variables.push_back(&DistIF);
 
-  // salinity
+  // computed salinity in ocean boxes
   Soc.create(m_grid, "Soc", WITHOUT_GHOSTS);
   Soc.set_attrs("model_state", "ocean salinity field","", "ocean salinity field");  //NOTE unit=psu
   m_variables.push_back(&Soc);
 
+  // salinity input for box 1
   Soc_base.create(m_grid, "Soc_base", WITHOUT_GHOSTS);
   Soc_base.set_attrs("model_state", "ocean base salinity field","", "ocean base salinity field");  //NOTE unit=psu
   m_variables.push_back(&Soc_base);
 
-  // temperature
+  // computed temperature in ocean boxes
   Toc.create(m_grid, "Toc", WITHOUT_GHOSTS);
   Toc.set_attrs("model_state", "ocean temperature field","K", "ocean temperature field");
   m_variables.push_back(&Toc);
 
+  // temperature input for box 1
   Toc_base.create(m_grid, "Toc_base", WITHOUT_GHOSTS);
   Toc_base.set_attrs("model_state", "ocean base temperature","K", "ocean base temperature");
   m_variables.push_back(&Toc_base);
 
+  // computed temperature in ocean boxes in degree Celsius
   Toc_inCelsius.create(m_grid, "Toc_inCelsius", WITHOUT_GHOSTS);
   Toc_inCelsius.set_attrs("model_state", "ocean box model temperature field","degree C", "ocean box model temperature field");
   m_variables.push_back(&Toc_inCelsius);
 
+  // in ocean box i: T_star = aS_{i-1} + b -c p_i - T_{i-1} with T_{-1} = Toc_base and S_{-1}=Soc_base
+  // FIXME convert to internal field
   T_star.create(m_grid, "T_star", WITHOUT_GHOSTS);
   T_star.set_attrs("model_state", "T_star field","degree C", "T_star field");
   m_variables.push_back(&T_star);

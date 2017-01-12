@@ -71,8 +71,8 @@ protected:
 private:
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux,
-                  cbasins,
-                  ICERISESmask,
+                  cbasins, // a basin defines the domain where one box model instance is solved
+                  ICERISESmask, 
                   BOXMODELmask,
                   OCEANMEANmask, 
                   OCEANmask,
