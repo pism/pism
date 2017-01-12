@@ -23,7 +23,6 @@
 #include "coupler/util/PGivenClimate.hh"
 #include "POModifier.hh"
 #include "base/util/IceModelVec2CellType.hh"
-// #include "base/util/iceModelVec.hh"
 
 namespace pism {
 namespace ocean {
@@ -67,11 +66,7 @@ protected:
 
   std::vector<IceModelVec*> m_variables;
 
-  bool ocean_oceanboxmodel_deltaT_set,
-       omeans_set,
-       roundbasins_set,
-       continental_shelf_depth_set,
-       exicerises_set;
+  bool   exicerises_set; // FIXME shouldn't this be always used?
 
 private:
   IceModelVec2S   m_shelfbtemp,
@@ -90,21 +85,10 @@ private:
                   Toc_inCelsius,
                   T_star,
                   overturning,
-                  heatflux,
                   basalmeltrate_shelf;
 
-  // const IceModelVec2CellType m_mask;
-
   IceModelVec2T   *m_theta_ocean,
-                  *m_salinity_ocean,
-                  *basins;
-
-  // The following are declared within POcavity.cc
-  // IceModelVec2S   *ice_thickness;
-                  // *topg;  // not owned by this class
-
-  IceModelVec2Int *mask;  // not owned by this class
-
+                  *m_salinity_ocean;
 
   void initBasinsOptions(const Constants &constants);
   void round_basins();
@@ -113,50 +97,44 @@ private:
   void extentOfIceShelves();
   void identifyBOXMODELmask();
   void oceanTemperature(const Constants &constants);
-  void basalMeltRateForGroundingLineBox(const Constants &constants);
-  void basalMeltRateForIceFrontBox(const Constants &constants);
-  void basalMeltRateForOtherShelves(const Constants &constants);
+  void basalMeltRateGroundingLineBox(const Constants &constants);
+  void basalMeltRateOtherBoxes(const Constants &constants);
+  void basalMeltRateMissingCells(const Constants &constants);
   double most_frequent_element(const std::vector<double>&);
-  // FIXME: move these declarations where they are also be initiated?
-  static const int  box_unidentified,
-                    box_noshelf,
-                    box_GL,
-                    box_neighboring,
-                    box_IF,
-                    box_other,
+
+  static const int  numberOfBoxes, // max number of ocean boxes (reached for big ice shelves)
+
+                    box1, // ocean box covering the grounding line region
+                    box2, // ocean box neighboring the box 1, other boxes are covered by boxi
 
                     maskfloating,
                     maskocean,
                     maskgrounded,
 
-                    imask_inner,
-                    imask_outer,
-                    imask_exclude,
-                    imask_unidentified,
-                    numberOfBoxes;
+                    imask_inner, // used in IdentifyMask 
+                    imask_outer, // used in IdentifyMask 
+                    imask_exclude, // used in IdentifyMask 
+                    imask_unidentified; // used in IdentifyMask 
+                    
+  std::vector<double> Toc_base_vec, // temperature input for box 1 per basin
+                      Soc_base_vec, // salinity input for box 1 per basin
+                      gamma_T_star_vec, // FIXME delete 
+                      C_vec, // FIXME delete 
+                      mean_salinity_boundary_vector, // salinity input for box i>1 per basin
+                      mean_temperature_boundary_vector, // temperature input for box i>1 per basin
+                      mean_meltrate_boundary_vector, // mean melt rate in box i-1 as input for box i>1 per basin
+                      mean_overturning_GLbox_vector; // mean overturning, computed in box 1, as input for box i>1 per basin
 
-  double counter_box_unidentified,
-         counter_floating;
-          // number of OBM-Boxes, there is one more box where Beckmann-Goose is computed..
-         // numberOfBoxes; // FIXME: Why should these be doubles and not ints?
+  std::vector< std::vector<double> >  counter_boxes; // matrix containing the number of shelf cells per basin and box
+                                                     // used for area calculation
 
-  std::vector<double> Toc_base_vec,
-                      Soc_base_vec,
-                      gamma_T_star_vec,
-                      C_vec,
-                      mean_salinity_boundary_vector, //FIXME rename these, used at all boundaries
-                      mean_temperature_boundary_vector,
-                      mean_meltrate_boundary_vector,
-                      mean_overturning_GLbox_vector; // execpt for the overturning...
-
-  std::vector< std::vector<double> >  counter_boxes;
-
-  double        gamma_T, value_C,
-                T_dummy, S_dummy,
+  // standard values are defined in Constants
+  // here needed to store custom values from user options.            
+  double        gamma_T, value_C, 
                 continental_shelf_depth;
 
   int      numberOfBasins,
-           Mx, My, xs, xm, ys, ym, dx, dy;
+           Mx, My, dx, dy;
 };
 
 } // end of namespace ocean
