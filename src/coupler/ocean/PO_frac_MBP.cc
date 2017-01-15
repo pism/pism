@@ -19,7 +19,7 @@
 
 #include <gsl/gsl_math.h>
 
-#include "PO_delta_MBP.hh"
+#include "PO_frac_MBP.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/pism_utilities.hh"
@@ -30,8 +30,8 @@ namespace ocean {
 Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, OceanModel* in)
   : PScalarForcing<OceanModel,OceanModifier>(g, in) {
 
-  m_option_prefix = "-ocean_delta_MBP";
-  m_offset_name   = "delta_MBP";
+  m_option_prefix = "-ocean_frac_MBP";
+  m_offset_name   = "frac_MBP";
 
   m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
 
@@ -56,7 +56,7 @@ void Delta_MBP::init_impl() {
 
 MaxTimestep Delta_MBP::max_timestep_impl(double t) const {
   (void) t;
-  return MaxTimestep("ocean delta_MBP");
+  return MaxTimestep("ocean frac_MBP");
 }
 
 void Delta_MBP::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {

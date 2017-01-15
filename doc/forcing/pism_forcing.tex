@@ -1671,29 +1671,29 @@ It takes the following command-line options:
 \item \intextoption{ocean_frac_SMB_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
 
-\subsection{Modifier: Scalar melange back pressure fraction offsets}
+\subsection{Modifier: Scalar melange back pressure fraction}
 \label{sec:delta-subshelf-smb}
-\optsection{OB@\oceanmods!\texttt{delta_MBP}}
+\optsection{OB@\oceanmods!\texttt{frac_MBP}}
 
 \begin{center}
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
-    Command-line option: & \texttt{-ocean~...,delta_MBP} \index[options]{OB@\oceanmods!\texttt{delta_MBP}} \\
-    NetCDF variables: & \variable{delta_MBP} \\
-    C++ class: & \class{PO_delta_MBP}\\
+    Command-line option: & \texttt{-ocean~...,frac_MBP} \index[options]{OB@\oceanmods!\texttt{frac_MBP}} \\
+    NetCDF variables: & \variable{frac_MBP} \\
+    C++ class: & \class{PO_frac_MBP}\\
     \bottomrule
   \end{tabular}
 \end{center}
 
-This modifier implements forcing using melange back pressure fraction offsets. The variable \texttt{delta_MBP} should take on values from 0 to 1; it is understood as the fraction of the maximum melange back pressure possible at a given location. (We assume that melange back pressure cannot exceed the pressure of the ice column at a calving front.)
+This modifier implements forcing using melange back pressure fraction offsets. The variable \texttt{frac_MBP} should take on values from 0 to 1; it is understood as the fraction of the maximum melange back pressure possible at a given location. (We assume that melange back pressure cannot exceed the pressure of the ice column at a calving front.)
 
 Please see section \ref*{manual-sec:model-melange-pressure} of the \emph{User's Manual} for details.
 
 This modifier takes the following command-line options:
 \begin{itemize}
-\item \fileopt{ocean_delta_MBP_file}: specifies the name of the file containing forcing data. This file has to contain the \variable{delta_MBP} variable using units of ``1'' (a dimensionless parameter)
-\item \intextoption{ocean_delta_MBP_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
-\item \intextoption{ocean_delta_MBP_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
+\item \fileopt{ocean_frac_MBP_file}: specifies the name of the file containing forcing data. This file has to contain the \variable{frac_MBP} variable using units of ``1'' (a dimensionless parameter)
+\item \intextoption{ocean_frac_MBP_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
+\item \intextoption{ocean_frac_MBP_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
 
 \subsection{Modifier: Caching}
