@@ -326,6 +326,6 @@ macro(pism_set_version_info)
 
   if (Pism_BUILD_PYTHON_BINDINGS)
     add_definitions("-DPISM_SWIG_VERSION=\"${SWIG_VERSION}\"")
-    add_definitions("-DPISM_PETSC4PY_VERSION=\"${PETSC4PY_VERSION}\"")
+    add_definitions("-DPISM_PETSC4PY_VERSION=\"${Pism_PETSC4PY_VERSION}\"")
   endif()
 endmacro()

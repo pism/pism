@@ -152,6 +152,13 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   find_package(PETSc4Py REQUIRED)
   find_package(SWIG REQUIRED)
 
+  if (DEFINED PETSC4PY_VERSION)
+    # FindPETSc4Py.cmake does not put PETSC4PY_VERSION into the CMake cache,
+    # so we save it here.
+    set(Pism_PETSC4PY_VERSION ${PETSC4PY_VERSION} CACHE STRING "PETSc4Py version")
+    mark_as_advanced(Pism_PETSC4PY_VERSION)
+  endif()
+
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
   execute_process(
