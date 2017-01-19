@@ -23,7 +23,7 @@ add_library (pismboundary OBJECT
   ./ocean/PO_delta_SL.cc
   ./ocean/PO_delta_T.cc
   ./ocean/PO_delta_SMB.cc
-  ./ocean/PO_delta_MBP.cc
+  ./ocean/PO_frac_MBP.cc
   ./ocean/PO_frac_SMB.cc
   ./ocean/POFactory.cc
   ./ocean/POInitialization.cc
