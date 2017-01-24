@@ -42,7 +42,7 @@ public:
                     a, b, c,
                     alpha, beta;
 
-      double        gamma_T, value_C,
+      double        gamma_T, overturning_coeff,
                     T_dummy, S_dummy;
 
       double        gamma_T_o, meltFactor, meltSalinity, b2;
@@ -129,7 +129,7 @@ private:
 
   // standard values are defined in Constants
   // here needed to store custom values from user options.            
-  double        gamma_T, value_C, 
+  double        gamma_T, overturning_coeff, 
                 continental_shelf_depth;
 
   int      numberOfBasins,

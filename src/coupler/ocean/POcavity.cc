@@ -49,17 +49,18 @@ Cavity::Constants::Constants(const Config &config) {
   c_p_ocean  = 3974.0;       // J/(K*kg), specific heat capacity of ocean mixed layer
   lambda     = latentHeat / c_p_ocean;   // °C, NOTE K vs °C
 
-  a          = -0.057;       // °C/psu
-  b          = 0.0832;       // °C
-  c          = 7.64e-4;      // °C/dbar
+  a          = -0.057;       // K/psu
+  b          = 0.0832 + 273.15;       // K
+  c          = 7.64e-4;      // K/dbar
 
-  alpha      = 7.5e-5;       // 1/°C, NOTE K vs °C
+  alpha      = 7.5e-5;       // 1/K 
   beta       = 7.7e-4;       // 1/psu
 
   gamma_T    = 1e-6;        // m/s FIXME check!
-  value_C    = 5e6;         // kg−1 s−1 FIXME check!
+  overturning_coeff    = 5e6;         // kg−1 s−1 FIXME check!
 
-  // for shelf cells where normal box model is not calculated, compare POConstantPIK
+  // for shelf cells where normal box model is not calculated, 
+  // used in basalMeltRateMissingCells(), compare POConstantPIK
   gamma_T_o    = 1.0e-4; //config.get("gamma_T"); //1e-4;
   // m/s, thermal exchange velocity for Beckmann-Goose parameterization
   meltFactor   = 0.002;     // FIXME add to pism_config, check value
@@ -189,7 +190,6 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   Toc_base.create(m_grid, "Toc_base", WITHOUT_GHOSTS);
   Toc_base.set_attrs("model_state", "ocean base temperature","K", "ocean base temperature");
   m_variables.push_back(&Toc_base);
-
 
   // in ocean box i: T_star = aS_{i-1} + b -c p_i - T_{i-1} with T_{-1} = Toc_base and S_{-1}=Soc_base
   // FIXME convert to internal field
@@ -340,8 +340,8 @@ void Cavity::initBasinsOptions(const Constants &cc) {
   gamma_T = cc.gamma_T;
   gamma_T = options::Real("-gamma_T","gamma_T for ocean cavity model",gamma_T);
 
-  value_C = cc.value_C;
-  value_C = options::Real("-value_C","value_C for ocean cavity model",value_C);
+  overturning_coeff = cc.overturning_coeff;
+  overturning_coeff = options::Real("-overturning_coeff","overturning_coeff for ocean cavity model",overturning_coeff);
 
   // data have been calculated previously for the 20 Zwally basins
   const double Toc_base_schmidtko[20] = {0.0,271.39431005,271.49081157,271.49922596,271.56714804,271.63507013,271.42228667,271.46720524,272.42253843,271.53779093,271.84942002,271.31676801,271.56846696,272.79372542,273.61694268,274.19168456,274.31958227,273.38372579,271.91951514,271.35349906}; //Schmidtko
@@ -374,12 +374,12 @@ void Cavity::initBasinsOptions(const Constants &cc) {
       }
 
       gamma_T_star_vec[k]= gamma_T; // FIXME remove, only one GammaT for all basins
-      C_vec[k]           = value_C; // FIXME remove, only one C for all basins
+      C_vec[k]           = overturning_coeff; // FIXME remove, only one C for all basins
   }
 
   m_log->message(5, "     Using %d drainage basins and default values: \n"
                                 "     gamma_T_star= %.2e, C = %.2e... \n"
-                                 , numberOfBasins, gamma_T, value_C);
+                                 , numberOfBasins, gamma_T, overturning_coeff);
 
   if (not ocean_means.is_set()) {
     m_log->message(5, "  calculate Soc and Toc from thetao and salinity... \n");
@@ -1015,7 +1015,7 @@ void Cavity::identifyBOXMODELmask() {
 
 
 /*!
-Compute ocean temperature outside of the ice shelf cavities.
+Set ocean temperature in Box 0, used as boundary condition for Box 1
 */
 
 
@@ -1058,15 +1058,15 @@ void Cavity::oceanTemperature(const Constants &cc) {
 
       //! temperature input for grounding line box should not be below pressure melting point 
       const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2,
-      const double T_pmt = cc.a*Soc_base(i,j) + cc.b - cc.c*pressure;
+      const double T_pmt = cc.a*Soc_base(i,j) + cc.b - cc.c*pressure; // in Kelvin
       
       
-      if (  Toc_base(i,j) < T_pmt + 273.15 ) {
+      if (  Toc_base(i,j) < T_pmt ) {
         m_log->message(2, "A2: PISM_WARNING: Toc_base is below the local pressure melting temperature for %d, %d, basin %d, setting it to the T_pmt \n",i,j,shelf_id);
-        Toc_base(i,j) = T_pmt + 273.15;
+        Toc_base(i,j) = T_pmt ;
       } 
 
-      Toc(i,j) = Toc_base(i,j); // FIXME still necessary? in K
+      //Toc(i,j) = Toc_base(i,j); // FIXME still necessary? in K
 
 
     } // end if herefloating
@@ -1134,7 +1134,7 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
 
       const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       // FIXME need to include atmospheric pressure?
-      T_star(i,j) = cc.a*Soc_base(i,j) + cc.b - cc.c*pressure - (Toc_base(i,j) - 273.15); // in °C
+      T_star(i,j) = cc.a*Soc_base(i,j) + cc.b - cc.c*pressure - Toc_base(i,j); // in K or degC
 
       double gamma_T_star,C1,g1;
 
@@ -1145,8 +1145,8 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
 
       //! temperature for grounding line box
 
-      double helpterm1 = g1/(cc.beta*(Soc_base(i,j) / (cc.nu*cc.lambda)) - cc.alpha);                  // in 1 / (1/°C) = °C
-      double helpterm2 = (g1*T_star(i,j)) / (cc.beta*(Soc_base(i,j) / (cc.nu*cc.lambda)) - cc.alpha); // in °C / (1/°C) = °C^2
+      double helpterm1 = g1/(cc.beta*(Soc_base(i,j) / (cc.nu*cc.lambda)) - cc.alpha);                  // in 1 / (1/K) = K
+      double helpterm2 = (g1*T_star(i,j)) / (cc.beta*(Soc_base(i,j) / (cc.nu*cc.lambda)) - cc.alpha); // in K / (1/K) = K^2
 
 
       if ((0.25*PetscSqr(helpterm1) -helpterm2) < 0.0) {
@@ -1161,13 +1161,13 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
         lcountHelpterm+=1;
       }
 
-      Toc(i,j) = Toc_base(i,j) - ( -0.5*helpterm1 + sqrt(0.25*PetscSqr(helpterm1) -helpterm2) );
+      Toc(i,j) = Toc_base(i,j) - ( -0.5*helpterm1 + sqrt(0.25*PetscSqr(helpterm1) -helpterm2) ); // in Kelvin
 
       //! salinity for grounding line box
       Soc(i,j) = Soc_base(i,j) - (Soc_base(i,j) / (cc.nu*cc.lambda)) * (Toc_base(i,j) - Toc(i,j));  // in psu
 
       //! basal melt rate for grounding line box
-      basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - (Toc(i,j) - 273.15));  // in m/s
+      basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - Toc(i,j));  // in m/s
 
       //! overturning
       // NOTE Actually, there is of course no overturning-FIELD, it is only a scalar for each shelf.
@@ -1288,7 +1288,7 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
         mean_overturning_in_GLbox     = mean_overturning_GLbox_vector[shelf_id]; // !!!leave this one with the grounding line box
 
         const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-        T_star(i,j) = cc.a*mean_salinity_in_boundary + cc.b - cc.c*pressure - (mean_temperature_in_boundary - 273.15);  // in °C
+        T_star(i,j) = cc.a*mean_salinity_in_boundary + cc.b - cc.c*pressure - mean_temperature_in_boundary;  // in °C or Kelvin since anomaly
 
         
         gamma_T_star = gamma_T_star_vec[shelf_id];
@@ -1316,7 +1316,7 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
           Soc(i,j) = mean_salinity_in_boundary - mean_salinity_in_boundary * (mean_temperature_in_boundary - Toc(i,j))/(cc.nu*cc.lambda); // psu FIXME: add term in denominator? Then also above in GL box + mean_temperature_in_boundary - Toc_inCelsius(i,j))
 
           //! basal melt rate for Box i > 1
-          basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - (Toc(i,j) - 273.15)); // in m/s
+          basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - Toc(i,j)); // in m/s
 
 
           // compute means at boundary to next box
