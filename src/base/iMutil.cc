@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -137,18 +137,22 @@ void IceModel::update_run_stats() {
 
   double flops = GlobalSum(m_grid->com, my_flops);
 
+  // time-independent info
+  {
+    m_run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
+    m_run_stats.set_double("grid_dx_meters", m_grid->dx());
+    m_run_stats.set_double("grid_dy_meters", m_grid->dy());
+    m_run_stats.set_double("grid_dz_min_meters", m_grid->dz_min());
+    m_run_stats.set_double("grid_dz_max_meters", m_grid->dz_max());
+    if (m_btu != NULL) {
+      m_run_stats.set_double("grid_dzb_meters", m_btu->vertical_spacing());
+    }
+  }
+
   m_run_stats.set_double("wall_clock_hours", wall_clock_hours);
   m_run_stats.set_double("processor_hours", proc_hours);
   m_run_stats.set_double("model_years_per_processor_hour", mypph);
   m_run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
-  m_run_stats.set_double("grid_dx_meters", m_grid->dx());
-  m_run_stats.set_double("grid_dy_meters", m_grid->dy());
-  m_run_stats.set_double("grid_dz_min_meters", m_grid->dz_min());
-  m_run_stats.set_double("grid_dz_max_meters", m_grid->dz_max());
-  if (m_btu != NULL) {
-    m_run_stats.set_double("grid_dzb_meters", m_btu->vertical_spacing());
-  }
-  m_run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
 
   m_run_stats.set_double("grounded_basal_ice_flux_cumulative", m_cumulative_fluxes.grounded_basal);
   m_run_stats.set_double("nonneg_rule_flux_cumulative",        m_cumulative_fluxes.nonneg_rule);
