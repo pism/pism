@@ -190,10 +190,6 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   Toc_base.set_attrs("model_state", "ocean base temperature","K", "ocean base temperature");
   m_variables.push_back(&Toc_base);
 
-  // computed temperature in ocean boxes in degree Celsius
-  Toc_inCelsius.create(m_grid, "Toc_inCelsius", WITHOUT_GHOSTS);
-  Toc_inCelsius.set_attrs("model_state", "ocean box model temperature field","degree C", "ocean box model temperature field");
-  m_variables.push_back(&Toc_inCelsius);
 
   // in ocean box i: T_star = aS_{i-1} + b -c p_i - T_{i-1} with T_{-1} = Toc_base and S_{-1}=Soc_base
   // FIXME convert to internal field
@@ -1109,7 +1105,6 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
   list.add(BOXMODELmask);
   list.add(T_star);
   list.add(Toc_base);
-  list.add(Toc_inCelsius);
   list.add(Toc);
   list.add(Soc_base);
   list.add(Soc);
@@ -1128,7 +1123,7 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
 
     // Make sure everything is at default values at the beginning of each timestep
     T_star(i,j) = 0.0; // in °C
-    Toc_inCelsius(i,j) = 0.0; // in °C
+    Toc(i,j) = 273.15; // in K
     Soc(i,j) = 0.0; // in psu
 
     basalmeltrate_shelf(i,j) = 0.0;
@@ -1166,30 +1161,29 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
         lcountHelpterm+=1;
       }
 
-      // NOTE Careful, Toc_base(i,j) is in K, Toc_inCelsius(i,j) NEEDS to be in °C!
-      Toc_inCelsius(i,j) = (Toc_base(i,j)-273.15) - ( -0.5*helpterm1 + sqrt(0.25*PetscSqr(helpterm1) -helpterm2) );
+      Toc(i,j) = Toc_base(i,j) - ( -0.5*helpterm1 + sqrt(0.25*PetscSqr(helpterm1) -helpterm2) );
 
       //! salinity for grounding line box
-      Soc(i,j) = Soc_base(i,j) - (Soc_base(i,j) / (cc.nu*cc.lambda)) * ((Toc_base(i,j)-273.15) - Toc_inCelsius(i,j));  // in psu
+      Soc(i,j) = Soc_base(i,j) - (Soc_base(i,j) / (cc.nu*cc.lambda)) * (Toc_base(i,j) - Toc(i,j));  // in psu
 
       //! basal melt rate for grounding line box
-      basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - Toc_inCelsius(i,j));  // in m/s
+      basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - (Toc(i,j) - 273.15));  // in m/s
 
       //! overturning
       // NOTE Actually, there is of course no overturning-FIELD, it is only a scalar for each shelf.
       // Here, we compute overturning as   MEAN[C1*cc.rho_star* (cc.beta*(Soc_base(i,j)-Soc(i,j)) - cc.alpha*((Toc_base(i,j)-273.15+Toc_anomaly(i,j))-Toc_inCelsius(i,j)))]
       // while in fact it should be   C1*cc.rho_star* (cc.beta*(Soc_base-MEAN[Soc(i,j)]) - cc.alpha*((Toc_base-273.15+Toc_anomaly)-MEAN[Toc_inCelsius(i,j)]))
       // which is the SAME since Soc_base, Toc_base and Toc_anomaly are the same FOR ALL i,j CONSIDERED, so this is just nomenclature!
-      overturning(i,j) = C1*cc.rho_star* (cc.beta*(Soc_base(i,j)-Soc(i,j)) - cc.alpha*((Toc_base(i,j)-273.15)-Toc_inCelsius(i,j))); // in m^3/s
+      overturning(i,j) = C1*cc.rho_star* (cc.beta*(Soc_base(i,j)-Soc(i,j)) - cc.alpha*(Toc_base(i,j)-Toc(i,j))); // in m^3/s
 
       if (BOXMODELmask(i-1,j)==box2 || BOXMODELmask(i+1,j)==box2 || BOXMODELmask(i,j-1)==box2 || BOXMODELmask(i,j+1)==box2){
       // i.e., if this cell is from the GL box and one of the neighbours is from the CF box - It is important to only take the border of the grounding line box
       // to the calving front box into account, because the following mean value will be used to compute the value for the calving front box. I.e., this helps avoiding discontinuities!
         lcounter_edge_of_GLbox_vector[shelf_id]++;
         lmean_salinity_GLbox_vector[shelf_id] += Soc(i,j);
-        lmean_temperature_GLbox_vector[shelf_id] += Toc_inCelsius(i,j);
+        lmean_temperature_GLbox_vector[shelf_id] += Toc(i,j); // in Kelvin
         lmean_meltrate_GLbox_vector[shelf_id] += basalmeltrate_shelf(i,j);
-        lmean_overturning_GLbox_vector[shelf_id] += overturning(i,j);
+        lmean_overturning_GLbox_vector[shelf_id] += overturning(i,j);  
 
         //m_log->message(4, "B1 : in basal melt rate gl rountine test1: %d,%d, %d: %.0f \n",i,j,shelf_id,lcounter_edge_of_GLbox_vector[shelf_id]);
 
@@ -1217,7 +1211,7 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
       mean_overturning_GLbox_vector[k] = mean_overturning_GLbox_vector[k]/counter_edge_of_GLbox_vector;
     } else { // This means that there is no [cell from the GLbox neighboring a cell from the CFbox], NOT necessarily that there is no GLbox!
       mean_salinity_boundary_vector[k]=0.0; mean_temperature_boundary_vector[k]=0.0; mean_meltrate_boundary_vector[k]=0.0; mean_overturning_GLbox_vector[k]=0.0;
-    }
+    } 
 
     m_log->message(2, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, melt=%.3e, over=%.1e \n", k,counter_edge_of_GLbox_vector,mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],mean_meltrate_boundary_vector[k],mean_overturning_GLbox_vector[k]) ;
   }
@@ -1252,7 +1246,7 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
 
     std::vector<double> lcounter_edge_of_boxi_vector(numberOfBasins);     // to compute means at boundary for the current box
     std::vector<double> lmean_salinity_boxi_vector(numberOfBasins);
-    std::vector<double> lmean_temperature_boxi_vector(numberOfBasins);
+    std::vector<double> lmean_temperature_boxi_vector(numberOfBasins); // in Kelvin
     std::vector<double> lmean_meltrate_boxi_vector(numberOfBasins);
 
     for (int k=0;k<numberOfBasins;k++){
@@ -1270,7 +1264,6 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
     list.add(BOXMODELmask);
     list.add(T_star);
     list.add(Toc_base);
-    list.add(Toc_inCelsius);
     list.add(Toc);
     list.add(Soc_base);
     list.add(Soc);
@@ -1290,12 +1283,12 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
 
         // FIXME RENAME THESE in GENERAL
         mean_salinity_in_boundary     = mean_salinity_boundary_vector[shelf_id];
-        mean_temperature_in_boundary  = mean_temperature_boundary_vector[shelf_id]; // note: in degree Celsius, mean over Toc_inCelsius
+        mean_temperature_in_boundary  = mean_temperature_boundary_vector[shelf_id]; // note: in Kelvin, mean over Toc
         mean_meltrate_in_boundary     = mean_meltrate_boundary_vector[shelf_id];
         mean_overturning_in_GLbox     = mean_overturning_GLbox_vector[shelf_id]; // !!!leave this one with the grounding line box
 
         const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-        T_star(i,j) = cc.a*mean_salinity_in_boundary + cc.b - cc.c*pressure - mean_temperature_in_boundary;  // in °C
+        T_star(i,j) = cc.a*mean_salinity_in_boundary + cc.b - cc.c*pressure - (mean_temperature_in_boundary - 273.15);  // in °C
 
         
         gamma_T_star = gamma_T_star_vec[shelf_id];
@@ -1317,13 +1310,13 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
           g2 = g1 / (cc.nu*cc.lambda);
 
           //! temperature for Box i > 1
-          Toc_inCelsius(i,j) = mean_temperature_in_boundary + g1 * T_star(i,j)/(mean_overturning_in_GLbox + g1 - g2*cc.a*mean_salinity_in_boundary); // degC
+          Toc(i,j) = mean_temperature_in_boundary + g1 * T_star(i,j)/(mean_overturning_in_GLbox + g1 - g2*cc.a*mean_salinity_in_boundary); // K
           
           //! salinity for Box i > 1
-          Soc(i,j) = mean_salinity_in_boundary - mean_salinity_in_boundary * (mean_temperature_in_boundary - Toc_inCelsius(i,j))/(cc.nu*cc.lambda); // psu FIXME: add term in denominator? Then also above in GL box + mean_temperature_in_boundary - Toc_inCelsius(i,j))
+          Soc(i,j) = mean_salinity_in_boundary - mean_salinity_in_boundary * (mean_temperature_in_boundary - Toc(i,j))/(cc.nu*cc.lambda); // psu FIXME: add term in denominator? Then also above in GL box + mean_temperature_in_boundary - Toc_inCelsius(i,j))
 
           //! basal melt rate for Box i > 1
-          basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - Toc_inCelsius(i,j)); // in m/s
+          basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - (Toc(i,j) - 273.15)); // in m/s
 
 
           // compute means at boundary to next box
@@ -1332,7 +1325,7 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
             // to the calving front box into account, because the following mean value will be used to compute the value for the calving front box. I.e., this helps avoiding discontinuities!
             lcounter_edge_of_boxi_vector[shelf_id]++;
             lmean_salinity_boxi_vector[shelf_id] += Soc(i,j);
-            lmean_temperature_boxi_vector[shelf_id] += Toc_inCelsius(i,j);
+            lmean_temperature_boxi_vector[shelf_id] += Toc(i,j);
             lmean_meltrate_boxi_vector[shelf_id] += basalmeltrate_shelf(i,j);
             //m_log->message(4, grid.com,"B1 : in basal melt rate gl rountine test1: %d,%d, %d: %.0f \n",i,j,shelf_id,lcounter_edge_of_GLbox_vector[shelf_id]);
           } // no else-case necessary since all variables are set to zero at the beginning of this routine
@@ -1346,11 +1339,11 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
       counter_edge_of_boxi_vector = GlobalSum(m_grid->com, lcounter_edge_of_boxi_vector[k]);
       mean_meltrate_boundary_vector[k] = GlobalSum(m_grid->com, lmean_meltrate_boxi_vector[k]);
       mean_salinity_boundary_vector[k] = GlobalSum(m_grid->com, lmean_salinity_boxi_vector[k]);
-      mean_temperature_boundary_vector[k] = GlobalSum(m_grid->com, lmean_temperature_boxi_vector[k]);
+      mean_temperature_boundary_vector[k] = GlobalSum(m_grid->com, lmean_temperature_boxi_vector[k]); // in Kelvin
 
       if (counter_edge_of_boxi_vector>0.0){
         mean_salinity_boundary_vector[k] = mean_salinity_boundary_vector[k]/counter_edge_of_boxi_vector;
-        mean_temperature_boundary_vector[k] = mean_temperature_boundary_vector[k]/counter_edge_of_boxi_vector;
+        mean_temperature_boundary_vector[k] = mean_temperature_boundary_vector[k]/counter_edge_of_boxi_vector; // in Kelvin
         mean_meltrate_boundary_vector[k] = mean_meltrate_boundary_vector[k]/counter_edge_of_boxi_vector;
       } else { // This means that there is no [cell from the GLbox neighboring a cell from the CFbox], NOT necessarily that there is no GLbox!
         mean_salinity_boundary_vector[k]=0.0; mean_temperature_boundary_vector[k]=0.0; mean_meltrate_boundary_vector[k]=0.0;
@@ -1371,7 +1364,6 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
 
 
 
-//! Convert Toc_inCelsius from °C to K and write into Toc for the .nc-file; NOTE It is crucial, that Toc_inCelsius is in °C for the computation of the basal melt rate
 //! Compute the melt rate for all other ice shelves.
 void Cavity::basalMeltRateMissingCells(const Constants &cc) {
 
@@ -1386,7 +1378,6 @@ void Cavity::basalMeltRateMissingCells(const Constants &cc) {
   list.add(cbasins);
   list.add(BOXMODELmask);
   list.add(Toc_base);
-  list.add(Toc_inCelsius);
   list.add(Toc);
   list.add(overturning);
   list.add(basalmeltrate_shelf);  // NOTE meltrate has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
@@ -1416,8 +1407,8 @@ void Cavity::basalMeltRateMissingCells(const Constants &cc) {
       basalmeltrate_shelf(i,j) = heatflux / (cc.latentHeat * cc.rhoi); // in m s-1
 
     } else if (shelf_id > 0.0) {
-      // Note: Here Toc field is set for all (!) floating grid cells, it is not set (and does not appear) in the routines before.
-      Toc(i,j) = 273.15 + Toc_inCelsius(i,j); // in K
+      continue; // standard case
+
     } else { // This must not happen
 
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,

@@ -82,7 +82,6 @@ private:
                   Soc_base,
                   Toc,
                   Toc_base,
-                  Toc_inCelsius,
                   T_star,
                   overturning,
                   basalmeltrate_shelf;
