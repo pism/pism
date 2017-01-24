@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -182,15 +182,11 @@ public:
   virtual void writeFiles(const std::string &default_filename);
   virtual void write_model_state(const PIO &nc);
 
-  enum MetadataFlag {WRITE_MAPPING                         = 1,
-                     WRITE_MAPPING_AND_RUN_STATS           = 1 | 2,
-                     WRITE_MAPPING_AND_GLOBAL_ATTRIBUTES   = 1 | 4,
-                     WRITE_RUN_STATS                       = 2,
-                     WRITE_RUN_STATS_AND_GLOBAL_ATTRIBUTES = 2 | 4,
-                     WRITE_GLOBAL_ATTRIBUTES               = 4,
-                     WRITE_ALL                             = 1 | 2 | 4};
+  virtual void write_mapping(const PIO &nc);
+  virtual void write_run_stats(const PIO &nc);
+  virtual void write_global_attributes(const PIO &nc);
+  virtual void write_config(const PIO &nc);
 
-  virtual void write_metadata(const PIO &nc, MetadataFlag flag);
   virtual void write_diagnostics(const PIO &nc, const std::set<std::string> &vars,
                                  IO_Type nctype);
 protected:

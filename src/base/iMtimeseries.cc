@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2016 Constantine Khroulev
+// Copyright (C) 2009-2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -123,10 +123,11 @@ void IceModel::init_timeseries() {
     }
   }
 
-  write_metadata(nc, WRITE_RUN_STATS_AND_GLOBAL_ATTRIBUTES);
+  write_run_stats(nc);
+  write_global_attributes(nc);
+  write_config(nc);
 
   nc.close();
-
 
   // set the output file:
   for (auto d : m_ts_diagnostics) {
@@ -413,20 +414,25 @@ void IceModel::write_extras() {
     nc.put_att_text(m_config->get_string("time.dimension_name"),
                     "bounds", "time_bounds");
 
+    // write global attributes, but avoid prepending history every time
+    {
+      VariableMetadata tmp = m_output_global_attributes;
+
+      tmp.set_string("history",
+                     tmp.get_string("history") + m_old_extra_file_history);
+
+      io::write_attributes(nc, tmp, PISM_DOUBLE, false);
+    }
+
+    // Write mapping information and configuration parameters. Both are time-independent.
+    write_mapping(nc);
+    write_config(nc);
+
     m_extra_file_is_ready = true;
   }
 
-  // write metadata to the file *every time* we update it, but avoid prepending history.
-  write_metadata(nc, WRITE_MAPPING_AND_RUN_STATS);
-  // write global attributes, but avoid prepending history every time
-  {
-    VariableMetadata tmp = m_output_global_attributes;
-
-    tmp.set_string("history",
-                   tmp.get_string("history") + m_old_extra_file_history);
-
-    io::write_attributes(nc, tmp, PISM_DOUBLE, false);
-  }
+  // write run_stats to the file *every time* we update it
+  write_run_stats(nc);
 
   double      current_time = m_time->current();
   std::string time_name    = m_config->get_string("time.dimension_name");
@@ -539,22 +545,10 @@ void IceModel::flush_timeseries() {
     }
   }
 
-  // update metadata in the time series output file
+  // update run_stats in the time series output file
   if (m_save_ts) {
     PIO nc(m_grid->com, "netcdf3", m_ts_filename, PISM_READWRITE);
-
-    write_metadata(nc, WRITE_RUN_STATS);
-    // write global attributes, but avoid prepending history every time
-    {
-      VariableMetadata tmp = m_output_global_attributes;
-
-      tmp.set_string("history",
-                     tmp.get_string("history") + m_old_ts_file_history);
-
-      io::write_attributes(nc, tmp, PISM_DOUBLE, false);
-    }
-
-    nc.close();
+    write_run_stats(nc);
   }
 }
 

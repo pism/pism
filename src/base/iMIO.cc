@@ -67,39 +67,36 @@ void  IceModel::writeFiles(const std::string &default_filename) {
   }
 }
 
-//! \brief Write metadata (global attributes, overrides and mapping parameters) to a file.
-void IceModel::write_metadata(const PIO &nc, MetadataFlag flag) {
 
-  if (flag & WRITE_MAPPING) {
-    // only write mapping if it is set.
-    const VariableMetadata &mapping = m_grid->get_mapping_info().mapping;
-    if (mapping.has_attributes()) {
-      if (not nc.inq_var(mapping.get_name())) {
-        nc.redef();
-        nc.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>());
-      }
-      io::write_attributes(nc, mapping, PISM_DOUBLE, false);
+void IceModel::write_mapping(const PIO &file) {
+  // only write mapping if it is set.
+  const VariableMetadata &mapping = m_grid->get_mapping_info().mapping;
+  if (mapping.has_attributes()) {
+    if (not file.inq_var(mapping.get_name())) {
+      file.redef();
+      file.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>());
     }
+    io::write_attributes(file, mapping, PISM_DOUBLE, false);
   }
-
-  if (flag & WRITE_RUN_STATS) {
-    update_run_stats();
-    if (not nc.inq_var(m_run_stats.get_name())) {
-      nc.redef();
-      nc.def_var(m_run_stats.get_name(), PISM_DOUBLE,
-                 std::vector<std::string>());
-    }
-    io::write_attributes(nc, m_run_stats, PISM_DOUBLE, false);
-  }
-
-  if (flag & WRITE_GLOBAL_ATTRIBUTES) {
-    io::write_global_attributes(nc, m_output_global_attributes);
-  }
-
-  // write configuration parameters to the file:
-  m_config->write(nc);
 }
 
+void IceModel::write_run_stats(const PIO &file) {
+  update_run_stats();
+  if (not file.inq_var(m_run_stats.get_name())) {
+    file.redef();
+    file.def_var(m_run_stats.get_name(), PISM_DOUBLE,
+               std::vector<std::string>());
+  }
+  io::write_attributes(file, m_run_stats, PISM_DOUBLE, false);
+}
+
+void IceModel::write_global_attributes(const PIO &file) {
+  io::write_global_attributes(file, m_output_global_attributes);
+}
+
+void IceModel::write_config(const PIO &file) {
+  m_config->write(file);
+}
 
 void IceModel::dumpToFile(const std::string &filename) {
   const Profiling &profiling = m_ctx->profiling();
@@ -109,7 +106,10 @@ void IceModel::dumpToFile(const std::string &filename) {
   PIO nc(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
 
   // Write metadata *before* everything else:
-  write_metadata(nc, WRITE_ALL);
+  write_mapping(nc);
+  write_run_stats(nc);
+  write_global_attributes(nc);
+  write_config(nc);
 
   std::string time_name = m_config->get_string("time.dimension_name");
   io::define_time(nc, time_name, m_time->calendar(),
@@ -415,7 +415,10 @@ void IceModel::write_snapshot() {
   }
 
   // write metadata to the file *every time* we update it
-  write_metadata(nc, WRITE_ALL);
+  write_mapping(nc);
+  write_run_stats(nc);
+  write_global_attributes(nc);
+  write_config(nc);
 
   io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
 
@@ -503,7 +506,10 @@ void IceModel::write_backup() {
   io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
 
   // Write metadata *before* variables:
-  write_metadata(nc, WRITE_ALL);
+  write_mapping(nc);
+  write_run_stats(nc);
+  write_global_attributes(nc);
+  write_config(nc);
 
   write_model_state(nc);
   write_diagnostics(nc, m_backup_vars, PISM_DOUBLE);
