@@ -92,7 +92,7 @@ private:
   void initBasinsOptions(const Constants &constants);
   void round_basins();
   void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
-  void computeOCEANMEANS();
+  void computeOCEANMEANS(const Constants &constants);
   void extentOfIceShelves();
   void identifyBOXMODELmask();
   void oceanTemperature(const Constants &constants);
@@ -115,8 +115,6 @@ private:
 
   std::vector<double> Toc_base_vec, // temperature input for box 1 per basin
                       Soc_base_vec, // salinity input for box 1 per basin
-                      gamma_T_star_vec, // FIXME delete
-                      C_vec, // FIXME delete
                       mean_salinity_boundary_vector, // salinity input for box i>1 per basin
                       mean_temperature_boundary_vector, // temperature input for box i>1 per basin
                       mean_overturning_GLbox_vector; // mean overturning, computed in box 1, as input for box i>1 per basin

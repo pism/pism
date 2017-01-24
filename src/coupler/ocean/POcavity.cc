@@ -278,7 +278,6 @@ void Cavity::define_variables_impl(const std::set<std::string> &vars,
       v->define(nc, nctype);
     }
   }
-
 }
 
 void Cavity::shelf_base_temperature_impl(IceModelVec2S &result) const {
@@ -327,8 +326,6 @@ void Cavity::initBasinsOptions(const Constants &cc) {
 
   Toc_base_vec.resize(numberOfBasins);
   Soc_base_vec.resize(numberOfBasins);
-  gamma_T_star_vec.resize(numberOfBasins);
-  C_vec.resize(numberOfBasins);
 
   counter_boxes.resize(numberOfBasins, std::vector<double>(2,0)); //does this work?
 
@@ -344,59 +341,20 @@ void Cavity::initBasinsOptions(const Constants &cc) {
   overturning_coeff = cc.default_overturning_coeff;
   overturning_coeff = options::Real("-overturning_coeff","overturning_coeff for ocean cavity model",overturning_coeff);
 
-  // data have been calculated previously for the 20 Zwally basins
-  const double Toc_base_schmidtko[20] = {0.0,271.39431005,271.49081157,271.49922596,271.56714804,271.63507013,271.42228667,271.46720524,272.42253843,271.53779093,271.84942002,271.31676801,271.56846696,272.79372542,273.61694268,274.19168456,274.31958227,273.38372579,271.91951514,271.35349906}; //Schmidtko
-  const double Soc_base_schmidtko[20] = {0.0,34.82193374,34.69721226,34.47641407,34.48950162,34.50258917,34.70101507,34.65306507,34.73295029,34.74859586,34.8368573,34.9529016,34.79486795,34.58380953,34.7260615,34.86198383,34.8374212 ,34.70418016,34.75598208,34.83617088}; //Schmidtko
-
-  const double Toc_base_woa[20] = {272.99816667,271.27814004,272.1840257,272.04435251,272.20415662,272.36396072,271.48763831,271.99695864,272.06504052,272.27114732,272.66657018,271.18920729,271.74067699,273.01811291,272.15295572,273.08542047,272.74584469,273.14263356,272.58496563,272.45217911}; //World Ocean Atlas
-  const double Soc_base_woa[20] = {34.6810522,34.78161073,34.67151084,34.66538478,34.67127468,34.67716458,34.75327377,34.69213327,34.72086382,34.70670158,34.71210592,34.80229468,34.76588022,34.69745763,34.7090778,34.68690903,34.66379606,34.64572337,34.6574402,34.65813983}; //World Ocean Atlas
-
-  // std::string ocean_means;
-  options::String ocean_means("-ocean_means", "TODO: description of option");
-
-  /////////////////////////////////////////////////////////////////////////////////////
-
-  for(int k=0;k<numberOfBasins;k++) {
-      if (ocean_means.is_set()){
-        if (ocean_means=="schmidtko"){
-          Toc_base_vec[k] = Toc_base_schmidtko[k] - 273.15;
-          Soc_base_vec[k] = Soc_base_schmidtko[k];}
-        else if (ocean_means=="woa"){
-          Toc_base_vec[k] = Toc_base_woa[k] - 273.15;
-          Soc_base_vec[k] = Soc_base_woa[k];}
-        else{
-          Toc_base_vec[k] = cc.T_dummy; //dummy
-          Soc_base_vec[k] = cc.S_dummy; //dummy
-        }
-      }
-      else{
-        Toc_base_vec[k] = cc.T_dummy; //dummy
-        Soc_base_vec[k] = cc.S_dummy; //dummy
-      }
-
-      gamma_T_star_vec[k]= gamma_T; // FIXME remove, only one GammaT for all basins
-      C_vec[k]           = overturning_coeff; // FIXME remove, only one C for all basins
-  }
-
-  m_log->message(5, "     Using %d drainage basins and default values: \n"
-                                "     gamma_T_star= %.2e, C = %.2e... \n"
+  m_log->message(5, "     Using %d drainage basins and values: \n"
+                                "     gamma_T= %.2e, overturning_coeff = %.2e... \n"
                                  , numberOfBasins, gamma_T, overturning_coeff);
 
-  if (not ocean_means.is_set()) {
-    m_log->message(5, "  calculate Soc and Toc from thetao and salinity... \n");
+  continental_shelf_depth = cc.continental_shelf_depth;
+  options::Real cont_shelf_depth("-continental_shelf_depth",
+                                 "continental shelf depth for ocean cavity model",
+                                 continental_shelf_depth);
 
-    // set continental shelf depth
-    continental_shelf_depth = cc.continental_shelf_depth;
-    options::Real cont_shelf_depth("-continental_shelf_depth",
-                                   "continental shelf depth for ocean cavity model",
-                                   continental_shelf_depth);
-
-    if (cont_shelf_depth.is_set()) {
-      m_log->message(5,
-      "  Depth of continental shelf for computation of temperature and salinity input\n"
-      "  is set for whole domain to continental_shelf_depth=%.0f meter\n",
-      continental_shelf_depth);
-    }
+  if (cont_shelf_depth.is_set()) {
+    m_log->message(5,
+    "  Depth of continental shelf for computation of temperature and salinity input\n"
+    "  is set for whole domain to continental_shelf_depth=%.0f meter\n",
+    continental_shelf_depth);
   }
 
 }
@@ -418,7 +376,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   initBasinsOptions(cc);
   identifyMASK(OCEANMEANmask,"ocean");
-  computeOCEANMEANS();
+  computeOCEANMEANS(cc);
 
   //geometry of ice shelves and temperatures
   m_log->message(4, "A  : calculating shelf_base_temperature\n");
@@ -431,7 +389,6 @@ void Cavity::update_impl(double my_t, double my_dt) {
   identifyBOXMODELmask();
   oceanTemperature(cc);
   m_shelfbtemp.copy_from(Toc);
-
 
   //basal melt rates underneath ice shelves
   m_log->message(4, "B  : calculating shelf_base_mass_flux\n");
@@ -604,7 +561,7 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
 
 //! When ocean_given is set compute mean salinity and temperature in each basin.
-void Cavity::computeOCEANMEANS() {
+void Cavity::computeOCEANMEANS(const Constants &cc) {
   // FIXME currently the mean is also calculated over submarine islands which are higher than continental_shelf_depth
 
   m_log->message(4, "0b2: in computeOCEANMEANS routine \n");
@@ -652,8 +609,11 @@ void Cavity::computeOCEANMEANS() {
 
     //if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
     if(k>0 && m_count[k]==0){
-      m_log->message(2, "PISM_WARNING: basin %d contains no ocean mean cells,"
-                        " no mean salinity or temperature values are computed! \n ", k);
+      m_log->message(2, "PISM_WARNING: basin %d contains no cells with OCEANMEANmask=2,"
+                        " no mean salinity or temperature values are computed, using"
+                        "the standard values T_dummy =%.3f, S:dummy=%.3f.\n", k, cc.T_dummy, cc.S_dummy);
+      Toc_base_vec[k] = cc.T_dummy;
+      Soc_base_vec[k] = cc.S_dummy;
     } else {
       m_Sval[k] = m_Sval[k] / m_count[k];
       m_Tval[k] = m_Tval[k] / m_count[k];
@@ -1097,11 +1057,7 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
       // FIXME need to include atmospheric pressure?
       T_star(i,j) = cc.a*Soc_base(i,j) + cc.b - cc.c*pressure - Toc_base(i,j); // in K or degC
 
-      double gamma_T_star,C1,g1;
-
-      gamma_T_star = gamma_T_star_vec[shelf_id];
-      C1 = C_vec[shelf_id];
-      g1 = (counter_boxes[shelf_id][box1] * dx * dy) * gamma_T_star / (C1*cc.rho_star); //NEW TEST
+      double g1 = (counter_boxes[shelf_id][box1] * dx * dy) * gamma_T / (overturning_coeff*cc.rho_star); //NEW TEST
 
 
       //! temperature for grounding line box
@@ -1128,14 +1084,14 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
       Soc(i,j) = Soc_base(i,j) - (Soc_base(i,j) / (cc.nu*cc.lambda)) * (Toc_base(i,j) - Toc(i,j));  // in psu
 
       //! basal melt rate for grounding line box
-      basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - Toc(i,j));  // in m/s
+      basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - Toc(i,j));  // in m/s
 
       //! overturning
       // NOTE Actually, there is of course no overturning-FIELD, it is only a scalar for each shelf.
       // Here, we compute overturning as   MEAN[C1*cc.rho_star* (cc.beta*(Soc_base(i,j)-Soc(i,j)) - cc.alpha*((Toc_base(i,j)-273.15+Toc_anomaly(i,j))-Toc_inCelsius(i,j)))]
       // while in fact it should be   C1*cc.rho_star* (cc.beta*(Soc_base-MEAN[Soc(i,j)]) - cc.alpha*((Toc_base-273.15+Toc_anomaly)-MEAN[Toc_inCelsius(i,j)]))
       // which is the SAME since Soc_base, Toc_base and Toc_anomaly are the same FOR ALL i,j CONSIDERED, so this is just nomenclature!
-      overturning(i,j) = C1*cc.rho_star* (cc.beta*(Soc_base(i,j)-Soc(i,j)) - cc.alpha*(Toc_base(i,j)-Toc(i,j))); // in m^3/s
+      overturning(i,j) = overturning_coeff*cc.rho_star* (cc.beta*(Soc_base(i,j)-Soc(i,j)) - cc.alpha*(Toc_base(i,j)-Toc(i,j))); // in m^3/s
 
       if (BOXMODELmask(i-1,j)==box2 || BOXMODELmask(i+1,j)==box2 || BOXMODELmask(i,j-1)==box2 || BOXMODELmask(i,j+1)==box2){
       // i.e., if this cell is from the GL box and one of the neighbours is from the CF box - It is important to only take the border of the grounding line box
@@ -1236,7 +1192,7 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
 
       if (BOXMODELmask(i,j)==boxi && shelf_id > 0.0){
 
-        double  gamma_T_star,area_boxi,mean_salinity_in_boundary,mean_temperature_in_boundary,mean_overturning_in_GLbox;
+        double  area_boxi,mean_salinity_in_boundary,mean_temperature_in_boundary,mean_overturning_in_GLbox;
 
         // FIXME RENAME THESE in GENERAL
         mean_salinity_in_boundary     = mean_salinity_boundary_vector[shelf_id];
@@ -1247,7 +1203,6 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
         T_star(i,j) = cc.a*mean_salinity_in_boundary + cc.b - cc.c*pressure - mean_temperature_in_boundary;  // in °C or Kelvin since anomaly
 
 
-        gamma_T_star = gamma_T_star_vec[shelf_id];
         area_boxi = (counter_boxes[shelf_id][boxi] * dx * dy); //FIXME this assumes rectangular cell areas, adjust with real areas from projection
 
 
@@ -1262,7 +1217,7 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
 
 
           double g1, g2;
-          g1 = (area_boxi*gamma_T_star);
+          g1 = (area_boxi*gamma_T);
           g2 = g1 / (cc.nu*cc.lambda);
 
           //! temperature for Box i > 1
@@ -1272,7 +1227,7 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
           Soc(i,j) = mean_salinity_in_boundary - mean_salinity_in_boundary * (mean_temperature_in_boundary - Toc(i,j))/(cc.nu*cc.lambda); // psu FIXME: add term in denominator? Then also above in GL box + mean_temperature_in_boundary - Toc_inCelsius(i,j))
 
           //! basal melt rate for Box i > 1
-          basalmeltrate_shelf(i,j) = (-gamma_T_star/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - Toc(i,j)); // in m/s
+          basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (cc.a*Soc(i,j) + cc.b - cc.c*pressure - Toc(i,j)); // in m/s
 
 
           // compute means at boundary to next box
