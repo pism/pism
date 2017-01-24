@@ -42,13 +42,13 @@ public:
                     a, b, c,
                     alpha, beta;
 
-      double        gamma_T, overturning_coeff,
+      double        default_gamma_T, default_overturning_coeff,
                     T_dummy, S_dummy;
 
       double        gamma_T_o, meltFactor, meltSalinity, b2;
       double        continental_shelf_depth;
 
-      int           numberOfBasins;
+      int           default_numberOfBasins, default_numberOfBoxes;
 
   };
 
@@ -101,9 +101,7 @@ private:
   void basalMeltRateMissingCells(const Constants &constants);
   double most_frequent_element(const std::vector<double>&);
 
-  static const int  numberOfBoxes, // max number of ocean boxes (reached for big ice shelves)
-
-                    box1, // ocean box covering the grounding line region
+  static const int  box1, // ocean box covering the grounding line region
                     box2, // ocean box neighboring the box 1, other boxes are covered by boxi
 
                     maskfloating,
@@ -131,7 +129,7 @@ private:
   double        gamma_T, overturning_coeff,
                 continental_shelf_depth;
 
-  int      numberOfBasins,
+  int      numberOfBasins, numberOfBoxes,
            Mx, My, dx, dy;
 };
 

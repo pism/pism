@@ -32,7 +32,8 @@ namespace ocean {
 
 Cavity::Constants::Constants(const Config &config) {
 
-  numberOfBasins = 20; // standard value for Antarctic basin mask
+  default_numberOfBasins = 20; // standard value for Antarctic basin mask
+  default_numberOfBoxes = 5; // maximum number of boxes (applies for big ice shelves)
 
   continental_shelf_depth = -800; // threshold between deep ocean and continental shelf
 
@@ -56,8 +57,8 @@ Cavity::Constants::Constants(const Config &config) {
   alpha      = 7.5e-5;       // 1/K
   beta       = 7.7e-4;       // 1/psu
 
-  gamma_T    = 1e-6;        // m/s FIXME check!
-  overturning_coeff    = 5e6;         // kg−1 s−1 FIXME check!
+  default_gamma_T    = 1e-6;        // m/s FIXME check!
+  default_overturning_coeff    = 5e6;         // kg−1 s−1 FIXME check!
 
   // for shelf cells where normal box model is not calculated,
   // used in basalMeltRateMissingCells(), compare POConstantPIK
@@ -69,8 +70,6 @@ Cavity::Constants::Constants(const Config &config) {
 
 }
 
-// maximum number of boxes (applies for big ice shelves)
-const int Cavity::numberOfBoxes = 5;
 
 const int Cavity::box1           = 1;       // ocean box covering the grounding line region
 const int Cavity::box2           = 2;       // ocean box neighboring the box 1
@@ -317,11 +316,14 @@ void Cavity::initBasinsOptions(const Constants &cc) {
 
   m_log->message(4, "0b : set number of Basins\n");
 
-  numberOfBasins = cc.numberOfBasins;
+  numberOfBasins = cc.default_numberOfBasins;
   numberOfBasins = options::Integer("-number_of_basins",
-                                    "number of drainage basins for ocean cavity model",
+                                    "number of drainage basins for SIMPEL model",
                                     numberOfBasins);
-
+  numberOfBoxes = cc.default_numberOfBoxes;
+  numberOfBoxes = options::Integer("-number_of_boxes",
+                                    "number of ocean boxes for SIMPEL model",
+                                    numberOfBoxes);
 
   Toc_base_vec.resize(numberOfBasins);
   Soc_base_vec.resize(numberOfBasins);
@@ -336,10 +338,10 @@ void Cavity::initBasinsOptions(const Constants &cc) {
   mean_temperature_boundary_vector.resize(numberOfBasins);
   mean_overturning_GLbox_vector.resize(numberOfBasins);
 
-  gamma_T = cc.gamma_T;
+  gamma_T = cc.default_gamma_T;
   gamma_T = options::Real("-gamma_T","gamma_T for ocean cavity model",gamma_T);
 
-  overturning_coeff = cc.overturning_coeff;
+  overturning_coeff = cc.default_overturning_coeff;
   overturning_coeff = options::Real("-overturning_coeff","overturning_coeff for ocean cavity model",overturning_coeff);
 
   // data have been calculated previously for the 20 Zwally basins
@@ -525,7 +527,6 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
   list.add(inputmask);
   list.add(m_mask);
   list.add(*topg);
-  // inputmask.begin_access();
 
   inputmask.set(imask_unidentified);
 
@@ -542,22 +543,12 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
     }
   }
 
-  // inputmask.end_access();
-
-
-  // IceModelVec::AccessList list;
-  // list.add(inputmask);
-
   int iteration_round = 0;
   // find inner region first
   while(all_inner_identified > previous_step_identified){
 
     iteration_round+=1;
     previous_step_identified = all_inner_identified;
-
-    // inputmask.begin_access();
-    // mask->begin_access();
-    // topg->begin_access();
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -593,8 +584,6 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
   // TODO: Not sure if we have to reinitialize m_mask and inputmask here.
   //set value for excluded areas (ice rises or submarine islands)
-  // list.add(inputmask);
-  // list.add(m_mask);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -701,11 +690,6 @@ void Cavity::extentOfIceShelves() {
   list.add(DistGL);
   list.add(OCEANmask);
 
-	// mask->begin_access();
-	// basins->begin_access();
-	// DistGL.begin_access();
-	// DistIF.begin_access();
-
 	if (exicerises_set) { list.add(ICERISESmask); }
 
 	DistGL.set(0);
@@ -768,8 +752,6 @@ void Cavity::extentOfIceShelves() {
 
     local_continue_loop = 0;
 
-    //DistGL.begin_access();
-
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -794,7 +776,6 @@ void Cavity::extentOfIceShelves() {
     } // for
 
     currentLabelGL++;
-    //DistGL.end_access();
     DistGL.update_ghosts();
 
     global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
@@ -810,8 +791,6 @@ void Cavity::extentOfIceShelves() {
   while( global_continue_loop !=0  ) {
 
     local_continue_loop = 0;
-
-    DistIF.begin_access();
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -838,7 +817,6 @@ void Cavity::extentOfIceShelves() {
 
 
     currentLabelIF++;
-    //DistIF.end_access();
     DistIF.update_ghosts();
 
     global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
@@ -898,7 +876,6 @@ void Cavity::identifyBOXMODELmask() {
   int n_min = 1; //
   double max_distGL_ref = 500000; // meter
   double zeta = 0.5;
-  // numberOfBoxes = 5; // FIXME Do we want this to be a chosable parameter?
 
   for (int l=0;l<numberOfBasins;l++){
     lnumberOfBoxes_perBasin[l] = 0;
@@ -957,10 +934,6 @@ void Cavity::identifyBOXMODELmask() {
   // set all floating cells which have no BOXMODELmask value as numberOfBoxes+1 -> beckmann-goose for melting
   // those are the cells which are not reachable from GL or IF //FIXME does that make sense?
 
-  // BOXMODELmask.begin_access();
-  // mask->begin_access();
-
-
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -969,10 +942,6 @@ void Cavity::identifyBOXMODELmask() {
     }
 
   }
-
-  // BOXMODELmask.end_access();
-  // mask->end_access();
-
 
   //m_log->message(2, "Number of Boxes=%.0f, lnumberOfBoxes = %.0f\n", numberOfBoxes, lnumberOfBoxes);
 
@@ -986,10 +955,6 @@ void Cavity::identifyBOXMODELmask() {
     }
   }
 
-  // BOXMODELmask.begin_access();
-  // basins->begin_access();
-
-
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     int box_id = static_cast<int>(round(BOXMODELmask(i,j)));
@@ -998,9 +963,6 @@ void Cavity::identifyBOXMODELmask() {
       lcounter_boxes[shelf_id][box_id]++;
     }
   }
-
-  // BOXMODELmask.end_access();
-  // basins->end_access();
 
   for (int k=0;k<numberOfBasins;k++){
     counter_boxes[k].resize(nBoxes);
