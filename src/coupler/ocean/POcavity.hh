@@ -72,9 +72,9 @@ private:
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux,
                   cbasins, // a basin defines the domain where one box model instance is solved
-                  ICERISESmask, 
+                  ICERISESmask,
                   BOXMODELmask,
-                  OCEANMEANmask, 
+                  OCEANMEANmask,
                   OCEANmask,
                   DistGL,
                   DistIF,
@@ -110,26 +110,25 @@ private:
                     maskocean,
                     maskgrounded,
 
-                    imask_inner, // used in IdentifyMask 
-                    imask_outer, // used in IdentifyMask 
-                    imask_exclude, // used in IdentifyMask 
-                    imask_unidentified; // used in IdentifyMask 
-                    
+                    imask_inner, // used in IdentifyMask
+                    imask_outer, // used in IdentifyMask
+                    imask_exclude, // used in IdentifyMask
+                    imask_unidentified; // used in IdentifyMask
+
   std::vector<double> Toc_base_vec, // temperature input for box 1 per basin
                       Soc_base_vec, // salinity input for box 1 per basin
-                      gamma_T_star_vec, // FIXME delete 
-                      C_vec, // FIXME delete 
+                      gamma_T_star_vec, // FIXME delete
+                      C_vec, // FIXME delete
                       mean_salinity_boundary_vector, // salinity input for box i>1 per basin
                       mean_temperature_boundary_vector, // temperature input for box i>1 per basin
-                      mean_meltrate_boundary_vector, // mean melt rate in box i-1 as input for box i>1 per basin
                       mean_overturning_GLbox_vector; // mean overturning, computed in box 1, as input for box i>1 per basin
 
   std::vector< std::vector<double> >  counter_boxes; // matrix containing the number of shelf cells per basin and box
                                                      // used for area calculation
 
   // standard values are defined in Constants
-  // here needed to store custom values from user options.            
-  double        gamma_T, overturning_coeff, 
+  // here needed to store custom values from user options.
+  double        gamma_T, overturning_coeff,
                 continental_shelf_depth;
 
   int      numberOfBasins,
