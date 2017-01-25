@@ -241,15 +241,18 @@ void Cavity::init_impl() {
 
   m_log->message(4, "SIMPEL basin min=%f,max=%f\n",cbasins.min(),cbasins.max());
 
+  Constants cc(*m_config);
+  initBasinsOptions(cc);
+
+  // FIXME: this should go to init_mpl to save cpu, but we first need to
+  // make sure that the once updated basin mask is stored and not overwritten.
+  round_basins();
+
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 &&
       m_salinity_ocean->get_n_records() == 1) {
         update(m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
-
-  // NOTE: moved to update_impl
-  // POBMConstants cc(config);
-  // initBasinsOptions(cc);
 
 }
 
@@ -366,12 +369,6 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   Constants cc(*m_config);
 
-  // FIXME: this should go to init_mpl to save cpu, but we first need to
-  // make sure that the once updated basin mask is stored and not overwritten.
-  round_basins();
-
-  // FIXME: this should also be moved to init_impl to be run only once at start.
-  initBasinsOptions(cc);
   identifyMASK(OCEANMEANmask,"ocean");
   computeOCEANMEANS(cc);
 
