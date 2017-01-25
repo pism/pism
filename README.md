@@ -14,7 +14,7 @@ The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sh
 
 PISM is jointly developed at the [University of Alaska, Fairbanks (UAF)](http://www.uaf.edu/) and the [Potsdam Institute for Climate Impact Research (PIK)](http://www.pik-potsdam.de/).  UAF developers are based in the [Glaciers Group](http://www.gi.alaska.edu/snowice/glaciers/) at the [Geophysical Institute](http://www.gi.alaska.edu).
 
-PISM development is supported by the [NASA Modeling, Analysis, and Prediction program](http://map.nasa.gov/) (grant #NNX13AM16G) and the [NASA Cryospheric Sciences program](http://ice.nasa.gov/) (grant #NNX13AK27G).
+PISM development is supported by the [NASA Modeling, Analysis, and Prediction program](http://map.nasa.gov/) (grant #NNX13AM16G) and the [NASA Cryospheric Sciences program](http://ice.nasa.gov/) (grant NNX16AQ40G) and by [NSF Polar Programs](https://nsf.gov/geo/plr/about.jsp) grants PLR-1603799 and PLR-1644277.
 
 
 Homepage
