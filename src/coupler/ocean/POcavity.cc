@@ -37,7 +37,7 @@ Cavity::Constants::Constants(const Config &config) {
 
   continental_shelf_depth = -800; // threshold between deep ocean and continental shelf
 
-  T_dummy = -1.5; // value for ocean temperature around Antarctica if no other data available FIXME Check
+  T_dummy = -1.5 + 273.15; // value for ocean temperature around Antarctica if no other data available FIXME Check
   S_dummy = 34.5; // value for ocean salinity around Antarctica if no other data available FIXME Check
 
   earth_grav = config.get_double("constants.standard_gravity");
@@ -227,26 +227,23 @@ void Cavity::init_impl() {
 
   cbasins.regrid(m_filename, CRITICAL);
 
-  // Range basins_range = cbasins.range();
-
-  // FIXME This kills the run when basins is interpolated on initialisation, I commented it first, but maybe we can change it such that it works better?
-  // if (basins_range.min < 0 or basins_range.max > numberOfBasins - 1) {
-  //   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-  //                                 "Some basin numbers in %s read from %s are invalid:"
-  //                                 "allowed range is [0, %d], found [%d, %d]",
-  //                                 cbasins.get_name().c_str(), m_filename.c_str(),
-  //                                 numberOfBasins - 1,
-  //                                 (int)basins_range.min, (int)basins_range.max);
-  // }
-
   m_log->message(4, "SIMPEL basin min=%f,max=%f\n",cbasins.min(),cbasins.max());
 
   Constants cc(*m_config);
   initBasinsOptions(cc);
 
-  // FIXME: this should go to init_mpl to save cpu, but we first need to
-  // make sure that the once updated basin mask is stored and not overwritten.
   round_basins();
+
+  Range basins_range = cbasins.range();
+
+  if (basins_range.min < 0 or basins_range.max > numberOfBasins - 1) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Some basin numbers in %s read from %s are invalid:"
+                                  "allowed range is [0, %d], found [%d, %d]",
+                                  cbasins.get_name().c_str(), m_filename.c_str(),
+                                  numberOfBasins - 1,
+                                  (int)basins_range.min, (int)basins_range.max);
+  }
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 &&
@@ -296,7 +293,6 @@ void Cavity::sea_level_elevation_impl(double &result) const {
 void Cavity::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
-
 
 void Cavity::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
 
@@ -369,6 +365,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   Constants cc(*m_config);
 
+  // prepare ocean input temperature and salinity per basin
   identifyMASK(OCEANMEANmask,"ocean");
   computeOCEANMEANS(cc);
 
@@ -608,7 +605,7 @@ void Cavity::computeOCEANMEANS(const Constants &cc) {
       m_Sval[k] = m_Sval[k] / m_count[k];
       m_Tval[k] = m_Tval[k] / m_count[k];
 
-      Toc_base_vec[k]=m_Tval[k] - 273.15;
+      Toc_base_vec[k]=m_Tval[k];
       Soc_base_vec[k]=m_Sval[k];
       m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", k, Toc_base_vec[k], Soc_base_vec[k]);
     }
@@ -957,11 +954,11 @@ void Cavity::oceanTemperature(const Constants &cc) {
 
     if (m_mask(i,j)==maskfloating){
       int shelf_id = (cbasins)(i,j);
-      Toc_base(i,j) = 273.15 + Toc_base_vec[shelf_id];
+      Toc_base(i,j) = Toc_base_vec[shelf_id];
       Soc_base(i,j) =  Soc_base_vec[shelf_id];
 
       //! salinity and temperature for grounding line box
-      if ( Soc_base(i,j) == 0.0 || Toc_base_vec[shelf_id] == 0.0 ) { //FIXME is there a reason that Toc and Soc are different?
+      if ( Soc_base(i,j) == 0.0 || Toc_base_vec[shelf_id] == 273.15 ) { //FIXME is there a reason that Toc and Soc are different?
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "PISM_ERROR: Missing Soc_base and Toc_base for"
                                       "%d, %d, basin %d \n   Aborting... \n", i, j, shelf_id);
