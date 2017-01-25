@@ -84,7 +84,8 @@ private:
                   Toc_base,
                   T_star,
                   overturning,
-                  basalmeltrate_shelf;
+                  basalmeltrate_shelf,
+                  T_pressure_melting;
 
   IceModelVec2T   *m_theta_ocean,
                   *m_salinity_ocean;
@@ -95,7 +96,7 @@ private:
   void computeOCEANMEANS(const Constants &constants);
   void extentOfIceShelves();
   void identifyBOXMODELmask();
-  void oceanTemperature(const Constants &constants);
+  void write_ocean_input_fields(const Constants &constants);
   void basalMeltRateGroundingLineBox(const Constants &constants);
   void basalMeltRateOtherBoxes(const Constants &constants);
   void basalMeltRateMissingCells(const Constants &constants);
