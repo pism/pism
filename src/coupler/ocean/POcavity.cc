@@ -1026,6 +1026,7 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
   double countHelpterm=0,
          lcountHelpterm=0;
 
+  BOXMODELmask.update_ghosts();
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1170,6 +1171,8 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
     list.add(Soc);
     list.add(overturning);
     list.add(basalmeltrate_shelf);
+
+    BOXMODELmask.update_ghosts();
 
     // for box i compute the melt rates.
 
