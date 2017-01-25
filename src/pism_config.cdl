@@ -297,6 +297,11 @@ netcdf pism_config {
     pism_config:calving.float_kill.margin_only_option = "float_kill_margin_only";
     pism_config:calving.float_kill.margin_only_type = "boolean";
 
+    pism_config:calving.float_kill.calve_near_grounding_line = "yes";
+    pism_config:calving.float_kill.calve_near_grounding_line_doc = "Calve floating ice near the grounding line.";
+    pism_config:calving.float_kill.calve_near_grounding_line_option = "float_kill_calve_near_grounding_line";
+    pism_config:calving.float_kill.calve_near_grounding_line_type = "boolean";
+
     pism_config:calving.front_retreat.use_cfl = "false";
     pism_config:calving.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
     pism_config:calving.front_retreat.use_cfl_option = "calving_cfl";

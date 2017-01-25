@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,7 +40,7 @@ public:
   void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
 
 protected:
-  bool m_margin_only;
+  bool m_margin_only, m_calve_near_grounding_line;
 };
 
 
