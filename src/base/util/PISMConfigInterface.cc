@@ -340,36 +340,75 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
 
 //! Get a flag from a command-line option.
 /*!
-  If called as `boolean_from_option("foo", "foo")`, checks both `-foo` and `-no_foo`.
+ * Use the command-line option `option` to set the configuration parameter `parameter_name`.
+ *
+ * When called as `set_boolean_from_option(config, "foo", "bar")`,
+ *
+ * sets the configuration parameter `bar` to `true` if
+ *
+ * - `-foo` is set (no argument)
+ * - `-foo true` is set
+ * - `-foo True` is set
+ * - `-foo yes` is set
+ *
+ * sets the `bar` to `false` if
+ *
+ * - `-foo false` is set
+ * - `-foo False` is set
+ * - `-foo no` is set
+ * - `-no_foo is set.
+ *
+ * `-foo X` with `X` not equal to `yes`, `no`, `true`, `True`, `false`, `False` results in an error.
+ */
+void set_boolean_from_option(Config &config, const std::string &option,
+                             const std::string &parameter_name) {
 
-  - if `-foo` is set, calls `set_boolean("foo", true)`,
+  // get the default value
+  bool value = config.get_boolean(parameter_name, Config::FORGET_THIS_USE);
+  std::string doc = config.get_string(parameter_name + "_doc", Config::FORGET_THIS_USE);
 
-  - if `-no_foo` is set, calls `set_boolean("foo", false)`,
+  // process the command-line option
+  options::String opt("-" + option, doc, value ? "true" : "false", options::ALLOW_EMPTY);
 
-  - if *both* are set, prints an error message and stops,
+  if (opt.is_set()) {
+    if (opt.value() == ""     or
+        opt.value() == "on"   or
+        opt.value() == "yes"  or
+        opt.value() == "true" or
+        opt.value() == "True") { // Python's "True"
 
-  - if none, does nothing.
+      value = true;
 
-*/
-void set_boolean_from_option(Config &config, const std::string &name, const std::string &flag) {
+    } else if (opt.value() == "off"   or
+               opt.value() == "no"    or
+               opt.value() == "false" or
+               opt.value() == "False") { // Python's "False"
 
-  bool foo    = options::Bool("-" + name,
-                              config.get_string(flag + "_doc", Config::FORGET_THIS_USE));
-  bool no_foo = options::Bool("-no_" + name,
-                              config.get_string(flag + "_doc", Config::FORGET_THIS_USE));
+      value = false;
 
-  if (foo and no_foo) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Inconsistent command-line options: both -%s and -no_%s are set.\n",
-                                  name.c_str(), name.c_str());
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid -%s argument: %s",
+                                    option.c_str(), opt.value().c_str());
+    }
   }
 
-  if (foo) {
-    config.set_boolean(flag, true, Config::USER);
+  // For backward compatibility we allow disabling an option -foo by setting -no_foo.
+  {
+    bool no_foo_is_set = options::Bool("-no_" + option, doc);
+
+    if (no_foo_is_set) {
+      if (opt.is_set()) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Inconsistent command-line options:"
+                                      " both -%s and -no_%s are set.\n",
+                                      option.c_str(), option.c_str());
+      } else {
+        value = false;
+      }
+    }
   }
 
-  if (no_foo) {
-    config.set_boolean(flag, false, Config::USER);
-  }
+  config.set_boolean(parameter_name, value, Config::USER);
 }
 
 //! Sets a configuration parameter from a command-line option.
