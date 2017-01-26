@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -111,7 +111,8 @@ public:
   PrescribedSliding(IceGrid::ConstPtr g);
   virtual ~PrescribedSliding();
   virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
-  virtual void init();
+protected:
+  virtual void init_impl();
 };
 
 } // end of namespace stressbalance

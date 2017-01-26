@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -455,8 +455,8 @@ void PrescribedSliding::update(bool fast, double sea_level,
   }
 }
 
-void PrescribedSliding::init() {
-  ShallowStressBalance::init();
+void PrescribedSliding::init_impl() {
+  ShallowStressBalance::init_impl();
 
   options::String input_filename("-prescribed_sliding_file",
                                  "name of the file to read velocity fields from");
