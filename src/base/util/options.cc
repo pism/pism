@@ -259,7 +259,8 @@ bool Bool(const std::string& option,
 //! Stop if an option `old_name` is set, printing a message that `new_name` should be used instead.
 void deprecated(const std::string &old_name, const std::string &new_name) {
 
-  String option(old_name, "no description", "default");
+  String option(old_name, "no description", "default",
+                options::ALLOW_EMPTY);
 
   if (option.is_set()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "command-line option '%s' is deprecated."
