@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -69,7 +69,7 @@ void Logger::message(int threshold, const std::string &buffer) const {
 }
 
 void Logger::message_impl(const char buffer[]) const {
-  PetscErrorCode ierr = PetscFPrintf(m_impl->com, PETSC_STDOUT, buffer);
+  PetscErrorCode ierr = PetscFPrintf(m_impl->com, PETSC_STDOUT, "%s", buffer);
   PISM_CHK(ierr, "PetscFPrintf");
 }
 
