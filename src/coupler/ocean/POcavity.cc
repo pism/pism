@@ -244,14 +244,14 @@ void Cavity::init_impl() {
 
   Range basins_range = cbasins.range();
 
-  if (basins_range.min < 0 or basins_range.max > numberOfBasins - 1) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Some basin numbers in %s read from %s are invalid:"
-                                  "allowed range is [0, %d], found [%d, %d]",
-                                  cbasins.get_name().c_str(), m_filename.c_str(),
-                                  numberOfBasins - 1,
-                                  (int)basins_range.min, (int)basins_range.max);
-  }
+  // if (basins_range.min < 0 or basins_range.max > numberOfBasins - 1) {
+  //   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+  //                                 "Some basin numbers in %s read from %s are invalid:"
+  //                                 "allowed range is [0, %d], found [%d, %d]",
+  //                                 cbasins.get_name().c_str(), m_filename.c_str(),
+  //                                 numberOfBasins - 1,
+  //                                 (int)basins_range.min, (int)basins_range.max);
+  // }
 
   // read time-independent data right away:
   if (m_theta_ocean->get_n_records() == 1 &&
@@ -382,6 +382,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
     identifyMASK(ICERISESmask,"icerises");}
 
   identifyMASK(OCEANmask,"openocean");
+  round_basins(); //FIXME if only done in init_impl, basin numbers are not correct later on, e.g. in write_ocean_input_fields()
   extentOfIceShelves();
   identifyBOXMODELmask();
   write_ocean_input_fields(cc);
@@ -956,7 +957,7 @@ void Cavity::write_ocean_input_fields(const Constants &cc) {
     const int i = p.i(), j = p.j();
 
     // make sure all temperatures are zero at the beginning of each timestep
-    Toc(i,j) = 273.15; // in K
+    Toc(i,j) = 273.15; // in K //FIXME delete?
     Toc_base(i,j) = 273.15;  // in K
     Soc_base(i,j) = 0.0; // in psu
 
@@ -965,6 +966,21 @@ void Cavity::write_ocean_input_fields(const Constants &cc) {
       int shelf_id = (cbasins)(i,j);
       Toc_base(i,j) = Toc_base_vec[shelf_id];
       Soc_base(i,j) =  Soc_base_vec[shelf_id];
+
+      if (i==201 && j==108){
+        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);        
+      }
+      if (i==201 && j==109){
+        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);        
+      }
+
+      if (j==201 && i==108){
+        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);        
+      }
+      if (j==201 && i==109){
+        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);        
+      }
+
 
       //! salinity and temperature for grounding line box
       if ( Soc_base(i,j) == 0.0 || Toc_base_vec[shelf_id] == 273.15 ) { //FIXME is there a reason that Toc and Soc are different?
