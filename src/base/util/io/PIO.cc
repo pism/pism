@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,6 @@ using std::shared_ptr;
 #include "PIO.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_const.hh"
-#include "LocalInterpCtx.hh"
 #include "base/util/VariableMetadata.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMTime.hh"
