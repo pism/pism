@@ -304,6 +304,7 @@ show :
   execute_process (COMMAND ${MAKE_EXECUTABLE} --no-print-directory -f ${pism_petsc_config_makefile} show VARIABLE=${name}
     OUTPUT_VARIABLE ${var}
     RESULT_VARIABLE petsc_return)
+  string(CONFIGURE "\${${var}}" ${var} ESCAPE_QUOTES)
   file (REMOVE ${pism_petsc_config_makefile})
 endmacro (pism_petsc_get_variable)
 
