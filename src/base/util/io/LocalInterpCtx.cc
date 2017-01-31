@@ -27,6 +27,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/IceGrid.hh"
 
+#include "base/util/pism_utilities.hh"
 #include "base/util/interpolation.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/Logger.hh"
@@ -80,7 +81,7 @@ static void subset_start_and_count(const std::vector<double> &x,
   processor.
 */
 LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
-                               double z_min, double z_max) {
+                               const std::vector<double> &z_output) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   grid.ctx()->log()->message(3, "\nRegridding file grid info:\n");
@@ -90,6 +91,8 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // extent of the domain. To compute the extent of the domain, assume
   // that the grid is cell-centered, so edge of the domain is half of
   // the grid spacing away from grid points at the edge.
+  //
+  // Note that x_min is not the same as grid.x(0).
   const double
     x_min = grid.x0() - grid.Lx(),
     x_max = grid.x0() + grid.Lx(),
@@ -100,6 +103,15 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
     input_x_max = input.x0 + input.Lx,
     input_y_min = input.y0 - input.Ly,
     input_y_max = input.y0 + input.Ly;
+
+  if (not is_increasing(z_output)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "vertical grid has to be strictly increasing");
+  }
+
+  const double
+    z_min = z_output.front(),
+    z_max = z_output.back();
 
   // tolerance (one micron)
   double eps = 1e-6;
@@ -135,7 +147,6 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // Z
   start[Z] = 0;                    // always start at the base
   count[Z] = std::max(input.z_len, 1u); // read at least one level
-  zlevels = input.z;
 
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
@@ -161,10 +172,8 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 
   y.reset(new LinearInterpolation(&input.y[start[Y]], count[Y],
                                   &grid.y()[grid.ys()], grid.ym()));
-}
 
-LocalInterpCtx::~LocalInterpCtx() {
-  // empty
+  z.reset(new LinearInterpolation(input.z, z_output));
 }
 
 } // end of namespace pism

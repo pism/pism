@@ -48,14 +48,14 @@ class grid_info;
 */
 class LocalInterpCtx {
 public:
-  LocalInterpCtx(const grid_info &g, const IceGrid &grid, double z_min, double z_max);
-  ~LocalInterpCtx();
-  unsigned int start[4], count[4]; // Indices in netCDF file.
-  std::shared_ptr<LinearInterpolation> x, y;
-  //! temporary buffer
+  LocalInterpCtx(const grid_info &input, const IceGrid &grid,
+                 const std::vector<double> &z_output);
+  // Indices in netCDF file.
+  unsigned int start[4], count[4];
+  // indexes and coefficients for 1D linear interpolation
+  std::shared_ptr<LinearInterpolation> x, y, z;
+  //! temporary storage
   std::vector<double> buffer;
-  //! input z levels
-  std::vector<double> zlevels;
 };
 
 } // end of namespace pism

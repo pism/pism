@@ -64,8 +64,6 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
   unsigned int nlevels = zlevels_out.size();
   double *input_array = &(lic->buffer[0]);
 
-  LinearInterpolation z(lic->zlevels, zlevels_out);
-
   // array sizes for mapping from logical to "flat" indices
   int
     x_count = lic->count[X],
@@ -93,10 +91,10 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
 
       if (nlevels > 1) {
         const int
-          Z_m = z.left(k),
-          Z_p = z.right(k);
+          Z_m = lic->z->left(k),
+          Z_p = lic->z->right(k);
 
-        const double alpha_z = z.alpha(k);
+        const double alpha_z = lic->z->alpha(k);
 
         // We pretend that there are always 8 neighbors (4 in the map plane,
         // 2 vertical levels). And compute the indices into the input_array for
@@ -413,7 +411,7 @@ static LocalInterpCtx* get_interp_context(const PIO& file,
                                           const std::vector<double> &zlevels) {
   grid_info gi(file, variable_name, grid.ctx()->unit_system(), grid.periodicity());
 
-  return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
+  return new LocalInterpCtx(gi, grid, zlevels);
 }
 
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
@@ -491,7 +489,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
                             start, count, imap);
 
     bool mapped_io = use_mapped_io(nc, grid.ctx()->unit_system(), var_name);
-    if (mapped_io == true) {
+    if (mapped_io) {
       nc.get_varm_double(var_name, start, count, imap, buffer);
     } else {
       nc.get_vara_double(var_name, start, count, buffer);

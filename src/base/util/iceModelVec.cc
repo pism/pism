@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -427,13 +427,13 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
     petsc::VecArray tmp_array(tmp);
 
     io::regrid_spatial_variable(metadata(0), *m_grid, nc,
-                            flag, m_report_range, default_value, tmp_array.get());
+                                flag, m_report_range, default_value, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
     io::regrid_spatial_variable(metadata(0), *m_grid,  nc,
-                            flag, m_report_range, default_value, v_array.get());
+                                flag, m_report_range, default_value, v_array.get());
   }
 }
 
