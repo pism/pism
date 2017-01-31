@@ -110,6 +110,18 @@ const std::vector<double>& LinearInterpolation::alpha() const {
   return m_alpha;
 }
 
+int LinearInterpolation::left(size_t j) const {
+  return m_left[j];
+}
+
+int LinearInterpolation::right(size_t j) const {
+  return m_right[j];
+}
+
+double LinearInterpolation::alpha(size_t j) const {
+  return m_alpha[j];
+}
+
 std::vector<double> LinearInterpolation::interpolate(const std::vector<double> &input_values) const {
   std::vector<double> result(m_alpha.size());
 
