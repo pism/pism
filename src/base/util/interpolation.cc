@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -50,6 +50,14 @@ void LinearInterpolation::init(const double *input_x, unsigned int input_x_size,
   m_left.resize(output_x_size);
   m_right.resize(output_x_size);
   m_alpha.resize(output_x_size);
+
+  // the trivial case
+  if (input_x_size < 2) {
+    m_left[0]  = 0;
+    m_right[0] = 0;
+    m_alpha[0] = 0.0;
+    return;
+  }
 
   // input grid points have to be stored in the increasing order
   for (unsigned int i = 0; i < input_x_size - 1; ++i) {
