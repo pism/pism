@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,7 +36,7 @@ CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_
                   "m", "");
 
   m_horizontal_calving_rate.create(m_grid, "horizontal_calving_rate", WITHOUT_GHOSTS);
-  m_horizontal_calving_rate.set_attrs("diagnostic", "calving rate", "m second-1", "");
+  m_horizontal_calving_rate.set_attrs("diagnostic", "calving rate", "m second-1", "land_ice_calving_rate");
   m_horizontal_calving_rate.set_time_independent(false);
   m_horizontal_calving_rate.metadata().set_string("glaciological_units", "m year-1");
   m_horizontal_calving_rate.write_in_glaciological_units = true;
@@ -308,7 +308,7 @@ CalvingRate::CalvingRate(const CalvingFrontRetreat *m,
   /* set metadata: */
   m_vars = {SpatialVariableMetadata(m_sys, name)};
 
-  set_attrs(long_name, "",
+  set_attrs(long_name, "land_ice_calving_rate",
             "m second-1", "m year-1", 0);
 }
 
