@@ -56,7 +56,6 @@ public:
   std::vector<double> buffer;
   //! input z levels
   std::vector<double> zlevels;
-  bool report_range;
 };
 
 } // end of namespace pism
