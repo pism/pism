@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,6 +33,7 @@
 #include "base/util/PISMTime.hh"
 #include "base/util/Logger.hh"
 #include "base/util/projection.hh"
+#include "base/util/interpolation.hh"
 
 namespace pism {
 namespace io {
@@ -60,22 +61,10 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
 
   const int X = 1, Z = 3; // indices, just for clarity
 
-  std::vector<double> &zlevels_in = lic->zlevels;
   unsigned int nlevels = zlevels_out.size();
   double *input_array = &(lic->buffer[0]);
 
-  std::vector<unsigned int> kbelow(nlevels, 0);
-
-  if (nlevels > 1) {
-    gsl_interp_accel *accel = gsl_interp_accel_alloc();
-    if (accel == NULL) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "Failed to allocate a GSL interpolation accelerator");
-    }
-    for (unsigned int k = 0; k < nlevels; ++k) {
-      kbelow[k] = gsl_interp_accel_find(accel, &zlevels_in[0], zlevels_in.size(), zlevels_out[k]);
-    }
-    gsl_interp_accel_free(accel);
-  }
+  LinearInterpolation z(lic->zlevels, zlevels_out);
 
   // array sizes for mapping from logical to "flat" indices
   int
@@ -96,36 +85,31 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
 
     for (unsigned int k = 0; k < nlevels; k++) {
 
-      double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
+      double
+        a_mm = 0.0,
+        a_mp = 0.0,
+        a_pm = 0.0,
+        a_pp = 0.0;
 
       if (nlevels > 1) {
-        // get the index into the source grid, for just below the level z
-        const int kc = kbelow[k];
+        const int
+          Z_m = z.left()[k],
+          Z_p = z.right()[k];
+
+        const double alpha_z = z.alpha()[k];
 
         // We pretend that there are always 8 neighbors (4 in the map plane,
         // 2 vertical levels). And compute the indices into the input_array for
         // those neighbors.
-        const int mmm = (Y_m * x_count + X_m) * z_count + kc;
-        const int mmp = (Y_m * x_count + X_m) * z_count + kc + 1;
-        const int mpm = (Y_m * x_count + X_p) * z_count + kc;
-        const int mpp = (Y_m * x_count + X_p) * z_count + kc + 1;
-        const int pmm = (Y_p * x_count + X_m) * z_count + kc;
-        const int pmp = (Y_p * x_count + X_m) * z_count + kc + 1;
-        const int ppm = (Y_p * x_count + X_p) * z_count + kc;
-        const int ppp = (Y_p * x_count + X_p) * z_count + kc + 1;
-
-        // We know how to index the neighbors, but we don't yet know where the
-        // point lies within this box.  This is represented by alpha_z in [0,1].
-        const double zkc = zlevels_in[kc];
-        double dz;
-        if (kc == z_count - 1) {
-          dz = zlevels_in[kc] - zlevels_in[kc-1];
-        } else {
-          dz = zlevels_in[kc+1] - zlevels_in[kc];
-        }
-        // location (x,y,z) is in target computational domain
-        const double z = zlevels_out[k];
-        const double alpha_z = (z - zkc) / dz;
+        const int
+          mmm = (Y_m * x_count + X_m) * z_count + Z_m,
+          mmp = (Y_m * x_count + X_m) * z_count + Z_p,
+          mpm = (Y_m * x_count + X_p) * z_count + Z_m,
+          mpp = (Y_m * x_count + X_p) * z_count + Z_p,
+          pmm = (Y_p * x_count + X_m) * z_count + Z_m,
+          pmp = (Y_p * x_count + X_m) * z_count + Z_p,
+          ppm = (Y_p * x_count + X_p) * z_count + Z_m,
+          ppp = (Y_p * x_count + X_p) * z_count + Z_p;
 
         // linear interpolation in the z-direction
         a_mm = input_array[mmm] * (1.0 - alpha_z) + input_array[mmp] * alpha_z;
