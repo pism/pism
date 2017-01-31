@@ -83,8 +83,6 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
                                double z_min, double z_max) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
-  com = grid.com;
-  rank = grid.rank();
   report_range = true;
 
   grid.ctx()->log()->message(3, "\nRegridding file grid info:\n");
@@ -146,11 +144,11 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // we perform a reduce so that node 0 has the maximum value.
   unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1u);
   unsigned int proc0_buffer_size = buffer_size;
-  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, com);
+  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, grid.com);
 
   ParallelSection allocation(grid.com);
   try {
-    if (rank == 0) {
+    if (grid.rank() == 0) {
       buffer.resize(proc0_buffer_size);
     } else {
       buffer.resize(buffer_size);

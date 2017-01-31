@@ -19,6 +19,8 @@
 #ifndef __lic_hh
 #define __lic_hh
 
+#include <vector>
+
 namespace pism {
 
 class IceGrid;
@@ -52,8 +54,6 @@ public:
   std::vector<double> buffer;
   std::vector<double> zlevels;     //!< input z levels
   bool report_range;
-  MPI_Comm com;                 //!< MPI Communicator (for printing, mostly)
-  int rank;             //!< MPI rank, to allocate a_raw on proc 0 only
 };
 
 } // end of namespace pism
