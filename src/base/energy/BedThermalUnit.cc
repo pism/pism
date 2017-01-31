@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -115,7 +115,8 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
   {
     m_top_surface_flux.create(m_grid, "heat_flux_from_bedrock", WITHOUT_GHOSTS);
     m_top_surface_flux.set_attrs("diagnostic", "upward geothermal flux at the top bedrock surface",
-                                 "W m-2", "");
+                                 "W m-2",
+                                 "upward_geothermal_heat_flux_at_ground_level"); // InitMIP "standard" name
     m_top_surface_flux.metadata().set_string("glaciological_units", "mW m-2");
     m_top_surface_flux.metadata().set_string("comment", "positive values correspond to an upward flux");
     m_top_surface_flux.write_in_glaciological_units = true;
@@ -232,7 +233,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
   : Diag<BedThermalUnit>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "hfgeoubed")};
   set_attrs("upward geothermal flux at ground (top of the bedrock) level",
-            "",                 // no standard name
+            "upward_geothermal_heat_flux_at_ground_level", // InitMIP "standard" name
             "W m-2", "W m-2", 0);
 }
 

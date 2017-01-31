@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -640,7 +640,8 @@ IceModel_tempbase::IceModel_tempbase(const IceModel *m)
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "tempbase")};
 
-  set_attrs("ice temperature at the base of ice", "",
+  set_attrs("ice temperature at the base of ice",
+            "land_ice_basal_temperature", // InitMIP "standard" name
             "K", "K", 0);
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
@@ -690,7 +691,8 @@ IceModel_tempsurf::IceModel_tempsurf(const IceModel *m)
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "tempsurf")};
 
-  set_attrs("ice temperature at 1m below the ice surface", "",
+  set_attrs("ice temperature at 1m below the ice surface",
+            "temperature_at_ground_level_in_snow_or_firn", // InitMIP "standard" name
             "K", "K", 0);
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
@@ -2039,7 +2041,7 @@ IceModel_land_ice_area_fraction::IceModel_land_ice_area_fraction(const IceModel 
   : Diag<IceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, land_ice_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by ice (grounded or floating)",
-            "",                 // no standard name
+            "land_ice_area_fraction", // InitMIP "standard" name
             "1", "1", 0);
 }
 
@@ -2119,7 +2121,7 @@ IceModel_grounded_ice_sheet_area_fraction::IceModel_grounded_ice_sheet_area_frac
   : Diag<IceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, grounded_ice_sheet_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by grounded ice",
-            "",                 // no standard name
+            "grounded_ice_sheet_area_fraction", // InitMIP "standard" name
             "1", "1", 0);
 }
 
@@ -2171,7 +2173,7 @@ IceModel_floating_ice_sheet_area_fraction::IceModel_floating_ice_sheet_area_frac
   : Diag<IceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, floating_ice_sheet_area_fraction_name)};
   set_attrs("fraction of a grid cell covered by floating ice",
-            "",                 // no standard name
+            "floating_ice_sheet_area_fraction", // InitMIP "standard" name
             "1", "1", 0);
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -371,9 +371,11 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
   m_vars = {SpatialVariableMetadata(m_sys, "uvelsurf"),
             SpatialVariableMetadata(m_sys, "vvelsurf")};
 
-  set_attrs("x-component of the horizontal velocity of ice at ice surface", "",
+  set_attrs("x-component of the horizontal velocity of ice at ice surface",
+            "land_ice_surface_x_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 0);
-  set_attrs("y-component of the horizontal velocity of ice at ice surface", "",
+  set_attrs("y-component of the horizontal velocity of ice at ice surface",
+            "land_ice_surface_y_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 1);
 
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
@@ -527,7 +529,8 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "wvelsurf")};
 
-  set_attrs("vertical velocity of ice at ice surface, relative to the geoid", "",
+  set_attrs("vertical velocity of ice at ice surface, relative to the geoid",
+            "land_ice_surface_upward_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 0);
   m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
   m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
@@ -571,7 +574,8 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "wvelbase")};
 
-  set_attrs("vertical velocity of ice at the base of ice, relative to the geoid", "",
+  set_attrs("vertical velocity of ice at the base of ice, relative to the geoid",
+            "land_ice_basal_upward_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 0);
   m_vars[0].set_double("valid_min", convert(m_sys, -1e6, "m year-1", "m second-1"));
   m_vars[0].set_double("valid_max", convert(m_sys, 1e6, "m year-1", "m second-1"));
@@ -616,9 +620,11 @@ PSB_velbase::PSB_velbase(const StressBalance *m)
   m_vars = {SpatialVariableMetadata(m_sys, "uvelbase"),
             SpatialVariableMetadata(m_sys, "vvelbase")};
 
-  set_attrs("x-component of the horizontal velocity of ice at the base of ice", "",
+  set_attrs("x-component of the horizontal velocity of ice at the base of ice",
+            "land_ice_basal_x_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 0);
-  set_attrs("y-component of the horizontal velocity of ice at the base of ice", "",
+  set_attrs("y-component of the horizontal velocity of ice at the base of ice",
+            "land_ice_basal_y_velocity", // InitMIP "standard" name
             "m s-1", "m year-1", 1);
 
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");

@@ -410,7 +410,8 @@ SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "taub_mag")};
 
-  set_attrs("magnitude of the basal shear stress at the base of ice", "",
+  set_attrs("magnitude of the basal shear stress at the base of ice",
+            "magnitude_of_land_ice_basal_drag", // InitMIP "standard" name
             "Pa", "Pa", 0);
   m_vars[0].set_string("comment",
                      "this field is purely diagnostic (not used by the model)");
