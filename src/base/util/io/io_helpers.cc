@@ -78,10 +78,10 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
 
     // Indices of neighboring points.
     const int
-      X_m = lic->x_left[i],
-      X_p = lic->x_right[i],
-      Y_m = lic->y_left[j],
-      Y_p = lic->y_right[j];
+      X_m = lic->x->left()[i],
+      X_p = lic->x->right()[i],
+      Y_m = lic->y->left()[j],
+      Y_p = lic->y->right()[j];
 
     for (unsigned int k = 0; k < nlevels; k++) {
 
@@ -125,9 +125,9 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
       }
 
       // interpolation coefficient in the x direction
-      const double x_alpha = lic->x_alpha[i];
+      const double x_alpha = lic->x->alpha()[i];
       // interpolation coefficient in the y direction
-      const double y_alpha = lic->y_alpha[j];
+      const double y_alpha = lic->y->alpha()[j];
 
       // interpolate in x direction
       const double a_m = a_mm * (1.0 - x_alpha) + a_mp * x_alpha;

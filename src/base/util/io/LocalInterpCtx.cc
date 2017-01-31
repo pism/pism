@@ -158,18 +158,11 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   }
   allocation.check();
 
-  // Compute indices of neighbors and map-plane interpolation coefficients.
-  LinearInterpolation x_interp(&input.x[start[X]], count[X],
-                               &grid.x()[grid.xs()], grid.xm());
-  x_left = x_interp.left();
-  x_right = x_interp.right();
-  x_alpha = x_interp.alpha();
+  x.reset(new LinearInterpolation(&input.x[start[X]], count[X],
+                                  &grid.x()[grid.xs()], grid.xm()));
 
-  LinearInterpolation y_interp(&input.y[start[Y]], count[Y],
-                               &grid.y()[grid.ys()], grid.ym());
-  y_left = y_interp.left();
-  y_right = y_interp.right();
-  y_alpha = y_interp.alpha();
+  y.reset(new LinearInterpolation(&input.y[start[Y]], count[Y],
+                                  &grid.y()[grid.ys()], grid.ym()));
 }
 
 LocalInterpCtx::~LocalInterpCtx() {

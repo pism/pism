@@ -20,6 +20,9 @@
 #define __lic_hh
 
 #include <vector>
+#include <memory>
+
+#include "base/util/interpolation.hh"
 
 namespace pism {
 
@@ -48,11 +51,11 @@ public:
   LocalInterpCtx(const grid_info &g, const IceGrid &grid, double z_min, double z_max);
   ~LocalInterpCtx();
   unsigned int start[4], count[4]; // Indices in netCDF file.
-  std::vector<int> x_left, x_right, y_left, y_right; // neighbors
-  std::vector<double> x_alpha, y_alpha;
+  std::shared_ptr<LinearInterpolation> x, y;
   //! temporary buffer
   std::vector<double> buffer;
-  std::vector<double> zlevels;     //!< input z levels
+  //! input z levels
+  std::vector<double> zlevels;
   bool report_range;
 };
 
