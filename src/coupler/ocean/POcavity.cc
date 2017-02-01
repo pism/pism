@@ -960,7 +960,7 @@ void Cavity::write_ocean_input_fields(const Constants &cc) {
         //FIXME: only works in serial runs
         m_log->message(2, "SIMPEL ocean WARNING: Toc_base is below the local pressure melting temperature\n"
                       "for %d, %d, basin %d, setting it to pressure melting point \n",i,j,shelf_id);
-        Toc_base(i,j) = T_pmt ;
+        Toc_base(i,j) = T_pmt + 0.001 ;//FIXME: Test for regularization 
         lcounterTpmp+=1;
       }
 
