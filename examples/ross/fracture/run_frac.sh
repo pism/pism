@@ -61,14 +61,14 @@ healing=""
 #softening="-fracture_softening 1.0" #no softening
 softening="-fracture_softening ${SOFTRES}" #residual eps=0.001
 
-fractures="-fractures ${FRACRATE},${THRESHOLD},${HEALRATE},${HEALTHRESHOLD} -write_fd_fields -scheme_fd2d ${healing} ${boundary} ${criterion} ${softening}"
+fractures="-fractures -fracture_parameters  ${FRACRATE},${THRESHOLD},${HEALRATE},${HEALTHRESHOLD} -write_fd_fields -scheme_fd2d ${healing} ${boundary} ${criterion} ${softening}"
 
 
 # run commands #############################################################################
 
 cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -i ../Ross_combined.nc -bootstrap -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given ${ssa} -kill_icebergs \
-  -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx -fractures 0,0,0,0 -write_fd_fields "
+  -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx -fractures -fracture_parameters 0,0,0,0 -write_fd_fields "
 
 # add "-verbose 4" to this command for additional internal info
 cmd_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc -surface given \
