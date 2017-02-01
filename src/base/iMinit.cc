@@ -296,8 +296,7 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
 
       // skip "enthalpy" and "Href" for now: we'll take care
       // of them a little later
-      if (short_name == "enthalpy" ||
-          short_name == "Href") {
+      if (short_name == "Href") {
         continue;
       }
 
