@@ -87,11 +87,11 @@ void IceModel::calculateFractureDensity() {
 
   double gamma = 1.0, initThreshold = 7.0e4, gammaheal = 0.0, healThreshold = 2.0e-10;
 
-  options::RealList fractures("-fractures", "gamma, initThreshold, gammaheal, healThreshold");
+  options::RealList fractures("-fracture_parameters", "gamma, initThreshold, gammaheal, healThreshold");
 
   if (fractures.is_set()) {
     if (fractures->size() != 4) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "option -fractures requires exactly 4 arguments");
+      throw RuntimeError(PISM_ERROR_LOCATION, "option -fracture_parameters requires exactly 4 arguments");
     }
     gamma         = fractures[0];
     initThreshold = fractures[1];
