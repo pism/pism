@@ -400,61 +400,47 @@ static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
   }
 }
 
-
-//! @brief Get the interpolation context (grid information) for an input file.
-/*!
- * @note The *caller* is in charge of destroying lic
- */
-static LocalInterpCtx* get_interp_context(const PIO& file,
-                                          const std::string &variable_name,
-                                          const IceGrid &grid,
-                                          const std::vector<double> &zlevels) {
-  grid_info gi(file, variable_name, grid.ctx()->unit_system(), grid.periodicity());
-
-  return new LocalInterpCtx(gi, grid, zlevels);
-}
-
-static void regrid_vec_generic(const PIO &nc, const IceGrid &grid,
+static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
                                const std::string &var_name,
                                const std::vector<double> &zlevels_out,
                                unsigned int t_start,
                                bool fill_missing,
                                double default_value,
                                double *output) {
+  const int X = 1, Y = 2, Z = 3; // indices, just for clarity
+
   try {
-    const int X = 1, Y = 2, Z = 3; // indices, just for clarity
-    std::vector<unsigned int> start, count, imap;
+    grid_info gi(file, var_name, grid.ctx()->unit_system(), grid.periodicity());
+    LocalInterpCtx lic(gi, grid, zlevels_out);
 
-    std::shared_ptr<LocalInterpCtx> lic(get_interp_context(nc, var_name, grid, zlevels_out));
-    assert((bool)lic);
-
-    double *buffer = &(lic->buffer[0]);
+    std::vector<double> &buffer = lic.buffer;
 
     const unsigned int t_count = 1;
-    compute_start_and_count(nc,
+    std::vector<unsigned int> start, count, imap;
+    compute_start_and_count(file,
                             grid.ctx()->unit_system(),
                             var_name,
                             t_start, t_count,
-                            lic->start[X], lic->count[X],
-                            lic->start[Y], lic->count[Y],
-                            lic->start[Z], lic->count[Z],
+                            lic.start[X], lic.count[X],
+                            lic.start[Y], lic.count[Y],
+                            lic.start[Z], lic.count[Z],
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(nc, grid.ctx()->unit_system(), var_name);
+    bool mapped_io = use_mapped_io(file, grid.ctx()->unit_system(), var_name);
     if (mapped_io) {
-      nc.get_varm_double(var_name, start, count, imap, buffer);
+      file.get_varm_double(var_name, start, count, imap, &buffer[0]);
     } else {
-      nc.get_vara_double(var_name, start, count, buffer);
+      file.get_vara_double(var_name, start, count, &buffer[0]);
     }
 
     // Replace missing values if the _FillValue attribute is present,
     // and if we have missing values to replace.
     if (fill_missing) {
-      std::vector<double> attribute = nc.get_att_double(var_name, "_FillValue");
+      std::vector<double> attribute = file.get_att_double(var_name, "_FillValue");
       if (attribute.size() == 1) {
         const double fill_value = attribute[0],
           epsilon = 1e-12;
-        for (unsigned int i = 0; i < lic->buffer.size(); ++i) {
+        for (unsigned int i = 0; i < buffer.size(); ++i) {
           if (fabs(buffer[i] - fill_value) < epsilon) {
             buffer[i] = default_value;
           }
@@ -463,10 +449,10 @@ static void regrid_vec_generic(const PIO &nc, const IceGrid &grid,
     }
 
     // interpolate
-    regrid(grid, zlevels_out, lic.get(), output);
+    regrid(grid, zlevels_out, &lic, output);
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
-                  var_name.c_str(), nc.inq_filename().c_str());
+                  var_name.c_str(), file.inq_filename().c_str());
     throw;
   }
 }
