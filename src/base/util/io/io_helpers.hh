@@ -43,14 +43,14 @@ namespace io {
 void regrid_spatial_variable(SpatialVariableMetadata &var,
                              const IceGrid& grid, const PIO &nc,
                              RegriddingFlag flag, bool do_report_range,
-                             bool allow_vertical_extrapolation,
+                             bool allow_extrapolation,
                              double default_value, double *output);
 
 void regrid_spatial_variable(SpatialVariableMetadata &var,
                              const IceGrid& grid, const PIO &nc,
                              unsigned int t_start,
                              RegriddingFlag flag, bool do_report_range,
-                             bool allow_vertical_extrapolation,
+                             bool allow_extrapolation,
                              double default_value, double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &var,

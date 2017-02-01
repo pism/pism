@@ -368,8 +368,7 @@ void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
   // the same way v is
   petsc::TemporaryGlobalVec tmp(da2);
 
-  // this is a 2D field, so we never allow extrapolation in the vertical direction
-  const bool allow_extrapolation = false;
+  const bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     {

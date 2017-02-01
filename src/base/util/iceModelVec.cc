@@ -422,7 +422,7 @@ void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
                        " only supports IceModelVecs with dof == 1.");
   }
 
-  bool allow_extrapolation = false;
+  bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
 
   if (m_has_ghosts) {
     petsc::TemporaryGlobalVec tmp(m_da);

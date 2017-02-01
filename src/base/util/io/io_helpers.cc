@@ -725,14 +725,14 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
 void regrid_spatial_variable(SpatialVariableMetadata &var,
                              const IceGrid& grid, const PIO &nc,
                              RegriddingFlag flag, bool report_range,
-                             bool allow_vertical_extrapolation,
+                             bool allow_extrapolation,
                              double default_value, double *output) {
   unsigned int t_length = nc.inq_nrecords(var.get_name(),
                                           var.get_string("standard_name"),
                                           var.unit_system());
 
   regrid_spatial_variable(var, grid, nc, t_length - 1, flag,
-                          report_range, allow_vertical_extrapolation,
+                          report_range, allow_extrapolation,
                           default_value, output);
 }
 
@@ -775,11 +775,10 @@ void check_input_grid(const grid_info &input) {
 /*!
  * Check the overlap of the input grid and the internal grid.
  *
- * Set `allow_vertical_extrapolation` to `true` to "extend" the vertical grid using "bootstrapping".
+ * Set `allow_extrapolation` to `true` to "extend" the vertical grid during "bootstrapping".
  */
 static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
-                               const std::vector<double> &z_internal,
-                               bool allow_vertical_extrapolation) {
+                               const std::vector<double> &z_internal) {
 
   // Grid spacing (assume that the grid is equally-spaced) and the
   // extent of the domain. To compute the extent of the domain, assume
@@ -820,14 +819,12 @@ static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
     z_max       = z_internal.size() > 0 ? z_internal.back()  : 0.0;
 
   if (not (z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
-    if (not allow_vertical_extrapolation) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "PISM's computational domain is not a subset of the domain in an input file\n"
-                                    "PISM grid:       z: [%3.3f, %3.3f] meters\n"
-                                    "input file grid: z: [%3.3f, %3.3f] meters",
-                                    z_min, z_max,
-                                    input_z_min, input_z_max);
-    }
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "PISM's computational domain is not a subset of the domain in an input file\n"
+                                  "PISM grid:       z: [%3.3f, %3.3f] meters\n"
+                                  "input file grid: z: [%3.3f, %3.3f] meters",
+                                  z_min, z_max,
+                                  input_z_min, input_z_max);
   }
 }
 
@@ -835,7 +832,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const IceGrid& grid, const PIO &file,
                              unsigned int t_start, RegriddingFlag flag,
                              bool report_range,
-                             bool allow_vertical_extrapolation,
+                             bool allow_extrapolation,
                              double default_value,
                              double *output) {
   const Logger &log = *grid.ctx()->log();
@@ -854,11 +851,15 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
   if (exists) {                      // the variable was found successfully
 
-    grid_info input_grid(file, name_found, sys, grid.periodicity());
+    {
+      grid_info input_grid(file, name_found, sys, grid.periodicity());
 
-    check_input_grid(input_grid);
+      check_input_grid(input_grid);
 
-    check_grid_overlap(input_grid, grid, levels, allow_vertical_extrapolation);
+      if (not allow_extrapolation) {
+        check_grid_overlap(input_grid, grid, levels);
+      }
+    }
 
     if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
       log.message(2,
