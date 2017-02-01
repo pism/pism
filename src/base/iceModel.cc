@@ -685,6 +685,15 @@ void IceModel::step(bool do_mass_continuity,
     dt_TempAge = 0.0;
   }
 
+  // Check if the ice thickness exceeded the height of the computational box and stop if it did.
+  bool thickness_too_high = check_maximum_ice_thickness(m_ice_thickness);
+
+  if (thickness_too_high) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Ice thickness exceeds the height of the computational box (%7.4f m)",
+                                  m_grid->Lz());
+  }
+
   // end the flag line
   m_stdout_flags += " " + m_adaptive_timestep_reason;
 }

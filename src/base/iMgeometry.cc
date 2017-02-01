@@ -662,9 +662,6 @@ void IceModel::massContExplicitStep(double dt,
   if (do_part_grid) {
     residual_redistribution(H_residual);
   }
-
-  // Check if the ice thickness exceeded the height of the computational box and stop if it did.
-  check_maximum_ice_thickness(m_ice_thickness);
 }
 
 /*!
