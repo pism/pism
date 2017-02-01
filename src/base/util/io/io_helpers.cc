@@ -401,7 +401,7 @@ static void put_vec(const PIO &nc, const IceGrid &grid, const std::string &var_n
 }
 
 static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
-                               const std::string &var_name,
+                               const std::string &variable_name,
                                const std::vector<double> &zlevels_out,
                                unsigned int t_start,
                                bool fill_missing,
@@ -410,7 +410,7 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
   const int X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   try {
-    grid_info gi(file, var_name, grid.ctx()->unit_system(), grid.periodicity());
+    grid_info gi(file, variable_name, grid.ctx()->unit_system(), grid.periodicity());
     LocalInterpCtx lic(gi, grid, zlevels_out);
 
     std::vector<double> &buffer = lic.buffer;
@@ -419,24 +419,24 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
     std::vector<unsigned int> start, count, imap;
     compute_start_and_count(file,
                             grid.ctx()->unit_system(),
-                            var_name,
+                            variable_name,
                             t_start, t_count,
                             lic.start[X], lic.count[X],
                             lic.start[Y], lic.count[Y],
                             lic.start[Z], lic.count[Z],
                             start, count, imap);
 
-    bool mapped_io = use_mapped_io(file, grid.ctx()->unit_system(), var_name);
+    bool mapped_io = use_mapped_io(file, grid.ctx()->unit_system(), variable_name);
     if (mapped_io) {
-      file.get_varm_double(var_name, start, count, imap, &buffer[0]);
+      file.get_varm_double(variable_name, start, count, imap, &buffer[0]);
     } else {
-      file.get_vara_double(var_name, start, count, &buffer[0]);
+      file.get_vara_double(variable_name, start, count, &buffer[0]);
     }
 
     // Replace missing values if the _FillValue attribute is present,
     // and if we have missing values to replace.
     if (fill_missing) {
-      std::vector<double> attribute = file.get_att_double(var_name, "_FillValue");
+      std::vector<double> attribute = file.get_att_double(variable_name, "_FillValue");
       if (attribute.size() == 1) {
         const double fill_value = attribute[0],
           epsilon = 1e-12;
@@ -452,7 +452,7 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
     regrid(grid, zlevels_out, &lic, output);
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
-                  var_name.c_str(), file.inq_filename().c_str());
+                  variable_name.c_str(), file.inq_filename().c_str());
     throw;
   }
 }
@@ -752,99 +752,182 @@ static void compute_range(MPI_Comm com, double *data, size_t data_size, double *
   }
 }
 
-void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const IceGrid& grid, const PIO &nc,
+/*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
+void check_input_grid(const grid_info &input) {
+  if (not is_increasing(input.x)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "input x coordinate has to be strictly increasing");
+  }
+
+  if (not is_increasing(input.y)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "input y coordinate has to be strictly increasing");
+  }
+
+  if (not is_increasing(input.z)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "input vertical grid has to be strictly increasing");
+  }
+}
+
+/*!
+ * Check the overlap of the input grid and the internal grid.
+ *
+ * Set `allow_vertical_extrapolation` to `true` to "extend" the vertical grid using "bootstrapping".
+ */
+static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
+                               const std::vector<double> &z_internal,
+                               bool allow_vertical_extrapolation) {
+
+  // Grid spacing (assume that the grid is equally-spaced) and the
+  // extent of the domain. To compute the extent of the domain, assume
+  // that the grid is cell-centered, so edge of the domain is half of
+  // the grid spacing away from grid points at the edge.
+  //
+  // Note that x_min is not the same as internal.x(0).
+  const double
+    x_min       = internal.x0() - internal.Lx(),
+    x_max       = internal.x0() + internal.Lx(),
+    y_min       = internal.y0() - internal.Ly(),
+    y_max       = internal.y0() + internal.Ly(),
+    input_x_min = input.x0 - input.Lx,
+    input_x_max = input.x0 + input.Lx,
+    input_y_min = input.y0 - input.Ly,
+    input_y_max = input.y0 + input.Ly;
+
+  // tolerance (one micron)
+  double eps = 1e-6;
+
+  // horizontal grid extent
+  if (not (x_min >= input_x_min - eps and x_max <= input_x_max + eps and
+           y_min >= input_y_min - eps and y_max <= input_y_max + eps)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "PISM's computational domain is not a subset of the domain in an input file\n"
+                                  "PISM grid:       x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters\n"
+                                  "input file grid: x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters",
+                                  x_min, x_max, y_min, y_max,
+                                  input_x_min, input_x_max, input_y_min, input_y_max);
+  }
+
+
+  // vertical grid extent
+  const double
+    input_z_min = input.z.size() > 0 ? input.z.front() : 0.0,
+    input_z_max = input.z.size() > 0 ? input.z.back()  : 0.0,
+    z_min       = z_internal.size() > 0 ? z_internal.front() : 0.0,
+    z_max       = z_internal.size() > 0 ? z_internal.back()  : 0.0;
+
+  if (not (z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
+    if (not allow_vertical_extrapolation) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "PISM's computational domain is not a subset of the domain in an input file\n"
+                                    "PISM grid:       z: [%3.3f, %3.3f] meters\n"
+                                    "input file grid: z: [%3.3f, %3.3f] meters",
+                                    z_min, z_max,
+                                    input_z_min, input_z_max);
+    }
+  }
+}
+
+void regrid_spatial_variable(SpatialVariableMetadata &variable,
+                             const IceGrid& grid, const PIO &file,
                              unsigned int t_start, RegriddingFlag flag,
                              bool do_report_range, double default_value,
                              double *output) {
   const Logger &log = *grid.ctx()->log();
 
-  nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
+  file.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
-  units::System::Ptr sys = var.unit_system();
-  const std::vector<double>& levels = var.get_levels();
+  units::System::Ptr sys = variable.unit_system();
+  const std::vector<double>& levels = variable.get_levels();
   const size_t data_size = grid.xm() * grid.ym() * levels.size();
 
   // Find the variable
   bool exists, found_by_standard_name;
   std::string name_found;
-  nc.inq_var(var.get_name(), var.get_string("standard_name"),
-             exists, name_found, found_by_standard_name);
+  file.inq_var(variable.get_name(), variable.get_string("standard_name"),
+               exists, name_found, found_by_standard_name);
 
   if (exists) {                      // the variable was found successfully
 
+    grid_info input_grid(file, name_found, sys, grid.periodicity());
+
+    check_input_grid(input_grid);
+
+    check_grid_overlap(input_grid, grid, levels, false);
+
     if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
       log.message(2,
-                 "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
-                 default_value, var.get_string("units").c_str(), var.get_name().c_str(),
-                 nc.inq_filename().c_str());
+                  "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
+                  default_value, variable.get_string("units").c_str(), variable.get_name().c_str(),
+                  file.inq_filename().c_str());
 
-      regrid_vec_fill_missing(nc, grid, name_found, levels,
+      regrid_vec_fill_missing(file, grid, name_found, levels,
                               t_start, default_value, output);
     } else {
-      regrid_vec(nc, grid, name_found, levels, t_start, output);
+      regrid_vec(file, grid, name_found, levels, t_start, output);
     }
 
     // Now we need to get the units string from the file and convert
     // the units, because check_range and report_range expect data to
     // be in PISM (MKS) units.
 
-    std::string input_units = nc.get_att_text(name_found, "units");
+    std::string input_units = file.get_att_text(name_found, "units");
 
     if (input_units.empty()) {
-      std::string internal_units = var.get_string("units");
+      std::string internal_units = variable.get_string("units");
       input_units = internal_units;
       if (not internal_units.empty()) {
         log.message(2,
-                   "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-                   "              Assuming that it is in '%s'.\n",
-                   var.get_name().c_str(),
-                   var.get_string("long_name").c_str(),
-                   internal_units.c_str());
+                    "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                    "              Assuming that it is in '%s'.\n",
+                    variable.get_name().c_str(),
+                    variable.get_string("long_name").c_str(),
+                    internal_units.c_str());
       }
     }
 
     // Convert data:
     units::Converter(sys,
-                  input_units,
-                  var.get_string("units")).convert_doubles(output, data_size);
+                     input_units,
+                     variable.get_string("units")).convert_doubles(output, data_size);
 
     // Read the valid range info:
-    read_valid_range(nc, name_found, var);
+    read_valid_range(file, name_found, variable);
 
     double min = 0.0, max = 0.0;
-    compute_range(nc.com(), output, data_size, &min, &max);
+    compute_range(grid.com, output, data_size, &min, &max);
 
     // Check the range and warn the user if needed:
-    var.check_range(nc.inq_filename(), min, max);
+    variable.check_range(file.inq_filename(), min, max);
 
     if (do_report_range) {
       // We can report the success, and the range now:
       log.message(2, "  FOUND ");
 
-      var.report_range(log, min, max, found_by_standard_name);
+      variable.report_range(log, min, max, found_by_standard_name);
     }
   } else {                // couldn't find the variable
     if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
       // if it's critical, print an error message and stop
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in the regridding file '%s'.",
-                                    var.get_name().c_str(), nc.inq_filename().c_str());
+                                    variable.get_name().c_str(), file.inq_filename().c_str());
     }
 
     // If it is optional, fill with the provided default value.
     // units::Converter constructor will make sure that units are compatible.
     units::Converter c(sys,
-                    var.get_string("units"),
-                    var.get_string("glaciological_units"));
+                       variable.get_string("units"),
+                       variable.get_string("glaciological_units"));
 
-    std::string spacer(var.get_name().size(), ' ');
+    std::string spacer(variable.get_name().size(), ' ');
     log.message(2,
-               "  absent %s / %-10s\n"
-               "         %s \\ not found; using default constant %7.2f (%s)\n",
-               var.get_name().c_str(),
-               var.get_string("long_name").c_str(),
-               spacer.c_str(), c(default_value),
-               var.get_string("glaciological_units").c_str());
+                "  absent %s / %-10s\n"
+                "         %s \\ not found; using default constant %7.2f (%s)\n",
+                variable.get_name().c_str(),
+                variable.get_string("long_name").c_str(),
+                spacer.c_str(), c(default_value),
+                variable.get_string("glaciological_units").c_str());
 
     for (size_t k = 0; k < data_size; ++k) {
       output[k] = default_value;

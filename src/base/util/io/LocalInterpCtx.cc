@@ -62,83 +62,6 @@ static void subset_start_and_count(const std::vector<double> &x,
   x_count = x_end - x_start + 1;
 }
 
-/*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
-void check_input_grid(const grid_info &input) {
-  if (not is_increasing(input.x)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "input x coordinate has to be strictly increasing");
-  }
-
-  if (not is_increasing(input.y)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "input y coordinate has to be strictly increasing");
-  }
-
-  if (not is_increasing(input.z)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "input vertical grid has to be strictly increasing");
-  }
-}
-
-/*!
- * Check the overlap of the input grid and the internal grid.
- *
- * Set `allow_vertical_extrapolation` to `true` to "extend" the vertical grid using "bootstrapping".
- */
-void check_grid_overlap(const grid_info &input, const IceGrid &internal,
-                        const std::vector<double> &z_internal,
-                        bool allow_vertical_extrapolation) {
-
-  // Grid spacing (assume that the grid is equally-spaced) and the
-  // extent of the domain. To compute the extent of the domain, assume
-  // that the grid is cell-centered, so edge of the domain is half of
-  // the grid spacing away from grid points at the edge.
-  //
-  // Note that x_min is not the same as internal.x(0).
-  const double
-    x_min       = internal.x0() - internal.Lx(),
-    x_max       = internal.x0() + internal.Lx(),
-    y_min       = internal.y0() - internal.Ly(),
-    y_max       = internal.y0() + internal.Ly(),
-    input_x_min = input.x0 - input.Lx,
-    input_x_max = input.x0 + input.Lx,
-    input_y_min = input.y0 - input.Ly,
-    input_y_max = input.y0 + input.Ly;
-
-  // tolerance (one micron)
-  double eps = 1e-6;
-
-  // horizontal grid extent
-  if (not (x_min >= input_x_min - eps and x_max <= input_x_max + eps and
-           y_min >= input_y_min - eps and y_max <= input_y_max + eps)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "PISM's computational domain is not a subset of the domain in an input file\n"
-                                  "PISM grid:       x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters\n"
-                                  "input file grid: x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters",
-                                  x_min, x_max, y_min, y_max,
-                                  input_x_min, input_x_max, input_y_min, input_y_max);
-  }
-
-
-  // vertical grid extent
-  const double
-    input_z_min = input.z.front(),
-    input_z_max = input.z.back(),
-    z_min       = z_internal.front(),
-    z_max       = z_internal.back();
-
-  if (not (z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
-    if (not allow_vertical_extrapolation) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "PISM's computational domain is not a subset of the domain in an input file\n"
-                                    "PISM grid:       z: [%3.3f, %3.3f] meters\n"
-                                    "input file grid: z: [%3.3f, %3.3f] meters",
-                                    z_min, z_max,
-                                    input_z_min, input_z_max);
-    }
-  }
-}
-
 //! Construct a local interpolation context.
 /*!
   The essential quantities to compute are where each processor should start within the NetCDF file grid
@@ -163,10 +86,6 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 
   grid.ctx()->log()->message(3, "\nRegridding file grid info:\n");
   input.report(*grid.ctx()->log(), 3, grid.ctx()->unit_system());
-
-  check_input_grid(input);
-
-  check_grid_overlap(input, grid, z_output, false);
 
   // limits of the processor's part of the target computational domain
   const double
