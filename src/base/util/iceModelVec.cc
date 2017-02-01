@@ -413,7 +413,7 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
 //! Gets an IceModelVec from a file `nc`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
-void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
+void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
                               double default_value) {
   m_grid->ctx()->log()->message(3, "  Regridding %s...\n", m_name.c_str());
 
@@ -422,18 +422,22 @@ void IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
                        " only supports IceModelVecs with dof == 1.");
   }
 
+  bool allow_extrapolation = false;
+
   if (m_has_ghosts) {
     petsc::TemporaryGlobalVec tmp(m_da);
     petsc::VecArray tmp_array(tmp);
 
-    io::regrid_spatial_variable(metadata(0), *m_grid, nc,
-                                flag, m_report_range, default_value, tmp_array.get());
+    io::regrid_spatial_variable(metadata(0), *m_grid, file, flag,
+                                m_report_range, allow_extrapolation,
+                                default_value, tmp_array.get());
 
     global_to_local(m_da, tmp, m_v);
   } else {
     petsc::VecArray v_array(m_v);
-    io::regrid_spatial_variable(metadata(0), *m_grid,  nc,
-                                flag, m_report_range, default_value, v_array.get());
+    io::regrid_spatial_variable(metadata(0), *m_grid,  file, flag,
+                                m_report_range, allow_extrapolation,
+                                default_value, v_array.get());
   }
 }
 

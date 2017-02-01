@@ -351,10 +351,10 @@ void IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   }
 }
 
-void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
+void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
                                double default_value) {
   if ((m_dof == 1) and (not m_has_ghosts)) {
-    IceModelVec::regrid_impl(nc, flag, default_value);
+    IceModelVec::regrid_impl(file, flag, default_value);
     return;
   }
 
@@ -368,11 +368,15 @@ void IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   // the same way v is
   petsc::TemporaryGlobalVec tmp(da2);
 
+  // this is a 2D field, so we never allow extrapolation in the vertical direction
+  const bool allow_extrapolation = false;
+
   for (unsigned int j = 0; j < m_dof; ++j) {
     {
       petsc::VecArray tmp_array(tmp);
-      io::regrid_spatial_variable(m_metadata[j], *m_grid,  nc,
-                                  flag, m_report_range, default_value, tmp_array.get());
+      io::regrid_spatial_variable(m_metadata[j], *m_grid,  file, flag,
+                                  m_report_range, allow_extrapolation,
+                                  default_value, tmp_array.get());
     }
 
     IceModelVec2::set_dof(da2, tmp, j);

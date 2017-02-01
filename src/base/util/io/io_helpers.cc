@@ -724,13 +724,15 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
  */
 void regrid_spatial_variable(SpatialVariableMetadata &var,
                              const IceGrid& grid, const PIO &nc,
-                             RegriddingFlag flag, bool do_report_range,
+                             RegriddingFlag flag, bool report_range,
+                             bool allow_vertical_extrapolation,
                              double default_value, double *output) {
   unsigned int t_length = nc.inq_nrecords(var.get_name(),
                                           var.get_string("standard_name"),
                                           var.unit_system());
 
-  regrid_spatial_variable(var, grid, nc, t_length - 1, flag, do_report_range,
+  regrid_spatial_variable(var, grid, nc, t_length - 1, flag,
+                          report_range, allow_vertical_extrapolation,
                           default_value, output);
 }
 
@@ -832,7 +834,9 @@ static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const IceGrid& grid, const PIO &file,
                              unsigned int t_start, RegriddingFlag flag,
-                             bool do_report_range, double default_value,
+                             bool report_range,
+                             bool allow_vertical_extrapolation,
+                             double default_value,
                              double *output) {
   const Logger &log = *grid.ctx()->log();
 
@@ -854,7 +858,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
     check_input_grid(input_grid);
 
-    check_grid_overlap(input_grid, grid, levels, false);
+    check_grid_overlap(input_grid, grid, levels, allow_vertical_extrapolation);
 
     if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
       log.message(2,
@@ -892,20 +896,21 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                      input_units,
                      variable.get_string("units")).convert_doubles(output, data_size);
 
-    // Read the valid range info:
-    read_valid_range(file, name_found, variable);
+    // Check the range and report it if necessary.
+    {
+      double min = 0.0, max = 0.0;
+      read_valid_range(file, name_found, variable);
 
-    double min = 0.0, max = 0.0;
-    compute_range(grid.com, output, data_size, &min, &max);
+      compute_range(grid.com, output, data_size, &min, &max);
 
-    // Check the range and warn the user if needed:
-    variable.check_range(file.inq_filename(), min, max);
+      // Check the range and warn the user if needed:
+      variable.check_range(file.inq_filename(), min, max);
+      if (report_range) {
+        // We can report the success, and the range now:
+        log.message(2, "  FOUND ");
 
-    if (do_report_range) {
-      // We can report the success, and the range now:
-      log.message(2, "  FOUND ");
-
-      variable.report_range(log, min, max, found_by_standard_name);
+        variable.report_range(log, min, max, found_by_standard_name);
+      }
     }
   } else {                // couldn't find the variable
     if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
