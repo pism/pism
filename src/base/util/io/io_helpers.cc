@@ -414,61 +414,13 @@ static LocalInterpCtx* get_interp_context(const PIO& file,
   return new LocalInterpCtx(gi, grid, zlevels);
 }
 
-//! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
-//! interpolation to put it on the grid defined by "grid" and zlevels_out.
-static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &var_name,
-                       const std::vector<double> &zlevels_out,
-                       unsigned int t_start, double *output) {
-  try {
-    const int X = 1, Y = 2, Z = 3; // indices, just for clarity
-    std::vector<unsigned int> start, count, imap;
-
-    std::shared_ptr<LocalInterpCtx> lic(get_interp_context(nc, var_name, grid, zlevels_out));
-    assert((bool)lic);
-
-    double *buffer = &(lic->buffer[0]);
-
-    const unsigned int t_count = 1;
-    compute_start_and_count(nc,
-                            grid.ctx()->unit_system(),
-                            var_name,
-                            t_start, t_count,
-                            lic->start[X], lic->count[X],
-                            lic->start[Y], lic->count[Y],
-                            lic->start[Z], lic->count[Z],
-                            start, count, imap);
-
-    bool mapped_io = use_mapped_io(nc, grid.ctx()->unit_system(), var_name);
-    if (mapped_io) {
-      nc.get_varm_double(var_name, start, count, imap, buffer);
-    } else {
-      nc.get_vara_double(var_name, start, count, buffer);
-    }
-
-    // interpolate
-    regrid(grid, zlevels_out, lic.get(), output);
-  } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
-                  var_name.c_str(), nc.inq_filename().c_str());
-    throw;
-  }
-}
-
-/** Regrid `var_name` from a file, replacing missing values with `default_value`.
- *
- * @param grid computational grid; used to initialize interpolation
- * @param var_name variable to regrid
- * @param zlevels_out vertical levels of the resulting grid
- * @param t_start time index of the record to regrid
- * @param default_value default value to replace `_FillValue` with
- * @param[out] output resulting interpolated field
- */
-static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
-                                    const std::string &var_name,
-                                    const std::vector<double> &zlevels_out,
-                                    unsigned int t_start,
-                                    double default_value,
-                                    double *output) {
+static void regrid_vec_generic(const PIO &nc, const IceGrid &grid,
+                               const std::string &var_name,
+                               const std::vector<double> &zlevels_out,
+                               unsigned int t_start,
+                               bool fill_missing,
+                               double default_value,
+                               double *output) {
   try {
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     std::vector<unsigned int> start, count, imap;
@@ -497,7 +449,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
 
     // Replace missing values if the _FillValue attribute is present,
     // and if we have missing values to replace.
-    {
+    if (fill_missing) {
       std::vector<double> attribute = nc.get_att_double(var_name, "_FillValue");
       if (attribute.size() == 1) {
         const double fill_value = attribute[0],
@@ -517,6 +469,42 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
                   var_name.c_str(), nc.inq_filename().c_str());
     throw;
   }
+}
+
+//! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
+//! interpolation to put it on the grid defined by "grid" and zlevels_out.
+static void regrid_vec(const PIO &nc, const IceGrid &grid, const std::string &var_name,
+                       const std::vector<double> &zlevels_out,
+                       unsigned int t_start, double *output) {
+  regrid_vec_generic(nc, grid,
+                     var_name,
+                     zlevels_out,
+                     t_start,
+                     false, 0.0,
+                     output);
+}
+
+/** Regrid `var_name` from a file, replacing missing values with `default_value`.
+ *
+ * @param grid computational grid; used to initialize interpolation
+ * @param var_name variable to regrid
+ * @param zlevels_out vertical levels of the resulting grid
+ * @param t_start time index of the record to regrid
+ * @param default_value default value to replace `_FillValue` with
+ * @param[out] output resulting interpolated field
+ */
+static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
+                                    const std::string &var_name,
+                                    const std::vector<double> &zlevels_out,
+                                    unsigned int t_start,
+                                    double default_value,
+                                    double *output) {
+  regrid_vec_generic(nc, grid,
+                     var_name,
+                     zlevels_out,
+                     t_start,
+                     true, default_value,
+                     output);
 }
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.

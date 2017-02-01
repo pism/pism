@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -47,9 +47,9 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
 
 void regrid_spatial_variable(SpatialVariableMetadata &var,
                              const IceGrid& grid, const PIO &nc,
-                             unsigned int t_start, RegriddingFlag flag,
-                             bool do_report_range, double default_value,
-                             double *output);
+                             unsigned int t_start,
+                             RegriddingFlag flag, bool do_report_range,
+                             double default_value, double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &var,
                            const IceGrid& grid, const PIO &nc,
