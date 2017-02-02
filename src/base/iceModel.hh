@@ -161,11 +161,7 @@ public:
 
   // see iMoptions.cc
   virtual void setFromOptions();
-  virtual std::set<std::string> output_size_from_option(const std::string &option,
-                                                        const std::string &description,
-                                                        const std::string &default_value);
-  virtual std::set<std::string> set_output_size(const std::string &keyword);
-  virtual std::string get_output_size(const std::string &option);
+  virtual std::set<std::string> output_variables(const std::string &keyword);
 
   // see iMutil.cc
   virtual void additionalAtStartTimestep();

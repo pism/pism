@@ -740,8 +740,18 @@ void IceModel::misc_setup() {
     }
   }
 
-  m_output_vars = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
-                                          "medium");
+#if (PISM_USE_PROJ4==1)
+  {
+    m_output_vars = output_variables(m_config->get_string("output.size"));
+    std::string proj_string = m_grid->get_mapping_info().proj4;
+    if (not proj_string.empty()) {
+      m_output_vars.insert("lon_bnds");
+      m_output_vars.insert("lat_bnds");
+      m_latitude.metadata().set_string("bounds", "lat_bnds");
+      m_longitude.metadata().set_string("bounds", "lon_bnds");
+    }
+  }
+#endif
 
   init_calving();
   init_diagnostics();

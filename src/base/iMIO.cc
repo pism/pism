@@ -60,9 +60,8 @@ void  IceModel::writeFiles(const std::string &default_filename) {
                "PISM WARNING: output file name does not have the '.nc' suffix!\n");
   }
 
-  if (get_output_size("-o_size") != "none") {
-    m_log->message(2,
-               "Writing model state to file `%s'\n", filename->c_str());
+  if (m_config->get_string("output.size") != "none") {
+    m_log->message(2, "Writing model state to file `%s'\n", filename->c_str());
     dumpToFile(filename);
   }
 }
@@ -100,27 +99,26 @@ void IceModel::write_config(const PIO &file) {
 
 void IceModel::dumpToFile(const std::string &filename) {
   const Profiling &profiling = m_ctx->profiling();
-
   profiling.begin("model state dump");
 
-  PIO nc(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+  {
+    PIO nc(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
 
-  // Write metadata *before* everything else:
-  write_mapping(nc);
-  write_run_stats(nc);
-  write_global_attributes(nc);
-  write_config(nc);
+    // Write metadata *before* everything else:
+    write_mapping(nc);
+    write_run_stats(nc);
+    write_global_attributes(nc);
+    write_config(nc);
 
-  std::string time_name = m_config->get_string("time.dimension_name");
-  io::define_time(nc, time_name, m_time->calendar(),
-                  m_time->CF_units_string(),
-                  m_sys);
+    std::string time_name = m_config->get_string("time.dimension_name");
+    io::define_time(nc, time_name, m_time->calendar(),
+                    m_time->CF_units_string(),
+                    m_sys);
 
-  io::append_time(nc, time_name, m_time->current());
+    io::append_time(nc, time_name, m_time->current());
 
-  write_model_state(nc);
-
-  nc.close();
+    write_model_state(nc);
+  }
 
   profiling.end("model state dump");
 }
@@ -181,22 +179,6 @@ void IceModel::write_diagnostics(const PIO &nc, const std::set<std::string> &var
 }
 
 void IceModel::write_model_state(const PIO &nc) {
-  std::string o_size = get_output_size("-o_size");
-
-#if (PISM_USE_PROJ4==1)
-  std::string proj_string = m_grid->get_mapping_info().proj4;
-  if (not proj_string.empty()) {
-    m_output_vars.insert("lon_bnds");
-    m_output_vars.insert("lat_bnds");
-    m_latitude.metadata().set_string("bounds", "lat_bnds");
-    m_longitude.metadata().set_string("bounds", "lon_bnds");
-  }
-#elif (PISM_USE_PROJ4==0)
-  // do nothing
-#else  // PISM_USE_PROJ4 is not set
-#error "PISM build system error: PISM_USE_PROJ4 is not set."
-#endif
-
   // define
   for (auto m : m_submodels) {
     m.second->define_model_state(nc);
@@ -311,9 +293,7 @@ void IceModel::init_snapshots() {
 
   bool split = options::Bool("-save_split", "Specifies whether to save snapshots to separate files");
 
-  m_snapshot_vars = output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
-                                          "small");
-
+  m_snapshot_vars = output_variables(m_config->get_string("output.save_size"));
 
   if (save_file.is_set() ^ save_times.is_set()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "you need to specify both -save_file and -save_times to save snapshots.");
@@ -461,8 +441,7 @@ void IceModel::init_backups() {
   m_backup_interval = options::Real("-backup_interval",
                                   "Automatic backup interval, hours", m_backup_interval);
 
-  m_backup_vars = output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
-                                        "small");
+  m_backup_vars = output_variables(m_config->get_string("output.backup_size"));
 
   m_last_backup_time = 0.0;
 }
