@@ -697,8 +697,12 @@ void IceModel::step(bool do_mass_continuity,
     dumpToFile(o_file, output_variables("small"));
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Ice thickness exceeds the height of the computational box (%7.4f m)",
-                                  m_grid->Lz());
+                                  "Ice thickness exceeds the height of the computational box (%7.4f m).\n"
+                                  "The model state was saved to '%s'. To continue this simulation,\n"
+                                  "run with\n"
+                                  "-i %s -bootstrap -regrid_file %s -allow_extrapolation -Lz N [other options]\n"
+                                  "where N > %7.4f.",
+                                  m_grid->Lz(), o_file.c_str(), o_file.c_str(), o_file.c_str(), m_grid->Lz());
   }
 
   // end the flag line
