@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Constantine Khroulev
+// Copyright (C) 2009--2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -341,17 +341,20 @@ void IceModelVec2T::update(unsigned int start) {
 
   PIO nc(m_grid->com, "guess_mode", m_filename, PISM_READONLY);
 
+  const bool allow_extrapolation = m_grid->ctx()->config()->get_boolean("grid.allow_extrapolation");
+
   for (unsigned int j = 0; j < missing; ++j) {
     {
       petsc::VecArray tmp_array(m_v);
-      io::regrid_spatial_variable(m_metadata[0], *m_grid, nc, start + j,
-                           CRITICAL, m_report_range, 0.0, tmp_array.get());
+      io::regrid_spatial_variable(m_metadata[0], *m_grid, nc, start + j, CRITICAL,
+                                  m_report_range, allow_extrapolation,
+                                  0.0, tmp_array.get());
     }
 
     m_grid->ctx()->log()->message(5, " %s: reading entry #%02d, year %s...\n",
-               m_name.c_str(),
-               start + j,
-               t->date(m_time[start + j]).c_str());
+                                  m_name.c_str(),
+                                  start + j,
+                                  t->date(m_time[start + j]).c_str());
 
     set_record(kept + j);
   }

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -90,7 +90,7 @@ InputOptions process_input_options(MPI_Comm com);
   output file:
 
   - Assemble the list of variables to be written (see
-  IceModel::set_output_size()); calls add_vars_to_output()
+  IceModel::output_variables()); calls add_vars_to_output()
   - Create a NetCDF file
   - Define all the variables in the file (see IceModel::write_variables());
   calls define_variables()

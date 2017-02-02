@@ -19,6 +19,11 @@
 #ifndef __lic_hh
 #define __lic_hh
 
+#include <vector>
+#include <memory>
+
+#include "base/util/interpolation.hh"
+
 namespace pism {
 
 class IceGrid;
@@ -43,17 +48,14 @@ class grid_info;
 */
 class LocalInterpCtx {
 public:
-  LocalInterpCtx(const grid_info &g, const IceGrid &grid, double z_min, double z_max);
-  ~LocalInterpCtx();
-  unsigned int start[4], count[4]; // Indices in netCDF file.
-  std::vector<int> x_left, x_right, y_left, y_right; // neighbors
-  std::vector<double> x_alpha, y_alpha;
-  //! temporary buffer
+  LocalInterpCtx(const grid_info &input, const IceGrid &grid,
+                 const std::vector<double> &z_output);
+  // Indices in netCDF file.
+  unsigned int start[4], count[4];
+  // indexes and coefficients for 1D linear interpolation
+  std::shared_ptr<LinearInterpolation> x, y, z;
+  //! temporary storage
   std::vector<double> buffer;
-  std::vector<double> zlevels;     //!< input z levels
-  bool report_range;
-  MPI_Comm com;                 //!< MPI Communicator (for printing, mostly)
-  int rank;             //!< MPI rank, to allocate a_raw on proc 0 only
 };
 
 } // end of namespace pism

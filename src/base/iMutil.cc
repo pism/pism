@@ -85,7 +85,7 @@ int IceModel::endOfTimeStepHook() {
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
        file_name);
     pism_signal = 0;
-    dumpToFile(file_name);
+    dumpToFile(file_name, m_output_vars);
 
     // flush all the time-series buffers:
     flush_timeseries();
@@ -215,32 +215,30 @@ void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
   loop.check();
 }
 
-//! Check if the thickness of the ice is too large and extend the grid if necessary.
-/*!
-  Extends the grid such that the new one has 2 (two) levels above the ice.
+//! Check if the thickness of the ice is too large.
+/*! Return true if the ice thickness exceeds the height of the computational domain.
  */
-void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness) {
+bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness) {
   IceGrid::ConstPtr grid = ice_thickness.get_grid();
 
   const double Lz = grid->Lz();
 
   IceModelVec::AccessList list(ice_thickness);
 
-  ParallelSection loop(grid->com);
-  try {
-    for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+  unsigned int counter = 0;
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (ice_thickness(i, j) > Lz) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Ice thickness (%7.4f m) exceeds the height"
-                                      " of the computational box (%7.4f m) at i=%d, j=%d.",
-                                      ice_thickness(i, j), Lz, i, j);
-      }
+    if (ice_thickness(i, j) > Lz) {
+      counter += 1;
     }
-  } catch (...) {
-    loop.failed();
   }
-  loop.check();
+
+  if (GlobalSum(grid->com, counter) > 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 //! Return the grid used by this model.

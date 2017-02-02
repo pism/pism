@@ -447,16 +447,15 @@ void IceModel::write_extras() {
   // time_length - 1).
   io::append_time(nc, time_name, current_time);
 
-  std::vector<double> data(2);
-  data[0] = m_last_extra;
-  data[1] = current_time;
-  io::write_time_bounds(nc, m_extra_bounds, time_start, data);
+  io::write_time_bounds(nc, m_extra_bounds, time_start, {m_last_extra, current_time});
 
   io::write_timeseries(nc, m_timestamp, time_start, wall_clock_hours);
 
   if (not m_extra_vars.empty()) {
-    write_diagnostics(nc, m_extra_vars, PISM_FLOAT);
+    define_diagnostics(nc, m_extra_vars, PISM_FLOAT);
+    write_diagnostics(nc, m_extra_vars);
   } else {
+    define_model_state(nc);
     write_model_state(nc);
   }
 

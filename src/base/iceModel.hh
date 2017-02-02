@@ -161,11 +161,7 @@ public:
 
   // see iMoptions.cc
   virtual void setFromOptions();
-  virtual std::set<std::string> output_size_from_option(const std::string &option,
-                                                        const std::string &description,
-                                                        const std::string &default_value);
-  virtual std::set<std::string> set_output_size(const std::string &keyword);
-  virtual std::string get_output_size(const std::string &option);
+  virtual std::set<std::string> output_variables(const std::string &keyword);
 
   // see iMutil.cc
   virtual void additionalAtStartTimestep();
@@ -180,15 +176,21 @@ public:
   void reset_cumulative_fluxes();
 
   virtual void writeFiles(const std::string &default_filename);
-  virtual void write_model_state(const PIO &nc);
 
-  virtual void write_mapping(const PIO &nc);
-  virtual void write_run_stats(const PIO &nc);
-  virtual void write_global_attributes(const PIO &nc);
-  virtual void write_config(const PIO &nc);
+  virtual void define_model_state(const PIO &file);
+  virtual void write_model_state(const PIO &file);
 
-  virtual void write_diagnostics(const PIO &nc, const std::set<std::string> &vars,
-                                 IO_Type nctype);
+  virtual void write_mapping(const PIO &file);
+  virtual void write_run_stats(const PIO &file);
+  virtual void write_global_attributes(const PIO &file);
+  virtual void write_config(const PIO &file);
+
+
+  virtual void define_diagnostics(const PIO &file,
+                                  const std::set<std::string> &variables,
+                                  IO_Type nctype);
+  virtual void write_diagnostics(const PIO &file,
+                                 const std::set<std::string> &variables);
 protected:
 
   //! Computational grid
@@ -366,7 +368,8 @@ protected:
 
 
   // see iMIO.cc
-  virtual void dumpToFile(const std::string &filename);
+  virtual void dumpToFile(const std::string &filename,
+                          const std::set<std::string> &variables);
   virtual void regrid(int dimensions);
   virtual void regrid_variables(const PIO &regrid_file,
                                 const std::set<std::string> &regrid_vars,
@@ -508,7 +511,7 @@ private:
 };
 
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
-void check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
+bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
 void bedrock_surface_temperature(double sea_level,
                                  const IceModelVec2CellType &cell_type,

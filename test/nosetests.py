@@ -1088,3 +1088,77 @@ def interpolation_weights_test():
     result = np.array([interp2d(grid, Z, x_pts[k], y_pts[k]) for k in range(N)])
 
     np.testing.assert_almost_equal(result, exact)
+
+def vertical_extrapolation_during_regridding_test():
+    "Test extrapolation in the vertical direction"
+    # create a grid with 11 levels, 1000m thick
+    ctx = PISM.Context()
+    params = PISM.GridParameters(ctx.config)
+    params.Lx = 1e5
+    params.Ly = 1e5
+    params.Mx = 3
+    params.My = 3
+    params.Mz = 11
+    params.Lz = 1000
+    params.periodicity = PISM.NOT_PERIODIC
+    params.ownership_ranges_from_options(ctx.size)
+
+    z = np.linspace(0, params.Lz, params.Mz)
+    params.z[:] = z
+
+    grid = PISM.IceGrid(ctx.ctx, params)
+
+    # create an IceModelVec that uses this grid
+    v = PISM.IceModelVec3()
+    v.create(grid, "test", PISM.WITHOUT_GHOSTS)
+    v.set(0.0)
+
+    # set a column
+    with PISM.vec.Access(nocomm=[v]):
+        v.set_column(1, 1, z)
+
+    # save to a file
+    v.dump("test.nc")
+
+    # create a taller grid (to 2000m):
+    params.Lz = 2000
+    params.Mz = 41
+    z_tall = np.linspace(0, params.Lz, params.Mz)
+    params.z[:] = z_tall
+
+    tall_grid = PISM.IceGrid(ctx.ctx, params)
+
+    # create an IceModelVec that uses this grid
+    v_tall = PISM.IceModelVec3()
+    v_tall.create(tall_grid, "test", PISM.WITHOUT_GHOSTS)
+
+    # Try regridding without extrapolation. This should fail.
+    try:
+        ctx.ctx.log().disable()
+        v_tall.regrid("test.nc", PISM.CRITICAL)
+        ctx.ctx.log().enable()
+        raise AssertionError("Should not be able to regrid without extrapolation")
+    except RuntimeError as e:
+        pass
+
+    # allow extrapolation during regridding
+    ctx.config.set_boolean("grid.allow_extrapolation", True)
+
+    # regrid from test.nc
+    ctx.ctx.log().disable()
+    v_tall.regrid("test.nc", PISM.CRITICAL)
+    ctx.ctx.log().enable()
+
+    # get a column
+    with PISM.vec.Access(nocomm=[v_tall]):
+        column = np.array(v_tall.get_column_vector(1, 1))
+
+    # compute the desired result
+    desired = np.r_[np.linspace(0, 1000, 21), np.zeros(20) + 1000]
+
+    # compare
+    np.testing.assert_almost_equal(column, desired)
+
+    # clean up
+    import os
+    os.remove("test.nc")

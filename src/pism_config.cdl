@@ -646,6 +646,11 @@ netcdf pism_config {
     pism_config:geometry.update.use_basal_melt_rate_option = "bmr_in_cont";
     pism_config:geometry.update.use_basal_melt_rate_type = "boolean";
 
+    pism_config:grid.allow_extrapolation = "no";
+    pism_config:grid.allow_extrapolation_doc = "Allow extrapolation during regridding.";
+    pism_config:grid.allow_extrapolation_option = "allow_extrapolation";
+    pism_config:grid.allow_extrapolation_type = "boolean";
+
     pism_config:grid.Lbz = 0;
     pism_config:grid.Lbz_doc = "Thickness of the thermal bedrock layer.";
     pism_config:grid.Lbz_type = "scalar";

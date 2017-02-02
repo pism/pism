@@ -27,6 +27,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/IceGrid.hh"
 
+#include "base/util/pism_utilities.hh"
 #include "base/util/interpolation.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/Logger.hh"
@@ -80,47 +81,14 @@ static void subset_start_and_count(const std::vector<double> &x,
   processor.
 */
 LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
-                               double z_min, double z_max) {
+                               const std::vector<double> &z_output) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
-
-  com = grid.com;
-  rank = grid.rank();
-  report_range = true;
 
   grid.ctx()->log()->message(3, "\nRegridding file grid info:\n");
   input.report(*grid.ctx()->log(), 3, grid.ctx()->unit_system());
 
-  // Grid spacing (assume that the grid is equally-spaced) and the
-  // extent of the domain. To compute the extent of the domain, assume
-  // that the grid is cell-centered, so edge of the domain is half of
-  // the grid spacing away from grid points at the edge.
-  const double
-    x_min = grid.x0() - grid.Lx(),
-    x_max = grid.x0() + grid.Lx(),
-    y_min = grid.y0() - grid.Ly(),
-    y_max = grid.y0() + grid.Ly();
-  const double
-    input_x_min = input.x0 - input.Lx,
-    input_x_max = input.x0 + input.Lx,
-    input_y_min = input.y0 - input.Ly,
-    input_y_max = input.y0 + input.Ly;
-
-  // tolerance (one micron)
-  double eps = 1e-6;
-  if (not (x_min >= input_x_min - eps and x_max <= input_x_max + eps and
-           y_min >= input_y_min - eps and y_max <= input_y_max + eps and
-           z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
-
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "target computational domain not a subset of source (in NetCDF file)\n"
-                                  "computational domain:\n"
-                                  "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n"
-                                  "source domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters",
-                                  x_min, x_max, y_min, y_max, z_min, z_max,
-                                  input_x_min, input_x_max, input_y_min, input_y_max, input.z_min, input.z_max);
-  }
-
   // limits of the processor's part of the target computational domain
-  double
+  const double
     x_min_proc = grid.x(grid.xs()),
     x_max_proc = grid.x(grid.xs() + grid.xm() - 1),
     y_min_proc = grid.y(grid.ys()),
@@ -139,18 +107,17 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // Z
   start[Z] = 0;                    // always start at the base
   count[Z] = std::max(input.z_len, 1u); // read at least one level
-  zlevels = input.z;
 
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
   // we perform a reduce so that node 0 has the maximum value.
   unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1u);
   unsigned int proc0_buffer_size = buffer_size;
-  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, com);
+  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, grid.com);
 
   ParallelSection allocation(grid.com);
   try {
-    if (rank == 0) {
+    if (grid.rank() == 0) {
       buffer.resize(proc0_buffer_size);
     } else {
       buffer.resize(buffer_size);
@@ -160,22 +127,13 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   }
   allocation.check();
 
-  // Compute indices of neighbors and map-plane interpolation coefficients.
-  LinearInterpolation x_interp(&input.x[start[X]], count[X],
-                               &grid.x()[grid.xs()], grid.xm());
-  x_left = x_interp.left();
-  x_right = x_interp.right();
-  x_alpha = x_interp.alpha();
+  x.reset(new LinearInterpolation(&input.x[start[X]], count[X],
+                                  &grid.x()[grid.xs()], grid.xm()));
 
-  LinearInterpolation y_interp(&input.y[start[Y]], count[Y],
-                               &grid.y()[grid.ys()], grid.ym());
-  y_left = y_interp.left();
-  y_right = y_interp.right();
-  y_alpha = y_interp.alpha();
-}
+  y.reset(new LinearInterpolation(&input.y[start[Y]], count[Y],
+                                  &grid.y()[grid.ys()], grid.ym()));
 
-LocalInterpCtx::~LocalInterpCtx() {
-  // empty
+  z.reset(new LinearInterpolation(input.z, z_output));
 }
 
 } // end of namespace pism

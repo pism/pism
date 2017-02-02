@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -76,19 +76,8 @@ void IceModel::setFromOptions() {
   }
 }
 
-//! Set the output file size using a command-line option.
-std::set<std::string> IceModel::output_size_from_option(const std::string &option,
-                                                        const std::string &description,
-                                                        const std::string &default_value) {
-
-  options::Keyword o_size(option, description, "none,small,medium,big,big_2d",
-                          default_value);
-
-  return set_output_size(o_size);
-}
-
 //! Assembles a list of variables corresponding to an output file size.
-std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
+std::set<std::string> IceModel::output_variables(const std::string &keyword) {
   std::set<std::string> result;
 
   if (keyword == "none") {
@@ -138,12 +127,5 @@ std::set<std::string> IceModel::set_output_size(const std::string &keyword) {
 
   return result;
 }
-
-
-//! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
-std::string IceModel::get_output_size(const std::string &option) {
-  return options::Keyword(option, "no description", "none,small,medium,big,big_2d", "no default");
-}
-
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -511,9 +511,13 @@ public:
   virtual ~IceModelVec3D();
 
   void set_column(int i, int j, double c);
-  void set_column(int i, int j, double *valsIN);
+  void set_column(int i, int j, const double *valsIN);
   double* get_column(int i, int j);
   const double* get_column(int i, int j) const;
+
+  // testing methods (for use from Python)
+  void set_column(int i, int j, const std::vector<double> &valsIN);
+  const std::vector<double> get_column_vector(int i, int j) const;
 
   virtual double getValZ(int i, int j, double z) const;
   virtual bool isLegalLevel(double z) const;

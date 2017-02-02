@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -51,6 +51,14 @@ void LinearInterpolation::init(const double *input_x, unsigned int input_x_size,
   m_right.resize(output_x_size);
   m_alpha.resize(output_x_size);
 
+  // the trivial case
+  if (input_x_size < 2) {
+    m_left[0]  = 0;
+    m_right[0] = 0;
+    m_alpha[0] = 0.0;
+    return;
+  }
+
   // input grid points have to be stored in the increasing order
   for (unsigned int i = 0; i < input_x_size - 1; ++i) {
     if (input_x[i] >= input_x[i + 1]) {
@@ -100,6 +108,18 @@ const std::vector<int>& LinearInterpolation::right() const {
 
 const std::vector<double>& LinearInterpolation::alpha() const {
   return m_alpha;
+}
+
+int LinearInterpolation::left(size_t j) const {
+  return m_left[j];
+}
+
+int LinearInterpolation::right(size_t j) const {
+  return m_right[j];
+}
+
+double LinearInterpolation::alpha(size_t j) const {
+  return m_alpha[j];
 }
 
 std::vector<double> LinearInterpolation::interpolate(const std::vector<double> &input_values) const {
