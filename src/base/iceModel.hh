@@ -176,15 +176,21 @@ public:
   void reset_cumulative_fluxes();
 
   virtual void writeFiles(const std::string &default_filename);
-  virtual void write_model_state(const PIO &nc);
 
-  virtual void write_mapping(const PIO &nc);
-  virtual void write_run_stats(const PIO &nc);
-  virtual void write_global_attributes(const PIO &nc);
-  virtual void write_config(const PIO &nc);
+  virtual void define_model_state(const PIO &file);
+  virtual void write_model_state(const PIO &file);
 
-  virtual void write_diagnostics(const PIO &nc, const std::set<std::string> &vars,
-                                 IO_Type nctype);
+  virtual void write_mapping(const PIO &file);
+  virtual void write_run_stats(const PIO &file);
+  virtual void write_global_attributes(const PIO &file);
+  virtual void write_config(const PIO &file);
+
+
+  virtual void define_diagnostics(const PIO &file,
+                                  const std::set<std::string> &variables,
+                                  IO_Type nctype);
+  virtual void write_diagnostics(const PIO &file,
+                                 const std::set<std::string> &variables);
 protected:
 
   //! Computational grid

@@ -117,52 +117,45 @@ void IceModel::dumpToFile(const std::string &filename) {
 
     io::append_time(nc, time_name, m_time->current());
 
+    define_model_state(nc);
+    define_diagnostics(nc, m_output_vars, PISM_DOUBLE);
+
     write_model_state(nc);
+    write_diagnostics(nc, m_output_vars);
   }
 
   profiling.end("model state dump");
 }
 
-//! \brief Writes variables listed in vars to filename, using nctype to write
-//! fields stored in dedicated IceModelVecs.
-void IceModel::write_diagnostics(const PIO &nc, const std::set<std::string> &vars_input,
-                                 IO_Type nctype) {
-
-  std::set<std::string> vars = vars_input;
-
+void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &variables,
+                                  IO_Type nctype) {
   // Define all the variables:
-  {
-    for (auto var : vars) {
-
-      if (m_grid->variables().is_available(var)) {
-        const IceModelVec *v = m_grid->variables().get(var);
-        // It has dedicated storage.
-        if (var == "mask") {
-          v->define(nc, PISM_BYTE); // use the default data type
-        } else {
-          v->define(nc, nctype);
-        }
+  for (auto var : variables) {
+    if (m_grid->variables().is_available(var)) {
+      const IceModelVec *v = m_grid->variables().get(var);
+      // It has dedicated storage.
+      if (var == "mask") {
+        v->define(file, PISM_BYTE); // use the default data type
       } else {
-        // It might be a diagnostic quantity
-        Diagnostic::Ptr diag = m_diagnostics[var];
+        v->define(file, nctype);
+      }
+    } else {
+      // It might be a diagnostic quantity
+      Diagnostic::Ptr diag = m_diagnostics[var];
 
-        if (diag) {
-          diag->define(nc);
-        }
+      if (diag) {
+        diag->define(file);
       }
     }
   }
-  // Write all the IceModel variables:
+}
 
-  // Make a copy to avoid modifying the container we're iterating over.
-  auto vars_copy = vars;
-  for (auto var : vars) {
+//! \brief Writes variables listed in vars to filename, using nctype to write
+//! fields stored in dedicated IceModelVecs.
+void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &variables) {
+  for (auto var : variables) {
     if (m_grid->variables().is_available(var)) {
-      m_grid->variables().get(var)->write(nc);
-
-      // note that it only erases variables that were found (and
-      // saved)
-      vars_copy.erase(var);
+      m_grid->variables().get(var)->write(file);
     } else {
       Diagnostic::Ptr diag = m_diagnostics[var];
 
@@ -170,26 +163,31 @@ void IceModel::write_diagnostics(const PIO &nc, const std::set<std::string> &var
         IceModelVec::Ptr v_diagnostic = diag->compute();
 
         v_diagnostic->write_in_glaciological_units = true;
-        v_diagnostic->write(nc);
-        vars_copy.erase(var);
+        v_diagnostic->write(file);
       }
     }
   }
-  // FIXME: collect names of unknown diagnostics
 }
 
-void IceModel::write_model_state(const PIO &nc) {
+void IceModel::define_model_state(const PIO &file) {
+  std::set<std::string> variables = output_variables("small");
+
   // define
-  for (auto m : m_submodels) {
-    m.second->define_model_state(nc);
-  }
+  define_diagnostics(file, variables, PISM_DOUBLE);
 
-  // write
   for (auto m : m_submodels) {
-    m.second->write_model_state(nc);
+    m.second->define_model_state(file);
   }
+}
 
-  write_diagnostics(nc, m_output_vars, PISM_DOUBLE);
+void IceModel::write_model_state(const PIO &file) {
+  std::set<std::string> variables = output_variables("small");
+
+  write_diagnostics(file, variables);
+
+  for (auto m : m_submodels) {
+    m.second->write_model_state(file);
+  }
 }
 
 
@@ -402,7 +400,11 @@ void IceModel::write_snapshot() {
 
   io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
 
-  write_diagnostics(nc, m_snapshot_vars, PISM_DOUBLE);
+  define_model_state(nc);
+  define_diagnostics(nc, m_snapshot_vars, PISM_DOUBLE);
+
+  write_model_state(nc);
+  write_diagnostics(nc, m_snapshot_vars);
 
   {
     // find out how much time passed since the beginning of the run
@@ -474,24 +476,27 @@ void IceModel::write_backup() {
 
   stampHistory(tmp);
 
-  PIO nc(m_grid->com, m_config->get_string("output.format"),
+  PIO file(m_grid->com, m_config->get_string("output.format"),
          m_backup_filename, PISM_READWRITE_MOVE);
 
   // write metadata:
-  io::define_time(nc, m_config->get_string("time.dimension_name"),
+  io::define_time(file, m_config->get_string("time.dimension_name"),
               m_time->calendar(),
               m_time->CF_units_string(),
               m_sys);
-  io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
+  io::append_time(file, m_config->get_string("time.dimension_name"), m_time->current());
 
   // Write metadata *before* variables:
-  write_mapping(nc);
-  write_run_stats(nc);
-  write_global_attributes(nc);
-  write_config(nc);
+  write_mapping(file);
+  write_run_stats(file);
+  write_global_attributes(file);
+  write_config(file);
 
-  write_model_state(nc);
-  write_diagnostics(nc, m_backup_vars, PISM_DOUBLE);
+  define_model_state(file);
+  define_diagnostics(file, m_backup_vars, PISM_DOUBLE);
+
+  write_model_state(file);
+  write_diagnostics(file, m_backup_vars);
 
   // Also flush time-series:
   flush_timeseries();
