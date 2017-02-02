@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -128,6 +128,25 @@ void IceModelVec3D::set_column(int i, int j, double c) {
   }
 }
 
+void IceModelVec3D::set_column(int i, int j, const std::vector<double> &data) {
+  double *column = get_column(i, j);
+  for (unsigned int k = 0; k < data.size(); ++k) {
+    column[k] = data[k];
+  }
+
+}
+
+const std::vector<double> IceModelVec3D::get_column_vector(int i, int j) const {
+  unsigned int n = m_zlevels.size();
+  std::vector<double> result(n);
+  const double *data = get_column(i, j);
+  for (unsigned int k = 0; k < n; ++k) {
+    result[k] = data[k];
+  }
+  return result;
+}
+
+
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 double IceModelVec3D::getValZ(int i, int j, double z) const {
 #if (PISM_DEBUG==1)
@@ -232,7 +251,7 @@ const double* IceModelVec3D::get_column(int i, int j) const {
   return ((double***) m_array)[j][i];
 }
 
-void  IceModelVec3D::set_column(int i, int j, double *valsIN) {
+void  IceModelVec3D::set_column(int i, int j, const double *valsIN) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
