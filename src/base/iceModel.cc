@@ -545,7 +545,7 @@ void IceModel::step(bool do_mass_continuity,
 
     std::string o_file = pism_filename_add_suffix(output_file,
                                                   "_stressbalance_failed", "");
-    dumpToFile(o_file);
+    dumpToFile(o_file, output_variables("small"));
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
                   o_file.c_str());
@@ -694,7 +694,7 @@ void IceModel::step(bool do_mass_continuity,
 
     std::string o_file = pism_filename_add_suffix(output_file,
                                                   "_max_thickness", "");
-    dumpToFile(o_file);
+    dumpToFile(o_file, output_variables("small"));
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Ice thickness exceeds the height of the computational box (%7.4f m)",

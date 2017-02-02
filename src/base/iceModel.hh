@@ -368,7 +368,8 @@ protected:
 
 
   // see iMIO.cc
-  virtual void dumpToFile(const std::string &filename);
+  virtual void dumpToFile(const std::string &filename,
+                          const std::set<std::string> &variables);
   virtual void regrid(int dimensions);
   virtual void regrid_variables(const PIO &regrid_file,
                                 const std::set<std::string> &regrid_vars,

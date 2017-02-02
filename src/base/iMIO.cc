@@ -62,7 +62,7 @@ void  IceModel::writeFiles(const std::string &default_filename) {
 
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'\n", filename->c_str());
-    dumpToFile(filename);
+    dumpToFile(filename, m_output_vars);
   }
 }
 
@@ -97,7 +97,8 @@ void IceModel::write_config(const PIO &file) {
   m_config->write(file);
 }
 
-void IceModel::dumpToFile(const std::string &filename) {
+void IceModel::dumpToFile(const std::string &filename,
+                          const std::set<std::string> &variables) {
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("model state dump");
 
@@ -118,10 +119,10 @@ void IceModel::dumpToFile(const std::string &filename) {
     io::append_time(nc, time_name, m_time->current());
 
     define_model_state(nc);
-    define_diagnostics(nc, m_output_vars, PISM_DOUBLE);
+    define_diagnostics(nc, variables, PISM_DOUBLE);
 
     write_model_state(nc);
-    write_diagnostics(nc, m_output_vars);
+    write_diagnostics(nc, variables);
   }
 
   profiling.end("model state dump");

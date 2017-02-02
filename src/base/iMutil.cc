@@ -85,7 +85,7 @@ int IceModel::endOfTimeStepHook() {
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
        file_name);
     pism_signal = 0;
-    dumpToFile(file_name);
+    dumpToFile(file_name, m_output_vars);
 
     // flush all the time-series buffers:
     flush_timeseries();
