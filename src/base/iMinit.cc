@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2015, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -248,6 +248,22 @@ void IceModel::model_state_setup() {
     if (run_stats.has_attribute("discharge_flux_cumulative")) {
       discharge_flux_cumulative = run_stats.get_double("discharge_flux_cumulative");
     }
+  }
+
+  if (input_file.is_set()) {
+    PIO nc(m_grid->com, "guess_mode");
+
+    nc.open(input_file, PISM_READONLY);
+    std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
+    if (not proj4_string.empty()) {
+      global_attributes.set_string("proj4", proj4_string);
+    }
+
+    if (nc.inq_var(mapping.get_name())) {
+      io::read_attributes(nc, mapping.get_name(), mapping);
+      mapping.report_to_stdout(*m_log, 4);
+    }
+    nc.close();
   }
 
   compute_cell_areas();
@@ -572,23 +588,13 @@ void IceModel::misc_setup() {
   bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
   if (input_file.is_set()) {
-    PIO nc(m_grid->com, "guess_mode");
-
-    nc.open(input_file, PISM_READONLY);
-
-    std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
-    if (not proj4_string.empty()) {
-      global_attributes.set_string("proj4", proj4_string);
+    std::string source;
+    {
+      PIO nc(m_grid->com, "guess_mode");
+      nc.open(input_file, PISM_READONLY);
+      source = nc.get_att_text("PISM_GLOBAL", "source");
+      nc.close();
     }
-
-    if (nc.inq_var(mapping.get_name())) {
-      io::read_attributes(nc, mapping.get_name(), mapping);
-      mapping.report_to_stdout(*m_log, 4);
-    }
-
-    std::string source = nc.get_att_text("PISM_GLOBAL", "source");
-    nc.close();
-
     if (not bootstrap) {
       // If it's missing, print a warning
       if (source.empty()) {
