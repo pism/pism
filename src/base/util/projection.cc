@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -339,7 +339,7 @@ static void compute_lon_lat(const std::string &projection, LonLat which,
   (void) which;
   (void) result;
 
-  throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compile longitude and latitude."
+  throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compute longitude and latitude."
                      " Please rebuild PISM with PROJ.4.");
 }
 
@@ -350,7 +350,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
   (void) which;
   (void) result;
 
-  throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compile longitude and latitude bounds."
+  throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compute longitude and latitude bounds."
                      " Please rebuild PISM with PROJ.4.");
 }
 
