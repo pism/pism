@@ -55,11 +55,11 @@ else
 fi
 
 # prefix to pism (not to executables)
-if [ -n "${PISM_PREFIX:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX  (already set)"
+if [ -n "${PISM_BIN:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN  (already set)"
 else
-  PISM_PREFIX=""    # just a guess
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX"
+  PISM_BIN=""    # just a guess
+  echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN"
 fi
 '''
 
@@ -75,7 +75,7 @@ class Experiment:
     My = 3
     Mz = 15
     initials = "ABC"
-    executable = "$PISM_DO $PISM_MPIDO $NN ${PISM_PREFIX}pismr"
+    executable = "$PISM_DO $PISM_MPIDO $NN ${PISM_BIN}pismr"
 
     def __init__(self, experiment, model=1, mode=1, Mx=None, Mz=15, semianalytic=True,
                  initials="ABC", executable=None):

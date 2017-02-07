@@ -54,7 +54,7 @@ consider setting optional environment variables (see script for meaning):
     PARAM_NOSGL  if set, DON'T use -tauc_slippery_grounding_lines
     PISM_DO      set to 'echo' if no run desired; defaults to empty
     PISM_MPIDO   defaults to 'mpiexec -n'
-    PISM_PREFIX  set to path to pismr executable if desired; defaults to empty
+    PISM_BIN  set to path to pismr executable if desired; defaults to empty
     PISM_EXEC    defaults to 'pismr'
     REGRIDFILE   set to file name to regrid from; defaults to empty (no regrid)
     REGRIDVARS   desired -regrid_vars; applies *if* REGRIDFILE set;
@@ -243,11 +243,11 @@ else
 fi
 
 # prefix to pism (not to executables)
-if [ -n "${PISM_PREFIX:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX  (already set)"
+if [ -n "${PISM_BIN:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN  (already set)"
 else
-  PISM_PREFIX=""    # just a guess
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX"
+  PISM_BIN=""    # just a guess
+  echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN"
 fi
 
 # set PISM_EXEC if using different executables, for example:
@@ -298,7 +298,7 @@ else
 fi
 
 # show remaining setup options:
-PISM="${PISM_PREFIX}${PISM_EXEC}"
+PISM="${PISM_BIN}${PISM_EXEC}"
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME         coupler = '$COUPLER'"
 echo "$SCRIPTNAME        dynamics = '$PHYS'"
