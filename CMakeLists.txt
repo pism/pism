@@ -206,6 +206,9 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/util/ DESTINATION ${Pism_BIN_DIR}
   USE_SOURCE_PERMISSIONS
   FILES_MATCHING PATTERN "*.py")
 
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples DESTINATION ${Pism_SHARE_DIR}
+    USE_SOURCE_PERMISSIONS)
+
 add_subdirectory (src)
 add_subdirectory (site-packages)
 
