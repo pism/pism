@@ -49,7 +49,7 @@ Run in the backround with 2 cores and saving output to a text file this way:
 You can also copy the script (along with
 `MISMIP_boot_1a_M1_A1.nc` and `MISMIP_conf_1a_A*.nc`) to a supercomputer to
 do the run later.  For such application, the script helpfully uses environment variables `PISM_DO`,
-`PISM_PREFIX` and `PISM_MPIDO`. For example, on some Cray machines you might do
+`PISM_BIN` and `PISM_MPIDO`. For example, on some Cray machines you might do
 
     PISM_MPIDO="aprun -n " bash experiment-1a-mode-1.sh 32
 

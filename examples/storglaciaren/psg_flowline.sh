@@ -42,11 +42,11 @@ else
 fi
 
 # prefix to pism (not to executables)
-if [ -n "${PISM_PREFIX:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX  (already set)"
+if [ -n "${PISM_BIN:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN  (already set)"
 else
-  PISM_PREFIX=""    # just a guess
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX"
+  PISM_BIN=""    # just a guess
+  echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN"
 fi
 
 # set PISM_EXEC if using different executables, for example:
@@ -63,7 +63,7 @@ echo
 PCONFIG=psg_config.nc
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PCONFIG -o_order zyx"
+PISM="${PISM_BIN}${PISM_EXEC} -config_override $PCONFIG -o_order zyx"
 
 
 DATANAME=storglaciaren_flowline.nc
