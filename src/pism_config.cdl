@@ -199,10 +199,10 @@ netcdf pism_config {
     pism_config:bed_deformation.lc.regrid_bed_special_option = "regrid_bed_special";
     pism_config:bed_deformation.lc.regrid_bed_special_type = "boolean";
 
-    pism_config:bed_deformation.lithosphere_density = 3300.0;
-    pism_config:bed_deformation.lithosphere_density_doc = "lithosphere density used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
-    pism_config:bed_deformation.lithosphere_density_type = "scalar";
-    pism_config:bed_deformation.lithosphere_density_units = "kg meter-3";
+    pism_config:bed_deformation.mantle_density = 3300.0;
+    pism_config:bed_deformation.mantle_density_doc = "half-space (mantle) density used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
+    pism_config:bed_deformation.mantle_density_type = "scalar";
+    pism_config:bed_deformation.mantle_density_units = "kg meter-3";
 
     pism_config:bed_deformation.lithosphere_flexural_rigidity = 5.0e24;
     pism_config:bed_deformation.lithosphere_flexural_rigidity_doc = "lithosphere flexural rigidity used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";

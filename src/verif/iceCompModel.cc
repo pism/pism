@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -225,7 +225,7 @@ void IceCompModel::allocate_bed_deformation() {
   IceModel::allocate_bed_deformation();
 
   // for simple isostasy
-  m_f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.lithosphere_density");
+  m_f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.mantle_density");
 
   std::string bed_def_model = m_config->get_string("bed_deformation.model");
 

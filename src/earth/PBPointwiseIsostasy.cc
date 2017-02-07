@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -74,9 +74,9 @@ void PBPointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_th
 
   m_t_beddef_last = t_final;
 
-  const double lithosphere_density = m_config->get_double("bed_deformation.lithosphere_density"),
+  const double mantle_density = m_config->get_double("bed_deformation.mantle_density"),
     ice_density = m_config->get_double("constants.ice.density"),
-    f = ice_density / lithosphere_density;
+    f = ice_density / mantle_density;
 
   //! Our goal: topg = topg_last - f*(thk - thk_last)
 

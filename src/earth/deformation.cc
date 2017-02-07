@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -67,7 +67,7 @@ BedDeformLC::BedDeformLC(const Config &config,
   m_dy     = dy;
   m_Z      = Z;
   m_icerho = config.get_double("constants.ice.density");
-  m_rho    = config.get_double("bed_deformation.lithosphere_density");
+  m_rho    = config.get_double("bed_deformation.mantle_density");
   m_eta    = config.get_double("bed_deformation.mantle_viscosity");
   m_D      = config.get_double("bed_deformation.lithosphere_flexural_rigidity");
 

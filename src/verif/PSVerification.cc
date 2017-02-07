@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -178,7 +178,7 @@ void Verification::update_impl(PetscReal t, PetscReal dt) {
 void Verification::update_ABCDH(double time) {
   double A0, T0, accum;
 
-  double f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.lithosphere_density");
+  double f = m_config->get_double("constants.ice.density") / m_config->get_double("bed_deformation.mantle_density");
 
   rheology::PatersonBuddCold tgaIce("stress_balance.sia.", *m_config, m_EC);
 
