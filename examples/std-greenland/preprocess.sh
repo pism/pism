@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014, 2016 The PISM Authors
+# Copyright (C) 2009-2014, 2016, 2017 The PISM Authors
 
 # Downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts
 # metadata, and saves under new name ready for PISM.  See README.md.
@@ -61,9 +61,9 @@ echo
 TEMPSERIES=pism_dT.nc
 echo -n "creating paleo-temperature file $TEMPSERIES from $DATANAME ... "
 ncks -O -v oisotopestimes,temp_time_series $DATANAME $TEMPSERIES
-ncrename -O -d oisotopestimes,time \
-            -v oisotopestimes,time \
-            -v temp_time_series,delta_T $TEMPSERIES
+ncrename -O -d oisotopestimes,time      $TEMPSERIES
+ncrename -O -v temp_time_series,delta_T $TEMPSERIES
+ncrename -O -v oisotopestimes,time      $TEMPSERIES
 # reverse time dimension
 ncpdq -O --rdr=-time $TEMPSERIES $TEMPSERIES
 # make times follow same convention as PISM
@@ -79,9 +79,9 @@ echo
 SLSERIES=pism_dSL.nc
 echo -n "creating paleo-sea-level file $SLSERIES from $DATANAME ... "
 ncks -O -v sealeveltimes,sealevel_time_series $DATANAME $SLSERIES
-ncrename -O -d sealeveltimes,time \
-            -v sealeveltimes,time \
-            -v sealevel_time_series,delta_SL $SLSERIES
+ncrename -O -d sealeveltimes,time $SLSERIES
+ncrename -O -v sealeveltimes,time $SLSERIES
+ncrename -O -v sealevel_time_series,delta_SL $SLSERIES
 # reverse time dimension
 ncpdq -O --rdr=-time $SLSERIES $SLSERIES
 # make times follow same convention as PISM
