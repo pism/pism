@@ -44,6 +44,7 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
 option (Pism_BUILD_PDFS "Build PISM's PDF documentation with 'make all'." OFF)
+option (Pism_INSTALL_EXAMPLES "Install the example directory." OFF)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
@@ -206,8 +207,11 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/util/ DESTINATION ${Pism_BIN_DIR}
   USE_SOURCE_PERMISSIONS
   FILES_MATCHING PATTERN "*.py")
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples DESTINATION ${Pism_SHARE_DIR}
+if (Pism_INSTALL_EXAMPLES)
+  install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
+    DESTINATION ${Pism_SHARE_DIR}
     USE_SOURCE_PERMISSIONS)
+endif()
 
 add_subdirectory (src)
 add_subdirectory (site-packages)
