@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ namespace bed {
 
 //! Class implementing the bed deformation model described in [\ref BLKfastearth].
 /*!
-  This class implements the [\ref LingleClark] bed deformation model by a Fourier 
+  This class implements the [\ref LingleClark] bed deformation model by a Fourier
   spectral collocation method, as described in [\ref BLKfastearth].  (The former
   reference is where the continuum model arose, and a flow-line application is given.
   The latter reference describes a new, fast method and gives verification results.
@@ -44,8 +44,8 @@ namespace bed {
   lithosphere) and a spherical elastic model are computed.  They are superposed
   because the underlying earth model is linear.
 
-  The class assumes that the supplied Petsc Vecs are *sequential*.  It is expected to be 
-  run only on processor zero (or possibly by each processor once each processor 
+  The class assumes that the supplied Petsc Vecs are *sequential*.  It is expected to be
+  run only on processor zero (or possibly by each processor once each processor
   owns the entire 2D gridded ice thicknesses and bed elevations.)
 
   A test program for this class is pism/src/verif/tryLCbd.cc.
@@ -101,8 +101,6 @@ private:
 
   void tweak(double seconds_from_start);
 
-  void clear_fftw_input();
-  void copy_fftw_output(fftw_complex *buffer);
   void set_fftw_input(Vec input, double normalization, int M, int N, int i0, int j0);
   void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
 };
@@ -111,4 +109,3 @@ private:
 } // end of namespace pism
 
 #endif  /* __deformation_hh */
-

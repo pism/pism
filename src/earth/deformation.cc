@@ -50,6 +50,29 @@ private:
   T* m_array;
 };
 
+//! \brief Fill `input` with zeros.
+static void clear_fftw_input(fftw_complex *input, int Nx, int Ny) {
+  VecAccessor2D<fftw_complex> fftw_in(input, Nx, Ny);
+  for (int i = 0; i < Nx; ++i) {
+    for (int j = 0; j < Ny; ++j) {
+      fftw_in(i, j)[0] = 0;
+      fftw_in(i, j)[1] = 0;
+    }
+  }
+}
+
+//! @brief Copy `source` to `destination`.
+static void copy_fftw_output(fftw_complex *source, fftw_complex *destination,
+                             int Nx, int Ny) {
+  VecAccessor2D<fftw_complex> S(source, Nx, Ny), D(destination, Nx, Ny);
+  for (int i = 0; i < Nx; ++i) {
+    for (int j = 0; j < Ny; ++j) {
+      D(i, j)[0] = S(i, j)[0];
+      D(i, j)[1] = S(i, j)[1];
+    }
+  }
+}
+
 BedDeformLC::BedDeformLC(const Config &config,
                          bool include_elastic,
                          int Mx, int My,
@@ -229,7 +252,7 @@ void BedDeformLC::uplift_init() {
   petsc::VecArray2D left(m_vleft, m_Nx, m_Ny), right(m_vright, m_Nx, m_Ny);
 
   // fft2(uplift)
-  clear_fftw_input();
+  clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
   set_fftw_input(m_uplift, 1.0, m_Mx, m_My, m_i0_plate, m_j0_plate);
   fftw_execute(m_dft_forward);
 
@@ -301,13 +324,13 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
   PISM_CHK(ierr, "VecWAXPY");
 
   // Compute fft2(-ice_rho * g * dH * dt), where H = H - H_start.
-  clear_fftw_input();
+  clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
   set_fftw_input(m_Hdiff, - m_icerho * m_standard_gravity * dt_seconds,
                  m_Mx, m_My, m_i0_plate, m_j0_plate);
   fftw_execute(m_dft_forward);
 
   // Save fft2(-ice_rho * g * dH * dt) in loadhat.
-  copy_fftw_output(m_loadhat);
+  copy_fftw_output(m_fftw_output, m_loadhat, m_Nx, m_Ny);
 
   // Compute fft2(u).
   // no need to clear fftw_input: all values are overwritten
@@ -406,28 +429,6 @@ void BedDeformLC::tweak(double seconds_from_start) {
 
   ierr = VecShift(m_U, discshift);
   PISM_CHK(ierr, "VecShift");
-}
-
-//! \brief Fill fftw_input with zeros.
-void BedDeformLC::clear_fftw_input() {
-  VecAccessor2D<fftw_complex> fftw_in(m_fftw_input, m_Nx, m_Ny);
-  for (int j = 0; j < m_Ny; ++j) {
-    for (int i = 0; i < m_Nx; ++i) {
-      fftw_in(i, j)[0] = 0;
-      fftw_in(i, j)[1] = 0;
-    }
-  }
-}
-
-//! \brief Copy fftw_output to `output`.
-void BedDeformLC::copy_fftw_output(fftw_complex *output) {
-  VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny), out(output, m_Nx, m_Ny);
-  for (int j = 0; j < m_Ny; ++j) {
-    for (int i = 0; i < m_Nx; ++i) {
-      out(i, j)[0] = fftw_out(i, j)[0];
-      out(i, j)[1] = fftw_out(i, j)[1];
-    }
-  }
 }
 
 //! \brief Set the real part of fftw_input to vec_input.
