@@ -30,10 +30,13 @@ endmacro(pism_dont_use_rpath)
 
 # Set CMake variables to ensure that everything is static
 macro(pism_strictly_static)
+
+  if (BUILD_SHARED_LIBS)
+    message(FATAL_ERROR "Please set BUILD_SHARED_LIBS to OFF.")
+  endif()
+
   set (CMAKE_SKIP_RPATH ON CACHE BOOL "Disable RPATH completely")
   set (CMAKE_FIND_LIBRARY_SUFFIXES .a)
-
-  set (BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared Pism libraries" FORCE)
 
   set (CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "") # get rid of -rdynamic
   set (CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "") # ditto
