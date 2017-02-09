@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007, 2015 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007, 2015, 2017 Jed Brown and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -88,7 +88,18 @@ double vd_integrand (double kap, void * paramsIN) {
   return expdiff * gsl_sf_bessel_J1(kap * R0) * gsl_sf_bessel_J0(kap * rk) / beta;
 }
 
-
+/*!
+ * Compute the response of the viscous half-space model in [@ref LingleClark] to a disc load.
+ *
+ * @param[in] t time in seconds
+ * @param[in] H0 thickness of the disc load, meters
+ * @param[in] R0 radius of the disc load, meters
+ * @param[in] r radius, meters
+ * @param[in] rho mantle density, kg/m3
+ * @param[in] grav acceleration due to gravity, m/s2
+ * @param[in] D lithosphere flexural rigidity, N meter
+ * @param[in] eta mantle viscosity, Pascal second
+ */
 double viscDisc(double t, double H0, double R0, double r, 
                 double rho, double grav, double D, double eta) {
   // t in seconds; H0, R0, r in meters
