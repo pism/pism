@@ -402,7 +402,7 @@ void BedDeformLC::tweak(double seconds_from_start) {
   const double Hequiv = delvolume / (M_PI * Requiv * Requiv);
 
   const double discshift = viscDisc(seconds_from_start,
-                                    Hequiv, Requiv, Lav, m_rho, m_standard_gravity, m_D, m_eta) - av;
+                                    Hequiv, Requiv, Lav, m_rho, m_icerho, m_standard_gravity, m_D, m_eta) - av;
 
   ierr = VecShift(m_U, discshift);
   PISM_CHK(ierr, "VecShift");
