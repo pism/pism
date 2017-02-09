@@ -283,23 +283,7 @@ void BedDeformLC::uplift_init() {
   fftw_execute(m_dft_inverse);
   get_fftw_output(m_U_start, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
 
-  {
-    petsc::VecArray2D u_start(m_U_start, m_Nx, m_Ny);
-
-    double av = 0.0;
-    for (int i = 0; i < m_Nx; i++) {
-      av += u_start(i, 0);
-    }
-
-    for (int j = 0; j < m_Ny; j++) {
-      av += u_start(0, j);
-    }
-
-    av = av / ((double) (m_Nx + m_Ny));
-
-    ierr = VecShift(m_U_start, -av);
-    PISM_CHK(ierr, "VecShift");
-  }
+  tweak(m_U_start, m_Nx, m_Ny, 0.0);
 
   ierr = VecCopy(m_U_start, m_U);
   PISM_CHK(ierr, "VecCopy");
@@ -366,7 +350,7 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
   get_fftw_output(m_U, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
 
   // now tweak
-  tweak(seconds_from_start);
+  tweak(m_U, m_Nx, m_Ny, seconds_from_start);
 
   // now compute elastic response if desired; bed = ue at end of this block
   if (m_include_elastic == true) {
@@ -395,39 +379,50 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
   }
 }
 
-void BedDeformLC::tweak(double seconds_from_start) {
-  petsc::VecArray2D u(m_U, m_Nx, m_Ny);
+void BedDeformLC::tweak(petsc::Vec &U, int Nx, int Ny, double seconds_from_start) {
+  PetscErrorCode ierr = 0;
+  petsc::VecArray2D u(U, Nx, Ny);
 
   // find average value along "distant" boundary of [-Lx_fat, Lx_fat]X[-Ly_fat, Ly_fat]
   // note domain is periodic, so think of cut locus of torus (!)
   // (will remove it:   uun1=uun1-(sum(uun1(1, :))+sum(uun1(:, 1)))/(2*N);)
   double av = 0.0;
-  for (int i = 0; i < m_Nx; i++) {
+  for (int i = 0; i < Nx; i++) {
     av += u(i, 0);
   }
 
-  for (int j = 0; j < m_Ny; j++) {
+  for (int j = 0; j < Ny; j++) {
     av += u(0, j);
   }
 
-  av = av / ((double) (m_Nx + m_Ny));
+  av = av / ((double) (Nx + Ny));
 
-  // tweak continued: replace far field with value for an equivalent disc load which has R0=Lx*(2/3)=L/3
-  // (instead of 1000km in Matlab code: H0 = dx*dx*sum(sum(H))/(pi*1e6^2);  % trapezoid rule)
-  const double Lav = (m_Lx_fat + m_Ly_fat) / 2.0;
-  const double Requiv = Lav * (2.0 / 3.0);
+  double discshift = 0.0;
+  if (seconds_from_start > 0.0) {
+    // tweak continued: replace far field with value for an equivalent disc load which has
+    // R0=Lx*(2/3)=L/3 (instead of 1000km in Matlab code: H0 = dx*dx*sum(sum(H))/(pi*1e6^2); %
+    // trapezoid rule)
+    const double Lav = (m_Lx_fat + m_Ly_fat) / 2.0;
+    const double Requiv = Lav * (2.0 / 3.0);
 
-  double delvolume;
-  PetscErrorCode ierr = VecSum(m_Hdiff, &delvolume);
-  PISM_CHK(ierr, "VecSum");
+    double delvolume = 0.0;
+    ierr = VecSum(m_Hdiff, &delvolume);
+    PISM_CHK(ierr, "VecSum");
 
-  delvolume = delvolume * m_dx * m_dy;  // make into a volume
-  const double Hequiv = delvolume / (M_PI * Requiv * Requiv);
+    delvolume = delvolume * m_dx * m_dy;  // make into a volume
+    const double Hequiv = delvolume / (M_PI * Requiv * Requiv);
 
-  const double discshift = viscDisc(seconds_from_start,
-                                    Hequiv, Requiv, Lav, m_rho, m_icerho, m_standard_gravity, m_D, m_eta) - av;
+    discshift = viscDisc(seconds_from_start, // time
+                         Hequiv,             // disc thickness
+                         Requiv,             // disc radius
+                         Lav,                // compute deflection at this radius
+                         m_rho, m_icerho,    // mantle and ice densities
+                         m_standard_gravity, //
+                         m_D,                // flexural rigidity
+                         m_eta);             // viscosity
+  }
 
-  ierr = VecShift(m_U, discshift);
+  ierr = VecShift(U, discshift - av);
   PISM_CHK(ierr, "VecShift");
 }
 

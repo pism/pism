@@ -99,7 +99,7 @@ private:
   fftw_complex *m_fftw_input, *m_fftw_output, *m_loadhat; // 2D sequential
   fftw_plan m_dft_forward, m_dft_inverse;
 
-  void tweak(double seconds_from_start);
+  void tweak(petsc::Vec &U, int Nx, int Ny, double seconds_from_start);
 
   void set_fftw_input(Vec input, double normalization, int M, int N, int i0, int j0);
   void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
