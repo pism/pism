@@ -89,7 +89,7 @@ double vd_integrand (double kap, void * paramsIN) {
 
 
 double viscDisc(double t, double H0, double R0, double r, 
-                double rho, double grav, double D, double eta) {
+                double rho, double rho_ice, double grav, double D, double eta) {
   // t in seconds; H0, R0, r in meters
 
   const double      ABSTOL = 1.0e-10;
@@ -130,7 +130,7 @@ double viscDisc(double t, double H0, double R0, double r,
   delete [] pts;
   gsl_integration_workspace_free(w);
   // u(k)=rhoi*g*H0*R0*result;
-  return rho * grav * H0 * R0 * sum;
+  return rho_ice * grav * H0 * R0 * sum;
 }
 
 } // end of namespace bed

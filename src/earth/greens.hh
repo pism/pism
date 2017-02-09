@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2014, 2015 Ed Bueler
+// Copyright (C) 2007--2009, 2014, 2015, 2017 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,7 @@ double vd_integrand (double kap, void * paramsIN);
 //! @brief Actually compute the response of the viscous half-space
 //! model in \ref LingleClark, to a disc load.
 double viscDisc(double t, double H0, double R0, double r, 
-                double rho, double grav, double D, double eta);
+                double rho, double rho_ice, double grav, double D, double eta);
 
 } // end of namespace bed
 } // end of namespace pism
