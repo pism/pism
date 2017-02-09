@@ -96,6 +96,7 @@ double vd_integrand (double kap, void * paramsIN) {
  * @param[in] R0 radius of the disc load, meters
  * @param[in] r radius, meters
  * @param[in] rho mantle density, kg/m3
+ * @param[in] rho_ice ice (load) density, kg/m3
  * @param[in] grav acceleration due to gravity, m/s2
  * @param[in] D lithosphere flexural rigidity, N meter
  * @param[in] eta mantle viscosity, Pascal second
