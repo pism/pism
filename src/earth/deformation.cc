@@ -116,7 +116,7 @@ BedDeformLC::BedDeformLC(const Config &config,
   m_uplift    = uplift;
 
   // memory allocation
-  PetscErrorCode  ierr;
+  PetscErrorCode  ierr = 0;
 
   ierr = VecDuplicate(m_H, m_Hdiff.rawptr());
   PISM_CHK(ierr, "VecDuplicate");
@@ -257,11 +257,12 @@ void BedDeformLC::uplift_init() {
   fftw_execute(m_dft_forward);
 
   // compute left and right coefficients
-  for (int j = 0; j < m_Ny; j++) {
-    for (int i = 0; i < m_Nx; i++) {
-      const double cclap = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j];
-      left(i, j) = m_rho * m_standard_gravity + m_D * cclap * cclap;
-      right(i, j) = -2.0 * m_eta * sqrt(cclap);
+  for (int i = 0; i < m_Nx; i++) {
+    for (int j = 0; j < m_Ny; j++) {
+      const double C = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j];
+
+      left(i, j)  = m_rho * m_standard_gravity + m_D * C * C;
+      right(i, j) = -2.0 * m_eta * sqrt(C);
     }
   }
 
@@ -323,11 +324,13 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
 
   // Compute left and right coefficients; note they depend on the length of a
   // time-step and thus cannot be precomputed
-  for (int j = 0; j < m_Ny; j++) {
-    for (int i = 0; i < m_Nx; i++) {
-      const double cclap = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
-        part1 = 2.0 * m_eta * sqrt(cclap),
-        part2 = (dt_seconds / 2.0) * (m_rho * m_standard_gravity + m_D * cclap * cclap);
+  for (int i = 0; i < m_Nx; i++) {
+    for (int j = 0; j < m_Ny; j++) {
+      const double
+        C     = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
+        part1 = 2.0 * m_eta * sqrt(C),
+        part2 = (dt_seconds / 2.0) * (m_rho * m_standard_gravity + m_D * C * C);
+
       left(i, j)  = part1 + part2;
       right(i, j) = part1 - part2;
     }
