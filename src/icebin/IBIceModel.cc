@@ -172,12 +172,12 @@ void IBIceModel::massContExplicitStep() {
 
   {
     AccessList access{ &ib_surface->icebin_massxfer, &ib_surface->icebin_enthxfer, &ib_surface->icebin_deltah,
-                       &cur.icebin_xfer, &cur.icebin_deltah };
+                       &cur.icebin_smb, &cur.icebin_deltah };
 
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
       for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
-        cur.icebin_xfer.mass(i, j) += m_dt * ib_surface->icebin_massxfer(i, j);
-        cur.icebin_xfer.enth(i, j) += m_dt * ib_surface->icebin_enthxfer(i, j);
+        cur.icebin_smb.mass(i, j) += m_dt * ib_surface->icebin_massxfer(i, j);
+        cur.icebin_smb.enth(i, j) += m_dt * ib_surface->icebin_enthxfer(i, j);
         cur.icebin_deltah(i, j) += m_dt * ib_surface->icebin_deltah(i, j);
       }
     }
