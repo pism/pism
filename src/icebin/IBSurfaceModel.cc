@@ -46,7 +46,7 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
   icebin_deltah.set_attrs(
       "climate_state", "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
       "W m-2", "");
-  icebin_deltah.metadata().set_string("glaciological_units", "kg m-2 year-1");
+//  icebin_deltah.metadata().set_string("glaciological_units", "kg m-2 year-1");
   //	icebin_deltah.write_in_glaciological_units = true;
 
 
