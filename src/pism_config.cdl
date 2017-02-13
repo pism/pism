@@ -265,11 +265,6 @@ netcdf pism_config {
     pism_config:bootstrapping.defaults.ice_thickness_type = "scalar";
     pism_config:bootstrapping.defaults.ice_thickness_units = "meters";
 
-    pism_config:bootstrapping.defaults.tillphi = 15.0;
-    pism_config:bootstrapping.defaults.tillphi_doc = "till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip";
-    pism_config:bootstrapping.defaults.tillphi_type = "scalar";
-    pism_config:bootstrapping.defaults.tillphi_units = "degrees";
-
     pism_config:bootstrapping.defaults.tillwat = 0.0;
     pism_config:bootstrapping.defaults.tillwat_doc = "till water thickness value to use if variable tillwat is absent in bootstrapping file";
     pism_config:bootstrapping.defaults.tillwat_type = "scalar";

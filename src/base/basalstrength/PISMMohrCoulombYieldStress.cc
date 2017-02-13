@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 PISM Authors
+// Copyright (C) 2004--2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,14 +59,9 @@ This submodel is inactive in floating areas.
 
 MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
                                                hydrology::Hydrology *hydro)
-  : YieldStress(g) {
+  : YieldStress(g), m_hydrology(hydro) {
 
-  m_topg_to_phi = false;
-  m_tauc_to_phi = false;
-
-  m_hydrology = hydro;
-
-  unsigned int stencil_width = m_config->get_double("grid.max_stencil_width");
+  const unsigned int stencil_width = m_config->get_double("grid.max_stencil_width");
 
   m_till_phi.create(m_grid, "tillphi", WITH_GHOSTS, stencil_width);
   m_till_phi.set_attrs("model_state",
@@ -77,23 +72,23 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
 
   // internal working space; stencil width needed because redundant computation
   // on overlaps
-  m_tillwat.create(m_grid, "tillwat_for_MohrCoulomb",
-                   WITH_GHOSTS, stencil_width);
+  m_tillwat.create(m_grid, "tillwat_for_MohrCoulomb", WITH_GHOSTS, stencil_width);
   m_tillwat.set_attrs("internal",
                       "copy of till water thickness held by MohrCoulombYieldStress",
                       "m", "");
-  bool addtransportable = m_config->get_boolean("basal_yield_stress.add_transportable_water");
-  if (addtransportable == true) {
-    m_bwat.create(m_grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS);
-    m_bwat.set_attrs("internal",
-                     "copy of transportable water thickness held by MohrCoulombYieldStress",
-                     "m", "");
-  }
+
   m_Po.create(m_grid, "overburden_pressure_for_MohrCoulomb",
               WITH_GHOSTS, stencil_width);
   m_Po.set_attrs("internal",
                  "copy of overburden pressure held by MohrCoulombYieldStress",
                  "Pa", "");
+
+  if (m_config->get_boolean("basal_yield_stress.add_transportable_water")) {
+    m_bwat.create(m_grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS);
+    m_bwat.set_attrs("internal",
+                     "copy of transportable water thickness held by MohrCoulombYieldStress",
+                     "m", "");
+  }
 }
 
 MohrCoulombYieldStress::~MohrCoulombYieldStress() {
@@ -112,7 +107,7 @@ where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$ is the basal shear stress and
 We call the scalar field \f$\tau_c(t,x,y)\f$ the \e yield \e stress even when
 the power \f$q\f$ is not zero; when that power is zero the formula describes
 a plastic material with an actual yield stress.  The constant
-\f$U_{\mathtt{th}}\f$ is the \e threshhold \e speed, and \f$q\f$ is the \e pseudo
+\f$U_{\mathtt{th}}\f$ is the \e threshold \e speed, and \f$q\f$ is the \e pseudo
 \e plasticity \e exponent.  The current class computes this yield stress field.
 See also IceBasalResistancePlasticLaw::drag().
 
@@ -158,27 +153,15 @@ void MohrCoulombYieldStress::init_impl() {
     }
   }
 
-  m_log->message(2, "* Initializing the default basal yield stress model...\n");
+  m_log->message(2, "* Initializing the Mohr-Coulomb basal yield stress model...\n");
 
-  options::Real
-    plastic_phi("-plastic_phi", "constant in space till friction angle",
-                m_config->get_double("basal_yield_stress.mohr_coulomb.till_phi_default"));
-
-  options::RealList
-    topg_to_phi_option("-topg_to_phi",
-                       "Turn on, and specify, the till friction angle parameterization"
-                       " based on bedrock elevation (topg)");
+  const double till_phi_default = m_config->get_double("basal_yield_stress.mohr_coulomb.till_phi_default");
 
   InputOptions opts = process_input_options(m_grid->com);
 
-  if (topg_to_phi_option.is_set() and plastic_phi.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "only one of -plastic_phi and -topg_to_phi is allowed.");
-  }
+  if (options::Bool("-topg_to_phi", "compute tillphi as a function of bed elevation")) {
 
-  if (topg_to_phi_option.is_set()) {
-
-    m_log->message(2,
-                 "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
+    m_log->message(2, "  option -topg_to_phi seen; creating tillphi map from bed elevation...\n");
 
     if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
 
@@ -187,38 +170,20 @@ void MohrCoulombYieldStress::init_impl() {
 
       if (tillphi_present) {
         m_log->message(2,
-                     "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
-                     "              present in the input file '%s'!\n",
-                     m_till_phi.metadata().get_string("short_name").c_str(), opts.filename.c_str());
+                       "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
+                       "              present in the input file '%s'!\n",
+                       m_till_phi.metadata().get_name().c_str(), opts.filename.c_str());
       }
     }
 
-    // note option -topg_to_phi will be read again to get comma separated array of parameters
-    m_topg_to_phi = true;
-
-    double phi_min  = topg_to_phi_option[0];
-    double phi_max  = topg_to_phi_option[1];
-    double topg_min = topg_to_phi_option[2];
-    double topg_max = topg_to_phi_option[3];
-
-    m_log->message(2,
-                 "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
-                 "            /  %5.2f                                 for   topg < %.f\n"
-                 "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
-                 "            \\  %5.2f                                 for   %.f < topg\n",
-                 phi_min, topg_min,
-                 phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
-                 phi_max, topg_max);
+    topg_to_phi(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
 
   } else if (opts.type == INIT_RESTART) {
     m_till_phi.read(opts.filename, opts.record);
   } else if (opts.type == INIT_BOOTSTRAP) {
-    m_till_phi.regrid(opts.filename, OPTIONAL,
-                      m_config->get_double("bootstrapping.defaults.tillphi"));
+    m_till_phi.regrid(opts.filename, OPTIONAL, till_phi_default);
   } else {
-    // Use the default value *or* the value set using the -plastic_phi
-    // command-line option.
-    m_till_phi.set(plastic_phi);
+    m_till_phi.set(till_phi_default);
   }
 
   // regrid if requested, regardless of how initialized
@@ -235,23 +200,19 @@ void MohrCoulombYieldStress::init_impl() {
       // "-tauc_to_phi filename.nc" is given
       m_basal_yield_stress.regrid(tauc_to_phi_file, CRITICAL);
     } else {
-      // "-tauc_to_phi" is given (without a file name); assume that tauc has to
-      // be present in an input file
-      if (opts.type == INIT_BOOTSTRAP) {
-        m_basal_yield_stress.regrid(opts.filename, CRITICAL);
-      } else {
-        m_basal_yield_stress.read(opts.filename, opts.record);
-      }
+      // "-tauc_to_phi" is given (without a file name); assume that tauc has to be present in an
+      // input file
+      m_basal_yield_stress.regrid(opts.filename, CRITICAL);
     }
 
     m_log->message(2,
                    "  Will compute till friction angle (tillphi) as a function"
                    " of the yield stress (tauc)...\n");
 
-    m_tauc_to_phi = true;
-
+    tauc_to_phi();
   } else {
     m_basal_yield_stress.set(0.0);
+    // will be set in update_impl()
   }
 }
 
@@ -307,35 +268,30 @@ hydrology::Routing (or derived class thereof).
  */
 void MohrCoulombYieldStress::update_impl() {
 
-  if (m_topg_to_phi) {
-    this->topg_to_phi();
-    m_topg_to_phi = false;
-  }
+  bool slippery_grounding_lines = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
+       add_transportable_water  = m_config->get_boolean("basal_yield_stress.add_transportable_water");
 
-  if (m_tauc_to_phi) {
-    this->tauc_to_phi();
-    m_tauc_to_phi = false;
-  }
+  hydrology::Routing* hydrowithtransport = dynamic_cast<hydrology::Routing*>(m_hydrology);
 
-  bool slipperygl       = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
-       addtransportable = m_config->get_boolean("basal_yield_stress.add_transportable_water");
+  if (add_transportable_water and not hydrowithtransport) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "add_transportable_water requires a routing hydrology model");
+  }
 
   const double high_tauc   = m_config->get_double("basal_yield_stress.ice_free_bedrock"),
                tillwat_max = m_config->get_double("hydrology.tillwat_max"),
                c0          = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
                N0          = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
-               e0overCc    = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio")
-                                / m_config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient"),
+               e0overCc    = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
+                              m_config->get_double("basal_yield_stress.mohr_coulomb.till_compressibility_coefficient")),
                delta       = m_config->get_double("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
                tlftw       = m_config->get_double("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
 
-  hydrology::Routing* hydrowithtransport = dynamic_cast<hydrology::Routing*>(m_hydrology);
   if (m_hydrology) {
     m_hydrology->till_water_thickness(m_tillwat);
     m_hydrology->overburden_pressure(m_Po);
-    if (addtransportable == true) {
-        assert(hydrowithtransport != NULL);
-        hydrowithtransport->subglacial_water_thickness(m_bwat);
+    if (add_transportable_water) {
+      hydrowithtransport->subglacial_water_thickness(m_bwat);
     }
   }
 
@@ -344,7 +300,7 @@ void MohrCoulombYieldStress::update_impl() {
 
   IceModelVec::AccessList list{&m_tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
       &bed_topography, &m_Po};
-  if (addtransportable == true) {
+  if (add_transportable_water) {
     list.add(m_bwat);
   }
 
@@ -359,11 +315,11 @@ void MohrCoulombYieldStress::update_impl() {
       // user can ask that marine grounding lines get special treatment
       const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
       double water = m_tillwat(i,j); // usual case
-      if (slipperygl == true &&
+      if (slippery_grounding_lines &&
           bed_topography(i,j) <= sea_level &&
           (mask.next_to_floating_ice(i,j) || mask.next_to_ice_free_ocean(i,j))) {
         water = tillwat_max;
-      } else if (addtransportable == true) {
+      } else if (add_transportable_water) {
         water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
       }
       double
@@ -394,40 +350,55 @@ where \f$\phi_{\text{min}}=\f$`phi_min`, \f$\phi_{\text{max}}=\f$`phi_max`,
 
 The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl.
 */
-void MohrCoulombYieldStress::topg_to_phi() {
-
-  double phi_min  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
-         phi_max  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
-         topg_min = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
-         topg_max = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max");
+void MohrCoulombYieldStress::topg_to_phi(const IceModelVec2S &bed_topography) {
 
   options::RealList option("-topg_to_phi",
                            "Turn on, and specify, the till friction angle parameterization"
                            " based on bedrock elevation (topg)");
 
-  if (option.is_set() and option->size() != 4) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid -topg_to_phi arguments: has to be a list"
+  if (not option.is_set()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-topg_to_phi is not set");
+  }
+
+  if (option->size() != 4) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "invalid -topg_to_phi arguments: has to be a list"
                                   " of 4 numbers, got %d", (int)option->size());
   }
 
-  if (option.is_set()) {
-    phi_min  = option[0];
-    phi_max  = option[1];
-    topg_min = option[2];
+  const double
+    phi_min  = option[0],
+    phi_max  = option[1],
+    topg_min = option[2],
     topg_max = option[3];
-  }
+
+  // FIXME: these parameters aren't actually used
+  // const double
+  //   phi_min  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min"),
+  //   phi_max  = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max"),
+  //   topg_min = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min"),
+  //   topg_max = m_config->get_double("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max");
+
+  m_log->message(2,
+                 "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
+                 "            /  %5.2f                                 for   topg < %.f\n"
+                 "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
+                 "            \\  %5.2f                                 for   %.f < topg\n",
+                 phi_min, topg_min,
+                 phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
+                 phi_max, topg_max);
 
   if (phi_min >= phi_max) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "invalid -topg_to_phi arguments: phi_min < phi_max is required");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "invalid -topg_to_phi arguments: phi_min < phi_max is required");
   }
 
   if (topg_min >= topg_max) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "invalid -topg_to_phi arguments: topg_min < topg_max is required");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "invalid -topg_to_phi arguments: topg_min < topg_max is required");
   }
 
-  const IceModelVec2S &bed_topography = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-
-  double slope = (phi_max - phi_min) / (topg_max - topg_min);
+  const double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
   IceModelVec::AccessList list{&bed_topography, &m_till_phi};
 
@@ -465,14 +436,15 @@ void MohrCoulombYieldStress::tauc_to_phi() {
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, &m_basal_yield_stress, &m_tillwat, &m_Po, &m_till_phi};
-
   // make sure that we have enough ghosts:
-  unsigned int GHOSTS = m_till_phi.get_stencil_width();
-  assert(mask.get_stencil_width()      >= GHOSTS);
-  assert(m_basal_yield_stress.get_stencil_width()    >= GHOSTS);
-  assert(m_tillwat.get_stencil_width() >= GHOSTS);
-  assert(m_Po.get_stencil_width()      >= GHOSTS);
+  const unsigned int GHOSTS = m_till_phi.get_stencil_width();
+
+  assert(mask.get_stencil_width()                 >= GHOSTS);
+  assert(m_basal_yield_stress.get_stencil_width() >= GHOSTS);
+  assert(m_tillwat.get_stencil_width()            >= GHOSTS);
+  assert(m_Po.get_stencil_width()                 >= GHOSTS);
+
+  IceModelVec::AccessList list{&mask, &m_basal_yield_stress, &m_tillwat, &m_Po, &m_till_phi};
 
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -482,9 +454,12 @@ void MohrCoulombYieldStress::tauc_to_phi() {
     } else if (mask.ice_free(i, j)) {
       // no change
     } else { // grounded and there is some ice
-      double s    = m_tillwat(i,j) / tillwat_max,
-        Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntil = std::min(m_Po(i,j), Ntil);
+      const double s = m_tillwat(i, j) / tillwat_max;
+
+      double Ntil = 0.0;
+      Ntil = N0 * pow(delta * m_Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntil = std::min(m_Po(i, j), Ntil);
+
       m_till_phi(i, j) = 180.0/M_PI * atan((m_basal_yield_stress(i, j) - c0) / Ntil);
     }
   }

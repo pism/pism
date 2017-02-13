@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,10 +45,9 @@ protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl();
 
-  void topg_to_phi();
+  void topg_to_phi(const IceModelVec2S &bed_topography);
   void tauc_to_phi();
 protected:
-  bool m_topg_to_phi, m_tauc_to_phi;
   IceModelVec2S m_till_phi, m_tillwat, m_Po;
   IceModelVec2S m_bwat;  // only allocated and used if basal_yield_stress.add_transportable_water = true
   hydrology::Hydrology *m_hydrology;
