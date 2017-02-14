@@ -51,7 +51,7 @@ CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_
 }
 
 CalvingFrontRetreat::~CalvingFrontRetreat() {
-
+  // empty
 }
 
 /**
@@ -129,16 +129,22 @@ MaxTimestep CalvingFrontRetreat::max_timestep_impl(double t) const {
   return MaxTimestep(std::max(dt, dt_min));
 }
 
-//! Update ice thickness, ice volume in partially-filled cells (Href),
-//! and cell type mask by applying the 2D horizontal calving rate.
-
-/*
-  FIXME: we don't really need to call remove_narrow_tongues here: it is necessary when we use a
-  calving parameterization which uses strain rates (eigen-calving), but it may not be appropriate
-  with a frontal melt parameterization.
+/*! Update ice geometry and mask using the computed horizontal calving rate.
+ * @param[in] dt time step, seconds
+ * @param[in] sea_level sea level elevation, meters
+ * @param[in] thickness_bc_mask Dirichlet B.C. mask for the ice thickness
+ * @param[in] bed_topography bed elevation, meters
+ * @param[in,out] mask cell type mask
+ * @param[in,out] Href "area specific volume"
+ * @param[in,out] ice_thickness ice thickness
+ *
+ * FIXME: we don't really need to call remove_narrow_tongues here: it is necessary when we use a
+ * calving parameterization which uses strain rates (eigen-calving), but it may not be appropriate
+ * with a frontal melt parameterization.
  */
 void CalvingFrontRetreat::update(double dt,
                                  double sea_level,
+                                 const IceModelVec2Int &ice_thickness_bc_mask,
                                  const IceModelVec2S &bed_topography,
                                  IceModelVec2CellType &mask,
                                  IceModelVec2S &Href,
@@ -180,8 +186,9 @@ void CalvingFrontRetreat::update(double dt,
 
   m_tmp.set(0.0);
 
-  IceModelVec::AccessList list{&ice_thickness, &bed_topography, &mask, &Href,
-      &m_tmp, &m_horizontal_calving_rate, &m_surface_topography};
+  IceModelVec::AccessList list{&ice_thickness, &ice_thickness_bc_mask,
+      &bed_topography, &mask, &Href, &m_tmp, &m_horizontal_calving_rate,
+      &m_surface_topography};
 
   // Prepare to loop over neighbors: directions
   const Direction dirs[] = {North, East, South, West};
@@ -189,6 +196,11 @@ void CalvingFrontRetreat::update(double dt,
   // Step 1: Apply the computed horizontal calving rate:
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
+
+    if (ice_thickness_bc_mask(i, j) > 0.5) {
+      // don't modify cells marked as Dirichlet B.C. locations
+      continue;
+    }
 
     const double rate = m_horizontal_calving_rate(i, j);
 
@@ -223,14 +235,17 @@ void CalvingFrontRetreat::update(double dt,
         int N = 0;
         {
           StarStencil<int> M_star = mask.int_star(i, j);
+          StarStencil<int> bc_star = ice_thickness_bc_mask.int_star(i, j);
           StarStencil<double> bed_star = bed_topography.star(i, j);
 
           for (int n = 0; n < 4; ++n) {
             const Direction direction = dirs[n];
             const int M = M_star[direction];
+            const int BC = bc_star[direction];
 
-            if (mask::floating_ice(M) or
-                (mask::grounded_ice(M) and bed_star[direction] < sea_level)) {
+            if (BC == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
+                (mask::floating_ice(M) or
+                 (mask::grounded_ice(M) and bed_star[direction] < sea_level))) {
               N += 1;
             }
           }
@@ -255,8 +270,9 @@ void CalvingFrontRetreat::update(double dt,
     const int i = p.i(), j = p.j();
 
     // Note: this condition has to match the one in step 1 above.
-    if (mask.floating_ice(i, j) or
-        (mask.grounded_ice(i, j) and bed_topography(i, j) < sea_level)) {
+    if (ice_thickness_bc_mask.as_int(i, j) == 0 and
+        (mask.floating_ice(i, j) or
+         (mask.grounded_ice(i, j) and bed_topography(i, j) < sea_level))) {
 
       const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
                               m_tmp(i, j + 1) + m_tmp(i, j - 1));
@@ -308,7 +324,7 @@ CalvingRate::CalvingRate(const CalvingFrontRetreat *m,
   /* set metadata: */
   m_vars = {SpatialVariableMetadata(m_sys, name)};
 
-  set_attrs(long_name, "land_ice_calving_rate",
+  set_attrs(long_name, "",      // land_ice_calving_rate
             "m second-1", "m year-1", 0);
 }
 

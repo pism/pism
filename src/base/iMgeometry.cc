@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -667,6 +667,16 @@ void IceModel::massContExplicitStep(double dt,
 /*!
  * Update ice thickness using the surface mass balance and the basal melt rate. This computation is
  * purely local (does not use or update ghosts).
+ *
+ * @param[in] dt time step length
+ * @param[in] cell_area cell area
+ * @param[in] climatic_mass_balance climatic (top surface) mass balance
+ * @param[in] basal_melt_rate basal (bottom surface) melt rate
+ * @param[in] cell_type cell type mask
+ * @param[in] bc_mask Dirichlet B.C. mask (NULL if no Dirichlet B.C.)
+ * @param[in,out] ice_thickness ice thickness (updated in place)
+ * @param[in,out] fluxes_scalar cumulative fluxes integrated over the domain
+ * @param[in,out] fluxes_2d cumulative fluxes
  */
 void IceModel::apply_surface_and_basal_mass_balance(double dt,
                                                     const IceModelVec2S &cell_area,

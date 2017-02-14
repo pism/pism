@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -47,9 +47,6 @@ std::map<std::string, Diagnostic::Ptr> FrontalMelt::diagnostics_impl() const {
 
 void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
                                        IceModelVec2S &result) const {
-  (void) mask;
-  (void) result;
-
   GeometryCalculator gc(*m_config);
 
   IceModelVec2S &shelf_base_mass_flux = m_tmp;

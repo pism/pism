@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,6 +39,7 @@ public:
 
   void update(double dt,
               double sea_level,
+              const IceModelVec2Int &ice_thickness_bc_mask,
               const IceModelVec2S &bed_topography,
               IceModelVec2CellType &pism_mask,
               IceModelVec2S &Href,
