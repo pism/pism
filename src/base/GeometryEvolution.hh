@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef GEOMETRYEVOLUTION_H
 #define GEOMETRYEVOLUTION_H
 
-#include "IceGeometry.hh"
+#include "Geometry.hh"
 
 namespace pism {
 
@@ -47,6 +47,19 @@ public:
   const IceModelVec2S& thickness_change() const;
   const IceModelVec2S& conservation_error() const;
 protected:
+  void compute_interface_velocity();
+
+  void compute_interface_fluxes();
+
+  void compute_flux_divergence();
+
+  void apply_flux_divergence();
+
+  void ensure_nonnegativity();
+
+  void update_cell_type();
+
+  void apply_surface_and_basal_mass_balance();
 private:
   struct Impl;
   Impl *m_impl;
