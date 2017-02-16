@@ -180,6 +180,71 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
   // calving is a separate issue
 }
 
+static double limit_advective_velocity(int mask_current, int mask_neighbor, double velocity) {
+
+  using mask::grounded_ice;
+  using mask::floating_ice;
+  using mask::ice_free_land;
+  using mask::ice_free_ocean;
+
+  // Case 1: Flow between grounded_ice and grounded_ice.
+  if (grounded_ice(mask_current) && grounded_ice(mask_neighbor)) {
+    return velocity;
+  }
+
+  // Cases 2 and 3: Flow between grounded_ice and floating_ice.
+  if ((grounded_ice(mask_current) && floating_ice(mask_neighbor)) ||
+      (floating_ice(mask_current) && grounded_ice(mask_neighbor))) {
+    return velocity;
+  }
+
+  // Cases 4 and 5: Flow between grounded_ice and ice_free_land.
+  if ((grounded_ice(mask_current) && ice_free_land(mask_neighbor)) ||
+      (ice_free_land(mask_current) && grounded_ice(mask_neighbor))) {
+    return velocity;
+  }
+
+  // Cases 6 and 7: Flow between grounded_ice and ice_free_ocean.
+  if ((grounded_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
+      (ice_free_ocean(mask_current) && grounded_ice(mask_neighbor))) {
+    return velocity;
+  }
+
+  // Case 8: Flow between floating_ice and floating_ice.
+  if (floating_ice(mask_current) && floating_ice(mask_neighbor)) {
+    return velocity;
+  }
+
+  // Cases 9 and 10: Flow between floating_ice and ice_free_land.
+  if ((floating_ice(mask_current) && ice_free_land(mask_neighbor)) ||
+      (ice_free_land(mask_current) && floating_ice(mask_neighbor))) {
+    // Disable all flow. This ensures that an ice shelf does not climb up a cliff.
+    return 0.0;
+  }
+
+  // Cases 11 and 12: Flow between floating_ice and ice_free_ocean.
+  if ((floating_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
+      (ice_free_ocean(mask_current) && floating_ice(mask_neighbor))) {
+    return velocity;
+  }
+
+  // Case 13: Flow between ice_free_land and ice_free_land.
+  if (ice_free_land(mask_current) && ice_free_land(mask_neighbor)) {
+    return 0.0;
+  }
+
+  // Cases 14 and 15: Flow between ice_free_land and ice_free_ocean.
+  if ((ice_free_land(mask_current) && ice_free_ocean(mask_neighbor)) ||
+      (ice_free_ocean(mask_current) && ice_free_land(mask_neighbor))) {
+    return 0.0;
+  }
+
+  // Case 16: Flow between ice_free_ocean and ice_free_ocean.
+  if (ice_free_ocean(mask_current) && ice_free_ocean(mask_neighbor)) {
+    return 0.0;
+  }
+}
+
 void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &cell_type,
                                                    const IceModelVec2V &velocity,
                                                    const IceModelVec2Int &bc_mask,
@@ -213,11 +278,11 @@ void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &c
           i_n = i + oi,              // i index of a neighbor
           j_n = j + oj;              // j index of a neighbor
 
+        const int M_n = cell_type(i_n, j_n); // mask of a neighbor
+
         // Regular case
         {
-          const int M_n = cell_type(i_n, j_n); // mask of a neighbor
-          const Vector2
-            V_n  = velocity(i_n, j_n);
+          const Vector2 V_n  = velocity(i_n, j_n);
 
           if (icy(M) and icy(M_n)) {
             // Case 1: both sides of the interface are icy
@@ -264,6 +329,8 @@ void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &c
 
         } // end of the Dirichlet B.C. case
 
+        // finally, limit advective velocities
+        output(i, j, n) = limit_advective_velocity(M, M_n, output(i, j, n));
 
       } // staggered grid offset (n) loop
 
@@ -272,7 +339,6 @@ void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &c
     loop.failed();
   }
   loop.check();
-
 }
 
 void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
