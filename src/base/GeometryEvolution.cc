@@ -341,6 +341,72 @@ void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &c
   loop.check();
 }
 
+static double limit_diffusive_flux(int mask_current, int mask_neighbor, double flux) {
+
+  using mask::grounded_ice;
+  using mask::floating_ice;
+  using mask::ice_free_land;
+  using mask::ice_free_ocean;
+
+  // Case 1: Flow between grounded_ice and grounded_ice.
+  if (grounded_ice(mask_current) && grounded_ice(mask_neighbor)) {
+    return flux;
+  }
+
+  // Cases 2 and 3: Flow between grounded_ice and floating_ice.
+  if ((grounded_ice(mask_current) && floating_ice(mask_neighbor)) ||
+      (floating_ice(mask_current) && grounded_ice(mask_neighbor))) {
+    return flux;
+  }
+
+  // Cases 4 and 5: Flow between grounded_ice and ice_free_land.
+  if ((grounded_ice(mask_current) && ice_free_land(mask_neighbor)) ||
+      (ice_free_land(mask_current) && grounded_ice(mask_neighbor))) {
+    return flux;
+  }
+
+  // Cases 6 and 7: Flow between grounded_ice and ice_free_ocean.
+  if ((grounded_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
+      (ice_free_ocean(mask_current) && grounded_ice(mask_neighbor))) {
+    return flux;
+  }
+
+  // Case 8: Flow between floating_ice and floating_ice.
+  if (floating_ice(mask_current) && floating_ice(mask_neighbor)) {
+    // no diffusive flux in ice shelves
+    return 0.0;
+  }
+
+  // Cases 9 and 10: Flow between floating_ice and ice_free_land.
+  if ((floating_ice(mask_current) && ice_free_land(mask_neighbor)) ||
+      (ice_free_land(mask_current) && floating_ice(mask_neighbor))) {
+    // Disable all flow. This ensures that an ice shelf does not climb up a cliff.
+    return 0.0;
+  }
+
+  // Cases 11 and 12: Flow between floating_ice and ice_free_ocean.
+  if ((floating_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
+      (ice_free_ocean(mask_current) && floating_ice(mask_neighbor))) {
+    return 0.0;
+  }
+
+  // Case 13: Flow between ice_free_land and ice_free_land.
+  if (ice_free_land(mask_current) && ice_free_land(mask_neighbor)) {
+    return 0.0;
+  }
+
+  // Cases 14 and 15: Flow between ice_free_land and ice_free_ocean.
+  if ((ice_free_land(mask_current) && ice_free_ocean(mask_neighbor)) ||
+      (ice_free_ocean(mask_current) && ice_free_land(mask_neighbor))) {
+    return 0.0;
+  }
+
+  // Case 16: Flow between ice_free_ocean and ice_free_ocean.
+  if (ice_free_ocean(mask_current) && ice_free_ocean(mask_neighbor)) {
+    return 0.0;
+  }
+}
+
 void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                                  const IceModelVec2Stag &velocity_staggered,
                                                  const IceModelVec2S &ice_thickness,
