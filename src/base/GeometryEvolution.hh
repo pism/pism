@@ -77,6 +77,7 @@ protected:
                              IceModelVec2S &area_specific_volume_change);
 
   void ensure_nonnegativity(const IceModelVec2S &ice_thickness,
+                            const IceModelVec2S &area_specific_volume,
                             IceModelVec2S &thickness_change,
                             IceModelVec2S &area_specific_volume_change,
                             IceModelVec2S &conservation_error);
