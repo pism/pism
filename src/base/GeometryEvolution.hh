@@ -27,6 +27,12 @@ namespace pism {
 /*!
  * NB! Write this in a way that does not use ghosts of input fields (copy to temp. storage and
  * communicate).
+ *
+ * The promise:
+ *
+ * H_change + Href_change = dt * (SMB_rate + BMB_rate - flux_divergence) + conservation_error
+ *
+ * Href == 0 if H > 0
  */
 class GeometryEvolution {
 public:
@@ -47,19 +53,41 @@ public:
   const IceModelVec2S& thickness_change() const;
   const IceModelVec2S& conservation_error() const;
 protected:
-  void compute_interface_velocity();
+  void compute_interface_velocity(const IceModelVec2CellType &cell_type,
+                                  const IceModelVec2V &advective_velocity,
+                                  const IceModelVec2Int &velocity_bc_mask,
+                                  const IceModelVec2V &velocity_bc_values,
+                                  IceModelVec2Stag &velocity_staggered);
 
-  void compute_interface_fluxes();
+  void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
+                                const IceModelVec2Stag &velocity_staggered,
+                                const IceModelVec2S &ice_thickness,
+                                const IceModelVec2Stag &diffusive_flux,
+                                IceModelVec2Stag &flux_staggered);
 
-  void compute_flux_divergence();
+  void compute_flux_divergence(const IceModelVec2Stag &flux_staggered,
+                               const IceModelVec2Int &thickness_bc_mask,
+                               IceModelVec2S &flux_fivergence);
 
-  void apply_flux_divergence();
+  void apply_flux_divergence(const IceModelVec2CellType &cell_type,
+                             const IceModelVec2S &ice_thickness,
+                             const IceModelVec2S &ice_surface_elevation,
+                             const IceModelVec2S &bed_elevation,
+                             IceModelVec2S &thickness_change,
+                             IceModelVec2S &area_specific_volume_change);
 
-  void ensure_nonnegativity();
+  void ensure_nonnegativity(const IceModelVec2S &ice_thickness,
+                            IceModelVec2S &thickness_change,
+                            IceModelVec2S &area_specific_volume_change,
+                            IceModelVec2S &conservation_error);
 
-  void update_cell_type();
-
-  void apply_surface_and_basal_mass_balance();
+  // note: cells with area_specific_volume > 0 do not experience changes due to surface and basal
+  // mass balance sources
+  void apply_surface_and_basal_mass_balance(const IceModelVec2S &ice_thickness,
+                                            const IceModelVec2Int &thickness_bc_mask,
+                                            const IceModelVec2S &surface_mass_balance,
+                                            const IceModelVec2S &basal_mass_balance,
+                                            IceModelVec2S &thickness_change);
 private:
   struct Impl;
   Impl *m_impl;

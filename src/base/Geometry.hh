@@ -36,6 +36,8 @@ public:
    */
   void ensure_consistency(double ice_free_thickness_threshold);
 
+  // We use getters here so that SWIG does not try to produce setters for the fields contained in
+  // this class.
   IceModelVec2S& cell_area();
   IceModelVec2S& latitude();
   IceModelVec2S& longitude();

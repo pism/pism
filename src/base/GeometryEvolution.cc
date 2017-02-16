@@ -20,25 +20,71 @@
 #include "GeometryEvolution.hh"
 
 #include "base/util/iceModelVec.hh"
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
 
 namespace pism {
 
 struct GeometryEvolution::Impl {
+  Impl(IceGrid::ConstPtr g);
+
   IceGrid::ConstPtr grid;
 
-  /*! @brief Fluxes through cell interfaces (sides). */
+  //! Fluxes through cell interfaces (sides).
   IceModelVec2Stag interface_fluxes;
-  /*! @brief Flux divergence (used to track thickness changes due to flow). */
+  //! Flux divergence (used to track thickness changes due to flow).
   IceModelVec2S flux_divergence;
-  /*! @brief Conservation error due to enforcing non-negativity of ice thickness. */
+  //! Conservation error due to enforcing non-negativity of ice thickness.
   IceModelVec2S conservation_error;
-  /*! @brief Effective surface mass balance. */
+  //! Effective surface mass balance.
   IceModelVec2S effective_SMB;
-  /*! @brief Effective basal mass balance. */
+  //! Effective basal mass balance.
   IceModelVec2S effective_BMB;
-  /*! @brief Change in ice thickness during the last time step. */
+  //! Change in ice thickness during the last time step.
   IceModelVec2S thickness_change;
+  //! Change in the ice area-specific volume during the last time step.
+  IceModelVec2S ice_area_specific_volume_change;
+
+  IceModelVec2Stag velocity_staggered;
+  IceModelVec2Stag flux_staggered;
+
+  double ice_thickness_threshold;
 };
+
+GeometryEvolution::Impl::Impl(IceGrid::ConstPtr g)
+  : grid(g) {
+
+  interface_fluxes.create(grid, "interface_fluxes", WITH_GHOSTS);
+  interface_fluxes.set_attrs("internal", "fluxes through cell interfaces (sides)", "m2 s-1", "");
+  interface_fluxes.metadata().set_string("glaciological_units", "m2 year-1");
+  interface_fluxes.write_in_glaciological_units = true;
+
+  flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS);
+  flux_divergence.set_attrs("internal", "flux divergence", "m s-1", "");
+
+  conservation_error.create(grid, "conservation_error", WITHOUT_GHOSTS);
+  conservation_error.set_attrs("internal",
+                               "conservation error due to enforcing non-negativity of ice thickness",
+                               "m", "");
+
+  effective_SMB.create(grid, "effective_SMB", WITHOUT_GHOSTS);
+  effective_SMB.set_attrs("internal", "effective surface mass balance rate", "m s-1", "");
+  effective_SMB.metadata().set_string("glaciological_units", "m year-1");
+  effective_SMB.write_in_glaciological_units = true;
+
+  effective_BMB.create(grid, "effective_BMB", WITHOUT_GHOSTS);
+  effective_BMB.set_attrs("internal", "effective basal mass balance rate", "m s-1", "");
+  effective_BMB.metadata().set_string("glaciological_units", "m year-1");
+  effective_BMB.write_in_glaciological_units = true;
+
+  thickness_change.create(grid, "thickness_change", WITHOUT_GHOSTS);
+  thickness_change.set_attrs("internal", "change in thickness during the last time step", "m", "");
+
+  ice_area_specific_volume_change.create(grid, "ice_area_specific_volume_change", WITHOUT_GHOSTS);
+  ice_area_specific_volume_change.set_attrs("interval",
+                                            "change in area-specific volume during the last time step",
+                                            "m3 / m2", "");
+}
 
 GeometryEvolution::GeometryEvolution(IceGrid::ConstPtr grid) {
   m_impl->grid = grid;
@@ -64,7 +110,19 @@ const IceModelVec2S& GeometryEvolution::conservation_error() const {
   return m_impl->conservation_error;
 }
 
-void GeometryEvolution::step(Geometry &ice_geometry, double dt,
+
+/*!
+ * @param[in,out] geometry ice geometry
+ * @param[in] dt time step, seconds
+ * @param[in] advective_velocity advective (SSA) velocity
+ * @param[in] diffusive_flux diffusive (SIA) flux
+ * @param[in] velocity_bc_mask advective velocity Dirichlet B.C. mask
+ * @param[in] velocity_bc_values advective velocity Dirichlet B.C. values
+ * @param[in] thickness_bc_mask ice thickness Dirichlet B.C. mask
+ * @param[in] surface_mass_balance_rate top surface mass balance rate (m / second)
+ * @param[in] basal_mass_balance_rate basal (bottom surface) mass balance rate
+ */
+void GeometryEvolution::step(Geometry &geometry, double dt,
                              const IceModelVec2V    &advective_velocity,
                              const IceModelVec2Stag &diffusive_flux,
                              const IceModelVec2Int  &velocity_bc_mask,
@@ -74,59 +132,185 @@ void GeometryEvolution::step(Geometry &ice_geometry, double dt,
                              const IceModelVec2S    &basal_mass_balance_rate) {
 
   // uses B.C. data and includes modifications for regional runs
-  compute_interface_velocity();
+  compute_interface_velocity(geometry.cell_type(),
+                             advective_velocity,
+                             velocity_bc_mask,
+                             velocity_bc_values,
+                             m_impl->velocity_staggered);
 
   // upwinding shows up here; includes modifications for regional runs
-  compute_interface_fluxes();
+  compute_interface_fluxes(geometry.cell_type(),
+                           m_impl->velocity_staggered,
+                           geometry.ice_thickness(),
+                           diffusive_flux,
+                           m_impl->flux_staggered);
 
   // simple finite differences
-  compute_flux_divergence();
+  compute_flux_divergence(m_impl->flux_staggered,
+                          thickness_bc_mask,
+                          m_impl->flux_divergence);
 
   // this is where part_grid should be implemented; uses thickness_bc_mask
-  apply_flux_divergence();
+  apply_flux_divergence(geometry.cell_type(),
+                        geometry.ice_thickness(),
+                        geometry.ice_surface_elevation(),
+                        geometry.bed_elevation(),
+                        m_impl->thickness_change,
+                        m_impl->ice_area_specific_volume_change);
 
-  // computes the numerical conservation error
-  ensure_nonnegativity();
+  // computes the numerical conservation error and corrects ice thickness
+  ensure_nonnegativity(geometry.ice_thickness(),
+                       m_impl->thickness_change,
+                       m_impl->ice_area_specific_volume_change,
+                       m_impl->conservation_error);
 
   // ice extent may change due to the flow, so we need to update the mask in preparation for
   // applying the source terms (surface and basal mass balance)
-  update_cell_type();
+  geometry.ensure_consistency(m_impl->ice_thickness_threshold);
 
   // uses thickness_bc_mask
-  apply_surface_and_basal_mass_balance();
+  apply_surface_and_basal_mass_balance(geometry.ice_thickness(),
+                                       thickness_bc_mask,
+                                       surface_mass_balance_rate,
+                                       basal_mass_balance_rate,
+                                       m_impl->thickness_change);
 
-  ice_geometry.ensure_consistency(m_impl->grid->ctx()->config()->get_double("geometry.ice_free_thickness_standard"));
+  geometry.ensure_consistency(m_impl->ice_thickness_threshold);
 
   // calving is a separate issue
 }
 
-void GeometryEvolution::compute_interface_velocity() {
+void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &cell_type,
+                                                   const IceModelVec2V &velocity,
+                                                   const IceModelVec2Int &bc_mask,
+                                                   const IceModelVec2V &bc_values,
+                                                   IceModelVec2Stag &output) {
+
+  using mask::icy;
+  using mask::ice_free;
+
+  IceGrid::ConstPtr grid = cell_type.get_grid();
+
+  IceModelVec::AccessList list{&cell_type, &velocity, &bc_mask, &bc_values, &output};
+
+  ParallelSection loop(grid->com);
+  try {
+    for (Points p(*grid); p; p.next()) {
+      const int
+        i  = p.i(),
+        j  = p.j(),
+        M  = cell_type(i, j),
+        BC = bc_mask.as_int(i, j);
+
+      const Vector2
+        V    = velocity(i, j),
+        V_bc = bc_values(i, j);
+
+      for (int n = 0; n < 2; ++n) {
+        const int
+          oi  = 1 - n,               // offset in the i direction
+          oj  = n,                   // offset in the j direction
+          i_n = i + oi,              // i index of a neighbor
+          j_n = j + oj;              // j index of a neighbor
+
+        // Regular case
+        {
+          const int M_n = cell_type(i_n, j_n); // mask of a neighbor
+          const Vector2
+            V_n  = velocity(i_n, j_n);
+
+          if (icy(M) and icy(M_n)) {
+            // Case 1: both sides of the interface are icy
+            output(i, j, n) = (n == 0 ? 0.5 * (V.u + V_n.u) : 0.5 * (V.v + V_n.v));
+
+          } else if (icy(M) and ice_free(M_n)) {
+            // Case 2: icy cell next to an ice-free cell
+            output(i, j, n) = (n == 0 ? V.u : V.v);
+
+          } else if (ice_free(M) and icy(M_n)) {
+            // Case 3: ice-free cell next to icy cell
+            output(i, j, n) = (n == 0 ? V_n.u : V_n.v);
+
+          } else if (ice_free(M) and ice_free(M_n)) {
+            // Case 4: both sides of the interface are ice-free
+            output(i, j, n) = 0.0;
+
+          }
+        }
+
+        // The Dirichlet B.C. case:
+        {
+          const int     BC_n   = bc_mask.as_int(i_n, j_n);
+          const Vector2 V_bc_n = bc_values(i_n, j_n);
+
+          if (BC == 1 and BC_n == 1) {
+            // Case 1: both sides of the interface are B.C. locations: average from
+            // the regular grid onto the staggered grid.
+            output(i, j, n) = (n == 0 ? 0.5 * (V_bc.u + V_bc_n.u) : 0.5 * (V_bc.v + V_bc_n.v));
+
+          } else if (BC == 1 and BC_n == 0) {
+            // Case 2: at a Dirichlet B.C. location next to a regular location
+            output(i, j, n) = (n == 0 ? V_bc.u : V_bc.v);
+
+          } else if (BC == 0 and BC_n == 1) {
+
+            // Case 3: at a regular location next to a Dirichlet B.C. location
+            output(i, j, n) = (n == 0 ? V_bc_n.u : V_bc_n.v);
+
+          } else {
+            // Case 4: elsewhere.
+            // No Dirichlet B.C. adjustment here.
+          }
+
+        } // end of the Dirichlet B.C. case
+
+
+      } // staggered grid offset (n) loop
+
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 
 }
 
-void GeometryEvolution::compute_interface_fluxes() {
+void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
+                                                 const IceModelVec2Stag &velocity_staggered,
+                                                 const IceModelVec2S &ice_thickness,
+                                                 const IceModelVec2Stag &diffusive_flux,
+                                                 IceModelVec2Stag &flux_staggered) {
 
 }
 
-void GeometryEvolution::compute_flux_divergence() {
+void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux_staggered,
+                                                const IceModelVec2Int &thickness_bc_mask,
+                                                IceModelVec2S &flux_fivergence) {
 
 }
 
-void GeometryEvolution::apply_flux_divergence() {
+void GeometryEvolution::apply_flux_divergence(const IceModelVec2CellType &cell_type,
+                                              const IceModelVec2S &ice_thickness,
+                                              const IceModelVec2S &ice_surface_elevation,
+                                              const IceModelVec2S &bed_elevation,
+                                              IceModelVec2S &thickness_change,
+                                              IceModelVec2S &area_specific_volume_change) {
 
 }
 
-void GeometryEvolution::ensure_nonnegativity() {
+void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
+                                             IceModelVec2S &thickness_change,
+                                             IceModelVec2S &area_specific_volume_change,
+                                             IceModelVec2S &conservation_error) {
 
 }
 
-void GeometryEvolution::update_cell_type() {
+void GeometryEvolution::apply_surface_and_basal_mass_balance(const IceModelVec2S &ice_thickness,
+                                                             const IceModelVec2Int &thickness_bc_mask,
+                                                             const IceModelVec2S &surface_mass_balance,
+                                                             const IceModelVec2S &basal_mass_balance,
+                                                             IceModelVec2S &thickness_change) {
 
 }
-
-void GeometryEvolution::apply_surface_and_basal_mass_balance() {
-
-}
-
 
 } // end of namespace pism

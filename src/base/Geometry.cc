@@ -103,7 +103,26 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   Config::ConstPtr config = grid->ctx()->config();
 
   IceModelVec::AccessList list{&m_sea_level_elevation, &m_bed_elevation,
-      &m_ice_thickness, &m_cell_type, &m_ice_surface_elevation};
+      &m_ice_thickness, &m_ice_area_specific_volume,
+      &m_cell_type, &m_ice_surface_elevation};
+
+  // first ensure that ice_area_specific_volume is 0 if ice_thickness > 0.
+  {
+    ParallelSection loop(grid->com);
+    try {
+      for (Points p(*grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        if (m_ice_thickness(i, j) > 0.0 and m_ice_area_specific_volume(i, j) > 0.0) {
+          m_ice_thickness(i, j) += m_ice_area_specific_volume(i, j);
+          m_ice_area_specific_volume(i, j) = 0.0;
+        }
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
+  }
 
   // compute cell type and surface elevation
   {
