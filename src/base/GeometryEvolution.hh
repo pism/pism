@@ -84,11 +84,15 @@ protected:
 
   // note: cells with area_specific_volume > 0 do not experience changes due to surface and basal
   // mass balance sources
-  void apply_surface_and_basal_mass_balance(const IceModelVec2S &ice_thickness,
-                                            const IceModelVec2Int &thickness_bc_mask,
-                                            const IceModelVec2S &surface_mass_balance,
-                                            const IceModelVec2S &basal_mass_balance,
-                                            IceModelVec2S &thickness_change);
+  void compute_surface_and_basal_mass_balance(double dt,
+                                              const IceModelVec2Int &thickness_bc_mask,
+                                              const IceModelVec2S &ice_thickness,
+                                              const IceModelVec2S &thickness_change,
+                                              const IceModelVec2CellType &cell_type,
+                                              const IceModelVec2S &smb_rate,
+                                              const IceModelVec2S &basal_melt_rate,
+                                              IceModelVec2S &effective_SMB,
+                                              IceModelVec2S &effective_BMB);
 private:
   struct Impl;
   Impl *m_impl;

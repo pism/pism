@@ -169,11 +169,17 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
   geometry.ensure_consistency(m_impl->ice_thickness_threshold);
 
   // uses thickness_bc_mask
-  apply_surface_and_basal_mass_balance(geometry.ice_thickness(),
-                                       thickness_bc_mask,
-                                       surface_mass_balance_rate,
-                                       basal_mass_balance_rate,
-                                       m_impl->thickness_change);
+  compute_surface_and_basal_mass_balance(dt,
+                                         thickness_bc_mask,
+                                         geometry.ice_thickness(),
+                                         m_impl->thickness_change,
+                                         geometry.cell_type(),
+                                         surface_mass_balance_rate,
+                                         basal_mass_balance_rate,
+                                         m_impl->effective_SMB,
+                                         m_impl->effective_BMB);
+
+  // FIXME: Now H_new = H_old + thickness_change + effective_SMB + effective_BMB.
 
   geometry.ensure_consistency(m_impl->ice_thickness_threshold);
 
@@ -546,12 +552,81 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
 
 }
 
-void GeometryEvolution::apply_surface_and_basal_mass_balance(const IceModelVec2S &ice_thickness,
-                                                             const IceModelVec2Int &thickness_bc_mask,
-                                                             const IceModelVec2S &surface_mass_balance,
-                                                             const IceModelVec2S &basal_mass_balance,
-                                                             IceModelVec2S &thickness_change) {
+/*!
+ * Given ice thickness `H` and the "proposed" change `dH`, compute the corrected change preserving
+ * non-negativity.
+ */
+static inline double effective_change(double H, double dH) {
+  return H + dH < 0.0 ? -H : dH;
+}
 
+/*!
+ * Compute effective surface and basal mass balance.
+ *
+ * @param[in] dt time step, seconds
+ * @param[in] thickness_bc_mask mask specifying ice thickness Dirichlet B.C. locations
+ * @param[in] ice_thickness ice thickness, m
+ * @param[in] thickness_change thickness change due to flow, m
+ * @param[in] cell_type cell type mask
+ * @param[in] smb_rate top surface mass balance rate, kg m-2 s-1
+ * @param[in] basal_melt_rate basal melt rate, m s-1
+ * @param[out] effective_smb effective top surface mass balance, m
+ * @param[out] effective_bmb effective basal mass balance, m
+ */
+void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
+                                                               const IceModelVec2Int &thickness_bc_mask,
+                                                               const IceModelVec2S &ice_thickness,
+                                                               const IceModelVec2S &thickness_change,
+                                                               const IceModelVec2CellType &cell_type,
+                                                               const IceModelVec2S &smb_rate,
+                                                               const IceModelVec2S &basal_melt_rate,
+                                                               IceModelVec2S &effective_SMB,
+                                                               IceModelVec2S &effective_BMB) {
+
+  Config::ConstPtr config = m_impl->grid->ctx()->config();
+  const double ice_density = config->get_double("constants.ice.density");
+
+  const bool use_bmr = config->get_boolean("geometry.update.use_basal_melt_rate");
+
+  IceModelVec::AccessList list{&ice_thickness, &thickness_change,
+      &smb_rate, &basal_melt_rate,
+      &cell_type, &thickness_bc_mask, &effective_SMB, &effective_BMB};
+
+  ParallelSection loop(m_impl->grid->com);
+  try {
+    for (Points p(*m_impl->grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      // Don't modify ice thickness at Dirichlet B.C. locations and in the ice-free ocean.
+      if (thickness_bc_mask.as_int(i, j) == 1 or
+          cell_type.ice_free_ocean(i, j)) {
+        effective_SMB(i, j) = 0.0;
+        effective_BMB(i, j) = 0.0;
+        continue;
+      }
+
+      const double
+        H       = ice_thickness(i, j),
+        dH_flow = thickness_change(i, j);
+
+      // Thickness change due to the surface mass balance
+      //
+      // Note that here we convert surface mass balance from [kg m-2 s-1] to [m s-1].
+      const double dH_SMB = effective_change(H + dH_flow,
+                                             dt * smb_rate(i, j) / ice_density);
+      effective_SMB(i, j) = dH_SMB;
+
+      // Thickness change due to the basal mass balance
+      //
+      // Note that basal_melt_rate is in [m s-1]. Here the negative sign converts the melt rate into
+      // mass balance.
+      effective_BMB(i, j) = effective_change(H + dH_flow + dH_SMB,
+                                             dt * (use_bmr ? -basal_melt_rate(i, j) : 0.0));
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 }
 
 } // end of namespace pism
