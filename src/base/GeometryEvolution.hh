@@ -48,51 +48,55 @@ public:
             const IceModelVec2S    &basal_mass_balance_rate);
 
   const IceModelVec2S& flux_divergence() const;
+
   const IceModelVec2S& top_surface_mass_balance() const;
   const IceModelVec2S& bottom_surface_mass_balance() const;
-  const IceModelVec2S& thickness_change() const;
+
+  const IceModelVec2S& thickness_change_due_to_flow() const;
+  const IceModelVec2S& area_specific_volume_change_due_to_flow() const;
+
   const IceModelVec2S& conservation_error() const;
 protected:
-  void compute_interface_velocity(const IceModelVec2CellType &cell_type,
-                                  const IceModelVec2V &advective_velocity,
-                                  const IceModelVec2Int &velocity_bc_mask,
-                                  const IceModelVec2V &velocity_bc_values,
-                                  IceModelVec2Stag &velocity_staggered);
+  virtual void compute_interface_velocity(const IceModelVec2CellType &cell_type,
+                                          const IceModelVec2V &advective_velocity,
+                                          const IceModelVec2Int &velocity_bc_mask,
+                                          const IceModelVec2V &velocity_bc_values,
+                                          IceModelVec2Stag &velocity_staggered);
 
-  void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
-                                const IceModelVec2Stag &velocity_staggered,
-                                const IceModelVec2S &ice_thickness,
-                                const IceModelVec2Stag &diffusive_flux,
-                                IceModelVec2Stag &flux_staggered);
+  virtual void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
+                                        const IceModelVec2Stag &velocity_staggered,
+                                        const IceModelVec2S &ice_thickness,
+                                        const IceModelVec2Stag &diffusive_flux,
+                                        IceModelVec2Stag &flux_staggered);
 
-  void compute_flux_divergence(const IceModelVec2Stag &flux_staggered,
-                               const IceModelVec2Int &thickness_bc_mask,
-                               IceModelVec2S &flux_fivergence);
+  virtual void compute_flux_divergence(const IceModelVec2Stag &flux_staggered,
+                                       const IceModelVec2Int &thickness_bc_mask,
+                                       IceModelVec2S &flux_fivergence);
 
-  void apply_flux_divergence(const IceModelVec2CellType &cell_type,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &ice_surface_elevation,
-                             const IceModelVec2S &bed_elevation,
-                             IceModelVec2S &thickness_change,
-                             IceModelVec2S &area_specific_volume_change);
+  virtual void compute_thickness_change_due_to_flow(const IceModelVec2CellType &cell_type,
+                                                    const IceModelVec2S &ice_thickness,
+                                                    const IceModelVec2S &ice_surface_elevation,
+                                                    const IceModelVec2S &bed_elevation,
+                                                    IceModelVec2S &thickness_change,
+                                                    IceModelVec2S &area_specific_volume_change);
 
-  void ensure_nonnegativity(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &area_specific_volume,
-                            IceModelVec2S &thickness_change,
-                            IceModelVec2S &area_specific_volume_change,
-                            IceModelVec2S &conservation_error);
+  virtual void ensure_nonnegativity(const IceModelVec2S &ice_thickness,
+                                    const IceModelVec2S &area_specific_volume,
+                                    IceModelVec2S &thickness_change,
+                                    IceModelVec2S &area_specific_volume_change,
+                                    IceModelVec2S &conservation_error);
 
   // note: cells with area_specific_volume > 0 do not experience changes due to surface and basal
   // mass balance sources
-  void compute_surface_and_basal_mass_balance(double dt,
-                                              const IceModelVec2Int &thickness_bc_mask,
-                                              const IceModelVec2S &ice_thickness,
-                                              const IceModelVec2S &thickness_change,
-                                              const IceModelVec2CellType &cell_type,
-                                              const IceModelVec2S &smb_rate,
-                                              const IceModelVec2S &basal_melt_rate,
-                                              IceModelVec2S &effective_SMB,
-                                              IceModelVec2S &effective_BMB);
+  virtual void compute_surface_and_basal_mass_balance(double dt,
+                                                      const IceModelVec2Int &thickness_bc_mask,
+                                                      const IceModelVec2S &ice_thickness,
+                                                      const IceModelVec2S &thickness_change,
+                                                      const IceModelVec2CellType &cell_type,
+                                                      const IceModelVec2S &smb_rate,
+                                                      const IceModelVec2S &basal_melt_rate,
+                                                      IceModelVec2S &effective_SMB,
+                                                      IceModelVec2S &effective_BMB);
 private:
   struct Impl;
   Impl *m_impl;

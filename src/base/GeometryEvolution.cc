@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #include "GeometryEvolution.hh"
 
@@ -100,7 +100,7 @@ const IceModelVec2S& GeometryEvolution::bottom_surface_mass_balance() const {
   return m_impl->effective_BMB;
 }
 
-const IceModelVec2S& GeometryEvolution::thickness_change() const {
+const IceModelVec2S& GeometryEvolution::thickness_change_due_to_flow() const {
   return m_impl->thickness_change;
 }
 
@@ -149,15 +149,15 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                           m_impl->flux_divergence);
 
   // this is where part_grid should be implemented; uses thickness_bc_mask
-  apply_flux_divergence(geometry.cell_type(),
-                        geometry.ice_thickness(),
-                        geometry.ice_surface_elevation(),
-                        geometry.bed_elevation(),
-                        m_impl->thickness_change,
-                        m_impl->ice_area_specific_volume_change);
+  compute_thickness_change_due_to_flow(geometry.cell_type(),
+                                       geometry.ice_thickness(),
+                                       geometry.ice_surface_elevation(),
+                                       geometry.bed_elevation(),
+                                       m_impl->thickness_change,
+                                       m_impl->ice_area_specific_volume_change);
 
   // Computes the numerical conservation error and corrects ice thickness. We can do this here
-  // because apply_surface_and_basal_mass_balance() preserves non-negativity.
+  // because compute_surface_and_basal_mass_balance() preserves non-negativity.
   ensure_nonnegativity(geometry.ice_thickness(),
                        geometry.ice_area_specific_volume(),
                        m_impl->thickness_change,
@@ -492,12 +492,27 @@ void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux,
   loop.check();
 }
 
-void GeometryEvolution::apply_flux_divergence(const IceModelVec2CellType &cell_type,
-                                              const IceModelVec2S &ice_thickness,
-                                              const IceModelVec2S &ice_surface_elevation,
-                                              const IceModelVec2S &bed_elevation,
-                                              IceModelVec2S &thickness_change,
-                                              IceModelVec2S &area_specific_volume_change) {
+void GeometryEvolution::compute_thickness_change_due_to_flow(const IceModelVec2CellType &cell_type,
+                                                             const IceModelVec2S &ice_thickness,
+                                                             const IceModelVec2S &ice_surface_elevation,
+                                                             const IceModelVec2S &bed_elevation,
+                                                             IceModelVec2S &thickness_change,
+                                                             IceModelVec2S &area_specific_volume_change) {
+  IceModelVec::AccessList list{&cell_type, &ice_thickness, &ice_surface_elevation,
+      &bed_elevation, &thickness_change, &area_specific_volume_change};
+
+  ParallelSection loop(m_impl->grid->com);
+  try {
+    for (Points p(*m_impl->grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      // FIXME
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
 
 }
 
