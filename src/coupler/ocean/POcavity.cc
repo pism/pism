@@ -261,31 +261,6 @@ void Cavity::init_impl() {
 
 }
 
-void Cavity::add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result) {
-  PGivenClimate<OceanModifier,OceanModel>::add_vars_to_output_impl(keyword, result);
-
-  // add variable here and in define_variables_impl
-  // if you want it to appear in snapshots
-  if (keyword != "none" && keyword != "small") {
-    result.insert(m_shelfbtemp.get_name());
-    result.insert(m_shelfbmassflux.get_name());
-  }
-}
-
-void Cavity::define_variables_impl(const std::set<std::string> &vars,
-                                           const PIO &nc, IO_Type nctype) {
-
-  PGivenClimate<OceanModifier,OceanModel>::define_variables_impl(vars, nc, nctype);
-
-  for (unsigned int k = 0; k < m_variables.size(); ++k) {
-    IceModelVec *v = m_variables[k];
-    std::string name = v->metadata().get_string("short_name");
-    if (set_contains(vars, name)) {
-      v->define(nc, nctype);
-    }
-  }
-}
-
 void Cavity::shelf_base_temperature_impl(IceModelVec2S &result) const {
   result.copy_from(m_shelfbtemp);
 }
@@ -300,20 +275,6 @@ void Cavity::sea_level_elevation_impl(double &result) const {
 
 void Cavity::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
   result.set(0.0);
-}
-
-void Cavity::write_variables_impl(const std::set<std::string> &vars, const PIO& nc) {
-
-  PGivenClimate<OceanModifier,OceanModel>::write_variables_impl(vars, nc);
-
-  for (unsigned int k = 0; k < m_variables.size(); ++k) {
-    IceModelVec *v = m_variables[k];
-    std::string name = v->metadata().get_string("short_name");
-    if (set_contains(vars, name)) {
-      v->write(nc);
-    }
-  }
-
 }
 
 void Cavity::initBasinsOptions(const Constants &cc) {
@@ -968,17 +929,17 @@ void Cavity::write_ocean_input_fields(const Constants &cc) {
       Soc_base(i,j) =  Soc_base_vec[shelf_id];
 
       if (i==201 && j==108){
-        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);        
+        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);
       }
       if (i==201 && j==109){
-        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);        
+        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);
       }
 
       if (j==201 && i==108){
-        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);        
+        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);
       }
       if (j==201 && i==109){
-        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);        
+        m_log->message(2, "HERE: Toc_base(i,j)=%f,  %d, %d, basin %d \n",Toc_base(i,j), i , j ,shelf_id);
       }
 
 
