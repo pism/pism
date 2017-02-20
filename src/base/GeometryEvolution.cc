@@ -186,6 +186,9 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
   // calving is a separate issue
 }
 
+/*!
+ * Prevent advective ice flow from floating ice to ice-free land, as well as in the ice-free areas.
+ */
 static double limit_advective_velocity(int mask_current, int mask_neighbor, double velocity) {
 
   using mask::grounded_ice;
@@ -255,6 +258,14 @@ static double limit_advective_velocity(int mask_current, int mask_neighbor, doub
                                 mask_current, mask_neighbor);
 }
 
+/*!
+ * Compute advective velocities at cell interfaces by averaging from the regular grid.
+ *
+ * Avoids using `velocity` at ice-free locations and includes Dirichlet B.C. values.
+ *
+ * FIXME: including Dirichlet B.C. values should not be necessary: the whole velocity field is
+ * treated as fixed (prescribed) here, anyway.
+ */
 void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &cell_type,
                                                    const IceModelVec2V &velocity,
                                                    const IceModelVec2Int &bc_mask,
@@ -349,6 +360,9 @@ void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &c
   loop.check();
 }
 
+/*!
+ * Prevent SIA-driven flow in ice shelves and ice-free areas.
+ */
 static double limit_diffusive_flux(int mask_current, int mask_neighbor, double flux) {
 
   using mask::grounded_ice;
@@ -422,6 +436,10 @@ static double limit_diffusive_flux(int mask_current, int mask_neighbor, double f
 /*!
  * Combine advective velocity and the diffusive flux on the staggered grid with the ice thickness to
  * compute the total flux through cell interfaces.
+ *
+ * Uses first-order upwinding to compute the advective flux.
+ *
+ * Limits the diffusive flux to prevent SIA-driven flow in the ocean and ice-free areas.
  */
 void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                                  const IceModelVec2Stag &velocity,
@@ -466,6 +484,11 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
   loop.check();
 }
 
+/*!
+ * Compute flux divergence using cell interface fluxes on the staggered grid.
+ *
+ * The flux divergence at Dirichlet B.C. locations is set to zero.
+ */
 void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux,
                                                 const IceModelVec2Int &thickness_bc_mask,
                                                 IceModelVec2S &output) {
