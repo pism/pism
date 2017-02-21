@@ -91,7 +91,7 @@ private:
   void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
   void computeOCEANMEANS(const Constants &constants);
   void extentOfIceShelves();
-  void identifyBOXMODELmask();
+  void identifyBOXMODELmask(const Constants &constants);
   void write_ocean_input_fields(const Constants &constants);
   void basalMeltRateGroundingLineBox(const Constants &constants);
   void basalMeltRateOtherBoxes(const Constants &constants);

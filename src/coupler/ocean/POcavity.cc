@@ -345,7 +345,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
   identifyMASK(OCEANmask,"openocean");
   round_basins(); //FIXME if only done in init_impl, basin numbers are not correct later on, e.g. in write_ocean_input_fields()
   extentOfIceShelves();
-  identifyBOXMODELmask();
+  identifyBOXMODELmask(cc);
   write_ocean_input_fields(cc);
 
   //basal melt rates underneath ice shelves
@@ -746,7 +746,7 @@ void Cavity::extentOfIceShelves() {
 
 //! Compute the BOXMODELmask based on DistGL and DistIF, calculate the extent of each box in each region
 
-void Cavity::identifyBOXMODELmask() {
+void Cavity::identifyBOXMODELmask(const Constants &cc) {
 
   m_log->message(5, "starting identifyBOXMODELmask routine\n");
 
@@ -801,6 +801,7 @@ void Cavity::identifyBOXMODELmask() {
     // Otherwise, we need to change the calculation of DistGL and DistIF
     lnumberOfBoxes_perBasin[l] = n_min + static_cast<int>(
         round(pow((max_distGL[l]*dx/max_distGL_ref), zeta) *(numberOfBoxes-n_min)));
+    lnumberOfBoxes_perBasin[l] = PetscMin(lnumberOfBoxes_perBasin[l],cc.default_numberOfBoxes);
     m_log->message(5, "lnumberOfBoxes[%d]=%d \n", l, lnumberOfBoxes_perBasin[l]);
   }
 
@@ -958,8 +959,8 @@ void Cavity::write_ocean_input_fields(const Constants &cc) {
 
       if (  Toc_base(i,j) < T_pmt ) {
         //FIXME: only works in serial runs
-        m_log->message(2, "SIMPEL ocean WARNING: Toc_base is below the local pressure melting temperature\n"
-                      "for %d, %d, basin %d, setting it to pressure melting point \n",i,j,shelf_id);
+        //m_log->message(2, "SIMPEL ocean WARNING: Toc_base is below the local pressure melting temperature\n"
+        //              "for %d, %d, basin %d, setting it to pressure melting point \n",i,j,shelf_id);
         Toc_base(i,j) = T_pmt + 0.001 ;//FIXME: Test for regularization 
         lcounterTpmp+=1;
       }
