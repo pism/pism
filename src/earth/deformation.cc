@@ -235,48 +235,55 @@ void BedDeformLC::precompute_coefficients() {
   }
 }
 
-void BedDeformLC::uplift_init() {
-  // to initialize we solve:
-  //   rho_r g U + D grad^4 U = 0 - 2 eta |grad| uplift
-  // where U=U_start; yes it really should have "0" on right side because
-  // load for future times will be "-rho g (H-H_start)", which is zero if no geometry
-  // change.
+/*!
+ * Solve
+ *
+ * @f$ 2 \nu |\nabla| \diff{u}{t} + \rho_r g U + D\nabla^4 U = \sigma_{zz}@f$
+ *
+ * for @f$ U @f$, treating @f$ \diff{u}{t} @f$ and @f$ \sigma_{zz} @f$ as known.
+ *
+ * @param[in] ice_thickness ice thickness, meters
+ * @param[in] bed_uplift bed uplift, m/second
+ *
+ * Here `ice_thickness` is used to compute the load @f$ \sigma_{zz} @f$ and `bed_uplift` is
+ * @f$ \diff{u}{t} @f$ itself.
+ *
+ * Sets m_U and m_U_start.
+ */
+void BedDeformLC::uplift_problem(Vec ice_thickness, Vec bed_uplift) {
+  PetscErrorCode ierr = 0;
 
-  // Compare equation (16) in Bueler, Lingle, Brown (2007) "Fast computation of
-  // a viscoelastic deformable Earth model for ice sheet simulations", Ann.
-  // Glaciol. 46, 97--105
-  // [NOTE PROBABLE SIGN ERROR in eqn (16)?:  load "rho g H" should be "- rho g H"]
-
-  // spectral/FFT quantities are on fat computational grid but uplift is on thin
-  PetscErrorCode ierr;
-  petsc::VecArray2D left(m_vleft, m_Nx, m_Ny), right(m_vright, m_Nx, m_Ny);
-
-  // fft2(uplift)
-  clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
-  set_fftw_input(m_uplift, 1.0, m_Mx, m_My, m_i0_plate, m_j0_plate);
-  fftw_execute(m_dft_forward);
-
-  // compute left and right coefficients
-  for (int i = 0; i < m_Nx; i++) {
-    for (int j = 0; j < m_Ny; j++) {
-      const double C = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j];
-
-      left(i, j)  = m_rho * m_standard_gravity + m_D * C * C;
-      right(i, j) = -2.0 * m_eta * sqrt(C);
-    }
+  // Compute fft2(-ice_rho * g * ice_thickness)
+  {
+    clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
+    set_fftw_input(ice_thickness, - m_icerho * m_standard_gravity, m_Mx, m_My, m_i0_plate, m_j0_plate);
+    fftw_execute(m_dft_forward);
+    // Save fft2(-ice_rho * g * ice_thickness) in loadhat.
+    copy_fftw_output(m_fftw_output, m_loadhat, m_Nx, m_Ny);
   }
 
-  // Matlab version:
-  //        frhs = right.*fft2(uplift);
-  //        u = real(ifft2(frhs. / left));
+  // fft2(uplift)
   {
-    VecAccessor2D<fftw_complex> u0_hat(m_fftw_input, m_Nx, m_Ny),
+    clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
+    set_fftw_input(m_uplift, 1.0, m_Mx, m_My, m_i0_plate, m_j0_plate);
+    fftw_execute(m_dft_forward);
+  }
+
+  {
+    VecAccessor2D<fftw_complex>
+      u0_hat(m_fftw_input, m_Nx, m_Ny),
+      load_hat(m_loadhat, m_Nx, m_Ny),
       uplift_hat(m_fftw_output, m_Nx, m_Ny);
 
-    for (int j = 0; j < m_Ny; j++) {
-      for (int i = 0; i < m_Nx; i++) {
-        u0_hat(i, j)[0] = (right(i, j) * uplift_hat(i, j)[0]) / left(i, j);
-        u0_hat(i, j)[1] = (right(i, j) * uplift_hat(i, j)[1]) / left(i, j);
+    for (int i = 0; i < m_Nx; i++) {
+      for (int j = 0; j < m_Ny; j++) {
+        const double
+          C = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
+          A = 2.0 * m_eta * sqrt(C),
+          B = m_rho * m_standard_gravity + m_D * C * C;
+
+        u0_hat(i, j)[0] = (load_hat(i, j)[0] - A * uplift_hat(i, j)[0]) / B;
+        u0_hat(i, j)[1] = (load_hat(i, j)[1] - A * uplift_hat(i, j)[1]) / B;
       }
     }
   }
@@ -286,8 +293,27 @@ void BedDeformLC::uplift_init() {
 
   tweak(m_U_start, m_Nx, m_Ny, 0.0);
 
-  ierr = VecCopy(m_U_start, m_U);
-  PISM_CHK(ierr, "VecCopy");
+  ierr = VecCopy(m_U_start, m_U); PISM_CHK(ierr, "VecCopy");
+}
+
+/*!
+ * to initialize we solve:
+ *   rho_r g U + D grad^4 U = 0 - 2 eta |grad| uplift
+ * where U=U_start; yes it really should have "0" on right side because
+ * load for future times will be "-rho g (H-H_start)", which is zero if no geometry
+ * change.
+ *
+ * Compare equation (16) in Bueler, Lingle, Brown (2007) "Fast computation of
+ * a viscoelastic deformable Earth model for ice sheet simulations", Ann.
+ * Glaciol. 46, 97--105
+ * [NOTE PROBABLE SIGN ERROR in eqn (16)?:  load "rho g H" should be "- rho g H"]
+ *
+ */
+void BedDeformLC::uplift_init() {
+  // zero load
+  PetscErrorCode ierr = VecSet(m_Hdiff, 0.0); PISM_CHK(ierr, "VecSet");
+
+  uplift_problem(m_Hdiff, m_uplift);
 }
 
 
@@ -305,6 +331,7 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
   petsc::VecArray2D left(m_vleft, m_Nx, m_Ny), right(m_vright, m_Nx, m_Ny);
 
   // Compute Hdiff
+  // Hdiff = H - H_start
   PetscErrorCode ierr = VecWAXPY(m_Hdiff, -1, m_H_start, m_H);
   PISM_CHK(ierr, "VecWAXPY");
 
@@ -382,7 +409,7 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
   }
 }
 
-void BedDeformLC::tweak(petsc::Vec &U, int Nx, int Ny, double seconds_from_start) {
+void BedDeformLC::tweak(Vec U, int Nx, int Ny, double seconds_from_start) {
   PetscErrorCode ierr = 0;
   petsc::VecArray2D u(U, Nx, Ny);
 
