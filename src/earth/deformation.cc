@@ -131,13 +131,6 @@ BedDeformLC::BedDeformLC(const Config &config,
   ierr = VecDuplicate(m_U, m_U_start.rawptr());
   PISM_CHK(ierr, "VecDuplicate");
 
-  // FFT - side coefficient fields (i.e. multiplication form of operators)
-  ierr = VecDuplicate(m_U, m_vleft.rawptr());
-  PISM_CHK(ierr, "VecDuplicate");
-
-  ierr = VecDuplicate(m_U, m_vright.rawptr());
-  PISM_CHK(ierr, "VecDuplicate");
-
   ierr = VecCreateSeq(PETSC_COMM_SELF, m_Nxge * m_Nyge, m_lrmE.rawptr());
   PISM_CHK(ierr, "VecCreateSeq");
 
@@ -279,11 +272,11 @@ void BedDeformLC::uplift_problem(Vec ice_thickness, Vec bed_uplift) {
       for (int j = 0; j < m_Ny; j++) {
         const double
           C = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
-          A = 2.0 * m_eta * sqrt(C),
+          A = - 2.0 * m_eta * sqrt(C),
           B = m_rho * m_standard_gravity + m_D * C * C;
 
-        u0_hat(i, j)[0] = (load_hat(i, j)[0] - A * uplift_hat(i, j)[0]) / B;
-        u0_hat(i, j)[1] = (load_hat(i, j)[1] - A * uplift_hat(i, j)[1]) / B;
+        u0_hat(i, j)[0] = (load_hat(i, j)[0] + A * uplift_hat(i, j)[0]) / B;
+        u0_hat(i, j)[1] = (load_hat(i, j)[1] + A * uplift_hat(i, j)[1]) / B;
       }
     }
   }
@@ -328,50 +321,45 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
   // note ice thicknesses and bed elevations only on physical ("thin") grid
   //   while spectral/FFT quantities are on fat computational grid
 
-  petsc::VecArray2D left(m_vleft, m_Nx, m_Ny), right(m_vright, m_Nx, m_Ny);
-
   // Compute Hdiff
   // Hdiff = H - H_start
   PetscErrorCode ierr = VecWAXPY(m_Hdiff, -1, m_H_start, m_H);
   PISM_CHK(ierr, "VecWAXPY");
 
   // Compute fft2(-ice_rho * g * dH * dt), where H = H - H_start.
-  clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
-  set_fftw_input(m_Hdiff, - m_icerho * m_standard_gravity * dt_seconds,
-                 m_Mx, m_My, m_i0_plate, m_j0_plate);
-  fftw_execute(m_dft_forward);
+  {
+    clear_fftw_input(m_fftw_input, m_Nx, m_Ny);
+    set_fftw_input(m_Hdiff, - m_icerho * m_standard_gravity * dt_seconds,
+                   m_Mx, m_My, m_i0_plate, m_j0_plate);
+    fftw_execute(m_dft_forward);
 
-  // Save fft2(-ice_rho * g * dH * dt) in loadhat.
-  copy_fftw_output(m_fftw_output, m_loadhat, m_Nx, m_Ny);
+    // Save fft2(-ice_rho * g * dH * dt) in loadhat.
+    copy_fftw_output(m_fftw_output, m_loadhat, m_Nx, m_Ny);
+  }
 
   // Compute fft2(u).
   // no need to clear fftw_input: all values are overwritten
-  set_fftw_input(m_U, 1.0, m_Nx, m_Ny, 0, 0);
-  fftw_execute(m_dft_forward);
-
-  // Compute left and right coefficients; note they depend on the length of a
-  // time-step and thus cannot be precomputed
-  for (int i = 0; i < m_Nx; i++) {
-    for (int j = 0; j < m_Ny; j++) {
-      const double
-        C     = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
-        part1 = 2.0 * m_eta * sqrt(C),
-        part2 = (dt_seconds / 2.0) * (m_rho * m_standard_gravity + m_D * C * C);
-
-      left(i, j)  = part1 + part2;
-      right(i, j) = part1 - part2;
-    }
+  {
+    set_fftw_input(m_U, 1.0, m_Nx, m_Ny, 0, 0);
+    fftw_execute(m_dft_forward);
   }
 
-  //         frhs = right.*fft2(uun) + fft2(dt*sszz);
-  //         uun1 = real(ifft2(frhs./left));
+  // frhs = right.*fft2(uun) + fft2(dt*sszz);
+  // uun1 = real(ifft2(frhs./left));
   {
     VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny),
       u_hat(m_fftw_output, m_Nx, m_Ny), load_hat(m_loadhat, m_Nx, m_Ny);
-    for (int j = 0; j < m_Ny; j++) {
-      for (int i = 0; i < m_Nx; i++) {
-        input(i, j)[0] = (right(i, j) * u_hat(i, j)[0] + load_hat(i, j)[0]) / left(i, j);
-        input(i, j)[1] = (right(i, j) * u_hat(i, j)[1] + load_hat(i, j)[1]) / left(i, j);
+    for (int i = 0; i < m_Nx; i++) {
+      for (int j = 0; j < m_Ny; j++) {
+        const double
+          C     = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
+          part1 = 2.0 * m_eta * sqrt(C),
+          part2 = (dt_seconds / 2.0) * (m_rho * m_standard_gravity + m_D * C * C),
+          A = part1 - part2,
+          B = part1 + part2;
+
+        input(i, j)[0] = (load_hat(i, j)[0] + A * u_hat(i, j)[0]) / B;
+        input(i, j)[1] = (load_hat(i, j)[1] + A * u_hat(i, j)[1]) / B;
       }
     }
   }

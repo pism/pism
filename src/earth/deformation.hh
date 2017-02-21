@@ -94,7 +94,6 @@ private:
 
   petsc::Vec m_Hdiff, m_dbedElastic, // sequential; working space
     m_U, m_U_start,     // sequential and fat
-    m_vleft, m_vright,  // coefficients; sequential and fat
     m_lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
 
   fftw_complex *m_fftw_input, *m_fftw_output, *m_loadhat; // 2D sequential
