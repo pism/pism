@@ -45,6 +45,7 @@ struct GeometryEvolution::Impl {
 
   // Work space
   IceModelVec2Stag velocity, flux;
+  IceModelVec2S residual_volume;
 
   double ice_thickness_threshold;
 };
@@ -149,7 +150,8 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                           m_impl->flux_divergence);
 
   // this is where part_grid should be implemented; uses thickness_bc_mask
-  compute_thickness_change_due_to_flow(geometry.cell_type(),
+  compute_thickness_change_due_to_flow(dt,
+                                       geometry.cell_type(),
                                        geometry.ice_thickness(),
                                        geometry.ice_surface_elevation(),
                                        geometry.bed_elevation(),
@@ -515,10 +517,12 @@ void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux,
   loop.check();
 }
 
-void GeometryEvolution::compute_thickness_change_due_to_flow(const IceModelVec2CellType &cell_type,
+void GeometryEvolution::compute_thickness_change_due_to_flow(double dt,
+                                                             const IceModelVec2CellType &cell_type,
                                                              const IceModelVec2S &ice_thickness,
                                                              const IceModelVec2S &ice_surface_elevation,
                                                              const IceModelVec2S &bed_elevation,
+                                                             const IceModelVec2S &flux_divergence,
                                                              IceModelVec2S &thickness_change,
                                                              IceModelVec2S &area_specific_volume_change) {
   IceModelVec::AccessList list{&cell_type, &ice_thickness, &ice_surface_elevation,
@@ -529,14 +533,21 @@ void GeometryEvolution::compute_thickness_change_due_to_flow(const IceModelVec2C
     for (Points p(*m_impl->grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // FIXME
+      const double dH = -dt * flux_divergence(i, j);
+
+      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
+        // the cell at this location may be partially-filled
+        area_specific_volume_change(i, j) += dH;
+      } else {
+        thickness_change(i, j) += dH;
+      }
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
 
-
+  distribute_area_specific_volume();
 }
 
 /*!

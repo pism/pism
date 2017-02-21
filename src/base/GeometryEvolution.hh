@@ -73,7 +73,8 @@ protected:
                                        const IceModelVec2Int &thickness_bc_mask,
                                        IceModelVec2S &flux_fivergence);
 
-  virtual void compute_thickness_change_due_to_flow(const IceModelVec2CellType &cell_type,
+  virtual void compute_thickness_change_due_to_flow(double dt,
+                                                    const IceModelVec2CellType &cell_type,
                                                     const IceModelVec2S &ice_thickness,
                                                     const IceModelVec2S &ice_surface_elevation,
                                                     const IceModelVec2S &bed_elevation,
