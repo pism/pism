@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+ // Copyright (C) 2012-2016 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -312,13 +312,14 @@ void Cavity::initBasinsOptions(const Constants &cc) {
   continental_shelf_depth = cc.continental_shelf_depth;
   options::Real cont_shelf_depth("-continental_shelf_depth",
                                  "continental shelf depth for ocean cavity model",
-                                 continental_shelf_depth);
+                                 (double)continental_shelf_depth);
 
   if (cont_shelf_depth.is_set()) {
     m_log->message(2,
     "  Depth of continental shelf for computation of temperature and salinity input\n"
     "  is set for whole domain to continental_shelf_depth=%.0f meter\n",
-    continental_shelf_depth);
+    cont_shelf_depth);
+    continental_shelf_depth=cont_shelf_depth;
   }
 
 }
