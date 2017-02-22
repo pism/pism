@@ -205,7 +205,7 @@ void BedDeformLC::precompute_coefficients() {
   }
 
   // compare geforconv.m
-  if (m_include_elastic == true) {
+  if (m_include_elastic) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "     computing spherical elastic load response matrix ...");
     PISM_CHK(ierr, "PetscPrintf");
@@ -323,8 +323,7 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
 
   // Compute Hdiff
   // Hdiff = H - H_start
-  PetscErrorCode ierr = VecWAXPY(m_Hdiff, -1, m_H_start, m_H);
-  PISM_CHK(ierr, "VecWAXPY");
+  PetscErrorCode ierr = VecWAXPY(m_Hdiff, -1, m_H_start, m_H); PISM_CHK(ierr, "VecWAXPY");
 
   // Compute fft2(-ice_rho * g * dH * dt), where H = H - H_start.
   {
@@ -371,15 +370,13 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start) {
   tweak(m_U, m_Nx, m_Ny, seconds_from_start);
 
   // now compute elastic response if desired; bed = ue at end of this block
-  if (m_include_elastic == true) {
+  if (m_include_elastic) {
     // Matlab:     ue=rhoi*conv2(H-H_start, II, 'same')
     conv2_same(m_Hdiff, m_Mx, m_My, m_lrmE, m_Nxge, m_Nyge, m_dbedElastic);
 
-    ierr = VecScale(m_dbedElastic, m_icerho);
-    PISM_CHK(ierr, "VecScale");
+    ierr = VecScale(m_dbedElastic, m_icerho); PISM_CHK(ierr, "VecScale");
   } else {
-    ierr = VecSet(m_dbedElastic, 0.0);
-    PISM_CHK(ierr, "VecSet");
+    ierr = VecSet(m_dbedElastic, 0.0); PISM_CHK(ierr, "VecSet");
   }
 
   // now sum contributions to get new bed elevation:
