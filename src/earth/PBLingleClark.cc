@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,9 +50,9 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   try {
     if (m_grid->rank() == 0) {
       m_bdLC = new BedDeformLC(*m_config, use_elastic_model,
-                               m_grid->Mx(), m_grid->My(), m_grid->dx(), m_grid->dy(),
-                               4,     // use Z = 4 for now; to reduce global drift?
-                               *m_Hstartp0, *m_bedstartp0, *m_upliftp0, *m_Hp0, *m_bedp0);
+                               m_grid->Mx(), m_grid->My(),
+                               m_grid->dx(), m_grid->dy(),
+                               4);     // use Z = 4 for now; to reduce global drift?
     }
   } catch (...) {
     rank0.failed();
@@ -81,7 +81,7 @@ void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_bdLC->uplift_init();
+      m_bdLC->init(*m_upliftp0);
     }
   } catch (...) {
     rank0.failed();
@@ -208,7 +208,8 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
   try {
     if (m_grid->rank() == 0) {  // only processor zero does the step
       m_bdLC->step(dt_beddef, // time step, in seconds
-                   t_final - m_grid->ctx()->time()->start()); // time since the start of the run, in seconds
+                   t_final - m_grid->ctx()->time()->start(), // time since the start of the run, in seconds
+                   *m_Hstartp0, *m_Hp0);
     }
   } catch (...) {
     rank0.failed();

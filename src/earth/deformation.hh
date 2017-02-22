@@ -23,6 +23,7 @@
 
 #include <petscvec.h>
 #include <fftw3.h>
+#include <vector>
 
 #include "base/util/petscwrappers/Vec.hh"
 
@@ -55,49 +56,79 @@ public:
   BedDeformLC(const Config &config,
               bool include_elastic,
               int Mx, int My, double dx, double dy,
-              int Z,
-              Vec Hstart, Vec bedstart, Vec uplift,  // initial state
-              Vec H,     // generally gets changed by calling program
-              // before each call to step
-              Vec bed);  // bed gets modified by step()
+              int Z);  // bed gets modified by step()
   ~BedDeformLC();
 
-  void uplift_init();
-  void uplift_problem(Vec ice_thickness, Vec bed_uplift);
-  void step(double dtyear, double yearFromStart);
+  void init(Vec uplift);
+  void uplift_problem(Vec load_thickness, Vec bed_uplift);
+  void step(double dt_seconds, double seconds_from_start, Vec H_start, Vec H);
 
-protected:
-  void precompute_coefficients();
-protected:
-  bool        m_include_elastic;
-  int         m_Mx, m_My;
-  double   m_dx, m_dy;
-  //! Factor by which fat FFT domain is larger than region of physical
-  //! interest.
-  int m_Z;
-  double m_icerho,           // ice density (for computing load from volume)
-    m_rho,                        // earth density
-    m_eta,                        // mantle viscosity
-    m_D;                          // lithosphere flexural rigidity
-
+  Vec plate_displacement() const;
 private:
+  void precompute_coefficients();
+
+  bool m_include_elastic;
+  // grid size
+  int    m_Mx;
+  int    m_My;
+  // grid spacing
+  double m_dx;
+  double m_dy;
+  //! Factor by which fat FFT domain is larger than region of physical interest.
+  int    m_Z;
+  //! load density (for computing load from volume)
+  double m_load_density;
+  //! mantle density
+  double m_mantle_density;
+  //! mantle viscosity
+  double m_eta;
+  //! lithosphere flexural rigidity
+  double m_D;
+
+  // acceleration due to gravity
   double m_standard_gravity;
-  int m_Nx, m_Ny,         // fat sizes
-    m_Nxge, m_Nyge;     // fat with boundary sizes
-  int      m_i0_plate,  m_j0_plate; // indices into fat array for corner of thin
-  double   m_Lx, m_Ly;         // half-lengths of the physical domain
-  double   m_Lx_fat, m_Ly_fat; // half-lengths of the FFT (spectral) computational domain
-  std::vector<double>  m_cx, m_cy;        // coeffs of derivatives in Fourier space
 
-  // point to storage owned elsewhere
-  Vec m_H, m_bed, m_H_start, m_bed_start, m_uplift;
+  // size of the extended grid
+  int m_Nx;
+  int m_Ny;
 
-  petsc::Vec m_Hdiff, m_dbedElastic, // sequential; working space
-    m_U, m_U_start,     // sequential and fat
-    m_lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
+  // fat with boundary sizes
+  int m_Nxge;
+  int m_Nyge;
 
-  fftw_complex *m_fftw_input, *m_fftw_output, *m_loadhat; // 2D sequential
-  fftw_plan m_dft_forward, m_dft_inverse;
+  // indices into extended grid for the corner of the physical grid
+  int m_i0_offset;
+  int m_j0_offset;
+
+  // half-lengths of the FFT (spectral) computational domain
+  double m_Lx;
+  double m_Ly;
+
+  // Coefficients of derivatives in Fourier space
+  std::vector<double> m_cx, m_cy;
+
+  // load thickness
+  petsc::Vec m_load_thickness;
+
+  // viscous plate displacement on the extended grid
+  petsc::Vec m_U;
+  // initial viscous plate displacement on the extended grid
+  petsc::Vec m_U_start;
+
+  // load response matrix (elastic); sequential and fat *with* boundary
+  petsc::Vec m_load_response_matrix;
+  // elastic plate dispacement
+  petsc::Vec m_db_elastic;
+
+  // total (viscous and elastic) plate displacement relative to the initial bed elevation
+  petsc::Vec m_db;
+
+  fftw_complex *m_fftw_input;
+  fftw_complex *m_fftw_output;
+  fftw_complex *m_loadhat;
+
+  fftw_plan m_dft_forward;
+  fftw_plan m_dft_inverse;
 
   void tweak(Vec U, int Nx, int Ny, double seconds_from_start);
 
