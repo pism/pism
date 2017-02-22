@@ -47,7 +47,7 @@ setup(
     version="0.0.1",
     description="Verification test P helper",
     author="PISM authors",
-    author_email="help@pism-docs.org",
+    author_email="uaf-pism@alaska.edu",
     cmdclass={'build_ext': build_ext},
     ext_modules=[extension]
 )

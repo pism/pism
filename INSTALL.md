@@ -88,5 +88,5 @@ and then run `make` as described above (in this build directory).
 See also [the development version page](http://www.pism-docs.org/wiki/doku.php?id=development_version).
 
 For questions about PISM usage, installation, creating new models, etc.,
-e-mail <help@pism-docs.org>.
+e-mail <uaf-pism@alaska.edu>.
 

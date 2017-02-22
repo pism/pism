@@ -74,7 +74,7 @@ void show_usage(MPI_Comm com, const std::string &execname, const std::string &us
              "       http://www.pism-docs.org/doxy/html/index.html\n"
              "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
              "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
-             "  5. email for help:  help@pism-docs.org\n",
+             "  5. email for help:  uaf-pism@alaska.edu\n",
              execname.c_str(), execname.c_str());
 }
 
