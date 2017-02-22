@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -143,7 +143,7 @@ void handle_fatal_errors(MPI_Comm com) {
                        "\n"
                        "PISM ERROR: Caught a C++ standard library exception: \"%s\".\n"
                        "            This is probably a bug in PISM.\n"
-                       "            Please send a report to help@pism-docs.org\n"
+                       "            Please send a report to uaf-pism@alaska.edu\n"
                        "\n",
                        e.what()); CHKERRCONTINUE(ierr);
   } catch (...) {
@@ -151,7 +151,7 @@ void handle_fatal_errors(MPI_Comm com) {
                        "\n"
                        "PISM ERROR: Caught an unexpected exception.\n"
                        "            This is probably a bug in PISM.\n"
-                       "            Please send a report to help@pism-docs.org\n"
+                       "            Please send a report to uaf-pism@alaska.edu\n"
                        "\n");
     CHKERRCONTINUE(ierr);
   }
