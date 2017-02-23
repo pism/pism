@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,6 +33,9 @@ class PBLingleClark : public BedDef {
 public:
   PBLingleClark(IceGrid::ConstPtr g);
   virtual ~PBLingleClark();
+
+  void uplift_problem(const IceModelVec2S &ice_thickness,
+                      const IceModelVec2S &bed_uplift);
 
 protected:
   MaxTimestep max_timestep_impl(double t) const;

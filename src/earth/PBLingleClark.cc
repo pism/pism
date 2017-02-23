@@ -66,6 +66,25 @@ PBLingleClark::~PBLingleClark() {
   }
 }
 
+void PBLingleClark::uplift_problem(const IceModelVec2S& ice_thickness,
+                                   const IceModelVec2S& bed_uplift) {
+  ice_thickness.put_on_proc0(*m_Hp0);
+  bed_uplift.put_on_proc0(*m_upliftp0);
+
+  ParallelSection rank0(m_grid->com);
+  try {
+    if (m_grid->rank() == 0) {
+      m_bdLC->uplift_problem(*m_Hp0, *m_upliftp0);
+
+    }
+  } catch (...) {
+    rank0.failed();
+  }
+  rank0.check();
+
+  m_topg.get_from_proc0(m_bdLC->plate_displacement());
+}
+
 void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
                                           const IceModelVec2S &bed_uplift,
                                           const IceModelVec2S &ice_thickness) {
