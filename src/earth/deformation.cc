@@ -324,8 +324,7 @@ void BedDeformLC::init(Vec uplift) {
 }
 
 
-void BedDeformLC::step(double dt_seconds, double seconds_from_start,
-                       Vec H_start, Vec H) {
+void BedDeformLC::step(double dt_seconds, Vec H_start, Vec H) {
   // solves:
   //     (2 eta |grad| U^{n+1}) + (dt/2) * (rho_r g U^{n+1} + D grad^4 U^{n+1})
   //   = (2 eta |grad| U^n) - (dt/2) * (rho_r g U^n + D grad^4 U^n) - dt * rho g H_start
@@ -382,7 +381,7 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start,
   get_fftw_output(m_U, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
 
   // now tweak
-  tweak(m_U, m_Nx, m_Ny, seconds_from_start);
+  tweak(m_U, m_Nx, m_Ny, 1e16);
 
   // now compute elastic response if desired; bed = ue at end of this block
   if (m_include_elastic) {
@@ -413,7 +412,7 @@ void BedDeformLC::step(double dt_seconds, double seconds_from_start,
   }
 }
 
-void BedDeformLC::tweak(Vec U, int Nx, int Ny, double seconds_from_start) {
+void BedDeformLC::tweak(Vec U, int Nx, int Ny, double time) {
   PetscErrorCode ierr = 0;
   petsc::VecArray2D u(U, Nx, Ny);
 
@@ -433,7 +432,7 @@ void BedDeformLC::tweak(Vec U, int Nx, int Ny, double seconds_from_start) {
 
   double discshift = 0.0;
 
-  if (seconds_from_start > 0.0) {
+  if (time > 0.0) {
     // tweak continued: replace far field with value for an equivalent disc load which has
     // R0=Lx*(2/3)=L/3 (instead of 1000km in MATLAB code: H0 = dx*dx*sum(sum(H))/(pi*1e6^2); %
     // trapezoid rule)
@@ -446,7 +445,7 @@ void BedDeformLC::tweak(Vec U, int Nx, int Ny, double seconds_from_start) {
     load_volume = load_volume * m_dx * m_dy;  // make into a volume
     const double Hequiv = load_volume / (M_PI * Requiv * Requiv);
 
-    discshift = viscDisc(seconds_from_start, // time
+    discshift = viscDisc(time,               // time in seconds
                          Hequiv,             // disc thickness
                          Requiv,             // disc radius
                          Lav,                // compute deflection at this radius

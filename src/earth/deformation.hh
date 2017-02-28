@@ -61,7 +61,7 @@ public:
 
   void init(Vec uplift);
   void uplift_problem(Vec load_thickness, Vec bed_uplift);
-  void step(double dt_seconds, double seconds_from_start, Vec H_start, Vec H);
+  void step(double dt_seconds, Vec H_start, Vec H);
 
   Vec plate_displacement() const;
 private:

@@ -226,9 +226,7 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {  // only processor zero does the step
-      m_bdLC->step(dt_beddef, // time step, in seconds
-                   t_final - m_grid->ctx()->time()->start(), // time since the start of the run, in seconds
-                   *m_Hstartp0, *m_Hp0);
+      m_bdLC->step(dt_beddef, *m_Hstartp0, *m_Hp0);
 
       PetscErrorCode ierr = VecWAXPY(*m_bedp0, 1.0, *m_bedstartp0,
                                      m_bdLC->plate_displacement());

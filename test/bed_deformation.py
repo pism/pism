@@ -216,8 +216,8 @@ def time_dependent_test():
     "Time dependent bed deformation (disc load)"
     diff = np.array([compare_time_dependent(n)[:3] for n in [34, 67]])
 
-    stored = [[3.11766460e-02, 5.32729218e+00, 9.46149102e-01],
-              [2.73639058e-02, 4.11831367e+00, 6.93081320e-01]]
+    stored = [[0.01023591, 5.19786964, 0.93575341],
+              [0.04744501, 4.11548251, 0.69969177]]
 
     return np.testing.assert_almost_equal(diff, stored)
 
@@ -226,9 +226,9 @@ def steady_state_test():
     Ns = 10 * np.arange(1, 5) + 1
     diff = np.array([compare_steady_state(n) for n in Ns])
 
-    stored = [[1.15757586e-01, 1.54071977e+01, 3.84625408e+00],
-              [3.69067375e-02, 1.06277170e+01, 1.92768607e+00],
-              [1.22669240e-02, 9.36294453e+00, 1.74885969e+00],
-              [1.76474864e-03, 7.62343371e+00, 1.37400899e+00]]
+    stored = [[3.20554234e-02, 1.55399957e+01, 3.81424688e+00],
+              [5.82578792e-03, 1.10354567e+01, 1.92997362e+00],
+              [1.62485942e-02, 9.53012210e+00, 1.75301378e+00],
+              [1.95503166e-02, 7.60885504e+00, 1.37961265e+00]]
 
     return np.testing.assert_almost_equal(diff, stored)
