@@ -73,6 +73,15 @@ static void copy_fftw_output(fftw_complex *source, fftw_complex *destination,
   }
 }
 
+/*!
+ * @param[in] config configuration database
+ * @param[in] include_elastic include elastic deformation component
+ * @param[in] Mx grid size in the X direction
+ * @param[in] My grid size in the Y direction
+ * @param[in] dx grid spacing in the X direction
+ * @param[in] dy grid spacing in the Y direction
+ * @param[in] Z integer factor (the spectral grid is Z times bigger than the PISM grid)
+ */
 BedDeformLC::BedDeformLC(const Config &config,
                          bool include_elastic,
                          int Mx, int My,
@@ -380,7 +389,9 @@ void BedDeformLC::step(double dt_seconds, Vec H_start, Vec H) {
   fftw_execute(m_dft_inverse);
   get_fftw_output(m_U, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
 
-  // now tweak
+  // Now tweak. (See the "correction" in section 5 of BuelerLingleBrown.)
+  //
+  // Here 1e16 approximates t = \infty.
   tweak(m_U, m_Nx, m_Ny, 1e16);
 
   // now compute elastic response if desired; bed = ue at end of this block
