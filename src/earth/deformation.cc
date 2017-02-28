@@ -95,10 +95,10 @@ BedDeformLC::BedDeformLC(const Config &config,
   m_standard_gravity = config.get_double("constants.standard_gravity");
 
   // derive more parameters
-  m_Nx        = m_Z*(m_Mx - 1);
-  m_Ny        = m_Z*(m_My - 1);
-  m_Lx        = (m_Nx / 2) * m_dx;
-  m_Ly        = (m_Ny / 2) * m_dy;
+  m_Nx        = m_Z*(m_Mx - 1) + 1;
+  m_Ny        = m_Z*(m_My - 1) + 1;
+  m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;
+  m_Ly        = 0.5 * (m_Ny - 1.0) * m_dy;
   m_Nxge      = m_Nx + 1;
   m_Nyge      = m_Ny + 1;
   m_i0_offset = (m_Z - 1)*(m_Mx - 1) / 2;
