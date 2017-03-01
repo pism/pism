@@ -29,6 +29,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
+#include "deformation.hh"
 
 namespace pism {
 namespace bed {
@@ -36,11 +37,22 @@ namespace bed {
 PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   : BedDef(g) {
 
-  m_Hp0        = m_topg.allocate_proc0_copy();
-  m_bedp0      = m_topg.allocate_proc0_copy();
-  m_Hstartp0   = m_topg.allocate_proc0_copy();
-  m_bedstartp0 = m_topg.allocate_proc0_copy();
-  m_upliftp0   = m_topg.allocate_proc0_copy();
+  m_work_0 = m_topg.allocate_proc0_copy();
+
+  // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
+  // displacement change back.
+  m_work.create(m_grid, "work_vector", WITHOUT_GHOSTS);
+  m_work.set_attrs("internal", "a work vector", "meters", "");
+
+  m_H_start.create(m_grid, "H_start", WITHOUT_GHOSTS);
+  m_H_start.set_attrs("internal",
+                      "ice thickness at the beginning of the run",
+                      "meters", "");
+
+  m_topg_start.create(m_grid, "topg_start", WITHOUT_GHOSTS);
+  m_topg_start.set_attrs("internal",
+                         "bed elevation at the beginning of the run",
+                         "meters", "");
 
   bool use_elastic_model = m_config->get_boolean("bed_deformation.lc.elastic_model");
 
@@ -70,25 +82,36 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
 PBLingleClark::~PBLingleClark() {
   if (m_bdLC != NULL) {
     delete m_bdLC;
+    m_bdLC = NULL;
   }
 }
 
 void PBLingleClark::uplift_problem(const IceModelVec2S& ice_thickness,
                                    const IceModelVec2S& bed_uplift) {
-  ice_thickness.put_on_proc0(*m_Hp0);
-  bed_uplift.put_on_proc0(*m_upliftp0);
+
+  // Note: this method is not called every very often so it's OK to allocate a rank 0 copy of
+  // bed_uplift and free it at the end of scope.
+
+  petsc::Vec::Ptr
+    thickness = m_work_0,
+    uplift    = bed_uplift.allocate_proc0_copy();
+
+  ice_thickness.put_on_proc0(*thickness);
+  bed_uplift.put_on_proc0(*uplift);
 
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_bdLC->uplift_problem(*m_Hp0, *m_upliftp0);
+      m_bdLC->uplift_problem(*thickness, *uplift);
+      PetscErrorCode ierr = VecCopy(m_bdLC->plate_displacement_change(), *m_work_0);
+      PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {
     rank0.failed();
   }
   rank0.check();
 
-  m_topg.get_from_proc0(m_bdLC->plate_displacement());
+  m_topg.get_from_proc0(*m_work_0);
 }
 
 void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
@@ -99,14 +122,17 @@ void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
   m_t  = GSL_NAN;
   m_dt = GSL_NAN;
 
-  ice_thickness.put_on_proc0(*m_Hstartp0);
-  bed.put_on_proc0(*m_bedstartp0);
-  bed_uplift.put_on_proc0(*m_upliftp0);
+  m_H_start.copy_from(ice_thickness);
+  m_topg_start.copy_from(bed);
+
+  petsc::Vec::Ptr uplift = m_work_0;
+
+  bed_uplift.put_on_proc0(*uplift);
 
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_bdLC->bootstrap(*m_upliftp0);
+      m_bdLC->bootstrap(*uplift);
     }
   } catch (...) {
     rank0.failed();
@@ -130,9 +156,10 @@ void PBLingleClark::init_impl() {
 
 MaxTimestep PBLingleClark::max_timestep_impl(double t) const {
   (void) t;
+  // no time-step restriction
+  // FIXME: we *should* have a time-step restriction for accuracy.
   return MaxTimestep("bed_def lc");
 }
-
 
 //! Update the Lingle-Clark bed deformation model.
 void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
@@ -158,24 +185,58 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
 
   m_t_beddef_last = t_final;
 
-  ice_thickness.put_on_proc0(*m_Hp0);
-  m_topg.put_on_proc0(*m_bedp0);
+  // compute the change in ice thickness
+  {
+    IceModelVec2S &H_change = m_work;
+    IceModelVec::AccessList list{&ice_thickness, &m_H_start, &H_change};
+
+    ParallelSection loop(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        H_change(i, j) = ice_thickness(i, j) - m_H_start(i, j);
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
+
+    H_change.put_on_proc0(*m_work_0);
+  }
 
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {  // only processor zero does the step
-      m_bdLC->step(dt_beddef, *m_Hstartp0, *m_Hp0);
-
-      PetscErrorCode ierr = VecWAXPY(*m_bedp0, 1.0, *m_bedstartp0,
-                                     m_bdLC->plate_displacement());
-      PISM_CHK(ierr, "VecWAXPY");
+      m_bdLC->step(dt_beddef, *m_work_0);
+      PetscErrorCode ierr = VecCopy(m_bdLC->plate_displacement_change(), *m_work_0);
+      PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {
     rank0.failed();
   }
   rank0.check();
 
-  m_topg.get_from_proc0(*m_bedp0);
+  // Update bed topography using the plate displacement change obtained from rank 0.
+  {
+    IceModelVec2S &dU = m_work;
+
+    dU.get_from_proc0(*m_work_0);
+
+    IceModelVec::AccessList list{&m_topg, &m_topg_start, &dU};
+
+    ParallelSection loop(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        m_topg(i, j) = m_topg_start(i, j) + dU(i, j);
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
+  }
 
   //! Finally, we need to update bed uplift and topg_last.
   compute_uplift(dt_beddef);

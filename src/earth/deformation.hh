@@ -49,7 +49,9 @@ namespace bed {
   run only on processor zero (or possibly by each processor once each processor
   owns the entire 2D gridded ice thicknesses and bed elevations.)
 
-  A test program for this class is pism/src/verif/tryLCbd.cc.
+  This model always assumes that we start with no load. Note that this does not mean that we
+  starting state is the equilibrium: the viscous plate may be "pre-bent" by using a provided
+  displacement field or by computing its displacement using an uplift field.
 */
 class BedDeformLC {
 public:
@@ -65,11 +67,11 @@ public:
 
   void uplift_problem(Vec load_thickness, Vec bed_uplift);
 
-  void step(double dt_seconds, Vec H_start, Vec H);
+  void step(double dt_seconds, Vec H);
+
+  Vec plate_displacement_change() const;
 
   Vec plate_displacement() const;
-
-  Vec plate_displacement_extended() const;
 private:
   void solve_uplift_problem(Vec ice_thickness, Vec bed_uplift, Vec output);
 
@@ -79,12 +81,12 @@ private:
 
   bool m_include_elastic;
   // grid size
-  int    m_Mx;
-  int    m_My;
+  int m_Mx;
+  int m_My;
   // grid spacing
   double m_dx;
   double m_dy;
-  //! load density (for computing load from volume)
+  //! load density (for computing load from its thickness)
   double m_load_density;
   //! mantle density
   double m_mantle_density;
@@ -100,7 +102,7 @@ private:
   int m_Nx;
   int m_Ny;
 
-  // fat with boundary sizes
+  // size of the extended grid with boundary points
   int m_Nxge;
   int m_Nyge;
 
@@ -108,15 +110,12 @@ private:
   int m_i0_offset;
   int m_j0_offset;
 
-  // half-lengths of the FFT (spectral) computational domain
+  // half-lengths of the extended (FFT, spectral) computational domain
   double m_Lx;
   double m_Ly;
 
   // Coefficients of derivatives in Fourier space
   std::vector<double> m_cx, m_cy;
-
-  // load thickness
-  petsc::Vec m_load_thickness;
 
   // viscous plate displacement on the extended grid
   petsc::Vec m_V;
@@ -128,7 +127,7 @@ private:
   // elastic plate displacement
   petsc::Vec m_dE;
 
-  // total (viscous and elastic) plate displacement relative to the initial bed elevation
+  // total (viscous and elastic) change in the plate displacement since the beginning of the run
   petsc::Vec m_dU;
 
   fftw_complex *m_fftw_input;
@@ -138,7 +137,7 @@ private:
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;
 
-  void tweak(Vec U, int Nx, int Ny, double seconds_from_start);
+  void tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time);
 
   void set_fftw_input(Vec input, double normalization, int M, int N, int i0, int j0);
   void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);

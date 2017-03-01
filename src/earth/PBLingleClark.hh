@@ -20,13 +20,12 @@
 #ifndef _PBLINGLECLARK_H_
 #define _PBLINGLECLARK_H_
 
-#include <fftw3.h>
-
 #include "PISMBedDef.hh"
-#include "deformation.hh"
 
 namespace pism {
 namespace bed {
+
+class BedDeformLC;
 
 //! A wrapper class around BedDeformLC.
 class PBLingleClark : public BedDef {
@@ -48,17 +47,16 @@ protected:
 
   void allocate();
 
-  // Vecs on processor 0:
-  //! ice thickness
-  petsc::Vec::Ptr m_Hp0;
-  //! bed elevation
-  petsc::Vec::Ptr m_bedp0;
-  //! initial (start-of-the-run) thickness
-  petsc::Vec::Ptr m_Hstartp0;
-  //! initial bed elevation
-  petsc::Vec::Ptr m_bedstartp0;
-  //! bed uplift
-  petsc::Vec::Ptr m_upliftp0;
+  //! Temporary storage
+  IceModelVec2S m_work;
+  //! Ice thickness at the beginning of the run.
+  IceModelVec2S m_H_start;
+  //! Bed elevation at the beginning of the run.
+  IceModelVec2S m_topg_start;
+
+  //! Storage on rank zero. Used to pass the load to the serial deformation model and get plate
+  //! displacement back.
+  petsc::Vec::Ptr m_work_0;
   BedDeformLC *m_bdLC;
 };
 
