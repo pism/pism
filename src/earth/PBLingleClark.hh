@@ -45,7 +45,7 @@ protected:
                              const IceModelVec2S &ice_thickness);
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);
-  void correct_topg();
+
   void allocate();
 
   // Vecs on processor 0:

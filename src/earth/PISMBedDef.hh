@@ -70,9 +70,6 @@ protected:
   //! current bed elevation
   IceModelVec2S m_topg;
 
-  //! bed elevation at the beginning of a run
-  IceModelVec2S m_topg_initial;
-
   //! bed elevation at the time of the last update
   IceModelVec2S m_topg_last;
 

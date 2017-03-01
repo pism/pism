@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -39,11 +39,6 @@ BedDef::BedDef(IceGrid::ConstPtr g)
   m_topg.set_attrs("model_state", "bedrock surface elevation",
                    "m", "bedrock_altitude");
 
-  m_topg_initial.create(m_grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL);
-  m_topg_initial.set_attrs("model_state",
-                           "bedrock surface elevation (at the beginning of the run)",
-                           "m", "");
-
   m_topg_last.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg_last.set_attrs("model_state", "bedrock surface elevation",
                         "m", "bedrock_altitude");
@@ -82,13 +77,12 @@ const IceModelVec2S& BedDef::uplift() const {
   return m_uplift;
 }
 
-
 void BedDef::define_model_state_impl(const PIO &output) const {
-  m_topg_initial.define(output);
+  m_topg.define(output);
 }
 
 void BedDef::write_model_state_impl(const PIO &output) const {
-  m_topg_initial.write(output);
+  m_topg.write(output);
 }
 
 void BedDef::init() {
@@ -164,7 +158,6 @@ void BedDef::init_impl() {
   }
 
   // this should be the last thing we do here
-  m_topg_initial.copy_from(m_topg);
   m_topg_last.copy_from(m_topg);
 }
 
