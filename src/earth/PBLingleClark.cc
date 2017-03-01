@@ -75,7 +75,6 @@ void PBLingleClark::uplift_problem(const IceModelVec2S& ice_thickness,
   try {
     if (m_grid->rank() == 0) {
       m_bdLC->uplift_problem(*m_Hp0, *m_upliftp0);
-
     }
   } catch (...) {
     rank0.failed();

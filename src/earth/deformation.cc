@@ -171,9 +171,6 @@ BedDeformLC::BedDeformLC(const Config &config,
   //
   // (Constantine Khroulev, February 1, 2015)
 
-  m_cx.resize(m_Nx);
-  m_cy.resize(m_Ny);
-
   precompute_coefficients();
 }
 
@@ -185,7 +182,7 @@ BedDeformLC::~BedDeformLC() {
   fftw_free(m_loadhat);
 }
 
-Vec pism::bed::BedDeformLC::plate_displacement() const {
+Vec BedDeformLC::plate_displacement() const {
   return m_db;
 }
 
@@ -193,7 +190,10 @@ Vec pism::bed::BedDeformLC::plate_displacement() const {
  * Pre-compute coefficients used by the model.
  */
 void BedDeformLC::precompute_coefficients() {
-  PetscErrorCode ierr;
+  PetscErrorCode ierr = 0;
+
+  m_cx.resize(m_Nx);
+  m_cy.resize(m_Ny);
 
   // Coefficients for Fourier spectral method Laplacian
   // MATLAB version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
@@ -332,7 +332,6 @@ void BedDeformLC::init(Vec uplift) {
   uplift_problem(m_load_thickness, uplift);
 }
 
-
 void BedDeformLC::step(double dt_seconds, Vec H_start, Vec H) {
   // solves:
   //     (2 eta |grad| U^{n+1}) + (dt/2) * (rho_r g U^{n+1} + D grad^4 U^{n+1})
@@ -430,54 +429,54 @@ void BedDeformLC::tweak(Vec U, int Nx, int Ny, double time) {
   // find average value along "distant" boundary of [-Lx, Lx]X[-Ly, Ly]
   // note domain is periodic, so think of cut locus of torus (!)
   // (will remove it:   uun1=uun1-(sum(uun1(1, :))+sum(uun1(:, 1)))/(2*N);)
-  double av = 0.0;
+  double average = 0.0;
   for (int i = 0; i < Nx; i++) {
-    av += u(i, 0);
+    average += u(i, 0);
   }
 
   for (int j = 0; j < Ny; j++) {
-    av += u(0, j);
+    average += u(0, j);
   }
 
-  av = av / ((double) (Nx + Ny));
+  average /= (double) (Nx + Ny);
 
-  double discshift = 0.0;
+  double shift = 0.0;
 
   if (time > 0.0) {
     // tweak continued: replace far field with value for an equivalent disc load which has
     // R0=Lx*(2/3)=L/3 (instead of 1000km in MATLAB code: H0 = dx*dx*sum(sum(H))/(pi*1e6^2); %
     // trapezoid rule)
-    const double Lav = (m_Lx + m_Ly) / 2.0;
-    const double Requiv = Lav * (2.0 / 3.0);
+    const double L_average = (m_Lx + m_Ly) / 2.0;
+    const double R         = L_average * (2.0 / 3.0);
 
-    double load_volume = 0.0;
-    ierr = VecSum(m_load_thickness, &load_volume); PISM_CHK(ierr, "VecSum");
+    double H_sum = 0.0;
+    ierr = VecSum(m_load_thickness, &H_sum); PISM_CHK(ierr, "VecSum");
 
-    load_volume = load_volume * m_dx * m_dy;  // make into a volume
-    const double Hequiv = load_volume / (M_PI * Requiv * Requiv);
+    // compute disc thickness by dividing its volume by the area
+    const double H = (H_sum * m_dx * m_dy) / (M_PI * R * R);
 
-    discshift = viscDisc(time,               // time in seconds
-                         Hequiv,             // disc thickness
-                         Requiv,             // disc radius
-                         Lav,                // compute deflection at this radius
-                         m_mantle_density, m_load_density,    // mantle and load densities
-                         m_standard_gravity, //
-                         m_D,                // flexural rigidity
-                         m_eta);             // viscosity
+    shift = viscDisc(time,               // time in seconds
+                     H,                  // disc thickness
+                     R,                  // disc radius
+                     L_average,          // compute deflection at this radius
+                     m_mantle_density, m_load_density,    // mantle and load densities
+                     m_standard_gravity, //
+                     m_D,                // flexural rigidity
+                     m_eta);             // mantle viscosity
   }
 
-  ierr = VecShift(U, discshift - av); PISM_CHK(ierr, "VecShift");
+  ierr = VecShift(U, shift - average); PISM_CHK(ierr, "VecShift");
 }
 
 //! \brief Set the real part of fftw_input to vec_input.
 /*!
  * Sets the imaginary part to zero.
  */
-void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int M, int N, int i0, int j0) {
-  petsc::VecArray2D in(vec_input, M, N);
+void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int Mx, int My, int i0, int j0) {
+  petsc::VecArray2D in(vec_input, Mx, My);
   VecAccessor2D<fftw_complex> input(m_fftw_input, m_Nx, m_Ny, i0, j0);
-  for (int j = 0; j < N; ++j) {
-    for (int i = 0; i < M; ++i) {
+  for (int j = 0; j < My; ++j) {
+    for (int i = 0; i < Mx; ++i) {
       input(i, j)[0] = in(i, j) * normalization;
       input(i, j)[1] = 0.0;
     }
@@ -485,11 +484,11 @@ void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int M, int
 }
 
 //! \brief Get the real part of fftw_output and put it in output.
-void BedDeformLC::get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0) {
-  petsc::VecArray2D out(output, M, N);
+void BedDeformLC::get_fftw_output(Vec output, double normalization, int Mx, int My, int i0, int j0) {
+  petsc::VecArray2D out(output, Mx, My);
   VecAccessor2D<fftw_complex> fftw_out(m_fftw_output, m_Nx, m_Ny, i0, j0);
-  for (int j = 0; j < N; ++j) {
-    for (int i = 0; i < M; ++i) {
+  for (int j = 0; j < My; ++j) {
+    for (int i = 0; i < Mx; ++i) {
       out(i, j) = fftw_out(i, j)[0] * normalization;
     }
   }
