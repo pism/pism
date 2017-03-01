@@ -55,8 +55,9 @@ class BedDeformLC {
 public:
   BedDeformLC(const Config &config,
               bool include_elastic,
-              int Mx, int My, double dx, double dy,
-              int Z);  // bed gets modified by step()
+              int Mx, int My,
+              double dx, double dy,
+              int Nx, int Ny);
   ~BedDeformLC();
 
   void init(Vec uplift);
@@ -74,8 +75,6 @@ private:
   // grid spacing
   double m_dx;
   double m_dy;
-  //! Factor by which fat FFT domain is larger than region of physical interest.
-  int    m_Z;
   //! load density (for computing load from volume)
   double m_load_density;
   //! mantle density

@@ -80,38 +80,40 @@ static void copy_fftw_output(fftw_complex *source, fftw_complex *destination,
  * @param[in] My grid size in the Y direction
  * @param[in] dx grid spacing in the X direction
  * @param[in] dy grid spacing in the Y direction
- * @param[in] Z integer factor (the spectral grid is Z times bigger than the PISM grid)
+ * @param[in] Nx extended grid size in the X direction
+ * @param[in] Ny extended grid size in the Y direction
  */
 BedDeformLC::BedDeformLC(const Config &config,
                          bool include_elastic,
                          int Mx, int My,
                          double dx, double dy,
-                         int Z) {
+                         int Nx, int Ny) {
 
   // set parameters
   m_include_elastic = include_elastic;
 
-  m_Mx     = Mx;
-  m_My     = My;
-  m_dx     = dx;
-  m_dy     = dy;
-  m_Z      = Z;
-  m_load_density = config.get_double("constants.ice.density");
-  m_mantle_density    = config.get_double("bed_deformation.mantle_density");
-  m_eta    = config.get_double("bed_deformation.mantle_viscosity");
-  m_D      = config.get_double("bed_deformation.lithosphere_flexural_rigidity");
+  // grid parameters
+  m_Mx = Mx;
+  m_My = My;
+  m_dx = dx;
+  m_dy = dy;
+  m_Nx = Nx;
+  m_Ny = Ny;
+
+  m_load_density   = config.get_double("constants.ice.density");
+  m_mantle_density = config.get_double("bed_deformation.mantle_density");
+  m_eta            = config.get_double("bed_deformation.mantle_viscosity");
+  m_D              = config.get_double("bed_deformation.lithosphere_flexural_rigidity");
 
   m_standard_gravity = config.get_double("constants.standard_gravity");
 
   // derive more parameters
-  m_Nx        = m_Z*(m_Mx - 1) + 1;
-  m_Ny        = m_Z*(m_My - 1) + 1;
   m_Lx        = 0.5 * (m_Nx - 1.0) * m_dx;
   m_Ly        = 0.5 * (m_Ny - 1.0) * m_dy;
   m_Nxge      = m_Nx + 1;
   m_Nyge      = m_Ny + 1;
-  m_i0_offset = (m_Z - 1)*(m_Mx - 1) / 2;
-  m_j0_offset = (m_Z - 1)*(m_My - 1) / 2;
+  m_i0_offset = (Nx - Mx) / 2;
+  m_j0_offset = (Ny - My) / 2;
 
   // memory allocation
   PetscErrorCode ierr = 0;

@@ -46,13 +46,20 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
 
   m_bdLC = NULL;
 
+  const int
+    Mx = m_grid->Mx(),
+    My = m_grid->My(),
+    Z  = 4,                     // use Z = 4 for now; to reduce global drift?
+    Nx = Z*(Mx - 1) + 1,
+    Ny = Z*(My - 1) + 1;
+
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
       m_bdLC = new BedDeformLC(*m_config, use_elastic_model,
-                               m_grid->Mx(), m_grid->My(),
+                               Mx, My,
                                m_grid->dx(), m_grid->dy(),
-                               4);     // use Z = 4 for now; to reduce global drift?
+                               Nx, Ny);
     }
   } catch (...) {
     rank0.failed();
