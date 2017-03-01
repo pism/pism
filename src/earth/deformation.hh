@@ -60,13 +60,22 @@ public:
               int Nx, int Ny);
   ~BedDeformLC();
 
-  void init(Vec uplift);
+  void init(Vec displacement);
+  void bootstrap(Vec uplift);
+
   void uplift_problem(Vec load_thickness, Vec bed_uplift);
+
   void step(double dt_seconds, Vec H_start, Vec H);
 
   Vec plate_displacement() const;
+
+  Vec plate_displacement_extended() const;
 private:
+  void solve_uplift_problem(Vec ice_thickness, Vec bed_uplift, Vec output);
+
   void precompute_coefficients();
+
+  void update_total_displacement(Vec V, Vec V0, Vec dE, Vec dU);
 
   bool m_include_elastic;
   // grid size
@@ -110,17 +119,17 @@ private:
   petsc::Vec m_load_thickness;
 
   // viscous plate displacement on the extended grid
-  petsc::Vec m_U;
+  petsc::Vec m_V;
   // initial viscous plate displacement on the extended grid
-  petsc::Vec m_U_start;
+  petsc::Vec m_V0;
 
   // load response matrix (elastic); sequential and fat *with* boundary
   petsc::Vec m_load_response_matrix;
-  // elastic plate dispacement
-  petsc::Vec m_db_elastic;
+  // elastic plate displacement
+  petsc::Vec m_dE;
 
   // total (viscous and elastic) plate displacement relative to the initial bed elevation
-  petsc::Vec m_db;
+  petsc::Vec m_dU;
 
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;

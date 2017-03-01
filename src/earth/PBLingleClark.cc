@@ -106,7 +106,7 @@ void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_bdLC->init(*m_upliftp0);
+      m_bdLC->bootstrap(*m_upliftp0);
     }
   } catch (...) {
     rank0.failed();

@@ -119,7 +119,7 @@ BedDeformLC::BedDeformLC(const Config &config,
   PetscErrorCode ierr = 0;
 
   // total plate displacement
-  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_db.rawptr());;
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_dU.rawptr());;
   PISM_CHK(ierr, "VecCreateSeq");
 
   // ice thickness difference (the load)
@@ -127,15 +127,15 @@ BedDeformLC::BedDeformLC(const Config &config,
   PISM_CHK(ierr, "VecCreateSeq");
 
   // elastic plate displacement
-  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_db_elastic.rawptr());;
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_dE.rawptr());;
   PISM_CHK(ierr, "VecCreateSeq");
 
   // viscous plate displacement
-  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Nx * m_Ny, m_U.rawptr());
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Nx * m_Ny, m_V.rawptr());
   PISM_CHK(ierr, "VecCreateSeq");
 
   // initial viscous plate displacement
-  ierr = VecDuplicate(m_U, m_U_start.rawptr());
+  ierr = VecDuplicate(m_V, m_V0.rawptr());
   PISM_CHK(ierr, "VecDuplicate");
 
   // elastic load response matrix
@@ -184,8 +184,15 @@ BedDeformLC::~BedDeformLC() {
   fftw_free(m_loadhat);
 }
 
+/*!
+ * Return plate displacement relative to its position at the beginning of the run.
+ */
 Vec BedDeformLC::plate_displacement() const {
-  return m_db;
+  return m_dU;
+}
+
+Vec BedDeformLC::plate_displacement_extended() const {
+  return m_V;
 }
 
 /**
@@ -252,10 +259,9 @@ void BedDeformLC::precompute_coefficients() {
  * Here `ice_thickness` is used to compute the load @f$ \sigma_{zz} @f$ and `bed_uplift` is
  * @f$ \diff{u}{t} @f$ itself.
  *
- * Sets m_U and m_U_start.
  */
-void BedDeformLC::uplift_problem(Vec ice_thickness, Vec bed_uplift) {
-  PetscErrorCode ierr = 0;
+void BedDeformLC::solve_uplift_problem(Vec ice_thickness, Vec bed_uplift,
+                                       Vec output) {
 
   // Compute fft2(-ice_rho * g * ice_thickness)
   {
@@ -293,45 +299,86 @@ void BedDeformLC::uplift_problem(Vec ice_thickness, Vec bed_uplift) {
   }
 
   fftw_execute(m_dft_inverse);
-  get_fftw_output(m_U_start, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
+  get_fftw_output(output, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
 
-  tweak(m_U_start, m_Nx, m_Ny, 0.0);
-
-  ierr = VecCopy(m_U_start, m_U); PISM_CHK(ierr, "VecCopy");
-
-  // put m_U into "plate displacement" m_db.
-  {
-    // PISM grid
-    petsc::VecArray2D db(m_db, m_Mx, m_My);
-    // extended grid
-    petsc::VecArray2D u(m_U, m_Nx, m_Ny, m_i0_offset, m_j0_offset);
-
-    for (int i = 0; i < m_Mx; i++) {
-      for (int j = 0; j < m_My; j++) {
-        db(i, j) = u(i, j);
-      }
-    }
-  }
+  tweak(output, m_Nx, m_Ny, 0.0);
 }
 
 /*!
- * to initialize we solve:
- *   rho_r g U + D grad^4 U = 0 - 2 eta |grad| uplift
- * where U=U_start; yes it really should have "0" on right side because
- * load for future times will be "-rho g (H-H_start)", which is zero if no geometry
- * change.
- *
- * Compare equation (16) in Bueler, Lingle, Brown (2007) "Fast computation of
- * a viscoelastic deformable Earth model for ice sheet simulations", Ann.
- * Glaciol. 46, 97--105
- * [NOTE PROBABLE SIGN ERROR in eqn (16)?:  load "rho g H" should be "- rho g H"]
- *
+ * Solve the uplift problem and put plate position in m_dU so that it can be accessed using
+ * plate_displacement().
  */
-void BedDeformLC::init(Vec uplift) {
+void BedDeformLC::uplift_problem(Vec ice_thickness, Vec bed_uplift) {
+  PetscErrorCode ierr = 0;
+
+  solve_uplift_problem(ice_thickness, bed_uplift, m_V);
+
+  ierr = VecSet(m_V0, 0.0); PISM_CHK(ierr, "VecSet");
+  ierr = VecSet(m_dE, 0.0); PISM_CHK(ierr, "VecSet");
+
+  update_total_displacement(m_V, m_V0, m_dE, m_dU);
+}
+
+/*! Initialize using provided bed uplift rate.
+ *
+ * Here we solve:
+ *
+ *   rho_r g U + D grad^4 U = 0 - 2 eta |grad| uplift
+ *
+ * where U = U_start.
+ *
+ * Yes it really should have "0" on right side because load for future times will be
+ *
+ * -rho g (H - H_start),
+ *
+ * which is zero if no geometry change.
+ *
+ * Compare equation (16) in Bueler, Lingle, Brown (2007) "Fast computation of a viscoelastic
+ * deformable Earth model for ice sheet simulations", Ann. Glaciol. 46, 97--105
+ *
+ * @note Probable sign error in eqn (16)?:  load "rho g H" should be "- rho g H"]
+ *
+ * This initialization method is used to "bootstrap" the model. It should not be used to re-start a
+ * stopped modeling run.
+ *
+ * @param[in] uplift initial bed uplift on the PISM grid
+ *
+ * Sets m_V, m_V0, m_dE, m_dU.
+ */
+void BedDeformLC::bootstrap(Vec uplift) {
   // zero load
   PetscErrorCode ierr = VecSet(m_load_thickness, 0.0); PISM_CHK(ierr, "VecSet");
 
-  uplift_problem(m_load_thickness, uplift);
+  // compute initial viscous plate elevation
+  solve_uplift_problem(m_load_thickness, uplift, m_V0);
+
+  ierr = VecCopy(m_V0, m_V); PISM_CHK(ierr, "VecCopy");
+
+  // we start with zero load, so the elastic contribution is zero
+  ierr = VecSet(m_dE, 0.0); PISM_CHK(ierr, "VecSet");
+
+  // since V and V0 are the same and dE == 0, dU is also zero
+  ierr = VecSet(m_dU, 0.0); PISM_CHK(ierr, "VecSet");
+}
+
+/*!
+ * Initialize using provided plate elevation.
+ *
+ * @param[in] V initial viscous plate elevation on the extended grid
+ *
+ * Sets m_V, m_V0, m_dE, m_dU.
+ */
+void BedDeformLC::init(Vec V) {
+  PetscErrorCode ierr = 0;
+
+  ierr = VecCopy(V, m_V0); PISM_CHK(ierr, "VecCopy");
+  ierr = VecCopy(V, m_V);  PISM_CHK(ierr, "VecCopy");
+
+  // we start with zero load, so the elastic contribution is zero
+  ierr = VecSet(m_dE, 0.0); PISM_CHK(ierr, "VecSet");
+
+  // since V and V0 are the same and dE == 0, dU is also zero
+  ierr = VecSet(m_dU, 0.0); PISM_CHK(ierr, "VecSet");
 }
 
 void BedDeformLC::step(double dt_seconds, Vec H_start, Vec H) {
@@ -363,7 +410,7 @@ void BedDeformLC::step(double dt_seconds, Vec H_start, Vec H) {
   // Compute fft2(u).
   // no need to clear fftw_input: all values are overwritten
   {
-    set_fftw_input(m_U, 1.0, m_Nx, m_Ny, 0, 0);
+    set_fftw_input(m_V, 1.0, m_Nx, m_Ny, 0, 0);
     fftw_execute(m_dft_forward);
   }
 
@@ -388,41 +435,52 @@ void BedDeformLC::step(double dt_seconds, Vec H_start, Vec H) {
   }
 
   fftw_execute(m_dft_inverse);
-  get_fftw_output(m_U, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
+  get_fftw_output(m_V, 1.0 / (m_Nx * m_Ny), m_Nx, m_Ny, 0, 0);
 
   // Now tweak. (See the "correction" in section 5 of BuelerLingleBrown.)
   //
   // Here 1e16 approximates t = \infty.
-  tweak(m_U, m_Nx, m_Ny, 1e16);
+  tweak(m_V, m_Nx, m_Ny, 1e16);
 
   // now compute elastic response if desired; bed = ue at end of this block
   if (m_include_elastic) {
     // MATLAB:     ue=rhoi*conv2(H-H_start, II, 'same')
-    conv2_same(m_load_thickness, m_Mx, m_My, m_load_response_matrix, m_Nxge, m_Nyge, m_db_elastic);
+    conv2_same(m_load_thickness, m_Mx, m_My, m_load_response_matrix, m_Nxge, m_Nyge, m_dE);
 
-    ierr = VecScale(m_db_elastic, m_load_density); PISM_CHK(ierr, "VecScale");
+    ierr = VecScale(m_dE, m_load_density); PISM_CHK(ierr, "VecScale");
   } else {
-    ierr = VecSet(m_db_elastic, 0.0); PISM_CHK(ierr, "VecSet");
+    ierr = VecSet(m_dE, 0.0); PISM_CHK(ierr, "VecSet");
   }
 
-  // compute total plate displacement relative to the initial bed elevation
-  {
-    // PISM grid
-    petsc::VecArray2D
-      db(m_db, m_Mx, m_My),
-      db_elastic(m_db_elastic, m_Mx, m_My);
-    // extended grid
-    petsc::VecArray2D
-      u(m_U, m_Nx, m_Ny, m_i0_offset, m_j0_offset),
-      u_start(m_U_start, m_Nx, m_Ny, m_i0_offset, m_j0_offset);
+  update_total_displacement(m_V, m_V0, m_dE, m_dU);
+}
 
-    for (int i = 0; i < m_Mx; i++) {
-      for (int j = 0; j < m_My; j++) {
-        db(i, j) = (u(i, j) - u_start(i, j)) + db_elastic(i, j);
-      }
+/*! Compute total plate displacement by combining viscous and elastic contributions.
+ *
+ * @param[in] V viscous plate position
+ * @param[in] V0 viscous plate position at the beginning of the run
+ * @param[in] dE elastic plate displacement
+ * @param[out] dU total plate displacement
+ */
+void BedDeformLC::update_total_displacement(Vec V, Vec V0, Vec dE, Vec dU) {
+  // compute total plate displacement relative to the initial bed elevation
+  // PISM grid
+  petsc::VecArray2D
+    du(dU, m_Mx, m_My),
+    du_elastic(dE, m_Mx, m_My);
+  // extended grid
+  petsc::VecArray2D
+    u(V, m_Nx, m_Ny, m_i0_offset, m_j0_offset),
+    u0(V0, m_Nx, m_Ny, m_i0_offset, m_j0_offset);
+
+  for (int i = 0; i < m_Mx; i++) {
+    for (int j = 0; j < m_My; j++) {
+      const double du_viscous = u(i, j) - u0(i, j);
+      du(i, j) = du_viscous + du_elastic(i, j);
     }
   }
 }
+
 
 void BedDeformLC::tweak(Vec U, int Nx, int Ny, double time) {
   PetscErrorCode ierr = 0;
