@@ -58,6 +58,11 @@ protected:
   //! displacement back.
   petsc::Vec::Ptr m_work_0;
   BedDeformLC *m_bdLC;
+
+  //! extended grid for the viscous plate displacement
+  IceGrid::Ptr m_extended_grid;
+  //! viscous plate displacement on the extended grid (part of the model state)
+  IceModelVec2S m_plate_displacement;
 };
 
 } // end of namespace bed

@@ -65,6 +65,14 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
     Nx = Z*(Mx - 1) + 1,
     Ny = Z*(My - 1) + 1;
 
+  m_extended_grid = IceGrid::Shallow(m_grid->ctx(),
+                                     Z*m_grid->Lx(), Z*m_grid->Ly(),
+                                     m_grid->x0(), m_grid->y0(),
+                                     Nx, Ny, NOT_PERIODIC);
+
+  m_plate_displacement.create(m_extended_grid, "plate_displacement", WITHOUT_GHOSTS);
+  m_plate_displacement.set_attrs("model state", "viscous plate displacement", "meters", "");
+
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
