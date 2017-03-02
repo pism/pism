@@ -44,29 +44,14 @@ BedDef::BedDef(IceGrid::ConstPtr g)
                         "m", "bedrock_altitude");
 
   m_uplift.create(m_grid, "dbdt", WITHOUT_GHOSTS);
-  m_uplift.set_attrs("model_state", "bedrock uplift rate",
+  m_uplift.set_attrs("diagnostic", "bedrock uplift rate",
                      "m s-1", "tendency_of_bedrock_altitude");
   m_uplift.metadata().set_string("glaciological_units", "mm year-1");
   m_uplift.write_in_glaciological_units = true;
-
-  // Set default values (we set them early so that pismv can override
-  // them in IceCompModel::set_vars_from_options(), which is called
-  // before BedDef::init()).
-  m_topg.set(0.0);
-  m_uplift.set(0.0);
 }
 
 BedDef::~BedDef() {
   // empty
-}
-
-void BedDef::set_elevation(const IceModelVec2S &input) {
-  m_topg.copy_from(input);
-  m_topg.update_ghosts();
-}
-
-void BedDef::set_uplift(const IceModelVec2S &input) {
-  m_uplift.copy_from(input);
 }
 
 const IceModelVec2S& BedDef::bed_elevation() const {
@@ -125,12 +110,10 @@ void BedDef::init_impl(const InputOptions &opts) {
   case INIT_RESTART:
     // read bed elevation and uplift rate from file
     m_log->message(2,
-                   "    reading bed topography and bed uplift rate\n"
-                   "    from %s ... \n",
+                   "    reading bed topography from %s ... \n",
                    opts.filename.c_str());
     // re-starting
     m_topg.read(opts.filename, opts.record); // fails if not found!
-    m_uplift.read(opts.filename, opts.record); // fails if not found!
     break;
   case INIT_BOOTSTRAP:
     // bootstrapping
@@ -142,12 +125,14 @@ void BedDef::init_impl(const InputOptions &opts) {
   case INIT_OTHER:
   default:
     {
-      // do nothing, keeping values set elsewhere
+      // do nothing
     }
   }
 
   // process -regrid_file and -regrid_vars
   regrid("bed deformation", m_topg);
+  // uplift is not a part of the model state, but the user may want to take it from a -regrid_file
+  // during bootstrapping
   regrid("bed deformation", m_uplift);
 
   std::string correction_file = m_config->get_string("bed_deformation.bed_topography_delta_file");

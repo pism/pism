@@ -46,9 +46,6 @@ public:
   const IceModelVec2S& bed_elevation() const;
   const IceModelVec2S& uplift() const;
 
-  void set_elevation(const IceModelVec2S &input);
-  void set_uplift(const IceModelVec2S &input);
-
 protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
