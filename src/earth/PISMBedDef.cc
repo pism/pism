@@ -85,20 +85,20 @@ void BedDef::write_model_state_impl(const PIO &output) const {
   m_topg.write(output);
 }
 
-void BedDef::init() {
-  this->init_impl();
+void BedDef::init(const InputOptions &opts) {
+  this->init_impl(opts);
 }
 
 //! Initialize using provided bed elevation and uplift.
-void BedDef::init(const IceModelVec2S &bed,
-                  const IceModelVec2S &bed_uplift,
-                  const IceModelVec2S &ice_thickness) {
-  this->init_with_inputs_impl(bed, bed_uplift, ice_thickness);
+void BedDef::bootstrap(const IceModelVec2S &bed,
+                       const IceModelVec2S &bed_uplift,
+                       const IceModelVec2S &ice_thickness) {
+  this->bootstrap_impl(bed, bed_uplift, ice_thickness);
 }
 
-void BedDef::init_with_inputs_impl(const IceModelVec2S &bed,
-                                   const IceModelVec2S &bed_uplift,
-                                   const IceModelVec2S &ice_thickness) {
+void BedDef::bootstrap_impl(const IceModelVec2S &bed,
+                            const IceModelVec2S &bed_uplift,
+                            const IceModelVec2S &ice_thickness) {
   m_topg.copy_from(bed);
   m_uplift.copy_from(bed_uplift);
   // suppress a compiler warning:
@@ -115,13 +115,11 @@ void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
 }
 
 //! Initialize from the context (input file and the "variables" database).
-void BedDef::init_impl() {
+void BedDef::init_impl(const InputOptions &opts) {
   m_t_beddef_last = m_grid->ctx()->time()->start();
 
   m_t  = GSL_NAN;
   m_dt = GSL_NAN;
-
-  InputOptions opts = process_input_options(m_grid->com);
 
   switch (opts.type) {
   case INIT_RESTART:

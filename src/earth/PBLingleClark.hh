@@ -41,10 +41,10 @@ protected:
   virtual void write_model_state_impl(const PIO &output) const;
 
   MaxTimestep max_timestep_impl(double t) const;
-  void init_impl();
-  void init_with_inputs_impl(const IceModelVec2S &bed_elevation,
-                             const IceModelVec2S &bed_uplift,
-                             const IceModelVec2S &ice_thickness);
+  void init_impl(const InputOptions &opts);
+  void bootstrap_impl(const IceModelVec2S &bed_elevation,
+                      const IceModelVec2S &bed_uplift,
+                      const IceModelVec2S &ice_thickness);
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);
 

@@ -73,7 +73,7 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
     bed_uplift.set(0.0)
     ice_thickness.set(0.0)
 
-    bed_model.init(bed, bed_uplift, ice_thickness)
+    bed_model.bootstrap(bed, bed_uplift, ice_thickness)
 
     # add the disc load
     with PISM.vec.Access(nocomm=ice_thickness):

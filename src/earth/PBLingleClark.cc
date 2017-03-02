@@ -138,9 +138,9 @@ void PBLingleClark::uplift_problem(const IceModelVec2S& ice_thickness,
   m_topg.get_from_proc0(*m_work0);
 }
 
-void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
-                                          const IceModelVec2S &bed_uplift,
-                                          const IceModelVec2S &ice_thickness) {
+void PBLingleClark::bootstrap_impl(const IceModelVec2S &bed,
+                                   const IceModelVec2S &bed_uplift,
+                                   const IceModelVec2S &ice_thickness) {
   m_t_beddef_last = m_grid->ctx()->time()->start();
 
   m_t  = GSL_NAN;
@@ -168,14 +168,14 @@ void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
 }
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
-void PBLingleClark::init_impl() {
+void PBLingleClark::init_impl(const InputOptions &opts) {
   m_log->message(2,
-             "* Initializing the Lingle-Clark bed deformation model...\n");
+                 "* Initializing the Lingle-Clark bed deformation model...\n");
 
-  BedDef::init_impl();
+  BedDef::init_impl(opts);
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  this->init_with_inputs_impl(m_topg, m_uplift, *ice_thickness);
+  this->bootstrap_impl(m_topg, m_uplift, *ice_thickness);
 }
 
 MaxTimestep PBLingleClark::max_timestep_impl(double t) const {
