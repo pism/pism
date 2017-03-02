@@ -37,7 +37,7 @@ namespace bed {
 PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   : BedDef(g) {
 
-  m_work_0 = m_topg.allocate_proc0_copy();
+  m_work0 = m_topg.allocate_proc0_copy();
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
@@ -85,6 +85,10 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   m_plate_displacement.metadata().get_x().set_name("x_lc");
   m_plate_displacement.metadata().get_y().set_name("y_lc");
 
+  // Set up scatters to and from processor 0 by allocating a processor 0 copy. (This copy is thrown
+  // away immediately.)
+  m_work0_extended = m_plate_displacement.allocate_proc0_copy();
+
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
@@ -113,7 +117,7 @@ void PBLingleClark::uplift_problem(const IceModelVec2S& ice_thickness,
   // bed_uplift and free it at the end of scope.
 
   petsc::Vec::Ptr
-    thickness = m_work_0,
+    thickness = m_work0,
     uplift    = bed_uplift.allocate_proc0_copy();
 
   ice_thickness.put_on_proc0(*thickness);
@@ -123,7 +127,7 @@ void PBLingleClark::uplift_problem(const IceModelVec2S& ice_thickness,
   try {
     if (m_grid->rank() == 0) {
       m_bdLC->uplift_problem(*thickness, *uplift);
-      PetscErrorCode ierr = VecCopy(m_bdLC->plate_displacement_change(), *m_work_0);
+      PetscErrorCode ierr = VecCopy(m_bdLC->plate_displacement_change(), *m_work0);
       PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {
@@ -131,7 +135,7 @@ void PBLingleClark::uplift_problem(const IceModelVec2S& ice_thickness,
   }
   rank0.check();
 
-  m_topg.get_from_proc0(*m_work_0);
+  m_topg.get_from_proc0(*m_work0);
 }
 
 void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
@@ -145,7 +149,7 @@ void PBLingleClark::init_with_inputs_impl(const IceModelVec2S &bed,
   m_H_start.copy_from(ice_thickness);
   m_topg_start.copy_from(bed);
 
-  petsc::Vec::Ptr uplift = m_work_0;
+  petsc::Vec::Ptr uplift = m_work0;
 
   bed_uplift.put_on_proc0(*uplift);
 
@@ -222,14 +226,16 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
     }
     loop.check();
 
-    H_change.put_on_proc0(*m_work_0);
+    H_change.put_on_proc0(*m_work0);
   }
 
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {  // only processor zero does the step
-      m_bdLC->step(dt_beddef, *m_work_0);
-      PetscErrorCode ierr = VecCopy(m_bdLC->plate_displacement_change(), *m_work_0);
+      m_bdLC->step(dt_beddef, *m_work0);
+      PetscErrorCode ierr = VecCopy(m_bdLC->plate_displacement_change(), *m_work0);
+      PISM_CHK(ierr, "VecCopy");
+      ierr = VecCopy(m_bdLC->plate_displacement(), *m_work0_extended);
       PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {
@@ -241,7 +247,7 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
   {
     IceModelVec2S &dU = m_work;
 
-    dU.get_from_proc0(*m_work_0);
+    dU.get_from_proc0(*m_work0);
 
     IceModelVec::AccessList list{&m_topg, &m_topg_start, &dU};
 
@@ -264,6 +270,19 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
 
   //! Increment the topg state counter. SIAFD relies on this!
   m_topg.inc_state_counter();
+
+  // get plate displacement on the extended grid from processor 0
+  m_plate_displacement.get_from_proc0(*m_work0_extended);
+}
+
+void PBLingleClark::define_model_state_impl(const PIO &output) const {
+  BedDef::define_model_state_impl(output);
+  m_plate_displacement.define(output);
+}
+
+void PBLingleClark::write_model_state_impl(const PIO &output) const {
+  BedDef::write_model_state_impl(output);
+  m_plate_displacement.write(output);
 }
 
 } // end of namespace bed

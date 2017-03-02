@@ -37,6 +37,9 @@ public:
                       const IceModelVec2S &bed_uplift);
 
 protected:
+  virtual void define_model_state_impl(const PIO &output) const;
+  virtual void write_model_state_impl(const PIO &output) const;
+
   MaxTimestep max_timestep_impl(double t) const;
   void init_impl();
   void init_with_inputs_impl(const IceModelVec2S &bed_elevation,
@@ -56,13 +59,14 @@ protected:
 
   //! Storage on rank zero. Used to pass the load to the serial deformation model and get plate
   //! displacement back.
-  petsc::Vec::Ptr m_work_0;
+  petsc::Vec::Ptr m_work0;
   BedDeformLC *m_bdLC;
 
   //! extended grid for the viscous plate displacement
   IceGrid::Ptr m_extended_grid;
   //! viscous plate displacement on the extended grid (part of the model state)
   IceModelVec2S m_plate_displacement;
+  petsc::Vec::Ptr m_work0_extended;
 };
 
 } // end of namespace bed
