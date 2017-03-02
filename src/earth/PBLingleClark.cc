@@ -65,13 +65,25 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
     Nx = Z*(Mx - 1) + 1,
     Ny = Z*(My - 1) + 1;
 
+  const double
+    Lx = Z * (m_grid->x0() - m_grid->x(0)),
+    Ly = Z * (m_grid->y0() - m_grid->y(0));
+
   m_extended_grid = IceGrid::Shallow(m_grid->ctx(),
-                                     Z*m_grid->Lx(), Z*m_grid->Ly(),
+                                     Lx, Ly,
                                      m_grid->x0(), m_grid->y0(),
                                      Nx, Ny, NOT_PERIODIC);
 
   m_plate_displacement.create(m_extended_grid, "plate_displacement", WITHOUT_GHOSTS);
-  m_plate_displacement.set_attrs("model state", "viscous plate displacement", "meters", "");
+  m_plate_displacement.set_attrs("model state",
+                                 "viscous plate displacement in the "
+                                 "Lingle-Clark bed deformation model", "meters", "");
+  m_plate_displacement.metadata().set_string("comment",
+                                             "This field has no physical meaning"
+                                             " and should not be used to interpret model results.");
+  // coordinate variables of the extended grid should have different names
+  m_plate_displacement.metadata().get_x().set_name("x_lc");
+  m_plate_displacement.metadata().get_y().set_name("y_lc");
 
   ParallelSection rank0(m_grid->com);
   try {
