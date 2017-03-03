@@ -200,9 +200,7 @@ void PBLingleClark::init_impl(const InputOptions &opts) {
     // Re-set m_topg because uplift_problem() modified it.
     m_topg.copy_from(m_topg_start);
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Call bootstrap() to initialize PBLingleClark"
-                                  " without an input file.");
+    // do nothing
   }
 
   // Try re-gridding plate_displacement.
