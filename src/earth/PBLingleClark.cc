@@ -129,6 +129,8 @@ void PBLingleClark::uplift_problem(const IceModelVec2S& ice_thickness,
       m_bdLC->uplift_problem(*thickness, *uplift);
       PetscErrorCode ierr = VecCopy(m_bdLC->plate_displacement_change(), *m_work0);
       PISM_CHK(ierr, "VecCopy");
+      ierr = VecCopy(m_bdLC->plate_displacement(), *m_work0_extended);
+      PISM_CHK(ierr, "VecCopy");
     }
   } catch (...) {
     rank0.failed();
@@ -136,6 +138,7 @@ void PBLingleClark::uplift_problem(const IceModelVec2S& ice_thickness,
   rank0.check();
 
   m_topg.get_from_proc0(*m_work0);
+  m_plate_displacement.get_from_proc0(*m_work0_extended);
 }
 
 void PBLingleClark::bootstrap_impl(const IceModelVec2S &bed,
@@ -148,40 +151,81 @@ void PBLingleClark::bootstrap_impl(const IceModelVec2S &bed,
 
   m_H_start.copy_from(ice_thickness);
   m_topg_start.copy_from(bed);
+  m_topg_last.copy_from(m_topg);
 
-  petsc::Vec::Ptr uplift = m_work0;
+  // initialize the plate displacement
+  {
+    bed_uplift.put_on_proc0(*m_work0);
 
-  bed_uplift.put_on_proc0(*uplift);
+    ParallelSection rank0(m_grid->com);
+    try {
+      if (m_grid->rank() == 0) {
+        m_bdLC->bootstrap(*m_work0);
+      }
+    } catch (...) {
+      rank0.failed();
+    }
+    rank0.check();
+  }
+}
+
+/*! Initialize the Lingle-Clark bed deformation model using uplift.
+ *
+ * Inputs:
+ *
+ * - bed topography,
+ * - ice thickness,
+ * - plate displacement (either read from a file or bootstrapped using uplift) and
+ *   possibly re-gridded.
+ */
+void PBLingleClark::init_impl(const InputOptions &opts) {
+  m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
+
+  // Initialize bed topography and uplift maps.
+  BedDef::init_impl(opts);
+
+  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+  m_H_start.copy_from(*ice_thickness);
+  m_topg_start.copy_from(m_topg);
+  m_topg_last.copy_from(m_topg);
+
+  if (opts.type == INIT_RESTART) {
+    // Set m_plate_displacement by reading from the input file.
+    m_plate_displacement.read(opts.filename, opts.record);
+  } else if (opts.type == INIT_BOOTSTRAP) {
+    // Set m_plate_displacement by solving the "uplift problem" with zero thickness.
+    m_work.set(0.0);
+    this->uplift_problem(m_work, m_uplift);
+    // Re-set m_topg because uplift_problem() modified it.
+    m_topg.copy_from(m_topg_start);
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Call bootstrap() to initialize PBLingleClark"
+                                  " without an input file.");
+  }
+
+  // Try re-gridding plate_displacement.
+  regrid("Lingle-Clark bed deformation model", m_plate_displacement, REGRID_WITHOUT_REGRID_VARS);
+
+  // Now that m_plate_displacement is finally initialized, put it on rank 0 and initialize m_bdLC
+  // itself.
+  m_plate_displacement.put_on_proc0(*m_work0_extended);
 
   ParallelSection rank0(m_grid->com);
   try {
-    if (m_grid->rank() == 0) {
-      m_bdLC->bootstrap(*uplift);
+    if (m_grid->rank() == 0) {  // only processor zero does the step
+      m_bdLC->init(*m_work0_extended);
     }
   } catch (...) {
     rank0.failed();
   }
   rank0.check();
-
-  // this should be the last thing we do here
-  m_topg_last.copy_from(m_topg);
-}
-
-//! Initialize the Lingle-Clark bed deformation model using uplift.
-void PBLingleClark::init_impl(const InputOptions &opts) {
-  m_log->message(2,
-                 "* Initializing the Lingle-Clark bed deformation model...\n");
-
-  BedDef::init_impl(opts);
-
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  this->bootstrap_impl(m_topg, m_uplift, *ice_thickness);
 }
 
 MaxTimestep PBLingleClark::max_timestep_impl(double t) const {
   (void) t;
   // no time-step restriction
-  // FIXME: we *should* have a time-step restriction for accuracy.
   return MaxTimestep("bed_def lc");
 }
 

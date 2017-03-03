@@ -114,6 +114,7 @@ void BedDef::init_impl(const InputOptions &opts) {
                    opts.filename.c_str());
     // re-starting
     m_topg.read(opts.filename, opts.record); // fails if not found!
+    m_uplift.set(0.0);
     break;
   case INIT_BOOTSTRAP:
     // bootstrapping
