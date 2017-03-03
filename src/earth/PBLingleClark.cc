@@ -44,11 +44,6 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   m_work.create(m_grid, "work_vector", WITHOUT_GHOSTS);
   m_work.set_attrs("internal", "a work vector", "meters", "");
 
-  m_H_start.create(m_grid, "H_start", WITHOUT_GHOSTS);
-  m_H_start.set_attrs("internal",
-                      "ice thickness at the beginning of the run",
-                      "meters", "");
-
   m_topg_start.create(m_grid, "topg_start", WITHOUT_GHOSTS);
   m_topg_start.set_attrs("internal",
                          "bed elevation at the beginning of the run",
@@ -149,7 +144,6 @@ void PBLingleClark::bootstrap_impl(const IceModelVec2S &bed,
   m_t  = GSL_NAN;
   m_dt = GSL_NAN;
 
-  m_H_start.copy_from(ice_thickness);
   m_topg_start.copy_from(bed);
   m_topg_last.copy_from(m_topg);
 
@@ -186,7 +180,6 @@ void PBLingleClark::init_impl(const InputOptions &opts) {
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  m_H_start.copy_from(*ice_thickness);
   m_topg_start.copy_from(m_topg);
   m_topg_last.copy_from(m_topg);
 
@@ -194,9 +187,8 @@ void PBLingleClark::init_impl(const InputOptions &opts) {
     // Set m_plate_displacement by reading from the input file.
     m_plate_displacement.read(opts.filename, opts.record);
   } else if (opts.type == INIT_BOOTSTRAP) {
-    // Set m_plate_displacement by solving the "uplift problem" with zero thickness.
-    m_work.set(0.0);
-    this->uplift_problem(m_work, m_uplift);
+    // Set m_plate_displacement by solving the "uplift problem".
+    this->uplift_problem(ice_thickness, m_uplift);
     // Re-set m_topg because uplift_problem() modified it.
     m_topg.copy_from(m_topg_start);
   } else {
@@ -251,25 +243,7 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
 
   m_t_beddef_last = t_final;
 
-  // compute the change in ice thickness
-  {
-    IceModelVec2S &H_change = m_work;
-    IceModelVec::AccessList list{&ice_thickness, &m_H_start, &H_change};
-
-    ParallelSection loop(m_grid->com);
-    try {
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        H_change(i, j) = ice_thickness(i, j) - m_H_start(i, j);
-      }
-    } catch (...) {
-      loop.failed();
-    }
-    loop.check();
-
-    H_change.put_on_proc0(*m_work0);
-  }
+  ice_thickness.put_on_proc0(*m_work0);
 
   ParallelSection rank0(m_grid->com);
   try {
