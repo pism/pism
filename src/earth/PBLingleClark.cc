@@ -188,7 +188,7 @@ void PBLingleClark::init_impl(const InputOptions &opts) {
     m_plate_displacement.read(opts.filename, opts.record);
   } else if (opts.type == INIT_BOOTSTRAP) {
     // Set m_plate_displacement by solving the "uplift problem".
-    this->uplift_problem(ice_thickness, m_uplift);
+    this->uplift_problem(*ice_thickness, m_uplift);
     // Re-set m_topg because uplift_problem() modified it.
     m_topg.copy_from(m_topg_start);
   } else {

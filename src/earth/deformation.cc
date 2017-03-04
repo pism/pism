@@ -344,20 +344,20 @@ void BedDeformLC::uplift_problem(Vec load_thickness, Vec bed_uplift) {
  *
  * Sets m_V, m_V0, m_dE, m_dU.
  */
-void BedDeformLC::bootstrap(Vec uplift) {
+void BedDeformLC::bootstrap(Vec thickness, Vec uplift) {
   PetscErrorCode ierr = 0;
 
-  // we start with zero load, so the elastic contribution is zero
-  ierr = VecSet(m_dE, 0.0); PISM_CHK(ierr, "VecSet");
-
-  // since in the beginning V and V0 are the same and dE == 0, dU is also zero
-  ierr = VecSet(m_dU, 0.0); PISM_CHK(ierr, "VecSet");
+  if (m_include_elastic) {
+    compute_elastic_response(thickness, m_dE);
+  }
 
   // compute initial viscous plate displacement using zero initial load (here m_dU (set to zero) is
   // used as the load thickness)
   solve_uplift_problem(m_dU, uplift, m_V0);
 
   ierr = VecCopy(m_V0, m_V); PISM_CHK(ierr, "VecCopy");
+
+  update_total_displacement(m_V, m_V0, m_dE, m_dU);
 }
 
 /*!
@@ -441,16 +441,19 @@ void BedDeformLC::step(double dt_seconds, Vec H) {
   // Here 1e16 approximates t = \infty.
   tweak(H, m_V, m_Nx, m_Ny, 1e16);
 
-  // now compute elastic response if desired; bed = ue at end of this block
+  // now compute elastic response if desired
   if (m_include_elastic) {
-    conv2_same(H, m_Mx, m_My, m_load_response_matrix, m_Nxge, m_Nyge, m_dE);
-
-    PetscErrorCode ierr = VecScale(m_dE, m_load_density); PISM_CHK(ierr, "VecScale");
-  } else {
-    PetscErrorCode ierr = VecSet(m_dE, 0.0); PISM_CHK(ierr, "VecSet");
+    compute_elastic_response(H, m_dE);
   }
 
   update_total_displacement(m_V, m_V0, m_dE, m_dU);
+}
+
+void BedDeformLC::compute_elastic_response(Vec H, Vec dE){
+
+  conv2_same(H, m_Mx, m_My, m_load_response_matrix, m_Nxge, m_Nyge, dE);
+
+  PetscErrorCode ierr = VecScale(m_dE, m_load_density); PISM_CHK(ierr, "VecScale");
 }
 
 /*! Compute total plate displacement change by combining viscous and elastic contributions.
