@@ -69,10 +69,10 @@ void IBIceModel::createVecs() {
 
   M1.create(m_grid, "M1", pism::WITHOUT_GHOSTS);
   M2.create(m_grid, "M2", pism::WITHOUT_GHOSTS);
-  M1.create(m_grid, "H1", pism::WITHOUT_GHOSTS);
-  M2.create(m_grid, "H2", pism::WITHOUT_GHOSTS);
-  M1.create(m_grid, "V1", pism::WITHOUT_GHOSTS);
-  M2.create(m_grid, "V2", pism::WITHOUT_GHOSTS);
+  H1.create(m_grid, "H1", pism::WITHOUT_GHOSTS);
+  H2.create(m_grid, "H2", pism::WITHOUT_GHOSTS);
+  V1.create(m_grid, "V1", pism::WITHOUT_GHOSTS);
+  V2.create(m_grid, "V2", pism::WITHOUT_GHOSTS);
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
