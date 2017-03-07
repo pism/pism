@@ -44,7 +44,7 @@ BedDef::BedDef(IceGrid::ConstPtr g)
                         "m", "bedrock_altitude");
 
   m_uplift.create(m_grid, "dbdt", WITHOUT_GHOSTS);
-  m_uplift.set_attrs("diagnostic", "bedrock uplift rate",
+  m_uplift.set_attrs("model_state", "bedrock uplift rate",
                      "m s-1", "tendency_of_bedrock_altitude");
   m_uplift.metadata().set_string("glaciological_units", "mm year-1");
   m_uplift.write_in_glaciological_units = true;
@@ -63,10 +63,12 @@ const IceModelVec2S& BedDef::uplift() const {
 }
 
 void BedDef::define_model_state_impl(const PIO &output) const {
+  m_uplift.define(output);
   m_topg.define(output);
 }
 
 void BedDef::write_model_state_impl(const PIO &output) const {
+  m_uplift.write(output);
   m_topg.write(output);
 }
 
@@ -110,11 +112,11 @@ void BedDef::init_impl(const InputOptions &opts) {
   case INIT_RESTART:
     // read bed elevation and uplift rate from file
     m_log->message(2,
-                   "    reading bed topography from %s ... \n",
+                   "    reading bed topography and uplift from %s ... \n",
                    opts.filename.c_str());
     // re-starting
     m_topg.read(opts.filename, opts.record); // fails if not found!
-    m_uplift.set(0.0);
+    m_uplift.read(opts.filename, opts.record); // fails if not found!
     break;
   case INIT_BOOTSTRAP:
     // bootstrapping
