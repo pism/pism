@@ -39,7 +39,7 @@ public:
       double        earth_grav,
                     rhoi, rhow, rho_star, nu,
                     latentHeat, c_p_ocean, lambda,
-                    a, b, c,
+                    a, b, c, as, bs, cs, 
                     alpha, beta;
 
       double        default_gamma_T, default_overturning_coeff,

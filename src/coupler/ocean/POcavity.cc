@@ -50,9 +50,20 @@ Cavity::Constants::Constants(const Config &config) {
   c_p_ocean  = 3974.0;       // J/(K*kg), specific heat capacity of ocean mixed layer
   lambda     = latentHeat / c_p_ocean;   // °C, NOTE K vs °C
 
-  a          = -0.057;       // K/psu
-  b          = 0.0832 + 273.15;       // K
-  c          = 7.64e-4;      // K/dbar
+  // Valus for linearized potential freezing point (from Xylar Asay-Davis, should be in Asay-Davis et al 2016, but not correct in there )
+  a          = -0.0572;       // K/psu
+  b          = 0.0788 + 273.15;       // K
+  c          = 7.77e-4;      // K/dbar
+
+  // in-situ pressure melting point from Jenkins et al. 2010 paper
+  as          = -0.0573;       // K/psu
+  bs          = 0.0832 + 273.15;       // K
+  cs          = 7.53e-4;      // K/dbar
+
+  // in-situ pressure melting point from Olbers & Hellmer 2010 paper
+  // as          = -0.057;       // K/psu
+  // bs          = 0.0832 + 273.15;       // K
+  // cs          = 7.64e-4;      // K/dbar
 
   alpha      = 7.5e-5;       // 1/K
   beta       = 7.7e-4;       // 1/psu
@@ -210,7 +221,7 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   // TODO: this may be initialized to NA, it should only have valid values below ice shelves.
   T_pressure_melting.create(m_grid, "T_pressure_melting", WITHOUT_GHOSTS);
   T_pressure_melting.set_attrs("model_state", "pressure melting temperature at ice shelf base",
-                        "Kelvin", "pressure melting temperature at ice shelf base"); // no CF standard_name?
+                        "Kelvin", "pressure melting temperature at ice shelf base"); // no CF standard_name? // This is the in-situ pressure melting point
   m_variables.push_back(&T_pressure_melting);
 
 
@@ -354,7 +365,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
   basalMeltRateOtherBoxes(cc); // TODO Diese Routinen woanders aufrufen (um Dopplung zu vermeiden)
   basalMeltRateMissingCells(cc);  //Assumes that mass flux is proportional to the shelf-base heat flux.
 
-  m_shelfbtemp.copy_from(T_pressure_melting);
+  m_shelfbtemp.copy_from(T_pressure_melting); // in-situ freezing point at the ice shelf base
   //
   basalmeltrate_shelf.scale(cc.rhoi);
   m_shelfbmassflux.copy_from(basalmeltrate_shelf); //TODO Check if scaling with ice density
@@ -955,7 +966,7 @@ void Cavity::write_ocean_input_fields(const Constants &cc) {
 
       //! temperature input for grounding line box should not be below pressure melting point
       const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2,
-      const double T_pmt = cc.a*Soc_base(i,j) + cc.b - cc.c*pressure; // in Kelvin
+      const double T_pmt = cc.a*Soc_base(i,j) + cc.b - cc.c*pressure; // in Kelvin, here potential freezing point
 
 
       if (  Toc_base(i,j) < T_pmt ) {
@@ -1064,12 +1075,12 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
       //! salinity for grounding line box
       Soc(i,j) = Soc_base(i,j) - (Soc_base(i,j) / (cc.nu*cc.lambda)) * (Toc_base(i,j) - Toc(i,j));  // in psu
 
-      double pressure_melting_temp = cc.a*Soc(i,j) + cc.b - cc.c*pressure;
+      double pressure_melting_temp = cc.a*Soc(i,j) + cc.b - cc.c*pressure; // potential pressure melting point
 
       //! basal melt rate for grounding line box
       basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (pressure_melting_temp - Toc(i,j));  // in m/s
 
-      T_pressure_melting(i,j) = pressure_melting_temp;
+      T_pressure_melting(i,j) = cc.as*Soc(i,j) + cc.bs - cc.cs*pressure; // in situ pressure melting point in Kelvin
       //! overturning
       // NOTE Actually, there is of course no overturning-FIELD, it is only a scalar for each shelf.
       // Here, we compute overturning as   MEAN[C1*cc.rho_star* (cc.beta*(Soc_base(i,j)-Soc(i,j)) - cc.alpha*((Toc_base(i,j)-273.15+Toc_anomaly(i,j))-Toc_inCelsius(i,j)))]
@@ -1212,11 +1223,11 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
           //! salinity for Box i > 1
           Soc(i,j) = mean_salinity_in_boundary - mean_salinity_in_boundary * (mean_temperature_in_boundary - Toc(i,j))/(cc.nu*cc.lambda); // psu FIXME: add term in denominator? Then also above in GL box + mean_temperature_in_boundary - Toc_inCelsius(i,j))
 
-          double pressure_melting_temp = cc.a*Soc(i,j) + cc.b - cc.c*pressure;
+          double pressure_melting_temp = cc.a*Soc(i,j) + cc.b - cc.c*pressure; // potential pressure melting point
           //! basal melt rate for Box i > 1
           basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (pressure_melting_temp - Toc(i,j)); // in m/s
 
-          T_pressure_melting(i,j) = pressure_melting_temp;
+          T_pressure_melting(i,j) = cc.as*Soc(i,j) + cc.bs - cc.cs*pressure; // in situ pressure melting point in Kelvin
 
           // compute means at boundary to next box
           if (BOXMODELmask(i-1,j)==(boxi+1) || BOXMODELmask(i+1,j)==(boxi+1) || BOXMODELmask(i,j-1)==(boxi+1) || BOXMODELmask(i,j+1)==(boxi+1)){
@@ -1295,12 +1306,17 @@ void Cavity::basalMeltRateMissingCells(const Constants &cc) {
 
 
       const double shelfbaseelev = - (cc.rhoi / cc.rhow) * (*ice_thickness)(i,j);
-
+      const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
+        
 
       //FIXME: for consistency reasons there should be constants a,b,c, gamma_T used
-      double T_f = 273.15 + (cc.a*cc.meltSalinity + cc.b2 + cc.c*shelfbaseelev); // add 273.15 to get it in Kelvin... 35 is the salinity
+      // FIXME: use potential freezin point 
+      // original, note: to fit with the version before, cc.a would need to be cc.as and cc.c cc.cs
+      //double T_f = 273.15 + (cc.a*cc.meltSalinity + cc.b2 + cc.c*shelfbaseelev); // add 273.15 to get it in Kelvin... 35 is the salinity
+      // Proposal: use potential freezin point, similar to before
+      double T_f = (cc.a*cc.meltSalinity + cc.b - cc.c*pressure); // in Kelvin... 35 is the salinity
 
-      T_pressure_melting(i,j) = T_f;
+      T_pressure_melting(i,j) =  cc.as*cc.meltSalinity + cc.bs - cc.cs*pressure; // in situ pressure melting point in Kelvin
 
       double heatflux = cc.meltFactor * cc.rhow * cc.c_p_ocean * cc.gamma_T_o * (Toc(i,j) - T_f);  // in W/m^2
       basalmeltrate_shelf(i,j) = heatflux / (cc.latentHeat * cc.rhoi); // in m s-1
