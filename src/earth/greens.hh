@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2014, 2015 Ed Bueler
+// Copyright (C) 2007--2009, 2014, 2015, 2017 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,7 @@ struct ge_params {
  * For G^E(r), the Green's function of spherical layered elastic earth
  * model. From data in \ref LingleClark. See also \ref BLKfastearth.
  */
-double ge_integrand(unsigned ndimMUSTBETWO, const double* xiANDeta, void* paramsIN);
+double ge_integrand(unsigned ndim, const double* xiANDeta, void* params);
 
 //! @brief Parameters used to describe the response of the viscous
 //! half-space model to a disc load.
@@ -50,12 +50,12 @@ struct vd_params {
  * model, see appendix B of \ref BLK2006earth. See also \ref
  * LingleClark and \ref BLKfastearth.
  */
-double vd_integrand (double kap, void * paramsIN);
+double vd_integrand (double kappa, void * paramsIN);
 
 //! @brief Actually compute the response of the viscous half-space
 //! model in \ref LingleClark, to a disc load.
 double viscDisc(double t, double H0, double R0, double r, 
-                double rho, double grav, double D, double eta);
+                double rho, double rho_ice, double grav, double D, double eta);
 
 } // end of namespace bed
 } // end of namespace pism

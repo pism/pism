@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -111,11 +111,6 @@ void IceCompModel::energyStep() {
 
 void IceCompModel::initTestFG() {
 
-  IceModelVec2S bed_topography;
-  bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-  bed_topography.set(0.0);
-  m_beddef->set_elevation(bed_topography);
-
   IceModelVec::AccessList list{&m_ice_thickness};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
@@ -135,16 +130,29 @@ void IceCompModel::initTestFG() {
   }
 
   m_ice_thickness.update_ghosts();
+
+  {
+    IceModelVec2S bed_topography, bed_uplift;
+    bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
+    bed_topography.set(0.0);
+    bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+    bed_uplift.set(0.0);
+
+    m_beddef->bootstrap(bed_topography, bed_uplift, m_ice_thickness);
+  }
 }
 
 void IceCompModel::initTestsKO() {
 
-  IceModelVec2S bed_topography;
+  IceModelVec2S bed_topography, bed_uplift;
   bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
-  bed_topography.set(0);
-  m_beddef->set_elevation(bed_topography);
+  bed_topography.set(0.0);
+  bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+  bed_uplift.set(0.0);
 
   m_ice_thickness.set(3000.0);
+
+  m_beddef->bootstrap(bed_topography, bed_uplift, m_ice_thickness);
 }
 
 void IceCompModel::getCompSourcesTestFG() {

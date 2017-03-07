@@ -19,4 +19,6 @@ if (Pism_BUILD_PYTHON_BINDINGS AND NOSE_EXECUTABLE)
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/bed_smoother.py)
   add_test(NAME "Python:nose:bed_deformation:LC"
     COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${PROJECT_SOURCE_DIR}/examples/python/bed_deformation.py)
+  add_test(NAME "Python:Verification:nose:bed_deformation:LC"
+    COMMAND ${NOSE_EXECUTABLE} "-v" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/bed_deformation.py)
 endif()
