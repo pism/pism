@@ -62,22 +62,23 @@ public:
               int Nx, int Ny);
   ~BedDeformLC();
 
-  void init(Vec displacement);
-  void bootstrap(Vec uplift);
+  void init(Vec thickness, Vec viscous_displacement);
 
-  void uplift_problem(Vec load_thickness, Vec bed_uplift);
+  void bootstrap(Vec thickness, Vec uplift);
 
   void step(double dt_seconds, Vec H);
 
-  Vec plate_displacement_change() const;
+  Vec total_displacement() const;
 
-  Vec plate_displacement() const;
+  Vec viscous_displacement() const;
 private:
-  void solve_uplift_problem(Vec ice_thickness, Vec bed_uplift, Vec output);
+  void compute_elastic_response(Vec H, Vec dE);
+
+  void uplift_problem(Vec ice_thickness, Vec bed_uplift, Vec output);
 
   void precompute_coefficients();
 
-  void update_total_displacement(Vec V, Vec V0, Vec dE, Vec dU);
+  void update_displacement(Vec V, Vec dE, Vec dU);
 
   bool m_include_elastic;
   // grid size
@@ -117,18 +118,16 @@ private:
   // Coefficients of derivatives in Fourier space
   std::vector<double> m_cx, m_cy;
 
-  // viscous plate displacement on the extended grid
-  petsc::Vec m_V;
-  // initial viscous plate displacement on the extended grid
-  petsc::Vec m_V0;
+  // viscous displacement on the extended grid
+  petsc::Vec m_Uv;
 
   // load response matrix (elastic); sequential and fat *with* boundary
   petsc::Vec m_load_response_matrix;
   // elastic plate displacement
-  petsc::Vec m_dE;
+  petsc::Vec m_Ue;
 
-  // total (viscous and elastic) change in the plate displacement since the beginning of the run
-  petsc::Vec m_dU;
+  // total (viscous and elastic) plate displacement
+  petsc::Vec m_U;
 
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;

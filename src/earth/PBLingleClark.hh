@@ -33,8 +33,7 @@ public:
   PBLingleClark(IceGrid::ConstPtr g);
   virtual ~PBLingleClark();
 
-  void uplift_problem(const IceModelVec2S &ice_thickness,
-                      const IceModelVec2S &bed_uplift);
+  const IceModelVec2S& total_displacement() const;
 
 protected:
   virtual void define_model_state_impl(const PIO &output) const;
@@ -48,25 +47,26 @@ protected:
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);
 
-  void allocate();
+  //! Total (viscous and elastic) bed displacement.
+  IceModelVec2S m_bed_displacement;
 
-  //! Temporary storage
-  IceModelVec2S m_work;
-  //! Ice thickness at the beginning of the run.
-  IceModelVec2S m_H_start;
-  //! Bed elevation at the beginning of the run.
-  IceModelVec2S m_topg_start;
-
-  //! Storage on rank zero. Used to pass the load to the serial deformation model and get plate
-  //! displacement back.
+  //! Storage on rank zero. Used to pass the load to the serial deformation model and get
+  //! bed displacement back.
   petsc::Vec::Ptr m_work0;
+
+  //! Bed relief relative to the bed displacement.
+  IceModelVec2S m_relief;
+
+  //! Serial viscoelastic bed deformation model.
   BedDeformLC *m_bdLC;
 
   //! extended grid for the viscous plate displacement
   IceGrid::Ptr m_extended_grid;
-  //! viscous plate displacement on the extended grid (part of the model state)
-  IceModelVec2S m_plate_displacement;
-  petsc::Vec::Ptr m_work0_extended;
+
+  //! Viscous displacement on the extended grid (part of the model state).
+  IceModelVec2S m_viscous_bed_displacement;
+  //! rank 0 storage using the extended grid
+  petsc::Vec::Ptr m_viscous_bed_displacement0;
 };
 
 } // end of namespace bed

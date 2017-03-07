@@ -3,7 +3,7 @@
 """Solves equation (16) of BuelerLingleBrown to obtain the steady
 state viscous plate deflection corresponding to a diven disc load.
 
-Used as a verification (and regression) test for BedDeformLC::uplift_problem().
+Used as a verification (and regression) test for BedDeformLC::bootstrap().
 """
 
 import PISM
@@ -115,6 +115,10 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
     ice_thickness = PISM.IceModelVec2S()
     ice_thickness.create(grid, "thk", PISM.WITHOUT_GHOSTS)
 
+    bed = PISM.IceModelVec2S()
+    bed.create(grid, "topg", PISM.WITHOUT_GHOSTS)
+    bed.set(0.0)
+
     bed_uplift = PISM.IceModelVec2S()
     bed_uplift.create(grid, "uplift", PISM.WITHOUT_GHOSTS)
     bed_uplift.set(0.0)
@@ -127,14 +131,14 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
             else:
                 ice_thickness[i, j] = 0.0
 
-    bed_model.uplift_problem(ice_thickness, bed_uplift)
+    bed_model.bootstrap(bed, bed_uplift, ice_thickness)
 
     p0 = PISM.vec.ToProcZero(grid)
 
     # extract half of the x grid
     r = grid.x()[N-1:]
     # extract values along the x direction (along the radius of the disc)
-    z = p0.communicate(bed_model.bed_elevation())[N-1,N-1:]
+    z = p0.communicate(bed_model.total_displacement())[N-1,N-1:]
 
     return r, z
 
