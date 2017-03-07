@@ -86,6 +86,8 @@ pism_test (initialization_without_enthalpy test_31.sh)
 
 pism_test (vertical_grid_expansion vertical_grid_expansion.sh)
 
+pism_test (bed_deformation:LC:exact_restartability bed_def_lc_restart.sh)
+
 if (Pism_USE_PROJ4)
   pism_test (epsg_code_processing test_epsg_processing.py)
 endif()
