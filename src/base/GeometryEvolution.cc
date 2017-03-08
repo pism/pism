@@ -628,49 +628,30 @@ void GeometryEvolution::massContExplicitStep(double dt, bool part_grid,
   // finally copy H_new into ice_thickness and communicate ghosted values
   H_new.update_ghosts();
 
-  // distribute residual ice mass if desired
+  /*
+    Redistribute residual ice mass from subgrid-scale parameterization.
+
+    See [@ref Albrechtetal2011].  Manages the loop.
+
+    FIXME: resolve fixed number (=3) of loops issue
+  */
   if (part_grid) {
-    residual_redistribution(bed_topography,
-                            sea_level,
-                            ice_surface_elevation,
-                            ice_thickness,
-                            cell_type,
-                            Href,
-                            H_residual);
+    const int max_loopcount = 3;
+
+    bool done = false;
+    for (int i = 0; not done and i < max_loopcount; ++i) {
+      residual_redistribution_iteration(bed_topography,
+                                        sea_level,
+                                        ice_surface_elevation,
+                                        ice_thickness,
+                                        cell_type,
+                                        Href,
+                                        H_residual,
+                                        done);
+      m_impl->log->message(4, "redistribution loopcount = %d\n", i);
+    }
   }
 }
-
-//! Redistribute residual ice mass from subgrid-scale parameterization.
-/*!
-  See [@ref Albrechtetal2011].  Manages the loop.
-
-  FIXME: repeatRedist should be config flag?
-
-  FIXME: resolve fixed number (=3) of loops issue
-*/
-void GeometryEvolution::residual_redistribution(const IceModelVec2S& bed_topography,
-                                                const IceModelVec2S& sea_level,
-                                                const IceModelVec2S& ice_surface_elevation,
-                                                IceModelVec2S& ice_thickness,
-                                                IceModelVec2CellType& cell_type,
-                                                IceModelVec2S& Href,
-                                                IceModelVec2S& H_residual) {
-  const int max_loopcount = 3;
-
-  bool done = false;
-  for (int i = 0; not done and i < max_loopcount; ++i) {
-    residual_redistribution_iteration(bed_topography,
-                                      sea_level,
-                                      ice_surface_elevation,
-                                      ice_thickness,
-                                      cell_type,
-                                      Href,
-                                      H_residual,
-                                      done);
-    m_impl->log->message(4, "redistribution loopcount = %d\n", i);
-  }
-}
-
 
 //! @brief Perform one iteration of the residual mass redistribution.
 void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S &bed_topography,

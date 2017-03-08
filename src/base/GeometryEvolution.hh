@@ -66,14 +66,6 @@ protected:
                                             IceModelVec2S& thickness_change,
                                             IceModelVec2S& area_specific_volume_change);
 
-  void residual_redistribution(const IceModelVec2S& bed_topography,
-                               const IceModelVec2S& sea_level,
-                               const IceModelVec2S& ice_surface_elevation,
-                               IceModelVec2S& ice_thickness,
-                               IceModelVec2CellType& cell_type,
-                               IceModelVec2S& Href,
-                               IceModelVec2S& H_residual);
-
   void massContExplicitStep(double dt,
                             bool part_grid,
                             const IceModelVec2S& bed_topography,
