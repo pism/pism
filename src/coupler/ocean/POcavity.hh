@@ -73,7 +73,7 @@ private:
                   m_shelfbmassflux,
                   cbasins, // a basin defines the domain where one box model instance is solved
                   icerise_mask,
-                  BOXMODELmask,
+                  ocean_box_mask,
                   ocean_contshelf_mask,
                   ocean_mask,
                   DistGL,
@@ -94,9 +94,9 @@ private:
   void round_basins();
   void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
   void compute_ocean_input_per_basin(const Constants &constants);
-  void extentOfIceShelves();
-  void identifyBOXMODELmask(const Constants &constants);
-  void write_ocean_input_fields(const Constants &constants);
+  void compute_distances();
+  void identify_ocean_box_mask(const Constants &constants);
+  void set_ocean_input_fields(const Constants &constants);
   void basalMeltRateGroundingLineBox(const Constants &constants);
   void basalMeltRateOtherBoxes(const Constants &constants);
   void basalMeltRateMissingCells(const Constants &constants);
