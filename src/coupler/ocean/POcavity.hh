@@ -79,9 +79,9 @@ private:
                   DistGL,
                   DistIF,
                   Soc,
-                  Soc_base,
+                  Soc_box0,
                   Toc,
-                  Toc_base,
+                  Toc_box0,
                   T_star,
                   overturning,
                   basalmeltrate_shelf,
@@ -114,8 +114,8 @@ private:
                     imask_exclude, // used in IdentifyMask
                     imask_unidentified; // used in IdentifyMask
 
-  std::vector<double> Toc_base_vec, // temperature input for box 1 per basin
-                      Soc_base_vec, // salinity input for box 1 per basin
+  std::vector<double> Toc_box0_vec, // temperature input for box 1 per basin
+                      Soc_box0_vec, // salinity input for box 1 per basin
                       mean_salinity_boundary_vector, // salinity input for box i>1 per basin
                       mean_temperature_boundary_vector, // temperature input for box i>1 per basin
                       mean_overturning_GLbox_vector; // mean overturning, computed in box 1, as input for box i>1 per basin
