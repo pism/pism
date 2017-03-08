@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,11 +30,11 @@ PBNull::PBNull(IceGrid::ConstPtr g)
   // empty
 }
 
-void PBNull::init_impl() {
+void PBNull::init_impl(const InputOptions &opts) {
   m_log->message(2,
              "* Initializing the dummy (no-op) bed deformation model...\n");
 
-  BedDef::init_impl();
+  BedDef::init_impl(opts);
 
   m_uplift.set(0.0);
 }

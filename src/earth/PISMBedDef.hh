@@ -34,10 +34,10 @@ public:
   BedDef(IceGrid::ConstPtr g);
   virtual ~BedDef();
 
-  void init();
-  void init(const IceModelVec2S &bed_elevation,
-            const IceModelVec2S &bed_uplift,
-            const IceModelVec2S &ice_thickness);
+  void init(const InputOptions &opts);
+  void bootstrap(const IceModelVec2S &bed_elevation,
+                 const IceModelVec2S &bed_uplift,
+                 const IceModelVec2S &ice_thickness);
 
   using Component_TS::update;
   void update(const IceModelVec2S &ice_thickness,
@@ -46,9 +46,6 @@ public:
   const IceModelVec2S& bed_elevation() const;
   const IceModelVec2S& uplift() const;
 
-  void set_elevation(const IceModelVec2S &input);
-  void set_uplift(const IceModelVec2S &input);
-
 protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -56,10 +53,10 @@ protected:
   void update_impl(double my_t, double my_dt);
   virtual void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                           double my_t, double my_dt) = 0;
-  virtual void init_impl();
-  virtual void init_with_inputs_impl(const IceModelVec2S &bed_elevation,
-                                     const IceModelVec2S &bed_uplift,
-                                     const IceModelVec2S &ice_thickness);
+  virtual void init_impl(const InputOptions &opts);
+  virtual void bootstrap_impl(const IceModelVec2S &bed_elevation,
+                              const IceModelVec2S &bed_uplift,
+                              const IceModelVec2S &ice_thickness);
   virtual void apply_topg_offset(const std::string &filename);
 
   void compute_uplift(double dt_beddef);
@@ -69,9 +66,6 @@ protected:
 
   //! current bed elevation
   IceModelVec2S m_topg;
-
-  //! bed elevation at the beginning of a run
-  IceModelVec2S m_topg_initial;
 
   //! bed elevation at the time of the last update
   IceModelVec2S m_topg_last;
@@ -87,7 +81,7 @@ protected:
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);
   MaxTimestep max_timestep_impl(double t) const;
-  void init_impl();
+  void init_impl(const InputOptions &opts);
 };
 
 //! Pointwide isostasy bed deformation model.
@@ -97,7 +91,7 @@ public:
   virtual ~PBPointwiseIsostasy();
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void init_impl();
+  virtual void init_impl(const InputOptions &opts);
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);
   IceModelVec2S m_thk_last;       //!< last ice thickness

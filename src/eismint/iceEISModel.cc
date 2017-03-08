@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -157,29 +157,26 @@ void IceEISModel::initialize_2d() {
                  "initializing variables from EISMINT II experiment %c formulas... \n",
                  m_experiment);
 
-  IceModelVec2S tmp;
-  tmp.create(m_grid, "topg", WITHOUT_GHOSTS);
+  IceModelVec2S bed_topography, bed_uplift;
+  bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
+  bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
 
   // set bed topography
-  {
-    if (m_experiment == 'I' or m_experiment == 'J') {
-      generate_trough_topography(tmp);
-    } else if (m_experiment == 'K' or m_experiment == 'L') {
-      generate_mound_topography(tmp);
-    } else {
-      tmp.set(0.0);
-    }
-
-    m_beddef->set_elevation(tmp);
+  if (m_experiment == 'I' or m_experiment == 'J') {
+    generate_trough_topography(bed_topography);
+  } else if (m_experiment == 'K' or m_experiment == 'L') {
+    generate_mound_topography(bed_topography);
+  } else {
+    bed_topography.set(0.0);
   }
 
-  // set bed uplift; no experiments have uplift at start
-  {
-    tmp.set(0.0);
-    m_beddef->set_uplift(tmp);
-  }
+  // set uplift
+  bed_uplift.set(0.0);
 
-  m_ice_thickness.set(0.0); // start with zero ice
+  // start with zero ice
+  m_ice_thickness.set(0.0);
+
+  m_beddef->bootstrap(bed_topography, bed_uplift, m_ice_thickness);
 }
 
 } // end of namespace pism
