@@ -37,17 +37,15 @@ namespace pism {
 class GeometryEvolution {
 public:
   GeometryEvolution(IceGrid::ConstPtr grid);
+  ~GeometryEvolution();
 
   void step(Geometry &ice_geometry, double dt,
             const IceModelVec2V    &advective_velocity,
             const IceModelVec2Stag &diffusive_flux,
             const IceModelVec2Int  &velocity_bc_mask,
-            const IceModelVec2V    &velocity_bc_values,
             const IceModelVec2Int  &thickness_bc_mask,
             const IceModelVec2S    &surface_mass_balance_rate,
             const IceModelVec2S    &basal_mass_balance_rate);
-
-  const IceModelVec2S& flux_divergence() const;
 
   const IceModelVec2S& top_surface_mass_balance() const;
   const IceModelVec2S& bottom_surface_mass_balance() const;
@@ -56,40 +54,41 @@ public:
   const IceModelVec2S& area_specific_volume_change_due_to_flow() const;
 
   const IceModelVec2S& conservation_error() const;
+
+  // diagnostic
+  const IceModelVec2Stag& interface_flux() const;
+  const IceModelVec2S& flux_divergence() const;
 protected:
+
   void compute_thickness_change_due_to_flow(double dt,
-                                            const IceModelVec2CellType& cell_type,
-                                            const IceModelVec2S& ice_thickness,
-                                            const IceModelVec2S& ice_surface_elevation,
                                             const IceModelVec2S& bed_elevation,
+                                            const IceModelVec2S& sea_level,
+                                            const IceModelVec2S& ice_thickness,
+                                            const IceModelVec2S& area_specific_volume,
                                             const IceModelVec2S& flux_divergence,
                                             IceModelVec2S& thickness_change,
                                             IceModelVec2S& area_specific_volume_change);
 
   void massContExplicitStep(double dt,
-                            bool part_grid,
-                            const IceModelVec2S& bed_topography,
-                            const IceModelVec2S& sea_level,
-                            const IceModelVec2S& ice_surface_elevation,
-                            const IceModelVec2S& flux_divergence,
-                            IceModelVec2CellType& cell_type,
-                            IceModelVec2S& ice_thickness,
-                            IceModelVec2S& Href);
+                            const IceModelVec2S &bed_topography,
+                            const IceModelVec2S &sea_level,
+                            const IceModelVec2S &flux_divergence,
+                            IceModelVec2S &ice_thickness,
+                            IceModelVec2S &Href);
 
   void residual_redistribution_iteration(const IceModelVec2S& bed_topography,
                                          const IceModelVec2S& sea_level,
-                                         const IceModelVec2S& ice_surface_elevation,
+                                         IceModelVec2S& ice_surface_elevation,
                                          IceModelVec2S& ice_thickness,
                                          IceModelVec2CellType& cell_type,
                                          IceModelVec2S& Href,
                                          IceModelVec2S& H_residual,
                                          bool &done);
 
-  virtual void compute_interface_velocity(const IceModelVec2CellType &cell_type,
-                                          const IceModelVec2V &advective_velocity,
-                                          const IceModelVec2Int &velocity_bc_mask,
-                                          const IceModelVec2V &velocity_bc_values,
-                                          IceModelVec2Stag &velocity_staggered);
+  void compute_interface_velocity(const IceModelVec2CellType& cell_type,
+                                  const IceModelVec2V& velocity,
+                                  const IceModelVec2Int& bc_mask,
+                                  IceModelVec2Stag& output);
 
   virtual void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                         const IceModelVec2Stag &velocity_staggered,
@@ -100,14 +99,6 @@ protected:
   virtual void compute_flux_divergence(const IceModelVec2Stag &flux_staggered,
                                        const IceModelVec2Int &thickness_bc_mask,
                                        IceModelVec2S &flux_fivergence);
-
-  virtual void compute_thickness_change_due_to_flow(double dt,
-                                                    const IceModelVec2CellType &cell_type,
-                                                    const IceModelVec2S &ice_thickness,
-                                                    const IceModelVec2S &ice_surface_elevation,
-                                                    const IceModelVec2S &bed_elevation,
-                                                    IceModelVec2S &thickness_change,
-                                                    IceModelVec2S &area_specific_volume_change);
 
   virtual void ensure_nonnegativity(const IceModelVec2S &ice_thickness,
                                     const IceModelVec2S &area_specific_volume,
