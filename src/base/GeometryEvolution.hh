@@ -57,6 +57,42 @@ public:
 
   const IceModelVec2S& conservation_error() const;
 protected:
+  void compute_thickness_change_due_to_flow(double dt,
+                                            const IceModelVec2CellType& cell_type,
+                                            const IceModelVec2S& ice_thickness,
+                                            const IceModelVec2S& ice_surface_elevation,
+                                            const IceModelVec2S& bed_elevation,
+                                            const IceModelVec2S& flux_divergence,
+                                            IceModelVec2S& thickness_change,
+                                            IceModelVec2S& area_specific_volume_change);
+
+  void residual_redistribution(const IceModelVec2S& bed_topography,
+                               const IceModelVec2S& sea_level,
+                               const IceModelVec2S& ice_surface_elevation,
+                               IceModelVec2S& ice_thickness,
+                               IceModelVec2CellType& cell_type,
+                               IceModelVec2S& Href,
+                               IceModelVec2S& H_residual);
+
+  void massContExplicitStep(double dt,
+                            bool part_grid,
+                            const IceModelVec2S& bed_topography,
+                            const IceModelVec2S& sea_level,
+                            const IceModelVec2S& ice_surface_elevation,
+                            const IceModelVec2S& flux_divergence,
+                            IceModelVec2CellType& cell_type,
+                            IceModelVec2S& ice_thickness,
+                            IceModelVec2S& Href);
+
+  void residual_redistribution_iteration(const IceModelVec2S& bed_topography,
+                                         const IceModelVec2S& sea_level,
+                                         const IceModelVec2S& ice_surface_elevation,
+                                         IceModelVec2S& ice_thickness,
+                                         IceModelVec2CellType& cell_type,
+                                         IceModelVec2S& Href,
+                                         IceModelVec2S& H_residual,
+                                         bool &done);
+
   virtual void compute_interface_velocity(const IceModelVec2CellType &cell_type,
                                           const IceModelVec2V &advective_velocity,
                                           const IceModelVec2Int &velocity_bc_mask,
