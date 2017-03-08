@@ -97,7 +97,7 @@ private:
   void compute_distances();
   void identify_ocean_box_mask(const Constants &constants);
   void set_ocean_input_fields(const Constants &constants);
-  void basalMeltRateGroundingLineBox(const Constants &constants);
+  void calculate_basal_melt_box1(const Constants &constants);
   void basalMeltRateOtherBoxes(const Constants &constants);
   void basalMeltRateMissingCells(const Constants &constants);
   double most_frequent_element(const std::vector<double>&);
@@ -118,7 +118,7 @@ private:
                       Soc_box0_vec, // salinity input for box 1 per basin
                       mean_salinity_boundary_vector, // salinity input for box i>1 per basin
                       mean_temperature_boundary_vector, // temperature input for box i>1 per basin
-                      mean_overturning_GLbox_vector; // mean overturning, computed in box 1, as input for box i>1 per basin
+                      mean_overturning_box1_vector; // mean overturning, computed in box 1, as input for box i>1 per basin
 
   std::vector< std::vector<double> >  counter_boxes; // matrix containing the number of shelf cells per basin and box
                                                      // used for area calculation

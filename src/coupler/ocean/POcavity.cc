@@ -318,7 +318,7 @@ void Cavity::initBasinsOptions(const Constants &cc) {
   counter_boxes.resize(numberOfBasins, std::vector<double>(2,0));
   mean_salinity_boundary_vector.resize(numberOfBasins);
   mean_temperature_boundary_vector.resize(numberOfBasins);
-  mean_overturning_GLbox_vector.resize(numberOfBasins);
+  mean_overturning_box1_vector.resize(numberOfBasins);
 
   gamma_T = cc.default_gamma_T;
   gamma_T = options::Real("-gamma_T","gamma_T for ocean cavity model",gamma_T); // meter per second
@@ -372,7 +372,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
   set_ocean_input_fields(cc);
 
   //basal melt rates underneath ice shelves
-  basalMeltRateGroundingLineBox(cc);
+  calculate_basal_melt_box1(cc);
   basalMeltRateOtherBoxes(cc); // TODO Diese Routinen woanders aufrufen (um Dopplung zu vermeiden)
   basalMeltRateMissingCells(cc);  //Assumes that mass flux is proportional to the shelf-base heat flux.
 
@@ -967,11 +967,11 @@ void Cavity::set_ocean_input_fields(const Constants &cc) {
       Toc_box0(i,j) = Toc_box0_vec[shelf_id];
       Soc_box0(i,j) =  Soc_box0_vec[shelf_id];
 
-      // temperature input for grounding line box should not be below pressure melting point
-      // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2,
+      // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4;
       const double T_pmt = cc.a*Soc_box0(i,j) + cc.b - cc.c*pressure; // in Kelvin, here potential freezing point
 
+      // temperature input for grounding line box should not be below pressure melting point
       if (  Toc_box0(i,j) < T_pmt ) {
         // Setting Toc_box0 a little higher than T_pmt ensures that later equations are well solvable.
         Toc_box0(i,j) = T_pmt + 0.001 ;
@@ -990,23 +990,29 @@ void Cavity::set_ocean_input_fields(const Constants &cc) {
 }
 
 
-//! Compute the basal melt / refreezing rates for each shelf cell bordering the grounding line box
-void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
+//! Compute the basal melt for each ice shelf cell in box 1
 
-  m_log->message(5, "starting basal basalMeltRateGroundingLineBox routine\n");
+//! Here are the core physical equations of the SIMPEL model (for box1):
+//! We here calculate basal melt rate, ambient ocean temperature and salinity
+//! and overturning within box1. We calculate the average values at the boundary
+//! between box 1 and box 2 as input for box 2.
 
-  std::vector<double> lcounter_edge_of_GLbox_vector(numberOfBasins);
-  std::vector<double> lmean_salinity_GLbox_vector(numberOfBasins);
-  std::vector<double> lmean_temperature_GLbox_vector(numberOfBasins);
-  std::vector<double> lmean_meltrate_GLbox_vector(numberOfBasins);
-  std::vector<double> lmean_overturning_GLbox_vector(numberOfBasins);
+void Cavity::calculate_basal_melt_box1(const Constants &cc) {
+
+  m_log->message(5, "starting basal calculate_basal_melt_box1 routine\n");
+
+  std::vector<double> lcounter_edge_of_box1_vector(numberOfBasins);
+  std::vector<double> lmean_salinity_box1_vector(numberOfBasins);
+  std::vector<double> lmean_temperature_box1_vector(numberOfBasins);
+  std::vector<double> lmean_meltrate_box1_vector(numberOfBasins);
+  std::vector<double> lmean_overturning_box1_vector(numberOfBasins);
 
   for (int k=0;k<numberOfBasins;k++){
-    lcounter_edge_of_GLbox_vector[k]=0.0;
-    lmean_salinity_GLbox_vector[k]=0.0;
-    lmean_temperature_GLbox_vector[k]=0.0;
-    lmean_meltrate_GLbox_vector[k]=0.0;
-    lmean_overturning_GLbox_vector[k]=0.0;
+    lcounter_edge_of_box1_vector[k]=0.0;
+    lmean_salinity_box1_vector[k]=0.0;
+    lmean_temperature_box1_vector[k]=0.0;
+    lmean_meltrate_box1_vector[k]=0.0;
+    lmean_overturning_box1_vector[k]=0.0;
   }
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -1024,12 +1030,14 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
   list.add(basalmeltrate_shelf);
   list.add(T_pressure_melting);
 
-
   double countHelpterm=0,
          lcountHelpterm=0;
 
   ocean_box_mask.update_ghosts();
 
+
+  // basal melt rate, ambient temperature and salinity and overturning calculation
+  // for each box1 grid cell.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -1043,23 +1051,23 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
     basalmeltrate_shelf(i,j) = 0.0;
     overturning(i,j) = 0.0;
 
-
     if ((ocean_box_mask(i,j) == box1) && (shelf_id > 0.0)){
 
-      const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-      // FIXME need to include atmospheric pressure?
+
+      // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
+      const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4;
       T_star(i,j) = cc.a*Soc_box0(i,j) + cc.b - cc.c*pressure - Toc_box0(i,j); // in Kelvin
 
       double g1 = (counter_boxes[shelf_id][box1] * dx * dy) * gamma_T / (overturning_coeff*cc.rho_star);
 
-      double helpterm1 = g1/(cc.beta*(Soc_box0(i,j) / (cc.nu*cc.lambda)) - cc.alpha); // in 1 / (1/K) = K
-      double helpterm2 = (g1*T_star(i,j)) / (cc.beta*(Soc_box0(i,j) / (cc.nu*cc.lambda)) - cc.alpha); // in K / (1/K) = K^2
+      // These are the coefficients for solving the quadratic temperature equation
+      // trough the p-q formula.
+      double p_coeff = g1/(cc.beta*(Soc_box0(i,j) / (cc.nu*cc.lambda)) - cc.alpha); // in 1 / (1/K) = K
+      double q_coeff = (g1*T_star(i,j)) / (cc.beta*(Soc_box0(i,j) / (cc.nu*cc.lambda)) - cc.alpha); // in K / (1/K) = K^2
 
-
-
-      // This can only happen if T_star > 0.25 helpterm1, in particular T_star > 0
-      // which can only happen for very small values of Toc_box0
-      if ((0.25*PetscSqr(helpterm1) - helpterm2) < 0.0) {
+      // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
+      // which can only happen for values of Toc_box0 close to the local pressure melting point
+      if ((0.25*PetscSqr(p_coeff) - q_coeff) < 0.0) {
 
         m_log->message(5,
           "SIMPEL ocean WARNING: negative square root argument at %d, %d\n"
@@ -1067,63 +1075,71 @@ void Cavity::basalMeltRateGroundingLineBox(const Constants &cc) {
           "Not aborting, but setting square root to 0... \n",
           i, j, T_star(i,j));
 
-        helpterm2=0.25*PetscSqr(helpterm1);
-
+        q_coeff=0.25*PetscSqr(p_coeff);
         lcountHelpterm+=1;
       }
 
-      //! temperature for grounding line box
-      Toc(i,j) = Toc_box0(i,j) - ( -0.5*helpterm1 + sqrt(0.25*PetscSqr(helpterm1) -helpterm2) ); // in Kelvin
-      //! salinity for grounding line box
+      //! temperature for box 1, p-q formula
+      Toc(i,j) = Toc_box0(i,j) - ( -0.5*p_coeff + sqrt(0.25*PetscSqr(p_coeff) -q_coeff) ); // in Kelvin
+      //! salinity for box 1
       Soc(i,j) = Soc_box0(i,j) - (Soc_box0(i,j) / (cc.nu*cc.lambda)) * (Toc_box0(i,j) - Toc(i,j));  // in psu
 
-      double pressure_melting_temp = cc.a*Soc(i,j) + cc.b - cc.c*pressure; // potential pressure melting point
+      // potential pressure melting point (using coefficients for potential temperature)
+      double pressure_melting_temp = cc.a*Soc(i,j) + cc.b - cc.c*pressure;
 
-      //! basal melt rate for grounding line box
+      //! basal melt rate for box 1
       basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (pressure_melting_temp - Toc(i,j));  // in m/s
 
-      T_pressure_melting(i,j) = cc.as*Soc(i,j) + cc.bs - cc.cs*pressure; // in situ pressure melting point in Kelvin
-      //! overturning
-      // NOTE Actually, there is of course no overturning-FIELD, it is only a scalar for each shelf.
-      // Here, we compute overturning as   MEAN[C1*cc.rho_star* (cc.beta*(Soc_box0(i,j)-Soc(i,j)) - cc.alpha*((Toc_box0(i,j)-273.15+Toc_anomaly(i,j))-Toc_inCelsius(i,j)))]
-      // while in fact it should be   C1*cc.rho_star* (cc.beta*(Soc_box0-MEAN[Soc(i,j)]) - cc.alpha*((Toc_box0-273.15+Toc_anomaly)-MEAN[Toc_inCelsius(i,j)]))
-      // which is the SAME since Soc_box0, Toc_box0 and Toc_anomaly are the same FOR ALL i,j CONSIDERED, so this is just nomenclature!
-      overturning(i,j) = overturning_coeff*cc.rho_star* (cc.beta*(Soc_box0(i,j)-Soc(i,j)) - cc.alpha*(Toc_box0(i,j)-Toc(i,j))); // in m^3/s
+      overturning(i,j) = overturning_coeff*cc.rho_star* (cc.beta*(Soc_box0(i,j)-Soc(i,j)) -
+                            cc.alpha*(Toc_box0(i,j)-Toc(i,j))); // in m^3/s
 
-      if (ocean_box_mask(i-1,j)==box2 || ocean_box_mask(i+1,j)==box2 || ocean_box_mask(i,j-1)==box2 || ocean_box_mask(i,j+1)==box2){
-      // i.e., if this cell is from the GL box and one of the neighbours is from the CF box - It is important to only take the border of the grounding line box
-      // to the calving front box into account, because the following mean value will be used to compute the value for the calving front box. I.e., this helps avoiding discontinuities!
-        lcounter_edge_of_GLbox_vector[shelf_id]++;
-        lmean_salinity_GLbox_vector[shelf_id] += Soc(i,j);
-        lmean_temperature_GLbox_vector[shelf_id] += Toc(i,j); // in Kelvin
-        lmean_meltrate_GLbox_vector[shelf_id] += basalmeltrate_shelf(i,j);
-        lmean_overturning_GLbox_vector[shelf_id] += overturning(i,j);
+      // average the temperature, salinity and overturning at the boundary between box1 and box2
+      // this is used as input for box 2
+      // using the values at the boundary helps smoothing discontinuities between boxes
+      // (here we sum up)
+      if (ocean_box_mask(i-1,j)==box2 || ocean_box_mask(i+1,j)==box2 ||
+          ocean_box_mask(i,j-1)==box2 || ocean_box_mask(i,j+1)==box2){
+        lcounter_edge_of_box1_vector[shelf_id]++;
+        lmean_salinity_box1_vector[shelf_id] += Soc(i,j);
+        lmean_temperature_box1_vector[shelf_id] += Toc(i,j); // in Kelvin
+        lmean_meltrate_box1_vector[shelf_id] += basalmeltrate_shelf(i,j);
+        lmean_overturning_box1_vector[shelf_id] += overturning(i,j);
 
       } // no else-case necessary since all variables are set to zero at the beginning of this routine
+
+      // in situ pressure melting point
+      T_pressure_melting(i,j) = cc.as*Soc(i,j) + cc.bs - cc.cs*pressure; //  in Kelvin
 
     }else { // i.e., not GL_box
         basalmeltrate_shelf(i,j) = 0.0;
     }
   }
 
+
+  // average the temperature, salinity and overturning at the boundary between box1 and box2
+  // (here we divide)
   for(int k=0;k<numberOfBasins;k++) {
-    double counter_edge_of_GLbox_vector=0.0;
+    double counter_edge_of_box1_vector=0.0;
 
-    counter_edge_of_GLbox_vector = GlobalSum(m_grid->com, lcounter_edge_of_GLbox_vector[k]);
-    mean_salinity_boundary_vector[k] = GlobalSum(m_grid->com, lmean_salinity_GLbox_vector[k]);
-    mean_temperature_boundary_vector[k] = GlobalSum(m_grid->com, lmean_temperature_GLbox_vector[k]);
-    mean_overturning_GLbox_vector[k] = GlobalSum(m_grid->com, lmean_overturning_GLbox_vector[k]);
+    counter_edge_of_box1_vector = GlobalSum(m_grid->com, lcounter_edge_of_box1_vector[k]);
+    mean_salinity_boundary_vector[k] = GlobalSum(m_grid->com, lmean_salinity_box1_vector[k]);
+    mean_temperature_boundary_vector[k] = GlobalSum(m_grid->com, lmean_temperature_box1_vector[k]);
+    mean_overturning_box1_vector[k] = GlobalSum(m_grid->com, lmean_overturning_box1_vector[k]);
 
-
-    if (counter_edge_of_GLbox_vector>0.0){
-      mean_salinity_boundary_vector[k] = mean_salinity_boundary_vector[k]/counter_edge_of_GLbox_vector;
-      mean_temperature_boundary_vector[k] = mean_temperature_boundary_vector[k]/counter_edge_of_GLbox_vector;
-      mean_overturning_GLbox_vector[k] = mean_overturning_GLbox_vector[k]/counter_edge_of_GLbox_vector;
-    } else { // This means that there is no [cell from the GLbox neighboring a cell from the CFbox], NOT necessarily that there is no GLbox!
-      mean_salinity_boundary_vector[k]=0.0; mean_temperature_boundary_vector[k]=0.0; mean_overturning_GLbox_vector[k]=0.0;
+    if (counter_edge_of_box1_vector>0.0){
+      mean_salinity_boundary_vector[k] = mean_salinity_boundary_vector[k]/counter_edge_of_box1_vector;
+      mean_temperature_boundary_vector[k] = mean_temperature_boundary_vector[k]/counter_edge_of_box1_vector;
+      mean_overturning_box1_vector[k] = mean_overturning_box1_vector[k]/counter_edge_of_box1_vector;
+    } else {
+      // This means that there is no [cell from the box 1 neighboring a cell from the box 2,
+      // not necessarily that there is no box 1.
+      mean_salinity_boundary_vector[k]=0.0;
+      mean_temperature_boundary_vector[k]=0.0;
+      mean_overturning_box1_vector[k]=0.0;
     }
 
-    m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", k,counter_edge_of_GLbox_vector,mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],mean_overturning_GLbox_vector[k]) ;
+    // print values at boundary between box 1 and box 2.
+    m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", k,counter_edge_of_box1_vector,mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],mean_overturning_box1_vector[k]) ;
   }
 
     countHelpterm = GlobalSum(m_grid->com, lcountHelpterm);
@@ -1194,7 +1210,7 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
         // FIXME RENAME THESE in GENERAL
         mean_salinity_in_boundary     = mean_salinity_boundary_vector[shelf_id];
         mean_temperature_in_boundary  = mean_temperature_boundary_vector[shelf_id]; // note: in Kelvin, mean over Toc
-        mean_overturning_in_GLbox     = mean_overturning_GLbox_vector[shelf_id]; // !!!leave this one with the grounding line box
+        mean_overturning_in_GLbox     = mean_overturning_box1_vector[shelf_id]; // !!!leave this one with the grounding line box
 
         const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
         T_star(i,j) = cc.a*mean_salinity_in_boundary + cc.b - cc.c*pressure - mean_temperature_in_boundary;  // in °C or Kelvin since anomaly
@@ -1259,7 +1275,7 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
 
       m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", k,counter_edge_of_boxi_vector,
                         mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],
-                        mean_overturning_GLbox_vector[k]) ;
+                        mean_overturning_box1_vector[k]) ;
     } // basins
 
     countGl0 = GlobalSum(m_grid->com, lcountGl0);
