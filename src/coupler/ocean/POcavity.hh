@@ -26,7 +26,11 @@
 
 namespace pism {
 namespace ocean {
-
+//! \brief Implements the SIMPEL ocean model as submitted to The Cryosphere (March 2017).
+//!
+//! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
+//! use in PISM, i.e. tree dimensions.
+//!
 class Cavity : public PGivenClimate<OceanModifier,OceanModel> {
 public:
   Cavity(IceGrid::ConstPtr g);
@@ -39,7 +43,7 @@ public:
       double        earth_grav,
                     rhoi, rhow, rho_star, nu,
                     latentHeat, c_p_ocean, lambda,
-                    a, b, c, as, bs, cs, 
+                    a, b, c, as, bs, cs,
                     alpha, beta;
 
       double        default_gamma_T, default_overturning_coeff,
@@ -68,10 +72,10 @@ private:
   IceModelVec2S   m_shelfbtemp,
                   m_shelfbmassflux,
                   cbasins, // a basin defines the domain where one box model instance is solved
-                  ICERISESmask,
+                  icerise_mask,
                   BOXMODELmask,
-                  OCEANMEANmask,
-                  OCEANmask,
+                  ocean_contshelf_mask,
+                  ocean_mask,
                   DistGL,
                   DistIF,
                   Soc,
@@ -89,7 +93,7 @@ private:
   void initBasinsOptions(const Constants &constants);
   void round_basins();
   void identifyMASK(IceModelVec2S &inputmask, std::string masktype);
-  void computeOCEANMEANS(const Constants &constants);
+  void compute_ocean_input_per_basin(const Constants &constants);
   void extentOfIceShelves();
   void identifyBOXMODELmask(const Constants &constants);
   void write_ocean_input_fields(const Constants &constants);

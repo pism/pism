@@ -157,19 +157,19 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   m_variables.push_back(&BOXMODELmask);
 
   // mask to identify the ice rises
-  ICERISESmask.create(m_grid, "ICERISESmask", WITH_GHOSTS);
-  ICERISESmask.set_attrs("model_state", "mask displaying ice rises","", "");
-  m_variables.push_back(&ICERISESmask);
+  icerise_mask.create(m_grid, "icerise_mask", WITH_GHOSTS);
+  icerise_mask.set_attrs("model_state", "mask displaying ice rises","", "");
+  m_variables.push_back(&icerise_mask);
 
   // mask displaying continental shelf - region where mean salinity and ocean temperature is calculated
-  OCEANMEANmask.create(m_grid, "OCEANMEANmask", WITH_GHOSTS);
-  OCEANMEANmask.set_attrs("model_state", "mask displaying ocean region for parameter input","", "");
-  m_variables.push_back(&OCEANMEANmask);
+  ocean_contshelf_mask.create(m_grid, "ocean_contshelf_mask", WITH_GHOSTS);
+  ocean_contshelf_mask.set_attrs("model_state", "mask displaying ocean region for parameter input","", "");
+  m_variables.push_back(&ocean_contshelf_mask);
 
   // mask displaying open ocean - ice-free regions below sea-level except 'holes' in ice shelves
-  OCEANmask.create(m_grid, "OCEANmask", WITH_GHOSTS);
-  OCEANmask.set_attrs("model_state", "mask displaying open ocean","", "");
-  m_variables.push_back(&OCEANmask);
+  ocean_mask.create(m_grid, "ocean_mask", WITH_GHOSTS);
+  ocean_mask.set_attrs("model_state", "mask displaying open ocean","", "");
+  m_variables.push_back(&ocean_mask);
 
   // mask with distance (in boxes) to grounding line
   DistGL.create(m_grid, "DistGL", WITH_GHOSTS);
@@ -347,17 +347,17 @@ void Cavity::update_impl(double my_t, double my_dt) {
   Constants cc(*m_config);
 
   // prepare ocean input temperature and salinity per basin
-  identifyMASK(OCEANMEANmask,"ocean");
-  computeOCEANMEANS(cc);
+  identifyMASK(ocean_contshelf_mask,"ocean_continental_shelf");
+  compute_ocean_input_per_basin(cc);
 
-  //geometry of ice shelves and input values of temperature and salinity
+  // define the ocean boxes below the ice shelves
   if (exicerises_set) {
-    identifyMASK(ICERISESmask,"icerises");}
-
-  identifyMASK(OCEANmask,"openocean");
-  round_basins(); //FIXME if only done in init_impl, basin numbers are not correct later on, e.g. in write_ocean_input_fields()
+    identifyMASK(icerise_mask,"icerises");}
+  identifyMASK(ocean_mask,"ocean");
+  round_basins();
   extentOfIceShelves();
   identifyBOXMODELmask(cc);
+
   write_ocean_input_fields(cc);
 
   //basal melt rates underneath ice shelves
@@ -390,10 +390,13 @@ double Cavity::most_frequent_element(const std::vector<double> &v)
       return mostFrequentElement;
   }
 
-//! Round basin mask non integer values to an integral value of the next neighbor
+//! Basin mask can have non-integer values from PISM regridding for points that lie at
+//! basin boundaries.
+//! Find such point here and set them to the integer value that is most frequent next to it.
 void Cavity::round_basins() {
 
-  //FIXME: THIS routine should be applied once in init, and roundbasins should be stored as field (assumed the basins do not change with time).
+  // FIXME: THIS routine should be applied once in init, and roundbasins should
+  // be stored as field (assumed the basins do not change with time).
 
   double id_fractional;
   std::vector<double> neighbours = {0,0,0,0};
@@ -432,15 +435,20 @@ void Cavity::round_basins() {
   }
 }
 
-//! Identify
-//!   ocean:    identify ocean up to continental shelf without detached submarine islands regions
-//!   icerises: identify grounded regions without detached ice rises
-//!   openocean: identify ocean without holes in ice shelves
+//! Create masks that indicate ocean on continental shelf, ice rises
+//! as well as open ocean.
+//! ocean_continental_shelf: ocean on the continental shelf without detached submarine islands
+//! icerises: grounded ice not connected to the main ice body
+//! ocean: ocean without holes in ice shelves, extends beyond continental shelf
+//!
+//! We here use a search algorithm, starting at the center or the boundary of the domain.
+//! We iteratively look for regions which satisfy one of the three types named above.
 
 void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
   m_log->message(5, "starting identifyMASK routine\n");
 
+  // Assume that the center of the domain belongs to main ice body.
   int seed_x = (Mx - 1)/2,
       seed_y = (My - 1)/2;
 
@@ -458,11 +466,12 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
   inputmask.set(imask_unidentified);
 
-  if ((masktype=="ocean" || masktype=="icerises") && (seed_x >= m_grid->xs()) && (seed_x < m_grid->xs()+m_grid->xm()) && (seed_y >= m_grid->ys())&& (seed_y < m_grid->ys()+m_grid->ym())){
+  // Find starting points for iteration.
+  if ((masktype=="ocean_continental_shelf" || masktype=="icerises") && (seed_x >= m_grid->xs()) && (seed_x < m_grid->xs()+m_grid->xm()) && (seed_y >= m_grid->ys())&& (seed_y < m_grid->ys()+m_grid->ym())){
     inputmask(seed_x,seed_y)=imask_inner;
   }
-  else if (masktype=="openocean"){
-    //only consider domain bounradies:
+  else if (masktype=="ocean"){
+    //assume that any point on the domain boundary belongs to the open ocean
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       if ((i==0) | (j==0) | (i>(Mx-2)) | (j>(My-2))){
@@ -471,23 +480,25 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
     }
   }
 
+  // Iteratively find region which satisfies condition for coninental shelf ocean,
+  // ice rise or open ocean.
   int iteration_round = 0;
-  // find inner region first
   while(all_inner_identified > previous_step_identified){
 
     iteration_round+=1;
     previous_step_identified = all_inner_identified;
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    for (Points p(*m_grid); p; p.next()) {
 
+      const int i = p.i(), j = p.j();
       bool masktype_condition = false;
-      if (masktype=="ocean"){
+
+      if (masktype=="ocean_continental_shelf"){
         masktype_condition = (m_mask(i,j)!=maskocean || (*topg)(i,j) >= continental_shelf_depth);}
       else if (masktype=="icerises"){
         masktype_condition = (m_mask(i,j)==maskgrounded);
       }
-      else if (masktype=="openocean"){
+      else if (masktype=="ocean"){
         masktype_condition = (m_mask(i,j)==maskocean);
       }
 
@@ -508,9 +519,8 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
   }
 
-  // TODO: Not sure if we have to reinitialize m_mask and inputmask here.
-  // set value for excluded areas (ice rises or submarine islands)
-
+  // Set all unidentified grid cells to value for excluded areas (ice rises
+  // or submarine islands)
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -518,21 +528,23 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
       inputmask(i,j)=imask_exclude;
     }
 
-    if (masktype=="ocean"){ //exclude ice covered parts
+    if (masktype=="ocean_continental_shelf"){ //exclude ice covered parts
       if (m_mask(i,j)!=maskocean && inputmask(i,j) == imask_inner){
         inputmask(i,j) = imask_outer;
       }
     }
-
   }
 
 }
 
 
-//! When ocean_given is set compute mean salinity and temperature in each basin.
-void Cavity::computeOCEANMEANS(const Constants &cc) {
+//! Compute temperature and salinity input from ocean data by averaging
+//! over ocean_contshelf_mask for each basin.
+//! Use dummy ocean data if no such average can be calculated.
 
-  m_log->message(5, "starting computeOCEANMEANS routine \n");
+void Cavity::compute_ocean_input_per_basin(const Constants &cc) {
+
+  m_log->message(5, "starting compute_ocean_input_per_basin routine \n");
 
   std::vector<double> lm_count(numberOfBasins); //count cells to take mean over for each basin
   std::vector<double> m_count(numberOfBasins);
@@ -541,6 +553,7 @@ void Cavity::computeOCEANMEANS(const Constants &cc) {
   std::vector<double> m_Tval(numberOfBasins);
   std::vector<double> m_Sval(numberOfBasins);
 
+ // initalize to zero per basin
   for(int k=0;k<numberOfBasins;k++){
     m_count[k]=0.0;
     lm_count[k]=0.0;
@@ -554,12 +567,13 @@ void Cavity::computeOCEANMEANS(const Constants &cc) {
   list.add(*m_theta_ocean);
   list.add(*m_salinity_ocean);
   list.add(cbasins);
-  list.add(OCEANMEANmask);
+  list.add(ocean_contshelf_mask);
 
+  // compute the sum for each basin
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (OCEANMEANmask(i,j) == imask_inner ){
+    if (ocean_contshelf_mask(i,j) == imask_inner ){
       int shelf_id =(cbasins)(i,j);
       lm_count[shelf_id]+=1;
       lm_Sval[shelf_id]+=(*m_salinity_ocean)(i,j);
@@ -568,19 +582,23 @@ void Cavity::computeOCEANMEANS(const Constants &cc) {
 
   }
 
-
+  // Divide by number of grid cells if more than zero cells belong to the basin.
+  // if no ocean_contshelf_mask values intersect with the basin, m_count is zero.
+  // in such case, use dummy temperature and salinity. This could happen, for
+  // example, if the ice shelf front advances beyond the continental shelf break.
   for(int k=0;k<numberOfBasins;k++) {
 
     m_count[k] = GlobalSum(m_grid->com, lm_count[k]);
     m_Sval[k] = GlobalSum(m_grid->com, lm_Sval[k]);
     m_Tval[k] = GlobalSum(m_grid->com, lm_Tval[k]);
 
-    //if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
-    //FIXME: the following warning occurs once at initialization before input is available.
+    // if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
+    // FIXME: the following warning occurs once at initialization before input is available.
     // Please ignore this very first warning for now.
     if(k>0 && m_count[k]==0){
-      m_log->message(2, "SIMPEL ocean WARNING: basin %d contains no cells with OCEANMEANmask=2.\n"
-                        "no mean salinity or temperature values are computed, using\n"
+      m_log->message(2, "SIMPEL ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
+                        "(no values with ocean_contshelf_mask=2).\n"
+                        "No mean salinity or temperature values are computed, instead using\n"
                         "the standard values T_dummy =%.3f, S_dummy=%.3f.\n", k, cc.T_dummy, cc.S_dummy);
       Toc_base_vec[k] = cc.T_dummy;
       Soc_base_vec[k] = cc.S_dummy;
@@ -598,7 +616,7 @@ void Cavity::computeOCEANMEANS(const Constants &cc) {
 
 
 //! Compute the extent of the ice shelves of each basin/region (i.e. counter) and
-//  compute for each ice shelf cell the distance to the grounding line (i.e. DistGL) and the calving front (i.e. DistIF)
+//! compute for each ice shelf cell the distance to the grounding line (i.e. DistGL) and the calving front (i.e. DistIF)
 
 
 void Cavity::extentOfIceShelves() {
@@ -618,9 +636,9 @@ void Cavity::extentOfIceShelves() {
   list.add(DistIF);
   list.add(cbasins);
   list.add(DistGL);
-  list.add(OCEANmask);
+  list.add(ocean_mask);
 
-	if (exicerises_set) { list.add(ICERISESmask); }
+	if (exicerises_set) { list.add(icerise_mask); }
 
 	DistGL.set(0);
 	DistIF.set(0);
@@ -631,10 +649,10 @@ void Cavity::extentOfIceShelves() {
 
     bool condition;
     if (exicerises_set) {
-      condition = (m_mask(i,j)==maskfloating || ICERISESmask(i,j)==imask_exclude || OCEANmask(i,j)==imask_exclude);
+      condition = (m_mask(i,j)==maskfloating || icerise_mask(i,j)==imask_exclude || ocean_mask(i,j)==imask_exclude);
     }
 		else {
-      condition = (m_mask(i,j)==maskfloating || OCEANmask(i,j)==imask_exclude);
+      condition = (m_mask(i,j)==maskfloating || ocean_mask(i,j)==imask_exclude);
     }
 
     if (condition) { //if this is a ice shelf cell (or an ice rise) or a hole in an ice shelf
@@ -642,10 +660,10 @@ void Cavity::extentOfIceShelves() {
 			// label the shelf cells adjacent to the grounding line with DistGL = 1
 			bool neighbor_to_land;
 			if (exicerises_set) {
-				neighbor_to_land = (  ICERISESmask(i,j+1)==imask_inner || ICERISESmask(i,j-1)==imask_inner ||
-					ICERISESmask(i+1,j)==imask_inner || ICERISESmask(i-1,j)==imask_inner ||
- 					ICERISESmask(i+1,j+1)==imask_inner || ICERISESmask(i+1,j-1)==imask_inner ||
- 					ICERISESmask(i-1,j+1)==imask_inner || ICERISESmask(i-1,j-1)==imask_inner );
+				neighbor_to_land = (  icerise_mask(i,j+1)==imask_inner || icerise_mask(i,j-1)==imask_inner ||
+					icerise_mask(i+1,j)==imask_inner || icerise_mask(i-1,j)==imask_inner ||
+ 					icerise_mask(i+1,j+1)==imask_inner || icerise_mask(i+1,j-1)==imask_inner ||
+ 					icerise_mask(i-1,j+1)==imask_inner || icerise_mask(i-1,j-1)==imask_inner );
 			} else {
 				neighbor_to_land = (  m_mask(i,j+1)<maskfloating || m_mask(i,j-1)<maskfloating ||
  					m_mask(i+1,j)<maskfloating || m_mask(i-1,j)<maskfloating ||
@@ -661,7 +679,7 @@ void Cavity::extentOfIceShelves() {
 			// label the shelf cells adjacent to the calving front with DistIF = 1,
 			// we do not need to exclude ice rises in this case.
       bool neighbor_to_ocean;
-      neighbor_to_ocean = (OCEANmask(i,j+1)==imask_inner || OCEANmask(i,j-1)==imask_inner || OCEANmask(i+1,j)==imask_inner || OCEANmask(i-1,j)==imask_inner);
+      neighbor_to_ocean = (ocean_mask(i,j+1)==imask_inner || ocean_mask(i,j-1)==imask_inner || ocean_mask(i+1,j)==imask_inner || ocean_mask(i-1,j)==imask_inner);
       //(m_mask(i,j+1)==maskocean || m_mask(i,j-1)== maskocean || m_mask(i+1,j)==maskocean || m_mask(i-1,j)==maskocean)
 			if (neighbor_to_ocean) {
 				DistIF(i,j) = currentLabelIF;
@@ -687,10 +705,10 @@ void Cavity::extentOfIceShelves() {
 
       bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
       if (exicerises_set) {
-        condition = (m_mask(i,j)==maskfloating || ICERISESmask(i,j)==imask_exclude || OCEANmask(i,j)==imask_exclude);
+        condition = (m_mask(i,j)==maskfloating || icerise_mask(i,j)==imask_exclude || ocean_mask(i,j)==imask_exclude);
       }
       else {
-        condition = (m_mask(i,j)==maskfloating || OCEANmask(i,j)==imask_exclude);
+        condition = (m_mask(i,j)==maskfloating || ocean_mask(i,j)==imask_exclude);
       }
 
       if ( condition && DistGL(i,j)==0 &&
@@ -727,10 +745,10 @@ void Cavity::extentOfIceShelves() {
 
       bool condition; // this cell is floating or an hole in the ice shelf (or an ice rise)
       if (exicerises_set) {
-        condition = (m_mask(i,j)==maskfloating || ICERISESmask(i,j)==imask_exclude || OCEANmask(i,j)==imask_exclude);
+        condition = (m_mask(i,j)==maskfloating || icerise_mask(i,j)==imask_exclude || ocean_mask(i,j)==imask_exclude);
       }
       else {
-        condition = (m_mask(i,j)==maskfloating || OCEANmask(i,j)==imask_exclude);
+        condition = (m_mask(i,j)==maskfloating || ocean_mask(i,j)==imask_exclude);
       }
 
       if ( condition && DistIF(i,j)==0 &&
@@ -973,7 +991,7 @@ void Cavity::write_ocean_input_fields(const Constants &cc) {
         //FIXME: only works in serial runs
         //m_log->message(2, "SIMPEL ocean WARNING: Toc_base is below the local pressure melting temperature\n"
         //              "for %d, %d, basin %d, setting it to pressure melting point \n",i,j,shelf_id);
-        Toc_base(i,j) = T_pmt + 0.001 ;//FIXME: Test for regularization 
+        Toc_base(i,j) = T_pmt + 0.001 ;//FIXME: Test for regularization
         lcounterTpmp+=1;
       }
 
@@ -1307,10 +1325,10 @@ void Cavity::basalMeltRateMissingCells(const Constants &cc) {
 
       const double shelfbaseelev = - (cc.rhoi / cc.rhow) * (*ice_thickness)(i,j);
       const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-        
+
 
       //FIXME: for consistency reasons there should be constants a,b,c, gamma_T used
-      // FIXME: use potential freezin point 
+      // FIXME: use potential freezin point
       // original, note: to fit with the version before, cc.a would need to be cc.as and cc.c cc.cs
       //double T_f = 273.15 + (cc.a*cc.meltSalinity + cc.b2 + cc.c*shelfbaseelev); // add 273.15 to get it in Kelvin... 35 is the salinity
       // Proposal: use potential freezin point, similar to before
