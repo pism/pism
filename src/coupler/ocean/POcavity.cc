@@ -638,12 +638,12 @@ void Cavity::extentOfIceShelves() {
   list.add(DistGL);
   list.add(ocean_mask);
 
-	if (exicerises_set) { list.add(icerise_mask); }
+  if (exicerises_set) { list.add(icerise_mask); }
 
-	DistGL.set(0);
-	DistIF.set(0);
+  DistGL.set(0);
+  DistIF.set(0);
 
-	// find the grounding line and the ice front
+  // find the grounding line and the ice front
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -651,45 +651,45 @@ void Cavity::extentOfIceShelves() {
     if (exicerises_set) {
       condition = (m_mask(i,j)==maskfloating || icerise_mask(i,j)==imask_exclude || ocean_mask(i,j)==imask_exclude);
     }
-		else {
+    else {
       condition = (m_mask(i,j)==maskfloating || ocean_mask(i,j)==imask_exclude);
     }
 
     if (condition) { //if this is a ice shelf cell (or an ice rise) or a hole in an ice shelf
 
-			// label the shelf cells adjacent to the grounding line with DistGL = 1
-			bool neighbor_to_land;
-			if (exicerises_set) {
-				neighbor_to_land = (  icerise_mask(i,j+1)==imask_inner || icerise_mask(i,j-1)==imask_inner ||
-					icerise_mask(i+1,j)==imask_inner || icerise_mask(i-1,j)==imask_inner ||
- 					icerise_mask(i+1,j+1)==imask_inner || icerise_mask(i+1,j-1)==imask_inner ||
- 					icerise_mask(i-1,j+1)==imask_inner || icerise_mask(i-1,j-1)==imask_inner );
-			} else {
-				neighbor_to_land = (  m_mask(i,j+1)<maskfloating || m_mask(i,j-1)<maskfloating ||
- 					m_mask(i+1,j)<maskfloating || m_mask(i-1,j)<maskfloating ||
-					m_mask(i+1,j+1)<maskfloating || m_mask(i+1,j-1)<maskfloating ||
-					m_mask(i-1,j+1)<maskfloating || m_mask(i-1,j-1)<maskfloating );
-			}
+      // label the shelf cells adjacent to the grounding line with DistGL = 1
+      bool neighbor_to_land;
+      if (exicerises_set) {
+        neighbor_to_land = (  icerise_mask(i,j+1)==imask_inner || icerise_mask(i,j-1)==imask_inner ||
+          icerise_mask(i+1,j)==imask_inner || icerise_mask(i-1,j)==imask_inner ||
+           icerise_mask(i+1,j+1)==imask_inner || icerise_mask(i+1,j-1)==imask_inner ||
+           icerise_mask(i-1,j+1)==imask_inner || icerise_mask(i-1,j-1)==imask_inner );
+      } else {
+        neighbor_to_land = (  m_mask(i,j+1)<maskfloating || m_mask(i,j-1)<maskfloating ||
+           m_mask(i+1,j)<maskfloating || m_mask(i-1,j)<maskfloating ||
+          m_mask(i+1,j+1)<maskfloating || m_mask(i+1,j-1)<maskfloating ||
+          m_mask(i-1,j+1)<maskfloating || m_mask(i-1,j-1)<maskfloating );
+      }
 
-			if (neighbor_to_land ){
-				// i.e. there is a grounded neighboring cell (which is not ice rise!)
-				DistGL(i,j) = currentLabelGL;
-			} // no else
+      if (neighbor_to_land ){
+        // i.e. there is a grounded neighboring cell (which is not ice rise!)
+        DistGL(i,j) = currentLabelGL;
+      } // no else
 
-			// label the shelf cells adjacent to the calving front with DistIF = 1,
-			// we do not need to exclude ice rises in this case.
+      // label the shelf cells adjacent to the calving front with DistIF = 1,
+      // we do not need to exclude ice rises in this case.
       bool neighbor_to_ocean;
       neighbor_to_ocean = (ocean_mask(i,j+1)==imask_inner || ocean_mask(i,j-1)==imask_inner || ocean_mask(i+1,j)==imask_inner || ocean_mask(i-1,j)==imask_inner);
       //(m_mask(i,j+1)==maskocean || m_mask(i,j-1)== maskocean || m_mask(i+1,j)==maskocean || m_mask(i-1,j)==maskocean)
-			if (neighbor_to_ocean) {
-				DistIF(i,j) = currentLabelIF;
-			}// no else
+      if (neighbor_to_ocean) {
+        DistIF(i,j) = currentLabelIF;
+      }// no else
 
-		}
-	}
+    }
+  }
 
-	DistGL.update_ghosts();
-	DistIF.update_ghosts();
+  DistGL.update_ghosts();
+  DistIF.update_ghosts();
 
   // Find DistGL for all shelf cells
   // FIXME: Do we want to take compute DistGL using four direct neigbors or
