@@ -64,6 +64,25 @@ private:
   std::vector<const PetscAccessible*> m_vecs;
 };
 
+/*!
+ * Interpolation helper. Does not check if points needed for interpolation are within the current
+ * processor's sub-domain.
+ */
+template<class F, typename T>
+T interpolate(const F &field, double x, double y) {
+  auto grid = field.get_grid();
+
+  int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
+  grid->compute_point_neighbors(x, y, i_left, i_right, j_bottom, j_top);
+
+  auto w = grid->compute_interp_weights(x, y);
+
+  return (w[0] * field(i_left,  j_bottom) +
+          w[1] * field(i_right, j_bottom) +
+          w[2] * field(i_right, j_top) +
+          w[3] * field(i_left,  j_top));
+}
+
 //! \brief Abstract class for reading, writing, allocating, and accessing a
 //! DA-based PETSc Vec (2D and 3D fields) from within IceModel.
 /*!
@@ -400,6 +419,13 @@ public:
 
   static Ptr To2DScalar(IceModelVec::Ptr input);
 
+  /*!
+   * Interpolation helper. See the pism::interpolate() for details.
+   */
+  double interpolate(double x, double y) const {
+    return pism::interpolate<IceModelVec2S, double>(*this, x, y);
+  }
+
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
   void create(IceGrid::ConstPtr grid, const std::string &name,
@@ -476,6 +502,13 @@ public:
   inline Vector2& operator()(int i, int j);
   inline const Vector2& operator()(int i, int j) const;
   inline StarStencil<Vector2> star(int i, int j) const;
+
+  /*!
+   * Interpolation helper. See the pism::interpolate() for details.
+   */
+  Vector2 interpolate(double x, double y) const {
+    return pism::interpolate<IceModelVec2V, Vector2>(*this, x, y);
+  }
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
