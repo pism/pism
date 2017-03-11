@@ -60,21 +60,12 @@ public:
   const IceModelVec2S& flux_divergence() const;
 protected:
 
-  void compute_thickness_change_due_to_flow(double dt,
-                                            const IceModelVec2S& bed_elevation,
-                                            const IceModelVec2S& sea_level,
-                                            const IceModelVec2S& ice_thickness,
-                                            const IceModelVec2S& area_specific_volume,
-                                            const IceModelVec2S& flux_divergence,
-                                            IceModelVec2S& thickness_change,
-                                            IceModelVec2S& area_specific_volume_change);
-
-  void massContExplicitStep(double dt,
-                            const IceModelVec2S &bed_topography,
-                            const IceModelVec2S &sea_level,
-                            const IceModelVec2S &flux_divergence,
-                            IceModelVec2S &ice_thickness,
-                            IceModelVec2S &Href);
+  void update_in_place(double dt,
+                       const IceModelVec2S& bed_elevation,
+                       const IceModelVec2S& sea_level,
+                       const IceModelVec2S& flux_divergence,
+                       IceModelVec2S& ice_thickness,
+                       IceModelVec2S& area_specific_volume);
 
   void residual_redistribution_iteration(const IceModelVec2S& bed_topography,
                                          const IceModelVec2S& sea_level,

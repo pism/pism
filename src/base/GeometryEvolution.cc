@@ -33,7 +33,6 @@ struct GeometryEvolution::Impl {
   Impl(IceGrid::ConstPtr g);
 
   IceGrid::ConstPtr  grid;
-  Config::ConstPtr   config;
   Logger::ConstPtr   log;
   GeometryCalculator gc;
 
@@ -76,10 +75,13 @@ struct GeometryEvolution::Impl {
   IceModelVec2CellType cell_type;            // ghosted; updated to maintain consistency
   IceModelVec2Stag     interface_velocity;   // ghosted; temporary storage
   IceModelVec2S        residual;             // not ghosted; temporary storage
+  IceModelVec2Int      velocity_bc_mask;
 };
 
 GeometryEvolution::Impl::Impl(IceGrid::ConstPtr g)
-  : grid(g), config(grid->ctx()->config()), log(grid->ctx()->log()), gc(*config) {
+  : grid(g), log(grid->ctx()->log()), gc(*grid->ctx()->config()) {
+
+  Config::ConstPtr config = grid->ctx()->config();
 
   gc.set_icefree_thickness(config->get_double("geometry.ice_free_thickness_standard"));
 
@@ -161,6 +163,10 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr g)
     residual.create(grid, "residual", WITHOUT_GHOSTS);
     residual.set_attrs("internal", "residual area specific volume",
                        "meters3 / meters2", "");
+
+    velocity_bc_mask.create(grid, "velocity_bc_mask", WITH_GHOSTS);
+    velocity_bc_mask.set_attrs("internal", "1 at velocity B.C. location, 0 elsewhere",
+                               "", "");
   }
 }
 
@@ -227,6 +233,7 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
   m_impl->sea_level.copy_from(geometry.sea_level_elevation());
   m_impl->bed_elevation.copy_from(geometry.bed_elevation());
   m_impl->input_velocity.copy_from(advective_velocity);
+  m_impl->velocity_bc_mask.copy_from(velocity_bc_mask);
 
   // Compute cell_type and surface_elevation. Ghosts of results are updated.
   m_impl->gc.compute(m_impl->sea_level,          // in (uses ghosts)
@@ -238,7 +245,7 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
   // Derived classes can include modifications for regional runs.
   compute_interface_velocity(m_impl->cell_type,           // in (uses ghosts)
                              m_impl->input_velocity,      // in (uses ghosts)
-                             velocity_bc_mask,     // in (uses ghosts)
+                             m_impl->velocity_bc_mask,    // in (uses ghosts)
                              m_impl->interface_velocity); // out (ghosts are updated)
 
   // Derived classes can include modifications for regional runs.
@@ -254,14 +261,21 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                           m_impl->flux_divergence); // out
 
   // This is where part_grid is implemented.
-  compute_thickness_change_due_to_flow(dt,                                // in
-                                       m_impl->bed_elevation,                    // in
-                                       m_impl->sea_level,                        // in
-                                       m_impl->ice_thickness,                    // in
-                                       m_impl->area_specific_volume,             // in
-                                       m_impl->flux_divergence,                  // in
-                                       m_impl->thickness_change,                 // out
-                                       m_impl->ice_area_specific_volume_change); // out
+  update_in_place(dt,                            // in
+                  m_impl->bed_elevation,         // in
+                  m_impl->sea_level,             // in
+                  m_impl->flux_divergence,       // in
+                  m_impl->ice_thickness,         // in/out
+                  m_impl->area_specific_volume); // in/out
+
+  // Compute ice thickness and area specific volume changes.
+  {
+    m_impl->ice_thickness.add(-1.0, geometry.ice_thickness(),
+                              m_impl->thickness_change);
+    m_impl->area_specific_volume.add(-1.0, geometry.ice_area_specific_volume(),
+                                     m_impl->ice_area_specific_volume_change);
+  }
+
 
   // Computes the numerical conservation error and corrects ice_thickness_change and . We can do
   // this here because compute_surface_and_basal_mass_balance() preserves non-negativity.
@@ -501,7 +515,7 @@ void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &c
 
         // The Dirichlet B.C. case:
         {
-          const int     BC_n   = bc_mask.as_int(i_n, j_n);
+          const int BC_n = bc_mask.as_int(i_n, j_n);
 
           if (BC == 1 and BC_n == 1) {
             // Case 1: both sides of the interface are B.C. locations: average from
@@ -632,29 +646,36 @@ void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux,
  * It would be better to compute the change in ice thickness and area_specific_volume and then apply
  * them, but it would require re-writing all the part-grid code from scratch. So, I make copies of
  * ice thickness and area_specific_volume, use this old code, then compute differences to get changes.
+ * Compute ice thickness changes due to the flow of the ice.
+ *
+ * @param[in] dt time step, seconds
+ * @param[in] bed_elevation bed elevation, meters
+ * @param[in] sea_level sea level elevation
+ * @param[in] ice_thickness ice thickness
+ * @param[in] area_specific_volume area-specific volume (m3/m2)
+ * @param[in] flux_divergence flux divergence
+ * @param[out] thickness_change ice thickness change due to flow
+ * @param[out] area_specific_volume_change area specific volume change due to flow
  */
-void GeometryEvolution::massContExplicitStep(double dt,
-                                             const IceModelVec2S &bed_topography,
-                                             const IceModelVec2S &sea_level,
-                                             const IceModelVec2S &flux_divergence,
-                                             IceModelVec2S &ice_thickness,
-                                             IceModelVec2S &Href) {
-
-  IceModelVec2S &ice_surface_elevation = m_impl->surface_elevation;
-  IceModelVec2CellType &cell_type = m_impl->cell_type;
+void GeometryEvolution::update_in_place(double dt,
+                                        const IceModelVec2S &bed_topography,
+                                        const IceModelVec2S &sea_level,
+                                        const IceModelVec2S &flux_divergence,
+                                        IceModelVec2S &ice_thickness,
+                                        IceModelVec2S &area_specific_volume) {
 
   m_impl->gc.compute(sea_level, bed_topography, ice_thickness,
-              cell_type, ice_surface_elevation);
+                     m_impl->cell_type, m_impl->surface_elevation);
 
   const double dx = m_impl->grid->dx();
 
-  IceModelVec::AccessList list{&ice_thickness, &ice_surface_elevation,
-      &bed_topography, &flux_divergence, &cell_type, &ice_thickness};
+  IceModelVec::AccessList list{&ice_thickness, &m_impl->surface_elevation,
+      &bed_topography, &flux_divergence, &m_impl->cell_type, &ice_thickness};
 
   if (m_impl->use_part_grid) {
     m_impl->residual.set(0.0);
 
-    list.add(Href);
+    list.add(area_specific_volume);
     list.add(m_impl->residual);
   }
 
@@ -665,44 +686,48 @@ void GeometryEvolution::massContExplicitStep(double dt,
 
       // Source terms:
       double
-        H_to_Href_flux       = 0.0, // units: [m]
-        Href_to_H_flux       = 0.0; // units: [m]
+        H_to_Href_flux = 0.0,   // units: [m]
+        Href_to_H_flux = 0.0;   // units: [m]
 
-      StarStencil<int> m = cell_type.int_star(i, j);
+      StarStencil<int> m = m_impl->cell_type.int_star(i, j);
 
-      StarStencil<double>  H = ice_thickness.star(i, j);
+      StarStencil<double> H = ice_thickness.star(i, j);
 
       // Compute divergence terms:
       double divQ = flux_divergence(i, j);
 
-      if (cell_type.ice_free_ocean(i, j)) {
+      if (m_impl->cell_type.ice_free_ocean(i, j)) {
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
         // parameterization
-        if (m_impl->use_part_grid && cell_type.next_to_ice(i, j)) {
+        if (m_impl->use_part_grid and m_impl->cell_type.next_to_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
           H_to_Href_flux  = -divQ * dt;
-          Href(i, j)    += H_to_Href_flux;
+          area_specific_volume(i, j)     += H_to_Href_flux;
 
-          double H_threshold = part_grid_threshold_thickness(m, H,
-                                                             ice_surface_elevation.star(i, j),
+          double threshold = part_grid_threshold_thickness(m, H,
+                                                             m_impl->surface_elevation.star(i, j),
                                                              bed_topography(i, j),
                                                              dx,
                                                              false);
-          double coverage_ratio = 1.0;
-          if (H_threshold > 0.0) {
-            coverage_ratio = Href(i, j) / H_threshold;
+
+          if (threshold > 0.0) {
+            const double coverage_ratio = area_specific_volume(i, j) / threshold;
+
+            if (coverage_ratio >= 1.0) {
+              m_impl->residual(i, j)     = area_specific_volume(i, j) - threshold;
+              Href_to_H_flux             = threshold;
+              area_specific_volume(i, j) = 0.0;
+            }
+
+          } else {
+            // Threshold is zero. All area_specific_volume is immediately converted to thickness.
+            m_impl->residual(i, j)     = 0.0;
+            Href_to_H_flux             = threshold;
+            area_specific_volume(i, j) = 0.0;
           }
 
-          if (coverage_ratio >= 1.0) {
-            // A partially filled grid cell is now considered to be full.
-            m_impl->residual(i, j) = Href(i, j) - H_threshold; // residual ice thickness
-            Href(i, j)       = 0.0;
-            Href_to_H_flux   = H_threshold;
-            // A cell that became "full" experiences both SMB and basal melt.
-          }
-
-          // In this case the flux goes into the Href variable and does not directly contribute to
+          // In this case the flux goes into the area_specific_volume variable and does not directly contribute to
           // ice thickness at this location.
           divQ = 0.0;
         }
@@ -722,7 +747,7 @@ void GeometryEvolution::massContExplicitStep(double dt,
   // Update cell_type
   //
   // Note that we use ice_thickness here: we need the mask corresponding to the new thickness.
-  m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
+  m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, m_impl->cell_type);
 
   /*
     Redistribute residual ice mass from subgrid-scale parameterization.
@@ -738,10 +763,10 @@ void GeometryEvolution::massContExplicitStep(double dt,
     for (int i = 0; not done and i < max_n_iterations; ++i) {
       residual_redistribution_iteration(bed_topography,
                                         sea_level,
-                                        ice_surface_elevation,
+                                        m_impl->surface_elevation,
                                         ice_thickness,
-                                        cell_type,
-                                        Href,
+                                        m_impl->cell_type,
+                                        area_specific_volume,
                                         m_impl->residual,
                                         done);
       m_impl->log->message(4, "redistribution iteration %d\n", i);
@@ -750,27 +775,28 @@ void GeometryEvolution::massContExplicitStep(double dt,
 }
 
 //! @brief Perform one iteration of the residual mass redistribution.
-void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S &bed_topography,
-                                                          const IceModelVec2S &sea_level,
-                                                          IceModelVec2S &ice_surface_elevation,
-                                                          IceModelVec2S &ice_thickness,
+void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &bed_topography,
+                                                          const IceModelVec2S  &sea_level,
+                                                          IceModelVec2S        &ice_surface_elevation,
+                                                          IceModelVec2S        &ice_thickness,
                                                           IceModelVec2CellType &cell_type,
-                                                          IceModelVec2S &Href,
-                                                          IceModelVec2S &H_residual, bool &done) {
+                                                          IceModelVec2S        &area_specific_volume,
+                                                          IceModelVec2S        &residual,
+                                                          bool &done) {
 
   bool reduce_frontal_thickness = false;
 
   m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
 
-  // First step: distribute residual ice thickness
+  // First step: distribute residual mass
   {
     // will be destroyed at the end of the block
-    IceModelVec::AccessList list{&cell_type, &ice_thickness, &Href, &H_residual};
+    IceModelVec::AccessList list{&cell_type, &ice_thickness, &area_specific_volume, &residual};
 
     for (Points p(*m_impl->grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (H_residual(i,j) <= 0.0) {
+      if (residual(i,j) <= 0.0) {
         continue;
       }
 
@@ -801,24 +827,24 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S &b
         // adjacent partially-filled cells (is there a more physical
         // way?)
         if (neighbors.e) {
-          Href(i + 1, j) += H_residual(i, j) / N;
+          area_specific_volume(i + 1, j) += residual(i, j) / N;
         }
         if (neighbors.w) {
-          Href(i - 1, j) += H_residual(i, j) / N;
+          area_specific_volume(i - 1, j) += residual(i, j) / N;
         }
         if (neighbors.n) {
-          Href(i, j + 1) += H_residual(i, j) / N;
+          area_specific_volume(i, j + 1) += residual(i, j) / N;
         }
         if (neighbors.s) {
-          Href(i, j - 1) += H_residual(i, j) / N;
+          area_specific_volume(i, j - 1) += residual(i, j) / N;
         }
 
-        H_residual(i, j) = 0.0;
+        residual(i, j) = 0.0;
       } else {
         // Conserve mass, but (possibly) create a "ridge" at the shelf
         // front
-        ice_thickness(i, j) += H_residual(i, j);
-        H_residual(i, j) = 0.0;
+        ice_thickness(i, j) += residual(i, j);
+        residual(i, j) = 0.0;
       }
 
     }
@@ -841,40 +867,44 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S &b
   {
     // will be destroyed at the end of the block
     IceModelVec::AccessList list{&ice_thickness, &ice_surface_elevation, &bed_topography, &cell_type};
+
     for (Points p(*m_impl->grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (Href(i,j) <= 0.0) {
+      if (area_specific_volume(i,j) <= 0.0) {
         continue;
       }
 
-      double H_threshold = part_grid_threshold_thickness(cell_type.int_star(i, j),
-                                                         ice_thickness.star(i, j),
-                                                         ice_surface_elevation.star(i, j),
-                                                         bed_topography(i,j),
-                                                         dx,
-                                                         reduce_frontal_thickness);
+      double threshold = part_grid_threshold_thickness(cell_type.int_star(i, j),
+                                                       ice_thickness.star(i, j),
+                                                       ice_surface_elevation.star(i, j),
+                                                       bed_topography(i,j),
+                                                       dx,
+                                                       reduce_frontal_thickness);
 
       double coverage_ratio = 1.0;
-      if (H_threshold > 0.0) {
-        coverage_ratio = Href(i, j) / H_threshold;
+
+      if (threshold > 0.0) {
+        coverage_ratio = area_specific_volume(i, j) / threshold;
       }
+
       if (coverage_ratio >= 1.0) {
-        // The current partially filled grid cell is considered to be full
-        H_residual(i, j) = Href(i, j) - H_threshold;
-        remaining_residual_thickness += H_residual(i, j);
-        ice_thickness(i, j) += H_threshold;
-        Href(i, j) = 0.0;
+        // The current partially filled grid cell is considered to be full.
+        residual(i, j)                = area_specific_volume(i, j) - threshold;
+        remaining_residual_thickness += residual(i, j);
+        ice_thickness(i, j)          += threshold;
+        area_specific_volume(i, j)    = 0.0;
       }
+
       if (ice_thickness(i, j) < 0) {
         m_impl->log->message(1,
-                   "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
-                   "  H_threshold: %f\n"
-                   "  coverage_ratio: %f\n"
-                   "  Href: %f\n"
-                   "  H_residual: %f\n"
-                   "  ice_thickness: %f\n", i, j, H_threshold, coverage_ratio,
-                   Href(i, j), H_residual(i, j), ice_thickness(i, j));
+                      "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
+                      "  threshold: %f\n"
+                      "  coverage_ratio: %f\n"
+                      "  area_specific_volume: %f\n"
+                      "  residual: %f\n"
+                      "  ice_thickness: %f\n", i, j, threshold, coverage_ratio,
+                      area_specific_volume(i, j), residual(i, j), ice_thickness(i, j));
       }
 
     }
@@ -890,40 +920,6 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S &b
   }
 
   ice_thickness.update_ghosts();
-}
-
-/*!
- * Compute ice thickness changes due to the flow of the ice.
- *
- * @param[in] dt time step, seconds
- * @param[in] bed_elevation bed elevation, meters
- * @param[in] sea_level
- */
-void GeometryEvolution::compute_thickness_change_due_to_flow(double dt,
-                                                             const IceModelVec2S &bed_elevation,
-                                                             const IceModelVec2S &sea_level,
-                                                             const IceModelVec2S &ice_thickness,
-                                                             const IceModelVec2S &area_specific_volume,
-                                                             const IceModelVec2S &flux_divergence,
-                                                             IceModelVec2S &thickness_change,
-                                                             IceModelVec2S &area_specific_volume_change) {
-
-  m_impl->gc.compute(sea_level,          // in (uses ghosts)
-              bed_elevation,      // in (uses ghosts)
-              ice_thickness,      // in (uses ghosts)
-              m_impl->cell_type,          // out (ghosts are updated)
-              m_impl->surface_elevation); // out (ghosts are updated)
-
-  massContExplicitStep(dt,                     // in
-                       bed_elevation,          // in (uses ghosts to compute ghosted mask and surface elevation)
-                       sea_level,              // in (uses ghosts to compute ghosted mask and surface elevation)
-                       flux_divergence,        // in
-                       m_impl->ice_thickness,         // updated in place
-                       m_impl->area_specific_volume); // updated in place
-
-  // Compute ice thickness and area specific volume changes.
-  m_impl->ice_thickness.add(-1.0, ice_thickness, thickness_change);
-  m_impl->area_specific_volume.add(-1.0, area_specific_volume, area_specific_volume_change);
 }
 
 /*!
