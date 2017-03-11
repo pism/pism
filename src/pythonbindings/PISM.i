@@ -52,6 +52,7 @@
 #endif
 
 #include "base/util/MaxTimestep.hh"
+#include "base/timestepping.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/Profiling.hh"
@@ -234,6 +235,7 @@
 
 %include "base/util/PISMDiagnostic.hh"
 %include "base/util/MaxTimestep.hh"
+%include "base/timestepping.hh"
 %include "base/util/PISMComponent.hh"
 %include "base/basalstrength/basal_resistance.hh"
 
