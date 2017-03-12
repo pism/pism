@@ -196,8 +196,8 @@ void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
   // extract K from R[ks], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
-    K = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
-    G = heat_flux / K;
+    Kdt = m_ice_density * PetscSqr(m_dz) * m_R[m_ks],
+    G = (heat_flux * m_dt) / Kdt;
 
   this->set_surface_neumann_bc(G);
 }
