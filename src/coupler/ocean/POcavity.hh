@@ -99,7 +99,7 @@ private:
   void set_ocean_input_fields(const Constants &constants);
   void calculate_basal_melt_box1(const Constants &constants);
   void calculate_basal_melt_other_boxes(const Constants &constants);
-  void basalMeltRateMissingCells(const Constants &constants);
+  void calculate_basal_melt_missing_cells(const Constants &constants);
   double most_frequent_element(const std::vector<double>&);
 
   static const int  box1, // ocean box covering the grounding line region

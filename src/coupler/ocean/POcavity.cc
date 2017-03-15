@@ -72,7 +72,7 @@ Cavity::Constants::Constants(const Config &config) {
   default_overturning_coeff    = 5e6;         // kg−1 s−1 FIXME check!
 
   // for shelf cells where normal box model is not calculated,
-  // used in basalMeltRateMissingCells(), compare POConstantPIK
+  // used in calculate_basal_melt_missing_cells(), compare POConstantPIK
   gamma_T_o    = 1.0e-4; //config.get("gamma_T"); //1e-4;
   // m/s, thermal exchange velocity for Beckmann-Goose parameterization
   meltFactor   = 0.002;     // FIXME add to pism_config, check value
@@ -374,7 +374,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
   //basal melt rates underneath ice shelves
   calculate_basal_melt_box1(cc);
   calculate_basal_melt_other_boxes(cc);
-  basalMeltRateMissingCells(cc);  //Assumes that mass flux is proportional to the shelf-base heat flux.
+  calculate_basal_melt_missing_cells(cc);  //Assumes that mass flux is proportional to the shelf-base heat flux.
 
   m_shelfbtemp.copy_from(T_pressure_melting); // in-situ freezing point at the ice shelf base
   //
@@ -890,7 +890,7 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   } // for
 
   // set all floating cells which have no ocean_box_mask value to numberOfBoxes+1.
-  // For these, beckmann-goose melting will be applied, see basalMeltRateMissingCells
+  // For these, beckmann-goose melting will be applied, see calculate_basal_melt_missing_cells
   // those are the cells which are not reachable from grounding line or calving front.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -927,7 +927,6 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   }
 
 }
-
 
 
 //! Set ocean ocean input from box 0 as boundary condition for box 1.
@@ -1166,14 +1165,27 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 //! Overturning is only calculated for box 1 and used here as it is the same for all boxes
 //!  We calculate the average values at the boundary between box i and box i+1 as input for box i+1.
 
-void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) { //FIXME rename routine!!
+void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) {
 
   m_log->message(5, "starting calculate_basal_melt_other_boxes routine\n");
-
 
   int nBoxes = static_cast<int>(round(numberOfBoxes+1));
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+  IceModelVec::AccessList list;
+  list.add(*ice_thickness);
+  list.add(cbasins);
+  list.add(ocean_box_mask);
+  list.add(T_star);
+  list.add(Toc_box0);
+  list.add(Toc);
+  list.add(Soc_box0);
+  list.add(Soc);
+  list.add(overturning);
+  list.add(basalmeltrate_shelf);
+  list.add(T_pressure_melting);
+  ocean_box_mask.update_ghosts();
 
   // Iterate over all Boxes i for i > 1
   // box number = numberOfBoxes+1 is used as identifier for Beckmann Goose calculation
@@ -1195,23 +1207,6 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) { //FIXME ren
       lmean_salinity_boxi_vector[shelf_id]   =0.0;
       lmean_temperature_boxi_vector[shelf_id]=0.0;
     }
-
-    // TODO: does this need to be within the loop over boxes?
-    // TODO: do we really need all these variables as full fields?
-    IceModelVec::AccessList list;
-    list.add(*ice_thickness);
-    list.add(cbasins);
-    list.add(ocean_box_mask);
-    list.add(T_star);
-    list.add(Toc_box0);
-    list.add(Toc);
-    list.add(Soc_box0);
-    list.add(Soc);
-    list.add(overturning);
-    list.add(basalmeltrate_shelf);
-    list.add(T_pressure_melting);
-
-    ocean_box_mask.update_ghosts();
 
     // for box i compute the melt rates.
 
@@ -1235,9 +1230,10 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) { //FIXME ren
         mean_overturning_in_box1     = mean_overturning_box1_vector[shelf_id];
 
         // if there are no boundary values from the box before
-        if (mean_salinity_in_boundary==0 || mean_overturning_in_box1==0 || mean_temperature_in_boundary==0) {
+        if (mean_salinity_in_boundary==0 || mean_overturning_in_box1==0 ||
+            mean_temperature_in_boundary==0) {
 
-          // set mask to Beckmann Goose identifier, will be handled in basalMeltRateMissingCells
+          // set mask to Beckmann Goose identifier, will be handled in calculate_basal_melt_missing_cells
           ocean_box_mask(i,j) = numberOfBoxes+1;
           // flag to print warning later
           lcountGl0+=1;
@@ -1282,7 +1278,7 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) { //FIXME ren
             lmean_temperature_boxi_vector[shelf_id] += Toc(i,j);
           } // no else-case necessary since all variables are set to zero at the beginning of this routine
         }
-      } // no else-case, since  calculate_basal_melt_box1() and basalMeltRateMissingCells() cover all other cases and we would overwrite those results here.
+      } // no else-case, since  calculate_basal_melt_box1() and calculate_basal_melt_missing_cells() cover all other cases and we would overwrite those results here.
     }
 
     // average the temperature, salinity and overturning at the boundary between boxi and box i+1
@@ -1297,7 +1293,9 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) { //FIXME ren
       if (counter_edge_of_boxi_vector>0.0){
         mean_salinity_boundary_vector[shelf_id] = mean_salinity_boundary_vector[shelf_id]/counter_edge_of_boxi_vector;
         mean_temperature_boundary_vector[shelf_id] = mean_temperature_boundary_vector[shelf_id]/counter_edge_of_boxi_vector; // in Kelvin
-      } else { // This means that there is no [cell from the GLbox neighboring a cell from the CFbox], NOT necessarily that there is no GLbox!
+      } else {
+        // This means that there is no cell in box i neighboring a cell from the box i+1,
+        // not necessarily that there is no box i.
         mean_salinity_boundary_vector[shelf_id]=0.0; mean_temperature_boundary_vector[shelf_id]=0.0;
       }
 
@@ -1318,14 +1316,23 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) { //FIXME ren
 }
 
 
-//! Compute the melt rate for all other ice shelves.
-void Cavity::basalMeltRateMissingCells(const Constants &cc) {
+//! Compute the basal melt for ice shelf cells with missing input data
 
-  m_log->message(5, "starting basalMeltRateMissingCells routine\n");
+//! This covers cells that could not not be related to ocean boxes
+//! or where input data is missing.
+//! Such boxes are identified with the ocean_box_mask value numberOfBoxes+1
+//! For those boxes use the [@BeckmannGoosse2003] meltrate parametrization, which
+//! only depends on local ocean input and not overturning.
+//! We use the open ocean temperature and salinity as input here.
+//! Also set basal melt rate to zero everywhere for shelf_id zero, which is mainly
+//! at the computational demain boundary.
+
+void Cavity::calculate_basal_melt_missing_cells(const Constants &cc) {
+
+  m_log->message(5, "starting calculate_basal_melt_missing_cells routine\n");
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  // TODO: do we really need all these variables as full fields?
   IceModelVec::AccessList list;
   list.add(*ice_thickness);
   list.add(cbasins);
@@ -1333,7 +1340,7 @@ void Cavity::basalMeltRateMissingCells(const Constants &cc) {
   list.add(Toc_box0);
   list.add(Toc);
   list.add(overturning);
-  list.add(basalmeltrate_shelf);  // NOTE meltrate has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
+  list.add(basalmeltrate_shelf); // in m/s
   list.add(T_pressure_melting);
 
   for (Points p(*m_grid); p; p.next()) {
@@ -1341,19 +1348,20 @@ void Cavity::basalMeltRateMissingCells(const Constants &cc) {
 
     int shelf_id = (cbasins)(i,j);
 
-    if (shelf_id == 0) { // boundary of computational domain
+    // mainly at the boundary of computational domain
+    if (shelf_id == 0) {
 
       basalmeltrate_shelf(i,j) = 0.0;
 
+    // missing cell identifier numberOfBoxes+1, as set in routines before
     } else if (ocean_box_mask(i,j)==(numberOfBoxes+1) ) {
 
-      Toc(i,j) = Toc_box0(i,j); // in K, NOTE: Toc_box0 is already in K, so no (+273.15)
-      // default: compute the melt rate from the temperature field according to beckmann_goosse03 (see below)
-
+      Toc(i,j) = Toc_box0(i,j); // in Kelvin
 
       const double shelfbaseelev = - (cc.rhoi / cc.rhow) * (*ice_thickness)(i,j);
-      const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
 
+      // in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
+      const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4;
 
       //FIXME: for consistency reasons there should be constants a,b,c, gamma_T used
       // FIXME: use potential freezin point
@@ -1362,7 +1370,8 @@ void Cavity::basalMeltRateMissingCells(const Constants &cc) {
       // Proposal: use potential freezin point, similar to before
       double T_f = (cc.a*cc.meltSalinity + cc.b - cc.c*pressure); // in Kelvin... 35 is the salinity
 
-      T_pressure_melting(i,j) =  cc.as*cc.meltSalinity + cc.bs - cc.cs*pressure; // in situ pressure melting point in Kelvin
+      // in situ pressure melting point in Kelvin
+      T_pressure_melting(i,j) =  cc.as*cc.meltSalinity + cc.bs - cc.cs*pressure;
 
       double heatflux = cc.meltFactor * cc.rhow * cc.c_p_ocean * cc.gamma_T_o * (Toc(i,j) - T_f);  // in W/m^2
       basalmeltrate_shelf(i,j) = heatflux / (cc.latentHeat * cc.rhoi); // in m s-1
