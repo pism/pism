@@ -73,11 +73,9 @@ Cavity::Constants::Constants(const Config &config) {
 
   // for shelf cells where normal box model is not calculated,
   // used in calculate_basal_melt_missing_cells(), compare POConstantPIK
-  gamma_T_o    = 1.0e-4; //config.get("gamma_T"); //1e-4;
   // m/s, thermal exchange velocity for Beckmann-Goose parameterization
-  meltFactor   = 0.002;     // FIXME add to pism_config, check value
-  meltSalinity = 35.0;
-  b2           = 0.0939;
+  // this is a different meltFactor as in POConstantPIK
+  meltFactor   = 0.2;
 
 }
 
@@ -1348,43 +1346,39 @@ void Cavity::calculate_basal_melt_missing_cells(const Constants &cc) {
 
     int shelf_id = (cbasins)(i,j);
 
-    // mainly at the boundary of computational domain
+    // mainly at the boundary of computational domain,
+    // or through erroneous basin mask
     if (shelf_id == 0) {
 
       basalmeltrate_shelf(i,j) = 0.0;
 
-    // missing cell identifier numberOfBoxes+1, as set in routines before
-    } else if (ocean_box_mask(i,j)==(numberOfBoxes+1) ) {
+    }
+
+    // cell with missing data identifier numberOfBoxes+1, as set in routines before
+    if ( (shelf_id > 0) && (ocean_box_mask(i,j)==(numberOfBoxes+1)) ) {
 
       Toc(i,j) = Toc_box0(i,j); // in Kelvin
-
-      const double shelfbaseelev = - (cc.rhoi / cc.rhow) * (*ice_thickness)(i,j);
+      Soc(i,j) = Soc_box0(i,j); // in psu
 
       // in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4;
 
-      //FIXME: for consistency reasons there should be constants a,b,c, gamma_T used
-      // FIXME: use potential freezin point
-      // original, note: to fit with the version before, cc.a would need to be cc.as and cc.c cc.cs
-      //double T_f = 273.15 + (cc.a*cc.meltSalinity + cc.b2 + cc.c*shelfbaseelev); // add 273.15 to get it in Kelvin... 35 is the salinity
-      // Proposal: use potential freezin point, similar to before
-      double T_f = (cc.a*cc.meltSalinity + cc.b - cc.c*pressure); // in Kelvin... 35 is the salinity
+      // potential pressure melting point needed to calculate thermal driving
+      // using coefficients for potential temperature
+      // these are different to the ones used in POConstantPIK
+      double potential_pressure_melting_point = cc.a*Soc(i,j) + cc.b - cc.c*pressure;
 
-      // in situ pressure melting point in Kelvin
-      T_pressure_melting(i,j) =  cc.as*cc.meltSalinity + cc.bs - cc.cs*pressure;
+      double heatflux = cc.meltFactor * cc.rhow * cc.c_p_ocean * cc.default_gamma_T *
+                         (Toc(i,j) - potential_pressure_melting_point);  // in W/m^2
 
-      double heatflux = cc.meltFactor * cc.rhow * cc.c_p_ocean * cc.gamma_T_o * (Toc(i,j) - T_f);  // in W/m^2
       basalmeltrate_shelf(i,j) = heatflux / (cc.latentHeat * cc.rhoi); // in m s-1
 
-    } else if (shelf_id > 0.0) {
-      continue; // standard case
+      // in situ pressure melting point in Kelvin
+      // this will be the temperature boundary condition at the ice at the shelf base
+      T_pressure_melting(i,j) =  cc.as*Soc(i,j) + cc.bs - cc.cs*pressure;
 
-    } else { // This must not happen
-
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "PISM_ERROR: [rank %d] at %d, %d  -- basins(i,j)=%d causes problems.\n"
-                                    "Aborting... \n",m_grid->rank(), i, j, shelf_id);
     }
+
   }
 
 }
