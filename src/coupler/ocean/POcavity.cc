@@ -251,7 +251,7 @@ void Cavity::init_impl() {
 
   round_basins();
 
-  Range basins_range = cbasins.range();
+  // Range basins_range = cbasins.range();
 
   // if (basins_range.min < 0 or basins_range.max > numberOfBasins - 1) {
   //   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -338,7 +338,7 @@ void Cavity::initBasinsOptions(const Constants &cc) {
     m_log->message(2,
     "  Depth of continental shelf for computation of temperature and salinity input\n"
     "  is set for whole domain to continental_shelf_depth=%.0f meter\n",
-    cont_shelf_depth);
+    continental_shelf_depth);
     continental_shelf_depth=cont_shelf_depth;
   }
 
@@ -1337,6 +1337,8 @@ void Cavity::calculate_basal_melt_missing_cells(const Constants &cc) {
   list.add(ocean_box_mask);
   list.add(Toc_box0);
   list.add(Toc);
+  list.add(Soc_box0);
+  list.add(Soc);
   list.add(overturning);
   list.add(basalmeltrate_shelf); // in m/s
   list.add(T_pressure_melting);
