@@ -373,7 +373,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   //basal melt rates underneath ice shelves
   calculate_basal_melt_box1(cc);
-  basalMeltRateOtherBoxes(cc); // TODO Diese Routinen woanders aufrufen (um Dopplung zu vermeiden)
+  calculate_basal_melt_other_boxes(cc); // TODO Diese Routinen woanders aufrufen (um Dopplung zu vermeiden)
   basalMeltRateMissingCells(cc);  //Assumes that mass flux is proportional to the shelf-base heat flux.
 
   m_shelfbtemp.copy_from(T_pressure_melting); // in-situ freezing point at the ice shelf base
@@ -553,6 +553,7 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
 
 //! We average over ocean_contshelf_mask for each basin.
 //! We use dummy ocean data if no such average can be calculated.
+//!
 
 void Cavity::compute_ocean_input_per_basin(const Constants &cc) {
 
@@ -611,7 +612,9 @@ void Cavity::compute_ocean_input_per_basin(const Constants &cc) {
       m_log->message(2, "SIMPEL ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
                         "(no values with ocean_contshelf_mask=2).\n"
                         "No mean salinity or temperature values are computed, instead using\n"
-                        "the standard values T_dummy =%.3f, S_dummy=%.3f.\n", k, cc.T_dummy, cc.S_dummy);
+                        "the standard values T_dummy =%.3f, S_dummy=%.3f.\n"
+                        "This might bias your basal melt rates, check your input data carefully.\n",
+                        k, cc.T_dummy, cc.S_dummy);
       Toc_box0_vec[k] = cc.T_dummy;
       Soc_box0_vec[k] = cc.S_dummy;
     } else {
@@ -1053,17 +1056,21 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 
     if ((ocean_box_mask(i,j) == box1) && (shelf_id > 0.0)){
 
-
       // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4;
       T_star(i,j) = cc.a*Soc_box0(i,j) + cc.b - cc.c*pressure - Toc_box0(i,j); // in Kelvin
 
-      double g1 = (counter_boxes[shelf_id][box1] * dx * dy) * gamma_T / (overturning_coeff*cc.rho_star);
+      //FIXME this assumes rectangular cell areas, adjust with real areas from projection
+      double area_box1 = (counter_boxes[shelf_id][box1] * dx * dy);
+
+      double g1 = area_box1 * gamma_T ;
+      double s1 = Soc_box0(i,j) / (cc.nu*cc.lambda);
 
       // These are the coefficients for solving the quadratic temperature equation
       // trough the p-q formula.
-      double p_coeff = g1/(cc.beta*(Soc_box0(i,j) / (cc.nu*cc.lambda)) - cc.alpha); // in 1 / (1/K) = K
-      double q_coeff = (g1*T_star(i,j)) / (cc.beta*(Soc_box0(i,j) / (cc.nu*cc.lambda)) - cc.alpha); // in K / (1/K) = K^2
+      double p_coeff = g1/( overturning_coeff*cc.rho_star * ( cc.beta * s1 - cc.alpha) ); // in 1 / (1/K) = K
+      double q_coeff = (g1*T_star(i,j)) /
+                        ( overturning_coeff*cc.rho_star * (  cc.beta * s1 - cc.alpha) ); // in K / (1/K) = K^2
 
       // This can only happen if T_star > 0.25*p_coeff, in particular T_star > 0
       // which can only happen for values of Toc_box0 close to the local pressure melting point
@@ -1084,11 +1091,13 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
       //! salinity for box 1
       Soc(i,j) = Soc_box0(i,j) - (Soc_box0(i,j) / (cc.nu*cc.lambda)) * (Toc_box0(i,j) - Toc(i,j));  // in psu
 
-      // potential pressure melting point (using coefficients for potential temperature)
-      double pressure_melting_temp = cc.a*Soc(i,j) + cc.b - cc.c*pressure;
+      // potential pressure melting pointneeded to calculate thermal driving
+      // using coefficients for potential temperature
+      double potential_pressure_melting_point = cc.a*Soc(i,j) + cc.b - cc.c*pressure;
 
       //! basal melt rate for box 1
-      basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (pressure_melting_temp - Toc(i,j));  // in m/s
+      basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (
+      potential_pressure_melting_point - Toc(i,j));  // in m/s
 
       overturning(i,j) = overturning_coeff*cc.rho_star* (cc.beta*(Soc_box0(i,j)-Soc(i,j)) -
                             cc.alpha*(Toc_box0(i,j)-Toc(i,j))); // in m^3/s
@@ -1118,28 +1127,28 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 
   // average the temperature, salinity and overturning at the boundary between box1 and box2
   // (here we divide)
-  for(int k=0;k<numberOfBasins;k++) {
+  for(int shelf_id=0;shelf_id<numberOfBasins;shelf_id++) {
     double counter_edge_of_box1_vector=0.0;
 
-    counter_edge_of_box1_vector = GlobalSum(m_grid->com, lcounter_edge_of_box1_vector[k]);
-    mean_salinity_boundary_vector[k] = GlobalSum(m_grid->com, lmean_salinity_box1_vector[k]);
-    mean_temperature_boundary_vector[k] = GlobalSum(m_grid->com, lmean_temperature_box1_vector[k]);
-    mean_overturning_box1_vector[k] = GlobalSum(m_grid->com, lmean_overturning_box1_vector[k]);
+    counter_edge_of_box1_vector = GlobalSum(m_grid->com, lcounter_edge_of_box1_vector[shelf_id]);
+    mean_salinity_boundary_vector[shelf_id] = GlobalSum(m_grid->com, lmean_salinity_box1_vector[shelf_id]);
+    mean_temperature_boundary_vector[shelf_id] = GlobalSum(m_grid->com, lmean_temperature_box1_vector[shelf_id]);
+    mean_overturning_box1_vector[shelf_id] = GlobalSum(m_grid->com, lmean_overturning_box1_vector[shelf_id]);
 
     if (counter_edge_of_box1_vector>0.0){
-      mean_salinity_boundary_vector[k] = mean_salinity_boundary_vector[k]/counter_edge_of_box1_vector;
-      mean_temperature_boundary_vector[k] = mean_temperature_boundary_vector[k]/counter_edge_of_box1_vector;
-      mean_overturning_box1_vector[k] = mean_overturning_box1_vector[k]/counter_edge_of_box1_vector;
+      mean_salinity_boundary_vector[shelf_id] = mean_salinity_boundary_vector[shelf_id]/counter_edge_of_box1_vector;
+      mean_temperature_boundary_vector[shelf_id] = mean_temperature_boundary_vector[shelf_id]/counter_edge_of_box1_vector;
+      mean_overturning_box1_vector[shelf_id] = mean_overturning_box1_vector[shelf_id]/counter_edge_of_box1_vector;
     } else {
       // This means that there is no [cell from the box 1 neighboring a cell from the box 2,
       // not necessarily that there is no box 1.
-      mean_salinity_boundary_vector[k]=0.0;
-      mean_temperature_boundary_vector[k]=0.0;
-      mean_overturning_box1_vector[k]=0.0;
+      mean_salinity_boundary_vector[shelf_id]=0.0;
+      mean_temperature_boundary_vector[shelf_id]=0.0;
+      mean_overturning_box1_vector[shelf_id]=0.0;
     }
 
     // print values at boundary between box 1 and box 2.
-    m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", k,counter_edge_of_box1_vector,mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],mean_overturning_box1_vector[k]) ;
+    m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", k,counter_edge_of_box1_vector,mean_salinity_boundary_vector[shelf_id],mean_temperature_boundary_vector[shelf_id],mean_overturning_box1_vector[shelf_id]) ;
   }
 
     countHelpterm = GlobalSum(m_grid->com, lcountHelpterm);
@@ -1150,28 +1159,36 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 
 }
 
+//! Compute the basal melt for each ice shelf cell in boxes other than box1
+
+//! Here are the core physical equations of the SIMPEL model:
+//! We here calculate basal melt rate, ambient ocean temperature and salinity.
+//! Overturning is only calculated for box 1 and used here as it is the same for all boxes
+//!  We calculate the average values at the boundary between box i and box i+1 as input for box i+1.
+
+void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) { //FIXME rename routine!!
+
+  m_log->message(5, "starting calculate_basal_melt_other_boxes routine\n");
 
 
-//! Iteratively over i=2,..,n: Compute the basal melt / refreezing rates for each shelf cell bordering the Box i
-
-void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routine!!
-
-  m_log->message(5, "starting basalMeltRateOtherBoxes routine\n");
-
-  int nBoxes = static_cast<int>(round(numberOfBoxes+1)); // do not include the Beckmann-Goose (=last) Box
+  int nBoxes = static_cast<int>(round(numberOfBoxes+1));
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  //! Iterate over all Boxes i for i > 1
+  // Iterate over all Boxes i for i > 1
+  // box number = numberOfBoxes+1 is used as identifier for Beckmann Goose calculation
+  // for cells with missing input and excluded in loop here, i.e. boxi <nBoxes.
   for (int boxi=2; boxi <nBoxes; ++boxi) {
+
     m_log->message(5, "computing basal melt rate, temperature and salinity for box i = %d \n", boxi);
 
     double countGl0=0,
            lcountGl0=0;
 
-    std::vector<double> lcounter_edge_of_boxi_vector(numberOfBasins);     // to compute means at boundary for the current box
-    std::vector<double> lmean_salinity_boxi_vector(numberOfBasins);
+    // averages at boundary between the current box and the subsequent box
+    std::vector<double> lmean_salinity_boxi_vector(numberOfBasins); // in psu
     std::vector<double> lmean_temperature_boxi_vector(numberOfBasins); // in Kelvin
+    std::vector<double> lcounter_edge_of_boxi_vector(numberOfBasins);
 
     for (int k=0;k<numberOfBasins;k++){
       lcounter_edge_of_boxi_vector[k] =0.0;
@@ -1205,62 +1222,73 @@ void Cavity::basalMeltRateOtherBoxes(const Constants &cc) { //FIXME rename routi
 
       if (ocean_box_mask(i,j)==boxi && shelf_id > 0.0){
 
-        double  area_boxi,mean_salinity_in_boundary,mean_temperature_in_boundary,mean_overturning_in_GLbox;
+        double area_boxi, mean_salinity_in_boundary,
+               mean_temperature_in_boundary,
+               mean_overturning_in_box1;
 
-        // FIXME RENAME THESE in GENERAL
+        // get the input from previous box (is from box 1 if boxi=2)
+        // overturning is only solved in box 1 and same for other boxes
+        // temperature and salinity boundary values will be updated at the
+        // end of this routine
         mean_salinity_in_boundary     = mean_salinity_boundary_vector[shelf_id];
-        mean_temperature_in_boundary  = mean_temperature_boundary_vector[shelf_id]; // note: in Kelvin, mean over Toc
-        mean_overturning_in_GLbox     = mean_overturning_box1_vector[shelf_id]; // !!!leave this one with the grounding line box
+        mean_temperature_in_boundary  = mean_temperature_boundary_vector[shelf_id]; // Kelvin
+        mean_overturning_in_box1     = mean_overturning_box1_vector[shelf_id];
 
-        const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4; // MUST be in dbar  // NOTE 1dbar = 10000 Pa = 1e4 kg m-1 s-2
-        T_star(i,j) = cc.a*mean_salinity_in_boundary + cc.b - cc.c*pressure - mean_temperature_in_boundary;  // in °C or Kelvin since anomaly
+        // if there are no boundary values from the box before
+        if (mean_salinity_in_boundary==0 || mean_overturning_in_box1==0 || mean_temperature_in_boundary==0) {
 
-
-        area_boxi = (counter_boxes[shelf_id][boxi] * dx * dy); //FIXME this assumes rectangular cell areas, adjust with real areas from projection
-
-
-        if (mean_salinity_in_boundary==0 || mean_overturning_in_GLbox==0 || mean_temperature_in_boundary==273.15) {
-
-          // if there are no boundary values from the box before
-          m_log->message(2, "SIMPEL ocean WARNING: No input from box i-1 for box %d at %d,%d, basin=%d \n"
-                            "switching to Beckmann Goose (2003) meltrate calculation\n",
-                         boxi, i, j, shelf_id);
+          // set mask to Beckmann Goose identifier, will be handled in basalMeltRateMissingCells
           ocean_box_mask(i,j) = numberOfBoxes+1;
+          // flag to print warning later
           lcountGl0+=1;
 
         } else {
+
+          // solve the SIMPLE physical model equations for boxes with boxi > 1
+          // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
+          const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4;
+          T_star(i,j) = cc.a*mean_salinity_in_boundary + cc.b - cc.c*pressure - mean_temperature_in_boundary;  // in Kelvin
+
+          //FIXME this assumes rectangular cell areas, adjust with real areas from projection
+          area_boxi = (counter_boxes[shelf_id][boxi] * dx * dy);
+
           // compute melt rates
+          double g1 = area_boxi*gamma_T;
+          double g2 = g1 / (cc.nu*cc.lambda);
 
-          double g1, g2;
-          g1 = (area_boxi*gamma_T);
-          g2 = g1 / (cc.nu*cc.lambda);
+          // temperature for Box i > 1
+          Toc(i,j) = mean_temperature_in_boundary + g1 * T_star(i,j)/(mean_overturning_in_box1 + g1 - g2*cc.a*mean_salinity_in_boundary); // K
 
-          //! temperature for Box i > 1
-          Toc(i,j) = mean_temperature_in_boundary + g1 * T_star(i,j)/(mean_overturning_in_GLbox + g1 - g2*cc.a*mean_salinity_in_boundary); // K
+          // salinity for Box i > 1
+          Soc(i,j) = mean_salinity_in_boundary - mean_salinity_in_boundary * (mean_temperature_in_boundary - Toc(i,j))/(cc.nu*cc.lambda); // psu
 
-          //! salinity for Box i > 1
-          Soc(i,j) = mean_salinity_in_boundary - mean_salinity_in_boundary * (mean_temperature_in_boundary - Toc(i,j))/(cc.nu*cc.lambda); // psu FIXME: add term in denominator? Then also above in GL box + mean_temperature_in_boundary - Toc_inCelsius(i,j))
+          // potential pressure melting pointneeded to calculate thermal driving
+          // using coefficients for potential temperature
+          double potential_pressure_melting_point = cc.a*Soc(i,j) + cc.b - cc.c*pressure;
 
-          double pressure_melting_temp = cc.a*Soc(i,j) + cc.b - cc.c*pressure; // potential pressure melting point
-          //! basal melt rate for Box i > 1
-          basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (pressure_melting_temp - Toc(i,j)); // in m/s
+          // basal melt rate for Box i > 1
+          basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (potential_pressure_melting_point - Toc(i,j)); // in m/s
 
-          T_pressure_melting(i,j) = cc.as*Soc(i,j) + cc.bs - cc.cs*pressure; // in situ pressure melting point in Kelvin
+          // in situ pressure melting point in Kelvin
+          T_pressure_melting(i,j) = cc.as*Soc(i,j) + cc.bs - cc.cs*pressure;
 
-          // compute means at boundary to next box
+          // average the temperature, salinity and overturning at the boundary between box i and box i+1
+          // this is used as input for box i+1
+          // using the values at the boundary helps smoothing discontinuities between boxes
+          // (here we sum up)
           if (ocean_box_mask(i-1,j)==(boxi+1) || ocean_box_mask(i+1,j)==(boxi+1) || ocean_box_mask(i,j-1)==(boxi+1) || ocean_box_mask(i,j+1)==(boxi+1)){
-            // i.e., if this cell is from the current Box and one of the neighbours is from the next higher box - It is important to only take the border of the current box
-            // to the calving front box into account, because the following mean value will be used to compute the value for the calving front box. I.e., this helps avoiding discontinuities!
             lcounter_edge_of_boxi_vector[shelf_id]++;
             lmean_salinity_boxi_vector[shelf_id] += Soc(i,j);
             lmean_temperature_boxi_vector[shelf_id] += Toc(i,j);
           } // no else-case necessary since all variables are set to zero at the beginning of this routine
         }
-      } // NOTE NO else-case, since  basalmeltRateGroundingLineBox() and basalMeltRateMissingCells() cover all other cases and we would overwrite those results here.
+      } // no else-case, since  calculate_basal_melt_box1() and basalMeltRateMissingCells() cover all other cases and we would overwrite those results here.
     }
 
+    // average the temperature, salinity and overturning at the boundary between boxi and box i+1
+    // (here we divide)
     for(int k=0;k<numberOfBasins;k++) {
-      // NOTE: overturning should not be changed!!!
+      // overturning should not be changed, fixed from box 1
       double counter_edge_of_boxi_vector=0.0;
       counter_edge_of_boxi_vector = GlobalSum(m_grid->com, lcounter_edge_of_boxi_vector[k]);
       mean_salinity_boundary_vector[k] = GlobalSum(m_grid->com, lmean_salinity_boxi_vector[k]);

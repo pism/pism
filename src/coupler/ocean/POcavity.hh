@@ -98,7 +98,7 @@ private:
   void identify_ocean_box_mask(const Constants &constants);
   void set_ocean_input_fields(const Constants &constants);
   void calculate_basal_melt_box1(const Constants &constants);
-  void basalMeltRateOtherBoxes(const Constants &constants);
+  void calculate_basal_melt_other_boxes(const Constants &constants);
   void basalMeltRateMissingCells(const Constants &constants);
   double most_frequent_element(const std::vector<double>&);
 
