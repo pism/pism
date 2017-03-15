@@ -373,7 +373,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
 
   //basal melt rates underneath ice shelves
   calculate_basal_melt_box1(cc);
-  calculate_basal_melt_other_boxes(cc); // TODO Diese Routinen woanders aufrufen (um Dopplung zu vermeiden)
+  calculate_basal_melt_other_boxes(cc);
   basalMeltRateMissingCells(cc);  //Assumes that mass flux is proportional to the shelf-base heat flux.
 
   m_shelfbtemp.copy_from(T_pressure_melting); // in-situ freezing point at the ice shelf base
@@ -567,13 +567,13 @@ void Cavity::compute_ocean_input_per_basin(const Constants &cc) {
   std::vector<double> m_Sval(numberOfBasins);
 
  // initalize to zero per basin
-  for(int k=0;k<numberOfBasins;k++){
-    m_count[k]=0.0;
-    lm_count[k]=0.0;
-    lm_Sval[k]=0.0;
-    lm_Tval[k]=0.0;
-    m_Tval[k]=0.0;
-    m_Sval[k]=0.0;
+  for(int shelf_id=0;shelf_id<numberOfBasins;shelf_id++){
+    m_count[shelf_id]=0.0;
+    lm_count[shelf_id]=0.0;
+    lm_Sval[shelf_id]=0.0;
+    lm_Tval[shelf_id]=0.0;
+    m_Tval[shelf_id]=0.0;
+    m_Sval[shelf_id]=0.0;
   }
 
   IceModelVec::AccessList list;
@@ -599,31 +599,31 @@ void Cavity::compute_ocean_input_per_basin(const Constants &cc) {
   // if no ocean_contshelf_mask values intersect with the basin, m_count is zero.
   // in such case, use dummy temperature and salinity. This could happen, for
   // example, if the ice shelf front advances beyond the continental shelf break.
-  for(int k=0;k<numberOfBasins;k++) {
+  for(int shelf_id=0;shelf_id<numberOfBasins;shelf_id++) {
 
-    m_count[k] = GlobalSum(m_grid->com, lm_count[k]);
-    m_Sval[k] = GlobalSum(m_grid->com, lm_Sval[k]);
-    m_Tval[k] = GlobalSum(m_grid->com, lm_Tval[k]);
+    m_count[shelf_id] = GlobalSum(m_grid->com, lm_count[shelf_id]);
+    m_Sval[shelf_id] = GlobalSum(m_grid->com, lm_Sval[shelf_id]);
+    m_Tval[shelf_id] = GlobalSum(m_grid->com, lm_Tval[shelf_id]);
 
     // if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
     // FIXME: the following warning occurs once at initialization before input is available.
     // Please ignore this very first warning for now.
-    if(k>0 && m_count[k]==0){
+    if(shelf_id>0 && m_count[shelf_id]==0){
       m_log->message(2, "SIMPEL ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
                         "(no values with ocean_contshelf_mask=2).\n"
                         "No mean salinity or temperature values are computed, instead using\n"
                         "the standard values T_dummy =%.3f, S_dummy=%.3f.\n"
                         "This might bias your basal melt rates, check your input data carefully.\n",
-                        k, cc.T_dummy, cc.S_dummy);
-      Toc_box0_vec[k] = cc.T_dummy;
-      Soc_box0_vec[k] = cc.S_dummy;
+                        shelf_id, cc.T_dummy, cc.S_dummy);
+      Toc_box0_vec[shelf_id] = cc.T_dummy;
+      Soc_box0_vec[shelf_id] = cc.S_dummy;
     } else {
-      m_Sval[k] = m_Sval[k] / m_count[k];
-      m_Tval[k] = m_Tval[k] / m_count[k];
+      m_Sval[shelf_id] = m_Sval[shelf_id] / m_count[shelf_id];
+      m_Tval[shelf_id] = m_Tval[shelf_id] / m_count[shelf_id];
 
-      Toc_box0_vec[k]=m_Tval[k];
-      Soc_box0_vec[k]=m_Sval[k];
-      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", k, Toc_box0_vec[k], Soc_box0_vec[k]);
+      Toc_box0_vec[shelf_id]=m_Tval[shelf_id];
+      Soc_box0_vec[shelf_id]=m_Sval[shelf_id];
+      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", shelf_id, Toc_box0_vec[shelf_id], Soc_box0_vec[shelf_id]);
     }
   }
 
@@ -807,7 +807,7 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
 
   const IceModelVec2CellType &m_mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  for(int k=0;k<numberOfBasins;k++){ max_distGL[k]=0.0; max_distIF[k]=0.0;lmax_distGL[k]=0.0; lmax_distIF[k]=0.0;}
+  for(int shelf_id=0;shelf_id<numberOfBasins;shelf_id++){ max_distGL[shelf_id]=0.0; max_distIF[shelf_id]=0.0;lmax_distGL[shelf_id]=0.0; lmax_distIF[shelf_id]=0.0;}
 
   IceModelVec::AccessList list;
   list.add(cbasins);
@@ -904,9 +904,9 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   const int nBoxes = numberOfBoxes+2;
   std::vector<std::vector<int> > lcounter_boxes(numberOfBasins, std::vector<int>(nBoxes));
 
-  for (int k=0;k<numberOfBasins;k++){
+  for (int shelf_id=0;shelf_id<numberOfBasins;shelf_id++){
     for (int l=0;l<nBoxes;l++){
-      lcounter_boxes[k][l]=0;
+      lcounter_boxes[shelf_id][l]=0;
     }
   }
 
@@ -919,10 +919,10 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
     }
   }
 
-  for (int k=0;k<numberOfBasins;k++){
-    counter_boxes[k].resize(nBoxes);
+  for (int shelf_id=0;shelf_id<numberOfBasins;shelf_id++){
+    counter_boxes[shelf_id].resize(nBoxes);
     for (int l=0;l<nBoxes;l++){
-      counter_boxes[k][l] = GlobalSum(m_grid->com, lcounter_boxes[k][l]);
+      counter_boxes[shelf_id][l] = GlobalSum(m_grid->com, lcounter_boxes[shelf_id][l]);
     }
   }
 
@@ -1010,12 +1010,12 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
   std::vector<double> lmean_meltrate_box1_vector(numberOfBasins);
   std::vector<double> lmean_overturning_box1_vector(numberOfBasins);
 
-  for (int k=0;k<numberOfBasins;k++){
-    lcounter_edge_of_box1_vector[k]=0.0;
-    lmean_salinity_box1_vector[k]=0.0;
-    lmean_temperature_box1_vector[k]=0.0;
-    lmean_meltrate_box1_vector[k]=0.0;
-    lmean_overturning_box1_vector[k]=0.0;
+  for (int shelf_id=0;shelf_id<numberOfBasins;shelf_id++){
+    lcounter_edge_of_box1_vector[shelf_id]=0.0;
+    lmean_salinity_box1_vector[shelf_id]=0.0;
+    lmean_temperature_box1_vector[shelf_id]=0.0;
+    lmean_meltrate_box1_vector[shelf_id]=0.0;
+    lmean_overturning_box1_vector[shelf_id]=0.0;
   }
 
   const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -1148,7 +1148,7 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
     }
 
     // print values at boundary between box 1 and box 2.
-    m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", k,counter_edge_of_box1_vector,mean_salinity_boundary_vector[shelf_id],mean_temperature_boundary_vector[shelf_id],mean_overturning_box1_vector[shelf_id]) ;
+    m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", shelf_id,counter_edge_of_box1_vector,mean_salinity_boundary_vector[shelf_id],mean_temperature_boundary_vector[shelf_id],mean_overturning_box1_vector[shelf_id]) ;
   }
 
     countHelpterm = GlobalSum(m_grid->com, lcountHelpterm);
@@ -1190,10 +1190,10 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) { //FIXME ren
     std::vector<double> lmean_temperature_boxi_vector(numberOfBasins); // in Kelvin
     std::vector<double> lcounter_edge_of_boxi_vector(numberOfBasins);
 
-    for (int k=0;k<numberOfBasins;k++){
-      lcounter_edge_of_boxi_vector[k] =0.0;
-      lmean_salinity_boxi_vector[k]   =0.0;
-      lmean_temperature_boxi_vector[k]=0.0;
+    for (int shelf_id=0;shelf_id<numberOfBasins;shelf_id++){
+      lcounter_edge_of_boxi_vector[shelf_id] =0.0;
+      lmean_salinity_boxi_vector[shelf_id]   =0.0;
+      lmean_temperature_boxi_vector[shelf_id]=0.0;
     }
 
     // TODO: does this need to be within the loop over boxes?
@@ -1287,23 +1287,23 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) { //FIXME ren
 
     // average the temperature, salinity and overturning at the boundary between boxi and box i+1
     // (here we divide)
-    for(int k=0;k<numberOfBasins;k++) {
+    for (int shelf_id=0;shelf_id<numberOfBasins;shelf_id++) {
       // overturning should not be changed, fixed from box 1
       double counter_edge_of_boxi_vector=0.0;
-      counter_edge_of_boxi_vector = GlobalSum(m_grid->com, lcounter_edge_of_boxi_vector[k]);
-      mean_salinity_boundary_vector[k] = GlobalSum(m_grid->com, lmean_salinity_boxi_vector[k]);
-      mean_temperature_boundary_vector[k] = GlobalSum(m_grid->com, lmean_temperature_boxi_vector[k]); // in Kelvin
+      counter_edge_of_boxi_vector = GlobalSum(m_grid->com, lcounter_edge_of_boxi_vector[shelf_id]);
+      mean_salinity_boundary_vector[shelf_id] = GlobalSum(m_grid->com, lmean_salinity_boxi_vector[shelf_id]);
+      mean_temperature_boundary_vector[shelf_id] = GlobalSum(m_grid->com, lmean_temperature_boxi_vector[shelf_id]); // in Kelvin
 
       if (counter_edge_of_boxi_vector>0.0){
-        mean_salinity_boundary_vector[k] = mean_salinity_boundary_vector[k]/counter_edge_of_boxi_vector;
-        mean_temperature_boundary_vector[k] = mean_temperature_boundary_vector[k]/counter_edge_of_boxi_vector; // in Kelvin
+        mean_salinity_boundary_vector[shelf_id] = mean_salinity_boundary_vector[shelf_id]/counter_edge_of_boxi_vector;
+        mean_temperature_boundary_vector[shelf_id] = mean_temperature_boundary_vector[shelf_id]/counter_edge_of_boxi_vector; // in Kelvin
       } else { // This means that there is no [cell from the GLbox neighboring a cell from the CFbox], NOT necessarily that there is no GLbox!
-        mean_salinity_boundary_vector[k]=0.0; mean_temperature_boundary_vector[k]=0.0;
+        mean_salinity_boundary_vector[shelf_id]=0.0; mean_temperature_boundary_vector[shelf_id]=0.0;
       }
 
-      m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", k,counter_edge_of_boxi_vector,
-                        mean_salinity_boundary_vector[k],mean_temperature_boundary_vector[k],
-                        mean_overturning_box1_vector[k]) ;
+      m_log->message(5, "  %d: cnt=%.0f, sal=%.3f, temp=%.3f, over=%.1e \n", shelf_id,counter_edge_of_boxi_vector,
+                        mean_salinity_boundary_vector[shelf_id],mean_temperature_boundary_vector[shelf_id],
+                        mean_overturning_box1_vector[shelf_id]) ;
     } // basins
 
     countGl0 = GlobalSum(m_grid->com, lcountGl0);
