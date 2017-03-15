@@ -80,10 +80,6 @@ Cavity::Constants::Constants(const Config &config) {
 }
 
 
-const int Cavity::box1           = 1;       // ocean box covering the grounding line region
-const int Cavity::box2           = 2;       // ocean box neighboring the box 1
-// other boxes are covered by boxi
-
 const int Cavity::maskfloating = MASK_FLOATING;
 const int Cavity::maskocean    = MASK_ICE_FREE_OCEAN;
 const int Cavity::maskgrounded = MASK_GROUNDED;
@@ -1051,14 +1047,14 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
     basalmeltrate_shelf(i,j) = 0.0;
     overturning(i,j) = 0.0;
 
-    if ((ocean_box_mask(i,j) == box1) && (shelf_id > 0.0)){
+    if ((ocean_box_mask(i,j) == 1) && (shelf_id > 0.0)){
 
       // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4;
       T_star(i,j) = cc.a*Soc_box0(i,j) + cc.b - cc.c*pressure - Toc_box0(i,j); // in Kelvin
 
       //FIXME this assumes rectangular cell areas, adjust with real areas from projection
-      double area_box1 = (counter_boxes[shelf_id][box1] * dx * dy);
+      double area_box1 = (counter_boxes[shelf_id][1] * dx * dy);
 
       double g1 = area_box1 * gamma_T ;
       double s1 = Soc_box0(i,j) / (cc.nu*cc.lambda);
@@ -1083,16 +1079,16 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
         lcountHelpterm+=1;
       }
 
-      //! temperature for box 1, p-q formula
+      // temperature for box 1, p-q formula
       Toc(i,j) = Toc_box0(i,j) - ( -0.5*p_coeff + sqrt(0.25*PetscSqr(p_coeff) -q_coeff) ); // in Kelvin
-      //! salinity for box 1
+      // salinity for box 1
       Soc(i,j) = Soc_box0(i,j) - (Soc_box0(i,j) / (cc.nu*cc.lambda)) * (Toc_box0(i,j) - Toc(i,j));  // in psu
 
       // potential pressure melting pointneeded to calculate thermal driving
       // using coefficients for potential temperature
       double potential_pressure_melting_point = cc.a*Soc(i,j) + cc.b - cc.c*pressure;
 
-      //! basal melt rate for box 1
+      // basal melt rate for box 1
       basalmeltrate_shelf(i,j) = (-gamma_T/(cc.nu*cc.lambda)) * (
       potential_pressure_melting_point - Toc(i,j));  // in m/s
 
@@ -1103,8 +1099,8 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
       // this is used as input for box 2
       // using the values at the boundary helps smoothing discontinuities between boxes
       // (here we sum up)
-      if (ocean_box_mask(i-1,j)==box2 || ocean_box_mask(i+1,j)==box2 ||
-          ocean_box_mask(i,j-1)==box2 || ocean_box_mask(i,j+1)==box2){
+      if (ocean_box_mask(i-1,j)==2 || ocean_box_mask(i+1,j)==2 ||
+          ocean_box_mask(i,j-1)==2 || ocean_box_mask(i,j+1)==2){
         lcounter_edge_of_box1_vector[shelf_id]++;
         lmean_salinity_box1_vector[shelf_id] += Soc(i,j);
         lmean_temperature_box1_vector[shelf_id] += Toc(i,j); // in Kelvin
@@ -1160,8 +1156,8 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 
 //! Here are the core physical equations of the SIMPEL model:
 //! We here calculate basal melt rate, ambient ocean temperature and salinity.
-//! Overturning is only calculated for box 1 and used here as it is the same for all boxes
-//!  We calculate the average values at the boundary between box i and box i+1 as input for box i+1.
+//! Overturning is only calculated for box 1.
+//! We calculate the average values at the boundary between box i and box i+1 as input for box i+1.
 
 void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) {
 
@@ -1316,14 +1312,14 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) {
 
 //! Compute the basal melt for ice shelf cells with missing input data
 
-//! This covers cells that could not not be related to ocean boxes
+//! This covers cells that could not be related to ocean boxes
 //! or where input data is missing.
-//! Such boxes are identified with the ocean_box_mask value numberOfBoxes+1
-//! For those boxes use the [@BeckmannGoosse2003] meltrate parametrization, which
-//! only depends on local ocean input and not overturning.
+//! Such boxes are identified with the ocean_box_mask value numberOfBoxes+1.
+//! For those boxes use the [@ref BeckmannGoosse2003] meltrate parametrization, which
+//! only depends on local ocean inputs.
 //! We use the open ocean temperature and salinity as input here.
-//! Also set basal melt rate to zero everywhere for shelf_id zero, which is mainly
-//! at the computational demain boundary.
+//! Also set basal melt rate to zero if shelf_id is zero, which is mainly
+//! at the computational domain boundary.
 
 void Cavity::calculate_basal_melt_missing_cells(const Constants &cc) {
 
