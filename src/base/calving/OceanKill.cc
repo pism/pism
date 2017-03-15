@@ -53,51 +53,81 @@ void OceanKill::init() {
   options::String ocean_kill_file("-ocean_kill_file",
                                   "Specifies a file to get ocean_kill thickness from");
 
+  bool ocean_kill_mask_set = options::Bool("-ocean_kill_mask",
+                                  "Specifies that ocean_kill mask is read from file");
+
+
   if (not ocean_kill_file.is_set()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "option -ocean_kill_file is required.");
   }
 
-  IceModelVec2S thickness, bed;
+  if (ocean_kill_mask_set) {
 
-  {
     m_log->message(2,
+               "  setting fixed calving front location using\n"
+               "  ocean_kill_mask from '%s'\n", ocean_kill_file->c_str());
+
+    m_ocean_kill_mask.regrid(ocean_kill_file, CRITICAL);
+
+    IceModelVec::AccessList list;
+    list.add(m_ocean_kill_mask);
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_ocean_kill_mask(i, j) < 0.5) {
+        m_ocean_kill_mask(i, j) = 0;
+      } else {
+        m_ocean_kill_mask(i, j) = 1;
+      }
+    }
+    m_ocean_kill_mask.update_ghosts();
+
+  } else {
+
+    IceModelVec2S thickness, bed;
+
+    {
+      m_log->message(2,
                "  setting fixed calving front location using\n"
                "  ice thickness and bed topography from '%s'\n"
                "  assuming sea level elevation of 0 meters.\n", ocean_kill_file->c_str());
 
-    thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
-    thickness.set_attrs("temporary", "land ice thickness",
-                        "m", "land_ice_thickness");
-    thickness.metadata().set_double("valid_min", 0.0);
+      thickness.create(m_grid, "thk", WITHOUT_GHOSTS);
+      thickness.set_attrs("temporary", "land ice thickness",
+                          "m", "land_ice_thickness");
+      thickness.metadata().set_double("valid_min", 0.0);
 
-    bed.create(m_grid, "topg", WITHOUT_GHOSTS);
-    bed.set_attrs("temporary", "bedrock surface elevation",
-                  "m", "bedrock_altitude");
+      bed.create(m_grid, "topg", WITHOUT_GHOSTS);
+      bed.set_attrs("temporary", "bedrock surface elevation",
+                    "m", "bedrock_altitude");
 
-    thickness.regrid(ocean_kill_file, CRITICAL);
-    bed.regrid(ocean_kill_file, CRITICAL);
-  }
+      thickness.regrid(ocean_kill_file, CRITICAL);
+      bed.regrid(ocean_kill_file, CRITICAL);
+    }
 
   IceModelVec::AccessList list{&m_ocean_kill_mask, &thickness, &bed};
 
-  GeometryCalculator gc(*m_config);
 
-  // FIXME: assumes zero sea level elevation.
-  const double sea_level = 0.0;
+    GeometryCalculator gc(*m_config);
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    // FIXME: assumes zero sea level elevation.
+    const double sea_level = 0.0;
 
-    int M = gc.mask(sea_level, bed(i, j), thickness(i, j));
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (thickness(i, j) > 0 or mask::grounded(M)) {
-      m_ocean_kill_mask(i, j) = 0;
-    } else {
-      m_ocean_kill_mask(i, j) = 1;
+      int M = gc.mask(sea_level, bed(i, j), thickness(i, j));
+
+      if (thickness(i, j) > 0 or mask::grounded(M)) {
+        m_ocean_kill_mask(i, j) = 0;
+      } else {
+        m_ocean_kill_mask(i, j) = 1;
+      }
     }
-  }
+    m_ocean_kill_mask.update_ghosts();
 
-  m_ocean_kill_mask.update_ghosts();
+  }
 }
 
 // Updates mask and ice thickness, including ghosts.
