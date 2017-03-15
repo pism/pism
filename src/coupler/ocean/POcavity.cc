@@ -68,14 +68,14 @@ Cavity::Constants::Constants(const Config &config) {
   alpha      = 7.5e-5;       // 1/K
   beta       = 7.7e-4;       // 1/psu
 
-  default_gamma_T    = 1e-6;        // m/s FIXME check!
-  default_overturning_coeff    = 5e6;         // kg−1 s−1 FIXME check!
+  default_gamma_T    = 2e-5;        // m/s FIXME check!
+  default_overturning_coeff    = 1e6;         // kg−1 s−1 FIXME check!
 
   // for shelf cells where normal box model is not calculated,
   // used in calculate_basal_melt_missing_cells(), compare POConstantPIK
   // m/s, thermal exchange velocity for Beckmann-Goose parameterization
   // this is a different meltFactor as in POConstantPIK
-  meltFactor   = 0.2;
+  meltFactor   = 0.01;
 
 }
 
