@@ -48,9 +48,13 @@ protected:
   void topg_to_phi(const IceModelVec2S &bed_topography);
   void tauc_to_phi();
 protected:
+
+  bool m_topg_to_phi, m_tauc_to_phi, m_iterative_phi;
   IceModelVec2S m_till_phi, m_tillwat, m_Po;
+  IceModelVec2S m_target_usurf, m_diff_usurf,m_usurf,m_diff_mask;
   IceModelVec2S m_bwat;  // only allocated and used if basal_yield_stress.add_transportable_water = true
   hydrology::Hydrology *m_hydrology;
+  double m_last_time, m_last_inverse_time;
 };
 
 } // end of namespace pism

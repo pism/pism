@@ -38,6 +38,8 @@
 #include "base/grounded_cell_fraction.hh"
 #include "base/part_grid_threshold_thickness.hh"
 
+#include "base/util/pism_options.hh"
+
 
 namespace pism {
 
@@ -465,6 +467,10 @@ void IceModel::massContExplicitStep(double dt,
     H_residual.set(0.0);
   }
 
+  const bool do_prescribe_gl = options::Bool("-prescribe_gl", "Prescribes grounding line position");
+  const double sea_level = m_ocean->sea_level_elevation();
+  const double ocean_density = m_config->get_double("constants.sea_water.density");
+
   const bool dirichlet_bc = m_config->get_boolean("stress_balance.ssa.dirichlet_bc");
   if (dirichlet_bc) {
     list.add(m_ssa_dirichlet_bc_mask);
@@ -591,6 +597,26 @@ void IceModel::massContExplicitStep(double dt,
         // this has to go *after* accounting above!
         H_new(i, j) = 0.0;
       }
+
+
+      //presribe floating ice thickness if grounding line fixed
+      if (do_prescribe_gl) {
+        if (m_cell_type.grounded(i, j)) {
+          // prevent grounded parts form becoming afloat
+          if (m_flux_divergence(i, j)<1000.0/3.14e7) {
+            H_new(i, j)=std::max(H_new(i, j),1.0-(bed_topography(i,j)-sea_level)*ocean_density/ice_density);
+          }
+        }
+        else {
+          //avoid artefacts for floating cells surrounded by grounded neighbors
+          if (m_cell_type.grounded(i-1,j) && m_cell_type.grounded(i+1,j) && m_cell_type.grounded(i,j-1) && m_cell_type.grounded(i,j+1)){
+            H_new(i, j)=H_new(i, j);
+          } else {
+            H_new(i, j) = m_ice_thickness(i, j);
+          }
+        }
+      }
+
 
       // time-series accounting:
       {

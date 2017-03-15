@@ -32,6 +32,8 @@
 #include "base/util/pism_utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
 
+#include "base/util/PISMTime.hh"
+
 namespace pism {
 
 //! \file PISMMohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
@@ -67,7 +69,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
   m_till_phi.set_attrs("model_state",
                        "friction angle for till under grounded ice sheet",
                        "degrees", "");
-  m_till_phi.set_time_independent(true);
+  //m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
 
   // internal working space; stencil width needed because redundant computation
@@ -89,6 +91,45 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
                      "copy of transportable water thickness held by MohrCoulombYieldStress",
                      "m", "");
   }
+
+
+
+  //! Optimzation of till friction angle for given target surface elevation, analogous to 
+  // Pollard et al. (2012), TC 6(5), "A simple inverse method for the distribution of basal 
+  // sliding coefficients under ice sheets, applied to Antarctica"
+
+  bool iterative_phi = options::Bool("-iterative_phi",
+                                   "Turn on the iterative till friction angle computation"
+                                   " which uses target surface elevation");
+  if (iterative_phi) {
+
+    m_usurf.create(m_grid, "usurf",
+              WITH_GHOSTS, stencil_width);
+    m_usurf.set_attrs("internal",
+                 "external surface elevation",
+                 "m", "surface_altitude"); 
+
+    m_target_usurf.create(m_grid, "target_usurf",
+              WITH_GHOSTS, stencil_width);
+    m_target_usurf.set_attrs("internal",
+                 "target surface elevation",
+                 "m", "target_surface_altitude"); 
+    m_target_usurf.set_time_independent(true);
+
+    m_diff_usurf.create(m_grid, "diff_usurf",
+              WITH_GHOSTS, stencil_width);
+    m_diff_usurf.set_attrs("internal",
+                 "surface elevation anomaly",
+                 "m", ""); 
+
+    m_diff_mask.create(m_grid, "diff_mask",
+              WITH_GHOSTS, stencil_width);
+    m_diff_mask.set_attrs("internal",
+                 "mask for till phi iteration",
+                 "", ""); 
+  }
+
+
 }
 
 MohrCoulombYieldStress::~MohrCoulombYieldStress() {
@@ -156,6 +197,25 @@ void MohrCoulombYieldStress::init_impl() {
   m_log->message(2, "* Initializing the Mohr-Coulomb basal yield stress model...\n");
 
   const double till_phi_default = m_config->get_double("basal_yield_stress.mohr_coulomb.till_phi_default");
+
+  //Optimization scheme for till friction angle anlogous to Pollard et al. (2012) /////////
+  options::String iterative_phi_file("-iterative_phi",
+                                   "Turn on the iterative till friction angle computation"
+                                   " which uses target surface elevation from file",
+                                   "", options::ALLOW_EMPTY);
+
+  m_iterative_phi = iterative_phi_file.is_set();
+
+  if (m_iterative_phi) {
+      m_log->message(2, "* Initializing the iterative till friction angle optimization...\n");
+      //FIXME: is there a better workaroud to read target surface elevation from external file?!
+      //m_usurf.regrid(iterative_phi_file, OPTIONAL,0.0);
+      m_usurf.regrid(iterative_phi_file, CRITICAL);
+      m_target_usurf.copy_from(m_usurf);
+  } else {
+    m_log->message(2, "* No file set to read target surface elevation from...\n");
+  }
+  /////////////////////////////////////////////////////////////////////////////////////////////
 
   InputOptions opts = process_input_options(m_grid->com);
 
@@ -226,13 +286,29 @@ void MohrCoulombYieldStress::set_till_friction_angle(const IceModelVec2S &input)
 }
 
 
+
 void MohrCoulombYieldStress::define_model_state_impl(const PIO &output) const {
   m_till_phi.define(output);
+
+  if (m_iterative_phi) {
+    m_diff_usurf.define(output);
+    m_target_usurf.define(output);
+    m_diff_mask.define(output);
+  }
 }
 
 void MohrCoulombYieldStress::write_model_state_impl(const PIO &output) const {
   m_till_phi.write(output);
+
+  if (m_iterative_phi) {
+    m_diff_usurf.write(output);
+    m_target_usurf.write(output);
+    m_diff_mask.write(output);
+  }
 }
+
+
+
 
 //! Update the till yield stress for use in the pseudo-plastic till basal stress
 //! model.  See also IceBasalResistancePlasticLaw.
@@ -268,8 +344,16 @@ hydrology::Routing (or derived class thereof).
  */
 void MohrCoulombYieldStress::update_impl() {
 
+
   bool slippery_grounding_lines = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
        add_transportable_water  = m_config->get_boolean("basal_yield_stress.add_transportable_water");
+
+  //const bool do_prescribe_gl = options::Bool("-prescribe_gl", "Prescribes grounding line position"); 
+
+  //if (m_topg_to_phi) {
+  //  this->topg_to_phi();
+  //  m_topg_to_phi = false;
+  //}
 
   hydrology::Routing* hydrowithtransport = dynamic_cast<hydrology::Routing*>(m_hydrology);
 
@@ -277,6 +361,7 @@ void MohrCoulombYieldStress::update_impl() {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "add_transportable_water requires a routing hydrology model");
   }
+
 
   const double high_tauc   = m_config->get_double("basal_yield_stress.ice_free_bedrock"),
                tillwat_max = m_config->get_double("hydrology.tillwat_max"),
@@ -297,12 +382,122 @@ void MohrCoulombYieldStress::update_impl() {
 
   const IceModelVec2CellType &mask           = *m_grid->variables().get_2d_cell_type("mask");
   const IceModelVec2S        &bed_topography = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2S        &usurf          = *m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list{&m_tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
       &bed_topography, &m_Po};
   if (add_transportable_water) {
     list.add(m_bwat);
   }
+
+  // simple inversion method for till friction angle /////////////////////////////
+  // FIXME: export as modularized function
+  if (m_iterative_phi) {
+    list.add(usurf);
+    list.add(m_target_usurf);
+    list.add(m_diff_usurf);
+    list.add(m_diff_mask);
+
+    double tinv = 500.0, // yr
+         hinv = 500.0, // m
+         phimin = 1.0, 
+         phiminup = 5.0, 
+         phihmin = -300.0, // m
+         phihmax = 700.0, // m
+         phimax = 60.0,
+         dphi = 1.0,
+         phimod = 0.01; // m/yr
+
+    tinv = options::Real("-tphi_inverse", "time step for phi inversion",tinv);
+    hinv = options::Real("-hphi_inverse", "relative thickness for phi inversion",hinv);
+    phimax = options::Real("-phimax_inverse", "maximum value of phi inversion",phimax);
+    phimin = options::Real("-phimin_inverse", "minimum value of phi inversion",phimin);
+    phimod = options::Real("-phimod_inverse", "change criterion for phi inversion",phimod);
+
+    double slope = (phiminup - phimin) / (phihmax - phihmin);
+
+    double year = units::convert(m_sys, m_grid->ctx()->time()->current(), "seconds", "years");
+
+    bool initstep = ((units::convert(m_sys, m_grid->ctx()->time()->start(), "seconds", "years") - year) == 0.0);
+
+    if (initstep) {
+      m_last_time = year,
+      m_last_inverse_time = year;
+      m_diff_mask.set(1.0);//apply everywhere
+    } 
+
+    //if (gsl_isnan(m_last_time)) {
+    //  m_last_time = units::convert(m_sys, m_grid->ctx()->time()->start(), "seconds", "years") - year;
+    //  m_log->message(2,"!!!! last time undefined");
+    //}
+    //if (gsl_isnan(m_last_inverse_time)) {
+    //  m_last_inverse_time = units::convert(m_sys, m_grid->ctx()->time()->start(), "seconds", "years") - year;
+    //  m_log->message(2,"!!!! last inverse time undefined");
+    //}
+
+    double dt_years = year - m_last_time,
+           dt_inverse = year - m_last_inverse_time;
+    bool inverse_step = (dt_inverse > tinv);
+    if (initstep)
+      inverse_step = true;
+
+    //if (inverse_step) 
+    //m_log->message(2,"!!!! time: %f, %f , %d, %d, %f, %f\n",year,(year+dt_years),dt_years,dt_inverse);
+
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (inverse_step) {
+        if (mask.grounded_ice(i,j)) {
+
+          double diff_usurf_prev = m_diff_usurf(i,j);
+          m_diff_usurf(i,j) = usurf(i,j)-m_target_usurf(i,j);
+          
+          // Convergence criterion
+          double till_phi_old = m_till_phi(i,j);
+          double diff_mask_old = m_diff_mask(i,j);
+          double diff_diff = PetscAbs(m_diff_usurf(i,j)-diff_usurf_prev);
+
+          if (diff_diff/tinv > phimod) {
+            m_diff_mask(i,j)=1.0;
+
+            // Do incremental steps of maximum 0.5*dphi down and dphi up reaching the upper limit phimax
+            m_till_phi(i,j) -= PetscMin(dphi,PetscMax(-dphi*0.5,m_diff_usurf(i,j)/hinv));
+            m_till_phi(i,j) = PetscMin(phimax,m_till_phi(i,j));
+
+            // Different lower constraints for marine (b<phihmin) and continental (b>phihmax) areas)
+            if (bed_topography(i,j)>phihmax){
+              m_till_phi(i,j) = PetscMax(phiminup,m_till_phi(i,j));
+
+            // Apply smooth transition between marine and continental areas
+            } else if (bed_topography(i,j)<=phihmax && bed_topography(i,j)>=phihmin){
+              m_till_phi(i, j) = PetscMax((phimin + (bed_topography(i,j) - phihmin) * slope),m_till_phi(i,j));
+
+            } else {
+              m_till_phi(i,j) = PetscMax(phimin,m_till_phi(i,j));
+            }
+          } else {
+            m_diff_mask(i,j)=0.0;
+          }
+
+
+        // Floating and ice free ocean
+        } else if (mask.ocean(i,j)){
+          m_diff_usurf(i,j) = usurf(i,j)-m_target_usurf(i,j);
+          m_till_phi(i,j) = phimin;
+          m_diff_mask(i,j)=0.0;
+        } 
+      }
+    }
+    m_last_time = year;
+    if (inverse_step) {
+      m_log->message(2,"\n* Perform iterative step for optimization of till friction angle phi!\n\n");
+      m_last_inverse_time = year;
+    }
+  }
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

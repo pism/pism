@@ -279,6 +279,8 @@ void ForceThickness::mass_flux_impl(IceModelVec2S &result) const {
       } else {
         result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - H(i,j));
       }
+      //avoid negative SMB
+      result(i,j)=PetscMax(0.0,result(i,j));
     }
   }
   // no communication needed
