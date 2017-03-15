@@ -194,11 +194,6 @@ netcdf pism_config {
     pism_config:bed_deformation.lc.elastic_model_option = "bed_def_lc_elastic_model";
     pism_config:bed_deformation.lc.elastic_model_type = "boolean";
 
-    pism_config:bed_deformation.lc.regrid_bed_special = "no";
-    pism_config:bed_deformation.lc.regrid_bed_special_doc = "Correct topg when switching to a different grid";
-    pism_config:bed_deformation.lc.regrid_bed_special_option = "regrid_bed_special";
-    pism_config:bed_deformation.lc.regrid_bed_special_type = "boolean";
-
     pism_config:bed_deformation.mantle_density = 3300.0;
     pism_config:bed_deformation.mantle_density_doc = "half-space (mantle) density used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
     pism_config:bed_deformation.mantle_density_type = "scalar";

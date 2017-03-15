@@ -259,7 +259,8 @@ void IceCompModel::initialize_2d() {
   IceModelVec2S zero;
   zero.create(m_grid, "temporary", WITHOUT_GHOSTS);
   zero.set(0.0);
-  m_beddef->set_uplift(zero);
+
+  m_beddef->bootstrap(zero, zero, m_ice_thickness);
 
   // Test-specific initialization:
   switch (m_testname) {
@@ -331,8 +332,10 @@ void IceCompModel::initTestABCDH() {
   m_ice_thickness.update_ghosts();
 
   {
-    IceModelVec2S bed_topography;
+    IceModelVec2S bed_topography, bed_uplift;
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
+    bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+    bed_uplift.set(0.0);
 
     if (m_testname == 'H') {
       bed_topography.copy_from(m_ice_thickness);
@@ -340,7 +343,7 @@ void IceCompModel::initTestABCDH() {
     } else {  // flat bed case otherwise
       bed_topography.set(0.0);
     }
-    m_beddef->set_elevation(bed_topography);
+    m_beddef->bootstrap(bed_topography, bed_uplift, m_ice_thickness);
   }
 }
 
@@ -390,8 +393,9 @@ void IceCompModel::initTestL() {
   ExactLParameters L = exactL(rr);
 
   {
-    IceModelVec2S bed_topography;
+    IceModelVec2S bed_topography, bed_uplift;
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
+    bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
 
     IceModelVec::AccessList list{&m_ice_thickness, &bed_topography};
 
@@ -401,7 +405,10 @@ void IceCompModel::initTestL() {
     }
 
     m_ice_thickness.update_ghosts();
-    m_beddef->set_elevation(bed_topography);
+
+    bed_uplift.set(0.0);
+
+    m_beddef->bootstrap(bed_topography, bed_uplift, m_ice_thickness);
   }
 
   // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
@@ -885,10 +892,13 @@ void IceCompModel::test_V_init() {
 
   {
     // initialize the bed topography
-    IceModelVec2S bed_topography;
+    IceModelVec2S bed_topography, bed_uplift;
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
     bed_topography.set(-1000);
-    m_beddef->set_elevation(bed_topography);
+    bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
+    bed_uplift.set(0.0);
+
+    m_beddef->bootstrap(bed_topography, bed_uplift, m_ice_thickness);
   }
 
   // set SSA boundary conditions:

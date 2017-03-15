@@ -1,8 +1,8 @@
-> *Copyright (C) 2004 -- 2016 the PISM authors.*
+> *Copyright (C) 2004 -- 2017 the PISM authors.*
 >
 > *This file is part of PISM. PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version. PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with PISM. If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA*
 
-> **WARNING**: PISM is an ongoing project. Ice sheet modeling is complicated and is generally not mature. Please don’t trust the results of PISM or any other ice sheet model without a fair amount of exploration. Also, please don’t expect all your questions to be answered here. Write to us with questions at help@pism-docs.org.
+> **WARNING**: PISM is an ongoing project. Ice sheet modeling is complicated and is generally not mature. Please don’t trust the results of PISM or any other ice sheet model without a fair amount of exploration. Also, please don’t expect all your questions to be answered here. Write to us with questions at uaf-pism@alaska.edu.
 
 # <a name="TOC"></a> Table of Contents
 
@@ -386,7 +386,7 @@ The main page for the documentation is then in `doc/pismpython/html/index.html` 
 
 6. <a name="6"></a> The `PETSC_ARCH` variable is just a string you can use to choose different PETSc configurations and does not have any other significance.
 
-[pism-developers]: mailto:help@pism-docs.org
+[pism-developers]: mailto:uaf-pism@alaska.edu
 
 [pism-docs]: http://www.pism-docs.org
 [pism-docs-manuals]: http://pism-docs.org/wiki/doku.php?id=overview

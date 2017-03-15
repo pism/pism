@@ -44,7 +44,6 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
 option (Pism_BUILD_PDFS "Build PISM's PDF documentation with 'make all'." OFF)
-option (Pism_INSTALL_EXAMPLES "Install the example directory." OFF)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
@@ -68,16 +67,12 @@ if (Pism_LINK_STATICALLY)
 endif ()
 
 # Deal with build types
-set (Pism_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
-# Force the default cache entry to obey Pism_BUILD_TYPE
-set (CMAKE_BUILD_TYPE ${Pism_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None (CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
-mark_as_advanced (CMAKE_BUILD_TYPE) # hide the default entry
-if (Pism_BUILD_TYPE MATCHES "Debug")
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
   set (Pism_BUILD_EXTRA_EXECS ON CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
   option (Pism_DEBUG              "Enables extra checks in the code."          ON)
   option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings."            ON)
   option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF)
-endif (Pism_BUILD_TYPE MATCHES "Debug")
+endif (CMAKE_BUILD_TYPE MATCHES "Debug")
 
 # Enable extra checks in the code:
 if (Pism_DEBUG)
@@ -207,11 +202,10 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/util/ DESTINATION ${Pism_BIN_DIR}
   USE_SOURCE_PERMISSIONS
   FILES_MATCHING PATTERN "*.py")
 
-if (Pism_INSTALL_EXAMPLES)
-  install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
-    DESTINATION ${Pism_SHARE_DIR}
-    USE_SOURCE_PERMISSIONS)
-endif()
+
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
+  DESTINATION ${Pism_SHARE_DIR}
+  USE_SOURCE_PERMISSIONS)
 
 add_subdirectory (src)
 add_subdirectory (site-packages)

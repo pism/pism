@@ -429,35 +429,39 @@ void IceModel::createVecs() {
     m_grid->variables().add(m_Href);
   }
 
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
-    // bc_locations
+  // SSA Dirichlet B.C. locations and values
+  //
+  // The mask m_ssa_dirichlet_bc_mask is also used to prescribe locations of ice thickness Dirichlet
+  // B.C. (FIXME)
+  {
     m_ssa_dirichlet_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
     m_ssa_dirichlet_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",
-                      "", "");
-    std::vector<double> bc_mask_values(2);
-    bc_mask_values[0] = 0;
-    bc_mask_values[1] = 1;
-    m_ssa_dirichlet_bc_mask.metadata().set_doubles("flag_values", bc_mask_values);
+                                      "", "");
+    m_ssa_dirichlet_bc_mask.metadata().set_doubles("flag_values", {0, 1});
     m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
     m_grid->variables().add(m_ssa_dirichlet_bc_mask);
 
+    m_ssa_dirichlet_bc_mask.set(0.0);
+  }
+  // SSA Dirichlet B.C. values
+  {
     double fill_value = units::convert(m_sys, m_config->get_double("output.fill_value"),
                                        "m year-1", "m second-1");
+    double valid_range = units::convert(m_sys, 1e6, "m year-1", "m second-1");
     // vel_bc
     m_ssa_dirichlet_bc_values.create(m_grid, "_ssa_bc", WITH_GHOSTS, WIDE_STENCIL); // u_ssa_bc and v_ssa_bc
     m_ssa_dirichlet_bc_values.set_attrs("model_state",
-                     "X-component of the SSA velocity boundary conditions",
-                     "m s-1", "", 0);
+                                        "X-component of the SSA velocity boundary conditions",
+                                        "m s-1", "", 0);
     m_ssa_dirichlet_bc_values.set_attrs("model_state",
-                     "Y-component of the SSA velocity boundary conditions",
-                     "m s-1", "", 1);
+                                        "Y-component of the SSA velocity boundary conditions",
+                                        "m s-1", "", 1);
     for (int j = 0; j < 2; ++j) {
       m_ssa_dirichlet_bc_values.metadata(j).set_string("glaciological_units", "m year-1");
-      m_ssa_dirichlet_bc_values.metadata(j).set_double("valid_min",  units::convert(m_sys, -1e6, "m year-1", "m second-1"));
-      m_ssa_dirichlet_bc_values.metadata(j).set_double("valid_max",  units::convert(m_sys,  1e6, "m year-1", "m second-1"));
+      m_ssa_dirichlet_bc_values.metadata(j).set_doubles("valid_range", {-valid_range, valid_range});
       m_ssa_dirichlet_bc_values.metadata(j).set_double("_FillValue", fill_value);
     }
-    //just for diagnostics...
+    // just for diagnostics...
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }
 

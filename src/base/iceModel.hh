@@ -362,8 +362,8 @@ protected:
   virtual void do_calving();
   virtual void Href_cleanup();
   virtual void update_cumulative_discharge(const IceModelVec2S &thickness,
-                                           const IceModelVec2S &thickness_old,
                                            const IceModelVec2S &Href,
+                                           const IceModelVec2S &thickness_old,
                                            const IceModelVec2S &Href_old);
 
 

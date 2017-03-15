@@ -91,12 +91,12 @@ public:
   GridParameters(Config::ConstPtr config);
 
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  GridParameters(Context::Ptr ctx,
+  GridParameters(Context::ConstPtr ctx,
                  const std::string &filename,
                  const std::string &variable_name,
                  Periodicity p);
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  GridParameters(Context::Ptr ctx,
+  GridParameters(Context::ConstPtr ctx,
                  const PIO &file,
                  const std::string &variable_name,
                  Periodicity p);
@@ -135,7 +135,7 @@ public:
   std::vector<unsigned int> procs_y;
 private:
   void init_from_config(Config::ConstPtr config);
-  void init_from_file(Context::Ptr ctx, const PIO &file,
+  void init_from_file(Context::ConstPtr ctx, const PIO &file,
                       const std::string &variable_name,
                       Periodicity p);
 };
@@ -206,25 +206,25 @@ public:
   typedef std::shared_ptr<IceGrid> Ptr;
   typedef std::shared_ptr<const IceGrid> ConstPtr;
 
-  IceGrid(Context::Ptr ctx, const GridParameters &p);
+  IceGrid(Context::ConstPtr ctx, const GridParameters &p);
 
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
                                                      SpacingType spacing, double Lambda = 0.0);
 
-  static Ptr Shallow(Context::Ptr ctx,
+  static Ptr Shallow(Context::ConstPtr ctx,
                      double Lx, double Ly,
                      double x0, double y0,
                      unsigned int Mx, unsigned int My, Periodicity p);
 
-  static Ptr FromFile(Context::Ptr ctx,
+  static Ptr FromFile(Context::ConstPtr ctx,
                       const PIO &file, const std::string &var_name,
                       Periodicity periodicity);
 
-  static Ptr FromFile(Context::Ptr ctx,
+  static Ptr FromFile(Context::ConstPtr ctx,
                       const std::string &file, const std::vector<std::string> &var_names,
                       Periodicity periodicity);
 
-  static Ptr FromOptions(Context::Ptr ctx);
+  static Ptr FromOptions(Context::ConstPtr ctx);
 
   petsc::DM::Ptr get_dm(int dm_dof, int stencil_width) const;
 

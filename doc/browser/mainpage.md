@@ -75,7 +75,7 @@ Just do `"make browser"` in the build directory and look in
   *root* for all PISM information.
 
 - You can *get help,* send comments, or ask for new features by email to
-  help@pism-docs.org.
+  uaf-pism@alaska.edu.
 
 - To *download* the PISM source code see https://github.com/pism/pism.
   Use of [Git](http://git-scm.com/) to download is strongly

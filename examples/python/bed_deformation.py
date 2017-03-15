@@ -105,7 +105,7 @@ def run(scenario, plot, pause, save):
 
     model = PISM.PBLingleClark(grid)
 
-    model.init(bed, uplift, thickness)
+    model.bootstrap(bed, uplift, thickness)
 
     # now add the disc load
     initialize_thickness(thickness, H0)

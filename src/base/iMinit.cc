@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -157,7 +157,7 @@ void IceModel::model_state_setup() {
 
   // Initialize a bed deformation model. This may use ice thickness initialized above.
   if (m_beddef) {
-    m_beddef->init();
+    m_beddef->init(input);
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
   }
@@ -867,9 +867,9 @@ void IceModel::init_calving() {
   }
 
   if (not methods.empty()) {
-    m_log->message(2,
-                   "PISM ERROR: calving method(s) [%s] are unknown and are ignored.\n",
-                   set_join(methods, ",").c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "PISM ERROR: calving method(s) [%s] are not supported.\n",
+                                  set_join(methods, ",").c_str());
   }
 }
 

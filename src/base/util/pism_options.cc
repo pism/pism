@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,7 @@ void show_usage(const Logger &log, const std::string &execname, const std::strin
              "       http://www.pism-docs.org/doxy/html/index.html\n"
              "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
              "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
-             "  5. email for help:  help@pism-docs.org\n",
+             "  5. email for help:  uaf-pism@alaska.edu\n",
              execname.c_str(), execname.c_str());
 }
 
