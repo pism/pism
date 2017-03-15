@@ -27,6 +27,7 @@
 #include "PA_delta_P.hh"
 #include "PA_frac_P.hh"
 #include "PA_paleo_precip.hh"
+#include "PATemperaturePIK.hh"
 #include "PAConstantPIK.hh"
 #include "PAAnomaly.hh"
 #include "PACosineYearlyCycle.hh"
@@ -42,6 +43,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   m_option = "atmosphere";
 
   add_model<PIK>("pik");
+  add_model<TemperaturePIK>("pik_temp");
   add_model<Given>("given");
   add_model<SeaRISEGreenland>("searise_greenland");
   add_model<CosineYearlyCycle>("yearly_cycle");

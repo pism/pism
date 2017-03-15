@@ -31,6 +31,10 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, AtmosphereModel* in)
   m_precip_lapse_rate = 0.0;
   m_option_prefix     = "-atmosphere_lapse_rate";
   m_surface = NULL;
+
+  m_precip_scale_factor = 0.0;
+  do_precip_scale = options::Bool("-precip_scale_factor", "Scale precipitation according to change in surface elevation");
+
 }
 
 LapseRates::~LapseRates() {
@@ -53,21 +57,46 @@ void LapseRates::init_impl() {
                                     " in m year-1 per km",
                                     m_precip_lapse_rate);
 
-  m_log->message(2,
+  m_precip_scale_factor = options::Real("-precip_scale_factor",
+                                    "Elevation scale rate for the surface mass balance,"
+                                    " in units per km",
+                                    m_precip_scale_factor);
+
+  
+
+  //This is basically temperature lapse rate 8.2 K/Km from PATemperaturPIK times precipitation scale rate 5%/K )
+  if (do_precip_scale){
+    m_log->message(2,
+             "   air temperature lapse rate: %3.3f K per km\n"
+             "   precipitation scale factor:   %3.3f per km\n",
+             m_temp_lapse_rate, m_precip_scale_factor);
+  } else {
+    m_log->message(2,
              "   air temperature lapse rate: %3.3f K per km\n"
              "   precipitation lapse rate:   %3.3f m year-1 per km\n",
              m_temp_lapse_rate, m_precip_lapse_rate);
+  }
 
   m_temp_lapse_rate = units::convert(m_sys, m_temp_lapse_rate, "K/km", "K/m");
 
   m_precip_lapse_rate = units::convert(m_sys, m_precip_lapse_rate, "m year-1 / km", "m second-1 / m");
 
   m_surface = m_grid->variables().get_2d_scalar("surface_altitude");
+
+  m_precip_scale_factor = units::convert(m_sys, m_precip_scale_factor, "km-1", "m-1");
+
+
 }
 
 void LapseRates::mean_precipitation_impl(IceModelVec2S &result) const {
   m_input_model->mean_precipitation(result);
-  lapse_rate_correction(result, m_precip_lapse_rate);
+  if (do_precip_scale) {
+    lapse_rate_scale(result, m_precip_scale_factor);
+  } else {
+    lapse_rate_correction(result, m_precip_lapse_rate);
+  }
+
+
 }
 
 void LapseRates::mean_annual_temp_impl(IceModelVec2S &result) const {
@@ -122,7 +151,11 @@ void LapseRates::precip_time_series_impl(int i, int j, std::vector<double> &resu
   assert(m_surface != NULL);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    result[m] -= m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
+    if (do_precip_scale) {
+      result[m] *= exp(-m_precip_scale_factor * ((*m_surface)(i, j) - usurf[m]));
+    } else {
+      result[m] -= m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
+    }
   }
 }
 

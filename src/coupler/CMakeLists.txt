@@ -1,6 +1,7 @@
 # Boundary models (surface, atmosphere, ocean).
 add_library (pismboundary OBJECT
   ./PISMAtmosphere.cc
+  ./atmosphere/PATemperaturePIK.cc
   ./atmosphere/PAConstantPIK.cc
   ./atmosphere/PASeariseGreenland.cc
   ./atmosphere/PAYearlyCycle.cc
