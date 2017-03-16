@@ -76,7 +76,6 @@ struct GeometryEvolution::Impl {
   IceModelVec2S        area_specific_volume; // ghosted; updated in place
   IceModelVec2S        surface_elevation;    // ghosted; updated to maintain consistency
   IceModelVec2CellType cell_type;            // ghosted; updated to maintain consistency
-  IceModelVec2Stag     interface_velocity;   // ghosted; temporary storage
   IceModelVec2S        residual;             // not ghosted; temporary storage
   IceModelVec2Int      velocity_bc_mask;
 };
@@ -159,10 +158,6 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr g)
 
     cell_type.create(grid, "cell_type", WITH_GHOSTS);
     cell_type.set_attrs("internal", "working copy of the cell type mask", "", "");
-
-    interface_velocity.create(grid, "interface_velocity", WITH_GHOSTS);
-    interface_velocity.set_attrs("internal", "velocity through cell interfaces",
-                                 "meters / second", "");
 
     residual.create(grid, "residual", WITHOUT_GHOSTS);
     residual.set_attrs("internal", "residual area specific volume",
@@ -251,18 +246,11 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
   m_impl->profile.end("ge.copy");
 
   // Derived classes can include modifications for regional runs.
-  m_impl->profile.begin("ge.interface_velocity");
-  compute_interface_velocity(m_impl->cell_type,           // in (uses ghosts)
-                             m_impl->input_velocity,      // in (uses ghosts)
-                             m_impl->velocity_bc_mask,    // in (uses ghosts)
-                             m_impl->interface_velocity); // out (ghosts are updated)
-  m_impl->profile.end("ge.interface_velocity");
-
-  // Derived classes can include modifications for regional runs.
   m_impl->profile.begin("ge.interface_fluxes");
   compute_interface_fluxes(m_impl->cell_type,          // in (uses ghosts)
-                           m_impl->interface_velocity, // in
                            m_impl->ice_thickness,      // in (uses ghosts)
+                           m_impl->input_velocity,     // in (uses ghosts)
+                           m_impl->velocity_bc_mask,   // in (uses ghosts)
                            diffusive_flux,      // in
                            m_impl->interface_flux);    // out
   m_impl->profile.end("ge.interface_fluxes");
@@ -474,109 +462,6 @@ static double limit_diffusive_flux(int mask_current, int mask_neighbor, double f
 }
 
 /*!
- * Compute advective velocities at cell interfaces by averaging from the regular grid.
- *
- * Avoids using `velocity` at ice-free locations and includes Dirichlet B.C. values.
- *
- * FIXME: including Dirichlet B.C. values should not be necessary: the whole velocity field is
- * treated as fixed (prescribed) here, anyway. Dirichlet B.C. *locations*, on the other hand, *are*
- * needed.
- *
- * Uses width=1 ghosts of cell_type, velocity, bc_mask, bc_values.
- */
-void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &cell_type,
-                                                   const IceModelVec2V &velocity,
-                                                   const IceModelVec2Int &bc_mask,
-                                                   IceModelVec2Stag &output) {
-
-  using mask::icy;
-  using mask::ice_free;
-
-  IceModelVec::AccessList list{&cell_type, &velocity, &bc_mask, &output};
-
-  ParallelSection loop(m_impl->grid->com);
-  try {
-    for (Points p(*m_impl->grid); p; p.next()) {
-      const int
-        i  = p.i(),
-        j  = p.j(),
-        M  = cell_type(i, j),
-        BC = bc_mask.as_int(i, j);
-
-      const Vector2 V = velocity(i, j);
-
-      for (int n = 0; n < 2; ++n) {
-        const int
-          oi  = 1 - n,               // offset in the i direction
-          oj  = n,                   // offset in the j direction
-          i_n = i + oi,              // i index of a neighbor
-          j_n = j + oj;              // j index of a neighbor
-
-        const int M_n = cell_type(i_n, j_n); // mask of a neighbor
-
-        const Vector2 V_n  = velocity(i_n, j_n);
-
-        // Regular case
-        {
-          if (icy(M) and icy(M_n)) {
-            // Case 1: both sides of the interface are icy
-            output(i, j, n) = (n == 0 ? 0.5 * (V.u + V_n.u) : 0.5 * (V.v + V_n.v));
-
-          } else if (icy(M) and ice_free(M_n)) {
-            // Case 2: icy cell next to an ice-free cell
-            output(i, j, n) = (n == 0 ? V.u : V.v);
-
-          } else if (ice_free(M) and icy(M_n)) {
-            // Case 3: ice-free cell next to icy cell
-            output(i, j, n) = (n == 0 ? V_n.u : V_n.v);
-
-          } else if (ice_free(M) and ice_free(M_n)) {
-            // Case 4: both sides of the interface are ice-free
-            output(i, j, n) = 0.0;
-
-          }
-        }
-
-        // The Dirichlet B.C. case:
-        {
-          const int BC_n = bc_mask.as_int(i_n, j_n);
-
-          if (BC == 1 and BC_n == 1) {
-            // Case 1: both sides of the interface are B.C. locations: average from
-            // the regular grid onto the staggered grid.
-            output(i, j, n) = (n == 0 ? 0.5 * (V.u + V_n.u) : 0.5 * (V.v + V_n.v));
-
-          } else if (BC == 1 and BC_n == 0) {
-            // Case 2: at a Dirichlet B.C. location next to a regular location
-            output(i, j, n) = (n == 0 ? V.u : V.v);
-
-          } else if (BC == 0 and BC_n == 1) {
-
-            // Case 3: at a regular location next to a Dirichlet B.C. location
-            output(i, j, n) = (n == 0 ? V_n.u : V_n.v);
-
-          } else {
-            // Case 4: elsewhere.
-            // No Dirichlet B.C. adjustment here.
-          }
-
-        } // end of the Dirichlet B.C. case
-
-        // finally, limit advective velocities
-        output(i, j, n) = limit_advective_velocity(M, M_n, output(i, j, n));
-
-      } // staggered grid offset (n) loop
-
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  output.update_ghosts();
-}
-
-/*!
  * Combine advective velocity and the diffusive flux on the staggered grid with the ice thickness to
  * compute the total flux through cell interfaces.
  *
@@ -585,12 +470,16 @@ void GeometryEvolution::compute_interface_velocity(const IceModelVec2CellType &c
  * Limits the diffusive flux to prevent SIA-driven flow in the ocean and ice-free areas.
  */
 void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
-                                                 const IceModelVec2Stag     &interface_velocity,
                                                  const IceModelVec2S        &ice_thickness,
+                                                 const IceModelVec2V        &velocity,
+                                                 const IceModelVec2Int      &velocity_bc_mask,
                                                  const IceModelVec2Stag     &diffusive_flux,
                                                  IceModelVec2Stag           &output) {
 
-  IceModelVec::AccessList list{&cell_type, &interface_velocity, &ice_thickness,
+  using mask::icy;
+  using mask::ice_free;
+
+  IceModelVec::AccessList list{&cell_type, &velocity, &velocity_bc_mask, &ice_thickness,
       &diffusive_flux, &output};
 
   ParallelSection loop(m_impl->grid->com);
@@ -599,9 +488,11 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
       const int
         i  = p.i(),
         j  = p.j(),
-        M  = cell_type(i, j);
+        M  = cell_type(i, j),
+        BC = velocity_bc_mask.as_int(i, j);
 
       const double H = ice_thickness(i, j);
+      const Vector2 V  = velocity(i, j);
 
       for (int n = 0; n < 2; ++n) {
         const int
@@ -612,15 +503,69 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
 
         const int M_n = cell_type(i_n, j_n);
 
-        // diffusive
-        const double
-          Q_diffusive = limit_diffusive_flux(M, M_n, diffusive_flux(i, j, n));
+        // advective velocity at the current interface
+        double v = 0.0;
+        {
+          const Vector2 V_n  = velocity(i_n, j_n);
 
-        // advective
+          // Regular case
+          {
+            if (icy(M) and icy(M_n)) {
+              // Case 1: both sides of the interface are icy
+              v = (n == 0 ? 0.5 * (V.u + V_n.u) : 0.5 * (V.v + V_n.v));
+
+            } else if (icy(M) and ice_free(M_n)) {
+              // Case 2: icy cell next to an ice-free cell
+              v = (n == 0 ? V.u : V.v);
+
+            } else if (ice_free(M) and icy(M_n)) {
+              // Case 3: ice-free cell next to icy cell
+              v = (n == 0 ? V_n.u : V_n.v);
+
+            } else if (ice_free(M) and ice_free(M_n)) {
+              // Case 4: both sides of the interface are ice-free
+              v = 0.0;
+
+            }
+          }
+
+          // The Dirichlet B.C. case:
+          {
+            const int BC_n = velocity_bc_mask.as_int(i_n, j_n);
+
+            if (BC == 1 and BC_n == 1) {
+              // Case 1: both sides of the interface are B.C. locations: average from
+              // the regular grid onto the staggered grid.
+              v = (n == 0 ? 0.5 * (V.u + V_n.u) : 0.5 * (V.v + V_n.v));
+
+            } else if (BC == 1 and BC_n == 0) {
+              // Case 2: at a Dirichlet B.C. location next to a regular location
+              v = (n == 0 ? V.u : V.v);
+
+            } else if (BC == 0 and BC_n == 1) {
+
+              // Case 3: at a regular location next to a Dirichlet B.C. location
+              v = (n == 0 ? V_n.u : V_n.v);
+
+            } else {
+              // Case 4: elsewhere.
+              // No Dirichlet B.C. adjustment here.
+            }
+
+          } // end of the Dirichlet B.C. case
+
+          // finally, limit advective velocities
+          v = limit_advective_velocity(M, M_n, v);
+        }
+
+        // advective flux
         const double
-          v           = interface_velocity(i, j, n),
           H_n         = ice_thickness(i_n, j_n),
           Q_advective = v * (v > 0.0 ? H : H_n); // first order upwinding
+
+        // diffusive flux
+        const double
+          Q_diffusive = limit_diffusive_flux(M, M_n, diffusive_flux(i, j, n));
 
         output(i, j, n) = Q_diffusive + Q_advective;
       } // end of the loop over neighbors (n)

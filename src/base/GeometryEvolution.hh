@@ -76,16 +76,12 @@ protected:
                                          IceModelVec2S& H_residual,
                                          bool &done);
 
-  void compute_interface_velocity(const IceModelVec2CellType& cell_type,
-                                  const IceModelVec2V& velocity,
-                                  const IceModelVec2Int& bc_mask,
-                                  IceModelVec2Stag& output);
-
   virtual void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
-                                        const IceModelVec2Stag &velocity_staggered,
-                                        const IceModelVec2S &ice_thickness,
-                                        const IceModelVec2Stag &diffusive_flux,
-                                        IceModelVec2Stag &flux_staggered);
+                                        const IceModelVec2S        &ice_thickness,
+                                        const IceModelVec2V        &velocity,
+                                        const IceModelVec2Int      &velocity_bc_mask,
+                                        const IceModelVec2Stag     &diffusive_flux,
+                                        IceModelVec2Stag           &output);
 
   virtual void compute_flux_divergence(const IceModelVec2Stag &flux_staggered,
                                        const IceModelVec2Int &thickness_bc_mask,
