@@ -29,7 +29,7 @@ namespace ocean {
 //! \brief Implements the SIMPEL ocean model as submitted to The Cryosphere (March 2017).
 //!
 //! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
-//! use in PISM, i.e. tree dimensions.
+//! use in PISM, i.e. three dimensions.
 //!
 class Cavity : public PGivenClimate<OceanModifier,OceanModel> {
 public:
@@ -98,14 +98,11 @@ private:
   void identify_ocean_box_mask(const Constants &constants);
   void set_ocean_input_fields(const Constants &constants);
   void calculate_basal_melt_box1(const Constants &constants);
-  void basalMeltRateOtherBoxes(const Constants &constants);
-  void basalMeltRateMissingCells(const Constants &constants);
+  void calculate_basal_melt_other_boxes(const Constants &constants);
+  void calculate_basal_melt_missing_cells(const Constants &constants);
   double most_frequent_element(const std::vector<double>&);
 
-  static const int  box1, // ocean box covering the grounding line region
-                    box2, // ocean box neighboring the box 1, other boxes are covered by boxi
-
-                    maskfloating,
+  static const int  maskfloating,
                     maskocean,
                     maskgrounded,
 
