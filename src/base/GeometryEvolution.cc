@@ -26,6 +26,7 @@
 #include "base/part_grid_threshold_thickness.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/util/Logger.hh"
+#include "base/util/Profiling.hh"
 
 namespace pism {
 
@@ -34,6 +35,8 @@ struct GeometryEvolution::Impl {
 
   IceGrid::ConstPtr  grid;
   Logger::ConstPtr   log;
+  const Profiling &profile;
+
   GeometryCalculator gc;
 
   double ice_density;
@@ -79,7 +82,8 @@ struct GeometryEvolution::Impl {
 };
 
 GeometryEvolution::Impl::Impl(IceGrid::ConstPtr g)
-  : grid(g), log(grid->ctx()->log()), gc(*grid->ctx()->config()) {
+  : grid(g), log(grid->ctx()->log()), profile(grid->ctx()->profiling()),
+    gc(*grid->ctx()->config()) {
 
   Config::ConstPtr config = grid->ctx()->config();
 
@@ -227,54 +231,67 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                              const IceModelVec2S    &surface_mass_balance_rate,
                              const IceModelVec2S    &basal_mass_balance_rate) {
 
-  // make ghosted copies of input fields
-  m_impl->ice_thickness.copy_from(geometry.ice_thickness());
-  m_impl->area_specific_volume.copy_from(geometry.ice_area_specific_volume());
-  m_impl->sea_level.copy_from(geometry.sea_level_elevation());
-  m_impl->bed_elevation.copy_from(geometry.bed_elevation());
-  m_impl->input_velocity.copy_from(advective_velocity);
-  m_impl->velocity_bc_mask.copy_from(velocity_bc_mask);
+  m_impl->profile.begin("ge.copy");
+  {
+    // make ghosted copies of input fields
+    m_impl->ice_thickness.copy_from(geometry.ice_thickness());
+    m_impl->area_specific_volume.copy_from(geometry.ice_area_specific_volume());
+    m_impl->sea_level.copy_from(geometry.sea_level_elevation());
+    m_impl->bed_elevation.copy_from(geometry.bed_elevation());
+    m_impl->input_velocity.copy_from(advective_velocity);
+    m_impl->velocity_bc_mask.copy_from(velocity_bc_mask);
 
-  // Compute cell_type and surface_elevation. Ghosts of results are updated.
-  m_impl->gc.compute(m_impl->sea_level,          // in (uses ghosts)
-              m_impl->bed_elevation,      // in (uses ghosts)
-              m_impl->ice_thickness,      // in (uses ghosts)
-              m_impl->cell_type,          // out (ghosts are updated)
-              m_impl->surface_elevation); // out (ghosts are updated)
+    // Compute cell_type and surface_elevation. Ghosts of results are updated.
+    m_impl->gc.compute(m_impl->sea_level,          // in (uses ghosts)
+                       m_impl->bed_elevation,      // in (uses ghosts)
+                       m_impl->ice_thickness,      // in (uses ghosts)
+                       m_impl->cell_type,          // out (ghosts are updated)
+                       m_impl->surface_elevation); // out (ghosts are updated)
+  }
+  m_impl->profile.end("ge.copy");
 
   // Derived classes can include modifications for regional runs.
+  m_impl->profile.begin("ge.interface_velocity");
   compute_interface_velocity(m_impl->cell_type,           // in (uses ghosts)
                              m_impl->input_velocity,      // in (uses ghosts)
                              m_impl->velocity_bc_mask,    // in (uses ghosts)
                              m_impl->interface_velocity); // out (ghosts are updated)
+  m_impl->profile.end("ge.interface_velocity");
 
   // Derived classes can include modifications for regional runs.
+  m_impl->profile.begin("ge.interface_fluxes");
   compute_interface_fluxes(m_impl->cell_type,          // in (uses ghosts)
                            m_impl->interface_velocity, // in
                            m_impl->ice_thickness,      // in (uses ghosts)
                            diffusive_flux,      // in
                            m_impl->interface_flux);    // out
+  m_impl->profile.end("ge.interface_fluxes");
 
-  // simple finite differences
+  m_impl->profile.begin("ge.flux_divergence");
   compute_flux_divergence(m_impl->interface_flux,   // in (uses ghosts)
                           thickness_bc_mask, // in
                           m_impl->flux_divergence); // out
+  m_impl->profile.end("ge.flux_divergence");
 
   // This is where part_grid is implemented.
+  m_impl->profile.begin("ge.update_in_place");
   update_in_place(dt,                            // in
                   m_impl->bed_elevation,         // in
                   m_impl->sea_level,             // in
                   m_impl->flux_divergence,       // in
                   m_impl->ice_thickness,         // in/out
                   m_impl->area_specific_volume); // in/out
+  m_impl->profile.end("ge.update_in_place");
 
   // Compute ice thickness and area specific volume changes.
+  m_impl->profile.begin("ge.compute_changes");
   {
     m_impl->ice_thickness.add(-1.0, geometry.ice_thickness(),
                               m_impl->thickness_change);
     m_impl->area_specific_volume.add(-1.0, geometry.ice_area_specific_volume(),
                                      m_impl->ice_area_specific_volume_change);
   }
+  m_impl->profile.end("ge.compute_changes");
 
 
   // Computes the numerical conservation error and corrects ice_thickness_change and . We can do
@@ -283,12 +300,15 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
   // Note that here we use the "old" ice geometry.
   //
   // This computation is purely local.
+  m_impl->profile.begin("ge.ensure_nonnegativity");
   ensure_nonnegativity(geometry.ice_thickness(),            // in
                        geometry.ice_area_specific_volume(), // in
                        m_impl->thickness_change,                   // in/out
                        m_impl->ice_area_specific_volume_change,    // in/out
                        m_impl->conservation_error);                // out
+  m_impl->profile.end("ge.ensure_nonnegativity");
 
+  m_impl->profile.begin("ge.source_terms");
   compute_surface_and_basal_mass_balance(dt,                        // in
                                          thickness_bc_mask,         // in
                                          m_impl->ice_thickness,            // in
@@ -298,8 +318,12 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                                          basal_mass_balance_rate,   // in
                                          m_impl->effective_SMB,            // out
                                          m_impl->effective_BMB);           // out
+  m_impl->profile.end("ge.source_terms");
 
-  // FIXME: Now H_new = H_old + thickness_change + effective_SMB + effective_BMB.
+  // Now the caller can compute
+  //
+  // H_new    = H_old + thickness_change + effective_SMB + effective_BMB,
+  // Href_new = Href_old + ice_area_specific_volume_change.
 
   // calving is a separate issue
 }

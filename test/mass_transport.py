@@ -34,7 +34,7 @@ def set_ice_thickness(output, time):
                    [np.sin(phi),  np.cos(phi)]])
 
     # center coordinates at time 0
-    x0, y0 = 0.5 * L, 0.0
+    x0, y0 = 0.25 * L, 0.0
 
     R = 0.25 * L
     x,y = M * np.matrix([x0, y0]).T
@@ -65,7 +65,7 @@ def mass_transport_test(t_final, C=1.0):
 
     ctx = PISM.Context().ctx
 
-    Mx = 201
+    Mx = 101
     My = 101
 
     grid = PISM.IceGrid_Shallow(ctx, 1, 1, 0, 0, Mx, My, PISM.NOT_PERIODIC)
@@ -110,7 +110,8 @@ def mass_transport_test(t_final, C=1.0):
     SMB.set(0.0)
     BMR.set(0.0)
 
-    geometry.ice_thickness().dump("thk-0.nc")
+    profiling = ctx.profiling()
+    profiling.start()
 
     t = 0.0
     dt = PISM.max_timestep_cfl_2d(geometry.ice_thickness(),
@@ -118,9 +119,15 @@ def mass_transport_test(t_final, C=1.0):
                                   v).dt_max.value() * C
 
     j = 0
+    profiling.stage_begin("ge");
     while t < t_final:
         print t
 
+        profiling.begin("dump");
+        geometry.ice_thickness().dump("thk-%05d.nc" % (j+1))
+        profiling.end("dump")
+
+        profiling.begin("step")
         ge.step(geometry, dt,
                 v,
                 Q,
@@ -128,20 +135,22 @@ def mass_transport_test(t_final, C=1.0):
                 H_bc_mask,
                 SMB,
                 BMR)
+        profiling.end("step")
 
+        profiling.begin("modify")
         geometry.ice_thickness().add(1.0, ge.thickness_change_due_to_flow())
-
-        geometry.ice_thickness().dump("thk-%05d.nc" % j)
+        profiling.end("modify")
 
         if t + dt > t_final:
             dt = t_final - t
 
         t += dt
         j += 1
+    profiling.stage_end("ge");
 
-    geometry.ice_thickness().dump("thk-1.nc")
+    profiling.report("profiling.py")
 
-    return ge, dt
+    return geometry, dt
 
 def move_particle(velocity, t_final, C=1.0):
     """Update position of a particle using the provided velocity field.
