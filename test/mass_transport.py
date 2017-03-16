@@ -50,15 +50,11 @@ def set_velocity(v):
 
     with PISM.vec.Access(nocomm=v):
         for (i, j) in grid.points():
-            x  = grid.x(i)
-            y  = grid.y(j)
+            x = grid.x(i)
+            y = grid.y(j)
 
-            R = PISM.radius(grid, i, j)
-
-            phi = np.arctan2(y, x)
-
-            v[i, j].u = -R * np.sin(phi) * 2 * np.pi
-            v[i, j].v =  R * np.cos(phi) * 2 * np.pi
+            v[i, j].u = -y * 2 * np.pi
+            v[i, j].v =  x * 2 * np.pi
 
 def mass_transport_test(t_final, C=1.0):
     "Test GeometryEvolution::step()"
