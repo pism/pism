@@ -30,6 +30,13 @@
 
 namespace pism {
 
+using mask::floating_ice;
+using mask::grounded_ice;
+using mask::ice_free;
+using mask::ice_free_land;
+using mask::ice_free_ocean;
+using mask::icy;
+
 struct GeometryEvolution::Impl {
   Impl(IceGrid::ConstPtr g);
 
@@ -145,26 +152,28 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr g)
                         "meters", "");
 
     ice_thickness.create(grid, "ice_thickness", WITH_GHOSTS);
-    ice_thickness.set_attrs("internal", "working copy of the ice thickness",
+    ice_thickness.set_attrs("internal", "working (ghosted) copy of the ice thickness",
                             "meters", "");
 
     area_specific_volume.create(grid, "area_specific_volume", WITH_GHOSTS);
-    area_specific_volume.set_attrs("internal", "working copy of the area specific volume",
+    area_specific_volume.set_attrs("internal", "working (ghosted) copy of the area specific volume",
                                    "meters3 / meters2", "");
 
     surface_elevation.create(grid, "surface_elevation", WITH_GHOSTS);
-    surface_elevation.set_attrs("internal", "working copy of the surface elevation",
+    surface_elevation.set_attrs("internal", "working (ghosted) copy of the surface elevation",
                                 "meters", "");
 
     cell_type.create(grid, "cell_type", WITH_GHOSTS);
-    cell_type.set_attrs("internal", "working copy of the cell type mask", "", "");
+    cell_type.set_attrs("internal", "working (ghosted) copy of the cell type mask",
+                        "", "");
 
     residual.create(grid, "residual", WITHOUT_GHOSTS);
     residual.set_attrs("internal", "residual area specific volume",
                        "meters3 / meters2", "");
 
     velocity_bc_mask.create(grid, "velocity_bc_mask", WITH_GHOSTS);
-    velocity_bc_mask.set_attrs("internal", "1 at velocity B.C. location, 0 elsewhere",
+    velocity_bc_mask.set_attrs("internal", "ghosted copy of the velocity B.C. mask"
+                               " (1 at velocity B.C. location, 0 elsewhere)",
                                "", "");
   }
 }
@@ -226,7 +235,7 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                              const IceModelVec2S    &surface_mass_balance_rate,
                              const IceModelVec2S    &basal_mass_balance_rate) {
 
-  m_impl->profile.begin("ge.copy");
+  m_impl->profile.begin("ge.update_ghosted_copies");
   {
     // make ghosted copies of input fields
     m_impl->ice_thickness.copy_from(geometry.ice_thickness());
@@ -243,7 +252,7 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                        m_impl->cell_type,          // out (ghosts are updated)
                        m_impl->surface_elevation); // out (ghosts are updated)
   }
-  m_impl->profile.end("ge.copy");
+  m_impl->profile.end("ge.update_ghosted_copies");
 
   // Derived classes can include modifications for regional runs.
   m_impl->profile.begin("ge.interface_fluxes");
@@ -251,7 +260,7 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                            m_impl->ice_thickness,      // in (uses ghosts)
                            m_impl->input_velocity,     // in (uses ghosts)
                            m_impl->velocity_bc_mask,   // in (uses ghosts)
-                           diffusive_flux,      // in
+                           diffusive_flux,             // in
                            m_impl->interface_flux);    // out
   m_impl->profile.end("ge.interface_fluxes");
 
@@ -281,7 +290,6 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
   }
   m_impl->profile.end("ge.compute_changes");
 
-
   // Computes the numerical conservation error and corrects ice_thickness_change and . We can do
   // this here because compute_surface_and_basal_mass_balance() preserves non-negativity.
   //
@@ -289,23 +297,23 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
   //
   // This computation is purely local.
   m_impl->profile.begin("ge.ensure_nonnegativity");
-  ensure_nonnegativity(geometry.ice_thickness(),            // in
-                       geometry.ice_area_specific_volume(), // in
-                       m_impl->thickness_change,                   // in/out
-                       m_impl->ice_area_specific_volume_change,    // in/out
-                       m_impl->conservation_error);                // out
+  ensure_nonnegativity(geometry.ice_thickness(),                // in
+                       geometry.ice_area_specific_volume(),     // in
+                       m_impl->thickness_change,                // in/out
+                       m_impl->ice_area_specific_volume_change, // in/out
+                       m_impl->conservation_error);             // out
   m_impl->profile.end("ge.ensure_nonnegativity");
 
   m_impl->profile.begin("ge.source_terms");
   compute_surface_and_basal_mass_balance(dt,                        // in
                                          thickness_bc_mask,         // in
-                                         m_impl->ice_thickness,            // in
-                                         m_impl->thickness_change,         // in
-                                         m_impl->cell_type,                // in
+                                         m_impl->ice_thickness,     // in
+                                         m_impl->thickness_change,  // in
+                                         m_impl->cell_type,         // in
                                          surface_mass_balance_rate, // in
                                          basal_mass_balance_rate,   // in
-                                         m_impl->effective_SMB,            // out
-                                         m_impl->effective_BMB);           // out
+                                         m_impl->effective_SMB,     // out
+                                         m_impl->effective_BMB);    // out
   m_impl->profile.end("ge.source_terms");
 
   // Now the caller can compute
@@ -319,146 +327,136 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
 /*!
  * Prevent advective ice flow from floating ice to ice-free land, as well as in the ice-free areas.
  */
-static double limit_advective_velocity(int mask_current, int mask_neighbor, double velocity) {
-
-  using mask::grounded_ice;
-  using mask::floating_ice;
-  using mask::ice_free_land;
-  using mask::ice_free_ocean;
+static double limit_advective_velocity(int current, int neighbor, double velocity) {
 
   // Case 1: Flow between grounded_ice and grounded_ice.
-  if (grounded_ice(mask_current) && grounded_ice(mask_neighbor)) {
+  if (grounded_ice(current) and grounded_ice(neighbor)) {
     return velocity;
   }
 
   // Cases 2 and 3: Flow between grounded_ice and floating_ice.
-  if ((grounded_ice(mask_current) && floating_ice(mask_neighbor)) ||
-      (floating_ice(mask_current) && grounded_ice(mask_neighbor))) {
+  if ((grounded_ice(current) and floating_ice(neighbor)) or
+      (floating_ice(current) and grounded_ice(neighbor))) {
     return velocity;
   }
 
   // Cases 4 and 5: Flow between grounded_ice and ice_free_land.
-  if ((grounded_ice(mask_current) && ice_free_land(mask_neighbor)) ||
-      (ice_free_land(mask_current) && grounded_ice(mask_neighbor))) {
+  if ((grounded_ice(current) and ice_free_land(neighbor)) or
+      (ice_free_land(current) and grounded_ice(neighbor))) {
     return velocity;
   }
 
   // Cases 6 and 7: Flow between grounded_ice and ice_free_ocean.
-  if ((grounded_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
-      (ice_free_ocean(mask_current) && grounded_ice(mask_neighbor))) {
+  if ((grounded_ice(current) and ice_free_ocean(neighbor)) or
+      (ice_free_ocean(current) and grounded_ice(neighbor))) {
     return velocity;
   }
 
   // Case 8: Flow between floating_ice and floating_ice.
-  if (floating_ice(mask_current) && floating_ice(mask_neighbor)) {
+  if (floating_ice(current) and floating_ice(neighbor)) {
     return velocity;
   }
 
   // Cases 9 and 10: Flow between floating_ice and ice_free_land.
-  if ((floating_ice(mask_current) && ice_free_land(mask_neighbor)) ||
-      (ice_free_land(mask_current) && floating_ice(mask_neighbor))) {
+  if ((floating_ice(current) and ice_free_land(neighbor)) or
+      (ice_free_land(current) and floating_ice(neighbor))) {
     // Disable all flow. This ensures that an ice shelf does not climb up a cliff.
     return 0.0;
   }
 
   // Cases 11 and 12: Flow between floating_ice and ice_free_ocean.
-  if ((floating_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
-      (ice_free_ocean(mask_current) && floating_ice(mask_neighbor))) {
+  if ((floating_ice(current) and ice_free_ocean(neighbor)) or
+      (ice_free_ocean(current) and floating_ice(neighbor))) {
     return velocity;
   }
 
   // Case 13: Flow between ice_free_land and ice_free_land.
-  if (ice_free_land(mask_current) && ice_free_land(mask_neighbor)) {
+  if (ice_free_land(current) and ice_free_land(neighbor)) {
     return 0.0;
   }
 
   // Cases 14 and 15: Flow between ice_free_land and ice_free_ocean.
-  if ((ice_free_land(mask_current) && ice_free_ocean(mask_neighbor)) ||
-      (ice_free_ocean(mask_current) && ice_free_land(mask_neighbor))) {
+  if ((ice_free_land(current) and ice_free_ocean(neighbor)) or
+      (ice_free_ocean(current) and ice_free_land(neighbor))) {
     return 0.0;
   }
 
   // Case 16: Flow between ice_free_ocean and ice_free_ocean.
-  if (ice_free_ocean(mask_current) && ice_free_ocean(mask_neighbor)) {
+  if (ice_free_ocean(current) and ice_free_ocean(neighbor)) {
     return 0.0;
   }
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "cannot handle the mask_current=%d, mask_neighbor=%d case",
-                                mask_current, mask_neighbor);
+                                "cannot handle the case current=%d, neighbor=%d",
+                                current, neighbor);
 }
 
 /*!
  * Prevent SIA-driven flow in ice shelves and ice-free areas.
  */
-static double limit_diffusive_flux(int mask_current, int mask_neighbor, double flux) {
-
-  using mask::grounded_ice;
-  using mask::floating_ice;
-  using mask::ice_free_land;
-  using mask::ice_free_ocean;
+static double limit_diffusive_flux(int current, int neighbor, double flux) {
 
   // Case 1: Flow between grounded_ice and grounded_ice.
-  if (grounded_ice(mask_current) && grounded_ice(mask_neighbor)) {
+  if (grounded_ice(current) and grounded_ice(neighbor)) {
     return flux;
   }
 
   // Cases 2 and 3: Flow between grounded_ice and floating_ice.
-  if ((grounded_ice(mask_current) && floating_ice(mask_neighbor)) ||
-      (floating_ice(mask_current) && grounded_ice(mask_neighbor))) {
+  if ((grounded_ice(current) and floating_ice(neighbor)) or
+      (floating_ice(current) and grounded_ice(neighbor))) {
     return flux;
   }
 
   // Cases 4 and 5: Flow between grounded_ice and ice_free_land.
-  if ((grounded_ice(mask_current) && ice_free_land(mask_neighbor)) ||
-      (ice_free_land(mask_current) && grounded_ice(mask_neighbor))) {
+  if ((grounded_ice(current) and ice_free_land(neighbor)) or
+      (ice_free_land(current) and grounded_ice(neighbor))) {
     return flux;
   }
 
   // Cases 6 and 7: Flow between grounded_ice and ice_free_ocean.
-  if ((grounded_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
-      (ice_free_ocean(mask_current) && grounded_ice(mask_neighbor))) {
+  if ((grounded_ice(current) and ice_free_ocean(neighbor)) or
+      (ice_free_ocean(current) and grounded_ice(neighbor))) {
     return flux;
   }
 
   // Case 8: Flow between floating_ice and floating_ice.
-  if (floating_ice(mask_current) && floating_ice(mask_neighbor)) {
+  if (floating_ice(current) and floating_ice(neighbor)) {
     // no diffusive flux in ice shelves
     return 0.0;
   }
 
   // Cases 9 and 10: Flow between floating_ice and ice_free_land.
-  if ((floating_ice(mask_current) && ice_free_land(mask_neighbor)) ||
-      (ice_free_land(mask_current) && floating_ice(mask_neighbor))) {
+  if ((floating_ice(current) and ice_free_land(neighbor)) or
+      (ice_free_land(current) and floating_ice(neighbor))) {
     // Disable all flow. This ensures that an ice shelf does not climb up a cliff.
     return 0.0;
   }
 
   // Cases 11 and 12: Flow between floating_ice and ice_free_ocean.
-  if ((floating_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
-      (ice_free_ocean(mask_current) && floating_ice(mask_neighbor))) {
+  if ((floating_ice(current) and ice_free_ocean(neighbor)) or
+      (ice_free_ocean(current) and floating_ice(neighbor))) {
     return 0.0;
   }
 
   // Case 13: Flow between ice_free_land and ice_free_land.
-  if (ice_free_land(mask_current) && ice_free_land(mask_neighbor)) {
+  if (ice_free_land(current) and ice_free_land(neighbor)) {
     return 0.0;
   }
 
   // Cases 14 and 15: Flow between ice_free_land and ice_free_ocean.
-  if ((ice_free_land(mask_current) && ice_free_ocean(mask_neighbor)) ||
-      (ice_free_ocean(mask_current) && ice_free_land(mask_neighbor))) {
+  if ((ice_free_land(current) and ice_free_ocean(neighbor)) or
+      (ice_free_ocean(current) and ice_free_land(neighbor))) {
     return 0.0;
   }
 
   // Case 16: Flow between ice_free_ocean and ice_free_ocean.
-  if (ice_free_ocean(mask_current) && ice_free_ocean(mask_neighbor)) {
+  if (ice_free_ocean(current) and ice_free_ocean(neighbor)) {
     return 0.0;
   }
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "cannot handle the mask_current=%d, mask_neighbor=%d case",
-                                mask_current, mask_neighbor);
+                                "cannot handle the case current=%d, neighbor=%d",
+                                current, neighbor);
 }
 
 /*!
@@ -475,9 +473,6 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
                                                  const IceModelVec2Int      &velocity_bc_mask,
                                                  const IceModelVec2Stag     &diffusive_flux,
                                                  IceModelVec2Stag           &output) {
-
-  using mask::icy;
-  using mask::ice_free;
 
   IceModelVec::AccessList list{&cell_type, &velocity, &velocity_bc_mask, &ice_thickness,
       &diffusive_flux, &output};
@@ -713,9 +708,7 @@ void GeometryEvolution::update_in_place(double dt,
 
   ice_thickness.update_ghosts();
 
-  // Update cell_type
-  //
-  // Note that we use ice_thickness here: we need the mask corresponding to the new thickness.
+  // Compute the mask corresponding to the new thickness.
   m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, m_impl->cell_type);
 
   /*
