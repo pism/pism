@@ -599,25 +599,6 @@ void IceModel::massContExplicitStep(double dt,
       }
 
 
-      //presribe floating ice thickness if grounding line fixed
-      if (do_prescribe_gl) {
-        if (m_cell_type.grounded(i, j)) {
-          // prevent grounded parts form becoming afloat
-          if (m_flux_divergence(i, j)<1000.0/3.14e7) {
-            H_new(i, j)=std::max(H_new(i, j),1.0-(bed_topography(i,j)-sea_level)*ocean_density/ice_density);
-          }
-        }
-        else {
-          //avoid artefacts for floating cells surrounded by grounded neighbors
-          if (m_cell_type.grounded(i-1,j) && m_cell_type.grounded(i+1,j) && m_cell_type.grounded(i,j-1) && m_cell_type.grounded(i,j+1)){
-            H_new(i, j)=H_new(i, j);
-          } else {
-            H_new(i, j) = m_ice_thickness(i, j);
-          }
-        }
-      }
-
-
       // time-series accounting:
       {
         // all these are in units of [kg]
@@ -659,6 +640,32 @@ void IceModel::massContExplicitStep(double dt,
                                        H_new,
                                        fluxes,
                                        m_cumulative_flux_fields);
+
+
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      //presribe floating ice thickness if grounding line fixed
+      if (do_prescribe_gl) {
+        if (m_cell_type.grounded(i, j)) {
+          // prevent grounded parts form becoming afloat
+          if (m_flux_divergence(i, j)<1000.0/3.14e7) {
+            H_new(i, j)=std::max(H_new(i, j),1.0-(bed_topography(i,j)-sea_level)*ocean_density/ice_density);
+          }
+        }
+        else {
+          //avoid artefacts for floating cells surrounded by grounded neighbors
+          if (m_cell_type.grounded(i-1,j) && m_cell_type.grounded(i+1,j) && m_cell_type.grounded(i,j-1) && m_cell_type.grounded(i,j+1)){
+            H_new(i, j)=H_new(i, j);
+          } else {
+            H_new(i, j) = m_ice_thickness(i, j);
+          }
+        }
+      }
+    }
+
+
 
   // flux accounting
   {
