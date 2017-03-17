@@ -282,6 +282,50 @@ void Cavity::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
   result.set(0.0);
 }
 
+
+void Cavity::define_model_state_impl(const PIO &output) const {
+  
+  cbasins.define(output);
+  ocean_box_mask.define(output);
+  icerise_mask.define(output);
+  ocean_contshelf_mask.define(output);
+  ocean_mask.define(output);
+  DistGL.define(output);
+  DistIF.define(output);
+  Soc.define(output);
+  Soc_box0.define(output);
+  Toc.define(output);
+  Toc_box0.define(output);
+  T_star.define(output);
+  overturning.define(output);
+  basalmeltrate_shelf.define(output);
+  T_pressure_melting.define(output);
+
+  OceanModel::define_model_state_impl(output);
+}
+
+void Cavity::write_model_state_impl(const PIO &output) const {
+  
+  cbasins.write(output);
+  ocean_box_mask.write(output);
+  icerise_mask.write(output);
+  ocean_contshelf_mask.write(output);
+  ocean_mask.write(output);
+  DistGL.write(output);
+  DistIF.write(output);
+  Soc.write(output);
+  Soc_box0.write(output);
+  Toc.write(output);
+  Toc_box0.write(output);
+  T_star.write(output);
+  overturning.write(output);
+  basalmeltrate_shelf.write(output);
+  T_pressure_melting.write(output);
+
+  OceanModel::define_model_state_impl(output);
+}
+
+
 //! initialize SIMPEL model variables, can be user-defined.
 
 //! numberOfBasins: number of drainage basins for SIMPEL model
