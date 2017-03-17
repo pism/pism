@@ -264,9 +264,11 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                            m_impl->interface_flux);    // out
   m_impl->profile.end("ge.interface_fluxes");
 
+  m_impl->interface_flux.update_ghosts();
+
   m_impl->profile.begin("ge.flux_divergence");
   compute_flux_divergence(m_impl->interface_flux,   // in (uses ghosts)
-                          thickness_bc_mask, // in
+                          thickness_bc_mask,        // in
                           m_impl->flux_divergence); // out
   m_impl->profile.end("ge.flux_divergence");
 
