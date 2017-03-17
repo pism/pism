@@ -8,4 +8,5 @@
 %include "base/Geometry.hh"
 
 %shared_ptr(pism::GeometryEvolution)
+%shared_ptr(pism::RegionalGeometryEvolution)
 %include "base/GeometryEvolution.hh"

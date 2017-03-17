@@ -1015,4 +1015,18 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
   loop.check();
 }
 
+RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
+  : GeometryEvolution(grid) {
+  // FIXME
+}
+
+void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
+                                                         const IceModelVec2S        &ice_thickness,
+                                                         const IceModelVec2V        &velocity,
+                                                         const IceModelVec2Int      &velocity_bc_mask,
+                                                         const IceModelVec2Stag     &diffusive_flux,
+                                                         IceModelVec2Stag           &output) {
+  // FIXME
+}
+
 } // end of namespace pism

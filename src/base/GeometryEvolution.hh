@@ -109,6 +109,18 @@ private:
   Impl *m_impl;
 };
 
+class RegionalGeometryEvolution : public GeometryEvolution {
+public:
+  RegionalGeometryEvolution(IceGrid::ConstPtr grid);
+protected:
+  virtual void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
+                                        const IceModelVec2S        &ice_thickness,
+                                        const IceModelVec2V        &velocity,
+                                        const IceModelVec2Int      &velocity_bc_mask,
+                                        const IceModelVec2Stag     &diffusive_flux,
+                                        IceModelVec2Stag           &output);
+};
+
 } // end of namespace pism
 
 #endif /* GEOMETRYEVOLUTION_H */
