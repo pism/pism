@@ -117,6 +117,9 @@ protected:
 class RegionalGeometryEvolution : public GeometryEvolution {
 public:
   RegionalGeometryEvolution(IceGrid::ConstPtr grid);
+
+  void set_no_model_mask(const IceModelVec2Int &mask);
+
 protected:
   virtual void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                         const IceModelVec2S        &ice_thickness,
