@@ -680,10 +680,10 @@ void GeometryEvolution::update_in_place(double dt,
           area_specific_volume(i, j)     += H_to_Href_flux;
 
           double threshold = part_grid_threshold_thickness(m, H,
-                                                             m_impl->surface_elevation.star(i, j),
-                                                             bed_topography(i, j),
-                                                             dx,
-                                                             false);
+                                                           m_impl->surface_elevation.star(i, j),
+                                                           bed_topography(i, j),
+                                                           dx,
+                                                           false);
 
           if (threshold > 0.0) {
             const double coverage_ratio = area_specific_volume(i, j) / threshold;
@@ -870,13 +870,13 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
 
       if (ice_thickness(i, j) < 0) {
         m_log->message(1,
-                      "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
-                      "  threshold: %f\n"
-                      "  coverage_ratio: %f\n"
-                      "  area_specific_volume: %f\n"
-                      "  residual: %f\n"
-                      "  ice_thickness: %f\n", i, j, threshold, coverage_ratio,
-                      area_specific_volume(i, j), residual(i, j), ice_thickness(i, j));
+                       "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
+                       "  threshold: %f\n"
+                       "  coverage_ratio: %f\n"
+                       "  area_specific_volume: %f\n"
+                       "  residual: %f\n"
+                       "  ice_thickness: %f\n", i, j, threshold, coverage_ratio,
+                       area_specific_volume(i, j), residual(i, j), ice_thickness(i, j));
       }
 
     }
