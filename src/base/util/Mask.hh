@@ -71,6 +71,10 @@ public:
     m_alpha = 1 - config.get_double("constants.ice.density") / config.get_double("constants.sea_water.density");
     m_is_dry_simulation = config.get_boolean("ocean.always_grounded");
     m_icefree_thickness = config.get_double("geometry.ice_free_thickness_standard");
+    if (m_icefree_thickness < 0.0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "invalid ice-free thickness threshold: %f", m_icefree_thickness);
+    }
   }
 
   void set_icefree_thickness(double threshold) {
@@ -105,7 +109,7 @@ public:
 
     const bool
       is_floating = (hfloating > hgrounded),
-      ice_free    = (thickness < m_icefree_thickness);
+      ice_free    = (thickness <= m_icefree_thickness);
 
     int mask_result;
     double surface_result;
