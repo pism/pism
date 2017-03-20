@@ -40,8 +40,6 @@ using mask::icy;
 struct GeometryEvolution::Impl {
   Impl(IceGrid::ConstPtr g);
 
-  IceGrid::ConstPtr  grid;
-  Logger::ConstPtr   log;
   const Profiling &profile;
 
   GeometryCalculator gc;
@@ -87,8 +85,8 @@ struct GeometryEvolution::Impl {
   IceModelVec2Int      velocity_bc_mask;
 };
 
-GeometryEvolution::Impl::Impl(IceGrid::ConstPtr g)
-  : grid(g), log(grid->ctx()->log()), profile(grid->ctx()->profiling()),
+GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
+  : profile(grid->ctx()->profiling()),
     gc(*grid->ctx()->config()) {
 
   Config::ConstPtr config = grid->ctx()->config();
@@ -178,12 +176,22 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr g)
   }
 }
 
-GeometryEvolution::GeometryEvolution(IceGrid::ConstPtr grid) {
+GeometryEvolution::GeometryEvolution(IceGrid::ConstPtr grid)
+  : Component(grid) {
   m_impl = new Impl(grid);
 }
 
 GeometryEvolution::~GeometryEvolution() {
   delete m_impl;
+}
+
+void GeometryEvolution::init(const InputOptions &opts) {
+  this->init_impl(opts);
+}
+
+void GeometryEvolution::init_impl(const InputOptions &opts) {
+  (void) opts;
+  // empty: the default implementation has no state
 }
 
 const IceModelVec2S& GeometryEvolution::flux_divergence() const {
@@ -479,9 +487,9 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
   IceModelVec::AccessList list{&cell_type, &velocity, &velocity_bc_mask, &ice_thickness,
       &diffusive_flux, &output};
 
-  ParallelSection loop(m_impl->grid->com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_impl->grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int
         i  = p.i(),
         j  = p.j(),
@@ -582,14 +590,14 @@ void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux,
                                                 const IceModelVec2Int &thickness_bc_mask,
                                                 IceModelVec2S &output) {
   const double
-    dx = m_impl->grid->dx(),
-    dy = m_impl->grid->dy();
+    dx = m_grid->dx(),
+    dy = m_grid->dy();
 
   IceModelVec::AccessList list{&flux, &thickness_bc_mask, &output};
 
-  ParallelSection loop(m_impl->grid->com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_impl->grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (thickness_bc_mask(i, j) > 0.5) {
@@ -633,7 +641,7 @@ void GeometryEvolution::update_in_place(double dt,
   m_impl->gc.compute(sea_level, bed_topography, ice_thickness,
                      m_impl->cell_type, m_impl->surface_elevation);
 
-  const double dx = m_impl->grid->dx();
+  const double dx = m_grid->dx();
 
   IceModelVec::AccessList list{&ice_thickness, &m_impl->surface_elevation,
       &bed_topography, &flux_divergence, &m_impl->cell_type, &ice_thickness};
@@ -645,9 +653,9 @@ void GeometryEvolution::update_in_place(double dt,
     list.add(m_impl->residual);
   }
 
-  ParallelSection loop(m_impl->grid->com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_impl->grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // Source terms:
@@ -733,7 +741,7 @@ void GeometryEvolution::update_in_place(double dt,
                                         area_specific_volume,
                                         m_impl->residual,
                                         done);
-      m_impl->log->message(4, "redistribution iteration %d\n", i);
+      m_log->message(4, "redistribution iteration %d\n", i);
     }
   }
 }
@@ -757,7 +765,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
     // will be destroyed at the end of the block
     IceModelVec::AccessList list{&cell_type, &ice_thickness, &area_specific_volume, &residual};
 
-    for (Points p(*m_impl->grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (residual(i,j) <= 0.0) {
@@ -824,7 +832,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
   double
     remaining_residual_thickness        = 0.0,
     remaining_residual_thickness_global = 0.0,
-    dx = m_impl->grid->dx();
+    dx = m_grid->dx();
 
   // Second step: we need to redistribute residual ice volume if
   // neighbors which gained redistributed ice also become full.
@@ -832,7 +840,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
     // will be destroyed at the end of the block
     IceModelVec::AccessList list{&ice_thickness, &ice_surface_elevation, &bed_topography, &cell_type};
 
-    for (Points p(*m_impl->grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (area_specific_volume(i,j) <= 0.0) {
@@ -861,7 +869,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
       }
 
       if (ice_thickness(i, j) < 0) {
-        m_impl->log->message(1,
+        m_log->message(1,
                       "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
                       "  threshold: %f\n"
                       "  coverage_ratio: %f\n"
@@ -875,7 +883,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
   }
 
   // check if redistribution should be run once more
-  remaining_residual_thickness_global = GlobalSum(m_impl->grid->com, remaining_residual_thickness);
+  remaining_residual_thickness_global = GlobalSum(m_grid->com, remaining_residual_thickness);
 
   if (remaining_residual_thickness_global > 0.0) {
     done = false;
@@ -910,9 +918,9 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
   IceModelVec::AccessList list{&ice_thickness, &area_specific_volume, &thickness_change,
       &area_specific_volume_change, &conservation_error};
 
-  ParallelSection loop(m_impl->grid->com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_impl->grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       conservation_error(i, j) = 0.0;
@@ -979,9 +987,9 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
       &smb_rate, &basal_melt_rate, &cell_type, &thickness_bc_mask,
       &effective_SMB, &effective_BMB};
 
-  ParallelSection loop(m_impl->grid->com);
+  ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_impl->grid); p; p.next()) {
+    for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // Don't modify ice thickness at Dirichlet B.C. locations and in the ice-free ocean.
@@ -1017,7 +1025,9 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
 
 RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
   : GeometryEvolution(grid) {
-  // FIXME
+
+  m_no_model_mask.create(m_grid, "m_no_model_mask", WITH_GHOSTS);
+  m_no_model_mask.set_attrs("model_mask", "'no model' mask", "", "");
 }
 
 void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cell_type,
@@ -1026,7 +1036,46 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellT
                                                          const IceModelVec2Int      &velocity_bc_mask,
                                                          const IceModelVec2Stag     &diffusive_flux,
                                                          IceModelVec2Stag           &output) {
-  // FIXME
+
+  GeometryEvolution::compute_interface_fluxes(cell_type, ice_thickness,
+                                              velocity, velocity_bc_mask, diffusive_flux,
+                                              output);
+
+  IceModelVec::AccessList list{&m_no_model_mask, &output};
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      const int M = m_no_model_mask.as_int(i, j);
+
+      for (unsigned int n = 0; n < 2; ++n) {
+        const int
+          oi  = 1 - n,               // offset in the i direction
+          oj  = n,                   // offset in the j direction
+          i_n = i + oi,              // i index of a neighbor
+          j_n = j + oj;              // j index of a neighbor
+
+        const int M_n = m_no_model_mask.as_int(i_n, j_n);
+
+        if (M == 1 and M_n == 0) {
+          output(i, j, n) = 0.0;
+        }
+
+        if (M == 0 and M_n == 1) {
+          output(i, j, n) = 0.0;
+        }
+
+        if (M == 1 and M_n == 1) {
+          output(i, j, n) = 0.0;
+        }
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 }
 
 } // end of namespace pism

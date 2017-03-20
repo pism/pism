@@ -14,7 +14,12 @@ using pism::MaskValue;
 %rename(get_lambda) pism::energy::tempSystemCtx::lambda;
 %include "base/energy/tempSystem.hh"
 
+%shared_ptr(pism::energy::EnergyModel)
 %include "base/energy/EnergyModel.hh"
+%shared_ptr(pism::energy::EnthalpyModel)
+%shared_ptr(pism::energy::DummyEnergyModel)
 %include "base/energy/EnthalpyModel.hh"
+%shared_ptr(pism::energy::TemperatureModel)
 %include "base/energy/TemperatureModel.hh"
+%shared_ptr(pism::energy::EnthalpyModel_Regional)
 %include "regional/EnthalpyModel_Regional.hh"

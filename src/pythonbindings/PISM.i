@@ -236,7 +236,11 @@
 %include "base/util/PISMDiagnostic.hh"
 %include "base/util/MaxTimestep.hh"
 %include "base/timestepping.hh"
+
+%shared_ptr(pism::Component)
+%shared_ptr(pism::Component_TS)
 %include "base/util/PISMComponent.hh"
+
 %include "base/basalstrength/basal_resistance.hh"
 
 %include pism_FlowLaw.i
@@ -253,6 +257,10 @@
 %include "base/grounded_cell_fraction.hh"
 %include "base/util/Mask.hh"
 %include "pism_python.hh"
+
+%shared_ptr(pism::YieldStress)
+%shared_ptr(pism::ConstantYieldStress)
+%shared_ptr(pism::MohrCoulombYieldStress)
 %include "base/basalstrength/PISMYieldStress.hh"
 %include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 
@@ -272,7 +280,9 @@
 #include "regional/SSAFD_Regional.hh"
 #include "regional/SIAFD_Regional.hh"
 %}
+%shared_ptr(pism::stressbalance::SSAFD_Regional)
 %include "regional/SSAFD_Regional.hh"
+%shared_ptr(pism::stressbalance::SIAFD_Regional)
 %include "regional/SIAFD_Regional.hh"
 
 %include "base/util/projection.hh"

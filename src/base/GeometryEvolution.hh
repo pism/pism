@@ -21,6 +21,7 @@
 #define GEOMETRYEVOLUTION_H
 
 #include "Geometry.hh"
+#include "base/util/PISMComponent.hh"
 
 namespace pism {
 
@@ -34,10 +35,12 @@ namespace pism {
  *
  * Href == 0 if H > 0
  */
-class GeometryEvolution {
+class GeometryEvolution : public Component {
 public:
   GeometryEvolution(IceGrid::ConstPtr grid);
   ~GeometryEvolution();
+
+  void init(const InputOptions &opts);
 
   void step(Geometry &ice_geometry, double dt,
             const IceModelVec2V    &advective_velocity,
@@ -59,6 +62,8 @@ public:
   const IceModelVec2Stag& interface_flux() const;
   const IceModelVec2S& flux_divergence() const;
 protected:
+
+  virtual void init_impl(const InputOptions &opts);
 
   void update_in_place(double dt,
                        const IceModelVec2S& bed_elevation,
@@ -104,7 +109,7 @@ protected:
                                                       const IceModelVec2S &basal_melt_rate,
                                                       IceModelVec2S &effective_SMB,
                                                       IceModelVec2S &effective_BMB);
-private:
+protected:
   struct Impl;
   Impl *m_impl;
 };
@@ -119,6 +124,8 @@ protected:
                                         const IceModelVec2Int      &velocity_bc_mask,
                                         const IceModelVec2Stag     &diffusive_flux,
                                         IceModelVec2Stag           &output);
+private:
+  IceModelVec2Int m_no_model_mask;
 };
 
 } // end of namespace pism
