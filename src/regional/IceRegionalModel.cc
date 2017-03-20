@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -69,17 +69,12 @@ void IceRegionalModel::createVecs() {
   // stencil width of 2 needed for surfaceGradientSIA() action
   m_no_model_mask.create(m_grid, "no_model_mask", WITH_GHOSTS, 2);
   m_no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
-                          "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
-                          "", ""); // no units and no standard name
-  double NMMASK_NORMAL   = 0.0,
-         NMMASK_ZERO_OUT = 1.0;
-  std::vector<double> mask_values(2);
-  mask_values[0] = NMMASK_NORMAL;
-  mask_values[1] = NMMASK_ZERO_OUT;
-  m_no_model_mask.metadata().set_doubles("flag_values", mask_values);
+                            "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
+                            "", ""); // no units and no standard name
+  m_no_model_mask.metadata().set_doubles("flag_values", {0, 1});
   m_no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   m_no_model_mask.set_time_independent(true);
-  m_no_model_mask.set(NMMASK_NORMAL);
+  m_no_model_mask.set(0);
   m_grid->variables().add(m_no_model_mask);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
