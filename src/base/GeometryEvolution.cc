@@ -1059,15 +1059,7 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellT
 
         const int M_n = m_no_model_mask.as_int(i_n, j_n);
 
-        if (M == 1 and M_n == 0) {
-          output(i, j, n) = 0.0;
-        }
-
-        if (M == 0 and M_n == 1) {
-          output(i, j, n) = 0.0;
-        }
-
-        if (M == 1 and M_n == 1) {
+        if (not (M == 0 and M_n == 0)) {
           output(i, j, n) = 0.0;
         }
       }
