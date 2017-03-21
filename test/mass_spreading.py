@@ -1,28 +1,35 @@
 import PISM
+import math
 
 log = PISM.Context().log
 
-def disc(thickness, x0, y0, H, R):
-    """Set ice thickness to H within the disc centered at (x0,y0) of
-    radius R and 0 elsewhere.
+def disc(thickness, x0, y0, H0, R0, exact=False):
+    """Set ice thickness to H0 within the disc centered at (x0,y0) of
+    radius R0 and 0 elsewhere.
     """
 
     grid = thickness.get_grid()
+
+    r2 = R0**2
+
+    if exact:
+        C = H0 * R0
+    else:
+        C = 0.0
 
     with PISM.vec.Access(nocomm=thickness):
         for (i, j) in grid.points():
             x  = grid.x(i)
             y  = grid.y(j)
             d2 = (x - x0)**2 + (y - y0)**2
-            r2 = R**2
             if d2 <= r2:
-                thickness[i, j] = H
+                thickness[i, j] = H0
             else:
-                thickness[i, j] = 0.0
+                thickness[i, j] = C / math.sqrt(d2)
 
     thickness.update_ghosts()
 
-def set_ice_thickness(output):
+def set_ice_thickness(output, exact=False):
     """Exact solution at time time. Corresponds to a disc that is rotated
     around the origin (one revolution per time unit)."""
 
@@ -32,7 +39,7 @@ def set_ice_thickness(output):
 
     R = 0.25 * L
 
-    disc(output, 0, 0, 1, R)
+    disc(output, 0, 0, 1, R, exact)
 
 def set_velocity(v):
     """Initialize the velocity field to a rigid rotation around the
@@ -62,10 +69,10 @@ def mass_transport_test(t_final, C=1.0):
 
     config = PISM.Context().config
 
-    # config.set_boolean("geometry.part_grid.enabled", True)
+    config.set_boolean("geometry.part_grid.enabled", True)
 
-    Mx = 101
-    My = 101
+    Mx = 401
+    My = 401
 
     grid = PISM.IceGrid_Shallow(ctx, 1, 1, 0, 0, Mx, My, PISM.NOT_PERIODIC)
 
@@ -98,7 +105,11 @@ def mass_transport_test(t_final, C=1.0):
     geometry.bed_elevation().set(-10.0)
     geometry.sea_level_elevation().set(0.0)
     # ice
-    set_ice_thickness(geometry.ice_thickness())
+    # save exact ice thickness
+    set_ice_thickness(geometry.ice_thickness(), exact=True)
+    geometry.ice_thickness().dump("thk-exact.nc")
+    # set initial ice thickness
+    set_ice_thickness(geometry.ice_thickness(), exact=False)
     geometry.ice_area_specific_volume().set(0.0)
 
     geometry.ensure_consistency(0.0)
