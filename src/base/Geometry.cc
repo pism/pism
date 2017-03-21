@@ -145,6 +145,11 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
     loop.check();
   }
 
+  m_ice_thickness.update_ghosts();
+  m_ice_area_specific_volume.update_ghosts();
+  m_cell_type.update_ghosts();
+  m_ice_surface_elevation.update_ghosts();
+
   const double
     ice_density = config->get_double("constants.ice.density"),
     ocean_density = config->get_double("constants.sea_water.density"),
