@@ -147,37 +147,3 @@ def mass_transport_test(t_final, C=1.0):
     profiling.report("profiling.py")
 
     return geometry, dt
-
-def move_particle(velocity, t_final, C=1.0):
-    """Update position of a particle using the provided velocity field.
-    Used to make sure we really do have a rotational velocity field.
-    """
-    grid = velocity.get_grid()
-    L = min(grid.Lx(), grid.Ly())
-
-    # compute max time step
-    H = PISM.model.createIceThicknessVec(grid)
-    m = PISM.model.createIceMaskVec(grid)
-
-    H.set(100.0)
-    m.set(PISM.MASK_GROUNDED)
-
-    dt = PISM.max_timestep_cfl_2d(H, m, velocity).dt_max.value() * C
-
-    # initial position
-    p0 = PISM.Vector2(L / 2.0, 0.0)
-
-    p = PISM.Vector2(p0.u, p0.v)
-    t = 0.0
-    with PISM.vec.Access(nocomm=velocity):
-        while t < t_final:
-            if t + dt > t_final:
-                dt = t_final - t
-
-            v = velocity.interpolate(p.u, p.v)
-
-            p += v * dt
-
-            t += dt
-
-    return (p - p0).magnitude()
