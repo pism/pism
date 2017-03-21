@@ -1,6 +1,8 @@
 import numpy as np
 import PISM
 
+log = PISM.Context().log
+
 def disc(thickness, x0, y0, H, R):
     """Set ice thickness to H within the disc centered at (x0,y0) of
     radius R and 0 elsewhere.
@@ -18,6 +20,8 @@ def disc(thickness, x0, y0, H, R):
                 thickness[i, j] = H
             else:
                 thickness[i, j] = 0.0
+
+    thickness.update_ghosts()
 
 def set_ice_thickness(output, time):
     """Exact solution at time time. Corresponds to a disc that is rotated
@@ -43,23 +47,31 @@ def set_ice_thickness(output, time):
 
 def set_velocity(v):
     """Initialize the velocity field to a rigid rotation around the
-    origin. This is slow, but it works.
+    origin.
 
     """
     grid = v.get_grid()
+
+    radial_velocity = 2 * np.pi
 
     with PISM.vec.Access(nocomm=v):
         for (i, j) in grid.points():
             x = grid.x(i)
             y = grid.y(j)
 
-            v[i, j].u = -y * 2 * np.pi
-            v[i, j].v =  x * 2 * np.pi
+            v[i, j].u = -y * radial_velocity
+            v[i, j].v =  x * radial_velocity
+
+    v.update_ghosts()
 
 def mass_transport_test(t_final, C=1.0):
     "Test GeometryEvolution::step()"
 
     ctx = PISM.Context().ctx
+
+    config = PISM.Context().config
+
+    # config.set_boolean("geometry.part_grid.enabled", True)
 
     Mx = 101
     My = 101
@@ -92,16 +104,16 @@ def mass_transport_test(t_final, C=1.0):
     geometry.latitude().set(0.0)
     geometry.longitude().set(0.0)
     # environment
-    geometry.bed_elevation().set(0.0)
+    geometry.bed_elevation().set(-10.0)
     geometry.sea_level_elevation().set(0.0)
     # ice
-    set_ice_thickness(geometry.ice_thickness(), time=0)
+    set_ice_thickness(geometry.ice_thickness(), time=1)
     geometry.ice_area_specific_volume().set(0.0)
 
     geometry.ensure_consistency(0.0)
 
     set_velocity(v)
-    v_bc_mask.set(0.0)          # all points are B.C. points, but it does not matter
+    v_bc_mask.set(0.0)          # all points are velocity B.C. points (but it does not matter)
     H_bc_mask.set(0.0)
     SMB.set(0.0)
     BMR.set(0.0)
@@ -110,17 +122,22 @@ def mass_transport_test(t_final, C=1.0):
     profiling.start()
 
     t = 0.0
-    dt = PISM.max_timestep_cfl_2d(geometry.ice_thickness(),
-                                  geometry.cell_type(),
-                                  v).dt_max.value() * C
-
     j = 0
     profiling.stage_begin("ge");
     while t < t_final:
-        print t
+
+        dt = PISM.max_timestep_cfl_2d(geometry.ice_thickness(),
+                                      geometry.cell_type(),
+                                      v).dt_max.value() * C
+
+        if t + dt > t_final:
+            dt = t_final - t
+
+        log.message(2, "{}, {}\n".format(t, dt))
 
         profiling.begin("dump");
         geometry.ice_thickness().dump("thk-%05d.nc" % (j+1))
+        geometry.ice_area_specific_volume().dump("Href-%05d.nc" % (j+1))
         profiling.end("dump")
 
         profiling.begin("step")
@@ -135,10 +152,9 @@ def mass_transport_test(t_final, C=1.0):
 
         profiling.begin("modify")
         geometry.ice_thickness().add(1.0, ge.thickness_change_due_to_flow())
+        geometry.ice_area_specific_volume().add(1.0, ge.area_specific_volume_change_due_to_flow())
+        geometry.ensure_consistency(0.0)
         profiling.end("modify")
-
-        if t + dt > t_final:
-            dt = t_final - t
 
         t += dt
         j += 1

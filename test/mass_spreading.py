@@ -62,7 +62,7 @@ def mass_transport_test(t_final, C=1.0):
 
     config = PISM.Context().config
 
-    config.set_boolean("geometry.part_grid.enabled", True)
+    # config.set_boolean("geometry.part_grid.enabled", True)
 
     Mx = 101
     My = 101
@@ -143,6 +143,7 @@ def mass_transport_test(t_final, C=1.0):
         profiling.begin("modify")
         geometry.ice_thickness().add(1.0, ge.thickness_change_due_to_flow())
         geometry.ice_area_specific_volume().add(1.0, ge.area_specific_volume_change_due_to_flow())
+        geometry.ensure_consistency(0.0)
         profiling.end("modify")
 
         t += dt
