@@ -206,6 +206,8 @@ void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
   m_thk_stored.metadata().set_name("thk");
   m_thk_stored.regrid(input_file, OPTIONAL, 0.0);
   m_thk_stored.metadata().set_name("thkstore");
+
+  m_no_model_mask.regrid(input_file, OPTIONAL, 0.0);
 }
 
 
@@ -256,6 +258,12 @@ void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
     m_thk_stored.metadata().set_string("pism_intent", "model_state");
     m_usurf_stored.metadata().set_string("pism_intent", "model_state");
   }
+
+  if (no_model_strip_set) {
+    // restore pism_intent to ensure that it is saved at the end of the run
+    m_no_model_mask.metadata().set_string("pism_intent", "model_state");
+  }
+
 
   if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
     m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "model_state");
