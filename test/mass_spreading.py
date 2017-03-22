@@ -3,52 +3,40 @@ import math
 
 log = PISM.Context().log
 
-def disc(thickness, x0, y0, H0, R0, exact=False):
+def disc(thickness, x0, y0, H0, R_inner, R_outer):
     """Set ice thickness to H0 within the disc centered at (x0,y0) of
-    radius R0 and 0 elsewhere.
+    radius R_inner, C/R in an annulus R_inner < r <= R_outer and 0
+    elsewhere.
+
     """
 
     grid = thickness.get_grid()
 
-    r2 = R0**2
+    R_inner_2 = R_inner**2
+    R_outer_2 = R_outer**2
 
-    if exact:
-        C = H0 * R0
-    else:
-        C = 0.0
+    C = H0 * R_inner
 
     with PISM.vec.Access(nocomm=thickness):
         for (i, j) in grid.points():
             x  = grid.x(i)
             y  = grid.y(j)
             d2 = (x - x0)**2 + (y - y0)**2
-            if d2 <= r2:
+            if d2 <= R_inner_2:
                 thickness[i, j] = H0
-            else:
+            elif d2 <= R_outer_2:
                 thickness[i, j] = C / math.sqrt(d2)
+            else:
+                thickness[i, j] = 0.0
 
     thickness.update_ghosts()
 
-def set_ice_thickness(output, exact=False):
-    """Exact solution at time time. Corresponds to a disc that is rotated
-    around the origin (one revolution per time unit)."""
-
-    grid = output.get_grid()
-
-    L = min(grid.Lx(), grid.Ly())
-
-    R = 0.25 * L
-
-    disc(output, 0, 0, 1, R, exact)
-
-def set_velocity(v):
+def set_velocity(scalar_velocity, v):
     """Initialize the velocity field to a rigid rotation around the
     origin. This is slow, but it works.
 
     """
     grid = v.get_grid()
-
-    scalar_velocity = 0.7
 
     with PISM.vec.Access(nocomm=v):
         for (i, j) in grid.points():
@@ -76,6 +64,10 @@ def mass_transport_test(t_final, C=1.0):
 
     grid = PISM.IceGrid_Shallow(ctx, 1, 1, 0, 0, Mx, My, PISM.NOT_PERIODIC)
 
+    L = min(grid.Lx(), grid.Ly())
+
+    R_inner = 0.25 * L
+
     geometry = PISM.Geometry(grid)
 
     v = PISM.model.create2dVelocityVec(grid)
@@ -97,6 +89,8 @@ def mass_transport_test(t_final, C=1.0):
 
     ge = PISM.GeometryEvolution(grid)
 
+    spreading_velocity = 0.7
+
     # grid info
     geometry.cell_area().set(grid.dx() * grid.dy())
     geometry.latitude().set(0.0)
@@ -106,17 +100,18 @@ def mass_transport_test(t_final, C=1.0):
     geometry.sea_level_elevation().set(0.0)
     # ice
     # save exact ice thickness
-    set_ice_thickness(geometry.ice_thickness(), exact=True)
+    R_outer = R_inner + spreading_velocity * t_final
+    disc(geometry.ice_thickness(), 0, 0, 1, R_inner, R_outer)
     geometry.ice_thickness().dump("thk-exact.nc")
     # set initial ice thickness
-    set_ice_thickness(geometry.ice_thickness(), exact=False)
+    disc(geometry.ice_thickness(), 0, 0, 1, R_inner, R_inner)
     geometry.ice_area_specific_volume().set(0.0)
 
     geometry.ensure_consistency(0.0)
 
-    set_velocity(v)
+    set_velocity(spreading_velocity, v)
     v_bc_mask.set(0.0)          # all points are B.C. points, but it does not matter
-    set_ice_thickness(H_bc_mask)
+    disc(H_bc_mask, 0, 0, 1, R_inner, R_inner)
     SMB.set(0.0)
     BMR.set(0.0)
 
@@ -137,8 +132,8 @@ def mass_transport_test(t_final, C=1.0):
         log.message(2, "{}, {}\n".format(t, dt))
 
         profiling.begin("dump");
-        geometry.ice_thickness().dump("thk-%05d.nc" % (j+1))
-        geometry.ice_area_specific_volume().dump("Href-%05d.nc" % (j+1))
+        # geometry.ice_thickness().dump("thk-%05d.nc" % (j+1))
+        # geometry.ice_area_specific_volume().dump("Href-%05d.nc" % (j+1))
         profiling.end("dump")
 
         profiling.begin("step")
@@ -160,6 +155,11 @@ def mass_transport_test(t_final, C=1.0):
         t += dt
         j += 1
     profiling.stage_end("ge");
+
+    # combine stuff
+    geometry.ice_thickness().add(1.0, geometry.ice_area_specific_volume())
+    # dump stuff
+    geometry.ice_thickness().dump("thk-final.nc")
 
     profiling.report("profiling.py")
 
