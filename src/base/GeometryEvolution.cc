@@ -646,8 +646,6 @@ void GeometryEvolution::update_in_place(double dt,
   m_impl->gc.compute(sea_level, bed_topography, ice_thickness,
                      m_impl->cell_type, m_impl->surface_elevation);
 
-  const double dx = m_grid->dx();
-
   // Store ice thickness. We need this copy to make sure that modifying ice_thickness in the loop
   // below does not affect the computation of the threshold thickness. (Note that
   // part_grid_threshold_thickness uses neighboring values of the mask, ice thickness, and surface
@@ -685,9 +683,7 @@ void GeometryEvolution::update_in_place(double dt,
           double threshold = part_grid_threshold_thickness(m_impl->cell_type.int_star(i, j),
                                                            m_impl->thickness.star(i, j),
                                                            m_impl->surface_elevation.star(i, j),
-                                                           bed_topography(i, j),
-                                                           dx,
-                                                           false);
+                                                           bed_topography(i, j));
 
           // if threshold is zero, turn all the area specific volume into ice thickness, with zero
           // residual
@@ -838,8 +834,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
   m_impl->gc.compute(sea_level, bed_topography, ice_thickness, cell_type, ice_surface_elevation);
 
   double
-    remaining_residual = 0.0,
-    dx = m_grid->dx();
+    remaining_residual = 0.0;
 
   // Second step: we need to redistribute residual ice volume if
   // neighbors which gained redistributed ice also become full.
@@ -857,9 +852,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
       double threshold = part_grid_threshold_thickness(cell_type.int_star(i, j),
                                                        m_impl->thickness.star(i, j),
                                                        ice_surface_elevation.star(i, j),
-                                                       bed_topography(i, j),
-                                                       dx,
-                                                       reduce_frontal_thickness);
+                                                       bed_topography(i, j));
 
       // if threshold is zero, turn all the area specific volume into ice thickness, with zero
       // residual

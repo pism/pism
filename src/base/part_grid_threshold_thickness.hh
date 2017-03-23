@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 PISM Authors
+// Copyright (C) 2004-2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,9 +26,7 @@ namespace pism {
 double part_grid_threshold_thickness(StarStencil<int> Mask,
                                      StarStencil<double> thickness,
                                      StarStencil<double> surface_elevation,
-                                     double bed_elevation,
-                                     double dx,
-                                     bool reduce_frontal_thickness);
+                                     double bed_elevation);
 
 } // end of namespace pism
 

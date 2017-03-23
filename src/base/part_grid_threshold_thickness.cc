@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,9 +31,7 @@ namespace pism {
 double part_grid_threshold_thickness(StarStencil<int> M,
                                      StarStencil<double> H,
                                      StarStencil<double> h,
-                                     double bed_elevation,
-                                     double dx,
-                                     bool reduce_frontal_thickness) {
+                                     double bed_elevation) {
   // get mean ice thickness and surface elevation over adjacent
   // icy cells
   double
@@ -65,17 +63,6 @@ double part_grid_threshold_thickness(StarStencil<int> M,
     H_threshold = h_average - bed_elevation;
   } else {
     H_threshold = H_average;
-    // reduces the guess at the front
-    if (reduce_frontal_thickness) {
-      // FIXME: Magic numbers without references to the literature are bad.
-      // for declining front C / Q0 according to analytical flowline profile in
-      //   vandeveen with v0 = 300m year-1 and H0 = 600m
-      const double
-        H0         = 600.0,     // 600 m
-        V0         = 300.0 / 3.15569259747e7, // 300 m year-1 (hard-wired for efficiency)
-        mslope     = 2.4511e-18 * dx / (H0 * V0);
-      H_threshold -= 0.8*mslope*pow(H_average, 5);
-    }
   }
 
   // make sure that the returned threshold thickness is non-negative:

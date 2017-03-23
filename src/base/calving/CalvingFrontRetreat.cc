@@ -213,9 +213,7 @@ void CalvingFrontRetreat::update(double dt,
       double H_threshold = part_grid_threshold_thickness(mask.int_star(i, j),
                                                          ice_thickness.star(i, j),
                                                          m_surface_topography.star(i, j),
-                                                         bed_topography(i, j),
-                                                         dx,
-                                                         false);
+                                                         bed_topography(i, j));
 
       // Calculate mass loss with respect to the associated ice thickness and the grid size:
       const double Href_change = -dt * rate * H_threshold / dx; // in m

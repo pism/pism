@@ -454,8 +454,7 @@ void IceModel::massContExplicitStep(double dt,
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool
-    do_part_grid             = m_config->get_boolean("geometry.part_grid.enabled"),
-    reduce_frontal_thickness = m_config->get_boolean("geometry.part_grid.reduce_frontal_thickness");
+    do_part_grid             = m_config->get_boolean("geometry.part_grid.enabled");
 
   if (do_part_grid) {
     list.add(m_Href);
@@ -544,9 +543,7 @@ void IceModel::massContExplicitStep(double dt,
 
           double H_threshold = part_grid_threshold_thickness(cell_type, H,
                                                              m_ice_surface_elevation.star(i, j),
-                                                             bed_topography(i, j),
-                                                             dx,
-                                                             reduce_frontal_thickness);
+                                                             bed_topography(i, j));
           double coverage_ratio = 1.0;
           if (H_threshold > 0.0) {
             coverage_ratio = m_Href(i, j) / H_threshold;

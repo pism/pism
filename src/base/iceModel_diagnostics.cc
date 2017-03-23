@@ -2091,9 +2091,7 @@ IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
           const double H_threshold = part_grid_threshold_thickness(cell_type.int_star(i, j),
                                                                    thickness.star(i, j),
                                                                    surface_elevation.star(i, j),
-                                                                   bed_topography(i,j),
-                                                                   dx,
-                                                                   reduce_frontal_thickness);
+                                                                   bed_topography(i,j));
           // protect from a division by zero
           if (H_threshold > 0.0) {
             (*result)(i, j) = H_reference / H_threshold;

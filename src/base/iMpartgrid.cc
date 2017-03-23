@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -66,7 +66,6 @@ void IceModel::residual_redistribution(IceModelVec2S &H_residual) {
  */
 void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool &done) {
 
-  bool reduce_frontal_thickness = m_config->get_boolean("geometry.part_grid.reduce_frontal_thickness");
   const double thickness_threshold = m_config->get_double("geometry.ice_free_thickness_standard");
   const double sea_level = m_ocean->sea_level_elevation();
 
@@ -148,8 +147,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
 
   double
     remaining_residual_thickness        = 0.0,
-    remaining_residual_thickness_global = 0.0,
-    dx = m_grid->dx();
+    remaining_residual_thickness_global = 0.0;
 
   // Second step: we need to redistribute residual ice volume if
   // neighbors which gained redistributed ice also become full.
@@ -167,9 +165,7 @@ void IceModel::residual_redistribution_iteration(IceModelVec2S &H_residual, bool
       double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
                                                          m_ice_thickness.star(i, j),
                                                          m_ice_surface_elevation.star(i, j),
-                                                         bed_topography(i,j),
-                                                         dx,
-                                                         reduce_frontal_thickness);
+                                                         bed_topography(i,j));
 
       double coverage_ratio = 1.0;
       if (H_threshold > 0.0) {

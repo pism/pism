@@ -616,11 +616,6 @@ netcdf pism_config {
     pism_config:geometry.part_grid.enabled_option = "part_grid";
     pism_config:geometry.part_grid.enabled_type = "boolean";
 
-    pism_config:geometry.part_grid.reduce_frontal_thickness = "no";
-    pism_config:geometry.part_grid.reduce_frontal_thickness_doc = "Reduce the threshold ice thickness at ice fronts using a van der Veen flowline analytical profile";
-    pism_config:geometry.part_grid.reduce_frontal_thickness_option = "part_grid_reduce_frontal_thickness";
-    pism_config:geometry.part_grid.reduce_frontal_thickness_type = "boolean";
-
     pism_config:geometry.remove_icebergs = "no";
     pism_config:geometry.remove_icebergs_doc = "identify and kill detached ice-shelf areas";
     pism_config:geometry.remove_icebergs_option = "kill_icebergs";
