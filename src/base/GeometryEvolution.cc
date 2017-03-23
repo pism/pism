@@ -646,20 +646,23 @@ void GeometryEvolution::update_in_place(double dt,
   m_impl->gc.compute(sea_level, bed_topography, ice_thickness,
                      m_impl->cell_type, m_impl->surface_elevation);
 
-  // Store ice thickness. We need this copy to make sure that modifying ice_thickness in the loop
-  // below does not affect the computation of the threshold thickness. (Note that
-  // part_grid_threshold_thickness uses neighboring values of the mask, ice thickness, and surface
-  // elevation.)
-  m_impl->thickness.copy_from(ice_thickness);
-
-  IceModelVec::AccessList list{&m_impl->thickness, &ice_thickness, &m_impl->surface_elevation,
-      &bed_topography, &flux_divergence, &m_impl->cell_type, &ice_thickness};
+  IceModelVec::AccessList list{&ice_thickness, &flux_divergence};
 
   if (m_impl->use_part_grid) {
     m_impl->residual.set(0.0);
 
+    // Store ice thickness. We need this copy to make sure that modifying ice_thickness in the loop
+    // below does not affect the computation of the threshold thickness. (Note that
+    // part_grid_threshold_thickness uses neighboring values of the mask, ice thickness, and surface
+    // elevation.)
+    m_impl->thickness.copy_from(ice_thickness);
+
     list.add(area_specific_volume);
     list.add(m_impl->residual);
+    list.add(m_impl->thickness);
+    list.add(m_impl->surface_elevation);
+    list.add(bed_topography);
+    list.add(m_impl->cell_type);
   }
 
   ParallelSection loop(m_grid->com);
@@ -667,16 +670,10 @@ void GeometryEvolution::update_in_place(double dt,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // Source terms:
-      double dH = 0.0;   // units: [m]
-
-      // Compute divergence terms:
       double divQ = flux_divergence(i, j);
 
-      if (m_impl->cell_type.ice_free_ocean(i, j)) {
-        // Decide whether to apply Albrecht et al 2011 subgrid-scale parameterization.
-        if (m_impl->use_part_grid and m_impl->cell_type.next_to_ice(i, j)) {
-
+      if (m_impl->use_part_grid) {
+        if (m_impl->cell_type.ice_free_ocean(i, j) and m_impl->cell_type.next_to_ice(i, j)) {
           // Add the flow contribution to this partially filled cell.
           area_specific_volume(i, j) += -divQ * dt;
 
@@ -697,14 +694,12 @@ void GeometryEvolution::update_in_place(double dt,
             area_specific_volume(i, j)  = 0.0;
           }
 
-          // In this case the flux goes into the area_specific_volume variable and does not directly contribute to
-          // ice thickness at this location.
+          // In this case the flux goes into the area_specific_volume variable and does not directly
+          // contribute to ice thickness at this location.
           divQ = 0.0;
         }
+      } // end of if (use_part_grid)
 
-      } // end of "if (ice_free_ocean)"
-
-      // mass transport
       ice_thickness(i, j) += - dt * divQ;
     }
   } catch (...) {
@@ -727,8 +722,10 @@ void GeometryEvolution::update_in_place(double dt,
   if (m_impl->use_part_grid) {
     const int max_n_iterations = 3;
 
-    bool done = false;
-    for (int i = 0; not done and i < max_n_iterations; ++i) {
+    for (int i = 0; i < max_n_iterations; ++i) {
+      m_log->message(4, "redistribution iteration %d\n", i);
+
+      bool done = false;
       residual_redistribution_iteration(bed_topography,
                                         sea_level,
                                         m_impl->surface_elevation,
@@ -737,7 +734,9 @@ void GeometryEvolution::update_in_place(double dt,
                                         area_specific_volume,
                                         m_impl->residual,
                                         done);
-      m_log->message(4, "redistribution iteration %d\n", i);
+      if (done) {
+        break;
+      }
     }
   }
 }
