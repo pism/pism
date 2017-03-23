@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -165,6 +165,8 @@ void IceRegionalModel::allocate_stressbalance() {
 
   // ~StressBalance() will de-allocate sliding and modifier.
   m_stress_balance = new StressBalance(m_grid, sliding, modifier);
+
+  m_submodels["stress balance"] = m_stress_balance;
 }
 
 
