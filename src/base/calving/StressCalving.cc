@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -64,6 +64,7 @@ void StressCalving::update_strain_rates() const {
   const IceModelVec2V        &ssa_velocity = m_stress_balance->advective_velocity();
   const IceModelVec2CellType &mask         = *m_grid->variables().get_2d_cell_type("mask");
   stressbalance::compute_2D_principal_strain_rates(ssa_velocity, mask, m_strain_rates);
+  m_strain_rates.update_ghosts();
 }
 
 
