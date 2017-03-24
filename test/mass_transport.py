@@ -173,7 +173,7 @@ def average_error(N):
     diff.create(grid, "difference", PISM.WITHOUT_GHOSTS)
 
     exact = PISM.IceModelVec2S()
-    exact.create(grid, "exact", PISM.WITHOUT_GHOSTS)
+    exact.create(grid, "thk", PISM.WITHOUT_GHOSTS)
 
     L = min(grid.Lx(), grid.Ly())
     R_inner = 0.25 * L
