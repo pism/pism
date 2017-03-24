@@ -22,6 +22,8 @@
 #include "PISMYieldStress.hh"
 #include "base/util/iceModelVec.hh"
 
+#include "base/util/PISMDiagnostic.hh"
+
 namespace pism {
 
 namespace hydrology {
@@ -36,6 +38,10 @@ public:
   virtual ~MohrCoulombYieldStress();
 
   void set_till_friction_angle(const IceModelVec2S &input);
+
+  const IceModelVec2S& diff_surface() const;
+  const IceModelVec2S& till_friction() const;
+
 protected:
   virtual void init_impl();
 
@@ -47,6 +53,9 @@ protected:
 
   void topg_to_phi(const IceModelVec2S &bed_topography);
   void tauc_to_phi();
+
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+
 protected:
 
   bool m_topg_to_phi, m_tauc_to_phi, m_iterative_phi;
@@ -55,6 +64,20 @@ protected:
   IceModelVec2S m_bwat;  // only allocated and used if basal_yield_stress.add_transportable_water = true
   hydrology::Hydrology *m_hydrology;
   double m_last_time, m_last_inverse_time;
+};
+
+class PMC_difference_surface_elevation : public Diag<MohrCoulombYieldStress> {
+public:
+  PMC_difference_surface_elevation(const MohrCoulombYieldStress *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
+};
+
+class PMC_till_friction_angle : public Diag<MohrCoulombYieldStress> {
+public:
+  PMC_till_friction_angle(const MohrCoulombYieldStress *m);
+protected:
+  virtual IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace pism
