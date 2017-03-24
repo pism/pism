@@ -231,15 +231,11 @@ const IceModelVec2S& BedThermalUnit::flux_through_bottom_surface() const {
 
 BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m)
   : Diag<BedThermalUnit>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, "hfgeoubed")};
-  set_attrs("upward geothermal flux at ground (top of the bedrock) level",
-            "upward_geothermal_heat_flux_at_ground_level", // InitMIP "standard" name
-            "W m-2", "W m-2", 0);
+  m_vars = {model->flux_through_top_surface().metadata()};
 }
 
 IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "hfgeoubed", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hfgeoubed", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   result->copy_from(model->flux_through_top_surface());
