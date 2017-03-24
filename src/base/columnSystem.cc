@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -146,12 +146,7 @@ void TridiagonalSystem::save_vector(std::ostream &output,
 }
 
 
-//! View the tridiagonal matrix.  Views as a full matrix if nmax <= 120, otherwise by listing diagonals.
-/*!
-Give first argument NULL to get standard out.  No binary viewer.
-
-Give description string as `info` argument.
- */
+//! View the tridiagonal matrix.
 void TridiagonalSystem::save_matrix(std::ostream &output,
                                     unsigned int system_size,
                                     const std::string &variable) const {
@@ -163,7 +158,7 @@ void TridiagonalSystem::save_matrix(std::ostream &output,
   }
 
   save_vector(output, m_U, system_size, variable + "_U");
-  save_vector(output, m_D, system_size,   variable + "_D");
+  save_vector(output, m_D, system_size, variable + "_D");
   save_vector(output, m_L, system_size, variable + "_L");
 
   // prepare to convert to a sparse matrix
