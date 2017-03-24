@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -297,7 +297,7 @@ double radius(const IceGrid &grid, int i, int j);
 //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
 //! meters around the edge of the computational domain.
 inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width) {
-  return (strip_width >= 0.0                               &&
+  return (strip_width >  0.0                               &&
           (grid.x(i)  <= grid.x(0) + strip_width           ||
            grid.x(i)  >= grid.x(grid.Mx()-1) - strip_width ||
            grid.y(j)  <= grid.y(0) + strip_width           ||

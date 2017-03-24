@@ -36,6 +36,10 @@ namespace pism {
 //! m around edge of computational domain, and value 0 otherwise.
 static void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2Int &result) {
 
+  if (width <= 0.0) {
+    return;
+  }
+
   IceModelVec::AccessList list(result);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
