@@ -153,11 +153,12 @@ void CalvingFrontRetreat::update(double dt,
   GeometryCalculator gc(*m_config);
   gc.compute_surface(sea_level, bed_topography, ice_thickness, m_surface_topography);
 
-  // Make a copy of the mask with ghosts and with MASK_ICE_FREE_OCEAN outside the modeling domain.
-  // This is needed to avoid "wrapping around" in regional setups.
-  {
-    // copy mask to temporary storage to get more ghosts
-    m_mask.copy_from(mask);
+  // copy mask to temporary storage to get more ghosts
+  m_mask.copy_from(mask);
+
+  // Set the mask to MASK_ICE_FREE_OCEAN outside the modeling domain. This is needed to avoid
+  // "wrapping around" in regional setups.
+  if (not m_config->get_boolean("calving.front_retreat.wrap_around")) {
 
     IceModelVec::AccessList list(m_mask);
 

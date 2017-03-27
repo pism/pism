@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2016 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy
+// Copyright (C) 2010--2017 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy
 // Aschwanden
 //
 // This file is part of PISM.
@@ -41,7 +41,7 @@ static char help[] =
   "Ice sheet driver for PISM regional (outlet glacier) simulations, initialized\n"
   "from data.\n";
 
-#include <petscsys.h>
+#include <petscsys.h>           // PETSC_COMM_WORLD
 
 #include "base/util/IceGrid.hh"
 #include "IceRegionalModel.hh"
@@ -51,6 +51,7 @@ static char help[] =
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/Context.hh"
+#include "base/util/Profiling.hh"
 #include "IceGrid_Regional.hh"
 
 int main(int argc, char *argv[]) {
@@ -86,7 +87,14 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
+    options::String profiling_log = options::String("-profile",
+                                                    "Save detailed profiling data to a file.");
+
     Config::Ptr config = ctx->config();
+
+    if (profiling_log.is_set()) {
+      ctx->profiling().start();
+    }
 
     IceGrid::Ptr g = regional_grid_from_options(ctx);
 
@@ -94,14 +102,25 @@ int main(int argc, char *argv[]) {
 
     m.init();
 
-    m.run();
+    bool print_list_and_stop = options::Bool("-list_diagnostics",
+                                             "List available diagnostic quantities and stop");
 
-    log->message(2, "... done with run\n");
+    if (print_list_and_stop) {
+      m.list_diagnostics();
+    } else {
+      m.run();
 
-    // provide a default output file name if no -o option is given.
-    m.writeFiles("unnamed_regional.nc");
+      log->message(2, "... done with run\n");
 
-    print_unused_parameters(*log, 3, *config);
+      // provide a default output file name if no -o option is given.
+      m.writeFiles("unnamed_regional.nc");
+
+      print_unused_parameters(*log, 3, *config);
+
+      if (profiling_log.is_set()) {
+        ctx->profiling().report(profiling_log);
+      }
+    }
   }
   catch (...) {
     handle_fatal_errors(com);

@@ -77,6 +77,14 @@ IceModelVec2S::IceModelVec2S() {
   m_begin_end_access_use_dof = false;
 }
 
+IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
+                             IceModelVecKind ghostedp, int width) {
+  m_begin_end_access_use_dof = false;
+
+  create(grid, name, ghostedp, width);
+}
+
+
 IceModelVec2Stag::IceModelVec2Stag()
   : IceModelVec2() {
   m_dof = 2;
