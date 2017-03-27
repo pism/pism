@@ -105,35 +105,33 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
   {
     // This is the only reported field that is ghosted (we need ghosts to compute flux divergence).
     interface_flux.create(grid, "interface_flux", WITH_GHOSTS);
-    interface_flux.set_attrs("internal", "fluxes through cell interfaces (sides)", "m2 s-1", "");
+    interface_flux.set_attrs("diagnostic", "fluxes through cell interfaces (sides)", "m2 s-1", "");
     interface_flux.metadata().set_string("glaciological_units", "m2 year-1");
     interface_flux.write_in_glaciological_units = true;
 
     flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS);
-    flux_divergence.set_attrs("internal", "flux divergence", "m s-1", "");
+    flux_divergence.set_attrs("diagnostic", "flux divergence", "m s-1", "");
 
     conservation_error.create(grid, "conservation_error", WITHOUT_GHOSTS);
-    conservation_error.set_attrs("internal",
+    conservation_error.set_attrs("diagnostic",
                                  "conservation error due to enforcing non-negativity of"
-                                 " ice thickness", "m", "");
+                                 " ice thickness (over the last time step)", "meters", "");
 
     effective_SMB.create(grid, "effective_SMB", WITHOUT_GHOSTS);
-    effective_SMB.set_attrs("internal", "effective surface mass balance rate", "m s-1", "");
-    effective_SMB.metadata().set_string("glaciological_units", "m year-1");
-    effective_SMB.write_in_glaciological_units = true;
+    effective_SMB.set_attrs("internal", "effective surface mass balance over the last time step",
+                            "meters", "");
 
     effective_BMB.create(grid, "effective_BMB", WITHOUT_GHOSTS);
-    effective_BMB.set_attrs("internal", "effective basal mass balance rate", "m s-1", "");
-    effective_BMB.metadata().set_string("glaciological_units", "m year-1");
-    effective_BMB.write_in_glaciological_units = true;
+    effective_BMB.set_attrs("internal", "effective basal mass balance over the last time step",
+                            "meters", "");
 
     thickness_change.create(grid, "thickness_change", WITHOUT_GHOSTS);
-    thickness_change.set_attrs("internal", "change in thickness", "m", "");
+    thickness_change.set_attrs("internal", "change in thickness due to flow", "meters", "");
 
     ice_area_specific_volume_change.create(grid, "ice_area_specific_volume_change", WITHOUT_GHOSTS);
     ice_area_specific_volume_change.set_attrs("interval",
-                                              "change in area-specific volume",
-                                              "m3 / m2", "");
+                                              "change in area-specific volume due to flow",
+                                              "meters3 / meters2", "");
   }
 
   // internal storage
@@ -1007,6 +1005,38 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
   }
   loop.check();
 }
+
+namespace diagnostics {
+
+/*! @brief Report the divergence of the ice flux. */
+class FluxDivergence : public Diag<GeometryEvolution>
+{
+public:
+  FluxDivergence(const GeometryEvolution *m)
+    : Diag<GeometryEvolution>(m) {
+    m_vars = {model->flux_divergence().metadata()};
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "flux_divergence", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    result->copy_from(model->flux_divergence());
+
+    return result;
+  }
+};
+
+} // end of namespace diagnostics
+
+std::map<std::string, Diagnostic::Ptr> GeometryEvolution::diagnostics_impl() const {
+  return {
+    {"flux_divergence", Diagnostic::Ptr(new diagnostics::FluxDivergence(this))}
+  };
+}
+
 
 RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
   : GeometryEvolution(grid) {
