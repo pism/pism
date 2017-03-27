@@ -84,6 +84,7 @@
 %template(StringSet) std::set<std::string>;
 %template(DoubleVectorMap) std::map<std::string, std::vector<double> >;
 %template(StringMap) std::map<std::string, std::string>;
+%template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
 
 // Why did I include this?
 %include "cstring.i"
@@ -233,6 +234,8 @@
 /* pism::Vars uses IceModelVec, so IceModelVec has to be wrapped first. */
 %include pism_Vars.i
 
+
+%shared_ptr(pism::Diagnostic)
 %include "base/util/PISMDiagnostic.hh"
 %include "base/util/MaxTimestep.hh"
 %include "base/timestepping.hh"
