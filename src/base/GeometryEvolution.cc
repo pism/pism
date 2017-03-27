@@ -762,8 +762,6 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
                                                           IceModelVec2S        &residual,
                                                           bool &done) {
 
-  bool reduce_frontal_thickness = false;
-
   m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
 
   const Direction directions[4] = {North, East, South, West};

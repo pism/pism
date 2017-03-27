@@ -2070,9 +2070,6 @@ IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
     list.add(*Href);
   }
 
-  const bool reduce_frontal_thickness = false;
-  const double dx = m_grid->dx();
-
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
