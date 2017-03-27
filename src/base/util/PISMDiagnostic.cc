@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,6 +46,34 @@ void Diagnostic::update_cumulative() {
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
 int Diagnostic::get_nvars() {
   return m_dof;
+}
+
+void Diagnostic::init(const PIO &input, unsigned int time) {
+  this->init_impl(input, time);
+}
+
+void Diagnostic::define_state(const PIO &output) const {
+  this->define_state_impl(output);
+}
+
+void Diagnostic::write_state(const PIO &output) const {
+  this->write_state_impl(output);
+}
+
+void Diagnostic::init_impl(const PIO &input, unsigned int time) {
+  (void) input;
+  (void) time;
+  // empty
+}
+
+void Diagnostic::define_state_impl(const PIO &output) const {
+  (void) output;
+  // empty
+}
+
+void Diagnostic::write_state_impl(const PIO &output) const {
+  (void) output;
+  // empty
 }
 
 //! Reset vertical levels corresponding to the z dimension.

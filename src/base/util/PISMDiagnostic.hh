@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -73,12 +73,20 @@ public:
 
   virtual void define(const PIO &nc);
 
+  void init(const PIO &input, unsigned int time);
+  void define_state(const PIO &output) const;
+  void write_state(const PIO &output) const;
+protected:
+  virtual void init_impl(const PIO &input, unsigned int time);
+  virtual void define_state_impl(const PIO &output) const;
+  virtual void write_state_impl(const PIO &output) const;
+
   void set_attrs(const std::string &my_long_name,
                  const std::string &my_standard_name,
                  const std::string &my_units,
                  const std::string &my_glaciological_units,
                  int N = 0);
-protected:
+
   virtual IceModelVec::Ptr compute_impl() = 0;
 
   //! the grid
