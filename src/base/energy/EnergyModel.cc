@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,6 +29,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/util/pism_options.hh"
+#include "base/util/Profiling.hh"
 
 namespace pism {
 namespace energy {
@@ -245,12 +246,16 @@ void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
   m_stdout_flags = "";
   m_stats = EnergyModelStats();
 
+  const Profiling &profiling = m_grid->ctx()->profiling();
+
+  profiling.begin("ice energy");
   {
     // this call should fill m_work with new values of enthalpy
     this->update_impl(t, dt, inputs);
 
     m_work.update_ghosts(m_ice_enthalpy);
   }
+  profiling.end("ice energy");
 
   // globalize m_stats and update m_stdout_flags
   {

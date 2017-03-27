@@ -43,7 +43,7 @@ big_events = ["basal yield stress",
               "I/O during run"]
 
 small_events = {}
-small_events["energy"] = ["temp step", "enth step", "BTU"];
+small_events["energy"] = ["ice energy", "BTU"];
 small_events["stress balance"] = ["SSB", "SB modifier", "SB strain heat",
                                   "SB vert. vel."]
 small_events["SB modifier"] = ["SIA bed smoother",
