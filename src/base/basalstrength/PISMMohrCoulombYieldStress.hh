@@ -66,6 +66,8 @@ protected:
   double m_last_time, m_last_inverse_time;
 };
 
+
+
 class PMC_difference_surface_elevation : public Diag<MohrCoulombYieldStress> {
 public:
   PMC_difference_surface_elevation(const MohrCoulombYieldStress *m);
@@ -73,12 +75,7 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
-class PMC_till_friction_angle : public Diag<MohrCoulombYieldStress> {
-public:
-  PMC_till_friction_angle(const MohrCoulombYieldStress *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
-};
+
 
 } // end of namespace pism
 

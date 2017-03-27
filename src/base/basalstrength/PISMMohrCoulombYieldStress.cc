@@ -307,6 +307,45 @@ void MohrCoulombYieldStress::write_model_state_impl(const PIO &output) const {
   }
 }
 
+
+PMC_difference_surface_elevation::PMC_difference_surface_elevation(const MohrCoulombYieldStress *m)
+  : Diag<MohrCoulombYieldStress>(m) {
+  m_vars = {SpatialVariableMetadata(m_sys, "diff_usurf")};
+  set_attrs("surface elevation anomaly",
+            "surface_elevation_anomaly", 
+            "m", "m", 0);
+}
+
+IceModelVec::Ptr PMC_difference_surface_elevation::compute_impl() {
+  IceModelVec2S::Ptr result(new IceModelVec2S);
+  result->create(m_grid, "diff_usurf", WITHOUT_GHOSTS);
+  result->metadata() = m_vars[0];
+
+  result->copy_from(model->diff_surface());
+
+  return result;
+}
+
+
+class PMC_till_friction_angle : public Diag<MohrCoulombYieldStress> {
+public:
+  PMC_till_friction_angle(const MohrCoulombYieldStress *m)
+    : Diag<MohrCoulombYieldStress>(m) {
+    m_vars = {model->till_friction().metadata()};
+  }
+protected:
+  IceModelVec::Ptr compute_impl() {
+    IceModelVec2S::Ptr result(new IceModelVec2S);
+    result->create(m_grid, "tillphi", WITHOUT_GHOSTS);
+    result->metadata() = m_vars[0];
+
+    result->copy_from(model->till_friction());
+
+    return result;
+  }
+};
+
+
 //out out of diff_usurf in extra files
 std::map<std::string, Diagnostic::Ptr> MohrCoulombYieldStress::diagnostics_impl() const {
 
@@ -327,42 +366,8 @@ const IceModelVec2S& MohrCoulombYieldStress::till_friction() const {
   return m_till_phi;
 }
 
-PMC_difference_surface_elevation::PMC_difference_surface_elevation(const MohrCoulombYieldStress *m)
-  : Diag<MohrCoulombYieldStress>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, "diff_usurf")};
-  set_attrs("surface elevation anomaly",
-            "surface_elevation_anomaly", 
-            "m", "m", 0);
-}
-
-IceModelVec::Ptr PMC_difference_surface_elevation::compute_impl() {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "diff_usurf", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-
-  result->copy_from(model->diff_surface());
-
-  return result;
-}
-
-PMC_till_friction_angle::PMC_till_friction_angle(const MohrCoulombYieldStress *m)
-  : Diag<MohrCoulombYieldStress>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, "tillphi")};
-  set_attrs("friction angle for till under grounded ice sheet",
-            "till_friction_angle", 
-            "degrees", "", 0);
-}
 
 
-IceModelVec::Ptr PMC_till_friction_angle::compute_impl() {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "tillphi", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-
-  result->copy_from(model->till_friction());
-
-  return result;
-}
 
 //! Update the till yield stress for use in the pseudo-plastic till basal stress
 //! model.  See also IceBasalResistancePlasticLaw.
