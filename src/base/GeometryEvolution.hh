@@ -42,7 +42,7 @@ public:
 
   void init(const InputOptions &opts);
 
-  void step(Geometry &ice_geometry, double dt,
+  void step(const Geometry &ice_geometry, double dt,
             const IceModelVec2V    &advective_velocity,
             const IceModelVec2Stag &diffusive_flux,
             const IceModelVec2Int  &velocity_bc_mask,

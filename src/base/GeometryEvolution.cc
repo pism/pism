@@ -240,7 +240,7 @@ const IceModelVec2S& GeometryEvolution::conservation_error() const {
  *
  * Results are stored in internal fields accessible using getters.
  */
-void GeometryEvolution::step(Geometry &geometry, double dt,
+void GeometryEvolution::step(const Geometry &geometry, double dt,
                              const IceModelVec2V    &advective_velocity,
                              const IceModelVec2Stag &diffusive_flux,
                              const IceModelVec2Int  &velocity_bc_mask,
