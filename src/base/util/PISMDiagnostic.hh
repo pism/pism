@@ -115,7 +115,78 @@ protected:
   const Model *model;
 };
 
-/*! @brief Helper class for computing time averages of 2D quantities. */
+/*!
+ * Report a time-averaged quantity by accumulating the cumulative quantity over several time steps.
+ */
+template<class M>
+class DiagAverage : public Diag<M>
+{
+public:
+  DiagAverage(const M *m, bool input_is_cumulative)
+    : Diag<M>(m),
+    m_accumulator(Diagnostic::m_grid, "cumulative_quantity", WITHOUT_GHOSTS),
+    m_total_time(0.0), m_input_is_cumulative(input_is_cumulative) {
+
+    m_accumulator.set(0.0);
+  }
+
+  void init_impl(const PIO &input, unsigned int time) {
+    m_accumulator.read(input, time);
+  }
+
+  void define_state_impl(const PIO &output) const {
+    m_accumulator.define(output);
+  }
+
+  void write_state_impl(const PIO &output) const {
+    m_accumulator.write(output);
+  }
+
+  void update(double dt) {
+    if (m_input_is_cumulative) {
+      // the input is a cumulative quantity is total change, so we just sum it up here
+      m_accumulator.add(1.0, this->model_input());
+    } else {
+      // the input is a rate, so to integrate over the reporting interval we
+      // multiply by dt
+      m_accumulator.add(dt, this->model_input());
+    }
+
+    m_total_time += dt;
+  }
+
+  void reset() {
+    m_accumulator.set(0.0);
+    m_total_time = 0.0;
+  }
+
+  IceModelVec::Ptr compute_impl() {
+    IceModelVec2S::Ptr result(new IceModelVec2S(Diagnostic::m_grid,
+                                                "diagnostic", WITHOUT_GHOSTS));
+    result->metadata(0) = Diagnostic::m_vars[0];
+
+    if (m_total_time > 0.0) {
+      result->copy_from(m_accumulator);
+      result->scale(1.0 / m_total_time);
+    } else {
+      result->set(Diagnostic::m_fill_value);
+    }
+
+    return result;
+  }
+protected:
+  IceModelVec2S m_accumulator;
+  double m_total_time;
+  bool m_input_is_cumulative;
+
+  // it should be enough to implement the constructor and this method
+  virtual const IceModelVec2S& model_input() = 0;
+};
+
+/*! @brief Helper class for computing time averages of 2D quantities.
+
+  FIXME: remove this.
+ */
 template <class M>
 class Diag_average : public Diag<M>
 {
