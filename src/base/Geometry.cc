@@ -169,7 +169,15 @@ IceModelVec2S& Geometry::cell_area() {
   return m_cell_area;
 }
 
+const IceModelVec2S& Geometry::cell_area() const {
+  return m_cell_area;
+}
+
 IceModelVec2S& Geometry::latitude() {
+  return m_latitude;
+}
+
+const IceModelVec2S& Geometry::latitude() const {
   return m_latitude;
 }
 
@@ -177,7 +185,15 @@ IceModelVec2S& Geometry::longitude() {
   return m_longitude;
 }
 
+const IceModelVec2S& Geometry::longitude() const {
+  return m_longitude;
+}
+
 IceModelVec2S& Geometry::bed_elevation() {
+  return m_bed_elevation;
+}
+
+const IceModelVec2S& Geometry::bed_elevation() const {
   return m_bed_elevation;
 }
 
@@ -185,7 +201,15 @@ IceModelVec2S& Geometry::sea_level_elevation() {
   return m_sea_level_elevation;
 }
 
+const IceModelVec2S& Geometry::sea_level_elevation() const {
+  return m_sea_level_elevation;
+}
+
 IceModelVec2S& Geometry::ice_thickness() {
+  return m_ice_thickness;
+}
+
+const IceModelVec2S& Geometry::ice_thickness() const {
   return m_ice_thickness;
 }
 
@@ -193,7 +217,15 @@ IceModelVec2S& Geometry::ice_area_specific_volume() {
   return m_ice_area_specific_volume;
 }
 
+const IceModelVec2S& Geometry::ice_area_specific_volume() const {
+  return m_ice_area_specific_volume;
+}
+
 IceModelVec2S& Geometry::cell_grounded_fraction() {
+  return m_cell_grounded_fraction;
+}
+
+const IceModelVec2S& Geometry::cell_grounded_fraction() const {
   return m_cell_grounded_fraction;
 }
 
@@ -201,7 +233,15 @@ IceModelVec2S& Geometry::ice_surface_elevation() {
   return m_ice_surface_elevation;
 }
 
+const IceModelVec2S& Geometry::ice_surface_elevation() const {
+  return m_ice_surface_elevation;
+}
+
 IceModelVec2CellType& Geometry::cell_type() {
+  return m_cell_type;
+}
+
+const IceModelVec2CellType& Geometry::cell_type() const {
   return m_cell_type;
 }
 

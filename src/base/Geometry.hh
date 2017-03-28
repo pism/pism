@@ -49,6 +49,17 @@ public:
   IceModelVec2S& ice_surface_elevation();
   IceModelVec2CellType& cell_type();
 
+  const IceModelVec2S& cell_area() const;
+  const IceModelVec2S& latitude() const;
+  const IceModelVec2S& longitude() const;
+  const IceModelVec2S& bed_elevation() const;
+  const IceModelVec2S& sea_level_elevation() const;
+  const IceModelVec2S& ice_thickness() const;
+  const IceModelVec2S& ice_area_specific_volume() const; // previously known as Href
+  const IceModelVec2S& cell_grounded_fraction() const;
+  const IceModelVec2S& ice_surface_elevation() const;
+  const IceModelVec2CellType& cell_type() const;
+
 private:
 
   // This is grid information, which is not (strictly speaking) ice geometry, but it should be
