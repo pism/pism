@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -54,14 +54,6 @@ inline const double& IceModelVec2S::operator()(int i, int j) const {
 }
 
 inline StarStencil<double> IceModelVec2S::star(int i, int j) const {
-#if (PISM_DEBUG==1)
-  check_array_indices(i, j, 0);
-  check_array_indices(i+1, j, 0);
-  check_array_indices(i-1, j, 0);
-  check_array_indices(i, j+1, 0);
-  check_array_indices(i, j-1, 0);
-#endif
-
   const IceModelVec2S &self = *this;
 
   StarStencil<double> result;
@@ -75,13 +67,6 @@ inline StarStencil<double> IceModelVec2S::star(int i, int j) const {
 }
 
 inline StarStencil<double> IceModelVec2Stag::star(int i, int j) const {
-#if (PISM_DEBUG==1)
-  check_array_indices(i, j, 0);
-  check_array_indices(i+1, j, 0);
-  check_array_indices(i-1, j, 0);
-  check_array_indices(i, j+1, 0);
-  check_array_indices(i, j-1, 0);
-#endif
   const IceModelVec2Stag &self = *this;
 
   StarStencil<double> result;
@@ -104,15 +89,8 @@ inline int IceModelVec2Int::as_int(int i, int j) const {
 }
 
 inline StarStencil<int> IceModelVec2Int::int_star(int i, int j) const {
-#if (PISM_DEBUG==1)
-  check_array_indices(i, j, 0);
-  check_array_indices(i+1, j, 0);
-  check_array_indices(i-1, j, 0);
-  check_array_indices(i, j+1, 0);
-  check_array_indices(i, j-1, 0);
-#endif
-
   StarStencil<int> result;
+
   result.ij = as_int(i,j);
   result.e =  as_int(i+1,j);
   result.w =  as_int(i-1,j);
@@ -138,13 +116,6 @@ inline const Vector2& IceModelVec2V::operator()(int i, int j) const {
 }
 
 inline StarStencil<Vector2> IceModelVec2V::star(int i, int j) const {
-#if (PISM_DEBUG==1)
-  check_array_indices(i, j, 0);
-  check_array_indices(i+1, j, 0);
-  check_array_indices(i-1, j, 0);
-  check_array_indices(i, j+1, 0);
-  check_array_indices(i, j-1, 0);
-#endif
   const IceModelVec2V &self = *this;
 
   StarStencil<Vector2> result;
