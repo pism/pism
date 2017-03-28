@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -268,7 +268,7 @@ void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::stri
 
   // Check the range of the ice thickness.
   {
-    double max_thickness = m_ice_thickness.range().max,
+    double max_thickness = m_geometry.ice_thickness().range().max,
       Lz = m_grid->Lz();
 
     if (max_thickness >= Lz + 1e-6) {

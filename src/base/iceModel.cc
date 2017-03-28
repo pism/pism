@@ -199,6 +199,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_time(context->time()),
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
+    m_geometry(m_grid),
     m_cumulative_flux_fields(m_grid),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
@@ -329,24 +330,21 @@ void IceModel::createVecs() {
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
-  // The following code creates (and documents -- to some extent) the
-  // variables. The main (and only) principle here is using standard names from
-  // the CF conventions; see
-  // http://cf-pcmdi.llnl.gov/documents/cf-standard-names
+  // FIXME: this should do for now, but we should pass a const reference to Geometry to sub-models
+  // as a function argument.
+  m_grid->variables().add(m_geometry.ice_surface_elevation());
+  m_grid->variables().add(m_geometry.ice_thickness());
+  m_grid->variables().add(m_geometry.cell_type());
+  m_grid->variables().add(m_geometry.longitude());
+  m_grid->variables().add(m_geometry.latitude());
+  m_grid->variables().add(m_geometry.cell_area());
 
-  // ice upper surface elevation
-  m_ice_surface_elevation.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
-  m_ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
-                                  "m", "surface_altitude");
-  m_grid->variables().add(m_ice_surface_elevation);
+  if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
+    m_grid->variables().add(m_geometry.cell_grounded_fraction());
+  }
 
-  // land ice thickness
-  {
-    m_ice_thickness.create(m_grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
-    m_ice_thickness.set_attrs("model_state", "land ice thickness",
-                              "m", "land_ice_thickness");
-    m_ice_thickness.metadata().set_double("valid_min", 0.0);
-    m_grid->variables().add(m_ice_thickness);
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
+    m_grid->variables().add(m_geometry.ice_area_specific_volume());
   }
 
   {
@@ -357,29 +355,6 @@ void IceModel::createVecs() {
     m_flux_divergence.metadata().set_string("glaciological_units", "m year-1");
     m_flux_divergence.write_in_glaciological_units = true;
   }
-
-  if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
-    m_gl_mask.create(m_grid, "gl_mask", WITHOUT_GHOSTS);
-    m_gl_mask.set_attrs("internal",
-                      "fractional grounded/floating mask (floating=0, grounded=1)",
-                      "", "");
-    m_grid->variables().add(m_gl_mask);
-  }
-
-  // grounded_dragging_floating integer mask
-  m_cell_type.create(m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
-  m_cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
-                  "", "");
-  std::vector<double> mask_values = {
-    MASK_ICE_FREE_BEDROCK,
-    MASK_GROUNDED,
-    MASK_FLOATING,
-    MASK_ICE_FREE_OCEAN};
-
-  m_cell_type.metadata().set_doubles("flag_values", mask_values);
-  m_cell_type.metadata().set_string("flag_meanings",
-                              "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  m_grid->variables().add(m_cell_type);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   {
@@ -400,34 +375,6 @@ void IceModel::createVecs() {
   m_basal_melt_rate.write_in_glaciological_units = true;
   m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
   m_grid->variables().add(m_basal_melt_rate);
-
-  // longitude
-  m_longitude.create(m_grid, "lon", WITH_GHOSTS);
-  m_longitude.set_attrs("mapping", "longitude", "degree_east", "longitude");
-  m_longitude.set_time_independent(true);
-  m_longitude.metadata().set_string("coordinates", "");
-  m_longitude.metadata().set_string("grid_mapping", "");
-  m_longitude.metadata().set_double("valid_min", -180.0);
-  m_longitude.metadata().set_double("valid_max",  180.0);
-  m_grid->variables().add(m_longitude);
-
-  // latitude
-  m_latitude.create(m_grid, "lat", WITH_GHOSTS); // has ghosts so that we can compute cell areas
-  m_latitude.set_attrs("mapping", "latitude", "degree_north", "latitude");
-  m_latitude.set_time_independent(true);
-  m_latitude.metadata().set_string("coordinates", "");
-  m_latitude.metadata().set_string("grid_mapping", "");
-  m_latitude.metadata().set_double("valid_min", -90.0);
-  m_latitude.metadata().set_double("valid_max",  90.0);
-  m_grid->variables().add(m_latitude);
-
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
-    // Href
-    m_Href.create(m_grid, "Href", WITH_GHOSTS);
-    m_Href.set_attrs("model_state", "temporary ice thickness at calving front boundary",
-                    "m", "");
-    m_grid->variables().add(m_Href);
-  }
 
   // SSA Dirichlet B.C. locations and values
   //
@@ -464,19 +411,6 @@ void IceModel::createVecs() {
     // just for diagnostics...
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }
-
-
-  // cell areas
-  m_cell_area.create(m_grid, "cell_area", WITHOUT_GHOSTS);
-  m_cell_area.set_attrs("diagnostic", "cell areas", "m2", "");
-  m_cell_area.metadata().set_string("comment",
-                                  "values are equal to dx*dy "
-                                  "if projection parameters are not available; "
-                                  "otherwise WGS84 ellipsoid is used");
-  m_cell_area.set_time_independent(true);
-  m_cell_area.metadata().set_string("glaciological_units", "km2");
-  m_cell_area.write_in_glaciological_units = true;
-  m_grid->variables().add(m_cell_area);
 
   if (m_config->get_boolean("fracture_density.enabled")) {
     m_fracture = new FractureFields(m_grid);
@@ -574,6 +508,9 @@ void IceModel::step(bool do_mass_continuity,
   m_ocean->update(current_time, m_dt);
   profiling.end("ocean");
 
+  // The sea level elevation might have changed.
+  enforce_consistency_of_geometry();
+
   dt_TempAge += m_dt;
   // IceModel::dt,dtTempAge are now set correctly according to
   // mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and
@@ -583,7 +520,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the age of the ice (if appropriate)
   if (m_age_model != NULL and updateAtDepth) {
     AgeModelInputs inputs;
-    inputs.ice_thickness = &m_ice_thickness;
+    inputs.ice_thickness = &m_geometry.ice_thickness();
     inputs.u3            = &m_stress_balance->velocity_u();
     inputs.v3            = &m_stress_balance->velocity_v();
     inputs.w3            = &m_stress_balance->velocity_w();
@@ -672,6 +609,7 @@ void IceModel::step(bool do_mass_continuity,
 
     if (bed_topography.get_state_counter() != topg_state_counter) {
       m_stdout_flags += "b";
+      // Bed elevation changed.
       enforce_consistency_of_geometry();
     } else {
       m_stdout_flags += " ";
@@ -690,7 +628,7 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   // Check if the ice thickness exceeded the height of the computational box and stop if it did.
-  const bool thickness_too_high = check_maximum_ice_thickness(m_ice_thickness);
+  const bool thickness_too_high = check_maximum_ice_thickness(m_geometry.ice_thickness());
 
   if (thickness_too_high) {
     options::String output_file("-o", "output file name",
@@ -865,6 +803,10 @@ void IceModel::init() {
   profiling.end("initialization");
 }
 
+const Geometry& IceModel::geometry() const {
+  return m_geometry;
+}
+
 const stressbalance::StressBalance* IceModel::stress_balance() const {
   return this->m_stress_balance;
 }
@@ -879,22 +821,6 @@ const bed::BedDef* IceModel::bed_model() const {
 
 const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
   return m_btu;
-}
-
-const IceModelVec2S& IceModel::ice_thickness() const {
-  return m_ice_thickness;
-}
-
-const IceModelVec2S & IceModel::cell_area() const {
-  return m_cell_area;
-}
-
-const IceModelVec2CellType & IceModel::cell_type() const {
-  return m_cell_type;
-}
-
-const IceModelVec2S& IceModel::ice_surface_elevation() const {
-  return m_ice_surface_elevation;
 }
 
 const energy::EnergyModel* IceModel::energy_balance_model() const {

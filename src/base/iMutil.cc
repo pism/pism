@@ -195,26 +195,6 @@ void  IceModel::stampHistory(const std::string &str) {
 
 }
 
-void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
-
-  IceModelVec::AccessList list(ice_thickness);
-
-  ParallelSection loop(grid->com);
-  try {
-    for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (ice_thickness(i, j) < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Thickness is negative at point i=%d, j=%d", i, j);
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-}
-
 //! Check if the thickness of the ice is too large.
 /*! Return true if the ice thickness exceeds the height of the computational domain.
  */

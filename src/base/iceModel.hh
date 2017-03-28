@@ -47,6 +47,7 @@
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/Geometry.hh"
 
 namespace pism {
 
@@ -237,22 +238,12 @@ protected:
 
   // state variables and some diagnostics/internals
 
-  //! ice surface elevation; ghosted
-  IceModelVec2S m_ice_surface_elevation;
-  //! ghosted
-  IceModelVec2S m_ice_thickness;
+  Geometry m_geometry;
+
   //! ghosted
   IceModelVec2S m_basal_yield_stress;
   //! rate of production of basal meltwater (ice-equivalent); no ghosts
   IceModelVec2S m_basal_melt_rate;
-  //! Longitude; ghosted to compute cell areas
-  IceModelVec2S m_longitude;
-  //! Latitude; ghosted to compute cell areas
-  IceModelVec2S m_latitude;
-  //! accumulated mass advected to a partially filled grid cell
-  IceModelVec2S m_Href;
-  //! cell areas (computed using the WGS84 datum)
-  IceModelVec2S m_cell_area;
   //! flux divergence
   IceModelVec2S m_flux_divergence;
 
@@ -260,17 +251,10 @@ protected:
 
 protected:
 
-  //! \brief mask for flow type with values ice_free_bedrock, grounded_ice, floating_ice,
-  //! ice_free_ocean
-  IceModelVec2CellType m_cell_type;
-
   //! mask to determine Dirichlet boundary locations
   IceModelVec2Int m_ssa_dirichlet_bc_mask;
   //! Dirichlet boundary velocities
   IceModelVec2V m_ssa_dirichlet_bc_values;
-
-  //! mask to determine grounding line position
-  IceModelVec2S m_gl_mask;
 
   // parameters
   //! mass continuity time step, s
@@ -428,14 +412,12 @@ public:
   const energy::BedThermalUnit* bedrock_thermal_model() const;
   const energy::EnergyModel* energy_balance_model() const;
 
-  const IceModelVec2S& ice_thickness() const;
-  const IceModelVec2S& ice_surface_elevation() const;
-  const IceModelVec2CellType& cell_type() const;
-  const IceModelVec2S &cell_area() const;
+  const Geometry& geometry() const;
 
   FluxCounters cumulative_fluxes() const;
   const IceModelVec2S& flux_divergence() const;
   const FluxFields& cumulative_fluxes_2d() const;
+
   double dt() const;
 
 protected:

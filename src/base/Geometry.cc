@@ -98,9 +98,31 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
                                     "m", "surface_altitude");
 }
 
+void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
+  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+
+  IceModelVec::AccessList list(ice_thickness);
+
+  ParallelSection loop(grid->com);
+  try {
+    for (Points p(*grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (ice_thickness(i, j) < 0.0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Thickness is negative at point i=%d, j=%d", i, j);
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
 void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   IceGrid::ConstPtr grid = m_ice_thickness.get_grid();
   Config::ConstPtr config = grid->ctx()->config();
+
+  check_minimum_ice_thickness(m_ice_thickness);
 
   IceModelVec::AccessList list{&m_sea_level_elevation, &m_bed_elevation,
       &m_ice_thickness, &m_ice_area_specific_volume,

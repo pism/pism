@@ -60,30 +60,20 @@ using namespace mask;
 */
 void IceModel::enforce_consistency_of_geometry() {
 
-  assert(m_ocean != NULL);
-  const double sea_level = m_ocean->sea_level_elevation();
-
-  const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
-
-  GeometryCalculator gc(*m_config);
+  m_geometry.bed_elevation().copy_from(m_beddef->bed_elevation());
+  m_geometry.sea_level_elevation().set(m_ocean->sea_level_elevation());
 
   if (m_config->get_boolean("geometry.remove_icebergs") and m_iceberg_remover != NULL) {
-    // the iceberg remover has to use the same mask as the stress balance code, hence the
-    // stress-balance-related threshold here
-    gc.set_icefree_thickness(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+    // The iceberg remover has to use the same mask as the stress balance code, hence the
+    // stress-balance-related threshold here.
+    m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
-    gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
-
-    m_iceberg_remover->update(m_cell_type, m_ice_thickness);
-    // the call above modifies ice thickness and updates the mask accordingly, but we re-compute the
-    // mask (we need to use the different threshold)
+    m_iceberg_remover->update(m_geometry.cell_type(), m_geometry.ice_thickness());
+    // The call above modifies ice thickness and updates the mask accordingly, but we re-compute the
+    // mask (we need to use a different threshold).
   }
 
-  gc.set_icefree_thickness(m_config->get_double("geometry.ice_free_thickness_standard"));
-  gc.compute_mask(sea_level, bed_topography, m_ice_thickness, m_cell_type);
-  gc.compute_surface(sea_level, bed_topography, m_ice_thickness, m_ice_surface_elevation);
-
-  check_minimum_ice_thickness(m_ice_thickness);
+  m_geometry.ensure_consistency(m_config->get_double("geometry.ice_free_thickness_standard"));
 }
 
 //! \brief Adjust ice flow through interfaces of the cell i,j.
@@ -442,14 +432,14 @@ void IceModel::massContExplicitStep(double dt,
     ice_density              = m_config->get_double("constants.ice.density");
 
   IceModelVec2S &H_new = m_work2d[0];
-  H_new.copy_from(m_ice_thickness);
+  H_new.copy_from(m_geometry.ice_thickness());
 
   IceModelVec2S &H_residual = m_work2d[1];
 
   const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
 
-  IceModelVec::AccessList list{&m_cell_area, &m_ice_thickness, &m_ice_surface_elevation,
-      &bed_topography, &diffusive_flux, &advective_velocity, &m_cell_type, &H_new,
+  IceModelVec::AccessList list{&m_geometry.cell_area(), &m_geometry.ice_thickness(), &m_geometry.ice_surface_elevation(),
+      &bed_topography, &diffusive_flux, &advective_velocity, &m_geometry.cell_type(), &H_new,
       &m_cumulative_flux_fields.nonneg, &m_flux_divergence};
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
@@ -457,7 +447,7 @@ void IceModel::massContExplicitStep(double dt,
     do_part_grid             = m_config->get_boolean("geometry.part_grid.enabled");
 
   if (do_part_grid) {
-    list.add(m_Href);
+    list.add(m_geometry.ice_area_specific_volume());
     list.add(H_residual);
     // FIXME: next line causes mass loss if max_loopcount in redistResiduals()
     //        was not sufficient to zero-out H_residual already
@@ -479,7 +469,7 @@ void IceModel::massContExplicitStep(double dt,
       // thicknesses and thickening rates to kg, for accounting of
       // fluxes during the current time-step.
       const double
-        meter_to_kg       = m_cell_area(i,j) * ice_density,
+        meter_to_kg       = m_geometry.cell_area()(i,j) * ice_density,
         meter_per_s_to_kg = meter_to_kg * dt;
 
       // Divergence terms:
@@ -494,9 +484,9 @@ void IceModel::massContExplicitStep(double dt,
         Href_to_H_flux       = 0.0, // units: [m]
         nonneg_rule_flux     = 0.0; // units: [m]
 
-      StarStencil<int> cell_type = m_cell_type.int_star(i, j);
+      StarStencil<int> cell_type = m_geometry.cell_type().int_star(i, j);
 
-      StarStencil<double>  H = m_ice_thickness.star(i, j);
+      StarStencil<double>  H = m_geometry.ice_thickness().star(i, j);
       StarStencil<double>  Q(0.0), v(0.0);
       StarStencil<int>     bc_mask(0);
       StarStencil<Vector2> bc_velocity;
@@ -522,38 +512,38 @@ void IceModel::massContExplicitStep(double dt,
         divQ_SSA += (v.n * (v.n > 0 ? H.ij : H.n) - v.s * (v.s > 0 ? H.s : H.ij)) / dy;
       }
 
-      if (m_cell_type.ice_free_ocean(i, j)) {
+      if (m_geometry.cell_type().ice_free_ocean(i, j)) {
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
         // parameterization
-        if (do_part_grid && m_cell_type.next_to_ice(i, j)) {
+        if (do_part_grid && m_geometry.cell_type().next_to_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
           H_to_Href_flux  = -(divQ_SSA + divQ_SIA) * dt;
-          m_Href(i, j)    += H_to_Href_flux;
+          m_geometry.ice_area_specific_volume()(i, j)    += H_to_Href_flux;
 
-          if (m_Href(i, j) < 0) {
+          if (m_geometry.ice_area_specific_volume()(i, j) < 0) {
             m_log->message(2,
                            "PISM WARNING: negative Href at (%d, %d)\n",
                            i, j);
 
             // Note: this adds mass!
-            nonneg_rule_flux += m_Href(i, j);
-            m_Href(i, j) = 0;
+            nonneg_rule_flux += m_geometry.ice_area_specific_volume()(i, j);
+            m_geometry.ice_area_specific_volume()(i, j) = 0;
           }
 
           double H_threshold = part_grid_threshold_thickness(cell_type, H,
-                                                             m_ice_surface_elevation.star(i, j),
+                                                             m_geometry.ice_surface_elevation().star(i, j),
                                                              bed_topography(i, j));
           double coverage_ratio = 1.0;
           if (H_threshold > 0.0) {
-            coverage_ratio = m_Href(i, j) / H_threshold;
+            coverage_ratio = m_geometry.ice_area_specific_volume()(i, j) / H_threshold;
           }
 
           if (coverage_ratio >= 1.0) {
             // A partially filled grid cell is now considered to be full.
-            H_residual(i, j)     = m_Href(i, j) - H_threshold; // residual ice thickness
-            m_Href(i, j)          = 0.0;
-            Href_to_H_flux       = H_threshold;
+            H_residual(i, j)     = m_geometry.ice_area_specific_volume()(i, j) - H_threshold; // residual ice thickness
+            m_geometry.ice_area_specific_volume()(i, j) = 0.0;
+            Href_to_H_flux                              = H_threshold;
             // A cell that became "full" experiences both SMB and basal melt.
           }
 
@@ -605,7 +595,7 @@ void IceModel::massContExplicitStep(double dt,
   }
   loop.check();
 
-  // update m_cell_type
+  // update m_geometry.cell_type()
   {
     const double thickness_threshold = m_config->get_double("geometry.ice_free_thickness_standard");
     const double sea_level = m_ocean->sea_level_elevation();
@@ -615,17 +605,17 @@ void IceModel::massContExplicitStep(double dt,
 
     // Note that we use H_new here: we need the mask corresponding to the new thickness. Also note
     // that the mask computation is local (we don't need to update ghosts of H_new).
-    gc.compute_mask(sea_level, bed_topography, H_new, m_cell_type);
+    gc.compute_mask(sea_level, bed_topography, H_new, m_geometry.cell_type());
   }
 
   IceModelVec2S &climatic_mass_balance = m_work2d[2];
   m_surface->mass_flux(climatic_mass_balance);
 
   apply_surface_and_basal_mass_balance(dt,
-                                       m_cell_area,
+                                       m_geometry.cell_area(),
                                        climatic_mass_balance,
                                        m_basal_melt_rate,
-                                       m_cell_type,
+                                       m_geometry.cell_type(),
                                        dirichlet_bc ? &m_ssa_dirichlet_bc_mask : NULL,
                                        H_new,
                                        fluxes,
@@ -653,7 +643,7 @@ void IceModel::massContExplicitStep(double dt,
   }
 
   // finally copy H_new into ice_thickness and communicate ghosted values
-  H_new.update_ghosts(m_ice_thickness);
+  H_new.update_ghosts(m_geometry.ice_thickness());
 
   // distribute residual ice mass if desired
   if (do_part_grid) {
@@ -786,15 +776,13 @@ void IceModel::update_grounded_cell_fraction() {
     ice_density   = m_config->get_double("constants.ice.density"),
     ocean_density = m_config->get_double("constants.sea_water.density");
 
-  assert(m_ocean != NULL);
-  const double sea_level = m_ocean->sea_level_elevation();
-
-  assert(m_beddef != NULL);
-  const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
-
-  compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
-                          m_ice_thickness, bed_topography, m_cell_type,
-                          m_gl_mask, NULL, NULL);
+  compute_grounded_cell_fraction(ice_density, ocean_density,
+                                 m_ocean->sea_level_elevation(),
+                                 m_geometry.ice_thickness(),
+                                 m_geometry.bed_elevation(),
+                                 m_geometry.cell_type(),
+                                 m_geometry.cell_grounded_fraction(),
+                                 NULL, NULL);
 }
 
 } // end of namespace pism

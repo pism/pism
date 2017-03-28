@@ -283,10 +283,10 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
   result->create(m_grid, "hardav", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
 
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->ice_thickness();
+  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness();
 
   IceModelVec::AccessList list{&cell_type, &ice_enthalpy, &ice_thickness, result.get()};
   ParallelSection loop(m_grid->com);
@@ -355,7 +355,8 @@ IceModelVec::Ptr IceModel_cts::compute_impl() {
   result->create(m_grid, "cts", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
 
-  energy::compute_cts(model->energy_balance_model()->enthalpy(), model->ice_thickness(), *result);
+  energy::compute_cts(model->energy_balance_model()->enthalpy(),
+                      model->geometry().ice_thickness(), *result);
 
   return result;
 }
@@ -374,7 +375,7 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(const IceModel *m)
 IceModelVec::Ptr IceModel_proc_ice_area::compute_impl() {
 
   const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "proc_ice_area", WITHOUT_GHOSTS);
@@ -586,7 +587,7 @@ IceModelVec::Ptr IceModel_enthalpysurf::compute_impl() {
   // compute levels corresponding to 1 m below the ice surface:
 
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->ice_thickness();
+  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness();
 
   IceModelVec::AccessList list{&ice_thickness, result.get()};
 
@@ -628,7 +629,7 @@ IceModelVec::Ptr IceModel_enthalpybase::compute_impl() {
 
   model->energy_balance_model()->enthalpy().getHorSlice(*result, 0.0);  // z=0 slice
 
-  result->mask_by(model->ice_thickness(), m_fill_value);
+  result->mask_by(model->geometry().ice_thickness(), m_fill_value);
 
   return result;
 }
@@ -659,7 +660,7 @@ IceModelVec::Ptr IceModel_tempbase::compute_impl() {
   // result contains basal enthalpy; note that it is allocated by
   // IceModel_enthalpybase::compute().
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
 
   IceModelVec::AccessList list{&cell_type, result.get(), thickness};
 
@@ -759,7 +760,7 @@ IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
     result->set(0.0);
   } else {
     energy::compute_liquid_water_fraction(model->energy_balance_model()->enthalpy(),
-                                          model->ice_thickness(),
+                                          model->geometry().ice_thickness(),
                                           *result);
   }
 
@@ -784,9 +785,9 @@ IceModelVec::Ptr IceModel_tempicethk::compute_impl() {
   result->create(m_grid, "tempicethk", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->ice_thickness();
+  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness();
 
   IceModelVec::AccessList list{&cell_type, result.get(), &ice_enthalpy, &ice_thickness};
 
@@ -853,9 +854,9 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->ice_thickness();
+  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness();
 
   IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &ice_enthalpy};
 
@@ -1312,8 +1313,8 @@ void IceModel_enthalpy_glacierized::update(double a, double b) {
 
   double value = energy::total_ice_enthalpy(m_config->get_double("output.ice_free_thickness_standard"),
                                             model->energy_balance_model()->enthalpy(),
-                                            model->ice_thickness(),
-                                            model->cell_area());
+                                            model->geometry().ice_thickness(),
+                                            model->geometry().cell_area());
 
   m_ts->append(value, a, b);
 }
@@ -1334,8 +1335,8 @@ void IceModel_enthalpy_nonglacierized::update(double a, double b) {
 
   double value = energy::total_ice_enthalpy(0.0,
                                             model->energy_balance_model()->enthalpy(),
-                                            model->ice_thickness(),
-                                            model->cell_area());
+                                            model->geometry().ice_thickness(),
+                                            model->geometry().cell_area());
 
   m_ts->append(value, a, b);
 }
@@ -1612,7 +1613,7 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
   if (gsl_isnan(m_last_report_time)) {
     result->set(units::convert(m_sys, 2e6, "m year-1", "m second-1"));
   } else {
-    const IceModelVec2S& ice_thickness = model->ice_thickness();
+    const IceModelVec2S& ice_thickness = model->geometry().ice_thickness();
 
     IceModelVec::AccessList list{result.get(), &m_last_ice_thickness, &ice_thickness};
 
@@ -1631,7 +1632,7 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
 
 void IceModel_dHdt::update_impl(double dt) {
   (void) dt;
-  const IceModelVec2S& ice_thickness = model->ice_thickness();
+  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness();
 
   IceModelVec::AccessList list{&ice_thickness, &m_last_ice_thickness};
 
@@ -1657,10 +1658,10 @@ IceModel_volume_glacierized_grounded::IceModel_volume_glacierized_grounded(IceMo
 void IceModel_volume_glacierized_grounded::update(double a, double b) {
   double volume = 0.0;
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
 
   const IceModelVec2S
-    &cell_area     = model->cell_area(),
+    &cell_area     = model->geometry().cell_area(),
     &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   const double thickness_threshold = m_config->get_double("output.ice_free_thickness_standard");
@@ -1694,10 +1695,10 @@ IceModel_volume_glacierized_shelf::IceModel_volume_glacierized_shelf(IceModel *m
 void IceModel_volume_glacierized_shelf::update(double a, double b) {
   double volume = 0.0;
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
 
   const IceModelVec2S
-    &cell_area     = model->cell_area(),
+    &cell_area     = model->geometry().cell_area(),
     &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   const double thickness_threshold = m_config->get_double("output.ice_free_thickness_standard");
@@ -2060,7 +2061,7 @@ IceModelVec::Ptr IceModel_land_ice_area_fraction::compute_impl() {
     &surface_elevation = *variables.get_2d_scalar("surface_altitude"),
     &bed_topography    = *variables.get_2d_scalar("bedrock_altitude");
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
 
   IceModelVec::AccessList list{&thickness, &surface_elevation, &bed_topography, &cell_type,
       result.get()};
@@ -2139,7 +2140,7 @@ IceModelVec::Ptr IceModel_grounded_ice_sheet_area_fraction::compute_impl() {
     &ice_thickness  = *variables.get_2d_scalar("land_ice_thickness"),
     &bed_topography = *variables.get_2d_scalar("bedrock_altitude");
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
                                  ice_thickness, bed_topography, cell_type,
@@ -2320,7 +2321,7 @@ IceModelVec::Ptr IceModel_height_above_flotation::compute_impl() {
   result->create(m_grid, "height_above_flotation", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
 
   const double
     ice_density   = m_config->get_double("constants.ice.density"),
@@ -2378,7 +2379,7 @@ IceModelVec::Ptr IceModel_ice_mass::compute_impl() {
   result->create(m_grid, "ice_mass", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->cell_type();
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type();
 
   const double
     ice_density = m_config->get_double("constants.ice.density");
@@ -2472,7 +2473,7 @@ IceModelVec::Ptr IceModel_hardness::compute_impl() {
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
   const IceModelVec3  &ice_enthalpy  = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S &ice_thickness = model->ice_thickness();
+  const IceModelVec2S &ice_thickness = model->geometry().ice_thickness();
 
   const rheology::FlowLaw *flow_law = model->stress_balance()->modifier()->flow_law();
 
@@ -2537,7 +2538,7 @@ IceModelVec::Ptr IceModel_viscosity::compute_impl() {
 
   const rheology::FlowLaw *flow_law = model->stress_balance()->modifier()->flow_law();
 
-  const IceModelVec2S &ice_thickness = model->ice_thickness();
+  const IceModelVec2S &ice_thickness = model->geometry().ice_thickness();
 
   const IceModelVec3
     &ice_enthalpy     = model->energy_balance_model()->enthalpy(),
