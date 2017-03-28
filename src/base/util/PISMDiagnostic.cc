@@ -76,17 +76,6 @@ void Diagnostic::write_state_impl(const PIO &output) const {
   // empty
 }
 
-//! Reset vertical levels corresponding to the z dimension.
-/** This is called after the automatic grid extension.
- */
-void Diagnostic::set_zlevels(std::vector<double> &zlevels) {
-  for (int j = 0; j < m_dof; ++j) {
-    if (m_vars[j].get_z().get_name() == "z") {
-      m_vars[j].set_levels(zlevels);
-    }
-  }
-}
-
 //! Get a metadata object corresponding to variable number N.
 SpatialVariableMetadata Diagnostic::get_metadata(int N) {
   if (N >= m_dof) {

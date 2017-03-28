@@ -67,8 +67,6 @@ public:
 
   virtual int get_nvars();
 
-  virtual void set_zlevels(std::vector<double> &zlevels);
-
   virtual SpatialVariableMetadata get_metadata(int N = 0);
 
   virtual void define(const PIO &nc);
