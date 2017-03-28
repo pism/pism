@@ -68,14 +68,14 @@ void IBIceModel::allocate_couplers() {
 }
 
 
-void IBIceModel::createVecs() {
-  super::createVecs();
+void IBIceModel::allocate_storage() {
+  super::allocate_storage();
 
-  printf("BEGIN IBIceModel::createVecs()\n");
+  printf("BEGIN IBIceModel::allocate_storage()\n");
   base.create(m_grid, "", WITHOUT_GHOSTS);
   cur.create(m_grid, "", WITHOUT_GHOSTS);
   rate.create(m_grid, "", WITHOUT_GHOSTS);
-  printf("END IBIceModel::createVecs()\n");
+  printf("END IBIceModel::allocate_storage()\n");
 
   M1.create(m_grid, "M1", pism::WITHOUT_GHOSTS);
   M2.create(m_grid, "M2", pism::WITHOUT_GHOSTS);
@@ -110,9 +110,9 @@ void IBIceModel::massContPostHook() {
 }
 
 
-void IBIceModel::energyStep() {
+void IBIceModel::energy_step() {
 
-  printf("BEGIN IBIceModel::energyStep(t=%f, dt=%f)\n", t_TempAge, dt_TempAge);
+  printf("BEGIN IBIceModel::energy_step(t=%f, dt=%f)\n", t_TempAge, dt_TempAge);
 
   // Enthalpy and mass continuity are stepped with different timesteps.
   // Fish out the timestep relevant to US.
@@ -122,7 +122,7 @@ void IBIceModel::energyStep() {
   // =========== BEFORE Energy Step
 
   // =========== The Energy Step Itself
-  super::energyStep();
+  super::energy_step();
 
   // =========== AFTER Energy Step
 
@@ -152,7 +152,7 @@ void IBIceModel::energyStep() {
   // cur.strain_heating = cur.strain_heating * 1.0 + my_dt * sum_columns(strain_heating3p)
   strain_heating3.sumColumns(cur.strain_heating, 1.0, my_dt);
 
-  printf("END IBIceModel::energyStep(time=%f)\n", t_TempAge);
+  printf("END IBIceModel::energy_step(time=%f)\n", t_TempAge);
 }
 
 void IBIceModel::massContExplicitStep(double dt,

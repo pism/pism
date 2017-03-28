@@ -44,7 +44,7 @@ const double IceCompModel::m_Tmin   = 223.15; // K
 const double IceCompModel::m_LforFG = 750000; // m
 const double IceCompModel::m_ApforG = 200; // m
 
-void IceCompModel::energyStep() {
+void IceCompModel::energy_step() {
 
   energy::EnergyModelStats stats;
 

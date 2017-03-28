@@ -40,11 +40,11 @@
 
 // IceModel owns a bunch of fields, so we have to include this.
 #include "base/util/iceModelVec.hh"
+#include "base/util/IceModelVec2CellType.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/PISMTime.hh"
-#include "base/util/IceModelVec2CellType.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/Geometry.hh"
@@ -155,18 +155,18 @@ public:
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
   virtual void step(bool do_mass_continuity, bool do_skip);
+  virtual void pre_step_hook();
+  virtual void post_step_hook();
   void reset_counters();
 
   // see iMbootstrap.cc
   virtual void bootstrap_2d(const PIO &input_file);
 
   // see iMoptions.cc
-  virtual void setFromOptions();
+  virtual void process_options();
   virtual std::set<std::string> output_variables(const std::string &keyword);
 
   // see iMutil.cc
-  virtual void additionalAtStartTimestep();
-  virtual void additionalAtEndTimestep();
   virtual void compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
@@ -176,7 +176,9 @@ public:
   void initialize_cumulative_fluxes(const PIO &input_file);
   void reset_cumulative_fluxes();
 
-  virtual void writeFiles(const std::string &default_filename);
+  virtual void save_results();
+  virtual void save_variables(const std::string &filename,
+                               const std::set<std::string> &variables);
 
   virtual void define_model_state(const PIO &file);
   virtual void write_model_state(const PIO &file);
@@ -305,14 +307,14 @@ protected:
   std::string m_stdout_flags;
 
   // see iceModel.cc
-  virtual void createVecs();
+  virtual void allocate_storage();
 
   virtual MaxTimestep max_timestep_diffusivity();
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMenergy.cc
-  virtual void energyStep();
+  virtual void energy_step();
 
   virtual void combine_basal_melt_rate();
 
@@ -352,15 +354,13 @@ protected:
 
 
   // see iMIO.cc
-  virtual void dumpToFile(const std::string &filename,
-                          const std::set<std::string> &variables);
   virtual void regrid(int dimensions);
   virtual void regrid_variables(const PIO &regrid_file,
                                 const std::set<std::string> &regrid_vars,
                                 unsigned int ndims);
 
   // see iMfractures.cc
-  virtual void calculateFractureDensity();
+  virtual void update_fracture_density();
 
   // see iMpartgrid.cc
   virtual void residual_redistribution(IceModelVec2S &residual);
@@ -369,11 +369,11 @@ protected:
   // see iMreport.cc
   virtual double compute_temperate_base_fraction(double ice_area);
   virtual double compute_original_ice_fraction(double ice_volume);
-  virtual void summary(bool tempAndAge);
-  virtual void summaryPrintLine(bool printPrototype, bool tempAndAge,
-                                double delta_t,
-                                double volume, double area,
-                                double meltfrac, double max_diffusivity);
+  virtual void print_summary(bool tempAndAge);
+  virtual void print_summary_line(bool printPrototype, bool tempAndAge,
+                                  double delta_t,
+                                  double volume, double area,
+                                  double meltfrac, double max_diffusivity);
 
 public:
 
@@ -392,10 +392,8 @@ public:
 
 protected:
   // see iMutil.cc
-  virtual int endOfTimeStepHook();
-  virtual void stampHistoryCommand();
-  virtual void stampHistoryEnd();
-  virtual void stampHistory(const std::string &);
+  virtual int process_signals();
+  virtual void prepend_history(const std::string &string);
   virtual void update_run_stats();
 
 protected:

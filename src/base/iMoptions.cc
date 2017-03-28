@@ -42,7 +42,7 @@
 namespace pism {
 
 //! Read some runtime (command line) options and alter the corresponding parameters or flags as appropriate.
-void IceModel::setFromOptions() {
+void IceModel::process_options() {
 
   m_log->message(3,
              "Processing physics-related command-line options...\n");

@@ -149,9 +149,9 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
   m_config->set_boolean("energy.temperature_based", true);
 }
 
-void IceCompModel::createVecs() {
+void IceCompModel::allocate_storage() {
 
-  IceModel::createVecs();
+  IceModel::allocate_storage();
 
   m_HexactL.create(m_grid, "HexactL", WITH_GHOSTS, 2);
 
@@ -575,16 +575,16 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   centerHerr = fabs(gdomeH - gdomeHexact);
 }
 
-void IceCompModel::additionalAtEndTimestep() {
+void IceCompModel::post_step_hook() {
   if (m_testname == 'A') {
     reset_thickness_test_A();
   }
 }
 
 
-void IceCompModel::summary(bool /* tempAndAge */) {
+void IceCompModel::print_summary(bool /* tempAndAge */) {
   //   we always show a summary at every step
-  IceModel::summary(true);
+  IceModel::print_summary(true);
 }
 
 

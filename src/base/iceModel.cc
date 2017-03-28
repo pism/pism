@@ -279,10 +279,9 @@ double IceModel::dt() const {
 }
 
 void IceModel::reset_counters() {
-  dt_TempAge   = 0.0;
-
-  m_dt              = 0.0;
-  m_skip_countdown   = 0;
+  dt_TempAge       = 0.0;
+  m_dt             = 0.0;
+  m_skip_countdown = 0;
 
   m_timestep_hit_multiples_last_time = m_time->current();
 }
@@ -326,7 +325,7 @@ IceModel::~IceModel() {
 
   All the memory allocated here is freed by IceModelVecs' destructors.
 */
-void IceModel::createVecs() {
+void IceModel::allocate_storage() {
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
@@ -435,8 +434,8 @@ void IceModel::step(bool do_mass_continuity,
 
   double current_time = m_time->current();
 
-  //! \li call additionalAtStartTimestep() to let derived classes do more
-  additionalAtStartTimestep();  // might set maxdt_temporary
+  //! \li call pre_step_hook() to let derived classes do more
+  pre_step_hook();  // might set maxdt_temporary
 
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
@@ -478,12 +477,16 @@ void IceModel::step(bool do_mass_continuity,
                              melange_back_pressure);
     profiling.end("stress balance");
   } catch (RuntimeError &e) {
-    options::String output_file("-o", "output file name",
-                                "output.nc", options::DONT_ALLOW_EMPTY);
+    std::string output_file = m_config->get_string("output.file_name");
+
+    if (output_file.empty()) {
+      m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
+      output_file = "unnamed.nc";
+    }
 
     std::string o_file = pism_filename_add_suffix(output_file,
                                                   "_stressbalance_failed", "");
-    dumpToFile(o_file, output_variables("small"));
+    save_variables(o_file, output_variables("small"));
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
                   o_file.c_str());
@@ -514,7 +517,7 @@ void IceModel::step(bool do_mass_continuity,
   dt_TempAge += m_dt;
   // IceModel::dt,dtTempAge are now set correctly according to
   // mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and
-  // other criteria from derived class additionalAtStartTimestep(), and from
+  // other criteria from derived class pre_step_hook(), and from
   // "-skip" mechanism
 
   //! \li update the age of the ice (if appropriate)
@@ -535,10 +538,10 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the enthalpy (or temperature) field according to the conservation of
   //!  energy model based (especially) on the new velocity field; see
-  //!  energyStep()
+  //!  energy_step()
   if (updateAtDepth) { // do the energy step
     profiling.begin("energy");
-    energyStep();
+    energy_step();
     profiling.end("energy");
     m_stdout_flags += "E";
   } else {
@@ -555,10 +558,10 @@ void IceModel::step(bool do_mass_continuity,
   m_subglacial_hydrology->update(current_time, m_dt);
   profiling.end("basal hydrology");
 
-  //! \li update the fracture density field; see calculateFractureDensity()
+  //! \li update the fracture density field; see update_fracture_density()
   if (m_config->get_boolean("fracture_density.enabled")) {
     profiling.begin("fracture density");
-    calculateFractureDensity();
+    update_fracture_density();
     profiling.end("fracture density");
   }
 
@@ -616,8 +619,8 @@ void IceModel::step(bool do_mass_continuity,
     }
   }
 
-  //! \li call additionalAtEndTimestep() to let derived classes do more
-  additionalAtEndTimestep();
+  //! \li call post_step_hook() to let derived classes do more
+  post_step_hook();
 
   // Done with the step; now adopt the new time.
   m_time->step(m_dt);
@@ -631,12 +634,16 @@ void IceModel::step(bool do_mass_continuity,
   const bool thickness_too_high = check_maximum_ice_thickness(m_geometry.ice_thickness);
 
   if (thickness_too_high) {
-    options::String output_file("-o", "output file name",
-                                "output.nc", options::DONT_ALLOW_EMPTY);
+    std::string output_file = m_config->get_string("output.file_name");
+
+    if (output_file.empty()) {
+      m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.");
+      output_file = "unnamed.nc";
+    }
 
     std::string o_file = pism_filename_add_suffix(output_file,
                                                   "_max_thickness", "");
-    dumpToFile(o_file, output_variables("small"));
+    save_variables(o_file, output_variables("small"));
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Ice thickness exceeds the height of the computational box (%7.4f m).\n"
@@ -651,6 +658,15 @@ void IceModel::step(bool do_mass_continuity,
   m_stdout_flags += " " + m_adaptive_timestep_reason;
 }
 
+//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
+void IceModel::pre_step_hook() {
+  // empty
+}
+
+//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
+void IceModel::post_step_hook() {
+  // empty
+}
 
 /**
  * Run the time-stepping loop from the current model time to `time`.
@@ -696,9 +712,9 @@ void IceModel::run() {
   m_log->message(2, "running forward ...\n");
 
   m_stdout_flags.erase(); // clear it out
-  summaryPrintLine(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
+  print_summary_line(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
   m_adaptive_timestep_reason = '$'; // no reason for no timestep
-  summary(do_energy);  // report starting state
+  print_summary(do_energy);  // report starting state
 
   t_TempAge = m_time->current();
   dt_TempAge = 0.0;
@@ -718,7 +734,7 @@ void IceModel::run() {
     bool tempAgeStep = updateAtDepth and (do_energy or m_age_model != NULL);
 
     const bool show_step = tempAgeStep or m_adaptive_timestep_reason == "end of the run";
-    summary(show_step);
+    print_summary(show_step);
 
     // writing these fields here ensures that we do it after the last time-step
     profiling.begin("I/O during run");
@@ -733,7 +749,7 @@ void IceModel::run() {
     if (stepcount >= 0) {
       stepcount++;
     }
-    if (endOfTimeStepHook() != 0) {
+    if (process_signals() != 0) {
       break;
     }
   } // end of the time-stepping loop
@@ -771,10 +787,10 @@ void IceModel::init() {
   time_setup();
 
   //! 2) Process the options:
-  setFromOptions();
+  process_options();
 
   //! 3) Memory allocation:
-  createVecs();
+  allocate_storage();
 
   //! 4) Allocate PISM components modeling some physical processes.
   allocate_submodels();

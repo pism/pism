@@ -69,7 +69,7 @@ protected:
 
 protected:
   // see iceModel.cc
-  virtual void createVecs();
+  virtual void allocate_storage();
 
 public:
   virtual void massContExplicitStep(double dt,
@@ -139,7 +139,7 @@ public:
   void massContPreHook();
   void massContPostHook();
   // Pre and post for energy
-  void energyStep();
+  void energy_step();
 
   void prepare_outputs(double time_s);
 

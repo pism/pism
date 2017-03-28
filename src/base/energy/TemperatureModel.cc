@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -144,7 +144,7 @@ This method should be kept because it is worth having alternative physics, and
     In this procedure two scalar fields are modified: basal_melt_rate and m_work.
     But basal_melt_rate will never need to communicate ghosted values (horizontal stencil
     neighbors).  The ghosted values for m_ice_temperature are updated from the values in m_work in the
-    communication done by energyStep().
+    communication done by energy_step().
 
   The (older) scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
   still an extreme and rare fjord situation which causes trouble.  For example, it

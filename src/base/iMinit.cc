@@ -267,7 +267,12 @@ void IceModel::model_state_setup() {
   // miscellaneous steps
   {
     reset_counters();
-    stampHistoryCommand();
+
+    char startstr[TEMPORARY_STRING_LENGTH];
+
+    snprintf(startstr, sizeof(startstr),
+             "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid->size());
+    prepend_history(startstr + pism_args_string());
   }
 }
 
@@ -663,7 +668,6 @@ void IceModel::allocate_couplers() {
   atmosphere::Factory pa(m_grid);
   surface::Factory ps(m_grid);
   ocean::Factory po(m_grid);
-  atmosphere::AtmosphereModel *atmosphere;
 
   if (m_surface == NULL) {
 
@@ -672,8 +676,7 @@ void IceModel::allocate_couplers() {
 
     m_surface = new surface::InitializationHelper(m_grid, ps.create());
 
-    atmosphere = pa.create();
-    m_surface->attach_atmosphere_model(atmosphere);
+    m_surface->attach_atmosphere_model(pa.create());
 
     m_submodels["surface process model"] = m_surface;
   }

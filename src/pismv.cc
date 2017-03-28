@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
     m.reportErrors();
 
     // provide a default output file name if no -o option is given.
-    m.writeFiles("unnamed.nc");
+    m.save_results();
 
     print_unused_parameters(*log, 3, *config);
   }

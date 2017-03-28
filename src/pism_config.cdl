@@ -1001,6 +1001,11 @@ netcdf pism_config {
     pism_config:output.runtime.area_scale_factor_log10_type = "integer";
     pism_config:output.runtime.area_scale_factor_log10_units = "pure number";
 
+    pism_config:output.file_name = "unnamed.nc";
+    pism_config:output.file_name_doc = "The file to save final model results to.";
+    pism_config:output.file_name_type = "string";
+    pism_config:output.file_name_option = "o";
+
     pism_config:output.runtime.time_unit_name = "year";
     pism_config:output.runtime.time_unit_name_doc = "Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)";
     pism_config:output.runtime.time_unit_name_type = "string";

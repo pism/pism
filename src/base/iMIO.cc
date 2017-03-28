@@ -44,25 +44,41 @@ namespace pism {
 
 //! Save model state in NetCDF format.
 /*!
-Optionally allows saving of full velocity field.
-
-Calls dumpToFile() to do the actual work.
+Calls save_variables() to do the actual work.
  */
-void  IceModel::writeFiles(const std::string &default_filename) {
-  std::string config_out;
+void IceModel::save_results() {
+  {
+    update_run_stats();
 
-  stampHistoryEnd();
+    // build and put string into global attribute "history"
+    char str[TEMPORARY_STRING_LENGTH];
 
-  options::String filename("-o", "Output file name", default_filename);
+    snprintf(str, TEMPORARY_STRING_LENGTH,
+             "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour, PETSc MFlops = %.2f.",
+             m_run_stats.get_double("wall_clock_hours"),
+             m_run_stats.get_double("processor_hours"),
+             m_run_stats.get_double("model_years_per_processor_hour"),
+             m_run_stats.get_double("PETSc_MFlops"));
 
-  if (!ends_with(filename, ".nc")) {
+    prepend_history(str);
+
+  }
+
+  std::string filename = m_config->get_string("output.file_name");
+
+  if (filename.empty()) {
+    m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
+    filename = "unnamed.nc";
+  }
+
+  if (not ends_with(filename, ".nc")) {
     m_log->message(2,
-               "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+                   "PISM WARNING: output file name does not have the '.nc' suffix!\n");
   }
 
   if (m_config->get_string("output.size") != "none") {
-    m_log->message(2, "Writing model state to file `%s'\n", filename->c_str());
-    dumpToFile(filename, m_output_vars);
+    m_log->message(2, "Writing model state to file `%s'\n", filename.c_str());
+    save_variables(filename, m_output_vars);
   }
 }
 
@@ -97,7 +113,7 @@ void IceModel::write_config(const PIO &file) {
   m_config->write(file);
 }
 
-void IceModel::dumpToFile(const std::string &filename,
+void IceModel::save_variables(const std::string &filename,
                           const std::set<std::string> &variables) {
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("model state dump");
@@ -434,8 +450,8 @@ void IceModel::init_backups() {
 
   m_backup_interval = m_config->get_double("output.backup_interval");
 
-  options::String backup_file("-o", "Output file name");
-  if (backup_file.is_set()) {
+  std::string backup_file = m_config->get_string("output.file_name");
+  if (not backup_file.empty()) {
     m_backup_filename = pism_filename_add_suffix(backup_file, "_backup", "");
   } else {
     m_backup_filename = "pism_backup.nc";
@@ -475,7 +491,7 @@ void IceModel::write_backup() {
                  "  [%s] Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
                  pism_timestamp(m_grid->com).c_str(), m_backup_filename.c_str(), wall_clock_hours);
 
-  stampHistory(tmp);
+  prepend_history(tmp);
 
   PIO file(m_grid->com, m_config->get_string("output.format"),
          m_backup_filename, PISM_READWRITE_MOVE);

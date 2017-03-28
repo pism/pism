@@ -44,7 +44,7 @@ namespace pism {
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
 
 //! Manage the solution of the energy equation, and related parallel communication.
-void IceModel::energyStep() {
+void IceModel::energy_step() {
 
   const Profiling &profiling = m_ctx->profiling();
 

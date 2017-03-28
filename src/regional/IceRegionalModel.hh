@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,7 +33,7 @@ protected:
   virtual void bootstrap_2d(const PIO &input_file);
   virtual void restart_2d(const PIO &input_file, unsigned int record);
   virtual void model_state_setup();
-  virtual void createVecs();
+  virtual void allocate_storage();
   virtual void allocate_stressbalance();
   virtual void allocate_basal_yield_stress();
   virtual void massContExplicitStep(double dt,

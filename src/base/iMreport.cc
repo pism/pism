@@ -202,7 +202,7 @@ unsigned int count_CFL_violations(const IceModelVec3 &u3,
   return (unsigned int)GlobalMax(grid->com, CFL_violation_count);
 }
 
-void IceModel::summary(bool tempAndAge) {
+void IceModel::print_summary(bool tempAndAge) {
 
   const IceModelVec3
     &u3 = m_stress_balance->velocity_u(),
@@ -238,7 +238,7 @@ void IceModel::summary(bool tempAndAge) {
   }
 
   // main report: 'S' line
-  summaryPrintLine(false, tempAndAge, m_dt,
+  print_summary_line(false, tempAndAge, m_dt,
                    volume, area, meltfrac, max_diffusivity);
 }
 
@@ -280,7 +280,7 @@ For more description and examples, see the PISM User's Manual.
 Derived classes of IceModel may redefine this method and print alternate
 information.
  */
-void IceModel::summaryPrintLine(bool printPrototype,  bool tempAndAge,
+void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
                                 double delta_t,
                                 double volume,  double area,
                                 double /* meltfrac */,  double max_diffusivity) {

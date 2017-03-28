@@ -63,9 +63,9 @@ IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, Context::Ptr c)
 }
 
 
-void IceRegionalModel::createVecs() {
+void IceRegionalModel::allocate_storage() {
 
-  IceModel::createVecs();
+  IceModel::allocate_storage();
 
   m_log->message(2, 
              "  creating IceRegionalModel vecs ...\n");
