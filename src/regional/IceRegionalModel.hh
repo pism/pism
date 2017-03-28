@@ -33,6 +33,8 @@ protected:
   virtual void bootstrap_2d(const PIO &input_file);
   virtual void restart_2d(const PIO &input_file, unsigned int record);
   virtual void model_state_setup();
+
+  virtual void allocate_geometry_evolution();
   virtual void allocate_storage();
   virtual void allocate_stressbalance();
   virtual void allocate_basal_yield_stress();

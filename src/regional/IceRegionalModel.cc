@@ -105,6 +105,19 @@ void IceRegionalModel::allocate_storage() {
   }
 }
 
+void IceRegionalModel::allocate_geometry_evolution() {
+  if (m_geometry_evolution) {
+    return;
+  }
+
+  m_log->message(2,
+                 "# Allocating the geometry evolution model...\n");
+
+  m_geometry_evolution.reset(new RegionalGeometryEvolution(m_grid));
+
+  m_submodels["geometry_evolution"] = m_geometry_evolution.get();
+}
+
 void IceRegionalModel::model_state_setup() {
 
   if (m_config->get_boolean("energy.temperature_based")) {

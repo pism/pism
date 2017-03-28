@@ -499,6 +499,20 @@ void IceModel::allocate_stressbalance() {
   m_submodels["stress balance"] = m_stress_balance;
 }
 
+void IceModel::allocate_geometry_evolution() {
+  if (m_geometry_evolution) {
+    return;
+  }
+
+  m_log->message(2,
+                 "# Allocating the geometry evolution model...\n");
+
+  m_geometry_evolution.reset(new GeometryEvolution(m_grid));
+
+  m_submodels["geometry_evolution"] = m_geometry_evolution.get();
+}
+
+
 void IceModel::allocate_iceberg_remover() {
 
   if (m_iceberg_remover != NULL) {
@@ -640,6 +654,8 @@ void IceModel::allocate_basal_yield_stress() {
   setting up the coupling or filling model-state variables.
  */
 void IceModel::allocate_submodels() {
+
+  allocate_geometry_evolution();
 
   allocate_iceberg_remover();
 

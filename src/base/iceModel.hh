@@ -48,6 +48,7 @@
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/Geometry.hh"
+#include "base/GeometryEvolution.hh"
 
 namespace pism {
 
@@ -137,6 +138,7 @@ public:
   virtual void allocate_subglacial_hydrology();
   virtual void allocate_basal_yield_stress();
   virtual void allocate_couplers();
+  virtual void allocate_geometry_evolution();
   virtual void allocate_iceberg_remover();
 
   virtual void model_state_setup();
@@ -241,6 +243,7 @@ protected:
   // state variables and some diagnostics/internals
 
   Geometry m_geometry;
+  std::unique_ptr<GeometryEvolution> m_geometry_evolution;
 
   //! ghosted
   IceModelVec2S m_basal_yield_stress;
