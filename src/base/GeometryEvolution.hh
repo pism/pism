@@ -59,7 +59,7 @@ public:
   const IceModelVec2S& conservation_error() const;
 
   // diagnostic
-  const IceModelVec2Stag& interface_flux() const;
+  const IceModelVec2Stag& flux_staggered() const;
   const IceModelVec2S& flux_divergence() const;
 protected:
   std::map<std::string,Diagnostic::Ptr> diagnostics_impl() const;

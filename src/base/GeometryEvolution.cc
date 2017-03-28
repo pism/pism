@@ -71,7 +71,7 @@ struct GeometryEvolution::Impl {
   IceModelVec2S ice_area_specific_volume_change;
 
   //! Flux through cell interfaces. Ghosted.
-  IceModelVec2Stag interface_flux;
+  IceModelVec2Stag flux_staggered;
 
   // Work space
   IceModelVec2V        input_velocity;       // ghosted copy; not modified
@@ -104,10 +104,12 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
   // reported quantities
   {
     // This is the only reported field that is ghosted (we need ghosts to compute flux divergence).
-    interface_flux.create(grid, "interface_flux", WITH_GHOSTS);
-    interface_flux.set_attrs("diagnostic", "fluxes through cell interfaces (sides)", "m2 s-1", "");
-    interface_flux.metadata().set_string("glaciological_units", "m2 year-1");
-    interface_flux.write_in_glaciological_units = true;
+    flux_staggered.create(grid, "flux_staggered", WITH_GHOSTS);
+    flux_staggered.set_attrs("diagnostic", "fluxes through cell interfaces (sides)"
+                             " on the staggered grid",
+                             "m2 s-1", "");
+    flux_staggered.metadata().set_string("glaciological_units", "m2 year-1");
+    flux_staggered.write_in_glaciological_units = true;
 
     flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS);
     flux_divergence.set_attrs("diagnostic", "flux divergence", "m s-1", "");
@@ -201,8 +203,8 @@ const IceModelVec2S& GeometryEvolution::flux_divergence() const {
   return m_impl->flux_divergence;
 }
 
-const IceModelVec2Stag& GeometryEvolution::interface_flux() const {
-  return m_impl->interface_flux;
+const IceModelVec2Stag& GeometryEvolution::flux_staggered() const {
+  return m_impl->flux_staggered;
 }
 
 const IceModelVec2S& GeometryEvolution::top_surface_mass_balance() const {
@@ -272,13 +274,13 @@ void GeometryEvolution::step(Geometry &geometry, double dt,
                            m_impl->input_velocity,     // in (uses ghosts)
                            m_impl->velocity_bc_mask,   // in (uses ghosts)
                            diffusive_flux,             // in
-                           m_impl->interface_flux);    // out
+                           m_impl->flux_staggered);    // out
   m_impl->profile.end("ge.interface_fluxes");
 
-  m_impl->interface_flux.update_ghosts();
+  m_impl->flux_staggered.update_ghosts();
 
   m_impl->profile.begin("ge.flux_divergence");
-  compute_flux_divergence(m_impl->interface_flux,   // in (uses ghosts)
+  compute_flux_divergence(m_impl->flux_staggered,   // in (uses ghosts)
                           thickness_bc_mask,        // in
                           m_impl->flux_divergence); // out
   m_impl->profile.end("ge.flux_divergence");
@@ -1016,10 +1018,8 @@ public:
     : Diag<GeometryEvolution>(m) {
     m_vars = {model->flux_divergence().metadata()};
   }
-
 protected:
   IceModelVec::Ptr compute_impl() {
-
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "flux_divergence", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
