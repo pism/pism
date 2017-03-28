@@ -232,7 +232,7 @@ void IceModel::model_state_setup() {
         m_surface->temperature(ice_surface_temperature);
         m_surface->mass_flux(climatic_mass_balance);
         m_energy_model->bootstrap(*input_file,
-                                  m_geometry.ice_thickness(),
+                                  m_geometry.ice_thickness,
                                   ice_surface_temperature,
                                   climatic_mass_balance,
                                   m_btu->flux_through_top_surface());
@@ -245,7 +245,7 @@ void IceModel::model_state_setup() {
         m_surface->temperature(ice_surface_temperature);
         m_surface->mass_flux(climatic_mass_balance);
         m_energy_model->initialize(m_basal_melt_rate,
-                                   m_geometry.ice_thickness(),
+                                   m_geometry.ice_thickness,
                                    ice_surface_temperature,
                                    climatic_mass_balance,
                                    m_btu->flux_through_top_surface());
@@ -308,13 +308,13 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
   if (m_config->get_boolean("geometry.part_grid.enabled")) {
 
     if (input_file.inq_var("Href")) {
-      m_geometry.ice_area_specific_volume().read(input_file, last_record);
+      m_geometry.ice_area_specific_volume.read(input_file, last_record);
     } else {
       m_log->message(2,
                      "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'."
                      " Setting it to zero...\n",
                      filename.c_str());
-      m_geometry.ice_area_specific_volume().set(0.0);
+      m_geometry.ice_area_specific_volume.set(0.0);
     }
   }
 }
@@ -348,21 +348,21 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
 
   m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
-  m_geometry.longitude().regrid(input_file, OPTIONAL);
+  m_geometry.longitude.regrid(input_file, OPTIONAL);
   if (not lon_found) {
-    m_geometry.longitude().metadata().set_string("missing_at_bootstrap","true");
+    m_geometry.longitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  m_geometry.latitude().regrid(input_file, OPTIONAL);
+  m_geometry.latitude.regrid(input_file, OPTIONAL);
   if (not lat_found) {
-    m_geometry.latitude().metadata().set_string("missing_at_bootstrap","true");
+    m_geometry.latitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  m_geometry.ice_thickness().regrid(input_file, OPTIONAL,
+  m_geometry.ice_thickness.regrid(input_file, OPTIONAL,
                          m_config->get_double("bootstrapping.defaults.ice_thickness"));
   // check the range of the ice thickness
   {
-    Range thk_range = m_geometry.ice_thickness().range();
+    Range thk_range = m_geometry.ice_thickness.range();
 
     if (thk_range.max >= m_grid->Lz() + 1e-6) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
@@ -380,7 +380,7 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
     //
     // On the other hand, we need to read it in to be able to re-start
     // from a PISM output file using the -bootstrap option.
-    m_geometry.ice_area_specific_volume().regrid(input_file, OPTIONAL, 0.0);
+    m_geometry.ice_area_specific_volume.regrid(input_file, OPTIONAL, 0.0);
   }
 
   if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
@@ -392,7 +392,7 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
   }
 
   // check if Lz is valid
-  Range thk_range = m_geometry.ice_thickness().range();
+  Range thk_range = m_geometry.ice_thickness.range();
 
   if (thk_range.max > m_grid->Lz()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Max. ice thickness (%3.3f m)\n"
@@ -747,8 +747,8 @@ void IceModel::misc_setup() {
     if (not proj_string.empty()) {
       m_output_vars.insert("lon_bnds");
       m_output_vars.insert("lat_bnds");
-      m_geometry.latitude().metadata().set_string("bounds", "lat_bnds");
-      m_geometry.longitude().metadata().set_string("bounds", "lon_bnds");
+      m_geometry.latitude.metadata().set_string("bounds", "lat_bnds");
+      m_geometry.longitude.metadata().set_string("bounds", "lon_bnds");
     }
   }
 #endif

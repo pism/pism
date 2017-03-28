@@ -61,9 +61,9 @@ void IceModel::energyStep() {
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
   m_surface->temperature(ice_surface_temperature);
   bedrock_surface_temperature(m_ocean->sea_level_elevation(),
-                              m_geometry.cell_type(),
-                              m_geometry.bed_elevation(),
-                              m_geometry.ice_thickness(),
+                              m_geometry.cell_type,
+                              m_geometry.bed_elevation,
+                              m_geometry.ice_thickness,
                               basal_enthalpy,
                               ice_surface_temperature,
                               bedtoptemp);
@@ -86,8 +86,8 @@ void IceModel::energyStep() {
 
     inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
     inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
-    inputs.cell_type                = &m_geometry.cell_type();            // geometry
-    inputs.ice_thickness            = &m_geometry.ice_thickness();        // geometry
+    inputs.cell_type                = &m_geometry.cell_type;            // geometry
+    inputs.ice_thickness            = &m_geometry.ice_thickness;        // geometry
     inputs.shelf_base_temp          = &shelf_base_temperature;            // ocean model
     inputs.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
     inputs.surface_temp             = &ice_surface_temperature;           // surface model
@@ -129,9 +129,9 @@ void IceModel::combine_basal_melt_rate() {
 
   const IceModelVec2S &M_grounded = m_energy_model->basal_melt_rate();
 
-  IceModelVec::AccessList list{&m_geometry.cell_type(), &M_grounded, &shelf_base_mass_flux, &m_basal_melt_rate};
+  IceModelVec::AccessList list{&m_geometry.cell_type, &M_grounded, &shelf_base_mass_flux, &m_basal_melt_rate};
   if (sub_gl) {
-    list.add(m_geometry.cell_grounded_fraction());
+    list.add(m_geometry.cell_grounded_fraction);
   }
 
   double ice_density = m_config->get_double("constants.ice.density");
@@ -147,8 +147,8 @@ void IceModel::combine_basal_melt_rate() {
     // Use the fractional floatation mask to adjust the basal melt
     // rate near the grounding line:
     if (sub_gl) {
-      lambda = m_geometry.cell_grounded_fraction()(i,j);
-    } else if (m_geometry.cell_type().ocean(i,j)) {
+      lambda = m_geometry.cell_grounded_fraction(i,j);
+    } else if (m_geometry.cell_type.ocean(i,j)) {
       lambda = 0.0;
     }
     m_basal_melt_rate(i,j) = lambda * M_grounded(i, j) + (1.0 - lambda) * M_shelf_base;

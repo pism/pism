@@ -36,52 +36,26 @@ public:
    */
   void ensure_consistency(double ice_free_thickness_threshold);
 
-  // We use getters here so that SWIG does not try to produce setters for the fields contained in
-  // this class.
-  IceModelVec2S& cell_area();
-  IceModelVec2S& latitude();
-  IceModelVec2S& longitude();
-  IceModelVec2S& bed_elevation();
-  IceModelVec2S& sea_level_elevation();
-  IceModelVec2S& ice_thickness();
-  IceModelVec2S& ice_area_specific_volume(); // previously known as Href
-  IceModelVec2S& cell_grounded_fraction();
-  IceModelVec2S& ice_surface_elevation();
-  IceModelVec2CellType& cell_type();
-
-  const IceModelVec2S& cell_area() const;
-  const IceModelVec2S& latitude() const;
-  const IceModelVec2S& longitude() const;
-  const IceModelVec2S& bed_elevation() const;
-  const IceModelVec2S& sea_level_elevation() const;
-  const IceModelVec2S& ice_thickness() const;
-  const IceModelVec2S& ice_area_specific_volume() const; // previously known as Href
-  const IceModelVec2S& cell_grounded_fraction() const;
-  const IceModelVec2S& ice_surface_elevation() const;
-  const IceModelVec2CellType& cell_type() const;
-
-private:
-
   // This is grid information, which is not (strictly speaking) ice geometry, but it should be
   // available everywhere we use ice geometry.
-  IceModelVec2S m_cell_area;
-  IceModelVec2S m_latitude;
-  IceModelVec2S m_longitude;
+  IceModelVec2S cell_area;
+  IceModelVec2S latitude;
+  IceModelVec2S longitude;
 
   // Part of ice geometry, but managed by the bed model and the ocean model. From the point of view
   // of the code updating ice geometry, these are inputs. These fields should be filled in before
   // passing a Geometry instance to the code that uses it.
-  IceModelVec2S m_bed_elevation;
-  IceModelVec2S m_sea_level_elevation;
+  IceModelVec2S bed_elevation;
+  IceModelVec2S sea_level_elevation;
 
   // the minimal "state"
-  IceModelVec2S m_ice_thickness;
-  IceModelVec2S m_ice_area_specific_volume; // previously known as Href
+  IceModelVec2S ice_thickness;
+  IceModelVec2S ice_area_specific_volume; // previously known as Href
 
   // redundant fields (can be computed using the ones above)
-  IceModelVec2CellType m_cell_type;
-  IceModelVec2S m_cell_grounded_fraction;
-  IceModelVec2S m_ice_surface_elevation;
+  IceModelVec2CellType cell_type;
+  IceModelVec2S cell_grounded_fraction;
+  IceModelVec2S ice_surface_elevation;
 };
 
 } // end of namespace pism

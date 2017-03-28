@@ -251,10 +251,10 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
   m_impl->profile.begin("ge.update_ghosted_copies");
   {
     // make ghosted copies of input fields
-    m_impl->ice_thickness.copy_from(geometry.ice_thickness());
-    m_impl->area_specific_volume.copy_from(geometry.ice_area_specific_volume());
-    m_impl->sea_level.copy_from(geometry.sea_level_elevation());
-    m_impl->bed_elevation.copy_from(geometry.bed_elevation());
+    m_impl->ice_thickness.copy_from(geometry.ice_thickness);
+    m_impl->area_specific_volume.copy_from(geometry.ice_area_specific_volume);
+    m_impl->sea_level.copy_from(geometry.sea_level_elevation);
+    m_impl->bed_elevation.copy_from(geometry.bed_elevation);
     m_impl->input_velocity.copy_from(advective_velocity);
     m_impl->velocity_bc_mask.copy_from(velocity_bc_mask);
 
@@ -298,9 +298,9 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
   // Compute ice thickness and area specific volume changes.
   m_impl->profile.begin("ge.compute_changes");
   {
-    m_impl->ice_thickness.add(-1.0, geometry.ice_thickness(),
+    m_impl->ice_thickness.add(-1.0, geometry.ice_thickness,
                               m_impl->thickness_change);
-    m_impl->area_specific_volume.add(-1.0, geometry.ice_area_specific_volume(),
+    m_impl->area_specific_volume.add(-1.0, geometry.ice_area_specific_volume,
                                      m_impl->ice_area_specific_volume_change);
   }
   m_impl->profile.end("ge.compute_changes");
@@ -312,8 +312,8 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
   //
   // This computation is purely local.
   m_impl->profile.begin("ge.ensure_nonnegativity");
-  ensure_nonnegativity(geometry.ice_thickness(),                // in
-                       geometry.ice_area_specific_volume(),     // in
+  ensure_nonnegativity(geometry.ice_thickness,                // in
+                       geometry.ice_area_specific_volume,     // in
                        m_impl->thickness_change,                // in/out
                        m_impl->ice_area_specific_volume_change, // in/out
                        m_impl->conservation_error);             // out

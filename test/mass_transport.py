@@ -98,15 +98,15 @@ def run(Mx, My, t_final, part_grid, C=1.0):
     ge = PISM.GeometryEvolution(grid)
 
     # grid info
-    geometry.cell_area().set(grid.dx() * grid.dy())
-    geometry.latitude().set(0.0)
-    geometry.longitude().set(0.0)
+    geometry.cell_area.set(grid.dx() * grid.dy())
+    geometry.latitude.set(0.0)
+    geometry.longitude.set(0.0)
     # environment
-    geometry.bed_elevation().set(-10.0)
-    geometry.sea_level_elevation().set(0.0)
+    geometry.bed_elevation.set(-10.0)
+    geometry.sea_level_elevation.set(0.0)
     # set initial ice thickness
-    disc(geometry.ice_thickness(), 0, 0, 1, R_inner, R_inner)
-    geometry.ice_area_specific_volume().set(0.0)
+    disc(geometry.ice_thickness, 0, 0, 1, R_inner, R_inner)
+    geometry.ice_area_specific_volume.set(0.0)
 
     geometry.ensure_consistency(0.0)
 
@@ -123,8 +123,8 @@ def run(Mx, My, t_final, part_grid, C=1.0):
     j = 0
     profiling.stage_begin("ge")
     while t < t_final:
-        dt = PISM.max_timestep_cfl_2d(geometry.ice_thickness(),
-                                      geometry.cell_type(),
+        dt = PISM.max_timestep_cfl_2d(geometry.ice_thickness,
+                                      geometry.cell_type,
                                       v).dt_max.value() * C
 
         if t + dt > t_final:
@@ -143,8 +143,8 @@ def run(Mx, My, t_final, part_grid, C=1.0):
         profiling.end("step")
 
         profiling.begin("modify")
-        geometry.ice_thickness().add(1.0, ge.thickness_change_due_to_flow())
-        geometry.ice_area_specific_volume().add(1.0, ge.area_specific_volume_change_due_to_flow())
+        geometry.ice_thickness.add(1.0, ge.thickness_change_due_to_flow())
+        geometry.ice_area_specific_volume.add(1.0, ge.area_specific_volume_change_due_to_flow())
         geometry.ensure_consistency(0.0)
         profiling.end("modify")
 
@@ -165,9 +165,9 @@ def average_error(N):
     log.enable()
 
     # combine stuff stored as thickness and as area specific volume
-    geometry.ice_thickness().add(1.0, geometry.ice_area_specific_volume())
+    geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
 
-    grid = geometry.ice_thickness().get_grid()
+    grid = geometry.ice_thickness.get_grid()
 
     diff = PISM.IceModelVec2S()
     diff.create(grid, "difference", PISM.WITHOUT_GHOSTS)
@@ -182,7 +182,7 @@ def average_error(N):
 
     disc(exact, 0, 0, 1, R_inner, R_outer)
 
-    exact.add(-1.0, geometry.ice_thickness(), diff)
+    exact.add(-1.0, geometry.ice_thickness, diff)
 
     # return the average error
     return diff.norm(PISM.PETSc.NormType.N1) / (N*N)
@@ -204,15 +204,15 @@ def part_grid_symmetry_test():
     log.enable()
 
     # combine stuff stored as thickness and as area specific volume
-    geometry.ice_thickness().add(1.0, geometry.ice_area_specific_volume())
+    geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
 
-    grid = geometry.ice_thickness().get_grid()
+    grid = geometry.ice_thickness.get_grid()
 
     p0 = PISM.vec.ToProcZero(grid)
 
     # gather ice thickness on rank 0 -- that way we can put it in a
     # numpy array and use flipud() and fliplr().
-    H = p0.communicate(geometry.ice_thickness())
+    H = p0.communicate(geometry.ice_thickness)
 
     np.testing.assert_almost_equal(H, np.flipud(H))
     np.testing.assert_almost_equal(H, np.fliplr(H))

@@ -332,19 +332,19 @@ void IceModel::createVecs() {
 
   // FIXME: this should do for now, but we should pass a const reference to Geometry to sub-models
   // as a function argument.
-  m_grid->variables().add(m_geometry.ice_surface_elevation());
-  m_grid->variables().add(m_geometry.ice_thickness());
-  m_grid->variables().add(m_geometry.cell_type());
-  m_grid->variables().add(m_geometry.longitude());
-  m_grid->variables().add(m_geometry.latitude());
-  m_grid->variables().add(m_geometry.cell_area());
+  m_grid->variables().add(m_geometry.ice_surface_elevation);
+  m_grid->variables().add(m_geometry.ice_thickness);
+  m_grid->variables().add(m_geometry.cell_type);
+  m_grid->variables().add(m_geometry.longitude);
+  m_grid->variables().add(m_geometry.latitude);
+  m_grid->variables().add(m_geometry.cell_area);
 
   if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
-    m_grid->variables().add(m_geometry.cell_grounded_fraction());
+    m_grid->variables().add(m_geometry.cell_grounded_fraction);
   }
 
   if (m_config->get_boolean("geometry.part_grid.enabled")) {
-    m_grid->variables().add(m_geometry.ice_area_specific_volume());
+    m_grid->variables().add(m_geometry.ice_area_specific_volume);
   }
 
   {
@@ -520,7 +520,7 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the age of the ice (if appropriate)
   if (m_age_model != NULL and updateAtDepth) {
     AgeModelInputs inputs;
-    inputs.ice_thickness = &m_geometry.ice_thickness();
+    inputs.ice_thickness = &m_geometry.ice_thickness;
     inputs.u3            = &m_stress_balance->velocity_u();
     inputs.v3            = &m_stress_balance->velocity_v();
     inputs.w3            = &m_stress_balance->velocity_w();
@@ -628,7 +628,7 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   // Check if the ice thickness exceeded the height of the computational box and stop if it did.
-  const bool thickness_too_high = check_maximum_ice_thickness(m_geometry.ice_thickness());
+  const bool thickness_too_high = check_maximum_ice_thickness(m_geometry.ice_thickness);
 
   if (thickness_too_high) {
     options::String output_file("-o", "output file name",

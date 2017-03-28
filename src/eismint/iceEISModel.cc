@@ -174,9 +174,9 @@ void IceEISModel::initialize_2d() {
   bed_uplift.set(0.0);
 
   // start with zero ice
-  m_geometry.ice_thickness().set(0.0);
+  m_geometry.ice_thickness.set(0.0);
 
-  m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness());
+  m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
 }
 
 } // end of namespace pism

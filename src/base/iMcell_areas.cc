@@ -34,20 +34,20 @@ void IceModel::compute_cell_areas() {
                    "* Computing cell areas using projection parameters (%s)...\n",
                    projection.c_str());
 
-    ::pism::compute_cell_areas(projection, m_geometry.cell_area());
+    ::pism::compute_cell_areas(projection, m_geometry.cell_area);
 
     m_log->message(2,
                    "* Computing longitude and latitude using projection parameters (%s)...\n",
                    projection.c_str());
 
-    compute_longitude(projection, m_geometry.longitude());
-    compute_latitude(projection, m_geometry.latitude());
+    compute_longitude(projection, m_geometry.longitude);
+    compute_latitude(projection, m_geometry.latitude);
   } else {
     m_log->message(2,
                    "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
                    m_grid->dx(), m_grid->dy());
 
-    m_geometry.cell_area().set(m_grid->dx() * m_grid->dy());
+    m_geometry.cell_area.set(m_grid->dx() * m_grid->dy());
   }
 }
 

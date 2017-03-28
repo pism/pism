@@ -260,7 +260,7 @@ void IceCompModel::initialize_2d() {
   zero.create(m_grid, "temporary", WITHOUT_GHOSTS);
   zero.set(0.0);
 
-  m_beddef->bootstrap(zero, zero, m_geometry.ice_thickness());
+  m_beddef->bootstrap(zero, zero, m_geometry.ice_thickness);
 
   // Test-specific initialization:
   switch (m_testname) {
@@ -294,9 +294,9 @@ void IceCompModel::initTestABCDH() {
 
   const double time = m_time->current();
 
-  m_geometry.cell_type().set(MASK_GROUNDED);
+  m_geometry.cell_type.set(MASK_GROUNDED);
 
-  IceModelVec::AccessList list(m_geometry.ice_thickness());
+  IceModelVec::AccessList list(m_geometry.ice_thickness);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -306,19 +306,19 @@ void IceCompModel::initTestABCDH() {
       const double r = radius(*m_grid, i, j);
       switch (m_testname) {
       case 'A':
-        m_geometry.ice_thickness()(i, j) = exactA(r).H;
+        m_geometry.ice_thickness(i, j) = exactA(r).H;
         break;
       case 'B':
-        m_geometry.ice_thickness()(i, j) = exactB(time, r).H;
+        m_geometry.ice_thickness(i, j) = exactB(time, r).H;
         break;
       case 'C':
-        m_geometry.ice_thickness()(i, j) = exactC(time, r).H;
+        m_geometry.ice_thickness(i, j) = exactC(time, r).H;
         break;
       case 'D':
-        m_geometry.ice_thickness()(i, j) = exactD(time, r).H;
+        m_geometry.ice_thickness(i, j) = exactD(time, r).H;
         break;
       case 'H':
-        m_geometry.ice_thickness()(i, j) = exactH(m_f, time, r).H;
+        m_geometry.ice_thickness(i, j) = exactH(m_f, time, r).H;
         break;
       default:
         throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, or H");
@@ -329,7 +329,7 @@ void IceCompModel::initTestABCDH() {
   }
   loop.check();
 
-  m_geometry.ice_thickness().update_ghosts();
+  m_geometry.ice_thickness.update_ghosts();
 
   {
     IceModelVec2S bed_topography, bed_uplift;
@@ -338,12 +338,12 @@ void IceCompModel::initTestABCDH() {
     bed_uplift.set(0.0);
 
     if (m_testname == 'H') {
-      bed_topography.copy_from(m_geometry.ice_thickness());
+      bed_topography.copy_from(m_geometry.ice_thickness);
       bed_topography.scale(-m_f);
     } else {  // flat bed case otherwise
       bed_topography.set(0.0);
     }
-    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness());
+      m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
   }
 }
 
@@ -397,39 +397,39 @@ void IceCompModel::initTestL() {
     bed_topography.create(m_grid, "topg", WITHOUT_GHOSTS);
     bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
 
-    IceModelVec::AccessList list{&m_geometry.ice_thickness(), &bed_topography};
+    IceModelVec::AccessList list{&m_geometry.ice_thickness, &bed_topography};
 
     for (k = 0; k < MM; k++) {
-      m_geometry.ice_thickness()(rrv[k].i, rrv[k].j)  = L.H[k];
+      m_geometry.ice_thickness(rrv[k].i, rrv[k].j)  = L.H[k];
       bed_topography(rrv[k].i, rrv[k].j) = L.b[k];
     }
 
-    m_geometry.ice_thickness().update_ghosts();
+    m_geometry.ice_thickness.update_ghosts();
 
     bed_uplift.set(0.0);
 
-    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness());
+    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
   }
 
   // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
-  m_HexactL.copy_from(m_geometry.ice_thickness());
+  m_HexactL.copy_from(m_geometry.ice_thickness);
 }
 
 //! \brief Tests A and E have a thickness B.C. (ice_thickness == 0 outside a circle of radius 750km).
 void IceCompModel::reset_thickness_test_A() {
   const double LforAE = 750e3; // m
 
-  IceModelVec::AccessList list(m_geometry.ice_thickness());
+  IceModelVec::AccessList list(m_geometry.ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (radius(*m_grid, i, j) > LforAE) {
-      m_geometry.ice_thickness()(i, j) = 0;
+      m_geometry.ice_thickness(i, j) = 0;
     }
   }
 
-  m_geometry.ice_thickness().update_ghosts();
+  m_geometry.ice_thickness.update_ghosts();
 }
 
 void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
@@ -453,7 +453,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     avHerr = 0.0,
     etaerr = 0.0;
 
-  IceModelVec::AccessList list(m_geometry.ice_thickness());
+  IceModelVec::AccessList list(m_geometry.ice_thickness);
   if (m_testname == 'L') {
     list.add(m_HexactL);
   }
@@ -473,9 +473,9 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_geometry.ice_thickness()(i,j) > 0) {
+      if (m_geometry.ice_thickness(i,j) > 0) {
         area += a;
-        vol += a * m_geometry.ice_thickness()(i,j) * 1e-3;
+        vol += a * m_geometry.ice_thickness(i,j) * 1e-3;
       }
       double xx = m_grid->x(i), r = radius(*m_grid, i,j);
       switch (m_testname) {
@@ -541,14 +541,14 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
       }
       if (i == ((int)m_grid->Mx() - 1)/2 and
           j == ((int)m_grid->My() - 1)/2) {
-        domeH = m_geometry.ice_thickness()(i,j);
+        domeH = m_geometry.ice_thickness(i,j);
         domeHexact = Hexact;
       }
       // compute maximum errors
-      Herr = std::max(Herr,fabs(m_geometry.ice_thickness()(i,j) - Hexact));
-      etaerr = std::max(etaerr,fabs(pow(m_geometry.ice_thickness()(i,j),m) - pow(Hexact,m)));
+      Herr = std::max(Herr,fabs(m_geometry.ice_thickness(i,j) - Hexact));
+      etaerr = std::max(etaerr,fabs(pow(m_geometry.ice_thickness(i,j),m) - pow(Hexact,m)));
       // add to sums for average errors
-      avHerr += fabs(m_geometry.ice_thickness()(i,j) - Hexact);
+      avHerr += fabs(m_geometry.ice_thickness(i,j) - Hexact);
     }
   } catch (...) {
     loop.failed();
@@ -898,14 +898,14 @@ void IceCompModel::test_V_init() {
     bed_uplift.create(m_grid, "uplift", WITHOUT_GHOSTS);
     bed_uplift.set(0.0);
 
-    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness());
+    m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
   }
 
   // set SSA boundary conditions:
   double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"),
     upstream_thk = 600.0;
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness(), &m_ssa_dirichlet_bc_mask,
+  IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_ssa_dirichlet_bc_mask,
       &m_ssa_dirichlet_bc_values};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -914,11 +914,11 @@ void IceCompModel::test_V_init() {
     if (i <= 2) {
       m_ssa_dirichlet_bc_mask(i,j) = 1;
       m_ssa_dirichlet_bc_values(i,j)  = Vector2(upstream_velocity, 0.0);
-      m_geometry.ice_thickness()(i, j) = upstream_thk;
+      m_geometry.ice_thickness(i, j) = upstream_thk;
     } else {
       m_ssa_dirichlet_bc_mask(i,j) = 0;
       m_ssa_dirichlet_bc_values(i,j)  = Vector2(0.0, 0.0);
-      m_geometry.ice_thickness()(i, j) = 0;
+      m_geometry.ice_thickness(i, j) = 0;
     }
   }
 
@@ -926,7 +926,7 @@ void IceCompModel::test_V_init() {
 
   m_ssa_dirichlet_bc_values.update_ghosts();
 
-  m_geometry.ice_thickness().update_ghosts();
+  m_geometry.ice_thickness.update_ghosts();
 }
 
 } // end of namespace pism
