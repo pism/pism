@@ -1607,6 +1607,8 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
+  double dt = m_grid->ctx()->time()->current() - m_last_report_time;
+
   if (gsl_isnan(m_last_report_time)) {
     result->set(units::convert(m_sys, 2e6, "m year-1", "m second-1"));
   } else {
@@ -1614,7 +1616,6 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
 
     IceModelVec::AccessList list{result.get(), &m_last_ice_thickness, &ice_thickness};
 
-    double dt = m_grid->ctx()->time()->current() - m_last_report_time;
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -1623,12 +1624,13 @@ IceModelVec::Ptr IceModel_dHdt::compute_impl() {
   }
 
   // Save the ice thickness and the corresponding time:
-  this->update_cumulative();
+  this->update(dt);
 
   return result;
 }
 
-void IceModel_dHdt::update_cumulative() {
+void IceModel_dHdt::update_impl(double dt) {
+  (void) dt;
   const IceModelVec2S& ice_thickness = model->ice_thickness();
 
   IceModelVec::AccessList list{&ice_thickness, &m_last_ice_thickness};

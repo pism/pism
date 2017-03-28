@@ -478,8 +478,8 @@ class IceModel_dHdt : public Diag<IceModel>
 {
 public:
   IceModel_dHdt(const IceModel *m);
-  virtual void update_cumulative();
 protected:
+  virtual void update_impl(double dt);
   virtual IceModelVec::Ptr compute_impl();
 protected:
   IceModelVec2S m_last_ice_thickness;

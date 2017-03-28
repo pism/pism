@@ -59,7 +59,7 @@ public:
 
   typedef std::shared_ptr<Diagnostic> Ptr;
 
-  virtual void update_cumulative();
+  void update(double dt);
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated
   //! IceModelVec.
@@ -84,6 +84,8 @@ protected:
                  const std::string &my_units,
                  const std::string &my_glaciological_units,
                  int N = 0);
+
+  virtual void update_impl(double dt);
 
   virtual IceModelVec::Ptr compute_impl() = 0;
 
@@ -127,7 +129,7 @@ public:
 
     m_accumulator.set(0.0);
   }
-
+protected:
   void init_impl(const PIO &input, unsigned int time) {
     m_accumulator.read(input, time);
   }
@@ -140,7 +142,7 @@ public:
     m_accumulator.write(output);
   }
 
-  void update(double dt) {
+  virtual void update_impl(double dt) {
     if (m_input_is_cumulative) {
       // the input is a cumulative quantity is total change, so we just sum it up here
       m_accumulator.add(1.0, this->model_input());
@@ -153,7 +155,7 @@ public:
     m_total_time += dt;
   }
 
-  void reset() {
+  virtual void reset() {
     m_accumulator.set(0.0);
     m_total_time = 0.0;
   }

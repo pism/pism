@@ -355,7 +355,7 @@ void IceModel::write_extras() {
       Diagnostic::Ptr diag = m_diagnostics[v];
 
       if (diag) {
-        diag->update_cumulative();
+        diag->update(m_dt);
       }
     }
 

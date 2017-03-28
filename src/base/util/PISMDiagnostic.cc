@@ -39,8 +39,13 @@ Diagnostic::~Diagnostic() {
 //! \brief Update a cumulative quantity needed to compute a rate of change.
 //! So far we there is only one such quantity: the rate of change of the ice
 //! thickness.
-void Diagnostic::update_cumulative() {
-  // the default implementation is empty
+void Diagnostic::update(double dt) {
+  this->update_impl(dt);
+}
+
+void Diagnostic::update_impl(double dt) {
+  (void) dt;
+  // empty
 }
 
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
