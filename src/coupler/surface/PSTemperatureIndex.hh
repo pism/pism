@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -46,9 +46,9 @@ public:
   TemperatureIndex(IceGrid::ConstPtr g);
   virtual ~TemperatureIndex();
 
-  const IceModelVec2S& accumulation() const;
-  const IceModelVec2S& melt() const;
-  const IceModelVec2S& runoff() const;
+  const IceModelVec2S& accumulation_rate() const;
+  const IceModelVec2S& melt_rate() const;
+  const IceModelVec2S& runoff_rate() const;
   const IceModelVec2S& snow_depth() const;
   const IceModelVec2S& air_temp_sd() const;
 

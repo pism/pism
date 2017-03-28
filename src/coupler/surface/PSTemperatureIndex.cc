@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -505,15 +505,15 @@ const IceModelVec2S& TemperatureIndex::cumulative_runoff() const {
   return m_cumulative_runoff;
 }
 
-const IceModelVec2S& TemperatureIndex::accumulation() const {
+const IceModelVec2S& TemperatureIndex::accumulation_rate() const {
   return m_accumulation_rate;
 }
 
-const IceModelVec2S& TemperatureIndex::melt() const {
+const IceModelVec2S& TemperatureIndex::melt_rate() const {
   return m_melt_rate;
 }
 
-const IceModelVec2S& TemperatureIndex::runoff() const {
+const IceModelVec2S& TemperatureIndex::runoff_rate() const {
   return m_runoff_rate;
 }
 
@@ -567,7 +567,7 @@ IceModelVec::Ptr PDD_saccum::compute_impl() {
   result->create(m_grid, "saccum", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  result->copy_from(model->accumulation());
+  result->copy_from(model->accumulation_rate());
 
   return result;
 }
@@ -588,7 +588,7 @@ IceModelVec::Ptr PDD_smelt::compute_impl() {
   result->create(m_grid, "smelt", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  result->copy_from(model->melt());
+  result->copy_from(model->melt_rate());
 
   return result;
 }
@@ -609,7 +609,7 @@ IceModelVec::Ptr PDD_srunoff::compute_impl() {
   result->create(m_grid, "srunoff", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
 
-  result->copy_from(model->runoff());
+  result->copy_from(model->runoff_rate());
 
   return result;
 }
