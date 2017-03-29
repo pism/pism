@@ -1166,12 +1166,12 @@ protected:
 std::map<std::string, Diagnostic::Ptr> GeometryEvolution::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result;
   result = {
-    {"flux_staggered",                 Diagnostic::Ptr(new diagnostics::FluxStaggered(this))},
-    {"flux_divergence",                Diagnostic::Ptr(new diagnostics::FluxDivergence(this))},
-    {"mass_conservation_error",        Diagnostic::Ptr(new diagnostics::ConservationError(this))},
-    {"effective_surface_mass_balance", Diagnostic::Ptr(new diagnostics::SMB(this))},
+    {"flux_staggered",                      Diagnostic::Ptr(new diagnostics::FluxStaggered(this))},
+    {"flux_divergence",                     Diagnostic::Ptr(new diagnostics::FluxDivergence(this))},
+    {"mass_conservation_error",             Diagnostic::Ptr(new diagnostics::ConservationError(this))},
+    {"effective_surface_mass_balance",      Diagnostic::Ptr(new diagnostics::SMB(this))},
     {"effective_surface_mass_balance_flux", Diagnostic::Ptr(new diagnostics::SMBFlux(this))},
-    {"effective_basal_mass_balance",   Diagnostic::Ptr(new diagnostics::BMB(this))}
+    {"effective_basal_mass_balance",        Diagnostic::Ptr(new diagnostics::BMB(this))}
   };
   return result;
 }
