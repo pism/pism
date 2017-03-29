@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Constantine Khroulev
+// Copyright (C) 2009--2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,6 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <mpi.h>
 
 #include "PISMUnits.hh"
 
