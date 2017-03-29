@@ -32,6 +32,7 @@
 #include "base/util/io/LocalInterpCtx.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/Logger.hh"
+#include "base/util/Context.hh"
 #include "base/util/projection.hh"
 #include "base/util/interpolation.hh"
 
@@ -217,6 +218,24 @@ void define_dimension(const PIO &nc, unsigned long int length,
   }
 }
 
+//! Prepare a file for output.
+void prepare_for_output(const PIO &file, const Context &ctx) {
+  const Time &time = *ctx.time();
+  const Config &config = *ctx.config();
+
+  define_time(file,
+              config.get_string("time.dimension_name"),
+              time.calendar(),
+              time.CF_units_string(),
+              ctx.unit_system());
+  append_time(file, config.get_string("time.dimension_name"),
+              time.current());
+}
+
+/*!
+ * Define a time dimension and the corresponding coordinate variable. Does nothing if the time
+ * variable is already present.
+ */
 void define_time(const PIO &nc, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system) {
   try {

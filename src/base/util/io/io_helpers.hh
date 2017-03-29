@@ -37,6 +37,7 @@ class IceGrid;
 class PIO;
 class Time;
 class Logger;
+class Context;
 
 namespace io {
 
@@ -64,6 +65,8 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
 
 void define_dimension(const PIO &nc, unsigned long int length,
                       const VariableMetadata &metadata);
+
+void prepare_for_output(const PIO &file, const Context &ctx);
 
 void define_time(const PIO &nc, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system);
