@@ -236,7 +236,7 @@ const IceModelVec2S& GeometryEvolution::conservation_error() const {
  * @param[in] velocity_bc_values advective velocity Dirichlet B.C. values
  * @param[in] thickness_bc_mask ice thickness Dirichlet B.C. mask
  * @param[in] surface_mass_balance_rate top surface mass balance rate (m / second)
- * @param[in] basal_mass_balance_rate basal (bottom surface) mass balance rate
+ * @param[in] basal_melt_rate basal (bottom surface) melt rate (m/ second)
  *
  * Results are stored in internal fields accessible using getters.
  */
@@ -246,7 +246,7 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
                              const IceModelVec2Int  &velocity_bc_mask,
                              const IceModelVec2Int  &thickness_bc_mask,
                              const IceModelVec2S    &surface_mass_balance_rate,
-                             const IceModelVec2S    &basal_mass_balance_rate) {
+                             const IceModelVec2S    &basal_melt_rate) {
 
   m_impl->profile.begin("ge.update_ghosted_copies");
   {
@@ -326,7 +326,7 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
                                          m_impl->thickness_change,  // in
                                          m_impl->cell_type,         // in
                                          surface_mass_balance_rate, // in
-                                         basal_mass_balance_rate,   // in
+                                         basal_melt_rate,           // in
                                          m_impl->effective_SMB,     // out
                                          m_impl->effective_BMB);    // out
   m_impl->profile.end("ge.source_terms");
@@ -940,7 +940,7 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
  * non-negativity.
  */
 static inline double effective_change(double H, double dH) {
-  return H + dH < 0.0 ? -H : dH;
+  return H + dH <= 0.0 ? -H : dH;
 }
 
 /*!
@@ -991,16 +991,18 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
       // Thickness change due to the surface mass balance
       //
       // Note that here we convert surface mass balance from [kg m-2 s-1] to [m s-1].
-      const double dH_SMB = effective_change(H + dH_flow,
-                                             dt * smb_rate(i, j) / m_impl->ice_density);
-      effective_SMB(i, j) = dH_SMB;
+      double dH_SMB = effective_change(H + dH_flow,
+                                       dt * smb_rate(i, j) / m_impl->ice_density);
 
       // Thickness change due to the basal mass balance
       //
       // Note that basal_melt_rate is in [m s-1]. Here the negative sign converts the melt rate into
       // mass balance.
-      effective_BMB(i, j) = effective_change(H + dH_flow + dH_SMB,
-                                             dt * (m_impl->use_bmr ? -basal_melt_rate(i, j) : 0.0));
+      double dH_BMB = effective_change(H + dH_flow + dH_SMB,
+                                       dt * (m_impl->use_bmr ? -basal_melt_rate(i, j) : 0.0));
+
+      effective_SMB(i, j) = dH_SMB;
+      effective_BMB(i, j) = dH_BMB;
     }
   } catch (...) {
     loop.failed();

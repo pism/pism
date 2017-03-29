@@ -24,7 +24,7 @@ Specifically, there is an "inner" horizontal variable \f$x\f$ describing the loc
 
 In order to describe the Schoof scheme using PISM notation, we start by recalling the mass continuity equation which is fundamental to any shallow ice theory:
   \f[ \frac{\partial H}{\partial t} = (M - S) - \nabla\cdot \mathbf{q}. \f]
-Within PISM this equation is handled by IceModel::massContExplicitStep().  Recall that \f$M-S\f$ is the mass balance added to the ice column per time.  (It plays no further role here.)  In the SIA case with zero basal sliding, the horizontal mass flux is
+Within PISM this equation is handled by GeometryEvolution.  Recall that \f$M-S\f$ is the mass balance added to the ice column per time.  (It plays no further role here.)  In the SIA case with zero basal sliding, the horizontal mass flux is
   \f[ \mathbf{q} = - D_{SIA} \nabla h, \f]
 where \f$D_{SIA}\ge 0\f$ is given next.  Thus the mass continuity equation is \e diffusive.  The diffusivity \f$D_{SIA}\f$ is a function of the ice geometry and the ice flow law.  In the isothermal Glen power law (power \f$= n\f$) case we recall
   \f[ D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1} \tag{siadiffusivity} \f]

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -105,7 +105,7 @@ CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
 /*!
   This procedure computes the maximum horizontal speed in the icy
   areas. In particular it computes CFL constant for the upwinding, in
-  massContExplicitStep(), which applies to the basal component of mass
+  GeometryEvolution::step(), which applies to the basal component of mass
   flux.
 
   That is, because the map-plane mass continuity is advective in the

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -147,7 +147,7 @@ void ForceThickness::init_impl() {
 If `-force_to_thickness_file` `foo.nc` is in use then vthktarget will have a target ice thickness
 map.  Let \f$H_{\text{tar}}\f$ be this target thickness,
 and let \f$H\f$ be the current model thickness.  Recall that the mass continuity
-equation solved by IceModel::massContExplicitStep() is
+equation solved by GeometryEvolution is
   \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
 and that this procedure is supposed to produce \f$M\f$.
 In this context, the semantics of `-force_to_thickness` are that \f$M\f$ is modified

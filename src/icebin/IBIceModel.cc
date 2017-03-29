@@ -88,28 +88,6 @@ void IBIceModel::allocate_storage() {
   cur.print_formulas(std::cout);
 }
 
-void IBIceModel::massContPreHook() {
-#if 0 // Avoid warnings until we put something in this method
-
-    // Enthalpy and mass continuity are stepped with different timesteps.
-    // Fish out the timestep relevant to US.
-    const double my_t0 = m_grid.time->current();
-    const double my_dt = this->dt;
-#endif
-}
-
-
-void IBIceModel::massContPostHook() {
-#if 0 // Avoid warnings until we put something in this method
-
-    // Enthalpy and mass continuity are stepped with different timesteps.
-    // Fish out the timestep relevant to US.
-    const double my_t0 = m_grid.time->current();
-    const double my_dt = this->dt;
-#endif
-}
-
-
 void IBIceModel::energy_step() {
 
   printf("BEGIN IBIceModel::energy_step(t=%f, dt=%f)\n", t_TempAge, dt_TempAge);
@@ -172,7 +150,10 @@ void IBIceModel::massContExplicitStep(double dt,
     AccessList access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
                        &cur.internal_advection, &cur.href_to_h,     &cur.nonneg_rule };
 
-    super::massContExplicitStep(dt, diffusive_flux, advective_velocity);
+    // FIXME: this is obviously broken now that PISM uses GeometryEvolution instead.
+    (void) diffusive_flux;
+    (void) advective_velocity;
+    // super::massContExplicitStep(dt, diffusive_flux, advective_velocity);
   }
 
   // =========== AFTER the Mass Continuity Step

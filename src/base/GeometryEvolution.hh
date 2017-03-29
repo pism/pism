@@ -48,7 +48,7 @@ public:
             const IceModelVec2Int  &velocity_bc_mask,
             const IceModelVec2Int  &thickness_bc_mask,
             const IceModelVec2S    &surface_mass_balance_rate,
-            const IceModelVec2S    &basal_mass_balance_rate);
+            const IceModelVec2S    &basal_melt_rate);
 
   const IceModelVec2S& top_surface_mass_balance() const;
   const IceModelVec2S& bottom_surface_mass_balance() const;

@@ -206,7 +206,6 @@ void IceRegionalModel::allocate_basal_yield_stress() {
   }
 }
 
-
 void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
 
   IceModel::bootstrap_2d(input_file);
@@ -223,7 +222,6 @@ void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
 
   m_no_model_mask.regrid(input_file, OPTIONAL, 0.0);
 }
-
 
 void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
 
@@ -281,44 +279,6 @@ void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
 
   if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
     m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "model_state");
-  }
-}
-
-
-void IceRegionalModel::massContExplicitStep(double dt,
-                                    const IceModelVec2Stag &diffusive_flux,
-                                    const IceModelVec2V &advective_velocity) {
-
-  // This ensures that no_model_mask is available in
-  // IceRegionalModel::cell_interface_fluxes() below.
-  IceModelVec::AccessList list(m_no_model_mask);
-
-  IceModel::massContExplicitStep(dt, diffusive_flux, advective_velocity);
-}
-
-void IceRegionalModel::cell_interface_fluxes(int i, int j,
-                                             StarStencil<int> cell_type,
-                                             StarStencil<int> bc_mask,
-                                             StarStencil<Vector2> bc_velocity,
-                                             StarStencil<Vector2> input_velocity,
-                                             StarStencil<double> input_flux,
-                                             StarStencil<double> &output_velocity,
-                                             StarStencil<double> &output_flux) {
-
-  IceModel::cell_interface_fluxes(i, j, cell_type, bc_mask, bc_velocity,
-                                  input_velocity, input_flux,
-                                  output_velocity, output_flux);
-
-  StarStencil<int> nmm = m_no_model_mask.int_star(i,j);
-  Direction dirs[4] = {North, East, South, West};
-
-  for (int n = 0; n < 4; ++n) {
-    Direction direction = dirs[n];
-
-      if ((nmm.ij == 1) || (nmm.ij == 0 && nmm[direction] == 1)) {
-      output_velocity[direction] = 0.0;
-      output_flux[direction] = 0.0;
-    }
   }
 }
 

@@ -135,10 +135,6 @@ public:
     return t_TempAge;
   }
 
-  // I added these...
-  void massContPreHook();
-  void massContPostHook();
-  // Pre and post for energy
   void energy_step();
 
   void prepare_outputs(double time_s);

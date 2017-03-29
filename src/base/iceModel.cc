@@ -423,6 +423,36 @@ void IceModel::allocate_storage() {
   }
 }
 
+//! Update the surface elevation and the flow-type mask when the geometry has changed.
+/*!
+  This procedure should be called whenever necessary to maintain consistency of geometry.
+
+  For instance, it should be called when either ice thickness or bed elevation change.
+  In particular we always want \f$h = H + b\f$ to apply at grounded points, and, on the
+  other hand, we want the mask to reflect that the ice is floating if the flotation
+  criterion applies at a point.
+
+  Also calls the code which removes icebergs, to avoid stress balance
+  solver problems associated to not-attached-to-grounded ice.
+*/
+void IceModel::enforce_consistency_of_geometry() {
+
+  m_geometry.bed_elevation.copy_from(m_beddef->bed_elevation());
+  m_geometry.sea_level_elevation.set(m_ocean->sea_level_elevation());
+
+  if (m_config->get_boolean("geometry.remove_icebergs") and m_iceberg_remover != NULL) {
+    // The iceberg remover has to use the same mask as the stress balance code, hence the
+    // stress-balance-related threshold here.
+    m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+
+    m_iceberg_remover->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    // The call above modifies ice thickness and updates the mask accordingly, but we re-compute the
+    // mask (we need to use a different threshold).
+  }
+
+  m_geometry.ensure_consistency(m_config->get_double("geometry.ice_free_thickness_standard"));
+}
+
 //! The contents of the main PISM time-step.
 /*!
 During the time-step we perform the following actions:
@@ -463,7 +493,6 @@ void IceModel::step(bool do_mass_continuity,
   // stress balance and the energy code)
   if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
     enforce_consistency_of_geometry(); // update h and mask
-    update_grounded_cell_fraction();
   }
 
   IceModelVec2S &melange_back_pressure = m_work2d[0];
@@ -566,13 +595,47 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   //! \li update the thickness of the ice according to the mass conservation
-  //!  model; see massContExplicitStep()
+  //!  model; see GeometryEvolution.
   if (do_mass_continuity) {
 
+    IceModelVec2S &surface_mass_balance_rate = m_work2d[0];
+    m_surface->mass_flux(surface_mass_balance_rate);
+
     profiling.begin("mass transport");
-    massContExplicitStep(m_dt,
-                         m_stress_balance->diffusive_flux(),
-                         m_stress_balance->advective_velocity());
+    // FIXME: thickness B.C. mask should be separate
+    IceModelVec2Int &thickness_bc_mask = m_ssa_dirichlet_bc_mask;
+
+    GeometryEvolution *ge = m_geometry_evolution.get();
+
+    ge->step(m_geometry,
+             m_dt,
+             m_stress_balance->advective_velocity(),
+             m_stress_balance->diffusive_flux(),
+             m_ssa_dirichlet_bc_mask,
+             thickness_bc_mask,
+             surface_mass_balance_rate,
+             m_basal_melt_rate);
+
+    const IceModelVec2S
+      &dH_flow = ge->thickness_change_due_to_flow(),
+      &dH_SMB  = ge->top_surface_mass_balance(),
+      &dH_BMB  = ge->bottom_surface_mass_balance();
+    IceModelVec2S &H = m_geometry.ice_thickness;
+
+    IceModelVec::AccessList list{&H, &dH_flow, &dH_SMB, &dH_BMB};
+    ParallelSection loop(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        H(i, j) = H(i, j) + dH_flow(i, j) + dH_SMB(i, j) + dH_BMB(i, j);
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
+
+    m_geometry.ice_area_specific_volume.add(1.0, ge->area_specific_volume_change_due_to_flow());
+
     enforce_consistency_of_geometry(); // update h and mask
     profiling.end("mass transport");
 

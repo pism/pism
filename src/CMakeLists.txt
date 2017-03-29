@@ -134,7 +134,6 @@ add_library (pism
   base/iMcalving.cc
   base/iMenergy.cc
   base/iMfractures.cc
-  base/iMgeometry.cc
   base/grounded_cell_fraction.cc
   base/iMinit.cc
   base/iMIO.cc

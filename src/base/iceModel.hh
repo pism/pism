@@ -90,7 +90,6 @@ namespace bed {
 class BedDef;
 }
 
-// forward declarations
 class IceGrid;
 class YieldStress;
 class AgeModel;
@@ -321,33 +320,8 @@ protected:
 
   virtual void combine_basal_melt_rate();
 
-  // see iMgeometry.cc
   virtual void enforce_consistency_of_geometry();
-  virtual void cell_interface_fluxes(int i, int j,
-                                     StarStencil<int> cell_type,
-                                     StarStencil<int> bc_mask,
-                                     StarStencil<Vector2> bc_values,
-                                     StarStencil<Vector2> input_velocity,
-                                     StarStencil<double> input_flux,
-                                     StarStencil<double> &output_velocity,
-                                     StarStencil<double> &output_flux);
-  virtual void adjust_flow(StarStencil<int> mask,
-                           StarStencil<double> &SSA_velocity,
-                           StarStencil<double> &SIA_flux);
-  virtual void massContExplicitStep(double dt,
-                                    const IceModelVec2Stag &diffusive_flux,
-                                    const IceModelVec2V &advective_velocity);
-  void apply_surface_and_basal_mass_balance(double dt,
-                                            const IceModelVec2S &cell_area,
-                                            const IceModelVec2S &climatic_mass_balance,
-                                            const IceModelVec2S &basal_melt_rate,
-                                            const IceModelVec2CellType &cell_type,
-                                            const IceModelVec2Int *bc_mask,
-                                            IceModelVec2S &H,
-                                            FluxCounters &fluxes_scalar,
-                                            FluxFields &fluxes_2d);
 
-  virtual void update_grounded_cell_fraction();
   virtual void do_calving();
   virtual void Href_cleanup();
   virtual void update_cumulative_discharge(const IceModelVec2S &thickness,

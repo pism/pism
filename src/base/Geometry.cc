@@ -110,7 +110,9 @@ void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
       const int i = p.i(), j = p.j();
 
       if (ice_thickness(i, j) < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Thickness is negative at point i=%d, j=%d", i, j);
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "H = %e (negative) at point i=%d, j=%d",
+                                      ice_thickness(i, j), i, j);
       }
     }
   } catch (...) {
