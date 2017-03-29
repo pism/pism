@@ -1179,7 +1179,7 @@ std::map<std::string, Diagnostic::Ptr> GeometryEvolution::diagnostics_impl() con
 RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
   : GeometryEvolution(grid) {
 
-  m_no_model_mask.create(m_grid, "m_no_model_mask", WITH_GHOSTS);
+  m_no_model_mask.create(m_grid, "no_model_mask", WITH_GHOSTS);
   m_no_model_mask.set_attrs("model_mask", "'no model' mask", "", "");
 }
 
