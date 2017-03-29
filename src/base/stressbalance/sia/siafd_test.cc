@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -411,14 +411,9 @@ int main(int argc, char *argv[]) {
                  ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
-    PIO pio(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
-
-    io::define_time(pio, config->get_string("time.dimension_name"),
-                    grid->ctx()->time()->calendar(),
-                    grid->ctx()->time()->CF_units_string(),
-                    ctx->unit_system());
-    io::append_time(pio, config->get_string("time.dimension_name"), 0.0);
-    pio.close();
+    PIO file(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
+    io::prepare_for_output(file, *ctx);
+    file.close();
 
     ice_surface_elevation.write(output_file);
     ice_thickness.write(output_file);

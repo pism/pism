@@ -156,14 +156,8 @@ T interpolate(const F &field, double x, double y) {
 
   If you need to "prepare" a file, do:
   \code
-  PIO nc(grid.com, grid.config.get_string("output.format"));
-
-  std::string time_name = config.get_string("time.dimension_name");
-  ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr); // append == false
-  ierr = nc.def_time(time_name, grid.time->calendar(),
-  grid.time->CF_units_string()); CHKERRQ(ierr);
-  ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
+  PIO file(grid.com, grid.config.get_string("output.format"));
+  io::prepare_for_output(file, *grid.ctx());
   \endcode
 
   A note about NetCDF write performance: due to limitations of the NetCDF

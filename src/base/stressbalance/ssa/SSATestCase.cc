@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -363,24 +363,20 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+  PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
           filename, PISM_READWRITE_MOVE);
-  io::define_time(pio, m_config->get_string("time.dimension_name"),
-                  m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->CF_units_string(),
-                  m_grid->ctx()->unit_system());
-  io::append_time(pio, m_config->get_string("time.dimension_name"), 0.0);
+  io::prepare_for_output(file, *m_grid->ctx());
 
-  m_surface.write(pio);
-  m_thickness.write(pio);
-  m_bc_mask.write(pio);
-  m_tauc.write(pio);
-  m_bed.write(pio);
-  m_ice_enthalpy.write(pio);
-  m_bc_values.write(pio);
+  m_surface.write(file);
+  m_thickness.write(file);
+  m_bc_mask.write(file);
+  m_tauc.write(file);
+  m_bed.write(file);
+  m_ice_enthalpy.write(file);
+  m_bc_values.write(file);
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
-  vel_ssa.write(pio);
+  vel_ssa.write(file);
 
   IceModelVec2V exact;
   exact.create(m_grid, "_exact", WITHOUT_GHOSTS);
@@ -401,9 +397,9 @@ void SSATestCase::write(const std::string &filename) {
     exactSolution(i, j, m_grid->x(i), m_grid->y(j),
                   &(exact(i,j).u), &(exact(i,j).v));
   }
-  exact.write(pio);
+  exact.write(file);
 
-  pio.close();
+  file.close();
 }
 
 } // end of namespace stressbalance

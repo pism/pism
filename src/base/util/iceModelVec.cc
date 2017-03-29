@@ -521,19 +521,13 @@ void IceModelVec::write_impl(const PIO &nc) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void IceModelVec::dump(const char filename[]) const {
-  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-         filename, PISM_READWRITE_CLOBBER);
+  PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+           filename, PISM_READWRITE_CLOBBER);
 
-  io::define_time(nc,
-                  m_grid->ctx()->config()->get_string("time.dimension_name"),
-                  m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->units_string(),
-                  m_grid->ctx()->unit_system());
-  io::append_time(nc, m_grid->ctx()->config()->get_string("time.dimension_name"),
-                  m_grid->ctx()->time()->current());
+  io::prepare_for_output(file, *m_grid->ctx());
 
-  define(nc, PISM_DOUBLE);
-  write(nc);
+  define(file, PISM_DOUBLE);
+  write(file);
 }
 
 //! Checks if two IceModelVecs have compatible sizes, dimensions and numbers of degrees of freedom.
