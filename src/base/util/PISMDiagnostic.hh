@@ -164,12 +164,18 @@ protected:
     IceModelVec2S::Ptr result(new IceModelVec2S(Diagnostic::m_grid,
                                                 "diagnostic", WITHOUT_GHOSTS));
     result->metadata(0) = Diagnostic::m_vars[0];
+    result->write_in_glaciological_units = true;
 
     if (m_total_time > 0.0) {
       result->copy_from(m_accumulator);
       result->scale(1.0 / m_total_time);
     } else {
-      result->set(Diagnostic::m_fill_value);
+      std::string
+        out = Diagnostic::m_vars[0].get_string("glaciological_units"),
+        in  = Diagnostic::m_vars[0].get_string("units");
+      const double
+        fill = convert(Diagnostic::m_sys, Diagnostic::m_fill_value, out, in);
+      result->set(fill);
     }
 
     return result;
