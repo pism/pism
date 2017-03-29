@@ -113,6 +113,7 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
 
     flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS);
     flux_divergence.set_attrs("diagnostic", "flux divergence", "m s-1", "");
+    flux_divergence.metadata().set_string("glaciological_units", "m year-1");
 
     conservation_error.create(grid, "conservation_error", WITHOUT_GHOSTS);
     conservation_error.set_attrs("diagnostic",
@@ -1024,6 +1025,7 @@ protected:
   IceModelVec::Ptr compute_impl() {
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "flux_divergence", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
+    result->write_in_glaciological_units = true;
 
     result->copy_from(model->flux_divergence());
 
@@ -1043,7 +1045,25 @@ protected:
     IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "flux_staggered", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
-    result->copy_from(model->flux_staggered());
+    const IceModelVec2Stag &input = model->flux_staggered();
+    IceModelVec2Stag &output = *result.get();
+
+    // FIXME: implement IceModelVec2Stag::copy_from()
+
+    IceModelVec::AccessList list{&input, &output};
+
+    ParallelSection loop(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        output(i, j, 0) = input(i, j, 0);
+        output(i, j, 1) = input(i, j, 1);
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
 
     return result;
   }

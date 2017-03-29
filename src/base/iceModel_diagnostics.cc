@@ -75,7 +75,6 @@ void IceModel::init_diagnostics() {
     {land_ice_area_fraction_name,           f(new IceModel_land_ice_area_fraction(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceModel_grounded_ice_sheet_area_fraction(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceModel_floating_ice_sheet_area_fraction(this))},
-    {"flux_divergence",                     f(new IceModel_flux_divergence(this))},
     {"climatic_mass_balance_cumulative",    f(new IceModel_climatic_mass_balance_cumulative(this))},
     {"nonneg_flux_cumulative",              f(new IceModel_nonneg_flux_2D_cumulative(this))},
     {"grounded_basal_flux_cumulative",      f(new IceModel_grounded_basal_flux_2D_cumulative(this))},
@@ -930,27 +929,6 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   }
   loop.check();
 
-
-  return result;
-}
-
-IceModel_flux_divergence::IceModel_flux_divergence(const IceModel *m)
-  : Diag<IceModel>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "flux_divergence")};
-
-  set_attrs("flux divergence", "", "m s-1", "m year-1", 0);
-}
-
-IceModelVec::Ptr IceModel_flux_divergence::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "flux_divergence", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  result->copy_from(model->flux_divergence());
 
   return result;
 }

@@ -248,8 +248,6 @@ protected:
   IceModelVec2S m_basal_yield_stress;
   //! rate of production of basal meltwater (ice-equivalent); no ghosts
   IceModelVec2S m_basal_melt_rate;
-  //! flux divergence
-  IceModelVec2S m_flux_divergence;
 
   FractureFields *m_fracture;
 
@@ -391,7 +389,6 @@ public:
   const Geometry& geometry() const;
 
   FluxCounters cumulative_fluxes() const;
-  const IceModelVec2S& flux_divergence() const;
   const FluxFields& cumulative_fluxes_2d() const;
 
   double dt() const;

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -170,14 +170,6 @@ class IceModel_tempicethk_basal : public Diag<IceModel>
 {
 public:
   IceModel_tempicethk_basal(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
-};
-//! \brief Computes the flux divergence.
-class IceModel_flux_divergence : public Diag<IceModel>
-{
-public:
-  IceModel_flux_divergence(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };

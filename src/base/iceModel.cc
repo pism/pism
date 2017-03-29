@@ -270,10 +270,6 @@ const IceModel::FluxFields& IceModel::cumulative_fluxes_2d() const {
   return m_cumulative_flux_fields;
 }
 
-const IceModelVec2S& IceModel::flux_divergence() const {
-  return m_flux_divergence;
-}
-
 double IceModel::dt() const {
   return m_dt;
 }
@@ -344,15 +340,6 @@ void IceModel::allocate_storage() {
 
   if (m_config->get_boolean("geometry.part_grid.enabled")) {
     m_grid->variables().add(m_geometry.ice_area_specific_volume);
-  }
-
-  {
-    m_flux_divergence.create(m_grid, "flux_divergence", WITHOUT_GHOSTS);
-    m_flux_divergence.set_attrs("diagnostic",
-                                "flux divergence",
-                                "m s-1", "");
-    m_flux_divergence.metadata().set_string("glaciological_units", "m year-1");
-    m_flux_divergence.write_in_glaciological_units = true;
   }
 
   // yield stress for basal till (plastic or pseudo-plastic model)
