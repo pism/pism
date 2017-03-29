@@ -594,88 +594,30 @@ void IceModel::step(bool do_mass_continuity,
     profiling.end("fracture density");
   }
 
-  //! \li update the thickness of the ice according to the mass conservation
-  //!  model; see GeometryEvolution.
+  //! \li update the thickness of the ice according to the mass conservation model and calving
+  //! parameterizations
+
   if (do_mass_continuity) {
-
-    IceModelVec2S &surface_mass_balance_rate = m_work2d[0];
-    m_surface->mass_flux(surface_mass_balance_rate);
-
     profiling.begin("mass transport");
-    // FIXME: thickness B.C. mask should be separate
-    IceModelVec2Int &thickness_bc_mask = m_ssa_dirichlet_bc_mask;
-
-    GeometryEvolution *ge = m_geometry_evolution.get();
-
-    ge->step(m_geometry,
-             m_dt,
-             m_stress_balance->advective_velocity(),
-             m_stress_balance->diffusive_flux(),
-             m_ssa_dirichlet_bc_mask,
-             thickness_bc_mask,
-             surface_mass_balance_rate,
-             m_basal_melt_rate);
-
-    const IceModelVec2S
-      &dH_flow = ge->thickness_change_due_to_flow(),
-      &dH_SMB  = ge->top_surface_mass_balance(),
-      &dH_BMB  = ge->bottom_surface_mass_balance();
-    IceModelVec2S &H = m_geometry.ice_thickness;
-
-    IceModelVec::AccessList list{&H, &dH_flow, &dH_SMB, &dH_BMB};
-    ParallelSection loop(m_grid->com);
-    try {
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-        H(i, j) = H(i, j) + dH_flow(i, j) + dH_SMB(i, j) + dH_BMB(i, j);
-      }
-    } catch (...) {
-      loop.failed();
-    }
-    loop.check();
-
-    m_geometry.ice_area_specific_volume.add(1.0, ge->area_specific_volume_change_due_to_flow());
-
-    enforce_consistency_of_geometry(); // update h and mask
+    update_ice_geometry(do_skip);
     profiling.end("mass transport");
-
-    // Note that there are three adaptive time-stepping criteria. Two of them
-    // (using max. diffusion and 2D CFL) are limiting the mass-continuity
-    // time-step and the third (3D CFL) limits the energy and age time-steps.
-
-    // The mass-continuity time-step is usually smaller, and the skipping
-    // mechanism lets us do several mass-continuity steps for each energy step.
-
-    // When -no_mass is set, mass-continuity-related time-step restrictions are
-    // disabled, making "skipping" unnecessary.
-
-    // This is why the following two lines appear here and are executed only
-    // if do_mass_continuity is true.
-    if (do_skip and m_skip_countdown > 0) {
-      m_skip_countdown--;
-    }
     m_stdout_flags += "h";
   } else {
     m_stdout_flags += "$";
   }
 
-  profiling.begin("calving");
-  do_calving();
-  profiling.end("calving");
-
   //! \li compute the bed deformation, which only depends on current thickness
   //! and bed elevation
   if (m_beddef) {
-    const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
-    int topg_state_counter = bed_topography.get_state_counter();
+    int topg_state_counter = m_beddef->bed_elevation().get_state_counter();
 
     profiling.begin("bed deformation");
     m_beddef->update(current_time, m_dt);
     profiling.end("bed deformation");
 
-    if (bed_topography.get_state_counter() != topg_state_counter) {
-      m_stdout_flags += "b";
+    if (m_beddef->bed_elevation().get_state_counter() != topg_state_counter) {
       // Bed elevation changed.
+      m_stdout_flags += "b";
       enforce_consistency_of_geometry();
     } else {
       m_stdout_flags += " ";
@@ -689,7 +631,7 @@ void IceModel::step(bool do_mass_continuity,
   m_time->step(m_dt);
 
   if (updateAtDepth) {
-    t_TempAge = m_time->current();
+    t_TempAge  = m_time->current();
     dt_TempAge = 0.0;
   }
 
@@ -719,6 +661,72 @@ void IceModel::step(bool do_mass_continuity,
 
   // end the flag line
   m_stdout_flags += " " + m_adaptive_timestep_reason;
+}
+
+/*!
+ * Perform an explicit step of the mass continuity equation and apply calving parameterizations.
+ */
+void IceModel::update_ice_geometry(bool skip) {
+  const Profiling &profiling = m_ctx->profiling();
+
+  IceModelVec2S &surface_mass_balance_rate = m_work2d[0];
+  m_surface->mass_flux(surface_mass_balance_rate);
+
+  // FIXME: thickness B.C. mask should be separate
+  IceModelVec2Int &thickness_bc_mask = m_ssa_dirichlet_bc_mask;
+
+  GeometryEvolution *ge = m_geometry_evolution.get();
+
+  ge->step(m_geometry,
+           m_dt,
+           m_stress_balance->advective_velocity(),
+           m_stress_balance->diffusive_flux(),
+           m_ssa_dirichlet_bc_mask,
+           thickness_bc_mask,
+           surface_mass_balance_rate,
+           m_basal_melt_rate);
+
+  const IceModelVec2S
+    &dH_flow = ge->thickness_change_due_to_flow(),
+    &dH_SMB  = ge->top_surface_mass_balance(),
+    &dH_BMB  = ge->bottom_surface_mass_balance();
+  IceModelVec2S &H = m_geometry.ice_thickness;
+
+  IceModelVec::AccessList list{&H, &dH_flow, &dH_SMB, &dH_BMB};
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      H(i, j) += dH_flow(i, j) + dH_SMB(i, j) + dH_BMB(i, j);
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  m_geometry.ice_area_specific_volume.add(1.0, ge->area_specific_volume_change_due_to_flow());
+
+  enforce_consistency_of_geometry(); // update h and mask
+
+  // Note that there are three adaptive time-stepping criteria. Two of them
+  // (using max. diffusion and 2D CFL) are limiting the mass-continuity
+  // time-step and the third (3D CFL) limits the energy and age time-steps.
+
+  // The mass-continuity time-step is usually smaller, and the skipping
+  // mechanism lets us do several mass-continuity steps for each energy step.
+
+  // When -no_mass is set, mass-continuity-related time-step restrictions are
+  // disabled, making "skipping" unnecessary.
+
+  // This is why the following two lines appear here and are executed only
+  // if do_mass_continuity is true.
+  if (skip and m_skip_countdown > 0) {
+    m_skip_countdown--;
+  }
+
+  profiling.begin("calving");
+  do_calving();
+  profiling.end("calving");
 }
 
 //! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.

@@ -322,6 +322,7 @@ protected:
 
   virtual void enforce_consistency_of_geometry();
 
+  virtual void update_ice_geometry(bool skip);
   virtual void do_calving();
   virtual void Href_cleanup();
   virtual void update_cumulative_discharge(const IceModelVec2S &thickness,
