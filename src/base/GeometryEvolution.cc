@@ -322,7 +322,7 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
   m_impl->profile.begin("ge.source_terms");
   compute_surface_and_basal_mass_balance(dt,                        // in
                                          thickness_bc_mask,         // in
-                                         m_impl->ice_thickness,     // in
+                                         geometry.ice_thickness,    // in
                                          m_impl->thickness_change,  // in
                                          m_impl->cell_type,         // in
                                          surface_mass_balance_rate, // in
