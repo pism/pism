@@ -285,6 +285,8 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   std::string x_name = var.get_x().get_name();
   if (not nc.inq_dim(x_name)) {
     define_dimension(nc, grid.Mx(), var.get_x());
+    nc.put_att_double(x_name, "spacing_meters", PISM_DOUBLE,
+                      grid.x(1) - grid.x(0));
     nc.put_1d_var(x_name, 0, grid.x().size(), grid.x());
   }
 
@@ -292,6 +294,8 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   std::string y_name = var.get_y().get_name();
   if (not nc.inq_dim(y_name)) {
     define_dimension(nc, grid.My(), var.get_y());
+    nc.put_att_double(y_name, "spacing_meters", PISM_DOUBLE,
+                      grid.y(1) - grid.y(0));
     nc.put_1d_var(y_name, 0, grid.y().size(), grid.y());
   }
 
@@ -303,6 +307,23 @@ static void define_dimensions(const SpatialVariableMetadata& var,
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
       define_dimension(nc, nlevels, var.get_z());
+
+      if (nlevels > 1) {
+        double dz_max = levels[1] - levels[0];
+        double dz_min = levels.back() - levels.front();
+
+        for (unsigned int k = 0; k < nlevels - 1; ++k) {
+          double dz = levels[k+1] - levels[k];
+          dz_max = std::max(dz_max, dz);
+          dz_min = std::min(dz_min, dz);
+        }
+
+        nc.put_att_double(z_name, "spacing_min_meters", PISM_DOUBLE,
+                          dz_min);
+        nc.put_att_double(z_name, "spacing_max_meters", PISM_DOUBLE,
+                          dz_max);
+      }
+
       nc.put_1d_var(z_name, 0, levels.size(), levels);
     }
   }

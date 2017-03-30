@@ -118,13 +118,6 @@ void IceModel::update_run_stats() {
   // time-independent info
   {
     m_run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
-    m_run_stats.set_double("grid_dx_meters", m_grid->dx());
-    m_run_stats.set_double("grid_dy_meters", m_grid->dy());
-    m_run_stats.set_double("grid_dz_min_meters", m_grid->dz_min());
-    m_run_stats.set_double("grid_dz_max_meters", m_grid->dz_max());
-    if (m_btu != NULL) {
-      m_run_stats.set_double("grid_dzb_meters", m_btu->vertical_spacing());
-    }
   }
 
   m_run_stats.set_double("wall_clock_hours", wall_clock_hours);
