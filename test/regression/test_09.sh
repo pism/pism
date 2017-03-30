@@ -28,7 +28,7 @@ set +e
 set +x
 
 # Compare bar-09.nc and baz-09.nc:
-$PISM_PATH/nccmp.py bar-09.nc baz-09.nc
+$PISM_PATH/nccmp.py -x -v timestamp bar-09.nc baz-09.nc
 if [ $? != 0 ];
 then
     exit 1

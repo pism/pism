@@ -48,6 +48,14 @@ void Diagnostic::update_impl(double dt) {
   // empty
 }
 
+void Diagnostic::reset() {
+  this->reset_impl();
+}
+
+void Diagnostic::reset_impl() {
+  // empty
+}
+
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
 int Diagnostic::get_nvars() {
   return m_dof;

@@ -297,7 +297,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
   PIO nc(m_grid->com, "netcdf3", filename, mode);      // OK to use NetCDF3.
   start = nc.inq_dimlen("N");
 
-  io::write_global_attributes(nc, global_attributes);
+  io::write_attributes(nc, global_attributes, PISM_DOUBLE, false);
 
   // Write the dimension variable:
   io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);
@@ -365,7 +365,8 @@ void SSATestCase::write(const std::string &filename) {
   // Write results to an output file:
   PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
           filename, PISM_READWRITE_MOVE);
-  io::prepare_for_output(file, *m_grid->ctx());
+  io::define_time(file, *m_grid->ctx());
+  io::append_time(file, *m_grid->ctx(), 0.0);
 
   m_surface.write(file);
   m_thickness.write(file);

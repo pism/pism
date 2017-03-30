@@ -52,6 +52,7 @@
 #include "base/util/pism_utilities.hh"
 #include "base/age/AgeModel.hh"
 #include "base/energy/EnergyModel.hh"
+#include "base/util/io/PIO.hh"
 
 namespace pism {
 
@@ -502,7 +503,9 @@ void IceModel::step(bool do_mass_continuity,
 
     std::string o_file = pism_filename_add_suffix(output_file,
                                                   "_stressbalance_failed", "");
-    save_variables(o_file, output_variables("small"));
+    PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+
+    save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
                   o_file.c_str());
@@ -635,7 +638,8 @@ void IceModel::step(bool do_mass_continuity,
 
     std::string o_file = pism_filename_add_suffix(output_file,
                                                   "_max_thickness", "");
-    save_variables(o_file, output_variables("small"));
+    PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+    save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Ice thickness exceeds the height of the computational box (%7.4f m).\n"

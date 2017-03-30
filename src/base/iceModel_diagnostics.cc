@@ -317,7 +317,7 @@ IceModel_rank::IceModel_rank(const IceModel *m)
 
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "rank")};
-
+  m_output_datatype = PISM_INT;
   set_attrs("processor rank", "", "1", "", 0);
   m_vars[0].set_time_independent(true);
 }

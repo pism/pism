@@ -218,8 +218,9 @@ void define_dimension(const PIO &nc, unsigned long int length,
   }
 }
 
+
 //! Prepare a file for output.
-void prepare_for_output(const PIO &file, const Context &ctx) {
+void define_time(const PIO &file, const Context &ctx) {
   const Time &time = *ctx.time();
   const Config &config = *ctx.config();
 
@@ -228,8 +229,14 @@ void prepare_for_output(const PIO &file, const Context &ctx) {
               time.calendar(),
               time.CF_units_string(),
               ctx.unit_system());
+}
+
+//! Prepare a file for output.
+void append_time(const PIO &file, const Context &ctx, double time_seconds) {
+  const Config &config = *ctx.config();
+
   append_time(file, config.get_string("time.dimension_name"),
-              time.current());
+              time_seconds);
 }
 
 /*!
@@ -964,7 +971,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
 //! Define a NetCDF variable corresponding to a time-series.
 void define_timeseries(const TimeseriesMetadata& var,
-                       const PIO &nc, IO_Type nctype, bool) {
+                       const PIO &nc, IO_Type nctype) {
 
   std::string name = var.get_name();
   std::string dimension_name = var.get_dimension_name();
@@ -1077,7 +1084,7 @@ void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata, size_t 
   std::string name = metadata.get_name();
   try {
     if (not nc.inq_var(name)) {
-      define_timeseries(metadata, nc, nctype, true);
+      define_timeseries(metadata, nc, nctype);
     }
 
     // create a copy of "data":
@@ -1101,7 +1108,7 @@ void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata, size_t 
 }
 
 void define_time_bounds(const TimeBoundsMetadata& var,
-                        const PIO &nc, IO_Type nctype, bool) {
+                        const PIO &nc, IO_Type nctype) {
   std::string name = var.get_name();
   std::string dimension_name = var.get_dimension_name();
   std::string bounds_name = var.get_bounds_name();
@@ -1222,7 +1229,7 @@ void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
   try {
     bool variable_exists = nc.inq_var(name);
     if (not variable_exists) {
-      define_time_bounds(metadata, nc, nctype, true);
+      define_time_bounds(metadata, nc, nctype);
     }
 
     // make a copy of "data"
@@ -1408,33 +1415,6 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
   } catch (RuntimeError &e) {
     e.add_context("writing attributes of variable '%s' to '%s'",
                   var_name.c_str(), nc.inq_filename().c_str());
-    throw;
-  }
-}
-
-/** Write global attributes to a file.
- *
- * Same as `write_attributes(nc, var, PISM_DOUBLE, false)`, but
- * prepends the history string.
- *
- * @param nc file to write to
- * @param var metadata object containing attributes
- *
- * @return 0 on success
- */
-void write_global_attributes(const PIO &nc, const VariableMetadata &var) {
-  try {
-    VariableMetadata tmp = var;
-
-    std::string old_history = nc.get_att_text("PISM_GLOBAL", "history");
-
-    tmp.set_name("PISM_GLOBAL");
-    tmp.set_string("history", tmp.get_string("history") + old_history);
-
-    write_attributes(nc, tmp, PISM_DOUBLE, false);
-
-  } catch (RuntimeError &e) {
-    e.add_context("writing global attributes to \"" + nc.inq_filename());
     throw;
   }
 }

@@ -33,6 +33,7 @@
 #include "pism_signal.h"
 #include "base/util/pism_utilities.hh"
 #include "base/util/projection.hh"
+#include "base/util/io/PIO.hh"
 
 namespace pism {
 
@@ -73,7 +74,9 @@ int IceModel::process_signals() {
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
        file_name);
     pism_signal = 0;
-    save_variables(file_name, m_output_vars);
+
+    PIO file(m_grid->com, m_config->get_string("output.format"), file_name, PISM_READWRITE_MOVE);
+    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
 
     // flush all the time-series buffers:
     flush_timeseries();

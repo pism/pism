@@ -972,6 +972,7 @@ netcdf pism_config {
     pism_config:output.backup_interval_doc = "wall-clock time between automatic backups";
     pism_config:output.backup_interval_type = "scalar";
     pism_config:output.backup_interval_units = "hours";
+    pism_config:output.backup_interval_option = "backup_interval";
 
     pism_config:output.backup_size = "small";
     pism_config:output.backup_size_choices = "none,small,medium,big_2d,big";

@@ -323,6 +323,7 @@ const IceModelVec3 & EnergyModel::enthalpy() const {
   return m_ice_enthalpy;
 }
 
+/*! @brief Basal melt rate in grounded areas. (It is set to zero elsewhere.) */
 const IceModelVec2S & EnergyModel::basal_melt_rate() const {
   return m_basal_melt_rate;
 }

@@ -42,6 +42,29 @@
 
 namespace pism {
 
+//! Write time-independent metadata to a file.
+void IceModel::write_metadata(const PIO &file, MappingTreatment mapping_flag,
+                              HistoryTreatment history_flag) {
+  if (mapping_flag == WRITE_MAPPING) {
+    write_mapping(file);
+  }
+
+  m_config->write(file);
+
+  if (history_flag == PREPEND_HISTORY) {
+    VariableMetadata tmp = m_output_global_attributes;
+
+    std::string old_history = file.get_att_text("PISM_GLOBAL", "history");
+
+    tmp.set_name("PISM_GLOBAL");
+    tmp.set_string("history", tmp.get_string("history") + old_history);
+
+    io::write_attributes(file, tmp, PISM_DOUBLE, false);
+  } else {
+    io::write_attributes(file, m_output_global_attributes, PISM_DOUBLE, false);
+  }
+}
+
 //! Save model state in NetCDF format.
 /*!
 Calls save_variables() to do the actual work.
@@ -78,7 +101,9 @@ void IceModel::save_results() {
 
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'\n", filename.c_str());
-    save_variables(filename, m_output_vars);
+    PIO file(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+
+    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
   }
 }
 
@@ -100,48 +125,47 @@ void IceModel::write_run_stats(const PIO &file) {
   if (not file.inq_var(m_run_stats.get_name())) {
     file.redef();
     file.def_var(m_run_stats.get_name(), PISM_DOUBLE,
-               std::vector<std::string>());
+                 std::vector<std::string>());
   }
   io::write_attributes(file, m_run_stats, PISM_DOUBLE, false);
 }
 
-void IceModel::write_global_attributes(const PIO &file) {
-  io::write_global_attributes(file, m_output_global_attributes);
-}
+void IceModel::save_variables(const PIO &file,
+                              OutputKind kind,
+                              const std::set<std::string> &variables,
+                              IO_Type default_diagnostics_type) {
 
-void IceModel::write_config(const PIO &file) {
-  m_config->write(file);
-}
+  // define the time dimension if necessary (no-op if it is already defined)
+  io::define_time(file, *m_grid->ctx());
+  // define the "timestamp" (wall clock time since the beginning of the run)
+  // Note: it is time-dependent, so we need to define time first.
+  io::define_timeseries(m_timestamp, file, PISM_FLOAT);
+  // append to the time dimension
+  io::append_time(file, *m_grid->ctx(), m_grid->ctx()->time()->current());
 
-void IceModel::save_variables(const std::string &filename,
-                          const std::set<std::string> &variables) {
-  const Profiling &profiling = m_ctx->profiling();
-  profiling.begin("model state dump");
+  // Write metadata *before* everything else:
+  //
+  // FIXME: we should write this to variables instead of attributes because NetCDF-4 crashes after
+  // about 2^16 attribute modifications per variable. :-(
+  write_run_stats(file);
 
-  {
-    PIO nc(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
-
-    // Write metadata *before* everything else:
-    write_mapping(nc);
-    write_run_stats(nc);
-    write_global_attributes(nc);
-    write_config(nc);
-
-    std::string time_name = m_config->get_string("time.dimension_name");
-    io::define_time(nc, time_name, m_time->calendar(),
-                    m_time->CF_units_string(),
-                    m_sys);
-
-    io::append_time(nc, time_name, m_time->current());
-
-    define_model_state(nc);
-    define_diagnostics(nc, variables, PISM_DOUBLE);
-
-    write_model_state(nc);
-    write_diagnostics(nc, variables);
+  if (kind == INCLUDE_MODEL_STATE) {
+    define_model_state(file);
   }
+  define_diagnostics(file, variables, default_diagnostics_type);
 
-  profiling.end("model state dump");
+  if (kind == INCLUDE_MODEL_STATE) {
+    write_model_state(file);
+  }
+  write_diagnostics(file, variables);
+
+  // find out how much time passed since the beginning of the run and save it to the output file
+  {
+    unsigned int time_length = file.inq_dimlen(m_config->get_string("time.dimension_name"));
+    size_t start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
+    io::write_timeseries(file, m_timestamp, start,
+                         wall_clock_hours(m_grid->com, m_start_time));
+  }
 }
 
 void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &variables,
@@ -410,10 +434,8 @@ void IceModel::write_snapshot() {
   }
 
   // write metadata to the file *every time* we update it
-  write_mapping(nc);
+  write_metadata(nc, WRITE_MAPPING, PREPEND_HISTORY);
   write_run_stats(nc);
-  write_global_attributes(nc);
-  write_config(nc);
 
   io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
 
@@ -448,8 +470,6 @@ void IceModel::write_snapshot() {
 //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
 void IceModel::init_backups() {
 
-  m_backup_interval = m_config->get_double("output.backup_interval");
-
   std::string backup_file = m_config->get_string("output.file_name");
   if (not backup_file.empty()) {
     m_backup_filename = pism_filename_add_suffix(backup_file, "_backup", "");
@@ -457,19 +477,19 @@ void IceModel::init_backups() {
     m_backup_filename = "pism_backup.nc";
   }
 
-  m_backup_interval = options::Real("-backup_interval",
-                                  "Automatic backup interval, hours", m_backup_interval);
-
-  m_backup_vars = output_variables(m_config->get_string("output.backup_size"));
-
   m_last_backup_time = 0.0;
 }
 
   //! Write a backup (i.e. an intermediate result of a run).
 void IceModel::write_backup() {
+
+  double backup_interval = m_config->get_double("output.backup_interval");
+
+  auto backup_vars = output_variables(m_config->get_string("output.backup_size"));
+
   double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
 
-  if (wall_clock_hours - m_last_backup_time < m_backup_interval) {
+  if (wall_clock_hours - m_last_backup_time < backup_interval) {
     return;
   }
 
@@ -504,16 +524,15 @@ void IceModel::write_backup() {
   io::append_time(file, m_config->get_string("time.dimension_name"), m_time->current());
 
   // Write metadata *before* variables:
-  write_mapping(file);
+
+  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
   write_run_stats(file);
-  write_global_attributes(file);
-  write_config(file);
 
   define_model_state(file);
-  define_diagnostics(file, m_backup_vars, PISM_DOUBLE);
+  define_diagnostics(file, backup_vars, PISM_DOUBLE);
 
   write_model_state(file);
-  write_diagnostics(file, m_backup_vars);
+  write_diagnostics(file, backup_vars);
 
   // Also flush time-series:
   flush_timeseries();

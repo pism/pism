@@ -524,7 +524,8 @@ void IceModelVec::dump(const char filename[]) const {
   PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
            filename, PISM_READWRITE_CLOBBER);
 
-  io::prepare_for_output(file, *m_grid->ctx());
+  io::define_time(file, *m_grid->ctx());
+  io::append_time(file, *m_grid->ctx(), m_grid->ctx()->time()->current());
 
   define(file, PISM_DOUBLE);
   write(file);

@@ -53,11 +53,7 @@ void IceModel::init_timeseries() {
   // default behavior is to move the file aside if it exists already; option allows appending
   bool append = options::Bool("-ts_append", "append scalar time-series");
 
-
-  IO_Mode mode = PISM_READWRITE;
-  if (not append) {
-    mode = PISM_READWRITE_MOVE;
-  }
+  IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
   if (ts_file.is_set() ^ times.is_set()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "you need to specity both -ts_file and -ts_times to save diagnostic time-series.");
@@ -123,9 +119,8 @@ void IceModel::init_timeseries() {
     }
   }
 
+  write_metadata(nc, SKIP_MAPPING, PREPEND_HISTORY);
   write_run_stats(nc);
-  write_global_attributes(nc);
-  write_config(nc);
 
   nc.close();
 
@@ -320,23 +315,25 @@ void IceModel::write_extras() {
   char filename[PETSC_MAX_PATH_LEN];
   unsigned int current_extra;
   // determine if the user set the -save_at and -save_to options
-  if (!m_save_extra) {
+  if (not m_save_extra) {
     return;
   }
 
+  double current_time = m_time->current();
+
   // do we need to save *now*?
-  if (m_next_extra < m_extra_times.size() &&
-      (m_time->current() >= m_extra_times[m_next_extra] ||
-       fabs(m_time->current() - m_extra_times[m_next_extra]) < 1.0)) {
+  if (m_next_extra < m_extra_times.size() and
+      (current_time >= m_extra_times[m_next_extra] or
+       fabs(current_time - m_extra_times[m_next_extra]) < 1.0)) {
     // the condition above is "true" if we passed a requested time or got to
     // within 1 second from it
 
     current_extra = m_next_extra;
 
     // update next_extra
-    while (m_next_extra < m_extra_times.size() &&
-           (m_extra_times[m_next_extra] <= m_time->current() ||
-            fabs(m_time->current() - m_extra_times[m_next_extra]) < 1.0)) {
+    while (m_next_extra < m_extra_times.size() and
+           (m_extra_times[m_next_extra] <= current_time or
+            fabs(current_time - m_extra_times[m_next_extra]) < 1.0)) {
       m_next_extra++;
     }
 
@@ -361,7 +358,7 @@ void IceModel::write_extras() {
 
     // This line re-initializes last_extra (the correct value is not known at
     // the time init_extras() is calles).
-    m_last_extra = m_time->current();
+    m_last_extra = current_time;
 
     return;
   }
@@ -380,10 +377,6 @@ void IceModel::write_extras() {
     return;
   }
 
-  const Profiling &profiling = m_ctx->profiling();
-
-  profiling.begin("extra_file reporting");
-
   if (m_split_extra) {
     m_extra_file_is_ready = false;        // each time-series record is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
@@ -393,80 +386,43 @@ void IceModel::write_extras() {
   }
 
   m_log->message(3,
-             "\nsaving spatial time-series to %s at %s\n\n",
-             filename, m_time->date().c_str());
-
-  // find out how much time passed since the beginning of the run
-  double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
+                 "saving spatial time-series to %s at %s\n",
+                 filename, m_time->date().c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
   bool append = options::Bool("-extra_append", "append -extra_file output");
   IO_Mode mode = m_extra_file_is_ready or append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
-  PIO nc(m_grid->com, m_config->get_string("output.format"), filename, mode);
+  const Profiling &profiling = m_ctx->profiling();
+  profiling.begin("extra_file reporting");
+  {
+    PIO file(m_grid->com, m_config->get_string("output.format"), filename, mode);
+    std::string time_name = m_config->get_string("time.dimension_name");
 
-  if (not m_extra_file_is_ready) {
-    // Prepare the file:
-    io::define_time(nc, m_config->get_string("time.dimension_name"),
-                    m_time->calendar(),
-                    m_time->CF_units_string(),
-                    m_sys);
-    nc.put_att_text(m_config->get_string("time.dimension_name"),
-                    "bounds", "time_bounds");
+    if (not m_extra_file_is_ready) {
+      // Prepare the file:
+      io::define_time(file, *m_ctx);
+      file.put_att_text(time_name, "bounds", "time_bounds");
 
-    // write global attributes, but avoid prepending history every time
-    {
-      VariableMetadata tmp = m_output_global_attributes;
+      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-      tmp.set_string("history",
-                     tmp.get_string("history") + m_old_extra_file_history);
-
-      io::write_attributes(nc, tmp, PISM_DOUBLE, false);
+      m_extra_file_is_ready = true;
     }
 
-    // Write mapping information and configuration parameters. Both are time-independent.
-    write_mapping(nc);
-    write_config(nc);
+    unsigned int time_length = file.inq_dimlen(time_name);
+    size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
-    m_extra_file_is_ready = true;
+    save_variables(file,
+                   m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
+                   m_extra_vars, PISM_FLOAT);
+
+    io::write_time_bounds(file, m_extra_bounds, time_start, {m_last_extra, current_time});
   }
+  profiling.end("extra_file reporting");
 
-  // write run_stats to the file *every time* we update it
-  write_run_stats(nc);
-
-  double      current_time = m_time->current();
-  std::string time_name    = m_config->get_string("time.dimension_name");
-
-  unsigned int time_length = nc.inq_dimlen(time_name);
-  size_t time_start = static_cast<size_t>(time_length);
-
-  // This call will extend the time dimension, but that will not
-  // happen until nc.enddef() is called. (We don't want to switch to
-  // "data mode" before we're done defining all variables, including
-  // time bounds). This is why time_start = time_length above (and not
-  // time_length - 1).
-  io::append_time(nc, time_name, current_time);
-
-  io::write_time_bounds(nc, m_extra_bounds, time_start, {m_last_extra, current_time});
-
-  io::write_timeseries(nc, m_timestamp, time_start, wall_clock_hours);
-
-  if (not m_extra_vars.empty()) {
-    define_diagnostics(nc, m_extra_vars, PISM_FLOAT);
-    write_diagnostics(nc, m_extra_vars);
-  } else {
-    define_model_state(nc);
-    write_model_state(nc);
-  }
-
-  nc.close();
-
-  // flush time-series buffers
   flush_timeseries();
 
   m_last_extra = current_time;
-
-  profiling.end("extra_file reporting");
 }
 
 static MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,

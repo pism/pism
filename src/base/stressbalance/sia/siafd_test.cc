@@ -412,18 +412,18 @@ int main(int argc, char *argv[]) {
 
     // Write results to an output file:
     PIO file(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
-    io::prepare_for_output(file, *ctx);
-    file.close();
+    io::define_time(file, *ctx);
+    io::append_time(file, *ctx, ctx->time()->current());
 
-    ice_surface_elevation.write(output_file);
-    ice_thickness.write(output_file);
-    cell_type.write(output_file);
-    bed_topography.write(output_file);
+    ice_surface_elevation.write(file);
+    ice_thickness.write(file);
+    cell_type.write(file);
+    bed_topography.write(file);
     
-    u3.write(output_file);
-    v3.write(output_file);
-    w3.write(output_file);
-    sigma.write(output_file);
+    u3.write(file);
+    v3.write(file);
+    w3.write(file);
+    sigma.write(file);
   }
   catch (...) {
     handle_fatal_errors(com);

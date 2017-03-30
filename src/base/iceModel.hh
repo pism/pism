@@ -178,16 +178,22 @@ public:
   void reset_cumulative_fluxes();
 
   virtual void save_results();
-  virtual void save_variables(const std::string &filename,
-                               const std::set<std::string> &variables);
+  enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
+  virtual void save_variables(const PIO &file,
+                              OutputKind kind,
+                              const std::set<std::string> &variables,
+                              IO_Type default_diagnostics_type = PISM_FLOAT);
 
   virtual void define_model_state(const PIO &file);
   virtual void write_model_state(const PIO &file);
 
+  enum HistoryTreatment {OVERWRITE_HISTORY = 0, PREPEND_HISTORY};
+  enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
+  virtual void write_metadata(const PIO &file, MappingTreatment mapping_flag,
+                              HistoryTreatment history_flag);
+
   virtual void write_mapping(const PIO &file);
   virtual void write_run_stats(const PIO &file);
-  virtual void write_global_attributes(const PIO &file);
-  virtual void write_config(const PIO &file);
 
 
   virtual void define_diagnostics(const PIO &file,
@@ -443,7 +449,6 @@ protected:
   MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups
-  double m_backup_interval;
   std::string m_backup_filename;
   double m_last_backup_time;
   std::set<std::string> m_backup_vars;

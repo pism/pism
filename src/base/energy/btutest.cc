@@ -231,7 +231,8 @@ int main(int argc, char *argv[]) {
     PIO file(grid->com, grid->ctx()->config()->get_string("output.format"),
             outname, PISM_READWRITE_MOVE);
 
-    io::prepare_for_output(file, *ctx);
+    io::define_time(file, *ctx);
+    io::append_time(file, *ctx, ctx->time()->current());
 
     btu->write_model_state(file);
 

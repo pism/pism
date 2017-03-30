@@ -138,7 +138,7 @@ void InitializationHelper::define_model_state_impl(const PIO &output) const {
   m_shelf_base_temperature.define(output);
   m_melange_back_pressure_fraction.define(output);
 
-  io::define_timeseries(m_sea_level_metadata, output, PISM_DOUBLE, true);
+  io::define_timeseries(m_sea_level_metadata, output, PISM_DOUBLE);
 
   m_input_model->define_model_state(output);
 }

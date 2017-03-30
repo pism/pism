@@ -60,6 +60,7 @@ public:
   typedef std::shared_ptr<Diagnostic> Ptr;
 
   void update(double dt);
+  void reset();
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated
   //! IceModelVec.
@@ -86,6 +87,7 @@ protected:
                  int N = 0);
 
   virtual void update_impl(double dt);
+  virtual void reset_impl();
 
   virtual IceModelVec::Ptr compute_impl() = 0;
 
@@ -116,16 +118,16 @@ protected:
 };
 
 /*!
- * Report a time-averaged quantity by accumulating the cumulative quantity over several time steps.
+ * Report a time-averaged quantity by accumulating changes over several time steps.
  */
 template<class M>
 class DiagAverage : public Diag<M>
 {
 public:
-  DiagAverage(const M *m, bool input_is_cumulative)
+  DiagAverage(const M *m, bool input_is_total_change)
     : Diag<M>(m),
-    m_accumulator(Diagnostic::m_grid, "cumulative_quantity", WITHOUT_GHOSTS),
-    m_total_time(0.0), m_input_is_cumulative(input_is_cumulative) {
+    m_accumulator(Diagnostic::m_grid, "cumulative_change", WITHOUT_GHOSTS),
+    m_total_time(0.0), m_input_is_total_change(input_is_total_change) {
 
     m_accumulator.set(0.0);
   }
@@ -143,12 +145,12 @@ protected:
   }
 
   virtual void update_impl(double dt) {
-    if (m_input_is_cumulative) {
-      // the input is a cumulative quantity is total change, so we just sum it up here
+    if (m_input_is_total_change) {
+      // the input is a total change over the time step, so we just sum it up here
       m_accumulator.add(1.0, this->model_input());
     } else {
-      // the input is a rate, so to integrate over the reporting interval we
-      // multiply by dt
+      // the input is a rate of change, so to integrate over the reporting interval we multiply by
+      // dt
       m_accumulator.add(dt, this->model_input());
     }
 
@@ -183,7 +185,7 @@ protected:
 protected:
   IceModelVec2S m_accumulator;
   double m_total_time;
-  bool m_input_is_cumulative;
+  bool m_input_is_total_change;
 
   // it should be enough to implement the constructor and this method
   virtual const IceModelVec2S& model_input() = 0;

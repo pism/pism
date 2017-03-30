@@ -66,7 +66,8 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
 void define_dimension(const PIO &nc, unsigned long int length,
                       const VariableMetadata &metadata);
 
-void prepare_for_output(const PIO &file, const Context &ctx);
+void define_time(const PIO &file, const Context &ctx);
+void append_time(const PIO &file, const Context &ctx, double time_seconds);
 
 void define_time(const PIO &nc, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system);
@@ -80,10 +81,10 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
                              bool use_glaciological_units);
 
 void define_timeseries(const TimeseriesMetadata& var,
-                       const PIO &nc, IO_Type nctype, bool);
+                       const PIO &nc, IO_Type nctype);
 
 void define_time_bounds(const TimeBoundsMetadata& var,
-                        const PIO &nc, IO_Type nctype, bool);
+                        const PIO &nc, IO_Type nctype);
 
 void read_timeseries(const PIO &nc, const TimeseriesMetadata &metadata,
                      const Time &time, const Logger &log, std::vector<double> &data);
@@ -108,8 +109,6 @@ void read_attributes(const PIO &nc, const std::string &variable_name, VariableMe
 
 void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type nctype,
                       bool use_glaciological_units);
-
-void write_global_attributes(const PIO &nc, const VariableMetadata &var);
 
 void read_valid_range(const PIO &nc, const std::string &name, VariableMetadata &variable);
 
