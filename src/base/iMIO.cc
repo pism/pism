@@ -200,20 +200,14 @@ void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &v
       Diagnostic::Ptr diag = m_diagnostics[var];
 
       if (diag) {
-        IceModelVec::Ptr v_diagnostic = diag->compute();
-
-        v_diagnostic->write_in_glaciological_units = true;
-        v_diagnostic->write(file);
+        diag->compute()->write(file);
       }
     }
   }
 }
 
 void IceModel::define_model_state(const PIO &file) {
-  std::set<std::string> variables = output_variables("small");
-
-  // define
-  define_diagnostics(file, variables, PISM_DOUBLE);
+  define_diagnostics(file, output_variables("small"), PISM_DOUBLE);
 
   for (auto m : m_submodels) {
     m.second->define_model_state(file);
@@ -221,9 +215,7 @@ void IceModel::define_model_state(const PIO &file) {
 }
 
 void IceModel::write_model_state(const PIO &file) {
-  std::set<std::string> variables = output_variables("small");
-
-  write_diagnostics(file, variables);
+  write_diagnostics(file, output_variables("small"));
 
   for (auto m : m_submodels) {
     m.second->write_model_state(file);

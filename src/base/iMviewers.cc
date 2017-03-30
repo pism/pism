@@ -92,7 +92,6 @@ void IceModel::update_viewers() {
 
   // map-plane viewers
   for (auto v : viewers) {
-
     if (m_grid->variables().is_available(v)) {
       this->view_field(m_grid->variables().get(v));
     } else {

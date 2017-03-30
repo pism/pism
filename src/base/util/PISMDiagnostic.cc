@@ -140,6 +140,7 @@ IceModelVec::Ptr Diagnostic::compute() {
   m_grid->ctx()->log()->message(3, "-  Computing %s...\n", all_names.c_str());
   IceModelVec::Ptr result = this->compute_impl();
   m_grid->ctx()->log()->message(3, "-  Done computing %s.\n", all_names.c_str());
+  result->write_in_glaciological_units = true;
   return result;
 }
 
