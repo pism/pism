@@ -127,7 +127,9 @@ public:
   DiagAverage(const M *m, bool input_is_total_change)
     : Diag<M>(m),
     m_accumulator(Diagnostic::m_grid, "cumulative_change", WITHOUT_GHOSTS),
-    m_total_time(0.0), m_input_is_total_change(input_is_total_change) {
+    m_total_time(0.0),
+    m_factor(1.0),
+    m_input_is_total_change(input_is_total_change) {
 
     m_accumulator.set(0.0);
   }
@@ -145,14 +147,12 @@ protected:
   }
 
   virtual void update_impl(double dt) {
-    if (m_input_is_total_change) {
-      // the input is a total change over the time step, so we just sum it up here
-      m_accumulator.add(1.0, this->model_input());
-    } else {
-      // the input is a rate of change, so to integrate over the reporting interval we multiply by
-      // dt
-      m_accumulator.add(dt, this->model_input());
-    }
+    // Here the "factor" is used to convert units (from m to kg m-2, for example) and (possibly)
+    // integrate over the time integral using the rectangle method.
+
+    double factor = m_factor * (m_input_is_total_change ? 1.0 : dt);
+
+    m_accumulator.add(factor, this->model_input());
 
     m_total_time += dt;
   }
@@ -184,7 +184,7 @@ protected:
   }
 protected:
   IceModelVec2S m_accumulator;
-  double m_total_time;
+  double m_total_time, m_factor;
   bool m_input_is_total_change;
 
   // it should be enough to implement the constructor and this method

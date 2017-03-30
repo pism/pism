@@ -1149,6 +1149,7 @@ class SMBFlux : public DiagAverage<GeometryEvolution>
 public:
   SMBFlux(const GeometryEvolution *m)
     : DiagAverage<GeometryEvolution>(m, true) {
+    m_factor = m_config->get_double("constants.ice.density");
     m_vars = {SpatialVariableMetadata(m_sys, "surface_mass_balance_flux")};
     set_attrs("surface mass balance flux, averaged over the reporting interval", "",
               "kg m-2 s-1", "kg m-2 year-1", 0);
