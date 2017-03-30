@@ -1015,11 +1015,16 @@ netcdf pism_config {
     pism_config:output.runtime.time_use_calendar_doc = "Whether to use the current calendar when printing model time in summary to stdout.";
     pism_config:output.runtime.time_use_calendar_type = "boolean";
 
-    pism_config:output.runtime.viewer_size = 320;
-    pism_config:output.runtime.viewer_size_doc = "default diagnostic viewer size (number of pixels of the longer side)";
-    pism_config:output.runtime.viewer_size_option = "view_size";
-    pism_config:output.runtime.viewer_size_type = "integer";
-    pism_config:output.runtime.viewer_size_units = "count";
+    pism_config:output.runtime.viewer.size = 320;
+    pism_config:output.runtime.viewer.size_doc = "default diagnostic viewer size (number of pixels of the longer side)";
+    pism_config:output.runtime.viewer.size_option = "view_size";
+    pism_config:output.runtime.viewer.size_type = "integer";
+    pism_config:output.runtime.viewer.size_units = "count";
+
+    pism_config:output.runtime.viewer.variables = "";
+    pism_config:output.runtime.viewer.variables_doc = "comma-separated list of map-plane diagnostic quantities to view at runtime";
+    pism_config:output.runtime.viewer.variables_option = "view";
+    pism_config:output.runtime.viewer.variables_type = "string";
 
     pism_config:output.runtime.volume_scale_factor_log10 = 6;
     pism_config:output.runtime.volume_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";

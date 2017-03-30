@@ -287,11 +287,11 @@ Once you’re done with the installation, a few tests can confirm that PISM is f
 
 2.  Try an EISMINT II run using the PETSc viewers (under the X window system):
 
-         pisms -y 5000 -view_map thk,temppabase,velsurf_mag
+         pisms -y 5000 -view thk,temppabase,velsurf_mag
 
     When using such viewers and `mpiexec` the additional final option `-display :0` is sometimes required to enable MPI to use X, like this:
 
-         mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,velsurf_mag -display :0
+         mpiexec -n 2 pisms -y 5000 -view thk,temppabase,velsurf_mag -display :0
 
     Also `-drawpause 0.1` or similar may be needed if the figures are refreshing too fast.
 

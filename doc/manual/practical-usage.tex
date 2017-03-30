@@ -586,7 +586,7 @@ are transposed.
   \begin{tabular}{p{0.4\linewidth}p{0.5\linewidth}}\toprule
     \textbf{Option} & \textbf{Description}\\
     \midrule
-    \listopt{view_map} & Turns on map-plane views of one or several variables, see tables~\allextras \\
+    \listopt{view} & Turns on map-plane views of one or several variables, see tables~\allextras \\
     \txtopt{view_size}{number} & desired viewer size, in pixels\\
     \intextoption{display} & The option \texttt{-display :0} seems to
     frequently be needed to let PETSc use Xwindows when running multiple
@@ -598,10 +598,10 @@ are transposed.
 \label{tab:diag-viewers}
 \end{table}
 
-The option \texttt{-view_map} shows map-plane views of 2D fields and surface
+The option \texttt{-view} shows map-plane views of 2D fields and surface
 and basal views of 3D fields (see tables~\allextras); for example:
 \begin{verbatim}
-$ pismr -i input.nc -y 1000 -o output.nc -view_map thk,tempsurf
+$ pismr -i input.nc -y 1000 -o output.nc -view thk,tempsurf
 \end{verbatim}
 shows ice thickness and ice temperature at the surface.
 

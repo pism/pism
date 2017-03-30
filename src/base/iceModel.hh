@@ -460,11 +460,9 @@ protected:
   double m_timestep_hit_multiples_last_time;
 
   // diagnostic viewers; see iMviewers.cc
-  virtual void init_viewers();
   virtual void update_viewers();
   virtual void view_field(const IceModelVec *field);
-  std::set<std::string> m_map_viewers, m_slice_viewers;
-  std::map<std::string,petsc::Viewer::Ptr> viewers;
+  std::map<std::string,petsc::Viewer::Ptr> m_viewers;
 
 private:
   double m_start_time;    // this is used in the wall-clock-time backup code

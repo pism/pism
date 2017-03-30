@@ -123,18 +123,22 @@ void IceModel::do_calving() {
  */
 void IceModel::Href_cleanup() {
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_geometry.ice_area_specific_volume, &m_geometry.cell_type};
+  IceModelVec2S
+    &V = m_geometry.ice_area_specific_volume,
+    &H = m_geometry.ice_thickness;
+
+  IceModelVec::AccessList list{&H, &V, &m_geometry.cell_type};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_geometry.ice_thickness(i, j) > 0 && m_geometry.ice_area_specific_volume(i, j) > 0) {
-      m_geometry.ice_thickness(i, j) += m_geometry.ice_area_specific_volume(i, j);
-      m_geometry.ice_area_specific_volume(i, j) = 0.0;
+    if (H(i, j) > 0 and V(i, j) > 0) {
+      H(i, j) += V(i, j);
+      V(i, j) = 0.0;
     }
 
-    if (m_geometry.ice_area_specific_volume(i, j) > 0.0 && not m_geometry.cell_type.next_to_ice(i, j)) {
-      m_geometry.ice_area_specific_volume(i, j) = 0.0;
+    if (V(i, j) > 0.0 and not m_geometry.cell_type.next_to_ice(i, j)) {
+      V(i, j) = 0.0;
     }
   }
 }

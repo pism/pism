@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,13 +25,13 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/error_handling.hh"
-#include "base/util/pism_options.hh"
 #include "base/util/PISMVars.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 
 void IceModel::view_field(const IceModelVec *field) {
-  unsigned int viewer_size = (unsigned int)m_config->get_double("output.runtime.viewer_size");
+  unsigned int viewer_size = (unsigned int)m_config->get_double("output.runtime.viewer.size");
 
   unsigned int dims = field->get_ndims();
 
@@ -41,11 +41,11 @@ void IceModel::view_field(const IceModelVec *field) {
 
   if (field->get_ndof() == 1) {    // scalar fields
     std::string name = field->metadata().get_string("short_name");
-    petsc::Viewer::Ptr viewer = viewers[name];
+    petsc::Viewer::Ptr viewer = m_viewers[name];
 
     if (not viewer) {
-      viewers[name].reset(new petsc::Viewer(m_grid->com, name, viewer_size, m_grid->Lx(), m_grid->Ly()));
-      viewer = viewers[name];
+      m_viewers[name].reset(new petsc::Viewer(m_grid->com, name, viewer_size, m_grid->Lx(), m_grid->Ly()));
+      viewer = m_viewers[name];
     }
 
     const IceModelVec2S *v2d = dynamic_cast<const IceModelVec2S*>(field);
@@ -60,17 +60,17 @@ void IceModel::view_field(const IceModelVec *field) {
       name_1 = field->metadata(0).get_string("short_name"),
       name_2 = field->metadata(1).get_string("short_name");
     petsc::Viewer::Ptr
-      v1 = viewers[name_1],
-      v2 = viewers[name_2];
+      v1 = m_viewers[name_1],
+      v2 = m_viewers[name_2];
 
     if (not v1) {
-      viewers[name_1].reset(new petsc::Viewer(m_grid->com, name_1, viewer_size, m_grid->Lx(), m_grid->Ly()));
-      v1 = viewers[name_1];
+      m_viewers[name_1].reset(new petsc::Viewer(m_grid->com, name_1, viewer_size, m_grid->Lx(), m_grid->Ly()));
+      v1 = m_viewers[name_1];
     }
 
     if (not v2) {
-      viewers[name_2].reset(new petsc::Viewer(m_grid->com, name_2, viewer_size, m_grid->Lx(), m_grid->Ly()));
-      v2 = viewers[name_2];
+      m_viewers[name_2].reset(new petsc::Viewer(m_grid->com, name_2, viewer_size, m_grid->Lx(), m_grid->Ly()));
+      v2 = m_viewers[name_2];
     }
 
     const IceModelVec2 *v2d = dynamic_cast<const IceModelVec2*>(field);
@@ -88,8 +88,10 @@ Most viewers are updated by this routine, but some other are updated elsewhere.
  */
 void IceModel::update_viewers() {
 
+  auto viewers = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
+
   // map-plane viewers
-  for (auto v : m_map_viewers) {
+  for (auto v : viewers) {
 
     if (m_grid->variables().is_available(v)) {
       this->view_field(m_grid->variables().get(v));
@@ -103,16 +105,5 @@ void IceModel::update_viewers() {
     }
   }
 }
-
-//! Initialize run-time diagnostic viewers.
-void IceModel::init_viewers() {
-
-  // map-plane (and surface) viewers:
-  m_map_viewers = options::StringSet("-view_map",
-                                     "specifies the comma-separated list of map-plane viewers",
-                                     "");
-}
-
-
 
 } // end of namespace pism

@@ -100,8 +100,10 @@ void IceModel::save_results() {
   }
 
   if (m_config->get_string("output.size") != "none") {
-    m_log->message(2, "Writing model state to file `%s'\n", filename.c_str());
+    m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
     PIO file(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
   }

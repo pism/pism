@@ -20,7 +20,7 @@ calving="-calving thickness_calving -thickness_calving_threshold 300"
 
 diagnostics="thk,mask,velbar_mag,Href,velbar,discharge_flux_cumulative"
 
-viewers="-view_map $diagnostics"
+viewers="-view $diagnostics"
 
 extra="-extra_times 10 -extra_vars $diagnostics -extra_file ${output_basename}_ex.nc"
 
