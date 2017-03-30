@@ -94,18 +94,16 @@ void IceModel::init_timeseries() {
     }
   }
 
-  PIO nc(m_grid->com, "netcdf3", ts_file, mode);      // Use NetCDF-3 to write time-series.
+  PIO file(m_grid->com, "netcdf3", ts_file, mode);      // Use NetCDF-3 to write time-series.
 
   if (append) {
-    m_old_ts_file_history = nc.get_att_text("PISM_GLOBAL", "history");
-
     double time_max;
     std::string time_name = m_config->get_string("time.dimension_name");
     bool time_exists = false;
 
-    time_exists = nc.inq_var(time_name);
+    time_exists = file.inq_var(time_name);
     if (time_exists == true) {
-      nc.inq_dim_limits(time_name, NULL, &time_max);
+      file.inq_dim_limits(time_name, NULL, &time_max);
 
       while (m_current_ts < m_ts_times.size() && m_ts_times[m_current_ts] < time_max) {
         m_current_ts++;
@@ -119,10 +117,10 @@ void IceModel::init_timeseries() {
     }
   }
 
-  write_metadata(nc, SKIP_MAPPING, PREPEND_HISTORY);
-  write_run_stats(nc);
+  write_metadata(file, SKIP_MAPPING, PREPEND_HISTORY);
+  write_run_stats(file);
 
-  nc.close();
+  file.close();
 
   // set the output file:
   for (auto d : m_ts_diagnostics) {
@@ -239,15 +237,13 @@ void IceModel::init_extras() {
   }
 
   if (append) {
-    PIO nc(m_grid->com, m_config->get_string("output.format"), m_extra_filename, PISM_READONLY);
-
-    m_old_extra_file_history = nc.get_att_text("PISM_GLOBAL", "history");
+    PIO file(m_grid->com, m_config->get_string("output.format"), m_extra_filename, PISM_READONLY);
 
     std::string time_name = m_config->get_string("time.dimension_name");
-    if (nc.inq_var(time_name)) {
+    if (file.inq_var(time_name)) {
       double time_max;
 
-      nc.inq_dim_limits(time_name, NULL, &time_max);
+      file.inq_dim_limits(time_name, NULL, &time_max);
 
       while (m_next_extra + 1 < m_extra_times.size() && m_extra_times[m_next_extra + 1] < time_max) {
         m_next_extra++;
@@ -268,7 +264,7 @@ void IceModel::init_extras() {
       m_extra_times = tmp;
       m_next_extra = 0;
     }
-    nc.close();
+    file.close();
   }
 
   m_save_extra          = true;
@@ -394,7 +390,7 @@ void IceModel::write_extras() {
   IO_Mode mode = m_extra_file_is_ready or append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
   const Profiling &profiling = m_ctx->profiling();
-  profiling.begin("extra_file reporting");
+  profiling.begin("io.extra_file");
   {
     PIO file(m_grid->com, m_config->get_string("output.format"), filename, mode);
     std::string time_name = m_config->get_string("time.dimension_name");
@@ -412,13 +408,15 @@ void IceModel::write_extras() {
     unsigned int time_length = file.inq_dimlen(time_name);
     size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
+    write_run_stats(file);
+
     save_variables(file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                    m_extra_vars, PISM_FLOAT);
 
     io::write_time_bounds(file, m_extra_bounds, time_start, {m_last_extra, current_time});
   }
-  profiling.end("extra_file reporting");
+  profiling.end("io.extra_file");
 
   flush_timeseries();
 
@@ -502,8 +500,8 @@ void IceModel::flush_timeseries() {
 
   // update run_stats in the time series output file
   if (m_save_ts) {
-    PIO nc(m_grid->com, "netcdf3", m_ts_filename, PISM_READWRITE);
-    write_run_stats(nc);
+    PIO file(m_grid->com, "netcdf3", m_ts_filename, PISM_READWRITE);
+    write_run_stats(file);
   }
 }
 

@@ -68,9 +68,9 @@ void IceModel::energy_step() {
                               ice_surface_temperature,
                               bedtoptemp);
 
-  profiling.begin("BTU");
+  profiling.begin("btu");
   m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
-  profiling.end("BTU");
+  profiling.end("btu");
 
   energy::EnergyModelInputs inputs;
   {

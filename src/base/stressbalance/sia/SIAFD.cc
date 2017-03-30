@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2017 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -153,24 +153,24 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > m_bed_state_counter) {
-    profiling.begin("SIA bed smoother");
+    profiling.begin("sia.bed_smoother");
     m_bed_smoother->preprocess_bed(*bed);
-    profiling.end("SIA bed smoother");
+    profiling.end("sia.bed_smoother");
     m_bed_state_counter = bed->get_state_counter();
   }
 
-  profiling.begin("SIA gradient");
+  profiling.begin("sia.gradient");
   compute_surface_gradient(h_x, h_y);
-  profiling.end("SIA gradient");
+  profiling.end("sia.gradient");
 
-  profiling.begin("SIA flux");
+  profiling.begin("sia.flux");
   compute_diffusive_flux(h_x, h_y, m_diffusive_flux, fast);
-  profiling.end("SIA flux");
+  profiling.end("sia.flux");
 
   if (!fast) {
-    profiling.begin("SIA 3D hor. vel.");
+    profiling.begin("sia.3d_velocity");
     compute_3d_horizontal_velocity(h_x, h_y, vel_input, m_u, m_v);
-    profiling.end("SIA 3D hor. vel.");
+    profiling.end("sia.3d_velocity");
   }
 }
 

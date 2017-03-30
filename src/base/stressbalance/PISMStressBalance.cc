@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -84,27 +84,27 @@ void StressBalance::update(bool fast, double sea_level,
   const Profiling &profiling = m_grid->ctx()->profiling();
 
   try {
-    profiling.begin("SSB");
+    profiling.begin("stress_balance.shallow");
     m_shallow_stress_balance->update(fast, sea_level, melange_back_pressure);
-    profiling.end("SSB");
+    profiling.end("stress_balance.shallow");
 
-    profiling.begin("SB modifier");
+    profiling.begin("stress_balance.modifier");
     const IceModelVec2V &velocity_2d = m_shallow_stress_balance->velocity();
     m_modifier->update(velocity_2d, fast);
-    profiling.end("SB modifier");
+    profiling.end("stress_balance.modifier");
 
     if (not fast) {
 
       const IceModelVec3 &u = m_modifier->velocity_u();
       const IceModelVec3 &v = m_modifier->velocity_v();
 
-      profiling.begin("SB strain heat");
+      profiling.begin("stress_balance.strain_heat");
       this->compute_volumetric_strain_heating();
-      profiling.end("SB strain heat");
+      profiling.end("stress_balance.strain_heat");
 
-      profiling.begin("SB vert. vel.");
+      profiling.begin("stress_balance.vertical_velocity");
       this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w);
-      profiling.end("SB vert. vel.");
+      profiling.end("stress_balance.vertical_velocity");
 
       m_cfl_3d = compute_cfl_3d();
     }

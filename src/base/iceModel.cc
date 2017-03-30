@@ -468,9 +468,9 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth and m_basal_yield_stress_model) {
-    profiling.begin("basal yield stress");
+    profiling.begin("basal_yield_stress");
     m_basal_yield_stress_model->update();
-    profiling.end("basal yield stress");
+    profiling.end("basal_yield_stress");
     m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
     m_stdout_flags += "y";
   } else {
@@ -488,11 +488,11 @@ void IceModel::step(bool do_mass_continuity,
   m_ocean->melange_back_pressure_fraction(melange_back_pressure);
 
   try {
-    profiling.begin("stress balance");
+    profiling.begin("stress_balance");
     m_stress_balance->update(not updateAtDepth,
                              m_ocean->sea_level_elevation(),
                              melange_back_pressure);
-    profiling.end("stress balance");
+    profiling.end("stress_balance");
   } catch (RuntimeError &e) {
     std::string output_file = m_config->get_string("output.file_name");
 
@@ -573,24 +573,24 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
-  profiling.begin("basal hydrology");
+  profiling.begin("basal_hydrology");
   m_subglacial_hydrology->update(current_time, m_dt);
-  profiling.end("basal hydrology");
+  profiling.end("basal_hydrology");
 
   //! \li update the fracture density field; see update_fracture_density()
   if (m_config->get_boolean("fracture_density.enabled")) {
-    profiling.begin("fracture density");
+    profiling.begin("fracture_density");
     update_fracture_density();
-    profiling.end("fracture density");
+    profiling.end("fracture_density");
   }
 
   //! \li update the thickness of the ice according to the mass conservation model and calving
   //! parameterizations
 
   if (do_mass_continuity) {
-    profiling.begin("mass transport");
+    profiling.begin("mass_transport");
     update_ice_geometry(do_skip);
-    profiling.end("mass transport");
+    profiling.end("mass_transport");
     m_stdout_flags += "h";
   } else {
     m_stdout_flags += "$";
@@ -601,9 +601,9 @@ void IceModel::step(bool do_mass_continuity,
   if (m_beddef) {
     int topg_state_counter = m_beddef->bed_elevation().get_state_counter();
 
-    profiling.begin("bed deformation");
+    profiling.begin("bed_deformation");
     m_beddef->update(current_time, m_dt);
-    profiling.end("bed deformation");
+    profiling.end("bed_deformation");
 
     if (m_beddef->bed_elevation().get_state_counter() != topg_state_counter) {
       // Bed elevation changed.
@@ -799,12 +799,12 @@ void IceModel::run() {
     print_summary(show_step);
 
     // writing these fields here ensures that we do it after the last time-step
-    profiling.begin("I/O during run");
+    profiling.begin("io");
     write_snapshot();
     write_timeseries();
     write_extras();
     write_backup();
-    profiling.end("I/O during run");
+    profiling.end("io");
 
     update_viewers();
 

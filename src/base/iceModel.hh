@@ -423,7 +423,6 @@ protected:
   std::string m_ts_filename;
   //! The history attribute in the -ts_file. Read from -ts_file if -ts_append is set, otherwise
   //! empty.
-  std::string m_old_ts_file_history;
   std::vector<double> m_ts_times; //! times requested
   unsigned int m_current_ts;      //! index of the current time
   std::set<std::string> m_ts_vars;                //! variables requested
@@ -435,15 +434,11 @@ protected:
   // spatially-varying time-series
   bool m_save_extra, m_extra_file_is_ready, m_split_extra;
   std::string m_extra_filename;
-  //! The history attribute in the -extra_file. Read from -extra_file if -extra_append is set,
-  //! otherwise empty.
-  std::string m_old_extra_file_history;
   std::vector<double> m_extra_times;
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
   TimeBoundsMetadata m_extra_bounds;
-  TimeseriesMetadata m_timestamp;
   void init_extras();
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);
@@ -465,6 +460,7 @@ protected:
   std::map<std::string,petsc::Viewer::Ptr> m_viewers;
 
 private:
+  TimeseriesMetadata m_timestamp;
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
 

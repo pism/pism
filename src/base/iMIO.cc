@@ -84,7 +84,6 @@ void IceModel::save_results() {
              m_run_stats.get_double("PETSc_MFlops"));
 
     prepend_history(str);
-
   }
 
   std::string filename = m_config->get_string("output.file_name");
@@ -99,16 +98,21 @@ void IceModel::save_results() {
                    "PISM WARNING: output file name does not have the '.nc' suffix!\n");
   }
 
+  const Profiling &profiling = m_ctx->profiling();
+
+  profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
     PIO file(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
+    write_run_stats(file);
+
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
   }
+  profiling.end("io.model_state");
 }
-
 
 void IceModel::write_mapping(const PIO &file) {
   // only write mapping if it is set.
@@ -116,7 +120,7 @@ void IceModel::write_mapping(const PIO &file) {
   if (mapping.has_attributes()) {
     if (not file.inq_var(mapping.get_name())) {
       file.redef();
-      file.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>());
+      file.def_var(mapping.get_name(), PISM_DOUBLE, {});
     }
     io::write_attributes(file, mapping, PISM_DOUBLE, false);
   }
@@ -126,8 +130,7 @@ void IceModel::write_run_stats(const PIO &file) {
   update_run_stats();
   if (not file.inq_var(m_run_stats.get_name())) {
     file.redef();
-    file.def_var(m_run_stats.get_name(), PISM_DOUBLE,
-                 std::vector<std::string>());
+    file.def_var(m_run_stats.get_name(), PISM_DOUBLE, {});
   }
   io::write_attributes(file, m_run_stats, PISM_DOUBLE, false);
 }
@@ -388,7 +391,7 @@ void IceModel::write_snapshot() {
   char filename[PETSC_MAX_PATH_LEN];
 
   // determine if the user set the -save_times and -save_file options
-  if (!m_save_snapshots) {
+  if (not m_save_snapshots) {
     return;
   }
 
@@ -418,55 +421,28 @@ void IceModel::write_snapshot() {
   }
 
   m_log->message(2,
-             "\nsaving snapshot to %s at %s, for time-step goal %s\n\n",
+             "saving snapshot to %s at %s, for time-step goal %s\n",
              filename, m_time->date().c_str(),
              m_time->date(saving_after).c_str());
 
+  const Profiling &profiling = m_ctx->profiling();
+
+  profiling.begin("io.snapshots");
   IO_Mode mode = m_snapshots_file_is_ready ? PISM_READWRITE : PISM_READWRITE_MOVE;
-  PIO nc(m_grid->com, m_config->get_string("output.format"), filename, mode);
-
-  if (not m_snapshots_file_is_ready) {
-    // Prepare the snapshots file:
-    io::define_time(nc, m_config->get_string("time.dimension_name"),
-                    m_time->calendar(),
-                    m_time->CF_units_string(),
-                    m_sys);
-
-    m_snapshots_file_is_ready = true;
-  }
-
-  // write metadata to the file *every time* we update it
-  write_metadata(nc, WRITE_MAPPING, PREPEND_HISTORY);
-  write_run_stats(nc);
-
-  io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
-
-  define_model_state(nc);
-  define_diagnostics(nc, m_snapshot_vars, PISM_DOUBLE);
-
-  write_model_state(nc);
-  write_diagnostics(nc, m_snapshot_vars);
-
   {
-    // find out how much time passed since the beginning of the run
-    double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
+    PIO file(m_grid->com, m_config->get_string("output.format"), filename, mode);
 
-    // Get time length now, i.e. after writing variables. This forces PISM to call PIO::enddef(), so
-    // that the length of the time dimension is up to date.
-    unsigned int time_length = nc.inq_dimlen(m_config->get_string("time.dimension_name"));
+    if (not m_snapshots_file_is_ready) {
+      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-    // make sure that time_start is valid even if time_length is zero
-    size_t time_start = 0;
-    if (time_length > 0) {
-      time_start = static_cast<size_t>(time_length - 1);
-    } else {
-      time_start = 0;
+      m_snapshots_file_is_ready = true;
     }
 
-    io::write_timeseries(nc, m_timestamp, time_start, wall_clock_hours);
-  }
+    write_run_stats(file);
 
-  nc.close();
+    save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars);
+  }
+  profiling.end("io.snapshots");
 }
 
 //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
@@ -485,9 +461,9 @@ void IceModel::init_backups() {
   //! Write a backup (i.e. an intermediate result of a run).
 void IceModel::write_backup() {
 
-  double backup_interval = m_config->get_double("output.backup_interval");
-
   auto backup_vars = output_variables(m_config->get_string("output.backup_size"));
+
+  double backup_interval = m_config->get_double("output.backup_interval");
 
   double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
 
@@ -496,57 +472,38 @@ void IceModel::write_backup() {
   }
 
   const Profiling &profiling = m_ctx->profiling();
-  profiling.begin("backup");
 
   m_last_backup_time = wall_clock_hours;
 
   // create a history string:
-  std::string date_str = pism_timestamp(m_grid->com);
-  char tmp[TEMPORARY_STRING_LENGTH];
-  snprintf(tmp, TEMPORARY_STRING_LENGTH,
-           "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
-           m_time->date().c_str(), wall_clock_hours);
-
-  PetscLogDouble backup_start_time = GetTime();
 
   m_log->message(2,
                  "  [%s] Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
                  pism_timestamp(m_grid->com).c_str(), m_backup_filename.c_str(), wall_clock_hours);
 
-  prepend_history(tmp);
+  PetscLogDouble backup_start_time = GetTime();
+  profiling.begin("io.backup");
+  {
+    PIO file(m_grid->com, m_config->get_string("output.format"),
+             m_backup_filename, PISM_READWRITE_MOVE);
 
-  PIO file(m_grid->com, m_config->get_string("output.format"),
-         m_backup_filename, PISM_READWRITE_MOVE);
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+    write_run_stats(file);
 
-  // write metadata:
-  io::define_time(file, m_config->get_string("time.dimension_name"),
-              m_time->calendar(),
-              m_time->CF_units_string(),
-              m_sys);
-  io::append_time(file, m_config->get_string("time.dimension_name"), m_time->current());
-
-  // Write metadata *before* variables:
-
-  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-  write_run_stats(file);
-
-  define_model_state(file);
-  define_diagnostics(file, backup_vars, PISM_DOUBLE);
-
-  write_model_state(file);
-  write_diagnostics(file, backup_vars);
+    save_variables(file, INCLUDE_MODEL_STATE, backup_vars);
+  }
+  profiling.end("io.backup");
+  PetscLogDouble backup_end_time = GetTime();
 
   // Also flush time-series:
   flush_timeseries();
 
-  PetscLogDouble backup_end_time = GetTime();
   m_log->message(2,
                  "  [%s] Done saving an automatic backup in %f seconds (%f minutes).\n",
                  pism_timestamp(m_grid->com).c_str(),
                  backup_end_time - backup_start_time,
                  (backup_end_time - backup_start_time) / 60.0);
 
-  profiling.end("backup");
 }
 
 
