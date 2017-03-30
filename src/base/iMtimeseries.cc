@@ -151,7 +151,7 @@ void IceModel::init_timeseries() {
 void IceModel::write_timeseries() {
 
   // return if no time-series requested
-  if (!m_save_ts) {
+  if (not m_save_ts) {
      return;
   }
 
@@ -216,7 +216,7 @@ void IceModel::init_extras() {
     throw RuntimeError(PISM_ERROR_LOCATION, "you need to specify both -extra_file and -extra_times to save spatial time-series.");
   }
 
-  if (!extra_file.is_set() && !times.is_set()) {
+  if (not extra_file.is_set() && not times.is_set()) {
     m_save_extra = false;
     return;
   }
@@ -276,7 +276,7 @@ void IceModel::init_extras() {
     m_log->message(2, "saving spatial time-series to '%s+year.nc'; ",
                m_extra_filename.c_str());
   } else {
-    if (!ends_with(m_extra_filename, ".nc")) {
+    if (not ends_with(m_extra_filename, ".nc")) {
       m_log->message(2,
                  "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
                  m_extra_filename.c_str());
