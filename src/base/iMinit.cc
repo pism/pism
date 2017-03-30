@@ -782,6 +782,9 @@ void IceModel::misc_setup() {
   init_timeseries();
   init_extras();
 
+  // de-allocate diagnostics that are not needed
+  prune_diagnostics();
+
   // Make sure that we use the output.variable_order that works with NetCDF-4,
   // "quilt", and HDF5 parallel I/O. (For different reasons, but mainly because
   // it is faster.)

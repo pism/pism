@@ -793,6 +793,8 @@ void IceModel::run() {
 
     step(do_mass_conserve, do_skip);
 
+    update_diagnostics(m_dt);
+
     // report a summary for major steps or the last one
     bool updateAtDepth = m_skip_countdown == 0;
     bool tempAgeStep = updateAtDepth and (do_energy or m_age_model != NULL);
@@ -905,6 +907,49 @@ const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
 
 const energy::EnergyModel* IceModel::energy_balance_model() const {
   return m_energy_model;
+}
+
+/*!
+ * De-allocate diagnostics that were not requested.
+ *
+ * Checks viewers, -extra_vars, -backup, -save_vars, and regular output.
+ *
+ * FIXME: I need to make sure that these reporting mechanisms are active. It is possible that
+ * variables are on a list, but that list is not actually used.
+ */
+void IceModel::prune_diagnostics() {
+
+  // get the list of available diagnostics
+  std::set<std::string> available;
+  for (auto d : m_diagnostics) {
+    available.insert(d.first);
+  }
+
+  // get the list of requested diagnostics
+  auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
+  requested = combine(requested, m_output_vars);
+  requested = combine(requested, m_snapshot_vars);
+  requested = combine(requested, m_extra_vars);
+  requested = combine(requested, m_backup_vars);
+
+  for (auto v : available) {
+    if (requested.find(v) == requested.end()) {
+      m_diagnostics.erase(v);
+    }
+  }
+}
+
+/*!
+ * Update diagnostics.
+ *
+ * This usually involves accumulative data needed to computed time-averaged quantities.
+ *
+ * Call this after prune_diagnostics() to avoid unnecessary work.
+ */
+void IceModel::update_diagnostics(double dt) {
+  for (auto d : m_diagnostics) {
+    d.second->update(dt);
+  }
 }
 
 } // end of namespace pism

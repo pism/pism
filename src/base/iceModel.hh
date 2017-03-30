@@ -146,6 +146,8 @@ public:
   virtual void init_calving();
 
   virtual void list_diagnostics();
+  virtual void update_diagnostics(double dt);
+  virtual void prune_diagnostics();
 
   // see iceModel.cc
   void init();
