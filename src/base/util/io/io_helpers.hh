@@ -38,6 +38,7 @@ class PIO;
 class Time;
 class Logger;
 class Context;
+class Config;
 
 namespace io {
 
@@ -67,12 +68,12 @@ void define_dimension(const PIO &nc, unsigned long int length,
                       const VariableMetadata &metadata);
 
 void define_time(const PIO &file, const Context &ctx);
-void append_time(const PIO &file, const Context &ctx, double time_seconds);
 
 void define_time(const PIO &nc, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system);
 
-void append_time(const PIO &nc, const std::string &name, double value);
+void append_time(const PIO &file, const Config &ctx, double time_seconds);
+void append_time(const PIO &nc, const std::string &name, double time_seconds);
 
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const PIO &nc,

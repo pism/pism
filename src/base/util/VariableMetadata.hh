@@ -26,9 +26,7 @@
 
 #include "PISMUnits.hh"
 
-// We use PIO and IO_Type here. (I should move methods using this out
-// of SpatialVariableMetadata. -- CK)
-#include "base/util/io/IO_Flags.hh"
+#include "base/util/io/IO_Flags.hh" // IO_Type
 
 namespace pism {
 
@@ -81,6 +79,7 @@ public:
   void set_string(const std::string &name, const std::string &value);
 
   void set_time_independent(bool flag);
+  void set_output_type(IO_Type type);
 
   void clear_all_doubles();
   void clear_all_strings();
@@ -98,6 +97,7 @@ public:
   bool has_attribute(const std::string &name) const;
   bool has_attributes() const;
   bool get_time_independent() const;
+  IO_Type get_output_type() const;
 
   typedef std::map<std::string,std::string> StringAttrs;
   const StringAttrs& get_all_strings() const;
@@ -123,6 +123,8 @@ private:
   std::map<std::string, std::vector<double> > m_doubles;
   std::string m_short_name;
   bool m_time_independent;
+
+  IO_Type m_output_type;
 };
 
 bool set_contains(const std::set<std::string> &S, const VariableMetadata &field);

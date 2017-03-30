@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
             outname, PISM_READWRITE_MOVE);
 
     io::define_time(file, *ctx);
-    io::append_time(file, *ctx, ctx->time()->current());
+    io::append_time(file, *ctx->config(), ctx->time()->current());
 
     btu->write_model_state(file);
 

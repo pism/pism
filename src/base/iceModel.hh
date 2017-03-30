@@ -198,7 +198,7 @@ public:
 
   virtual void define_diagnostics(const PIO &file,
                                   const std::set<std::string> &variables,
-                                  IO_Type nctype);
+                                  IO_Type default_type);
   virtual void write_diagnostics(const PIO &file,
                                  const std::set<std::string> &variables);
 protected:

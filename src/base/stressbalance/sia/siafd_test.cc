@@ -413,7 +413,7 @@ int main(int argc, char *argv[]) {
     // Write results to an output file:
     PIO file(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
     io::define_time(file, *ctx);
-    io::append_time(file, *ctx, ctx->time()->current());
+    io::append_time(file, *ctx->config(), ctx->time()->current());
 
     ice_surface_elevation.write(file);
     ice_thickness.write(file);

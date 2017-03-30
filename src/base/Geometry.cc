@@ -88,6 +88,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
   cell_type.metadata().set_doubles("flag_values", mask_values);
   cell_type.metadata().set_string("flag_meanings",
                                     "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
+  cell_type.metadata().set_output_type(PISM_BYTE);
 
   cell_grounded_fraction.create(grid, "cell_grounded_fraction", WITHOUT_GHOSTS);
   cell_grounded_fraction.set_attrs("internal",

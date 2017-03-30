@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -37,7 +37,8 @@ VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr s
   : m_n_spatial_dims(ndims),
     m_unit_system(system),
     m_short_name(name),
-    m_time_independent(false) {
+    m_time_independent(false),
+    m_output_type(PISM_NAT) {
 
   clear_all_strings();
   clear_all_doubles();
@@ -64,8 +65,16 @@ void VariableMetadata::set_time_independent(bool flag) {
   m_time_independent = flag;
 }
 
+void VariableMetadata::set_output_type(IO_Type type) {
+  m_output_type = type;
+}
+
 bool VariableMetadata::get_time_independent() const {
   return m_time_independent;
+}
+
+IO_Type VariableMetadata::get_output_type() const {
+  return m_output_type;
 }
 
 units::System::Ptr VariableMetadata::unit_system() const {

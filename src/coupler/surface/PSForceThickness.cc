@@ -52,7 +52,8 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, SurfaceModel *input)
                        "mask specifying where to apply the force-to-thickness mechanism",
                        "", ""); // no units and no standard name
   m_ftt_mask.set(1.0); // default: applied in whole domain
-  m_ftt_mask.write_in_glaciological_units = true;
+  m_ftt_mask.metadata().set_output_type(PISM_BYTE);
+  m_ftt_mask.metadata().set_time_independent(true);
 }
 
 ForceThickness::~ForceThickness() {

@@ -232,9 +232,7 @@ void define_time(const PIO &file, const Context &ctx) {
 }
 
 //! Prepare a file for output.
-void append_time(const PIO &file, const Context &ctx, double time_seconds) {
-  const Config &config = *ctx.config();
-
+void append_time(const PIO &file, const Config &config, double time_seconds) {
   append_time(file, config.get_string("time.dimension_name"),
               time_seconds);
 }
@@ -543,7 +541,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const PIO &nc,
-                             IO_Type nctype,
+                             IO_Type default_type,
                              const std::string &variable_order,
                              bool use_glaciological_units) {
   std::vector<std::string> dims;
@@ -608,9 +606,13 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 
   assert(dims.size() > 1);
 
-  nc.def_var(name, nctype, dims);
+  IO_Type type = var.get_output_type();
+  if (type == PISM_NAT) {
+    type = default_type;
+  }
+  nc.def_var(name, type, dims);
 
-  write_attributes(nc, var, nctype, use_glaciological_units);
+  write_attributes(nc, var, type, use_glaciological_units);
 
   // add the "grid_mapping" attribute if the grid has an associated mapping.
   const VariableMetadata &mapping = grid.get_mapping_info().mapping;

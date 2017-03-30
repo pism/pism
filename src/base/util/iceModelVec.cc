@@ -465,10 +465,12 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
-void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
+void IceModelVec::define(const PIO &nc, IO_Type default_type) const {
   std::string order = m_grid->ctx()->config()->get_string("output.variable_order");
   for (unsigned int j = 0; j < m_dof; ++j) {
-    io::define_spatial_variable(metadata(j), *m_grid, nc, output_datatype,
+    IO_Type type = metadata(j).get_output_type();
+    type = type == PISM_NAT ? default_type : type;
+    io::define_spatial_variable(metadata(j), *m_grid, nc, type,
                                 order, write_in_glaciological_units);
   }
 }
@@ -525,7 +527,7 @@ void IceModelVec::dump(const char filename[]) const {
            filename, PISM_READWRITE_CLOBBER);
 
   io::define_time(file, *m_grid->ctx());
-  io::append_time(file, *m_grid->ctx(), m_grid->ctx()->time()->current());
+  io::append_time(file, *m_grid->ctx()->config(), m_grid->ctx()->time()->current());
 
   define(file, PISM_DOUBLE);
   write(file);

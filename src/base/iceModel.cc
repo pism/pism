@@ -373,6 +373,8 @@ void IceModel::allocate_storage() {
                                       "", "");
     m_ssa_dirichlet_bc_mask.metadata().set_doubles("flag_values", {0, 1});
     m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
+    m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_BYTE);
+    m_ssa_dirichlet_bc_mask.set_time_independent(true);
     m_grid->variables().add(m_ssa_dirichlet_bc_mask);
 
     m_ssa_dirichlet_bc_mask.set(0.0);

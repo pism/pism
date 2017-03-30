@@ -146,7 +146,7 @@ void IceModel::save_variables(const PIO &file,
   // Note: it is time-dependent, so we need to define time first.
   io::define_timeseries(m_timestamp, file, PISM_FLOAT);
   // append to the time dimension
-  io::append_time(file, *m_grid->ctx(), m_grid->ctx()->time()->current());
+  io::append_time(file, *m_config, m_grid->ctx()->time()->current());
 
   // Write metadata *before* everything else:
   //
@@ -174,17 +174,11 @@ void IceModel::save_variables(const PIO &file,
 }
 
 void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &variables,
-                                  IO_Type nctype) {
+                                  IO_Type default_type) {
   // Define all the variables:
   for (auto var : variables) {
     if (m_grid->variables().is_available(var)) {
-      const IceModelVec *v = m_grid->variables().get(var);
-      // It has dedicated storage.
-      if (var == "mask") {
-        v->define(file, PISM_BYTE); // use the default data type
-      } else {
-        v->define(file, nctype);
-      }
+      m_grid->variables().get(var)->define(file, default_type);
     } else {
       // It might be a diagnostic quantity
       Diagnostic::Ptr diag = m_diagnostics[var];

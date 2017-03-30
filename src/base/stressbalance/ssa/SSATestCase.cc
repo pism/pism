@@ -366,7 +366,7 @@ void SSATestCase::write(const std::string &filename) {
   PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
           filename, PISM_READWRITE_MOVE);
   io::define_time(file, *m_grid->ctx());
-  io::append_time(file, *m_grid->ctx(), 0.0);
+  io::append_time(file, *m_config, 0.0);
 
   m_surface.write(file);
   m_thickness.write(file);
