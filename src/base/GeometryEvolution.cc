@@ -1032,7 +1032,8 @@ protected:
     return result;
   }
 };
-/*! @brief Report mass flux on the staggered grid */
+
+/*! @brief Report mass flux on the staggered grid. */
 class FluxStaggered : public Diag<GeometryEvolution>
 {
 public:
