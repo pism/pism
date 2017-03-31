@@ -1147,12 +1147,16 @@ protected:
 } // end of namespace diagnostics
 
 std::map<std::string, Diagnostic::Ptr> GeometryEvolution::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result;
+  using namespace diagnostics;
+  typedef Diagnostic::Ptr Ptr;
+
+  std::map<std::string, Ptr> result;
   result = {
-    {"flux_staggered",                      Diagnostic::Ptr(new diagnostics::FluxStaggered(this))},
-    {"flux_divergence",                     Diagnostic::Ptr(new diagnostics::FluxDivergence(this))},
-    {"effective_surface_mass_balance_flux", Diagnostic::Ptr(new diagnostics::SMBFlux(this))},
-    {"mass_conservation_error_flux",        Diagnostic::Ptr(new diagnostics::MassConservationErrorFlux(this))},
+    {"flux_staggered",               Ptr(new FluxStaggered(this))},
+    {"flux_divergence",              Ptr(new FluxDivergence(this))},
+    {"surface_mass_balance_flux",    Ptr(new SMBFlux(this))},
+    {"basal_mass_balance_flux",      Ptr(new BMBFlux(this))},
+    {"mass_conservation_error_flux", Ptr(new MassConservationErrorFlux(this))},
   };
   return result;
 }
