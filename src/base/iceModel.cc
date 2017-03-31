@@ -767,6 +767,9 @@ void IceModel::run() {
 
   int stepcount = m_config->get_boolean("time_stepping.count_steps") ? 0 : -1;
 
+  // de-allocate diagnostics that are not needed
+  prune_diagnostics();
+
   enforce_consistency_of_geometry();
 
   // update diagnostics at the beginning of the run:
@@ -949,6 +952,15 @@ void IceModel::prune_diagnostics() {
 void IceModel::update_diagnostics(double dt) {
   for (auto d : m_diagnostics) {
     d.second->update(dt);
+  }
+}
+
+/*!
+ * Reset accumulators in diagnostics that compute time-averaged quantities.
+ */
+void IceModel::reset_diagnostics() {
+  for (auto d : m_diagnostics) {
+    d.second->reset();
   }
 }
 

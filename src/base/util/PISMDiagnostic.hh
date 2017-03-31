@@ -157,7 +157,7 @@ protected:
     m_total_time += dt;
   }
 
-  virtual void reset() {
+  virtual void reset_impl() {
     m_accumulator.set(0.0);
     m_total_time = 0.0;
   }

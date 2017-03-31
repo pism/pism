@@ -339,21 +339,11 @@ void IceModel::write_extras() {
   }
 
   if (current_extra == 0) {
-    // The first time defines the left end-point of the first reporting
-    // interval; we don't write a report at this time, but we still need to
-    // store cumulative quantities that may be needed to compute rates of
-    // change.
+    // The first time defines the left end-point of the first reporting interval; we don't write a
+    // report at this time.
 
-    for (auto v : m_extra_vars) {
-      Diagnostic::Ptr diag = m_diagnostics[v];
-
-      if (diag) {
-        diag->update(m_dt);
-      }
-    }
-
-    // This line re-initializes last_extra (the correct value is not known at
-    // the time init_extras() is calles).
+    // Re-initialize last_extra (the correct value is not known at the time init_extras() is
+    // called).
     m_last_extra = current_time;
 
     return;
@@ -421,6 +411,9 @@ void IceModel::write_extras() {
   flush_timeseries();
 
   m_last_extra = current_time;
+
+  // reset accumulators in diagnostics that compute time averaged quantities
+  reset_diagnostics();
 }
 
 static MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
