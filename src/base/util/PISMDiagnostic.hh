@@ -27,6 +27,7 @@
 #include "IceGrid.hh"
 #include "PISMConfigInterface.hh"
 #include "iceModelVec.hh"
+#include "base/util/error_handling.hh"
 
 namespace pism {
 
@@ -188,7 +189,9 @@ protected:
   bool m_input_is_total_change;
 
   // it should be enough to implement the constructor and this method
-  virtual const IceModelVec2S& model_input() = 0;
+  virtual const IceModelVec2S& model_input() {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no default implementation");
+  }
 };
 
 /*! @brief Helper class for computing time averages of 2D quantities.
