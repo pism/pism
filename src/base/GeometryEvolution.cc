@@ -1069,80 +1069,6 @@ protected:
   }
 };
 
-/*! @brief Report conservation error due to enforcing the non-negativity of thickness. */
-class ConservationError : public Diag<GeometryEvolution>
-{
-public:
-  ConservationError(const GeometryEvolution *m)
-    : Diag<GeometryEvolution>(m) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "mass_conservation_error")};
-
-    set_attrs("mass conservation error due to enforcing the non-negativity of thickness"
-              " (over the last time step)", "",
-              "meters", "meters", 0);
-  }
-protected:
-  IceModelVec::Ptr compute_impl() {
-
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "mass_conservation_error", WITHOUT_GHOSTS));
-    result->metadata(0) = m_vars[0];
-
-    result->copy_from(model->conservation_error());
-
-    return result;
-  }
-};
-
-/*! @brief Report effective top surface mass balance over the last time step */
-class SMB : public Diag<GeometryEvolution>
-{
-public:
-  SMB(const GeometryEvolution *m)
-    : Diag<GeometryEvolution>(m) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "effective_surface_mass_balance")};
-
-    set_attrs("effective top surface mass balance over the last time step", "",
-              "m", "m", 0);
-  }
-protected:
-  IceModelVec::Ptr compute_impl() {
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_surface_mass_balance",
-                                                WITHOUT_GHOSTS));
-    result->metadata(0) = m_vars[0];
-
-    result->copy_from(model->top_surface_mass_balance());
-
-    return result;
-  }
-};
-
-/*! @brief Report effective basal mass balance over the last time step */
-class BMB : public Diag<GeometryEvolution>
-{
-public:
-  BMB(const GeometryEvolution *m)
-    : Diag<GeometryEvolution>(m) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "effective_basal_mass_balance")};
-
-    set_attrs("effective basal mass balance over the last time step", "",
-              "m", "m", 0);
-  }
-protected:
-  IceModelVec::Ptr compute_impl() {
-
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_basal_mass_balance",
-                                                WITHOUT_GHOSTS));
-    result->metadata(0) = m_vars[0];
-
-    result->copy_from(model->bottom_surface_mass_balance());
-
-    return result;
-  }
-};
-
 /*! @brief Report surface mass balance flux, averaged over the reporting interval */
 class SMBFlux : public DiagAverage<GeometryEvolution>
 {
@@ -1199,11 +1125,8 @@ std::map<std::string, Diagnostic::Ptr> GeometryEvolution::diagnostics_impl() con
   result = {
     {"flux_staggered",                      Diagnostic::Ptr(new diagnostics::FluxStaggered(this))},
     {"flux_divergence",                     Diagnostic::Ptr(new diagnostics::FluxDivergence(this))},
-    {"mass_conservation_error",             Diagnostic::Ptr(new diagnostics::ConservationError(this))},
-    {"effective_surface_mass_balance",      Diagnostic::Ptr(new diagnostics::SMB(this))},
     {"effective_surface_mass_balance_flux", Diagnostic::Ptr(new diagnostics::SMBFlux(this))},
     {"mass_conservation_error_flux",        Diagnostic::Ptr(new diagnostics::MassConservationErrorFlux(this))},
-    {"effective_basal_mass_balance",        Diagnostic::Ptr(new diagnostics::BMB(this))}
   };
   return result;
 }
