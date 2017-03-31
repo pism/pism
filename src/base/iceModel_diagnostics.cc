@@ -51,6 +51,65 @@ static const char* land_ice_area_fraction_name           = "sftgif";
 static const char* grounded_ice_sheet_area_fraction_name = "sftgrf";
 static const char* floating_ice_sheet_area_fraction_name = "sftflf";
 
+/*! @brief Report average basal mass balance flux over the reporting interval (grounded or floating
+    areas) */
+class BMBSplit : public DiagAverage<IceModel>
+{
+public:
+  enum Kind {GROUNDED, FLOATING};
+  BMBSplit(const IceModel *m, Kind flag)
+    : DiagAverage<IceModel>(m, true), m_kind(flag) {
+
+    std::string name, description;
+    if (m_kind == GROUNDED) {
+      name        = "basal_mass_balance_flux_grounded";
+      description = "average basal mass balance flux over the reporting interval (grounded areas)";
+    } else {
+      name        = "basal_mass_balance_flux_floating";
+      description = "average basal mass balance flux over the reporting interval (floating areas)";
+    }
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+
+    set_attrs(description, "", "kg m-2 s-1", "kg m-2 year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value, "year-1", "second-1");
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  Kind m_kind;
+  void update_impl(double dt) {
+    // This is the default implementation. You should modify or delete it.
+    const IceModelVec2S &input = model->geometry_evolution().bottom_surface_mass_balance();
+    const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+
+    IceModelVec::AccessList list{&input, &cell_type, &m_accumulator};
+
+    ParallelSection loop(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        if (m_kind == GROUNDED and cell_type.grounded(i, j)) {
+          m_accumulator(i, j) += input(i, j);
+        } else if (m_kind == FLOATING and cell_type.ocean(i, j)) {
+          m_accumulator(i, j) += input(i, j);
+        } else {
+          m_accumulator(i, j) = 0.0;
+        }
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
+
+    m_total_time += dt;
+  }
+};
+
 void IceModel::list_diagnostics() {
 
   m_log->message(1, "\n");
@@ -2545,7 +2604,9 @@ void IceModel::init_diagnostics() {
     {"basal_mass_balance_average",          f(new IceModel_basal_mass_balance_average(this))},
     {"height_above_flotation",              f(new IceModel_height_above_flotation(this))},
     {"ice_mass",                            f(new IceModel_ice_mass(this))},
-    {"topg_sl_adjusted",                    f(new IceModel_topg_sl_adjusted(this))}
+    {"topg_sl_adjusted",                    f(new IceModel_topg_sl_adjusted(this))},
+    {"basal_mass_balance_flux_grounded",    f(new BMBSplit(this, BMBSplit::GROUNDED))},
+    {"basal_mass_balance_flux_floating",    f(new BMBSplit(this, BMBSplit::FLOATING))}
   };
 
 #if (PISM_USE_PROJ4==1)
