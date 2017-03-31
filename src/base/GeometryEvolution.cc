@@ -1095,6 +1095,31 @@ protected:
   }
 };
 
+/*! @brief Report basal mass balance flux, averaged over the reporting interval */
+class BMBFlux : public DiagAverage<GeometryEvolution>
+{
+public:
+  BMBFlux(const GeometryEvolution *m)
+    : DiagAverage<GeometryEvolution>(m, true) {
+    m_factor = m_config->get_double("constants.ice.density");
+    m_vars = {SpatialVariableMetadata(m_sys, "basal_mass_balance_flux")};
+    set_attrs("average basal mass flux over reporting interval",
+              "",               // no standard name
+              "kg m-2 s-1", "kg m-2 year-1", 0);
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       "kg year-1", "kg second-1");
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  const IceModelVec2S &model_input() {
+    return model->bottom_surface_mass_balance();
+  }
+};
+
 class MassConservationErrorFlux : public DiagAverage<GeometryEvolution>
 {
 public:
