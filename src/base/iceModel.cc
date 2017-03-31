@@ -58,7 +58,6 @@ namespace pism {
 
 IceModel::FluxCounters::FluxCounters() {
   grounded_basal = 0.0;
-  nonneg_rule    = 0.0;
   sub_shelf      = 0.0;
   surface        = 0.0;
   sum_divQ_SIA   = 0.0;
@@ -156,15 +155,6 @@ IceModel::FluxFields::FluxFields(IceGrid::ConstPtr grid) {
     basal_floating.write_in_glaciological_units = true;
   }
   {
-    nonneg.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS);
-    nonneg.set_attrs("diagnostic",
-                     "cumulative nonnegative rule flux (positive means ice gain)",
-                     "kg m-2", "");
-    nonneg.set_time_independent(false);
-    nonneg.metadata().set_string("glaciological_units", "Gt m-2");
-    nonneg.write_in_glaciological_units = true;
-  }
-  {
     discharge.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
     discharge.set_attrs("diagnostic",
                         "cumulative discharge (calving) flux (positive means ice loss)",
@@ -179,7 +169,6 @@ void IceModel::FluxFields::reset() {
   climatic_mass_balance.set(0.0);
   basal_grounded.set(0.0);
   basal_floating.set(0.0);
-  nonneg.set(0.0);
   discharge.set(0.0);
 }
 
@@ -187,7 +176,6 @@ void IceModel::FluxFields::regrid(const PIO &input_file) {
   climatic_mass_balance.regrid(input_file, OPTIONAL, 0.0);
   basal_grounded.regrid(input_file,        OPTIONAL, 0.0);
   basal_floating.regrid(input_file,        OPTIONAL, 0.0);
-  nonneg.regrid(input_file,                OPTIONAL, 0.0);
   discharge.regrid(input_file,             OPTIONAL, 0.0);
 }
 

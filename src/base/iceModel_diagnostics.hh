@@ -422,24 +422,6 @@ public:
   virtual void update(double a, double b);
 };
 
-//! \brief Reports the 'numerical' ice flux resulting from enforcing the 'thk
-//! >= 0' rule.
-class IceModel_nonneg_flux : public TSDiag<IceModel>
-{
-public:
-  IceModel_nonneg_flux(const IceModel *m);
-  virtual void update(double a, double b);
-};
-
-//! \brief Reports the cumulative 'numerical' ice flux resulting from enforcing the 'thk
-//! >= 0' rule.
-class IceModel_nonneg_flux_cumulative : public TSDiag<IceModel>
-{
-public:
-  IceModel_nonneg_flux_cumulative(const IceModel *m);
-  virtual void update(double a, double b);
-};
-
 //! \brief Reports the total discharge flux.
 class IceModel_discharge_flux : public TSDiag<IceModel>
 {
@@ -512,17 +494,6 @@ public:
   IceModel_sum_divQ_flux(const IceModel *m);
   virtual void update(double a, double b);
 };
-
-//! \brief Reports the 2D cumulative (numerical) flux due to enforcing
-//! non-negativity of ice thickness.
-class IceModel_nonneg_flux_2D_cumulative : public Diag<IceModel>
-{
-public:
-  IceModel_nonneg_flux_2D_cumulative(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
-};
-
 
 //! \brief Reports the 2D cumulative grounded basal flux.
 class IceModel_grounded_basal_flux_2D_cumulative : public Diag<IceModel>

@@ -102,7 +102,6 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
   result.insert("climatic_mass_balance_cumulative");
   result.insert("grounded_basal_flux_cumulative");
   result.insert("floating_basal_flux_cumulative");
-  result.insert("nonneg_flux_cumulative");
   result.insert("discharge_flux_cumulative");
 
   std::string variables;

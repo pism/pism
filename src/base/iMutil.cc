@@ -126,7 +126,6 @@ void IceModel::update_run_stats() {
   m_run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
 
   m_run_stats.set_double("grounded_basal_ice_flux_cumulative", m_cumulative_fluxes.grounded_basal);
-  m_run_stats.set_double("nonneg_rule_flux_cumulative",        m_cumulative_fluxes.nonneg_rule);
   m_run_stats.set_double("sub_shelf_ice_flux_cumulative",      m_cumulative_fluxes.sub_shelf);
   m_run_stats.set_double("surface_ice_flux_cumulative",        m_cumulative_fluxes.surface);
   m_run_stats.set_double("sum_divQ_SIA_cumulative",            m_cumulative_fluxes.sum_divQ_SIA);

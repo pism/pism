@@ -76,7 +76,6 @@ void IceModel::init_diagnostics() {
     {grounded_ice_sheet_area_fraction_name, f(new IceModel_grounded_ice_sheet_area_fraction(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceModel_floating_ice_sheet_area_fraction(this))},
     {"climatic_mass_balance_cumulative",    f(new IceModel_climatic_mass_balance_cumulative(this))},
-    {"nonneg_flux_cumulative",              f(new IceModel_nonneg_flux_2D_cumulative(this))},
     {"grounded_basal_flux_cumulative",      f(new IceModel_grounded_basal_flux_2D_cumulative(this))},
     {"floating_basal_flux_cumulative",      f(new IceModel_floating_basal_flux_2D_cumulative(this))},
     {"discharge_flux_cumulative",           f(new IceModel_discharge_flux_2D_cumulative(this))},
@@ -130,8 +129,6 @@ void IceModel::init_diagnostics() {
     {"grounded_basal_ice_flux_cumulative",   s(new IceModel_grounded_basal_flux_cumulative(this))},
     {"sub_shelf_ice_flux",                   s(new IceModel_sub_shelf_flux(this))},
     {"sub_shelf_ice_flux_cumulative",        s(new IceModel_sub_shelf_flux_cumulative(this))},
-    {"nonneg_rule_flux",                     s(new IceModel_nonneg_flux(this))},
-    {"nonneg_rule_flux_cumulative",          s(new IceModel_nonneg_flux_cumulative(this))},
     {"discharge_flux",                       s(new IceModel_discharge_flux(this))},
     {"discharge_flux_cumulative",            s(new IceModel_discharge_flux_cumulative(this))},
     {"H_to_Href_flux",                       s(new IceModel_H_to_Href_flux(this))},
@@ -1488,39 +1485,6 @@ void IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
-IceModel_nonneg_flux::IceModel_nonneg_flux(const IceModel *m)
-  : TSDiag<IceModel>(m) {
-
-  // set metadata:
-  m_ts = new DiagnosticTimeseries(*m_grid, "nonneg_flux", m_time_dimension_name);
-
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name", "'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
-  m_ts->metadata().set_string("comment", "positive means ice gain");
-  m_ts->rate_of_change = true;
-}
-
-void IceModel_nonneg_flux::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
-}
-
-IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(const IceModel *m)
-  : TSDiag<IceModel>(m) {
-
-  // set metadata:
-  m_ts = new DiagnosticTimeseries(*m_grid, "nonneg_flux_cumulative", m_time_dimension_name);
-
-  m_ts->metadata().set_string("units", "kg");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name", "cumulative 'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
-  m_ts->metadata().set_string("comment", "positive means ice gain");
-}
-
-void IceModel_nonneg_flux_cumulative::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().nonneg_rule, a, b);
-}
-
 IceModel_discharge_flux::IceModel_discharge_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
@@ -1799,30 +1763,6 @@ void IceModel_limnsw::update(double a, double b) {
     ice_mass    = ice_volume * ice_density;
 
   m_ts->append(ice_mass, a, b);
-}
-
-IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(const IceModel *m)
-  : Diag<IceModel>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "nonneg_flux_cumulative")};
-
-  set_attrs("cumulative non-negative rule (thk >= 0) flux",
-            "",                 // no standard name
-            "kg m-2", "Gt m-2", 0);
-  m_vars[0].set_string("comment", "positive means ice gain");
-}
-
-IceModelVec::Ptr IceModel_nonneg_flux_2D_cumulative::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  result->copy_from(model->cumulative_fluxes_2d().nonneg);
-
-  return result;
 }
 
 IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(const IceModel *m)

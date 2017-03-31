@@ -282,7 +282,6 @@ protected:
     double Href_to_H;
     double discharge;
     double grounded_basal;
-    double nonneg_rule;
     double sub_shelf;
     double sum_divQ_SIA;
     double sum_divQ_SSA;
@@ -300,8 +299,6 @@ protected:
     IceModelVec2S basal_grounded;
     //! floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     IceModelVec2S basal_floating;
-    //! cumulative nonnegative-rule flux
-    IceModelVec2S nonneg;
     //! cumulative discharge (calving) flux
     IceModelVec2S discharge;
   };
