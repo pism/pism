@@ -1168,6 +1168,29 @@ protected:
   }
 };
 
+class MassConservationErrorFlux : public DiagAverage<GeometryEvolution>
+{
+public:
+  MassConservationErrorFlux(const GeometryEvolution *m)
+    : DiagAverage<GeometryEvolution>(m, true) {
+    m_factor = m_config->get_double("constants.ice.density");
+    m_vars = {SpatialVariableMetadata(m_sys, "mass_conservation_error_flux")};
+    set_attrs("average mass conservation error flux over reporting interval",
+              "",               // no standard name
+              "kg m-2 s-1", "kg m-2 year-1", 0);
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       "kg year-1", "kg second-1");
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  const IceModelVec2S &model_input() {
+    return model->conservation_error();
+  }
+};
 
 } // end of namespace diagnostics
 
@@ -1179,6 +1202,7 @@ std::map<std::string, Diagnostic::Ptr> GeometryEvolution::diagnostics_impl() con
     {"mass_conservation_error",             Diagnostic::Ptr(new diagnostics::ConservationError(this))},
     {"effective_surface_mass_balance",      Diagnostic::Ptr(new diagnostics::SMB(this))},
     {"effective_surface_mass_balance_flux", Diagnostic::Ptr(new diagnostics::SMBFlux(this))},
+    {"mass_conservation_error_flux",        Diagnostic::Ptr(new diagnostics::MassConservationErrorFlux(this))},
     {"effective_basal_mass_balance",        Diagnostic::Ptr(new diagnostics::BMB(this))}
   };
   return result;
