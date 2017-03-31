@@ -393,6 +393,7 @@ public:
   const energy::EnergyModel* energy_balance_model() const;
 
   const Geometry& geometry() const;
+  const GeometryEvolution& geometry_evolution() const;
 
   FluxCounters cumulative_fluxes() const;
   const FluxFields& cumulative_fluxes_2d() const;

@@ -880,6 +880,10 @@ const Geometry& IceModel::geometry() const {
   return m_geometry;
 }
 
+const GeometryEvolution& IceModel::geometry_evolution() const {
+  return *m_geometry_evolution;
+}
+
 const stressbalance::StressBalance* IceModel::stress_balance() const {
   return this->m_stress_balance;
 }
