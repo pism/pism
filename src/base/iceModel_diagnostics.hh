@@ -382,27 +382,11 @@ public:
   virtual void update(double a, double b);
 };
 
-//! \brief Reports the cumulative total surface ice flux.
-class IceModel_surface_flux_cumulative : public TSDiag<IceModel>
-{
-public:
-  IceModel_surface_flux_cumulative(const IceModel *m);
-  virtual void update(double a, double b);
-};
-
 //! \brief Reports the total basal ice flux over the grounded region.
 class IceModel_grounded_basal_flux : public TSDiag<IceModel>
 {
 public:
   IceModel_grounded_basal_flux(const IceModel *m);
-  virtual void update(double a, double b);
-};
-
-//! \brief Reports the cumulative total basal ice flux over the grounded region.
-class IceModel_grounded_basal_flux_cumulative : public TSDiag<IceModel>
-{
-public:
-  IceModel_grounded_basal_flux_cumulative(const IceModel *m);
   virtual void update(double a, double b);
 };
 
@@ -414,37 +398,12 @@ public:
   virtual void update(double a, double b);
 };
 
-//! \brief Reports the total sub-shelf ice flux.
-class IceModel_sub_shelf_flux_cumulative : public TSDiag<IceModel>
-{
-public:
-  IceModel_sub_shelf_flux_cumulative(const IceModel *m);
-  virtual void update(double a, double b);
-};
-
 //! \brief Reports the total discharge flux.
 class IceModel_discharge_flux : public TSDiag<IceModel>
 {
 public:
   IceModel_discharge_flux(const IceModel *m);
   virtual void update(double a, double b);
-};
-
-//! \brief Reports the cumulative total discharge flux.
-class IceModel_discharge_flux_cumulative : public TSDiag<IceModel>
-{
-public:
-  IceModel_discharge_flux_cumulative(const IceModel *m);
-  virtual void update(double a, double b);
-};
-
-//! \brief Reports cumulative surface mass balance.
-class IceModel_climatic_mass_balance_cumulative : public Diag<IceModel>
-{
-public:
-  IceModel_climatic_mass_balance_cumulative(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes dHdt, the ice thickness rate of change.
@@ -468,60 +427,6 @@ public:
   virtual void update(double a, double b);
 };
 
-//! \brief Reports the mass flux from the mass tracked using ice thickness
-//! (thk) to the mass tracked using Href.
-class IceModel_H_to_Href_flux : public TSDiag<IceModel>
-{
-public:
-  IceModel_H_to_Href_flux(const IceModel *m);
-  virtual void update(double a, double b);
-};
-
-//! \brief Reports the mass flux from the mass tracked using Href to the mass
-//! tracked using ice thickness (thk).
-class IceModel_Href_to_H_flux : public TSDiag<IceModel>
-{
-public:
-  IceModel_Href_to_H_flux(const IceModel *m);
-  virtual void update(double a, double b);
-};
-
-//! \brief Reports the sum(div Q) flux (to diagnose issues in the mass
-//! transport scheme).
-class IceModel_sum_divQ_flux : public TSDiag<IceModel>
-{
-public:
-  IceModel_sum_divQ_flux(const IceModel *m);
-  virtual void update(double a, double b);
-};
-
-//! \brief Reports the 2D cumulative grounded basal flux.
-class IceModel_grounded_basal_flux_2D_cumulative : public Diag<IceModel>
-{
-public:
-  IceModel_grounded_basal_flux_2D_cumulative(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
-};
-
-//! \brief Reports the 2D cumulative floating basal flux.
-class IceModel_floating_basal_flux_2D_cumulative : public Diag<IceModel>
-{
-public:
-  IceModel_floating_basal_flux_2D_cumulative(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
-};
-
-//! \brief Reports the 2D cumulative discharge (calving) flux.
-class IceModel_discharge_flux_2D_cumulative : public Diag<IceModel>
-{
-public:
-  IceModel_discharge_flux_2D_cumulative(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
-};
-
 //! \brief Reports the 2D cumulative discharge (calving) flux.
 class IceModel_discharge_flux_2D : public Diag<IceModel>
 {
@@ -530,28 +435,6 @@ public:
 protected:
   virtual IceModelVec::Ptr compute_impl();
   IceModelVec2S m_last_cumulative_discharge;
-  double m_last_report_time;
-};
-
-//! \brief Reports surface mass balance flux (average over reporting interval).
-class IceModel_surface_mass_balance_average : public Diag<IceModel>
-{
-public:
-  IceModel_surface_mass_balance_average(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
-  IceModelVec2S m_last_cumulative_SMB;
-  double m_last_report_time;
-};
-
-//! \brief Reports the 2D cumulative discharge (calving) flux.
-class IceModel_basal_mass_balance_average : public Diag<IceModel>
-{
-public:
-  IceModel_basal_mass_balance_average(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
-  IceModelVec2S m_last_cumulative_BMB;
   double m_last_report_time;
 };
 

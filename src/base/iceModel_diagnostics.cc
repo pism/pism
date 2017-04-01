@@ -62,11 +62,11 @@ public:
 
     std::string name, description;
     if (m_kind == GROUNDED) {
-      name        = "basal_mass_balance_flux_grounded";
-      description = "average basal mass balance flux over the reporting interval (grounded areas)";
+      name        = "basal_grounded_mass_flux";
+      description = "average basal mass flux over the reporting interval (grounded areas)";
     } else {
-      name        = "basal_mass_balance_flux_floating";
-      description = "average basal mass balance flux over the reporting interval (floating areas)";
+      name        = "basal_floating_mass_flux";
+      description = "average basal mass flux over the reporting interval (floating areas)";
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
@@ -897,28 +897,6 @@ IceModelVec::Ptr IceModel_tempicethk_basal::compute_impl() {
   return result;
 }
 
-IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(const IceModel *m)
-  : Diag<IceModel>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "climatic_mass_balance_cumulative")};
-
-  set_attrs("cumulative ice-equivalent climatic mass balance", "",
-            "kg m-2", "kg m-2", 0);
-}
-
-IceModelVec::Ptr IceModel_climatic_mass_balance_cumulative::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "climatic_mass_balance_cumulative", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  result->copy_from(model->cumulative_fluxes_2d().climatic_mass_balance);
-
-  return result;
-}
-
 IceModel_volume_glacierized::IceModel_volume_glacierized(IceModel *m)
   : TSDiag<IceModel>(m) {
 
@@ -1371,21 +1349,6 @@ void IceModel_surface_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().surface, a, b);
 }
 
-IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(const IceModel *m)
-  : TSDiag<IceModel>(m) {
-
-  // set metadata:
-  m_ts = new DiagnosticTimeseries(*m_grid, "surface_ice_flux_cumulative", m_time_dimension_name);
-
-  m_ts->metadata().set_string("units", "kg");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name", "cumulative total over ice domain of top surface ice mass flux");
-}
-
-void IceModel_surface_flux_cumulative::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().surface, a, b);
-}
-
 IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
@@ -1400,22 +1363,6 @@ IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(const IceModel *m)
 }
 
 void IceModel_grounded_basal_flux::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
-}
-
-IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(const IceModel *m)
-  : TSDiag<IceModel>(m) {
-
-  // set metadata:
-  m_ts = new DiagnosticTimeseries(*m_grid, "grounded_basal_ice_flux_cumulative", m_time_dimension_name);
-
-  m_ts->metadata().set_string("units", "kg");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name", "cumulative total grounded basal mass flux");
-  m_ts->metadata().set_string("comment", "positive means ice gain");
-}
-
-void IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
 }
 
@@ -1436,22 +1383,6 @@ void IceModel_sub_shelf_flux::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
 }
 
-IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(const IceModel *m)
-  : TSDiag<IceModel>(m) {
-
-  // set metadata:
-  m_ts = new DiagnosticTimeseries(*m_grid, "sub_shelf_ice_flux_cumulative", m_time_dimension_name);
-
-  m_ts->metadata().set_string("units", "kg");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name", "cumulative total sub-shelf ice flux");
-  m_ts->metadata().set_string("comment", "positive means ice gain");
-}
-
-void IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
-}
-
 IceModel_discharge_flux::IceModel_discharge_flux(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
@@ -1466,22 +1397,6 @@ IceModel_discharge_flux::IceModel_discharge_flux(const IceModel *m)
 }
 
 void IceModel_discharge_flux::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().discharge, a, b);
-}
-
-IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(const IceModel *m)
-  : TSDiag<IceModel>(m) {
-
-  // set metadata:
-  m_ts = new DiagnosticTimeseries(*m_grid, "discharge_flux_cumulative", m_time_dimension_name);
-
-  m_ts->metadata().set_string("units", "kg");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name", "cumulative discharge (calving etc.) flux");
-  m_ts->metadata().set_string("comment", "positive means ice gain");
-}
-
-void IceModel_discharge_flux_cumulative::update(double a, double b) {
   m_ts->append(model->cumulative_fluxes().discharge, a, b);
 }
 
@@ -1659,57 +1574,6 @@ void IceModel_max_hor_vel::update(double a, double b) {
   m_ts->append(std::max(cfl.u_max, cfl.v_max), a, b);
 }
 
-IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(const IceModel *m)
-  : TSDiag<IceModel>(m) {
-  // set metadata:
-  m_ts = new DiagnosticTimeseries(*m_grid, "H_to_Href_flux", m_time_dimension_name);
-
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name", "mass flux from thk to Href");
-  m_ts->metadata().set_string("comment", "does not correspond to mass gain or loss");
-  m_ts->rate_of_change = true;
-}
-
-void IceModel_H_to_Href_flux::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().H_to_Href, a, b);
-}
-
-IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(const IceModel *m)
-  : TSDiag<IceModel>(m) {
-  // set metadata:
-  m_ts = new DiagnosticTimeseries(*m_grid, "Href_to_H_flux", m_time_dimension_name);
-
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name", "mass flux from Href to thk");
-  m_ts->metadata().set_string("comment", "does not correspond to mass gain or loss");
-  m_ts->rate_of_change = true;
-}
-
-void IceModel_Href_to_H_flux::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().Href_to_H, a, b);
-}
-
-IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(const IceModel *m)
-  : TSDiag<IceModel>(m) {
-  // set metadata:
-  m_ts = new DiagnosticTimeseries(*m_grid, "sum_divQ_flux", m_time_dimension_name);
-
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name", "sum(divQ)");
-  m_ts->metadata().set_string("comment", "positive means ice gain");
-  m_ts->rate_of_change = true;
-}
-
-void IceModel_sum_divQ_flux::update(double a, double b) {
-
-  m_ts->append(model->cumulative_fluxes().sum_divQ_SIA +
-               model->cumulative_fluxes().sum_divQ_SSA,
-               a, b);
-}
-
 IceModel_limnsw::IceModel_limnsw(const IceModel *m)
   : TSDiag<IceModel>(m) {
 
@@ -1730,79 +1594,6 @@ void IceModel_limnsw::update(double a, double b) {
     ice_mass    = ice_volume * ice_density;
 
   m_ts->append(ice_mass, a, b);
-}
-
-IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(const IceModel *m)
-  : Diag<IceModel>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "grounded_basal_flux_cumulative")};
-
-  set_attrs("cumulative grounded basal flux",
-            "",                 // no standard name
-            "kg m-2", "Gt m-2", 0);
-  m_vars[0].set_string("comment", "positive means ice gain");
-}
-
-IceModelVec::Ptr IceModel_grounded_basal_flux_2D_cumulative::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  result->copy_from(model->cumulative_fluxes_2d().basal_grounded);
-
-  return result;
-}
-
-IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(const IceModel *m)
-  : Diag<IceModel>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "floating_basal_flux_cumulative")};
-
-  set_attrs("cumulative floating basal flux",
-            "",                 // no standard name
-            "kg m-2", "Gt m-2", 0);
-  m_vars[0].set_string("comment", "positive means ice gain");
-}
-
-IceModelVec::Ptr IceModel_floating_basal_flux_2D_cumulative::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  result->copy_from(model->cumulative_fluxes_2d().basal_floating);
-
-  return result;
-}
-
-
-IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(const IceModel *m)
-  : Diag<IceModel>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "discharge_flux_cumulative")};
-
-  set_attrs("cumulative ice discharge (calving) flux",
-            "",                 // no standard name
-            "kg", "Gt", 0);
-  m_vars[0].set_string("comment", "positive means ice gain");
-}
-
-IceModelVec::Ptr IceModel_discharge_flux_2D_cumulative::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  result->copy_from(model->cumulative_fluxes_2d().discharge);
-
-  return result;
 }
 
 IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(const IceModel *m)
@@ -2073,118 +1864,6 @@ IceModelVec::Ptr IceModel_floating_ice_sheet_area_fraction::compute_impl() {
 
   // Floating area fraction is total area fraction minus grounded area fraction.
   result->add(-1.0, *grounded_area_fraction);
-
-  return result;
-}
-
-IceModel_surface_mass_balance_average::IceModel_surface_mass_balance_average(const IceModel *m)
-  : Diag<IceModel>(m) {
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "surface_mass_balance_average")};
-
-  set_attrs("average surface mass flux over reporting interval",
-            "",                 // no standard name
-            "kg m-2 second-1", "kg m-2 year-1", 0);
-  m_vars[0].set_string("comment", "positive means ice gain");
-
-  double fill_value = units::convert(m_sys, m_fill_value,
-                                     "kg year-1", "kg second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
-  m_vars[0].set_string("cell_methods", "time: mean");
-
-  m_last_cumulative_SMB.create(m_grid, "last_cumulative_SMB", WITHOUT_GHOSTS);
-  m_last_cumulative_SMB.set_attrs("internal",
-                                  "cumulative SMB at the time of the last report of surface_mass_balance_average",
-                                  "kg m-2", "");
-
-  m_last_report_time = GSL_NAN;
-}
-
-IceModelVec::Ptr IceModel_surface_mass_balance_average::compute_impl() {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "surface_mass_balance_average", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  const IceModelVec2S &cumulative_SMB = model->cumulative_fluxes_2d().climatic_mass_balance;
-  const double current_time = m_grid->ctx()->time()->current();
-
-  if (gsl_isnan(m_last_report_time)) {
-    const double fill_value = units::convert(m_sys, m_fill_value,
-                                             "kg year-1", "kg second-1");
-    result->set(fill_value);
-  } else {
-    IceModelVec::AccessList list{result.get(), &m_last_cumulative_SMB, &cumulative_SMB};
-
-    double dt = current_time - m_last_report_time;
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      (*result)(i, j) = (cumulative_SMB(i, j) - m_last_cumulative_SMB(i, j)) / dt;
-    }
-  }
-
-  // Save the cumulative SMB and the corresponding time:
-  m_last_cumulative_SMB.copy_from(cumulative_SMB);
-  m_last_report_time = current_time;
-
-  return result;
-}
-
-IceModel_basal_mass_balance_average::IceModel_basal_mass_balance_average(const IceModel *m)
-  : Diag<IceModel>(m) {
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "basal_mass_balance_average")};
-
-  set_attrs("average basal mass flux over reporting interval",
-            "",                 // no standard name
-            "kg m-2 second-1", "kg m-2 year-1", 0);
-  m_vars[0].set_string("comment", "positive means ice gain");
-
-  double fill_value = units::convert(m_sys, m_fill_value,
-                                     "kg year-1", "kg second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
-  m_vars[0].set_string("cell_methods", "time: mean");
-
-  m_last_cumulative_BMB.create(m_grid, "last_cumulative_basal_mass_balance", WITHOUT_GHOSTS);
-  m_last_cumulative_BMB.set_attrs("internal",
-                                  "cumulative basal mass balance at the time of the last report of basal_mass_balance_average",
-                                  "kg m-2", "");
-
-  m_last_report_time = GSL_NAN;
-}
-
-IceModelVec::Ptr IceModel_basal_mass_balance_average::compute_impl() {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "basal_mass_balance_average", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  const IceModelVec2S &cumulative_grounded_BMB = model->cumulative_fluxes_2d().basal_grounded;
-  const IceModelVec2S &cumulative_floating_BMB = model->cumulative_fluxes_2d().basal_floating;
-  const double current_time = m_grid->ctx()->time()->current();
-
-  if (gsl_isnan(m_last_report_time)) {
-    const double fill_value = units::convert(m_sys, m_fill_value,
-                                             "kg year-1", "kg second-1");
-    result->set(fill_value);
-  } else {
-    IceModelVec::AccessList list{result.get(), &m_last_cumulative_BMB, &cumulative_grounded_BMB,
-        &cumulative_floating_BMB};
-
-    double dt = current_time - m_last_report_time;
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      (*result)(i, j) = (cumulative_grounded_BMB(i, j) +
-                         cumulative_floating_BMB(i, j) -
-                         m_last_cumulative_BMB(i, j)) / dt;
-    }
-  }
-
-  // Save the cumulative BMB and the corresponding time:
-  cumulative_grounded_BMB.add(1.0, cumulative_floating_BMB, m_last_cumulative_BMB);
-  m_last_report_time = current_time;
 
   return result;
 }
@@ -2595,18 +2274,12 @@ void IceModel::init_diagnostics() {
     {land_ice_area_fraction_name,           f(new IceModel_land_ice_area_fraction(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceModel_grounded_ice_sheet_area_fraction(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceModel_floating_ice_sheet_area_fraction(this))},
-    {"climatic_mass_balance_cumulative",    f(new IceModel_climatic_mass_balance_cumulative(this))},
-    {"grounded_basal_flux_cumulative",      f(new IceModel_grounded_basal_flux_2D_cumulative(this))},
-    {"floating_basal_flux_cumulative",      f(new IceModel_floating_basal_flux_2D_cumulative(this))},
-    {"discharge_flux_cumulative",           f(new IceModel_discharge_flux_2D_cumulative(this))},
     {"discharge_flux",                      f(new IceModel_discharge_flux_2D(this))},
-    {"surface_mass_balance_average",        f(new IceModel_surface_mass_balance_average(this))},
-    {"basal_mass_balance_average",          f(new IceModel_basal_mass_balance_average(this))},
     {"height_above_flotation",              f(new IceModel_height_above_flotation(this))},
     {"ice_mass",                            f(new IceModel_ice_mass(this))},
     {"topg_sl_adjusted",                    f(new IceModel_topg_sl_adjusted(this))},
-    {"basal_mass_balance_flux_grounded",    f(new BMBSplit(this, BMBSplit::GROUNDED))},
-    {"basal_mass_balance_flux_floating",    f(new BMBSplit(this, BMBSplit::FLOATING))}
+    {"basal_grounded_mass_flux",            f(new BMBSplit(this, BMBSplit::GROUNDED))},
+    {"basal_floating_mass_flux",            f(new BMBSplit(this, BMBSplit::FLOATING))}
   };
 
 #if (PISM_USE_PROJ4==1)
@@ -2646,16 +2319,9 @@ void IceModel::init_diagnostics() {
     {"max_hor_vel",                          s(new IceModel_max_hor_vel(this))},
     {"limnsw",                               s(new IceModel_limnsw(this))},
     {"surface_ice_flux",                     s(new IceModel_surface_flux(this))},
-    {"surface_ice_flux_cumulative",          s(new IceModel_surface_flux_cumulative(this))},
     {"grounded_basal_ice_flux",              s(new IceModel_grounded_basal_flux(this))},
-    {"grounded_basal_ice_flux_cumulative",   s(new IceModel_grounded_basal_flux_cumulative(this))},
     {"sub_shelf_ice_flux",                   s(new IceModel_sub_shelf_flux(this))},
-    {"sub_shelf_ice_flux_cumulative",        s(new IceModel_sub_shelf_flux_cumulative(this))},
     {"discharge_flux",                       s(new IceModel_discharge_flux(this))},
-    {"discharge_flux_cumulative",            s(new IceModel_discharge_flux_cumulative(this))},
-    {"H_to_Href_flux",                       s(new IceModel_H_to_Href_flux(this))},
-    {"Href_to_H_flux",                       s(new IceModel_Href_to_H_flux(this))},
-    {"sum_divQ_flux",                        s(new IceModel_sum_divQ_flux(this))}
   };
 
   // get diagnostics from submodels
