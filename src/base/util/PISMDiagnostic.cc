@@ -57,7 +57,7 @@ void Diagnostic::reset_impl() {
 }
 
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
-int Diagnostic::get_nvars() {
+int Diagnostic::n_variables() {
   return m_dof;
 }
 
@@ -90,9 +90,11 @@ void Diagnostic::write_state_impl(const PIO &output) const {
 }
 
 //! Get a metadata object corresponding to variable number N.
-SpatialVariableMetadata Diagnostic::get_metadata(int N) {
+SpatialVariableMetadata Diagnostic::metadata(int N) {
   if (N >= m_dof) {
-    return SpatialVariableMetadata(m_grid->ctx()->unit_system(), "missing");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "variable metadata index %d is out of bounds",
+                                  N);
   }
 
   return m_vars[N];
@@ -132,8 +134,8 @@ void Diagnostic::set_attrs(const std::string &long_name,
 IceModelVec::Ptr Diagnostic::compute() {
   // use the name of the first variable
   std::vector<std::string> names;
-  for (unsigned int j = 0; j < m_vars.size(); ++j) {
-    names.push_back(m_vars[j].get_name());
+  for (auto &v : m_vars) {
+    names.push_back(v.get_name());
   }
   std::string all_names = join(names, ",");
 

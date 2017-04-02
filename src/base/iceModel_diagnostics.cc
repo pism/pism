@@ -165,19 +165,19 @@ void IceModel::list_diagnostics() {
 
       std::string
         name                = f.first,
-        units               = diag->get_metadata().get_string("units"),
-        glaciological_units = diag->get_metadata().get_string("glaciological_units");
+        units               = diag->metadata().get_string("units"),
+        glaciological_units = diag->metadata().get_string("glaciological_units");
 
       if (not glaciological_units.empty()) {
         units = glaciological_units;
       }
 
-      if (diag->get_metadata().get_n_spatial_dimensions() == d) {
+      if (diag->metadata().get_n_spatial_dimensions() == d) {
 
         m_log->message(1, "   Name: %s [%s]\n", name.c_str(), units.c_str());
 
-        for (int k = 0; k < diag->get_nvars(); ++k) {
-          SpatialVariableMetadata var = diag->get_metadata(k);
+        for (int k = 0; k < diag->n_variables(); ++k) {
+          SpatialVariableMetadata var = diag->metadata(k);
 
           std::string long_name = var.get_string("long_name");
 

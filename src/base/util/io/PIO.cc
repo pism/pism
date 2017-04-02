@@ -316,10 +316,10 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
 
     if (not std_name.empty()) {
 
-      int nvars;
-      m_impl->nc->inq_nvars(nvars);
+      int n_variables;
+      m_impl->nc->inq_nvars(n_variables);
 
-      for (int j = 0; j < nvars; ++j) {
+      for (int j = 0; j < n_variables; ++j) {
         string name;
         m_impl->nc->inq_varname(j, name);
 

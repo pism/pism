@@ -67,9 +67,9 @@ public:
   //! IceModelVec.
   IceModelVec::Ptr compute();
 
-  virtual int get_nvars();
+  int n_variables();
 
-  virtual SpatialVariableMetadata get_metadata(int N = 0);
+  SpatialVariableMetadata metadata(int N = 0);
 
   virtual void define(const PIO &nc);
 
