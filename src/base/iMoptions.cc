@@ -97,13 +97,6 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
     }
   }
 
-  // FIXME: this will not be needed once diagnostics can save their state themselves.
-  // add cumulative quantities to ensure continuity after restarting
-  result.insert("climatic_mass_balance_cumulative");
-  result.insert("grounded_basal_flux_cumulative");
-  result.insert("floating_basal_flux_cumulative");
-  result.insert("discharge_flux_cumulative");
-
   std::string variables;
   if (keyword == "medium") {
     // add all the variables listed in the config file ("medium" size):

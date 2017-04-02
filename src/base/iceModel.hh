@@ -177,9 +177,6 @@ public:
   virtual void restart_2d(const PIO &input_file, unsigned int record);
   virtual void initialize_2d();
 
-  void initialize_cumulative_fluxes(const PIO &input_file);
-  void reset_cumulative_fluxes();
-
   virtual void save_results();
   enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
   virtual void save_variables(const PIO &file,
@@ -275,37 +272,7 @@ protected:
   //! enthalpy/temperature and age time-steps
   double dt_TempAge;
 
-  struct FluxCounters {
-    FluxCounters();
-
-    double H_to_Href;
-    double Href_to_H;
-    double discharge;
-    double grounded_basal;
-    double sub_shelf;
-    double sum_divQ_SIA;
-    double sum_divQ_SSA;
-    double surface;
-  };
-
-  struct FluxFields {
-    FluxFields(IceGrid::ConstPtr grid);
-    void reset();
-    void regrid(const PIO &input_file);
-
-    //! climatic_mass_balance
-    IceModelVec2S climatic_mass_balance;
-    //! grounded basal (melt/freeze-on) cumulative flux
-    IceModelVec2S basal_grounded;
-    //! floating (sub-shelf) basal (melt/freeze-on) cumulative flux
-    IceModelVec2S basal_floating;
-    //! cumulative discharge (calving) flux
-    IceModelVec2S discharge;
-  };
-
 protected:
-  FluxCounters m_cumulative_fluxes;
-  FluxFields m_cumulative_flux_fields;
   unsigned int m_skip_countdown;
 
   std::string m_adaptive_timestep_reason;
@@ -329,11 +296,12 @@ protected:
   virtual void update_ice_geometry(bool skip);
   virtual void do_calving();
   virtual void Href_cleanup();
-  virtual void update_cumulative_discharge(const IceModelVec2S &thickness,
-                                           const IceModelVec2S &Href,
-                                           const IceModelVec2S &thickness_old,
-                                           const IceModelVec2S &Href_old);
-
+  virtual void compute_discharge(const IceModelVec2S &thickness,
+                                 const IceModelVec2S &Href,
+                                 const IceModelVec2S &thickness_old,
+                                 const IceModelVec2S &Href_old,
+                                 IceModelVec2S &output);
+  const IceModelVec2S &discharge() const;
 
   // see iMIO.cc
   virtual void regrid(int dimensions);
@@ -343,10 +311,6 @@ protected:
 
   // see iMfractures.cc
   virtual void update_fracture_density();
-
-  // see iMpartgrid.cc
-  virtual void residual_redistribution(IceModelVec2S &residual);
-  virtual void residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
   virtual double compute_temperate_base_fraction(double ice_area);
@@ -395,12 +359,11 @@ public:
   const Geometry& geometry() const;
   const GeometryEvolution& geometry_evolution() const;
 
-  FluxCounters cumulative_fluxes() const;
-  const FluxFields& cumulative_fluxes_2d() const;
-
   double dt() const;
 
 protected:
+  // discharge during the last time step
+  IceModelVec2S m_dischange;
 
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
   std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;

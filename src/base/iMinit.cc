@@ -130,9 +130,6 @@ void IceModel::model_state_setup() {
       m_output_global_attributes.set_string("history",
                                             history + m_output_global_attributes.get_string("history"));
 
-      initialize_cumulative_fluxes(*input_file);
-    } else {
-      reset_cumulative_fluxes();
     }
 
     compute_cell_areas();
@@ -414,41 +411,6 @@ void IceModel::initialize_2d() {
   // methods).
   throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
 }
-
-void IceModel::reset_cumulative_fluxes() {
-  // 2D
-  m_cumulative_flux_fields.reset();
-  // scalar
-  m_cumulative_fluxes = FluxCounters();
-}
-
-
-void IceModel::initialize_cumulative_fluxes(const PIO &input_file) {
-  // 2D
-  m_cumulative_flux_fields.regrid(input_file);
-
-  // scalar, stored in run_stats
-  if (input_file.inq_var("run_stats")) {
-    io::read_attributes(input_file, m_run_stats.get_name(), m_run_stats);
-
-    try {
-      m_cumulative_fluxes.H_to_Href      = m_run_stats.get_double("H_to_Href_flux_cumulative");
-      m_cumulative_fluxes.Href_to_H      = m_run_stats.get_double("Href_to_H_flux_cumulative");
-      m_cumulative_fluxes.discharge      = m_run_stats.get_double("discharge_flux_cumulative");
-      m_cumulative_fluxes.grounded_basal = m_run_stats.get_double("grounded_basal_ice_flux_cumulative");
-      m_cumulative_fluxes.sub_shelf      = m_run_stats.get_double("sub_shelf_ice_flux_cumulative");
-      m_cumulative_fluxes.sum_divQ_SIA   = m_run_stats.get_double("sum_divQ_SIA_cumulative");
-      m_cumulative_fluxes.sum_divQ_SSA   = m_run_stats.get_double("sum_divQ_SSA_cumulative");
-      m_cumulative_fluxes.surface        = m_run_stats.get_double("surface_ice_flux_cumulative");
-    }
-    catch (RuntimeError &e) {
-      e.add_context("initializing cumulative flux counters from '%s'",
-                    input_file.inq_filename().c_str());
-      throw;
-    }
-  }
-}
-
 
 //! \brief Decide which stress balance model to use.
 void IceModel::allocate_stressbalance() {

@@ -1346,7 +1346,8 @@ IceModel_surface_flux::IceModel_surface_flux(const IceModel *m)
 
 void IceModel_surface_flux::update(double a, double b) {
 
-  m_ts->append(model->cumulative_fluxes().surface, a, b);
+  // FIXME: units
+  m_ts->append(model->geometry_evolution().top_surface_mass_balance().sum(), a, b);
 }
 
 IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(const IceModel *m)
@@ -1363,7 +1364,8 @@ IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(const IceModel *m)
 }
 
 void IceModel_grounded_basal_flux::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().grounded_basal, a, b);
+  // FIXME: units
+  m_ts->append(model->geometry_evolution().bottom_surface_mass_balance().sum(), a, b);
 }
 
 IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(const IceModel *m)
@@ -1380,7 +1382,8 @@ IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(const IceModel *m)
 }
 
 void IceModel_sub_shelf_flux::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().sub_shelf, a, b);
+  // FIXME: reimplement
+  m_ts->append(0, a, b);
 }
 
 IceModel_discharge_flux::IceModel_discharge_flux(const IceModel *m)
@@ -1397,7 +1400,8 @@ IceModel_discharge_flux::IceModel_discharge_flux(const IceModel *m)
 }
 
 void IceModel_discharge_flux::update(double a, double b) {
-  m_ts->append(model->cumulative_fluxes().discharge, a, b);
+  // FIXME: reimplement
+  m_ts->append(0, a, b);
 }
 
 IceModel_dHdt::IceModel_dHdt(const IceModel *m)
@@ -1594,62 +1598,6 @@ void IceModel_limnsw::update(double a, double b) {
     ice_mass    = ice_volume * ice_density;
 
   m_ts->append(ice_mass, a, b);
-}
-
-IceModel_discharge_flux_2D::IceModel_discharge_flux_2D(const IceModel *m)
-  : Diag<IceModel>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "discharge_flux")};
-
-  set_attrs("average ice discharge (calving) flux over reporting interval",
-            "",                 // no standard name
-            "kg second-1", "Gt year-1", 0);
-  m_vars[0].set_string("comment", "positive means ice gain");
-
-  double fill_value = units::convert(m_sys, m_fill_value,
-                                     "Gt year-1", "kg second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
-  m_vars[0].set_string("cell_methods", "time: mean");
-
-  m_last_cumulative_discharge.create(m_grid, "last_cumulative_discharge", WITHOUT_GHOSTS);
-  m_last_cumulative_discharge.set_attrs("internal",
-                                        "cumulative discharge at the time of the last report of discharge_flux",
-                                        "kg", "");
-
-  m_last_report_time = GSL_NAN;
-}
-
-IceModelVec::Ptr IceModel_discharge_flux_2D::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "discharge_flux", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  const IceModelVec2S &cumulative_discharge = model->cumulative_fluxes_2d().discharge;
-  const double current_time = m_grid->ctx()->time()->current();
-
-  if (gsl_isnan(m_last_report_time)) {
-    const double fill_value = units::convert(m_sys, m_fill_value,
-                                             "Gt year-1", "kg second-1");
-    result->set(fill_value);
-  } else {
-    IceModelVec::AccessList list{result.get(), &m_last_cumulative_discharge, &cumulative_discharge};
-
-    double dt = current_time - m_last_report_time;
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      (*result)(i, j) = (cumulative_discharge(i, j) - m_last_cumulative_discharge(i, j)) / dt;
-    }
-  }
-
-  // Save the cumulative discharge and the corresponding time:
-  m_last_cumulative_discharge.copy_from(cumulative_discharge);
-  m_last_report_time = current_time;
-
-  return result;
 }
 
 IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(const IceModel *m,
@@ -2274,7 +2222,6 @@ void IceModel::init_diagnostics() {
     {land_ice_area_fraction_name,           f(new IceModel_land_ice_area_fraction(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceModel_grounded_ice_sheet_area_fraction(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceModel_floating_ice_sheet_area_fraction(this))},
-    {"discharge_flux",                      f(new IceModel_discharge_flux_2D(this))},
     {"height_above_flotation",              f(new IceModel_height_above_flotation(this))},
     {"ice_mass",                            f(new IceModel_ice_mass(this))},
     {"topg_sl_adjusted",                    f(new IceModel_topg_sl_adjusted(this))},

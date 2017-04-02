@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Constantine Khroulev
+// Copyright (C) 2009--2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -364,7 +364,8 @@ void DiagnosticTimeseries::interp(double a, double b) {
   }
 
   if ((b < m_t[0]) || (b > m_t[1])) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
                                   b);
   }
 

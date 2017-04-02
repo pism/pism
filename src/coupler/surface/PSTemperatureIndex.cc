@@ -193,6 +193,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_runoff_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_runoff_rate.write_in_glaciological_units = true;
 
+  // FIXME: I need to re-implement saccum, smelt, and srunoff.
   {
     m_cumulative_accumulation.create(m_grid, "saccum_cumulative", WITHOUT_GHOSTS);
     m_cumulative_accumulation.set_attrs("diagnostic",

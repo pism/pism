@@ -63,13 +63,12 @@ public:
   void update(double dt);
   void reset();
 
-  //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated
-  //! IceModelVec.
+  //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated IceModelVec.
   IceModelVec::Ptr compute();
 
   int n_variables();
 
-  SpatialVariableMetadata metadata(int N = 0);
+  SpatialVariableMetadata& metadata(int N = 0);
 
   virtual void define(const PIO &nc);
 

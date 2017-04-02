@@ -56,16 +56,6 @@
 
 namespace pism {
 
-IceModel::FluxCounters::FluxCounters() {
-  grounded_basal = 0.0;
-  sub_shelf      = 0.0;
-  surface        = 0.0;
-  sum_divQ_SIA   = 0.0;
-  sum_divQ_SSA   = 0.0;
-  Href_to_H      = 0.0;
-  H_to_Href      = 0.0;
-}
-
 FractureFields::FractureFields(IceGrid::ConstPtr grid) {
   Config::ConstPtr config = grid->ctx()->config();
 
@@ -126,59 +116,6 @@ FractureFields::FractureFields(IceGrid::ConstPtr grid) {
                                 "Pa", "", 2);
 }
 
-IceModel::FluxFields::FluxFields(IceGrid::ConstPtr grid) {
-  {
-    climatic_mass_balance.create(grid, "climatic_mass_balance_cumulative",
-                                 WITHOUT_GHOSTS);
-    climatic_mass_balance.set_attrs("diagnostic",
-                                    "cumulative surface mass balance",
-                                    "kg m-2", "");
-  }
-  {
-    basal_grounded.create(grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS);
-    basal_grounded.set_attrs("diagnostic",
-                             "cumulative basal flux into the ice "
-                             "in grounded areas (positive means ice gain)",
-                             "kg m-2", "");
-    basal_grounded.set_time_independent(false);
-    basal_grounded.metadata().set_string("glaciological_units", "Gt m-2");
-    basal_grounded.write_in_glaciological_units = true;
-  }
-  {
-    basal_floating.create(grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS);
-    basal_floating.set_attrs("diagnostic",
-                             "cumulative basal flux into the ice "
-                             "in floating areas (positive means ice gain)",
-                             "kg m-2", "");
-    basal_floating.set_time_independent(false);
-    basal_floating.metadata().set_string("glaciological_units", "Gt m-2");
-    basal_floating.write_in_glaciological_units = true;
-  }
-  {
-    discharge.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
-    discharge.set_attrs("diagnostic",
-                        "cumulative discharge (calving) flux (positive means ice loss)",
-                        "kg", "");
-    discharge.set_time_independent(false);
-    discharge.metadata().set_string("glaciological_units", "Gt");
-    discharge.write_in_glaciological_units = true;
-  }
-}
-
-void IceModel::FluxFields::reset() {
-  climatic_mass_balance.set(0.0);
-  basal_grounded.set(0.0);
-  basal_floating.set(0.0);
-  discharge.set(0.0);
-}
-
-void IceModel::FluxFields::regrid(const PIO &input_file) {
-  climatic_mass_balance.regrid(input_file, OPTIONAL, 0.0);
-  basal_grounded.regrid(input_file,        OPTIONAL, 0.0);
-  basal_floating.regrid(input_file,        OPTIONAL, 0.0);
-  discharge.regrid(input_file,             OPTIONAL, 0.0);
-}
-
 IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   : m_grid(g),
     m_config(context->config()),
@@ -189,7 +126,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
-    m_cumulative_flux_fields(m_grid),
+    m_dischange(m_grid, "discharge", WITH_GHOSTS),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
 
@@ -249,14 +186,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
       m_work2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
     }
   }
-}
-
-IceModel::FluxCounters IceModel::cumulative_fluxes() const {
-  return m_cumulative_fluxes;
-}
-
-const IceModel::FluxFields& IceModel::cumulative_fluxes_2d() const {
-  return m_cumulative_flux_fields;
 }
 
 double IceModel::dt() const {

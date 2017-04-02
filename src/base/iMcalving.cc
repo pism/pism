@@ -111,8 +111,10 @@ void IceModel::do_calving() {
   // update the mask and surface elevation.
   enforce_consistency_of_geometry();
 
-  update_cumulative_discharge(m_geometry.ice_thickness, m_geometry.ice_area_specific_volume,
-                              old_H, old_Href);
+  compute_discharge(m_geometry.ice_thickness,
+                    m_geometry.ice_area_specific_volume,
+                    old_H, old_Href,
+                    m_dischange);
 }
 
 /**
@@ -144,7 +146,7 @@ void IceModel::Href_cleanup() {
 }
 
 /**
- * Updates the cumulative ice discharge into the ocean.
+ * Compute the ice discharge into the ocean during the current time step.
  *
  * Units: kg, computed as thickness [m] * cell_area [m2] * density [kg m-3].
  *
@@ -152,18 +154,19 @@ void IceModel::Href_cleanup() {
  * @param Href current "reference ice thickness"
  * @param thickness_old old ice thickness
  * @param Href_old old "reference ice thickness"
+ * @param[out] output computed discharge during the current time step
  */
-void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
-                                           const IceModelVec2S &Href,
-                                           const IceModelVec2S &thickness_old,
-                                           const IceModelVec2S &Href_old) {
+void IceModel::compute_discharge(const IceModelVec2S &thickness,
+                                 const IceModelVec2S &Href,
+                                 const IceModelVec2S &thickness_old,
+                                 const IceModelVec2S &Href_old,
+                                 IceModelVec2S &output) {
 
   const double ice_density = m_config->get_double("constants.ice.density");
 
   IceModelVec::AccessList list{&thickness, &thickness_old,
-      &Href, &Href_old, &m_geometry.cell_area, &m_cumulative_flux_fields.discharge};
+      &Href, &Href_old, &m_geometry.cell_area, &output};
 
-  double total_discharge = 0.0;
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -172,15 +175,8 @@ void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
       H_new     = thickness(i, j) + Href(i, j),
       discharge = (H_new - H_old) * m_geometry.cell_area(i, j) * ice_density;
 
-    // Only count mass loss. (A cell may stay "partially-filled" for several time-steps as the
-    // calving front advances. In this case delta_Href is real, but does not correspond to
-    if (discharge <= 0.0) {
-      m_cumulative_flux_fields.discharge(i, j) += discharge;
-      total_discharge += discharge;
-    }
+    output(i, j) += discharge;
   }
-
-  m_cumulative_fluxes.discharge += GlobalSum(m_grid->com, total_discharge);
 }
 
 } // end of namespace pism
