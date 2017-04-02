@@ -100,8 +100,12 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
+void Diagnostic::define(const PIO &file) {
+  this->define_impl(file);
+}
+
 //! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define(const PIO &nc) {
+void Diagnostic::define_impl(const PIO &file) {
   std::string order = m_grid->ctx()->config()->get_string("output.variable_order");
   for (unsigned int j = 0; j < m_dof; ++j) {
     io::define_spatial_variable(m_vars[j], *m_grid, file, m_output_datatype, order, true);

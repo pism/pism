@@ -70,12 +70,13 @@ public:
 
   SpatialVariableMetadata& metadata(unsigned int N = 0);
 
-  virtual void define(const PIO &nc);
+  void define(const PIO &nc);
 
   void init(const PIO &input, unsigned int time);
   void define_state(const PIO &output) const;
   void write_state(const PIO &output) const;
 protected:
+  virtual void define_impl(const PIO &nc);
   virtual void init_impl(const PIO &input, unsigned int time);
   virtual void define_state_impl(const PIO &output) const;
   virtual void write_state_impl(const PIO &output) const;
