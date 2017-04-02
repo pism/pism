@@ -138,7 +138,6 @@ add_library (pism
   base/iMinit.cc
   base/iMIO.cc
   base/iMoptions.cc
-  base/iMpartgrid.cc
   base/iMreport.cc
   base/iMtimeseries.cc
   base/iMutil.cc
