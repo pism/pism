@@ -108,6 +108,37 @@ protected:
   double m_fill_value;
 };
 
+/*!
+ * Helper template wrapping quantities with dedicated storage in diagnostic classes.
+ *
+ * Note: Make sure that that created diagnostics don't outlast fields that they wrap (or you'll hav
+ * dangling pointers).
+ */
+template<class T>
+class DiagWithDedicatedStorage : public Diagnostic {
+public:
+  DiagWithDedicatedStorage(const T &input)
+    : Diagnostic(input.get_grid()),
+      m_input(input)
+  {
+    m_dof = input.get_ndof();
+    for (unsigned int j = 0; j < m_dof; ++j) {
+      m_vars.push_back(input.metadata(j));
+    }
+  }
+protected:
+  IceModelVec::Ptr compute_impl() {
+    typename T::Ptr result(new T());
+
+    result->copy_from(m_input);
+
+    return result;
+  }
+  const T &m_input;
+};
+
+typedef DiagWithDedicatedStorage<IceModelVec2S> Diag2S;
+
 //! A template derived from Diagnostic, adding a "Model".
 template <class Model>
 class Diag : public Diagnostic {
