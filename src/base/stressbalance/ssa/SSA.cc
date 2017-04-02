@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2017 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -407,7 +407,7 @@ SSA_taud::SSA_taud(const SSA *m)
   set_attrs("Y-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < m_dof; ++k) {
+  for (unsigned int k = 0; k < m_dof; ++k) {
     m_vars[k].set_string("comment",
                        "this is the driving stress used by the SSA solver");
   }

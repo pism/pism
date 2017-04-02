@@ -57,7 +57,7 @@ void Diagnostic::reset_impl() {
 }
 
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
-int Diagnostic::n_variables() {
+unsigned int Diagnostic::n_variables() {
   return m_dof;
 }
 
@@ -90,7 +90,7 @@ void Diagnostic::write_state_impl(const PIO &output) const {
 }
 
 //! Get a metadata object corresponding to variable number N.
-SpatialVariableMetadata& Diagnostic::metadata(int N) {
+SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   if (N >= m_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "variable metadata index %d is out of bounds",
@@ -103,8 +103,8 @@ SpatialVariableMetadata& Diagnostic::metadata(int N) {
 //! Define NetCDF variables corresponding to a diagnostic quantity.
 void Diagnostic::define(const PIO &nc) {
   std::string order = m_grid->ctx()->config()->get_string("output.variable_order");
-  for (int j = 0; j < m_dof; ++j) {
-    io::define_spatial_variable(m_vars[j], *m_grid, nc, m_output_datatype, order, true);
+  for (unsigned int j = 0; j < m_dof; ++j) {
+    io::define_spatial_variable(m_vars[j], *m_grid, file, m_output_datatype, order, true);
   }
 }
 
@@ -113,7 +113,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
                            const std::string &standard_name,
                            const std::string &units,
                            const std::string &glaciological_units,
-                           int N) {
+                           unsigned int N) {
   if (N >= m_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "N (%d) >= m_dof (%d)", N, m_dof);
   }

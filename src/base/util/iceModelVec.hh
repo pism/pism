@@ -235,7 +235,7 @@ public:
   const std::string& get_name() const;
   virtual void  set_attrs(const std::string &pism_intent, const std::string &long_name,
                           const std::string &units, const std::string &standard_name,
-                          int component = 0);
+                          unsigned int component = 0);
   virtual void  read_attributes(const std::string &filename, int component = 0);
   virtual void  define(const PIO &nc, IO_Type default_type = PISM_DOUBLE) const;
 

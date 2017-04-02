@@ -66,9 +66,9 @@ public:
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated IceModelVec.
   IceModelVec::Ptr compute();
 
-  int n_variables();
+  unsigned int n_variables();
 
-  SpatialVariableMetadata& metadata(int N = 0);
+  SpatialVariableMetadata& metadata(unsigned int N = 0);
 
   virtual void define(const PIO &nc);
 
@@ -84,7 +84,7 @@ protected:
                  const std::string &my_standard_name,
                  const std::string &my_units,
                  const std::string &my_glaciological_units,
-                 int N = 0);
+                 unsigned int N = 0);
 
   virtual void update_impl(double dt);
   virtual void reset_impl();
@@ -98,7 +98,7 @@ protected:
   //! Configuration flags and parameters
   const Config::ConstPtr m_config;
   //! number of degrees of freedom; 1 for scalar fields, 2 for vector fields
-  int m_dof;
+  unsigned int m_dof;
   //! data type to use in the file
   IO_Type m_output_datatype;
   //! metadata corresponding to NetCDF variables

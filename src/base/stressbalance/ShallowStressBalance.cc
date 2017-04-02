@@ -285,7 +285,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
   set_attrs("Y-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < m_dof; ++k) {
+  for (unsigned int k = 0; k < m_dof; ++k) {
     m_vars[k].set_string("comment",
                        "this field is purely diagnostic (not used by the model)");
   }
@@ -367,7 +367,7 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
   set_attrs("Y-component of the shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < m_dof; ++k) {
+  for (unsigned int k = 0; k < m_dof; ++k) {
     m_vars[k].set_string("comment",
                        "this field is purely diagnostic (not used by the model)");
   }
