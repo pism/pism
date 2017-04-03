@@ -96,7 +96,6 @@ int IceModel::process_signals() {
 
 
 void IceModel::update_run_stats() {
-  PetscErrorCode ierr;
 
   // timing stats
   // MYPPH stands for "model years per processor hour"
