@@ -659,13 +659,11 @@ IceModel_liqfrac::IceModel_liqfrac(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys,
-                                           "liqfrac", m_grid->z())};
+  m_vars = {SpatialVariableMetadata(m_sys, "liqfrac", m_grid->z())};
 
   set_attrs("liquid water fraction in ice (between 0 and 1)", "",
             "1", "1", 0);
-  m_vars[0].set_double("valid_min", 0);
-  m_vars[0].set_double("valid_max", 1);
+  m_vars[0].set_doubles("valid_range", {0.0, 1.0});
 }
 
 IceModelVec::Ptr IceModel_liqfrac::compute_impl() {
