@@ -27,7 +27,6 @@ namespace pism {
 
 Diagnostic::Diagnostic(IceGrid::ConstPtr g)
   : m_grid(g), m_sys(g->ctx()->unit_system()), m_config(g->ctx()->config()) {
-  m_output_datatype = PISM_FLOAT;
   m_dof = 1;
   m_fill_value = m_config->get_double("output.fill_value");
 }
@@ -100,15 +99,17 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const PIO &file) {
-  this->define_impl(file);
+void Diagnostic::define(const PIO &file, IO_Type default_type) {
+  this->define_impl(file, default_type);
 }
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const PIO &file) {
-  std::string order = m_grid->ctx()->config()->get_string("output.variable_order");
+void Diagnostic::define_impl(const PIO &file, IO_Type default_type) {
   for (unsigned int j = 0; j < m_dof; ++j) {
-    io::define_spatial_variable(m_vars[j], *m_grid, file, m_output_datatype, order, true);
+    io::define_spatial_variable(m_vars[j], *m_grid, file,
+                                default_type,
+                                m_grid->ctx()->config()->get_string("output.variable_order"),
+                                true);
   }
 }
 

@@ -70,13 +70,13 @@ public:
 
   SpatialVariableMetadata& metadata(unsigned int N = 0);
 
-  void define(const PIO &nc);
+  void define(const PIO &file, IO_Type default_type);
 
   void init(const PIO &input, unsigned int time);
   void define_state(const PIO &output) const;
   void write_state(const PIO &output) const;
 protected:
-  virtual void define_impl(const PIO &nc);
+  virtual void define_impl(const PIO &file, IO_Type default_type);
   virtual void init_impl(const PIO &input, unsigned int time);
   virtual void define_state_impl(const PIO &output) const;
   virtual void write_state_impl(const PIO &output) const;
@@ -100,8 +100,6 @@ protected:
   const Config::ConstPtr m_config;
   //! number of degrees of freedom; 1 for scalar fields, 2 for vector fields
   unsigned int m_dof;
-  //! data type to use in the file
-  IO_Type m_output_datatype;
   //! metadata corresponding to NetCDF variables
   std::vector<SpatialVariableMetadata> m_vars;
   //! fill value (used often enough to justify storing it)
