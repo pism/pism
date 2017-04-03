@@ -126,7 +126,11 @@ public:
   }
 protected:
   IceModelVec::Ptr compute_impl() {
-    typename T::Ptr result(new T());
+    typename T::Ptr result(new T(m_input.get_grid(), "unnamed", WITHOUT_GHOSTS));
+    result->set_name(m_input.get_name());
+    for (unsigned int k = 0; k < m_dof; ++k) {
+      result->metadata(k) = m_vars[k];
+    }
 
     result->copy_from(m_input);
 

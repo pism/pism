@@ -96,10 +96,10 @@ void IceModel::update_viewers() {
       this->view_field(m_grid->variables().get(v));
     } else {
       // if not found, try to compute:
-      Diagnostic::Ptr diag = m_diagnostics[v];
+      auto diag = m_diagnostics.find(v);
 
-      if (diag) {
-        this->view_field(diag->compute().get());
+      if (diag != m_diagnostics.end()) {
+        this->view_field(diag->second->compute().get());
       }
     }
   }

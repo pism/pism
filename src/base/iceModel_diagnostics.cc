@@ -176,7 +176,7 @@ void IceModel::list_diagnostics() {
 
         m_log->message(1, "   Name: %s [%s]\n", name.c_str(), units.c_str());
 
-        for (int k = 0; k < diag->n_variables(); ++k) {
+        for (unsigned int k = 0; k < diag->n_variables(); ++k) {
           SpatialVariableMetadata var = diag->metadata(k);
 
           std::string long_name = var.get_string("long_name");
@@ -242,8 +242,7 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
     }
   }
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "hardav", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hardav", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -278,18 +277,15 @@ IceModelVec::Ptr IceModel_hardav::compute_impl() {
 
 IceModel_rank::IceModel_rank(const IceModel *m)
   : Diag<IceModel>(m) {
-
-  // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "rank")};
-  m_output_datatype = PISM_INT;
   set_attrs("processor rank", "", "1", "", 0);
   m_vars[0].set_time_independent(true);
+  m_vars[0].set_output_type(PISM_INT);
 }
 
 IceModelVec::Ptr IceModel_rank::compute_impl() {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "rank", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "rank", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   IceModelVec::AccessList list{result.get()};
@@ -2226,7 +2222,8 @@ void IceModel::init_diagnostics() {
     {"ice_mass",                            f(new IceModel_ice_mass(this))},
     {"topg_sl_adjusted",                    f(new IceModel_topg_sl_adjusted(this))},
     {"basal_grounded_mass_flux",            f(new BMBSplit(this, BMBSplit::GROUNDED))},
-    {"basal_floating_mass_flux",            f(new BMBSplit(this, BMBSplit::FLOATING))}
+    {"basal_floating_mass_flux",            f(new BMBSplit(this, BMBSplit::FLOATING))},
+    {"bmelt",                               f(new Diag2S(m_basal_melt_rate))}
   };
 
 #if (PISM_USE_PROJ4==1)

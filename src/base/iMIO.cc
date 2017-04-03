@@ -175,17 +175,12 @@ void IceModel::save_variables(const PIO &file,
 
 void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &variables,
                                   IO_Type default_type) {
-  // Define all the variables:
-  for (auto var : variables) {
-    if (m_grid->variables().is_available(var)) {
-      m_grid->variables().get(var)->define(file, default_type);
-    } else {
-      // It might be a diagnostic quantity
-      Diagnostic::Ptr diag = m_diagnostics[var];
 
-      if (diag) {
-        diag->define(file);
-      }
+  for (auto variable : variables) {
+    auto diag = m_diagnostics.find(variable);
+
+    if (diag != m_diagnostics.end()) {
+      diag->second->define(file, default_type);
     }
   }
 }
@@ -193,15 +188,12 @@ void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
 void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &variables) {
-  for (auto var : variables) {
-    if (m_grid->variables().is_available(var)) {
-      m_grid->variables().get(var)->write(file);
-    } else {
-      Diagnostic::Ptr diag = m_diagnostics[var];
 
-      if (diag) {
-        diag->compute()->write(file);
-      }
+  for (auto variable : variables) {
+    auto diag = m_diagnostics.find(variable);
+
+    if (diag != m_diagnostics.end()) {
+      diag->second->compute()->write(file);
     }
   }
 }
