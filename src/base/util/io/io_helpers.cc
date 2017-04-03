@@ -1366,11 +1366,15 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
     }
 
     std::vector<double> bounds(2);
-    if (variable.has_attribute("valid_min")) {
-      bounds[0]  = variable.get_double("valid_min");
-    }
-    if (variable.has_attribute("valid_max")) {
-      bounds[1]  = variable.get_double("valid_max");
+    if (variable.has_attribute("valid_range")) {
+      bounds = variable.get_doubles("valid_range");
+    } else {
+      if (variable.has_attribute("valid_min")) {
+        bounds[0]  = variable.get_double("valid_min");
+      }
+      if (variable.has_attribute("valid_max")) {
+        bounds[1]  = variable.get_double("valid_max");
+      }
     }
 
     double fill_value = 0.0;
@@ -1396,7 +1400,10 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
       nc.put_att_double(var_name, "_FillValue", nctype, fill_value);
     }
 
-    if (variable.has_attribute("valid_min") && variable.has_attribute("valid_max")) {
+    if (variable.has_attribute("valid_range")) {
+      nc.put_att_double(var_name, "valid_range", nctype, bounds);
+    } else if (variable.has_attribute("valid_min") and
+               variable.has_attribute("valid_max")) {
       nc.put_att_double(var_name, "valid_range", nctype, bounds);
     } else if (variable.has_attribute("valid_min")) {
       nc.put_att_double(var_name, "valid_min",   nctype, bounds[0]);
