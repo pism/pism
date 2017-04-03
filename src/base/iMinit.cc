@@ -149,7 +149,7 @@ void IceModel::model_state_setup() {
       initialize_2d();
     }
 
-    regrid(2);
+    regrid();
   }
 
   // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
@@ -283,41 +283,8 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
 
   m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
-  // Read the model state, mapping and climate_steady variables:
-  for (auto v : m_grid->variables().keys()) {
-    // FIXME: remove const_cast. This is bad.
-    IceModelVec *var = const_cast<IceModelVec*>(m_grid->variables().get(v));
-
-    std::string
-      intent     = var->metadata().get_string("pism_intent"),
-      short_name = var->metadata().get_string("short_name");
-
-    if (intent == "model_state" ||
-        intent == "mapping"     ||
-        intent == "climate_steady") {
-
-      // skip "enthalpy" and "Href" for now: we'll take care
-      // of them a little later
-      if (short_name == "Href") {
-        continue;
-      }
-
-      var->read(input_file, last_record);
-    }
-  }
-
-  // check if the input file has Href; set to 0 if it is not present
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
-
-    if (input_file.inq_var("Href")) {
-      m_geometry.ice_area_specific_volume.read(input_file, last_record);
-    } else {
-      m_log->message(2,
-                     "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'."
-                     " Setting it to zero...\n",
-                     filename.c_str());
-      m_geometry.ice_area_specific_volume.set(0.0);
-    }
+  for (auto variable : m_model_state) {
+    variable->read(input_file, last_record);
   }
 }
 

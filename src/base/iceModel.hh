@@ -304,10 +304,7 @@ protected:
   const IceModelVec2S &discharge() const;
 
   // see iMIO.cc
-  virtual void regrid(int dimensions);
-  virtual void regrid_variables(const PIO &regrid_file,
-                                const std::set<std::string> &regrid_vars,
-                                unsigned int ndims);
+  virtual void regrid();
 
   // see iMfractures.cc
   virtual void update_fracture_density();
@@ -365,6 +362,10 @@ protected:
   // discharge during the last time step
   IceModelVec2S m_dischange;
 
+  /*!
+   * The set of variables that the "state" of IceModel consists of.
+   */
+  std::set<IceModelVec*> m_model_state;
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
   std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
 

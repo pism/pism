@@ -328,6 +328,9 @@ void IceModel::allocate_storage() {
     m_grid->variables().add(m_fracture->growth_rate);
     m_grid->variables().add(m_fracture->density);
   }
+
+  m_model_state.insert(&m_ssa_dirichlet_bc_mask);
+  m_model_state.insert(&m_ssa_dirichlet_bc_values);
 }
 
 //! Update the surface elevation and the flow-type mask when the geometry has changed.

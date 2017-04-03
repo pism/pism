@@ -175,7 +175,6 @@ void IceModel::save_variables(const PIO &file,
 
 void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &variables,
                                   IO_Type default_type) {
-
   for (auto variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
@@ -188,7 +187,6 @@ void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
 void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &variables) {
-
   for (auto variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
@@ -199,7 +197,9 @@ void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &v
 }
 
 void IceModel::define_model_state(const PIO &file) {
-  define_diagnostics(file, output_variables("small"), PISM_DOUBLE);
+  for (auto v : m_model_state) {
+    v->define(file);
+  }
 
   for (auto m : m_submodels) {
     m.second->define_model_state(file);
@@ -207,7 +207,9 @@ void IceModel::define_model_state(const PIO &file) {
 }
 
 void IceModel::write_model_state(const PIO &file) {
-  write_diagnostics(file, output_variables("small"));
+  for (auto v : m_model_state) {
+    v->write(file);
+  }
 
   for (auto m : m_submodels) {
     m.second->write_model_state(file);
@@ -216,20 +218,7 @@ void IceModel::write_model_state(const PIO &file) {
 
 
 //! Manage regridding based on user options.
-/*!
-  For each variable selected by option `-regrid_vars`, we regrid it onto the current grid from
-  the NetCDF file specified by `-regrid_file`.
-
-  This `dimensions` argument can be 2 (regrid 2D variables only), 3 (3D
-  only) and 0 (everything).
-*/
-void IceModel::regrid(int dimensions) {
-
-  if (not (dimensions == 0 ||
-           dimensions == 2 ||
-           dimensions == 3)) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "dimensions can only be 0 (all), 2 or 3");
-  }
+void IceModel::regrid() {
 
   options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
 
@@ -243,61 +232,27 @@ void IceModel::regrid(int dimensions) {
      return;
   }
 
-  if (dimensions != 0) {
-    m_log->message(2, "regridding %dD variables from file %s ...\n",
-               dimensions, regrid_filename->c_str());
-  } else {
-    m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
-  }
+  m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
 
   {
     PIO regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
-
-    if (dimensions == 0) {
-      regrid_variables(regrid_file, regrid_vars, 2);
-      regrid_variables(regrid_file, regrid_vars, 3);
-    } else {
-      regrid_variables(regrid_file, regrid_vars, dimensions);
-    }
-  }
-}
-
-void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::string> &vars,
-                                unsigned int ndims) {
-
-  for (auto var : vars) {
-
-    if (not m_grid->variables().is_available(var)) {
-      continue;
+    for (auto v : m_model_state) {
+      if (regrid_vars->find(v->get_name()) != regrid_vars->end()) {
+        v->regrid(regrid_file, CRITICAL);
+      }
     }
 
-    // FIXME: remove const_cast. This is bad.
-    IceModelVec *v = const_cast<IceModelVec*>(m_grid->variables().get(var));
-    SpatialVariableMetadata &m = v->metadata();
+    // Check the range of the ice thickness.
+    {
+      double
+        max_thickness = m_geometry.ice_thickness.range().max,
+        Lz            = m_grid->Lz();
 
-    if (v->get_ndims() != ndims) {
-      continue;
-    }
-
-    std::string pism_intent = m.get_string("pism_intent");
-    if (pism_intent != "model_state") {
-      m_log->message(2, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
-                     var.c_str());
-      continue;
-    }
-
-    v->regrid(regrid_file, CRITICAL);
-  }
-
-  // Check the range of the ice thickness.
-  {
-    double max_thickness = m_geometry.ice_thickness.range().max,
-      Lz = m_grid->Lz();
-
-    if (max_thickness >= Lz + 1e-6) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
-                                    "exceeds the height of the computational domain (%f meters).",
-                                    max_thickness, Lz);
+      if (max_thickness >= Lz + 1e-6) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
+                                      "exceeds the height of the computational domain (%f meters).",
+                                      max_thickness, Lz);
+      }
     }
   }
 }
@@ -433,13 +388,12 @@ void IceModel::init_backups() {
     m_backup_filename = "pism_backup.nc";
   }
 
+  m_backup_vars = output_variables(m_config->get_string("output.backup_size"));
   m_last_backup_time = 0.0;
 }
 
   //! Write a backup (i.e. an intermediate result of a run).
 void IceModel::write_backup() {
-
-  auto backup_vars = output_variables(m_config->get_string("output.backup_size"));
 
   double backup_interval = m_config->get_double("output.backup_interval");
 
@@ -468,7 +422,7 @@ void IceModel::write_backup() {
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     write_run_stats(file);
 
-    save_variables(file, INCLUDE_MODEL_STATE, backup_vars);
+    save_variables(file, INCLUDE_MODEL_STATE, m_backup_vars);
   }
   profiling.end("io.backup");
   PetscLogDouble backup_end_time = GetTime();
