@@ -140,6 +140,7 @@ protected:
 };
 
 typedef DiagWithDedicatedStorage<IceModelVec2S> Diag2S;
+typedef DiagWithDedicatedStorage<IceModelVec2V> Diag2V;
 
 //! A template derived from Diagnostic, adding a "Model".
 template <class Model>

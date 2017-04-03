@@ -2231,7 +2231,10 @@ void IceModel::init_diagnostics() {
     {"ice_area_specific_volume",            f(new Diag2S(m_geometry.ice_area_specific_volume))},
     {"mask",                                f(new Diag2S(m_geometry.cell_type))},
     {"cell_grounded_fraction",              f(new Diag2S(m_geometry.cell_grounded_fraction))},
-    {"usurf",                               f(new Diag2S(m_geometry.ice_surface_elevation))}
+    {"usurf",                               f(new Diag2S(m_geometry.ice_surface_elevation))},
+    {"tauc",                                f(new Diag2S(m_basal_yield_stress))},
+    {"ssa_bc_mask",                         f(new Diag2S(m_ssa_dirichlet_bc_mask))},
+    {"ssa_bc_vel",                          f(new Diag2V(m_ssa_dirichlet_bc_values))}
   };
 
 #if (PISM_USE_PROJ4==1)
