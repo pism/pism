@@ -330,6 +330,7 @@ void IceModel::allocate_storage() {
     m_grid->variables().add(m_fracture->density);
   }
 
+  // Add some variables to the list of "model state" fields.
   m_model_state.insert(&m_ssa_dirichlet_bc_mask);
   m_model_state.insert(&m_ssa_dirichlet_bc_values);
 
