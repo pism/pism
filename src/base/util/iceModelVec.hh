@@ -570,6 +570,10 @@ private:
 class IceModelVec3 : public IceModelVec3D {
 public:
   IceModelVec3();
+  IceModelVec3(IceGrid::ConstPtr mygrid, const std::string &short_name,
+               IceModelVecKind ghostedp,
+               unsigned int stencil_width = 1);
+
   virtual ~IceModelVec3();
 
   typedef std::shared_ptr<IceModelVec3> Ptr;

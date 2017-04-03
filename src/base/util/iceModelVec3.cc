@@ -57,10 +57,15 @@ IceModelVec3::IceModelVec3() {
   // empty
 }
 
+IceModelVec3::IceModelVec3(IceGrid::ConstPtr grid, const std::string &short_name,
+                           IceModelVecKind ghostedp,
+                           unsigned int stencil_width) {
+  create(grid, short_name, ghostedp, stencil_width);
+}
+
 IceModelVec3::~IceModelVec3() {
   // empty
 }
-
 
 IceModelVec3::Ptr IceModelVec3::To3DScalar(IceModelVec::Ptr input) {
   IceModelVec3::Ptr result = dynamic_pointer_cast<IceModelVec3,IceModelVec>(input);
