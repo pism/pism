@@ -114,7 +114,7 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
     m_basal_melt_rate.create(m_grid, "bmelt", WITHOUT_GHOSTS);
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.set_attrs("model_state",
-                                "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
+                                "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)",
                                 "m s-1", "land_ice_basal_melt_rate");
     m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
     m_basal_melt_rate.write_in_glaciological_units = true;
@@ -351,6 +351,56 @@ EnergyModel_liquified_ice_volume::EnergyModel_liquified_ice_volume(const EnergyM
 
 void EnergyModel_liquified_ice_volume::update(double a, double b) {
   m_ts->append(model->cumulative_stats().liquified_ice_volume, a, b);
+}
+
+namespace diagnostics {
+/*! @brief Report ice enthalpy.
+  tion */
+class Enthalpy : public Diag<EnergyModel>
+{
+public:
+  Enthalpy(const EnergyModel *m)
+    : Diag<EnergyModel>(m) {
+    m_vars = {model->enthalpy().metadata()};
+  }
+
+protected:
+  IceModelVec::Ptr compute_impl() {
+
+    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "enthalpy", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    const IceModelVec3 &input = model->enthalpy();
+
+    // FIXME: implement IceModelVec3::copy_from()
+
+    IceModelVec::AccessList list {result.get(), &input};
+    ParallelSection loop(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        result->set_column(i, j, input.get_column(i, j));
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
+
+
+    return result;
+  }
+};
+
+} // end of namespace diagnostics
+
+std::map<std::string, Diagnostic::Ptr> EnergyModel::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result;
+  result = {
+    {"enthalpy", Diagnostic::Ptr(new diagnostics::Enthalpy(this))},
+    {"bmelt",    Diagnostic::Ptr(new Diag2S(m_basal_melt_rate))}
+  };
+  return result;
 }
 
 std::map<std::string, TSDiagnostic::Ptr> EnergyModel::ts_diagnostics_impl() const {
