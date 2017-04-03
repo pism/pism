@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Constantine Khroulev
+// Copyright (C) 2009--2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,6 +32,15 @@ namespace pism {
 IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   m_dof = 2;
   m_begin_end_access_use_dof = false;
+}
+
+IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
+                             IceModelVecKind ghostedp, unsigned int stencil_width)
+  : IceModelVec2() {
+  m_dof = 2;
+  m_begin_end_access_use_dof = false;
+
+  create(grid, short_name, ghostedp, stencil_width);
 }
 
 IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
