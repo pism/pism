@@ -2215,15 +2215,23 @@ void IceModel::init_diagnostics() {
     {"tempsurf",                            f(new IceModel_tempsurf(this))},
     {"dHdt",                                f(new IceModel_dHdt(this))},
     {"effective_viscosity",                 f(new IceModel_viscosity(this))},
+    {"basal_grounded_mass_flux",            f(new BMBSplit(this, BMBSplit::GROUNDED))},
+    {"basal_floating_mass_flux",            f(new BMBSplit(this, BMBSplit::FLOATING))},
     {land_ice_area_fraction_name,           f(new IceModel_land_ice_area_fraction(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceModel_grounded_ice_sheet_area_fraction(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceModel_floating_ice_sheet_area_fraction(this))},
     {"height_above_flotation",              f(new IceModel_height_above_flotation(this))},
     {"ice_mass",                            f(new IceModel_ice_mass(this))},
     {"topg_sl_adjusted",                    f(new IceModel_topg_sl_adjusted(this))},
-    {"basal_grounded_mass_flux",            f(new BMBSplit(this, BMBSplit::GROUNDED))},
-    {"basal_floating_mass_flux",            f(new BMBSplit(this, BMBSplit::FLOATING))},
-    {"bmelt",                               f(new Diag2S(m_basal_melt_rate))}
+    {"bmelt",                               f(new Diag2S(m_basal_melt_rate))},
+    {"cell_area",                           f(new Diag2S(m_geometry.cell_area))},
+    {"latitude",                            f(new Diag2S(m_geometry.latitude))},
+    {"longitude",                           f(new Diag2S(m_geometry.longitude))},
+    {"thk",                                 f(new Diag2S(m_geometry.ice_thickness))},
+    {"ice_area_specific_volume",            f(new Diag2S(m_geometry.ice_area_specific_volume))},
+    {"mask",                                f(new Diag2S(m_geometry.cell_type))},
+    {"cell_grounded_fraction",              f(new Diag2S(m_geometry.cell_grounded_fraction))},
+    {"usurf",                               f(new Diag2S(m_geometry.ice_surface_elevation))}
   };
 
 #if (PISM_USE_PROJ4==1)
