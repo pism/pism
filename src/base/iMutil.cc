@@ -107,14 +107,6 @@ void IceModel::update_run_stats() {
                                       m_time->current() - m_time->start(),
                                       "seconds", "years") / proc_hours;
 
-  // get PETSc's reported number of floating point ops (*not* per time) on this
-  //   process, then sum over all processes
-  PetscLogDouble my_flops = 0.0;
-  ierr = PetscGetFlops(&my_flops);
-  PISM_CHK(ierr, "PetscGetFlops");
-
-  double flops = GlobalSum(m_grid->com, my_flops);
-
   // time-independent info
   {
     m_run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
@@ -123,7 +115,6 @@ void IceModel::update_run_stats() {
   m_run_stats.set_double("wall_clock_hours", wall_clock_hours);
   m_run_stats.set_double("processor_hours", proc_hours);
   m_run_stats.set_double("model_years_per_processor_hour", mypph);
-  m_run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
 }
 
 //! Get time and user/host name and add it to the given string.
