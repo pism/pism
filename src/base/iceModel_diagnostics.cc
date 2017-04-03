@@ -114,45 +114,6 @@ void IceModel::list_diagnostics() {
 
   m_log->message(1, "\n");
 
-  // quantities with dedicated storage
-  {
-    std::set<std::string> list = m_grid->variables().keys();
-
-    for (unsigned int d = 3; d > 1; --d) {
-
-      m_log->message(1,
-                     "======== Available %dD quantities with dedicated storage ========\n",
-                     d);
-
-      for (auto s : list) {
-        const IceModelVec *v = NULL;
-
-        if (m_grid->variables().is_available(s)) {
-          v = m_grid->variables().get(s);
-        }
-
-        if (v != NULL && v->get_ndims() == d) {
-          const SpatialVariableMetadata &var = v->metadata();
-
-          std::string
-            name                = var.get_name(),
-            units               = var.get_string("units"),
-            glaciological_units = var.get_string("glaciological_units"),
-            long_name           = var.get_string("long_name");
-
-          if (not glaciological_units.empty()) {
-            units = glaciological_units;
-          }
-
-          m_log->message(1,
-                         "   Name: %s [%s]\n"
-                         "       - %s\n\n", name.c_str(), units.c_str(), long_name.c_str());
-        }
-      }
-    }
-
-  } // done with quantities with dedicated storage
-
   // 2D and 3D diagnostics
   for (unsigned int d = 3; d > 1; --d) {
 
