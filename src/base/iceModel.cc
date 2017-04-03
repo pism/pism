@@ -314,6 +314,7 @@ void IceModel::allocate_storage() {
       m_ssa_dirichlet_bc_values.metadata(j).set_doubles("valid_range", {-valid_range, valid_range});
       m_ssa_dirichlet_bc_values.metadata(j).set_double("_FillValue", fill_value);
     }
+    m_ssa_dirichlet_bc_values.write_in_glaciological_units = true;
     // just for diagnostics...
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }
