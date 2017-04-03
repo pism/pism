@@ -75,6 +75,8 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
   ice_area_specific_volume.set_attrs("model_state",
                                        "ice-volume-per-area in partially-filled grid cells",
                                        "m3/m2", "");
+  ice_area_specific_volume.metadata().set_string("comment",
+                                                 "this variable represents the amount of ice in a partially-filled cell and not the corresponding geometry, so thinking about it as 'thickness' is not helpful")
 
   cell_type.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
   cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
