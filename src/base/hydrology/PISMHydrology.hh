@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 PISM Authors
+// Copyright (C) 2012-2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -250,13 +250,9 @@ public:
 
   virtual void init();
 
-  friend class MCHydrology_ice_free_land_loss_cumulative;
   friend class MCHydrology_ice_free_land_loss;
-  friend class MCHydrology_ocean_loss_cumulative;
   friend class MCHydrology_ocean_loss;
-  friend class MCHydrology_negative_thickness_gain_cumulative;
   friend class MCHydrology_negative_thickness_gain;
-  friend class MCHydrology_null_strip_loss_cumulative;
   friend class MCHydrology_null_strip_loss;
 
   virtual void wall_melt(IceModelVec2S &result) const;
