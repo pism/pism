@@ -219,43 +219,6 @@ IceModelVec::Ptr CTS::compute_impl() {
   return result;
 }
 
-IceModel_proc_ice_area::IceModel_proc_ice_area(const IceModel *m)
-  : Diag<IceModel>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "proc_ice_area")};
-
-  set_attrs("number of cells containing ice in a processor's domain", "",
-            "", "", 0);
-  m_vars[0].set_time_independent(true);
-}
-
-IceModelVec::Ptr IceModel_proc_ice_area::compute_impl() {
-
-  const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "proc_ice_area", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-
-  int ice_filled_cells = 0;
-
-  IceModelVec::AccessList list{&cell_type, &thickness};
-  for (Points p(*m_grid); p; p.next()) {
-    if (cell_type.icy(p.i(), p.j())) {
-      ice_filled_cells += 1;
-    }
-  }
-
-  for (Points p(*m_grid); p; p.next()) {
-    (*result)(p.i(), p.j()) = ice_filled_cells;
-  }
-
-  return result;
-}
-
-
 Temperature::Temperature(const IceModel *m)
   : Diag<IceModel>(m) {
 
@@ -2105,7 +2068,6 @@ void IceModel::init_diagnostics() {
     {"hardav",                              f(new HardnessAverage(this))},
     {"hardness",                            f(new Hardness(this))},
     {"liqfrac",                             f(new LiquidFraction(this))},
-    {"proc_ice_area",                       f(new IceModel_proc_ice_area(this))},
     {"rank",                                f(new Rank(this))},
     {"temp",                                f(new Temperature(this))},
     {"temp_pa",                             f(new TemperaturePA(this))},

@@ -76,15 +76,6 @@ protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
-//! \brief Computes the number of ice-filled cells is a processor's domain.
-class IceModel_proc_ice_area : public Diag<IceModel>
-{
-public:
-  IceModel_proc_ice_area(const IceModel *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl();
-};
-
 //! \brief Computes ice temperature from enthalpy.
 class Temperature : public Diag<IceModel>
 {
