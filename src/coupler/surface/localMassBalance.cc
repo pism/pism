@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -34,6 +34,10 @@ namespace surface {
 LocalMassBalance::LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system)
   : m_config(myconfig), m_unit_system(system),
     m_seconds_per_day(86400) {
+  // empty
+}
+
+LocalMassBalance::~LocalMassBalance() {
   // empty
 }
 
@@ -228,10 +232,10 @@ which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
 PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::Ptr system,
-                                       bool repeatable)
+                                       Kind repeatable)
   : PDDMassBalance(config, system) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
-  gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));
+  gsl_rng_set(pddRandGen, repeatable == 1 ? 0 : time(0));
 }
 
 

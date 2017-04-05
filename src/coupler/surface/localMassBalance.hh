@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -69,8 +69,8 @@ public:
     double refreezeFrac;
   };
 
-  LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system);
-  virtual ~LocalMassBalance() {}
+  LocalMassBalance(Config::ConstPtr config, units::System::Ptr system);
+  virtual ~LocalMassBalance();
 
   virtual unsigned int get_timeseries_length(double dt) = 0;
 
@@ -119,7 +119,7 @@ protected:
 class PDDMassBalance : public LocalMassBalance {
 
 public:
-  PDDMassBalance(Config::ConstPtr myconfig, units::System::Ptr system);
+  PDDMassBalance(Config::ConstPtr config, units::System::Ptr system);
   virtual ~PDDMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt);
@@ -161,10 +161,13 @@ protected:
   with appropriate spatial and temporal ranges.
 */
 class PDDrandMassBalance : public PDDMassBalance {
-
 public:
-  PDDrandMassBalance(Config::ConstPtr myconfig, units::System::Ptr system,
-                     bool repeatable); //! repeatable==true to seed with zero every time.
+
+  enum Kind {NOT_REPEATABLE = 0, REPEATABLE = 1};
+
+  PDDrandMassBalance(Config::ConstPtr config,
+                     units::System::Ptr system,
+                     Kind repeatable);
   virtual ~PDDrandMassBalance();
 
   virtual unsigned int get_timeseries_length(double dt);

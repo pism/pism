@@ -105,9 +105,9 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                                "Standard deviation data reference year", 0);
 
   if (m_randomized_repeatable) {
-    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, true);
+    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE);
   } else if (m_randomized) {
-    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, false);
+    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::NOT_REPEATABLE);
   } else {
     m_mbscheme = new PDDMassBalance(m_config, m_sys);
   }
