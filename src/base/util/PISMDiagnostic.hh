@@ -159,12 +159,15 @@ template<class M>
 class DiagAverage : public Diag<M>
 {
 public:
-  DiagAverage(const M *m, bool input_is_total_change)
+
+  enum InputKind {TOTAL_CHANGE = 0, RATE = 1};
+
+  DiagAverage(const M *m, InputKind kind)
     : Diag<M>(m),
     m_accumulator(Diagnostic::m_grid, "cumulative_change", WITHOUT_GHOSTS),
     m_total_time(0.0),
     m_factor(1.0),
-    m_input_is_total_change(input_is_total_change) {
+    m_input_kind(kind) {
 
     m_accumulator.set(0.0);
   }
@@ -185,7 +188,7 @@ protected:
     // Here the "factor" is used to convert units (from m to kg m-2, for example) and (possibly)
     // integrate over the time integral using the rectangle method.
 
-    double factor = m_factor * (m_input_is_total_change ? 1.0 : dt);
+    double factor = m_factor * (m_input_kind == TOTAL_CHANGE ? 1.0 : dt);
 
     m_accumulator.add(factor, this->model_input());
 
@@ -220,7 +223,7 @@ protected:
 protected:
   IceModelVec2S m_accumulator;
   double m_total_time, m_factor;
-  bool m_input_is_total_change;
+  InputKind m_input_kind;
 
   // it should be enough to implement the constructor and this method
   virtual const IceModelVec2S& model_input() {

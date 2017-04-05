@@ -58,7 +58,7 @@ class BMBSplit : public DiagAverage<IceModel>
 public:
   enum Kind {GROUNDED, FLOATING};
   BMBSplit(const IceModel *m, Kind flag)
-    : DiagAverage<IceModel>(m, true), m_kind(flag) {
+    : DiagAverage<IceModel>(m, TOTAL_CHANGE), m_kind(flag) {
 
     std::string name, description;
     if (m_kind == GROUNDED) {

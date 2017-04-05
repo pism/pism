@@ -1075,7 +1075,7 @@ class SMBFlux : public DiagAverage<GeometryEvolution>
 {
 public:
   SMBFlux(const GeometryEvolution *m)
-    : DiagAverage<GeometryEvolution>(m, true) {
+    : DiagAverage<GeometryEvolution>(m, TOTAL_CHANGE) {
     m_factor = m_config->get_double("constants.ice.density");
     m_vars = {SpatialVariableMetadata(m_sys, "surface_mass_balance_flux")};
     set_attrs("average surface mass flux over reporting interval",
@@ -1100,7 +1100,7 @@ class BMBFlux : public DiagAverage<GeometryEvolution>
 {
 public:
   BMBFlux(const GeometryEvolution *m)
-    : DiagAverage<GeometryEvolution>(m, true) {
+    : DiagAverage<GeometryEvolution>(m, TOTAL_CHANGE) {
     m_factor = m_config->get_double("constants.ice.density");
     m_vars = {SpatialVariableMetadata(m_sys, "basal_mass_balance_flux")};
     set_attrs("average basal mass flux over reporting interval",
@@ -1124,7 +1124,7 @@ class MassConservationErrorFlux : public DiagAverage<GeometryEvolution>
 {
 public:
   MassConservationErrorFlux(const GeometryEvolution *m)
-    : DiagAverage<GeometryEvolution>(m, true) {
+    : DiagAverage<GeometryEvolution>(m, TOTAL_CHANGE) {
     m_factor = m_config->get_double("constants.ice.density");
     m_vars = {SpatialVariableMetadata(m_sys, "mass_conservation_error_flux")};
     set_attrs("average mass conservation error flux over reporting interval",
