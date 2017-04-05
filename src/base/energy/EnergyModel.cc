@@ -398,7 +398,7 @@ std::map<std::string, Diagnostic::Ptr> EnergyModel::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result;
   result = {
     {"enthalpy", Diagnostic::Ptr(new diagnostics::Enthalpy(this))},
-    {"bmelt",    Diagnostic::Ptr(new Diag2S(m_basal_melt_rate))}
+    {"bmelt",    Diagnostic::wrap(m_basal_melt_rate)}
   };
   return result;
 }

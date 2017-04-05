@@ -25,6 +25,14 @@
 
 namespace pism {
 
+Diagnostic::Ptr Diagnostic::wrap(const IceModelVec2S &input) {
+  return Ptr(new DiagWithDedicatedStorage<IceModelVec2S>(input));
+}
+
+Diagnostic::Ptr Diagnostic::wrap(const IceModelVec2V &input) {
+  return Ptr(new DiagWithDedicatedStorage<IceModelVec2V>(input));
+}
+
 Diagnostic::Diagnostic(IceGrid::ConstPtr g)
   : m_grid(g), m_sys(g->ctx()->unit_system()), m_config(g->ctx()->config()) {
   m_dof = 1;

@@ -2182,18 +2182,18 @@ void IceModel::init_diagnostics() {
     {"height_above_flotation",              f(new IceModel_height_above_flotation(this))},
     {"ice_mass",                            f(new IceModel_ice_mass(this))},
     {"topg_sl_adjusted",                    f(new IceModel_topg_sl_adjusted(this))},
-    {"bmelt",                               f(new Diag2S(m_basal_melt_rate))},
-    {"cell_area",                           f(new Diag2S(m_geometry.cell_area))},
-    {"latitude",                            f(new Diag2S(m_geometry.latitude))},
-    {"longitude",                           f(new Diag2S(m_geometry.longitude))},
-    {"thk",                                 f(new Diag2S(m_geometry.ice_thickness))},
-    {"ice_area_specific_volume",            f(new Diag2S(m_geometry.ice_area_specific_volume))},
-    {"mask",                                f(new Diag2S(m_geometry.cell_type))},
-    {"cell_grounded_fraction",              f(new Diag2S(m_geometry.cell_grounded_fraction))},
-    {"usurf",                               f(new Diag2S(m_geometry.ice_surface_elevation))},
-    {"tauc",                                f(new Diag2S(m_basal_yield_stress))},
-    {"ssa_bc_mask",                         f(new Diag2S(m_ssa_dirichlet_bc_mask))},
-    {"ssa_bc_vel",                          f(new Diag2V(m_ssa_dirichlet_bc_values))}
+    {"bmelt",                               Diagnostic::wrap(m_basal_melt_rate)},
+    {"cell_area",                           Diagnostic::wrap(m_geometry.cell_area)},
+    {"latitude",                            Diagnostic::wrap(m_geometry.latitude)},
+    {"longitude",                           Diagnostic::wrap(m_geometry.longitude)},
+    {"thk",                                 Diagnostic::wrap(m_geometry.ice_thickness)},
+    {"ice_area_specific_volume",            Diagnostic::wrap(m_geometry.ice_area_specific_volume)},
+    {"mask",                                Diagnostic::wrap(m_geometry.cell_type)},
+    {"cell_grounded_fraction",              Diagnostic::wrap(m_geometry.cell_grounded_fraction)},
+    {"usurf",                               Diagnostic::wrap(m_geometry.ice_surface_elevation)},
+    {"tauc",                                Diagnostic::wrap(m_basal_yield_stress)},
+    {"ssa_bc_mask",                         Diagnostic::wrap(m_ssa_dirichlet_bc_mask)},
+    {"ssa_bc_vel",                          Diagnostic::wrap(m_ssa_dirichlet_bc_values)}
   };
 
 #if (PISM_USE_PROJ4==1)

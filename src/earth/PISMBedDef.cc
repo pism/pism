@@ -75,8 +75,8 @@ void BedDef::write_model_state_impl(const PIO &output) const {
 std::map<std::string, Diagnostic::Ptr> BedDef::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result;
   result = {
-    {"dbdt", Diagnostic::Ptr(new Diag2S(m_uplift))},
-    {"topg", Diagnostic::Ptr(new Diag2S(m_topg))}
+    {"dbdt", Diagnostic::wrap(m_uplift)},
+    {"topg", Diagnostic::wrap(m_topg)}
   };
 
   return result;
