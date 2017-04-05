@@ -24,53 +24,54 @@
 
 namespace pism {
 
+namespace diagnostics {
 //! \brief Computes vertically-averaged ice hardness.
-class IceModel_hardav : public Diag<IceModel>
+class HardnessAverage : public Diag<IceModel>
 {
 public:
-  IceModel_hardav(const IceModel *m);
+  HardnessAverage(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
-class IceModel_land_ice_area_fraction : public Diag<IceModel>
+class IceAreaFraction : public Diag<IceModel>
 {
 public:
-  IceModel_land_ice_area_fraction(const IceModel *m);
+  IceAreaFraction(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
-class IceModel_grounded_ice_sheet_area_fraction : public Diag<IceModel>
+class IceAreaFractionGrounded : public Diag<IceModel>
 {
 public:
-  IceModel_grounded_ice_sheet_area_fraction(const IceModel *m);
+  IceAreaFractionGrounded(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
-class IceModel_floating_ice_sheet_area_fraction : public Diag<IceModel>
+class IceAreaFractionFloating : public Diag<IceModel>
 {
 public:
-  IceModel_floating_ice_sheet_area_fraction(const IceModel *m);
+  IceAreaFractionFloating(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes a diagnostic field filled with processor rank values.
-class IceModel_rank : public Diag<IceModel>
+class Rank : public Diag<IceModel>
 {
 public:
-  IceModel_rank(const IceModel *m);
+  Rank(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes CTS, CTS = E/E_s(p).
-class IceModel_cts : public Diag<IceModel>
+class CTS : public Diag<IceModel>
 {
 public:
-  IceModel_cts(const IceModel *m);
+  CTS(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
@@ -85,332 +86,332 @@ protected:
 };
 
 //! \brief Computes ice temperature from enthalpy.
-class IceModel_temp : public Diag<IceModel>
+class Temperature : public Diag<IceModel>
 {
 public:
-  IceModel_temp(const IceModel *m);
+  Temperature(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Compute the pressure-adjusted temperature in degrees C corresponding
 //! to ice temperature.
-class IceModel_temp_pa : public Diag<IceModel>
+class TemperaturePA : public Diag<IceModel>
 {
 public:
-  IceModel_temp_pa(const IceModel *m);
+  TemperaturePA(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes basal values of the pressure-adjusted temperature.
-class IceModel_temppabase : public Diag<IceModel>
+class TemperaturePABasal : public Diag<IceModel>
 {
 public:
-  IceModel_temppabase(const IceModel *m);
+  TemperaturePABasal(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes surface values of ice enthalpy.
-class IceModel_enthalpysurf : public Diag<IceModel>
+class EnthalpySurface : public Diag<IceModel>
 {
 public:
-  IceModel_enthalpysurf(const IceModel *m);
+  EnthalpySurface(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes enthalpy at the base of the ice.
-class IceModel_enthalpybase : public Diag<IceModel>
+class EnthalpyBasal : public Diag<IceModel>
 {
 public:
-  IceModel_enthalpybase(const IceModel *m);
+  EnthalpyBasal(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes ice temperature at the base of the ice.
-class IceModel_tempbase : public Diag<IceModel>
+class TemperatureBasal : public Diag<IceModel>
 {
 public:
-  IceModel_tempbase(const IceModel *m);
+  TemperatureBasal(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes ice temperature at the surface of the ice.
-class IceModel_tempsurf : public Diag<IceModel>
+class TemperatureSurface : public Diag<IceModel>
 {
 public:
-  IceModel_tempsurf(const IceModel *m);
+  TemperatureSurface(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the liquid water fraction.
-class IceModel_liqfrac : public Diag<IceModel>
+class LiquidFraction : public Diag<IceModel>
 {
 public:
-  IceModel_liqfrac(const IceModel *m);
+  LiquidFraction(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the total thickness of temperate ice in a column.
-class IceModel_tempicethk : public Diag<IceModel>
+class TemperateIceThickness : public Diag<IceModel>
 {
 public:
-  IceModel_tempicethk(const IceModel *m);
+  TemperateIceThickness(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 //! \brief Computes the thickness of the basal layer of temperate ice.
-class IceModel_tempicethk_basal : public Diag<IceModel>
+class TemperateIceThicknessBasal : public Diag<IceModel>
 {
 public:
-  IceModel_tempicethk_basal(const IceModel *m);
+  TemperateIceThicknessBasal(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 //! \brief Computes the total ice volume in glacierized areas.
-class IceModel_volume_glacierized : public TSDiag<IceModel> // GOOD
+class VolumeGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_volume_glacierized(IceModel *m);
+  VolumeGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total ice volume.
-class IceModel_volume_nonglacierized : public TSDiag<IceModel> // GOOD
+class VolumeNonGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_volume_nonglacierized(IceModel *m);
+  VolumeNonGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total ice volume, which is relevant for sea-level
-class IceModel_slvol : public TSDiag<IceModel> // GOOD
+class SeaLevelVolume : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_slvol(const IceModel *m);
+  SeaLevelVolume(const IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice volume in glacierized areas.
-class IceModel_volume_rate_of_change_glacierized : public TSDiag<IceModel> // FIXME_
+class VolumeRateOfChangeGlacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
-  IceModel_volume_rate_of_change_glacierized(IceModel *m);
+  VolumeRateOfChangeGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice volume.
-class IceModel_volume_rate_of_change_nonglacierized : public TSDiag<IceModel> // FIXME_
+class VolumeRateOfChangeNonGlacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
-  IceModel_volume_rate_of_change_nonglacierized(IceModel *m);
+  VolumeRateOfChangeNonGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total ice area.
-class IceModel_area_glacierized : public TSDiag<IceModel> // GOOD
+class AreaGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_area_glacierized(IceModel *m);
+  AreaGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total ice mass in glacierized areas.
-class IceModel_mass_glacierized : public TSDiag<IceModel> // GOOD
+class MassGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_mass_glacierized(IceModel *m);
+  MassGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total ice mass.
-class IceModel_mass_nonglacierized : public TSDiag<IceModel> // GOOD
+class MassNonGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_mass_nonglacierized(IceModel *m);
+  MassNonGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total mass of the ice not displacing sea water.
-class IceModel_limnsw : public TSDiag<IceModel> // GOOD
+class MassNotDisplacingSeaWater : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_limnsw(const IceModel *m);
+  MassNotDisplacingSeaWater(const IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice mass in glacierized areas.
-class IceModel_mass_rate_of_change_glacierized : public TSDiag<IceModel> // FIXME_
+class MassRateOfChangeGlacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
-  IceModel_mass_rate_of_change_glacierized(IceModel *m);
+  MassRateOfChangeGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice mass.
-class IceModel_mass_rate_of_change_nonglacierized : public TSDiag<IceModel> // FIXME_
+class MassRateOfChangeNonGlacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
-  IceModel_mass_rate_of_change_nonglacierized(IceModel *m);
+  MassRateOfChangeNonGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total volume of the temperate ice in glacierized areas.
-class IceModel_volume_glacierized_temperate : public TSDiag<IceModel> // GOOD
+class VolumeGlacierizedTemperate : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_volume_glacierized_temperate(IceModel *m);
+  VolumeGlacierizedTemperate(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total volume of the temperate ice.
-class IceModel_volume_nonglacierized_temperate : public TSDiag<IceModel> // GOOD
+class VolumeNonGlacierizedTemperate : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_volume_nonglacierized_temperate(IceModel *m);
+  VolumeNonGlacierizedTemperate(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total volume of the cold ice in glacierized areas.
-class IceModel_volume_glacierized_cold : public TSDiag<IceModel> // GOOD
+class VolumeGlacierizedCold : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_volume_glacierized_cold(IceModel *m);
+  VolumeGlacierizedCold(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total volume of the cold ice.
-class IceModel_volume_nonglacierized_cold : public TSDiag<IceModel> // GOOD
+class VolumeNonGlacierizedCold : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_volume_nonglacierized_cold(IceModel *m);
+  VolumeNonGlacierizedCold(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total area of the temperate ice.
-class IceModel_area_glacierized_temperate_base : public TSDiag<IceModel> // GOOD
+class AreaGlacierizedTemperateBase : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_area_glacierized_temperate_base(IceModel *m);
+  AreaGlacierizedTemperateBase(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total area of the cold ice.
-class IceModel_area_glacierized_cold_base : public TSDiag<IceModel> // GOOD
+class AreaGlacierizedColdBase : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_area_glacierized_cold_base(IceModel *m);
+  AreaGlacierizedColdBase(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total ice enthalpy in glacierized areas.
-class IceModel_enthalpy_glacierized : public TSDiag<IceModel> // GOOD
+class EnthalpyGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_enthalpy_glacierized(IceModel *m);
+  EnthalpyGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total ice enthalpy.
-class IceModel_enthalpy_nonglacierized : public TSDiag<IceModel> // GOOD
+class EnthalpyNonGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_enthalpy_nonglacierized(IceModel *m);
+  EnthalpyNonGlacierized(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total grounded ice area.
-class IceModel_area_glacierized_grounded : public TSDiag<IceModel> // GOOD
+class AreaGlacierizedGrounded : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_area_glacierized_grounded(IceModel *m);
+  AreaGlacierizedGrounded(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total floating ice area.
-class IceModel_area_glacierized_shelf : public TSDiag<IceModel> // GOOD
+class AreaGlacierizedShelf : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_area_glacierized_shelf(IceModel *m);
+  AreaGlacierizedShelf(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total grounded ice volume.
-class IceModel_volume_glacierized_grounded : public TSDiag<IceModel> // GOOD
+class VolumeGlacierizedGrounded : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_volume_glacierized_grounded(IceModel *m);
+  VolumeGlacierizedGrounded(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the total floating ice volume.
-class IceModel_volume_glacierized_shelf : public TSDiag<IceModel> // GOOD
+class VolumeGlacierizedShelf : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_volume_glacierized_shelf(IceModel *m);
+  VolumeGlacierizedShelf(IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the mass continuity time step.
-class IceModel_dt : public TSDiag<IceModel> // GOOD
+class TimeStepLength : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_dt(const IceModel *m);
+  TimeStepLength(const IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports maximum diffusivity.
-class IceModel_max_diffusivity : public TSDiag<IceModel> // GOOD
+class MaxDiffusivity : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_max_diffusivity(const IceModel *m);
+  MaxDiffusivity(const IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the total surface ice flux.
-class IceModel_surface_flux : public TSDiag<IceModel> // FIXME_
+class MassFluxSurface : public TSDiag<IceModel> // FIXME_
 {
 public:
-  IceModel_surface_flux(const IceModel *m);
+  MassFluxSurface(const IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the total basal ice flux over the grounded region.
-class IceModel_grounded_basal_flux : public TSDiag<IceModel> // FIXME_
+class MassFluxBasalGrounded : public TSDiag<IceModel> // FIXME_
 {
 public:
-  IceModel_grounded_basal_flux(const IceModel *m);
+  MassFluxBasalGrounded(const IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the total sub-shelf ice flux.
-class IceModel_sub_shelf_flux : public TSDiag<IceModel> // FIXME_
+class MassFluxBasalFloating : public TSDiag<IceModel> // FIXME_
 {
 public:
-  IceModel_sub_shelf_flux(const IceModel *m);
+  MassFluxBasalFloating(const IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Reports the total discharge flux.
-class IceModel_discharge_flux : public TSDiag<IceModel> // FIXME_
+class MassFluxDischarge : public TSDiag<IceModel> // FIXME_
 {
 public:
-  IceModel_discharge_flux(const IceModel *m);
+  MassFluxDischarge(const IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes dHdt, the ice thickness rate of change.
-class IceModel_dHdt : public Diag<IceModel>
+class ThicknessRateOfChange : public Diag<IceModel>
 {
 public:
-  IceModel_dHdt(const IceModel *m);
+  ThicknessRateOfChange(const IceModel *m);
 protected:
   virtual void update_impl(double dt);
   virtual IceModelVec::Ptr compute_impl();
@@ -420,72 +421,64 @@ protected:
 };
 
 //! \brief Reports the maximum horizontal absolute velocity component over the grid.
-class IceModel_max_hor_vel : public TSDiag<IceModel> // GOOD
+class MaxHorizontalVelocity : public TSDiag<IceModel> // GOOD
 {
 public:
-  IceModel_max_hor_vel(const IceModel *m);
+  MaxHorizontalVelocity(const IceModel *m);
   virtual void update(double a, double b);
 };
 
 //! \brief Computes the 2D height above flotation.
-class IceModel_height_above_flotation : public Diag<IceModel>
+class HeightAboveFloatation : public Diag<IceModel>
 {
 public:
-  IceModel_height_above_flotation(const IceModel *m);
+  HeightAboveFloatation(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 
 //! \brief Computes the mass per cell.
-class IceModel_ice_mass : public Diag<IceModel>
+class IceMass : public Diag<IceModel>
 {
 public:
-  IceModel_ice_mass(const IceModel *m);
+  IceMass(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl();
 };
 
 /*! @brief Sea-level adjusted bed topography (zero at sea level). */
-class IceModel_topg_sl_adjusted : public Diag<IceModel>
+class BedTopographySeaLevelAdjusted : public Diag<IceModel>
 {
 public:
-  IceModel_topg_sl_adjusted(const IceModel *m);
+  BedTopographySeaLevelAdjusted(const IceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
 
 /*! @brief Ice hardness computed using the SIA flow law. */
-class IceModel_hardness : public Diag<IceModel>
+class Hardness : public Diag<IceModel>
 {
 public:
-  IceModel_hardness(const IceModel *m);
+  Hardness(const IceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
 
 /*! @brief Effective viscosity of ice (3D). */
-class IceModel_viscosity : public Diag<IceModel>
+class Viscosity : public Diag<IceModel>
 {
 public:
-  IceModel_viscosity(IceModel *m);
+  Viscosity(IceModel *m);
 protected:
   IceModelVec::Ptr compute_impl();
 };
 
-} // end of namespace pism
-
-#if (PISM_USE_PROJ4==1)
-#include <proj_api.h>
-#endif
-
-namespace pism {
-
 //! \brief Computes latitude and longitude bounds.
-class IceModel_lat_lon_bounds : public Diag<IceModel>
+class LatLonBounds : public Diag<IceModel>
 {
 public:
-  IceModel_lat_lon_bounds(const IceModel *m,
+  LatLonBounds(const IceModel *m,
                           const std::string &var_name,
                           const std::string &proj_string);
 protected:
@@ -494,6 +487,7 @@ protected:
   std::string m_var_name, m_proj_string;
 };
 
+} // end of namespace diagnostics
 } // end of namespace pism
 
 #endif  /* _ICEMODEL_DIAGNOSTICS_H_ */
