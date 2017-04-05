@@ -37,7 +37,7 @@ ${mpi} ${pismr} ${options} -i out1.nc -o out2.nc -extra_file ex2.nc -ye 2000
 ncrcat -O ex1.nc ex2.nc ex-restart.nc
 
 # run straight
-${mpi} pismr ${options} -bootstrap ${grid} -i out0.nc -o out3.nc -extra_file ex.nc -ys 0 -ye 2000
+${mpi} ${pismr} ${options} -bootstrap ${grid} -i out0.nc -o out3.nc -extra_file ex.nc -ys 0 -ye 2000
 
 set +e
 
