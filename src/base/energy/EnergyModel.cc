@@ -329,7 +329,7 @@ const IceModelVec2S & EnergyModel::basal_melt_rate() const {
 }
 
 /*! @brief Total volume of liquified ice. */
-class EnergyModel_liquified_ice_volume : public TSDiag<EnergyModel> {
+class EnergyModel_liquified_ice_volume : public TSDiag<EnergyModel> { // FIXME_
 public:
   EnergyModel_liquified_ice_volume(const EnergyModel *m);
 protected:

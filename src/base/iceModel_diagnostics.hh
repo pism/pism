@@ -175,7 +175,7 @@ protected:
 };
 
 //! \brief Computes the total ice volume in glacierized areas.
-class IceModel_volume_glacierized : public TSDiag<IceModel>
+class IceModel_volume_glacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_volume_glacierized(IceModel *m);
@@ -183,7 +183,7 @@ public:
 };
 
 //! \brief Computes the total ice volume.
-class IceModel_volume_nonglacierized : public TSDiag<IceModel>
+class IceModel_volume_nonglacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_volume_nonglacierized(IceModel *m);
@@ -191,7 +191,7 @@ public:
 };
 
 //! \brief Computes the total ice volume, which is relevant for sea-level
-class IceModel_slvol : public TSDiag<IceModel>
+class IceModel_slvol : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_slvol(const IceModel *m);
@@ -199,7 +199,7 @@ public:
 };
 
 //! \brief Computes the rate of change of the total ice volume in glacierized areas.
-class IceModel_volume_rate_of_change_glacierized : public TSDiag<IceModel>
+class IceModel_volume_rate_of_change_glacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
   IceModel_volume_rate_of_change_glacierized(IceModel *m);
@@ -207,7 +207,7 @@ public:
 };
 
 //! \brief Computes the rate of change of the total ice volume.
-class IceModel_volume_rate_of_change_nonglacierized : public TSDiag<IceModel>
+class IceModel_volume_rate_of_change_nonglacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
   IceModel_volume_rate_of_change_nonglacierized(IceModel *m);
@@ -215,7 +215,7 @@ public:
 };
 
 //! \brief Computes the total ice area.
-class IceModel_area_glacierized : public TSDiag<IceModel>
+class IceModel_area_glacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_area_glacierized(IceModel *m);
@@ -223,7 +223,7 @@ public:
 };
 
 //! \brief Computes the total ice mass in glacierized areas.
-class IceModel_mass_glacierized : public TSDiag<IceModel>
+class IceModel_mass_glacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_mass_glacierized(IceModel *m);
@@ -231,7 +231,7 @@ public:
 };
 
 //! \brief Computes the total ice mass.
-class IceModel_mass_nonglacierized : public TSDiag<IceModel>
+class IceModel_mass_nonglacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_mass_nonglacierized(IceModel *m);
@@ -239,7 +239,7 @@ public:
 };
 
 //! \brief Computes the total mass of the ice not displacing sea water.
-class IceModel_limnsw : public TSDiag<IceModel>
+class IceModel_limnsw : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_limnsw(const IceModel *m);
@@ -247,7 +247,7 @@ public:
 };
 
 //! \brief Computes the rate of change of the total ice mass in glacierized areas.
-class IceModel_mass_rate_of_change_glacierized : public TSDiag<IceModel>
+class IceModel_mass_rate_of_change_glacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
   IceModel_mass_rate_of_change_glacierized(IceModel *m);
@@ -255,7 +255,7 @@ public:
 };
 
 //! \brief Computes the rate of change of the total ice mass.
-class IceModel_mass_rate_of_change_nonglacierized : public TSDiag<IceModel>
+class IceModel_mass_rate_of_change_nonglacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
   IceModel_mass_rate_of_change_nonglacierized(IceModel *m);
@@ -263,7 +263,7 @@ public:
 };
 
 //! \brief Computes the total volume of the temperate ice in glacierized areas.
-class IceModel_volume_glacierized_temperate : public TSDiag<IceModel>
+class IceModel_volume_glacierized_temperate : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_volume_glacierized_temperate(IceModel *m);
@@ -271,7 +271,7 @@ public:
 };
 
 //! \brief Computes the total volume of the temperate ice.
-class IceModel_volume_nonglacierized_temperate : public TSDiag<IceModel>
+class IceModel_volume_nonglacierized_temperate : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_volume_nonglacierized_temperate(IceModel *m);
@@ -279,7 +279,7 @@ public:
 };
 
 //! \brief Computes the total volume of the cold ice in glacierized areas.
-class IceModel_volume_glacierized_cold : public TSDiag<IceModel>
+class IceModel_volume_glacierized_cold : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_volume_glacierized_cold(IceModel *m);
@@ -287,7 +287,7 @@ public:
 };
 
 //! \brief Computes the total volume of the cold ice.
-class IceModel_volume_nonglacierized_cold : public TSDiag<IceModel>
+class IceModel_volume_nonglacierized_cold : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_volume_nonglacierized_cold(IceModel *m);
@@ -295,7 +295,7 @@ public:
 };
 
 //! \brief Computes the total area of the temperate ice.
-class IceModel_area_glacierized_temperate_base : public TSDiag<IceModel>
+class IceModel_area_glacierized_temperate_base : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_area_glacierized_temperate_base(IceModel *m);
@@ -303,7 +303,7 @@ public:
 };
 
 //! \brief Computes the total area of the cold ice.
-class IceModel_area_glacierized_cold_base : public TSDiag<IceModel>
+class IceModel_area_glacierized_cold_base : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_area_glacierized_cold_base(IceModel *m);
@@ -311,7 +311,7 @@ public:
 };
 
 //! \brief Computes the total ice enthalpy in glacierized areas.
-class IceModel_enthalpy_glacierized : public TSDiag<IceModel>
+class IceModel_enthalpy_glacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_enthalpy_glacierized(IceModel *m);
@@ -319,7 +319,7 @@ public:
 };
 
 //! \brief Computes the total ice enthalpy.
-class IceModel_enthalpy_nonglacierized : public TSDiag<IceModel>
+class IceModel_enthalpy_nonglacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_enthalpy_nonglacierized(IceModel *m);
@@ -327,7 +327,7 @@ public:
 };
 
 //! \brief Computes the total grounded ice area.
-class IceModel_area_glacierized_grounded : public TSDiag<IceModel>
+class IceModel_area_glacierized_grounded : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_area_glacierized_grounded(IceModel *m);
@@ -335,7 +335,7 @@ public:
 };
 
 //! \brief Computes the total floating ice area.
-class IceModel_area_glacierized_shelf : public TSDiag<IceModel>
+class IceModel_area_glacierized_shelf : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_area_glacierized_shelf(IceModel *m);
@@ -343,7 +343,7 @@ public:
 };
 
 //! \brief Computes the total grounded ice volume.
-class IceModel_volume_glacierized_grounded : public TSDiag<IceModel>
+class IceModel_volume_glacierized_grounded : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_volume_glacierized_grounded(IceModel *m);
@@ -351,7 +351,7 @@ public:
 };
 
 //! \brief Computes the total floating ice volume.
-class IceModel_volume_glacierized_shelf : public TSDiag<IceModel>
+class IceModel_volume_glacierized_shelf : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_volume_glacierized_shelf(IceModel *m);
@@ -359,7 +359,7 @@ public:
 };
 
 //! \brief Reports the mass continuity time step.
-class IceModel_dt : public TSDiag<IceModel>
+class IceModel_dt : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_dt(const IceModel *m);
@@ -367,7 +367,7 @@ public:
 };
 
 //! \brief Reports maximum diffusivity.
-class IceModel_max_diffusivity : public TSDiag<IceModel>
+class IceModel_max_diffusivity : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_max_diffusivity(const IceModel *m);
@@ -375,7 +375,7 @@ public:
 };
 
 //! \brief Reports the total surface ice flux.
-class IceModel_surface_flux : public TSDiag<IceModel>
+class IceModel_surface_flux : public TSDiag<IceModel> // FIXME_
 {
 public:
   IceModel_surface_flux(const IceModel *m);
@@ -383,7 +383,7 @@ public:
 };
 
 //! \brief Reports the total basal ice flux over the grounded region.
-class IceModel_grounded_basal_flux : public TSDiag<IceModel>
+class IceModel_grounded_basal_flux : public TSDiag<IceModel> // FIXME_
 {
 public:
   IceModel_grounded_basal_flux(const IceModel *m);
@@ -391,7 +391,7 @@ public:
 };
 
 //! \brief Reports the total sub-shelf ice flux.
-class IceModel_sub_shelf_flux : public TSDiag<IceModel>
+class IceModel_sub_shelf_flux : public TSDiag<IceModel> // FIXME_
 {
 public:
   IceModel_sub_shelf_flux(const IceModel *m);
@@ -399,7 +399,7 @@ public:
 };
 
 //! \brief Reports the total discharge flux.
-class IceModel_discharge_flux : public TSDiag<IceModel>
+class IceModel_discharge_flux : public TSDiag<IceModel> // FIXME_
 {
 public:
   IceModel_discharge_flux(const IceModel *m);
@@ -420,7 +420,7 @@ protected:
 };
 
 //! \brief Reports the maximum horizontal absolute velocity component over the grid.
-class IceModel_max_hor_vel : public TSDiag<IceModel>
+class IceModel_max_hor_vel : public TSDiag<IceModel> // GOOD
 {
 public:
   IceModel_max_hor_vel(const IceModel *m);
