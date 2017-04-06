@@ -56,7 +56,6 @@ void IceModel::energy_step() {
   //   enthalpyStep()
 
   IceModelVec2S &ice_surface_temperature = m_work2d[0];
-  IceModelVec2S &bedtoptemp              = m_work2d[1];
   IceModelVec2S &basal_enthalpy          = m_work2d[2];
   m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
   m_surface->temperature(ice_surface_temperature);
@@ -66,10 +65,10 @@ void IceModel::energy_step() {
                               m_geometry.ice_thickness,
                               basal_enthalpy,
                               ice_surface_temperature,
-                              bedtoptemp);
+                              m_bedtoptemp);
 
   profiling.begin("btu");
-  m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
+  m_btu->update(m_bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("btu");
 
   energy::EnergyModelInputs inputs;
@@ -118,7 +117,7 @@ void IceModel::energy_step() {
  * The sub shelf mass flux provided by an ocean model is in [kg m-2
  * s-1], so we divide by the ice density to convert to [m second-1].
  */
-void IceModel::combine_basal_melt_rate() {
+void IceModel::combine_basal_melt_rate(IceModelVec2S &result) {
 
   IceModelVec2S &shelf_base_mass_flux = m_work2d[0];
   assert(m_ocean != NULL);
@@ -129,7 +128,7 @@ void IceModel::combine_basal_melt_rate() {
 
   const IceModelVec2S &M_grounded = m_energy_model->basal_melt_rate();
 
-  IceModelVec::AccessList list{&m_geometry.cell_type, &M_grounded, &shelf_base_mass_flux, &m_basal_melt_rate};
+  IceModelVec::AccessList list{&m_geometry.cell_type, &M_grounded, &shelf_base_mass_flux, &result};
   if (sub_gl) {
     list.add(m_geometry.cell_grounded_fraction);
   }
@@ -151,7 +150,7 @@ void IceModel::combine_basal_melt_rate() {
     } else if (m_geometry.cell_type.ocean(i,j)) {
       lambda = 0.0;
     }
-    m_basal_melt_rate(i,j) = lambda * M_grounded(i, j) + (1.0 - lambda) * M_shelf_base;
+    result(i,j) = lambda * M_grounded(i, j) + (1.0 - lambda) * M_shelf_base;
   }
 }
 

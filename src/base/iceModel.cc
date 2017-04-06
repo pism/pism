@@ -270,6 +270,13 @@ void IceModel::allocate_storage() {
     m_grid->variables().add(m_basal_yield_stress);
   }
 
+  {
+    m_bedtoptemp.create(m_grid, "bedtoptemp", WITHOUT_GHOSTS);
+    m_bedtoptemp.set_attrs("diagnostic",
+                           "temperature at the top surface of the bedrock thermal layer",
+                           "Kelvin", "");
+  }
+
   // basal melt rate
   m_basal_melt_rate.create(m_grid, "bmelt", WITHOUT_GHOSTS);
   m_basal_melt_rate.set_attrs("internal",
@@ -499,7 +506,7 @@ void IceModel::step(bool do_mass_continuity,
 
   // Combine basal melt rate in grounded (computed during the energy
   // step) and floating (provided by an ocean model) areas.
-  combine_basal_melt_rate();
+  combine_basal_melt_rate(m_basal_melt_rate);
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)

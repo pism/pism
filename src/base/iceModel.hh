@@ -254,6 +254,8 @@ protected:
   IceModelVec2S m_basal_yield_stress;
   //! rate of production of basal meltwater (ice-equivalent); no ghosts
   IceModelVec2S m_basal_melt_rate;
+  //! temperature at the top surface of the bedrock thermal layer
+  IceModelVec2S m_bedtoptemp;
 
   FractureFields *m_fracture;
 
@@ -289,7 +291,7 @@ protected:
   // see iMenergy.cc
   virtual void energy_step();
 
-  virtual void combine_basal_melt_rate();
+  virtual void combine_basal_melt_rate(IceModelVec2S &result);
 
   virtual void enforce_consistency_of_geometry();
 
@@ -301,7 +303,6 @@ protected:
                                  const IceModelVec2S &thickness_old,
                                  const IceModelVec2S &Href_old,
                                  IceModelVec2S &output);
-  const IceModelVec2S &discharge() const;
 
   // see iMIO.cc
   virtual void regrid();
@@ -319,6 +320,7 @@ protected:
                                   double meltfrac, double max_diffusivity);
 
 public:
+  const IceModelVec2S &discharge() const;
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:

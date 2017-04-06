@@ -2057,6 +2057,7 @@ void IceModel::init_diagnostics() {
 
   typedef Diagnostic::Ptr f;   // "f" for "field"
   m_diagnostics = {
+    {"bedtoptemp",                          Diagnostic::wrap(m_bedtoptemp)},
     {"cts",                                 f(new CTS(this))},
     {"enthalpybase",                        f(new EnthalpyBasal(this))},
     {"enthalpysurf",                        f(new EnthalpySurface(this))},

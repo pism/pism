@@ -205,15 +205,10 @@ std::map<std::string, Diagnostic::Ptr> BedThermalUnit::diagnostics_impl() const 
 }
 
 void BedThermalUnit::update_impl(double t, double dt) {
-  // CHECK: has the desired time-interval already been dealt with?
-  if ((fabs(t - m_t) < 1e-12) and (fabs(dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  const IceModelVec2S
-    &bedtoptemp = *m_grid->variables().get_2d_scalar("bedtoptemp");
-
-  this->update_impl(bedtoptemp, t, dt);
+  (void) t;
+  (void) dt;
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "BedThermalUnit::update(t, dt) is not implemented");
 }
 
 void BedThermalUnit::update(const IceModelVec2S &bedrock_top_temperature,
