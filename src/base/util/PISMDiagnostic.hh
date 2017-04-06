@@ -28,6 +28,8 @@
 #include "PISMConfigInterface.hh"
 #include "iceModelVec.hh"
 #include "base/util/error_handling.hh"
+#include "base/util/io/PIO.hh"
+#include "base/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -156,32 +158,56 @@ protected:
  * Report a time-averaged quantity by accumulating changes over several time steps.
  */
 template<class M>
-class DiagAverage : public Diag<M>
+class DiagAverageRate : public Diag<M>
 {
 public:
 
   enum InputKind {TOTAL_CHANGE = 0, RATE = 1};
 
-  DiagAverage(const M *m, InputKind kind)
+  DiagAverageRate(const M *m, const std::string &name, InputKind kind)
     : Diag<M>(m),
-    m_accumulator(Diagnostic::m_grid, "cumulative_change", WITHOUT_GHOSTS),
-    m_total_time(0.0),
     m_factor(1.0),
-    m_input_kind(kind) {
+    m_input_kind(kind),
+    m_accumulator(Diagnostic::m_grid, name + "_accumulator", WITHOUT_GHOSTS),
+    m_interval_length(0.0),
+    m_time_since_reset(name + "_time_since_reset",
+                        Diagnostic::m_config->get_string("time.dimension_name"),
+                        Diagnostic::m_sys) {
+
+    m_time_since_reset.set_string("units", "seconds");
+    m_time_since_reset.set_string("long_name",
+                                  "time since " + m_accumulator.get_name() +
+                                  " was reset to 0");
+
+    m_accumulator.metadata().set_string("long_name",
+                                        "accumulator for the " + name + " diagnostic");
 
     m_accumulator.set(0.0);
   }
 protected:
   void init_impl(const PIO &input, unsigned int time) {
     m_accumulator.read(input, time);
+    {
+      std::vector<double> data;
+      input.get_1d_var(m_time_since_reset.get_name(),
+                       time, 1, // start, count
+                       data);
+      m_interval_length = data[0];
+    }
   }
 
   void define_state_impl(const PIO &output) const {
     m_accumulator.define(output);
+    io::define_timeseries(m_time_since_reset, output, PISM_DOUBLE);
   }
 
   void write_state_impl(const PIO &output) const {
     m_accumulator.write(output);
+
+    const unsigned int
+      time_length = output.inq_dimlen(m_time_since_reset.get_dimension_name()),
+      t_start = time_length > 0 ? time_length - 1 : 0;
+    io::write_timeseries(output, m_time_since_reset, t_start, m_interval_length, PISM_DOUBLE);
   }
 
   virtual void update_impl(double dt) {
@@ -192,12 +218,12 @@ protected:
 
     m_accumulator.add(factor, this->model_input());
 
-    m_total_time += dt;
+    m_interval_length += dt;
   }
 
   virtual void reset_impl() {
     m_accumulator.set(0.0);
-    m_total_time = 0.0;
+    m_interval_length = 0.0;
   }
 
   IceModelVec::Ptr compute_impl() {
@@ -206,9 +232,9 @@ protected:
     result->metadata(0) = Diagnostic::m_vars[0];
     result->write_in_glaciological_units = true;
 
-    if (m_total_time > 0.0) {
+    if (m_interval_length > 0.0) {
       result->copy_from(m_accumulator);
-      result->scale(1.0 / m_total_time);
+      result->scale(1.0 / m_interval_length);
     } else {
       std::string
         out = Diagnostic::m_vars[0].get_string("glaciological_units"),
@@ -221,9 +247,14 @@ protected:
     return result;
   }
 protected:
-  IceModelVec2S m_accumulator;
-  double m_total_time, m_factor;
+  // constants initialized in the constructor
+  double m_factor;
   InputKind m_input_kind;
+  // the state (read from and written to files)
+  IceModelVec2S m_accumulator;
+  // length of the reporting interval, accumulated along with the cumulative quantity
+  double m_interval_length;
+  TimeseriesMetadata m_time_since_reset;
 
   // it should be enough to implement the constructor and this method
   virtual const IceModelVec2S& model_input() {

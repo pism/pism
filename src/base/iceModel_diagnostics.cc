@@ -55,12 +55,16 @@ namespace diagnostics {
 
 /*! @brief Report average basal mass balance flux over the reporting interval (grounded or floating
   areas) */
-class BMBSplit : public DiagAverage<IceModel>
+class BMBSplit : public DiagAverageRate<IceModel>
 {
 public:
   enum Kind {GROUNDED, FLOATING};
   BMBSplit(const IceModel *m, Kind flag)
-    : DiagAverage<IceModel>(m, TOTAL_CHANGE), m_kind(flag) {
+    : DiagAverageRate<IceModel>(m,
+                            flag == GROUNDED
+                            ? "basal_grounded_mass_flux"
+                            : "basal_floating_mass_flux",
+                            TOTAL_CHANGE), m_kind(flag) {
 
     std::string name, description;
     if (m_kind == GROUNDED) {
@@ -72,6 +76,7 @@ public:
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", "kg m-2");
 
     set_attrs(description, "", "kg m-2 s-1", "kg m-2 year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
@@ -108,7 +113,7 @@ protected:
     }
     loop.check();
 
-    m_total_time += dt;
+    m_interval_length += dt;
   }
 };
 
@@ -1272,8 +1277,9 @@ ThicknessRateOfChange::ThicknessRateOfChange(const IceModel *m)
   double fill_value = units::convert(m_sys, m_fill_value,
                                      "m year-1", "m second-1");
 
-  m_vars[0].set_double("valid_min",  units::convert(m_sys, -1e6, "m year-1", "m second-1"));
-  m_vars[0].set_double("valid_max",  units::convert(m_sys,  1e6, "m year-1", "m second-1"));
+  const double valid_range = units::convert(m_sys, -1e6, "m year-1", "m second-1");
+
+  m_vars[0].set_doubles("valid_range",  {-valid_range, valid_range});
   m_vars[0].set_double("_FillValue", fill_value);
   m_vars[0].set_string("cell_methods", "time: mean");
 

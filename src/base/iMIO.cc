@@ -203,6 +203,10 @@ void IceModel::define_model_state(const PIO &file) {
   for (auto m : m_submodels) {
     m.second->define_model_state(file);
   }
+
+  for (auto d : m_diagnostics) {
+    d.second->define_state(file);
+  }
 }
 
 void IceModel::write_model_state(const PIO &file) {
@@ -212,6 +216,10 @@ void IceModel::write_model_state(const PIO &file) {
 
   for (auto m : m_submodels) {
     m.second->write_model_state(file);
+  }
+
+  for (auto d : m_diagnostics) {
+    d.second->write_state(file);
   }
 }
 

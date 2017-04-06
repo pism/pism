@@ -1320,13 +1320,8 @@ void read_attributes(const PIO &nc, const std::string &variable_name, VariableMe
       IO_Type nctype = nc.inq_atttype(variable_name, attribute_name);
 
       if (nctype == PISM_CHAR) {
-        std::string value = nc.get_att_text(variable_name, attribute_name);
-
-        if (attribute_name == "units") {
-          variable.set_string("units", value);
-        } else {
-          variable.set_string(attribute_name, value);
-        }
+        variable.set_string(attribute_name,
+                            nc.get_att_text(variable_name, attribute_name));
       } else {
         variable.set_doubles(attribute_name,
                              nc.get_att_double(variable_name, attribute_name));

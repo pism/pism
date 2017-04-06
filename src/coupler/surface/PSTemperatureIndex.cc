@@ -522,13 +522,14 @@ void TemperatureIndex::write_model_state_impl(const PIO &output) const {
 namespace diagnostics {
 
 /*! @brief Report surface melt, averaged over the reporting interval */
-class SurfaceMelt : public DiagAverage<TemperatureIndex>
+class SurfaceMelt : public DiagAverageRate<TemperatureIndex>
 {
 public:
   SurfaceMelt(const TemperatureIndex *m)
-    : DiagAverage<TemperatureIndex>(m, TOTAL_CHANGE) {
+    : DiagAverageRate<TemperatureIndex>(m, "smelt", TOTAL_CHANGE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "smelt")};
+    m_accumulator.metadata().set_string("units", "kg m-2");
 
     set_attrs("surface melt, averaged over the reporting interval", "",
               "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -547,13 +548,14 @@ protected:
 };
 
 /*! @brief Report surface runoff, averaged over the reporting interval */
-class SurfaceRunoff : public DiagAverage<TemperatureIndex>
+class SurfaceRunoff : public DiagAverageRate<TemperatureIndex>
 {
 public:
   SurfaceRunoff(const TemperatureIndex *m)
-    : DiagAverage<TemperatureIndex>(m, TOTAL_CHANGE) {
+    : DiagAverageRate<TemperatureIndex>(m, "srunoff", TOTAL_CHANGE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "srunoff")};
+    m_accumulator.metadata().set_string("units", "kg m-2");
 
     set_attrs("surface runoff, averaged over the reporting interval", "",
               "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -572,13 +574,14 @@ protected:
 };
 
 /*! @brief Report accumulation (precipitation minus rain), averaged over the reporting interval */
-class Accumulation : public DiagAverage<TemperatureIndex>
+class Accumulation : public DiagAverageRate<TemperatureIndex>
 {
 public:
   Accumulation(const TemperatureIndex *m)
-    : DiagAverage<TemperatureIndex>(m, TOTAL_CHANGE) {
+    : DiagAverageRate<TemperatureIndex>(m, "saccum", TOTAL_CHANGE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "saccum")};
+    m_accumulator.metadata().set_string("units", "kg m-2");
 
     set_attrs("accumulation (precipitation minus rain), averaged over the reporting interval", "",
               "kg m-2 s-1", "kg m-2 year-1", 0);

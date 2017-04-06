@@ -1067,13 +1067,15 @@ protected:
 };
 
 /*! @brief Report surface mass balance flux, averaged over the reporting interval */
-class SMBFlux : public DiagAverage<GeometryEvolution>
+class SMBFlux : public DiagAverageRate<GeometryEvolution>
 {
 public:
   SMBFlux(const GeometryEvolution *m)
-    : DiagAverage<GeometryEvolution>(m, TOTAL_CHANGE) {
+    : DiagAverageRate<GeometryEvolution>(m, "surface_mass_balance_flux", TOTAL_CHANGE) {
     m_factor = m_config->get_double("constants.ice.density");
     m_vars = {SpatialVariableMetadata(m_sys, "surface_mass_balance_flux")};
+    m_accumulator.metadata().set_string("units", "kg m-2");
+
     set_attrs("average surface mass flux over reporting interval",
               "",               // no standard name
               "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -1092,13 +1094,15 @@ protected:
 };
 
 /*! @brief Report basal mass balance flux, averaged over the reporting interval */
-class BMBFlux : public DiagAverage<GeometryEvolution>
+class BMBFlux : public DiagAverageRate<GeometryEvolution>
 {
 public:
   BMBFlux(const GeometryEvolution *m)
-    : DiagAverage<GeometryEvolution>(m, TOTAL_CHANGE) {
+    : DiagAverageRate<GeometryEvolution>(m, "basal_mass_balance_flux", TOTAL_CHANGE) {
     m_factor = m_config->get_double("constants.ice.density");
     m_vars = {SpatialVariableMetadata(m_sys, "basal_mass_balance_flux")};
+    m_accumulator.metadata().set_string("units", "kg m-2");
+
     set_attrs("average basal mass flux over reporting interval",
               "",               // no standard name
               "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -1116,13 +1120,15 @@ protected:
   }
 };
 
-class MassConservationErrorFlux : public DiagAverage<GeometryEvolution>
+class MassConservationErrorFlux : public DiagAverageRate<GeometryEvolution>
 {
 public:
   MassConservationErrorFlux(const GeometryEvolution *m)
-    : DiagAverage<GeometryEvolution>(m, TOTAL_CHANGE) {
+    : DiagAverageRate<GeometryEvolution>(m, "mass_conservation_error_flux", TOTAL_CHANGE) {
     m_factor = m_config->get_double("constants.ice.density");
     m_vars = {SpatialVariableMetadata(m_sys, "mass_conservation_error_flux")};
+    m_accumulator.metadata().set_string("units", "kg m-2");
+
     set_attrs("average mass conservation error flux over reporting interval",
               "",               // no standard name
               "kg m-2 s-1", "kg m-2 year-1", 0);
