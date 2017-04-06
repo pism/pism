@@ -84,24 +84,28 @@ public:
   virtual void get_snow_accumulation(double *precip_rate, double *T,
                                      unsigned int N) = 0;
 
+  class Changes {
+  public:
+    Changes();
+
+    double snow_depth;
+    double melt;
+    double runoff;
+    double smb;
+  };
+
   /** 
    * Take a step of the PDD model.
    *
    * @param[in] ddf degree day factors
    * @param[in] PDDs number of positive degree days during the time step [K day]
    * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
-   * @param[in,out] snow_depth snow depth [ice equivalent meters]
-   * @param[in,out] cumulative_melt [ice equivalent meters]
-   * @param[in,out] cumulative_runoff [ice equivalent meters]
-   * @param[in,out] cumulative_smb [ice equivalent meters]
+   * @param[in] old_snow_depth snow depth [ice equivalent meters]
    */
-  virtual void step(const DegreeDayFactors &ddf,
-                    double PDDs,
-                    double accumulation,
-                    double &snow_depth,
-                    double &cumulative_melt,
-                    double &cumulative_runoff,
-                    double &cumulative_smb) = 0;
+  virtual Changes step(const DegreeDayFactors &ddf,
+                       double PDDs,
+                       double old_snow_depth,
+                       double accumulation) = 0;
 
 protected:
   const Config::ConstPtr m_config;
@@ -129,13 +133,10 @@ public:
   virtual void get_snow_accumulation(double *precip_rate, double *T,
                                      unsigned int N);
 
-  virtual void step(const DegreeDayFactors &ddf,
-                    double PDDs,
-                    double accumulation,
-                    double &snow_depth,
-                    double &cumulative_melt,
-                    double &cumulative_runoff,
-                    double &cumulative_smb);
+  virtual Changes step(const DegreeDayFactors &ddf,
+                       double PDDs,
+                       double snow_depth,
+                       double accumulation);
 
 protected:
   double CalovGreveIntegrand(double sigma, double TacC);

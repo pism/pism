@@ -31,6 +31,13 @@
 namespace pism {
 namespace surface {
 
+LocalMassBalance::Changes::Changes() {
+  snow_depth = 0.0;
+  melt       = 0.0;
+  runoff     = 0.0;
+  smb        = 0.0;
+}
+
 LocalMassBalance::LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system)
   : m_config(myconfig), m_unit_system(system),
     m_seconds_per_day(86400) {
@@ -171,19 +178,18 @@ void PDDMassBalance::get_snow_accumulation(double *P, double *T,
  * The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but
  * is influenced by R. Hock (personal communication).
  */
-void PDDMassBalance::step(const DegreeDayFactors &ddf,
-                          double PDDs,
-                          double accumulation,
-                          double &snow_depth,
-                          double &cumulative_melt,
-                          double &cumulative_runoff,
-                          double &cumulative_smb) {
+PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
+                                             double PDDs,
+                                             double old_snow_depth,
+                                             double accumulation) {
+
+  Changes result;
 
   double
+    snow_depth      = old_snow_depth + accumulation,
     max_snow_melted = PDDs * ddf.snow,
-    snow_melted = 0.0, excess_pdds = 0.0;
-
-  snow_depth += accumulation;
+    snow_melted     = 0.0,
+    excess_pdds     = 0.0;
 
   if (PDDs <= 0.0) {       // The "no melt" case.
     snow_melted = 0.0;
@@ -205,7 +211,7 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
   double
     ice_melted              = excess_pdds * ddf.ice,
     melt                    = snow_melted + ice_melted,
-    ice_created_by_refreeze = 0.0, runoff = 0.0;
+    ice_created_by_refreeze = 0.0;
 
   if (refreeze_ice_melt) {
     ice_created_by_refreeze = melt * ddf.refreezeFrac;
@@ -213,16 +219,19 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
     ice_created_by_refreeze = snow_melted * ddf.refreezeFrac;
   }
 
-  runoff = melt - ice_created_by_refreeze;
-
   snow_depth -= snow_melted;
   if (snow_depth < 0.0) {
     snow_depth = 0.0;
   }
 
-  cumulative_melt   += melt;
-  cumulative_runoff += runoff;
-  cumulative_smb    += accumulation - runoff;
+  const double runoff = melt - ice_created_by_refreeze;
+
+  result.snow_depth = snow_depth - old_snow_depth;
+  result.melt       = melt;
+  result.runoff     = runoff;
+  result.smb        = accumulation - runoff;
+
+  return result;
 }
 
 
