@@ -395,14 +395,15 @@ void IceModel::write_extras() {
       m_extra_file_is_ready = true;
     }
 
-    unsigned int time_length = file.inq_dimlen(time_name);
-    size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
-
     write_run_stats(file);
 
     save_variables(file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                    m_extra_vars, PISM_FLOAT);
+
+    // Get the length of the time dimension *after* it is appended to.
+    unsigned int time_length = file.inq_dimlen(time_name);
+    size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
     io::write_time_bounds(file, m_extra_bounds, time_start, {m_last_extra, current_time});
   }
