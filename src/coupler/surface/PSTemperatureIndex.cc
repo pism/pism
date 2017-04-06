@@ -37,35 +37,6 @@
 namespace pism {
 namespace surface {
 
-// Diagnostic classes.
-
-/*! @brief Surface accumulation averaged over reporting intervals. */
-class PDD_saccum_average : public Diag_average<TemperatureIndex>
-{
-public:
-  PDD_saccum_average(const TemperatureIndex *m);
-protected:
-  const IceModelVec2S &cumulative_value() const;
-};
-
-/*! @brief Surface melt averaged over reporting intervals. */
-class PDD_smelt_average : public Diag_average<TemperatureIndex>
-{
-public:
-  PDD_smelt_average(const TemperatureIndex *m);
-protected:
-  const IceModelVec2S &cumulative_value() const;
-};
-
-/*! @brief Surface runoff averaged over reporting intervals. */
-class PDD_srunoff_average : public Diag_average<TemperatureIndex>
-{
-public:
-  PDD_srunoff_average(const TemperatureIndex *m);
-protected:
-  const IceModelVec2S &cumulative_value() const;
-};
-
 ///// PISM surface model implementing a PDD scheme.
 
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
@@ -83,7 +54,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_sd_use_param          = m_config->get_boolean("surface.pdd.std_dev_use_param");
   m_sd_param_a            = m_config->get_double("surface.pdd.std_dev_param_a");
   m_sd_param_b            = m_config->get_double("surface.pdd.std_dev_param_b");
-
 
   m_randomized = options::Bool("-pdd_rand",
                                "Use a PDD implementation based on simulating a random process");
@@ -538,79 +508,14 @@ void TemperatureIndex::write_model_state_impl(const PIO &output) const {
 
 std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result = {
-    {"saccum",          Diagnostic::Ptr(new PDD_saccum(this))},
-    {"smelt",           Diagnostic::Ptr(new PDD_smelt(this))},
-    {"srunoff",         Diagnostic::Ptr(new PDD_srunoff(this))},
-    {"saccum_average",  Diagnostic::Ptr(new PDD_saccum_average(this))},
-    {"smelt_average",   Diagnostic::Ptr(new PDD_smelt_average(this))},
-    {"srunoff_average", Diagnostic::Ptr(new PDD_srunoff_average(this))},
-    {"air_temp_sd",     Diagnostic::Ptr(new PDD_air_temp_sd(this))}
+    // {"saccum",          Diagnostic::Ptr(new PDD_saccum(this))},
+    // {"smelt",           Diagnostic::Ptr(new PDD_smelt(this))},
+    // {"srunoff",         Diagnostic::Ptr(new PDD_srunoff(this))},
+    {"air_temp_sd", Diagnostic::Ptr(new PDD_air_temp_sd(this))},
+    {"snow_depth",  Diagnostic::Ptr(new PDD_snow_depth(this))},
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());
-
-  return result;
-}
-
-PDD_saccum::PDD_saccum(const TemperatureIndex *m)
-  : Diag<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "saccum")};
-
-  set_attrs("instantaneous surface accumulation rate (precipitation minus rain)", "",
-            "kg m-2 s-1", "kg m-2 year-1", 0);
-}
-
-IceModelVec::Ptr PDD_saccum::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "saccum", WITHOUT_GHOSTS);
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->accumulation_rate());
-
-  return result;
-}
-
-PDD_smelt::PDD_smelt(const TemperatureIndex *m)
-  : Diag<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "smelt")};
-
-  set_attrs("instantaneous surface melt rate", "",
-            "kg m-2 s-1", "kg m-2 year-1", 0);
-}
-
-IceModelVec::Ptr PDD_smelt::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "smelt", WITHOUT_GHOSTS);
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->melt_rate());
-
-  return result;
-}
-
-PDD_srunoff::PDD_srunoff(const TemperatureIndex *m)
-  : Diag<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "srunoff")};
-
-  set_attrs("instantaneous surface meltwater runoff rate", "",
-            "kg m-2 s-1", "kg m-2 year-1", 0);
-}
-
-IceModelVec::Ptr PDD_srunoff::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "srunoff", WITHOUT_GHOSTS);
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->runoff_rate());
 
   return result;
 }
@@ -655,57 +560,6 @@ IceModelVec::Ptr PDD_air_temp_sd::compute_impl() {
   result->copy_from(model->air_temp_sd());
 
   return result;
-}
-
-PDD_saccum_average::PDD_saccum_average(const TemperatureIndex *m)
-  : Diag_average<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "saccum_average")};
-
-  set_attrs("surface accumulation averaged over reporting intervals", "",
-            "kg m-2 s-1", "kg m-2 year-1", 0);
-  double fill_value = units::convert(m_sys, m_fill_value,
-                                     "kg year-1", "kg second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
-}
-
-const IceModelVec2S & PDD_saccum_average::cumulative_value() const {
-  return model->cumulative_accumulation();
-}
-
-PDD_smelt_average::PDD_smelt_average(const TemperatureIndex *m)
-  : Diag_average<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "smelt_average")};
-
-  set_attrs("surface melt averaged over reporting intervals", "",
-            "kg m-2 s-1", "kg m-2 year-1", 0);
-  double fill_value = units::convert(m_sys, m_fill_value,
-                                     "kg year-1", "kg second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
-}
-
-const IceModelVec2S & PDD_smelt_average::cumulative_value() const {
-  return model->cumulative_melt();
-}
-
-PDD_srunoff_average::PDD_srunoff_average(const TemperatureIndex *m)
-  : Diag_average<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "srunoff_average")};
-
-  set_attrs("surface runoff averaged over reporting intervals", "",
-            "kg m-2 s-1", "kg m-2 year-1", 0);
-  double fill_value = units::convert(m_sys, m_fill_value,
-                                     "kg year-1", "kg second-1");
-  m_vars[0].set_double("_FillValue", fill_value);
-}
-
-const IceModelVec2S & PDD_srunoff_average::cumulative_value() const {
-  return model->cumulative_runoff();
 }
 
 } // end of namespace surface

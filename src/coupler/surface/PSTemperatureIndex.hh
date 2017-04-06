@@ -111,33 +111,6 @@ protected:
   double m_sd_ref_time, m_sd_param_a, m_sd_param_b;
 };
 
-/*! @brief Surface accumulation rate. */
-class PDD_saccum : public Diag<TemperatureIndex>
-{
-public:
-  PDD_saccum(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Surface melt rate. */
-class PDD_smelt : public Diag<TemperatureIndex>
-{
-public:
-  PDD_smelt(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Surface runoff rate. */
-class PDD_srunoff : public Diag<TemperatureIndex>
-{
-public:
-  PDD_srunoff(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
 /*! @brief Snow cover depth. */
 class PDD_snow_depth : public Diag<TemperatureIndex>
 {
