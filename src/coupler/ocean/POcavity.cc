@@ -374,6 +374,12 @@ void Cavity::update_impl(double my_t, double my_dt) {
   //
   basalmeltrate_shelf.scale(cc.rhoi);
   m_shelfbmassflux.copy_from(basalmeltrate_shelf); //TODO Check if scaling with ice density
+
+  bool no_shelfb_melt = options::Bool("-no_shelfb_melt","Sets shelfbmassflux to 0.0");
+  if (no_shelfb_melt){
+    m_shelfbmassflux.set(0.0);
+  }
+
 }
 
 // To be used solely in round_basins()
