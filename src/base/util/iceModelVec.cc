@@ -934,6 +934,12 @@ void AccessList::add(const PetscAccessible &vec) {
   m_vecs.push_back(&vec);
 }
 
+void AccessList::add(const std::vector<const PetscAccessible*> vecs) {
+  for (auto v : vecs) {
+    add(*v);
+  }
+}
+
 //! Return the total number of elements in the *owned* part of an array.
 size_t IceModelVec::size() const {
   // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case

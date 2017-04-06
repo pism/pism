@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2017 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -293,14 +293,11 @@ void SSAFD::assemble_rhs() {
   IceModelVec::AccessList list{&m_taud, &m_b};
 
   if (m_bc_values && m_bc_mask) {
-    list.add(*m_bc_values);
-    list.add(*m_bc_mask);
+    list.add({m_bc_values, m_bc_mask});
   }
 
   if (use_cfbc) {
-    list.add(*m_thickness);
-    list.add(*m_bed);
-    list.add(m_mask);
+    list.add({m_thickness, m_bed, &m_mask});
   }
 
   if (use_cfbc && m_melange_back_pressure != NULL) {
@@ -500,9 +497,7 @@ void SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
   bool lateral_drag_enabled=m_config->get_boolean("stress_balance.ssa.fd.lateral_drag.enabled");
   if (lateral_drag_enabled) {
-    list.add(*m_thickness);
-    list.add(*m_bed);
-    list.add(*m_surface);
+    list.add({m_thickness, m_bed, m_surface});
   }
   double lateral_drag_viscosity=m_config->get_double("stress_balance.ssa.fd.lateral_drag.viscosity");
   double HminFrozen=0.0;
@@ -1451,9 +1446,7 @@ void SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
     }
   }
 
-  list.add(result);
-  list.add(m_hardness);
-  list.add(*m_thickness);
+  list.add({&result, &m_hardness, m_thickness});
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

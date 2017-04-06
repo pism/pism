@@ -353,9 +353,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
     latitude         = m_grid->variables().get_2d_scalar("latitude");
     longitude        = m_grid->variables().get_2d_scalar("longitude");
 
-    list.add(*latitude);
-    list.add(*longitude);
-    list.add(*surface_altitude);
+    list.add({latitude, longitude, surface_altitude});
     fausto_greve->update_temp_mj(*surface_altitude, *latitude, *longitude);
   }
 

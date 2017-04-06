@@ -58,12 +58,8 @@ void IceModel::update_fracture_density() {
 
   const bool write_fd = m_config->get_boolean("fracture_density.write_fields");
   if (write_fd) {
-    list.add(m_fracture->growth_rate);
-    list.add(m_fracture->healing_rate);
-    list.add(m_fracture->flow_enhancement);
-    list.add(m_fracture->toughness);
-    list.add(A);
-    list.add(A_new);
+    list.add({&m_fracture->growth_rate, &m_fracture->healing_rate,
+          &m_fracture->flow_enhancement, &m_fracture->toughness, &A, &A_new});
     A_new.copy_from(A);
   }
 

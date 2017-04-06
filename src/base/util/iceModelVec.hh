@@ -60,6 +60,7 @@ public:
   AccessList(const PetscAccessible &v);
   ~AccessList();
   void add(const PetscAccessible &v);
+  void add(const std::vector<const PetscAccessible*> vecs);
 private:
   std::vector<const PetscAccessible*> m_vecs;
 };

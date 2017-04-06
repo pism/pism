@@ -658,12 +658,8 @@ void GeometryEvolution::update_in_place(double dt,
     // elevation.)
     m_impl->thickness.copy_from(ice_thickness);
 
-    list.add(area_specific_volume);
-    list.add(m_impl->residual);
-    list.add(m_impl->thickness);
-    list.add(m_impl->surface_elevation);
-    list.add(bed_topography);
-    list.add(m_impl->cell_type);
+    list.add({&area_specific_volume, &m_impl->residual, &m_impl->thickness,
+          &m_impl->surface_elevation, &bed_topography, &m_impl->cell_type});
   }
 
   ParallelSection loop(m_grid->com);

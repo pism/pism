@@ -280,8 +280,7 @@ void SSAFEM::cache_inputs() {
 
   bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
   if (use_explicit_driving_stress) {
-    list.add(*m_driving_stress_x);
-    list.add(*m_driving_stress_y);
+    list.add({m_driving_stress_x, m_driving_stress_y});
   }
 
   ParallelSection loop(m_grid->com);

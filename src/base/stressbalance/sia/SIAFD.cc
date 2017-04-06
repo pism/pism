@@ -596,8 +596,7 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   }
 
   if (full_update) {
-    list.add(m_delta[0]);
-    list.add(m_delta[1]);
+    list.add({&m_delta[0], &m_delta[1]});
   }
 
   assert(theta.get_stencil_width()      >= 2);
