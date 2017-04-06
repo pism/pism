@@ -111,24 +111,6 @@ protected:
   double m_sd_ref_time, m_sd_param_a, m_sd_param_b;
 };
 
-/*! @brief Snow cover depth. */
-class PDD_snow_depth : public Diag<TemperatureIndex>
-{
-public:
-  PDD_snow_depth(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Standard deviation of near-surface air temperature. */
-class PDD_air_temp_sd : public Diag<TemperatureIndex>
-{
-public:
-  PDD_air_temp_sd(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
 } // end of namespace surface
 } // end of namespace pism
 
