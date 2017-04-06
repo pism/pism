@@ -16,7 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>
 #include <cassert>
 
 #include "iceModel_diagnostics.hh"
@@ -1265,74 +1264,64 @@ void MassFluxDischarge::update(double a, double b) {
   m_ts->append(0, a, b);
 }
 
-ThicknessRateOfChange::ThicknessRateOfChange(const IceModel *m)
-  : Diag<IceModel>(m) {
+//! \brief Computes dHdt, the ice thickness rate of change.
+class ThicknessRateOfChange : public Diag<IceModel>
+{
+public:
+  ThicknessRateOfChange(const IceModel *m)
+    : Diag<IceModel>(m),
+    m_last_thickness(m_grid, "last_ice_thickness", WITHOUT_GHOSTS),
+    m_interval_length(0.0) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "dHdt")};
+    // set metadata:
+    m_vars = {SpatialVariableMetadata(m_sys, "dHdt")};
 
-  set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
-            "m s-1", "m year-1", 0);
+    set_attrs("ice thickness rate of change",
+              "tendency_of_land_ice_thickness",
+              "m second-1", "m year-1", 0);
 
-  double fill_value = units::convert(m_sys, m_fill_value,
-                                     "m year-1", "m second-1");
+    m_fill_value = units::convert(m_sys, m_fill_value,
+                                  "m year-1", "m second-1");
 
-  const double valid_range = units::convert(m_sys, -1e6, "m year-1", "m second-1");
+    const double valid_range = units::convert(m_sys, -1e6, "m year-1", "m second-1");
 
-  m_vars[0].set_doubles("valid_range",  {-valid_range, valid_range});
-  m_vars[0].set_double("_FillValue", fill_value);
-  m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0].set_doubles("valid_range",  {-valid_range, valid_range});
+    m_vars[0].set_double("_FillValue", m_fill_value);
+    m_vars[0].set_string("cell_methods", "time: mean");
 
-  m_last_ice_thickness.create(m_grid, "last_ice_thickness", WITHOUT_GHOSTS);
-  m_last_ice_thickness.set_attrs("internal",
-                                 "ice thickness at the time of the last report of dHdt",
-                                 "m", "land_ice_thickness");
+    m_last_thickness.set_attrs("internal",
+                               "ice thickness at the time of the last report of dHdt",
+                               "m", "land_ice_thickness");
+  }
+protected:
+  IceModelVec::Ptr compute_impl() {
 
-  m_last_report_time = GSL_NAN;
-}
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "dHdt", WITHOUT_GHOSTS));
+    result->metadata() = m_vars[0];
 
-IceModelVec::Ptr ThicknessRateOfChange::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "dHdt", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
-  double dt = m_grid->ctx()->time()->current() - m_last_report_time;
-
-  if (gsl_isnan(m_last_report_time)) {
-    result->set(units::convert(m_sys, 2e6, "m year-1", "m second-1"));
-  } else {
-    const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
-
-    IceModelVec::AccessList list{result.get(), &m_last_ice_thickness, &ice_thickness};
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      (*result)(i, j) = (ice_thickness(i, j) - m_last_ice_thickness(i, j)) / dt;
+    if (m_interval_length > 0.0) {
+      model->geometry().ice_thickness.add(-1.0, m_last_thickness, *result);
+      result->scale(1.0 / m_interval_length);
+    } else {
+      result->set(m_fill_value);
     }
+
+    return result;
   }
 
-  // Save the ice thickness and the corresponding time:
-  this->update(dt);
-
-  return result;
-}
-
-void ThicknessRateOfChange::update_impl(double dt) {
-  (void) dt;
-  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
-
-  IceModelVec::AccessList list{&ice_thickness, &m_last_ice_thickness};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    m_last_ice_thickness(i, j) = ice_thickness(i, j);
+  void reset_impl() {
+    m_interval_length = 0.0;
+    m_last_thickness.copy_from(model->geometry().ice_thickness);
   }
 
-  m_last_report_time = m_grid->ctx()->time()->current();
-}
+  void update_impl(double dt) {
+    m_interval_length += dt;
+  }
+
+protected:
+  IceModelVec2S m_last_thickness;
+  double m_interval_length;
+};
 
 VolumeGlacierizedGrounded::VolumeGlacierizedGrounded(IceModel *m)
   : TSDiag<IceModel>(m) {

@@ -398,19 +398,6 @@ public:
   virtual void update(double a, double b);
 };
 
-//! \brief Computes dHdt, the ice thickness rate of change.
-class ThicknessRateOfChange : public Diag<IceModel>
-{
-public:
-  ThicknessRateOfChange(const IceModel *m);
-protected:
-  virtual void update_impl(double dt);
-  virtual IceModelVec::Ptr compute_impl();
-protected:
-  IceModelVec2S m_last_ice_thickness;
-  double m_last_report_time;
-};
-
 //! \brief Reports the maximum horizontal absolute velocity component over the grid.
 class MaxHorizontalVelocity : public TSDiag<IceModel> // GOOD
 {
