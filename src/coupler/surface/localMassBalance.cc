@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
 #include <ctime>  // for time(), used to initialize random number gen
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
@@ -108,9 +109,15 @@ double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
  * @param N length of the T array
  * @param[out] PDDs pointer to a pre-allocated array with N-1 elements
  */
-void PDDMassBalance::get_PDDs(double *S, double dt_series,
-                              double *T, unsigned int N, double *PDDs) {
+void PDDMassBalance::get_PDDs(double dt_series,
+                              const std::vector<double> &S,
+                              const std::vector<double> &T,
+                              std::vector<double> &PDDs) {
+  assert(S.size() == T.size() and T.size() == PDDs.size());
+  assert(dt_series > 0.0);
+
   const double h_days = dt_series / m_seconds_per_day;
+  const size_t N = S.size();
 
   for (unsigned int k = 0; k < N; ++k) {
     PDDs[k] = h_days * CalovGreveIntegrand(S[k], T[k] - pdd_threshold_temp);
@@ -134,8 +141,11 @@ void PDDMassBalance::get_PDDs(double *S, double dt_series,
  * @param[in] T air temperature (array of length N)
  * @param[in] N array length
  */
-void PDDMassBalance::get_snow_accumulation(double *P, double *T,
-                                           unsigned int N) {
+void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
+                                           std::vector<double> &P) {
+
+  assert(T.size() == P.size());
+  const size_t N = T.size();
 
   // Following \ref Hock2005b we employ a linear transition from Tmin to Tmax
   for (unsigned int i = 0; i < N; i++) {
@@ -283,9 +293,15 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
  * @param N number of points in the temperature time-series, each corresponds to a sub-interval
  * @param PDDs pointer to a pre-allocated array of length N
  */
-void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
-                                  double *T, unsigned int N, double *PDDs) {
+void PDDrandMassBalance::get_PDDs(double dt_series,
+                                  const std::vector<double> &S,
+                                  const std::vector<double> &T,
+                                  std::vector<double> &PDDs) {
+  assert(S.size() == T.size() and T.size() == PDDs.size());
+  assert(dt_series > 0.0);
+
   const double h_days = dt_series / m_seconds_per_day;
+  const size_t N = S.size();
 
   for (unsigned int k = 0; k < N; ++k) {
     // average temperature in k-th interval

@@ -439,12 +439,12 @@ void TemperatureIndex::update_impl(double t, double dt) {
       // Use temperature time series, the "positive" threshhold, and
       // the standard deviation of the daily variability to get the
       // number of positive degree days (PDDs)
-      m_mbscheme->get_PDDs(&S[0], dtseries, &T[0], Nseries, &PDDs[0]);
+      m_mbscheme->get_PDDs(dtseries, S, T, // inputs
+                           PDDs);          // output
 
       // Use temperature time series to remove rainfall from precipitation
-      m_mbscheme->get_snow_accumulation(&P[0], // precipitation rate (input-output)
-                                        &T[0], // air temperature (input)
-                                        Nseries);
+      m_mbscheme->get_snow_accumulation(T,  // air temperature (input)
+                                        P); // precipitation rate (input-output)
 
       // Use degree-day factors, the number of PDDs, and the snow precipitation to get surface mass
       // balance (and diagnostics: accumulation, melt, runoff)

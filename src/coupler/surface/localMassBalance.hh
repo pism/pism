@@ -77,12 +77,14 @@ public:
   //! Count positive degree days (PDDs).  Returned value in units of K day.
   /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt_series, ..., t+(N-1)dt_series.
     Inputs `t`, `dt_series` are in seconds.  */
-  virtual void get_PDDs(double *S, double dt_series,
-                        double *T, unsigned int N, double *PDDs) = 0;
+  virtual void get_PDDs(double dt_series,
+                        const std::vector<double> &S,
+                        const std::vector<double> &T,
+                        std::vector<double> &PDDs) = 0;
 
   /*! Remove rain from precipitation. */
-  virtual void get_snow_accumulation(double *precip_rate, double *T,
-                                     unsigned int N) = 0;
+  virtual void get_snow_accumulation(const std::vector<double> &T,
+                                     std::vector<double> &precip_rate) = 0;
 
   class Changes {
   public:
@@ -99,8 +101,8 @@ public:
    *
    * @param[in] ddf degree day factors
    * @param[in] PDDs number of positive degree days during the time step [K day]
-   * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
    * @param[in] old_snow_depth snow depth [ice equivalent meters]
+   * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
    */
   virtual Changes step(const DegreeDayFactors &ddf,
                        double PDDs,
@@ -127,11 +129,13 @@ public:
   virtual ~PDDMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt);
-  virtual void get_PDDs(double *S, double dt_series,
-                        double *T, unsigned int N, double *PDDs);
+  virtual void get_PDDs(double dt_series,
+                        const std::vector<double> &S,
+                        const std::vector<double> &T,
+                        std::vector<double> &PDDs);
 
-  virtual void get_snow_accumulation(double *precip_rate, double *T,
-                                     unsigned int N);
+  virtual void get_snow_accumulation(const std::vector<double> &T,
+                                     std::vector<double> &precip_rate);
 
   virtual Changes step(const DegreeDayFactors &ddf,
                        double PDDs,
@@ -173,8 +177,10 @@ public:
 
   virtual unsigned int get_timeseries_length(double dt);
 
-  virtual void get_PDDs(double *S, double dt_series,
-                        double *T, unsigned int N, double *PDDs);
+  virtual void get_PDDs(double dt_series,
+                        const std::vector<double> &S,
+                        const std::vector<double> &T,
+                        std::vector<double> &PDDs);
 protected:
   gsl_rng *pddRandGen;
 };
