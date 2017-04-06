@@ -177,7 +177,7 @@ void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
  *
  * - a fraction of the melted snow and ice refreezes, conceptualized
  *   as superimposed ice, and this is controlled by parameter \c
- *   ddf.refreezeFrac
+ *   ddf.refreeze_fraction
  *
  * - the excess number of PDDs is used to melt both the ice that came
  *   from refreeze and then any ice which is already present.
@@ -224,9 +224,9 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
     ice_created_by_refreeze = 0.0;
 
   if (refreeze_ice_melt) {
-    ice_created_by_refreeze = melt * ddf.refreezeFrac;
+    ice_created_by_refreeze = melt * ddf.refreeze_fraction;
   } else {
-    ice_created_by_refreeze = snow_melted * ddf.refreezeFrac;
+    ice_created_by_refreeze = snow_melted * ddf.refreeze_fraction;
   }
 
   snow_depth -= snow_melted;
@@ -317,17 +317,19 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr g)
   : m_grid(g), m_config(g->ctx()->config()) {
 
-  beta_ice_w  = m_config->get_double("surface.pdd.fausto.beta_ice_w");
-  beta_snow_w = m_config->get_double("surface.pdd.fausto.beta_snow_w");
+  m_beta_ice_w  = m_config->get_double("surface.pdd.fausto.beta_ice_w");
+  m_beta_snow_w = m_config->get_double("surface.pdd.fausto.beta_snow_w");
 
-  T_c         = m_config->get_double("surface.pdd.fausto.T_c");
-  T_w         = m_config->get_double("surface.pdd.fausto.T_w");
-  beta_ice_c  = m_config->get_double("surface.pdd.fausto.beta_ice_c");
-  beta_snow_c = m_config->get_double("surface.pdd.fausto.beta_snow_c");
+  m_T_c         = m_config->get_double("surface.pdd.fausto.T_c");
+  m_T_w         = m_config->get_double("surface.pdd.fausto.T_w");
+  m_beta_ice_c  = m_config->get_double("surface.pdd.fausto.beta_ice_c");
+  m_beta_snow_c = m_config->get_double("surface.pdd.fausto.beta_snow_c");
 
-  fresh_water_density        = m_config->get_double("constants.fresh_water.density");
-  ice_density                = m_config->get_double("constants.ice.density");
-  pdd_fausto_latitude_beta_w = m_config->get_double("surface.pdd.fausto.latitude_beta_w");
+  m_fresh_water_density        = m_config->get_double("constants.fresh_water.density");
+  m_ice_density                = m_config->get_double("constants.ice.density");
+  m_pdd_fausto_latitude_beta_w = m_config->get_double("surface.pdd.fausto.latitude_beta_w");
+  m_refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
+
 
   m_temp_mj.create(m_grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   m_temp_mj.set_attrs("internal",
@@ -335,40 +337,46 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr g)
                     "K", "");
 }
 
+FaustoGrevePDDObject::~FaustoGrevePDDObject() {
+  // empty
+}
 
-void FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
-                                               double /* usurf */,
-                                               double lat, double /* lon */,
-                                               LocalMassBalance::DegreeDayFactors &ddf) {
+LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int i, int j,
+                                                                            double latitude) {
+
+  LocalMassBalance::DegreeDayFactors ddf;
+  ddf.refreeze_fraction = m_refreeze_fraction;
 
   IceModelVec::AccessList list(m_temp_mj);
   const double T_mj = m_temp_mj(i,j);
 
-  if (lat < pdd_fausto_latitude_beta_w) { // case lat < 72 deg N
-    ddf.ice  = beta_ice_w;
-    ddf.snow = beta_snow_w;
+  if (latitude < m_pdd_fausto_latitude_beta_w) { // case latitude < 72 deg N
+    ddf.ice  = m_beta_ice_w;
+    ddf.snow = m_beta_snow_w;
   } else { // case > 72 deg N
-    if (T_mj >= T_w) {
-      ddf.ice  = beta_ice_w;
-      ddf.snow = beta_snow_w;
-    } else if (T_mj <= T_c) {
-      ddf.ice  = beta_ice_c;
-      ddf.snow = beta_snow_c;
+    if (T_mj >= m_T_w) {
+      ddf.ice  = m_beta_ice_w;
+      ddf.snow = m_beta_snow_w;
+    } else if (T_mj <= m_T_c) {
+      ddf.ice  = m_beta_ice_c;
+      ddf.snow = m_beta_snow_c;
     } else { // middle case   T_c < T_mj < T_w
       const double
-        lam_i = pow((T_w - T_mj) / (T_w - T_c) , 3.0),
-        lam_s = (T_mj - T_c) / (T_w - T_c);
-      ddf.ice  = beta_ice_w + (beta_ice_c - beta_ice_w) * lam_i;
-      ddf.snow = beta_snow_w + (beta_snow_c - beta_snow_w) * lam_s;
+        lam_i = pow((m_T_w - T_mj) / (m_T_w - m_T_c) , 3.0),
+        lam_s = (T_mj - m_T_c) / (m_T_w - m_T_c);
+      ddf.ice  = m_beta_ice_w + (m_beta_ice_c - m_beta_ice_w) * lam_i;
+      ddf.snow = m_beta_snow_w + (m_beta_snow_c - m_beta_snow_w) * lam_s;
     }
   }
 
   // degree-day factors in \ref Faustoetal2009 are water-equivalent
   //   thickness per degree day; ice-equivalent thickness melted per degree
   //   day is slightly larger; for example, iwfactor = 1000/910
-  const double iwfactor = fresh_water_density / ice_density;
+  const double iwfactor = m_fresh_water_density / m_ice_density;
   ddf.snow *= iwfactor;
   ddf.ice  *= iwfactor;
+
+  return ddf;
 }
 
 

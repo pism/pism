@@ -66,7 +66,7 @@ public:
     //! m day^-1 K^-1; ice-equivalent amount of ice melted, per PDD
     double ice;
     //! fraction of melted snow which refreezes as ice
-    double refreezeFrac;
+    double refreeze_fraction;
   };
 
   LocalMassBalance(Config::ConstPtr config, units::System::Ptr system);
@@ -204,23 +204,31 @@ class FaustoGrevePDDObject {
 
 public:
   FaustoGrevePDDObject(IceGrid::ConstPtr g);
-  virtual ~FaustoGrevePDDObject() {}
+  virtual ~FaustoGrevePDDObject();
 
-  virtual void update_temp_mj(const IceModelVec2S &surfelev,
+  void update_temp_mj(const IceModelVec2S &surfelev,
                               const IceModelVec2S &lat,
                               const IceModelVec2S &lon);
 
   /*! If this method is called, it is assumed that i,j is in the ownership range
     for IceModelVec2S temp_mj. */
-  virtual void setDegreeDayFactors(int i, int j,
-                                   double /* usurf */, double lat, double /* lon */,
-                                   LocalMassBalance::DegreeDayFactors &ddf);
+  LocalMassBalance::DegreeDayFactors degree_day_factors(int i, int j, double latitude);
 
 protected:
   IceGrid::ConstPtr m_grid;
   const Config::ConstPtr m_config;
-  double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
-    fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;
+
+  double m_beta_ice_w;
+  double m_beta_snow_w;
+  double m_T_c;
+  double m_T_w;
+  double m_beta_ice_c;
+  double m_beta_snow_c;
+  double m_fresh_water_density;
+  double m_ice_density;
+  double m_pdd_fausto_latitude_beta_w;
+  double m_refreeze_fraction;
+
   IceModelVec2S m_temp_mj;
 };
 
