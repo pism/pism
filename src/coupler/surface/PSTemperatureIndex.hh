@@ -46,15 +46,11 @@ public:
   TemperatureIndex(IceGrid::ConstPtr g);
   virtual ~TemperatureIndex();
 
-  const IceModelVec2S& accumulation_rate() const;
-  const IceModelVec2S& melt_rate() const;
-  const IceModelVec2S& runoff_rate() const;
   const IceModelVec2S& snow_depth() const;
   const IceModelVec2S& air_temp_sd() const;
-
-  const IceModelVec2S& cumulative_accumulation() const;
-  const IceModelVec2S& cumulative_melt() const;
-  const IceModelVec2S& cumulative_runoff() const;
+  const IceModelVec2S& accumulation() const;
+  const IceModelVec2S& melt() const;
+  const IceModelVec2S& runoff() const;
 
 protected:
   virtual void init_impl();
@@ -71,9 +67,11 @@ protected:
 
   double compute_next_balance_year_start(double time);
 protected:
-  LocalMassBalance *m_mbscheme;         //!< mass balance scheme to use
+  //! mass balance scheme to use
+  LocalMassBalance *m_mbscheme;
 
-  FaustoGrevePDDObject *m_faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
+  //! if not NULL then user wanted fausto PDD stuff
+  FaustoGrevePDDObject *m_faustogreve;
 
   //! holds degree-day factors in location-independent case
   LocalMassBalance::DegreeDayFactors m_base_ddf;
@@ -87,23 +85,20 @@ protected:
   //! cached surface mass balance rate
   IceModelVec2S m_climatic_mass_balance;
 
-  //! diagnostic output accumulation rate (snow - rain)
-  IceModelVec2S m_accumulation_rate;
-
-  //! diagnostic output melt rate (rate at which snow and ice is melted; but some snow melt
-  //! refreezes)
-  IceModelVec2S m_melt_rate;
-
-  //! diagnostic output meltwater runoff rate
-  IceModelVec2S m_runoff_rate;
-
   //! snow depth (reset once a year)
   IceModelVec2S m_snow_depth;
+
+  //! standard deviation of the daily variability of the air temperature
   IceModelVec2T m_air_temp_sd;
 
-  IceModelVec2S m_cumulative_accumulation;
-  IceModelVec2S m_cumulative_melt;
-  IceModelVec2S m_cumulative_runoff;
+  //! total accumulation during the last time step
+  IceModelVec2S m_accumulation;
+
+  //! total melt during the last time step
+  IceModelVec2S m_melt;
+
+  //! total runoff during the last time step
+  IceModelVec2S m_runoff;
 
   bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
   bool m_sd_use_param, m_sd_file_set;

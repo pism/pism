@@ -202,47 +202,21 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 
   // diagnostic fields:
 
-  m_accumulation_rate.create(m_grid, "saccum", WITHOUT_GHOSTS);
-  m_accumulation_rate.set_attrs("diagnostic",
-                                "instantaneous surface accumulation rate"
-                                " (precipitation minus rain)",
-                                "kg m-2 s-1",
-                                "");
-  m_accumulation_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_accumulation_rate.write_in_glaciological_units = true;
-
-  m_melt_rate.create(m_grid, "smelt", WITHOUT_GHOSTS);
-  m_melt_rate.set_attrs("diagnostic",
-                        "instantaneous surface melt rate",
-                        "kg m-2 s-1",
-                        "");
-  m_melt_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_melt_rate.write_in_glaciological_units = true;
-
-  m_runoff_rate.create(m_grid, "srunoff", WITHOUT_GHOSTS);
-  m_runoff_rate.set_attrs("diagnostic",
-                          "instantaneous surface meltwater runoff rate",
-                          "kg m-2 s-1",
-                          "");
-  m_runoff_rate.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_runoff_rate.write_in_glaciological_units = true;
-
-  // FIXME: I need to re-implement saccum, smelt, and srunoff.
   {
-    m_cumulative_accumulation.create(m_grid, "saccum_cumulative", WITHOUT_GHOSTS);
-    m_cumulative_accumulation.set_attrs("diagnostic",
-                                       "cumulative surface accumulation"
-                                       " (precipitation minus rain)",
-                                       "kg m-2", "");
+    m_accumulation.create(m_grid, "saccum", WITHOUT_GHOSTS);
+    m_accumulation.set_attrs("diagnostic",
+                             "surface accumulation"
+                             " (precipitation minus rain)",
+                             "kg m-2", "");
 
-    m_cumulative_melt.create(m_grid, "smelt_cumulative", WITHOUT_GHOSTS);
-    m_cumulative_melt.set_attrs("diagnostic", "cumulative surface melt",
-                               "kg m-2", "");
+    m_melt.create(m_grid, "smelt", WITHOUT_GHOSTS);
+    m_melt.set_attrs("diagnostic", "surface melt",
+                     "kg m-2", "");
 
-    m_cumulative_runoff.create(m_grid, "srunoff_cumulative", WITHOUT_GHOSTS);
-    m_cumulative_runoff.set_attrs("diagnostic",
-                                 "cumulative surface meltwater runoff",
-                                 "kg m-2", "");
+    m_runoff.create(m_grid, "srunoff", WITHOUT_GHOSTS);
+    m_runoff.set_attrs("diagnostic",
+                       "surface meltwater runoff",
+                       "kg m-2", "");
   }
 
   m_snow_depth.create(m_grid, "snow_depth", WITHOUT_GHOSTS);
@@ -309,9 +283,9 @@ void TemperatureIndex::init_impl() {
 
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 
-  m_cumulative_accumulation.set(0.0);
-  m_cumulative_melt.set(0.0);
-  m_cumulative_runoff.set(0.0);
+  m_accumulation.set(0.0);
+  m_melt.set(0.0);
+  m_runoff.set(0.0);
 }
 
 MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) const {
@@ -332,10 +306,10 @@ double TemperatureIndex::compute_next_balance_year_start(double time) {
   return m_grid->ctx()->time()->increment_date(balance_year_start, 1);
 }
 
-void TemperatureIndex::update_impl(double my_t, double my_dt) {
+void TemperatureIndex::update_impl(double t, double dt) {
 
-  if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12)) {
+  if ((fabs(t - m_t) < 1e-12) &&
+      (fabs(dt - m_dt) < 1e-12)) {
     return;
   }
 
@@ -343,25 +317,25 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   // change during the call
   FaustoGrevePDDObject *fausto_greve = m_faustogreve;
 
-  m_t  = my_t;
-  m_dt = my_dt;
+  m_t  = t;
+  m_dt = dt;
 
   // update to ensure that temperature and precipitation time series
   // are correct:
-  m_atmosphere->update(my_t, my_dt);
+  m_atmosphere->update(t, dt);
 
   // set up air temperature and precipitation time series
-  int Nseries = m_mbscheme->get_timeseries_length(my_dt);
+  int Nseries = m_mbscheme->get_timeseries_length(dt);
 
-  const double dtseries = my_dt / Nseries;
+  const double dtseries = dt / Nseries;
   std::vector<double> ts(Nseries), T(Nseries), S(Nseries), P(Nseries), PDDs(Nseries);
   for (int k = 0; k < Nseries; ++k) {
-    ts[k] = my_t + k * dtseries;
+    ts[k] = t + k * dtseries;
   }
 
   // update standard deviation time series
   if (m_sd_file_set == true) {
-    m_air_temp_sd.update(my_t, my_dt);
+    m_air_temp_sd.update(t, dt);
     m_air_temp_sd.init_interpolation(ts);
   }
 
@@ -371,9 +345,8 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
     *latitude         = NULL,
     *longitude        = NULL;
 
-  IceModelVec::AccessList list{&mask, &m_air_temp_sd, &m_climatic_mass_balance, &m_accumulation_rate,
-      &m_melt_rate, &m_runoff_rate, &m_snow_depth, &m_cumulative_accumulation,
-      &m_cumulative_melt, &m_cumulative_runoff};
+  IceModelVec::AccessList list{&mask, &m_air_temp_sd, &m_climatic_mass_balance,
+      &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
 
   if (fausto_greve != NULL) {
     surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
@@ -407,6 +380,13 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
+
+      // reset total accumulation, melt, and runoff
+      {
+        m_accumulation(i, j) = 0.0;
+        m_melt(i, j)         = 0.0;
+        m_runoff(i, j)       = 0.0;
+      }
 
       // the temperature time series from the AtmosphereModel and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
@@ -446,7 +426,7 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
       }
 
       // apply standard deviation param over ice if in use
-      if (m_sd_use_param && mask.icy(i,j)) {
+      if (m_sd_use_param and mask.icy(i, j)) {
         for (int k = 0; k < Nseries; ++k) {
           S[k] = m_sd_param_a * (T[k] - 273.15) + m_sd_param_b;
           if (S[k] < 0.0) {
@@ -466,15 +446,11 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
                                         &T[0], // air temperature (input)
                                         Nseries);
 
-      // Use degree-day factors, and number of PDDs, and the snow
-      // precipitation, to get surface mass balance (and diagnostics:
-      // accumulation, melt, runoff)
+      // Use degree-day factors, the number of PDDs, and the snow precipitation to get surface mass
+      // balance (and diagnostics: accumulation, melt, runoff)
       {
         double next_snow_depth_reset = m_next_balance_year_start;
-        m_accumulation_rate(i,j)     = 0.0;
-        m_melt_rate(i,j)             = 0.0;
-        m_runoff_rate(i,j)           = 0.0;
-        m_climatic_mass_balance(i,j) = 0.0;
+
         for (int k = 0; k < Nseries; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
             m_snow_depth(i,j)       = 0.0;
@@ -483,26 +459,21 @@ void TemperatureIndex::update_impl(double my_t, double my_dt) {
             }
           }
 
-          double accumulation     = P[k] * dtseries;
-          m_accumulation_rate(i,j) += accumulation;
+          const double accumulation = P[k] * dtseries;
 
-          m_mbscheme->step(ddf, PDDs[k], accumulation,
-                           m_snow_depth(i,j), m_melt_rate(i,j), m_runoff_rate(i,j),
-                           m_climatic_mass_balance(i,j));
-        }
+          LocalMassBalance::Changes changes;
+          changes = m_mbscheme->step(ddf, PDDs[k], m_snow_depth(i, j), accumulation);
 
-        // convert from [m during the current time-step] to kg m-2 s-1
-        m_accumulation_rate(i,j)     *= (ice_density/m_dt);
-        m_melt_rate(i,j)             *= (ice_density/m_dt);
-        m_runoff_rate(i,j)           *= (ice_density/m_dt);
-        m_climatic_mass_balance(i,j) *= (ice_density/m_dt);
-      }
+          // update snow depth
+          m_snow_depth(i, j) += changes.snow_depth;
 
-      // update cumulative quantities
-      {
-        m_cumulative_accumulation(i, j) += m_accumulation_rate(i, j) * m_dt;
-        m_cumulative_melt(i, j)         += m_melt_rate(i, j) * m_dt;
-        m_cumulative_runoff(i, j)       += m_runoff_rate(i, j) * m_dt;
+          // update total accumulation, melt, and runoff
+          {
+            m_accumulation(i, j) += accumulation;
+            m_melt(i, j)         += changes.melt;
+            m_runoff(i, j)       += changes.runoff;
+          }
+        } // end of the time-stepping loop
       }
 
       if (mask.ocean(i,j)) {
@@ -523,33 +494,20 @@ void TemperatureIndex::mass_flux_impl(IceModelVec2S &result) const {
   result.copy_from(m_climatic_mass_balance);
 }
 
-
 void TemperatureIndex::temperature_impl(IceModelVec2S &result) const {
   m_atmosphere->mean_annual_temp(result);
 }
 
-const IceModelVec2S& TemperatureIndex::cumulative_accumulation() const {
-  return m_cumulative_accumulation;
+const IceModelVec2S& TemperatureIndex::accumulation() const {
+  return m_accumulation;
 }
 
-const IceModelVec2S& TemperatureIndex::cumulative_melt() const {
-  return m_cumulative_melt;
+const IceModelVec2S& TemperatureIndex::melt() const {
+  return m_melt;
 }
 
-const IceModelVec2S& TemperatureIndex::cumulative_runoff() const {
-  return m_cumulative_runoff;
-}
-
-const IceModelVec2S& TemperatureIndex::accumulation_rate() const {
-  return m_accumulation_rate;
-}
-
-const IceModelVec2S& TemperatureIndex::melt_rate() const {
-  return m_melt_rate;
-}
-
-const IceModelVec2S& TemperatureIndex::runoff_rate() const {
-  return m_runoff_rate;
+const IceModelVec2S& TemperatureIndex::runoff() const {
+  return m_runoff;
 }
 
 const IceModelVec2S& TemperatureIndex::snow_depth() const {
