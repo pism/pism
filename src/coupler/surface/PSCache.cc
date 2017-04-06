@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -53,8 +53,8 @@ Cache::Cache(IceGrid::ConstPtr g, SurfaceModel* in)
   m_liquid_water_fraction.set_attrs("diagnostic",
                                     "ice surface liquid water fraction", "1", "");
 
-  m_mass_held_in_surface_layer.create(m_grid, "mass_held_in_surface_layer", WITHOUT_GHOSTS);
-  m_mass_held_in_surface_layer.set_attrs("diagnostic",
+  m_surface_layer_mass.create(m_grid, "surface_layer_mass", WITHOUT_GHOSTS);
+  m_surface_layer_mass.set_attrs("diagnostic",
                                          "mass held in surface layer", "kg", "");
 
   m_surface_layer_thickness.create(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS);
@@ -108,7 +108,7 @@ void Cache::update_impl(double t, double dt) {
     m_input_model->mass_flux(m_mass_flux);
     m_input_model->temperature(m_temperature);
     m_input_model->liquid_water_fraction(m_liquid_water_fraction);
-    m_input_model->layer_mass(m_mass_held_in_surface_layer);
+    m_input_model->layer_mass(m_surface_layer_mass);
     m_input_model->layer_thickness(m_surface_layer_thickness);
   }
 }
@@ -151,7 +151,7 @@ void Cache::liquid_water_fraction_impl(IceModelVec2S &result) const {
 }
 
 void Cache::layer_mass_impl(IceModelVec2S &result) const {
-  result.copy_from(m_mass_held_in_surface_layer);
+  result.copy_from(m_surface_layer_mass);
 }
 
 void Cache::layer_thickness_impl(IceModelVec2S &result) const {

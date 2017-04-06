@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -54,12 +54,12 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in
                                                   "1", "");
     m_ice_surface_liquid_water_fraction.set_time_independent(false);
 
-    m_mass_held_in_surface_layer.create(m_grid, "effective_mass_held_in_surface_layer", WITHOUT_GHOSTS);
-    m_mass_held_in_surface_layer.set_attrs("model_state",
+    m_surface_layer_mass.create(m_grid, "effective_surface_layer_mass", WITHOUT_GHOSTS);
+    m_surface_layer_mass.set_attrs("model_state",
                                            "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)",
                                            "kg",
                                            "");
-    m_mass_held_in_surface_layer.set_time_independent(false);
+    m_surface_layer_mass.set_time_independent(false);
 
     m_surface_layer_thickness.create(m_grid, "effective_surface_layer_thickness", WITHOUT_GHOSTS);
     m_surface_layer_thickness.set_attrs("model_state",
@@ -72,7 +72,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, SurfaceModel* in
   m_variables = {&m_ice_surface_mass_flux,
                  &m_ice_surface_temperature,
                  &m_ice_surface_liquid_water_fraction,
-                 &m_mass_held_in_surface_layer,
+                 &m_surface_layer_mass,
                  &m_surface_layer_thickness};
 }
 
@@ -115,7 +115,7 @@ void InitializationHelper::update_impl(double t, double dt) {
   m_input_model->mass_flux(m_ice_surface_mass_flux);
   m_input_model->temperature(m_ice_surface_temperature);
   m_input_model->liquid_water_fraction(m_ice_surface_liquid_water_fraction);
-  m_input_model->layer_mass(m_mass_held_in_surface_layer);
+  m_input_model->layer_mass(m_surface_layer_mass);
   m_input_model->layer_thickness(m_surface_layer_thickness);
 }
 
@@ -132,7 +132,7 @@ void InitializationHelper::liquid_water_fraction_impl(IceModelVec2S &result) con
 }
 
 void InitializationHelper::layer_mass_impl(IceModelVec2S &result) const {
-  result.copy_from(m_mass_held_in_surface_layer);
+  result.copy_from(m_surface_layer_mass);
 }
 
 void InitializationHelper::layer_thickness_impl(IceModelVec2S &result) const {
