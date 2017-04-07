@@ -157,7 +157,7 @@ std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
     {"bwatvel",          Diagnostic::Ptr(new Routing_bwatvel(this))},
     {"hydrovelbase_mag", Diagnostic::Ptr(new Distributed_hydrovelbase_mag(this))}
   };
-  return result;
+  return combine(result, Routing::diagnostics_impl());
 }
 
 std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() const {

@@ -164,15 +164,15 @@ void Routing::write_model_state_impl(const PIO &output) const {
 
 std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result = {
-    {"bwp", Diagnostic::Ptr(new Hydrology_bwp(this))},
-    {"bwprel", Diagnostic::Ptr(new Hydrology_bwprel(this))},
-    {"effbwp", Diagnostic::Ptr(new Hydrology_effbwp(this))},
-    {"hydrobmelt", Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
-    {"hydroinput", Diagnostic::Ptr(new Hydrology_hydroinput(this))},
-    {"wallmelt", Diagnostic::Ptr(new Hydrology_wallmelt(this))},
-    {"bwatvel", Diagnostic::Ptr(new Routing_bwatvel(this))}
+    {"bwp",             Diagnostic::Ptr(new Hydrology_bwp(this))},
+    {"bwprel",          Diagnostic::Ptr(new Hydrology_bwprel(this))},
+    {"effbwp",          Diagnostic::Ptr(new Hydrology_effbwp(this))},
+    {"hydrobmelt",      Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
+    {"hydroinput",      Diagnostic::Ptr(new Hydrology_hydroinput(this))},
+    {"wallmelt",        Diagnostic::Ptr(new Hydrology_wallmelt(this))},
+    {"bwatvel",         Diagnostic::Ptr(new Routing_bwatvel(this))}
   };
-  return result;
+  return combine(result, Hydrology::diagnostics_impl());
 }
 
 std::map<std::string, TSDiagnostic::Ptr> Routing::ts_diagnostics_impl() const {
