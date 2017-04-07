@@ -201,7 +201,9 @@ void BedThermalUnit::write_model_state_impl(const PIO &output) const {
 }
 
 std::map<std::string, Diagnostic::Ptr> BedThermalUnit::diagnostics_impl() const {
-  return {{"hfgeoubed", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
+  return {
+    {"bheatflx",   Diagnostic::wrap(m_bottom_surface_flux)},
+    {"hfgeoubed", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
 }
 
 void BedThermalUnit::update_impl(double t, double dt) {
