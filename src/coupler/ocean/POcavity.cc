@@ -44,7 +44,8 @@ Cavity::Constants::Constants(const Config &config) {
   rhoi       = config.get_double("constants.ice.density");
   rhow       = config.get_double("constants.sea_water.density");
   rho_star   = 1033;                  // kg/m^3
-  nu         = rhoi / rho_star;       // no unit
+  //nu         = rhoi / rho_star;       // no unit
+  nu          = rhoi / rhow; // no unit FIXME REPLACE
 
   latentHeat = config.get_double("constants.fresh_water.latent_heat_of_fusion"); //Joule / kg
   c_p_ocean  = 3974.0;       // J/(K*kg), specific heat capacity of ocean mixed layer
@@ -843,6 +844,9 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   std::vector<double> lmax_distGL(numberOfBasins);
   std::vector<double> lmax_distIF(numberOfBasins);
 
+  double lmax_distGL_ref = 0.0; // FIXME add
+  double max_distGL_ref = 0.0; // FIXME add
+
   const IceModelVec2CellType &m_mask = *m_grid->variables().get_2d_cell_type("mask");
 
   for(int shelf_id=0;shelf_id<numberOfBasins;shelf_id++){ max_distGL[shelf_id]=0.0; max_distIF[shelf_id]=0.0;lmax_distGL[shelf_id]=0.0; lmax_distIF[shelf_id]=0.0;}
@@ -864,6 +868,9 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
     if ( DistIF(i,j)> lmax_distIF[shelf_id] ) {
       lmax_distIF[shelf_id] = DistIF(i,j);
     }
+    if (DistGL(i,j)>lmax_distGL_ref){// FIXME add
+      lmax_distGL_ref = DistGL(i,j);
+    }
   }
 
 
@@ -871,6 +878,7 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
     max_distGL[l] = GlobalMax(m_grid->com, lmax_distGL[l]);
     max_distIF[l] = GlobalMax(m_grid->com, lmax_distIF[l]);
   }
+  max_distGL_ref = GlobalMax(m_grid->com, lmax_distGL_ref); // FIXME add 
 
   // Compute the number of boxes for each basin
   // based on maximum distance between calving front and grounding line (in DistGL)
@@ -880,14 +888,15 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   std::vector<int> lnumberOfBoxes_perBasin(numberOfBasins);
 
   int n_min = 1; //
-  double max_distGL_ref = 500000; // meter //FIXME make this an input parameter
+  //double max_distGL_ref = 500000; // meter //FIXME make this an input parameter FIXME remove
   double zeta = 0.5; // hard coded for now
 
   for (int l=0;l<numberOfBasins;l++){
     lnumberOfBoxes_perBasin[l] = 0;
     // FIXME: this is only correct for same dx and dy spacing.
     lnumberOfBoxes_perBasin[l] = n_min + static_cast<int>(
-        round(pow((max_distGL[l]*dx/max_distGL_ref), zeta) *(numberOfBoxes-n_min)));
+        //round(pow((max_distGL[l]*dx/max_distGL_ref), zeta) *(numberOfBoxes-n_min))); 
+        round(pow((max_distGL[l]/max_distGL_ref), zeta) *(numberOfBoxes-n_min))); // FIXME add
     lnumberOfBoxes_perBasin[l] = PetscMin(lnumberOfBoxes_perBasin[l],cc.default_numberOfBoxes);
     m_log->message(5, "lnumberOfBoxes[%d]=%d \n", l, lnumberOfBoxes_perBasin[l]);
   }
