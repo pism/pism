@@ -1,4 +1,4 @@
- // Copyright (C) 2012-2016 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+ // Copyright (C) 2012-2017 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -16,6 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//
+// Please cite this model as 
+// Antarctic sub-shelf melt rates via PICO
+// R. Reese, T. Albrecht, M. Mengel, X. Asay-Davis, R. Winkelmann 
+// (in prep.)
+
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_poly.h>
@@ -44,8 +50,7 @@ Cavity::Constants::Constants(const Config &config) {
   rhoi       = config.get_double("constants.ice.density");
   rhow       = config.get_double("constants.sea_water.density");
   rho_star   = 1033;                  // kg/m^3
-  //nu         = rhoi / rho_star;       // no unit
-  nu          = rhoi / rhow; // no unit FIXME REPLACE
+  nu          = rhoi / rhow; // no unit
 
   latentHeat = config.get_double("constants.fresh_water.latent_heat_of_fusion"); //Joule / kg
   c_p_ocean  = 3974.0;       // J/(K*kg), specific heat capacity of ocean mixed layer
@@ -844,8 +849,8 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   std::vector<double> lmax_distGL(numberOfBasins);
   std::vector<double> lmax_distIF(numberOfBasins);
 
-  double lmax_distGL_ref = 0.0; // FIXME add
-  double max_distGL_ref = 0.0; // FIXME add
+  double lmax_distGL_ref = 0.0; 
+  double max_distGL_ref = 0.0; 
 
   const IceModelVec2CellType &m_mask = *m_grid->variables().get_2d_cell_type("mask");
 
@@ -868,7 +873,7 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
     if ( DistIF(i,j)> lmax_distIF[shelf_id] ) {
       lmax_distIF[shelf_id] = DistIF(i,j);
     }
-    if (DistGL(i,j)>lmax_distGL_ref){// FIXME add
+    if (DistGL(i,j)>lmax_distGL_ref){
       lmax_distGL_ref = DistGL(i,j);
     }
   }
@@ -878,7 +883,7 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
     max_distGL[l] = GlobalMax(m_grid->com, lmax_distGL[l]);
     max_distIF[l] = GlobalMax(m_grid->com, lmax_distIF[l]);
   }
-  max_distGL_ref = GlobalMax(m_grid->com, lmax_distGL_ref); // FIXME add 
+  max_distGL_ref = GlobalMax(m_grid->com, lmax_distGL_ref);  
 
   // Compute the number of boxes for each basin
   // based on maximum distance between calving front and grounding line (in DistGL)
@@ -888,15 +893,12 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   std::vector<int> lnumberOfBoxes_perBasin(numberOfBasins);
 
   int n_min = 1; //
-  //double max_distGL_ref = 500000; // meter //FIXME make this an input parameter FIXME remove
   double zeta = 0.5; // hard coded for now
 
   for (int l=0;l<numberOfBasins;l++){
     lnumberOfBoxes_perBasin[l] = 0;
-    // FIXME: this is only correct for same dx and dy spacing.
-    lnumberOfBoxes_perBasin[l] = n_min + static_cast<int>(
-        //round(pow((max_distGL[l]*dx/max_distGL_ref), zeta) *(numberOfBoxes-n_min))); 
-        round(pow((max_distGL[l]/max_distGL_ref), zeta) *(numberOfBoxes-n_min))); // FIXME add
+    lnumberOfBoxes_perBasin[l] = n_min + static_cast<int>( 
+    		round(pow((max_distGL[l]/max_distGL_ref), zeta) *(numberOfBoxes-n_min))); 
     lnumberOfBoxes_perBasin[l] = PetscMin(lnumberOfBoxes_perBasin[l],cc.default_numberOfBoxes);
     m_log->message(5, "lnumberOfBoxes[%d]=%d \n", l, lnumberOfBoxes_perBasin[l]);
   }
