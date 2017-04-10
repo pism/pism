@@ -2091,7 +2091,6 @@ void IceModel::init_diagnostics() {
     {"mask",                                Diagnostic::wrap(m_geometry.cell_type)},
     {"cell_grounded_fraction",              Diagnostic::wrap(m_geometry.cell_grounded_fraction)},
     {"usurf",                               Diagnostic::wrap(m_geometry.ice_surface_elevation)},
-    {"tauc",                                Diagnostic::wrap(m_basal_yield_stress)},
     {"ssa_bc_mask",                         Diagnostic::wrap(m_ssa_dirichlet_bc_mask)},
     {"ssa_bc_vel",                          Diagnostic::wrap(m_ssa_dirichlet_bc_values)}
   };
