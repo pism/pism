@@ -135,7 +135,7 @@ HardnessAverage::HardnessAverage(const IceModel *m)
 }
 
 //! \brief Computes vertically-averaged ice hardness.
-IceModelVec::Ptr HardnessAverage::compute_impl() {
+IceModelVec::Ptr HardnessAverage::compute_impl() const {
 
   const rheology::FlowLaw *flow_law = model->stress_balance()->shallow()->flow_law();
   if (flow_law == NULL) {
@@ -186,7 +186,7 @@ Rank::Rank(const IceModel *m)
   m_vars[0].set_output_type(PISM_INT);
 }
 
-IceModelVec::Ptr Rank::compute_impl() {
+IceModelVec::Ptr Rank::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "rank", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
@@ -211,7 +211,7 @@ CTS::CTS(const IceModel *m)
             "", "", 0);
 }
 
-IceModelVec::Ptr CTS::compute_impl() {
+IceModelVec::Ptr CTS::compute_impl() const {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "cts", WITHOUT_GHOSTS);
@@ -233,13 +233,9 @@ Temperature::Temperature(const IceModel *m)
   m_vars[0].set_double("valid_min", 0);
 }
 
-IceModelVec::Ptr Temperature::compute_impl() {
+IceModelVec::Ptr Temperature::compute_impl() const {
 
-  // update vertical levels (in case the grid was extended
-  m_vars[0].set_levels(m_grid->z());
-
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "temp", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -284,15 +280,11 @@ TemperaturePA::TemperaturePA(const IceModel *m)
   m_vars[0].set_double("valid_max", 0);
 }
 
-IceModelVec::Ptr TemperaturePA::compute_impl() {
+IceModelVec::Ptr TemperaturePA::compute_impl() const {
   bool cold_mode = m_config->get_boolean("energy.temperature_based");
   double melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature");
 
-  // update vertical levels (in case the m_grid was extended
-  m_vars[0].set_levels(m_grid->z());
-
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "temp_pa", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp_pa", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -346,7 +338,7 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
             "Celsius", "Celsius", 0);
 }
 
-IceModelVec::Ptr TemperaturePABasal::compute_impl() {
+IceModelVec::Ptr TemperaturePABasal::compute_impl() const {
 
   bool cold_mode = m_config->get_boolean("energy.temperature_based");
   double melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature");
@@ -403,7 +395,7 @@ EnthalpySurface::EnthalpySurface(const IceModel *m)
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
 
-IceModelVec::Ptr EnthalpySurface::compute_impl() {
+IceModelVec::Ptr EnthalpySurface::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "enthalpysurf", WITHOUT_GHOSTS);
@@ -446,7 +438,7 @@ EnthalpyBasal::EnthalpyBasal(const IceModel *m)
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
 
-IceModelVec::Ptr EnthalpyBasal::compute_impl() {
+IceModelVec::Ptr EnthalpyBasal::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "enthalpybase", WITHOUT_GHOSTS);
@@ -472,7 +464,7 @@ TemperatureBasal::TemperatureBasal(const IceModel *m)
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
 
-IceModelVec::Ptr TemperatureBasal::compute_impl() {
+IceModelVec::Ptr TemperatureBasal::compute_impl() const {
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -523,7 +515,7 @@ TemperatureSurface::TemperatureSurface(const IceModel *m)
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
 
-IceModelVec::Ptr TemperatureSurface::compute_impl() {
+IceModelVec::Ptr TemperatureSurface::compute_impl() const {
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -571,7 +563,7 @@ LiquidFraction::LiquidFraction(const IceModel *m)
   m_vars[0].set_doubles("valid_range", {0.0, 1.0});
 }
 
-IceModelVec::Ptr LiquidFraction::compute_impl() {
+IceModelVec::Ptr LiquidFraction::compute_impl() const {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "liqfrac", WITHOUT_GHOSTS);
@@ -602,7 +594,7 @@ TemperateIceThickness::TemperateIceThickness(const IceModel *m)
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
 
-IceModelVec::Ptr TemperateIceThickness::compute_impl() {
+IceModelVec::Ptr TemperateIceThickness::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "tempicethk", WITHOUT_GHOSTS);
@@ -669,7 +661,7 @@ TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m)
 /*!
  * Uses linear interpolation to go beyond vertical grid resolution.
  */
-IceModelVec::Ptr TemperateIceThicknessBasal::compute_impl() {
+IceModelVec::Ptr TemperateIceThicknessBasal::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "tempicethk_basal", WITHOUT_GHOSTS);
@@ -1294,7 +1286,7 @@ public:
                                "m", "land_ice_thickness");
   }
 protected:
-  IceModelVec::Ptr compute_impl() {
+  IceModelVec::Ptr compute_impl() const {
 
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "dHdt", WITHOUT_GHOSTS));
     result->metadata() = m_vars[0];
@@ -1492,7 +1484,7 @@ LatLonBounds::LatLonBounds(const IceModel *m,
   // will not be available and so this code will not run.
 }
 
-IceModelVec::Ptr LatLonBounds::compute_impl() {
+IceModelVec::Ptr LatLonBounds::compute_impl() const {
   std::map<std::string,std::string> attrs;
   std::vector<double> indices(4);
 
@@ -1523,7 +1515,7 @@ IceAreaFraction::IceAreaFraction(const IceModel *m)
             "1", "1", 0);
 }
 
-IceModelVec::Ptr IceAreaFraction::compute_impl() {
+IceModelVec::Ptr IceAreaFraction::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, land_ice_area_fraction_name, WITHOUT_GHOSTS);
@@ -1598,7 +1590,7 @@ IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m)
             "1", "1", 0);
 }
 
-IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() {
+IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
@@ -1650,7 +1642,7 @@ IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m)
             "1", "1", 0);
 }
 
-IceModelVec::Ptr IceAreaFractionFloating::compute_impl() {
+IceModelVec::Ptr IceAreaFractionFloating::compute_impl() const {
 
   IceAreaFraction land_ice_area_fraction(model);
   IceModelVec::Ptr ice_area_fraction = land_ice_area_fraction.compute();
@@ -1678,7 +1670,7 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m)
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
 
-IceModelVec::Ptr HeightAboveFloatation::compute_impl() {
+IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "height_above_flotation", WITHOUT_GHOSTS);
@@ -1736,7 +1728,7 @@ IceMass::IceMass(const IceModel *m)
   m_vars[0].set_double("_FillValue", m_fill_value);
 }
 
-IceModelVec::Ptr IceMass::compute_impl() {
+IceModelVec::Ptr IceMass::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "ice_mass", WITHOUT_GHOSTS);
@@ -1800,7 +1792,7 @@ BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
             "meters", "meters", 0);
 }
 
-IceModelVec::Ptr BedTopographySeaLevelAdjusted::compute_impl() {
+IceModelVec::Ptr BedTopographySeaLevelAdjusted::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "topg_sl_adjusted", WITHOUT_GHOSTS);
@@ -1827,7 +1819,7 @@ Hardness::Hardness(const IceModel *m)
             unitstr, unitstr, 0);
 }
 
-IceModelVec::Ptr Hardness::compute_impl() {
+IceModelVec::Ptr Hardness::compute_impl() const {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "hardness", WITHOUT_GHOSTS);
@@ -1886,7 +1878,7 @@ static inline double square(double x) {
   return x * x;
 }
 
-IceModelVec::Ptr Viscosity::compute_impl() {
+IceModelVec::Ptr Viscosity::compute_impl() const {
 
   IceModelVec3::Ptr result(new IceModelVec3);
   result->create(m_grid, "effective_viscosity", WITHOUT_GHOSTS);

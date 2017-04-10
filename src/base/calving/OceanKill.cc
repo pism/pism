@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -136,7 +136,7 @@ OceanKill_mask::OceanKill_mask(const OceanKill *m)
             "", "", 0);
 }
 
-IceModelVec::Ptr OceanKill_mask::compute_impl() {
+IceModelVec::Ptr OceanKill_mask::compute_impl() const {
 
   IceModelVec2Int::Ptr result(new IceModelVec2Int);
   result->create(m_grid, "ocean_kill_mask", WITHOUT_GHOSTS);

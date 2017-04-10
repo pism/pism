@@ -31,7 +31,7 @@ class HardnessAverage : public Diag<IceModel>
 public:
   HardnessAverage(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 class IceAreaFraction : public Diag<IceModel>
@@ -39,7 +39,7 @@ class IceAreaFraction : public Diag<IceModel>
 public:
   IceAreaFraction(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 class IceAreaFractionGrounded : public Diag<IceModel>
@@ -47,7 +47,7 @@ class IceAreaFractionGrounded : public Diag<IceModel>
 public:
   IceAreaFractionGrounded(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 class IceAreaFractionFloating : public Diag<IceModel>
@@ -55,7 +55,7 @@ class IceAreaFractionFloating : public Diag<IceModel>
 public:
   IceAreaFractionFloating(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes a diagnostic field filled with processor rank values.
@@ -64,7 +64,7 @@ class Rank : public Diag<IceModel>
 public:
   Rank(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes CTS, CTS = E/E_s(p).
@@ -73,7 +73,7 @@ class CTS : public Diag<IceModel>
 public:
   CTS(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes ice temperature from enthalpy.
@@ -82,7 +82,7 @@ class Temperature : public Diag<IceModel>
 public:
   Temperature(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Compute the pressure-adjusted temperature in degrees C corresponding
@@ -92,7 +92,7 @@ class TemperaturePA : public Diag<IceModel>
 public:
   TemperaturePA(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes basal values of the pressure-adjusted temperature.
@@ -101,7 +101,7 @@ class TemperaturePABasal : public Diag<IceModel>
 public:
   TemperaturePABasal(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes surface values of ice enthalpy.
@@ -110,7 +110,7 @@ class EnthalpySurface : public Diag<IceModel>
 public:
   EnthalpySurface(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes enthalpy at the base of the ice.
@@ -119,7 +119,7 @@ class EnthalpyBasal : public Diag<IceModel>
 public:
   EnthalpyBasal(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes ice temperature at the base of the ice.
@@ -128,7 +128,7 @@ class TemperatureBasal : public Diag<IceModel>
 public:
   TemperatureBasal(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes ice temperature at the surface of the ice.
@@ -137,7 +137,7 @@ class TemperatureSurface : public Diag<IceModel>
 public:
   TemperatureSurface(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes the liquid water fraction.
@@ -146,7 +146,7 @@ class LiquidFraction : public Diag<IceModel>
 public:
   LiquidFraction(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes the total thickness of temperate ice in a column.
@@ -155,7 +155,7 @@ class TemperateIceThickness : public Diag<IceModel>
 public:
   TemperateIceThickness(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 //! \brief Computes the thickness of the basal layer of temperate ice.
 class TemperateIceThicknessBasal : public Diag<IceModel>
@@ -163,7 +163,7 @@ class TemperateIceThicknessBasal : public Diag<IceModel>
 public:
   TemperateIceThicknessBasal(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes the total ice volume in glacierized areas.
@@ -412,7 +412,7 @@ class HeightAboveFloatation : public Diag<IceModel>
 public:
   HeightAboveFloatation(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -422,7 +422,7 @@ class IceMass : public Diag<IceModel>
 public:
   IceMass(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Sea-level adjusted bed topography (zero at sea level). */
@@ -431,7 +431,7 @@ class BedTopographySeaLevelAdjusted : public Diag<IceModel>
 public:
   BedTopographySeaLevelAdjusted(const IceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Ice hardness computed using the SIA flow law. */
@@ -440,7 +440,7 @@ class Hardness : public Diag<IceModel>
 public:
   Hardness(const IceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Effective viscosity of ice (3D). */
@@ -449,7 +449,7 @@ class Viscosity : public Diag<IceModel>
 public:
   Viscosity(IceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes latitude and longitude bounds.
@@ -460,7 +460,7 @@ public:
                           const std::string &var_name,
                           const std::string &proj_string);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 protected:
   std::string m_var_name, m_proj_string;
 };

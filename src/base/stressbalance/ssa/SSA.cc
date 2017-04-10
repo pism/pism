@@ -413,7 +413,7 @@ SSA_taud::SSA_taud(const SSA *m)
   }
 }
 
-IceModelVec::Ptr SSA_taud::compute_impl() {
+IceModelVec::Ptr SSA_taud::compute_impl() const {
 
   IceModelVec2V::Ptr result(new IceModelVec2V);
   result->create(m_grid, "result", WITHOUT_GHOSTS);
@@ -437,7 +437,7 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
                      "this is the magnitude of the driving stress used by the SSA solver");
 }
 
-IceModelVec::Ptr SSA_taud_mag::compute_impl() {
+IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
 
   // Allocate memory:
   IceModelVec2S::Ptr result(new IceModelVec2S);
@@ -480,7 +480,7 @@ SSA_calving_front_pressure_difference::SSA_calving_front_pressure_difference(SSA
             "", "", 0);
 }
 
-IceModelVec::Ptr SSA_calving_front_pressure_difference::compute_impl() {
+IceModelVec::Ptr SSA_calving_front_pressure_difference::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "ocean_pressure_difference", WITHOUT_GHOSTS);

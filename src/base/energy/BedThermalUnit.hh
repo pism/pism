@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -157,7 +157,7 @@ class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
 public:
   BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 } // end of namespace energy

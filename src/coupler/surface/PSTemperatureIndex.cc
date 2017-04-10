@@ -45,7 +45,7 @@ class PDD_snow_depth : public Diag<TemperatureIndex>
 public:
   PDD_snow_depth(const TemperatureIndex *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Standard deviation of near-surface air temperature. */
@@ -54,7 +54,7 @@ class PDD_air_temp_sd : public Diag<TemperatureIndex>
 public:
   PDD_air_temp_sd(const TemperatureIndex *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 PDD_snow_depth::PDD_snow_depth(const TemperatureIndex *m)
@@ -67,7 +67,7 @@ PDD_snow_depth::PDD_snow_depth(const TemperatureIndex *m)
             "m", "m", 0);
 }
 
-IceModelVec::Ptr PDD_snow_depth::compute_impl() {
+IceModelVec::Ptr PDD_snow_depth::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "snow_depth", WITHOUT_GHOSTS);
@@ -88,7 +88,7 @@ PDD_air_temp_sd::PDD_air_temp_sd(const TemperatureIndex *m)
             "Kelvin", "Kelvin", 0);
 }
 
-IceModelVec::Ptr PDD_air_temp_sd::compute_impl() {
+IceModelVec::Ptr PDD_air_temp_sd::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "air_temp_sd", WITHOUT_GHOSTS);

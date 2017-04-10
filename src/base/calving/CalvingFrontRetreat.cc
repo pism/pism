@@ -327,7 +327,7 @@ CalvingRate::CalvingRate(const CalvingFrontRetreat *m,
             "m second-1", "m year-1", 0);
 }
 
-IceModelVec::Ptr CalvingRate::compute_impl() {
+IceModelVec::Ptr CalvingRate::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "", WITHOUT_GHOSTS);

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -48,7 +48,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
   m_vars[0].set_double("valid_max", 1);
 }
 
-IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() {
+IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
@@ -70,7 +70,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() {
+IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "topgsmooth", WITHOUT_GHOSTS);
@@ -90,7 +90,7 @@ SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_thksmooth::compute_impl() {
+IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
 
   const IceModelVec2S        &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
   const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -117,7 +117,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
             "m2 s-1", "m2 s-1", 0);
 }
 
-IceModelVec::Ptr SIAFD_diffusivity::compute_impl() {
+IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "diffusivity", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
@@ -142,7 +142,7 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
             "m2 s-1", "m2 s-1", 1);
 }
 
-IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() {
+IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "diffusivity", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
@@ -169,7 +169,7 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_x::compute_impl() {
+IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "h_x", WITH_GHOSTS);
@@ -200,7 +200,7 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_y::compute_impl() {
+IceModelVec::Ptr SIAFD_h_y::compute_impl() const {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "h_y", WITH_GHOSTS);

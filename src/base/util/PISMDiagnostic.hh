@@ -69,19 +69,19 @@ public:
   void reset();
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated IceModelVec.
-  IceModelVec::Ptr compute();
+  IceModelVec::Ptr compute() const;
 
-  unsigned int n_variables();
+  unsigned int n_variables() const;
 
   SpatialVariableMetadata& metadata(unsigned int N = 0);
 
-  void define(const PIO &file, IO_Type default_type);
+  void define(const PIO &file, IO_Type default_type) const;
 
   void init(const PIO &input, unsigned int time);
   void define_state(const PIO &output) const;
   void write_state(const PIO &output) const;
 protected:
-  virtual void define_impl(const PIO &file, IO_Type default_type);
+  virtual void define_impl(const PIO &file, IO_Type default_type) const;
   virtual void init_impl(const PIO &input, unsigned int time);
   virtual void define_state_impl(const PIO &output) const;
   virtual void write_state_impl(const PIO &output) const;
@@ -95,7 +95,7 @@ protected:
   virtual void update_impl(double dt);
   virtual void reset_impl();
 
-  virtual IceModelVec::Ptr compute_impl() = 0;
+  virtual IceModelVec::Ptr compute_impl() const = 0;
 
   //! the grid
   IceGrid::ConstPtr m_grid;
@@ -130,7 +130,7 @@ public:
     }
   }
 protected:
-  IceModelVec::Ptr compute_impl() {
+  IceModelVec::Ptr compute_impl() const {
     typename T::Ptr result(new T(m_input.get_grid(), "unnamed", WITHOUT_GHOSTS));
     result->set_name(m_input.get_name());
     for (unsigned int k = 0; k < m_dof; ++k) {
@@ -226,7 +226,7 @@ protected:
     m_interval_length = 0.0;
   }
 
-  IceModelVec::Ptr compute_impl() {
+  IceModelVec::Ptr compute_impl() const {
     IceModelVec2S::Ptr result(new IceModelVec2S(Diagnostic::m_grid,
                                                 "diagnostic", WITHOUT_GHOSTS));
     result->metadata(0) = Diagnostic::m_vars[0];

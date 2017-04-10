@@ -365,7 +365,7 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() {
+  IceModelVec::Ptr compute_impl() const {
 
     IceModelVec3::Ptr result(new IceModelVec3(m_grid, "enthalpy", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];

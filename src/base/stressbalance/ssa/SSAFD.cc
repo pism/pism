@@ -1665,7 +1665,7 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
             "Pa s m", "kPa s m", 1);
 }
 
-IceModelVec::Ptr SSAFD_nuH::compute_impl() {
+IceModelVec::Ptr SSAFD_nuH::compute_impl() const {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "nuH", WITH_GHOSTS);

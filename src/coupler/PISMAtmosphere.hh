@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -78,7 +78,7 @@ class PA_air_temp_snapshot : public Diag<AtmosphereModel>
 public:
   PA_air_temp_snapshot(const AtmosphereModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Effective near-surface mean-annual air temperature. */
@@ -87,7 +87,7 @@ class PA_air_temp : public Diag<AtmosphereModel>
 public:
   PA_air_temp(const AtmosphereModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Effective precipitation rate (average over time step). */
@@ -96,7 +96,7 @@ class PA_precipitation : public Diag<AtmosphereModel>
 public:
   PA_precipitation(const AtmosphereModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 } // end of namespace atmosphere

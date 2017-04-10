@@ -28,7 +28,7 @@ Hydrology_bwat::Hydrology_bwat(const Hydrology *m)
   set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
 }
 
-IceModelVec::Ptr Hydrology_bwat::compute_impl() {
+IceModelVec::Ptr Hydrology_bwat::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "bwat", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
@@ -44,7 +44,7 @@ Hydrology_bwp::Hydrology_bwp(const Hydrology *m)
 }
 
 
-IceModelVec::Ptr Hydrology_bwp::compute_impl() {
+IceModelVec::Ptr Hydrology_bwp::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "bwp", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
@@ -63,7 +63,7 @@ Hydrology_bwprel::Hydrology_bwprel(const Hydrology *m)
 }
 
 
-IceModelVec::Ptr Hydrology_bwprel::compute_impl() {
+IceModelVec::Ptr Hydrology_bwprel::compute_impl() const {
   double fill_value = m_fill_value;
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
@@ -99,7 +99,7 @@ Hydrology_effbwp::Hydrology_effbwp(const Hydrology *m)
 }
 
 
-IceModelVec::Ptr Hydrology_effbwp::compute_impl() {
+IceModelVec::Ptr Hydrology_effbwp::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "effbwp", WITHOUT_GHOSTS);
@@ -124,7 +124,7 @@ Hydrology_hydrobmelt::Hydrology_hydrobmelt(const Hydrology *m)
 }
 
 
-IceModelVec::Ptr Hydrology_hydrobmelt::compute_impl() {
+IceModelVec::Ptr Hydrology_hydrobmelt::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "hydrobmelt", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
@@ -145,7 +145,7 @@ Hydrology_hydroinput::Hydrology_hydroinput(const Hydrology *m)
 }
 
 
-IceModelVec::Ptr Hydrology_hydroinput::compute_impl() {
+IceModelVec::Ptr Hydrology_hydroinput::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "hydroinput", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];
@@ -166,7 +166,7 @@ Hydrology_wallmelt::Hydrology_wallmelt(const Hydrology *m)
 }
 
 
-IceModelVec::Ptr Hydrology_wallmelt::compute_impl() {
+IceModelVec::Ptr Hydrology_wallmelt::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "wallmelt", WITHOUT_GHOSTS);
   result->metadata() = m_vars[0];

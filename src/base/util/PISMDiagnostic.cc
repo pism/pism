@@ -64,7 +64,7 @@ void Diagnostic::reset_impl() {
 }
 
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
-unsigned int Diagnostic::n_variables() {
+unsigned int Diagnostic::n_variables() const {
   return m_dof;
 }
 
@@ -107,12 +107,12 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const PIO &file, IO_Type default_type) {
+void Diagnostic::define(const PIO &file, IO_Type default_type) const {
   this->define_impl(file, default_type);
 }
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const PIO &file, IO_Type default_type) {
+void Diagnostic::define_impl(const PIO &file, IO_Type default_type) const {
   for (unsigned int j = 0; j < m_dof; ++j) {
     io::define_spatial_variable(m_vars[j], *m_grid, file,
                                 default_type,
@@ -144,7 +144,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
   }
 }
 
-IceModelVec::Ptr Diagnostic::compute() {
+IceModelVec::Ptr Diagnostic::compute() const {
   // use the name of the first variable
   std::vector<std::string> names;
   for (auto &v : m_vars) {

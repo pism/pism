@@ -231,7 +231,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
   m_vars = {model->flux_through_top_surface().metadata()};
 }
 
-IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() {
+IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hfgeoubed", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 

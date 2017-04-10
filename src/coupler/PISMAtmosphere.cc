@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -84,7 +84,7 @@ PA_air_temp_snapshot::PA_air_temp_snapshot(const AtmosphereModel *m)
             "Kelvin", "Kelvin", 0);
 }
 
-IceModelVec::Ptr PA_air_temp_snapshot::compute_impl() {
+IceModelVec::Ptr PA_air_temp_snapshot::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS);
@@ -127,7 +127,7 @@ PA_air_temp::PA_air_temp(const AtmosphereModel *m)
             "Kelvin", "Kelvin", 0);
 }
 
-IceModelVec::Ptr PA_air_temp::compute_impl() {
+IceModelVec::Ptr PA_air_temp::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "effective_air_temp", WITHOUT_GHOSTS);
@@ -149,7 +149,7 @@ PA_precipitation::PA_precipitation(const AtmosphereModel *m)
             "kg m-2 second-1", "kg m-2 year-1", 0);
 }
 
-IceModelVec::Ptr PA_precipitation::compute_impl() {
+IceModelVec::Ptr PA_precipitation::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "effective_precipitation", WITHOUT_GHOSTS);

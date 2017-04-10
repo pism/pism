@@ -47,7 +47,7 @@ class Hydrology_bwat : public Diag<Hydrology>
 public:
   Hydrology_bwat(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -57,7 +57,7 @@ class Hydrology_bwp : public Diag<Hydrology>
 public:
   Hydrology_bwp(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -67,7 +67,7 @@ class Hydrology_bwprel : public Diag<Hydrology>
 public:
   Hydrology_bwprel(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -77,7 +77,7 @@ class Hydrology_effbwp : public Diag<Hydrology>
 public:
   Hydrology_effbwp(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -87,7 +87,7 @@ class Hydrology_hydrobmelt : public Diag<Hydrology>
 public:
   Hydrology_hydrobmelt(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -97,7 +97,7 @@ class Hydrology_hydroinput : public Diag<Hydrology>
 public:
   Hydrology_hydroinput(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -107,7 +107,7 @@ class Hydrology_wallmelt : public Diag<Hydrology>
 public:
   Hydrology_wallmelt(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -118,7 +118,7 @@ class Routing_bwatvel : public Diag<Routing>
 public:
   Routing_bwatvel(const Routing *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Reports the values of velbase_mag seen by the Hydrology model.
@@ -128,7 +128,7 @@ class Distributed_hydrovelbase_mag : public Diag<Distributed>
 public:
   Distributed_hydrovelbase_mag(const Distributed *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 

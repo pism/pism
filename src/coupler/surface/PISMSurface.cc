@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -42,7 +42,7 @@ class PS_climatic_mass_balance : public Diag<SurfaceModel>
 public:
   PS_climatic_mass_balance(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Ice surface temperature. */
@@ -51,7 +51,7 @@ class PS_ice_surface_temp : public Diag<SurfaceModel>
 public:
   PS_ice_surface_temp(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Ice liquid water fraction at the ice surface. */
@@ -60,7 +60,7 @@ class PS_liquid_water_fraction : public Diag<SurfaceModel>
 public:
   PS_liquid_water_fraction(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Mass of the surface layer (snow and firn). */
@@ -69,7 +69,7 @@ class PS_layer_mass : public Diag<SurfaceModel>
 public:
   PS_layer_mass(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Surface layer (snow and firn) thickness. */
@@ -78,7 +78,7 @@ class PS_layer_thickness : public Diag<SurfaceModel>
 public:
   PS_layer_thickness(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 ///// PISMSurfaceModel base class:
@@ -215,7 +215,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
             "kg m-2 second-1", "kg m-2 year-1", 0);
 }
 
-IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() {
+IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
@@ -236,7 +236,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
             "Kelvin", "Kelvin", 0);
 }
 
-IceModelVec::Ptr PS_ice_surface_temp::compute_impl() {
+IceModelVec::Ptr PS_ice_surface_temp::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
@@ -257,7 +257,7 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m)
             "1", "1", 0);
 }
 
-IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() {
+IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
@@ -278,7 +278,7 @@ PS_layer_mass::PS_layer_mass(const SurfaceModel *m)
             "kg", "kg", 0);
 }
 
-IceModelVec::Ptr PS_layer_mass::compute_impl() {
+IceModelVec::Ptr PS_layer_mass::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "surface_layer_mass", WITHOUT_GHOSTS);
@@ -299,7 +299,7 @@ PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m)
             "meters", "meters", 0);
 }
 
-IceModelVec::Ptr PS_layer_thickness::compute_impl() {
+IceModelVec::Ptr PS_layer_thickness::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS);

@@ -477,7 +477,7 @@ Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(const Distributed *m)
 }
 
 
-IceModelVec::Ptr Distributed_hydrovelbase_mag::compute_impl() {
+IceModelVec::Ptr Distributed_hydrovelbase_mag::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S);
   result->create(m_grid, "hydrovelbase_mag", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
