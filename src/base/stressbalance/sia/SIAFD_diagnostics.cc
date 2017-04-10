@@ -51,8 +51,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
 IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "schoofs_theta", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "schoofs_theta", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->m_bed_smoother->get_theta(*surface, *result);
@@ -72,8 +71,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
 
 IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "topgsmooth", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "topgsmooth", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   result->copy_from(model->m_bed_smoother->get_smoothed_bed());
@@ -96,8 +94,7 @@ IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
   const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "thksmooth", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "thksmooth", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->m_bed_smoother->get_smoothed_thk(surface, thickness, mask,
@@ -118,8 +115,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
 }
 
 IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "diffusivity", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "diffusivity", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   model->compute_diffusivity(*result);

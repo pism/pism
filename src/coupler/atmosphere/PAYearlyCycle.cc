@@ -171,8 +171,7 @@ PA_mean_july_temp::PA_mean_july_temp(const YearlyCycle *m)
 
 IceModelVec::Ptr PA_mean_july_temp::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->mean_july_temp(*result);

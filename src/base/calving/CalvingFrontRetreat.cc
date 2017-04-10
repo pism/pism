@@ -329,8 +329,7 @@ CalvingRate::CalvingRate(const CalvingFrontRetreat *m,
 
 IceModelVec::Ptr CalvingRate::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->calving_rate());

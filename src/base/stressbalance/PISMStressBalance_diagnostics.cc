@@ -132,8 +132,7 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
 
 IceModelVec::Ptr PSB_velbar_mag::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "velbar_mag", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbar_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   // compute vertically-averaged horizontal velocity:
@@ -296,8 +295,7 @@ IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
   IceModelVec2S tmp;
   tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "velbase_mag", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbase_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   const IceModelVec3
@@ -339,8 +337,7 @@ IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
   IceModelVec2S tmp;
   tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "velsurf_mag", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velsurf_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   const IceModelVec3
@@ -542,8 +539,7 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
 IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "wvelsurf", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelsurf", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
@@ -587,8 +583,7 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
 IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
   double fill_value = convert(m_sys, m_fill_value, "m year-1", "m second-1");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "wvelbase", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelbase", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
@@ -688,8 +683,7 @@ PSB_bfrict::PSB_bfrict(const StressBalance *m)
 
 IceModelVec::Ptr PSB_bfrict::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "bfrict", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bfrict", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   result->copy_from(model->basal_frictional_heating());
@@ -1126,8 +1120,7 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
 
   using std::max;
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "vonmises_stress", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "vonmises_stress", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   IceModelVec2S &vonmises_stress = *result;

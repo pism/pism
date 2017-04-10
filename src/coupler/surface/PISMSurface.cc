@@ -217,8 +217,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->mass_flux(*result);
@@ -238,8 +237,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_ice_surface_temp::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_temp", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->temperature(*result);
@@ -259,8 +257,7 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->liquid_water_fraction(*result);
@@ -280,8 +277,7 @@ PS_layer_mass::PS_layer_mass(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_layer_mass::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "surface_layer_mass", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_mass", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->layer_mass(*result);
@@ -301,8 +297,7 @@ PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_layer_thickness::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->layer_thickness(*result);

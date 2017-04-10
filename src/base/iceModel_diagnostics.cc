@@ -343,8 +343,7 @@ IceModelVec::Ptr TemperaturePABasal::compute_impl() const {
   bool cold_mode = m_config->get_boolean("energy.temperature_based");
   double melting_point_temp = m_config->get_double("constants.fresh_water.melting_point_temperature");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "temp_pa_base", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "temp_pa_base", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -397,8 +396,7 @@ EnthalpySurface::EnthalpySurface(const IceModel *m)
 
 IceModelVec::Ptr EnthalpySurface::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "enthalpysurf", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "enthalpysurf", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   // compute levels corresponding to 1 m below the ice surface:
@@ -440,8 +438,7 @@ EnthalpyBasal::EnthalpyBasal(const IceModel *m)
 
 IceModelVec::Ptr EnthalpyBasal::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "enthalpybase", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "enthalpybase", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   model->energy_balance_model()->enthalpy().getHorSlice(*result, 0.0);  // z=0 slice
@@ -596,8 +593,7 @@ TemperateIceThickness::TemperateIceThickness(const IceModel *m)
 
 IceModelVec::Ptr TemperateIceThickness::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "tempicethk", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "tempicethk", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -663,8 +659,7 @@ TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m)
  */
 IceModelVec::Ptr TemperateIceThicknessBasal::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "tempicethk_basal", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "tempicethk_basal", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
@@ -1517,8 +1512,7 @@ IceAreaFraction::IceAreaFraction(const IceModel *m)
 
 IceModelVec::Ptr IceAreaFraction::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, land_ice_area_fraction_name, WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, land_ice_area_fraction_name, WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   const Vars &variables = m_grid->variables();
@@ -1591,8 +1585,7 @@ IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m)
 }
 
 IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   const double sea_level = model->ocean_model()->sea_level_elevation();
@@ -1672,8 +1665,7 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m)
 
 IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "height_above_flotation", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "height_above_flotation", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -1730,8 +1722,7 @@ IceMass::IceMass(const IceModel *m)
 
 IceModelVec::Ptr IceMass::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "ice_mass", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_mass", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -1794,8 +1785,7 @@ BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
 
 IceModelVec::Ptr BedTopographySeaLevelAdjusted::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "topg_sl_adjusted", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "topg_sl_adjusted", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->bed_model()->bed_elevation());

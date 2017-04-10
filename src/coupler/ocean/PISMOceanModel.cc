@@ -87,8 +87,7 @@ PO_sea_level::PO_sea_level(const OceanModel *m)
 
 IceModelVec::Ptr PO_sea_level::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "sea_level", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "sea_level", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   result->set(model->sea_level_elevation());
@@ -108,8 +107,7 @@ PO_shelf_base_temperature::PO_shelf_base_temperature(const OceanModel *m)
 
 IceModelVec::Ptr PO_shelf_base_temperature::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "shelfbtemp", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbtemp", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->shelf_base_temperature(*result);
@@ -129,8 +127,7 @@ PO_shelf_base_mass_flux::PO_shelf_base_mass_flux(const OceanModel *m)
 
 IceModelVec::Ptr PO_shelf_base_mass_flux::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "shelfbmassflux", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbmassflux", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->shelf_base_mass_flux(*result);
@@ -150,8 +147,7 @@ PO_melange_back_pressure_fraction::PO_melange_back_pressure_fraction(const Ocean
 
 IceModelVec::Ptr PO_melange_back_pressure_fraction::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "melange_back_pressure_fraction", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "melange_back_pressure_fraction", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->melange_back_pressure_fraction(*result);

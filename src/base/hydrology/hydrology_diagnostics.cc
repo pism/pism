@@ -29,8 +29,7 @@ Hydrology_bwat::Hydrology_bwat(const Hydrology *m)
 }
 
 IceModelVec::Ptr Hydrology_bwat::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "bwat", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwat", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
   model->subglacial_water_thickness(*result);
@@ -45,8 +44,7 @@ Hydrology_bwp::Hydrology_bwp(const Hydrology *m)
 
 
 IceModelVec::Ptr Hydrology_bwp::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "bwp", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwp", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
   model->subglacial_water_pressure(*result);
@@ -66,8 +64,7 @@ Hydrology_bwprel::Hydrology_bwprel(const Hydrology *m)
 IceModelVec::Ptr Hydrology_bwprel::compute_impl() const {
   double fill_value = m_fill_value;
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "bwprel", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwprel", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   IceModelVec2S Po;
@@ -101,8 +98,7 @@ Hydrology_effbwp::Hydrology_effbwp(const Hydrology *m)
 
 IceModelVec::Ptr Hydrology_effbwp::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "effbwp", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effbwp", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
   IceModelVec2S P;
@@ -125,8 +121,7 @@ Hydrology_hydrobmelt::Hydrology_hydrobmelt(const Hydrology *m)
 
 
 IceModelVec::Ptr Hydrology_hydrobmelt::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "hydrobmelt", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydrobmelt", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->write_in_glaciological_units = true;
 
@@ -146,8 +141,7 @@ Hydrology_hydroinput::Hydrology_hydroinput(const Hydrology *m)
 
 
 IceModelVec::Ptr Hydrology_hydroinput::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "hydroinput", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydroinput", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
@@ -167,8 +161,7 @@ Hydrology_wallmelt::Hydrology_wallmelt(const Hydrology *m)
 
 
 IceModelVec::Ptr Hydrology_wallmelt::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "wallmelt", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wallmelt", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 

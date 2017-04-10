@@ -440,8 +440,7 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
 IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
 
   // Allocate memory:
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "taud_mag", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   result->write_in_glaciological_units = true;
 
@@ -482,8 +481,7 @@ SSA_calving_front_pressure_difference::SSA_calving_front_pressure_difference(SSA
 
 IceModelVec::Ptr SSA_calving_front_pressure_difference::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "ocean_pressure_difference", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ocean_pressure_difference", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   IceModelVec2CellType mask;

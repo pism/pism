@@ -69,8 +69,7 @@ PDD_snow_depth::PDD_snow_depth(const TemperatureIndex *m)
 
 IceModelVec::Ptr PDD_snow_depth::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "snow_depth", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "snow_depth", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->snow_depth());
@@ -90,8 +89,7 @@ PDD_air_temp_sd::PDD_air_temp_sd(const TemperatureIndex *m)
 
 IceModelVec::Ptr PDD_air_temp_sd::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "air_temp_sd", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_sd", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->air_temp_sd());

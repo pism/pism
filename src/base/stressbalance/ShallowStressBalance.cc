@@ -342,8 +342,7 @@ SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m)
 IceModelVec::Ptr SSB_taud_mag::compute_impl() const {
 
   // Allocate memory:
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "taud_mag", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->write_in_glaciological_units = true;
 
@@ -420,8 +419,7 @@ SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
 IceModelVec::Ptr SSB_taub_mag::compute_impl() const {
 
   // Allocate memory:
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "taub_mag", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taub_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->write_in_glaciological_units = true;
 
@@ -479,8 +477,7 @@ SSB_beta::SSB_beta(const ShallowStressBalance *m)
 IceModelVec::Ptr SSB_beta::compute_impl() const {
 
   // Allocate memory:
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "beta", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "beta", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->write_in_glaciological_units = true;
 
