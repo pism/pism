@@ -1032,6 +1032,7 @@ AreaGlacierizedGrounded::AreaGlacierizedGrounded(IceModel *m)
 
   m_ts->metadata().set_string("units", "m2");
   m_ts->metadata().set_string("long_name", "area of grounded ice in glacierized areas");
+  m_ts->metadata().set_double("valid_min", 0.0);
 }
 
 void AreaGlacierizedGrounded::update(double a, double b) {
@@ -1046,6 +1047,7 @@ AreaGlacierizedShelf::AreaGlacierizedShelf(IceModel *m)
 
   m_ts->metadata().set_string("units", "m2");
   m_ts->metadata().set_string("long_name", "area of ice shelves in glacierized areas");
+  m_ts->metadata().set_double("valid_min", 0.0);
 }
 
 void AreaGlacierizedShelf::update(double a, double b) {
@@ -1061,6 +1063,7 @@ TimeStepLength::TimeStepLength(const IceModel *m)
   m_ts->metadata().set_string("units", "second");
   m_ts->metadata().set_string("glaciological_units", "year");
   m_ts->metadata().set_string("long_name", "mass continuity time step");
+  m_ts->metadata().set_double("valid_min", 0.0);
 }
 
 void TimeStepLength::update(double a, double b) {
@@ -1073,6 +1076,7 @@ MaxDiffusivity::MaxDiffusivity(const IceModel *m)
 
   m_ts->metadata().set_string("units", "m2 s-1");
   m_ts->metadata().set_string("long_name", "maximum diffusivity");
+  m_ts->metadata().set_double("valid_min", 0.0);
 }
 
 void MaxDiffusivity::update(double a, double b) {
@@ -1202,6 +1206,7 @@ VolumeGlacierizedGrounded::VolumeGlacierizedGrounded(IceModel *m)
 
   m_ts->metadata().set_string("units", "m3");
   m_ts->metadata().set_string("long_name", "volume of grounded ice in glacierized areas");
+  m_ts->metadata().set_double("valid_min", 0.0);
 }
 
 void VolumeGlacierizedGrounded::update(double a, double b) {
@@ -1235,6 +1240,7 @@ VolumeGlacierizedShelf::VolumeGlacierizedShelf(IceModel *m)
 
   m_ts->metadata().set_string("units", "m3");
   m_ts->metadata().set_string("long_name", "volume of ice shelves in glacierized areas");
+  m_ts->metadata().set_double("valid_min", 0.0);
 }
 
 void VolumeGlacierizedShelf::update(double a, double b) {
@@ -1282,6 +1288,7 @@ MaxHorizontalVelocity::MaxHorizontalVelocity(const IceModel *m)
   m_ts->metadata().set_string("long_name",
                               "maximum abs component of horizontal ice velocity"
                               " over grid in last time step during time-series reporting interval");
+  m_ts->metadata().set_double("valid_min", 0.0);
 }
 
 void MaxHorizontalVelocity::update(double a, double b) {
