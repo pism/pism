@@ -267,39 +267,18 @@ class TSDiagnostic {
 public:
   typedef std::shared_ptr<TSDiagnostic> Ptr;
 
-  TSDiagnostic(IceGrid::ConstPtr g)
-    : m_grid(g),
-      m_config(g->ctx()->config()),
-      m_sys(g->ctx()->unit_system()), m_ts(NULL) {
-  }
-
-  virtual ~TSDiagnostic() {
-    delete m_ts;
-  }
+  TSDiagnostic(IceGrid::ConstPtr g);
+  virtual ~TSDiagnostic();
 
   virtual void update(double a, double b) = 0;
 
-  virtual void save(double a, double b) {
-    if (m_ts) {
-      m_ts->interp(a, b);
-    }
-  }
+  virtual void save(double a, double b);
 
-  virtual void flush() {
-    if (m_ts) {
-      m_ts->flush();
-    }
-  }
+  virtual void flush();
 
-  virtual void init(const std::string &filename) {
-    if (m_ts) {
-      m_ts->init(filename);
-    }
-  }
+  virtual void init(const std::string &filename);
 
-  virtual std::string get_string(const std::string &name) {
-    return m_ts->metadata().get_string(name);
-  }
+  virtual std::string get_string(const std::string &name);
 
 protected:
   //! the grid

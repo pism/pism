@@ -159,4 +159,38 @@ IceModelVec::Ptr Diagnostic::compute() const {
   return result;
 }
 
+TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g)
+  : m_grid(g),
+    m_config(g->ctx()->config()),
+    m_sys(g->ctx()->unit_system()), m_ts(NULL) {
+  // empty
+}
+
+TSDiagnostic::~TSDiagnostic() {
+  delete m_ts;
+}
+
+void TSDiagnostic::save(double a, double b) {
+  if (m_ts) {
+    m_ts->interp(a, b);
+  }
+}
+
+void TSDiagnostic::flush() {
+  if (m_ts) {
+    m_ts->flush();
+  }
+}
+
+void TSDiagnostic::init(const std::string &filename) {
+  if (m_ts) {
+    m_ts->init(filename);
+  }
+}
+
+std::string TSDiagnostic::get_string(const std::string &name) {
+  return m_ts->metadata().get_string(name);
+}
+
+
 } // end of namespace pism
