@@ -19,7 +19,7 @@
 #ifndef __PISMDiagnostic_hh
 #define __PISMDiagnostic_hh
 
-#include <gsl/gsl_math.h>       // GSL_NAN
+#include <memory>
 
 #include "VariableMetadata.hh"
 #include "Timeseries.hh"        // inline code
@@ -155,7 +155,8 @@ protected:
 };
 
 /*!
- * Report a time-averaged quantity by accumulating changes over several time steps.
+ * Report a time-averaged rate of change of a quantity by accumulating changes over several time
+ * steps.
  */
 template<class M>
 class DiagAverageRate : public Diag<M>
@@ -267,7 +268,7 @@ class TSDiagnostic {
 public:
   typedef std::shared_ptr<TSDiagnostic> Ptr;
 
-  TSDiagnostic(IceGrid::ConstPtr g);
+  TSDiagnostic(IceGrid::ConstPtr g, const std::string &name);
   virtual ~TSDiagnostic();
 
   virtual void update(double a, double b) = 0;
@@ -287,20 +288,17 @@ protected:
   const Config::ConstPtr m_config;
   //! the unit system
   const units::System::Ptr m_sys;
-  DiagnosticTimeseries *m_ts;
+  std::unique_ptr<DiagnosticTimeseries> m_ts;
 };
 
 template <class Model>
 class TSDiag : public TSDiagnostic {
 public:
-  TSDiag(const Model *m)
-    : TSDiagnostic(m->grid()), model(m) {
-    m_time_units = m_grid->ctx()->time()->CF_units_string();
-    m_time_dimension_name = m_grid->ctx()->config()->get_string("time.dimension_name");
+  TSDiag(const Model *m, const std::string &name)
+    : TSDiagnostic(m->grid(), name), model(m) {
   }
 protected:
   const Model *model;
-  std::string m_time_units, m_time_dimension_name;
 };
 
 } // end of namespace pism

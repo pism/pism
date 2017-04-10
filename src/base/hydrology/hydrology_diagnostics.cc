@@ -172,13 +172,13 @@ IceModelVec::Ptr Hydrology_wallmelt::compute_impl() const {
 
 
 MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(const Routing *m)
-      : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_ice_free_land_loss", m_time_dimension_name);
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name",
-                                "rate of liquid water loss from subglacial hydrology into cells with mask as ice free land");
+  : TSDiag<Routing>(m, "hydro_ice_free_land_loss") {
+
   m_ts->rate_of_change = true;
+  m_ts->metadata().set_string("units", "kg s-1");
+  m_ts->metadata().set_string("long_name",
+                              "rate of liquid water loss from subglacial hydrology into "
+                              "cells with mask as ice free land");
 }
 
 void MCHydrology_ice_free_land_loss::update(double a, double b) {
@@ -186,13 +186,13 @@ void MCHydrology_ice_free_land_loss::update(double a, double b) {
 }
 
 MCHydrology_ocean_loss::MCHydrology_ocean_loss(const Routing *m)
-      : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_ocean_loss", m_time_dimension_name);
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name",
-                                "rate of liquid water loss from subglacial hydrology into cells with mask as ocean");
+  : TSDiag<Routing>(m, "hydro_ocean_loss") {
+
   m_ts->rate_of_change = true;
+  m_ts->metadata().set_string("units", "kg s-1");
+  m_ts->metadata().set_string("long_name",
+                              "rate of liquid water loss from subglacial hydrology into "
+                              "cells with mask as ocean");
 }
 
 void MCHydrology_ocean_loss::update(double a, double b) {
@@ -200,13 +200,14 @@ void MCHydrology_ocean_loss::update(double a, double b) {
 }
 
 MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(const Routing *m)
-      : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_negative_thickness_gain", m_time_dimension_name);
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name",
-                                "rate of non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero");
+  : TSDiag<Routing>(m, "hydro_negative_thickness_gain") {
+
   m_ts->rate_of_change = true;
+  m_ts->metadata().set_string("units", "kg s-1");
+  m_ts->metadata().set_string("long_name",
+                              "rate of non-conserving liquid water gain from subglacial "
+                              "hydrology transportable water thickness coming out negative "
+                              "during time step, and being projected up to zero");
 }
 
 void MCHydrology_negative_thickness_gain::update(double a, double b) {
@@ -214,13 +215,13 @@ void MCHydrology_negative_thickness_gain::update(double a, double b) {
 }
 
 MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(const Routing *m)
-      : TSDiag<Routing>(m) {
-  m_ts = new DiagnosticTimeseries(*m_grid, "hydro_null_strip_loss", m_time_dimension_name);
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-  m_ts->metadata().set_string("long_name",
-                                "rate of liquid water loss from subglacial hydrology into cells inside the null strip");
+  : TSDiag<Routing>(m, "hydro_null_strip_loss") {
+
   m_ts->rate_of_change = true;
+  m_ts->metadata().set_string("units", "kg s-1");
+  m_ts->metadata().set_string("long_name",
+                              "rate of liquid water loss from subglacial hydrology into "
+                              "cells inside the null strip");
 }
 
 void MCHydrology_null_strip_loss::update(double a, double b) {

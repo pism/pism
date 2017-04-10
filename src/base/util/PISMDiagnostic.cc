@@ -159,15 +159,16 @@ IceModelVec::Ptr Diagnostic::compute() const {
   return result;
 }
 
-TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g)
+TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
   : m_grid(g),
     m_config(g->ctx()->config()),
-    m_sys(g->ctx()->unit_system()), m_ts(NULL) {
-  // empty
+    m_sys(g->ctx()->unit_system()),
+    m_ts(new DiagnosticTimeseries(*g, name, g->ctx()->config()->get_string("time.dimension_name"))) {
+
+  m_ts->dimension_metadata().set_string("units", g->ctx()->time()->CF_units_string());
 }
 
 TSDiagnostic::~TSDiagnostic() {
-  delete m_ts;
 }
 
 void TSDiagnostic::save(double a, double b) {

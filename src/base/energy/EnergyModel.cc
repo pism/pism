@@ -337,14 +337,9 @@ protected:
 };
 
 EnergyModel_liquified_ice_volume::EnergyModel_liquified_ice_volume(const EnergyModel *m)
-  : TSDiag<EnergyModel>(m) {
-
-  // set metadata
-  m_ts = new DiagnosticTimeseries(*m_grid, "liquified_ice_volume", m_time_dimension_name);
+  : TSDiag<EnergyModel>(m, "liquified_ice_volume") {
 
   m_ts->metadata().set_string("units", "m3");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
-
   m_ts->metadata().set_string("long_name",
                               "total volume of ice liquified during a reporting interval");
 }
@@ -354,8 +349,7 @@ void EnergyModel_liquified_ice_volume::update(double a, double b) {
 }
 
 namespace diagnostics {
-/*! @brief Report ice enthalpy.
-  tion */
+/*! @brief Report ice enthalpy. */
 class Enthalpy : public Diag<EnergyModel>
 {
 public:
