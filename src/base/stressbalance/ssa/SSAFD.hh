@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,8 @@ public:
   SSAFD(IceGrid::ConstPtr g);
   virtual ~SSAFD();
 
-  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
+  virtual void update(double sea_level, const IceModelVec2S &melange_back_pressure,
+                      bool full_update);
 
   const IceModelVec2Stag & integrated_viscosity() const;
 protected:

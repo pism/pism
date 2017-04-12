@@ -62,7 +62,7 @@ public:
 
   void set_basal_melt_rate(const IceModelVec2S &bmr);
 
-  //! \brief Update all the fields if (not fast), only update diffusive flux
+  //! \brief Update all the fields if (full_update), only update diffusive flux
   //! and max. diffusivity otherwise.
   void update(double sea_level,
               const IceModelVec2S &melange_back_pressure, bool full_update);

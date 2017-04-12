@@ -165,9 +165,9 @@ void SSATestCase::run() {
   // Solve (fast==true means "no update"):
   m_ctx->log()->message(2, "* Solving the SSA stress balance ...\n");
 
-  bool fast = false;
+  bool full_update = true;
   double sea_level = 0.0;
-  m_ssa->update(fast, sea_level, m_melange_back_pressure);
+  m_ssa->update(sea_level, m_melange_back_pressure, full_update);
 }
 
 //! Report on the generated solution

@@ -249,10 +249,11 @@ void SSAFD::init_impl() {
   }
 }
 
-void SSAFD::update(bool fast, double sea_level, const IceModelVec2S& melange_back_pressure) {
+void SSAFD::update(double sea_level, const IceModelVec2S& melange_back_pressure,
+                   bool full_update) {
   m_melange_back_pressure = &melange_back_pressure;
 
-  SSA::update(fast, sea_level, melange_back_pressure);
+  SSA::update(sea_level, melange_back_pressure, full_update);
 }
 
 //! \brief Computes the right-hand side ("rhs") of the linear problem for the

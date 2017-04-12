@@ -46,9 +46,8 @@ public:
   void set_boundary_conditions(const IceModelVec2Int &locations,
                                const IceModelVec2V &velocities);
 
-  virtual void update(bool fast,
-                      double sea_level,
-                      const IceModelVec2S &melange_back_pressure) = 0;
+  virtual void update(double sea_level,
+                      const IceModelVec2S &melange_back_pressure, bool full_update) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
   const IceModelVec2V& velocity() const;
@@ -101,7 +100,7 @@ public:
   ZeroSliding(IceGrid::ConstPtr g);
   virtual ~ZeroSliding();
   
-  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
+  virtual void update(double sea_level, const IceModelVec2S &melange_back_pressure, bool full_update);
 
 protected:
 };
@@ -110,7 +109,7 @@ class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(IceGrid::ConstPtr g);
   virtual ~PrescribedSliding();
-  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
+  virtual void update(double sea_level, const IceModelVec2S &melange_back_pressure, bool full_update);
 protected:
   virtual void init_impl();
 };

@@ -192,7 +192,8 @@ void SSA::init_impl() {
 }
 
 //! \brief Update the SSA solution.
-void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure) {
+void SSA::update(double sea_level, const IceModelVec2S &melange_back_pressure,
+                 bool full_update) {
 
   m_sea_level = sea_level;
   (void) melange_back_pressure;
@@ -207,7 +208,7 @@ void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_
     gc.compute_mask(sea_level, *m_bed, *m_thickness, m_mask);
   }
 
-  if (not fast) {
+  if (full_update) {
     solve();
     compute_basal_frictional_heating(m_velocity, *m_tauc, m_mask,
                                      m_basal_frictional_heating);

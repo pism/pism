@@ -85,12 +85,12 @@ void StressBalance::update(double sea_level,
 
   try {
     profiling.begin("stress_balance.shallow");
-    m_shallow_stress_balance->update(not full_update, sea_level, melange_back_pressure);
+    m_shallow_stress_balance->update(sea_level, melange_back_pressure, full_update);
     profiling.end("stress_balance.shallow");
 
     profiling.begin("stress_balance.modifier");
     const IceModelVec2V &velocity_2d = m_shallow_stress_balance->velocity();
-    m_modifier->update(velocity_2d, not full_update);
+    m_modifier->update(velocity_2d, full_update);
     profiling.end("stress_balance.modifier");
 
     if (full_update) {

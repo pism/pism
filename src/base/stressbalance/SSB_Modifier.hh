@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ public:
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &vel_input, bool fast) = 0;
+  virtual void update(const IceModelVec2V &vel_input, bool full_update) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
   virtual const IceModelVec2Stag& diffusive_flux();
@@ -75,7 +75,7 @@ public:
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &vel_input, bool fast);
+  virtual void update(const IceModelVec2V &vel_input, bool full_update);
 
 protected:
 };

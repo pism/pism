@@ -141,9 +141,9 @@ void SIAFD::init() {
   m_bed_state_counter = -1;
 }
 
-//! \brief Do the update; if fast == true, skip the update of 3D velocities and
-//! strain heating.
-void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
+//! \brief Do the update; if full_update == false skip the update of 3D velocities and strain
+//! heating.
+void SIAFD::update(const IceModelVec2V &vel_input, bool full_update) {
   IceModelVec2Stag &h_x = m_work_2d_stag[0], &h_y = m_work_2d_stag[1];
 
   const IceModelVec2S *bed = m_grid->variables().get_2d_scalar("bedrock_altitude");
@@ -164,10 +164,10 @@ void SIAFD::update(const IceModelVec2V &vel_input, bool fast) {
   profiling.end("sia.gradient");
 
   profiling.begin("sia.flux");
-  compute_diffusive_flux(h_x, h_y, m_diffusive_flux, fast);
+  compute_diffusive_flux(h_x, h_y, m_diffusive_flux, full_update);
   profiling.end("sia.flux");
 
-  if (!fast) {
+  if (full_update) {
     profiling.begin("sia.3d_velocity");
     compute_3d_horizontal_velocity(h_x, h_y, vel_input, m_u, m_v);
     profiling.end("sia.3d_velocity");
@@ -512,7 +512,7 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
 }
 
 
-//! \brief Compute the SIA flux. If (not fast), also store delta on the staggered grid.
+//! \brief Compute the SIA flux. If full_update, also store delta on the staggered grid.
 /*!
  * Recall that \f$ Q = -D \nabla h \f$ is the diffusive flux in the mass-continuity equation
  *
@@ -543,17 +543,17 @@ void SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h
  * \f$F(z)\f$ (which is computationally expensive) in the horizontal ice
  * velocity (see compute_3d_horizontal_velocity()) computation.
  *
- * This method computes \f$Q\f$ and stores \f$\delta\f$ in delta[0,1] if (not fast).
+ * This method computes \f$Q\f$ and stores \f$\delta\f$ in delta[0,1] if full_update.
  *
  * The trapezoidal rule is used to approximate the integral.
  *
  * \param[in]  h_x x-component of the surface gradient, on the staggered grid
  * \param[in]  h_y y-component of the surface gradient, on the staggered grid
  * \param[out] result diffusive ice flux
- * \param[in]  fast the boolean flag specitying if we're doing a "fast" update.
+ * \param[in]  full_update the boolean flag specitying if we're doing a "full" update.
  */
 void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
-                                   IceModelVec2Stag &result, bool fast) {
+                                   IceModelVec2Stag &result, bool full_update) {
   IceModelVec2S
     &thk_smooth = m_work_2d[0],
     &theta      = m_work_2d[1];
@@ -563,8 +563,6 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
     &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-
-  bool full_update = (not fast);
 
   result.set(0.0);
 

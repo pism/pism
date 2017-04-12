@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -112,7 +112,7 @@ public:
 
   SSAStrengthExtension *strength_extension;
 
-  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
+  virtual void update(double sea_level, const IceModelVec2S &melange_back_pressure, bool full_update);
 
   void set_initial_guess(const IceModelVec2V &guess);
 

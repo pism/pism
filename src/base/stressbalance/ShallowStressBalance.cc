@@ -140,11 +140,12 @@ ZeroSliding::~ZeroSliding() {
 }
 
 //! \brief Update the trivial shallow stress balance object.
-void ZeroSliding::update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure) {
+void ZeroSliding::update(double sea_level, const IceModelVec2S &melange_back_pressure,
+                         bool full_update) {
   (void) sea_level;
   (void) melange_back_pressure;
 
-  if (not fast) {
+  if (full_update) {
     m_velocity.set(0.0);
     m_basal_frictional_heating.set(0.0);
   }
@@ -445,11 +446,12 @@ PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 
-void PrescribedSliding::update(bool fast, double sea_level,
-                               const IceModelVec2S &melange_back_pressure) {
+void PrescribedSliding::update(double sea_level,
+                               const IceModelVec2S &melange_back_pressure,
+                               bool full_update) {
   (void) sea_level;
   (void) melange_back_pressure;
-  if (not fast) {
+  if (full_update) {
     m_basal_frictional_heating.set(0.0);
   }
 }

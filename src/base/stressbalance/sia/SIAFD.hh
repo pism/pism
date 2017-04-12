@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,7 +61,7 @@ public:
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &vel_input, bool fast);
+  virtual void update(const IceModelVec2V &vel_input, bool full_update);
 
 protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
@@ -73,7 +73,7 @@ protected:
   virtual void surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
   virtual void compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
-                                      IceModelVec2Stag &result, bool fast);
+                                      IceModelVec2Stag &result, bool full_update);
 
   virtual void compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x,
                                               const IceModelVec2Stag &h_y,
