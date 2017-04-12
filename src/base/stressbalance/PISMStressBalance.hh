@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -64,8 +64,8 @@ public:
 
   //! \brief Update all the fields if (not fast), only update diffusive flux
   //! and max. diffusivity otherwise.
-  void update(bool fast, double sea_level,
-              const IceModelVec2S &melange_back_pressure);
+  void update(double sea_level,
+              const IceModelVec2S &melange_back_pressure, bool full_update);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   const IceModelVec2V& advective_velocity() const;

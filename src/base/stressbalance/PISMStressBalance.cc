@@ -78,22 +78,22 @@ void StressBalance::set_basal_melt_rate(const IceModelVec2S &bmr_input) {
 }
 
 //! \brief Performs the shallow stress balance computation.
-void StressBalance::update(bool fast, double sea_level,
-                           const IceModelVec2S &melange_back_pressure) {
+void StressBalance::update(double sea_level,
+                           const IceModelVec2S &melange_back_pressure, bool full_update) {
 
   const Profiling &profiling = m_grid->ctx()->profiling();
 
   try {
     profiling.begin("stress_balance.shallow");
-    m_shallow_stress_balance->update(fast, sea_level, melange_back_pressure);
+    m_shallow_stress_balance->update(not full_update, sea_level, melange_back_pressure);
     profiling.end("stress_balance.shallow");
 
     profiling.begin("stress_balance.modifier");
     const IceModelVec2V &velocity_2d = m_shallow_stress_balance->velocity();
-    m_modifier->update(velocity_2d, fast);
+    m_modifier->update(velocity_2d, not full_update);
     profiling.end("stress_balance.modifier");
 
-    if (not fast) {
+    if (full_update) {
 
       const IceModelVec3 &u = m_modifier->velocity_u();
       const IceModelVec3 &v = m_modifier->velocity_v();

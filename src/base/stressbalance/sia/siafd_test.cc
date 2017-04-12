@@ -395,9 +395,8 @@ int main(int argc, char *argv[]) {
                                     "melange back pressure fraction", "", "");
     melange_back_pressure.set(0.0);
 
-    // Solve (fast==true means "no 3D update and no strain heating computation"):
-    bool fast = false;
-    stress_balance.update(fast, 0.0, melange_back_pressure);
+    bool full_update = true;
+    stress_balance.update(0.0, melange_back_pressure, full_update);
 
     // Report errors relative to the exact solution:
     const IceModelVec3
