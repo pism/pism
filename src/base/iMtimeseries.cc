@@ -16,13 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <sstream>
-#include <algorithm>
-#include <gsl/gsl_interp.h>
+#include <gsl/gsl_interp.h>     // gsl_interp_bsearch()
 
 #include "iceModel.hh"
 
-#include "base/stressbalance/PISMStressBalance.hh"
 #include "base/energy/EnergyModel.hh"
 
 #include "base/util/PISMConfigInterface.hh"
@@ -31,7 +28,6 @@
 #include "base/util/error_handling.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
-#include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/Profiling.hh"
