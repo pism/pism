@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -479,8 +479,22 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   // Use parameter name as its own command-line option by default. parameter_name_option can specify
   // a different (possibly shorter) command-line option.
   std::string option = name;
-  if (config.is_set(name + "_option")) {
-    option = config.get_string(name + "_option");
+
+  if (config.is_set(name + "_option")) { // there is a short version of the command-line option
+    std::string
+      short_option = config.get_string(name + "_option"),
+      description  = config.get_string(name + "_doc");
+
+    if (options::Bool("-" + short_option, description)) { // short option is set
+      if (options::Bool("-" + option, description)) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "both -%s and -%s are set (please use one or the other)",
+                                      option.c_str(), short_option.c_str());
+      }
+
+      // Use the short option only if the user set it, otherwise used the full (long) option below.
+      option = short_option;
+    }
   }
 
   std::string type = "string";
