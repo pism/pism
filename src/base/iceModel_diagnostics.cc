@@ -1124,8 +1124,7 @@ MassFluxBasalFloating::MassFluxBasalFloating(const IceModel *m)
 }
 
 void MassFluxBasalFloating::update(double a, double b) {
-  // FIXME: reimplement
-  m_ts->append(0, a, b);
+  m_ts->append(0, a, b);        // FIXME_
 }
 
 MassFluxDischarge::MassFluxDischarge(const IceModel *m)
@@ -1138,8 +1137,7 @@ MassFluxDischarge::MassFluxDischarge(const IceModel *m)
 }
 
 void MassFluxDischarge::update(double a, double b) {
-  // FIXME: reimplement
-  m_ts->append(0, a, b);
+  m_ts->append(0, a, b);        // FIXME_
 }
 
 //! \brief Computes dHdt, the ice thickness rate of change.
