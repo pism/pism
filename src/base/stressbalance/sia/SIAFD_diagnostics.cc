@@ -118,7 +118,7 @@ IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "diffusivity", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  model->compute_diffusivity(*result);
+  model->diffusivity().staggered_to_regular(*result);
 
   return result;
 }
@@ -141,11 +141,11 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
 IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "diffusivity", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
   result->write_in_glaciological_units = true;
 
-  model->compute_diffusivity_staggered(*result);
+  result->copy_from(model->diffusivity());
 
   return result;
 }
@@ -168,15 +168,11 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
 IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
-  result->create(m_grid, "h_x", WITH_GHOSTS);
+  result->create(m_grid, "h_x", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
-  result->write_in_glaciological_units = true;
 
-  model->compute_surface_gradient(model->m_work_2d_stag[0],
-                                  model->m_work_2d_stag[1]);
-
-  result->copy_from(model->m_work_2d_stag[0]);
+  result->copy_from(model->surface_gradient_x());
 
   return result;
 }
@@ -199,15 +195,11 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
 IceModelVec::Ptr SIAFD_h_y::compute_impl() const {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
-  result->create(m_grid, "h_y", WITH_GHOSTS);
+  result->create(m_grid, "h_y", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
-  result->write_in_glaciological_units = true;
 
-  model->compute_surface_gradient(model->m_work_2d_stag[0],
-                                  model->m_work_2d_stag[1]);
-
-  result->copy_from(model->m_work_2d_stag[1]);
+  result->copy_from(model->surface_gradient_y());
 
   return result;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell
+// Copyright (C) 2013, 2014, 2015, 2016, 2017  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -140,6 +140,8 @@ public:
     return m_design_param;
   }
 
+  void init();
+
   virtual void set_design(IceModelVec2S &zeta);
 
   virtual TerminationReason::Ptr linearize_at(IceModelVec2S &zeta);
@@ -166,8 +168,6 @@ public:
   }
 
 protected:
-
-  void construct();
 
   IceModelVec2S   *m_zeta;                   ///< Current value of zeta, provided from caller.
   IceModelVec2S   m_dzeta_local;             ///< Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.

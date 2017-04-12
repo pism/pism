@@ -23,6 +23,8 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
+#include "base/Geometry.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 
 namespace pism {
 namespace inverse {
@@ -37,19 +39,11 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
     m_element(*m_grid),
     m_quadrature(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
-  this->construct();
-}
 
-IP_SSATaucForwardProblem::~IP_SSATaucForwardProblem() {
-  // empty
-}
-
-void IP_SSATaucForwardProblem::construct() {
   PetscErrorCode ierr;
   int stencil_width = 1;
 
-  m_velocity_shared.reset(new IceModelVec2V);
-  m_velocity_shared->create(m_grid, "dummy", WITHOUT_GHOSTS);
+  m_velocity_shared.reset(new IceModelVec2V(m_grid, "dummy", WITHOUT_GHOSTS));
   m_velocity_shared->metadata(0) = m_velocity.metadata(0);
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 
@@ -91,23 +85,41 @@ void IP_SSATaucForwardProblem::construct() {
   PISM_CHK(ierr, "KSPSetFromOptions");
 }
 
+IP_SSATaucForwardProblem::~IP_SSATaucForwardProblem() {
+  // empty
+}
+
 void IP_SSATaucForwardProblem::init() {
 
   // This calls SSA::init(), which calls pism::Vars::get_2d_scalar()
   // to set m_tauc.
   SSAFEM::init();
 
-  // The purpose of this change is to make the forward model (SSAFEM)
-  // see changes to tauc made in set_design() below.
+  // Get most of the inputs from IceGrid::variables() and fake the rest.
   //
-  // As far as I can tell in this context tauc does not come from a
-  // yield stress model, so this should do no harm.
-  //
-  // I don't know if this is necessary, though. Before this change
-  // set_design used to mess with values in the field pointed to by
-  // SSA::m_tauc *which we do not own*. (This is bad.)
-  // -- CK, January 7, 2015
-  m_tauc = &m_tauc_copy;
+  // I will need to fix this at some point.
+  {
+    Geometry geometry(m_grid);
+    geometry.cell_area.set(m_grid->dx() * m_grid->dy());
+    geometry.ice_thickness.copy_from(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
+    geometry.bed_elevation.copy_from(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
+    geometry.sea_level_elevation.set(0.0);
+    geometry.ice_area_specific_volume.set(0.0);
+
+    geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+
+    stressbalance::StressBalanceInputs inputs;
+
+    inputs.sea_level             = 0.0;
+    inputs.geometry              = &geometry;
+    inputs.basal_melt_rate       = NULL;
+    inputs.melange_back_pressure = NULL;
+    inputs.basal_yield_stress    = m_grid->variables().get_2d_scalar("tauc");
+    inputs.enthalpy              = m_grid->variables().get_3d_scalar("enthalpy");
+    inputs.age                   = NULL;
+
+    cache_inputs(inputs);
+  }
 }
 
 //! Sets the current value of of the design paramter \f$\zeta\f$.

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -168,8 +168,6 @@ public:
   }
 
 protected:
-
-  void construct();
 
   /// Current value of zeta, provided from caller.
   IceModelVec2S   *m_zeta;

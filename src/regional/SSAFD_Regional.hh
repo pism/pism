@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,7 +33,7 @@ public:
   SSAFD_Regional(IceGrid::ConstPtr g);
   virtual ~SSAFD_Regional();
   virtual void init();
-  virtual void compute_driving_stress(IceModelVec2V &taud) const;
+  virtual void compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const;
 };
 
 } // end of namespace stressbalance

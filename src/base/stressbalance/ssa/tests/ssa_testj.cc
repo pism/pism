@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -44,42 +44,27 @@ namespace stressbalance {
 class SSATestCaseJ: public SSATestCase
 {
 public:
-  SSATestCaseJ(Context::Ptr ctx)
-    : SSATestCase(ctx) {
-    // empty
-  }
-
-protected:
-  virtual void initializeGrid(int Mx,int My);
-
-  virtual void initializeSSAModel();
-
-  virtual void initializeSSACoefficients();
-
-  virtual void exactSolution(int i, int j,
-    double x, double y, double *u, double *v);
-};
-
-void SSATestCaseJ::initializeGrid(int Mx,int My) {
-
-  double halfWidth = 300.0e3;  // 300.0 km half-width
-  double Lx = halfWidth, Ly = halfWidth;
-  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
-                            0.0, 0.0, // center: (x0,y0)
-                            Mx, My, XY_PERIODIC);
-}
-
-void SSATestCaseJ::initializeSSAModel() {
+  SSATestCaseJ(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+    : SSATestCase(ctx, Mx, My, 300e3, 300e3, XY_PERIODIC) {
   m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", false);
 
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
   m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-}
+
+  m_ssa = ssafactory(m_grid);
+  }
+
+protected:
+  virtual void initializeSSACoefficients();
+
+  virtual void exactSolution(int i, int j,
+                             double x, double y, double *u, double *v);
+};
 
 void SSATestCaseJ::initializeSSACoefficients() {
   m_tauc.set(0.0);    // irrelevant for test J
-  m_bed.set(-1000.0); // assures shelf is floating (maximum ice thickness is 770 m)
-  m_ice_mask.set(MASK_FLOATING);
+  m_geometry.bed_elevation.set(-1000.0); // assures shelf is floating (maximum ice thickness is 770 m)
+  m_geometry.cell_type.set(MASK_FLOATING);
 
   double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
   m_ice_enthalpy.set(enth0);
@@ -96,7 +81,7 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_ssa->strength_extension->set_notional_strength(nu0 * H0);
   m_ssa->strength_extension->set_min_thickness(800);
 
-  IceModelVec::AccessList list{&m_thickness, &m_surface, &m_bc_mask, &m_bc_values};
+  IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -106,8 +91,8 @@ void SSATestCaseJ::initializeSSACoefficients() {
     // set H,h on regular grid
     struct TestJParameters J_parameters = exactJ(myx, myy);
 
-    m_thickness(i,j) = J_parameters.H;
-    m_surface(i,j) = (1.0 - ice_rho / ocean_rho) * J_parameters.H; // FIXME issue #15
+    m_geometry.ice_thickness(i,j) = J_parameters.H;
+    m_geometry.ice_surface_elevation(i,j) = (1.0 - ice_rho / ocean_rho) * J_parameters.H; // FIXME issue #15
 
     // special case at center point: here we set bc_values at (i,j) by
     // setting bc_mask and bc_values appropriately
@@ -120,8 +105,8 @@ void SSATestCaseJ::initializeSSACoefficients() {
   }
 
   // communicate what we have set
-  m_surface.update_ghosts();
-  m_thickness.update_ghosts();
+  m_geometry.ice_surface_elevation.update_ghosts();
+  m_geometry.ice_thickness.update_ghosts();
   m_bc_mask.update_ghosts();
   m_bc_values.update_ghosts();
 
@@ -188,8 +173,8 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCaseJ testcase(ctx);
-    testcase.init(Mx,My,ssafactory);
+    SSATestCaseJ testcase(ctx, Mx, My, ssafactory);
+    testcase.init();
     testcase.run();
     testcase.report("J");
     testcase.write(output);

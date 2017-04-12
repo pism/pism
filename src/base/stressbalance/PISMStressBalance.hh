@@ -26,12 +26,28 @@
 namespace pism {
 
 class IceModelVec2CellType;
+class Geometry;
 
 //! Stress balance models and related diagnostics.
 namespace stressbalance {
 
 class ShallowStressBalance;
 class SSB_Modifier;
+
+class StressBalanceInputs {
+public:
+  StressBalanceInputs();
+
+  double sea_level;             // FIXME: use the 2D field in Geometry
+  const Geometry *geometry;
+
+  const IceModelVec2S *basal_melt_rate;
+  const IceModelVec2S *basal_yield_stress; // NOT USED YET
+  const IceModelVec2S *melange_back_pressure;
+
+  const IceModelVec3  *enthalpy; // NOT USED YET
+  const IceModelVec3  *age;      // NOT USED YET
+};
 
 //! The class defining PISM's interface to the shallow stress balance code.
 /*!
@@ -60,12 +76,9 @@ public:
   void set_boundary_conditions(const IceModelVec2Int &locations,
                                const IceModelVec2V &velocities);
 
-  void set_basal_melt_rate(const IceModelVec2S &bmr);
-
   //! \brief Update all the fields if (full_update), only update diffusive flux
   //! and max. diffusivity otherwise.
-  void update(double sea_level,
-              const IceModelVec2S &melange_back_pressure, bool full_update);
+  void update(const StressBalanceInputs &inputs, bool full_update);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   const IceModelVec2V& advective_velocity() const;
@@ -113,19 +126,16 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  virtual void compute_vertical_velocity(const IceModelVec3 &u,
+  virtual void compute_vertical_velocity(const IceModelVec2CellType &mask,
+                                         const IceModelVec3 &u,
                                          const IceModelVec3 &v,
                                          const IceModelVec2S *bmr,
                                          IceModelVec3 &result);
-  virtual void compute_volumetric_strain_heating();
-
-  CFLData compute_cfl_2d();
-  CFLData compute_cfl_3d();
+  virtual void compute_volumetric_strain_heating(const StressBalanceInputs &inputs);
 
   CFLData m_cfl_2d, m_cfl_3d;
 
   IceModelVec3 m_w, m_strain_heating;
-  const IceModelVec2S *m_basal_melt_rate;
 
   ShallowStressBalance *m_shallow_stress_balance;
   SSB_Modifier *m_modifier;

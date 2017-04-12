@@ -426,8 +426,19 @@ void IceModel::step(bool do_mass_continuity,
 
   try {
     profiling.begin("stress_balance");
-    m_stress_balance->update(m_ocean->sea_level_elevation(),
-                             melange_back_pressure, updateAtDepth);
+    stressbalance::StressBalanceInputs inputs;
+    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
+      inputs.basal_melt_rate = &m_basal_melt_rate;
+    }
+
+    inputs.sea_level             = m_ocean->sea_level_elevation();
+    inputs.basal_yield_stress    = &m_basal_yield_stress;
+    inputs.melange_back_pressure = &melange_back_pressure;
+    inputs.geometry              = &m_geometry;
+    inputs.enthalpy              = &m_energy_model->enthalpy();
+    inputs.age                   = m_age_model ? &m_age_model->age() : NULL;
+
+    m_stress_balance->update(inputs, updateAtDepth);
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {
     std::string output_file = m_config->get_string("output.file_name");

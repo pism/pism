@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -53,20 +53,25 @@ namespace stressbalance {
 class SSATestCaseExp: public SSATestCase
 {
 public:
-  SSATestCaseExp(Context::Ptr ctx)
-    : SSATestCase(ctx) {
+  SSATestCaseExp(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+    : SSATestCase(ctx, Mx, My, 50e3, 50e3, NOT_PERIODIC) {
     L     = units::convert(ctx->unit_system(), 50, "km", "m"); // 50km half-width
     H0    = 500;                      // meters
     dhdx  = 0.005;                    // pure number
     nu0   = units::convert(ctx->unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // 1kPa
+
+    // Use a pseudo-plastic law with linear till
+    m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
+    m_config->set_double("basal_resistance.pseudo_plastic.q", 1.0);
+
+    // The following is irrelevant because we will force linear rheology later.
+    m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
+
+    m_ssa = ssafactory(m_grid);
   }
 
 protected:
-  virtual void initializeGrid(int Mx,int My);
-
-  virtual void initializeSSAModel();
-
   virtual void initializeSSACoefficients();
 
   virtual void exactSolution(int i, int j,
@@ -74,24 +79,6 @@ protected:
 
   double L, H0, dhdx, nu0, tauc0;
 };
-
-
-void SSATestCaseExp::initializeGrid(int Mx,int My) {
-  double Lx=L, Ly = L;
-  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
-                            0.0, 0.0, // center: (x0,y0)
-                            Mx, My, NOT_PERIODIC);
-}
-
-
-void SSATestCaseExp::initializeSSAModel() {
-  // Use a pseudo-plastic law with linear till
-  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
-  m_config->set_double("basal_resistance.pseudo_plastic.q", 1.0);
-
-  // The following is irrelevant because we will force linear rheology later.
-  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-}
 
 void SSATestCaseExp::initializeSSACoefficients() {
 
@@ -103,9 +90,9 @@ void SSATestCaseExp::initializeSSACoefficients() {
   m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
 
   // Set constants for most coefficients.
-  m_thickness.set(H0);
-  m_surface.set(H0);
-  m_bed.set(0.);
+  m_geometry.ice_thickness.set(H0);
+  m_geometry.ice_surface_elevation.set(H0);
+  m_geometry.bed_elevation.set(0.0);
   m_tauc.set(tauc0);
 
 
@@ -198,8 +185,8 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCaseExp testcase(ctx);
-    testcase.init(Mx,My,ssafactory);
+    SSATestCaseExp testcase(ctx, Mx, My, ssafactory);
+    testcase.init();
     testcase.run();
     testcase.report("linear");
     testcase.write(output_file);

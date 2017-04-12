@@ -267,6 +267,8 @@
 %include "base/basalstrength/PISMYieldStress.hh"
 %include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 
+%include geometry.i
+
 %include pism_SSA.i
 
 %include pism_SIA.i
@@ -306,7 +308,5 @@
 %include pism_ocean.i
 
 %include pism_verification.i
-
-%include geometry.i
 
 %include "base/energy/bootstrapping.hh"

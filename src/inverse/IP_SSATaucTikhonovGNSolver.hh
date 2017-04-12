@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -105,8 +105,6 @@ protected:
   virtual TerminationReason::Ptr compute_dlogalpha(double *dalpha);
 
   virtual TerminationReason::Ptr linesearch();
-
-  void construct();
 
   IP_SSATaucForwardProblem &m_ssaforward;
 

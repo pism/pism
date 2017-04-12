@@ -3,7 +3,11 @@
 #include "base/stressbalance/ssa/SSAFD.hh"
 #include "base/stressbalance/ssa/SSA_diagnostics.hh"
 #include "base/stressbalance/ssa/SSAFD_diagnostics.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 %}
+
+%shared_ptr(pism::stressbalance::StressBalance)
+%include "base/stressbalance/PISMStressBalance.hh"
 
 %shared_ptr(pism::stressbalance::ShallowStressBalance)
 %shared_ptr(pism::stressbalance::ZeroSliding)

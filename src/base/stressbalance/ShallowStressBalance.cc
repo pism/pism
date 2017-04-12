@@ -38,7 +38,6 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
 
   m_bc_values = NULL;
   m_bc_mask = NULL;
-  m_sea_level = 0.0;
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
@@ -140,10 +139,8 @@ ZeroSliding::~ZeroSliding() {
 }
 
 //! \brief Update the trivial shallow stress balance object.
-void ZeroSliding::update(double sea_level, const IceModelVec2S &melange_back_pressure,
-                         bool full_update) {
-  (void) sea_level;
-  (void) melange_back_pressure;
+void ZeroSliding::update(const StressBalanceInputs &inputs, bool full_update) {
+  (void) inputs;
 
   if (full_update) {
     m_velocity.set(0.0);
@@ -446,11 +443,8 @@ PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 
-void PrescribedSliding::update(double sea_level,
-                               const IceModelVec2S &melange_back_pressure,
-                               bool full_update) {
-  (void) sea_level;
-  (void) melange_back_pressure;
+void PrescribedSliding::update(const StressBalanceInputs &inputs, bool full_update) {
+  (void) inputs;
   if (full_update) {
     m_basal_frictional_heating.set(0.0);
   }

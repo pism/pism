@@ -396,7 +396,10 @@ int main(int argc, char *argv[]) {
     melange_back_pressure.set(0.0);
 
     bool full_update = true;
-    stress_balance.update(0.0, melange_back_pressure, full_update);
+    stressbalance::StressBalanceInputs inputs;
+    inputs.sea_level             = 0.0;
+    inputs.melange_back_pressure = &melange_back_pressure;
+    stress_balance.update(inputs, full_update);
 
     // Report errors relative to the exact solution:
     const IceModelVec3

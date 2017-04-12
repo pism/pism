@@ -255,10 +255,6 @@ void IceModel::model_state_setup() {
   // this has to go after we add enthalpy to m_grid->variables()
   if (m_stress_balance) {
     m_stress_balance->init();
-
-    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
-      m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
-    }
   }
 
   // miscellaneous steps

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMVars.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -122,20 +123,24 @@ ConstantInColumn::~ConstantInColumn()
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-void ConstantInColumn::update(const IceModelVec2V &vel_input, bool fast) {
+void ConstantInColumn::update(const IceModelVec2V &sliding_velocity,
+                              const StressBalanceInputs &inputs,
+                              bool full_update) {
 
-  if (fast) {
+  (void) inputs;
+
+  if (not full_update) {
     return;
   }
 
   // horizontal velocity and its maximum:
-  IceModelVec::AccessList list{&m_u, &m_v, &vel_input};
+  IceModelVec::AccessList list{&m_u, &m_v, &sliding_velocity};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_u.set_column(i,j, vel_input(i,j).u);
-    m_v.set_column(i,j, vel_input(i,j).v);
+    m_u.set_column(i,j, sliding_velocity(i,j).u);
+    m_v.set_column(i,j, sliding_velocity(i,j).v);
   }
 
   // Communicate to get ghosts (needed to compute w):

@@ -34,6 +34,8 @@ class IceModelVec2CellType;
 
 namespace stressbalance {
 
+class StressBalanceInputs;
+
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance : public Component {
 public:
@@ -46,8 +48,7 @@ public:
   void set_boundary_conditions(const IceModelVec2Int &locations,
                                const IceModelVec2V &velocities);
 
-  virtual void update(double sea_level,
-                      const IceModelVec2S &melange_back_pressure, bool full_update) = 0;
+  virtual void update(const StressBalanceInputs &inputs, bool full_update) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
   const IceModelVec2V& velocity() const;
@@ -78,7 +79,6 @@ protected:
   
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  double m_sea_level;
   IceBasalResistancePlasticLaw *m_basal_sliding_law;
   rheology::FlowLaw *m_flow_law;
   EnthalpyConverter::Ptr m_EC;
@@ -100,7 +100,7 @@ public:
   ZeroSliding(IceGrid::ConstPtr g);
   virtual ~ZeroSliding();
   
-  virtual void update(double sea_level, const IceModelVec2S &melange_back_pressure, bool full_update);
+  virtual void update(const StressBalanceInputs &inputs, bool full_update);
 
 protected:
 };
@@ -109,7 +109,7 @@ class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(IceGrid::ConstPtr g);
   virtual ~PrescribedSliding();
-  virtual void update(double sea_level, const IceModelVec2S &melange_back_pressure, bool full_update);
+  virtual void update(const StressBalanceInputs &inputs, bool full_update);
 protected:
   virtual void init_impl();
 };

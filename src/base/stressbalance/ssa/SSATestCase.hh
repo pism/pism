@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/IceModelVec2CellType.hh"
+#include "base/Geometry.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -34,20 +35,16 @@ namespace stressbalance {
   test.  Subclasses must implement the following abstract methods to define
   the input to an SSA for a test case:
 
-  1) initializeGrid (to build a grid of the specified size appropriate for the test)
-  2) initializeSSAModel (to specify the laws used by the model, e.g. ice flow and basal sliding laws)
-  3) initializeSSACoefficients (to initialize the ssa coefficients, e.g. ice thickness)
-
-  The SSA itself is constructed between steps 2) and 3).
+  1) initializeSSACoefficients (to initialize the ssa coefficients, e.g. ice thickness)
 
   Additionally, a subclass can implement `report` to handle
   printing statistics after a run.  The default report method relies
-  on subclasses implementing the exactSolution method for comparision.
+  on subclasses implementing the exactSolution method for comparison.
 
   A driver uses an SSATestCase by calling 1-3 below and 4,5 as desired:
 
   1) its constructor
-  2) init (to specify the grid size and choice of SSA algorithm)
+  2) init (to set coefficients)
   3) run (to actually solve the ssa)
   4) report
   5) write (to save the results of the computation to a file)
@@ -55,11 +52,12 @@ namespace stressbalance {
 class SSATestCase
 {
 public:
-  SSATestCase(Context::Ptr ctx);
+  SSATestCase(Context::Ptr ctx, int Mx, int My,
+              double Lx, double Ly, Periodicity periodicity);
 
   virtual ~SSATestCase();
 
-  virtual void init(int Mx, int My, SSAFactory ssafactory);
+  virtual void init();
 
   virtual void run();
 
@@ -68,15 +66,6 @@ public:
   virtual void write(const std::string &filename);
 
 protected:
-
-  virtual void buildSSACoefficients();
-
-  //! Initialize the member variable grid as appropriate for the test case.
-  virtual void initializeGrid(int Mx,int My) = 0;
-
-  //! Allocate the member variables basal, ice, and enthalpyconverter as
-  //! appropriate for the test case.
-  virtual void initializeSSAModel() = 0;
 
   //! Set up the coefficient variables as appropriate for the test case.
   virtual void initializeSSACoefficients() = 0;
@@ -93,21 +82,24 @@ protected:
                      double max_v,
                      double avg_u,
                      double avg_v);
+
   MPI_Comm m_com;
+  const Context::Ptr m_ctx;
   const Config::Ptr m_config;
   IceGrid::Ptr m_grid;
-  const Context::Ptr m_ctx;
   const units::System::Ptr m_sys;
 
   // SSA model variables.
   EnthalpyConverter::Ptr m_enthalpyconverter;
 
   // SSA coefficient variables.
-  IceModelVec2S  m_surface, m_thickness, m_bed, m_tauc, m_melange_back_pressure;
+  IceModelVec2S m_tauc, m_melange_back_pressure;
   IceModelVec3 m_ice_enthalpy;
+
   IceModelVec2V m_bc_values;
-  IceModelVec2CellType m_ice_mask;
   IceModelVec2Int m_bc_mask;
+
+  Geometry m_geometry;
 
   SSA *m_ssa;
 };
