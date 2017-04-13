@@ -193,7 +193,7 @@ See Table \ref{tab:hydrology} for options which apply to all hydrology models.  
     \textbf{Option} & \textbf{Description}
     \\\midrule
     \fileopt{hydrology_bmelt_file} & Specifies a NetCDF file which contains a time-independent field \texttt{bmelt} which has units of water thickness per time.  This rate \emph{replaces} the conservation-of-energy computed \texttt{bmelt} rate. \\
-    \txtopt{hydrology_const_bmelt}{(m/a)} & If \texttt{-hydrology_use_const_bmelt} is set then use this to set the constant rate (water thickness per time). \\
+    \txtopt{hydrology_const_bmelt}{(m/s)} & If \texttt{-hydrology_use_const_bmelt} is set then use this to set the constant rate (water thickness per time). \\
     \fileopt{hydrology_input_to_bed_file} & Specifies a NetCDF file which contains a time-dependent field \texttt{inputtobed} which has units of water thickness per time.  This rate is \emph{added to} the \texttt{bmelt} rate. \\
     \txtopt{hydrology_input_to_bed_period}{(a)} & The period, in years, of \texttt{-hydrology_input_to_bed_file} data. \\
     \txtopt{hydrology_input_to_bed_reference_year}{(a)} & The reference year for periodizing the \texttt{-hydrology_input_to_bed_file} data. \\
