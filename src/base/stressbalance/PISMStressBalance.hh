@@ -44,6 +44,7 @@ public:
   const IceModelVec2S *basal_melt_rate;
   const IceModelVec2S *basal_yield_stress; // NOT USED YET
   const IceModelVec2S *melange_back_pressure;
+  const IceModelVec2S *fracture_density;
 
   const IceModelVec3  *enthalpy; // NOT USED YET
   const IceModelVec3  *age;      // NOT USED YET

@@ -99,8 +99,6 @@ SSAFD::SSAFD(IceGrid::ConstPtr g)
   m_view_nuh = false;
   m_nuh_viewer_size = 300;
 
-  m_fracture_density = NULL;
-
   // PETSc objects and settings
   {
     PetscErrorCode ierr;
@@ -237,10 +235,6 @@ void SSAFD::init_impl() {
 
   m_default_pc_failure_count     = 0;
   m_default_pc_failure_max_count = 5;
-
-  if (m_config->get_boolean("fracture_density.enabled")) {
-    m_fracture_density = m_grid->variables().get_2d_scalar("fracture_density");
-  }
 }
 
 void SSAFD::update(const StressBalanceInputs &inputs, bool full_update) {
@@ -1227,7 +1221,7 @@ void SSAFD::compute_hardav_staggered(const StressBalanceInputs &inputs) {
   }
   loop.check();
 
-  fracture_induced_softening();
+  fracture_induced_softening(inputs.fracture_density);
 }
 
 
@@ -1264,8 +1258,8 @@ void SSAFD::compute_hardav_staggered(const StressBalanceInputs &inputs) {
   So scaling the enhancement factor by \f$C\f$ is equivalent to scaling
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
-void SSAFD::fracture_induced_softening() {
-  if (not m_config->get_boolean("fracture_density.enabled")) {
+void SSAFD::fracture_induced_softening(const IceModelVec2S *fracture_density) {
+  if (not fracture_density) {
     return;
   }
 
@@ -1273,7 +1267,7 @@ void SSAFD::fracture_induced_softening() {
     epsilon = m_config->get_double("fracture_density.softening_lower_limit"),
     n_glen  = m_flow_law->exponent();
 
-  IceModelVec::AccessList list{&m_hardness, m_fracture_density};
+  IceModelVec::AccessList list{&m_hardness, fracture_density};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1283,7 +1277,7 @@ void SSAFD::fracture_induced_softening() {
 
       const double
         // fracture density on the staggered grid:
-        phi       = 0.5 * ((*m_fracture_density)(i,j) + (*m_fracture_density)(i+oi,j+oj)),
+        phi       = 0.5 * ((*fracture_density)(i,j) + (*fracture_density)(i+oi,j+oj)),
         // the line below implements equation (6) in the paper
         softening = pow((1.0-(1.0-epsilon)*phi), -n_glen);
 

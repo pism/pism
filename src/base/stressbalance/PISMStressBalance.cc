@@ -40,6 +40,7 @@ StressBalanceInputs::StressBalanceInputs() {
 
   basal_melt_rate       = NULL;
   melange_back_pressure = NULL;
+  fracture_density      = NULL;
   basal_yield_stress    = NULL;
 
   enthalpy = NULL;

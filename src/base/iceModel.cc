@@ -443,6 +443,10 @@ void IceModel::step(bool do_mass_continuity,
       inputs.bc_values = &m_ssa_dirichlet_bc_values;
     }
 
+    if (m_config->get_boolean("fracture_density.enabled")) {
+      inputs.fracture_density = &m_fracture->density;
+    }
+
     m_stress_balance->update(inputs, updateAtDepth);
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {
