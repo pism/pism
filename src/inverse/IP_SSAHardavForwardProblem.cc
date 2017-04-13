@@ -273,9 +273,9 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
-  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
-  double           m_dirichletWeight    = m_dirichletScale;
+  const IceModelVec2Int *dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *dirichletValues    = m_bc_values;
+  double                 dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[Nk];
   Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
@@ -292,8 +292,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // An Nq by Nk array of test function values.
   const fem::Germs *test = m_quadrature.test_function_values();
 
-  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
-                                        m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
+                                        dirichletWeight);
   fem::DirichletData_Scalar fixedZeta(m_fixed_design_locations, NULL);
 
   // Jacobian times weights for quadrature.
@@ -464,12 +464,12 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   const fem::Germs *test = m_quadrature.test_function_values();
 
   // Aliases to help with notation consistency.
-  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
-  const IceModelVec2V   *m_dirichletValues = m_bc_values;
-  double        m_dirichletWeight = m_dirichletScale;
+  const IceModelVec2Int *dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *dirichletValues    = m_bc_values;
+  double                 dirichletWeight    = m_dirichletScale;
 
-  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
-                                        m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
+                                        dirichletWeight);
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
@@ -651,14 +651,14 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
-  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
-  double        m_dirichletWeight    = m_dirichletScale;
+  const IceModelVec2Int *dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *dirichletValues    = m_bc_values;
+  double                 dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);
   Vector2 **du_a = m_du_global.get_array();
-  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
-                                        m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
+                                        dirichletWeight);
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);
   }
