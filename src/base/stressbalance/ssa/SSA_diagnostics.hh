@@ -49,15 +49,6 @@ protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
 
-/*! @brief Ocean pressure difference at calving fronts. Used to debug CF boundary conditins. */
-class SSA_calving_front_pressure_difference : public Diag<SSA>
-{
-public:
-  SSA_calving_front_pressure_difference(SSA *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
 } // end of namespace stressbalance
 } // end of namespace pism
 

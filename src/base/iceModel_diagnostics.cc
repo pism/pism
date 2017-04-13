@@ -52,6 +52,80 @@ static const char* floating_ice_sheet_area_fraction_name = "sftflf";
 
 namespace diagnostics {
 
+
+/*! @brief Ocean pressure difference at calving fronts. Used to debug CF boundary conditins. */
+class CalvingFrontPressureDifference : public Diag<IceModel>
+{
+public:
+  CalvingFrontPressureDifference(IceModel *m);
+protected:
+  IceModelVec::Ptr compute_impl() const;
+};
+
+
+CalvingFrontPressureDifference::CalvingFrontPressureDifference(IceModel *m)
+  : Diag<IceModel>(m) {
+
+  /* set metadata: */
+  m_vars = {SpatialVariableMetadata(m_sys, "ocean_pressure_difference")};
+  m_vars[0].set_double("_FillValue", m_fill_value);
+
+  set_attrs("ocean pressure difference at calving fronts", "",
+            "", "", 0);
+}
+
+IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ocean_pressure_difference", WITHOUT_GHOSTS));
+  result->metadata(0) = m_vars[0];
+
+  IceModelVec2CellType mask;
+  mask.create(m_grid, "mask", WITH_GHOSTS);
+
+  const IceModelVec2S &H   = model->geometry().ice_thickness;
+  const IceModelVec2S &bed = model->geometry().bed_elevation;
+  const double sea_level = model->ocean_model()->sea_level_elevation(); // FIXME: use 2D sea level
+
+  {
+    const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
+    GeometryCalculator gc(*m_config);
+    gc.set_icefree_thickness(H_threshold);
+
+    gc.compute_mask(sea_level, bed, H, mask);
+  }
+
+  const double
+    rho_ice   = m_config->get_double("constants.ice.density"),
+    rho_ocean = m_config->get_double("constants.sea_water.density"),
+    g         = m_config->get_double("constants.standard_gravity");
+
+  const bool dry_mode = m_config->get_boolean("ocean.always_grounded");
+
+  IceModelVec::AccessList list{&H, &bed, &mask, result.get()};
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
+        (*result)(i, j) = stressbalance::ocean_pressure_difference(mask.ocean(i, j), dry_mode,
+                                                                   H(i, j), bed(i, j), sea_level,
+                                                                   rho_ice, rho_ocean, g);
+      } else {
+        (*result)(i, j) = m_fill_value;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+
+  return result;
+}
+
+
 /*! @brief Report average basal mass balance flux over the reporting interval (grounded or floating
   areas) */
 class BMBSplit : public DiagAverageRate<IceModel>
@@ -1950,7 +2024,8 @@ void IceModel::init_diagnostics() {
     {"cell_grounded_fraction",              Diagnostic::wrap(m_geometry.cell_grounded_fraction)},
     {"usurf",                               Diagnostic::wrap(m_geometry.ice_surface_elevation)},
     {"ssa_bc_mask",                         Diagnostic::wrap(m_ssa_dirichlet_bc_mask)},
-    {"ssa_bc_vel",                          Diagnostic::wrap(m_ssa_dirichlet_bc_values)}
+    {"ssa_bc_vel",                          Diagnostic::wrap(m_ssa_dirichlet_bc_values)},
+    {"ocean_pressure_difference",           f(new CalvingFrontPressureDifference(this))},
   };
 
 #if (PISM_USE_PROJ4==1)

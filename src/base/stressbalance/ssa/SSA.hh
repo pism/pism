@@ -120,9 +120,6 @@ public:
 
   virtual std::string stdout_report() const;
 
-  double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
-                                   double rho_ice, double rho_ocean, double g) const;
-
   const IceModelVec2V& driving_stress() const;
 protected:
   virtual void define_model_state_impl(const PIO &output) const;
