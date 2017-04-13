@@ -438,6 +438,11 @@ void IceModel::step(bool do_mass_continuity,
     inputs.enthalpy              = &m_energy_model->enthalpy();
     inputs.age                   = m_age_model ? &m_age_model->age() : NULL;
 
+    if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+      inputs.bc_mask   = &m_ssa_dirichlet_bc_mask;
+      inputs.bc_values = &m_ssa_dirichlet_bc_values;
+    }
+
     m_stress_balance->update(inputs, updateAtDepth);
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {

@@ -119,6 +119,8 @@ void SSATestCase::run() {
   inputs.geometry              = &m_geometry;
   inputs.enthalpy              = &m_ice_enthalpy;
   inputs.basal_yield_stress    = &m_tauc;
+  inputs.bc_mask               = &m_bc_mask;
+  inputs.bc_values             = &m_bc_values;
 
   bool full_update = true;
   m_ssa->update(inputs, full_update);

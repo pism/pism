@@ -126,8 +126,6 @@ void SSATestCaseI::initializeSSACoefficients() {
   m_geometry.bed_elevation.update_ghosts();
   m_bc_mask.update_ghosts();
   m_bc_values.update_ghosts();
-
-  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
 }
 
 

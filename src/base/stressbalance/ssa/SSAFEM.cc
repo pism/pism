@@ -40,11 +40,12 @@ namespace stressbalance {
  */
 SSAFEM::SSAFEM(IceGrid::ConstPtr g)
   : SSA(g),
+    m_bc_mask(NULL),
+    m_bc_values(NULL),
     m_gc(*m_config),
     m_element_index(*g),
     m_element(*g),
     m_quadrature(g->dx(), g->dy(), 1.0) {
-
 
   const double ice_density = m_config->get_double("constants.ice.density");
   m_alpha = 1 - ice_density / m_config->get_double("constants.sea_water.density");
@@ -274,6 +275,12 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
    elements, exterior elements, and boundary faces.
 */
 void SSAFEM::cache_inputs(const StressBalanceInputs &inputs) {
+
+  // Hold on to pointers to the B.C. mask and values: they are needed in SNES callbacks and
+  // inputs.bc_{mask,values} are not available there.
+  m_bc_mask   = inputs.bc_mask;
+  m_bc_values = inputs.bc_values;
+
   const std::vector<double> &z = m_grid->z();
 
   IceModelVec::AccessList list{&m_coefficients,

@@ -47,6 +47,9 @@ public:
 
   const IceModelVec3  *enthalpy; // NOT USED YET
   const IceModelVec3  *age;      // NOT USED YET
+
+  const IceModelVec2Int *bc_mask;
+  const IceModelVec2V *bc_values;
 };
 
 //! The class defining PISM's interface to the shallow stress balance code.
@@ -68,13 +71,6 @@ public:
 
   //! \brief Initialize the StressBalance object.
   void init();
-
-  //! \brief Set the vertically-averaged ice velocity boundary condition.
-  /*!
-   * Does not affect the SIA computation.
-   */
-  void set_boundary_conditions(const IceModelVec2Int &locations,
-                               const IceModelVec2V &velocities);
 
   //! \brief Update all the fields if (full_update), only update diffusive flux
   //! and max. diffusivity otherwise.

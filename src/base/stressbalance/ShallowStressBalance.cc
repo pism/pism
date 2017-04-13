@@ -53,9 +53,6 @@ using pism::mask::ice_free;
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(g->ctx()->enthalpy_converter()) {
 
-  m_bc_values = NULL;
-  m_bc_mask = NULL;
-
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
   if (m_config->get_boolean("basal_resistance.pseudo_plastic.enabled") == true) {
@@ -111,13 +108,6 @@ EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() const {
 
 const IceBasalResistancePlasticLaw* ShallowStressBalance::sliding_law() const {
   return m_basal_sliding_law;
-}
-
-
-void ShallowStressBalance::set_boundary_conditions(const IceModelVec2Int &locations,
-                                                   const IceModelVec2V &velocities) {
-  m_bc_values = &velocities;
-  m_bc_mask = &locations;
 }
 
 //! \brief Get the thickness-advective 2D velocity.

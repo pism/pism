@@ -66,6 +66,9 @@ protected:
     Vector2 driving_stress;
   };
 
+  const IceModelVec2Int *m_bc_mask;
+  const IceModelVec2V *m_bc_values;
+
   GeometryCalculator m_gc;
   double m_alpha;
   double m_rho_g;

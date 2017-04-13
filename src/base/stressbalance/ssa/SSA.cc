@@ -163,11 +163,6 @@ void SSA::init_impl() {
   } else {
     m_velocity.set(0.0); // default initial guess
   }
-
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
-    m_bc_mask = m_grid->variables().get_2d_mask("bc_mask");
-    m_bc_values = m_grid->variables().get_2d_vector("vel_ssa_bc");
-  }
 }
 
 //! \brief Update the SSA solution.

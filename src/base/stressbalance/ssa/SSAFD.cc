@@ -288,8 +288,8 @@ void SSAFD::assemble_rhs(const StressBalanceInputs &inputs) {
 
   IceModelVec::AccessList list{&m_taud, &m_b};
 
-  if (m_bc_values && m_bc_mask) {
-    list.add({m_bc_values, m_bc_mask});
+  if (inputs.bc_values && inputs.bc_mask) {
+    list.add({inputs.bc_values, inputs.bc_mask});
   }
 
   if (use_cfbc) {
@@ -305,10 +305,10 @@ void SSAFD::assemble_rhs(const StressBalanceInputs &inputs) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_bc_values != NULL &&
-        m_bc_mask->as_int(i, j) == 1) {
-      m_b(i, j).u = m_scaling * (*m_bc_values)(i, j).u;
-      m_b(i, j).v = m_scaling * (*m_bc_values)(i, j).v;
+    if (inputs.bc_values != NULL &&
+        inputs.bc_mask->as_int(i, j) == 1) {
+      m_b(i, j).u = m_scaling * (*inputs.bc_values)(i, j).u;
+      m_b(i, j).v = m_scaling * (*inputs.bc_values)(i, j).v;
       continue;
     }
 
@@ -495,8 +495,8 @@ void SSAFD::assemble_matrix(const StressBalanceInputs &inputs,
 
   IceModelVec::AccessList list{&m_nuH, &tauc, &vel, &m_mask};
 
-  if (m_bc_values && m_bc_mask) {
-    list.add(*m_bc_mask);
+  if (inputs.bc_values && inputs.bc_mask) {
+    list.add(*inputs.bc_mask);
   }
 
   const bool sub_gl = m_config->get_boolean("geometry.grounded_cell_fraction");
@@ -520,7 +520,7 @@ void SSAFD::assemble_matrix(const StressBalanceInputs &inputs,
       const int i = p.i(), j = p.j();
 
       // Handle the easy case: provided Dirichlet boundary conditions
-      if (m_bc_values && m_bc_mask && m_bc_mask->as_int(i,j) == 1) {
+      if (inputs.bc_values && inputs.bc_mask && inputs.bc_mask->as_int(i,j) == 1) {
         // set diagonal entry to one (scaled); RHS entry will be known velocity;
         set_diagonal_matrix_entry(A, i, j, m_scaling);
         continue;

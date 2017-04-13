@@ -44,6 +44,9 @@ StressBalanceInputs::StressBalanceInputs() {
 
   enthalpy = NULL;
   age      = NULL;
+
+  bc_mask   = NULL;
+  bc_values = NULL;
 }
 
 StressBalance::StressBalance(IceGrid::ConstPtr g,
@@ -75,11 +78,6 @@ StressBalance::~StressBalance() {
 void StressBalance::init() {
   m_shallow_stress_balance->init();
   m_modifier->init();
-}
-
-void StressBalance::set_boundary_conditions(const IceModelVec2Int &locations,
-                                            const IceModelVec2V &velocities) {
-  m_shallow_stress_balance->set_boundary_conditions(locations, velocities);
 }
 
 //! \brief Performs the shallow stress balance computation.

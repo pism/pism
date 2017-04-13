@@ -52,8 +52,6 @@ public:
   //  initialization and I/O:
 
   void init();
-  void set_boundary_conditions(const IceModelVec2Int &locations,
-                               const IceModelVec2V &velocities);
 
   virtual void update(const StressBalanceInputs &inputs, bool full_update) = 0;
 
@@ -91,8 +89,6 @@ protected:
   EnthalpyConverter::Ptr m_EC;
 
   IceModelVec2V m_velocity;
-  const IceModelVec2V *m_bc_values;
-  const IceModelVec2Int *m_bc_mask;
   IceModelVec2S m_basal_frictional_heating;
 };
 
