@@ -292,8 +292,7 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
 IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
   // FIXME: compute this using PSB_velbase.
 
-  IceModelVec2S tmp;
-  tmp.create(m_grid, "tmp", WITHOUT_GHOSTS);
+  IceModelVec2S tmp(m_grid, "tmp", WITHOUT_GHOSTS);
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbase_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
@@ -855,11 +854,8 @@ PSB_strainheat::PSB_strainheat(const StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_strainheat::compute_impl() const {
-
-  IceModelVec3::Ptr result(new IceModelVec3);
-  result->create(m_grid, "strainheat", WITHOUT_GHOSTS);
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "strainheat", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
 
   result->copy_from(model->volumetric_strain_heating());
 

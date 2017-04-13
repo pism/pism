@@ -1021,7 +1021,6 @@ protected:
   IceModelVec::Ptr compute_impl() const {
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "flux_divergence", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
-    result->write_in_glaciological_units = true;
 
     result->copy_from(model->flux_divergence());
 

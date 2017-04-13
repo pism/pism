@@ -480,11 +480,8 @@ Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(const Distributed *m)
 IceModelVec::Ptr Distributed_hydrovelbase_mag::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydrovelbase_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
-  result->write_in_glaciological_units = true;
-
   // the value reported diagnostically is merely the last value filled
   result->copy_from(model->m_velbase_mag);
-
   return result;
 }
 

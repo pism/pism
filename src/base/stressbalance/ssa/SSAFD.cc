@@ -1689,7 +1689,6 @@ IceModelVec::Ptr SSAFD_nuH::compute_impl() const {
   result->create(m_grid, "nuH", WITH_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
-  result->write_in_glaciological_units = true;
 
   result->copy_from(model->integrated_viscosity());
 

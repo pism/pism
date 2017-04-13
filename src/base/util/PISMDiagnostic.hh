@@ -231,7 +231,6 @@ protected:
     IceModelVec2S::Ptr result(new IceModelVec2S(Diagnostic::m_grid,
                                                 "diagnostic", WITHOUT_GHOSTS));
     result->metadata(0) = Diagnostic::m_vars[0];
-    result->write_in_glaciological_units = true;
 
     if (m_interval_length > 0.0) {
       result->copy_from(m_accumulator);

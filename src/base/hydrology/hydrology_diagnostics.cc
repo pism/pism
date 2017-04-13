@@ -31,7 +31,6 @@ Hydrology_bwat::Hydrology_bwat(const Hydrology *m)
 IceModelVec::Ptr Hydrology_bwat::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwat", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
   model->subglacial_water_thickness(*result);
   return result;
 }
@@ -46,7 +45,6 @@ Hydrology_bwp::Hydrology_bwp(const Hydrology *m)
 IceModelVec::Ptr Hydrology_bwp::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwp", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
   model->subglacial_water_pressure(*result);
   return result;
 }
@@ -123,8 +121,6 @@ Hydrology_hydrobmelt::Hydrology_hydrobmelt(const Hydrology *m)
 IceModelVec::Ptr Hydrology_hydrobmelt::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydrobmelt", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
-  result->write_in_glaciological_units = true;
-
   // the value reported diagnostically is merely the last value filled
   result->copy_from(model->m_bmelt_local);
 
@@ -143,8 +139,6 @@ Hydrology_hydroinput::Hydrology_hydroinput(const Hydrology *m)
 IceModelVec::Ptr Hydrology_hydroinput::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydroinput", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
   // the value reported diagnostically is merely the last value filled
   result->copy_from(model->m_total_input);
 
@@ -163,10 +157,7 @@ Hydrology_wallmelt::Hydrology_wallmelt(const Hydrology *m)
 IceModelVec::Ptr Hydrology_wallmelt::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wallmelt", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
-
   model->wall_melt(*result);
-
   return result;
 }
 

@@ -792,12 +792,10 @@ Routing_bwatvel::Routing_bwatvel(const Routing *m)
 
 
 IceModelVec::Ptr Routing_bwatvel::compute_impl() const {
-
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
-  result->write_in_glaciological_units = true;
 
   model->velocity_staggered(*result);
 
