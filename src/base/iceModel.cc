@@ -341,7 +341,6 @@ void IceModel::allocate_storage() {
   m_model_state.insert(&m_ssa_dirichlet_bc_mask);
   m_model_state.insert(&m_ssa_dirichlet_bc_values);
 
-  m_model_state.insert(&m_geometry.cell_area);
   m_model_state.insert(&m_geometry.latitude);
   m_model_state.insert(&m_geometry.longitude);
   m_model_state.insert(&m_geometry.ice_thickness);
