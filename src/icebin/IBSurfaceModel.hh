@@ -54,14 +54,28 @@ protected:
   bool _initialized;
   std::string m_input_file;
 
+  // Organized list of the variables...
+  std::vector<std::pair<std::string, pism::IceModelVec2S *>> vecs;
+  void create(pism::IceModelVec2S &vec, std::string const &name) {
+    vec.create(m_grid, name, WITHOUT_GHOSTS);
+    vccs.push_back(make_pair(name, &vec));
+  }
+
+
 public:
+  // ------ See icebin/contracts/modele_pism.cpp
   // Inputs from IceBin
-  pism::IceModelVec2S icebin_wflux;
-  pism::IceModelVec2S icebin_deltah;
+
+
+  // Mass of ice being transferred Stieglitz --> Icebin
   pism::IceModelVec2S icebin_massxfer; // [kg m-2 s-1]
+  // Enthalpy of ice being transferred Stieglitz --> Icebin
   pism::IceModelVec2S icebin_enthxfer; // [J m-2 s-1]
-  // Calculated
-  pism::IceModelVec2S surface_temp;
+
+  // Temperature of the Dirichlet B.C.
+  pism::IceModelVec2S icebin_bc_temp;
+  // Water content of the Dirichlet B.C.
+  pism::IceModelVec2S icebin_bc_waterfraction;
 };
 
 } // end of namespace surface
