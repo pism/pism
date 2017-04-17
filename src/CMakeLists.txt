@@ -110,6 +110,7 @@ add_custom_target (touch_pism_revision
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
 add_library (pism
+  ${EVERYTRACE_cf_mpi_REFADDR}
   base/pism_signal.c
   base/columnSystem.cc
   base/age/AgeModel.cc
@@ -173,7 +174,7 @@ add_library (pism
   $<TARGET_OBJECTS:pisminverse>
   $<TARGET_OBJECTS:pismregional>
 )
-target_link_libraries (pism ${Pism_EXTERNAL_LIBS})
+target_link_libraries (pism ${EVERYTRACE_LIBRARY} ${Pism_EXTERNAL_LIBS})
 add_dependencies (pism pism_config)
 add_dependencies (pism touch_pism_revision)
 

@@ -1,6 +1,7 @@
 # PISM-side code used by IceBin (https://github.com/citibeth/icebin).
 
 add_library (pismicebin
+  ${EVERYTRACE_cf_mpi_REFADDR}
   IBIceModel.cc
   IBSurfaceModel.cc
   MassEnergyBudget.cc
