@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2015 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2015, 2017 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -172,6 +172,8 @@ void SSA::init_impl() {
       m_log->message(3, "Reading u_ssa and v_ssa...\n");
 
       m_velocity.read(input_file, start);
+    } else {
+      m_velocity.set(0.0); // default initial guess
     }
 
   } else {
