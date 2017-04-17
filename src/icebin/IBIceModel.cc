@@ -67,12 +67,8 @@ void IBIceModel::createVecs() {
   rate.create(m_grid, "", WITHOUT_GHOSTS);
   printf("END IBIceModel::createVecs()\n");
 
-  M1.create(m_grid, "M1", pism::WITHOUT_GHOSTS);
-  M2.create(m_grid, "M2", pism::WITHOUT_GHOSTS);
-  H1.create(m_grid, "H1", pism::WITHOUT_GHOSTS);
-  H2.create(m_grid, "H2", pism::WITHOUT_GHOSTS);
-  V1.create(m_grid, "V1", pism::WITHOUT_GHOSTS);
-  V2.create(m_grid, "V2", pism::WITHOUT_GHOSTS);
+  // Sent back to IceBin
+  surface_senth.create(m_grid, "surface_senth", pism::WITHOUT_GHOSTS);
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
@@ -317,32 +313,17 @@ void IBIceModel::reset_rate() {
 }
 
 void IBIceModel::prepare_outputs(double time_s) {
-  double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
-
   // --------- ice_surface_enth from m_ice_enthalpy
-  AccessList access{ &m_ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_ice_thickness };
+  AccessList access{
+    &m_ice_enthalpy, &m_ice_thickness,        // INPUTS
+    &surface_senth };                      // OUTPUT
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       double const *Enth = m_ice_enthalpy.get_column(i, j);
 
       // Top Layer
       int const ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
-      V1(i, j) = m_ice_thickness(i, j) - m_grid->z(ks); // [m^3 m-2]
-      M1(i, j) = V1(i, j) * ice_density;                // [kg m-2] = [m^3 m-2] [kg m-3]
-      H1(i, j) = Enth[ks] * M1(i, j);                   // [J m-2] = [J kg-1] [kg m-2]
-
-      // Second layer
-      int const ks2 = ks - 1;
-      if (ks2 >= 0) {
-        V2(i, j) = m_grid->z(ks) - m_grid->z(ks2);
-        M2(i, j) = V2(i, j) * ice_density;
-        H2(i, j) = Enth[ks2] * M2(i, j);
-      } else {
-        // There is no second layer
-        V2(i, j) = 0;
-        M2(i, j) = 0;
-        H2(i, j) = 0;
-      }
+      surface_senth(i, j) = Enth[ks];   // [J kg-1]
     }
   }
 
@@ -376,29 +357,10 @@ void IBIceModel::misc_setup() {
   for (; base_ii != base.all_vecs.end(); ++base_ii, ++cur_ii) {
     base_ii->vec.copy_from(cur_ii->vec);
   }
-
-#if 0
-    // ---------- Create the netCDF output file
-    std::unique_ptr<PIO> nc;
-    std::string ofname = (params.output_dir / "post_energy.nc").string();
-    prepare_nc(ofname, nc);
-
-    // -------- Define MethEnth structres in netCDF file
-    m_ice_enthalpy.define(*nc, PISM_DOUBLE);
-    ice_thickness.define(*nc, PISM_DOUBLE);
-    ice_surface_temp.define(*nc, PISM_DOUBLE);
-    PSConstantICEBIN *surface = ps_constant_icebin();
-    surface->effective_surface_temp.define(*nc, PISM_DOUBLE);
-    for (auto ii = rate.all_vecs.begin(); ii != rate.all_vecs.end(); ++ii) {
-        ii->vec.define(*nc, PISM_DOUBLE);
-    }
-
-    // --------- Close and return
-    nc->close();
-#endif
 }
 
-/** Sums over columns to compute enthalpy on 2D m_grid->
+/** Sums over columns to compute enthalpy on 2D m_grid.
+This is used to track conservation of energy.
 
 NOTE: Unfortunately so far PISM does not keep track of enthalpy in
 "partially-filled" cells, so Enth2(i,j) is not valid at locations like
@@ -407,11 +369,12 @@ best thing we can do is estimate Enth2(i,j) at partially-filled cells
 by computing the average over icy neighbors. I think you can re-use
 the idea from IceModel::get_threshold_thickness(...) (iMpartm_grid->cc).  */
 
-
 void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &mass2) {
   //   getInternalColumn() is allocated already
   double ice_density = m_config->get_double("constants.ice.density", "kg m-3");
-  AccessList access{ &m_ice_thickness, &m_ice_enthalpy, &enth2, &mass2 };
+  AccessList access{
+    &m_ice_thickness, &m_ice_enthalpy,    // Inputs
+    &enth2, &mass2 };                     // Outputs
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       enth2(i, j) = 0;

@@ -63,9 +63,9 @@ protected:
 
   // Output variables prepared for return to GCM
   // (relevant ice model state to be exported)
-  pism::IceModelVec2S M1, M2;
-  pism::IceModelVec2S H1, H2;
-  pism::IceModelVec2S V1, V2;
+
+  // Specific enthalpy at surface of the ice sheet [J kg-1]
+  pism::IceModelVec2S surface_senth;
 
 protected:
   // see iceModel.cc
