@@ -61,12 +61,12 @@ if (Pism_LINK_STATICALLY)
 endif ()
 
 mark_as_advanced (CMAKE_BUILD_TYPE) # hide the default entry
-if (Pism_BUILD_TYPE MATCHES "Debug")
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
   set (Pism_BUILD_EXTRA_EXECS ON CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
   option (Pism_DEBUG              "Enables extra checks in the code."          ON)
   option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings."            ON)
   option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF)
-endif (Pism_BUILD_TYPE MATCHES "Debug")
+endif (CMAKE_BUILD_TYPE MATCHES "Debug")
 
 # Enable extra checks in the code:
 if (Pism_DEBUG)
