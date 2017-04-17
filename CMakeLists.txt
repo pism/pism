@@ -51,6 +51,7 @@ option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try tu
 option (Pism_CODE_COVERAGE "Add compiler options for code coverage testing." OFF)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
+option (Pism_USE_EVERYTRACE "Use the Everytrace library to provide stacktraces on crashes." OFF)
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 pism_use_rpath()
@@ -135,6 +136,10 @@ pism_set_dependencies()
 # Make sure that PetscScalar is double (not complex<double>.)
 pism_check_petsc_scalar_type()
 pism_set_version_info()
+
+if (Pism_USE_EVERYTRACE)
+  find_package(Everytrace)
+endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
   find_package(Python REQUIRED)
