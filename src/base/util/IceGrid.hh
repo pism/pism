@@ -287,6 +287,11 @@ private:
   struct Impl;
   Impl *m_impl;
 
+public:
+    Impl const *impl() const { return m_impl; }    // Debugging
+
+private:
+
   // Hide copy constructor / assignment operator.
   IceGrid(const IceGrid &);
   IceGrid & operator=(const IceGrid &);
