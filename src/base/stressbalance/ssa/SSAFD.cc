@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2017 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -124,6 +124,10 @@ SSAFD::SSAFD(IceGrid::ConstPtr g)
     // solve() call).
     ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE);
     PISM_CHK(ierr, "KSPSetInitialGuessNonzero");
+
+    // Use the initial residual norm.
+    ierr = KSPConvergedDefaultSetUIRNorm(m_KSP);
+    PISM_CHK(ierr, "KSPConvergedDefaultSetUIRNorm");
   }
 }
 
