@@ -42,6 +42,7 @@ protected:
   virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
   virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
   virtual void ice_surface_temperature_impl(IceModelVec2S &result);
+  virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result);
   virtual MaxTimestep max_timestep_impl(double t);
   virtual void update_impl(double my_t, double my_dt);
   virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
@@ -56,10 +57,9 @@ protected:
 
   // Organized list of the variables...
   std::vector<std::pair<std::string, pism::IceModelVec2S *>> vecs;
-  void create(pism::IceModelVec2S &vec, std::string const &name) {
-    vec.create(m_grid, name, WITHOUT_GHOSTS);
-    vccs.push_back(make_pair(name, &vec));
-  }
+
+  // Used internally
+  void create(pism::IceModelVec2S &vec, std::string const &name);
 
 
 public:
@@ -71,6 +71,10 @@ public:
   pism::IceModelVec2S icebin_massxfer; // [kg m-2 s-1]
   // Enthalpy of ice being transferred Stieglitz --> Icebin
   pism::IceModelVec2S icebin_enthxfer; // [J m-2 s-1]
+
+  // GCM's idea of energy transfer into ice sheet.
+  // Used to compute mass/energy budget
+  pism::IceModelVec2S icebin_deltah;
 
   // Temperature of the Dirichlet B.C.
   pism::IceModelVec2S icebin_bc_temp;

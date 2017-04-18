@@ -35,6 +35,13 @@ namespace icebin {
 ///// ice surface temperature parameterized as in PISM-IBSurfaceModel dependent on latitude and surface elevation
 
 
+void IBSurfaceModel::create(pism::IceModelVec2S &vec, std::string const &name)
+{
+    vec.create(m_grid, name, WITHOUT_GHOSTS);
+    vecs.push_back(make_pair(name, &vec));
+}
+
+
 IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
   printf("BEGIN IBSurfaceModel::allocate_IBSurfaceModel()\n");
 
@@ -50,8 +57,14 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
     "Enthalpy of ice being transferred Stieglitz --> Icebin",
     "W m-2", "land_ice_surface_specific_mass_balance");
 
-  // ------- Dirichlet Bondary condition derived from icebin_deltah
 
+  // ------- Used only for mass/energy budget
+  create(icebin_deltah, "icebin_deltah");
+  icebin_deltah.set_attrs(
+      "climate_state", "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
+      "W m-2", "");
+
+  // ------- Dirichlet Bondary condition derived from icebin_deltah
   create(icebin_bc_temp, "icebin_bc_temp");
   icebin_bc_temp.set_attrs("climate_state",
     "Temperature of the Dirichlet B.C.",
@@ -114,7 +127,7 @@ void IBSurfaceModel::ice_surface_temperature_impl(IceModelVec2S &result) {
   result.copy_from(icebin_bc_temp);
 }
 
-void IBSurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+void IBSurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
   result.copy_from(icebin_bc_waterfraction);
 }
 
@@ -136,22 +149,8 @@ void IBSurfaceModel::define_variables_impl(const std::set<std::string> &vars, co
 
 void IBSurfaceModel::write_variables_impl(const std::set<std::string> &vars, const PIO &nc) {
   for (auto vec=vecs.begin(); vec != vecs.end(); ++vec) {
-    if (set_contains(vars, vec->first))
-      vec->second->write(nc, nctype);
-    }
+    if (set_contains(vars, vec->first)) vec->second->write(nc);
   }
-}
-
-// ================================================================
-/** Assumes icebin_deltah has been set.  Sets icebin_bc_xxx variables accordingly. */
-void IBSurfaceModel::construct_dirichlet_bc(pism::IceModelVec2S &surface_senth)
-{
-    AccessList access{
-        &icebin_deltah, &surface_senth,    // IN
-        &icebin_bc_senth, &icebin_bc_temp, &icebin_bc_waterfraction
-    };
-
-
 }
 
 } // end of namespace surface
