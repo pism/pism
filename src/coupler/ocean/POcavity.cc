@@ -43,8 +43,8 @@ Cavity::Constants::Constants(const Config &config) {
 
   continental_shelf_depth = -800; // threshold between deep ocean and continental shelf
 
-  T_dummy = -1.5 + 273.15; // value for ocean temperature around Antarctica if no other data available FIXME Check
-  S_dummy = 34.5; // value for ocean salinity around Antarctica if no other data available FIXME Check
+  T_dummy = -1.5 + 273.15; // value for ocean temperature around Antarctica if no other data available (cold conditions)
+  S_dummy = 34.7; // value for ocean salinity around Antarctica if no other data available (cold conditions)
 
   earth_grav = config.get_double("constants.standard_gravity");
   rhoi       = config.get_double("constants.ice.density");
@@ -74,8 +74,8 @@ Cavity::Constants::Constants(const Config &config) {
   alpha      = 7.5e-5;       // 1/K
   beta       = 7.7e-4;       // 1/psu
 
-  default_gamma_T    = 2e-5;        // m/s FIXME check!
-  default_overturning_coeff    = 1e6;         // kg−1 s−1 FIXME check!
+  default_gamma_T    = 2e-5;        // m/s, best fit value in paper 
+  default_overturning_coeff    = 1e6;         // kg−1 s−1, best fit value in paper 
 
   // for shelf cells where normal box model is not calculated,
   // used in calculate_basal_melt_missing_cells(), compare POConstantPIK
@@ -112,7 +112,7 @@ Cavity::Cavity(IceGrid::ConstPtr g)
 
   process_options();
 
-  exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in ocean cavity model"); // FIXME set always?
+  exicerises_set = options::Bool("-exclude_icerises", "exclude ice rises in ocean cavity model"); 
 
   std::map<std::string, std::string> standard_names;
   set_vec_parameters(standard_names);
@@ -217,10 +217,10 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   m_variables.push_back(&overturning);
 
   basalmeltrate_shelf.create(m_grid, "basalmeltrate_shelf", WITHOUT_GHOSTS);
-  basalmeltrate_shelf.set_attrs("model_state", "SIMPEL sub-shelf melt rate", "m/s",
-                                "SIMPEL sub-shelf melt rate");
-  //FIXME unit in field is kg m-2 a-1, but the written unit is m per a
+  basalmeltrate_shelf.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s",
+                                "PICO sub-shelf melt rate");
   basalmeltrate_shelf.metadata().set_string("glaciological_units", "m year-1");
+  basalmeltrate_shelf.write_in_glaciological_units = true;
   m_variables.push_back(&basalmeltrate_shelf);
 
   // TODO: this may be initialized to NA, it should only have valid values below ice shelves.
@@ -429,9 +429,8 @@ void Cavity::update_impl(double my_t, double my_dt) {
   calculate_basal_melt_missing_cells(cc);  //Assumes that mass flux is proportional to the shelf-base heat flux.
 
   m_shelfbtemp.copy_from(T_pressure_melting); // in-situ freezing point at the ice shelf base
-  //
-  basalmeltrate_shelf.scale(cc.rhoi);
-  m_shelfbmassflux.copy_from(basalmeltrate_shelf); //TODO Check if scaling with ice density
+  m_shelfbmassflux.copy_from(basalmeltrate_shelf); 
+  m_shelfbmassflux.scale(cc.rhoi);
 }
 
 // To be used solely in round_basins()
@@ -937,7 +936,6 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
         // FIXME: is there a more elegant way to ensure float?
         if ( ((n*1.0-k*1.0-1.0)/(n*1.0) <= pow((1.0-r),2)) && (pow((1.0-r), 2) <= (n*1.0-k*1.0)/n*1.0) ){
 
-
           // ensure that boxnumber of a cell cannot be bigger than the distance to the grounding line
           if (DistGL(i,j) < k+1) {
             ocean_box_mask(i,j) = DistGL(i,j);
@@ -1023,7 +1021,7 @@ void Cavity::set_ocean_input_fields(const Constants &cc) {
     const int i = p.i(), j = p.j();
 
     // make sure all temperatures are zero at the beginning of each timestep
-    Toc(i,j) = 273.15; // in K //FIXME delete?
+    Toc(i,j) = 273.15; // in K 
     Toc_box0(i,j) = 273.15;  // in K
     Soc_box0(i,j) = 0.0; // in psu
 
