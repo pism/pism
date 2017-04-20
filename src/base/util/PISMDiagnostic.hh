@@ -278,7 +278,7 @@ public:
 
   virtual void init(const std::string &filename);
 
-  virtual std::string get_string(const std::string &name);
+  const VariableMetadata &metadata() const;
 
 protected:
   //! the grid

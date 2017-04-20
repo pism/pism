@@ -2112,13 +2112,13 @@ void IceModel::list_diagnostics() {
   m_log->message(1, "======== Available time-series ========\n");
 
   for (auto d : m_ts_diagnostics) {
-    TSDiagnostic::Ptr diag = d.second;
+    const VariableMetadata &m = d.second->metadata();
 
     std::string
       name                = d.first,
-      long_name           = diag->get_string("long_name"),
-      units               = diag->get_string("units"),
-      glaciological_units = diag->get_string("glaciological_units");
+      long_name           = m.get_string("long_name"),
+      units               = m.get_string("units"),
+      glaciological_units = m.get_string("glaciological_units");
 
     if (not glaciological_units.empty()) {
       units = glaciological_units;

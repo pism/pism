@@ -189,8 +189,8 @@ void TSDiagnostic::init(const std::string &filename) {
   }
 }
 
-std::string TSDiagnostic::get_string(const std::string &name) {
-  return m_ts->metadata().get_string(name);
+const VariableMetadata &TSDiagnostic::metadata() const {
+  return m_ts->metadata();
 }
 
 
