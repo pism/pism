@@ -20,7 +20,7 @@
 // Please cite this model as 
 // Antarctic sub-shelf melt rates via PICO
 // R. Reese, T. Albrecht, M. Mengel, X. Asay-Davis, R. Winkelmann 
-// (in prep.)
+// (subm.)
 
 
 #include <gsl/gsl_math.h>
@@ -171,6 +171,11 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   ocean_mask.set_attrs("model_state", "mask displaying open ocean","", "");
   m_variables.push_back(&ocean_mask);
 
+  // mask displaying subglacial lakes - floating regions with no connection to the ocean
+  lake_mask.create(m_grid, "lake_mask", WITH_GHOSTS);
+  lake_mask.set_attrs("model_state", "mask displaying subglacial lakes","", "");
+  m_variables.push_back(&lake_mask);
+
   // mask with distance (in boxes) to grounding line
   DistGL.create(m_grid, "DistGL", WITH_GHOSTS);
   DistGL.set_attrs("model_state", "mask displaying distance to grounding line","", "");
@@ -296,6 +301,7 @@ void Cavity::define_model_state_impl(const PIO &output) const {
   icerise_mask.define(output);
   ocean_contshelf_mask.define(output);
   ocean_mask.define(output);
+  lake_mask.define(output);
   DistGL.define(output);
   DistIF.define(output);
   Soc.define(output);
@@ -317,6 +323,7 @@ void Cavity::write_model_state_impl(const PIO &output) const {
   icerise_mask.write(output);
   ocean_contshelf_mask.write(output);
   ocean_mask.write(output);
+  lake_mask.write(output);
   DistGL.write(output);
   DistIF.write(output);
   Soc.write(output);
@@ -409,6 +416,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
   if (exicerises_set) {
     identifyMASK(icerise_mask,"icerises");}
   identifyMASK(ocean_mask,"ocean");
+  identifyMASK(lake_mask,"lakes");
   round_basins();
   compute_distances();
   identify_ocean_box_mask(cc);
@@ -497,6 +505,7 @@ void Cavity::round_basins() {
 //! ocean_continental_shelf: ocean on the continental shelf without detached submarine islands
 //! icerises: grounded ice not connected to the main ice body
 //! ocean: ocean without holes in ice shelves, extends beyond continental shelf
+//! lakes: subglacial lakes without access to the ocean
 //! We here use a search algorithm, starting at the center or the boundary of the domain.
 //! We iteratively look for regions which satisfy one of the three types named above.
 void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
@@ -525,8 +534,8 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
   if ((masktype=="ocean_continental_shelf" || masktype=="icerises") && (seed_x >= m_grid->xs()) && (seed_x < m_grid->xs()+m_grid->xm()) && (seed_y >= m_grid->ys())&& (seed_y < m_grid->ys()+m_grid->ym())){
     inputmask(seed_x,seed_y)=imask_inner;
   }
-  else if (masktype=="ocean"){
-    //assume that any point on the domain boundary belongs to the open ocean
+  else if (masktype=="ocean" || masktype=="lakes"){
+    //assume that some point on the domain boundary belongs to the open ocean
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       if ((i==0) | (j==0) | (i>(Mx-2)) | (j>(My-2))){
@@ -555,6 +564,9 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
       }
       else if (masktype=="ocean"){
         masktype_condition = (m_mask(i,j)==maskocean);
+      }
+      else if (masktype=="lakes"){
+        masktype_condition = (m_mask(i,j)==maskocean || m_mask(i,j)==maskfloating);
       }
 
       if (masktype_condition && inputmask(i,j)==imask_unidentified &&
@@ -861,6 +873,7 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   list.add(DistGL);
   list.add(DistIF);
   list.add(ocean_box_mask);
+  list.add(lake_mask);
   list.add(m_mask);
 
   for (Points p(*m_grid); p; p.next()) {
@@ -939,11 +952,13 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   } // for
 
   // set all floating cells which have no ocean_box_mask value to numberOfBoxes+1.
+  // do not apply this to cells that are subglacial lakes, 
+  // since they are not accessible for ocean waters and hence should not be treated in this model
   // For these, beckmann-goose melting will be applied, see calculate_basal_melt_missing_cells
   // those are the cells which are not reachable from grounding line or calving front.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (m_mask(i,j)==maskfloating && ocean_box_mask(i,j)==0){ // floating
+    if (m_mask(i,j)==maskfloating && ocean_box_mask(i,j)==0 && lake_mask(i,j)!=1){ // floating, no sub-glacial lake
       ocean_box_mask(i,j) = numberOfBoxes + 1;
     }
 

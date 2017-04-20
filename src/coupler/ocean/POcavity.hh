@@ -79,6 +79,7 @@ private:
                   ocean_box_mask,
                   ocean_contshelf_mask,
                   ocean_mask,
+                  lake_mask,
                   DistGL,
                   DistIF,
                   Soc,
