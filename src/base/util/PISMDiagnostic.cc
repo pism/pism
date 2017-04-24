@@ -165,33 +165,35 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
     m_sys(g->ctx()->unit_system()),
     m_ts(new DiagnosticTimeseries(*g, name, g->ctx()->config()->get_string("time.dimension_name"))) {
 
+  m_current_time = 0;
+
   m_ts->dimension_metadata().set_string("units", g->ctx()->time()->CF_units_string());
 }
 
 TSDiagnostic::~TSDiagnostic() {
 }
 
+void TSDiagnostic::update(double t0, double t1) {
+  this->update_impl(t0, t1);
+}
+
+
 void TSDiagnostic::save(double a, double b) {
-  if (m_ts) {
-    m_ts->interp(a, b);
-  }
+  m_ts->interp(a, b);
 }
 
 void TSDiagnostic::flush() {
-  if (m_ts) {
-    m_ts->flush();
-  }
+  m_ts->flush();
 }
 
-void TSDiagnostic::init(const std::string &filename) {
-  if (m_ts) {
-    m_ts->init(filename);
-  }
+void TSDiagnostic::init(const std::string &output_filename,
+                        std::shared_ptr<std::vector<double>> requested_times) {
+  m_ts->init(output_filename);
+  m_times = requested_times;
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {
   return m_ts->metadata();
 }
-
 
 } // end of namespace pism

@@ -826,7 +826,7 @@ VolumeGlacierized::VolumeGlacierized(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void VolumeGlacierized::update(double a, double b) {
+void VolumeGlacierized::update_impl(double a, double b) {
 
   double value = model->ice_volume(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -841,7 +841,7 @@ VolumeNonGlacierized::VolumeNonGlacierized(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void VolumeNonGlacierized::update(double a, double b) {
+void VolumeNonGlacierized::update_impl(double a, double b) {
 
   double value = model->ice_volume(0.0);
 
@@ -856,7 +856,7 @@ SeaLevelVolume::SeaLevelVolume(const IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void SeaLevelVolume::update(double a, double b) {
+void SeaLevelVolume::update_impl(double a, double b) {
 
   double value = model->sealevel_volume(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -866,12 +866,12 @@ void SeaLevelVolume::update(double a, double b) {
 VolumeRateOfChangeGlacierized::VolumeRateOfChangeGlacierized(IceModel *m)
   : TSDiag<IceModel>(m, "volume_rate_of_change_glacierized") {
 
-  m_ts->rate_of_change = true;
+  // FIXME_
   m_ts->metadata().set_string("units", "m3 s-1");
   m_ts->metadata().set_string("long_name", "rate of change of the ice volume in glacierized areas");
 }
 
-void VolumeRateOfChangeGlacierized::update(double a, double b) {
+void VolumeRateOfChangeGlacierized::update_impl(double a, double b) {
 
   double value = model->ice_volume(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -882,13 +882,13 @@ void VolumeRateOfChangeGlacierized::update(double a, double b) {
 VolumeRateOfChangeNonGlacierized::VolumeRateOfChangeNonGlacierized(IceModel *m)
   : TSDiag<IceModel>(m, "volume_rate_of_change_nonglacierized") {
 
-  m_ts->rate_of_change = true;
+  // FIXME_
   m_ts->metadata().set_string("units", "m3 s-1");
   m_ts->metadata().set_string("long_name",
                               "rate of change of the ice volume, including seasonal cover");
 }
 
-void VolumeRateOfChangeNonGlacierized::update(double a, double b) {
+void VolumeRateOfChangeNonGlacierized::update_impl(double a, double b) {
 
   // note that "value" below *should* be the ice volume
   m_ts->append(model->ice_volume(0.0), a, b);
@@ -903,7 +903,7 @@ AreaGlacierized::AreaGlacierized(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void AreaGlacierized::update(double a, double b) {
+void AreaGlacierized::update_impl(double a, double b) {
 
   double value = model->ice_area(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -918,7 +918,7 @@ MassGlacierized::MassGlacierized(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void MassGlacierized::update(double a, double b) {
+void MassGlacierized::update_impl(double a, double b) {
 
   double value = model->ice_volume(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -933,7 +933,7 @@ MassNonGlacierized::MassNonGlacierized(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void MassNonGlacierized::update(double a, double b) {
+void MassNonGlacierized::update_impl(double a, double b) {
 
   double value = model->ice_volume(0.0);
 
@@ -943,12 +943,12 @@ void MassNonGlacierized::update(double a, double b) {
 MassRateOfChangeGlacierized::MassRateOfChangeGlacierized(IceModel *m)
   : TSDiag<IceModel>(m, "mass_rate_of_change_glacierized") {
 
-  m_ts->rate_of_change = true;
+  // FIXME_
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->metadata().set_string("long_name", "rate of change of the mass of ice in glacierized areas");
 }
 
-void MassRateOfChangeGlacierized::update(double a, double b) {
+void MassRateOfChangeGlacierized::update_impl(double a, double b) {
 
   const double
     ice_density = m_grid->ctx()->config()->get_double("constants.ice.density"),
@@ -960,13 +960,13 @@ void MassRateOfChangeGlacierized::update(double a, double b) {
 MassRateOfChangeNonGlacierized::MassRateOfChangeNonGlacierized(IceModel *m)
   : TSDiag<IceModel>(m, "mass_rate_of_change_nonglacierized") {
 
-  m_ts->rate_of_change = true;
+  // FIXME_
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->metadata().set_string("long_name",
                               "rate of change of the mass of ice, including seasonal cover");
 }
 
-void MassRateOfChangeNonGlacierized::update(double a, double b) {
+void MassRateOfChangeNonGlacierized::update_impl(double a, double b) {
 
   const double ice_density = m_grid->ctx()->config()->get_double("constants.ice.density");
 
@@ -982,7 +982,7 @@ VolumeGlacierizedTemperate::VolumeGlacierizedTemperate(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void VolumeGlacierizedTemperate::update(double a, double b) {
+void VolumeGlacierizedTemperate::update_impl(double a, double b) {
 
   double value = model->ice_volume_temperate(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -997,7 +997,7 @@ VolumeNonGlacierizedTemperate::VolumeNonGlacierizedTemperate(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void VolumeNonGlacierizedTemperate::update(double a, double b) {
+void VolumeNonGlacierizedTemperate::update_impl(double a, double b) {
 
   double value = model->ice_volume_temperate(0.0);
 
@@ -1013,7 +1013,7 @@ VolumeGlacierizedCold::VolumeGlacierizedCold(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void VolumeGlacierizedCold::update(double a, double b) {
+void VolumeGlacierizedCold::update_impl(double a, double b) {
 
   double value = model->ice_volume_cold(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -1028,7 +1028,7 @@ VolumeNonGlacierizedCold::VolumeNonGlacierizedCold(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void VolumeNonGlacierizedCold::update(double a, double b) {
+void VolumeNonGlacierizedCold::update_impl(double a, double b) {
 
   double value = model->ice_volume_cold(0.0);
 
@@ -1043,7 +1043,7 @@ AreaGlacierizedTemperateBase::AreaGlacierizedTemperateBase(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void AreaGlacierizedTemperateBase::update(double a, double b) {
+void AreaGlacierizedTemperateBase::update_impl(double a, double b) {
 
   double value = model->ice_area_temperate(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -1058,7 +1058,7 @@ AreaGlacierizedColdBase::AreaGlacierizedColdBase(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void AreaGlacierizedColdBase::update(double a, double b) {
+void AreaGlacierizedColdBase::update_impl(double a, double b) {
 
   double value = model->ice_area_cold(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -1073,7 +1073,7 @@ EnthalpyGlacierized::EnthalpyGlacierized(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void EnthalpyGlacierized::update(double a, double b) {
+void EnthalpyGlacierized::update_impl(double a, double b) {
 
   double value = energy::total_ice_enthalpy(m_config->get_double("output.ice_free_thickness_standard"),
                                             model->energy_balance_model()->enthalpy(),
@@ -1091,7 +1091,7 @@ EnthalpyNonGlacierized::EnthalpyNonGlacierized(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void EnthalpyNonGlacierized::update(double a, double b) {
+void EnthalpyNonGlacierized::update_impl(double a, double b) {
 
   double value = energy::total_ice_enthalpy(0.0,
                                             model->energy_balance_model()->enthalpy(),
@@ -1109,7 +1109,7 @@ AreaGlacierizedGrounded::AreaGlacierizedGrounded(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void AreaGlacierizedGrounded::update(double a, double b) {
+void AreaGlacierizedGrounded::update_impl(double a, double b) {
 
   double value = model->ice_area_grounded(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -1124,7 +1124,7 @@ AreaGlacierizedShelf::AreaGlacierizedShelf(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void AreaGlacierizedShelf::update(double a, double b) {
+void AreaGlacierizedShelf::update_impl(double a, double b) {
 
   double value = model->ice_area_floating(m_config->get_double("output.ice_free_thickness_standard"));
 
@@ -1140,7 +1140,7 @@ TimeStepLength::TimeStepLength(const IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void TimeStepLength::update(double a, double b) {
+void TimeStepLength::update_impl(double a, double b) {
 
   m_ts->append(model->dt(), a, b);
 }
@@ -1153,7 +1153,7 @@ MaxDiffusivity::MaxDiffusivity(const IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void MaxDiffusivity::update(double a, double b) {
+void MaxDiffusivity::update_impl(double a, double b) {
   double value = model->stress_balance()->max_diffusivity();
 
   m_ts->append(value, a, b);
@@ -1162,13 +1162,13 @@ void MaxDiffusivity::update(double a, double b) {
 MassFluxSurface::MassFluxSurface(const IceModel *m)
   : TSDiag<IceModel>(m, "surface_ice_flux") {
 
-  m_ts->rate_of_change = true;
+  // FIXME_
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->metadata().set_string("long_name", "total over ice domain of top surface ice mass flux");
   m_ts->metadata().set_string("comment", "positive means ice gain");
 }
 
-void MassFluxSurface::update(double a, double b) {
+void MassFluxSurface::update_impl(double a, double b) {
 
   // FIXME: units
   m_ts->append(model->geometry_evolution().top_surface_mass_balance().sum(), a, b);
@@ -1177,13 +1177,13 @@ void MassFluxSurface::update(double a, double b) {
 MassFluxBasalGrounded::MassFluxBasalGrounded(const IceModel *m)
   : TSDiag<IceModel>(m, "grounded_basal_ice_flux") {
 
-  m_ts->rate_of_change = true;
+  // FIXME_
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->metadata().set_string("long_name", "total over grounded ice domain of basal mass flux");
   m_ts->metadata().set_string("comment", "positive means ice gain");
 }
 
-void MassFluxBasalGrounded::update(double a, double b) {
+void MassFluxBasalGrounded::update_impl(double a, double b) {
   // FIXME: units
   m_ts->append(model->geometry_evolution().bottom_surface_mass_balance().sum(), a, b);
 }
@@ -1191,26 +1191,26 @@ void MassFluxBasalGrounded::update(double a, double b) {
 MassFluxBasalFloating::MassFluxBasalFloating(const IceModel *m)
   : TSDiag<IceModel>(m, "sub_shelf_ice_flux") {
 
-  m_ts->rate_of_change = true;
+  // FIXME_
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->metadata().set_string("long_name", "total sub-shelf ice flux");
   m_ts->metadata().set_string("comment", "positive means ice gain");
 }
 
-void MassFluxBasalFloating::update(double a, double b) {
+void MassFluxBasalFloating::update_impl(double a, double b) {
   m_ts->append(0, a, b);        // FIXME_
 }
 
 MassFluxDischarge::MassFluxDischarge(const IceModel *m)
   : TSDiag<IceModel>(m, "discharge_flux") {
 
-  m_ts->rate_of_change = true;
+  // FIXME_
   m_ts->metadata().set_string("units", "kg s-1");
   m_ts->metadata().set_string("long_name", "discharge (calving & icebergs) flux");
   m_ts->metadata().set_string("comment", "positive means ice gain");
 }
 
-void MassFluxDischarge::update(double a, double b) {
+void MassFluxDischarge::update_impl(double a, double b) {
   m_ts->append(0, a, b);        // FIXME_
 }
 
@@ -1281,7 +1281,7 @@ VolumeGlacierizedGrounded::VolumeGlacierizedGrounded(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void VolumeGlacierizedGrounded::update(double a, double b) {
+void VolumeGlacierizedGrounded::update_impl(double a, double b) {
   double volume = 0.0;
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -1315,7 +1315,7 @@ VolumeGlacierizedShelf::VolumeGlacierizedShelf(IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void VolumeGlacierizedShelf::update(double a, double b) {
+void VolumeGlacierizedShelf::update_impl(double a, double b) {
   double volume = 0.0;
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -1363,7 +1363,7 @@ MaxHorizontalVelocity::MaxHorizontalVelocity(const IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void MaxHorizontalVelocity::update(double a, double b) {
+void MaxHorizontalVelocity::update_impl(double a, double b) {
 
   CFLData cfl = model->stress_balance()->max_timestep_cfl_3d();
 
@@ -1378,7 +1378,7 @@ MassNotDisplacingSeaWater::MassNotDisplacingSeaWater(const IceModel *m)
   m_ts->metadata().set_double("valid_min", 0.0);
 }
 
-void MassNotDisplacingSeaWater::update(double a, double b) {
+void MassNotDisplacingSeaWater::update_impl(double a, double b) {
 
   const double
     ice_density = m_config->get_double("constants.ice.density"),

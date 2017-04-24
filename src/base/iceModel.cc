@@ -127,6 +127,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
     m_dischange(m_grid, "discharge", WITH_GHOSTS),
+    m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
 

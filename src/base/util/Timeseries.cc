@@ -314,7 +314,6 @@ DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid &g, const std::string &
 
   buffer_size = (size_t)g.ctx()->config()->get_double("output.timeseries_buffer_size");
   m_start = 0;
-  rate_of_change = false;
   m_dimension.set_string("calendar", g.ctx()->time()->calendar());
   m_dimension.set_string("long_name", "time");
   m_dimension.set_string("axis", "T");
@@ -332,10 +331,6 @@ DiagnosticTimeseries::~DiagnosticTimeseries() {
  * append() has to be called with the "cumulative" quantity as the V argument.
  */
 void DiagnosticTimeseries::append(double V, double /*a*/, double b) {
-
-  if (rate_of_change && m_v.empty()) {
-    m_v_previous = V;
-  }
 
   // append to the interpolation buffer
   m_t.push_back(b);
@@ -375,15 +370,6 @@ void DiagnosticTimeseries::interp(double a, double b) {
     // the value to report
     value = v_current;
 
-  if (rate_of_change) {
-    // use backward-in-time finite difference to compute the rate of change:
-    value = (v_current - m_v_previous) / (b - a);
-
-    // remember the value of the "cumulative" quantity for differencing during
-    // the next call:
-    m_v_previous = v_current;
-  }
-
   // use the right endpoint as the 'time' record (the midpoint is also an option)
   m_time.push_back(b);
   m_values.push_back(value);
@@ -411,9 +397,7 @@ void DiagnosticTimeseries::init(const std::string &filename) {
 
       if (var_exists) {
         nc.get_1d_var(name(), len - 1, 1, tmp);
-        // NOTE: this is WRONG if rate_of_change == true!
         m_v.push_back(tmp[0]);
-        m_v_previous = tmp[0];
       }
     }
   }

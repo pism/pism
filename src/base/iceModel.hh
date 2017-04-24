@@ -388,11 +388,12 @@ protected:
   bool m_save_ts;                 //! true if the user requested time-series output
   //! file to write time-series to
   std::string m_ts_filename;
-  //! The history attribute in the -ts_file. Read from -ts_file if -ts_append is set, otherwise
-  //! empty.
-  std::vector<double> m_ts_times; //! times requested
-  unsigned int m_current_ts;      //! index of the current time
-  std::set<std::string> m_ts_vars;                //! variables requested
+  //! times requested
+  std::shared_ptr<std::vector<double>> m_ts_times;
+  //! index of the current time
+  unsigned int m_current_ts;
+  //! variables requested
+  std::set<std::string> m_ts_vars;
   void init_timeseries();
   void flush_timeseries();
   void write_timeseries();

@@ -333,7 +333,7 @@ class EnergyModel_liquified_ice_volume : public TSDiag<EnergyModel> { // FIXME_
 public:
   EnergyModel_liquified_ice_volume(const EnergyModel *m);
 protected:
-  void update(double a, double b);
+  void update_impl(double a, double b);
 };
 
 EnergyModel_liquified_ice_volume::EnergyModel_liquified_ice_volume(const EnergyModel *m)
@@ -344,7 +344,7 @@ EnergyModel_liquified_ice_volume::EnergyModel_liquified_ice_volume(const EnergyM
                               "total volume of ice liquified during a reporting interval");
 }
 
-void EnergyModel_liquified_ice_volume::update(double a, double b) {
+void EnergyModel_liquified_ice_volume::update_impl(double a, double b) {
   m_ts->append(model->cumulative_stats().liquified_ice_volume, a, b);
 }
 

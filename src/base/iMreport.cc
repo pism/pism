@@ -246,8 +246,7 @@ void IceModel::print_summary(bool tempAndAge) {
 //! Print a line to stdout which summarizes the state of the modeled ice sheet at the end of the time step.
 /*!
 This method is for casual inspection of model behavior, and to provide the user
-with some indication of the state of the run.  Use of DiagnosticTimeseries is
-superior for precise analysis of model output.
+with some indication of the state of the run.
 
 Generally, two lines are printed to stdout, the first starting with a space
 and the second starting with the character 'S' in the left-most column (column 1).

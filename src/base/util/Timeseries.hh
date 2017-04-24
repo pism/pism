@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -176,12 +176,10 @@ public:
 
   size_t buffer_size;
   std::string output_filename;
-  bool rate_of_change;
 
 protected:
   size_t m_start;
   std::deque<double> m_t, m_v;
-  double m_v_previous;
 };
 
 } // end of namespace pism

@@ -64,7 +64,7 @@ void IceModel::init_timeseries() {
   m_save_ts = true;
 
   try {
-    m_time->parse_times(times, m_ts_times);
+    m_time->parse_times(times, *m_ts_times);
   } catch (RuntimeError &e) {
     e.add_context("parsing the -ts_times argument %s", times->c_str());
     throw;
@@ -101,7 +101,7 @@ void IceModel::init_timeseries() {
     if (time_exists == true) {
       file.inq_dim_limits(time_name, NULL, &time_max);
 
-      while (m_current_ts < m_ts_times.size() && m_ts_times[m_current_ts] < time_max) {
+      while (m_current_ts < m_ts_times->size() && (*m_ts_times)[m_current_ts] < time_max) {
         m_current_ts++;
       }
 
@@ -120,26 +120,26 @@ void IceModel::init_timeseries() {
 
   // set the output file:
   for (auto d : m_ts_diagnostics) {
-    d.second->init(ts_file);
+    d.second->init(ts_file, m_ts_times);
   }
 
   // ignore times before (and including) the beginning of the run:
-  while (m_current_ts < m_ts_times.size() && m_ts_times[m_current_ts] < m_time->start()) {
+  while (m_current_ts < m_ts_times->size() && (*m_ts_times)[m_current_ts] < m_time->start()) {
     m_current_ts++;
   }
 
-  if (m_ts_times.size() == m_current_ts) {
+  if (m_ts_times->size() == m_current_ts) {
     m_save_ts = false;
     return;
   }
 
   // discard requested times before the beginning of the run
-  std::vector<double> tmp(m_ts_times.size() - m_current_ts);
+  std::vector<double> tmp(m_ts_times->size() - m_current_ts);
   for (unsigned int k = 0; k < tmp.size(); ++k) {
-    tmp[k] = m_ts_times[m_current_ts + k];
+    tmp[k] = (*m_ts_times)[m_current_ts + k];
   }
 
-  m_ts_times = tmp;
+  *m_ts_times = tmp;
   m_current_ts = 0;
 }
 
@@ -152,12 +152,12 @@ void IceModel::write_timeseries() {
   }
 
   // return if wrote all the records already
-  if (m_current_ts == m_ts_times.size()) {
+  if (m_current_ts == m_ts_times->size()) {
     return;
   }
 
   // return if did not yet reach the time we need to save at
-  if (m_ts_times[m_current_ts] > m_time->current()) {
+  if ((*m_ts_times)[m_current_ts] > m_time->current()) {
     return;
   }
 
@@ -171,7 +171,7 @@ void IceModel::write_timeseries() {
 
 
   // Interpolate to put them on requested times:
-  for (; m_current_ts < m_ts_times.size() && m_ts_times[m_current_ts] <= m_time->current(); m_current_ts++) {
+  for (; m_current_ts < m_ts_times->size() && (*m_ts_times)[m_current_ts] <= m_time->current(); m_current_ts++) {
 
     // the very first time (current_ts == 0) defines the left endpoint of the
     // first time interval; we don't write a report at that time
@@ -183,7 +183,7 @@ void IceModel::write_timeseries() {
       TSDiagnostic::Ptr diag = m_ts_diagnostics[d];
 
       if (diag) {
-        diag->save(m_ts_times[m_current_ts - 1], m_ts_times[m_current_ts]);
+        diag->save((*m_ts_times)[m_current_ts - 1], (*m_ts_times)[m_current_ts]);
       }
     }
   }
@@ -474,7 +474,7 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
     return MaxTimestep("reporting (-ts_times)");
   }
 
-  return reporting_max_timestep(m_ts_times, my_t, "reporting (-ts_times)");
+  return reporting_max_timestep(*m_ts_times, my_t, "reporting (-ts_times)");
 }
 
 //! Flush scalar time-series.

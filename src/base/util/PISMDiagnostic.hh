@@ -270,17 +270,20 @@ public:
   TSDiagnostic(IceGrid::ConstPtr g, const std::string &name);
   virtual ~TSDiagnostic();
 
-  virtual void update(double a, double b) = 0;
+  void update(double a, double b);
 
-  virtual void save(double a, double b);
+  void save(double a, double b);
 
-  virtual void flush();
+  void flush();
 
-  virtual void init(const std::string &filename);
+  void init(const std::string &output_filename,
+            std::shared_ptr<std::vector<double>> requested_times);
 
   const VariableMetadata &metadata() const;
 
 protected:
+  virtual void update_impl(double a, double b) = 0;
+
   //! the grid
   IceGrid::ConstPtr m_grid;
   //! Configuration flags and parameters
@@ -288,6 +291,8 @@ protected:
   //! the unit system
   const units::System::Ptr m_sys;
   std::unique_ptr<DiagnosticTimeseries> m_ts;
+  std::shared_ptr<std::vector<double>> m_times;
+  unsigned int m_current_time;
 };
 
 template <class Model>

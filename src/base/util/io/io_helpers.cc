@@ -1264,11 +1264,9 @@ void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
                   metadata.get_string("units"),
                   metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
-    std::vector<unsigned int> start(2), count(2);
-    start[0] = static_cast<unsigned int>(t_start);
-    start[1] = 0;
-    count[0] = static_cast<unsigned int>(tmp.size()) / 2;
-    count[1] = 2;
+    std::vector<unsigned int>
+      start{static_cast<unsigned int>(t_start), 0},
+      count{static_cast<unsigned int>(tmp.size()) / 2, 2};
 
     nc.enddef();
     nc.put_vara_double(name, start, count, &tmp[0]);
