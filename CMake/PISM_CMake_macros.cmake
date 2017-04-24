@@ -170,19 +170,6 @@ macro(pism_find_prerequisites)
     find_package (PNetCDF REQUIRED)
   endif()
 
-  if (Pism_USE_PARALLEL_HDF5)
-
-    if (NOT HDF5_FOUND)
-      message(FATAL_ERROR "HDF-5 is required.")
-    endif()
-
-    if(NOT HDF5_IS_PARALLEL)
-      set (Pism_USE_PARALLEL_HDF5 OFF CACHE BOOL "Enables parallel HDF5 I/O." FORCE)
-      message(FATAL_ERROR
-        "Selected HDF-5 library (include: ${HDF5_INCLUDE_DIR}, lib: ${HDF5_LIBRARIES}) does not support parallel I/O.")
-    endif()
-  endif()
-
   if (Pism_USE_PROJ4)
     find_package (PROJ4 REQUIRED)
   endif()
@@ -275,13 +262,6 @@ macro(pism_set_dependencies)
   if (Pism_USE_PNETCDF)
     include_directories (${PNETCDF_INCLUDES})
     list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
-  endif()
-
-  # Put HDF5 includes near the beginning of the list. (It is possible that the system has
-  # more than one HDF5 library installed--- one serial, built with NetCDF, and one parallel.
-  # We want to use the latter.)
-  if (Pism_USE_PARALLEL_HDF5)
-    include_directories (BEFORE ${HDF5_C_INCLUDE_DIR})
   endif()
 
   # Hide distracting CMake variables

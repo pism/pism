@@ -41,10 +41,6 @@ using std::shared_ptr;
 #include "PISMPNCFile.hh"
 #endif
 
-#if (PISM_USE_HDF5==1)
-#include "PISMNC4_HDF5.hh"
-#endif
-
 #include "base/util/error_handling.hh"
 
 namespace pism {
@@ -89,11 +85,6 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
 #if (PISM_USE_PNETCDF==1)
   else if (mode == "pnetcdf") {
     return io::NCFile::Ptr(new io::PNCFile(com));
-  }
-#endif
-#if (PISM_USE_HDF5==1)
-  else if (mode == "hdf5") {
-    return io::NCFile::Ptr(new io::NC4_HDF5(com));
   }
 #endif
   else {
