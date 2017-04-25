@@ -172,8 +172,10 @@ MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(const Routing *m)
                               "cells with mask as ice free land");
 }
 
-void MCHydrology_ice_free_land_loss::update_impl(double a, double b) {
-  m_ts->append(model->m_ice_free_land_loss_cumulative, a, b);
+double MCHydrology_ice_free_land_loss::compute(double a, double b) {
+  (void) a;
+  (void) b;
+  return model->m_ice_free_land_loss_cumulative; // FIXME_
 }
 
 MCHydrology_ocean_loss::MCHydrology_ocean_loss(const Routing *m)
@@ -186,8 +188,10 @@ MCHydrology_ocean_loss::MCHydrology_ocean_loss(const Routing *m)
                               "cells with mask as ocean");
 }
 
-void MCHydrology_ocean_loss::update_impl(double a, double b) {
-  m_ts->append(model->m_ocean_loss_cumulative, a, b);
+double MCHydrology_ocean_loss::compute(double a, double b) {
+  (void) a;
+  (void) b;
+  return model->m_ocean_loss_cumulative; // FIXME_
 }
 
 MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(const Routing *m)
@@ -201,8 +205,10 @@ MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(const R
                               "during time step, and being projected up to zero");
 }
 
-void MCHydrology_negative_thickness_gain::update_impl(double a, double b) {
-  m_ts->append(model->m_negative_thickness_gain_cumulative, a, b);
+double MCHydrology_negative_thickness_gain::compute(double a, double b) {
+  (void) a;
+  (void) b;
+  return model->m_negative_thickness_gain_cumulative;
 }
 
 MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(const Routing *m)
@@ -215,8 +221,10 @@ MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(const Routing *m)
                               "cells inside the null strip");
 }
 
-void MCHydrology_null_strip_loss::update_impl(double a, double b) {
-  m_ts->append(model->m_null_strip_loss_cumulative, a, b);
+double MCHydrology_null_strip_loss::compute(double a, double b) {
+  (void) a;
+  (void) b;
+  return model->m_null_strip_loss_cumulative; // FIXME_
 }
 
 } // end of namespace hydrology

@@ -169,24 +169,6 @@ void IceModel::write_timeseries() {
     }
   }
 
-
-  // Interpolate to put them on requested times:
-  for (; m_current_ts < m_ts_times->size() && (*m_ts_times)[m_current_ts] <= m_time->current(); m_current_ts++) {
-
-    // the very first time (current_ts == 0) defines the left endpoint of the
-    // first time interval; we don't write a report at that time
-    if (m_current_ts == 0) {
-      continue;
-    }
-
-    for (auto d : m_ts_vars) {
-      TSDiagnostic::Ptr diag = m_ts_diagnostics[d];
-
-      if (diag) {
-        diag->save((*m_ts_times)[m_current_ts - 1], (*m_ts_times)[m_current_ts]);
-      }
-    }
-  }
   m_energy_model->reset_cumulative_stats();
 }
 

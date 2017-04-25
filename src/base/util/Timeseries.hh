@@ -171,11 +171,9 @@ public:
   void init(const std::string &filename);
   void append(double V, double a, double b);
   void interp(double a, double b);
-  void reset();
-  void flush();
+  void flush(const std::string &output_filename);
 
   size_t buffer_size;
-  std::string output_filename;
 
 protected:
   size_t m_start;

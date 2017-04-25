@@ -321,7 +321,6 @@ DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid &g, const std::string &
 
 //! Destructor; makes sure that everything is written to a file.
 DiagnosticTimeseries::~DiagnosticTimeseries() {
-  flush();
 }
 
 //! Adds the (t,v) pair to the interpolation buffer.
@@ -377,10 +376,6 @@ void DiagnosticTimeseries::interp(double a, double b) {
   // save the time bounds
   m_time_bounds.push_back(a);
   m_time_bounds.push_back(b);
-
-  if (m_time.size() == buffer_size) {
-    flush();
-  }
 }
 
 void DiagnosticTimeseries::init(const std::string &filename) {
@@ -402,27 +397,19 @@ void DiagnosticTimeseries::init(const std::string &filename) {
     }
   }
 
-  output_filename = filename;
   m_start = len;
 }
 
 
 //! Writes data to a file.
-void DiagnosticTimeseries::flush() {
-  unsigned int len = 0;
-
-  // return cleanly if this DiagnosticTimeseries object was created but never
-  // used:
-  if (output_filename.empty()) {
-    return;
-  }
+void DiagnosticTimeseries::flush(const std::string &output_filename) {
 
   if (m_time.empty()) {
     return;
   }
 
   PIO nc(m_com, "netcdf3", output_filename, PISM_READWRITE); // OK to use netcdf3
-  len = nc.inq_dimlen(m_dimension.get_name());
+  unsigned int len = nc.inq_dimlen(m_dimension.get_name());
 
   if (len > 0) {
     double last_time;
@@ -447,15 +434,5 @@ void DiagnosticTimeseries::flush() {
   m_values.clear();
   m_time_bounds.clear();
 }
-
-void DiagnosticTimeseries::reset() {
-  m_time.clear();
-  m_values.clear();
-  m_time_bounds.clear();
-  m_start = 0;
-  m_t.clear();
-  m_v.clear();
-}
-
 
 } // end of namespace pism

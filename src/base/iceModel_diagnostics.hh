@@ -171,7 +171,7 @@ class VolumeGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   VolumeGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total ice volume.
@@ -179,7 +179,7 @@ class VolumeNonGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   VolumeNonGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total ice volume, which is relevant for sea-level
@@ -187,7 +187,7 @@ class SeaLevelVolume : public TSDiag<IceModel> // GOOD
 {
 public:
   SeaLevelVolume(const IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice volume in glacierized areas.
@@ -195,7 +195,7 @@ class VolumeRateOfChangeGlacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
   VolumeRateOfChangeGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice volume.
@@ -203,7 +203,7 @@ class VolumeRateOfChangeNonGlacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
   VolumeRateOfChangeNonGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total ice area.
@@ -211,7 +211,7 @@ class AreaGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   AreaGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total ice mass in glacierized areas.
@@ -219,7 +219,7 @@ class MassGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   MassGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total ice mass.
@@ -227,7 +227,7 @@ class MassNonGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   MassNonGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total mass of the ice not displacing sea water.
@@ -235,7 +235,7 @@ class MassNotDisplacingSeaWater : public TSDiag<IceModel> // GOOD
 {
 public:
   MassNotDisplacingSeaWater(const IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice mass in glacierized areas.
@@ -243,7 +243,7 @@ class MassRateOfChangeGlacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
   MassRateOfChangeGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice mass.
@@ -251,7 +251,7 @@ class MassRateOfChangeNonGlacierized : public TSDiag<IceModel> // FIXME_
 {
 public:
   MassRateOfChangeNonGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total volume of the temperate ice in glacierized areas.
@@ -259,7 +259,7 @@ class VolumeGlacierizedTemperate : public TSDiag<IceModel> // GOOD
 {
 public:
   VolumeGlacierizedTemperate(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total volume of the temperate ice.
@@ -267,7 +267,7 @@ class VolumeNonGlacierizedTemperate : public TSDiag<IceModel> // GOOD
 {
 public:
   VolumeNonGlacierizedTemperate(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total volume of the cold ice in glacierized areas.
@@ -275,7 +275,7 @@ class VolumeGlacierizedCold : public TSDiag<IceModel> // GOOD
 {
 public:
   VolumeGlacierizedCold(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total volume of the cold ice.
@@ -283,7 +283,7 @@ class VolumeNonGlacierizedCold : public TSDiag<IceModel> // GOOD
 {
 public:
   VolumeNonGlacierizedCold(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total area of the temperate ice.
@@ -291,7 +291,7 @@ class AreaGlacierizedTemperateBase : public TSDiag<IceModel> // GOOD
 {
 public:
   AreaGlacierizedTemperateBase(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total area of the cold ice.
@@ -299,7 +299,7 @@ class AreaGlacierizedColdBase : public TSDiag<IceModel> // GOOD
 {
 public:
   AreaGlacierizedColdBase(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total ice enthalpy in glacierized areas.
@@ -307,7 +307,7 @@ class EnthalpyGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   EnthalpyGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total ice enthalpy.
@@ -315,7 +315,7 @@ class EnthalpyNonGlacierized : public TSDiag<IceModel> // GOOD
 {
 public:
   EnthalpyNonGlacierized(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total grounded ice area.
@@ -323,7 +323,7 @@ class AreaGlacierizedGrounded : public TSDiag<IceModel> // GOOD
 {
 public:
   AreaGlacierizedGrounded(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total floating ice area.
@@ -331,7 +331,7 @@ class AreaGlacierizedShelf : public TSDiag<IceModel> // GOOD
 {
 public:
   AreaGlacierizedShelf(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total grounded ice volume.
@@ -339,7 +339,7 @@ class VolumeGlacierizedGrounded : public TSDiag<IceModel> // GOOD
 {
 public:
   VolumeGlacierizedGrounded(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the total floating ice volume.
@@ -347,7 +347,7 @@ class VolumeGlacierizedShelf : public TSDiag<IceModel> // GOOD
 {
 public:
   VolumeGlacierizedShelf(IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Reports the mass continuity time step.
@@ -355,7 +355,7 @@ class TimeStepLength : public TSDiag<IceModel> // GOOD
 {
 public:
   TimeStepLength(const IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Reports maximum diffusivity.
@@ -363,7 +363,7 @@ class MaxDiffusivity : public TSDiag<IceModel> // GOOD
 {
 public:
   MaxDiffusivity(const IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Reports the total surface ice flux.
@@ -371,7 +371,7 @@ class MassFluxSurface : public TSDiag<IceModel> // FIXME_
 {
 public:
   MassFluxSurface(const IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Reports the total basal ice flux over the grounded region.
@@ -379,7 +379,7 @@ class MassFluxBasalGrounded : public TSDiag<IceModel> // FIXME_
 {
 public:
   MassFluxBasalGrounded(const IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Reports the total sub-shelf ice flux.
@@ -387,7 +387,7 @@ class MassFluxBasalFloating : public TSDiag<IceModel> // FIXME_
 {
 public:
   MassFluxBasalFloating(const IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Reports the total discharge flux.
@@ -395,7 +395,7 @@ class MassFluxDischarge : public TSDiag<IceModel> // FIXME_
 {
 public:
   MassFluxDischarge(const IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Reports the maximum horizontal absolute velocity component over the grid.
@@ -403,7 +403,7 @@ class MaxHorizontalVelocity : public TSDiag<IceModel> // GOOD
 {
 public:
   MaxHorizontalVelocity(const IceModel *m);
-  virtual void update_impl(double a, double b);
+  double compute(double a, double b);
 };
 
 //! \brief Computes the 2D height above flotation.

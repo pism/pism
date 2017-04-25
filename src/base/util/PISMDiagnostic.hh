@@ -20,6 +20,7 @@
 #define __PISMDiagnostic_hh
 
 #include <memory>
+#include <deque>
 
 #include "VariableMetadata.hh"
 #include "Timeseries.hh"        // inline code
@@ -272,8 +273,6 @@ public:
 
   void update(double a, double b);
 
-  void save(double a, double b);
-
   void flush();
 
   void init(const std::string &output_filename,
@@ -282,7 +281,10 @@ public:
   const VariableMetadata &metadata() const;
 
 protected:
-  virtual void update_impl(double a, double b) = 0;
+  virtual double compute(double t0, double t1) = 0;
+
+  void evaluate_regular(double t0, double t1);
+  void evaluate_rate(double t0, double t1);
 
   //! the grid
   IceGrid::ConstPtr m_grid;
@@ -290,9 +292,18 @@ protected:
   const Config::ConstPtr m_config;
   //! the unit system
   const units::System::Ptr m_sys;
-  std::unique_ptr<DiagnosticTimeseries> m_ts;
+  //! time series object used to store computed values and metadata
+  std::unique_ptr<Timeseries> m_ts;
+  //! requested times
   std::shared_ptr<std::vector<double>> m_times;
+  //! times and values, for interpolation
+  std::deque<double> m_t, m_v;
+  double m_accumulator;
+  //! index into m_times
   unsigned int m_current_time;
+  //! the name of the file to save to (stored here because it is used by flush(), which is called
+  //! from update())
+  std::string m_output_filename;
 };
 
 template <class Model>
