@@ -115,7 +115,7 @@ protected:
 /*!
  * Helper template wrapping quantities with dedicated storage in diagnostic classes.
  *
- * Note: Make sure that that created diagnostics don't outlast fields that they wrap (or you'll hav
+ * Note: Make sure that that created diagnostics don't outlast fields that they wrap (or you'll have
  * dangling pointers).
  */
 template<class T>
