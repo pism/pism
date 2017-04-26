@@ -55,7 +55,7 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
   create(icebin_enthxfer, "icebin_enthxfer");
   icebin_enthxfer.set_attrs("climate_state",
     "Enthalpy of ice being transferred Stieglitz --> Icebin",
-    "W m-2", "land_ice_surface_specific_mass_balance");
+    "W m-2", "land_ice_surface_specific_enth_balance");
 
 
   // ------- Used only for mass/energy budget
