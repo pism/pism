@@ -96,8 +96,7 @@ public:
   void update(double t, double dt, const EnergyModelInputs &inputs);
 
   const EnergyModelStats& stats() const;
-  const EnergyModelStats& cumulative_stats() const;
-  void reset_cumulative_stats();
+
   const IceModelVec3 & enthalpy() const;
   const IceModelVec2S & basal_melt_rate() const;
 
@@ -140,7 +139,7 @@ protected:
   IceModelVec3 m_work;
   IceModelVec2S m_basal_melt_rate;
 
-  EnergyModelStats m_stats, m_cumulative_stats;
+  EnergyModelStats m_stats;
 
 private:
   std::string m_stdout_flags;

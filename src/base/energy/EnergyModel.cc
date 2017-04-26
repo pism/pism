@@ -262,7 +262,7 @@ void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
     char buffer[50] = "";
 
     m_stats.sum(m_grid->com);
-    m_cumulative_stats += m_stats;
+
     if (m_stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
       const double reduced_accuracy_percentage = 100.0 * (m_stats.reduced_accuracy_counter / (m_grid->Mx() * m_grid->My()));
       const double reporting_threshold = 5.0; // only report if above 5%
@@ -311,16 +311,6 @@ const EnergyModelStats& EnergyModel::stats() const {
   return m_stats;
 }
 
-const EnergyModelStats& EnergyModel::cumulative_stats() const {
-  return m_cumulative_stats;
-}
-
-void EnergyModel::reset_cumulative_stats() {
-  // FIXME_: we should not have any *cumulative* stats: reporting changes during the last time step
-  // is much better.
-  m_cumulative_stats = EnergyModelStats();
-}
-
 const IceModelVec3 & EnergyModel::enthalpy() const {
   return m_ice_enthalpy;
 }
@@ -330,27 +320,28 @@ const IceModelVec2S & EnergyModel::basal_melt_rate() const {
   return m_basal_melt_rate;
 }
 
-/*! @brief Total volume of liquified ice. */
-class EnergyModel_liquified_ice_volume : public TSDiag<EnergyModel> { // FIXME_
+/*! @brief Ice loss "flux" due to ice liquefaction. */
+class LiquifiedIceFlux : public TSDiag<EnergyModel> {
 public:
-  EnergyModel_liquified_ice_volume(const EnergyModel *m);
+  LiquifiedIceFlux(const EnergyModel *m)
+    : TSDiag<EnergyModel>(m, "liquified_ice_flux", RATE_OF_CHANGE) {
+
+    m_ts.metadata().set_string("units", "m3 / second");
+    m_ts.metadata().set_string("glaciological_units", "m3 / year");
+    m_ts.metadata().set_string("long_name",
+                               "rate of ice loss due to liquefaction,"
+                               " averaged over the reporting interval");
+    m_ts.metadata().set_string("comment", "positive means ice loss");
+    m_ts.metadata().set_string("cell_methods", "time: mean");
+  }
 protected:
-  double compute(double a, double b);
+  double compute(double t0, double t1) {
+    (void) t0;
+    (void) t1;
+    // liquified ice volume during the last time step
+    return model->stats().liquified_ice_volume;
+  }
 };
-
-EnergyModel_liquified_ice_volume::EnergyModel_liquified_ice_volume(const EnergyModel *m)
-  : TSDiag<EnergyModel>(m, "liquified_ice_volume") {
-
-  m_ts.metadata().set_string("units", "m3");
-  m_ts.metadata().set_string("long_name",
-                             "total volume of ice liquified during a reporting interval");
-}
-
-double EnergyModel_liquified_ice_volume::compute(double a, double b) {
-  (void) a;
-  (void) b;
-  return model->cumulative_stats().liquified_ice_volume;
-}
 
 namespace diagnostics {
 /*! @brief Report ice enthalpy. */
@@ -403,7 +394,7 @@ std::map<std::string, Diagnostic::Ptr> EnergyModel::diagnostics_impl() const {
 
 std::map<std::string, TSDiagnostic::Ptr> EnergyModel::ts_diagnostics_impl() const {
   return {
-    {"liquified_ice_volume", TSDiagnostic::Ptr(new EnergyModel_liquified_ice_volume(this))}
+    {"liquified_ice_flux", TSDiagnostic::Ptr(new LiquifiedIceFlux(this))}
   };
 }
 

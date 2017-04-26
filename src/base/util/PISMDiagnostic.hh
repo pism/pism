@@ -328,8 +328,8 @@ protected:
 template <class Model>
 class TSDiag : public TSDiagnostic {
 public:
-  TSDiag(const Model *m, const std::string &name)
-    : TSDiagnostic(m->grid(), name, SNAPSHOT), model(m) {
+  TSDiag(const Model *m, const std::string &name, Kind kind = SNAPSHOT)
+    : TSDiagnostic(m->grid(), name, kind), model(m) {
   }
 protected:
   const Model *model;

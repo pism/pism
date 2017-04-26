@@ -76,18 +76,18 @@ void IceModel::init_timeseries() {
   if (not vars.empty()) {
     m_log->message(2, "variables requested: %s\n", set_join(vars, ",").c_str());
 
-    // get the list of available diagnostics
-    std::set<std::string> available;
-    for (auto d : m_diagnostics) {
-      available.insert(d.first);
-    }
-
-    // de-allocate all scalar diagnostics that were not requested
-    for (auto v : available) {
-      if (vars.find(v) == vars.end()) {
-        m_ts_diagnostics.erase(v);
+    std::map<std::string, TSDiagnostic::Ptr> diagnostics;
+    for (auto v : vars) {
+      if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
+        diagnostics[v] = m_ts_diagnostics[v];
+      } else {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "scalar diagnostic '%s' is not available",
+                                      v.c_str());
       }
     }
+    // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
+    m_ts_diagnostics = diagnostics;
   } else {
     // use all diagnostics in m_ts_diagnostics
   }

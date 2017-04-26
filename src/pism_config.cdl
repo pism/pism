@@ -1063,6 +1063,7 @@ netcdf pism_config {
 
     pism_config:output.timeseries.variables = "";
     pism_config:output.timeseries.variables_doc = "Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.";
+    pism_config:output.timeseries.variables_option = "ts_vars";
     pism_config:output.timeseries.variables_type = "string";
 
     pism_config:output.variable_order = "yxz";
