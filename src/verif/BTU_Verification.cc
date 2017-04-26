@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,7 @@
  */
 
 #include "BTU_Verification.hh"
+#include "base/util/PISMTime.hh"
 #include "verif/tests/exactTestK.h"
 #include "verif/tests/exactTestO.h"
 #include "base/util/error_handling.hh"

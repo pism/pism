@@ -1009,12 +1009,12 @@ void define_timeseries(const TimeseriesMetadata& var,
   }
 
   if (not nc.inq_var(name)) {
-    std::vector<std::string> dims(1, dimension_name);
     nc.redef();
-    nc.def_var(name, nctype, dims);
+    nc.def_var(name, nctype, {dimension_name});
   }
 
-  write_attributes(nc, var, PISM_FLOAT, true);
+  const bool use_glaciological_units = true;
+  write_attributes(nc, var, nctype, use_glaciological_units);
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.

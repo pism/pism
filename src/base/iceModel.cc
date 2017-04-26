@@ -168,7 +168,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   // Do not save snapshots by default:
   m_save_snapshots = false;
   // Do not save time-series by default:
-  m_save_ts        = false;
   m_save_extra     = false;
 
   m_fracture = NULL;
@@ -727,7 +726,6 @@ void IceModel::run() {
   enforce_consistency_of_geometry();
 
   // update diagnostics at the beginning of the run:
-  write_timeseries();
   write_extras();
 
   m_log->message(2, "running forward ...\n");
@@ -762,7 +760,6 @@ void IceModel::run() {
     // writing these fields here ensures that we do it after the last time-step
     profiling.begin("io");
     write_snapshot();
-    write_timeseries();
     write_extras();
     write_backup();
     profiling.end("io");
@@ -910,6 +907,11 @@ void IceModel::prune_diagnostics() {
 void IceModel::update_diagnostics(double dt) {
   for (auto d : m_diagnostics) {
     d.second->update(dt);
+  }
+
+  const double time = m_time->current();
+  for (auto d : m_ts_diagnostics) {
+    d.second->update(time - dt, time);
   }
 }
 

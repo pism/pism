@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,6 +30,7 @@
 #include "error_handling.hh"
 #include "PISMConfigInterface.hh"
 #include "MaxTimestep.hh"
+#include "base/util/PISMTime.hh"
 
 namespace pism {
 

@@ -43,25 +43,21 @@ void IceModel::init_timeseries() {
 
   options::String times("-ts_times", "Specifies a MATLAB-style range or a list of requested times");
 
-  options::StringSet vars("-ts_vars", "Specifies a comma-separated list of veriables to save",
-                          "");
+  std::set<std::string> vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
 
   // default behavior is to move the file aside if it exists already; option allows appending
   bool append = options::Bool("-ts_append", "append scalar time-series");
 
-  IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
-
   if (ts_file.is_set() ^ times.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "you need to specity both -ts_file and -ts_times to save diagnostic time-series.");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "you need to specity both -ts_file and -ts_times to save diagnostic time-series.");
   }
 
   // If neither -ts_file nor -ts_times is set, we're done.
-  if (not ts_file.is_set() && not times.is_set()) {
-    m_save_ts = false;
+  if (not ts_file.is_set() and not times.is_set()) {
+    m_ts_diagnostics.clear();
     return;
   }
-
-  m_save_ts = true;
 
   try {
     m_time->parse_times(times, *m_ts_times);
@@ -74,104 +70,42 @@ void IceModel::init_timeseries() {
     throw RuntimeError(PISM_ERROR_LOCATION, "no argument for -ts_times option.");
   }
 
-  m_log->message(2, "saving scalar time-series to '%s'; ",
-             ts_file->c_str());
+  m_log->message(2, "  saving scalar time-series to '%s'\n", ts_file->c_str());
+  m_log->message(2, "  times requested: %s\n", times->c_str());
 
-  m_log->message(2, "times requested: %s\n", times->c_str());
+  if (not vars.empty()) {
+    m_log->message(2, "variables requested: %s\n", set_join(vars, ",").c_str());
 
-  m_current_ts = 0;
+    // get the list of available diagnostics
+    std::set<std::string> available;
+    for (auto d : m_diagnostics) {
+      available.insert(d.first);
+    }
 
-  if (vars.is_set()) {
-    m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
-    m_ts_vars = vars;
+    // de-allocate all scalar diagnostics that were not requested
+    for (auto v : available) {
+      if (vars.find(v) == vars.end()) {
+        m_ts_diagnostics.erase(v);
+      }
+    }
   } else {
-    for (auto d : m_ts_diagnostics) {
-      m_ts_vars.insert(d.first);
-    }
+    // use all diagnostics in m_ts_diagnostics
   }
 
-  PIO file(m_grid->com, "netcdf3", ts_file, mode);      // Use NetCDF-3 to write time-series.
+  // prepare the output file
+  {
+    IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
+    PIO file(m_grid->com, "netcdf3", ts_file, mode);      // Use NetCDF-3 to write time-series.
 
-  if (append) {
-    double time_max;
-    std::string time_name = m_config->get_string("time.dimension_name");
-    bool time_exists = false;
-
-    time_exists = file.inq_var(time_name);
-    if (time_exists == true) {
-      file.inq_dim_limits(time_name, NULL, &time_max);
-
-      while (m_current_ts < m_ts_times->size() && (*m_ts_times)[m_current_ts] < time_max) {
-        m_current_ts++;
-      }
-
-      if (m_current_ts > 0) {
-        m_log->message(2,
-                   "skipping times before the last record in %s (at %s)\n",
-                   ts_file->c_str(), m_time->date(time_max).c_str());
-      }
-    }
+    write_metadata(file, SKIP_MAPPING, PREPEND_HISTORY);
+    write_run_stats(file);
   }
 
-  write_metadata(file, SKIP_MAPPING, PREPEND_HISTORY);
-  write_run_stats(file);
-
-  file.close();
-
-  // set the output file:
+  // initialize scalar diagnostics
   for (auto d : m_ts_diagnostics) {
     d.second->init(ts_file, m_ts_times);
   }
-
-  // ignore times before (and including) the beginning of the run:
-  while (m_current_ts < m_ts_times->size() && (*m_ts_times)[m_current_ts] < m_time->start()) {
-    m_current_ts++;
-  }
-
-  if (m_ts_times->size() == m_current_ts) {
-    m_save_ts = false;
-    return;
-  }
-
-  // discard requested times before the beginning of the run
-  std::vector<double> tmp(m_ts_times->size() - m_current_ts);
-  for (unsigned int k = 0; k < tmp.size(); ++k) {
-    tmp[k] = (*m_ts_times)[m_current_ts + k];
-  }
-
-  *m_ts_times = tmp;
-  m_current_ts = 0;
 }
-
-//! Write time-series.
-void IceModel::write_timeseries() {
-
-  // return if no time-series requested
-  if (not m_save_ts) {
-     return;
-  }
-
-  // return if wrote all the records already
-  if (m_current_ts == m_ts_times->size()) {
-    return;
-  }
-
-  // return if did not yet reach the time we need to save at
-  if ((*m_ts_times)[m_current_ts] > m_time->current()) {
-    return;
-  }
-
-  for (auto d : m_ts_vars) {
-    TSDiagnostic::Ptr diag = m_ts_diagnostics[d];
-
-    if (diag) {
-      diag->update(m_time->current() - m_dt, m_time->current());
-    }
-  }
-
-  m_energy_model->reset_cumulative_stats();
-}
-
 
 //! Initialize the code saving spatially-variable diagnostic quantities.
 void IceModel::init_extras() {
@@ -451,8 +385,8 @@ MaxTimestep IceModel::save_max_timestep(double my_t) {
 //! Computes the maximum time-step we can take and still hit all `-ts_times`.
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
-  if ((not m_save_ts) or
-      (not m_config->get_boolean("time_stepping.hit_ts_times"))) {
+  if ((not m_config->get_boolean("time_stepping.hit_ts_times")) or
+      m_ts_diagnostics.empty()) {
     return MaxTimestep("reporting (-ts_times)");
   }
 
@@ -462,16 +396,12 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
 //! Flush scalar time-series.
 void IceModel::flush_timeseries() {
   // flush all the time-series buffers:
-  for (auto d : m_ts_vars) {
-    TSDiagnostic::Ptr diag = m_ts_diagnostics[d];
-
-    if (diag) {
-      diag->flush();
-    }
+  for (auto d : m_ts_diagnostics) {
+    d.second->flush();
   }
 
   // update run_stats in the time series output file
-  if (m_save_ts) {
+  if (not m_ts_diagnostics.empty()) {
     PIO file(m_grid->com, "netcdf3", m_ts_filename, PISM_READWRITE);
     write_run_stats(file);
   }

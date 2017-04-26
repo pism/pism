@@ -316,6 +316,8 @@ const EnergyModelStats& EnergyModel::cumulative_stats() const {
 }
 
 void EnergyModel::reset_cumulative_stats() {
+  // FIXME_: we should not have any *cumulative* stats: reporting changes during the last time step
+  // is much better.
   m_cumulative_stats = EnergyModelStats();
 }
 
@@ -339,9 +341,9 @@ protected:
 EnergyModel_liquified_ice_volume::EnergyModel_liquified_ice_volume(const EnergyModel *m)
   : TSDiag<EnergyModel>(m, "liquified_ice_volume") {
 
-  m_ts->metadata().set_string("units", "m3");
-  m_ts->metadata().set_string("long_name",
-                              "total volume of ice liquified during a reporting interval");
+  m_ts.metadata().set_string("units", "m3");
+  m_ts.metadata().set_string("long_name",
+                             "total volume of ice liquified during a reporting interval");
 }
 
 double EnergyModel_liquified_ice_volume::compute(double a, double b) {

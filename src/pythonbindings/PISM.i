@@ -60,6 +60,8 @@
 #include "base/util/projection.hh"
 #include "base/energy/bootstrapping.hh"
 #include "base/util/node_types.hh"
+
+#include "base/util/PISMTime.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values

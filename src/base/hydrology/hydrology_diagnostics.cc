@@ -166,8 +166,8 @@ MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(const Routing *m)
   : TSDiag<Routing>(m, "hydro_ice_free_land_loss") {
 
   // FIXME_
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->metadata().set_string("long_name",
+  m_ts.metadata().set_string("units", "kg s-1");
+  m_ts.metadata().set_string("long_name",
                               "rate of liquid water loss from subglacial hydrology into "
                               "cells with mask as ice free land");
 }
@@ -182,10 +182,10 @@ MCHydrology_ocean_loss::MCHydrology_ocean_loss(const Routing *m)
   : TSDiag<Routing>(m, "hydro_ocean_loss") {
 
   // FIXME_
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->metadata().set_string("long_name",
-                              "rate of liquid water loss from subglacial hydrology into "
-                              "cells with mask as ocean");
+  m_ts.metadata().set_string("units", "kg s-1");
+  m_ts.metadata().set_string("long_name",
+                             "rate of liquid water loss from subglacial hydrology into "
+                             "cells with mask as ocean");
 }
 
 double MCHydrology_ocean_loss::compute(double a, double b) {
@@ -198,11 +198,11 @@ MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(const R
   : TSDiag<Routing>(m, "hydro_negative_thickness_gain") {
 
   // FIXME_
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->metadata().set_string("long_name",
-                              "rate of non-conserving liquid water gain from subglacial "
-                              "hydrology transportable water thickness coming out negative "
-                              "during time step, and being projected up to zero");
+  m_ts.metadata().set_string("units", "kg s-1");
+  m_ts.metadata().set_string("long_name",
+                             "rate of non-conserving liquid water gain from subglacial "
+                             "hydrology transportable water thickness coming out negative "
+                             "during time step, and being projected up to zero");
 }
 
 double MCHydrology_negative_thickness_gain::compute(double a, double b) {
@@ -215,10 +215,10 @@ MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(const Routing *m)
   : TSDiag<Routing>(m, "hydro_null_strip_loss") {
 
   // FIXME_
-  m_ts->metadata().set_string("units", "kg s-1");
-  m_ts->metadata().set_string("long_name",
-                              "rate of liquid water loss from subglacial hydrology into "
-                              "cells inside the null strip");
+  m_ts.metadata().set_string("units", "kg s-1");
+  m_ts.metadata().set_string("long_name",
+                             "rate of liquid water loss from subglacial hydrology into "
+                             "cells inside the null strip");
 }
 
 double MCHydrology_null_strip_loss::compute(double a, double b) {

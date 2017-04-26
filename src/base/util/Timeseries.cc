@@ -180,6 +180,13 @@ void Timeseries::write(const PIO &nc) const {
   }
 }
 
+//! Clear storage.
+void Timeseries::reset() {
+  m_time.clear();
+  m_values.clear();
+  m_time_bounds.clear();
+}
+
 /** Scale all values stored in this instance by `scaling_factor`.
  *
  * This is used to convert mass balance offsets from [m s-1] to [kg m-2 s-1].
@@ -280,159 +287,51 @@ double Timeseries::average(double t, double dt, unsigned int N) const {
 }
 
 //! Append a pair (t,v) to the timeseries.
-void Timeseries::append(double v, double a, double b) {
-  m_time.push_back(b);
+void Timeseries::append(double v, double t0, double t1) {
+  m_time.push_back(t1);
   m_values.push_back(v);
-  m_time_bounds.push_back(a);
-  m_time_bounds.push_back(b);
-}
-
-TimeseriesMetadata& Timeseries::metadata() {
-  return m_variable;
+  m_time_bounds.push_back(t0);
+  m_time_bounds.push_back(t1);
 }
 
 std::string Timeseries::name() const {
   return m_variable.get_name();
 }
 
+TimeseriesMetadata& Timeseries::metadata() {
+  return m_variable;
+}
+
 TimeseriesMetadata& Timeseries::dimension_metadata() {
   return m_dimension;
 }
 
-//! Returns the length of the time-series stored.
-/*!
-  This length is changed by read() and append().
- */
-int Timeseries::length() const {
-  return (int)m_values.size();
+TimeBoundsMetadata& Timeseries::bounds_metadata() {
+  return m_bounds;
 }
 
-//----- DiagnosticTimeseries
-
-DiagnosticTimeseries::DiagnosticTimeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name)
-  : Timeseries(g, name, dimension_name) {
-
-  buffer_size = (size_t)g.ctx()->config()->get_double("output.timeseries_buffer_size");
-  m_start = 0;
-  m_dimension.set_string("calendar", g.ctx()->time()->calendar());
-  m_dimension.set_string("long_name", "time");
-  m_dimension.set_string("axis", "T");
+const TimeseriesMetadata& Timeseries::metadata() const {
+  return m_variable;
 }
 
-//! Destructor; makes sure that everything is written to a file.
-DiagnosticTimeseries::~DiagnosticTimeseries() {
+const TimeseriesMetadata& Timeseries::dimension_metadata() const {
+  return m_dimension;
 }
 
-//! Adds the (t,v) pair to the interpolation buffer.
-/*! The interpolation buffer holds 2 values only (for linear interpolation).
- *
- * If this DiagnosticTimeseries object is reporting a "rate of change",
- * append() has to be called with the "cumulative" quantity as the V argument.
- */
-void DiagnosticTimeseries::append(double V, double /*a*/, double b) {
-
-  // append to the interpolation buffer
-  m_t.push_back(b);
-  m_v.push_back(V);
-
-  if (m_t.size() == 3) {
-    m_t.pop_front();
-    m_v.pop_front();
-  }
+const TimeBoundsMetadata& Timeseries::bounds_metadata() const {
+  return m_bounds;
 }
 
-//! \brief Use linear interpolation to find the value of a scalar diagnostic
-//! quantity at time `T` and store the obtained pair (T, value).
-void DiagnosticTimeseries::interp(double a, double b) {
-
-  if (m_t.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "DiagnosticTimeseries::interp(...): interpolation buffer is empty");
-  }
-
-  if (m_t.size() == 1) {
-    m_time.push_back(b);
-    m_values.push_back(GSL_NAN);
-    m_time_bounds.push_back(a);
-    m_time_bounds.push_back(b);
-    return;
-  }
-
-  if ((b < m_t[0]) || (b > m_t[1])) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
-                                  b);
-  }
-
-  double
-    // compute the "cumulative" quantity using linear interpolation
-    v_current = m_v[0] + (b - m_t[0]) / (m_t[1] - m_t[0]) * (m_v[1] - m_v[0]),
-    // the value to report
-    value = v_current;
-
-  // use the right endpoint as the 'time' record (the midpoint is also an option)
-  m_time.push_back(b);
-  m_values.push_back(value);
-
-  // save the time bounds
-  m_time_bounds.push_back(a);
-  m_time_bounds.push_back(b);
+const std::vector<double> & Timeseries::times() const {
+  return m_time;
 }
 
-void DiagnosticTimeseries::init(const std::string &filename) {
-  unsigned int len = 0;
-
-  // Get the number of records in the file (for appending):
-  if (io::file_exists(m_com, filename)) {
-    PIO nc(m_com, "netcdf3", filename, PISM_READONLY); // OK to use netcdf3
-    len = nc.inq_dimlen(m_dimension.get_name());
-    if (len > 0) {
-      // read the last value and initialize v_previous and v[0]
-      std::vector<double> tmp;
-      bool var_exists = nc.inq_var(name());
-
-      if (var_exists) {
-        nc.get_1d_var(name(), len - 1, 1, tmp);
-        m_v.push_back(tmp[0]);
-      }
-    }
-  }
-
-  m_start = len;
+const std::vector<double> & Timeseries::bounds() const {
+  return m_time_bounds;
 }
 
-
-//! Writes data to a file.
-void DiagnosticTimeseries::flush(const std::string &output_filename) {
-
-  if (m_time.empty()) {
-    return;
-  }
-
-  PIO nc(m_com, "netcdf3", output_filename, PISM_READWRITE); // OK to use netcdf3
-  unsigned int len = nc.inq_dimlen(m_dimension.get_name());
-
-  if (len > 0) {
-    double last_time;
-    nc.inq_dim_limits(m_dimension.get_dimension_name(),
-                      NULL, &last_time);
-    if (last_time < m_time.front()) {
-      m_start = len;
-    }
-  }
-
-  if (len == (unsigned int)m_start) {
-    io::write_timeseries(nc, m_dimension, m_start, m_time);
-
-    set_bounds_units();
-    io::write_time_bounds(nc, m_bounds, m_start, m_time_bounds);
-  }
-  io::write_timeseries(nc, m_variable, m_start, m_values);
-
-  m_start += m_time.size();
-
-  m_time.clear();
-  m_values.clear();
-  m_time_bounds.clear();
+const std::vector<double> & Timeseries::values() const {
+  return m_values;
 }
 
 } // end of namespace pism

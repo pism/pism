@@ -23,8 +23,7 @@
 #include <deque>
 
 #include "VariableMetadata.hh"
-#include "Timeseries.hh"        // inline code
-#include "PISMTime.hh"
+#include "Timeseries.hh"        // inline code and a member of TSDiagnostic
 #include "IceGrid.hh"
 #include "PISMConfigInterface.hh"
 #include "iceModelVec.hh"
@@ -266,12 +265,15 @@ protected:
 //! @brief PISM's scalar time-series diagnostics.
 class TSDiagnostic {
 public:
+
+  enum Kind {SNAPSHOT = 0, RATE_OF_CHANGE = 1};
+
   typedef std::shared_ptr<TSDiagnostic> Ptr;
 
-  TSDiagnostic(IceGrid::ConstPtr g, const std::string &name);
+  TSDiagnostic(IceGrid::ConstPtr g, const std::string &name, Kind kind);
   virtual ~TSDiagnostic();
 
-  void update(double a, double b);
+  void update(double t0, double t1);
 
   void flush();
 
@@ -280,12 +282,27 @@ public:
 
   const VariableMetadata &metadata() const;
 
+  void define(const PIO &file) const;
+
+  void define_state(const PIO &file) const;
+  void write_state(const PIO &file) const;
+
 protected:
+  /*!
+   * Compute the diagnostic. Regular (snapshot) quantity should be computed here; for rates of
+   * change, compute() should return the total change during the time step from t0 to t1. The rate
+   * itself is computed in evaluate_rate().
+   */
   virtual double compute(double t0, double t1) = 0;
 
-  void evaluate_regular(double t0, double t1);
-  void evaluate_rate(double t0, double t1);
+  void evaluate_regular(double t0, double t1, double v0, double v1);
+  void evaluate_rate(double t0, double t1, double change);
 
+  //! kind of a diagnostic: snapshot of a quantity or a rate of change
+  Kind m_kind;
+  //! the name of the file to save to (stored here because it is used by flush(), which is called
+  //! from update())
+  std::string m_output_filename;
   //! the grid
   IceGrid::ConstPtr m_grid;
   //! Configuration flags and parameters
@@ -293,24 +310,26 @@ protected:
   //! the unit system
   const units::System::Ptr m_sys;
   //! time series object used to store computed values and metadata
-  std::unique_ptr<Timeseries> m_ts;
+  Timeseries m_ts;
   //! requested times
   std::shared_ptr<std::vector<double>> m_times;
-  //! times and values, for interpolation
-  std::deque<double> m_t, m_v;
-  double m_accumulator;
   //! index into m_times
   unsigned int m_current_time;
-  //! the name of the file to save to (stored here because it is used by flush(), which is called
-  //! from update())
-  std::string m_output_filename;
+  //! last two values, for interpolation (used to compute instantaneous values at requested times)
+  std::deque<double> m_v;
+  //! accumulator of changes (used to compute rates of change)
+  double m_accumulator;
+  //! starting index used when flushing the buffer
+  unsigned int m_start;
+  //! size of the buffer used to store data
+  size_t m_buffer_size;
 };
 
 template <class Model>
 class TSDiag : public TSDiagnostic {
 public:
   TSDiag(const Model *m, const std::string &name)
-    : TSDiagnostic(m->grid(), name), model(m) {
+    : TSDiagnostic(m->grid(), name, SNAPSHOT), model(m) {
   }
 protected:
   const Model *model;

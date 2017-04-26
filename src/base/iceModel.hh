@@ -368,7 +368,9 @@ protected:
    * The set of variables that the "state" of IceModel consists of.
    */
   std::set<IceModelVec*> m_model_state;
+  //! Requested spatially-variable diagnostics.
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
+  //! Requested scalar diagnostics.
   std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
 
   // Set of variables to put in the output file:
@@ -384,19 +386,12 @@ protected:
   void write_snapshot();
   MaxTimestep save_max_timestep(double my_t);
 
-  // scalar time-series
-  bool m_save_ts;                 //! true if the user requested time-series output
-  //! file to write time-series to
+  //! file to write scalar time-series to
   std::string m_ts_filename;
-  //! times requested
+  //! requested times for scalar time-series
   std::shared_ptr<std::vector<double>> m_ts_times;
-  //! index of the current time
-  unsigned int m_current_ts;
-  //! variables requested
-  std::set<std::string> m_ts_vars;
   void init_timeseries();
   void flush_timeseries();
-  void write_timeseries();
   MaxTimestep ts_max_timestep(double my_t);
 
   // spatially-varying time-series
@@ -418,8 +413,8 @@ protected:
   void init_backups();
   void write_backup();
 
-  // last time at which PISM hit a multiple of X years, see the
-  // timestep_hit_multiples configuration parameter
+  // last time at which PISM hit a multiple of X years, see the configuration parameter
+  // time_stepping.hit_multiples
   double m_timestep_hit_multiples_last_time;
 
   // diagnostic viewers; see iMviewers.cc

@@ -1056,10 +1056,14 @@ netcdf pism_config {
     pism_config:output.sizes.medium_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by sub-models.";
     pism_config:output.sizes.medium_type = "string";
 
-    pism_config:output.timeseries_buffer_size = 10000;
-    pism_config:output.timeseries_buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
-    pism_config:output.timeseries_buffer_size_type = "integer";
-    pism_config:output.timeseries_buffer_size_units = "count";
+    pism_config:output.timeseries.buffer_size = 10000;
+    pism_config:output.timeseries.buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
+    pism_config:output.timeseries.buffer_size_type = "integer";
+    pism_config:output.timeseries.buffer_size_units = "count";
+
+    pism_config:output.timeseries.variables = "";
+    pism_config:output.timeseries.variables_doc = "Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.";
+    pism_config:output.timeseries.variables_type = "string";
 
     pism_config:output.variable_order = "yxz";
     pism_config:output.variable_order_choices = "xyz,yxz,zyx";
