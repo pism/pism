@@ -321,10 +321,10 @@ const IceModelVec2S & EnergyModel::basal_melt_rate() const {
 }
 
 /*! @brief Ice loss "flux" due to ice liquefaction. */
-class LiquifiedIceFlux : public TSDiag<EnergyModel> {
+class LiquifiedIceFlux : public TSDiag<TSFluxDiagnostic,EnergyModel> {
 public:
   LiquifiedIceFlux(const EnergyModel *m)
-    : TSDiag<EnergyModel>(m, "liquified_ice_flux", RATE_OF_CHANGE) {
+    : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
 
     m_ts.metadata().set_string("units", "m3 / second");
     m_ts.metadata().set_string("glaciological_units", "m3 / year");

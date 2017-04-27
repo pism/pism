@@ -265,12 +265,9 @@ protected:
 //! @brief PISM's scalar time-series diagnostics.
 class TSDiagnostic {
 public:
-
-  enum Kind {SNAPSHOT = 0, RATE_OF_CHANGE = 1};
-
   typedef std::shared_ptr<TSDiagnostic> Ptr;
 
-  TSDiagnostic(IceGrid::ConstPtr g, const std::string &name, Kind kind);
+  TSDiagnostic(IceGrid::ConstPtr g, const std::string &name);
   virtual ~TSDiagnostic();
 
   void update(double t0, double t1);
@@ -288,6 +285,17 @@ public:
   void write_state(const PIO &file) const;
 
 protected:
+  virtual void define_state_impl(const PIO &file) const = 0;
+  virtual void write_state_impl(const PIO &file) const = 0;
+
+  /*!
+   * Read the "state" of a diagnostics from an input file, assuming that we are appending to it. (If
+   * we are not appending, the file will be empty.)
+   */
+  virtual void init_impl(const PIO& file) = 0;
+
+  virtual void update_impl(double t0, double t1) = 0;
+
   /*!
    * Compute the diagnostic. Regular (snapshot) quantity should be computed here; for rates of
    * change, compute() should return the total change during the time step from t0 to t1. The rate
@@ -295,11 +303,6 @@ protected:
    */
   virtual double compute(double t0, double t1) = 0;
 
-  void evaluate_regular(double t0, double t1, double v0, double v1);
-  void evaluate_rate(double t0, double t1, double change);
-
-  //! kind of a diagnostic: snapshot of a quantity or a rate of change
-  Kind m_kind;
   //! the name of the file to save to (stored here because it is used by flush(), which is called
   //! from update())
   std::string m_output_filename;
@@ -315,24 +318,87 @@ protected:
   std::shared_ptr<std::vector<double>> m_times;
   //! index into m_times
   unsigned int m_current_time;
-  //! last two values, for interpolation (used to compute instantaneous values at requested times)
-  std::deque<double> m_v;
-  //! accumulator of changes (used to compute rates of change)
-  double m_accumulator;
+
   //! starting index used when flushing the buffer
   unsigned int m_start;
   //! size of the buffer used to store data
   size_t m_buffer_size;
 };
 
-template <class Model>
-class TSDiag : public TSDiagnostic {
+//! Scalar diagnostic reporting a snapshot of a quantity modeled by PISM.
+/*!
+ * Uses linear interpolation to estimate values at requested times.
+ *
+ * The method compute() should return the instantaneous "snapshot" value.
+ */
+class TSSnapshotDiagnostic : public TSDiagnostic {
 public:
-  TSDiag(const Model *m, const std::string &name, Kind kind = SNAPSHOT)
-    : TSDiagnostic(m->grid(), name, kind), model(m) {
+  TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::string &name);
+private:
+  void init_impl(const PIO& file);
+  void update_impl(double t0, double t1);
+  void evaluate(double t0, double t1, double v0, double v1);
+
+  void define_state_impl(const PIO &file) const;
+  void write_state_impl(const PIO &file) const;
+
+  //! last two values, for interpolation (used to compute instantaneous values at requested times)
+  std::deque<double> m_v;
+};
+
+//! Scalar diagnostic reporting the rate of change of a quantity modeled by PISM.
+/*!
+ * The rate of change is averaged in time over reporting intervals.
+ *
+ * The method compute() should return the instantaneous "snapshot" value of a quantity.
+ */
+class TSRateDiagnostic : public TSDiagnostic {
+public:
+  TSRateDiagnostic(IceGrid::ConstPtr g, const std::string &name);
+protected:
+  //! accumulator of changes (used to compute rates of change)
+  double m_accumulator;
+  void evaluate(double t0, double t1, double v0, double v1);
+private:
+  void init_impl(const PIO& file);
+  void update_impl(double t0, double t1);
+
+  void define_state_impl(const PIO &file) const;
+  void write_state_impl(const PIO &file) const;
+
+  //! last two values, used to compute the change during a time step
+  std::deque<double> m_v;
+};
+
+//! Scalar diagnostic reporting a "flux".
+/*!
+ * The flux is averaged over reporting intervals.
+ *
+ * The method compute() should return the change due to a flux over a time step.
+ *
+ * Fluxes can be computed using TSRateDiagnostic, but that would require keeping track of the total
+ * change due to a flux. It is possible for the magnitude of the total change to grow indefinitely,
+ * leading to the loss of precision; this is why we use changes over individual time steps instead.
+ *
+ * (The total change due to a flux can grow in magnitude even it the amount does not change. For
+ * example: if calving removes as much ice as we have added due to the SMB, the total mass is
+ * constant, but total SMB will grow.)
+ */
+class TSFluxDiagnostic : public TSRateDiagnostic {
+public:
+  TSFluxDiagnostic(IceGrid::ConstPtr g, const std::string &name);
+private:
+  void update_impl(double t0, double t1);
+};
+
+template <class D, class M>
+class TSDiag : public D {
+public:
+  TSDiag(const M *m, const std::string &name)
+    : D(m->grid(), name), model(m) {
   }
 protected:
-  const Model *model;
+  const M *model;
 };
 
 } // end of namespace pism

@@ -163,7 +163,7 @@ IceModelVec::Ptr Hydrology_wallmelt::compute_impl() const {
 
 
 MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(const Routing *m)
-  : TSDiag<Routing>(m, "hydro_ice_free_land_loss") {
+  : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_ice_free_land_loss") {
 
   // FIXME_
   m_ts.metadata().set_string("units", "kg s-1");
@@ -179,7 +179,7 @@ double MCHydrology_ice_free_land_loss::compute(double a, double b) {
 }
 
 MCHydrology_ocean_loss::MCHydrology_ocean_loss(const Routing *m)
-  : TSDiag<Routing>(m, "hydro_ocean_loss") {
+  : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_ocean_loss") {
 
   // FIXME_
   m_ts.metadata().set_string("units", "kg s-1");
@@ -195,7 +195,7 @@ double MCHydrology_ocean_loss::compute(double a, double b) {
 }
 
 MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(const Routing *m)
-  : TSDiag<Routing>(m, "hydro_negative_thickness_gain") {
+  : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_negative_thickness_gain") {
 
   // FIXME_
   m_ts.metadata().set_string("units", "kg s-1");
@@ -212,7 +212,7 @@ double MCHydrology_negative_thickness_gain::compute(double a, double b) {
 }
 
 MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(const Routing *m)
-  : TSDiag<Routing>(m, "hydro_null_strip_loss") {
+  : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_null_strip_loss") {
 
   // FIXME_
   m_ts.metadata().set_string("units", "kg s-1");

@@ -136,7 +136,7 @@ protected:
 // These eight report the quantities computed in hydrology::Routing::boundary_mass_changes()
 
 //! \brief Reports the rate of loss of liquid water, in kg/s, to locations with mask "ice_free_land()==true".
-class MCHydrology_ice_free_land_loss : public TSDiag<Routing> // FIXME_
+class MCHydrology_ice_free_land_loss : public TSDiag<TSFluxDiagnostic, Routing> // FIXME_
 {
 public:
   MCHydrology_ice_free_land_loss(const Routing *m);
@@ -144,7 +144,7 @@ public:
 };
 
 //! \brief Reports the rate of loss of liquid water, in kg/s, to locations with mask "ocean()==true".
-class MCHydrology_ocean_loss : public TSDiag<Routing> // FIXME_
+class MCHydrology_ocean_loss : public TSDiag<TSFluxDiagnostic, Routing> // FIXME_
 {
 public:
   MCHydrology_ocean_loss(const Routing *m);
@@ -152,7 +152,7 @@ public:
 };
 
 //! \brief Reports the rate of non-conserving gain of liquid water, in kg/s, from water thickness coming out negative during a time step, and being projected up to zero.
-class MCHydrology_negative_thickness_gain : public TSDiag<Routing> // FIXME_
+class MCHydrology_negative_thickness_gain : public TSDiag<TSFluxDiagnostic, Routing> // FIXME_
 {
 public:
   MCHydrology_negative_thickness_gain(const Routing *m);
@@ -160,7 +160,7 @@ public:
 };
 
 //! \brief Reports the rate of loss of liquid water, in kg/s, to locations in the null strip, if that strip has positive width.
-class MCHydrology_null_strip_loss : public TSDiag<Routing> // FIXME_
+class MCHydrology_null_strip_loss : public TSDiag<TSFluxDiagnostic, Routing> // FIXME_
 {
 public:
   MCHydrology_null_strip_loss(const Routing *m);

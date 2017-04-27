@@ -35,18 +35,18 @@ Diagnostic::Ptr Diagnostic::wrap(const IceModelVec2V &input) {
 }
 
 Diagnostic::Diagnostic(IceGrid::ConstPtr g)
-  : m_grid(g), m_sys(g->ctx()->unit_system()), m_config(g->ctx()->config()) {
-  m_dof = 1;
-  m_fill_value = m_config->get_double("output.fill_value");
+  : m_grid(g),
+    m_sys(g->ctx()->unit_system()),
+    m_config(g->ctx()->config()),
+    m_dof(1),
+    m_fill_value(m_config->get_double("output.fill_value")) {
+  // empty
 }
 
 Diagnostic::~Diagnostic() {
   // empty
 }
 
-//! \brief Update a cumulative quantity needed to compute a rate of change.
-//! So far we there is only one such quantity: the rate of change of the ice
-//! thickness.
 void Diagnostic::update(double dt) {
   this->update_impl(dt);
 }
@@ -160,15 +160,13 @@ IceModelVec::Ptr Diagnostic::compute() const {
   return result;
 }
 
-TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name, Kind kind)
-  : m_kind(kind),
-    m_grid(g),
+TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
+  : m_grid(g),
     m_config(g->ctx()->config()),
     m_sys(g->ctx()->unit_system()),
     m_ts(*g, name, g->ctx()->config()->get_string("time.dimension_name")) {
 
   m_current_time = 0;
-  m_accumulator  = 0.0;
   m_start        = 0;
 
   m_buffer_size = (size_t)m_config->get_double("output.timeseries.buffer_size");
@@ -183,7 +181,22 @@ TSDiagnostic::~TSDiagnostic() {
   flush();
 }
 
-void TSDiagnostic::evaluate_regular(double t0, double t1, double v0, double v1) {
+TSSnapshotDiagnostic::TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::string &name)
+  : TSDiagnostic(g, name) {
+  // empty
+}
+
+TSRateDiagnostic::TSRateDiagnostic(IceGrid::ConstPtr g, const std::string &name)
+  : TSDiagnostic(g, name), m_accumulator(0.0) {
+  // empty
+}
+
+TSFluxDiagnostic::TSFluxDiagnostic(IceGrid::ConstPtr g, const std::string &name)
+  : TSRateDiagnostic(g, name) {
+  // empty
+}
+
+void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v0, double v1) {
 
   // skip times before the beginning of this time step
   while (m_current_time < m_times->size() and (*m_times)[m_current_time] < t0) {
@@ -208,7 +221,9 @@ void TSDiagnostic::evaluate_regular(double t0, double t1, double v0, double v1) 
   }
 }
 
-void TSDiagnostic::evaluate_rate(double t0, double t1, double change) {
+void TSRateDiagnostic::evaluate(double t0, double t1, double v0, double v1) {
+  const double change = v1 - v0;
+
   assert(t1 > t0);
 
   // skip times before the beginning of this time step
@@ -268,22 +283,35 @@ void TSDiagnostic::evaluate_rate(double t0, double t1, double change) {
 }
 
 void TSDiagnostic::update(double t0, double t1) {
-  double value = this->compute(t0, t1);
+  this->update_impl(t0, t1);
+}
 
+void TSSnapshotDiagnostic::update_impl(double t0, double t1) {
   assert(t1 > t0);
 
-  m_v.push_back(value);
+  m_v.push_back(this->compute(t0, t1));
 
   if (m_v.size() == 2) {
-
-    if (m_kind == SNAPSHOT) {
-      evaluate_regular(t0, t1, m_v[0], m_v[1]);
-    } else {
-      evaluate_rate(t0, t1, value);
-    }
-
+    evaluate(t0, t1, m_v[0], m_v[1]);
     m_v.pop_front();
   }
+}
+
+void TSRateDiagnostic::update_impl(double t0, double t1) {
+  assert(t1 > t0);
+
+  m_v.push_back(this->compute(t0, t1));
+
+  if (m_v.size() == 2) {
+    evaluate(t0, t1, m_v[0], m_v[1]);
+    m_v.pop_front();
+  }
+}
+
+void TSFluxDiagnostic::update_impl(double t0, double t1) {
+  assert(t1 > t0);
+
+  evaluate(t0, t1, 0.0, this->compute(t0, t1));
 }
 
 void TSDiagnostic::define(const PIO &file) const {
@@ -329,15 +357,11 @@ void TSDiagnostic::init(const std::string &output_filename,
   {
     // Get the number of records in the file (for appending):
     if (io::file_exists(m_grid->com, output_filename)) {
-      PIO nc(m_grid->com, "netcdf3", output_filename, PISM_READONLY); // OK to use netcdf3
-      m_start = nc.inq_dimlen(m_ts.dimension_metadata().get_name());
-      // if (len > 0) {
-      //   std::vector<double> tmp;
+      PIO file(m_grid->com, "netcdf3", output_filename, PISM_READONLY); // OK to use netcdf3
+      m_start = file.inq_dimlen(m_ts.dimension_metadata().get_name());
 
-      //   if (nc.inq_var(name())) {
-      //     nc.get_1d_var(name(), len - 1, 1, tmp);
-      //   }
-      // }
+      // try to read the state
+      this->init_impl(file);
     } else {
       m_start = 0;
     }
@@ -352,11 +376,35 @@ const VariableMetadata &TSDiagnostic::metadata() const {
 }
 
 void TSDiagnostic::define_state(const PIO &file) const {
-  // FIXME
+  this->define_state_impl(file);
 }
 
 void TSDiagnostic::write_state(const PIO &file) const {
-  // FIXME
+  this->write_state_impl(file);
+}
+
+void TSSnapshotDiagnostic::define_state_impl(const PIO &file) const {
+  // FIXME_
+}
+
+void TSSnapshotDiagnostic::write_state_impl(const PIO &file) const {
+  // FIXME_
+}
+
+void TSSnapshotDiagnostic::init_impl(const PIO &file) {
+  // FIXME_
+}
+
+void TSRateDiagnostic::init_impl(const PIO &file) {
+  // FIXME_
+}
+
+void TSRateDiagnostic::define_state_impl(const PIO &file) const {
+  // FIXME_
+}
+
+void TSRateDiagnostic::write_state_impl(const PIO &file) const {
+  // FIXME_
 }
 
 } // end of namespace pism
