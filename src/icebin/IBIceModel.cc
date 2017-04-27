@@ -259,6 +259,9 @@ void IBIceModel::set_rate(double dt) {
 
   printf("BEGIN IBIceModel::set_rate(dt=%f)\n", dt);
 
+  if (dt == 0) throw RuntimeError(PISM_ERROR_LOCATION,
+    "Coupling timestep has size dt=0");
+
   double by_dt = 1.0 / dt;
 
   compute_enth2(cur.total.enth, cur.total.mass);
