@@ -189,7 +189,7 @@ TSSnapshotDiagnostic::TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::strin
 }
 
 TSRateDiagnostic::TSRateDiagnostic(IceGrid::ConstPtr g, const std::string &name)
-  : TSDiagnostic(g, name), m_accumulator(0.0) {
+  : TSDiagnostic(g, name), m_accumulator(0.0), m_v_previous(0.0), m_v_previous_set(false) {
   // empty
 }
 
@@ -222,9 +222,7 @@ void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v) {
   }
 }
 
-void TSRateDiagnostic::evaluate(double t0, double t1, double v0, double v1) {
-  const double change = v1 - v0;
-
+void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
   assert(t1 > t0);
 
   // skip times before the beginning of this time step
@@ -288,52 +286,37 @@ void TSDiagnostic::update(double t0, double t1) {
 }
 
 void TSSnapshotDiagnostic::update_impl(double t0, double t1) {
-
-  const double value = this->compute();
-
   if (fabs(t1 - t0) < 1e-2) {
-    // zero length time step means "no time step; just save the value at this time"
     return;
   }
-
   assert(t1 > t0);
-
-  evaluate(t0, t1, value);
+  evaluate(t0, t1, this->compute());
 }
 
 void TSRateDiagnostic::update_impl(double t0, double t1) {
+  const double v = this->compute();
 
-  m_v.push_back(this->compute());
-
-  if (fabs(t1 - t0) < 1e-2) {
-    // zero length time step means "no time step; just save the value at this time"
-    return;
+  if (m_v_previous_set) {
+    assert(t1 > t0);
+    evaluate(t0, t1, v - m_v_previous);
   }
 
-  assert(t1 > t0);
-
-  if (m_v.size() == 2) {
-    evaluate(t0, t1, m_v[0], m_v[1]);
-    m_v.pop_front();
-  }
+  m_v_previous = v;
+  m_v_previous_set = true;
 }
 
 void TSFluxDiagnostic::update_impl(double t0, double t1) {
   if (fabs(t1 - t0) < 1e-2) {
-    // zero length time step means "no time step"
     return;
   }
-
   assert(t1 > t0);
-
-  evaluate(t0, t1, 0.0, this->compute());
+  evaluate(t0, t1, this->compute());
 }
 
 void TSDiagnostic::define(const PIO &file) const {
   io::define_timeseries(m_ts.variable(), file, PISM_DOUBLE);
   io::define_time_bounds(m_ts.bounds(), file, PISM_DOUBLE);
 }
-
 
 void TSDiagnostic::flush() {
 

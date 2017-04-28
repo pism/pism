@@ -367,7 +367,7 @@ public:
 };
 
 //! \brief Reports the total surface ice flux.
-class MassFluxSurface : public TSDiag<TSFluxDiagnostic, IceModel> // FIXME_
+class MassFluxSurface : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   MassFluxSurface(const IceModel *m);
@@ -375,7 +375,7 @@ public:
 };
 
 //! \brief Reports the total basal ice flux over the grounded region.
-class MassFluxBasalGrounded : public TSDiag<TSFluxDiagnostic, IceModel> // FIXME_
+class MassFluxBasalGrounded : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   MassFluxBasalGrounded(const IceModel *m);
@@ -383,7 +383,7 @@ public:
 };
 
 //! \brief Reports the total sub-shelf ice flux.
-class MassFluxBasalFloating : public TSDiag<TSFluxDiagnostic, IceModel> // FIXME_
+class MassFluxBasalFloating : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   MassFluxBasalFloating(const IceModel *m);

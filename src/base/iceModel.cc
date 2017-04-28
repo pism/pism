@@ -724,9 +724,11 @@ void IceModel::run() {
 
   enforce_consistency_of_geometry();
 
-  // update diagnostics at the beginning of the run:
+  // Update spatially-variable diagnostics at the beginning of the run.
   write_extras();
-  // update scalar time series to remember the state at the beginning of the run
+
+  // Update scalar time series to remember the state at the beginning of the run.
+  // This is needed to compute rates of change of the ice mass, volume, etc.
   {
     const double time = m_time->current();
     for (auto d : m_ts_diagnostics) {

@@ -52,6 +52,9 @@ static const char* floating_ice_sheet_area_fraction_name = "sftflf";
 
 namespace diagnostics {
 
+enum AreaType {GROUNDED, FLOATING, BOTH};
+
+enum SurfaceType {TOP, BOTTOM};
 
 /*! @brief Ocean pressure difference at calving fronts. Used to debug CF boundary conditins. */
 class CalvingFrontPressureDifference : public Diag<IceModel>
@@ -131,13 +134,13 @@ IceModelVec::Ptr CalvingFrontPressureDifference::compute_impl() const {
 class BMBSplit : public DiagAverageRate<IceModel>
 {
 public:
-  enum Kind {GROUNDED, FLOATING};
-  BMBSplit(const IceModel *m, Kind flag)
+  BMBSplit(const IceModel *m, AreaType flag)
     : DiagAverageRate<IceModel>(m,
                             flag == GROUNDED
                             ? "basal_grounded_mass_flux"
                             : "basal_floating_mass_flux",
                             TOTAL_CHANGE), m_kind(flag) {
+    assert(flag != BOTH);
 
     std::string name, description;
     if (m_kind == GROUNDED) {
@@ -160,7 +163,7 @@ public:
   }
 
 protected:
-  Kind m_kind;
+  AreaType m_kind;
   void update_impl(double dt) {
     const IceModelVec2S &input = model->geometry_evolution().bottom_surface_mass_balance();
     const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -1101,52 +1104,87 @@ double MaxDiffusivity::compute() {
   return model->stress_balance()->max_diffusivity();
 }
 
+double mass_change(const IceModel *model, SurfaceType surface, AreaType area) {
+  const IceGrid &grid = *model->grid();
+  const Config &config = *grid.ctx()->config();
+
+  const double ice_density = config.get_double("constants.ice.density");
+
+  const IceModelVec2S &cell_area = model->geometry().cell_area;
+  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+
+  const IceModelVec2S &thickness_change = (surface == TOP) ?
+    model->geometry_evolution().top_surface_mass_balance() :
+    model->geometry_evolution().bottom_surface_mass_balance();
+
+  IceModelVec::AccessList list{&cell_area, &cell_type, &thickness_change};
+
+  double volume_change = 0.0;
+  ParallelSection loop(grid.com);
+  try {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if ((area == BOTH) or
+          (area == GROUNDED and cell_type.grounded(i, j)) or
+          (area == FLOATING and cell_type.ocean(i, j))) {
+
+        volume_change += cell_area(i, j) * thickness_change(i, j);
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  // (kg / m3) * m3 = kg
+  return ice_density * GlobalSum(grid.com, volume_change);
+}
+
 MassFluxSurface::MassFluxSurface(const IceModel *m)
   : TSDiag<TSFluxDiagnostic, IceModel>(m, "surface_ice_flux") {
 
-  // FIXME_
   m_ts.variable().set_string("units", "kg s-1");
+  m_ts.variable().set_string("glaciological_units", "kg year-1");
   m_ts.variable().set_string("long_name", "total over ice domain of top surface ice mass flux");
   m_ts.variable().set_string("comment", "positive means ice gain");
 }
 
 double MassFluxSurface::compute() {
-  // FIXME_: units
-  return model->geometry_evolution().top_surface_mass_balance().sum();
+  return mass_change(model, TOP, BOTH);
 }
 
 MassFluxBasalGrounded::MassFluxBasalGrounded(const IceModel *m)
   : TSDiag<TSFluxDiagnostic, IceModel>(m, "grounded_basal_ice_flux") {
 
-  // FIXME_
   m_ts.variable().set_string("units", "kg s-1");
+  m_ts.variable().set_string("glaciological_units", "kg year-1");
   m_ts.variable().set_string("long_name", "total over grounded ice domain of basal mass flux");
   m_ts.variable().set_string("comment", "positive means ice gain");
 }
 
 double MassFluxBasalGrounded::compute() {
-  // FIXME: units
-  return model->geometry_evolution().bottom_surface_mass_balance().sum();
+  return mass_change(model, BOTTOM, BOTH);
 }
 
 MassFluxBasalFloating::MassFluxBasalFloating(const IceModel *m)
   : TSDiag<TSFluxDiagnostic, IceModel>(m, "sub_shelf_ice_flux") {
 
-  // FIXME_
   m_ts.variable().set_string("units", "kg s-1");
+  m_ts.variable().set_string("glaciological_units", "kg year-1");
   m_ts.variable().set_string("long_name", "total sub-shelf ice flux");
   m_ts.variable().set_string("comment", "positive means ice gain");
 }
 
 double MassFluxBasalFloating::compute() {
-  return 0.0;                      // FIXME_ (not zero in general)
+  return mass_change(model, BOTTOM, FLOATING);
 }
 
 MassFluxDischarge::MassFluxDischarge(const IceModel *m)
   : TSDiag<TSFluxDiagnostic, IceModel>(m, "discharge_flux") {
 
-  // FIXME_
   m_ts.variable().set_string("units", "kg s-1");
+  m_ts.variable().set_string("glaciological_units", "kg year-1");
   m_ts.variable().set_string("long_name", "discharge (calving & icebergs) flux");
   m_ts.variable().set_string("comment", "positive means ice gain");
 }
@@ -1935,8 +1973,8 @@ void IceModel::init_diagnostics() {
     {"tempsurf",                            f(new TemperatureSurface(this))},
     {"dHdt",                                f(new ThicknessRateOfChange(this))},
     {"effective_viscosity",                 f(new Viscosity(this))},
-    {"basal_grounded_mass_flux",            f(new BMBSplit(this, BMBSplit::GROUNDED))},
-    {"basal_floating_mass_flux",            f(new BMBSplit(this, BMBSplit::FLOATING))},
+    {"basal_grounded_mass_flux",            f(new BMBSplit(this, GROUNDED))},
+    {"basal_floating_mass_flux",            f(new BMBSplit(this, FLOATING))},
     {land_ice_area_fraction_name,           f(new IceAreaFraction(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this))},

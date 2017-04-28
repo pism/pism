@@ -20,7 +20,6 @@
 #define __PISMDiagnostic_hh
 
 #include <memory>
-#include <deque>
 
 #include "VariableMetadata.hh"
 #include "Timeseries.hh"        // inline code and a member of TSDiagnostic
@@ -352,7 +351,7 @@ public:
 protected:
   //! accumulator of changes (used to compute rates of change)
   double m_accumulator;
-  void evaluate(double t0, double t1, double v0, double v1);
+  void evaluate(double t0, double t1, double change);
 private:
   void init_impl(const PIO& file);
   void update_impl(double t0, double t1);
@@ -361,7 +360,8 @@ private:
   void write_state_impl(const PIO &file) const;
 
   //! last two values, used to compute the change during a time step
-  std::deque<double> m_v;
+  double m_v_previous;
+  bool m_v_previous_set;
 };
 
 //! Scalar diagnostic reporting a "flux".
