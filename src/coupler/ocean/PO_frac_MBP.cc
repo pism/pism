@@ -35,9 +35,9 @@ Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, OceanModel* in)
 
   m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
 
-  m_offset->metadata().set_string("units", "1");
-  m_offset->metadata().set_string("long_name", "melange back pressure fraction");
-  m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  m_offset->variable().set_string("units", "1");
+  m_offset->variable().set_string("long_name", "melange back pressure fraction");
+  m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
 }
 
 Delta_MBP::~Delta_MBP() {

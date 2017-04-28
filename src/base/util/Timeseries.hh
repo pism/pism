@@ -86,16 +86,16 @@ public:
 
   void reset();
 
-  TimeseriesMetadata& metadata();
-  TimeseriesMetadata& dimension_metadata();
-  TimeBoundsMetadata& bounds_metadata();
+  TimeseriesMetadata& variable();
+  TimeseriesMetadata& dimension();
+  TimeBoundsMetadata& bounds();
 
-  const TimeseriesMetadata& metadata() const;
-  const TimeseriesMetadata& dimension_metadata() const;
-  const TimeBoundsMetadata& bounds_metadata() const;
+  const TimeseriesMetadata& variable() const;
+  const TimeseriesMetadata& dimension() const;
+  const TimeBoundsMetadata& bounds() const;
 
   const std::vector<double> &times() const;
-  const std::vector<double> &bounds() const;
+  const std::vector<double> &time_bounds() const;
   const std::vector<double> &values() const;
 
   void scale(double scaling_factor);

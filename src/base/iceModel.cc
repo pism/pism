@@ -18,7 +18,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <sstream>
 #include <algorithm>
 #include <petscsys.h>
 
@@ -797,6 +796,10 @@ Please see the documenting comments of the functions called below to find
 explanations of their intended uses.
  */
 void IceModel::init() {
+  // Get the start time in seconds and ensure that it is consistent
+  // across all processors.
+  m_start_time = GlobalMax(m_grid->com, GetTime());
+
   const Profiling &profiling = m_ctx->profiling();
 
   profiling.begin("initialization");
@@ -831,10 +834,6 @@ void IceModel::init() {
   //! The following flow-chart illustrates the process.
   //!
   //! \dotfile initialization-sequence.dot "IceModel initialization sequence"
-
-  // Get the start time in seconds and ensure that it is consistent
-  // across all processors.
-  m_start_time = GlobalMax(m_grid->com, GetTime());
 
   profiling.end("initialization");
 }

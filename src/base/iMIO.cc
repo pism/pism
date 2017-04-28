@@ -207,6 +207,15 @@ void IceModel::define_model_state(const PIO &file) {
   for (auto d : m_diagnostics) {
     d.second->define_state(file);
   }
+
+  std::string ts_filename = m_config->get_string("output.timeseries.filename");
+  if (not ts_filename.empty()) {
+    PIO ts_file(m_grid->com, "netcdf3", ts_filename, PISM_READWRITE);
+    ts_file.redef();
+    for (auto d : m_ts_diagnostics) {
+      d.second->define_state(ts_file);
+    }
+  }
 }
 
 void IceModel::write_model_state(const PIO &file) {
@@ -220,6 +229,15 @@ void IceModel::write_model_state(const PIO &file) {
 
   for (auto d : m_diagnostics) {
     d.second->write_state(file);
+  }
+
+  std::string ts_filename = m_config->get_string("output.timeseries.filename");
+  if (not ts_filename.empty()) {
+    PIO ts_file(m_grid->com, "netcdf3", ts_filename, PISM_READWRITE);
+    ts_file.redef();
+    for (auto d : m_ts_diagnostics) {
+      d.second->write_state(ts_file);
+    }
   }
 }
 

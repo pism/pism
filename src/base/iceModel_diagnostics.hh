@@ -191,7 +191,7 @@ public:
 };
 
 //! \brief Computes the rate of change of the total ice volume in glacierized areas.
-class VolumeRateOfChangeGlacierized : public TSDiag<TSRateDiagnostic, IceModel> // FIXME_
+class VolumeRateOfChangeGlacierized : public TSDiag<TSRateDiagnostic, IceModel>
 {
 public:
   VolumeRateOfChangeGlacierized(IceModel *m);
@@ -199,7 +199,7 @@ public:
 };
 
 //! \brief Computes the rate of change of the total ice volume.
-class VolumeRateOfChangeNonGlacierized : public TSDiag<TSRateDiagnostic, IceModel> // FIXME_
+class VolumeRateOfChangeNonGlacierized : public TSDiag<TSRateDiagnostic, IceModel>
 {
 public:
   VolumeRateOfChangeNonGlacierized(IceModel *m);
@@ -239,7 +239,7 @@ public:
 };
 
 //! \brief Computes the rate of change of the total ice mass in glacierized areas.
-class MassRateOfChangeGlacierized : public TSDiag<TSRateDiagnostic, IceModel> // FIXME_
+class MassRateOfChangeGlacierized : public TSDiag<TSRateDiagnostic, IceModel>
 {
 public:
   MassRateOfChangeGlacierized(IceModel *m);
@@ -247,7 +247,7 @@ public:
 };
 
 //! \brief Computes the rate of change of the total ice mass.
-class MassRateOfChangeNonGlacierized : public TSDiag<TSRateDiagnostic, IceModel> // FIXME_
+class MassRateOfChangeNonGlacierized : public TSDiag<TSRateDiagnostic, IceModel>
 {
 public:
   MassRateOfChangeNonGlacierized(IceModel *m);

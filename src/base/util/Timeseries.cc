@@ -298,27 +298,27 @@ std::string Timeseries::name() const {
   return m_variable.get_name();
 }
 
-TimeseriesMetadata& Timeseries::metadata() {
+TimeseriesMetadata& Timeseries::variable() {
   return m_variable;
 }
 
-TimeseriesMetadata& Timeseries::dimension_metadata() {
+TimeseriesMetadata& Timeseries::dimension() {
   return m_dimension;
 }
 
-TimeBoundsMetadata& Timeseries::bounds_metadata() {
+TimeBoundsMetadata& Timeseries::bounds() {
   return m_bounds;
 }
 
-const TimeseriesMetadata& Timeseries::metadata() const {
+const TimeseriesMetadata& Timeseries::variable() const {
   return m_variable;
 }
 
-const TimeseriesMetadata& Timeseries::dimension_metadata() const {
+const TimeseriesMetadata& Timeseries::dimension() const {
   return m_dimension;
 }
 
-const TimeBoundsMetadata& Timeseries::bounds_metadata() const {
+const TimeBoundsMetadata& Timeseries::bounds() const {
   return m_bounds;
 }
 
@@ -326,7 +326,7 @@ const std::vector<double> & Timeseries::times() const {
   return m_time;
 }
 
-const std::vector<double> & Timeseries::bounds() const {
+const std::vector<double> & Timeseries::time_bounds() const {
   return m_time_bounds;
 }
 

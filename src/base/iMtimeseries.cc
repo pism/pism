@@ -38,23 +38,17 @@ namespace pism {
 //! Initializes the code writing scalar time-series.
 void IceModel::init_timeseries() {
 
-  options::String ts_file("-ts_file", "Specifies the time-series output file name");
-  m_ts_filename = ts_file;
+  m_ts_filename = m_config->get_string("output.timeseries.filename");
 
   options::String times("-ts_times", "Specifies a MATLAB-style range or a list of requested times");
 
-  std::set<std::string> vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
-
-  // default behavior is to move the file aside if it exists already; option allows appending
-  bool append = options::Bool("-ts_append", "append scalar time-series");
-
-  if (ts_file.is_set() ^ times.is_set()) {
+  if (times.is_set() xor not m_ts_filename.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "you need to specity both -ts_file and -ts_times to save diagnostic time-series.");
+                       "you need to specity both -ts_file and -ts_times"
+                       " to save scalar diagnostic time-series.");
   }
 
-  // If neither -ts_file nor -ts_times is set, we're done.
-  if (not ts_file.is_set() and not times.is_set()) {
+  if (m_ts_filename.empty()) {
     m_ts_diagnostics.clear();
     return;
   }
@@ -66,13 +60,10 @@ void IceModel::init_timeseries() {
     throw;
   }
 
-  if (times->empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "no argument for -ts_times option.");
-  }
-
-  m_log->message(2, "  saving scalar time-series to '%s'\n", ts_file->c_str());
+  m_log->message(2, "  saving scalar time-series to '%s'\n", m_ts_filename.c_str());
   m_log->message(2, "  times requested: %s\n", times->c_str());
 
+  std::set<std::string> vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
   if (not vars.empty()) {
     m_log->message(2, "variables requested: %s\n", set_join(vars, ",").c_str());
 
@@ -94,16 +85,28 @@ void IceModel::init_timeseries() {
 
   // prepare the output file
   {
+    // default behavior is to move the file aside if it exists already; option allows appending
+    bool append = m_config->get_boolean("output.timeseries.append");
     IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
-    PIO file(m_grid->com, "netcdf3", ts_file, mode);      // Use NetCDF-3 to write time-series.
+    PIO file(m_grid->com, "netcdf3", m_ts_filename, mode);      // Use NetCDF-3 to write time-series.
+    // add the last saved time to the list of requested times so that the first time is interpreted
+    // as the end of a reporting time step
+    if (append and file.inq_dimlen("time") > 0) {
+      double t = 0;
+      file.inq_dim_limits("time", NULL, &t);
+      // add this time only if it is strictly before the first requested one
+      if (t < m_ts_times->front()) {
+        m_ts_times->insert(m_ts_times->begin(), t);
+      }
+    }
 
     write_metadata(file, SKIP_MAPPING, PREPEND_HISTORY);
     write_run_stats(file);
-  }
 
-  // initialize scalar diagnostics
-  for (auto d : m_ts_diagnostics) {
-    d.second->init(ts_file, m_ts_times);
+    // initialize scalar diagnostics
+    for (auto d : m_ts_diagnostics) {
+      d.second->init(file, m_ts_times);
+    }
   }
 }
 

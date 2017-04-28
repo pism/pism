@@ -171,10 +171,12 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
 
   m_buffer_size = (size_t)m_config->get_double("output.timeseries.buffer_size");
 
-  m_ts.dimension_metadata().set_string("calendar", m_grid->ctx()->time()->calendar());
-  m_ts.dimension_metadata().set_string("long_name", m_config->get_string("time.dimension_name"));
-  m_ts.dimension_metadata().set_string("axis", "T");
-  m_ts.dimension_metadata().set_string("units", m_grid->ctx()->time()->CF_units_string());
+  m_ts.variable().set_string("ancillary_variables", name + "_aux");
+
+  m_ts.dimension().set_string("calendar", m_grid->ctx()->time()->calendar());
+  m_ts.dimension().set_string("long_name", m_config->get_string("time.dimension_name"));
+  m_ts.dimension().set_string("axis", "T");
+  m_ts.dimension().set_string("units", m_grid->ctx()->time()->CF_units_string());
 }
 
 TSDiagnostic::~TSDiagnostic() {
@@ -315,8 +317,8 @@ void TSFluxDiagnostic::update_impl(double t0, double t1) {
 }
 
 void TSDiagnostic::define(const PIO &file) const {
-  io::define_timeseries(m_ts.metadata(), file, PISM_DOUBLE);
-  io::define_time_bounds(m_ts.bounds_metadata(), file, PISM_DOUBLE);
+  io::define_timeseries(m_ts.variable(), file, PISM_DOUBLE);
+  io::define_time_bounds(m_ts.bounds(), file, PISM_DOUBLE);
 }
 
 
@@ -328,9 +330,10 @@ void TSDiagnostic::flush() {
     return;
   }
 
-  std::string dimension_name = m_ts.dimension_metadata().get_name();
+  std::string dimension_name = m_ts.dimension().get_name();
 
   PIO file(m_grid->com, "netcdf3", m_output_filename, PISM_READWRITE); // OK to use netcdf3
+
   unsigned int len = file.inq_dimlen(dimension_name);
 
   if (len > 0) {
@@ -342,37 +345,31 @@ void TSDiagnostic::flush() {
   }
 
   if (len == m_start) {
-    io::write_timeseries(file, m_ts.dimension_metadata(), m_start, times);
-    io::write_time_bounds(file, m_ts.bounds_metadata(), m_start, m_ts.bounds());
+    io::write_timeseries(file, m_ts.dimension(), m_start, times);
+    io::write_time_bounds(file, m_ts.bounds(), m_start, m_ts.time_bounds());
   }
-  io::write_timeseries(file, m_ts.metadata(), m_start, m_ts.values());
+  io::write_timeseries(file, m_ts.variable(), m_start, m_ts.values());
 
   m_start += m_ts.times().size();
 
   m_ts.reset();
 }
 
-void TSDiagnostic::init(const std::string &output_filename,
+void TSDiagnostic::init(const PIO &output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
-  {
-    // Get the number of records in the file (for appending):
-    if (io::file_exists(m_grid->com, output_filename)) {
-      PIO file(m_grid->com, "netcdf3", output_filename, PISM_READONLY); // OK to use netcdf3
-      m_start = file.inq_dimlen(m_ts.dimension_metadata().get_name());
+  m_output_filename = output_file.inq_filename();
 
-      // try to read the state
-      this->init_impl(file);
-    } else {
-      m_start = 0;
-    }
-  }
-
-  m_output_filename = output_filename;
   m_times = requested_times;
+
+  // Get the number of records in the file (for appending):
+  m_start = output_file.inq_dimlen(m_ts.dimension().get_name());
+
+  // try to read the state
+  this->init_impl(output_file);
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {
-  return m_ts.metadata();
+  return m_ts.variable();
 }
 
 void TSDiagnostic::define_state(const PIO &file) const {
@@ -384,15 +381,38 @@ void TSDiagnostic::write_state(const PIO &file) const {
 }
 
 void TSSnapshotDiagnostic::define_state_impl(const PIO &file) const {
-  // FIXME_
+  std::string data_name = m_ts.name() + "_aux";
+
+  if (file.inq_var(data_name)) {
+    return;
+  }
+
+  file.def_var(data_name, PISM_DOUBLE, {});
+  file.put_att_text(data_name,
+                    "long_name",
+                    "data used to initialize the scalar diagnostic " + m_ts.name() +
+                    " when re-starting");
+  file.put_att_text(data_name, "units", m_ts.variable().get_string("units"));
 }
 
 void TSSnapshotDiagnostic::write_state_impl(const PIO &file) const {
-  // FIXME_
+  if (m_v.empty()) {
+    return;
+  }
+
+  std::string name = m_ts.name() + "_aux";
+  double tmp = m_v.back();
+  file.put_vara_double(name, {}, {}, &tmp);
 }
 
 void TSSnapshotDiagnostic::init_impl(const PIO &file) {
-  // FIXME_
+  std::string name = m_ts.name() + "_aux";
+
+  if (file.inq_var(name)) {
+    double tmp = 0.0;
+    file.get_vara_double(name, {}, {}, &tmp);
+    m_v.push_back(tmp);
+  }
 }
 
 void TSRateDiagnostic::init_impl(const PIO &file) {

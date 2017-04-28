@@ -326,13 +326,13 @@ public:
   LiquifiedIceFlux(const EnergyModel *m)
     : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
 
-    m_ts.metadata().set_string("units", "m3 / second");
-    m_ts.metadata().set_string("glaciological_units", "m3 / year");
-    m_ts.metadata().set_string("long_name",
+    m_ts.variable().set_string("units", "m3 / second");
+    m_ts.variable().set_string("glaciological_units", "m3 / year");
+    m_ts.variable().set_string("long_name",
                                "rate of ice loss due to liquefaction,"
                                " averaged over the reporting interval");
-    m_ts.metadata().set_string("comment", "positive means ice loss");
-    m_ts.metadata().set_string("cell_methods", "time: mean");
+    m_ts.variable().set_string("comment", "positive means ice loss");
+    m_ts.variable().set_string("cell_methods", "time: mean");
   }
 protected:
   double compute(double t0, double t1) {

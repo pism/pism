@@ -18,7 +18,6 @@
 
 #include <cstring>
 #include <cmath>
-#include <sstream>
 #include <set>
 
 #include "iceModel.hh"

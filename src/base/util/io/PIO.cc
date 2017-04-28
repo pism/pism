@@ -397,7 +397,7 @@ unsigned int PIO::inq_dimlen(const string &name) const {
   try {
     bool exists = false;
     m_impl->nc->inq_dimid(name, exists);
-    if (exists == true) {
+    if (exists) {
       unsigned int result = 0;
       m_impl->nc->inq_dimlen(name, result);
       return result;

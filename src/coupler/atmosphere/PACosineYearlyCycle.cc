@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -73,9 +73,9 @@ void CosineYearlyCycle::init_impl() {
     if (m_A == NULL) {
       m_A = new Timeseries(*m_grid, "amplitude_scaling",
                            m_config->get_string("time.dimension_name"));
-      m_A->metadata().set_string("units", "1");
-      m_A->metadata().set_string("long_name", "cosine yearly cycle amplitude scaling");
-      m_A->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+      m_A->variable().set_string("units", "1");
+      m_A->variable().set_string("long_name", "cosine yearly cycle amplitude scaling");
+      m_A->dimension().set_string("units", m_grid->ctx()->time()->units_string());
     }
 
     m_log->message(2,

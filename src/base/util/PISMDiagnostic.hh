@@ -274,7 +274,7 @@ public:
 
   void flush();
 
-  void init(const std::string &output_filename,
+  void init(const PIO &output_file,
             std::shared_ptr<std::vector<double>> requested_times);
 
   const VariableMetadata &metadata() const;
@@ -303,22 +303,24 @@ protected:
    */
   virtual double compute(double t0, double t1) = 0;
 
-  //! the name of the file to save to (stored here because it is used by flush(), which is called
-  //! from update())
-  std::string m_output_filename;
   //! the grid
   IceGrid::ConstPtr m_grid;
   //! Configuration flags and parameters
   const Config::ConstPtr m_config;
   //! the unit system
   const units::System::Ptr m_sys;
+
   //! time series object used to store computed values and metadata
   Timeseries m_ts;
+
   //! requested times
   std::shared_ptr<std::vector<double>> m_times;
   //! index into m_times
   unsigned int m_current_time;
 
+  //! the name of the file to save to (stored here because it is used by flush(), which is called
+  //! from update())
+  std::string m_output_filename;
   //! starting index used when flushing the buffer
   unsigned int m_start;
   //! size of the buffer used to store data
