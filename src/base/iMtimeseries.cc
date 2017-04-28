@@ -92,10 +92,12 @@ void IceModel::init_timeseries() {
     // add the last saved time to the list of requested times so that the first time is interpreted
     // as the end of a reporting time step
     if (append and file.inq_dimlen("time") > 0) {
-      double t = 0;
+      double
+        epsilon = 1.0,          // one second
+        t       = 0.0;
       file.inq_dim_limits("time", NULL, &t);
       // add this time only if it is strictly before the first requested one
-      if (t < m_ts_times->front()) {
+      if (t + epsilon < m_ts_times->front()) {
         m_ts_times->insert(m_ts_times->begin(), t);
       }
     }

@@ -726,6 +726,13 @@ void IceModel::run() {
 
   // update diagnostics at the beginning of the run:
   write_extras();
+  // update scalar time series to remember the state at the beginning of the run
+  {
+    const double time = m_time->current();
+    for (auto d : m_ts_diagnostics) {
+      d.second->update(time, time);
+    }
+  }
 
   m_log->message(2, "running forward ...\n");
 
@@ -899,7 +906,7 @@ void IceModel::prune_diagnostics() {
 /*!
  * Update diagnostics.
  *
- * This usually involves accumulative data needed to computed time-averaged quantities.
+ * This usually involves accumulating data needed to computed time-averaged quantities.
  *
  * Call this after prune_diagnostics() to avoid unnecessary work.
  */

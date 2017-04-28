@@ -198,7 +198,7 @@ TSFluxDiagnostic::TSFluxDiagnostic(IceGrid::ConstPtr g, const std::string &name)
   // empty
 }
 
-void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v0, double v1) {
+void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v) {
 
   // skip times before the beginning of this time step
   while (m_current_time < m_times->size() and (*m_times)[m_current_time] < t0) {
@@ -218,7 +218,6 @@ void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v0, double v1) 
       t_s = (*m_times)[k - 1],
       t_e = (*m_times)[k];
 
-    const double v = v0 + (v1 - v0) * (t_e - t0) / (t1 - t0);
     m_ts.append(v, t_s, t_e);
   }
 }
@@ -289,20 +288,29 @@ void TSDiagnostic::update(double t0, double t1) {
 }
 
 void TSSnapshotDiagnostic::update_impl(double t0, double t1) {
+
+  const double value = this->compute();
+
+  if (fabs(t1 - t0) < 1e-2) {
+    // zero length time step means "no time step; just save the value at this time"
+    return;
+  }
+
   assert(t1 > t0);
 
-  m_v.push_back(this->compute(t0, t1));
-
-  if (m_v.size() == 2) {
-    evaluate(t0, t1, m_v[0], m_v[1]);
-    m_v.pop_front();
-  }
+  evaluate(t0, t1, value);
 }
 
 void TSRateDiagnostic::update_impl(double t0, double t1) {
-  assert(t1 > t0);
 
-  m_v.push_back(this->compute(t0, t1));
+  m_v.push_back(this->compute());
+
+  if (fabs(t1 - t0) < 1e-2) {
+    // zero length time step means "no time step; just save the value at this time"
+    return;
+  }
+
+  assert(t1 > t0);
 
   if (m_v.size() == 2) {
     evaluate(t0, t1, m_v[0], m_v[1]);
@@ -311,9 +319,14 @@ void TSRateDiagnostic::update_impl(double t0, double t1) {
 }
 
 void TSFluxDiagnostic::update_impl(double t0, double t1) {
+  if (fabs(t1 - t0) < 1e-2) {
+    // zero length time step means "no time step"
+    return;
+  }
+
   assert(t1 > t0);
 
-  evaluate(t0, t1, 0.0, this->compute(t0, t1));
+  evaluate(t0, t1, 0.0, this->compute());
 }
 
 void TSDiagnostic::define(const PIO &file) const {
@@ -324,9 +337,7 @@ void TSDiagnostic::define(const PIO &file) const {
 
 void TSDiagnostic::flush() {
 
-  const std::vector<double> &times = m_ts.times();
-
-  if (times.empty()) {
+  if (m_ts.times().empty()) {
     return;
   }
 
@@ -337,15 +348,15 @@ void TSDiagnostic::flush() {
   unsigned int len = file.inq_dimlen(dimension_name);
 
   if (len > 0) {
-    double last_time;
+    double last_time = 0.0;
     file.inq_dim_limits(dimension_name, NULL, &last_time);
-    if (last_time < times.front()) {
+    if (last_time < m_ts.times().front()) {
       m_start = len;
     }
   }
 
   if (len == m_start) {
-    io::write_timeseries(file, m_ts.dimension(), m_start, times);
+    io::write_timeseries(file, m_ts.dimension(), m_start, m_ts.times());
     io::write_time_bounds(file, m_ts.bounds(), m_start, m_ts.time_bounds());
   }
   io::write_timeseries(file, m_ts.variable(), m_start, m_ts.values());
@@ -380,39 +391,16 @@ void TSDiagnostic::write_state(const PIO &file) const {
   this->write_state_impl(file);
 }
 
-void TSSnapshotDiagnostic::define_state_impl(const PIO &file) const {
-  std::string data_name = m_ts.name() + "_aux";
-
-  if (file.inq_var(data_name)) {
-    return;
-  }
-
-  file.def_var(data_name, PISM_DOUBLE, {});
-  file.put_att_text(data_name,
-                    "long_name",
-                    "data used to initialize the scalar diagnostic " + m_ts.name() +
-                    " when re-starting");
-  file.put_att_text(data_name, "units", m_ts.variable().get_string("units"));
+void TSDiagnostic::define_state_impl(const PIO &file) const {
+  (void) file;
 }
 
-void TSSnapshotDiagnostic::write_state_impl(const PIO &file) const {
-  if (m_v.empty()) {
-    return;
-  }
-
-  std::string name = m_ts.name() + "_aux";
-  double tmp = m_v.back();
-  file.put_vara_double(name, {}, {}, &tmp);
+void TSDiagnostic::write_state_impl(const PIO &file) const {
+  (void) file;
 }
 
 void TSSnapshotDiagnostic::init_impl(const PIO &file) {
-  std::string name = m_ts.name() + "_aux";
-
-  if (file.inq_var(name)) {
-    double tmp = 0.0;
-    file.get_vara_double(name, {}, {}, &tmp);
-    m_v.push_back(tmp);
-  }
+  (void) file;
 }
 
 void TSRateDiagnostic::init_impl(const PIO &file) {

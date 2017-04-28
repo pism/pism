@@ -335,9 +335,7 @@ public:
     m_ts.variable().set_string("cell_methods", "time: mean");
   }
 protected:
-  double compute(double t0, double t1) {
-    (void) t0;
-    (void) t1;
+  double compute() {
     // liquified ice volume during the last time step
     return model->stats().liquified_ice_volume;
   }

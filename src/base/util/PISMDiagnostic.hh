@@ -285,8 +285,8 @@ public:
   void write_state(const PIO &file) const;
 
 protected:
-  virtual void define_state_impl(const PIO &file) const = 0;
-  virtual void write_state_impl(const PIO &file) const = 0;
+  virtual void define_state_impl(const PIO &file) const;
+  virtual void write_state_impl(const PIO &file) const;
 
   /*!
    * Read the "state" of a diagnostics from an input file, assuming that we are appending to it. (If
@@ -301,7 +301,7 @@ protected:
    * change, compute() should return the total change during the time step from t0 to t1. The rate
    * itself is computed in evaluate_rate().
    */
-  virtual double compute(double t0, double t1) = 0;
+  virtual double compute() = 0;
 
   //! the grid
   IceGrid::ConstPtr m_grid;
@@ -329,8 +329,6 @@ protected:
 
 //! Scalar diagnostic reporting a snapshot of a quantity modeled by PISM.
 /*!
- * Uses linear interpolation to estimate values at requested times.
- *
  * The method compute() should return the instantaneous "snapshot" value.
  */
 class TSSnapshotDiagnostic : public TSDiagnostic {
@@ -339,13 +337,7 @@ public:
 private:
   void init_impl(const PIO& file);
   void update_impl(double t0, double t1);
-  void evaluate(double t0, double t1, double v0, double v1);
-
-  void define_state_impl(const PIO &file) const;
-  void write_state_impl(const PIO &file) const;
-
-  //! last two values, for interpolation (used to compute instantaneous values at requested times)
-  std::deque<double> m_v;
+  void evaluate(double t0, double t1, double v);
 };
 
 //! Scalar diagnostic reporting the rate of change of a quantity modeled by PISM.
