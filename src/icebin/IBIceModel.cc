@@ -186,15 +186,17 @@ void IBIceModel::massContExplicitStep() {
 /** This is called IMMEDIATELY after ice is gained/lost in
 iMgeometry.cc (massContExplicitStep()).  Here we can record the same
 values that PISM saw when moving ice around. */
-void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
-                                                       double surface_mass_balance, // [m s-1] ice equivalent
-                                                       double meltrate_grounded,    // [m s-1] ice equivalent
-                                                       double meltrate_floating,    // [m s-1] ice equivalent
-                                                       double divQ_SIA,             // [m s-1] ice equivalent
-                                                       double divQ_SSA,             // [m s-1] ice equivalent
-                                                       double Href_to_H_flux,       // [m] ice equivalent
-                                                       double nonneg_rule_flux)     // [m] ice equivalent
+void IBIceModel::accumulateFluxes_massContExplicitStep(
+  int i, int j,
+  double surface_mass_balance, // [m s-1] ice equivalent
+  double basal_melt_rate,      // [m s-1] ice equivalent
+  double divQ_SIA,             // [m s-1] ice equivalent
+  double divQ_SSA,             // [m s-1] ice equivalent
+  double Href_to_H_flux,       // [m] ice equivalent
+  double nonneg_rule_flux)     // [m] ice equivalent
 {
+// printf("BEGIN IBIceModel::accumulateFluxes_MassContExplicitStep()\n");
+
   EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
 
   // -------------- Melting
@@ -204,15 +206,10 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
   double mass;
 
   // ------- Melting at base of ice sheet
-  mass = -meltrate_grounded * _meter_per_s_to_kg_per_m2;
+  mass = -basal_melt_rate * _meter_per_s_to_kg_per_m2;
+  // TODO: Change this to just cur.melt_rate
   cur.melt_grounded.mass(i, j) += mass;
   cur.melt_grounded.enth(i, j) += mass * specific_enth_basal;
-
-  // ------- Melting under ice shelf
-  mass = -meltrate_floating * _meter_per_s_to_kg_per_m2;
-  cur.melt_floating.mass(i, j) += mass;
-  cur.melt_floating.enth(i, j) += mass * specific_enth_basal;
-
 
   // -------------- internal_advection
   const int ks             = m_grid->kBelowHeight(m_ice_thickness(i, j));
@@ -263,6 +260,7 @@ void IBIceModel::set_rate(double dt) {
     "Coupling timestep has size dt=0");
 
   double by_dt = 1.0 / dt;
+printf("IBIceModel::set_rate(dt=%f)\n", dt);
 
   compute_enth2(cur.total.enth, cur.total.mass);
   cur.set_epsilon(m_grid);
@@ -390,14 +388,16 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
         double const *Enth = m_ice_enthalpy.get_column(i, j); // do NOT delete this pointer: space returned by
         for (int k = 0; k < ks; ++k) {
           double dz = (m_grid->z(k + 1) - m_grid->z(k));
-          enth2(i, j) += Enth[k] * dz; // m J / kg
+          enth2(i, j) += Enth[k] * dz; // [m J kg-1]
         }
 
-        // Do the last layer a bit differently
+        // Last layer is (potentially) partial
         double dz = (m_ice_thickness(i, j) - m_grid->z(ks));
-        enth2(i, j) += Enth[ks] * dz;
-        enth2(i, j) *= ice_density;                        // --> J/m^2
-        mass2(i, j) = m_ice_thickness(i, j) * ice_density; // --> kg/m^2
+        enth2(i, j) += Enth[ks] * dz;    // [m J kg-1]
+
+        // Finish off after all layers processed
+        enth2(i, j) *= ice_density;                        // --> [J m-2]
+        mass2(i, j) = m_ice_thickness(i, j) * ice_density; // --> [kg m-2]
       }
     }
   }

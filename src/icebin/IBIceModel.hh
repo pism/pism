@@ -72,15 +72,16 @@ protected:
   virtual void createVecs();
 
 public:
+  virtual void accumulateFluxes_massContExplicitStep(
+    int i, int j,
+    double surface_mass_balance, // [m s-1] ice equivalent (from PISM)
+    double basal_melt_rate,      // [m s-1] ice equivalent
+    double divQ_SIA,             // [m s-1] ice equivalent
+    double divQ_SSA,             // [m s-1] ice equivalent
+    double Href_to_H_flux,       // [m s-1] ice equivalent
+    double nonneg_rule_flux);    // [m s-1] ice equivalent
   virtual void massContExplicitStep();
-  virtual void accumulateFluxes_massContExplicitStep(int i, int j,
-                                                     double surface_mass_balance, // [m s-1] ice equivalent (from PISM)
-                                                     double meltrate_grounded,    // [m s-1] ice equivalent
-                                                     double meltrate_floating,    // [m s-1] ice equivalent
-                                                     double divQ_SIA,             // [m s-1] ice equivalent
-                                                     double divQ_SSA,             // [m s-1] ice equivalent
-                                                     double Href_to_H_flux,       // [m s-1] ice equivalent
-                                                     double nonneg_rule_flux);    // [m s-1] ice equivalent
+
 private:
   // Temporary variables inside massContExplicitStep()
   double _ice_density;              // From config
