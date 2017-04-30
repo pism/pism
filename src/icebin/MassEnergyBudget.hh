@@ -136,6 +136,7 @@ public:
     static const int TOTAL = 4;     // To be differenced at the end.
     static const int DELTA = 8;
     static const int EPSILON = 16;      // To be differenced at the end.
+    static const int ADVECTION = 32;    // This energy term is due to advection of a related mass term.
 
     // ======================== Summary of above variables
     // This makes it easy to difference two MassEnergyBudget instances.
@@ -165,7 +166,7 @@ protected:
     {
         all_vecs.push_back(VecWithFlags(massenth.mass, MASS | flags,
             contract_name_mass));
-        all_vecs.push_back(VecWithFlags(massenth.enth, ENTH | flags,
+        all_vecs.push_back(VecWithFlags(massenth.enth, ENTH | ADVECTION | flags,
             contract_name_enth));
     }
 
