@@ -280,19 +280,7 @@ public:
 
   void define(const PIO &file) const;
 
-  void define_state(const PIO &file) const;
-  void write_state(const PIO &file) const;
-
 protected:
-  virtual void define_state_impl(const PIO &file) const;
-  virtual void write_state_impl(const PIO &file) const;
-
-  /*!
-   * Read the "state" of a diagnostics from an input file, assuming that we are appending to it. (If
-   * we are not appending, the file will be empty.)
-   */
-  virtual void init_impl(const PIO& file) = 0;
-
   virtual void update_impl(double t0, double t1) = 0;
 
   /*!
@@ -334,7 +322,6 @@ class TSSnapshotDiagnostic : public TSDiagnostic {
 public:
   TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::string &name);
 private:
-  void init_impl(const PIO& file);
   void update_impl(double t0, double t1);
   void evaluate(double t0, double t1, double v);
 };
@@ -353,11 +340,7 @@ protected:
   double m_accumulator;
   void evaluate(double t0, double t1, double change);
 private:
-  void init_impl(const PIO& file);
   void update_impl(double t0, double t1);
-
-  void define_state_impl(const PIO &file) const;
-  void write_state_impl(const PIO &file) const;
 
   //! last two values, used to compute the change during a time step
   double m_v_previous;

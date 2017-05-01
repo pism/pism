@@ -223,10 +223,11 @@ void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v) {
 }
 
 void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
+  static const double epsilon = 1e-4; // seconds
   assert(t1 > t0);
 
-  // skip times before the beginning of this time step
-  while (m_current_time < m_times->size() and (*m_times)[m_current_time] < t0) {
+  // skip times before and including the beginning of this time step
+  while (m_current_time < m_times->size() and (*m_times)[m_current_time] <= t0) {
     m_current_time += 1;
   }
 
@@ -277,7 +278,9 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
     // if this time step contained some requested times we need to add the change since the last one
     // to the accumulator
     const double dt = t1 - (*m_times)[m_current_time - 1];
-    m_accumulator += change * (dt / (t1 - t0));
+    if (dt > epsilon) {
+      m_accumulator += change * (dt / (t1 - t0));
+    }
   }
 }
 
@@ -357,45 +360,10 @@ void TSDiagnostic::init(const PIO &output_file,
 
   // Get the number of records in the file (for appending):
   m_start = output_file.inq_dimlen(m_ts.dimension().get_name());
-
-  // try to read the state
-  this->init_impl(output_file);
 }
 
 const VariableMetadata &TSDiagnostic::metadata() const {
   return m_ts.variable();
-}
-
-void TSDiagnostic::define_state(const PIO &file) const {
-  this->define_state_impl(file);
-}
-
-void TSDiagnostic::write_state(const PIO &file) const {
-  this->write_state_impl(file);
-}
-
-void TSDiagnostic::define_state_impl(const PIO &file) const {
-  (void) file;
-}
-
-void TSDiagnostic::write_state_impl(const PIO &file) const {
-  (void) file;
-}
-
-void TSSnapshotDiagnostic::init_impl(const PIO &file) {
-  (void) file;
-}
-
-void TSRateDiagnostic::init_impl(const PIO &file) {
-  // FIXME_
-}
-
-void TSRateDiagnostic::define_state_impl(const PIO &file) const {
-  // FIXME_
-}
-
-void TSRateDiagnostic::write_state_impl(const PIO &file) const {
-  // FIXME_
 }
 
 } // end of namespace pism
