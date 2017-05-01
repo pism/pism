@@ -166,7 +166,7 @@ add_library (pism
   $<TARGET_OBJECTS:pisminverse>
   $<TARGET_OBJECTS:pismregional>
 )
-target_link_libraries (pism ${EVERYTRACE_LIBRARY} ${Pism_EXTERNAL_LIBS})
+target_link_libraries (pism ${Pism_EXTERNAL_LIBS})
 add_dependencies (pism pism_config)
 add_dependencies (pism touch_pism_revision)
 

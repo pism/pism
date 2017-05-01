@@ -144,7 +144,8 @@ pism_check_petsc_scalar_type()
 pism_set_version_info()
 
 if (Pism_USE_EVERYTRACE)
-  find_package(Everytrace)
+  find_package(Everytrace REQUIRED)
+  list (APPEND Pism_EXTERNAL_LIBS ${EVERYTRACE_LIBRARY})
 endif()
 
 if (Pism_BUILD_PYTHON_BINDINGS)
