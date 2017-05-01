@@ -351,6 +351,20 @@ void IceModel::cell_interface_fluxes(int i, int j,
 }
 
 
+
+// This is a hook called from within massContExplicitStep().
+// By default, do nothing.
+void IceModel::accumulateFluxes_massContExplicitStep(
+  int i, int j,
+  double surface_mass_balance,           // [m s-1] ice equivalent
+  double melt_rate,                      // [m s-1] ice equivalent
+  double divQ_SIA,                       // [m s-1] ice equivalent
+  double divQ_SSA,                       // [m s-1] ice equivalent
+  double Href_to_H_flux,                 // [m s-1] ice equivalent
+  double nonneg_rule_flux)               // [m s-1] ice equivalent
+{}
+
+
 //! Update the thickness from the diffusive flux and sliding velocity, and the surface and basal mass balance rates.
 /*!
   The partial differential equation describing the conservation of mass in the
@@ -450,7 +464,7 @@ void IceModel::massContExplicitStep(double dt,
 
   IceModelVec::AccessList list{&m_cell_area, &m_ice_thickness, &m_ice_surface_elevation,
       &bed_topography, &diffusive_flux, &advective_velocity, &m_cell_type, &H_new,
-      &m_cumulative_flux_fields.nonneg, &m_flux_divergence};
+      &m_cumulative_flux_fields.nonneg, &m_flux_divergence, &m_ice_enthalpy};
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool
@@ -773,7 +787,12 @@ void IceModel::apply_surface_and_basal_mass_balance(double dt,
         fluxes_scalar.surface += surface_mass_balance * meter_per_s_to_kg;
       }
 
-    }
+      // Allow user to accumulate in custom ways
+      accumulateFluxes_massContExplicitStep(i, j,
+        surface_mass_balance, basal_melt_rate,
+        divQ_SIA, divQ_SSA, Href_to_H_flux, nonneg_rule_flux);
+
+    }    // for (Points p(*m_grid); p; p.next) ...
   } catch (...) {
     loop.failed();
   }
