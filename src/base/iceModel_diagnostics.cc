@@ -1190,7 +1190,28 @@ MassFluxDischarge::MassFluxDischarge(const IceModel *m)
 }
 
 double MassFluxDischarge::compute() {
-  return 0.0;                   // FIXME_ (not zero in general)
+
+  const double ice_density = m_config->get_double("constants.ice.density");
+
+  const IceModelVec2S
+    &cell_area = model->geometry().cell_area,
+    &discharge = model->discharge();
+
+  double total_discharge = 0.0;
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      total_discharge += ice_density * cell_area(i, j) * discharge(i, j);
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return GlobalSum(m_grid->com, total_discharge);
 }
 
 //! \brief Computes dHdt, the ice thickness rate of change.

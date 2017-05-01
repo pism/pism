@@ -391,7 +391,7 @@ public:
 };
 
 //! \brief Reports the total discharge flux.
-class MassFluxDischarge : public TSDiag<TSFluxDiagnostic, IceModel> // FIXME_
+class MassFluxDischarge : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   MassFluxDischarge(const IceModel *m);
