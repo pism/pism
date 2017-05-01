@@ -362,7 +362,7 @@ public:
 
 protected:
   // discharge during the last time step
-  IceModelVec2S m_dischange;
+  IceModelVec2S m_discharge;
 
   /*!
    * The set of variables that the "state" of IceModel consists of.

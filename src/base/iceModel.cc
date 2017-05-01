@@ -125,7 +125,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
-    m_dischange(m_grid, "discharge", WITH_GHOSTS),
+    m_discharge(m_grid, "discharge", WITH_GHOSTS),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
@@ -873,6 +873,10 @@ const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
 
 const energy::EnergyModel* IceModel::energy_balance_model() const {
   return m_energy_model;
+}
+
+const IceModelVec2S& IceModel::discharge() const {
+  return m_discharge;
 }
 
 /*!

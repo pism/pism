@@ -114,7 +114,7 @@ void IceModel::do_calving() {
   compute_discharge(m_geometry.ice_thickness,
                     m_geometry.ice_area_specific_volume,
                     old_H, old_Href,
-                    m_dischange);
+                    m_discharge);
 }
 
 /**
