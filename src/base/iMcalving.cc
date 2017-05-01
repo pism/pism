@@ -148,7 +148,7 @@ void IceModel::Href_cleanup() {
 /**
  * Compute the ice discharge into the ocean during the current time step.
  *
- * Units: kg, computed as thickness [m] * cell_area [m2] * density [kg m-3].
+ * Units: ice equivalent meters.
  *
  * @param thickness current ice thickness
  * @param Href current "reference ice thickness"
@@ -162,10 +162,8 @@ void IceModel::compute_discharge(const IceModelVec2S &thickness,
                                  const IceModelVec2S &Href_old,
                                  IceModelVec2S &output) {
 
-  const double ice_density = m_config->get_double("constants.ice.density");
-
   IceModelVec::AccessList list{&thickness, &thickness_old,
-      &Href, &Href_old, &m_geometry.cell_area, &output};
+      &Href, &Href_old, &output};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -173,7 +171,7 @@ void IceModel::compute_discharge(const IceModelVec2S &thickness,
     const double
       H_old     = thickness_old(i, j) + Href_old(i, j),
       H_new     = thickness(i, j) + Href(i, j),
-      discharge = (H_new - H_old) * m_geometry.cell_area(i, j) * ice_density;
+      discharge = H_new - H_old;
 
     output(i, j) += discharge;
   }
