@@ -165,7 +165,6 @@ IceModelVec::Ptr Hydrology_wallmelt::compute_impl() const {
 MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(const Routing *m)
   : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_ice_free_land_loss") {
 
-  // FIXME_
   m_ts.variable().set_string("units", "kg s-1");
   m_ts.variable().set_string("long_name",
                               "rate of liquid water loss from subglacial hydrology into "
@@ -173,13 +172,12 @@ MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(const Routing *m)
 }
 
 double MCHydrology_ice_free_land_loss::compute() {
-  return model->m_ice_free_land_loss_cumulative; // FIXME_
+  return model->boundary_mass_accounting().ice_free_land_loss;
 }
 
 MCHydrology_ocean_loss::MCHydrology_ocean_loss(const Routing *m)
   : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_ocean_loss") {
 
-  // FIXME_
   m_ts.variable().set_string("units", "kg s-1");
   m_ts.variable().set_string("long_name",
                              "rate of liquid water loss from subglacial hydrology into "
@@ -187,13 +185,12 @@ MCHydrology_ocean_loss::MCHydrology_ocean_loss(const Routing *m)
 }
 
 double MCHydrology_ocean_loss::compute() {
-  return model->m_ocean_loss_cumulative; // FIXME_
+  return model->boundary_mass_accounting().ocean_loss;
 }
 
 MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(const Routing *m)
   : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_negative_thickness_gain") {
 
-  // FIXME_
   m_ts.variable().set_string("units", "kg s-1");
   m_ts.variable().set_string("long_name",
                              "rate of non-conserving liquid water gain from subglacial "
@@ -202,13 +199,12 @@ MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(const R
 }
 
 double MCHydrology_negative_thickness_gain::compute() {
-  return model->m_negative_thickness_gain_cumulative;
+  return model->boundary_mass_accounting().negative_thickness_gain;
 }
 
 MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(const Routing *m)
   : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_null_strip_loss") {
 
-  // FIXME_
   m_ts.variable().set_string("units", "kg s-1");
   m_ts.variable().set_string("long_name",
                              "rate of liquid water loss from subglacial hydrology into "
@@ -216,7 +212,7 @@ MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(const Routing *m)
 }
 
 double MCHydrology_null_strip_loss::compute() {
-  return model->m_null_strip_loss_cumulative; // FIXME_
+  return model->boundary_mass_accounting().null_strip_loss;
 }
 
 } // end of namespace hydrology
