@@ -49,7 +49,6 @@ void IceModel::init_timeseries() {
   }
 
   if (m_ts_filename.empty()) {
-    m_ts_diagnostics.clear();
     return;
   }
 
@@ -66,21 +65,6 @@ void IceModel::init_timeseries() {
   std::set<std::string> vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
   if (not vars.empty()) {
     m_log->message(2, "variables requested: %s\n", set_join(vars, ",").c_str());
-
-    std::map<std::string, TSDiagnostic::Ptr> diagnostics;
-    for (auto v : vars) {
-      if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
-        diagnostics[v] = m_ts_diagnostics[v];
-      } else {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "scalar diagnostic '%s' is not available",
-                                      v.c_str());
-      }
-    }
-    // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
-    m_ts_diagnostics = diagnostics;
-  } else {
-    // use all diagnostics in m_ts_diagnostics
   }
 
   // prepare the output file
