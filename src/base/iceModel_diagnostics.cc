@@ -193,13 +193,13 @@ protected:
 };
 
 /*! @brief Report discharge (calving and frontal melt) flux. */
-class DischargeFlux : public DiagAverageRate<IceModel>
+class CalvingMassFlux : public DiagAverageRate<IceModel>
 {
 public:
-  DischargeFlux(const IceModel *m)
-    : DiagAverageRate<IceModel>(m, "discharge_flux", TOTAL_CHANGE) {
+  CalvingMassFlux(const IceModel *m)
+    : DiagAverageRate<IceModel>(m, "calving_mass_flux", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "discharge_flux")};
+    m_vars = {SpatialVariableMetadata(m_sys, "calving_mass_flux")};
     m_accumulator.metadata().set_string("units", "kg m-2");
 
     set_attrs("discharge (calving and frontal melt) flux",
@@ -2039,7 +2039,7 @@ void IceModel::init_diagnostics() {
     {"effective_viscosity",                 f(new Viscosity(this))},
     {"basal_grounded_mass_flux",            f(new BMBSplit(this, GROUNDED))},
     {"basal_floating_mass_flux",            f(new BMBSplit(this, FLOATING))},
-    {"discharge_flux",                      f(new DischargeFlux(this))},
+    {"calving_mass_flux",                   f(new CalvingMassFlux(this))},
     {land_ice_area_fraction_name,           f(new IceAreaFraction(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this))},
