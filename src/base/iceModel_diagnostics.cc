@@ -192,6 +192,49 @@ protected:
   }
 };
 
+/*! @brief Report discharge (calving and frontal melt) flux. */
+class DischargeFlux : public DiagAverageRate<IceModel>
+{
+public:
+  DischargeFlux(const IceModel *m)
+    : DiagAverageRate<IceModel>(m, "discharge_flux", TOTAL_CHANGE) {
+
+    m_vars = {SpatialVariableMetadata(m_sys, "discharge_flux")};
+    m_accumulator.metadata().set_string("units", "kg m-2");
+
+    set_attrs("discharge (calving and frontal melt) flux",
+              "",               // no CF standard name
+              "kg m-2 second-1", "kg m-2 year-1", 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value,
+                                       m_vars[0].get_string("glaciological_units"),
+                                       m_vars[0].get_string("units"));
+    m_vars[0].set_double("_FillValue", fill_value);
+    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+  }
+
+protected:
+  void update_impl(double dt) {
+
+    const double ice_density = m_config->get_double("constants.ice.density");
+
+    const IceModelVec2S &cell_area = model->geometry().cell_area;
+    const IceModelVec2S &discharge = model->discharge();
+
+    IceModelVec::AccessList list{&cell_area, &discharge, &m_accumulator};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      m_accumulator(i, j) += ice_density * discharge(i, j) / cell_area(i, j);
+    }
+
+    m_interval_length += dt;
+  }
+};
+
+
 HardnessAverage::HardnessAverage(const IceModel *m)
   : Diag<IceModel>(m) {
 
@@ -1996,6 +2039,7 @@ void IceModel::init_diagnostics() {
     {"effective_viscosity",                 f(new Viscosity(this))},
     {"basal_grounded_mass_flux",            f(new BMBSplit(this, GROUNDED))},
     {"basal_floating_mass_flux",            f(new BMBSplit(this, FLOATING))},
+    {"discharge_flux",                      f(new DischargeFlux(this))},
     {land_ice_area_fraction_name,           f(new IceAreaFraction(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this))},
