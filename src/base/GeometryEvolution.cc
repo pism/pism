@@ -662,6 +662,10 @@ void GeometryEvolution::update_in_place(double dt,
           &m_impl->surface_elevation, &bed_topography, &m_impl->cell_type});
   }
 
+#if (PISM_DEBUG==1)
+  const double Lz = m_grid->Lz();
+#endif
+
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -698,6 +702,13 @@ void GeometryEvolution::update_in_place(double dt,
       } // end of if (use_part_grid)
 
       ice_thickness(i, j) += - dt * divQ;
+
+#if (PISM_DEBUG==1)
+      if (ice_thickness(i, j) > Lz) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice thickness exceeds Lz at i=%d, j=%d (H=%f, Lz=%f)",
+                                      i, j, ice_thickness(i, j), Lz);
+      }
+#endif
     }
   } catch (...) {
     loop.failed();
