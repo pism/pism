@@ -49,10 +49,6 @@ class BedSmoother;
  */
 class SIAFD : public SSB_Modifier
 {
-  friend class SIAFD_schoofs_theta;
-  friend class SIAFD_topgsmooth;
-  friend class SIAFD_thksmooth;
-  friend class SIAFD_diffusivity_staggered;
 public:
   SIAFD(IceGrid::ConstPtr g);
 
@@ -63,6 +59,8 @@ public:
   virtual void update(const IceModelVec2V &sliding_velocity,
                       const StressBalanceInputs &inputs,
                       bool full_update);
+
+  const BedSmoother& bed_smoother() const;
 
   const IceModelVec2Stag& surface_gradient_x() const;
   const IceModelVec2Stag& surface_gradient_y() const;

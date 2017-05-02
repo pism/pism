@@ -590,9 +590,9 @@ void SIAFD::compute_diffusivity(bool full_update,
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
   // have stencil width WIDE_GHOSTS for this too work
-  m_bed_smoother->get_theta(h, theta);
+  m_bed_smoother->theta(h, theta);
 
-  m_bed_smoother->get_smoothed_thk(h, H, mask, thk_smooth);
+  m_bed_smoother->smoothed_thk(h, H, mask, thk_smooth);
 
   IceModelVec::AccessList list{&result, &theta, &thk_smooth, &h_x, &h_y, enthalpy};
 
@@ -803,7 +803,7 @@ void SIAFD::compute_I(const Geometry &geometry) {
 
   const IceModelVec2CellType &mask = geometry.cell_type;
 
-  m_bed_smoother->get_smoothed_thk(h, H, mask, thk_smooth);
+  m_bed_smoother->smoothed_thk(h, H, mask, thk_smooth);
 
   IceModelVec::AccessList list{&m_delta[0], &m_delta[1], &I[0], &I[1], &thk_smooth};
 
@@ -1013,6 +1013,11 @@ const IceModelVec2Stag& SIAFD::surface_gradient_y() const {
 const IceModelVec2Stag& SIAFD::diffusivity() const {
   return m_D;
 }
+
+const BedSmoother& SIAFD::bed_smoother() const {
+  return *m_bed_smoother;
+}
+
 
 } // end of namespace stressbalance
 } // end of namespace pism

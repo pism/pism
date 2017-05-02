@@ -54,7 +54,7 @@ IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "schoofs_theta", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  model->m_bed_smoother->get_theta(*surface, *result);
+  model->bed_smoother().theta(*surface, *result);
 
   return result;
 }
@@ -74,7 +74,7 @@ IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "topgsmooth", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  result->copy_from(model->m_bed_smoother->get_smoothed_bed());
+  result->copy_from(model->bed_smoother().smoothed_bed());
 
   return result;
 }
@@ -97,8 +97,8 @@ IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "thksmooth", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  model->m_bed_smoother->get_smoothed_thk(surface, thickness, mask,
-                                          *result);
+  model->bed_smoother().smoothed_thk(surface, thickness, mask,
+                                     *result);
   return result;
 }
 
