@@ -313,8 +313,8 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
   //
   // This computation is purely local.
   m_impl->profile.begin("ge.ensure_nonnegativity");
-  ensure_nonnegativity(geometry.ice_thickness,                // in
-                       geometry.ice_area_specific_volume,     // in
+  ensure_nonnegativity(geometry.ice_thickness,                  // in
+                       geometry.ice_area_specific_volume,       // in
                        m_impl->thickness_change,                // in/out
                        m_impl->ice_area_specific_volume_change, // in/out
                        m_impl->conservation_error);             // out
