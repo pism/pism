@@ -765,14 +765,15 @@ void IceModel::run() {
     const bool show_step = tempAgeStep or m_adaptive_timestep_reason == "end of the run";
     print_summary(show_step);
 
+    // update viewers before writing extras because writing extras resets diagnostics
+    update_viewers();
+
     // writing these fields here ensures that we do it after the last time-step
     profiling.begin("io");
     write_snapshot();
     write_extras();
     write_backup();
     profiling.end("io");
-
-    update_viewers();
 
     if (stepcount >= 0) {
       stepcount++;
