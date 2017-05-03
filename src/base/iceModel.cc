@@ -910,7 +910,9 @@ void IceModel::prune_diagnostics() {
 
   // scalar time series
   std::set<std::string> vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
-  if (not vars.empty()) {
+  if (not m_ts_filename.empty() and vars.empty()) {
+    // use all diagnostics
+  } else {
     std::map<std::string, TSDiagnostic::Ptr> diagnostics;
     for (auto v : vars) {
       if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
@@ -923,10 +925,7 @@ void IceModel::prune_diagnostics() {
     }
     // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
     m_ts_diagnostics = diagnostics;
-  } else {
-    // use all diagnostics in m_ts_diagnostics
   }
-
 }
 
 /*!
