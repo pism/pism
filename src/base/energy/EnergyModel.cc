@@ -114,7 +114,7 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
     m_basal_melt_rate.create(m_grid, "bmelt", WITHOUT_GHOSTS);
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.set_attrs("model_state",
-                                "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
+                                "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)",
                                 "m s-1", "land_ice_basal_melt_rate");
     m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
     m_basal_melt_rate.write_in_glaciological_units = true;
@@ -248,21 +248,21 @@ void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
 
   const Profiling &profiling = m_grid->ctx()->profiling();
 
-  profiling.begin("ice energy");
+  profiling.begin("ice_energy");
   {
     // this call should fill m_work with new values of enthalpy
     this->update_impl(t, dt, inputs);
 
     m_work.update_ghosts(m_ice_enthalpy);
   }
-  profiling.end("ice energy");
+  profiling.end("ice_energy");
 
   // globalize m_stats and update m_stdout_flags
   {
     char buffer[50] = "";
 
     m_stats.sum(m_grid->com);
-    m_cumulative_stats += m_stats;
+
     if (m_stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
       const double reduced_accuracy_percentage = 100.0 * (m_stats.reduced_accuracy_counter / (m_grid->Mx() * m_grid->My()));
       const double reporting_threshold = 5.0; // only report if above 5%
@@ -311,50 +311,88 @@ const EnergyModelStats& EnergyModel::stats() const {
   return m_stats;
 }
 
-const EnergyModelStats& EnergyModel::cumulative_stats() const {
-  return m_cumulative_stats;
-}
-
-void EnergyModel::reset_cumulative_stats() {
-  m_cumulative_stats = EnergyModelStats();
-}
-
 const IceModelVec3 & EnergyModel::enthalpy() const {
   return m_ice_enthalpy;
 }
 
+/*! @brief Basal melt rate in grounded areas. (It is set to zero elsewhere.) */
 const IceModelVec2S & EnergyModel::basal_melt_rate() const {
   return m_basal_melt_rate;
 }
 
-/*! @brief Total volume of liquified ice. */
-class EnergyModel_liquified_ice_volume : public TSDiag<EnergyModel> {
+/*! @brief Ice loss "flux" due to ice liquefaction. */
+class LiquifiedIceFlux : public TSDiag<TSFluxDiagnostic,EnergyModel> {
 public:
-  EnergyModel_liquified_ice_volume(const EnergyModel *m);
+  LiquifiedIceFlux(const EnergyModel *m)
+    : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
+
+    m_ts.variable().set_string("units", "m3 / second");
+    m_ts.variable().set_string("glaciological_units", "m3 / year");
+    m_ts.variable().set_string("long_name",
+                               "rate of ice loss due to liquefaction,"
+                               " averaged over the reporting interval");
+    m_ts.variable().set_string("comment", "positive means ice loss");
+    m_ts.variable().set_string("cell_methods", "time: mean");
+  }
 protected:
-  void update(double a, double b);
+  double compute() {
+    // liquified ice volume during the last time step
+    return model->stats().liquified_ice_volume;
+  }
 };
 
-EnergyModel_liquified_ice_volume::EnergyModel_liquified_ice_volume(const EnergyModel *m)
-  : TSDiag<EnergyModel>(m) {
+namespace diagnostics {
+/*! @brief Report ice enthalpy. */
+class Enthalpy : public Diag<EnergyModel>
+{
+public:
+  Enthalpy(const EnergyModel *m)
+    : Diag<EnergyModel>(m) {
+    m_vars = {model->enthalpy().metadata()};
+  }
 
-  // set metadata
-  m_ts = new DiagnosticTimeseries(*m_grid, "liquified_ice_volume", m_time_dimension_name);
+protected:
+  IceModelVec::Ptr compute_impl() const {
 
-  m_ts->metadata().set_string("units", "m3");
-  m_ts->dimension_metadata().set_string("units", m_time_units);
+    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "enthalpy", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
 
-  m_ts->metadata().set_string("long_name",
-                              "total volume of ice liquified during a reporting interval");
-}
+    const IceModelVec3 &input = model->enthalpy();
 
-void EnergyModel_liquified_ice_volume::update(double a, double b) {
-  m_ts->append(model->cumulative_stats().liquified_ice_volume, a, b);
+    // FIXME: implement IceModelVec3::copy_from()
+
+    IceModelVec::AccessList list {result.get(), &input};
+    ParallelSection loop(m_grid->com);
+    try {
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        result->set_column(i, j, input.get_column(i, j));
+      }
+    } catch (...) {
+      loop.failed();
+    }
+    loop.check();
+
+
+    return result;
+  }
+};
+
+} // end of namespace diagnostics
+
+std::map<std::string, Diagnostic::Ptr> EnergyModel::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result;
+  result = {
+    {"enthalpy", Diagnostic::Ptr(new diagnostics::Enthalpy(this))},
+    {"bmelt",    Diagnostic::wrap(m_basal_melt_rate)}
+  };
+  return result;
 }
 
 std::map<std::string, TSDiagnostic::Ptr> EnergyModel::ts_diagnostics_impl() const {
   return {
-    {"liquified_ice_volume", TSDiagnostic::Ptr(new EnergyModel_liquified_ice_volume(this))}
+    {"liquified_ice_flux", TSDiagnostic::Ptr(new LiquifiedIceFlux(this))}
   };
 }
 

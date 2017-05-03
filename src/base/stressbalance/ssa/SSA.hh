@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,8 @@
 #include "base/util/IceModelVec2CellType.hh"
 
 namespace pism {
+
+class Geometry;
 
 namespace stressbalance {
 
@@ -112,16 +114,13 @@ public:
 
   SSAStrengthExtension *strength_extension;
 
-  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
+  virtual void update(const StressBalanceInputs &inputs, bool full_update);
 
   void set_initial_guess(const IceModelVec2V &guess);
 
   virtual std::string stdout_report() const;
 
-  virtual void compute_driving_stress(IceModelVec2V &taud) const;
-
-  double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
-                                   double rho_ice, double rho_ocean, double g) const;
+  const IceModelVec2V& driving_stress() const;
 protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
@@ -130,16 +129,12 @@ protected:
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  virtual void solve() = 0;
+  virtual void compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const;
+
+  virtual void solve(const StressBalanceInputs &inputs) = 0;
 
   IceModelVec2CellType m_mask;
-  const IceModelVec2S *m_thickness;
-  const IceModelVec2S *m_tauc;
-  const IceModelVec2S *m_surface;
-  const IceModelVec2S *m_bed;
   IceModelVec2V m_taud;
-  const IceModelVec3 *m_ice_enthalpy;
-  const IceModelVec2S *m_gl_mask;
 
   std::string m_stdout_ssa;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -50,9 +50,10 @@ namespace stressbalance {
 
 class SSATestCasePlug: public SSATestCase {
 public:
-  SSATestCasePlug(Context::Ptr ctx, double n)
-    : SSATestCase(ctx) {
-    H0    = 2000.;              //m
+  SSATestCasePlug(Context::Ptr ctx, int Mx, int My,
+                  double n, SSAFactory ssafactory)
+    : SSATestCase(ctx, Mx, My, 50e3, 50e3, NOT_PERIODIC) {
+    H0    = 2000.;              // m
     L     = 50.e3;              // 50km half-width
     dhdx  = 0.001;              // pure number, slope of surface & bed
     tauc0 = 0.;                 // No basal shear stress
@@ -61,13 +62,20 @@ public:
     B0           = 3.7e8;
 
     this->glen_n = n;
+
+    // Basal sliding law parameters are irrelevant because tauc=0
+
+    // Enthalpy converter is irrelevant (but still required) for this test.
+    m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
+
+    // Use constant hardness
+    m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+    m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n));
+
+    m_ssa = ssafactory(m_grid);
   }
 
 protected:
-  virtual void initializeGrid(int Mx,int My);
-
-  virtual void initializeSSAModel();
-
   virtual void initializeSSACoefficients();
 
   virtual void exactSolution(int i, int j,
@@ -85,26 +93,6 @@ protected:
 
 };
 
-
-void SSATestCasePlug::initializeGrid(int Mx,int My) {
-  double Lx=L, Ly = L;
-  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
-                            0.0, 0.0, // center: (x0,y0)
-                            Mx, My, NOT_PERIODIC);
-}
-
-
-void SSATestCasePlug::initializeSSAModel() {
-  // Basal sliding law parameters are irrelevant because tauc=0
-
-  // Enthalpy converter is irrelevant (but still required) for this test.
-  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-
-  // Use constant hardness
-  m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-  m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B0, -glen_n));
-}
-
 void SSATestCasePlug::initializeSSACoefficients() {
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
@@ -115,14 +103,13 @@ void SSATestCasePlug::initializeSSACoefficients() {
   m_ssa->strength_extension->set_min_thickness(H0/2);
 
   // Set constant coefficients.
-  m_thickness.set(H0);
+  m_geometry.ice_thickness.set(H0);
   m_tauc.set(tauc0);
-
 
   // Set boundary conditions (Dirichlet all the way around).
   m_bc_mask.set(0.0);
 
-  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask, &m_bed, &m_surface};
+  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask, &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -130,8 +117,8 @@ void SSATestCasePlug::initializeSSACoefficients() {
     double myu, myv;
     const double myx = m_grid->x(i), myy=m_grid->y(j);
 
-    m_bed(i,j) = -myx*(dhdx);
-    m_surface(i,j) = m_bed(i,j) + H0;
+    m_geometry.bed_elevation(i,j) = -myx*(dhdx);
+    m_geometry.ice_surface_elevation(i,j) = m_geometry.bed_elevation(i,j) + H0;
 
     bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
                  (i == 0) || (i == (int)m_grid->Mx() - 1));
@@ -145,15 +132,13 @@ void SSATestCasePlug::initializeSSACoefficients() {
 
   m_bc_values.update_ghosts();
   m_bc_mask.update_ghosts();
-  m_bed.update_ghosts();
-  m_surface.update_ghosts();
-
-  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
+  m_geometry.bed_elevation.update_ghosts();
+  m_geometry.ice_surface_elevation.update_ghosts();
 }
 
 void SSATestCasePlug::exactSolution(int /*i*/, int /*j*/,
-                                              double /*x*/, double y,
-                                              double *u, double *v) {
+                                    double /*x*/, double y,
+                                    double *u, double *v) {
   double earth_grav = m_config->get_double("constants.standard_gravity"),
     ice_rho = m_config->get_double("constants.ice.density");
   double f = ice_rho * earth_grav * H0* dhdx;
@@ -215,8 +200,8 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCasePlug testcase(ctx, glen_n);
-    testcase.init(Mx,My,ssafactory);
+    SSATestCasePlug testcase(ctx, Mx, My, glen_n, ssafactory);
+    testcase.init();
     testcase.run();
     testcase.report("plug");
     testcase.write(output_file);

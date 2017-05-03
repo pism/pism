@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,49 +25,31 @@
 #include "base/util/pism_options.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/pism_utilities.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 
 namespace pism {
 namespace stressbalance {
 
-//! Initialize the storage for the various coefficients used as input to the SSA
-//! (ice elevation, thickness, etc.)
-void SSATestCase::buildSSACoefficients()
-{
+SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
+                         double Lx, double Ly, Periodicity periodicity)
+  : m_com(ctx->com()), m_ctx(ctx), m_config(ctx->config()),
+    m_grid(IceGrid::Shallow(m_ctx, Lx, Ly, 0.0, 0.0, Mx, My, periodicity)),
+    m_sys(ctx->unit_system()),
+    m_geometry(m_grid),
+    m_ssa(NULL) {
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
-
-  // ice surface elevation
-  m_surface.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
-  m_surface.set_attrs("diagnostic", "ice upper surface elevation", "m",
-                      "surface_altitude");
-  m_grid->variables().add(m_surface);
-
-  // land ice thickness
-  m_thickness.create(m_grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
-  m_thickness.set_attrs("model_state", "land ice thickness", "m",
-                        "land_ice_thickness");
-  m_thickness.metadata().set_double("valid_min", 0.0);
-  m_grid->variables().add(m_thickness);
-
-  // bedrock surface elevation
-  m_bed.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
-  m_bed.set_attrs("model_state", "bedrock surface elevation", "m",
-                  "bedrock_altitude");
-  m_grid->variables().add(m_bed);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   m_tauc.create(m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
   m_tauc.set_attrs("diagnostic",
                    "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
-  m_grid->variables().add(m_tauc);
 
   // enthalpy
   m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
   m_ice_enthalpy.set_attrs("model_state",
                        "ice enthalpy (includes sensible heat, latent heat, pressure)",
                        "J kg-1", "");
-  m_grid->variables().add(m_ice_enthalpy);
-
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
   m_bc_values.create(m_grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); // u_bc and v_bc
@@ -95,33 +77,14 @@ void SSATestCase::buildSSACoefficients()
   m_bc_values.write_in_glaciological_units = true;
   m_bc_values.set(fill_value);
 
-  // grounded_dragging_floating integer mask
-  m_ice_mask.create(m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
-  m_ice_mask.set_attrs("model_state",
-                       "grounded_dragging_floating integer mask", "", "");
-  std::vector<double> mask_values(4);
-  mask_values[0] = MASK_ICE_FREE_BEDROCK;
-  mask_values[1] = MASK_GROUNDED;
-  mask_values[2] = MASK_FLOATING;
-  mask_values[3] = MASK_ICE_FREE_OCEAN;
-  m_ice_mask.metadata().set_doubles("flag_values", mask_values);
-  m_ice_mask.metadata().set_string("flag_meanings",
-                                   "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  m_grid->variables().add(m_ice_mask);
-
-  m_ice_mask.set(MASK_GROUNDED);
-
   // Dirichlet B.C. mask
   m_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
   m_bc_mask.set_attrs("model_state",
                       "grounded_dragging_floating integer mask", "", "");
-  mask_values.resize(2);
-  mask_values[0] = 0;
-  mask_values[1] = 1;
-  m_bc_mask.metadata().set_doubles("flag_values", mask_values);
+
+  m_bc_mask.metadata().set_doubles("flag_values", {0.0, 1.0});
   m_bc_mask.metadata().set_string("flag_meanings",
                                   "no_data ssa.dirichlet_bc_location");
-  m_grid->variables().add(m_bc_mask);
 
   m_melange_back_pressure.create(m_grid, "melange_back_pressure_fraction",
                                  WITH_GHOSTS, WIDE_STENCIL);
@@ -130,44 +93,37 @@ void SSATestCase::buildSSACoefficients()
   m_melange_back_pressure.set(0.0);
 }
 
-SSATestCase::SSATestCase(Context::Ptr ctx)
-  : m_com(ctx->com()), m_config(ctx->config()), m_ctx(ctx),
-    m_sys(ctx->unit_system()), m_ssa(NULL) {
-  // empty
-}
-
 SSATestCase::~SSATestCase()
 {
   delete m_ssa;
 }
 
 //! Initialize the test case at the start of a run
-void SSATestCase::init(int Mx, int My, SSAFactory ssafactory) {
-  // Subclass builds grid->
-  initializeGrid(Mx, My);
+void SSATestCase::init() {
 
-  // Subclass builds ice flow law, basal resistance, etc.
-  initializeSSAModel();
+  m_ssa->init();
 
-  // We setup storage for the coefficients.
-  buildSSACoefficients();
-
-  // Allocate the actual SSA solver.
-  m_ssa = ssafactory(m_grid);
-  m_ssa->init(); // vars was setup preivouisly with buildSSACoefficients
-
-  // Allow the subclass to setup the coefficients.
+  // Allow the subclass to set the coefficients.
   initializeSSACoefficients();
 }
 
 //! Solve the SSA
 void SSATestCase::run() {
-  // Solve (fast==true means "no update"):
   m_ctx->log()->message(2, "* Solving the SSA stress balance ...\n");
 
-  bool fast = false;
-  double sea_level = 0.0;
-  m_ssa->update(fast, sea_level, m_melange_back_pressure);
+  m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+
+  StressBalanceInputs inputs;
+  inputs.sea_level             = 0.0;
+  inputs.melange_back_pressure = &m_melange_back_pressure;
+  inputs.geometry              = &m_geometry;
+  inputs.enthalpy              = &m_ice_enthalpy;
+  inputs.basal_yield_stress    = &m_tauc;
+  inputs.bc_mask               = &m_bc_mask;
+  inputs.bc_values             = &m_bc_values;
+
+  bool full_update = true;
+  m_ssa->update(inputs, full_update);
 }
 
 //! Report on the generated solution
@@ -297,7 +253,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
   PIO nc(m_grid->com, "netcdf3", filename, mode);      // OK to use NetCDF3.
   start = nc.inq_dimlen("N");
 
-  io::write_global_attributes(nc, global_attributes);
+  io::write_attributes(nc, global_attributes, PISM_DOUBLE, false);
 
   // Write the dimension variable:
   io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);
@@ -363,24 +319,21 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  PIO pio(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+  PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
           filename, PISM_READWRITE_MOVE);
-  io::define_time(pio, m_config->get_string("time.dimension_name"),
-                  m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->CF_units_string(),
-                  m_grid->ctx()->unit_system());
-  io::append_time(pio, m_config->get_string("time.dimension_name"), 0.0);
+  io::define_time(file, *m_grid->ctx());
+  io::append_time(file, *m_config, 0.0);
 
-  m_surface.write(pio);
-  m_thickness.write(pio);
-  m_bc_mask.write(pio);
-  m_tauc.write(pio);
-  m_bed.write(pio);
-  m_ice_enthalpy.write(pio);
-  m_bc_values.write(pio);
+  m_geometry.ice_surface_elevation.write(file);
+  m_geometry.ice_thickness.write(file);
+  m_bc_mask.write(file);
+  m_tauc.write(file);
+  m_geometry.bed_elevation.write(file);
+  m_ice_enthalpy.write(file);
+  m_bc_values.write(file);
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
-  vel_ssa.write(pio);
+  vel_ssa.write(file);
 
   IceModelVec2V exact;
   exact.create(m_grid, "_exact", WITHOUT_GHOSTS);
@@ -401,9 +354,9 @@ void SSATestCase::write(const std::string &filename) {
     exactSolution(i, j, m_grid->x(i), m_grid->y(j),
                   &(exact(i,j).u), &(exact(i,j).v));
   }
-  exact.write(pio);
+  exact.write(file);
 
-  pio.close();
+  file.close();
 }
 
 } // end of namespace stressbalance

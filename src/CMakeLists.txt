@@ -7,6 +7,10 @@ set(PISM_PARALLEL_IO_FLAGS "")
 
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
+  base/Geometry.cc
+  base/GeometryEvolution.cc
+  base/util/FETools.cc
+  base/util/node_types.cc
   base/util/petscwrappers/PetscInitializer.cc
   base/util/petscwrappers/DM.cc
   base/util/petscwrappers/IS.cc
@@ -123,12 +127,10 @@ add_library (pism
   base/iMcalving.cc
   base/iMenergy.cc
   base/iMfractures.cc
-  base/iMgeometry.cc
   base/grounded_cell_fraction.cc
   base/iMinit.cc
   base/iMIO.cc
   base/iMoptions.cc
-  base/iMpartgrid.cc
   base/iMreport.cc
   base/iMtimeseries.cc
   base/iMutil.cc

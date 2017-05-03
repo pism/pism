@@ -1,7 +1,7 @@
 #!/bin/bash
 
 N=4
-M=101
+M=201
 xx=$M
 yy=$M
 length=400
@@ -11,7 +11,7 @@ infile="circular_noshelf.nc"
 if [[ ! -r $infile ]]
 then
     echo "generating the input file..."
-    ./circular_dirichlet.py -o $infile
+    ./circular_dirichlet.py -Mx $M -My $M -o $infile
 fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 1500 -Lbz 1000"
@@ -22,15 +22,15 @@ output_basename="test_eigencalving"
 
 calving="-calving eigen_calving -eigen_calving_K 1e15"
 
-diagnostics="thk,mask,velbar_mag,Href,velbar,discharge_flux_cumulative"
+diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,calving_mass_flux"
 
-viewers="-view_map $diagnostics"
+viewers="-view $diagnostics"
 
 extra="-extra_times 10 -extra_vars $diagnostics -extra_file ${output_basename}_ex.nc"
 
 ts="-ts_times 10 -ts_file ${output_basename}_ts.nc"
 
-misc_options="-cfbc -part_grid -o_order zyx"
+misc_options="-cfbc -part_grid -o_order zyx -energy none"
 
 pismopts="-i $infile -bootstrap $grid $stressbalance $calving $viewers $extra $ts $misc_options"
 

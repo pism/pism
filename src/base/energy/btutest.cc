@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -228,18 +228,16 @@ int main(int argc, char *argv[]) {
                  max_error, 100.0*max_error/FF, avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
-    PIO pio(grid->com, grid->ctx()->config()->get_string("output.format"),
+    PIO file(grid->com, grid->ctx()->config()->get_string("output.format"),
             outname, PISM_READWRITE_MOVE);
 
-    std::string time_name = config->get_string("time.dimension_name");
-    io::define_time(pio, time_name, ctx->time()->calendar(),
-                    ctx->time()->CF_units_string(), ctx->unit_system());
-    io::append_time(pio, time_name, ctx->time()->end());
+    io::define_time(file, *ctx);
+    io::append_time(file, *ctx->config(), ctx->time()->current());
 
-    btu->write_model_state(pio);
+    btu->write_model_state(file);
 
-    bedtoptemp.write(pio);
-    heat_flux_at_ice_base.write(pio);
+    bedtoptemp.write(file);
+    heat_flux_at_ice_base.write(file);
 
     log->message(2, "done.\n");
   }

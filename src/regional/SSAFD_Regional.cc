@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,9 +44,9 @@ void SSAFD_Regional::init() {
   }
 }
 
-void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) const {
+void SSAFD_Regional::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const {
 
-  SSAFD::compute_driving_stress(result);
+  SSAFD::compute_driving_stress(geometry, result);
 
   const IceModelVec2Int &nmm = *m_grid->variables().get_2d_mask("no_model_mask");
 

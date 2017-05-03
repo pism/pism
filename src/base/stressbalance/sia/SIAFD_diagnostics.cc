@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -48,14 +48,13 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
   m_vars[0].set_double("valid_max", 1);
 }
 
-IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() {
+IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {
   const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "schoofs_theta", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "schoofs_theta", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  model->m_bed_smoother->get_theta(*surface, *result);
+  model->bed_smoother().theta(*surface, *result);
 
   return result;
 }
@@ -70,13 +69,12 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() {
+IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "topgsmooth", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "topgsmooth", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  result->copy_from(model->m_bed_smoother->get_smoothed_bed());
+  result->copy_from(model->bed_smoother().smoothed_bed());
 
   return result;
 }
@@ -90,18 +88,17 @@ SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_thksmooth::compute_impl() {
+IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
 
   const IceModelVec2S        &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
   const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "thksmooth", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "thksmooth", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  model->m_bed_smoother->get_smoothed_thk(surface, thickness, mask,
-                                          *result);
+  model->bed_smoother().smoothed_thk(surface, thickness, mask,
+                                     *result);
   return result;
 }
 
@@ -117,12 +114,11 @@ SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
             "m2 s-1", "m2 s-1", 0);
 }
 
-IceModelVec::Ptr SIAFD_diffusivity::compute_impl() {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "diffusivity", WITHOUT_GHOSTS);
+IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "diffusivity", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  model->compute_diffusivity(*result);
+  model->diffusivity().staggered_to_regular(*result);
 
   return result;
 }
@@ -142,14 +138,13 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
             "m2 s-1", "m2 s-1", 1);
 }
 
-IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() {
+IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "diffusivity", WITHOUT_GHOSTS);
-  result->metadata() = m_vars[0];
+  result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
-  result->write_in_glaciological_units = true;
 
-  model->compute_diffusivity_staggered(*result);
+  result->copy_from(model->diffusivity());
 
   return result;
 }
@@ -169,18 +164,14 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_x::compute_impl() {
+IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
-  result->create(m_grid, "h_x", WITH_GHOSTS);
+  result->create(m_grid, "h_x", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
-  result->write_in_glaciological_units = true;
 
-  model->compute_surface_gradient(model->m_work_2d_stag[0],
-                                  model->m_work_2d_stag[1]);
-
-  result->copy_from(model->m_work_2d_stag[0]);
+  result->copy_from(model->surface_gradient_x());
 
   return result;
 }
@@ -200,18 +191,14 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_y::compute_impl() {
+IceModelVec::Ptr SIAFD_h_y::compute_impl() const {
 
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
-  result->create(m_grid, "h_y", WITH_GHOSTS);
+  result->create(m_grid, "h_y", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
-  result->write_in_glaciological_units = true;
 
-  model->compute_surface_gradient(model->m_work_2d_stag[0],
-                                  model->m_work_2d_stag[1]);
-
-  result->copy_from(model->m_work_2d_stag[1]);
+  result->copy_from(model->surface_gradient_y());
 
   return result;
 }

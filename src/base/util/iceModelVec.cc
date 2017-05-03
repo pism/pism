@@ -399,7 +399,7 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
                             const std::string &long_name,
                             const std::string &units,
                             const std::string &standard_name,
-                            int N) {
+                            unsigned int N) {
 
   metadata(N).set_string("long_name", long_name);
 
@@ -465,10 +465,12 @@ void IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
-void IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
+void IceModelVec::define(const PIO &nc, IO_Type default_type) const {
   std::string order = m_grid->ctx()->config()->get_string("output.variable_order");
   for (unsigned int j = 0; j < m_dof; ++j) {
-    io::define_spatial_variable(metadata(j), *m_grid, nc, output_datatype,
+    IO_Type type = metadata(j).get_output_type();
+    type = type == PISM_NAT ? default_type : type;
+    io::define_spatial_variable(metadata(j), *m_grid, nc, type,
                                 order, write_in_glaciological_units);
   }
 }
@@ -521,19 +523,14 @@ void IceModelVec::write_impl(const PIO &nc) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void IceModelVec::dump(const char filename[]) const {
-  PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
-         filename, PISM_READWRITE_CLOBBER);
+  PIO file(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+           filename, PISM_READWRITE_CLOBBER);
 
-  io::define_time(nc,
-                  m_grid->ctx()->config()->get_string("time.dimension_name"),
-                  m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->units_string(),
-                  m_grid->ctx()->unit_system());
-  io::append_time(nc, m_grid->ctx()->config()->get_string("time.dimension_name"),
-                  m_grid->ctx()->time()->current());
+  io::define_time(file, *m_grid->ctx());
+  io::append_time(file, *m_grid->ctx()->config(), m_grid->ctx()->time()->current());
 
-  define(nc, PISM_DOUBLE);
-  write(nc);
+  define(file, PISM_DOUBLE);
+  write(file);
 }
 
 //! Checks if two IceModelVecs have compatible sizes, dimensions and numbers of degrees of freedom.
@@ -935,6 +932,12 @@ AccessList::AccessList(const PetscAccessible &vec) {
 void AccessList::add(const PetscAccessible &vec) {
   vec.begin_access();
   m_vecs.push_back(&vec);
+}
+
+void AccessList::add(const std::vector<const PetscAccessible*> vecs) {
+  for (auto v : vecs) {
+    add(*v);
+  }
 }
 
 //! Return the total number of elements in the *owned* part of an array.

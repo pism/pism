@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,20 +34,20 @@ void IceModel::compute_cell_areas() {
                    "* Computing cell areas using projection parameters (%s)...\n",
                    projection.c_str());
 
-    ::pism::compute_cell_areas(projection, m_cell_area);
+    ::pism::compute_cell_areas(projection, m_geometry.cell_area);
 
     m_log->message(2,
                    "* Computing longitude and latitude using projection parameters (%s)...\n",
                    projection.c_str());
 
-    compute_longitude(projection, m_longitude);
-    compute_latitude(projection, m_latitude);
+    compute_longitude(projection, m_geometry.longitude);
+    compute_latitude(projection, m_geometry.latitude);
   } else {
     m_log->message(2,
                    "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
                    m_grid->dx(), m_grid->dy());
 
-    m_cell_area.set(m_grid->dx() * m_grid->dy());
+    m_geometry.cell_area.set(m_grid->dx() * m_grid->dy());
   }
 }
 

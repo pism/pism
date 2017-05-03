@@ -85,12 +85,6 @@ IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
 }
 
 
-IceModelVec2Stag::IceModelVec2Stag()
-  : IceModelVec2() {
-  m_dof = 2;
-  m_begin_end_access_use_dof = true;
-}
-
 void  IceModelVec2S::create(IceGrid::ConstPtr grid, const std::string &name, IceModelVecKind ghostedp, int width) {
   assert(m_v == NULL);
   IceModelVec2::create(grid, name, ghostedp, width, m_dof);
@@ -459,6 +453,18 @@ void IceModelVec2::view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const {
     convert_vec(tmp, m_metadata[i].unit_system(),
                 units, glaciological_units);
 
+    double bounds[2] = {0.0, 0.0};
+    ierr = VecMin(tmp, NULL, &bounds[0]); PISM_CHK(ierr, "VecMin");
+    ierr = VecMax(tmp, NULL, &bounds[1]); PISM_CHK(ierr, "VecMax");
+
+    if (bounds[0] == bounds[1]) {
+      bounds[0] = -1.0;
+      bounds[1] =  1.0;
+    }
+
+    ierr = PetscViewerDrawSetBounds(v, 1, bounds);
+    PISM_CHK(ierr, "PetscViewerDrawSetBounds");
+
     ierr = VecView(tmp, v);
     PISM_CHK(ierr, "VecView");
   }
@@ -666,6 +672,12 @@ void IceModelVec2S::copy_from(const IceModelVec &source) {
 
 // IceModelVec2Stag
 
+IceModelVec2Stag::IceModelVec2Stag()
+  : IceModelVec2() {
+  m_dof = 2;
+  m_begin_end_access_use_dof = true;
+}
+
 IceModelVec2Stag::Ptr IceModelVec2Stag::ToStaggered(IceModelVec::Ptr input) {
   IceModelVec2Stag::Ptr result = dynamic_pointer_cast<IceModelVec2Stag,IceModelVec>(input);
   if (not (bool)result) {
@@ -674,11 +686,21 @@ IceModelVec2Stag::Ptr IceModelVec2Stag::ToStaggered(IceModelVec::Ptr input) {
   return result;
 }
 
+IceModelVec2Stag::IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
+                                   IceModelVecKind ghostedp,
+                                   unsigned int stencil_width)
+  : IceModelVec2() {
+  m_dof = 2;
+  m_begin_end_access_use_dof = true;
 
-void IceModelVec2Stag::create(IceGrid::ConstPtr grid, const std::string &short_name, IceModelVecKind ghostedp,
-                                        unsigned int stencil_width) {
+  create(grid, name, ghostedp, stencil_width);
+}
 
-  IceModelVec2::create(grid, short_name, ghostedp, stencil_width, m_dof);
+void IceModelVec2Stag::create(IceGrid::ConstPtr grid, const std::string &name,
+                              IceModelVecKind ghostedp,
+                              unsigned int stencil_width) {
+
+  IceModelVec2::create(grid, name, ghostedp, stencil_width, m_dof);
 }
 
 //! Averages staggered grid values of a scalar field and puts them on a regular grid.

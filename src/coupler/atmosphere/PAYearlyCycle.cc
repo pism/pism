@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -169,10 +169,9 @@ PA_mean_july_temp::PA_mean_july_temp(const YearlyCycle *m)
             "Kelvin", "Kelvin", 0);
 }
 
-IceModelVec::Ptr PA_mean_july_temp::compute_impl() {
+IceModelVec::Ptr PA_mean_july_temp::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_july", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
   model->mean_july_temp(*result);

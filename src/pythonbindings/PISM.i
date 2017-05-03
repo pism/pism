@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,12 +52,16 @@
 #endif
 
 #include "base/util/MaxTimestep.hh"
+#include "base/timestepping.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/Profiling.hh"
 
 #include "base/util/projection.hh"
 #include "base/energy/bootstrapping.hh"
+#include "base/util/node_types.hh"
+
+#include "base/util/PISMTime.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -82,6 +86,7 @@
 %template(StringSet) std::set<std::string>;
 %template(DoubleVectorMap) std::map<std::string, std::vector<double> >;
 %template(StringMap) std::map<std::string, std::string>;
+%template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
 
 // Why did I include this?
 %include "cstring.i"
@@ -231,9 +236,16 @@
 /* pism::Vars uses IceModelVec, so IceModelVec has to be wrapped first. */
 %include pism_Vars.i
 
+
+%shared_ptr(pism::Diagnostic)
 %include "base/util/PISMDiagnostic.hh"
 %include "base/util/MaxTimestep.hh"
+%include "base/timestepping.hh"
+
+%shared_ptr(pism::Component)
+%shared_ptr(pism::Component_TS)
 %include "base/util/PISMComponent.hh"
+
 %include "base/basalstrength/basal_resistance.hh"
 
 %include pism_FlowLaw.i
@@ -250,8 +262,14 @@
 %include "base/grounded_cell_fraction.hh"
 %include "base/util/Mask.hh"
 %include "pism_python.hh"
+
+%shared_ptr(pism::YieldStress)
+%shared_ptr(pism::ConstantYieldStress)
+%shared_ptr(pism::MohrCoulombYieldStress)
 %include "base/basalstrength/PISMYieldStress.hh"
 %include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
+
+%include geometry.i
 
 %include pism_SSA.i
 
@@ -269,7 +287,9 @@
 #include "regional/SSAFD_Regional.hh"
 #include "regional/SIAFD_Regional.hh"
 %}
+%shared_ptr(pism::stressbalance::SSAFD_Regional)
 %include "regional/SSAFD_Regional.hh"
+%shared_ptr(pism::stressbalance::SIAFD_Regional)
 %include "regional/SIAFD_Regional.hh"
 
 %include "base/util/projection.hh"
@@ -282,7 +302,8 @@
 %ignore pism::fem::p1::chi;
 %ignore pism::fem::p1::n_sides;
 %ignore pism::fem::p1::incident_nodes;
-%include "base/stressbalance/ssa/FETools.hh"
+%include "base/util/FETools.hh"
+%include "base/util/node_types.hh"
 
 %include pism_inverse.i
 

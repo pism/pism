@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,14 +40,14 @@ WeatherStation::WeatherStation(IceGrid::ConstPtr g)
     m_precipitation_timeseries(*g, "precipitation", m_config->get_string("time.dimension_name")),
     m_air_temp_timeseries(*g, "air_temp", m_config->get_string("time.dimension_name"))
 {
-  m_precipitation_timeseries.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-  m_precipitation_timeseries.metadata().set_string("units", "kg m-2 second-1");
-  m_precipitation_timeseries.metadata().set_string("long_name",
+  m_precipitation_timeseries.dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_precipitation_timeseries.variable().set_string("units", "kg m-2 second-1");
+  m_precipitation_timeseries.variable().set_string("long_name",
                                         "ice-equivalent precipitation rate");
 
-  m_air_temp_timeseries.dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
-  m_air_temp_timeseries.metadata().set_string("units", "Kelvin");
-  m_air_temp_timeseries.metadata().set_string("long_name",
+  m_air_temp_timeseries.dimension().set_string("units", m_grid->ctx()->time()->units_string());
+  m_air_temp_timeseries.variable().set_string("units", "Kelvin");
+  m_air_temp_timeseries.variable().set_string("long_name",
                                           "near-surface air temperature");
 }
 

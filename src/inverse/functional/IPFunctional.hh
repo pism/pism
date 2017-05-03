@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define IPFUNCTIONAL_HH_1E2DIXE6
 
 #include "base/util/iceModelVec.hh"
-#include "base/stressbalance/ssa/FETools.hh"
+#include "base/util/FETools.hh"
 
 namespace pism {
 

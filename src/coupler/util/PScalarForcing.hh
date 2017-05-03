@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -110,8 +110,7 @@ protected:
 
   unsigned int m_bc_period;       // in years
   double m_bc_reference_time;  // in seconds
-  // current scalar forcing; initialized by init_impl(...), set in update(...), saved by
-  // write_variables_impl(...)
+  // current scalar forcing
   double m_current_forcing;
 };
 

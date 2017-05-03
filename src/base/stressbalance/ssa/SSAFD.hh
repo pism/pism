@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@ public:
   SSAFD(IceGrid::ConstPtr g);
   virtual ~SSAFD();
 
-  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
+  virtual void update(const StressBalanceInputs &inputs, bool full_update);
 
   const IceModelVec2Stag & integrated_viscosity() const;
 protected:
@@ -48,30 +48,35 @@ protected:
 
   virtual void pc_setup_asm();
   
-  virtual void solve();
+  virtual void solve(const StressBalanceInputs &inputs);
 
-  virtual void picard_iteration(double nuH_regularization,
+  virtual void picard_iteration(const StressBalanceInputs &inputs,
+                                double nuH_regularization,
                                 double nuH_iter_failure_underrelax);
 
-  virtual void picard_manager(double nuH_regularization,
+  virtual void picard_manager(const StressBalanceInputs &inputs,
+                              double nuH_regularization,
                               double nuH_iter_failure_underrelax);
 
-  virtual void picard_strategy_regularization();
+  virtual void picard_strategy_regularization(const StressBalanceInputs &inputs);
 
-  virtual void compute_hardav_staggered();
+  virtual void compute_hardav_staggered(const StressBalanceInputs &inputs);
 
-  virtual void compute_nuH_staggered(IceModelVec2Stag &result,
-                                     double epsilon);
+  virtual void compute_nuH_staggered(const Geometry &geometry,
+                                     double nuH_regularization,
+                                     IceModelVec2Stag &result);
 
-  virtual void compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
-                                          double nuH_regularization);
+  virtual void compute_nuH_staggered_cfbc(const Geometry &geometry,
+                                          double nuH_regularization,
+                                          IceModelVec2Stag &result);
 
   virtual void compute_nuH_norm(double &norm,
                                 double &norm_change);
 
-  virtual void assemble_matrix(bool include_basal_shear, Mat A);
+  virtual void assemble_matrix(const StressBalanceInputs &inputs,
+                               bool include_basal_shear, Mat A);
 
-  virtual void assemble_rhs();
+  virtual void assemble_rhs(const StressBalanceInputs &inputs);
 
   virtual void write_system_petsc(const std::string &namepart);
 
@@ -82,7 +87,7 @@ protected:
 
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
-  virtual void fracture_induced_softening();
+  virtual void fracture_induced_softening(const IceModelVec2S *fracture_density);
 
   // objects used internally
   IceModelVec2Stag m_hardness, m_nuH, m_nuH_old;
@@ -92,7 +97,6 @@ protected:
   IceModelVec2V m_b;            // right hand side
   double m_scaling;
 
-  const IceModelVec2S *m_fracture_density, *m_melange_back_pressure;
   IceModelVec2V m_velocity_old;
 
   unsigned int m_default_pc_failure_count,

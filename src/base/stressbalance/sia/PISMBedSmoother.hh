@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -84,13 +84,14 @@ public:
 
   virtual void preprocess_bed(const IceModelVec2S &topg);
 
-  virtual void get_smoothed_thk(const IceModelVec2S &usurf,
-                                const IceModelVec2S &thk,
-                                const IceModelVec2CellType &mask,
-                                IceModelVec2S &thksmooth);
-  virtual void get_theta(const IceModelVec2S &usurf, IceModelVec2S &result);
+  virtual void smoothed_thk(const IceModelVec2S &usurf,
+                            const IceModelVec2S &thk,
+                            const IceModelVec2CellType &mask,
+                            IceModelVec2S &thksmooth) const;
 
-  const IceModelVec2S& get_smoothed_bed();
+  virtual void theta(const IceModelVec2S &usurf, IceModelVec2S &result) const;
+
+  const IceModelVec2S& smoothed_bed() const;
 protected:
   //! smoothed bed elevation; set by calling preprocess_bed()
   IceModelVec2S m_topgsmooth;

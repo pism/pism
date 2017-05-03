@@ -465,4 +465,9 @@ void MohrCoulombYieldStress::tauc_to_phi() {
   }
 }
 
+std::map<std::string, Diagnostic::Ptr> MohrCoulombYieldStress::diagnostics_impl() const {
+  return combine({{"tillphi", Diagnostic::wrap(m_till_phi)}},
+                 YieldStress::diagnostics_impl());
+}
+
 } // end of namespace pism

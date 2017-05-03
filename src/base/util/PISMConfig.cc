@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,8 +16,6 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-
-#include <sstream>
 
 #include "PISMConfig.hh"
 #include "base/util/io/PIO.hh"

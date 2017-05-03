@@ -59,7 +59,6 @@ void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
 
   const double
     sea_level   = m_ocean->sea_level_elevation(),
-    dx          = m_grid->dx(),
     ice_density = m_config->get_double("constants.ice.density"),
     alpha       = ice_density / m_config->get_double("constants.sea_water.density");
 
@@ -78,7 +77,7 @@ void FrontalMelt::compute_calving_rate(const IceModelVec2CellType &mask,
         StarStencil<double> h = surface_elevation.star(i, j);
         StarStencil<int> M = mask.int_star(i, j);
 
-        const double H_threshold = part_grid_threshold_thickness(M, H, h, bed, dx, false);
+        const double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
 
         const int m = gc.mask(sea_level, bed, H_threshold);
 

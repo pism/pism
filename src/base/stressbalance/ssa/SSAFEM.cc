@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -18,15 +18,17 @@
 
 #include "base/util/IceGrid.hh"
 #include "SSAFEM.hh"
-#include "FETools.hh"
+#include "base/util/FETools.hh"
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/rheology/FlowLaw.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/PISMVars.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/Geometry.hh"
 
-#include "node_types.hh"
+#include "base/util/node_types.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -38,11 +40,12 @@ namespace stressbalance {
  */
 SSAFEM::SSAFEM(IceGrid::ConstPtr g)
   : SSA(g),
+    m_bc_mask(NULL),
+    m_bc_values(NULL),
     m_gc(*m_config),
     m_element_index(*g),
     m_element(*g),
     m_quadrature(g->dx(), g->dy(), 1.0) {
-
 
   const double ice_density = m_config->get_double("constants.ice.density");
   m_alpha = 1 - ice_density / m_config->get_double("constants.sea_water.density");
@@ -135,8 +138,9 @@ void SSAFEM::init_impl() {
 
   SSA::init_impl();
 
-  // Use explicit driving stress if the surface elevation is not available.
-  if (m_surface == NULL) {
+  // Use explicit driving stress if provided.
+  if (m_grid->variables().is_available("ssa_driving_stress_x") and
+      m_grid->variables().is_available("ssa_driving_stress_y")) {
     m_driving_stress_x = m_grid->variables().get_2d_scalar("ssa_driving_stress_x");
     m_driving_stress_y = m_grid->variables().get_2d_scalar("ssa_driving_stress_y");
   }
@@ -156,12 +160,9 @@ void SSAFEM::init_impl() {
   // On restart, SSA::init() reads the SSA velocity from a PISM output file
   // into IceModelVec2V "velocity". We use that field as an initial guess.
   // If we are not restarting from a PISM file, "velocity" is identically zero,
-  // and the call below clears SSAX.
+  // and the call below clears m_velocity_global.
 
   m_velocity_global.copy_from(m_velocity);
-
-  // Store coefficient data at the element nodes.
-  cache_inputs();
 }
 
 /**  Solve the SSA system of equations.
@@ -178,9 +179,9 @@ void SSAFEM::init_impl() {
  difference is that SSAFEM::solve() recomputes the cached values of the coefficients before calling
  SSAFEM::solve_nocache().
  */
-void SSAFEM::solve() {
+void SSAFEM::solve(const StressBalanceInputs &inputs) {
 
-  TerminationReason::Ptr reason = solve_with_reason();
+  TerminationReason::Ptr reason = solve_with_reason(inputs);
   if (reason->failed()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "SSAFEM solve failed to converge (SNES reason %s)",
                                   reason->description().c_str());
@@ -189,10 +190,10 @@ void SSAFEM::solve() {
   }
 }
 
-TerminationReason::Ptr SSAFEM::solve_with_reason() {
+TerminationReason::Ptr SSAFEM::solve_with_reason(const StressBalanceInputs &inputs) {
 
   // Set up the system to solve.
-  cache_inputs();
+  cache_inputs(inputs);
 
   return solve_nocache();
 }
@@ -273,15 +274,24 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
    In addition to coefficients at element nodes we store "node types" used to identify interior
    elements, exterior elements, and boundary faces.
 */
-void SSAFEM::cache_inputs() {
+void SSAFEM::cache_inputs(const StressBalanceInputs &inputs) {
+
+  // Hold on to pointers to the B.C. mask and values: they are needed in SNES callbacks and
+  // inputs.bc_{mask,values} are not available there.
+  m_bc_mask   = inputs.bc_mask;
+  m_bc_values = inputs.bc_values;
+
   const std::vector<double> &z = m_grid->z();
 
-  IceModelVec::AccessList list{&m_coefficients, m_ice_enthalpy, m_thickness, m_bed, m_tauc};
+  IceModelVec::AccessList list{&m_coefficients,
+      inputs.enthalpy,
+      &inputs.geometry->ice_thickness,
+      &inputs.geometry->bed_elevation,
+      inputs.basal_yield_stress};
 
   bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
   if (use_explicit_driving_stress) {
-    list.add(*m_driving_stress_x);
-    list.add(*m_driving_stress_y);
+    list.add({m_driving_stress_x, m_driving_stress_y});
   }
 
   ParallelSection loop(m_grid->com);
@@ -289,7 +299,7 @@ void SSAFEM::cache_inputs() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double thickness = (*m_thickness)(i, j);
+      double thickness = inputs.geometry->ice_thickness(i, j);
 
       Vector2 tau_d;
       if (use_explicit_driving_stress) {
@@ -300,16 +310,16 @@ void SSAFEM::cache_inputs() {
 	// constructor, but is not used
       }
 
-      const double *enthalpy = m_ice_enthalpy->get_column(i, j);
+      const double *enthalpy = inputs.enthalpy->get_column(i, j);
       double hardness = rheology::averaged_hardness(*m_flow_law, thickness,
                                                     m_grid->kBelowHeight(thickness),
                                                     &z[0], enthalpy);
 
       Coefficients c;
       c.thickness      = thickness;
-      c.bed            = (*m_bed)(i, j);
-      c.sea_level      = m_sea_level; // FIXME: use a 2D field
-      c.tauc           = (*m_tauc)(i, j);
+      c.bed            = inputs.geometry->bed_elevation(i, j);
+      c.sea_level      = inputs.sea_level; // FIXME: use a 2D field
+      c.tauc           = (*inputs.basal_yield_stress)(i, j);
       c.hardness       = hardness;
       c.driving_stress = tau_d;
 
@@ -324,15 +334,15 @@ void SSAFEM::cache_inputs() {
 
   const bool use_cfbc = m_config->get_boolean("stress_balance.calving_front_stress_bc");
   if (use_cfbc) {
-    // Note: the call below uses ghosts of m_thickness.
-    compute_node_types(*m_thickness,
+    // Note: the call below uses ghosts of inputs.geometry->ice_thickness.
+    compute_node_types(inputs.geometry->ice_thickness,
                        m_config->get_double("stress_balance.ice_free_thickness_standard"),
                        m_node_type);
   } else {
     m_node_type.set(NODE_INTERIOR);
   }
 
-  cache_residual_cfbc();
+  cache_residual_cfbc(inputs);
 
 }
 
@@ -545,7 +555,7 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
    This method computes FIXME.
 
  */
-void SSAFEM::cache_residual_cfbc() {
+void SSAFEM::cache_residual_cfbc(const StressBalanceInputs &inputs) {
 
   fem::BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy(), 1.0);
 
@@ -573,7 +583,9 @@ void SSAFEM::cache_residual_cfbc() {
     return;
   }
 
-  IceModelVec::AccessList list{&m_node_type, m_thickness, m_bed, &m_boundary_integral};
+  IceModelVec::AccessList list{&m_node_type,
+      &inputs.geometry->ice_thickness,
+      &inputs.geometry->bed_elevation, &m_boundary_integral};
 
   // Iterate over the elements.
   const int
@@ -607,10 +619,10 @@ void SSAFEM::cache_residual_cfbc() {
         }
 
         double H_nodal[Nk];
-        m_element.nodal_values(*m_thickness, H_nodal);
+        m_element.nodal_values(inputs.geometry->ice_thickness, H_nodal);
 
         double b_nodal[Nk];
-        m_element.nodal_values(*m_bed, b_nodal);
+        m_element.nodal_values(inputs.geometry->bed_elevation, b_nodal);
 
         // storage for test function values psi[0] for the first "end" of a side, psi[1] for the
         // second
@@ -646,11 +658,11 @@ void SSAFEM::cache_residual_cfbc() {
               H   = H_nodal[n0] * psi[0] + H_nodal[n1] * psi[1],
               bed = b_nodal[n0] * psi[0] + b_nodal[n1] * psi[1];
 
-            const bool floating = ocean(m_gc.mask(m_sea_level, bed, H));
+            const bool floating = ocean(m_gc.mask(inputs.sea_level, bed, H));
 
             // ocean pressure difference at a quadrature point
             const double dP = ocean_pressure_difference(floating, is_dry_simulation,
-                                                        H, bed, m_sea_level,
+                                                        H, bed, inputs.sea_level,
                                                         ice_density, ocean_density,
                                                         standard_gravity);
 
@@ -663,7 +675,7 @@ void SSAFEM::cache_residual_cfbc() {
 
         } // loop over element sides
 
-        m_element.add_residual_contribution(&I[0], m_boundary_integral);
+        m_element.add_contribution(&I[0], m_boundary_integral);
 
       } // i-loop
     } // j-loop
@@ -695,7 +707,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
   IceModelVec::AccessList list{&m_node_type, &m_coefficients, &m_boundary_integral};
 
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
-  // to set it using ElementMap::add_residual_contribution() because that would lead to
+  // to set it using ElementMap::add_contribution() because that would lead to
   // double-counting. Also note that without CFBC m_boundary_integral is exactly zero.
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -782,7 +794,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
             // values.
             dirichlet_data.enforce(m_element, velocity_nodal);
             // mark Dirichlet nodes in m_element so that they are not touched by
-            // add_residual_contribution() below
+            // add_contribution() below
             dirichlet_data.constrain(m_element);
           }
 
@@ -825,9 +837,9 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
           } // k (test functions)
         }   // q (quadrature points)
 
-        m_element.add_residual_contribution(residual, residual_global);
-      } // j-loop
-    } // i-loop
+        m_element.add_contribution(residual, residual_global);
+      } // i-loop
+    } // j-loop
   } catch (...) {
     loop.failed();
   }
@@ -1057,7 +1069,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
             } // l
           } // k
         } // q
-        m_element.add_jacobian_contribution(&K[0][0], Jac);
+        m_element.add_contribution(&K[0][0], Jac);
       } // j
     } // i
   } catch (...) {

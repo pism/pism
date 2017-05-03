@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-#include <sstream>
 
 #include "PISMConfigInterface.hh"
 #include "PISMTime.hh"
@@ -510,13 +508,7 @@ void Time::parse_range(const std::string &spec, std::vector<double> &result) con
     delta   = 0;
   } else {
 
-    std::istringstream arg(spec);
-    std::vector<std::string> parts;
-    std::string tmp;
-
-    while(getline(arg, tmp, ':')) {
-      parts.push_back(tmp);
-    }
+    std::vector<std::string> parts = pism::split(spec, ':');
 
     if (parts.size() == 1) {
       parse_interval_length(parts[0], keyword, &delta);

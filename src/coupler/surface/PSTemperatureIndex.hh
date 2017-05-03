@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,35 +26,27 @@
 namespace pism {
 namespace surface {
 
-//! \brief A class implementing a temperature-index (positive degree-day) scheme
+//! @brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
 //! precipitation and air temperature.
 /*! 
   Temperature-index schemes are far from perfect as a way of modeling surface mass
   balance on ice sheets which experience surface melt, but they are known to have
   reasonable data requirements and to do a good job when tuned appropriately
-  [\ref Hock05].
-
-  This base class already accesses a fair amount of functionality.  It holds a
-  pointer to an instance of the LocalMassBalance class.  This class has method
-  LocalMassBalance::getMassFluxFromTemperatureTimeSeries() which uses the
-  precipitation during the ice sheet model time step, plus a variable temperature
-  over that time step, to compute melt, refreeze, and surface balance.
+  [@ref Hock05].
 */
 class TemperatureIndex : public SurfaceModel {
 public:
   TemperatureIndex(IceGrid::ConstPtr g);
   virtual ~TemperatureIndex();
 
+  // diagnostics (for the last time step)
+  const IceModelVec2S& snow_depth() const;
+  // these represent totals (not rates) over the time step
+  const IceModelVec2S& air_temp_sd() const;
   const IceModelVec2S& accumulation() const;
   const IceModelVec2S& melt() const;
   const IceModelVec2S& runoff() const;
-  const IceModelVec2S& snow_depth() const;
-  const IceModelVec2S& air_temp_sd() const;
-
-  const IceModelVec2S& cumulative_accumulation() const;
-  const IceModelVec2S& cumulative_melt() const;
-  const IceModelVec2S& cumulative_runoff() const;
 
 protected:
   virtual void init_impl();
@@ -71,89 +63,42 @@ protected:
 
   double compute_next_balance_year_start(double time);
 protected:
-  LocalMassBalance *m_mbscheme;         //!< mass balance scheme to use
+  //! mass balance scheme to use
+  LocalMassBalance *m_mbscheme;
 
-  FaustoGrevePDDObject *m_faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
+  //! if not NULL then user wanted fausto PDD stuff
+  FaustoGrevePDDObject *m_faustogreve;
 
   //! holds degree-day factors in location-independent case
   LocalMassBalance::DegreeDayFactors m_base_ddf;
 
   //! K; daily amount of randomness
   double m_base_pddStdDev;
-  //! K; temps are positive above this
-  double m_base_pddThresholdTemp;
+
   double m_next_balance_year_start;
 
   //! cached surface mass balance rate
   IceModelVec2S m_climatic_mass_balance;
 
-  //! diagnostic output accumulation rate (snow - rain)
-  IceModelVec2S m_accumulation_rate;
-
-  //! diagnostic output melt rate (rate at which snow and ice is melted; but some snow melt
-  //! refreezes)
-  IceModelVec2S m_melt_rate;
-
-  //! diagnostic output meltwater runoff rate
-  IceModelVec2S m_runoff_rate;
-
   //! snow depth (reset once a year)
   IceModelVec2S m_snow_depth;
+
+  //! standard deviation of the daily variability of the air temperature
   IceModelVec2T m_air_temp_sd;
 
-  IceModelVec2S m_cumulative_accumulation;
-  IceModelVec2S m_cumulative_melt;
-  IceModelVec2S m_cumulative_runoff;
+  //! total accumulation during the last time step
+  IceModelVec2S m_accumulation;
+
+  //! total melt during the last time step
+  IceModelVec2S m_melt;
+
+  //! total runoff during the last time step
+  IceModelVec2S m_runoff;
 
   bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
   bool m_sd_use_param, m_sd_file_set;
   int m_sd_period, m_sd_period_years;
   double m_sd_ref_time, m_sd_param_a, m_sd_param_b;
-};
-
-/*! @brief Surface accumulation rate. */
-class PDD_saccum : public Diag<TemperatureIndex>
-{
-public:
-  PDD_saccum(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Surface melt rate. */
-class PDD_smelt : public Diag<TemperatureIndex>
-{
-public:
-  PDD_smelt(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Surface runoff rate. */
-class PDD_srunoff : public Diag<TemperatureIndex>
-{
-public:
-  PDD_srunoff(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Snow cover depth. */
-class PDD_snow_depth : public Diag<TemperatureIndex>
-{
-public:
-  PDD_snow_depth(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
-};
-
-/*! @brief Standard deviation of near-surface air temperature. */
-class PDD_air_temp_sd : public Diag<TemperatureIndex>
-{
-public:
-  PDD_air_temp_sd(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl();
 };
 
 } // end of namespace surface

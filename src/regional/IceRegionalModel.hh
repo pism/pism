@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,20 +33,11 @@ protected:
   virtual void bootstrap_2d(const PIO &input_file);
   virtual void restart_2d(const PIO &input_file, unsigned int record);
   virtual void model_state_setup();
-  virtual void createVecs();
+
+  virtual void allocate_geometry_evolution();
+  virtual void allocate_storage();
   virtual void allocate_stressbalance();
   virtual void allocate_basal_yield_stress();
-  virtual void massContExplicitStep(double dt,
-                                    const IceModelVec2Stag &diffusive_flux,
-                                    const IceModelVec2V &advective_velocity);
-  virtual void cell_interface_fluxes(int i, int j,
-                                     StarStencil<int> cell_type,
-                                     StarStencil<int> bc_mask,
-                                     StarStencil<Vector2> bc_velocity,
-                                     StarStencil<Vector2> in_SSA_velocity,
-                                     StarStencil<double> in_SIA_flux,
-                                     StarStencil<double> &out_SSA_velocity,
-                                     StarStencil<double> &out_SIA_flux);
 private:
   IceModelVec2Int m_no_model_mask;
   IceModelVec2S   m_usurf_stored, m_thk_stored;

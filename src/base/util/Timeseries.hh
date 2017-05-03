@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -83,10 +83,20 @@ public:
   double operator[](unsigned int j) const;
   double average(double t, double dt, unsigned int N) const;
   void append(double value, double a, double b);
-  int length() const;
 
-  TimeseriesMetadata& metadata();
-  TimeseriesMetadata& dimension_metadata();
+  void reset();
+
+  TimeseriesMetadata& variable();
+  TimeseriesMetadata& dimension();
+  TimeBoundsMetadata& bounds();
+
+  const TimeseriesMetadata& variable() const;
+  const TimeseriesMetadata& dimension() const;
+  const TimeBoundsMetadata& bounds() const;
+
+  const std::vector<double> &times() const;
+  const std::vector<double> &time_bounds() const;
+  const std::vector<double> &values() const;
 
   void scale(double scaling_factor);
 
@@ -95,93 +105,22 @@ public:
   bool get_use_bounds() const;
   void set_use_bounds(bool flag);
 
-protected:
-  void set_bounds_units();
-  TimeseriesMetadata m_dimension, m_variable;
+private:
   MPI_Comm m_com;
-  TimeBoundsMetadata m_bounds;
+
   bool m_use_bounds;
+
+  TimeseriesMetadata m_dimension;
+  TimeseriesMetadata m_variable;
+  TimeBoundsMetadata m_bounds;
+
   std::vector<double> m_time;
   std::vector<double> m_values;
   std::vector<double> m_time_bounds;
-private:
+
+  void set_bounds_units();
   void private_constructor(MPI_Comm com, const std::string &dimension_name);
   void report_range(const Logger &log);
-};
-
-//! A class for storing and writing diagnostic time-series.
-/*! This version of Timeseries only holds `buffer_size` entries in memory and
-  writes to a file every time this limit is exceeded.
-
-  Here is a usage example:
-
-  First, prepare a file for writing:
-
-  \code
-  std::string seriesname = "ser_delta_T.nc";
-  PIO nc(grid.com, grid.rank, grid.config.get_string("output.format"));
-  nc.open_for_writing(seriesname, true, false);
-  nc.close();
-  \endcode
-
-  Next, create the DiagnosticTimeseries object and set metadata. This will
-  prepare the offsets object to write delta_T(t) time-series to file
-  ser_delta_T.nc, converting from degrees Kelvin (internal units) to degrees
-  Celsius ("glaciological" units). Time will be written in seconds (%i.e. there is
-  no unit conversion there).
-
-  \code
-  offsets = new DiagnosticTimeseries(g, "delta_T", "time");
-  offsets->set_string("units", "Kelvin", "Celsius");
-  offsets->set_dimension_units("seconds", "");
-  offsets->buffer_size = 100; // only store 100 entries; default is 10000
-  offsets->output_filename = seriesname;
-  offsets->set_attr("long_name", "temperature offsets from some value");
-  \endcode
-
-  Once this is set up, one can add calls like
-
-  \code
-  offsets->append(my_t - my_dt, my_t, TsOffset);
-  offsets->interp(time - my_dt, time);
-  \endcode
-
-  to the code. The first call will store the (my_t, TsOffset). The second
-  call will use linear interpolation to find the value at `time` years.  Note
-  that the first call adds to a buffer but does not yield any output without 
-  the second call.  Therefore, even if interpolation is not really needed
-  because time==my_t, the call to interp() should still occur.
-  
-  Finally, the destructor of DiagnosticTimeseries will flush(), which writes out
-  the buffered values:
-
-  \code
-  delete offsets;
-  \endcode
-
-  Note that every time you exceed the `buffer_size` limit, all the entries are
-  written to a file by flush() <b> and removed from memory</b>.  One may also
-  explicitly call flush().
-*/
-class DiagnosticTimeseries : public Timeseries {
-public:
-  DiagnosticTimeseries(const IceGrid &g, const std::string &name, const std::string &dimension_name);
-  ~DiagnosticTimeseries();
-
-  void init(const std::string &filename);
-  void append(double V, double a, double b);
-  void interp(double a, double b);
-  void reset();
-  void flush();
-
-  size_t buffer_size;
-  std::string output_filename;
-  bool rate_of_change;
-
-protected:
-  size_t m_start;
-  std::deque<double> m_t, m_v;
-  double m_v_previous;
 };
 
 } // end of namespace pism

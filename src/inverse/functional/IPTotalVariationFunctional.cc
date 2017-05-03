@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -134,7 +134,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
             *(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy);
         } // k
       } // q
-      m_element.add_residual_contribution(gradient_e, gradient);
+      m_element.add_contribution(gradient_e, gradient);
     } // j
   } // i
 }

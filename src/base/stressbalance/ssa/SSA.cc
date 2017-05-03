@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2017 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,8 @@
 #include "base/util/pism_options.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/Geometry.hh"
 
 #include "SSA_diagnostics.hh"
 
@@ -73,13 +75,6 @@ double SSAStrengthExtension::get_min_thickness() const {
 SSA::SSA(IceGrid::ConstPtr g)
   : ShallowStressBalance(g)
 {
-  m_thickness = NULL;
-  m_tauc = NULL;
-  m_surface = NULL;
-  m_bed = NULL;
-  m_ice_enthalpy = NULL;
-  m_gl_mask = NULL;
-
   strength_extension = new SSAStrengthExtension(*m_config);
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
@@ -145,22 +140,6 @@ void SSA::init_impl() {
   m_log->message(2,
              "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
-  if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
-    m_gl_mask = m_grid->variables().get_2d_scalar("gl_mask");
-  }
-
-  m_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  m_tauc      = m_grid->variables().get_2d_scalar("tauc");
-
-  try {
-    m_surface = m_grid->variables().get_2d_scalar("surface_altitude");
-  } catch (RuntimeError) {
-    m_surface = NULL;
-  }
-
-  m_bed      = m_grid->variables().get_2d_scalar("bedrock_altitude");
-  m_ice_enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
-
   InputOptions opts = process_input_options(m_grid->com);
 
   // Check if PISM is being initialized from an output file from a previous run
@@ -184,18 +163,10 @@ void SSA::init_impl() {
   } else {
     m_velocity.set(0.0); // default initial guess
   }
-
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
-    m_bc_mask = m_grid->variables().get_2d_mask("bc_mask");
-    m_bc_values = m_grid->variables().get_2d_vector("vel_ssa_bc");
-  }
 }
 
 //! \brief Update the SSA solution.
-void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure) {
-
-  m_sea_level = sea_level;
-  (void) melange_back_pressure;
+void SSA::update(const StressBalanceInputs &inputs, bool full_update) {
 
   // update the cell type mask using the ice-free thickness threshold for stress balance
   // computations
@@ -204,12 +175,17 @@ void SSA::update(bool fast, double sea_level, const IceModelVec2S &melange_back_
     GeometryCalculator gc(*m_config);
     gc.set_icefree_thickness(H_threshold);
 
-    gc.compute_mask(sea_level, *m_bed, *m_thickness, m_mask);
+    gc.compute_mask(inputs.sea_level,
+                    inputs.geometry->bed_elevation,
+                    inputs.geometry->ice_thickness,
+                    m_mask);
   }
 
-  if (not fast) {
-    solve();
-    compute_basal_frictional_heating(m_velocity, *m_tauc, m_mask,
+  if (full_update) {
+    solve(inputs);
+    compute_basal_frictional_heating(m_velocity,
+                                     *inputs.basal_yield_stress,
+                                     m_mask,
                                      m_basal_frictional_heating);
   }
 }
@@ -227,8 +203,12 @@ surface gradient. When the thickness at a grid point is very small (below \c
 minThickEtaTransform in the procedure), the formula is slightly modified to
 give a lower driving stress. The transformation is not used in floating ice.
  */
-void SSA::compute_driving_stress(IceModelVec2V &result) const {
-  const IceModelVec2S &thk = *m_thickness; // to improve readability (below)
+void SSA::compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const {
+  // Shortcuts to improve readability.
+  const IceModelVec2S
+    &thk     = geometry.ice_thickness,
+    &surface = geometry.ice_surface_elevation,
+    &bed     = geometry.bed_elevation;
 
   const double n = m_flow_law->exponent(), // frequently n = 3
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -241,7 +221,7 @@ void SSA::compute_driving_stress(IceModelVec2V &result) const {
   bool compute_surf_grad_inward_ssa = m_config->get_boolean("stress_balance.ssa.compute_surface_gradient_inward");
   bool use_eta = (m_config->get_string("stress_balance.sia.surface_gradient_method") == "eta");
 
-  IceModelVec::AccessList list{m_surface, m_bed, &m_mask, &thk, &result};
+  IceModelVec::AccessList list{&surface, &bed, &m_mask, &thk, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -264,13 +244,13 @@ void SSA::compute_driving_stress(IceModelVec2V &result) const {
         }
         // now add bed slope to get actual h_x,h_y
         // FIXME: there is no reason to assume user's bed is periodized
-        h_x += m_bed->diff_x(i,j);
-        h_y += m_bed->diff_y(i,j);
+        h_x += bed.diff_x(i,j);
+        h_y += bed.diff_y(i,j);
       } else {  // floating or eta transformation is not used
         if (compute_surf_grad_inward_ssa) {
           // Special case for verification tests.
-          h_x = m_surface->diff_x_p(i,j);
-          h_y = m_surface->diff_y_p(i,j);
+          h_x = surface.diff_x_p(i,j);
+          h_y = surface.diff_y_p(i,j);
         } else {              // general case
 
           // To compute the x-derivative we use
@@ -314,8 +294,8 @@ void SSA::compute_driving_stress(IceModelVec2V &result) const {
             }
 
             if (east + west > 0) {
-              h_x = 1.0 / (west + east) * (west * m_surface->diff_x_stagE(i-1,j) +
-                                           east * m_surface->diff_x_stagE(i,j));
+              h_x = 1.0 / (west + east) * (west * surface.diff_x_stagE(i-1,j) +
+                                           east * surface.diff_x_stagE(i,j));
             } else {
               h_x = 0.0;
             }
@@ -347,8 +327,8 @@ void SSA::compute_driving_stress(IceModelVec2V &result) const {
             }
 
             if (north + south > 0) {
-              h_y = 1.0 / (south + north) * (south * m_surface->diff_y_stagN(i,j-1) +
-                                             north * m_surface->diff_y_stagN(i,j));
+              h_y = 1.0 / (south + north) * (south * surface.diff_y_stagN(i,j-1) +
+                                             north * surface.diff_y_stagN(i,j));
             } else {
               h_y = 0.0;
             }
@@ -372,6 +352,10 @@ std::string SSA::stdout_report() const {
 //! \brief Set the initial guess of the SSA velocity.
 void SSA::set_initial_guess(const IceModelVec2V &guess) {
   m_velocity.copy_from(guess);
+}
+
+const IceModelVec2V& SSA::driving_stress() const {
+  return m_taud;
 }
 
 
@@ -407,20 +391,19 @@ SSA_taud::SSA_taud(const SSA *m)
   set_attrs("Y-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < m_dof; ++k) {
+  for (unsigned int k = 0; k < m_dof; ++k) {
     m_vars[k].set_string("comment",
                        "this is the driving stress used by the SSA solver");
   }
 }
 
-IceModelVec::Ptr SSA_taud::compute_impl() {
+IceModelVec::Ptr SSA_taud::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V);
-  result->create(m_grid, "result", WITHOUT_GHOSTS);
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  model->compute_driving_stress(*result);
+  result->copy_from(model->driving_stress());
 
   return result;
 }
@@ -437,97 +420,13 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
                      "this is the magnitude of the driving stress used by the SSA solver");
 }
 
-IceModelVec::Ptr SSA_taud_mag::compute_impl() {
+IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
 
   // Allocate memory:
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "taud_mag", WITHOUT_GHOSTS);
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
-  result->write_in_glaciological_units = true;
 
-  IceModelVec2V::Ptr taud = IceModelVec2V::ToVector(SSA_taud(model).compute());
-
-  result->set_to_magnitude(*taud);
-
-  return result;
-}
-
-//! Evaluate the ocean pressure difference term in the calving-front BC.
-double SSA::ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
-                                      double sea_level, double rho_ice, double rho_ocean,
-                                      double g) const {
-  if (shelf) {
-    // floating shelf
-    return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;
-  } else {
-    // grounded terminus
-    if (bed >= sea_level or dry_mode) {
-      return 0.5 * rho_ice * g * H * H;
-    } else {
-      return 0.5 * rho_ice * g * (H * H - (rho_ocean / rho_ice) * pow(sea_level - bed, 2.0));
-    }
-  }
-}
-
-SSA_calving_front_pressure_difference::SSA_calving_front_pressure_difference(SSA *m)
-  : Diag<SSA>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "ocean_pressure_difference")};
-  m_vars[0].set_double("_FillValue", m_fill_value);
-
-  set_attrs("ocean pressure difference at calving fronts", "",
-            "", "", 0);
-}
-
-IceModelVec::Ptr SSA_calving_front_pressure_difference::compute_impl() {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "ocean_pressure_difference", WITHOUT_GHOSTS);
-  result->metadata(0) = m_vars[0];
-
-  IceModelVec2CellType mask;
-  mask.create(m_grid, "mask", WITH_GHOSTS);
-
-  const IceModelVec2S &H   = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-  const double sea_level = 0.0;  // FIXME: use real sea level
-
-  {
-    const double H_threshold = m_config->get_double("stress_balance.ice_free_thickness_standard");
-    GeometryCalculator gc(*m_config);
-    gc.set_icefree_thickness(H_threshold);
-
-    gc.compute_mask(sea_level, bed, H, mask);
-  }
-
-  const double
-    rho_ice   = m_config->get_double("constants.ice.density"),
-    rho_ocean = m_config->get_double("constants.sea_water.density"),
-    g         = m_config->get_double("constants.standard_gravity");
-
-  const bool dry_mode = m_config->get_boolean("ocean.always_grounded");
-
-  IceModelVec::AccessList list{&H, &bed, &mask, result.get()};
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
-        (*result)(i, j) = model->ocean_pressure_difference(mask.ocean(i, j), dry_mode,
-                                                           H(i, j), bed(i, j), sea_level,
-                                                           rho_ice, rho_ocean, g);
-      } else {
-        (*result)(i, j) = m_fill_value;
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
+  result->set_to_magnitude(model->driving_stress());
 
   return result;
 }

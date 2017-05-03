@@ -60,9 +60,29 @@ public:
   AccessList(const PetscAccessible &v);
   ~AccessList();
   void add(const PetscAccessible &v);
+  void add(const std::vector<const PetscAccessible*> vecs);
 private:
   std::vector<const PetscAccessible*> m_vecs;
 };
+
+/*!
+ * Interpolation helper. Does not check if points needed for interpolation are within the current
+ * processor's sub-domain.
+ */
+template<class F, typename T>
+T interpolate(const F &field, double x, double y) {
+  auto grid = field.get_grid();
+
+  int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
+  grid->compute_point_neighbors(x, y, i_left, i_right, j_bottom, j_top);
+
+  auto w = grid->compute_interp_weights(x, y);
+
+  return (w[0] * field(i_left,  j_bottom) +
+          w[1] * field(i_right, j_bottom) +
+          w[2] * field(i_right, j_top) +
+          w[3] * field(i_left,  j_top));
+}
 
 //! \brief Abstract class for reading, writing, allocating, and accessing a
 //! DA-based PETSc Vec (2D and 3D fields) from within IceModel.
@@ -137,14 +157,8 @@ private:
 
   If you need to "prepare" a file, do:
   \code
-  PIO nc(grid.com, grid.config.get_string("output.format"));
-
-  std::string time_name = config.get_string("time.dimension_name");
-  ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr); // append == false
-  ierr = nc.def_time(time_name, grid.time->calendar(),
-  grid.time->CF_units_string()); CHKERRQ(ierr);
-  ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
+  PIO file(grid.com, grid.config.get_string("output.format"));
+  io::prepare_for_output(file, *grid.ctx());
   \endcode
 
   A note about NetCDF write performance: due to limitations of the NetCDF
@@ -222,9 +236,9 @@ public:
   const std::string& get_name() const;
   virtual void  set_attrs(const std::string &pism_intent, const std::string &long_name,
                           const std::string &units, const std::string &standard_name,
-                          int component = 0);
+                          unsigned int component = 0);
   virtual void  read_attributes(const std::string &filename, int component = 0);
-  virtual void  define(const PIO &nc, IO_Type output_datatype = PISM_DOUBLE) const;
+  virtual void  define(const PIO &nc, IO_Type default_type = PISM_DOUBLE) const;
 
   void read(const std::string &filename, unsigned int time);
   void read(const PIO &nc, unsigned int time);
@@ -402,6 +416,13 @@ public:
 
   static Ptr To2DScalar(IceModelVec::Ptr input);
 
+  /*!
+   * Interpolation helper. See the pism::interpolate() for details.
+   */
+  double interpolate(double x, double y) const {
+    return pism::interpolate<IceModelVec2S, double>(*this, x, y);
+  }
+
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
   void create(IceGrid::ConstPtr grid, const std::string &name,
@@ -460,6 +481,8 @@ public:
 class IceModelVec2V : public IceModelVec2 {
 public:
   IceModelVec2V();
+  IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
+                IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   ~IceModelVec2V();
 
   typedef std::shared_ptr<IceModelVec2V> Ptr;
@@ -478,6 +501,13 @@ public:
   inline Vector2& operator()(int i, int j);
   inline const Vector2& operator()(int i, int j) const;
   inline StarStencil<Vector2> star(int i, int j) const;
+
+  /*!
+   * Interpolation helper. See the pism::interpolate() for details.
+   */
+  Vector2 interpolate(double x, double y) const {
+    return pism::interpolate<IceModelVec2V, Vector2>(*this, x, y);
+  }
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
@@ -486,6 +516,8 @@ public:
 class IceModelVec2Stag : public IceModelVec2 {
 public:
   IceModelVec2Stag();
+  IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &short_name,
+                   IceModelVecKind ghostedp, unsigned int stencil_width = 1);
 
   typedef std::shared_ptr<IceModelVec2Stag> Ptr;
   typedef std::shared_ptr<const IceModelVec2Stag> ConstPtr;
@@ -539,6 +571,10 @@ private:
 class IceModelVec3 : public IceModelVec3D {
 public:
   IceModelVec3();
+  IceModelVec3(IceGrid::ConstPtr mygrid, const std::string &short_name,
+               IceModelVecKind ghostedp,
+               unsigned int stencil_width = 1);
+
   virtual ~IceModelVec3();
 
   typedef std::shared_ptr<IceModelVec3> Ptr;

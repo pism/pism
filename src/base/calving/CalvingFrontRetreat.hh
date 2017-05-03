@@ -69,7 +69,7 @@ public:
   CalvingRate(const CalvingFrontRetreat *m,
               const std::string &name,
               const std::string &long_name);
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 } // end of namespace pism

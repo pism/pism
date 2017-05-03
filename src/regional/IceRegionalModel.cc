@@ -63,9 +63,9 @@ IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, Context::Ptr c)
 }
 
 
-void IceRegionalModel::createVecs() {
+void IceRegionalModel::allocate_storage() {
 
-  IceModel::createVecs();
+  IceModel::allocate_storage();
 
   m_log->message(2, 
              "  creating IceRegionalModel vecs ...\n");
@@ -73,17 +73,13 @@ void IceRegionalModel::createVecs() {
   // stencil width of 2 needed for surfaceGradientSIA() action
   m_no_model_mask.create(m_grid, "no_model_mask", WITH_GHOSTS, 2);
   m_no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
-                          "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
-                          "", ""); // no units and no standard name
-  double NMMASK_NORMAL   = 0.0,
-         NMMASK_ZERO_OUT = 1.0;
-  std::vector<double> mask_values(2);
-  mask_values[0] = NMMASK_NORMAL;
-  mask_values[1] = NMMASK_ZERO_OUT;
-  m_no_model_mask.metadata().set_doubles("flag_values", mask_values);
+                            "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
+                            "", ""); // no units and no standard name
+  m_no_model_mask.metadata().set_doubles("flag_values", {0, 1});
   m_no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   m_no_model_mask.set_time_independent(true);
-  m_no_model_mask.set(NMMASK_NORMAL);
+  m_no_model_mask.metadata().set_output_type(PISM_BYTE);
+  m_no_model_mask.set(0);
   m_grid->variables().add(m_no_model_mask);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
@@ -108,6 +104,19 @@ void IceRegionalModel::createVecs() {
 
     m_grid->variables().add(m_no_model_mask, "bc_mask");
   }
+}
+
+void IceRegionalModel::allocate_geometry_evolution() {
+  if (m_geometry_evolution) {
+    return;
+  }
+
+  m_log->message(2,
+                 "# Allocating the geometry evolution model...\n");
+
+  m_geometry_evolution.reset(new RegionalGeometryEvolution(m_grid));
+
+  m_submodels["geometry_evolution"] = m_geometry_evolution.get();
 }
 
 void IceRegionalModel::model_state_setup() {
@@ -198,7 +207,6 @@ void IceRegionalModel::allocate_basal_yield_stress() {
   }
 }
 
-
 void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
 
   IceModel::bootstrap_2d(input_file);
@@ -215,7 +223,6 @@ void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
 
   m_no_model_mask.regrid(input_file, OPTIONAL, 0.0);
 }
-
 
 void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
 
@@ -273,44 +280,6 @@ void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
 
   if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
     m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "model_state");
-  }
-}
-
-
-void IceRegionalModel::massContExplicitStep(double dt,
-                                    const IceModelVec2Stag &diffusive_flux,
-                                    const IceModelVec2V &advective_velocity) {
-
-  // This ensures that no_model_mask is available in
-  // IceRegionalModel::cell_interface_fluxes() below.
-  IceModelVec::AccessList list(m_no_model_mask);
-
-  IceModel::massContExplicitStep(dt, diffusive_flux, advective_velocity);
-}
-
-void IceRegionalModel::cell_interface_fluxes(int i, int j,
-                                             StarStencil<int> cell_type,
-                                             StarStencil<int> bc_mask,
-                                             StarStencil<Vector2> bc_velocity,
-                                             StarStencil<Vector2> input_velocity,
-                                             StarStencil<double> input_flux,
-                                             StarStencil<double> &output_velocity,
-                                             StarStencil<double> &output_flux) {
-
-  IceModel::cell_interface_fluxes(i, j, cell_type, bc_mask, bc_velocity,
-                                  input_velocity, input_flux,
-                                  output_velocity, output_flux);
-
-  StarStencil<int> nmm = m_no_model_mask.int_star(i,j);
-  Direction dirs[4] = {North, East, South, West};
-
-  for (int n = 0; n < 4; ++n) {
-    Direction direction = dirs[n];
-
-      if ((nmm.ij == 1) || (nmm.ij == 0 && nmm[direction] == 1)) {
-      output_velocity[direction] = 0.0;
-      output_flux[direction] = 0.0;
-    }
   }
 }
 

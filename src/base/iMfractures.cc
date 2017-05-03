@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2016 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2017 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ namespace pism {
 
 //! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
 
-void IceModel::calculateFractureDensity() {
+void IceModel::update_fracture_density() {
   const double dx = m_grid->dx(), dy = m_grid->dy(), Mx = m_grid->Mx(), My = m_grid->My();
 
   IceModelVec2S &D = m_fracture->density, &A = m_fracture->age, &D_new = m_work2d[0], &A_new = m_work2d[1];
@@ -42,11 +42,11 @@ void IceModel::calculateFractureDensity() {
   const IceModelVec2V &ssa_velocity = m_stress_balance->advective_velocity();
   IceModelVec2 &strain_rates = m_fracture->strain_rates;
   IceModelVec2 &deviatoric_stresses = m_fracture->deviatoric_stresses;
-  stressbalance::compute_2D_principal_strain_rates(ssa_velocity, m_cell_type, strain_rates);
-  m_stress_balance->compute_2D_stresses(ssa_velocity, m_cell_type, deviatoric_stresses);
+  stressbalance::compute_2D_principal_strain_rates(ssa_velocity, m_geometry.cell_type, strain_rates);
+  m_stress_balance->compute_2D_stresses(ssa_velocity, m_geometry.cell_type, deviatoric_stresses);
 
   IceModelVec::AccessList list{&ssa_velocity, &strain_rates, &deviatoric_stresses,
-      &m_ice_thickness, &D, &D_new, &m_cell_type};
+      &m_geometry.ice_thickness, &D, &D_new, &m_geometry.cell_type};
 
   D_new.copy_from(D);
 
@@ -58,12 +58,8 @@ void IceModel::calculateFractureDensity() {
 
   const bool write_fd = m_config->get_boolean("fracture_density.write_fields");
   if (write_fd) {
-    list.add(m_fracture->growth_rate);
-    list.add(m_fracture->healing_rate);
-    list.add(m_fracture->flow_enhancement);
-    list.add(m_fracture->toughness);
-    list.add(A);
-    list.add(A_new);
+    list.add({&m_fracture->growth_rate, &m_fracture->healing_rate,
+          &m_fracture->flow_enhancement, &m_fracture->toughness, &A, &A_new});
     A_new.copy_from(A);
   }
 
@@ -235,7 +231,7 @@ void IceModel::calculateFractureDensity() {
 
     //healing
     double fdheal = gammaheal * (strain_rates(i, j, 0) - healThreshold);
-    if (m_ice_thickness(i, j) > 0.0) {
+    if (m_geometry.ice_thickness(i, j) > 0.0) {
       if (constant_healing) {
         fdheal = gammaheal * (-healThreshold);
         if (fracture_weighted_healing) {
@@ -264,7 +260,7 @@ void IceModel::calculateFractureDensity() {
     //################################################################################
     // write related fracture quantities to nc-file
     // if option -write_fd_fields is set
-    if (write_fd && m_ice_thickness(i, j) > 0.0) {
+    if (write_fd && m_geometry.ice_thickness(i, j) > 0.0) {
       //fracture toughness
       m_fracture->toughness(i, j) = sigmat;
 
@@ -277,7 +273,7 @@ void IceModel::calculateFractureDensity() {
       }
 
       // fracture healing rate
-      if (m_ice_thickness(i, j) > 0.0) {
+      if (m_geometry.ice_thickness(i, j) > 0.0) {
         if (constant_healing || (strain_rates(i, j, 0) < healThreshold)) {
           if (fracture_weighted_healing) {
             m_fracture->healing_rate(i, j) = fdheal * (1 - D(i, j));
@@ -300,7 +296,7 @@ void IceModel::calculateFractureDensity() {
       // additional flow enhancement due to fracture softening
       double phi_exp   = 3.0; //flow_law->exponent();
       double softening = pow((1.0 - (1.0 - soft_residual) * D_new(i, j)), -phi_exp);
-      if (m_ice_thickness(i, j) > 0.0) {
+      if (m_geometry.ice_thickness(i, j) > 0.0) {
         m_fracture->flow_enhancement(i, j) = 1.0 / pow(softening, 1 / 3.0);
       } else {
         m_fracture->flow_enhancement(i, j) = 1.0;
@@ -324,7 +320,7 @@ void IceModel::calculateFractureDensity() {
       }
     }
     // ice free regions and boundary of computational domain
-    if (m_ice_thickness(i, j) == 0.0 || i == 0 || j == 0 || i == Mx - 1 || j == My - 1) {
+    if (m_geometry.ice_thickness(i, j) == 0.0 || i == 0 || j == 0 || i == Mx - 1 || j == My - 1) {
       D_new(i, j) = 0.0;
       if (write_fd) {
         A_new(i, j)                       = 0.0;

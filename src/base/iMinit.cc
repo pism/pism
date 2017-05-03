@@ -130,9 +130,6 @@ void IceModel::model_state_setup() {
       m_output_global_attributes.set_string("history",
                                             history + m_output_global_attributes.get_string("history"));
 
-      initialize_cumulative_fluxes(*input_file);
-    } else {
-      reset_cumulative_fluxes();
     }
 
     compute_cell_areas();
@@ -152,7 +149,7 @@ void IceModel::model_state_setup() {
       initialize_2d();
     }
 
-    regrid(2);
+    regrid();
   }
 
   // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
@@ -232,7 +229,7 @@ void IceModel::model_state_setup() {
         m_surface->temperature(ice_surface_temperature);
         m_surface->mass_flux(climatic_mass_balance);
         m_energy_model->bootstrap(*input_file,
-                                  m_ice_thickness,
+                                  m_geometry.ice_thickness,
                                   ice_surface_temperature,
                                   climatic_mass_balance,
                                   m_btu->flux_through_top_surface());
@@ -245,7 +242,7 @@ void IceModel::model_state_setup() {
         m_surface->temperature(ice_surface_temperature);
         m_surface->mass_flux(climatic_mass_balance);
         m_energy_model->initialize(m_basal_melt_rate,
-                                   m_ice_thickness,
+                                   m_geometry.ice_thickness,
                                    ice_surface_temperature,
                                    climatic_mass_balance,
                                    m_btu->flux_through_top_surface());
@@ -258,16 +255,17 @@ void IceModel::model_state_setup() {
   // this has to go after we add enthalpy to m_grid->variables()
   if (m_stress_balance) {
     m_stress_balance->init();
-
-    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
-      m_stress_balance->set_basal_melt_rate(m_basal_melt_rate);
-    }
   }
 
   // miscellaneous steps
   {
     reset_counters();
-    stampHistoryCommand();
+
+    char startstr[TEMPORARY_STRING_LENGTH];
+
+    snprintf(startstr, sizeof(startstr),
+             "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid->size());
+    prepend_history(startstr + pism_args_string());
   }
 }
 
@@ -281,41 +279,8 @@ void IceModel::restart_2d(const PIO &input_file, unsigned int last_record) {
 
   m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
-  // Read the model state, mapping and climate_steady variables:
-  for (auto v : m_grid->variables().keys()) {
-    // FIXME: remove const_cast. This is bad.
-    IceModelVec *var = const_cast<IceModelVec*>(m_grid->variables().get(v));
-
-    std::string
-      intent     = var->metadata().get_string("pism_intent"),
-      short_name = var->metadata().get_string("short_name");
-
-    if (intent == "model_state" ||
-        intent == "mapping"     ||
-        intent == "climate_steady") {
-
-      // skip "enthalpy" and "Href" for now: we'll take care
-      // of them a little later
-      if (short_name == "Href") {
-        continue;
-      }
-
-      var->read(input_file, last_record);
-    }
-  }
-
-  // check if the input file has Href; set to 0 if it is not present
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
-
-    if (input_file.inq_var("Href")) {
-      m_Href.read(input_file, last_record);
-    } else {
-      m_log->message(2,
-                     "PISM WARNING: Href for PISM-PIK -part_grid not found in '%s'."
-                     " Setting it to zero...\n",
-                     filename.c_str());
-      m_Href.set(0.0);
-    }
+  for (auto variable : m_model_state) {
+    variable->read(input_file, last_record);
   }
 }
 
@@ -348,21 +313,21 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
 
   m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
-  m_longitude.regrid(input_file, OPTIONAL);
+  m_geometry.longitude.regrid(input_file, OPTIONAL);
   if (not lon_found) {
-    m_longitude.metadata().set_string("missing_at_bootstrap","true");
+    m_geometry.longitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  m_latitude.regrid(input_file, OPTIONAL);
+  m_geometry.latitude.regrid(input_file, OPTIONAL);
   if (not lat_found) {
-    m_latitude.metadata().set_string("missing_at_bootstrap","true");
+    m_geometry.latitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  m_ice_thickness.regrid(input_file, OPTIONAL,
+  m_geometry.ice_thickness.regrid(input_file, OPTIONAL,
                          m_config->get_double("bootstrapping.defaults.ice_thickness"));
   // check the range of the ice thickness
   {
-    Range thk_range = m_ice_thickness.range();
+    Range thk_range = m_geometry.ice_thickness.range();
 
     if (thk_range.max >= m_grid->Lz() + 1e-6) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
@@ -380,7 +345,7 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
     //
     // On the other hand, we need to read it in to be able to re-start
     // from a PISM output file using the -bootstrap option.
-    m_Href.regrid(input_file, OPTIONAL, 0.0);
+    m_geometry.ice_area_specific_volume.regrid(input_file, OPTIONAL, 0.0);
   }
 
   if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
@@ -389,10 +354,13 @@ void IceModel::bootstrap_2d(const PIO &input_file) {
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that
     // makes sense is the zero Dirichlet B.C.
     m_ssa_dirichlet_bc_values.regrid(input_file, OPTIONAL,  0.0);
+  } else {
+    m_ssa_dirichlet_bc_mask.set(0.0);
+    m_ssa_dirichlet_bc_values.set(0.0);
   }
 
   // check if Lz is valid
-  Range thk_range = m_ice_thickness.range();
+  Range thk_range = m_geometry.ice_thickness.range();
 
   if (thk_range.max > m_grid->Lz()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Max. ice thickness (%3.3f m)\n"
@@ -406,42 +374,6 @@ void IceModel::initialize_2d() {
   // methods).
   throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
 }
-
-void IceModel::reset_cumulative_fluxes() {
-  // 2D
-  m_cumulative_flux_fields.reset();
-  // scalar
-  m_cumulative_fluxes = FluxCounters();
-}
-
-
-void IceModel::initialize_cumulative_fluxes(const PIO &input_file) {
-  // 2D
-  m_cumulative_flux_fields.regrid(input_file);
-
-  // scalar, stored in run_stats
-  if (input_file.inq_var("run_stats")) {
-    io::read_attributes(input_file, m_run_stats.get_name(), m_run_stats);
-
-    try {
-      m_cumulative_fluxes.H_to_Href      = m_run_stats.get_double("H_to_Href_flux_cumulative");
-      m_cumulative_fluxes.Href_to_H      = m_run_stats.get_double("Href_to_H_flux_cumulative");
-      m_cumulative_fluxes.discharge      = m_run_stats.get_double("discharge_flux_cumulative");
-      m_cumulative_fluxes.grounded_basal = m_run_stats.get_double("grounded_basal_ice_flux_cumulative");
-      m_cumulative_fluxes.nonneg_rule    = m_run_stats.get_double("nonneg_rule_flux_cumulative");
-      m_cumulative_fluxes.sub_shelf      = m_run_stats.get_double("sub_shelf_ice_flux_cumulative");
-      m_cumulative_fluxes.sum_divQ_SIA   = m_run_stats.get_double("sum_divQ_SIA_cumulative");
-      m_cumulative_fluxes.sum_divQ_SSA   = m_run_stats.get_double("sum_divQ_SSA_cumulative");
-      m_cumulative_fluxes.surface        = m_run_stats.get_double("surface_ice_flux_cumulative");
-    }
-    catch (RuntimeError &e) {
-      e.add_context("initializing cumulative flux counters from '%s'",
-                    input_file.inq_filename().c_str());
-      throw;
-    }
-  }
-}
-
 
 //! \brief Decide which stress balance model to use.
 void IceModel::allocate_stressbalance() {
@@ -493,6 +425,20 @@ void IceModel::allocate_stressbalance() {
 
   m_submodels["stress balance"] = m_stress_balance;
 }
+
+void IceModel::allocate_geometry_evolution() {
+  if (m_geometry_evolution) {
+    return;
+  }
+
+  m_log->message(2,
+                 "# Allocating the geometry evolution model...\n");
+
+  m_geometry_evolution.reset(new GeometryEvolution(m_grid));
+
+  m_submodels["geometry_evolution"] = m_geometry_evolution.get();
+}
+
 
 void IceModel::allocate_iceberg_remover() {
 
@@ -636,6 +582,8 @@ void IceModel::allocate_basal_yield_stress() {
  */
 void IceModel::allocate_submodels() {
 
+  allocate_geometry_evolution();
+
   allocate_iceberg_remover();
 
   allocate_stressbalance();
@@ -663,7 +611,6 @@ void IceModel::allocate_couplers() {
   atmosphere::Factory pa(m_grid);
   surface::Factory ps(m_grid);
   ocean::Factory po(m_grid);
-  atmosphere::AtmosphereModel *atmosphere;
 
   if (m_surface == NULL) {
 
@@ -672,8 +619,7 @@ void IceModel::allocate_couplers() {
 
     m_surface = new surface::InitializationHelper(m_grid, ps.create());
 
-    atmosphere = pa.create();
-    m_surface->attach_atmosphere_model(atmosphere);
+    m_surface->attach_atmosphere_model(pa.create());
 
     m_submodels["surface process model"] = m_surface;
   }
@@ -747,8 +693,8 @@ void IceModel::misc_setup() {
     if (not proj_string.empty()) {
       m_output_vars.insert("lon_bnds");
       m_output_vars.insert("lat_bnds");
-      m_latitude.metadata().set_string("bounds", "lat_bnds");
-      m_longitude.metadata().set_string("bounds", "lon_bnds");
+      m_geometry.latitude.metadata().set_string("bounds", "lat_bnds");
+      m_geometry.longitude.metadata().set_string("bounds", "lon_bnds");
     }
   }
 #endif
@@ -759,7 +705,6 @@ void IceModel::misc_setup() {
   init_backups();
   init_timeseries();
   init_extras();
-  init_viewers();
 
   // Make sure that we use the output.variable_order that works with NetCDF-4 and "quilt" parallel
   // I/O. (For different reasons, but mainly because it is faster.)
@@ -783,6 +728,23 @@ void IceModel::misc_setup() {
       m_log->message(2,
                      "* PISM-PIK mass/geometry methods are in use: %s\n",
                      join(pik_methods, ", ").c_str());
+    }
+  }
+
+  // initialize diagnostics
+  {
+    // reset: this gives diagnostics a chance to capture the current state of the model at the
+    // beginning of the run
+    for (auto d : m_diagnostics) {
+      d.second->reset();
+    }
+
+    // read in the state (accumulators) if we are re-starting a run
+    if (opts.type == INIT_RESTART) {
+      PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+      for (auto d : m_diagnostics) {
+        d.second->init(file, opts.record);
+      }
     }
   }
 }

@@ -34,6 +34,15 @@ class IceModelVec2CellType;
 
 namespace stressbalance {
 
+/*!
+ * Vertically-averaged ocean pressure difference at the calving front, used in the implementation of
+ * the stress boundary condition at the calving front in SSA stress balance solvers.
+ */
+double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
+                                 double rho_ice, double rho_ocean, double g);
+
+class StressBalanceInputs;
+
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance : public Component {
 public:
@@ -43,12 +52,8 @@ public:
   //  initialization and I/O:
 
   void init();
-  void set_boundary_conditions(const IceModelVec2Int &locations,
-                               const IceModelVec2V &velocities);
 
-  virtual void update(bool fast,
-                      double sea_level,
-                      const IceModelVec2S &melange_back_pressure) = 0;
+  virtual void update(const StressBalanceInputs &inputs, bool full_update) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
   const IceModelVec2V& velocity() const;
@@ -79,14 +84,11 @@ protected:
   
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  double m_sea_level;
   IceBasalResistancePlasticLaw *m_basal_sliding_law;
   rheology::FlowLaw *m_flow_law;
   EnthalpyConverter::Ptr m_EC;
 
   IceModelVec2V m_velocity;
-  const IceModelVec2V *m_bc_values;
-  const IceModelVec2Int *m_bc_mask;
   IceModelVec2S m_basal_frictional_heating;
 };
 
@@ -101,7 +103,7 @@ public:
   ZeroSliding(IceGrid::ConstPtr g);
   virtual ~ZeroSliding();
   
-  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
+  virtual void update(const StressBalanceInputs &inputs, bool full_update);
 
 protected:
 };
@@ -110,7 +112,7 @@ class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(IceGrid::ConstPtr g);
   virtual ~PrescribedSliding();
-  virtual void update(bool fast, double sea_level, const IceModelVec2S &melange_back_pressure);
+  virtual void update(const StressBalanceInputs &inputs, bool full_update);
 protected:
   virtual void init_impl();
 };

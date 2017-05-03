@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,10 +33,10 @@ Delta_P::Delta_P(IceGrid::ConstPtr g, AtmosphereModel* in)
   m_option_prefix = "-atmosphere_delta_P";
   m_offset_name = "delta_P";
   m_offset = new Timeseries(*m_grid, m_offset_name, m_config->get_string("time.dimension_name"));
-  m_offset->metadata().set_string("units", "kg m-2 second-1");
-  m_offset->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_offset->metadata().set_string("long_name", "precipitation offsets");
-  m_offset->dimension_metadata().set_string("units", m_grid->ctx()->time()->units_string());
+  m_offset->variable().set_string("units", "kg m-2 second-1");
+  m_offset->variable().set_string("glaciological_units", "kg m-2 year-1");
+  m_offset->variable().set_string("long_name", "precipitation offsets");
+  m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
 }
 
 Delta_P::~Delta_P()

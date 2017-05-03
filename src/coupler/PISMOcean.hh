@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011, 2013, 2014, 2015, 2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -61,7 +61,7 @@ class PO_sea_level : public Diag<OceanModel>
 public:
   PO_sea_level(const OceanModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Shelf base temperature. */
@@ -70,7 +70,7 @@ class PO_shelf_base_temperature : public Diag<OceanModel>
 public:
   PO_shelf_base_temperature(const OceanModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Shelf base mass flux. */
@@ -79,7 +79,7 @@ class PO_shelf_base_mass_flux : public Diag<OceanModel>
 public:
   PO_shelf_base_mass_flux(const OceanModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Melange back pressure fraction. */
@@ -88,7 +88,7 @@ class PO_melange_back_pressure_fraction : public Diag<OceanModel>
 public:
   PO_melange_back_pressure_fraction(const OceanModel *m);
 protected:
-  IceModelVec::Ptr compute_impl();
+  IceModelVec::Ptr compute_impl() const;
 };
 
 } // end of namespace ocean

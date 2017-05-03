@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -121,7 +121,7 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
   preprocess_bed(topg, m_Nx, m_Ny);
 }
 
-const IceModelVec2S& BedSmoother::get_smoothed_bed() {
+const IceModelVec2S& BedSmoother::smoothed_bed() const {
   return m_topgsmooth;
 }
 
@@ -281,19 +281,19 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::get_smoothed_thk(const IceModelVec2S &usurf,
-                                   const IceModelVec2S &thk,
-                                   const IceModelVec2CellType &mask,
-                                   IceModelVec2S &result) {
+void BedSmoother::smoothed_thk(const IceModelVec2S &usurf,
+                               const IceModelVec2S &thk,
+                               const IceModelVec2CellType &mask,
+                               IceModelVec2S &result) const {
 
   IceModelVec::AccessList list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
 
   unsigned int GHOSTS = result.get_stencil_width();
-  assert(mask.get_stencil_width()       >= GHOSTS);
+  assert(mask.get_stencil_width()         >= GHOSTS);
   assert(m_maxtl.get_stencil_width()      >= GHOSTS);
-  assert(thk.get_stencil_width()        >= GHOSTS);
+  assert(thk.get_stencil_width()          >= GHOSTS);
   assert(m_topgsmooth.get_stencil_width() >= GHOSTS);
-  assert(usurf.get_stencil_width()      >= GHOSTS);
+  assert(usurf.get_stencil_width()        >= GHOSTS);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -348,7 +348,7 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::get_theta(const IceModelVec2S &usurf, IceModelVec2S &result) {
+void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const {
 
   if ((m_Nx < 0) || (m_Ny < 0)) {
     result.set(1.0);

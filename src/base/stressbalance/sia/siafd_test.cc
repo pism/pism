@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -395,9 +395,11 @@ int main(int argc, char *argv[]) {
                                     "melange back pressure fraction", "", "");
     melange_back_pressure.set(0.0);
 
-    // Solve (fast==true means "no 3D update and no strain heating computation"):
-    bool fast = false;
-    stress_balance.update(fast, 0.0, melange_back_pressure);
+    bool full_update = true;
+    stressbalance::StressBalanceInputs inputs;
+    inputs.sea_level             = 0.0;
+    inputs.melange_back_pressure = &melange_back_pressure;
+    stress_balance.update(inputs, full_update);
 
     // Report errors relative to the exact solution:
     const IceModelVec3
@@ -411,24 +413,19 @@ int main(int argc, char *argv[]) {
                  ice_thickness, u3, v3, w3, sigma);
 
     // Write results to an output file:
-    PIO pio(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
+    PIO file(grid->com, "netcdf3", output_file, PISM_READWRITE_MOVE);
+    io::define_time(file, *ctx);
+    io::append_time(file, *ctx->config(), ctx->time()->current());
 
-    io::define_time(pio, config->get_string("time.dimension_name"),
-                    grid->ctx()->time()->calendar(),
-                    grid->ctx()->time()->CF_units_string(),
-                    ctx->unit_system());
-    io::append_time(pio, config->get_string("time.dimension_name"), 0.0);
-    pio.close();
-
-    ice_surface_elevation.write(output_file);
-    ice_thickness.write(output_file);
-    cell_type.write(output_file);
-    bed_topography.write(output_file);
+    ice_surface_elevation.write(file);
+    ice_thickness.write(file);
+    cell_type.write(file);
+    bed_topography.write(file);
     
-    u3.write(output_file);
-    v3.write(output_file);
-    w3.write(output_file);
-    sigma.write(output_file);
+    u3.write(file);
+    v3.write(file);
+    w3.write(file);
+    sigma.write(file);
   }
   catch (...) {
     handle_fatal_errors(com);

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 PISM Authors
+// Copyright (C) 2012-2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,7 @@ class Hydrology_bwat : public Diag<Hydrology>
 public:
   Hydrology_bwat(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -57,7 +57,7 @@ class Hydrology_bwp : public Diag<Hydrology>
 public:
   Hydrology_bwp(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -67,7 +67,7 @@ class Hydrology_bwprel : public Diag<Hydrology>
 public:
   Hydrology_bwprel(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -77,7 +77,7 @@ class Hydrology_effbwp : public Diag<Hydrology>
 public:
   Hydrology_effbwp(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -87,7 +87,7 @@ class Hydrology_hydrobmelt : public Diag<Hydrology>
 public:
   Hydrology_hydrobmelt(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -97,7 +97,7 @@ class Hydrology_hydroinput : public Diag<Hydrology>
 public:
   Hydrology_hydroinput(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -107,7 +107,7 @@ class Hydrology_wallmelt : public Diag<Hydrology>
 public:
   Hydrology_wallmelt(const Hydrology *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
@@ -118,7 +118,7 @@ class Routing_bwatvel : public Diag<Routing>
 public:
   Routing_bwatvel(const Routing *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Reports the values of velbase_mag seen by the Hydrology model.
@@ -128,75 +128,43 @@ class Distributed_hydrovelbase_mag : public Diag<Distributed>
 public:
   Distributed_hydrovelbase_mag(const Distributed *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl();
+  virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
 // Diagnostic time-series for mass-conserving ("MC") subglacial hydrology models.
 // These eight report the quantities computed in hydrology::Routing::boundary_mass_changes()
 
-//! \brief Reports the cumulative loss of liquid water, in kg, to locations with mask "ice_free_land()==true".
-class MCHydrology_ice_free_land_loss_cumulative : public TSDiag<Routing>
-{
-public:
-  MCHydrology_ice_free_land_loss_cumulative(const Routing *m);
-  virtual void update(double a, double b);
-};
-
 //! \brief Reports the rate of loss of liquid water, in kg/s, to locations with mask "ice_free_land()==true".
-class MCHydrology_ice_free_land_loss : public TSDiag<Routing>
+class MCHydrology_ice_free_land_loss : public TSDiag<TSFluxDiagnostic, Routing>
 {
 public:
   MCHydrology_ice_free_land_loss(const Routing *m);
-  virtual void update(double a, double b);
-};
-
-//! \brief Reports the cumulative loss of liquid water, in kg, to locations with mask "ocean()==true".
-class MCHydrology_ocean_loss_cumulative : public TSDiag<Routing>
-{
-public:
-  MCHydrology_ocean_loss_cumulative(const Routing *m);
-  virtual void update(double a, double b);
+  double compute();
 };
 
 //! \brief Reports the rate of loss of liquid water, in kg/s, to locations with mask "ocean()==true".
-class MCHydrology_ocean_loss : public TSDiag<Routing>
+class MCHydrology_ocean_loss : public TSDiag<TSFluxDiagnostic, Routing>
 {
 public:
   MCHydrology_ocean_loss(const Routing *m);
-  virtual void update(double a, double b);
-};
-
-//! \brief Reports the cumulative non-conserving gain of liquid water, in kg, from water thickness coming out negative during a time step, and being projected up to zero.
-class MCHydrology_negative_thickness_gain_cumulative : public TSDiag<Routing>
-{
-public:
-  MCHydrology_negative_thickness_gain_cumulative(const Routing *m);
-  virtual void update(double a, double b);
+  double compute();
 };
 
 //! \brief Reports the rate of non-conserving gain of liquid water, in kg/s, from water thickness coming out negative during a time step, and being projected up to zero.
-class MCHydrology_negative_thickness_gain : public TSDiag<Routing>
+class MCHydrology_negative_thickness_gain : public TSDiag<TSFluxDiagnostic, Routing>
 {
 public:
   MCHydrology_negative_thickness_gain(const Routing *m);
-  virtual void update(double a, double b);
-};
-
-//! \brief Reports the cumulative loss of liquid water, in kg, to locations in the null strip, if that strip has positive width.
-class MCHydrology_null_strip_loss_cumulative : public TSDiag<Routing>
-{
-public:
-  MCHydrology_null_strip_loss_cumulative(const Routing *m);
-  virtual void update(double a, double b);
+  double compute();
 };
 
 //! \brief Reports the rate of loss of liquid water, in kg/s, to locations in the null strip, if that strip has positive width.
-class MCHydrology_null_strip_loss : public TSDiag<Routing>
+class MCHydrology_null_strip_loss : public TSDiag<TSFluxDiagnostic, Routing>
 {
 public:
   MCHydrology_null_strip_loss(const Routing *m);
-  virtual void update(double a, double b);
+  double compute();
 };
 
 } // end of namespace hydrology

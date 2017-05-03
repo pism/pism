@@ -307,10 +307,10 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
 
     if (not std_name.empty()) {
 
-      int nvars;
-      m_impl->nc->inq_nvars(nvars);
+      int n_variables;
+      m_impl->nc->inq_nvars(n_variables);
 
-      for (int j = 0; j < nvars; ++j) {
+      for (int j = 0; j < n_variables; ++j) {
         string name;
         m_impl->nc->inq_varname(j, name);
 
@@ -397,7 +397,7 @@ unsigned int PIO::inq_dimlen(const string &name) const {
   try {
     bool exists = false;
     m_impl->nc->inq_dimid(name, exists);
-    if (exists == true) {
+    if (exists) {
       unsigned int result = 0;
       m_impl->nc->inq_dimlen(name, result);
       return result;

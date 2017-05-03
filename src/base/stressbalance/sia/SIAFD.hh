@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,8 @@
 #include "base/stressbalance/SSB_Modifier.hh"      // derives from SSB_Modifier
 
 namespace pism {
+
+class Geometry;
 
 namespace stressbalance {
 
@@ -47,13 +49,6 @@ class BedSmoother;
  */
 class SIAFD : public SSB_Modifier
 {
-  friend class SIAFD_schoofs_theta;
-  friend class SIAFD_topgsmooth;
-  friend class SIAFD_thksmooth;
-  friend class SIAFD_diffusivity;
-  friend class SIAFD_diffusivity_staggered;
-  friend class SIAFD_h_x;
-  friend class SIAFD_h_y;
 public:
   SIAFD(IceGrid::ConstPtr g);
 
@@ -61,38 +56,57 @@ public:
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &vel_input, bool fast);
+  virtual void update(const IceModelVec2V &sliding_velocity,
+                      const StressBalanceInputs &inputs,
+                      bool full_update);
+
+  const BedSmoother& bed_smoother() const;
+
+  const IceModelVec2Stag& surface_gradient_x() const;
+  const IceModelVec2Stag& surface_gradient_y() const;
+  const IceModelVec2Stag& diffusivity() const;
 
 protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+  virtual void compute_surface_gradient(const Geometry &geometry,
+                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
-  virtual void surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
-  virtual void surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
-  virtual void surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+  virtual void surface_gradient_eta(const Geometry &geometry,
+                                    IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+  virtual void surface_gradient_haseloff(const Geometry &geometry,
+                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+  virtual void surface_gradient_mahaffy(const Geometry &geometry,
+                                        IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
+
+  virtual void compute_diffusivity(bool full_update,
+                                   const Geometry &geometry,
+                                   const IceModelVec3 *enthalpy,
+                                   const IceModelVec3 *age,
+                                   const IceModelVec2Stag &h_x,
+                                   const IceModelVec2Stag &h_y,
+                                   IceModelVec2Stag &result);
 
   virtual void compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
-                                      IceModelVec2Stag &result, bool fast);
+                                      const IceModelVec2Stag &diffusivity,
+                                      IceModelVec2Stag &result);
 
-  virtual void compute_3d_horizontal_velocity(const IceModelVec2Stag &h_x,
+  virtual void compute_3d_horizontal_velocity(const Geometry &geometry,
+                                              const IceModelVec2Stag &h_x,
                                               const IceModelVec2Stag &h_y,
                                               const IceModelVec2V &vel_input,
                                               IceModelVec3 &u_out, IceModelVec3 &v_out);
 
-  virtual void compute_I();
+  virtual void compute_I(const Geometry &geometry);
 
   virtual double grainSizeVostok(double age) const;
-
-  virtual void compute_diffusivity(IceModelVec2S &result) const;
-  virtual void compute_diffusivity_staggered(IceModelVec2Stag &result) const;
 
   bool interglacial(double accumulation_time);
 
   //! temporary storage for eta, theta and the smoothed thickness
   mutable IceModelVec2S m_work_2d[2];
-  //! temporary storage for the surface gradient
-  mutable IceModelVec2Stag m_work_2d_stag[2];
+  //! temporary storage for the surface gradient and the diffusivity
+  mutable IceModelVec2Stag m_h_x, m_h_y, m_D;
   //! temporary storage for delta on the staggered grid
   mutable IceModelVec3 m_delta[2];
   //! temporary storage used to store I and strain_heating on the staggered grid

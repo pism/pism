@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2016 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2014, 2015, 2016, 2017 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,35 @@ void GeometryCalculator::compute(double sea_level, const IceModelVec2S &bed, con
   compute_surface(sea_level, bed, thickness, out_surface);
 }
 
+void GeometryCalculator::compute(const IceModelVec2S& sea_level,
+                                 const IceModelVec2S& bed,
+                                 const IceModelVec2S& thickness,
+                                 IceModelVec2Int& out_mask,
+                                 IceModelVec2S& out_surface) const {
+  compute_mask(sea_level, bed, thickness, out_mask);
+  compute_surface(sea_level, bed, thickness, out_surface);
+}
+
+void GeometryCalculator::compute_mask(const IceModelVec2S &sea_level,
+                                      const IceModelVec2S &bed,
+                                      const IceModelVec2S &thickness,
+                                      IceModelVec2Int &result) const {
+  IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
+
+  const IceGrid &grid = *bed.get_grid();
+
+  const unsigned int stencil = result.get_stencil_width();
+  assert(sea_level.get_stencil_width() >= stencil);
+  assert(bed.get_stencil_width()       >= stencil);
+  assert(thickness.get_stencil_width() >= stencil);
+
+  for (PointsWithGhosts p(grid, stencil); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i,j) = this->mask(sea_level(i, j), bed(i, j), thickness(i, j));
+  }
+}
+
 void GeometryCalculator::compute_mask(double sea_level,
                                       const IceModelVec2S &bed,
                                       const IceModelVec2S &thickness,
@@ -45,6 +74,26 @@ void GeometryCalculator::compute_mask(double sea_level,
     const int i = p.i(), j = p.j();
 
     result(i,j) = this->mask(sea_level, bed(i,j), thickness(i,j));
+  }
+}
+
+void GeometryCalculator::compute_surface(const IceModelVec2S &sea_level,
+                                         const IceModelVec2S &bed,
+                                         const IceModelVec2S &thickness,
+                                         IceModelVec2S &result) const {
+  IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
+
+  const IceGrid &grid = *bed.get_grid();
+
+  const unsigned int stencil = result.get_stencil_width();
+  assert(sea_level.get_stencil_width() >= stencil);
+  assert(bed.get_stencil_width()       >= stencil);
+  assert(thickness.get_stencil_width() >= stencil);
+
+  for (PointsWithGhosts p(grid, stencil); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i,j) = this->surface(sea_level(i, j), bed(i, j), thickness(i, j));
   }
 }
 

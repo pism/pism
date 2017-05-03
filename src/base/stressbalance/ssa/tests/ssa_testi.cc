@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -40,25 +40,6 @@ static char help[] =
 namespace pism {
 namespace stressbalance {
 
-class SSATestCaseI: public SSATestCase {
-public:
-  SSATestCaseI(Context::Ptr ctx)
-    : SSATestCase(ctx) {
-    // empty
-  }
-
-protected:
-  virtual void initializeGrid(int Mx,int My);
-
-  virtual void initializeSSAModel();
-
-  virtual void initializeSSACoefficients();
-
-  virtual void exactSolution(int i, int j,
-    double x, double y, double *u, double *v);
-
-};
-
 const double m_schoof = 10; // (pure number)
 const double L_schoof = 40e3; // meters
 const double aspect_schoof = 0.05; // (pure)
@@ -67,28 +48,39 @@ const double H0_schoof = aspect_schoof * L_schoof;
 const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
                                      // given on p. 239 of Schoof; why so big?
 
-void SSATestCaseI::initializeGrid(int Mx,int My) {
-  double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-  double Lx = std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)));
-  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
-                            0.0, 0.0, // center: (x0,y0)
-                            Mx, My, NOT_PERIODIC);
-}
+class SSATestCaseI: public SSATestCase {
+public:
+  SSATestCaseI(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+    : SSATestCase(ctx,
+                  Mx, My,
+                  std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * (3.0 * L_schoof) / (My - 1))),
+                  3.0 * L_schoof,
+                  NOT_PERIODIC) {
+    m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
+    m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", false);
 
-void SSATestCaseI::initializeSSAModel() {
-  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
+    m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+    m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
 
-  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", false);
+    m_ssa = ssafactory(m_grid);
+  }
 
-  m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-  m_config->set_double("flow_law.isothermal_Glen.ice_softness", pow(B_schoof, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
-}
+protected:
+  virtual void initializeSSACoefficients();
+
+  virtual void exactSolution(int i, int j,
+    double x, double y, double *u, double *v);
+
+};
 
 void SSATestCaseI::initializeSSACoefficients() {
 
   m_bc_mask.set(0);
-  m_thickness.set(H0_schoof);
+  m_geometry.ice_thickness.set(H0_schoof);
+
+  double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
+  m_ice_enthalpy.set(enth0);
 
   // ssa->strength_extension->set_min_thickness(2*H0_schoof);
 
@@ -96,7 +88,7 @@ void SSATestCaseI::initializeSSACoefficients() {
   m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
   m_config->set_double("stress_balance.ssa.epsilon", 0.0);  // don't use this lower bound
 
-  IceModelVec::AccessList list{&m_tauc, &m_bc_values, &m_bc_mask, &m_surface, &m_bed};
+  IceModelVec::AccessList list{&m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation, &m_geometry.bed_elevation};
 
   double standard_gravity = m_config->get_double("constants.standard_gravity"),
     ice_rho = m_config->get_double("constants.ice.density");
@@ -117,8 +109,8 @@ void SSATestCaseI::initializeSSACoefficients() {
     const double myx = m_grid->x(i), myy=m_grid->y(j);
     // eval exact solution; will only use exact vels if at edge
     struct TestIParameters I_parameters = exactI(m_schoof, myx, myy);
-    m_bed(i, j) = I_parameters.bed;
-    m_surface(i,j) = m_bed(i,j) + H0_schoof;
+    m_geometry.bed_elevation(i, j) = I_parameters.bed;
+    m_geometry.ice_surface_elevation(i,j) = m_geometry.bed_elevation(i,j) + H0_schoof;
 
     bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
                  (i == 0) || (i == (int)m_grid->Mx() - 1));
@@ -130,12 +122,10 @@ void SSATestCaseI::initializeSSACoefficients() {
   }
 
   // communicate what we have set
-  m_surface.update_ghosts();
-  m_bed.update_ghosts();
+  m_geometry.ice_surface_elevation.update_ghosts();
+  m_geometry.bed_elevation.update_ghosts();
   m_bc_mask.update_ghosts();
   m_bc_values.update_ghosts();
-
-  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
 }
 
 
@@ -196,8 +186,8 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCaseI testcase(ctx);
-    testcase.init(Mx,My,ssafactory);
+    SSATestCaseI testcase(ctx, Mx, My, ssafactory);
+    testcase.init();
     testcase.run();
     testcase.report("I");
     testcase.write(output_file);

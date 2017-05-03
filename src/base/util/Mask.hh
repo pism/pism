@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -71,6 +71,10 @@ public:
     m_alpha = 1 - config.get_double("constants.ice.density") / config.get_double("constants.sea_water.density");
     m_is_dry_simulation = config.get_boolean("ocean.always_grounded");
     m_icefree_thickness = config.get_double("geometry.ice_free_thickness_standard");
+    if (m_icefree_thickness < 0.0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "invalid ice-free thickness threshold: %f", m_icefree_thickness);
+    }
   }
 
   void set_icefree_thickness(double threshold) {
@@ -80,14 +84,23 @@ public:
     m_icefree_thickness = threshold;
   }
 
+  void compute(const IceModelVec2S &sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
+               IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
+
   void compute(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
                IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
 
   void compute_mask(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
                     IceModelVec2Int &result) const;
 
+  void compute_mask(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
+                    const IceModelVec2S& thickness, IceModelVec2Int& result) const;
+
   void compute_surface(double sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
                        IceModelVec2S &result) const;
+
+  void compute_surface(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
+                       const IceModelVec2S& thickness, IceModelVec2S& result) const;
 
   inline void compute(double sea_level, double bed, double thickness,
                       int *out_mask, double *out_surface) const {
@@ -96,7 +109,7 @@ public:
 
     const bool
       is_floating = (hfloating > hgrounded),
-      ice_free    = (thickness < m_icefree_thickness);
+      ice_free    = (thickness <= m_icefree_thickness);
 
     int mask_result;
     double surface_result;

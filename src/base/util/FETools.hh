@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown nd Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017 Jed Brown nd Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,8 @@
 #define _FETOOLS_H_
 
 #include <cassert>
+
+#include <vector>
 
 #include <petscmat.h>
 
@@ -183,6 +185,15 @@ struct QuadPoint {
   double eta;
 };
 
+//! Q0 element information.
+// FIXME: not sure if Q0 is the right notation here.
+namespace q0 {
+//! Number of shape functions on a Q0 element.
+const int n_chi = 4;
+//! Evaluate a piecewise-constant shape function and its derivatives.
+Germ chi(unsigned int k, const QuadPoint &p);
+} // end of namespace q0
+
 //! Q1 element information.
 namespace q1 {
 //! Number of shape functions on a Q1 element.
@@ -273,11 +284,13 @@ public:
   /*! @brief Get nodal values of an integer mask. */
   void nodal_values(const IceModelVec2Int &x_global, int *result) const;
 
-  /*! @brief Add the values of element-local residual contributions `y` to the global residual
-    vector `y_global`. */
-  /*! The element-local residual should be an array of Nk values.*/
+  /*! @brief Add the values of element-local contributions `y` to the global vector `y_global`. */
+  /*! The element-local array `local` should be an array of Nk values.
+   *
+   * Use this to add residual contributions.
+   */
   template<typename T>
-  void add_residual_contribution(const T *residual, T** y_global) const {
+  void add_contribution(const T *local, T** y_global) const {
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
       if (m_row[k].k == 1) {
         // skip rows marked as "invalid"
@@ -286,12 +299,12 @@ public:
       const int
         i = m_row[k].i,
         j = m_row[k].j;
-      y_global[j][i] += residual[k];   // note the indexing order
+      y_global[j][i] += local[k];   // note the indexing order
     }
   }
 
   template<class C, typename T>
-  void add_residual_contribution(const T *residual, C& y_global) const {
+  void add_contribution(const T *local, C& y_global) const {
     for (unsigned int k = 0; k < fem::q1::n_chi; k++) {
       if (m_row[k].k == 1) {
         // skip rows marked as "invalid"
@@ -300,7 +313,7 @@ public:
       const int
         i = m_row[k].i,
         j = m_row[k].j;
-      y_global(i, j) += residual[k];   // note the indexing order
+      y_global(i, j) += local[k];   // note the indexing order
     }
   }
 
@@ -315,7 +328,8 @@ public:
     j = m_j + m_j_offset[k];
   }
 
-  void add_jacobian_contribution(const double *K, Mat J) const;
+  /*! @brief Add Jacobian contributions. */
+  void add_contribution(const double *K, Mat J) const;
 
 private:
   //! Constant for marking invalid row/columns.
@@ -426,6 +440,10 @@ public:
   const double* weights() const {
     return m_W;
   }
+
+  Germ test_function_values(unsigned int q, unsigned int k) const;
+  double weights(unsigned int q) const;
+
 protected:
   //! Number of quadrature points.
   const unsigned int m_Nq;
@@ -452,9 +470,9 @@ protected:
   physical element and its inverse, which are used to convert partial derivatives with respect to
   xi, eta to partial derivatives with respect to x and y.
  */
-class Q1Quadrature : public Quadrature {
+class UniformQxQuadrature : public Quadrature {
 protected:
-  Q1Quadrature(unsigned int size, double dx, double dy, double L);
+  UniformQxQuadrature(unsigned int size, double dx, double dy, double L);
 };
 
 //! Numerical integration of finite element functions.
@@ -494,7 +512,7 @@ protected:
 
   See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
-class Q1Quadrature4 : public Q1Quadrature {
+class Q1Quadrature4 : public UniformQxQuadrature {
 public:
   Q1Quadrature4(double dx, double dy, double L=1.0);
 private:
@@ -502,7 +520,7 @@ private:
 };
 
 //! The 9-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
-class Q1Quadrature9 : public Q1Quadrature {
+class Q1Quadrature9 : public UniformQxQuadrature {
 public:
   Q1Quadrature9(double dx, double dy, double L=1.0);
 private:
@@ -510,11 +528,27 @@ private:
 };
 
 //! The 16-point 2D Gaussian quadrature on the square [-1,1]*[-1,1].
-class Q1Quadrature16 : public Q1Quadrature {
+class Q1Quadrature16 : public UniformQxQuadrature {
 public:
   Q1Quadrature16(double dx, double dy, double L=1.0);
 private:
   static const unsigned int m_size = 16;
+};
+
+class Q0Quadrature1e4 : public UniformQxQuadrature {
+public:
+  Q0Quadrature1e4(double dx, double dy, double L=1.0);
+private:
+  static const unsigned int m_size_1d = 100;
+  static const unsigned int m_size = m_size_1d * m_size_1d;
+};
+
+class Q1Quadrature1e4 : public UniformQxQuadrature {
+public:
+  Q1Quadrature1e4(double dx, double dy, double L=1.0);
+private:
+  static const unsigned int m_size_1d = 100;
+  static const unsigned int m_size = m_size_1d * m_size_1d;
 };
 
 //! Quadratures on a P1 element.

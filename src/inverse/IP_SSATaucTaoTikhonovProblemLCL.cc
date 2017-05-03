@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,10 +37,7 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
                                                                  IPFunctional<StateVec> &stateFunctional)
 : m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
   m_designFunctional(designFunctional), m_stateFunctional(stateFunctional) {
-  this->construct();
-}
 
-void IP_SSATaucTaoTikhonovProblemLCL::construct() {
   PetscErrorCode ierr;
   IceGrid::ConstPtr grid = m_d0.get_grid();
 
@@ -52,36 +49,30 @@ void IP_SSATaucTaoTikhonovProblemLCL::construct() {
 
   int design_stencil_width = m_d0.get_stencil_width();
   int state_stencil_width = m_u_obs.get_stencil_width();
-  m_d.reset(new DesignVec);
-  m_d->create(grid, "design variable", WITH_GHOSTS, design_stencil_width);
+  m_d.reset(new DesignVec(grid, "design variable", WITH_GHOSTS, design_stencil_width));
 
   m_d_Jdesign.create(grid, "Jdesign design variable", WITH_GHOSTS, design_stencil_width);
   m_dGlobal.create(grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width);
   m_dGlobal.copy_from(m_d0);
 
-  m_uGlobal.reset(new StateVec);
-  m_uGlobal->create(grid, "state variable (global)", WITHOUT_GHOSTS, state_stencil_width);
+  m_uGlobal.reset(new StateVec(grid, "state variable (global)",
+                               WITHOUT_GHOSTS, state_stencil_width));
 
   m_u.create(grid, "state variable", WITH_GHOSTS, state_stencil_width);
   m_du.create(grid, "du", WITH_GHOSTS, state_stencil_width);
   m_u_Jdesign.create(grid, "Jdesign state variable", WITH_GHOSTS, state_stencil_width);
 
-  m_u_diff.reset(new StateVec);
-  m_u_diff->create(grid, "state residual", WITH_GHOSTS, state_stencil_width);
+  m_u_diff.reset(new StateVec(grid, "state residual", WITH_GHOSTS, state_stencil_width));
 
-  m_d_diff.reset(new DesignVec);
-  m_d_diff->create(grid, "design residual", WITH_GHOSTS, design_stencil_width);
+  m_d_diff.reset(new DesignVec(grid, "design residual", WITH_GHOSTS, design_stencil_width));
 
   m_dzeta.create(grid,"dzeta",WITH_GHOSTS,design_stencil_width);
 
-  m_grad_state.reset(new StateVec);
-  m_grad_state->create(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width);
+  m_grad_state.reset(new StateVec(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width));
 
-  m_grad_design.reset(new DesignVec);
-  m_grad_design->create(grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad_design.reset(new DesignVec(grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width));
 
-  m_constraints.reset(new StateVec);
-  m_constraints->create(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width);
+  m_constraints.reset(new StateVec(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width));
 
   DM da;
   m_ssaforward.get_da(&da);

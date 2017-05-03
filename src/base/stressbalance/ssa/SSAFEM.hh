@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _SSAFEM_H_
 
 #include "SSA.hh"
-#include "FETools.hh"
+#include "base/util/FETools.hh"
 #include "base/util/petscwrappers/SNES.hh"
 #include "base/util/TerminationReason.hh"
 #include "base/util/Mask.hh"
@@ -45,7 +45,7 @@ public:
 
 protected:
   virtual void init_impl();
-  void cache_inputs();
+  void cache_inputs(const StressBalanceInputs &inputs);
 
   //! Storage for SSA coefficients at element nodes.
   //!
@@ -65,6 +65,9 @@ protected:
     //! prescribed gravitational driving stress
     Vector2 driving_stress;
   };
+
+  const IceModelVec2Int *m_bc_mask;
+  const IceModelVec2V *m_bc_values;
 
   GeometryCalculator m_gc;
   double m_alpha;
@@ -102,9 +105,9 @@ protected:
 
   void compute_local_jacobian(Vector2 const *const *const velocity, Mat J);
 
-  virtual void solve();
+  virtual void solve(const StressBalanceInputs &inputs);
 
-  TerminationReason::Ptr solve_with_reason();
+  TerminationReason::Ptr solve_with_reason(const StressBalanceInputs &inputs);
 
   TerminationReason::Ptr solve_nocache();
 
@@ -143,7 +146,7 @@ protected:
   const IceModelVec2S *m_driving_stress_x;
   const IceModelVec2S *m_driving_stress_y;
 private:
-  void cache_residual_cfbc();
+  void cache_residual_cfbc(const StressBalanceInputs &inputs);
   void monitor_jacobian(Mat Jac);
   void monitor_function(Vector2 const *const *const velocity_global,
                         Vector2 const *const *const residual_global);

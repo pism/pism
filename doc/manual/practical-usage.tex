@@ -418,7 +418,6 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \texttt{mask} & \textsl{none} & grounded/dragging/floating integer mask \\
     \texttt{nonneg_flux_cumulative} & \textsl{Gt} & cumulative numerical flux created by enforcing non-negativity of ice thickness \\
     \texttt{nuH} & \textsl{kPa s m} & ice thickness times effective viscosity, on the staggered grid\\
-    \texttt{proc_ice_area} & \textsl{none} &  number of cells containing ice in a processor's domain \\
     \texttt{rank} & \textsl{none} &  processor rank \\
     \texttt{schoofs_theta} & \textsl{1} &  multiplier $\theta$ in \cite{Schoofbasaltopg2003} \\
     \texttt{shelfbmassflux} & \textsl{m / year} & ice mass flux from ice shelf base (positive flux is loss from ice shelf) \\
@@ -586,7 +585,7 @@ are transposed.
   \begin{tabular}{p{0.4\linewidth}p{0.5\linewidth}}\toprule
     \textbf{Option} & \textbf{Description}\\
     \midrule
-    \listopt{view_map} & Turns on map-plane views of one or several variables, see tables~\allextras \\
+    \listopt{view} & Turns on map-plane views of one or several variables, see tables~\allextras \\
     \txtopt{view_size}{number} & desired viewer size, in pixels\\
     \intextoption{display} & The option \texttt{-display :0} seems to
     frequently be needed to let PETSc use Xwindows when running multiple
@@ -598,10 +597,10 @@ are transposed.
 \label{tab:diag-viewers}
 \end{table}
 
-The option \texttt{-view_map} shows map-plane views of 2D fields and surface
+The option \texttt{-view} shows map-plane views of 2D fields and surface
 and basal views of 3D fields (see tables~\allextras); for example:
 \begin{verbatim}
-$ pismr -i input.nc -y 1000 -o output.nc -view_map thk,tempsurf
+$ pismr -i input.nc -y 1000 -o output.nc -view thk,tempsurf
 \end{verbatim}
 shows ice thickness and ice temperature at the surface.
 

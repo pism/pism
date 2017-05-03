@@ -68,14 +68,14 @@ void IBIceModel::allocate_couplers() {
 }
 
 
-void IBIceModel::createVecs() {
-  super::createVecs();
+void IBIceModel::allocate_storage() {
+  super::allocate_storage();
 
-  printf("BEGIN IBIceModel::createVecs()\n");
+  printf("BEGIN IBIceModel::allocate_storage()\n");
   base.create(m_grid, "", WITHOUT_GHOSTS);
   cur.create(m_grid, "", WITHOUT_GHOSTS);
   rate.create(m_grid, "", WITHOUT_GHOSTS);
-  printf("END IBIceModel::createVecs()\n");
+  printf("END IBIceModel::allocate_storage()\n");
 
   M1.create(m_grid, "M1", pism::WITHOUT_GHOSTS);
   M2.create(m_grid, "M2", pism::WITHOUT_GHOSTS);
@@ -88,31 +88,9 @@ void IBIceModel::createVecs() {
   cur.print_formulas(std::cout);
 }
 
-void IBIceModel::massContPreHook() {
-#if 0 // Avoid warnings until we put something in this method
+void IBIceModel::energy_step() {
 
-    // Enthalpy and mass continuity are stepped with different timesteps.
-    // Fish out the timestep relevant to US.
-    const double my_t0 = m_grid.time->current();
-    const double my_dt = this->dt;
-#endif
-}
-
-
-void IBIceModel::massContPostHook() {
-#if 0 // Avoid warnings until we put something in this method
-
-    // Enthalpy and mass continuity are stepped with different timesteps.
-    // Fish out the timestep relevant to US.
-    const double my_t0 = m_grid.time->current();
-    const double my_dt = this->dt;
-#endif
-}
-
-
-void IBIceModel::energyStep() {
-
-  printf("BEGIN IBIceModel::energyStep(t=%f, dt=%f)\n", t_TempAge, dt_TempAge);
+  printf("BEGIN IBIceModel::energy_step(t=%f, dt=%f)\n", t_TempAge, dt_TempAge);
 
   // Enthalpy and mass continuity are stepped with different timesteps.
   // Fish out the timestep relevant to US.
@@ -122,7 +100,7 @@ void IBIceModel::energyStep() {
   // =========== BEFORE Energy Step
 
   // =========== The Energy Step Itself
-  super::energyStep();
+  super::energy_step();
 
   // =========== AFTER Energy Step
 
@@ -152,7 +130,7 @@ void IBIceModel::energyStep() {
   // cur.strain_heating = cur.strain_heating * 1.0 + my_dt * sum_columns(strain_heating3p)
   strain_heating3.sumColumns(cur.strain_heating, 1.0, my_dt);
 
-  printf("END IBIceModel::energyStep(time=%f)\n", t_TempAge);
+  printf("END IBIceModel::energy_step(time=%f)\n", t_TempAge);
 }
 
 void IBIceModel::massContExplicitStep(double dt,
@@ -172,7 +150,10 @@ void IBIceModel::massContExplicitStep(double dt,
     AccessList access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
                        &cur.internal_advection, &cur.href_to_h,     &cur.nonneg_rule };
 
-    super::massContExplicitStep(dt, diffusive_flux, advective_velocity);
+    // FIXME: this is obviously broken now that PISM uses GeometryEvolution instead.
+    (void) diffusive_flux;
+    (void) advective_velocity;
+    // super::massContExplicitStep(dt, diffusive_flux, advective_velocity);
   }
 
   // =========== AFTER the Mass Continuity Step
@@ -214,7 +195,7 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
   EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
 
   // -------------- Melting
-  double p_basal             = EC->pressure(m_ice_thickness(i, j));
+  double p_basal             = EC->pressure(m_geometry.ice_thickness(i, j));
   double T                   = EC->melting_temperature(p_basal);
   double specific_enth_basal = EC->enthalpy_permissive(T, 1.0, p_basal);
   double mass;
@@ -231,7 +212,7 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(int i, int j,
 
 
   // -------------- internal_advection
-  const int ks             = m_grid->kBelowHeight(m_ice_thickness(i, j));
+  const int ks             = m_grid->kBelowHeight(m_geometry.ice_thickness(i, j));
   // Approximate, we will use the enthalpy of the top layer...
   double specific_enth_top = m_energy_model->enthalpy().get_column(i, j)[ks];
 
@@ -362,14 +343,14 @@ void IBIceModel::prepare_initial_outputs() {
 
   const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
 
-  AccessList access{ &ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_ice_thickness };
+  AccessList access{ &ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_geometry.ice_thickness };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       double const *Enth = ice_enthalpy.get_column(i, j);
 
       // Top Layer
-      int const ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
-      V1(i, j) = m_ice_thickness(i, j) - m_grid->z(ks); // [m^3 m-2]
+      int const ks = m_grid->kBelowHeight(m_geometry.ice_thickness(i, j));
+      V1(i, j) = m_geometry.ice_thickness(i, j) - m_grid->z(ks); // [m^3 m-2]
       M1(i, j) = V1(i, j) * ice_density;                // [kg m-2] = [m^3 m-2] [kg m-3]
       H1(i, j) = Enth[ks] * M1(i, j);                   // [J m-2] = [J kg-1] [kg m-2]
 
@@ -436,7 +417,7 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
 
   const IceModelVec3 *ice_enthalpy = &m_energy_model->enthalpy();
 
-  AccessList access{ &m_ice_thickness, ice_enthalpy, &enth2, &mass2 };
+  AccessList access{ &m_geometry.ice_thickness, ice_enthalpy, &enth2, &mass2 };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       enth2(i, j) = 0;
@@ -444,8 +425,8 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
 
       // count all ice, including cells that have so little they
       // are considered "ice-free"
-      if (m_ice_thickness(i, j) > 0) {
-        const int ks       = m_grid->kBelowHeight(m_ice_thickness(i, j));
+      if (m_geometry.ice_thickness(i, j) > 0) {
+        const int ks       = m_grid->kBelowHeight(m_geometry.ice_thickness(i, j));
         double const *Enth = ice_enthalpy->get_column(i, j);
         for (int k = 0; k < ks; ++k) {
           double dz = (m_grid->z(k + 1) - m_grid->z(k));
@@ -453,10 +434,10 @@ void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &
         }
 
         // Do the last layer a bit differently
-        double dz = (m_ice_thickness(i, j) - m_grid->z(ks));
+        double dz = (m_geometry.ice_thickness(i, j) - m_grid->z(ks));
         enth2(i, j) += Enth[ks] * dz;
         enth2(i, j) *= ice_density;                        // --> J/m^2
-        mass2(i, j) = m_ice_thickness(i, j) * ice_density; // --> kg/m^2
+        mass2(i, j) = m_geometry.ice_thickness(i, j) * ice_density; // --> kg/m^2
       }
     }
   }
@@ -487,7 +468,7 @@ void IBIceModel::construct_surface_temp(
   const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
 
   {
-    AccessList access{ &ice_enthalpy, &deltah, &m_ice_thickness, &surface_temp };
+    AccessList access{ &ice_enthalpy, &deltah, &m_geometry.ice_thickness, &surface_temp };
 
     // First time around, set effective_surface_temp to top temperature
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
@@ -498,12 +479,12 @@ void IBIceModel::construct_surface_temp(
         double const *Enth = ice_enthalpy.get_column(i, j);
 
         // Enthalpy at top of ice sheet
-        const int ks      = m_grid->kBelowHeight(m_ice_thickness(i, j));
+        const int ks      = m_grid->kBelowHeight(m_geometry.ice_thickness(i, j));
         double spec_enth3 = Enth[ks]; // Specific enthalpy [J kg-1]
 
         if (deltah_ij != default_val) {
           // Adjust enthalpy @top by deltah
-          double toplayer_dz = m_ice_thickness(i, j) - m_grid->z(ks); // [m]
+          double toplayer_dz = m_geometry.ice_thickness(i, j) - m_grid->z(ks); // [m]
 
           // [J kg-1] = [J kg-1]
           //     + [J m-2 s-1] * [m^2 m-3] * [m^3 kg-1] * [s]

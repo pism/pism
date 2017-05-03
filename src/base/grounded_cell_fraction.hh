@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,6 +34,16 @@ void compute_grounded_cell_fraction(double ice_density,
                              IceModelVec2S &result,
                              IceModelVec2S *result_x,
                              IceModelVec2S *result_y);
+
+/*!
+ * Compute grounded cell fractions using quadratures.
+ */
+void compute_grounded_cell_fraction(double ice_density,
+                                    double ocean_density,
+                                    const IceModelVec2S &sea_level,
+                                    const IceModelVec2S &ice_thickness,
+                                    const IceModelVec2S &bed_topography,
+                                    IceModelVec2S &result);
 
 } // end of namespace pism
 

@@ -22,9 +22,9 @@ output_basename="test_vonmisescalving"
 
 calving="-calving vonmises_calving"
 
-diagnostics="thk,mask,velbar_mag,Href,velbar,discharge_flux_cumulative"
+diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,calving_mass_flux"
 
-viewers="-view_map $diagnostics"
+viewers="-view $diagnostics"
 
 extra="-extra_times 10 -extra_vars $diagnostics -extra_file ${output_basename}_ex.nc"
 

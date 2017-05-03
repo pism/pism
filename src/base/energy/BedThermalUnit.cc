@@ -201,19 +201,16 @@ void BedThermalUnit::write_model_state_impl(const PIO &output) const {
 }
 
 std::map<std::string, Diagnostic::Ptr> BedThermalUnit::diagnostics_impl() const {
-  return {{"hfgeoubed", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
+  return {
+    {"bheatflx",   Diagnostic::wrap(m_bottom_surface_flux)},
+    {"hfgeoubed", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
 }
 
 void BedThermalUnit::update_impl(double t, double dt) {
-  // CHECK: has the desired time-interval already been dealt with?
-  if ((fabs(t - m_t) < 1e-12) and (fabs(dt - m_dt) < 1e-12)) {
-    return;
-  }
-
-  const IceModelVec2S
-    &bedtoptemp = *m_grid->variables().get_2d_scalar("bedtoptemp");
-
-  this->update_impl(bedtoptemp, t, dt);
+  (void) t;
+  (void) dt;
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "BedThermalUnit::update(t, dt) is not implemented");
 }
 
 void BedThermalUnit::update(const IceModelVec2S &bedrock_top_temperature,
@@ -234,7 +231,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
   m_vars = {model->flux_through_top_surface().metadata()};
 }
 
-IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() {
+IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hfgeoubed", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 

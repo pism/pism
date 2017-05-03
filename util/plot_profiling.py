@@ -29,26 +29,26 @@ colors = np.array(colors) / 255.0
 n_procs = r.numProcs
 s = r.Stages["time-stepping loop"]
 
-big_events = ["basal yield stress",
-              "stress balance",
+big_events = ["basal_yield_stress",
+              "stress_balance",
               "surface",
               "ocean",
               "age",
               "energy",
-              "basal hydrology",
-              "fracture density",
-              "mass transport",
+              "basal_hydrology",
+              "fracture_density",
+              "mass_transport",
               "calving",
-              "bed deformation",
-              "I/O during run"]
+              "bed_deformation",
+              "io"]
 
 small_events = {}
-small_events["energy"] = ["ice energy", "BTU"];
-small_events["stress balance"] = ["SSB", "SB modifier", "SB strain heat",
-                                  "SB vert. vel."]
-small_events["SB modifier"] = ["SIA bed smoother",
-                               "SIA gradient", "SIA flux", "SIA 3D hor. vel."]
-small_events["I/O during run"] = ["backup", "extra_file reporting", "model state dump"]
+small_events["energy"] = ["ice_energy", "btu"];
+small_events["stress_balance"] = ["stress_balance.shallow", "stress_balance.modifier",
+                                  "stress_balance.strain_heat", "stress_balance.vertical_velocity"]
+small_events["stress_balance.modifier"] = ["sia.bed_smoother",
+                                           "sia.gradient", "sia.flux", "sia.valocity"]
+small_events["io"] = ["io.backup", "io.extra_file", "io.model_state"]
 
 def get_event_times(event, n_procs):
     result = [s[event][j]["time"] for j in range(n_procs)]
@@ -125,15 +125,15 @@ energy = figure("Energy step",
                 big["energy"][0], total_time)
 
 stressbalance = figure("Stress balance",
-                       small_events["stress balance"],
-                       big["stress balance"][0], total_time)
+                       small_events["stress_balance"],
+                       big["stress_balance"][0], total_time)
 
 sia = figure("SB modifier (SIA)",
-             small_events["SB modifier"],
-             stressbalance["SB modifier"][0], total_time)
+             small_events["stress_balance.modifier"],
+             stressbalance["stress_balance.modifier"][0], total_time)
 
 io = figure("I/O during run",
-             small_events["I/O during run"],
-             big["I/O during run"][0], total_time)
+             small_events["io"],
+             big["io"][0], total_time)
 
 plt.show()

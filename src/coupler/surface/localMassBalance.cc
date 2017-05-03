@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert>
 #include <ctime>  // for time(), used to initialize random number gen
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
@@ -31,9 +32,20 @@
 namespace pism {
 namespace surface {
 
+LocalMassBalance::Changes::Changes() {
+  snow_depth = 0.0;
+  melt       = 0.0;
+  runoff     = 0.0;
+  smb        = 0.0;
+}
+
 LocalMassBalance::LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system)
   : m_config(myconfig), m_unit_system(system),
     m_seconds_per_day(86400) {
+  // empty
+}
+
+LocalMassBalance::~LocalMassBalance() {
   // empty
 }
 
@@ -97,9 +109,15 @@ double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
  * @param N length of the T array
  * @param[out] PDDs pointer to a pre-allocated array with N-1 elements
  */
-void PDDMassBalance::get_PDDs(double *S, double dt_series,
-                              double *T, unsigned int N, double *PDDs) {
+void PDDMassBalance::get_PDDs(double dt_series,
+                              const std::vector<double> &S,
+                              const std::vector<double> &T,
+                              std::vector<double> &PDDs) {
+  assert(S.size() == T.size() and T.size() == PDDs.size());
+  assert(dt_series > 0.0);
+
   const double h_days = dt_series / m_seconds_per_day;
+  const size_t N = S.size();
 
   for (unsigned int k = 0; k < N; ++k) {
     PDDs[k] = h_days * CalovGreveIntegrand(S[k], T[k] - pdd_threshold_temp);
@@ -123,8 +141,11 @@ void PDDMassBalance::get_PDDs(double *S, double dt_series,
  * @param[in] T air temperature (array of length N)
  * @param[in] N array length
  */
-void PDDMassBalance::get_snow_accumulation(double *P, double *T,
-                                           unsigned int N) {
+void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
+                                           std::vector<double> &P) {
+
+  assert(T.size() == P.size());
+  const size_t N = T.size();
 
   // Following \ref Hock2005b we employ a linear transition from Tmin to Tmax
   for (unsigned int i = 0; i < N; i++) {
@@ -156,7 +177,7 @@ void PDDMassBalance::get_snow_accumulation(double *P, double *T,
  *
  * - a fraction of the melted snow and ice refreezes, conceptualized
  *   as superimposed ice, and this is controlled by parameter \c
- *   ddf.refreezeFrac
+ *   ddf.refreeze_fraction
  *
  * - the excess number of PDDs is used to melt both the ice that came
  *   from refreeze and then any ice which is already present.
@@ -167,19 +188,18 @@ void PDDMassBalance::get_snow_accumulation(double *P, double *T,
  * The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but
  * is influenced by R. Hock (personal communication).
  */
-void PDDMassBalance::step(const DegreeDayFactors &ddf,
-                          double PDDs,
-                          double accumulation,
-                          double &snow_depth,
-                          double &cumulative_melt,
-                          double &cumulative_runoff,
-                          double &cumulative_smb) {
+PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
+                                             double PDDs,
+                                             double old_snow_depth,
+                                             double accumulation) {
+
+  Changes result;
 
   double
+    snow_depth      = old_snow_depth + accumulation,
     max_snow_melted = PDDs * ddf.snow,
-    snow_melted = 0.0, excess_pdds = 0.0;
-
-  snow_depth += accumulation;
+    snow_melted     = 0.0,
+    excess_pdds     = 0.0;
 
   if (PDDs <= 0.0) {       // The "no melt" case.
     snow_melted = 0.0;
@@ -201,24 +221,27 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
   double
     ice_melted              = excess_pdds * ddf.ice,
     melt                    = snow_melted + ice_melted,
-    ice_created_by_refreeze = 0.0, runoff = 0.0;
+    ice_created_by_refreeze = 0.0;
 
   if (refreeze_ice_melt) {
-    ice_created_by_refreeze = melt * ddf.refreezeFrac;
+    ice_created_by_refreeze = melt * ddf.refreeze_fraction;
   } else {
-    ice_created_by_refreeze = snow_melted * ddf.refreezeFrac;
+    ice_created_by_refreeze = snow_melted * ddf.refreeze_fraction;
   }
-
-  runoff = melt - ice_created_by_refreeze;
 
   snow_depth -= snow_melted;
   if (snow_depth < 0.0) {
     snow_depth = 0.0;
   }
 
-  cumulative_melt   += melt;
-  cumulative_runoff += runoff;
-  cumulative_smb    += accumulation - runoff;
+  const double runoff = melt - ice_created_by_refreeze;
+
+  result.snow_depth = snow_depth - old_snow_depth;
+  result.melt       = melt;
+  result.runoff     = runoff;
+  result.smb        = accumulation - runoff;
+
+  return result;
 }
 
 
@@ -228,10 +251,10 @@ which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
 PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::Ptr system,
-                                       bool repeatable)
+                                       Kind repeatable)
   : PDDMassBalance(config, system) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
-  gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));
+  gsl_rng_set(pddRandGen, repeatable == 1 ? 0 : time(0));
 }
 
 
@@ -270,9 +293,15 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
  * @param N number of points in the temperature time-series, each corresponds to a sub-interval
  * @param PDDs pointer to a pre-allocated array of length N
  */
-void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
-                                  double *T, unsigned int N, double *PDDs) {
+void PDDrandMassBalance::get_PDDs(double dt_series,
+                                  const std::vector<double> &S,
+                                  const std::vector<double> &T,
+                                  std::vector<double> &PDDs) {
+  assert(S.size() == T.size() and T.size() == PDDs.size());
+  assert(dt_series > 0.0);
+
   const double h_days = dt_series / m_seconds_per_day;
+  const size_t N = S.size();
 
   for (unsigned int k = 0; k < N; ++k) {
     // average temperature in k-th interval
@@ -288,17 +317,19 @@ void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
 FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr g)
   : m_grid(g), m_config(g->ctx()->config()) {
 
-  beta_ice_w  = m_config->get_double("surface.pdd.fausto.beta_ice_w");
-  beta_snow_w = m_config->get_double("surface.pdd.fausto.beta_snow_w");
+  m_beta_ice_w  = m_config->get_double("surface.pdd.fausto.beta_ice_w");
+  m_beta_snow_w = m_config->get_double("surface.pdd.fausto.beta_snow_w");
 
-  T_c         = m_config->get_double("surface.pdd.fausto.T_c");
-  T_w         = m_config->get_double("surface.pdd.fausto.T_w");
-  beta_ice_c  = m_config->get_double("surface.pdd.fausto.beta_ice_c");
-  beta_snow_c = m_config->get_double("surface.pdd.fausto.beta_snow_c");
+  m_T_c         = m_config->get_double("surface.pdd.fausto.T_c");
+  m_T_w         = m_config->get_double("surface.pdd.fausto.T_w");
+  m_beta_ice_c  = m_config->get_double("surface.pdd.fausto.beta_ice_c");
+  m_beta_snow_c = m_config->get_double("surface.pdd.fausto.beta_snow_c");
 
-  fresh_water_density        = m_config->get_double("constants.fresh_water.density");
-  ice_density                = m_config->get_double("constants.ice.density");
-  pdd_fausto_latitude_beta_w = m_config->get_double("surface.pdd.fausto.latitude_beta_w");
+  m_fresh_water_density        = m_config->get_double("constants.fresh_water.density");
+  m_ice_density                = m_config->get_double("constants.ice.density");
+  m_pdd_fausto_latitude_beta_w = m_config->get_double("surface.pdd.fausto.latitude_beta_w");
+  m_refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
+
 
   m_temp_mj.create(m_grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   m_temp_mj.set_attrs("internal",
@@ -306,40 +337,46 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr g)
                     "K", "");
 }
 
+FaustoGrevePDDObject::~FaustoGrevePDDObject() {
+  // empty
+}
 
-void FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
-                                               double /* usurf */,
-                                               double lat, double /* lon */,
-                                               LocalMassBalance::DegreeDayFactors &ddf) {
+LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int i, int j,
+                                                                            double latitude) {
+
+  LocalMassBalance::DegreeDayFactors ddf;
+  ddf.refreeze_fraction = m_refreeze_fraction;
 
   IceModelVec::AccessList list(m_temp_mj);
   const double T_mj = m_temp_mj(i,j);
 
-  if (lat < pdd_fausto_latitude_beta_w) { // case lat < 72 deg N
-    ddf.ice  = beta_ice_w;
-    ddf.snow = beta_snow_w;
+  if (latitude < m_pdd_fausto_latitude_beta_w) { // case latitude < 72 deg N
+    ddf.ice  = m_beta_ice_w;
+    ddf.snow = m_beta_snow_w;
   } else { // case > 72 deg N
-    if (T_mj >= T_w) {
-      ddf.ice  = beta_ice_w;
-      ddf.snow = beta_snow_w;
-    } else if (T_mj <= T_c) {
-      ddf.ice  = beta_ice_c;
-      ddf.snow = beta_snow_c;
+    if (T_mj >= m_T_w) {
+      ddf.ice  = m_beta_ice_w;
+      ddf.snow = m_beta_snow_w;
+    } else if (T_mj <= m_T_c) {
+      ddf.ice  = m_beta_ice_c;
+      ddf.snow = m_beta_snow_c;
     } else { // middle case   T_c < T_mj < T_w
       const double
-        lam_i = pow((T_w - T_mj) / (T_w - T_c) , 3.0),
-        lam_s = (T_mj - T_c) / (T_w - T_c);
-      ddf.ice  = beta_ice_w + (beta_ice_c - beta_ice_w) * lam_i;
-      ddf.snow = beta_snow_w + (beta_snow_c - beta_snow_w) * lam_s;
+        lam_i = pow((m_T_w - T_mj) / (m_T_w - m_T_c) , 3.0),
+        lam_s = (T_mj - m_T_c) / (m_T_w - m_T_c);
+      ddf.ice  = m_beta_ice_w + (m_beta_ice_c - m_beta_ice_w) * lam_i;
+      ddf.snow = m_beta_snow_w + (m_beta_snow_c - m_beta_snow_w) * lam_s;
     }
   }
 
   // degree-day factors in \ref Faustoetal2009 are water-equivalent
   //   thickness per degree day; ice-equivalent thickness melted per degree
   //   day is slightly larger; for example, iwfactor = 1000/910
-  const double iwfactor = fresh_water_density / ice_density;
+  const double iwfactor = m_fresh_water_density / m_ice_density;
   ddf.snow *= iwfactor;
   ddf.ice  *= iwfactor;
+
+  return ddf;
 }
 
 

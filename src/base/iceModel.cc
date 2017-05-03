@@ -18,7 +18,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <sstream>
 #include <algorithm>
 #include <petscsys.h>
 
@@ -52,19 +51,9 @@
 #include "base/util/pism_utilities.hh"
 #include "base/age/AgeModel.hh"
 #include "base/energy/EnergyModel.hh"
+#include "base/util/io/PIO.hh"
 
 namespace pism {
-
-IceModel::FluxCounters::FluxCounters() {
-  grounded_basal = 0.0;
-  nonneg_rule    = 0.0;
-  sub_shelf      = 0.0;
-  surface        = 0.0;
-  sum_divQ_SIA   = 0.0;
-  sum_divQ_SSA   = 0.0;
-  Href_to_H      = 0.0;
-  H_to_Href      = 0.0;
-}
 
 FractureFields::FractureFields(IceGrid::ConstPtr grid) {
   Config::ConstPtr config = grid->ctx()->config();
@@ -126,70 +115,6 @@ FractureFields::FractureFields(IceGrid::ConstPtr grid) {
                                 "Pa", "", 2);
 }
 
-IceModel::FluxFields::FluxFields(IceGrid::ConstPtr grid) {
-  {
-    climatic_mass_balance.create(grid, "climatic_mass_balance_cumulative",
-                                 WITHOUT_GHOSTS);
-    climatic_mass_balance.set_attrs("diagnostic",
-                                    "cumulative surface mass balance",
-                                    "kg m-2", "");
-  }
-  {
-    basal_grounded.create(grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS);
-    basal_grounded.set_attrs("diagnostic",
-                             "cumulative basal flux into the ice "
-                             "in grounded areas (positive means ice gain)",
-                             "kg m-2", "");
-    basal_grounded.set_time_independent(false);
-    basal_grounded.metadata().set_string("glaciological_units", "Gt m-2");
-    basal_grounded.write_in_glaciological_units = true;
-  }
-  {
-    basal_floating.create(grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS);
-    basal_floating.set_attrs("diagnostic",
-                             "cumulative basal flux into the ice "
-                             "in floating areas (positive means ice gain)",
-                             "kg m-2", "");
-    basal_floating.set_time_independent(false);
-    basal_floating.metadata().set_string("glaciological_units", "Gt m-2");
-    basal_floating.write_in_glaciological_units = true;
-  }
-  {
-    nonneg.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS);
-    nonneg.set_attrs("diagnostic",
-                     "cumulative nonnegative rule flux (positive means ice gain)",
-                     "kg m-2", "");
-    nonneg.set_time_independent(false);
-    nonneg.metadata().set_string("glaciological_units", "Gt m-2");
-    nonneg.write_in_glaciological_units = true;
-  }
-  {
-    discharge.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS);
-    discharge.set_attrs("diagnostic",
-                        "cumulative discharge (calving) flux (positive means ice loss)",
-                        "kg", "");
-    discharge.set_time_independent(false);
-    discharge.metadata().set_string("glaciological_units", "Gt");
-    discharge.write_in_glaciological_units = true;
-  }
-}
-
-void IceModel::FluxFields::reset() {
-  climatic_mass_balance.set(0.0);
-  basal_grounded.set(0.0);
-  basal_floating.set(0.0);
-  nonneg.set(0.0);
-  discharge.set(0.0);
-}
-
-void IceModel::FluxFields::regrid(const PIO &input_file) {
-  climatic_mass_balance.regrid(input_file, OPTIONAL, 0.0);
-  basal_grounded.regrid(input_file,        OPTIONAL, 0.0);
-  basal_floating.regrid(input_file,        OPTIONAL, 0.0);
-  nonneg.regrid(input_file,                OPTIONAL, 0.0);
-  discharge.regrid(input_file,             OPTIONAL, 0.0);
-}
-
 IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   : m_grid(g),
     m_config(context->config()),
@@ -199,7 +124,9 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_time(context->time()),
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
-    m_cumulative_flux_fields(m_grid),
+    m_geometry(m_grid),
+    m_discharge(m_grid, "discharge", WITH_GHOSTS),
+    m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
     m_timestamp("timestamp", m_config->get_string("time.dimension_name"), m_sys) {
 
@@ -240,7 +167,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   // Do not save snapshots by default:
   m_save_snapshots = false;
   // Do not save time-series by default:
-  m_save_ts        = false;
   m_save_extra     = false;
 
   m_fracture = NULL;
@@ -261,27 +187,14 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   }
 }
 
-IceModel::FluxCounters IceModel::cumulative_fluxes() const {
-  return m_cumulative_fluxes;
-}
-
-const IceModel::FluxFields& IceModel::cumulative_fluxes_2d() const {
-  return m_cumulative_flux_fields;
-}
-
-const IceModelVec2S& IceModel::flux_divergence() const {
-  return m_flux_divergence;
-}
-
 double IceModel::dt() const {
   return m_dt;
 }
 
 void IceModel::reset_counters() {
-  dt_TempAge   = 0.0;
-
-  m_dt              = 0.0;
-  m_skip_countdown   = 0;
+  dt_TempAge       = 0.0;
+  m_dt             = 0.0;
+  m_skip_countdown = 0;
 
   m_timestep_hit_multiples_last_time = m_time->current();
 }
@@ -325,61 +238,26 @@ IceModel::~IceModel() {
 
   All the memory allocated here is freed by IceModelVecs' destructors.
 */
-void IceModel::createVecs() {
+void IceModel::allocate_storage() {
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 
-  // The following code creates (and documents -- to some extent) the
-  // variables. The main (and only) principle here is using standard names from
-  // the CF conventions; see
-  // http://cf-pcmdi.llnl.gov/documents/cf-standard-names
-
-  // ice upper surface elevation
-  m_ice_surface_elevation.create(m_grid, "usurf", WITH_GHOSTS, WIDE_STENCIL);
-  m_ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
-                                  "m", "surface_altitude");
-  m_grid->variables().add(m_ice_surface_elevation);
-
-  // land ice thickness
-  {
-    m_ice_thickness.create(m_grid, "thk", WITH_GHOSTS, WIDE_STENCIL);
-    m_ice_thickness.set_attrs("model_state", "land ice thickness",
-                              "m", "land_ice_thickness");
-    m_ice_thickness.metadata().set_double("valid_min", 0.0);
-    m_grid->variables().add(m_ice_thickness);
-  }
-
-  {
-    m_flux_divergence.create(m_grid, "flux_divergence", WITHOUT_GHOSTS);
-    m_flux_divergence.set_attrs("diagnostic",
-                                "flux divergence",
-                                "m s-1", "");
-    m_flux_divergence.metadata().set_string("glaciological_units", "m year-1");
-    m_flux_divergence.write_in_glaciological_units = true;
-  }
+  // FIXME: this should do for now, but we should pass a const reference to Geometry to sub-models
+  // as a function argument.
+  m_grid->variables().add(m_geometry.ice_surface_elevation);
+  m_grid->variables().add(m_geometry.ice_thickness);
+  m_grid->variables().add(m_geometry.cell_type);
+  m_grid->variables().add(m_geometry.longitude);
+  m_grid->variables().add(m_geometry.latitude);
+  m_grid->variables().add(m_geometry.cell_area);
 
   if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
-    m_gl_mask.create(m_grid, "gl_mask", WITHOUT_GHOSTS);
-    m_gl_mask.set_attrs("internal",
-                      "fractional grounded/floating mask (floating=0, grounded=1)",
-                      "", "");
-    m_grid->variables().add(m_gl_mask);
+    m_grid->variables().add(m_geometry.cell_grounded_fraction);
   }
 
-  // grounded_dragging_floating integer mask
-  m_cell_type.create(m_grid, "mask", WITH_GHOSTS, WIDE_STENCIL);
-  m_cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
-                  "", "");
-  std::vector<double> mask_values = {
-    MASK_ICE_FREE_BEDROCK,
-    MASK_GROUNDED,
-    MASK_FLOATING,
-    MASK_ICE_FREE_OCEAN};
-
-  m_cell_type.metadata().set_doubles("flag_values", mask_values);
-  m_cell_type.metadata().set_string("flag_meanings",
-                              "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  m_grid->variables().add(m_cell_type);
+  if (m_config->get_boolean("geometry.part_grid.enabled")) {
+    m_grid->variables().add(m_geometry.ice_area_specific_volume);
+  }
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   {
@@ -389,6 +267,13 @@ void IceModel::createVecs() {
                                  "yield stress for basal till (plastic or pseudo-plastic model)",
                                  "Pa", "");
     m_grid->variables().add(m_basal_yield_stress);
+  }
+
+  {
+    m_bedtoptemp.create(m_grid, "bedtoptemp", WITHOUT_GHOSTS);
+    m_bedtoptemp.set_attrs("diagnostic",
+                           "temperature at the top surface of the bedrock thermal layer",
+                           "Kelvin", "");
   }
 
   // basal melt rate
@@ -401,34 +286,6 @@ void IceModel::createVecs() {
   m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
   m_grid->variables().add(m_basal_melt_rate);
 
-  // longitude
-  m_longitude.create(m_grid, "lon", WITH_GHOSTS);
-  m_longitude.set_attrs("mapping", "longitude", "degree_east", "longitude");
-  m_longitude.set_time_independent(true);
-  m_longitude.metadata().set_string("coordinates", "");
-  m_longitude.metadata().set_string("grid_mapping", "");
-  m_longitude.metadata().set_double("valid_min", -180.0);
-  m_longitude.metadata().set_double("valid_max",  180.0);
-  m_grid->variables().add(m_longitude);
-
-  // latitude
-  m_latitude.create(m_grid, "lat", WITH_GHOSTS); // has ghosts so that we can compute cell areas
-  m_latitude.set_attrs("mapping", "latitude", "degree_north", "latitude");
-  m_latitude.set_time_independent(true);
-  m_latitude.metadata().set_string("coordinates", "");
-  m_latitude.metadata().set_string("grid_mapping", "");
-  m_latitude.metadata().set_double("valid_min", -90.0);
-  m_latitude.metadata().set_double("valid_max",  90.0);
-  m_grid->variables().add(m_latitude);
-
-  if (m_config->get_boolean("geometry.part_grid.enabled")) {
-    // Href
-    m_Href.create(m_grid, "Href", WITH_GHOSTS);
-    m_Href.set_attrs("model_state", "temporary ice thickness at calving front boundary",
-                    "m", "");
-    m_grid->variables().add(m_Href);
-  }
-
   // SSA Dirichlet B.C. locations and values
   //
   // The mask m_ssa_dirichlet_bc_mask is also used to prescribe locations of ice thickness Dirichlet
@@ -439,6 +296,8 @@ void IceModel::createVecs() {
                                       "", "");
     m_ssa_dirichlet_bc_mask.metadata().set_doubles("flag_values", {0, 1});
     m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
+    m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_BYTE);
+    m_ssa_dirichlet_bc_mask.set_time_independent(true);
     m_grid->variables().add(m_ssa_dirichlet_bc_mask);
 
     m_ssa_dirichlet_bc_mask.set(0.0);
@@ -461,22 +320,10 @@ void IceModel::createVecs() {
       m_ssa_dirichlet_bc_values.metadata(j).set_doubles("valid_range", {-valid_range, valid_range});
       m_ssa_dirichlet_bc_values.metadata(j).set_double("_FillValue", fill_value);
     }
+    m_ssa_dirichlet_bc_values.write_in_glaciological_units = true;
     // just for diagnostics...
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }
-
-
-  // cell areas
-  m_cell_area.create(m_grid, "cell_area", WITHOUT_GHOSTS);
-  m_cell_area.set_attrs("diagnostic", "cell areas", "m2", "");
-  m_cell_area.metadata().set_string("comment",
-                                  "values are equal to dx*dy "
-                                  "if projection parameters are not available; "
-                                  "otherwise WGS84 ellipsoid is used");
-  m_cell_area.set_time_independent(true);
-  m_cell_area.metadata().set_string("glaciological_units", "km2");
-  m_cell_area.write_in_glaciological_units = true;
-  m_grid->variables().add(m_cell_area);
 
   if (m_config->get_boolean("fracture_density.enabled")) {
     m_fracture = new FractureFields(m_grid);
@@ -488,6 +335,45 @@ void IceModel::createVecs() {
     m_grid->variables().add(m_fracture->growth_rate);
     m_grid->variables().add(m_fracture->density);
   }
+
+  // Add some variables to the list of "model state" fields.
+  m_model_state.insert(&m_ssa_dirichlet_bc_mask);
+  m_model_state.insert(&m_ssa_dirichlet_bc_values);
+
+  m_model_state.insert(&m_geometry.latitude);
+  m_model_state.insert(&m_geometry.longitude);
+  m_model_state.insert(&m_geometry.ice_thickness);
+  m_model_state.insert(&m_geometry.ice_area_specific_volume);
+}
+
+//! Update the surface elevation and the flow-type mask when the geometry has changed.
+/*!
+  This procedure should be called whenever necessary to maintain consistency of geometry.
+
+  For instance, it should be called when either ice thickness or bed elevation change.
+  In particular we always want \f$h = H + b\f$ to apply at grounded points, and, on the
+  other hand, we want the mask to reflect that the ice is floating if the flotation
+  criterion applies at a point.
+
+  Also calls the code which removes icebergs, to avoid stress balance
+  solver problems associated to not-attached-to-grounded ice.
+*/
+void IceModel::enforce_consistency_of_geometry() {
+
+  m_geometry.bed_elevation.copy_from(m_beddef->bed_elevation());
+  m_geometry.sea_level_elevation.set(m_ocean->sea_level_elevation());
+
+  if (m_config->get_boolean("geometry.remove_icebergs") and m_iceberg_remover != NULL) {
+    // The iceberg remover has to use the same mask as the stress balance code, hence the
+    // stress-balance-related threshold here.
+    m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+
+    m_iceberg_remover->update(m_geometry.cell_type, m_geometry.ice_thickness);
+    // The call above modifies ice thickness and updates the mask accordingly, but we re-compute the
+    // mask (we need to use a different threshold).
+  }
+
+  m_geometry.ensure_consistency(m_config->get_double("geometry.ice_free_thickness_standard"));
 }
 
 //! The contents of the main PISM time-step.
@@ -501,8 +387,8 @@ void IceModel::step(bool do_mass_continuity,
 
   double current_time = m_time->current();
 
-  //! \li call additionalAtStartTimestep() to let derived classes do more
-  additionalAtStartTimestep();  // might set maxdt_temporary
+  //! \li call pre_step_hook() to let derived classes do more
+  pre_step_hook();  // might set maxdt_temporary
 
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
@@ -517,9 +403,9 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth and m_basal_yield_stress_model) {
-    profiling.begin("basal yield stress");
+    profiling.begin("basal_yield_stress");
     m_basal_yield_stress_model->update();
-    profiling.end("basal yield stress");
+    profiling.end("basal_yield_stress");
     m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
     m_stdout_flags += "y";
   } else {
@@ -530,7 +416,6 @@ void IceModel::step(bool do_mass_continuity,
   // stress balance and the energy code)
   if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
     enforce_consistency_of_geometry(); // update h and mask
-    update_grounded_cell_fraction();
   }
 
   IceModelVec2S &melange_back_pressure = m_work2d[0];
@@ -538,18 +423,43 @@ void IceModel::step(bool do_mass_continuity,
   m_ocean->melange_back_pressure_fraction(melange_back_pressure);
 
   try {
-    profiling.begin("stress balance");
-    m_stress_balance->update(not updateAtDepth,
-                             m_ocean->sea_level_elevation(),
-                             melange_back_pressure);
-    profiling.end("stress balance");
+    profiling.begin("stress_balance");
+    stressbalance::StressBalanceInputs inputs;
+    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
+      inputs.basal_melt_rate = &m_basal_melt_rate;
+    }
+
+    inputs.sea_level             = m_ocean->sea_level_elevation();
+    inputs.basal_yield_stress    = &m_basal_yield_stress;
+    inputs.melange_back_pressure = &melange_back_pressure;
+    inputs.geometry              = &m_geometry;
+    inputs.enthalpy              = &m_energy_model->enthalpy();
+    inputs.age                   = m_age_model ? &m_age_model->age() : NULL;
+
+    if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+      inputs.bc_mask   = &m_ssa_dirichlet_bc_mask;
+      inputs.bc_values = &m_ssa_dirichlet_bc_values;
+    }
+
+    if (m_config->get_boolean("fracture_density.enabled")) {
+      inputs.fracture_density = &m_fracture->density;
+    }
+
+    m_stress_balance->update(inputs, updateAtDepth);
+    profiling.end("stress_balance");
   } catch (RuntimeError &e) {
-    options::String output_file("-o", "output file name",
-                                "output.nc", options::DONT_ALLOW_EMPTY);
+    std::string output_file = m_config->get_string("output.file_name");
+
+    if (output_file.empty()) {
+      m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
+      output_file = "unnamed.nc";
+    }
 
     std::string o_file = pism_filename_add_suffix(output_file,
                                                   "_stressbalance_failed", "");
-    dumpToFile(o_file, output_variables("small"));
+    PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+
+    save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
                   o_file.c_str());
@@ -574,16 +484,19 @@ void IceModel::step(bool do_mass_continuity,
   m_ocean->update(current_time, m_dt);
   profiling.end("ocean");
 
+  // The sea level elevation might have changed.
+  enforce_consistency_of_geometry();
+
   dt_TempAge += m_dt;
   // IceModel::dt,dtTempAge are now set correctly according to
   // mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and
-  // other criteria from derived class additionalAtStartTimestep(), and from
+  // other criteria from derived class pre_step_hook(), and from
   // "-skip" mechanism
 
   //! \li update the age of the ice (if appropriate)
   if (m_age_model != NULL and updateAtDepth) {
     AgeModelInputs inputs;
-    inputs.ice_thickness = &m_ice_thickness;
+    inputs.ice_thickness = &m_geometry.ice_thickness;
     inputs.u3            = &m_stress_balance->velocity_u();
     inputs.v3            = &m_stress_balance->velocity_v();
     inputs.w3            = &m_stress_balance->velocity_w();
@@ -598,10 +511,10 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the enthalpy (or temperature) field according to the conservation of
   //!  energy model based (especially) on the new velocity field; see
-  //!  energyStep()
+  //!  energy_step()
   if (updateAtDepth) { // do the energy step
     profiling.begin("energy");
-    energyStep();
+    energy_step();
     profiling.end("energy");
     m_stdout_flags += "E";
   } else {
@@ -610,67 +523,44 @@ void IceModel::step(bool do_mass_continuity,
 
   // Combine basal melt rate in grounded (computed during the energy
   // step) and floating (provided by an ocean model) areas.
-  combine_basal_melt_rate();
+  combine_basal_melt_rate(m_basal_melt_rate);
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
-  profiling.begin("basal hydrology");
+  profiling.begin("basal_hydrology");
   m_subglacial_hydrology->update(current_time, m_dt);
-  profiling.end("basal hydrology");
+  profiling.end("basal_hydrology");
 
-  //! \li update the fracture density field; see calculateFractureDensity()
+  //! \li update the fracture density field; see update_fracture_density()
   if (m_config->get_boolean("fracture_density.enabled")) {
-    profiling.begin("fracture density");
-    calculateFractureDensity();
-    profiling.end("fracture density");
+    profiling.begin("fracture_density");
+    update_fracture_density();
+    profiling.end("fracture_density");
   }
 
-  //! \li update the thickness of the ice according to the mass conservation
-  //!  model; see massContExplicitStep()
+  //! \li update the thickness of the ice according to the mass conservation model and calving
+  //! parameterizations
+
   if (do_mass_continuity) {
-
-    profiling.begin("mass transport");
-    massContExplicitStep(m_dt,
-                         m_stress_balance->diffusive_flux(),
-                         m_stress_balance->advective_velocity());
-    enforce_consistency_of_geometry(); // update h and mask
-    profiling.end("mass transport");
-
-    // Note that there are three adaptive time-stepping criteria. Two of them
-    // (using max. diffusion and 2D CFL) are limiting the mass-continuity
-    // time-step and the third (3D CFL) limits the energy and age time-steps.
-
-    // The mass-continuity time-step is usually smaller, and the skipping
-    // mechanism lets us do several mass-continuity steps for each energy step.
-
-    // When -no_mass is set, mass-continuity-related time-step restrictions are
-    // disabled, making "skipping" unnecessary.
-
-    // This is why the following two lines appear here and are executed only
-    // if do_mass_continuity is true.
-    if (do_skip and m_skip_countdown > 0) {
-      m_skip_countdown--;
-    }
+    profiling.begin("mass_transport");
+    update_ice_geometry(do_skip);
+    profiling.end("mass_transport");
     m_stdout_flags += "h";
   } else {
     m_stdout_flags += "$";
   }
 
-  profiling.begin("calving");
-  do_calving();
-  profiling.end("calving");
-
   //! \li compute the bed deformation, which only depends on current thickness
   //! and bed elevation
   if (m_beddef) {
-    const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
-    int topg_state_counter = bed_topography.get_state_counter();
+    int topg_state_counter = m_beddef->bed_elevation().get_state_counter();
 
-    profiling.begin("bed deformation");
+    profiling.begin("bed_deformation");
     m_beddef->update(current_time, m_dt);
-    profiling.end("bed deformation");
+    profiling.end("bed_deformation");
 
-    if (bed_topography.get_state_counter() != topg_state_counter) {
+    if (m_beddef->bed_elevation().get_state_counter() != topg_state_counter) {
+      // Bed elevation changed.
       m_stdout_flags += "b";
       enforce_consistency_of_geometry();
     } else {
@@ -678,27 +568,32 @@ void IceModel::step(bool do_mass_continuity,
     }
   }
 
-  //! \li call additionalAtEndTimestep() to let derived classes do more
-  additionalAtEndTimestep();
+  //! \li call post_step_hook() to let derived classes do more
+  post_step_hook();
 
   // Done with the step; now adopt the new time.
   m_time->step(m_dt);
 
   if (updateAtDepth) {
-    t_TempAge = m_time->current();
+    t_TempAge  = m_time->current();
     dt_TempAge = 0.0;
   }
 
   // Check if the ice thickness exceeded the height of the computational box and stop if it did.
-  const bool thickness_too_high = check_maximum_ice_thickness(m_ice_thickness);
+  const bool thickness_too_high = check_maximum_ice_thickness(m_geometry.ice_thickness);
 
   if (thickness_too_high) {
-    options::String output_file("-o", "output file name",
-                                "output.nc", options::DONT_ALLOW_EMPTY);
+    std::string output_file = m_config->get_string("output.file_name");
+
+    if (output_file.empty()) {
+      m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.");
+      output_file = "unnamed.nc";
+    }
 
     std::string o_file = pism_filename_add_suffix(output_file,
                                                   "_max_thickness", "");
-    dumpToFile(o_file, output_variables("small"));
+    PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
+    save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Ice thickness exceeds the height of the computational box (%7.4f m).\n"
@@ -713,6 +608,81 @@ void IceModel::step(bool do_mass_continuity,
   m_stdout_flags += " " + m_adaptive_timestep_reason;
 }
 
+/*!
+ * Perform an explicit step of the mass continuity equation and apply calving parameterizations.
+ */
+void IceModel::update_ice_geometry(bool skip) {
+  const Profiling &profiling = m_ctx->profiling();
+
+  IceModelVec2S &surface_mass_balance_rate = m_work2d[0];
+  m_surface->mass_flux(surface_mass_balance_rate);
+
+  // FIXME: thickness B.C. mask should be separate
+  IceModelVec2Int &thickness_bc_mask = m_ssa_dirichlet_bc_mask;
+
+  GeometryEvolution *ge = m_geometry_evolution.get();
+
+  ge->step(m_geometry,
+           m_dt,
+           m_stress_balance->advective_velocity(),
+           m_stress_balance->diffusive_flux(),
+           m_ssa_dirichlet_bc_mask,
+           thickness_bc_mask,
+           surface_mass_balance_rate,
+           m_basal_melt_rate);
+
+  const IceModelVec2S
+    &dH_flow = ge->thickness_change_due_to_flow(),
+    &dH_SMB  = ge->top_surface_mass_balance(),
+    &dH_BMB  = ge->bottom_surface_mass_balance();
+  IceModelVec2S &H = m_geometry.ice_thickness;
+
+  IceModelVec::AccessList list{&H, &dH_flow, &dH_SMB, &dH_BMB};
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      H(i, j) += dH_flow(i, j) + dH_SMB(i, j) + dH_BMB(i, j);
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  m_geometry.ice_area_specific_volume.add(1.0, ge->area_specific_volume_change_due_to_flow());
+
+  enforce_consistency_of_geometry(); // update h and mask
+
+  // Note that there are three adaptive time-stepping criteria. Two of them
+  // (using max. diffusion and 2D CFL) are limiting the mass-continuity
+  // time-step and the third (3D CFL) limits the energy and age time-steps.
+
+  // The mass-continuity time-step is usually smaller, and the skipping
+  // mechanism lets us do several mass-continuity steps for each energy step.
+
+  // When -no_mass is set, mass-continuity-related time-step restrictions are
+  // disabled, making "skipping" unnecessary.
+
+  // This is why the following two lines appear here and are executed only
+  // if do_mass_continuity is true.
+  if (skip and m_skip_countdown > 0) {
+    m_skip_countdown--;
+  }
+
+  profiling.begin("calving");
+  do_calving();
+  profiling.end("calving");
+}
+
+//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
+void IceModel::pre_step_hook() {
+  // empty
+}
+
+//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
+void IceModel::post_step_hook() {
+  // empty
+}
 
 /**
  * Run the time-stepping loop from the current model time to `time`.
@@ -749,18 +719,29 @@ void IceModel::run() {
 
   int stepcount = m_config->get_boolean("time_stepping.count_steps") ? 0 : -1;
 
+  // de-allocate diagnostics that are not needed
+  prune_diagnostics();
+
   enforce_consistency_of_geometry();
 
-  // update diagnostics at the beginning of the run:
-  write_timeseries();
+  // Update spatially-variable diagnostics at the beginning of the run.
   write_extras();
+
+  // Update scalar time series to remember the state at the beginning of the run.
+  // This is needed to compute rates of change of the ice mass, volume, etc.
+  {
+    const double time = m_time->current();
+    for (auto d : m_ts_diagnostics) {
+      d.second->update(time, time);
+    }
+  }
 
   m_log->message(2, "running forward ...\n");
 
   m_stdout_flags.erase(); // clear it out
-  summaryPrintLine(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
+  print_summary_line(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
   m_adaptive_timestep_reason = '$'; // no reason for no timestep
-  summary(do_energy);  // report starting state
+  print_summary(do_energy);  // report starting state
 
   t_TempAge = m_time->current();
   dt_TempAge = 0.0;
@@ -775,27 +756,29 @@ void IceModel::run() {
 
     step(do_mass_conserve, do_skip);
 
+    update_diagnostics(m_dt);
+
     // report a summary for major steps or the last one
     bool updateAtDepth = m_skip_countdown == 0;
     bool tempAgeStep = updateAtDepth and (do_energy or m_age_model != NULL);
 
     const bool show_step = tempAgeStep or m_adaptive_timestep_reason == "end of the run";
-    summary(show_step);
+    print_summary(show_step);
+
+    // update viewers before writing extras because writing extras resets diagnostics
+    update_viewers();
 
     // writing these fields here ensures that we do it after the last time-step
-    profiling.begin("I/O during run");
+    profiling.begin("io");
     write_snapshot();
-    write_timeseries();
     write_extras();
     write_backup();
-    profiling.end("I/O during run");
-
-    update_viewers();
+    profiling.end("io");
 
     if (stepcount >= 0) {
       stepcount++;
     }
-    if (endOfTimeStepHook() != 0) {
+    if (process_signals() != 0) {
       break;
     }
   } // end of the time-stepping loop
@@ -823,6 +806,10 @@ Please see the documenting comments of the functions called below to find
 explanations of their intended uses.
  */
 void IceModel::init() {
+  // Get the start time in seconds and ensure that it is consistent
+  // across all processors.
+  m_start_time = GlobalMax(m_grid->com, GetTime());
+
   const Profiling &profiling = m_ctx->profiling();
 
   profiling.begin("initialization");
@@ -833,10 +820,10 @@ void IceModel::init() {
   time_setup();
 
   //! 2) Process the options:
-  setFromOptions();
+  process_options();
 
   //! 3) Memory allocation:
-  createVecs();
+  allocate_storage();
 
   //! 4) Allocate PISM components modeling some physical processes.
   allocate_submodels();
@@ -858,11 +845,15 @@ void IceModel::init() {
   //!
   //! \dotfile initialization-sequence.dot "IceModel initialization sequence"
 
-  // Get the start time in seconds and ensure that it is consistent
-  // across all processors.
-  m_start_time = GlobalMax(m_grid->com, GetTime());
-
   profiling.end("initialization");
+}
+
+const Geometry& IceModel::geometry() const {
+  return m_geometry;
+}
+
+const GeometryEvolution& IceModel::geometry_evolution() const {
+  return *m_geometry_evolution;
 }
 
 const stressbalance::StressBalance* IceModel::stress_balance() const {
@@ -881,24 +872,88 @@ const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
   return m_btu;
 }
 
-const IceModelVec2S& IceModel::ice_thickness() const {
-  return m_ice_thickness;
-}
-
-const IceModelVec2S & IceModel::cell_area() const {
-  return m_cell_area;
-}
-
-const IceModelVec2CellType & IceModel::cell_type() const {
-  return m_cell_type;
-}
-
-const IceModelVec2S& IceModel::ice_surface_elevation() const {
-  return m_ice_surface_elevation;
-}
-
 const energy::EnergyModel* IceModel::energy_balance_model() const {
   return m_energy_model;
+}
+
+const IceModelVec2S& IceModel::discharge() const {
+  return m_discharge;
+}
+
+/*!
+ * De-allocate diagnostics that were not requested.
+ *
+ * Checks viewers, -extra_vars, -backup, -save_vars, and regular output.
+ *
+ * FIXME: I need to make sure that these reporting mechanisms are active. It is possible that
+ * variables are on a list, but that list is not actually used.
+ */
+void IceModel::prune_diagnostics() {
+
+  // get the list of available diagnostics
+  std::set<std::string> available;
+  for (auto d : m_diagnostics) {
+    available.insert(d.first);
+  }
+
+  // get the list of requested diagnostics
+  auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
+  requested = combine(requested, m_output_vars);
+  requested = combine(requested, m_snapshot_vars);
+  requested = combine(requested, m_extra_vars);
+  requested = combine(requested, m_backup_vars);
+
+  for (auto v : available) {
+    if (requested.find(v) == requested.end()) {
+      m_diagnostics.erase(v);
+    }
+  }
+
+  // scalar time series
+  std::set<std::string> vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
+  if (not m_ts_filename.empty() and vars.empty()) {
+    // use all diagnostics
+  } else {
+    std::map<std::string, TSDiagnostic::Ptr> diagnostics;
+    for (auto v : vars) {
+      if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
+        diagnostics[v] = m_ts_diagnostics[v];
+      } else {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "scalar diagnostic '%s' is not available",
+                                      v.c_str());
+      }
+    }
+    // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
+    m_ts_diagnostics = diagnostics;
+  }
+}
+
+/*!
+ * Update diagnostics.
+ *
+ * This usually involves accumulating data needed to computed time-averaged quantities.
+ *
+ * Call this after prune_diagnostics() to avoid unnecessary work.
+ */
+void IceModel::update_diagnostics(double dt) {
+  for (auto d : m_diagnostics) {
+    d.second->update(dt);
+  }
+
+  const double time = m_time->current();
+  for (auto d : m_ts_diagnostics) {
+    d.second->update(time - dt, time);
+  }
+}
+
+/*!
+ * Reset accumulators in diagnostics that compute time-averaged quantities.
+ */
+void IceModel::reset_diagnostics() {
+  for (auto d : m_diagnostics) {
+    d.second->reset();
+  }
 }
 
 } // end of namespace pism

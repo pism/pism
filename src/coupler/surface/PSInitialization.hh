@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -61,7 +61,7 @@ private:
   IceModelVec2S m_ice_surface_mass_flux;
   IceModelVec2S m_ice_surface_temperature;
   IceModelVec2S m_ice_surface_liquid_water_fraction;
-  IceModelVec2S m_mass_held_in_surface_layer;
+  IceModelVec2S m_surface_layer_mass;
   IceModelVec2S m_surface_layer_thickness;
 };
 

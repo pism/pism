@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -96,8 +96,7 @@ public:
   void update(double t, double dt, const EnergyModelInputs &inputs);
 
   const EnergyModelStats& stats() const;
-  const EnergyModelStats& cumulative_stats() const;
-  void reset_cumulative_stats();
+
   const IceModelVec3 & enthalpy() const;
   const IceModelVec2S & basal_melt_rate() const;
 
@@ -126,6 +125,7 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const = 0;
   virtual void write_model_state_impl(const PIO &output) const = 0;
 
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
   virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
   /*! @brief Initialize enthalpy by reading it from a file, or by reading temperature and liquid
@@ -139,7 +139,7 @@ protected:
   IceModelVec3 m_work;
   IceModelVec2S m_basal_melt_rate;
 
-  EnergyModelStats m_stats, m_cumulative_stats;
+  EnergyModelStats m_stats;
 
 private:
   std::string m_stdout_flags;

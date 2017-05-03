@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,8 @@
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
 #include "base/rheology/FlowLaw.hh"
+#include "base/Geometry.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
 
 namespace pism {
 namespace inverse {
@@ -39,19 +41,11 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
     m_element(*m_grid),
     m_quadrature(g->dx(), g->dy(), 1.0),
     m_rebuild_J_state(true) {
-  this->construct();
-}
 
-IP_SSAHardavForwardProblem::~IP_SSAHardavForwardProblem() {
-  // empty
-}
-
-void IP_SSAHardavForwardProblem::construct() {
   PetscErrorCode ierr;
   int stencilWidth = 1;
 
-  m_velocity_shared.reset(new IceModelVec2V);
-  m_velocity_shared->create(m_grid, "dummy", WITHOUT_GHOSTS);
+  m_velocity_shared.reset(new IceModelVec2V(m_grid, "dummy", WITHOUT_GHOSTS));
   m_velocity_shared->metadata(0) = m_velocity.metadata(0);
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 
@@ -90,6 +84,43 @@ void IP_SSAHardavForwardProblem::construct() {
 
   ierr = KSPSetFromOptions(m_ksp);
   PISM_CHK(ierr, "KSPSetFromOptions");
+}
+
+void IP_SSAHardavForwardProblem::init() {
+
+  SSAFEM::init();
+
+  // Get most of the inputs from IceGrid::variables() and fake the rest.
+  //
+  // I will need to fix this at some point.
+  {
+    Geometry geometry(m_grid);
+    geometry.cell_area.set(m_grid->dx() * m_grid->dy());
+    geometry.ice_thickness.copy_from(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
+    geometry.bed_elevation.copy_from(*m_grid->variables().get_2d_scalar("bedrock_altitude"));
+    geometry.sea_level_elevation.set(0.0);
+    geometry.ice_area_specific_volume.set(0.0);
+
+    geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
+
+    stressbalance::StressBalanceInputs inputs;
+
+    inputs.sea_level             = 0.0;
+    inputs.geometry              = &geometry;
+    inputs.basal_melt_rate       = NULL;
+    inputs.melange_back_pressure = NULL;
+    inputs.basal_yield_stress    = m_grid->variables().get_2d_scalar("tauc");
+    inputs.enthalpy              = m_grid->variables().get_3d_scalar("enthalpy");
+    inputs.age                   = NULL;
+    inputs.bc_mask               = m_grid->variables().get_2d_mask("bc_mask");
+    inputs.bc_values             = m_grid->variables().get_2d_vector("vel_ssa_bc");
+
+    cache_inputs(inputs);
+  }
+}
+
+IP_SSAHardavForwardProblem::~IP_SSAHardavForwardProblem() {
+  // empty
 }
 
 //! Sets the current value of of the design paramter \f$\zeta\f$.
@@ -244,9 +275,9 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
-  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
-  double           m_dirichletWeight    = m_dirichletScale;
+  const IceModelVec2Int *dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *dirichletValues    = m_bc_values;
+  double                 dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[Nk];
   Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
@@ -263,8 +294,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // An Nq by Nk array of test function values.
   const fem::Germs *test = m_quadrature.test_function_values();
 
-  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
-                                        m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
+                                        dirichletWeight);
   fem::DirichletData_Scalar fixedZeta(m_fixed_design_locations, NULL);
 
   // Jacobian times weights for quadrature.
@@ -345,7 +376,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
             du_e[k].v += W[q]*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
           }
         } // q
-        m_element.add_residual_contribution(du_e, du_a);
+        m_element.add_contribution(du_e, du_a);
       } // j
     } // i
   } catch (...) {
@@ -435,12 +466,12 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   const fem::Germs *test = m_quadrature.test_function_values();
 
   // Aliases to help with notation consistency.
-  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
-  const IceModelVec2V   *m_dirichletValues = m_bc_values;
-  double        m_dirichletWeight = m_dirichletScale;
+  const IceModelVec2Int *dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *dirichletValues    = m_bc_values;
+  double                 dirichletWeight    = m_dirichletScale;
 
-  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
-                                        m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
+                                        dirichletWeight);
 
   // Jacobian times weights for quadrature.
   const double* W = m_quadrature.weights();
@@ -518,7 +549,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
           }
         } // q
 
-        m_element.add_residual_contribution(dzeta_e, dzeta_a);
+        m_element.add_contribution(dzeta_e, dzeta_a);
       } // j
     } // i
   } catch (...) {
@@ -622,14 +653,14 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2Int *m_dirichletLocations = m_bc_mask;
-  const IceModelVec2V   *m_dirichletValues    = m_bc_values;
-  double        m_dirichletWeight    = m_dirichletScale;
+  const IceModelVec2Int *dirichletLocations = m_bc_mask;
+  const IceModelVec2V   *dirichletValues    = m_bc_values;
+  double                 dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);
   Vector2 **du_a = m_du_global.get_array();
-  fem::DirichletData_Vector dirichletBC(m_dirichletLocations, m_dirichletValues,
-                                        m_dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
+                                        dirichletWeight);
   if (dirichletBC) {
     dirichletBC.fix_residual_homogeneous(du_a);
   }

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -124,8 +124,6 @@ public:
   virtual void applyConstraintsJacobianDesignTranspose(Vec x, Vec y);
 
 protected:
-
-  void construct();
 
   IP_SSATaucForwardProblem &m_ssaforward;
 

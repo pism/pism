@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,17 +32,6 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
   : m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
     m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
     m_target_misfit(0.0) {
-  this->construct();
-
-  m_log = d0.get_grid()->ctx()->log();
-}
-
-IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
-  // empty
-}
-
-
-void IP_SSATaucTikhonovGNSolver::construct() {
   PetscErrorCode ierr;
   IceGrid::ConstPtr grid = m_d0.get_grid();
   m_comm = grid->com;
@@ -66,13 +55,12 @@ void IP_SSATaucTikhonovGNSolver::construct() {
 
   m_dGlobal.create(grid, "d (sans ghosts)", WITHOUT_GHOSTS, 0);
 
-  m_d.reset(new DesignVec);
-  m_d->create(grid, "d", WITH_GHOSTS, design_stencil_width);
+  m_d.reset(new DesignVec(grid, "d", WITH_GHOSTS, design_stencil_width));
   m_d_diff.create(grid, "d_diff", WITH_GHOSTS, design_stencil_width);
   m_d_diff_lin.create(grid, "d_diff linearized", WITH_GHOSTS, design_stencil_width);
   m_h.create(grid, "h", WITH_GHOSTS, design_stencil_width);
   m_hGlobal.create(grid, "h (sans ghosts)", WITHOUT_GHOSTS);
-  
+
   m_dalpha_rhs.create(grid, "dalpha rhs", WITHOUT_GHOSTS);
   m_dh_dalpha.create(grid, "dh_dalpha", WITH_GHOSTS, design_stencil_width);
   m_dh_dalphaGlobal.create(grid, "dh_dalpha", WITHOUT_GHOSTS);
@@ -103,7 +91,7 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   PISM_CHK(ierr, "PCSetType");
 
   ierr = KSPSetFromOptions(m_ksp);
-  PISM_CHK(ierr, "KSPSetFromOptions");  
+  PISM_CHK(ierr, "KSPSetFromOptions");
 
   int nLocalNodes  = grid->xm()*grid->ym();
   int nGlobalNodes = grid->Mx()*grid->My();
@@ -119,13 +107,19 @@ void IP_SSATaucTikhonovGNSolver::construct() {
   m_logalpha = log(m_alpha);
 
   m_tikhonov_adaptive = options::Bool("-tikhonov_adaptive", "Tikhonov adaptive");
-  
+
   m_iter_max = 1000;
   m_iter_max = options::Integer("-inv_gn_iter_max", "", m_iter_max);
 
   m_tikhonov_atol = grid->ctx()->config()->get_double("inverse.tikhonov.atol");
   m_tikhonov_rtol = grid->ctx()->config()->get_double("inverse.tikhonov.rtol");
   m_tikhonov_ptol = grid->ctx()->config()->get_double("inverse.tikhonov.ptol");
+
+  m_log = d0.get_grid()->ctx()->log();
+}
+
+IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
+  // empty
 }
 
 TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::init() {

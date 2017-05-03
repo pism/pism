@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,7 @@ public:
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:
-  virtual void createVecs();
+  virtual void allocate_storage();
   virtual void allocate_bedrock_thermal_unit();
   virtual void allocate_bed_deformation();
   virtual void allocate_couplers();
@@ -48,13 +48,13 @@ protected:
   // related to all (or most) tests
   int m_testname;
 
-  virtual void additionalAtEndTimestep();
+  virtual void post_step_hook();
   // all tests except K
   void computeGeometryErrors(double &gvolexact, double &gareaexact, double &gdomeHexact,
                                        double &volerr, double &areaerr,
                                        double &gmaxHerr, double &gavHerr, double &gmaxetaerr,
                                        double &centerHerr);
-  virtual void summary(bool tempAndAge);
+  virtual void print_summary(bool tempAndAge);
 
   // related to tests A B C D H
   void initTestABCDH();
@@ -66,7 +66,7 @@ protected:
   void initTestL();
 
   // related to tests F G; see iCMthermo.cc
-  virtual void energyStep();
+  virtual void energy_step();
   void initTestFG();
   void getCompSourcesTestFG();
 

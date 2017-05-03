@@ -53,8 +53,8 @@ void IceModel::do_calving() {
     &old_Href = m_work2d[1];
 
   {
-    old_H.copy_from(m_ice_thickness);
-    old_Href.copy_from(m_Href);
+    old_H.copy_from(m_geometry.ice_thickness);
+    old_Href.copy_from(m_geometry.ice_area_specific_volume);
   }
 
   // eigen-calving should go first: it uses the ice velocity field,
@@ -64,42 +64,42 @@ void IceModel::do_calving() {
     m_eigen_calving->update(m_dt,
                             m_ocean->sea_level_elevation(),
                             m_ssa_dirichlet_bc_mask,
-                            m_beddef->bed_elevation(),
-                            m_cell_type,
-                            m_Href,
-                            m_ice_thickness);
+                            m_geometry.bed_elevation,
+                            m_geometry.cell_type,
+                            m_geometry.ice_area_specific_volume,
+                            m_geometry.ice_thickness);
   }
 
   if (m_vonmises_calving != NULL) {
     m_vonmises_calving->update(m_dt,
                                m_ocean->sea_level_elevation(),
                                m_ssa_dirichlet_bc_mask,
-                               m_beddef->bed_elevation(),
-                               m_cell_type,
-                               m_Href,
-                               m_ice_thickness);
+                               m_geometry.bed_elevation,
+                               m_geometry.cell_type,
+                               m_geometry.ice_area_specific_volume,
+                               m_geometry.ice_thickness);
   }
 
   if (m_frontal_melt != NULL) {
     m_frontal_melt->update(m_dt,
                            m_ocean->sea_level_elevation(),
                            m_ssa_dirichlet_bc_mask,
-                           m_beddef->bed_elevation(),
-                           m_cell_type,
-                           m_Href,
-                           m_ice_thickness);
+                           m_geometry.bed_elevation,
+                           m_geometry.cell_type,
+                           m_geometry.ice_area_specific_volume,
+                           m_geometry.ice_thickness);
   }
 
   if (m_ocean_kill_calving != NULL) {
-    m_ocean_kill_calving->update(m_cell_type, m_ice_thickness);
+    m_ocean_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
   }
 
   if (m_float_kill_calving != NULL) {
-    m_float_kill_calving->update(m_cell_type, m_ice_thickness);
+    m_float_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
   }
 
   if (m_thickness_threshold_calving != NULL) {
-    m_thickness_threshold_calving->update(m_cell_type, m_ice_thickness);
+    m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
   }
 
   // This call removes icebergs, too.
@@ -111,8 +111,10 @@ void IceModel::do_calving() {
   // update the mask and surface elevation.
   enforce_consistency_of_geometry();
 
-  update_cumulative_discharge(m_ice_thickness, m_Href,
-                              old_H, old_Href);
+  compute_discharge(m_geometry.ice_thickness,
+                    m_geometry.ice_area_specific_volume,
+                    old_H, old_Href,
+                    m_discharge);
 }
 
 /**
@@ -123,60 +125,55 @@ void IceModel::do_calving() {
  */
 void IceModel::Href_cleanup() {
 
-  IceModelVec::AccessList list{&m_ice_thickness, &m_Href, &m_cell_type};
+  IceModelVec2S
+    &V = m_geometry.ice_area_specific_volume,
+    &H = m_geometry.ice_thickness;
+
+  IceModelVec::AccessList list{&H, &V, &m_geometry.cell_type};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_ice_thickness(i, j) > 0 && m_Href(i, j) > 0) {
-      m_ice_thickness(i, j) += m_Href(i, j);
-      m_Href(i, j) = 0.0;
+    if (H(i, j) > 0 and V(i, j) > 0) {
+      H(i, j) += V(i, j);
+      V(i, j) = 0.0;
     }
 
-    if (m_Href(i, j) > 0.0 && not m_cell_type.next_to_ice(i, j)) {
-      m_Href(i, j) = 0.0;
+    if (V(i, j) > 0.0 and not m_geometry.cell_type.next_to_ice(i, j)) {
+      V(i, j) = 0.0;
     }
   }
 }
 
 /**
- * Updates the cumulative ice discharge into the ocean.
+ * Compute the ice discharge into the ocean during the current time step.
  *
- * Units: kg, computed as thickness [m] * cell_area [m2] * density [kg m-3].
+ * Units: ice equivalent meters.
  *
  * @param thickness current ice thickness
  * @param Href current "reference ice thickness"
  * @param thickness_old old ice thickness
  * @param Href_old old "reference ice thickness"
+ * @param[out] output computed discharge during the current time step
  */
-void IceModel::update_cumulative_discharge(const IceModelVec2S &thickness,
-                                           const IceModelVec2S &Href,
-                                           const IceModelVec2S &thickness_old,
-                                           const IceModelVec2S &Href_old) {
-
-  const double ice_density = m_config->get_double("constants.ice.density");
+void IceModel::compute_discharge(const IceModelVec2S &thickness,
+                                 const IceModelVec2S &Href,
+                                 const IceModelVec2S &thickness_old,
+                                 const IceModelVec2S &Href_old,
+                                 IceModelVec2S &output) {
 
   IceModelVec::AccessList list{&thickness, &thickness_old,
-      &Href, &Href_old, &m_cell_area, &m_cumulative_flux_fields.discharge};
+      &Href, &Href_old, &output};
 
-  double total_discharge = 0.0;
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
       H_old     = thickness_old(i, j) + Href_old(i, j),
-      H_new     = thickness(i, j) + Href(i, j),
-      discharge = (H_new - H_old) * m_cell_area(i, j) * ice_density;
+      H_new     = thickness(i, j) + Href(i, j);
 
-    // Only count mass loss. (A cell may stay "partially-filled" for several time-steps as the
-    // calving front advances. In this case delta_Href is real, but does not correspond to
-    if (discharge <= 0.0) {
-      m_cumulative_flux_fields.discharge(i, j) += discharge;
-      total_discharge += discharge;
-    }
+    output(i, j) = H_new - H_old;
   }
-
-  m_cumulative_fluxes.discharge += GlobalSum(m_grid->com, total_discharge);
 }
 
 } // end of namespace pism

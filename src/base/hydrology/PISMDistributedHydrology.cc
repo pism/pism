@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 PISM Authors
+// Copyright (C) 2012-2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -88,10 +88,7 @@ void Distributed::init() {
 
   init_bwp();
 
-  m_ice_free_land_loss_cumulative      = 0.0;
-  m_ocean_loss_cumulative              = 0.0;
-  m_negative_thickness_gain_cumulative = 0.0;
-  m_null_strip_loss_cumulative         = 0.0;
+  m_boundary_accounting.reset();
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     m_log->message(2,
@@ -157,19 +154,15 @@ std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
     {"bwatvel",          Diagnostic::Ptr(new Routing_bwatvel(this))},
     {"hydrovelbase_mag", Diagnostic::Ptr(new Distributed_hydrovelbase_mag(this))}
   };
-  return result;
+  return combine(result, Routing::diagnostics_impl());
 }
 
 std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() const {
   std::map<std::string, TSDiagnostic::Ptr> result = {
     // add mass-conservation time-series diagnostics
-    {"hydro_ice_free_land_loss_cumulative",      TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss_cumulative(this))},
     {"hydro_ice_free_land_loss",                 TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
-    {"hydro_ocean_loss_cumulative",              TSDiagnostic::Ptr(new MCHydrology_ocean_loss_cumulative(this))},
     {"hydro_ocean_loss",                         TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
-    {"hydro_negative_thickness_gain_cumulative", TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain_cumulative(this))},
     {"hydro_negative_thickness_gain",            TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},
-    {"hydro_null_strip_loss_cumulative",         TSDiagnostic::Ptr(new MCHydrology_null_strip_loss_cumulative(this))},
     {"hydro_null_strip_loss",                    TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this))}
   };
   return result;
@@ -325,6 +318,8 @@ void Distributed::update_impl(double icet, double icedt) {
   m_t = icet;
   m_dt = icedt;
 
+  m_boundary_accounting.reset();
+
   // make sure W,P have valid ghosts before starting hydrology steps
   m_W.update_ghosts();
   m_P.update_ghosts();
@@ -343,14 +338,29 @@ void Distributed::update_impl(double icet, double icedt) {
             Wr    = m_config->get_double("hydrology.roughness_scale"),
             phi0  = m_config->get_double("hydrology.regularizing_porosity");
 
-  double ht = m_t, hdt = 0, // hydrology model time and time step
-            maxKW = 0, maxV = 0, maxD = 0;
-  double icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
-            delta_icefree = 0, delta_ocean = 0, delta_neggain = 0, delta_nullstrip = 0;
+  double
+    ht    = m_t,
+    hdt   = 0.0,                  // hydrology model time and time step
+    maxKW = 0.0,
+    maxV  = 0.0,
+    maxD  = 0.0;
 
-  double PtoCFLratio = 0,  // for reporting ratio of dtCFL to dtDIFFP
-            cumratio = 0.0;
-  int hydrocount = 0; // count hydrology time steps
+  double
+    icefreelost     = 0.0,
+    oceanlost       = 0.0,
+    negativegain    = 0.0,
+    nullstriplost   = 0.0;
+  double
+    delta_icefree   = 0.0,
+    delta_ocean     = 0.0,
+    delta_neggain   = 0.0,
+    delta_nullstrip = 0.0;
+
+  double
+    PtoCFLratio = 0.0,          // for reporting ratio of dtCFL to dtDIFFP
+    cumratio    = 0.0;
+
+  unsigned int hydrocount = 0; // count hydrology time steps
 
   while (ht < m_t + m_dt) {
     hydrocount++;
@@ -380,7 +390,7 @@ void Distributed::update_impl(double icet, double icedt) {
     adaptive_for_WandP_evolution(ht, m_t+m_dt, maxKW, hdt, maxV, maxD, PtoCFLratio);
     cumratio += PtoCFLratio;
 
-    if ((m_inputtobed != NULL) || (hydrocount==1)) {
+    if ((m_inputtobed != NULL) || (hydrocount == 1)) {
       get_input_rate(ht,hdt,m_total_input);
     }
 
@@ -394,10 +404,11 @@ void Distributed::update_impl(double icet, double icedt) {
     nullstriplost+= delta_nullstrip;
 
     // update Pnew from time step
-    const double  CC = (rg * hdt) / phi0,
-                     wux  = 1.0 / (m_dx * m_dx),
-                     wuy  = 1.0 / (m_dy * m_dy);
-    double Open, Close, divflux, ZZ, diffW;
+    const double
+      CC  = (rg * hdt) / phi0,
+      wux = 1.0 / (m_dx * m_dx),
+      wuy = 1.0 / (m_dy * m_dy);
+    double diffW;
     overburden_pressure(m_Pover);
 
     const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
@@ -416,8 +427,8 @@ void Distributed::update_impl(double icet, double icedt) {
         m_Pnew(i,j) = m_Pover(i,j);
       } else {
         // opening and closure terms in pressure equation
-        Open = std::max(0.0,c1 * m_velbase_mag(i,j) * (Wr - m_W(i,j)));
-        Close = c2 * Aglen * pow(m_Pover(i,j) - m_P(i,j),nglen) * m_W(i,j);
+        double Open = std::max(0.0,c1 * m_velbase_mag(i,j) * (Wr - m_W(i,j)));
+        double Close = c2 * Aglen * pow(m_Pover(i,j) - m_P(i,j),nglen) * m_W(i,j);
 
         // compute the flux divergence the same way as in raw_update_W()
         const double divadflux =
@@ -430,10 +441,10 @@ void Distributed::update_impl(double icet, double icedt) {
           Ds = rg * m_K(i,j-1,1) * m_Wstag(i,j-1,1);
         diffW =   wux * (De * (m_W(i+1,j) - m_W(i,j)) - Dw * (m_W(i,j) - m_W(i-1,j)))
           + wuy * (Dn * (m_W(i,j+1) - m_W(i,j)) - Ds * (m_W(i,j) - m_W(i,j-1)));
-        divflux = - divadflux + diffW;
+        double divflux = - divadflux + diffW;
 
         // pressure update equation
-        ZZ = Close - Open + m_total_input(i,j) - (m_Wtilnew(i,j) - m_Wtil(i,j)) / hdt;
+        double ZZ = Close - Open + m_total_input(i,j) - (m_Wtilnew(i,j) - m_Wtil(i,j)) / hdt;
         m_Pnew(i,j) = m_P(i,j) + CC * (divflux + ZZ);
         // projection to enforce  0 <= P <= P_o
         m_Pnew(i,j) = std::min(std::max(0.0, m_Pnew(i,j)), m_Pover(i,j));
@@ -466,10 +477,10 @@ void Distributed::update_impl(double icet, double icedt) {
              "  max D = %.2e m^2 s-1)\n",
              m_dt/hydrocount, cumratio/hydrocount, maxV, maxD);
 
-  m_ice_free_land_loss_cumulative      += icefreelost;
-  m_ocean_loss_cumulative              += oceanlost;
-  m_negative_thickness_gain_cumulative += negativegain;
-  m_null_strip_loss_cumulative         += nullstriplost;
+  m_boundary_accounting.ice_free_land_loss      += icefreelost;
+  m_boundary_accounting.ocean_loss              += oceanlost;
+  m_boundary_accounting.negative_thickness_gain += negativegain;
+  m_boundary_accounting.null_strip_loss         += nullstriplost;
 }
 
 
@@ -481,15 +492,11 @@ Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(const Distributed *m)
 }
 
 
-IceModelVec::Ptr Distributed_hydrovelbase_mag::compute_impl() {
-  IceModelVec2S::Ptr result(new IceModelVec2S);
-  result->create(m_grid, "hydrovelbase_mag", WITHOUT_GHOSTS);
+IceModelVec::Ptr Distributed_hydrovelbase_mag::compute_impl() const {
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydrovelbase_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
-  result->write_in_glaciological_units = true;
-
   // the value reported diagnostically is merely the last value filled
   result->copy_from(model->m_velbase_mag);
-
   return result;
 }
 

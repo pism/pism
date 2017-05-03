@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -58,21 +58,30 @@ namespace stressbalance {
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(Context::Ptr ctx, double q):
-    SSATestCase(ctx), basal_q(q)
+  SSATestCaseConst(Context::Ptr ctx, int Mx, int My, double q,
+                   SSAFactory ssafactory):
+    SSATestCase(ctx, Mx, My, 50e3, 50e3, NOT_PERIODIC),
+    basal_q(q)
   {
     L     = units::convert(ctx->unit_system(), 50.0, "km", "m"); // 50km half-width
     H0    = 500;                        // m
     dhdx  = 0.005;                      // pure number
     nu0   = units::convert(ctx->unit_system(), 30.0, "MPa year", "Pa s");
     tauc0 = 1.e4;               // Pa
+
+    m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
+    m_config->set_double("basal_resistance.pseudo_plastic.q", basal_q);
+
+    // Use a pseudo-plastic law with a constant q determined at run time
+    m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
+
+    // The following is irrelevant because we will force linear rheology later.
+    m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
+
+    m_ssa = ssafactory(m_grid);
   };
 
 protected:
-  virtual void initializeGrid(int Mx,int My);
-
-  virtual void initializeSSAModel();
-
   virtual void initializeSSACoefficients();
 
   virtual void exactSolution(int i, int j,
@@ -81,25 +90,6 @@ protected:
   double basal_q,
     L, H0, dhdx, nu0, tauc0;
 };
-
-void SSATestCaseConst::initializeGrid(int Mx,int My) {
-  double Lx=L, Ly = L;
-  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
-                            0.0, 0.0, // center: (x0,y0)
-                            Mx, My, NOT_PERIODIC);
-}
-
-
-void SSATestCaseConst::initializeSSAModel() {
-  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
-  m_config->set_double("basal_resistance.pseudo_plastic.q", basal_q);
-
-  // Use a pseudo-plastic law with a constant q determined at run time
-  m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", true);
-
-  // The following is irrelevant because we will force linear rheology later.
-  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-}
 
 void SSATestCaseConst::initializeSSACoefficients() {
 
@@ -111,37 +101,36 @@ void SSATestCaseConst::initializeSSACoefficients() {
   m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", true);
 
   // Set constant thickness, tauc
-  m_bc_mask.set(MASK_GROUNDED);
-  m_thickness.set(H0);
+  m_bc_mask.set(0);
+  m_geometry.ice_thickness.set(H0);
   m_tauc.set(tauc0);
 
-  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask, &m_bed, &m_surface};
+  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask,
+      &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double myu, myv;
-    const double myx = m_grid->x(i), myy=m_grid->y(j);
+    double u, v;
+    const double x = m_grid->x(i), y=m_grid->y(j);
 
-    m_bed(i,j) = -myx*(dhdx);
-    m_surface(i,j) = m_bed(i,j) + H0;
+    m_geometry.bed_elevation(i, j) = -x*(dhdx);
+    m_geometry.ice_surface_elevation(i, j) = m_geometry.bed_elevation(i, j) + H0;
 
     bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
                  (i == 0) || (i == (int)m_grid->Mx() - 1));
     if (edge) {
       m_bc_mask(i,j) = 1;
-      exactSolution(i,j,myx,myy,&myu,&myv);
-      m_bc_values(i,j).u = myu;
-      m_bc_values(i,j).v = myv;
+      exactSolution(i, j, x, y, &u, &v);
+      m_bc_values(i, j).u = u;
+      m_bc_values(i, j).v = v;
     }
   }
 
   m_bc_values.update_ghosts();
   m_bc_mask.update_ghosts();
-  m_bed.update_ghosts();
-  m_surface.update_ghosts();
-
-  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
+  m_geometry.bed_elevation.update_ghosts();
+  m_geometry.ice_surface_elevation.update_ghosts();
 }
 
 
@@ -210,8 +199,8 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCaseConst testcase(ctx, basal_q);
-    testcase.init(Mx,My,ssafactory);
+    SSATestCaseConst testcase(ctx, Mx, My, basal_q, ssafactory);
+    testcase.init();
     testcase.run();
     testcase.report("const");
     testcase.write(output_file);

@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2016 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2017 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -55,20 +55,26 @@ static double u_exact(double V0, double H0, double C, double x) {
 
 class SSATestCaseCFBC: public SSATestCase {
 public:
-  SSATestCaseCFBC(Context::Ptr ctx)
-    : SSATestCase(ctx) {
+  SSATestCaseCFBC(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+    : SSATestCase(ctx, Mx, My, 250e3, 250e3, Y_PERIODIC) {
     V0 = units::convert(ctx->unit_system(), 300.0, "m year-1", "m second-1");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;
+
+    m_config->set_double("flow_law.isothermal_Glen.ice_softness",
+                         pow(1.9e8, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
+    m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", false);
+    m_config->set_boolean("stress_balance.calving_front_stress_bc", true);
+    m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+
+    m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
+
+    m_ssa = ssafactory(m_grid);
   }
 
   virtual void write_nuH(const std::string &filename);
 
 protected:
-  virtual void initializeGrid(int Mx, int My);
-
-  virtual void initializeSSAModel();
-
   virtual void initializeSSACoefficients();
 
   virtual void exactSolution(int i, int j,
@@ -87,36 +93,16 @@ void SSATestCaseCFBC::write_nuH(const std::string &filename) {
   }
 }
 
-void SSATestCaseCFBC::initializeGrid(int Mx, int My) {
-
-  double halfWidth = 250.0e3;  // 500.0 km length
-  double Lx = halfWidth, Ly = halfWidth;
-  m_grid = IceGrid::Shallow(m_ctx, Lx, Ly,
-                            0.0, 0.0, // center: (x0,y0)
-                            Mx, My, Y_PERIODIC);
-}
-
-void SSATestCaseCFBC::initializeSSAModel() {
-
-  m_config->set_double("flow_law.isothermal_Glen.ice_softness",
-                       pow(1.9e8, -m_config->get_double("stress_balance.ssa.Glen_exponent")));
-  m_config->set_boolean("stress_balance.ssa.compute_surface_gradient_inward", false);
-  m_config->set_boolean("stress_balance.calving_front_stress_bc", true);
-  m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-
-  m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
-}
-
 void SSATestCaseCFBC::initializeSSACoefficients() {
 
   m_tauc.set(0.0);    // irrelevant
-  m_bed.set(-1000.0); // assures shelf is floating
-
+  m_geometry.bed_elevation.set(-1000.0); // assures shelf is floating
 
   double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
   m_ice_enthalpy.set(enth0);
 
-  IceModelVec::AccessList list{&m_thickness, &m_surface, &m_bc_mask, &m_bc_values, &m_ice_mask};
+  IceModelVec::AccessList list{&m_geometry.ice_thickness,
+      &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values, &m_geometry.cell_type};
 
   double ocean_rho = m_config->get_double("constants.sea_water.density"),
     ice_rho = m_config->get_double("constants.ice.density");
@@ -129,14 +115,14 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
     const double x = m_grid->x(i);
 
     if (i != (int)m_grid->Mx() - 1) {
-      m_thickness(i, j) = H_exact(V0, H0, C, x - x_min);
-      m_ice_mask(i, j)  = MASK_FLOATING;
+      m_geometry.ice_thickness(i, j) = H_exact(V0, H0, C, x - x_min);
+      m_geometry.cell_type(i, j)  = MASK_FLOATING;
     } else {
-      m_thickness(i, j) = 0;
-      m_ice_mask(i, j)  = MASK_ICE_FREE_OCEAN;
+      m_geometry.ice_thickness(i, j) = 0;
+      m_geometry.cell_type(i, j)  = MASK_ICE_FREE_OCEAN;
     }
 
-    m_surface(i,j) = (1.0 - ice_rho / ocean_rho) * m_thickness(i, j);
+    m_geometry.ice_surface_elevation(i,j) = (1.0 - ice_rho / ocean_rho) * m_geometry.ice_thickness(i, j);
 
     if (i == 0) {
       m_bc_mask(i, j)  = 1;
@@ -151,17 +137,15 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
 
 
   // communicate what we have set
-  m_surface.update_ghosts();
+  m_geometry.ice_surface_elevation.update_ghosts();
 
-  m_thickness.update_ghosts();
+  m_geometry.ice_thickness.update_ghosts();
 
   m_bc_mask.update_ghosts();
 
-  m_ice_mask.update_ghosts();
+  m_geometry.cell_type.update_ghosts();
 
   m_bc_values.update_ghosts();
-
-  m_ssa->set_boundary_conditions(m_bc_mask, m_bc_values);
 }
 
 void SSATestCaseCFBC::exactSolution(int i, int /*j*/,
@@ -228,8 +212,8 @@ int main(int argc, char *argv[]) {
       /* can't happen */
     }
 
-    SSATestCaseCFBC testcase(ctx);
-    testcase.init(Mx,My,ssafactory);
+    SSATestCaseCFBC testcase(ctx, Mx, My, ssafactory);
+    testcase.init();
     testcase.run();
     testcase.report("V");
     testcase.write(output_file);

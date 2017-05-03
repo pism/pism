@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -78,7 +78,9 @@ std::vector<std::string> split(const std::string &input, char separator) {
   std::vector<std::string> result;
 
   while (getline(input_list, token, separator)) {
-    result.push_back(token);
+    if (not token.empty()) {
+      result.push_back(token);
+    }
   }
   return result;
 }
@@ -90,7 +92,9 @@ std::set<std::string> set_split(const std::string &input, char separator) {
   std::set<std::string> result;
 
   while (getline(input_list, token, separator)) {
-    result.insert(token);
+    if (not token.empty()) {
+      result.insert(token);
+    }
   }
   return result;
 }

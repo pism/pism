@@ -88,9 +88,9 @@ def smooth(topg, topg_smoothed, usurf, theta):
 
     smoother.preprocess_bed(topg)
 
-    smoother.get_theta(usurf, theta)
+    smoother.theta(usurf, theta)
 
-    topg_smoothed.copy_from(smoother.get_smoothed_bed())
+    topg_smoothed.copy_from(smoother.smoothed_bed())
 
 def run():
     "Run the bed smoother using synthetic geometry."

@@ -32,6 +32,7 @@
 #include "base/util/io/LocalInterpCtx.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/Logger.hh"
+#include "base/util/Context.hh"
 #include "base/util/projection.hh"
 #include "base/util/interpolation.hh"
 
@@ -217,6 +218,29 @@ void define_dimension(const PIO &nc, unsigned long int length,
   }
 }
 
+
+//! Prepare a file for output.
+void define_time(const PIO &file, const Context &ctx) {
+  const Time &time = *ctx.time();
+  const Config &config = *ctx.config();
+
+  define_time(file,
+              config.get_string("time.dimension_name"),
+              time.calendar(),
+              time.CF_units_string(),
+              ctx.unit_system());
+}
+
+//! Prepare a file for output.
+void append_time(const PIO &file, const Config &config, double time_seconds) {
+  append_time(file, config.get_string("time.dimension_name"),
+              time_seconds);
+}
+
+/*!
+ * Define a time dimension and the corresponding coordinate variable. Does nothing if the time
+ * variable is already present.
+ */
 void define_time(const PIO &nc, const std::string &name, const std::string &calendar,
                  const std::string &units, units::System::Ptr unit_system) {
   try {
@@ -259,6 +283,8 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   std::string x_name = var.get_x().get_name();
   if (not nc.inq_dim(x_name)) {
     define_dimension(nc, grid.Mx(), var.get_x());
+    nc.put_att_double(x_name, "spacing_meters", PISM_DOUBLE,
+                      grid.x(1) - grid.x(0));
     nc.put_1d_var(x_name, 0, grid.x().size(), grid.x());
   }
 
@@ -266,6 +292,8 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   std::string y_name = var.get_y().get_name();
   if (not nc.inq_dim(y_name)) {
     define_dimension(nc, grid.My(), var.get_y());
+    nc.put_att_double(y_name, "spacing_meters", PISM_DOUBLE,
+                      grid.y(1) - grid.y(0));
     nc.put_1d_var(y_name, 0, grid.y().size(), grid.y());
   }
 
@@ -277,6 +305,23 @@ static void define_dimensions(const SpatialVariableMetadata& var,
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
       define_dimension(nc, nlevels, var.get_z());
+
+      if (nlevels > 1) {
+        double dz_max = levels[1] - levels[0];
+        double dz_min = levels.back() - levels.front();
+
+        for (unsigned int k = 0; k < nlevels - 1; ++k) {
+          double dz = levels[k+1] - levels[k];
+          dz_max = std::max(dz_max, dz);
+          dz_min = std::min(dz_min, dz);
+        }
+
+        nc.put_att_double(z_name, "spacing_min_meters", PISM_DOUBLE,
+                          dz_min);
+        nc.put_att_double(z_name, "spacing_max_meters", PISM_DOUBLE,
+                          dz_max);
+      }
+
       nc.put_1d_var(z_name, 0, levels.size(), levels);
     }
   }
@@ -496,7 +541,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const PIO &nc,
-                             IO_Type nctype,
+                             IO_Type default_type,
                              const std::string &variable_order,
                              bool use_glaciological_units) {
   std::vector<std::string> dims;
@@ -561,9 +606,13 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 
   assert(dims.size() > 1);
 
-  nc.def_var(name, nctype, dims);
+  IO_Type type = var.get_output_type();
+  if (type == PISM_NAT) {
+    type = default_type;
+  }
+  nc.def_var(name, type, dims);
 
-  write_attributes(nc, var, nctype, use_glaciological_units);
+  write_attributes(nc, var, type, use_glaciological_units);
 
   // add the "grid_mapping" attribute if the grid has an associated mapping.
   const VariableMetadata &mapping = grid.get_mapping_info().mapping;
@@ -945,7 +994,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
 //! Define a NetCDF variable corresponding to a time-series.
 void define_timeseries(const TimeseriesMetadata& var,
-                       const PIO &nc, IO_Type nctype, bool) {
+                       const PIO &nc, IO_Type nctype) {
 
   std::string name = var.get_name();
   std::string dimension_name = var.get_dimension_name();
@@ -960,12 +1009,12 @@ void define_timeseries(const TimeseriesMetadata& var,
   }
 
   if (not nc.inq_var(name)) {
-    std::vector<std::string> dims(1, dimension_name);
     nc.redef();
-    nc.def_var(name, nctype, dims);
+    nc.def_var(name, nctype, {dimension_name});
   }
 
-  write_attributes(nc, var, PISM_FLOAT, true);
+  const bool use_glaciological_units = true;
+  write_attributes(nc, var, nctype, use_glaciological_units);
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
@@ -1058,7 +1107,7 @@ void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata, size_t 
   std::string name = metadata.get_name();
   try {
     if (not nc.inq_var(name)) {
-      define_timeseries(metadata, nc, nctype, true);
+      define_timeseries(metadata, nc, nctype);
     }
 
     // create a copy of "data":
@@ -1082,7 +1131,7 @@ void write_timeseries(const PIO &nc, const TimeseriesMetadata &metadata, size_t 
 }
 
 void define_time_bounds(const TimeBoundsMetadata& var,
-                        const PIO &nc, IO_Type nctype, bool) {
+                        const PIO &nc, IO_Type nctype) {
   std::string name = var.get_name();
   std::string dimension_name = var.get_dimension_name();
   std::string bounds_name = var.get_bounds_name();
@@ -1203,7 +1252,7 @@ void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
   try {
     bool variable_exists = nc.inq_var(name);
     if (not variable_exists) {
-      define_time_bounds(metadata, nc, nctype, true);
+      define_time_bounds(metadata, nc, nctype);
     }
 
     // make a copy of "data"
@@ -1215,11 +1264,9 @@ void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
                   metadata.get_string("units"),
                   metadata.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
 
-    std::vector<unsigned int> start(2), count(2);
-    start[0] = static_cast<unsigned int>(t_start);
-    start[1] = 0;
-    count[0] = static_cast<unsigned int>(tmp.size()) / 2;
-    count[1] = 2;
+    std::vector<unsigned int>
+      start{static_cast<unsigned int>(t_start), 0},
+      count{static_cast<unsigned int>(tmp.size()) / 2, 2};
 
     nc.enddef();
     nc.put_vara_double(name, start, count, &tmp[0]);
@@ -1271,13 +1318,8 @@ void read_attributes(const PIO &nc, const std::string &variable_name, VariableMe
       IO_Type nctype = nc.inq_atttype(variable_name, attribute_name);
 
       if (nctype == PISM_CHAR) {
-        std::string value = nc.get_att_text(variable_name, attribute_name);
-
-        if (attribute_name == "units") {
-          variable.set_string("units", value);
-        } else {
-          variable.set_string(attribute_name, value);
-        }
+        variable.set_string(attribute_name,
+                            nc.get_att_text(variable_name, attribute_name));
       } else {
         variable.set_doubles(attribute_name,
                              nc.get_att_double(variable_name, attribute_name));
@@ -1317,11 +1359,15 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
     }
 
     std::vector<double> bounds(2);
-    if (variable.has_attribute("valid_min")) {
-      bounds[0]  = variable.get_double("valid_min");
-    }
-    if (variable.has_attribute("valid_max")) {
-      bounds[1]  = variable.get_double("valid_max");
+    if (variable.has_attribute("valid_range")) {
+      bounds = variable.get_doubles("valid_range");
+    } else {
+      if (variable.has_attribute("valid_min")) {
+        bounds[0]  = variable.get_double("valid_min");
+      }
+      if (variable.has_attribute("valid_max")) {
+        bounds[1]  = variable.get_double("valid_max");
+      }
     }
 
     double fill_value = 0.0;
@@ -1347,7 +1393,10 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
       nc.put_att_double(var_name, "_FillValue", nctype, fill_value);
     }
 
-    if (variable.has_attribute("valid_min") && variable.has_attribute("valid_max")) {
+    if (variable.has_attribute("valid_range")) {
+      nc.put_att_double(var_name, "valid_range", nctype, bounds);
+    } else if (variable.has_attribute("valid_min") and
+               variable.has_attribute("valid_max")) {
       nc.put_att_double(var_name, "valid_range", nctype, bounds);
     } else if (variable.has_attribute("valid_min")) {
       nc.put_att_double(var_name, "valid_min",   nctype, bounds[0]);
@@ -1389,33 +1438,6 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
   } catch (RuntimeError &e) {
     e.add_context("writing attributes of variable '%s' to '%s'",
                   var_name.c_str(), nc.inq_filename().c_str());
-    throw;
-  }
-}
-
-/** Write global attributes to a file.
- *
- * Same as `write_attributes(nc, var, PISM_DOUBLE, false)`, but
- * prepends the history string.
- *
- * @param nc file to write to
- * @param var metadata object containing attributes
- *
- * @return 0 on success
- */
-void write_global_attributes(const PIO &nc, const VariableMetadata &var) {
-  try {
-    VariableMetadata tmp = var;
-
-    std::string old_history = nc.get_att_text("PISM_GLOBAL", "history");
-
-    tmp.set_name("PISM_GLOBAL");
-    tmp.set_string("history", tmp.get_string("history") + old_history);
-
-    write_attributes(nc, tmp, PISM_DOUBLE, false);
-
-  } catch (RuntimeError &e) {
-    e.add_context("writing global attributes to \"" + nc.inq_filename());
     throw;
   }
 }

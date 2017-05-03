@@ -621,11 +621,6 @@ netcdf pism_config {
     pism_config:geometry.part_grid.enabled_option = "part_grid";
     pism_config:geometry.part_grid.enabled_type = "boolean";
 
-    pism_config:geometry.part_grid.reduce_frontal_thickness = "no";
-    pism_config:geometry.part_grid.reduce_frontal_thickness_doc = "Reduce the threshold ice thickness at ice fronts using a van der Veen flowline analytical profile";
-    pism_config:geometry.part_grid.reduce_frontal_thickness_option = "part_grid_reduce_frontal_thickness";
-    pism_config:geometry.part_grid.reduce_frontal_thickness_type = "boolean";
-
     pism_config:geometry.remove_icebergs = "no";
     pism_config:geometry.remove_icebergs_doc = "identify and kill detached ice-shelf areas";
     pism_config:geometry.remove_icebergs_option = "kill_icebergs";
@@ -977,6 +972,7 @@ netcdf pism_config {
     pism_config:output.backup_interval_doc = "wall-clock time between automatic backups";
     pism_config:output.backup_interval_type = "scalar";
     pism_config:output.backup_interval_units = "hours";
+    pism_config:output.backup_interval_option = "backup_interval";
 
     pism_config:output.backup_size = "small";
     pism_config:output.backup_size_choices = "none,small,medium,big_2d,big";
@@ -1006,6 +1002,11 @@ netcdf pism_config {
     pism_config:output.runtime.area_scale_factor_log10_type = "integer";
     pism_config:output.runtime.area_scale_factor_log10_units = "pure number";
 
+    pism_config:output.file_name = "unnamed.nc";
+    pism_config:output.file_name_doc = "The file to save final model results to.";
+    pism_config:output.file_name_type = "string";
+    pism_config:output.file_name_option = "o";
+
     pism_config:output.runtime.time_unit_name = "year";
     pism_config:output.runtime.time_unit_name_doc = "Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)";
     pism_config:output.runtime.time_unit_name_type = "string";
@@ -1014,11 +1015,16 @@ netcdf pism_config {
     pism_config:output.runtime.time_use_calendar_doc = "Whether to use the current calendar when printing model time in summary to stdout.";
     pism_config:output.runtime.time_use_calendar_type = "boolean";
 
-    pism_config:output.runtime.viewer_size = 320;
-    pism_config:output.runtime.viewer_size_doc = "default diagnostic viewer size (number of pixels of the longer side)";
-    pism_config:output.runtime.viewer_size_option = "view_size";
-    pism_config:output.runtime.viewer_size_type = "integer";
-    pism_config:output.runtime.viewer_size_units = "count";
+    pism_config:output.runtime.viewer.size = 320;
+    pism_config:output.runtime.viewer.size_doc = "default diagnostic viewer size (number of pixels of the longer side)";
+    pism_config:output.runtime.viewer.size_option = "view_size";
+    pism_config:output.runtime.viewer.size_type = "integer";
+    pism_config:output.runtime.viewer.size_units = "count";
+
+    pism_config:output.runtime.viewer.variables = "";
+    pism_config:output.runtime.viewer.variables_doc = "comma-separated list of map-plane diagnostic quantities to view at runtime";
+    pism_config:output.runtime.viewer.variables_option = "view";
+    pism_config:output.runtime.viewer.variables_type = "string";
 
     pism_config:output.runtime.volume_scale_factor_log10 = 6;
     pism_config:output.runtime.volume_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout";
@@ -1050,10 +1056,25 @@ netcdf pism_config {
     pism_config:output.sizes.medium_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by sub-models.";
     pism_config:output.sizes.medium_type = "string";
 
-    pism_config:output.timeseries_buffer_size = 10000;
-    pism_config:output.timeseries_buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
-    pism_config:output.timeseries_buffer_size_type = "integer";
-    pism_config:output.timeseries_buffer_size_units = "count";
+    pism_config:output.timeseries.buffer_size = 10000;
+    pism_config:output.timeseries.buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
+    pism_config:output.timeseries.buffer_size_type = "integer";
+    pism_config:output.timeseries.buffer_size_units = "count";
+
+    pism_config:output.timeseries.variables = "";
+    pism_config:output.timeseries.variables_doc = "Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.";
+    pism_config:output.timeseries.variables_option = "ts_vars";
+    pism_config:output.timeseries.variables_type = "string";
+
+    pism_config:output.timeseries.append = "false";
+    pism_config:output.timeseries.append_type = "boolean";
+    pism_config:output.timeseries.append_option = "ts_append";
+    pism_config:output.timeseries.append_doc = "If true, append to the scalar time series output file.";
+
+    pism_config:output.timeseries.filename = "";
+    pism_config:output.timeseries.filename_type = "string";
+    pism_config:output.timeseries.filename_option = "ts_file";
+    pism_config:output.timeseries.filename_doc = "Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.";
 
     pism_config:output.variable_order = "yxz";
     pism_config:output.variable_order_choices = "xyz,yxz,zyx";

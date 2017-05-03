@@ -40,13 +40,15 @@
 
 // IceModel owns a bunch of fields, so we have to include this.
 #include "base/util/iceModelVec.hh"
+#include "base/util/IceModelVec2CellType.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/PISMTime.hh"
-#include "base/util/IceModelVec2CellType.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/Geometry.hh"
+#include "base/GeometryEvolution.hh"
 
 namespace pism {
 
@@ -88,7 +90,6 @@ namespace bed {
 class BedDef;
 }
 
-// forward declarations
 class IceGrid;
 class YieldStress;
 class AgeModel;
@@ -136,6 +137,7 @@ public:
   virtual void allocate_subglacial_hydrology();
   virtual void allocate_basal_yield_stress();
   virtual void allocate_couplers();
+  virtual void allocate_geometry_evolution();
   virtual void allocate_iceberg_remover();
 
   virtual void model_state_setup();
@@ -143,7 +145,10 @@ public:
   virtual void init_diagnostics();
   virtual void init_calving();
 
+  virtual void prune_diagnostics();
   virtual void list_diagnostics();
+  virtual void update_diagnostics(double dt);
+  virtual void reset_diagnostics();
 
   // see iceModel.cc
   void init();
@@ -154,41 +159,46 @@ public:
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
   virtual void step(bool do_mass_continuity, bool do_skip);
+  virtual void pre_step_hook();
+  virtual void post_step_hook();
   void reset_counters();
 
   // see iMbootstrap.cc
   virtual void bootstrap_2d(const PIO &input_file);
 
   // see iMoptions.cc
-  virtual void setFromOptions();
+  virtual void process_options();
   virtual std::set<std::string> output_variables(const std::string &keyword);
 
   // see iMutil.cc
-  virtual void additionalAtStartTimestep();
-  virtual void additionalAtEndTimestep();
   virtual void compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
   virtual void restart_2d(const PIO &input_file, unsigned int record);
   virtual void initialize_2d();
 
-  void initialize_cumulative_fluxes(const PIO &input_file);
-  void reset_cumulative_fluxes();
-
-  virtual void writeFiles(const std::string &default_filename);
+  virtual void save_results();
+  enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
+  virtual void save_variables(const PIO &file,
+                              OutputKind kind,
+                              const std::set<std::string> &variables,
+                              IO_Type default_diagnostics_type = PISM_FLOAT);
 
   virtual void define_model_state(const PIO &file);
   virtual void write_model_state(const PIO &file);
 
+  enum HistoryTreatment {OVERWRITE_HISTORY = 0, PREPEND_HISTORY};
+  enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
+  virtual void write_metadata(const PIO &file, MappingTreatment mapping_flag,
+                              HistoryTreatment history_flag);
+
   virtual void write_mapping(const PIO &file);
   virtual void write_run_stats(const PIO &file);
-  virtual void write_global_attributes(const PIO &file);
-  virtual void write_config(const PIO &file);
 
 
   virtual void define_diagnostics(const PIO &file,
                                   const std::set<std::string> &variables,
-                                  IO_Type nctype);
+                                  IO_Type default_type);
   virtual void write_diagnostics(const PIO &file,
                                  const std::set<std::string> &variables);
 protected:
@@ -237,40 +247,24 @@ protected:
 
   // state variables and some diagnostics/internals
 
-  //! ice surface elevation; ghosted
-  IceModelVec2S m_ice_surface_elevation;
-  //! ghosted
-  IceModelVec2S m_ice_thickness;
+  Geometry m_geometry;
+  std::unique_ptr<GeometryEvolution> m_geometry_evolution;
+
   //! ghosted
   IceModelVec2S m_basal_yield_stress;
   //! rate of production of basal meltwater (ice-equivalent); no ghosts
   IceModelVec2S m_basal_melt_rate;
-  //! Longitude; ghosted to compute cell areas
-  IceModelVec2S m_longitude;
-  //! Latitude; ghosted to compute cell areas
-  IceModelVec2S m_latitude;
-  //! accumulated mass advected to a partially filled grid cell
-  IceModelVec2S m_Href;
-  //! cell areas (computed using the WGS84 datum)
-  IceModelVec2S m_cell_area;
-  //! flux divergence
-  IceModelVec2S m_flux_divergence;
+  //! temperature at the top surface of the bedrock thermal layer
+  IceModelVec2S m_bedtoptemp;
 
   FractureFields *m_fracture;
 
 protected:
 
-  //! \brief mask for flow type with values ice_free_bedrock, grounded_ice, floating_ice,
-  //! ice_free_ocean
-  IceModelVec2CellType m_cell_type;
-
   //! mask to determine Dirichlet boundary locations
   IceModelVec2Int m_ssa_dirichlet_bc_mask;
   //! Dirichlet boundary velocities
   IceModelVec2V m_ssa_dirichlet_bc_values;
-
-  //! mask to determine grounding line position
-  IceModelVec2S m_gl_mask;
 
   // parameters
   //! mass continuity time step, s
@@ -280,40 +274,7 @@ protected:
   //! enthalpy/temperature and age time-steps
   double dt_TempAge;
 
-  struct FluxCounters {
-    FluxCounters();
-
-    double H_to_Href;
-    double Href_to_H;
-    double discharge;
-    double grounded_basal;
-    double nonneg_rule;
-    double sub_shelf;
-    double sum_divQ_SIA;
-    double sum_divQ_SSA;
-    double surface;
-  };
-
-  struct FluxFields {
-    FluxFields(IceGrid::ConstPtr grid);
-    void reset();
-    void regrid(const PIO &input_file);
-
-    //! climatic_mass_balance
-    IceModelVec2S climatic_mass_balance;
-    //! grounded basal (melt/freeze-on) cumulative flux
-    IceModelVec2S basal_grounded;
-    //! floating (sub-shelf) basal (melt/freeze-on) cumulative flux
-    IceModelVec2S basal_floating;
-    //! cumulative nonnegative-rule flux
-    IceModelVec2S nonneg;
-    //! cumulative discharge (calving) flux
-    IceModelVec2S discharge;
-  };
-
 protected:
-  FluxCounters m_cumulative_fluxes;
-  FluxFields m_cumulative_flux_fields;
   unsigned int m_skip_countdown;
 
   std::string m_adaptive_timestep_reason;
@@ -321,77 +282,45 @@ protected:
   std::string m_stdout_flags;
 
   // see iceModel.cc
-  virtual void createVecs();
+  virtual void allocate_storage();
 
   virtual MaxTimestep max_timestep_diffusivity();
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMenergy.cc
-  virtual void energyStep();
+  virtual void energy_step();
 
-  virtual void combine_basal_melt_rate();
+  virtual void combine_basal_melt_rate(IceModelVec2S &result);
 
-  // see iMgeometry.cc
   virtual void enforce_consistency_of_geometry();
-  virtual void cell_interface_fluxes(int i, int j,
-                                     StarStencil<int> cell_type,
-                                     StarStencil<int> bc_mask,
-                                     StarStencil<Vector2> bc_values,
-                                     StarStencil<Vector2> input_velocity,
-                                     StarStencil<double> input_flux,
-                                     StarStencil<double> &output_velocity,
-                                     StarStencil<double> &output_flux);
-  virtual void adjust_flow(StarStencil<int> mask,
-                           StarStencil<double> &SSA_velocity,
-                           StarStencil<double> &SIA_flux);
-  virtual void massContExplicitStep(double dt,
-                                    const IceModelVec2Stag &diffusive_flux,
-                                    const IceModelVec2V &advective_velocity);
-  void apply_surface_and_basal_mass_balance(double dt,
-                                            const IceModelVec2S &cell_area,
-                                            const IceModelVec2S &climatic_mass_balance,
-                                            const IceModelVec2S &basal_melt_rate,
-                                            const IceModelVec2CellType &cell_type,
-                                            const IceModelVec2Int *bc_mask,
-                                            IceModelVec2S &H,
-                                            FluxCounters &fluxes_scalar,
-                                            FluxFields &fluxes_2d);
 
-  virtual void update_grounded_cell_fraction();
+  virtual void update_ice_geometry(bool skip);
   virtual void do_calving();
   virtual void Href_cleanup();
-  virtual void update_cumulative_discharge(const IceModelVec2S &thickness,
-                                           const IceModelVec2S &Href,
-                                           const IceModelVec2S &thickness_old,
-                                           const IceModelVec2S &Href_old);
-
+  virtual void compute_discharge(const IceModelVec2S &thickness,
+                                 const IceModelVec2S &Href,
+                                 const IceModelVec2S &thickness_old,
+                                 const IceModelVec2S &Href_old,
+                                 IceModelVec2S &output);
 
   // see iMIO.cc
-  virtual void dumpToFile(const std::string &filename,
-                          const std::set<std::string> &variables);
-  virtual void regrid(int dimensions);
-  virtual void regrid_variables(const PIO &regrid_file,
-                                const std::set<std::string> &regrid_vars,
-                                unsigned int ndims);
+  virtual void regrid();
 
   // see iMfractures.cc
-  virtual void calculateFractureDensity();
-
-  // see iMpartgrid.cc
-  virtual void residual_redistribution(IceModelVec2S &residual);
-  virtual void residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
+  virtual void update_fracture_density();
 
   // see iMreport.cc
   virtual double compute_temperate_base_fraction(double ice_area);
   virtual double compute_original_ice_fraction(double ice_volume);
-  virtual void summary(bool tempAndAge);
-  virtual void summaryPrintLine(bool printPrototype, bool tempAndAge,
-                                double delta_t,
-                                double volume, double area,
-                                double meltfrac, double max_diffusivity);
+  virtual void print_summary(bool tempAndAge);
+  virtual void print_summary_line(bool printPrototype, bool tempAndAge,
+                                  double delta_t,
+                                  double volume, double area,
+                                  double meltfrac, double max_diffusivity);
 
 public:
+  const IceModelVec2S &discharge() const;
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
@@ -408,10 +337,8 @@ public:
 
 protected:
   // see iMutil.cc
-  virtual int endOfTimeStepHook();
-  virtual void stampHistoryCommand();
-  virtual void stampHistoryEnd();
-  virtual void stampHistory(const std::string &);
+  virtual int process_signals();
+  virtual void prepend_history(const std::string &string);
   virtual void update_run_stats();
 
 protected:
@@ -428,19 +355,22 @@ public:
   const energy::BedThermalUnit* bedrock_thermal_model() const;
   const energy::EnergyModel* energy_balance_model() const;
 
-  const IceModelVec2S& ice_thickness() const;
-  const IceModelVec2S& ice_surface_elevation() const;
-  const IceModelVec2CellType& cell_type() const;
-  const IceModelVec2S &cell_area() const;
+  const Geometry& geometry() const;
+  const GeometryEvolution& geometry_evolution() const;
 
-  FluxCounters cumulative_fluxes() const;
-  const IceModelVec2S& flux_divergence() const;
-  const FluxFields& cumulative_fluxes_2d() const;
   double dt() const;
 
 protected:
+  // discharge during the last time step
+  IceModelVec2S m_discharge;
 
+  /*!
+   * The set of variables that the "state" of IceModel consists of.
+   */
+  std::set<IceModelVec*> m_model_state;
+  //! Requested spatially-variable diagnostics.
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
+  //! Requested scalar diagnostics.
   std::map<std::string,TSDiagnostic::Ptr> m_ts_diagnostics;
 
   // Set of variables to put in the output file:
@@ -456,57 +386,44 @@ protected:
   void write_snapshot();
   MaxTimestep save_max_timestep(double my_t);
 
-  // scalar time-series
-  bool m_save_ts;                 //! true if the user requested time-series output
-  //! file to write time-series to
+  //! file to write scalar time-series to
   std::string m_ts_filename;
-  //! The history attribute in the -ts_file. Read from -ts_file if -ts_append is set, otherwise
-  //! empty.
-  std::string m_old_ts_file_history;
-  std::vector<double> m_ts_times; //! times requested
-  unsigned int m_current_ts;      //! index of the current time
-  std::set<std::string> m_ts_vars;                //! variables requested
+  //! requested times for scalar time-series
+  std::shared_ptr<std::vector<double>> m_ts_times;
   void init_timeseries();
   void flush_timeseries();
-  void write_timeseries();
   MaxTimestep ts_max_timestep(double my_t);
 
   // spatially-varying time-series
   bool m_save_extra, m_extra_file_is_ready, m_split_extra;
   std::string m_extra_filename;
-  //! The history attribute in the -extra_file. Read from -extra_file if -extra_append is set,
-  //! otherwise empty.
-  std::string m_old_extra_file_history;
   std::vector<double> m_extra_times;
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
   TimeBoundsMetadata m_extra_bounds;
-  TimeseriesMetadata m_timestamp;
   void init_extras();
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups
-  double m_backup_interval;
   std::string m_backup_filename;
   double m_last_backup_time;
   std::set<std::string> m_backup_vars;
   void init_backups();
   void write_backup();
 
-  // last time at which PISM hit a multiple of X years, see the
-  // timestep_hit_multiples configuration parameter
+  // last time at which PISM hit a multiple of X years, see the configuration parameter
+  // time_stepping.hit_multiples
   double m_timestep_hit_multiples_last_time;
 
   // diagnostic viewers; see iMviewers.cc
-  virtual void init_viewers();
   virtual void update_viewers();
   virtual void view_field(const IceModelVec *field);
-  std::set<std::string> m_map_viewers, m_slice_viewers;
-  std::map<std::string,petsc::Viewer::Ptr> viewers;
+  std::map<std::string,petsc::Viewer::Ptr> m_viewers;
 
 private:
+  TimeseriesMetadata m_timestamp;
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
 

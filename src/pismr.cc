@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,8 @@ static char help[] =
   "Ice sheet driver for PISM ice sheet simulations, initialized from data.\n"
   "The basic PISM executable for evolution runs.\n";
 
-#include <petscsys.h>
+#include <memory>
+#include <petscsys.h>           // PETSC_COMM_WORLD
 
 #include "base/util/IceGrid.hh"
 #include "base/iceModel.hh"
@@ -31,6 +32,9 @@ static char help[] =
 #include "base/util/error_handling.hh"
 #include "base/util/Context.hh"
 #include "base/util/Profiling.hh"
+
+#include "regional/IceGrid_Regional.hh"
+#include "regional/IceRegionalModel.hh"
 
 using namespace pism;
 
@@ -46,10 +50,11 @@ int main(int argc, char *argv[]) {
     Logger::Ptr log = ctx->log();
 
     std::string usage =
-      "  pismr -i IN.nc [-bootstrap] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pismr -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
       "  -bootstrap  enable heuristics to produce an initial state from an incomplete input\n"
+      "  -regional   enable \"regional mode\"\n"
       "notes:\n"
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
@@ -72,24 +77,30 @@ int main(int argc, char *argv[]) {
       ctx->profiling().start();
     }
 
-    log->message(3, "* Setting the computational grid...\n");
-    IceGrid::Ptr g = IceGrid::FromOptions(ctx);
+    IceGrid::Ptr grid;
+    std::unique_ptr<IceModel> model;
 
-    IceModel m(g, ctx);
+    if (options::Bool("-regional", "enable regional (outlet glacier) mode")) {
+      grid = regional_grid_from_options(ctx);
+      model.reset(new IceRegionalModel(grid, ctx));
+    } else {
+      grid = IceGrid::FromOptions(ctx);
+      model.reset(new IceModel(grid, ctx));
+    }
 
-    m.init();
+    model->init();
 
     bool print_list_and_stop = options::Bool("-list_diagnostics",
                                              "List available diagnostic quantities and stop");
 
     if (print_list_and_stop) {
-      m.list_diagnostics();
+      model->list_diagnostics();
     } else {
-      m.run();
+      model->run();
 
       log->message(2, "... done with run\n");
-      // provide a default output file name if no -o option is given.
-      m.writeFiles("unnamed.nc");
+
+      model->save_results();
     }
     print_unused_parameters(*log, 3, *config);
 

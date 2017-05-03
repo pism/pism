@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -35,6 +35,31 @@ namespace pism {
 //! FEM (Finite Element Method) utilities
 namespace fem {
 
+namespace q0 {
+/*!
+ * Piecewise-constant shape functions.
+ */
+Germ chi(unsigned int k, const QuadPoint &pt) {
+  assert(k < q0::n_chi);
+
+  Germ result;
+
+  if ((k == 0 and pt.xi <= 0.0 and pt.eta <= 0.0) or
+      (k == 1 and pt.xi > 0.0 and pt.eta <= 0.0) or
+      (k == 2 and pt.xi > 0.0 and pt.eta > 0.0) or
+      (k == 3 and pt.xi <= 0.0 and pt.eta > 0.0)) {
+    result.val = 1.0;
+  } else {
+    result.val = 0.0;
+  }
+
+  result.dx  = 0.0;
+  result.dy  = 0.0;
+
+  return result;
+}
+} // end of namespace q0
+
 namespace q1 {
 
 //! Q1 basis functions on the reference element with nodes (-1,-1), (1,-1), (1,1), (-1,1).
@@ -52,6 +77,7 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
 
   return result;
 }
+
 
 const Vector2* outward_normals() {
   static const Vector2 n[] = {Vector2( 0.0, -1.0),  // south
@@ -216,7 +242,7 @@ void ElementMap::mark_col_invalid(int k) {
  *  mark_row_invalid() and mark_col_invalid() are ignored. (Just as they
  *  should be.)
  */
-void ElementMap::add_jacobian_contribution(const double *K, Mat J) const {
+void ElementMap::add_contribution(const double *K, Mat J) const {
   PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
                                                    fem::q1::n_chi, m_row,
                                                    fem::q1::n_chi, m_col,
@@ -230,8 +256,6 @@ const int ElementMap::m_j_offset[4] = {0, 0, 1, 1};
 Quadrature::Quadrature(unsigned int N)
   : m_Nq(N) {
 
-  assert(N <= fem::MAX_QUADRATURE_SIZE);
-
   m_W = (double*) malloc(m_Nq * sizeof(double));
   if (m_W == NULL) {
     throw std::runtime_error("Failed to allocate a Quadrature instance");
@@ -244,7 +268,15 @@ Quadrature::Quadrature(unsigned int N)
   }
 }
 
-Q1Quadrature::Q1Quadrature(unsigned int size, double dx, double dy, double scaling)
+Germ Quadrature::test_function_values(unsigned int q, unsigned int k) const {
+  return m_germs[q][k];
+}
+
+double Quadrature::weights(unsigned int q) const {
+  return m_W[q];
+}
+
+UniformQxQuadrature::UniformQxQuadrature(unsigned int size, double dx, double dy, double scaling)
   : Quadrature(size) {
   // We use uniform Cartesian coordinates, so the Jacobian is constant and diagonal on every
   // element.
@@ -319,7 +351,7 @@ static Germ apply_jacobian_inverse(const double J_inv[2][2], const Germ &f) {
 
 //! Two-by-two Gaussian quadrature on a rectangle.
 Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
-  : Q1Quadrature(m_size, dx, dy, L) {
+  : UniformQxQuadrature(m_size, dx, dy, L) {
 
   // coordinates and weights of the 2-point 1D Gaussian quadrature
   const double
@@ -336,7 +368,7 @@ Q1Quadrature4::Q1Quadrature4(double dx, double dy, double L)
 }
 
 Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
-  : Q1Quadrature(m_size, dx, dy, L) {
+  : UniformQxQuadrature(m_size, dx, dy, L) {
   // The quadrature points on the reference square.
 
   const double
@@ -358,7 +390,7 @@ Q1Quadrature9::Q1Quadrature9(double dx, double dy, double L)
 }
 
 Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
-  : Q1Quadrature(m_size, dx, dy, L) {
+  : UniformQxQuadrature(m_size, dx, dy, L) {
   // The quadrature points on the reference square.
   const double
     A          = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
@@ -375,6 +407,49 @@ Q1Quadrature16::Q1Quadrature16(double dx, double dy, double L)
   double W[m_size];
 
   tensor_product_quadrature(4, points4, weights4, points, W);
+
+  initialize(q1::chi, q1::n_chi, points, W);
+}
+
+
+//! @brief 1e4-point (100x100) uniform (*not* Gaussian) quadrature for integrating discontinuous
+//! functions.
+Q0Quadrature1e4::Q0Quadrature1e4(double dx, double dy, double L)
+  : UniformQxQuadrature(m_size, dx, dy, L) {
+  assert(m_size_1d * m_size_1d == m_size);
+
+  double xi[m_size_1d], w[m_size_1d];
+  const double dxi = 2.0 / m_size_1d;
+  for (unsigned int k = 0; k < m_size_1d; ++k) {
+    xi[k] = -1.0 + dxi*(k + 0.5);
+    w[k]  = 2.0 / m_size_1d;
+  }
+
+  QuadPoint points[m_size];
+  double W[m_size];
+
+  tensor_product_quadrature(m_size_1d, xi, w, points, W);
+
+  initialize(q0::chi, q0::n_chi, points, W);
+}
+
+//! @brief 1e4-point (100x100) uniform (*not* Gaussian) quadrature for integrating discontinuous
+//! functions.
+Q1Quadrature1e4::Q1Quadrature1e4(double dx, double dy, double L)
+  : UniformQxQuadrature(m_size, dx, dy, L) {
+  assert(m_size_1d * m_size_1d == m_size);
+
+  double xi[m_size_1d], w[m_size_1d];
+  const double dxi = 2.0 / m_size_1d;
+  for (unsigned int k = 0; k < m_size_1d; ++k) {
+    xi[k] = -1.0 + dxi*(k + 0.5);
+    w[k]  = 2.0 / m_size_1d;
+  }
+
+  QuadPoint points[m_size];
+  double W[m_size];
+
+  tensor_product_quadrature(m_size_1d, xi, w, points, W);
 
   initialize(q1::chi, q1::n_chi, points, W);
 }

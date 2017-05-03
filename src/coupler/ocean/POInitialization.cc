@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -82,7 +82,8 @@ void InitializationHelper::init_impl() {
                    opts.filename.c_str());
 
     PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
-    const unsigned int last_record = file.inq_nrecords() - 1;
+    const unsigned int time_length = file.inq_nrecords();
+    const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 
     m_melange_back_pressure_fraction.read(file, last_record);
     m_shelf_base_mass_flux.read(file, last_record);
@@ -138,7 +139,7 @@ void InitializationHelper::define_model_state_impl(const PIO &output) const {
   m_shelf_base_temperature.define(output);
   m_melange_back_pressure_fraction.define(output);
 
-  io::define_timeseries(m_sea_level_metadata, output, PISM_DOUBLE, true);
+  io::define_timeseries(m_sea_level_metadata, output, PISM_DOUBLE);
 
   m_input_model->define_model_state(output);
 }
@@ -149,7 +150,9 @@ void InitializationHelper::write_model_state_impl(const PIO &output) const {
   m_shelf_base_temperature.write(output);
   m_melange_back_pressure_fraction.write(output);
 
-  unsigned int t_start = output.inq_dimlen(m_sea_level_metadata.get_dimension_name()) - 1;
+  const unsigned int
+    time_length = output.inq_dimlen(m_sea_level_metadata.get_dimension_name()),
+    t_start = time_length > 0 ? time_length - 1 : 0;
   io::write_timeseries(output, m_sea_level_metadata, t_start, m_sea_level_elevation,
                        PISM_DOUBLE);
 

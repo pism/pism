@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -184,7 +184,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
                                    m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
       } // q
-      m_element.add_residual_contribution(gradient_e, gradient);
+      m_element.add_contribution(gradient_e, gradient);
     } // j
   } // i
 }
@@ -248,7 +248,7 @@ void IP_H1NormFunctional2S::assemble_form(Mat form) {
             } // l
           } // k
         } // q
-        m_element.add_jacobian_contribution(&K[0][0], form);
+        m_element.add_contribution(&K[0][0], form);
       } // j
     } // i
   } catch (...) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,30 +42,76 @@
 
 namespace pism {
 
-//! Save model state in NetCDF format.
-/*!
-Optionally allows saving of full velocity field.
-
-Calls dumpToFile() to do the actual work.
- */
-void  IceModel::writeFiles(const std::string &default_filename) {
-  std::string config_out;
-
-  stampHistoryEnd();
-
-  options::String filename("-o", "Output file name", default_filename);
-
-  if (!ends_with(filename, ".nc")) {
-    m_log->message(2,
-               "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+//! Write time-independent metadata to a file.
+void IceModel::write_metadata(const PIO &file, MappingTreatment mapping_flag,
+                              HistoryTreatment history_flag) {
+  if (mapping_flag == WRITE_MAPPING) {
+    write_mapping(file);
   }
 
-  if (m_config->get_string("output.size") != "none") {
-    m_log->message(2, "Writing model state to file `%s'\n", filename->c_str());
-    dumpToFile(filename, m_output_vars);
+  m_config->write(file);
+
+  if (history_flag == PREPEND_HISTORY) {
+    VariableMetadata tmp = m_output_global_attributes;
+
+    std::string old_history = file.get_att_text("PISM_GLOBAL", "history");
+
+    tmp.set_name("PISM_GLOBAL");
+    tmp.set_string("history", tmp.get_string("history") + old_history);
+
+    io::write_attributes(file, tmp, PISM_DOUBLE, false);
+  } else {
+    io::write_attributes(file, m_output_global_attributes, PISM_DOUBLE, false);
   }
 }
 
+//! Save model state in NetCDF format.
+/*!
+Calls save_variables() to do the actual work.
+ */
+void IceModel::save_results() {
+  {
+    update_run_stats();
+
+    // build and put string into global attribute "history"
+    char str[TEMPORARY_STRING_LENGTH];
+
+    snprintf(str, TEMPORARY_STRING_LENGTH,
+             "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
+             m_run_stats.get_double("wall_clock_hours"),
+             m_run_stats.get_double("processor_hours"),
+             m_run_stats.get_double("model_years_per_processor_hour"));
+
+    prepend_history(str);
+  }
+
+  std::string filename = m_config->get_string("output.file_name");
+
+  if (filename.empty()) {
+    m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
+    filename = "unnamed.nc";
+  }
+
+  if (not ends_with(filename, ".nc")) {
+    m_log->message(2,
+                   "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+  }
+
+  const Profiling &profiling = m_ctx->profiling();
+
+  profiling.begin("io.model_state");
+  if (m_config->get_string("output.size") != "none") {
+    m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
+    PIO file(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
+
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+
+    write_run_stats(file);
+
+    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars);
+  }
+  profiling.end("io.model_state");
+}
 
 void IceModel::write_mapping(const PIO &file) {
   // only write mapping if it is set.
@@ -73,7 +119,7 @@ void IceModel::write_mapping(const PIO &file) {
   if (mapping.has_attributes()) {
     if (not file.inq_var(mapping.get_name())) {
       file.redef();
-      file.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>());
+      file.def_var(mapping.get_name(), PISM_DOUBLE, {});
     }
     io::write_attributes(file, mapping, PISM_DOUBLE, false);
   }
@@ -83,70 +129,56 @@ void IceModel::write_run_stats(const PIO &file) {
   update_run_stats();
   if (not file.inq_var(m_run_stats.get_name())) {
     file.redef();
-    file.def_var(m_run_stats.get_name(), PISM_DOUBLE,
-               std::vector<std::string>());
+    file.def_var(m_run_stats.get_name(), PISM_DOUBLE, {});
   }
   io::write_attributes(file, m_run_stats, PISM_DOUBLE, false);
 }
 
-void IceModel::write_global_attributes(const PIO &file) {
-  io::write_global_attributes(file, m_output_global_attributes);
-}
+void IceModel::save_variables(const PIO &file,
+                              OutputKind kind,
+                              const std::set<std::string> &variables,
+                              IO_Type default_diagnostics_type) {
 
-void IceModel::write_config(const PIO &file) {
-  m_config->write(file);
-}
+  // define the time dimension if necessary (no-op if it is already defined)
+  io::define_time(file, *m_grid->ctx());
+  // define the "timestamp" (wall clock time since the beginning of the run)
+  // Note: it is time-dependent, so we need to define time first.
+  io::define_timeseries(m_timestamp, file, PISM_FLOAT);
+  // append to the time dimension
+  io::append_time(file, *m_config, m_grid->ctx()->time()->current());
 
-void IceModel::dumpToFile(const std::string &filename,
-                          const std::set<std::string> &variables) {
-  const Profiling &profiling = m_ctx->profiling();
-  profiling.begin("model state dump");
+  // Write metadata *before* everything else:
+  //
+  // FIXME: we should write this to variables instead of attributes because NetCDF-4 crashes after
+  // about 2^16 attribute modifications per variable. :-(
+  write_run_stats(file);
 
-  {
-    PIO nc(m_grid->com, m_config->get_string("output.format"), filename, PISM_READWRITE_MOVE);
-
-    // Write metadata *before* everything else:
-    write_mapping(nc);
-    write_run_stats(nc);
-    write_global_attributes(nc);
-    write_config(nc);
-
-    std::string time_name = m_config->get_string("time.dimension_name");
-    io::define_time(nc, time_name, m_time->calendar(),
-                    m_time->CF_units_string(),
-                    m_sys);
-
-    io::append_time(nc, time_name, m_time->current());
-
-    define_model_state(nc);
-    define_diagnostics(nc, variables, PISM_DOUBLE);
-
-    write_model_state(nc);
-    write_diagnostics(nc, variables);
+  if (kind == INCLUDE_MODEL_STATE) {
+    define_model_state(file);
   }
+  define_diagnostics(file, variables, default_diagnostics_type);
 
-  profiling.end("model state dump");
+  if (kind == INCLUDE_MODEL_STATE) {
+    write_model_state(file);
+  }
+  write_diagnostics(file, variables);
+
+  // find out how much time passed since the beginning of the run and save it to the output file
+  {
+    unsigned int time_length = file.inq_dimlen(m_config->get_string("time.dimension_name"));
+    size_t start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
+    io::write_timeseries(file, m_timestamp, start,
+                         wall_clock_hours(m_grid->com, m_start_time));
+  }
 }
 
 void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &variables,
-                                  IO_Type nctype) {
-  // Define all the variables:
-  for (auto var : variables) {
-    if (m_grid->variables().is_available(var)) {
-      const IceModelVec *v = m_grid->variables().get(var);
-      // It has dedicated storage.
-      if (var == "mask") {
-        v->define(file, PISM_BYTE); // use the default data type
-      } else {
-        v->define(file, nctype);
-      }
-    } else {
-      // It might be a diagnostic quantity
-      Diagnostic::Ptr diag = m_diagnostics[var];
+                                  IO_Type default_type) {
+  for (auto variable : variables) {
+    auto diag = m_diagnostics.find(variable);
 
-      if (diag) {
-        diag->define(file);
-      }
+    if (diag != m_diagnostics.end()) {
+      diag->second->define(file, default_type);
     }
   }
 }
@@ -154,59 +186,46 @@ void IceModel::define_diagnostics(const PIO &file, const std::set<std::string> &
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
 void IceModel::write_diagnostics(const PIO &file, const std::set<std::string> &variables) {
-  for (auto var : variables) {
-    if (m_grid->variables().is_available(var)) {
-      m_grid->variables().get(var)->write(file);
-    } else {
-      Diagnostic::Ptr diag = m_diagnostics[var];
+  for (auto variable : variables) {
+    auto diag = m_diagnostics.find(variable);
 
-      if (diag) {
-        IceModelVec::Ptr v_diagnostic = diag->compute();
-
-        v_diagnostic->write_in_glaciological_units = true;
-        v_diagnostic->write(file);
-      }
+    if (diag != m_diagnostics.end()) {
+      diag->second->compute()->write(file);
     }
   }
 }
 
 void IceModel::define_model_state(const PIO &file) {
-  std::set<std::string> variables = output_variables("small");
-
-  // define
-  define_diagnostics(file, variables, PISM_DOUBLE);
+  for (auto v : m_model_state) {
+    v->define(file);
+  }
 
   for (auto m : m_submodels) {
     m.second->define_model_state(file);
   }
+
+  for (auto d : m_diagnostics) {
+    d.second->define_state(file);
+  }
 }
 
 void IceModel::write_model_state(const PIO &file) {
-  std::set<std::string> variables = output_variables("small");
-
-  write_diagnostics(file, variables);
+  for (auto v : m_model_state) {
+    v->write(file);
+  }
 
   for (auto m : m_submodels) {
     m.second->write_model_state(file);
+  }
+
+  for (auto d : m_diagnostics) {
+    d.second->write_state(file);
   }
 }
 
 
 //! Manage regridding based on user options.
-/*!
-  For each variable selected by option `-regrid_vars`, we regrid it onto the current grid from
-  the NetCDF file specified by `-regrid_file`.
-
-  This `dimensions` argument can be 2 (regrid 2D variables only), 3 (3D
-  only) and 0 (everything).
-*/
-void IceModel::regrid(int dimensions) {
-
-  if (not (dimensions == 0 ||
-           dimensions == 2 ||
-           dimensions == 3)) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "dimensions can only be 0 (all), 2 or 3");
-  }
+void IceModel::regrid() {
 
   options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
 
@@ -220,61 +239,27 @@ void IceModel::regrid(int dimensions) {
      return;
   }
 
-  if (dimensions != 0) {
-    m_log->message(2, "regridding %dD variables from file %s ...\n",
-               dimensions, regrid_filename->c_str());
-  } else {
-    m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
-  }
+  m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
 
   {
     PIO regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
-
-    if (dimensions == 0) {
-      regrid_variables(regrid_file, regrid_vars, 2);
-      regrid_variables(regrid_file, regrid_vars, 3);
-    } else {
-      regrid_variables(regrid_file, regrid_vars, dimensions);
-    }
-  }
-}
-
-void IceModel::regrid_variables(const PIO &regrid_file, const std::set<std::string> &vars,
-                                unsigned int ndims) {
-
-  for (auto var : vars) {
-
-    if (not m_grid->variables().is_available(var)) {
-      continue;
+    for (auto v : m_model_state) {
+      if (regrid_vars->find(v->get_name()) != regrid_vars->end()) {
+        v->regrid(regrid_file, CRITICAL);
+      }
     }
 
-    // FIXME: remove const_cast. This is bad.
-    IceModelVec *v = const_cast<IceModelVec*>(m_grid->variables().get(var));
-    SpatialVariableMetadata &m = v->metadata();
+    // Check the range of the ice thickness.
+    {
+      double
+        max_thickness = m_geometry.ice_thickness.range().max,
+        Lz            = m_grid->Lz();
 
-    if (v->get_ndims() != ndims) {
-      continue;
-    }
-
-    std::string pism_intent = m.get_string("pism_intent");
-    if (pism_intent != "model_state") {
-      m_log->message(2, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
-                     var.c_str());
-      continue;
-    }
-
-    v->regrid(regrid_file, CRITICAL);
-  }
-
-  // Check the range of the ice thickness.
-  {
-    double max_thickness = m_ice_thickness.range().max,
-      Lz = m_grid->Lz();
-
-    if (max_thickness >= Lz + 1e-6) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
-                                    "exceeds the height of the computational domain (%f meters).",
-                                    max_thickness, Lz);
+      if (max_thickness >= Lz + 1e-6) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
+                                      "exceeds the height of the computational domain (%f meters).",
+                                      max_thickness, Lz);
+      }
     }
   }
 }
@@ -346,7 +331,7 @@ void IceModel::write_snapshot() {
   char filename[PETSC_MAX_PATH_LEN];
 
   // determine if the user set the -save_times and -save_file options
-  if (!m_save_snapshots) {
+  if (not m_save_snapshots) {
     return;
   }
 
@@ -376,140 +361,88 @@ void IceModel::write_snapshot() {
   }
 
   m_log->message(2,
-             "\nsaving snapshot to %s at %s, for time-step goal %s\n\n",
+             "saving snapshot to %s at %s, for time-step goal %s\n",
              filename, m_time->date().c_str(),
              m_time->date(saving_after).c_str());
 
+  const Profiling &profiling = m_ctx->profiling();
+
+  profiling.begin("io.snapshots");
   IO_Mode mode = m_snapshots_file_is_ready ? PISM_READWRITE : PISM_READWRITE_MOVE;
-  PIO nc(m_grid->com, m_config->get_string("output.format"), filename, mode);
-
-  if (not m_snapshots_file_is_ready) {
-    // Prepare the snapshots file:
-    io::define_time(nc, m_config->get_string("time.dimension_name"),
-                    m_time->calendar(),
-                    m_time->CF_units_string(),
-                    m_sys);
-
-    m_snapshots_file_is_ready = true;
-  }
-
-  // write metadata to the file *every time* we update it
-  write_mapping(nc);
-  write_run_stats(nc);
-  write_global_attributes(nc);
-  write_config(nc);
-
-  io::append_time(nc, m_config->get_string("time.dimension_name"), m_time->current());
-
-  define_model_state(nc);
-  define_diagnostics(nc, m_snapshot_vars, PISM_DOUBLE);
-
-  write_model_state(nc);
-  write_diagnostics(nc, m_snapshot_vars);
-
   {
-    // find out how much time passed since the beginning of the run
-    double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
+    PIO file(m_grid->com, m_config->get_string("output.format"), filename, mode);
 
-    // Get time length now, i.e. after writing variables. This forces PISM to call PIO::enddef(), so
-    // that the length of the time dimension is up to date.
-    unsigned int time_length = nc.inq_dimlen(m_config->get_string("time.dimension_name"));
+    if (not m_snapshots_file_is_ready) {
+      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-    // make sure that time_start is valid even if time_length is zero
-    size_t time_start = 0;
-    if (time_length > 0) {
-      time_start = static_cast<size_t>(time_length - 1);
-    } else {
-      time_start = 0;
+      m_snapshots_file_is_ready = true;
     }
 
-    io::write_timeseries(nc, m_timestamp, time_start, wall_clock_hours);
-  }
+    write_run_stats(file);
 
-  nc.close();
+    save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars);
+  }
+  profiling.end("io.snapshots");
 }
 
 //! Initialize the backup (snapshot-on-wallclock-time) mechanism.
 void IceModel::init_backups() {
 
-  m_backup_interval = m_config->get_double("output.backup_interval");
-
-  options::String backup_file("-o", "Output file name");
-  if (backup_file.is_set()) {
+  std::string backup_file = m_config->get_string("output.file_name");
+  if (not backup_file.empty()) {
     m_backup_filename = pism_filename_add_suffix(backup_file, "_backup", "");
   } else {
     m_backup_filename = "pism_backup.nc";
   }
 
-  m_backup_interval = options::Real("-backup_interval",
-                                  "Automatic backup interval, hours", m_backup_interval);
-
   m_backup_vars = output_variables(m_config->get_string("output.backup_size"));
-
   m_last_backup_time = 0.0;
 }
 
   //! Write a backup (i.e. an intermediate result of a run).
 void IceModel::write_backup() {
+
+  double backup_interval = m_config->get_double("output.backup_interval");
+
   double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
 
-  if (wall_clock_hours - m_last_backup_time < m_backup_interval) {
+  if (wall_clock_hours - m_last_backup_time < backup_interval) {
     return;
   }
 
   const Profiling &profiling = m_ctx->profiling();
-  profiling.begin("backup");
 
   m_last_backup_time = wall_clock_hours;
 
   // create a history string:
-  std::string date_str = pism_timestamp(m_grid->com);
-  char tmp[TEMPORARY_STRING_LENGTH];
-  snprintf(tmp, TEMPORARY_STRING_LENGTH,
-           "PISM automatic backup at %s, %3.3f hours after the beginning of the run\n",
-           m_time->date().c_str(), wall_clock_hours);
-
-  PetscLogDouble backup_start_time = GetTime();
 
   m_log->message(2,
                  "  [%s] Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
                  pism_timestamp(m_grid->com).c_str(), m_backup_filename.c_str(), wall_clock_hours);
 
-  stampHistory(tmp);
+  PetscLogDouble backup_start_time = GetTime();
+  profiling.begin("io.backup");
+  {
+    PIO file(m_grid->com, m_config->get_string("output.format"),
+             m_backup_filename, PISM_READWRITE_MOVE);
 
-  PIO file(m_grid->com, m_config->get_string("output.format"),
-         m_backup_filename, PISM_READWRITE_MOVE);
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+    write_run_stats(file);
 
-  // write metadata:
-  io::define_time(file, m_config->get_string("time.dimension_name"),
-              m_time->calendar(),
-              m_time->CF_units_string(),
-              m_sys);
-  io::append_time(file, m_config->get_string("time.dimension_name"), m_time->current());
-
-  // Write metadata *before* variables:
-  write_mapping(file);
-  write_run_stats(file);
-  write_global_attributes(file);
-  write_config(file);
-
-  define_model_state(file);
-  define_diagnostics(file, m_backup_vars, PISM_DOUBLE);
-
-  write_model_state(file);
-  write_diagnostics(file, m_backup_vars);
+    save_variables(file, INCLUDE_MODEL_STATE, m_backup_vars);
+  }
+  profiling.end("io.backup");
+  PetscLogDouble backup_end_time = GetTime();
 
   // Also flush time-series:
   flush_timeseries();
 
-  PetscLogDouble backup_end_time = GetTime();
   m_log->message(2,
                  "  [%s] Done saving an automatic backup in %f seconds (%f minutes).\n",
                  pism_timestamp(m_grid->com).c_str(),
                  backup_end_time - backup_start_time,
                  (backup_end_time - backup_start_time) / 60.0);
 
-  profiling.end("backup");
 }
 
 

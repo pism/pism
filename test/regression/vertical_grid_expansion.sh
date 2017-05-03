@@ -36,7 +36,7 @@ ${PISM_PATH}/pismr -i input-vertical-grid.nc -bootstrap \
         -o ok-vertical-grid.nc
 
 # compare results (use relative tolerance)
-$PISM_PATH/nccmp.py -r -t 1e-7 fixed-vertical-grid.nc ok-vertical-grid.nc
+$PISM_PATH/nccmp.py -x -v timestamp -r -t 1e-7 fixed-vertical-grid.nc ok-vertical-grid.nc
 if [ $? != 0 ];
 then
     exit 1

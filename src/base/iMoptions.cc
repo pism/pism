@@ -18,7 +18,6 @@
 
 #include <cstring>
 #include <cmath>
-#include <sstream>
 #include <set>
 
 #include "iceModel.hh"
@@ -42,7 +41,7 @@
 namespace pism {
 
 //! Read some runtime (command line) options and alter the corresponding parameters or flags as appropriate.
-void IceModel::setFromOptions() {
+void IceModel::process_options() {
 
   m_log->message(3,
              "Processing physics-related command-line options...\n");
@@ -76,56 +75,26 @@ void IceModel::setFromOptions() {
   }
 }
 
-//! Assembles a list of variables corresponding to an output file size.
+//! Assembles a list of diagnostics corresponding to an output file size.
 std::set<std::string> IceModel::output_variables(const std::string &keyword) {
-  std::set<std::string> result;
-
-  if (keyword == "none") {
-    return result;
-  }
-
-  // Add all the model-state variables:
-  for (auto v : m_grid->variables().keys()) {
-    const SpatialVariableMetadata &m = m_grid->variables().get(v)->metadata();
-
-    std::string intent = m.get_string("pism_intent");
-
-    if (intent == "model_state" or
-        intent == "mapping"     or
-        intent == "climate_steady") {
-      result.insert(v);
-    }
-  }
-
-  // add cumulative quantities to ensure continuity after restarting
-  result.insert("climatic_mass_balance_cumulative");
-  result.insert("grounded_basal_flux_cumulative");
-  result.insert("floating_basal_flux_cumulative");
-  result.insert("nonneg_flux_cumulative");
-  result.insert("discharge_flux_cumulative");
 
   std::string variables;
-  if (keyword == "medium") {
-    // add all the variables listed in the config file ("medium" size):
+
+  if (keyword == "none" or
+      keyword == "small") {
+    variables = "";
+  } else if (keyword == "medium") {
     variables = m_config->get_string("output.sizes.medium");
   } else if (keyword == "big_2d") {
-    // add all the variables listed in the config file (under "medium" and "big_2d" sizes):
-    variables = m_config->get_string("output.sizes.medium");
-    variables += "," + m_config->get_string("output.sizes.big_2d");
+    variables = (m_config->get_string("output.sizes.medium") + "," +
+                 m_config->get_string("output.sizes.big_2d"));
   } else if (keyword == "big") {
-    // add all the variables listed in the config file ("big" size):
-    variables = m_config->get_string("output.sizes.medium");
-    variables += "," + m_config->get_string("output.sizes.big_2d");
-    variables += "," + m_config->get_string("output.sizes.big");
+    variables = (m_config->get_string("output.sizes.medium") + "," +
+                 m_config->get_string("output.sizes.big_2d") + "," +
+                 m_config->get_string("output.sizes.big"));
   }
 
-  for (auto name : split(variables, ',')) {
-    if (not name.empty()) {
-      result.insert(name);
-    }
-  }
-
-  return result;
+  return set_split(variables, ',');
 }
 
 } // end of namespace pism

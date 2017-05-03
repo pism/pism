@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 PISM Authors
+// Copyright (C) 2012-2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -245,18 +245,25 @@ private:
 */
 class Routing : public Hydrology {
 public:
+
+  //! Mass losses and gains at the boundary (over the last time step).
+  struct BoundaryAccounting {
+    BoundaryAccounting();
+    double ice_free_land_loss;
+    double ocean_loss;
+    double null_strip_loss;
+    double negative_thickness_gain;
+    void reset();
+  };
+
   Routing(IceGrid::ConstPtr g);
   virtual ~Routing();
 
   virtual void init();
 
-  friend class MCHydrology_ice_free_land_loss_cumulative;
   friend class MCHydrology_ice_free_land_loss;
-  friend class MCHydrology_ocean_loss_cumulative;
   friend class MCHydrology_ocean_loss;
-  friend class MCHydrology_negative_thickness_gain_cumulative;
   friend class MCHydrology_negative_thickness_gain;
-  friend class MCHydrology_null_strip_loss_cumulative;
   friend class MCHydrology_null_strip_loss;
 
   virtual void wall_melt(IceModelVec2S &result) const;
@@ -264,6 +271,8 @@ public:
   virtual void subglacial_water_thickness(IceModelVec2S &result) const;
 
   virtual void subglacial_water_pressure(IceModelVec2S &result) const;
+
+  BoundaryAccounting boundary_mass_accounting() const;
 
 protected:
   virtual void update_impl(double icet, double icedt);
@@ -300,10 +309,7 @@ protected:
                                      double &icefreelost, double &oceanlost,
                                      double &negativegain, double &nullstriplost);
 
-  double m_ice_free_land_loss_cumulative,
-         m_ocean_loss_cumulative,
-         m_negative_thickness_gain_cumulative,
-         m_null_strip_loss_cumulative;
+  BoundaryAccounting m_boundary_accounting;
 
   virtual void check_water_thickness_nonnegative(IceModelVec2S &thk);
 

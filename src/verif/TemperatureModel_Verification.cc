@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,7 @@
 #include "verif/tests/exactTestK.h"
 #include "verif/tests/exactTestO.h"
 #include "base/energy/utilities.hh"
+#include "base/util/PISMTime.hh"
 
 namespace pism {
 namespace energy {
