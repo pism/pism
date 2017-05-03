@@ -1242,11 +1242,14 @@ double MassFluxDischarge::compute() {
 
   double total_discharge = 0.0;
 
+  IceModelVec::AccessList list{&cell_area, &discharge};
+
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
+      // (kg/m^3) * m^2 * m = kg
       total_discharge += ice_density * cell_area(i, j) * discharge(i, j);
     }
   } catch (...) {
