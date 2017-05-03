@@ -453,6 +453,18 @@ void IceModelVec2::view(petsc::Viewer::Ptr v1, petsc::Viewer::Ptr v2) const {
     convert_vec(tmp, m_metadata[i].unit_system(),
                 units, glaciological_units);
 
+    double bounds[2] = {0.0, 0.0};
+    ierr = VecMin(tmp, NULL, &bounds[0]); PISM_CHK(ierr, "VecMin");
+    ierr = VecMax(tmp, NULL, &bounds[1]); PISM_CHK(ierr, "VecMax");
+
+    if (bounds[0] == bounds[1]) {
+      bounds[0] = -1.0;
+      bounds[1] =  1.0;
+    }
+
+    ierr = PetscViewerDrawSetBounds(v, 1, bounds);
+    PISM_CHK(ierr, "PetscViewerDrawSetBounds");
+
     ierr = VecView(tmp, v);
     PISM_CHK(ierr, "VecView");
   }
