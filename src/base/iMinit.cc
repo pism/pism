@@ -730,6 +730,23 @@ void IceModel::misc_setup() {
                      join(pik_methods, ", ").c_str());
     }
   }
+
+  // initialize diagnostics
+  {
+    // reset: this gives diagnostics a chance to capture the current state of the model at the
+    // beginning of the run
+    for (auto d : m_diagnostics) {
+      d.second->reset();
+    }
+
+    // read in the state (accumulators) if we are re-starting a run
+    if (opts.type == INIT_RESTART) {
+      PIO file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
+      for (auto d : m_diagnostics) {
+        d.second->init(file, opts.record);
+      }
+    }
+  }
 }
 
 //! \brief Initialize calving mechanisms.
