@@ -170,10 +170,9 @@ void IceModel::compute_discharge(const IceModelVec2S &thickness,
 
     const double
       H_old     = thickness_old(i, j) + Href_old(i, j),
-      H_new     = thickness(i, j) + Href(i, j),
-      discharge = H_new - H_old;
+      H_new     = thickness(i, j) + Href(i, j);
 
-    output(i, j) += discharge;
+    output(i, j) = H_new - H_old;
   }
 }
 
