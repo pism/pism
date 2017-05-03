@@ -219,15 +219,15 @@ protected:
 
     const double ice_density = m_config->get_double("constants.ice.density");
 
-    const IceModelVec2S &cell_area = model->geometry().cell_area;
     const IceModelVec2S &discharge = model->discharge();
 
-    IceModelVec::AccessList list{&cell_area, &discharge, &m_accumulator};
+    IceModelVec::AccessList list{&discharge, &m_accumulator};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      m_accumulator(i, j) += ice_density * discharge(i, j) / cell_area(i, j);
+      // m * kg/m^3 = kg/m^2
+      m_accumulator(i, j) += discharge(i, j) * ice_density;
     }
 
     m_interval_length += dt;
