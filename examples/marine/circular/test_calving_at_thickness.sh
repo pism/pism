@@ -18,7 +18,7 @@ stressbalance="-ssa_method fem -stress_balance ssa -ssa_dirichlet_bc $pc"
 
 calving="-calving thickness_calving -thickness_calving_threshold 300"
 
-diagnostics="thk,mask,velbar_mag,Href,velbar"
+diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,calving_mass_flux"
 
 viewers="-view $diagnostics"
 

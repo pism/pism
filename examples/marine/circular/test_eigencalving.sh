@@ -22,7 +22,7 @@ output_basename="test_eigencalving"
 
 calving="-calving eigen_calving -eigen_calving_K 1e15"
 
-diagnostics="thk,mask,velbar_mag,Href,velbar,discharge_flux_cumulative"
+diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,calving_mass_flux"
 
 viewers="-view $diagnostics"
 
