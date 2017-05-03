@@ -186,13 +186,20 @@ public:
   }
 protected:
   void init_impl(const PIO &input, unsigned int time) {
-    m_accumulator.read(input, time);
-    {
+    if (input.inq_var(m_accumulator.get_name())) {
+      m_accumulator.read(input, time);
+    } else {
+      m_accumulator.set(0.0);
+    }
+
+    if (input.inq_var(m_time_since_reset.get_name())) {
       std::vector<double> data;
       input.get_1d_var(m_time_since_reset.get_name(),
                        time, 1, // start, count
                        data);
       m_interval_length = data[0];
+    } else {
+      m_interval_length = 0.0;
     }
   }
 
