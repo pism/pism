@@ -411,13 +411,13 @@ double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) 
       sea_level = m_geometry.sea_level_elevation(i, j);
 
     if (m_geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
-        const double cell_ice_volume = thickness * m_geometry.cell_area(i,j);
-        if (bed > sea_level) {
-          volume += cell_ice_volume;
-        } else {
-          const double max_floating_volume = (sea_level - bed) * (sea_water_density / ice_density);
-          volume += cell_ice_volume - max_floating_volume;
-        }
+      const double cell_ice_volume = thickness * m_geometry.cell_area(i,j);
+      if (bed > sea_level) {
+        volume += cell_ice_volume;
+      } else {
+        const double max_floating_volume = (sea_level - bed) * (sea_water_density / ice_density);
+        volume += cell_ice_volume - max_floating_volume;
+      }
     }
   } // end of the loop over grid points
 
