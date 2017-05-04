@@ -1646,9 +1646,11 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m)
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "height_above_flotation")};
 
-  set_attrs("the height above flotation", "",
-            "m", "m", 0);
+  set_attrs("ice thickness in excess of the maximum floating ice thickness",
+            "", "m", "m", 0);
   m_vars[0].set_double("_FillValue", m_fill_value);
+  m_vars[0].set_string("comment",
+                       "shows how close to floatation the ice is at a given location");
 }
 
 IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
@@ -1661,7 +1663,7 @@ IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
   const double
     ice_density   = m_config->get_double("constants.ice.density"),
     ocean_density = m_config->get_double("constants.sea_water.density"),
-    sea_level = model->ocean_model()->sea_level_elevation();
+    sea_level     = model->ocean_model()->sea_level_elevation();
 
   const IceModelVec2S
     &ice_thickness  = model->geometry().ice_thickness,
@@ -1674,22 +1676,22 @@ IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double thk = ice_thickness(i,j);
-      double bed = bed_topography(i,j);
+      const double
+        thickness   = ice_thickness(i, j),
+        bed         = bed_topography(i, j),
+        ocean_depth = sea_level - bed;
 
-      // if we have no ice, go on to the next grid point (this cell will be
-      // marked as "missing" later)
-      if (cell_type.ice_free(i, j)) {
-        (*result)(i,j) = m_fill_value;
-        continue;
+      if (cell_type.icy(i, j) and ocean_depth > 0.0) {
+        const double max_floating_thickness = ocean_depth * (ocean_density / ice_density);
+        (*result)(i, j) = thickness - max_floating_thickness;
+      } else {
+        (*result)(i, j) = m_fill_value;
       }
-      (*result)(i,j) = ((ice_density / ocean_density) * thk) + (bed - sea_level);
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
-
 
   return result;
 }
