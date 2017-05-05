@@ -113,21 +113,55 @@ struct FractureFields {
   IceModelVec2 deviatoric_stresses;
 };
 
-
-//! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
+//! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
+//! an ice sheet.
 class IceModel {
 public:
-  // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid::Ptr g, Context::Ptr context);
-  virtual ~IceModel(); // must be virtual merely because some members are virtual
 
-  // see iMinit.cc
-  virtual void time_setup();
+  // the destructor must be virtual merely because some members are virtual
+  virtual ~IceModel();
 
   IceGrid::Ptr grid() const;
-
   Context::Ptr ctx() const;
 
+  void init();
+
+  /** Run PISM in the "standalone" mode. */
+  virtual void run();
+
+  /** Advance the current PISM run to a specific time */
+  virtual void run_to(double time);
+
+  virtual void save_results();
+
+  void list_diagnostics() const;
+
+  const IceModelVec2S &discharge() const;
+
+  double ice_volume(double thickness_threshold) const;
+  double ice_volume_not_displacing_seawater(double thickness_threshold) const;
+  double sealevel_volume(double thickness_threshold) const;
+  double ice_volume_temperate(double thickness_threshold) const;
+  double ice_volume_cold(double thickness_threshold) const;
+  double ice_area(double thickness_threshold) const;
+  double ice_area_grounded(double thickness_threshold) const;
+  double ice_area_floating(double thickness_threshold) const;
+  double ice_area_temperate(double thickness_threshold) const;
+  double ice_area_cold(double thickness_threshold) const;
+
+  const stressbalance::StressBalance* stress_balance() const;
+  const ocean::OceanModel* ocean_model() const;
+  const bed::BedDef* bed_model() const;
+  const energy::BedThermalUnit* bedrock_thermal_model() const;
+  const energy::EnergyModel* energy_balance_model() const;
+
+  const Geometry& geometry() const;
+  const GeometryEvolution& geometry_evolution() const;
+
+  double dt() const;
+
+protected:
   virtual void allocate_submodels();
   virtual void allocate_stressbalance();
   virtual void allocate_age_model();
@@ -140,27 +174,20 @@ public:
   virtual void allocate_geometry_evolution();
   virtual void allocate_iceberg_remover();
 
+  virtual void time_setup();
   virtual void model_state_setup();
   virtual void misc_setup();
   virtual void init_diagnostics();
   virtual void init_calving();
 
   virtual void prune_diagnostics();
-  virtual void list_diagnostics();
   virtual void update_diagnostics(double dt);
   virtual void reset_diagnostics();
 
-  // see iceModel.cc
-  void init();
-
-
-  /** Run PISM in the "standalone" mode. */
-  virtual void run();
-  /** Advance the current PISM run to a specific time */
-  virtual void run_to(double time);
   virtual void step(bool do_mass_continuity, bool do_skip);
   virtual void pre_step_hook();
   virtual void post_step_hook();
+
   void reset_counters();
 
   // see iMbootstrap.cc
@@ -177,7 +204,6 @@ public:
   virtual void restart_2d(const PIO &input_file, unsigned int record);
   virtual void initialize_2d();
 
-  virtual void save_results();
   enum OutputKind {INCLUDE_MODEL_STATE = 0, JUST_DIAGNOSTICS};
   virtual void save_variables(const PIO &file,
                               OutputKind kind,
@@ -201,7 +227,6 @@ public:
                                   IO_Type default_type);
   virtual void write_diagnostics(const PIO &file,
                                  const std::set<std::string> &variables);
-protected:
 
   //! Computational grid
   const IceGrid::Ptr m_grid;
@@ -259,8 +284,6 @@ protected:
 
   FractureFields *m_fracture;
 
-protected:
-
   //! mask to determine Dirichlet boundary locations
   IceModelVec2Int m_ssa_dirichlet_bc_mask;
   //! Dirichlet boundary velocities
@@ -274,7 +297,6 @@ protected:
   //! enthalpy/temperature and age time-steps
   double dt_TempAge;
 
-protected:
   unsigned int m_skip_countdown;
 
   std::string m_adaptive_timestep_reason;
@@ -319,48 +341,18 @@ protected:
                                   double volume, double area,
                                   double meltfrac, double max_diffusivity);
 
-public:
-  const IceModelVec2S &discharge() const;
 
-  // see iMreport.cc;  methods for computing diagnostic quantities:
-  // scalar:
-  double ice_volume(double thickness_threshold) const;
-  double ice_volume_not_displacing_seawater(double thickness_threshold) const;
-  double sealevel_volume(double thickness_threshold) const;
-  double ice_volume_temperate(double thickness_threshold) const;
-  double ice_volume_cold(double thickness_threshold) const;
-  double ice_area(double thickness_threshold) const;
-  double ice_area_grounded(double thickness_threshold) const;
-  double ice_area_floating(double thickness_threshold) const;
-  double ice_area_temperate(double thickness_threshold) const;
-  double ice_area_cold(double thickness_threshold) const;
-
-protected:
   // see iMutil.cc
   virtual int process_signals();
   virtual void prepend_history(const std::string &string);
   virtual void update_run_stats();
 
-protected:
   // working space (a convenience)
   static const int m_n_work2d = 4;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
   stressbalance::StressBalance *m_stress_balance;
 
-public:
-  const stressbalance::StressBalance* stress_balance() const;
-  const ocean::OceanModel* ocean_model() const;
-  const bed::BedDef* bed_model() const;
-  const energy::BedThermalUnit* bedrock_thermal_model() const;
-  const energy::EnergyModel* energy_balance_model() const;
-
-  const Geometry& geometry() const;
-  const GeometryEvolution& geometry_evolution() const;
-
-  double dt() const;
-
-protected:
   // discharge during the last time step
   IceModelVec2S m_discharge;
 

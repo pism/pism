@@ -2114,7 +2114,7 @@ void IceModel::init_diagnostics() {
   }
 }
 
-void IceModel::list_diagnostics() {
+void IceModel::list_diagnostics() const {
 
   m_log->message(1, "\n");
 
