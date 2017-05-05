@@ -19,7 +19,6 @@
 
 #include "IceRegionalModel.hh"
 #include "base/util/PISMVars.hh"
-#include "base/util/pism_options.hh"
 #include "base/enthalpyConverter.hh"
 #include "base/stressbalance/ShallowStressBalance.hh"
 #include "SSAFD_Regional.hh"
@@ -30,6 +29,7 @@
 #include "RegionalDefaultYieldStress.hh"
 #include "base/util/io/PIO.hh"
 #include "coupler/PISMOcean.hh"
+#include "EnthalpyModel_Regional.hh"
 
 namespace pism {
 
@@ -96,6 +96,10 @@ void IceRegionalModel::allocate_storage() {
                          "m",
                          ""); //  no standard name
   m_grid->variables().add(m_thk_stored);
+
+  m_model_state.insert(&m_thk_stored);
+  m_model_state.insert(&m_usurf_stored);
+  m_model_state.insert(&m_no_model_mask);
 }
 
 void IceRegionalModel::allocate_geometry_evolution() {
@@ -110,37 +114,26 @@ void IceRegionalModel::allocate_geometry_evolution() {
   m_submodels["geometry_evolution"] = m_geometry_evolution.get();
 }
 
-void IceRegionalModel::model_state_setup() {
+void IceRegionalModel::allocate_energy_model() {
 
-  if (m_config->get_boolean("energy.temperature_based")) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "pismr -regional does not support the '-energy cold' mode.");
+  if (m_energy_model != NULL) {
+    return;
   }
 
-  IceModel::model_state_setup();
+  m_log->message(2, "# Allocating an energy balance model...\n");
 
-  // This code should be here because -zero_grad_where_no_model and -no_model_strip are processed
-  // both when PISM is re-started *and* during bootstrapping.
-  {
-    if (m_config->get_boolean("regional.zero_gradient")) {
-      m_thk_stored.set(0.0);
-      m_usurf_stored.set(0.0);
+  if (m_config->get_boolean("energy.enabled")) {
+    if (m_config->get_boolean("energy.temperature_based")) {
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "pismr -regional does not support the '-energy cold' mode.");
+    } else {
+      m_energy_model = new energy::EnthalpyModel_Regional(m_grid, m_stress_balance);
     }
-
-    double strip_width = m_config->get_double("regional.no_model_strip", "meters");
-    set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
+  } else {
+    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance);
   }
 
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
-    IceModelVec::AccessList list{&m_no_model_mask, &m_ssa_dirichlet_bc_mask};
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (m_no_model_mask(i, j) > 0.5) {
-        m_ssa_dirichlet_bc_mask(i, j) = 1;
-      }
-    }
-  }
+  m_submodels["energy balance model"] = m_energy_model;
 }
 
 void IceRegionalModel::allocate_stressbalance() {
@@ -208,43 +201,51 @@ void IceRegionalModel::allocate_basal_yield_stress() {
   }
 }
 
+//! Bootstrap a "regional" model.
+/*!
+ * Need to initialize all the variables managed by IceModel, as well as
+ * - no_model_mask
+ * - usurf_stored
+ * - thk_stored
+ */
 void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
 
   IceModel::bootstrap_2d(input_file);
 
-  GeometryCalculator gc(*m_config);
+  // no_model_mask
+  {
+    // set using the no_model_strip parameter
+    double strip_width = m_config->get_double("regional.no_model_strip", "meters");
+    set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
 
-  // Use values set by IceModel::bootstrap_2d() to initialize usurf_stored and thk_stored.
-
-  gc.compute_surface(m_ocean->sea_level_elevation(),
-                     m_geometry.bed_elevation,
-                     m_geometry.ice_thickness,
-                     m_usurf_stored);
-
-  m_thk_stored.copy_from(m_geometry.ice_thickness);
-
-  m_no_model_mask.regrid(input_file, OPTIONAL, 0.0);
-}
-
-void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
-
-  IceModel::restart_2d(input_file, record);
-
-  std::string filename = input_file.inq_filename();
-
-  m_log->message(2, "* Initializing 2D fields of IceRegionalModel from '%s'...\n",
-                 filename.c_str());
-
-  if (m_config->get_boolean("regional.zero_gradient")) {
-    m_thk_stored.set(0.0);
-    m_usurf_stored.set(0.0);
-  } else {
-    m_thk_stored.read(input_file, record);
-    m_usurf_stored.read(input_file, record);
+    // allow overriding via regridding
+    m_no_model_mask.regrid(input_file, OPTIONAL, 0.0);
   }
 
-  if (m_config->get_double("regional.no_model_strip") > 0.0) {
-    m_model_state.insert(&m_no_model_mask);
+  if (m_config->get_boolean("regional.zero_gradient")) {
+    m_usurf_stored.set(0.0);
+    m_thk_stored.set(0.0);
+  } else {
+    GeometryCalculator gc(*m_config);
+    // Use values set by IceModel::bootstrap_2d() to initialize usurf_stored and thk_stored.
+    gc.compute_surface(m_ocean->sea_level_elevation(),
+                       m_geometry.bed_elevation,
+                       m_geometry.ice_thickness,
+                       m_usurf_stored);
+
+    m_thk_stored.copy_from(m_geometry.ice_thickness);
+  }
+
+  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+    IceModelVec::AccessList list{&m_no_model_mask, &m_ssa_dirichlet_bc_mask};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_no_model_mask(i, j) > 0.5) {
+        m_ssa_dirichlet_bc_mask(i, j) = 1;
+      }
+    }
   }
 }
 
