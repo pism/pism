@@ -643,6 +643,12 @@ void IceModel::update_ice_geometry(bool skip) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       H(i, j) += dH_flow(i, j) + dH_SMB(i, j) + dH_BMB(i, j);
+#if (PISM_DEBUG==1)
+      if (H(i, j) < 0.0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "H = %f (negative) at i=%d, j=%d",
+                                      H(i, j), i, j);
+      }
+#endif
     }
   } catch (...) {
     loop.failed();
