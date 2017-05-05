@@ -40,7 +40,8 @@ protected:
   virtual void allocate_basal_yield_stress();
 private:
   IceModelVec2Int m_no_model_mask;
-  IceModelVec2S   m_usurf_stored, m_thk_stored;
+  IceModelVec2S   m_usurf_stored;
+  IceModelVec2S   m_thk_stored;
 };
 
 } // end of namespace pism

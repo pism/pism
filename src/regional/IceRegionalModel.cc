@@ -29,6 +29,7 @@
 #include "base/basalstrength/PISMConstantYieldStress.hh"
 #include "RegionalDefaultYieldStress.hh"
 #include "base/util/io/PIO.hh"
+#include "coupler/PISMOcean.hh"
 
 namespace pism {
 
@@ -44,14 +45,12 @@ static void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2In
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (in_null_strip(grid, i, j, width) == true) {
+    if (in_null_strip(grid, i, j, width)) {
       result(i, j) = 1;
     } else {
       result(i, j) = 0;
     }
   }
-
-  result.metadata().set_string("pism_intent", "model_state");
 
   result.update_ghosts();
 }
@@ -68,11 +67,11 @@ void IceRegionalModel::allocate_storage() {
   IceModel::allocate_storage();
 
   m_log->message(2, 
-             "  creating IceRegionalModel vecs ...\n");
+                 "  creating IceRegionalModel vecs ...\n");
 
   // stencil width of 2 needed for surfaceGradientSIA() action
   m_no_model_mask.create(m_grid, "no_model_mask", WITH_GHOSTS, 2);
-  m_no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
+  m_no_model_mask.set_attrs("model_state",
                             "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
                             "", ""); // no units and no standard name
   m_no_model_mask.metadata().set_doubles("flag_values", {0, 1});
@@ -84,26 +83,19 @@ void IceRegionalModel::allocate_storage() {
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
   m_usurf_stored.create(m_grid, "usurfstore", WITH_GHOSTS, 2);
-  m_usurf_stored.set_attrs("model_state", // ensures that it gets written at the end of the run
-                       "saved surface elevation for use to keep surface gradient constant in no_model strip",
-                       "m",
-                       ""); //  no standard name
+  m_usurf_stored.set_attrs("model_state",
+                           "saved surface elevation for use to keep surface gradient constant in no_model strip",
+                           "m",
+                           ""); //  no standard name
   m_grid->variables().add(m_usurf_stored);
 
   // stencil width of 1 needed for differentiation
   m_thk_stored.create(m_grid, "thkstore", WITH_GHOSTS, 1);
-  m_thk_stored.set_attrs("model_state", // ensures that it gets written at the end of the run
-                     "saved ice thickness for use to keep driving stress constant in no_model strip",
-                     "m",
-                     ""); //  no standard name
+  m_thk_stored.set_attrs("model_state",
+                         "saved ice thickness for use to keep driving stress constant in no_model strip",
+                         "m",
+                         ""); //  no standard name
   m_grid->variables().add(m_thk_stored);
-
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
-    // remove the bc_mask variable from the dictionary
-    m_grid->variables().remove("bc_mask");
-
-    m_grid->variables().add(m_no_model_mask, "bc_mask");
-  }
 }
 
 void IceRegionalModel::allocate_geometry_evolution() {
@@ -111,8 +103,7 @@ void IceRegionalModel::allocate_geometry_evolution() {
     return;
   }
 
-  m_log->message(2,
-                 "# Allocating the geometry evolution model...\n");
+  m_log->message(2, "# Allocating the geometry evolution model (regional version)...\n");
 
   m_geometry_evolution.reset(new RegionalGeometryEvolution(m_grid));
 
@@ -122,7 +113,7 @@ void IceRegionalModel::allocate_geometry_evolution() {
 void IceRegionalModel::model_state_setup() {
 
   if (m_config->get_boolean("energy.temperature_based")) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "pismo does not support the '-energy cold' mode.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "pismr -regional does not support the '-energy cold' mode.");
   }
 
   IceModel::model_state_setup();
@@ -130,15 +121,25 @@ void IceRegionalModel::model_state_setup() {
   // This code should be here because -zero_grad_where_no_model and -no_model_strip are processed
   // both when PISM is re-started *and* during bootstrapping.
   {
-    bool zgwnm = options::Bool("-zero_grad_where_no_model",
-                               "set zero surface gradient in no model strip");
-    if (zgwnm) {
+    if (m_config->get_boolean("regional.zero_gradient")) {
       m_thk_stored.set(0.0);
       m_usurf_stored.set(0.0);
     }
 
     double strip_width = m_config->get_double("regional.no_model_strip", "meters");
     set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
+  }
+
+  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+    IceModelVec::AccessList list{&m_no_model_mask, &m_ssa_dirichlet_bc_mask};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_no_model_mask(i, j) > 0.5) {
+        m_ssa_dirichlet_bc_mask(i, j) = 1;
+      }
+    }
   }
 }
 
@@ -211,75 +212,39 @@ void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
 
   IceModel::bootstrap_2d(input_file);
 
-  // read usurfstore from usurf, then restore its name
-  m_usurf_stored.metadata().set_name("usurf");
-  m_usurf_stored.regrid(input_file, OPTIONAL, 0.0);
-  m_usurf_stored.metadata().set_name("usurfstore");
+  GeometryCalculator gc(*m_config);
 
-  // read thkstore from thk, then restore its name
-  m_thk_stored.metadata().set_name("thk");
-  m_thk_stored.regrid(input_file, OPTIONAL, 0.0);
-  m_thk_stored.metadata().set_name("thkstore");
+  // Use values set by IceModel::bootstrap_2d() to initialize usurf_stored and thk_stored.
+
+  gc.compute_surface(m_ocean->sea_level_elevation(),
+                     m_geometry.bed_elevation,
+                     m_geometry.ice_thickness,
+                     m_usurf_stored);
+
+  m_thk_stored.copy_from(m_geometry.ice_thickness);
 
   m_no_model_mask.regrid(input_file, OPTIONAL, 0.0);
 }
 
 void IceRegionalModel::restart_2d(const PIO &input_file, unsigned int record) {
 
+  IceModel::restart_2d(input_file, record);
+
   std::string filename = input_file.inq_filename();
 
   m_log->message(2, "* Initializing 2D fields of IceRegionalModel from '%s'...\n",
                  filename.c_str());
 
-  bool no_model_strip_set = options::Bool("-no_model_strip", "No-model strip, in km");
-
-  if (no_model_strip_set) {
-    m_no_model_mask.metadata().set_string("pism_intent", "internal");
+  if (m_config->get_boolean("regional.zero_gradient")) {
+    m_thk_stored.set(0.0);
+    m_usurf_stored.set(0.0);
+  } else {
+    m_thk_stored.read(input_file, record);
+    m_usurf_stored.read(input_file, record);
   }
 
-  // Allow re-starting from a file that does not contain u_ssa_bc and v_ssa_bc.
-  // The user is probably using -regrid_file to bring in SSA B.C. data.
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
-    const bool
-      u_ssa_exists = input_file.inq_var("u_ssa_bc"),
-      v_ssa_exists = input_file.inq_var("v_ssa_bc");
-
-    if (not (u_ssa_exists and v_ssa_exists)) {
-      m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "internal");
-      m_log->message(2, 
-                     "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
-                     "              This may be overridden by the -regrid_file option.\n",
-                     filename.c_str());
-
-      m_ssa_dirichlet_bc_values.set(0.0);
-    }
-  }
-
-  bool zgwnm = options::Bool("-zero_grad_where_no_model",
-                             "zero surface gradient in no model strip");
-  if (zgwnm) {
-    // mark these as "internal" so that IceModel::restart_2d() does not try to read them from the
-    // input_file.
-    m_thk_stored.metadata().set_string("pism_intent", "internal");
-    m_usurf_stored.metadata().set_string("pism_intent", "internal");
-  }
-
-  IceModel::restart_2d(input_file, record);
-
-  if (zgwnm) {
-    // restore pism_intent to ensure that they are saved at the end of the run
-    m_thk_stored.metadata().set_string("pism_intent", "model_state");
-    m_usurf_stored.metadata().set_string("pism_intent", "model_state");
-  }
-
-  if (no_model_strip_set) {
-    // restore pism_intent to ensure that it is saved at the end of the run
-    m_no_model_mask.metadata().set_string("pism_intent", "model_state");
-  }
-
-
-  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
-    m_ssa_dirichlet_bc_values.metadata().set_string("pism_intent", "model_state");
+  if (m_config->get_double("regional.no_model_strip") > 0.0) {
+    m_model_state.insert(&m_no_model_mask);
   }
 }
 

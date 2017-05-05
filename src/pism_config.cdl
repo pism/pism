@@ -1088,6 +1088,11 @@ netcdf pism_config {
     pism_config:regional.no_model_strip_type = "scalar";
     pism_config:regional.no_model_strip_units = "km";
 
+    pism_config:regional.zero_gradient = "false";
+    pism_config:regional.zero_gradient_type = "boolean";
+    pism_config:regional.zero_gradient_option = "zero_grad_where_no_model";
+    pism_config:regional.zero_gradient_doc = "Use zero ice thickness and ice surface gradient in the no_model_mask area.";
+
     pism_config:run_info.institution = "";
     pism_config:run_info.institution_doc = "Institution name. This string is written to output files as the 'institution' global attribute.";
     pism_config:run_info.institution_option = "institution";
