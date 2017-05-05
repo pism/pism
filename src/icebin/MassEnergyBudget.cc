@@ -93,19 +93,19 @@ void MassEnergyBudget::create(pism::IceGrid::ConstPtr grid, std::string const &p
 	// No DELTA< does not participate in epsilon computation
 	add_massenth(pism_smb, 0, "pism_smb.mass", "pism_smb.enth");
 
-	icebin_smb.create(grid, prefix+"icebin_smb",
+	smb.create(grid, prefix+"smb",
 		ghostedp, width);
-	icebin_smb.set_attrs("diagnostic",
-		"icebin_smb",
-		"m-2 s-1", "icebin_smb");
-	add_massenth(icebin_smb, DELTA, "icebin_smb.mass", "icebin_smb.enth");
+	smb.set_attrs("diagnostic",
+		"smb",
+		"m-2 s-1", "smb");
+	add_massenth(smb, DELTA, "smb.mass", "smb.enth");
 
-	icebin_deltah.create(grid, prefix+"icebin_deltah",
+	deltah.create(grid, prefix+"deltah",
 		ghostedp, width);
-	icebin_deltah.set_attrs("diagnostic",
-		"icebin_deltah",
-		"J m-2 s-1", "icebin_deltah");
-	add_enth(icebin_deltah, DELTA, "");
+	deltah.set_attrs("diagnostic",
+		"deltah",
+		"J m-2 s-1", "deltah");
+	add_enth(deltah, DELTA, "");
 
 	href_to_h.create(grid, prefix+"href_to_h",
 		ghostedp, width);

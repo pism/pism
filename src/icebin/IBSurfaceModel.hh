@@ -67,19 +67,19 @@ public:
   // Inputs from IceBin
 
 
-  // Mass of ice being transferred Stieglitz --> Icebin
-  pism::IceModelVec2S icebin_massxfer; // [kg m-2 s-1]
+  // Mass of ice being transferred GCM --> Ice Model
+  pism::IceModelVec2S massxfer; // [kg m-2 s-1]
   // Enthalpy of ice being transferred Stieglitz --> Icebin
-  pism::IceModelVec2S icebin_enthxfer; // [J m-2 s-1]
+  pism::IceModelVec2S enthxfer; // [J m-2 s-1]
 
   // GCM's idea of energy transfer into ice sheet.
   // Used to compute mass/energy budget
-  pism::IceModelVec2S icebin_deltah;
+  pism::IceModelVec2S deltah;
 
   // Temperature of the Dirichlet B.C.
-  pism::IceModelVec2S icebin_bc_temp;
+  pism::IceModelVec2S ice_top_bc_temp;
   // Water content of the Dirichlet B.C.
-  pism::IceModelVec2S icebin_bc_waterfraction;
+  pism::IceModelVec2S ice_top_bc_wc;
 };
 
 } // end of namespace surface

@@ -65,7 +65,7 @@ protected:
   // (relevant ice model state to be exported)
 
   // Specific enthalpy at surface of the ice sheet [J kg-1]
-  pism::IceModelVec2S surface_senth;
+  pism::IceModelVec2S ice_top_senth;
 
 protected:
   // see iceModel.cc

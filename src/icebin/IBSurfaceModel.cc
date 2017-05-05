@@ -45,33 +45,33 @@ void IBSurfaceModel::create(pism::IceModelVec2S &vec, std::string const &name)
 IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
   printf("BEGIN IBSurfaceModel::allocate_IBSurfaceModel()\n");
 
-  create(icebin_massxfer, "icebin_massxfer");
-  icebin_massxfer.set_attrs("climate_state",
+  create(massxfer, "massxfer");
+  massxfer.set_attrs("climate_state",
     "Mass of ice being transferred Stieglitz --> Icebin",
     "kg m-2 s-1", "land_ice_surface_specific_mass_balance");
-  icebin_massxfer.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  icebin_massxfer.write_in_glaciological_units = true;
+  massxfer.metadata().set_string("glaciological_units", "kg m-2 year-1");
+  massxfer.write_in_glaciological_units = true;
 
-  create(icebin_enthxfer, "icebin_enthxfer");
-  icebin_enthxfer.set_attrs("climate_state",
+  create(enthxfer, "enthxfer");
+  enthxfer.set_attrs("climate_state",
     "Enthalpy of ice being transferred Stieglitz --> Icebin",
     "W m-2", "land_ice_surface_specific_enth_balance");
 
 
   // ------- Used only for mass/energy budget
-  create(icebin_deltah, "icebin_deltah");
-  icebin_deltah.set_attrs(
+  create(deltah, "deltah");
+  deltah.set_attrs(
       "climate_state", "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
       "W m-2", "");
 
-  // ------- Dirichlet Bondary condition derived from icebin_deltah
-  create(icebin_bc_temp, "icebin_bc_temp");
-  icebin_bc_temp.set_attrs("climate_state",
+  // ------- Dirichlet Bondary condition derived from deltah
+  create(ice_top_bc_temp, "ice_top_bc_temp");
+  ice_top_bc_temp.set_attrs("climate_state",
     "Temperature of the Dirichlet B.C.",
     "K", "");
 
-  create(icebin_bc_waterfraction, "icebin_bc_waterfraction");
-  icebin_bc_waterfraction.set_attrs("climate_state",
+  create(ice_top_bc_wc, "ice_top_bc_wc");
+  ice_top_bc_wc.set_attrs("climate_state",
     "Water content of the Dirichlet B.C.",
     "1", "");
 
@@ -120,15 +120,15 @@ void IBSurfaceModel::get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr>
 }
 
 void IBSurfaceModel::ice_surface_mass_flux_impl(IceModelVec2S &result) {
-  result.copy_from(icebin_massxfer);
+  result.copy_from(massxfer);
 }
 
 void IBSurfaceModel::ice_surface_temperature_impl(IceModelVec2S &result) {
-  result.copy_from(icebin_bc_temp);
+  result.copy_from(ice_top_bc_temp);
 }
 
 void IBSurfaceModel::ice_surface_liquid_water_fraction_impl(IceModelVec2S &result) {
-  result.copy_from(icebin_bc_waterfraction);
+  result.copy_from(ice_top_bc_wc);
 }
 
 void IBSurfaceModel::add_vars_to_output_impl(const std::string & /*keyword*/, std::set<std::string> &result) {

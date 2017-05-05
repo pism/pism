@@ -68,7 +68,7 @@ void IBIceModel::createVecs() {
   printf("END IBIceModel::createVecs()\n");
 
   // Sent back to IceBin
-  surface_senth.create(m_grid, "surface_senth", pism::WITHOUT_GHOSTS);
+  ice_top_senth.create(m_grid, "ice_top_senth", pism::WITHOUT_GHOSTS);
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
@@ -151,7 +151,8 @@ void IBIceModel::massContExplicitStep() {
 
   // =========== The Mass Continuity Step Itself
   // This will call through to accumulateFluxes_massContExplicitStep()
-  // in the inner loop
+  // in the inner loop.  We must open access to variables we will use
+  // in that subroutine.
   {
     AccessList access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
                        &cur.internal_advection, &cur.href_to_h,     &cur.nonneg_rule };
@@ -163,21 +164,22 @@ void IBIceModel::massContExplicitStep() {
 
   // ----------- SMB: Pass inputs through to outputs.
   // They are needed to participate in mass/energy budget
+  // This allows them to be used in the MassEnergyBudget computation.
   IBSurfaceModel *ib_surface = ib_surface_model();
 
-
   {
-    AccessList access{ &ib_surface->icebin_massxfer, &ib_surface->icebin_enthxfer, &ib_surface->icebin_deltah,
-                       &cur.icebin_smb, &cur.icebin_deltah };
+    AccessList access{ &ib_surface->massxfer, &ib_surface->enthxfer, &ib_surface->deltah,
+                       &cur.smb, &cur.deltah };
 
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
       for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
-        cur.icebin_smb.mass(i, j) += m_dt * ib_surface->icebin_massxfer(i, j);
-        cur.icebin_smb.enth(i, j) += m_dt * ib_surface->icebin_enthxfer(i, j);
-        cur.icebin_deltah(i, j) += m_dt * ib_surface->icebin_deltah(i, j);
+        cur.smb.mass(i, j) += m_dt * ib_surface->massxfer(i, j);
+        cur.smb.enth(i, j) += m_dt * ib_surface->enthxfer(i, j);
+        cur.deltah(i, j) += m_dt * ib_surface->deltah(i, j);
       }
     }
   }
+
 
   printf("END IBIceModel::MassContExplicitStep()\n");
 }
@@ -222,7 +224,7 @@ void IBIceModel::accumulateFluxes_massContExplicitStep(
   cur.internal_advection.enth(i, j) += mass * specific_enth_top;
 
 
-  // -------------- Get the easy veriables out of the way...
+  // -------------- Get the easy variables out of the way...
   mass = surface_mass_balance * _meter_per_s_to_kg_per_m2;
   cur.pism_smb.mass(i, j) += mass;
   cur.pism_smb.enth(i, j) += mass * specific_enth_top;
@@ -314,17 +316,20 @@ void IBIceModel::reset_rate() {
 }
 
 void IBIceModel::prepare_outputs(double time_s) {
+  EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
+
   // --------- ice_surface_enth from m_ice_enthalpy
   AccessList access{
     &m_ice_enthalpy, &m_ice_thickness,        // INPUTS
-    &surface_senth };                      // OUTPUT
+    &ice_top_senth };                      // OUTPUT
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       double const *Enth = m_ice_enthalpy.get_column(i, j);
 
       // Top Layer
       int const ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
-      surface_senth(i, j) = Enth[ks];   // [J kg-1]
+      double senth = Enth[ks];   // [J kg-1]
+      ice_top_senth(i,j) = senth;
     }
   }
 
