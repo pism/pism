@@ -67,6 +67,7 @@ if (Pism_LINK_STATICALLY)
 endif ()
 
 # Deal with build types
+mark_as_advanced(CLEAR CMAKE_BUILD_TYPE)
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
   set (Pism_BUILD_EXTRA_EXECS ON CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
   option (Pism_DEBUG              "Enables extra checks in the code."          ON)
