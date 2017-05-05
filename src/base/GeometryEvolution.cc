@@ -341,6 +341,48 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
 }
 
 /*!
+ * Update geometry by applying changes computed by step().
+ *
+ * Note: This method performs these changes in the same order as the code ensuring non-negativity.
+ * This is important.
+ */
+void GeometryEvolution::update_geometry(Geometry &geometry) const {
+
+  const IceModelVec2S
+    &dH_flow = thickness_change_due_to_flow(),
+    &dH_SMB  = top_surface_mass_balance(),
+    &dH_BMB  = bottom_surface_mass_balance();
+  IceModelVec2S &H = geometry.ice_thickness;
+
+  IceModelVec::AccessList list{&H, &dH_flow, &dH_SMB, &dH_BMB};
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      // To preserve non-negativity of thickness we need to apply changes in this exact order.
+      // (Recall that floating-point arithmetic is not associative.)
+      const double H_new = ((H(i, j) + dH_flow(i, j)) + dH_SMB(i, j)) + dH_BMB(i, j);
+
+#if (PISM_DEBUG==1)
+      if (H_new < 0.0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "H = %f (negative) at i=%d, j=%d",
+                                      H_new, i, j);
+      }
+#endif
+
+      H(i, j) = H_new;
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  geometry.ice_area_specific_volume.add(1.0, area_specific_volume_change_due_to_flow());
+}
+
+
+/*!
  * Prevent advective ice flow from floating ice to ice-free land, as well as in the ice-free areas.
  */
 static double limit_advective_velocity(int current, int neighbor, double velocity) {

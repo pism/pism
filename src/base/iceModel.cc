@@ -620,46 +620,16 @@ void IceModel::update_ice_geometry(bool skip) {
   // FIXME: thickness B.C. mask should be separate
   IceModelVec2Int &thickness_bc_mask = m_ssa_dirichlet_bc_mask;
 
-  GeometryEvolution *ge = m_geometry_evolution.get();
+  m_geometry_evolution->step(m_geometry,
+                             m_dt,
+                             m_stress_balance->advective_velocity(),
+                             m_stress_balance->diffusive_flux(),
+                             m_ssa_dirichlet_bc_mask,
+                             thickness_bc_mask,
+                             surface_mass_balance_rate,
+                             m_basal_melt_rate);
 
-  ge->step(m_geometry,
-           m_dt,
-           m_stress_balance->advective_velocity(),
-           m_stress_balance->diffusive_flux(),
-           m_ssa_dirichlet_bc_mask,
-           thickness_bc_mask,
-           surface_mass_balance_rate,
-           m_basal_melt_rate);
-
-  const IceModelVec2S
-    &dH_flow = ge->thickness_change_due_to_flow(),
-    &dH_SMB  = ge->top_surface_mass_balance(),
-    &dH_BMB  = ge->bottom_surface_mass_balance();
-  IceModelVec2S &H = m_geometry.ice_thickness;
-
-  IceModelVec::AccessList list{&H, &dH_flow, &dH_SMB, &dH_BMB};
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      const double H_new = H(i, j) + dH_flow(i, j) + dH_SMB(i, j) + dH_BMB(i, j);
-
-#if (PISM_DEBUG==1)
-      if (H_new < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "H = %f (negative) at i=%d, j=%d",
-                                      H_new, i, j);
-      }
-#endif
-
-      H(i, j) = H_new;
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-  m_geometry.ice_area_specific_volume.add(1.0, ge->area_specific_volume_change_due_to_flow());
+  m_geometry_evolution->update_geometry(m_geometry);
 
   enforce_consistency_of_geometry(); // update h and mask
 

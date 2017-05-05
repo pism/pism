@@ -50,6 +50,8 @@ public:
             const IceModelVec2S    &surface_mass_balance_rate,
             const IceModelVec2S    &basal_melt_rate);
 
+  void update_geometry(Geometry &ice_geometry) const;
+
   const IceModelVec2S& top_surface_mass_balance() const;
   const IceModelVec2S& bottom_surface_mass_balance() const;
 
