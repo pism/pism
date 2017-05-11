@@ -49,8 +49,8 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
   massxfer.set_attrs("climate_state",
     "Mass of ice being transferred Stieglitz --> Icebin",
     "kg m-2 s-1", "land_ice_surface_specific_mass_balance");
-  massxfer.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  massxfer.write_in_glaciological_units = true;
+//  massxfer.metadata().set_string("glaciological_units", "kg m-2 year-1");
+//  massxfer.write_in_glaciological_units = true;
 
   create(enthxfer, "enthxfer");
   enthxfer.set_attrs("climate_state",
