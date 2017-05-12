@@ -67,6 +67,10 @@ protected:
   // Specific enthalpy at surface of the ice sheet [J kg-1]
   pism::IceModelVec2S ice_top_senth;
 
+public:
+  // Elevation of grid cells, with NaN off the ice sheet [m]
+  pism::IceModelVec2S elevI;
+
 protected:
   // see iceModel.cc
   virtual void createVecs();

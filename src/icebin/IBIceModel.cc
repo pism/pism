@@ -1,9 +1,11 @@
 #include <iostream>
+#include <limits>
 
 #include <base/energy/BedThermalUnit.hh>
 #include <base/enthalpyConverter.hh>
 #include <base/util/io/PIO.hh>
 #include <base/util/io/io_helpers.hh>
+#include <base/util/Mask.hh>
 
 #include <icebin/IBIceModel.hh>
 #include <icebin/IBSurfaceModel.hh>
@@ -11,6 +13,8 @@
 
 namespace pism {
 namespace icebin {
+
+static double const nan = std::numeric_limits<double>::quiet_NaN();
 
 // ================================
 
@@ -69,6 +73,7 @@ void IBIceModel::createVecs() {
 
   // Sent back to IceBin
   ice_top_senth.create(m_grid, "ice_top_senth", pism::WITHOUT_GHOSTS);
+  elevI.create(m_grid, "elevI", pism::WITHOUT_GHOSTS);
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
@@ -319,9 +324,12 @@ void IBIceModel::prepare_outputs(double time_s) {
   EnthalpyConverter::Ptr EC = ctx()->enthalpy_converter();
 
   // --------- ice_surface_enth from m_ice_enthalpy
+  auto &ice_surface_elevation(this->ice_surface_elevation());
+  auto &cell_type(this->cell_type());
   AccessList access{
     &m_ice_enthalpy, &m_ice_thickness,        // INPUTS
-    &ice_top_senth };                      // OUTPUT
+    &ice_surface_elevation, &cell_type,
+    &ice_top_senth, &elevI };                 // OUTPUT
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       double const *Enth = m_ice_enthalpy.get_column(i, j);
@@ -330,6 +338,14 @@ void IBIceModel::prepare_outputs(double time_s) {
       int const ks = m_grid->kBelowHeight(m_ice_thickness(i, j));
       double senth = Enth[ks];   // [J kg-1]
       ice_top_senth(i,j) = senth;
+
+      // elevI: Used by IceBin for elevation and masking
+      auto ct(cell_type(i,j));
+      if (ct == MASK_GROUNDED || ct == MASK_FLOATING) {
+        elevI(i,j) = ice_surface_elevation(i,j);
+      } else {
+        elevI(i,j) = nan;
+      }
     }
   }
 
