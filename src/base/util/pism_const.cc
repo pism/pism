@@ -29,6 +29,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+#include <cstdarg>
+
 
 #include "pism_const.hh"
 #include "error_handling.hh"

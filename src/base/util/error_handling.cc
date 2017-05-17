@@ -21,6 +21,8 @@
 #include <petsc.h>
 
 #include <stdexcept>
+#include <cstdarg>
+
 
 namespace pism {
 
