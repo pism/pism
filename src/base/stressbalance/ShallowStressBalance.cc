@@ -219,6 +219,18 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
     StarStencil<int> m = mask.int_star(i,j);
     StarStencil<Vector2> U = V.star(i,j);
 
+    bool mean_hardness = options::Bool("-use_mean_hardness", "Use mean hardness for deviatoric stress calcuation");
+  //if (mean_hardness){
+
+    const IceModelVec3  *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
+    const IceModelVec2S *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+    list.add(*enthalpy);
+    list.add(*thickness);
+
+    const double *z = &m_grid->z()[0];
+  //}
+
     // strain in units s-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
       east = 1, west = 1, south = 1, north = 1;
@@ -264,6 +276,12 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
       v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
     }
 
+    if (mean_hardness) {
+      double H = (*thickness)(i, j);
+      unsigned int k = m_grid->kBelowHeight(H);
+      hardness = averaged_hardness(*m_flow_law, H, k, &z[0], enthalpy->get_column(i, j));
+    }
+    
     double nu = 0.0;
     m_flow_law->effective_viscosity(hardness,
                                     secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
