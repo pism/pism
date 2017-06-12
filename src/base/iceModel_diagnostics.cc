@@ -234,6 +234,31 @@ protected:
   }
 };
 
+template<class Base>
+class MassTransport : public Base {
+public:
+  MassTransport(const IceModel *m, const std::string &name)
+    : Base(m) {
+    // override units
+    Base::m_accumulator.metadata().set_string("units", "kg");
+    Base::m_vars[0].set_string("units", "kg second-1");
+    Base::m_vars[0].set_string("glaciological_units", "Gt year-1");
+  }
+protected:
+  IceModelVec::Ptr compute_impl() const {
+    IceModelVec2S::Ptr result = IceModelVec2S::To2DScalar(Base::compute_impl());
+    auto& cell_area = Base::model->geometry().cell_area;
+
+    IceModelVec::AccessList list{result.get(), &cell_area};
+
+    for (Points p(*Base::m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      (*result)(i, j) *= cell_area(i, j);
+    }
+    return result;
+  }
+};
 
 HardnessAverage::HardnessAverage(const IceModel *m)
   : Diag<IceModel>(m) {
@@ -2045,6 +2070,7 @@ void IceModel::init_diagnostics() {
     {"basal_grounded_mass_flux",            f(new BMBSplit(this, GROUNDED))},
     {"basal_floating_mass_flux",            f(new BMBSplit(this, FLOATING))},
     {"discharge_mass_flux",                 f(new DischargeMassFlux(this))},
+    {"tendency_of_ice_mass_due_to_discharge", f(new MassTransport<DischargeMassFlux>(this, "tendency_of_ice_mass_due_to_discharge"))},
     {land_ice_area_fraction_name,           f(new IceAreaFraction(this))},
     {grounded_ice_sheet_area_fraction_name, f(new IceAreaFractionGrounded(this))},
     {floating_ice_sheet_area_fraction_name, f(new IceAreaFractionFloating(this))},
@@ -2114,67 +2140,134 @@ void IceModel::init_diagnostics() {
   }
 }
 
-void IceModel::list_diagnostics() const {
+static void print_diagnostics(const Logger &log,
+                              const std::map<std::string, std::vector<VariableMetadata>> &list) {
+  for (const auto &d : list) {
+    const std::string &name = d.first;
+    log.message(1, " Name: %s\n", name.c_str());
 
-  m_log->message(1, "\n");
-
-  // 2D and 3D diagnostics
-  for (unsigned int d = 3; d > 1; --d) {
-
-    m_log->message(1,
-                   "======== Available %dD diagnostic quantities ========\n",
-                   d);
-
-    for (auto f : m_diagnostics) {
-      Diagnostic::Ptr diag = f.second;
+    for (const auto &v : d.second) {
 
       std::string
-        name                = f.first,
-        units               = diag->metadata().get_string("units"),
-        glaciological_units = diag->metadata().get_string("glaciological_units");
+        var_name            = v.get_name(),
+        units               = v.get_string("units"),
+        glaciological_units = v.get_string("glaciological_units"),
+        long_name           = v.get_string("long_name"),
+        comment             = v.get_string("comment");
 
       if (not glaciological_units.empty()) {
         units = glaciological_units;
       }
 
-      if (diag->metadata().get_n_spatial_dimensions() == d) {
-
-        m_log->message(1, "   Name: %s [%s]\n", name.c_str(), units.c_str());
-
-        for (unsigned int k = 0; k < diag->n_variables(); ++k) {
-          SpatialVariableMetadata var = diag->metadata(k);
-
-          std::string long_name = var.get_string("long_name");
-
-          m_log->message(1, "      -  %s\n", long_name.c_str());
-        }
-
-        m_log->message(1, "\n");
+      log.message(1, "   %s [%s]\n", var_name.c_str(), units.c_str());
+      log.message(1, "    %s\n", long_name.c_str());
+      if (not comment.empty()) {
+        log.message(1, "    %s\n", comment.c_str());
       }
-    } // end of the loop over diagnostics
+    }
+    log.message(1, "\n");
   }
+}
+
+static void print_diagnostics_json(const Logger &log,
+                                   const std::map<std::string, std::vector<VariableMetadata>> &list) {
+  log.message(1, "{\n");
+  bool first_diagnostic = true;
+  for (const auto &d : list) {
+
+    if (not first_diagnostic) {
+      log.message(1, ",\n");
+    } else {
+      first_diagnostic = false;
+    }
+
+    log.message(1, "\"%s\" : [\n", d.first.c_str());
+
+    bool first_variable = true;
+    for (const auto &variable : d.second) {
+
+      std::string
+        var_name            = variable.get_name(),
+        units               = variable.get_string("units"),
+        glaciological_units = variable.get_string("glaciological_units"),
+        long_name           = variable.get_string("long_name"),
+        standard_name       = variable.get_string("standard_name"),
+        comment             = variable.get_string("comment");
+
+      if (not glaciological_units.empty()) {
+        units = glaciological_units;
+      }
+
+      if (not first_variable) {
+        log.message(1, ",\n");
+      } else {
+        first_variable = false;
+      }
+
+      log.message(1, "[\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"]",
+                  var_name.c_str(), units.c_str(), long_name.c_str(), standard_name.c_str(), comment.c_str());
+    }
+    log.message(1, "]");
+  }
+  log.message(1, "}\n");
+}
+
+void IceModel::list_diagnostics_json() const {
+
+  m_log->message(1, "{\n");
+
+  m_log->message(1, "\"spatial\" :\n");
+  print_diagnostics_json(*m_log, describe_diagnostics());
+
+  m_log->message(1, ",\n");        // separator
+
+  m_log->message(1, "\"scalar\" :\n");
+  print_diagnostics_json(*m_log, describe_ts_diagnostics());
+
+  m_log->message(1, "}\n");
+}
+
+void IceModel::list_diagnostics() const {
+
+  m_log->message(1, "\n");
+  m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
+
+  print_diagnostics(*m_log, describe_diagnostics());
 
   // scalar time-series
   m_log->message(1, "======== Available time-series ========\n");
 
-  for (auto d : m_ts_diagnostics) {
-    const VariableMetadata &m = d.second->metadata();
+  print_diagnostics(*m_log, describe_ts_diagnostics());
+}
 
-    std::string
-      name                = d.first,
-      long_name           = m.get_string("long_name"),
-      units               = m.get_string("units"),
-      glaciological_units = m.get_string("glaciological_units");
+/*!
+ * Return metadata of 2D and 3D diagnostics.
+ */
+std::map<std::string, std::vector<VariableMetadata>> IceModel::describe_diagnostics() const {
+  std::map<std::string, std::vector<VariableMetadata>> result;
 
-    if (not glaciological_units.empty()) {
-      units = glaciological_units;
+  for (auto f : m_diagnostics) {
+    Diagnostic::Ptr diag = f.second;
+
+    for (unsigned int k = 0; k < diag->n_variables(); ++k) {
+      result[f.first].push_back(diag->metadata(k));
     }
-
-    m_log->message(1,
-                   "   Name: %s [%s]\n"
-                   "      -  %s\n\n",
-                   name.c_str(), units.c_str(), long_name.c_str());
   }
+
+  return result;
+}
+
+/*!
+ * Return metadata of scalar diagnostics.
+ */
+std::map<std::string, std::vector<VariableMetadata>> IceModel::describe_ts_diagnostics() const {
+  std::map<std::string, std::vector<VariableMetadata>> result;
+
+  for (auto d : m_ts_diagnostics) {
+    result[d.first] = {d.second->metadata()};
+  }
+
+  return result;
 }
 
 } // end of namespace pism

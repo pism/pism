@@ -233,7 +233,7 @@ protected:
     m_interval_length = 0.0;
   }
 
-  IceModelVec::Ptr compute_impl() const {
+  virtual IceModelVec::Ptr compute_impl() const {
     IceModelVec2S::Ptr result(new IceModelVec2S(Diagnostic::m_grid,
                                                 "diagnostic", WITHOUT_GHOSTS));
     result->metadata(0) = Diagnostic::m_vars[0];

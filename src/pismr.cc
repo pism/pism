@@ -90,11 +90,16 @@ int main(int argc, char *argv[]) {
 
     model->init();
 
-    bool print_list_and_stop = options::Bool("-list_diagnostics",
-                                             "List available diagnostic quantities and stop");
+    const bool
+      list_ascii = options::Bool("-list_diagnostics",
+                                 "List available diagnostic quantities and stop"),
+      list_json = options::Bool("-list_diagnostics_json",
+                                "List available diagnostic quantities (JSON format) and stop");
 
-    if (print_list_and_stop) {
+    if (list_ascii) {
       model->list_diagnostics();
+    } else if (list_json) {
+      model->list_diagnostics_json();
     } else {
       model->run();
 

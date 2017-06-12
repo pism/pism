@@ -136,6 +136,9 @@ public:
   virtual void save_results();
 
   void list_diagnostics() const;
+  void list_diagnostics_json() const;
+  std::map<std::string, std::vector<VariableMetadata>> describe_diagnostics() const;
+  std::map<std::string, std::vector<VariableMetadata>> describe_ts_diagnostics() const;
 
   const IceModelVec2S &discharge() const;
 
