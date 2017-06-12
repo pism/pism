@@ -420,7 +420,7 @@ double IceModel::ice_volume_not_displacing_seawater(double thickness_threshold) 
         if (bed > sea_level) {
           volume += cell_ice_volume;
         } else {
-          const double max_floating_volume = (sea_level - bed) * (sea_water_density / ice_density);
+          const double max_floating_volume = (sea_level - bed) * m_cell_area(i,j) * (sea_water_density / ice_density);
           volume += cell_ice_volume - max_floating_volume;
         }
     }
