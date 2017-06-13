@@ -1122,86 +1122,6 @@ protected:
   }
 };
 
-/*! @brief Report surface mass balance flux, averaged over the reporting interval */
-class SMBFlux : public DiagAverageRate<GeometryEvolution>
-{
-public:
-  SMBFlux(const GeometryEvolution *m)
-    : DiagAverageRate<GeometryEvolution>(m, "surface_mass_balance_flux", TOTAL_CHANGE) {
-    m_factor = m_config->get_double("constants.ice.density");
-    m_vars = {SpatialVariableMetadata(m_sys, "surface_mass_balance_flux")};
-    m_accumulator.metadata().set_string("units", "kg m-2");
-
-    set_attrs("average surface mass flux over reporting interval",
-              "",               // no standard name
-              "kg m-2 s-1", "kg m-2 year-1", 0);
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       "kg year-1", "kg second-1");
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
-  }
-
-protected:
-  const IceModelVec2S &model_input() {
-    return model->top_surface_mass_balance();
-  }
-};
-
-/*! @brief Report basal mass balance flux, averaged over the reporting interval */
-class BMBFlux : public DiagAverageRate<GeometryEvolution>
-{
-public:
-  BMBFlux(const GeometryEvolution *m)
-    : DiagAverageRate<GeometryEvolution>(m, "basal_mass_balance_flux", TOTAL_CHANGE) {
-    m_factor = m_config->get_double("constants.ice.density");
-    m_vars = {SpatialVariableMetadata(m_sys, "basal_mass_balance_flux")};
-    m_accumulator.metadata().set_string("units", "kg m-2");
-
-    set_attrs("average basal mass flux over reporting interval",
-              "",               // no standard name
-              "kg m-2 s-1", "kg m-2 year-1", 0);
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       "kg year-1", "kg second-1");
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
-  }
-
-protected:
-  const IceModelVec2S &model_input() {
-    return model->bottom_surface_mass_balance();
-  }
-};
-
-class MassConservationErrorFlux : public DiagAverageRate<GeometryEvolution>
-{
-public:
-  MassConservationErrorFlux(const GeometryEvolution *m)
-    : DiagAverageRate<GeometryEvolution>(m, "mass_conservation_error_flux", TOTAL_CHANGE) {
-    m_factor = m_config->get_double("constants.ice.density");
-    m_vars = {SpatialVariableMetadata(m_sys, "mass_conservation_error_flux")};
-    m_accumulator.metadata().set_string("units", "kg m-2");
-
-    set_attrs("average mass conservation error flux over reporting interval",
-              "",               // no standard name
-              "kg m-2 s-1", "kg m-2 year-1", 0);
-
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       "kg year-1", "kg second-1");
-    m_vars[0].set_double("_FillValue", fill_value);
-    m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
-  }
-
-protected:
-  const IceModelVec2S &model_input() {
-    return model->conservation_error();
-  }
-};
-
 } // end of namespace diagnostics
 
 std::map<std::string, Diagnostic::Ptr> GeometryEvolution::diagnostics_impl() const {
@@ -1212,9 +1132,6 @@ std::map<std::string, Diagnostic::Ptr> GeometryEvolution::diagnostics_impl() con
   result = {
     {"flux_staggered",               Ptr(new FluxStaggered(this))},
     {"flux_divergence",              Ptr(new FluxDivergence(this))},
-    {"surface_mass_balance_flux",    Ptr(new SMBFlux(this))},
-    {"basal_mass_balance_flux",      Ptr(new BMBFlux(this))},
-    {"mass_conservation_error_flux", Ptr(new MassConservationErrorFlux(this))},
   };
   return result;
 }
