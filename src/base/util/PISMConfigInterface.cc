@@ -485,7 +485,8 @@ void set_parameter_from_options(Config &config, const std::string &name) {
       short_option = config.get_string(name + "_option"),
       description  = config.get_string(name + "_doc");
 
-    if (options::Bool("-" + short_option, description)) { // short option is set
+    if (options::Bool("-" + short_option, description) or
+        options::Bool("-no_" + short_option, description)) { // short option is set
       if (options::Bool("-" + option, description)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "both -%s and -%s are set (please use one or the other)",
