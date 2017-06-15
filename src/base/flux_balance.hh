@@ -206,21 +206,21 @@ public:
   SurfaceFlux(const IceModel *m, AmountKind kind)
     : DiagAverageRate<IceModel>(m,
                                 kind == AMOUNT
-                                ? "tendency_of_ice_amount_due_to_surface_mass_balance"
-                                : "tendency_of_ice_mass_due_to_surface_mass_balance",
+                                ? "tendency_of_ice_amount_due_to_surface_mass_flux"
+                                : "tendency_of_ice_mass_due_to_surface_mass_flux",
                                 TOTAL_CHANGE),
     m_kind(kind) {
     m_factor = m_config->get_double("constants.ice.density");
 
     std::string
-      name              = "tendency_of_ice_amount_due_to_surface_mass_balance",
+      name              = "tendency_of_ice_amount_due_to_surface_mass_flux",
       accumulator_units = "kg m-2",
       long_name         = "average surface mass flux over reporting interval",
       standard_name     = "",
       internal_units    = "kg m-2 second-1",
       external_units    = "kg m-2 year-1";
     if (kind == MASS) {
-      name              = "tendency_of_ice_mass_due_to_surface_mass_balance",
+      name              = "tendency_of_ice_mass_due_to_surface_mass_flux",
       accumulator_units = "kg",
       long_name         = "average surface mass flux over reporting interval",
       standard_name     = "",
@@ -268,21 +268,21 @@ public:
   BasalFlux(const IceModel *m, AmountKind kind)
     : DiagAverageRate<IceModel>(m,
                                 kind == AMOUNT
-                                ? "tendency_of_ice_amount_due_to_basal_mass_balance"
-                                : "tendency_of_ice_mass_due_to_basal_mass_balance",
+                                ? "tendency_of_ice_amount_due_to_basal_mass_flux"
+                                : "tendency_of_ice_mass_due_to_basal_mass_flux",
                                 TOTAL_CHANGE),
     m_kind(kind) {
     m_factor = m_config->get_double("constants.ice.density");
 
     std::string
-      name              = "tendency_of_ice_amount_due_to_basal_mass_balance",
+      name              = "tendency_of_ice_amount_due_to_basal_mass_flux",
       accumulator_units = "kg m-2",
       long_name         = "average basal mass flux over reporting interval",
       standard_name     = "",
       internal_units    = "kg m-2 second-1",
       external_units    = "kg m-2 year-1";
     if (kind == MASS) {
-      name              = "tendency_of_ice_mass_due_to_basal_mass_balance",
+      name              = "tendency_of_ice_mass_due_to_basal_mass_flux",
       accumulator_units = "kg",
       long_name         = "average basal mass flux over reporting interval",
       standard_name     = "tendency_of_land_ice_mass_due_to_basal_mass_balance",
