@@ -96,6 +96,33 @@ void IceModel::init_timeseries() {
   }
 }
 
+static std::set<std::string> process_extra_shortcuts(const std::set<std::string> &input) {
+  std::set<std::string> result = input;
+
+  // process shortcuts
+  if (result.find("amount_fluxes") != result.end()) {
+    result.erase("amount_fluxes");
+    result.insert("tendency_of_ice_amount");
+    result.insert("tendency_of_ice_amount_due_to_basal_mass_flux");
+    result.insert("tendency_of_ice_amount_due_to_conservation_error");
+    result.insert("tendency_of_ice_amount_due_to_discharge");
+    result.insert("tendency_of_ice_amount_due_to_flow");
+    result.insert("tendency_of_ice_amount_due_to_surface_mass_flux");
+  }
+
+  if (result.find("mass_fluxes") != result.end()) {
+    result.erase("mass_fluxes");
+    result.insert("tendency_of_ice_mass");
+    result.insert("tendency_of_ice_mass_due_to_basal_mass_flux");
+    result.insert("tendency_of_ice_mass_due_to_conservation_error");
+    result.insert("tendency_of_ice_mass_due_to_discharge");
+    result.insert("tendency_of_ice_mass_due_to_flow");
+    result.insert("tendency_of_ice_mass_due_to_surface_mass_flux");
+  }
+
+  return result;
+}
+
 //! Initialize the code saving spatially-variable diagnostic quantities.
 void IceModel::init_extras() {
 
@@ -194,7 +221,7 @@ void IceModel::init_extras() {
   }
 
   if (vars.is_set()) {
-    m_extra_vars = vars;
+    m_extra_vars = process_extra_shortcuts(vars);
     m_log->message(2, "variables requested: %s\n", vars.to_string().c_str());
   } else {
     m_log->message(2, "PISM WARNING: -extra_vars was not set. Writing the model state...\n");
