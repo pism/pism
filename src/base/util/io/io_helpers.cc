@@ -559,7 +559,7 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
   // "..._bounds" should be stored with grid corners (corresponding to
   // the "z" dimension here) last, so we override the variable storage
   // order here
-  if (ends_with(name, "_bounds") and order == "zyx") {
+  if (ends_with(name, "_bnds") and order == "zyx") {
     order = "yxz";
   }
 
@@ -614,9 +614,10 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 
   write_attributes(nc, var, type, use_glaciological_units);
 
-  // add the "grid_mapping" attribute if the grid has an associated mapping.
+  // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat_bnds and
+  // lon_bnds should not have the grid_mapping attribute to support CDO (see issue #384).
   const VariableMetadata &mapping = grid.get_mapping_info().mapping;
-  if (mapping.has_attributes()) {
+  if (mapping.has_attributes() and not (name == "lat_bnds" or name == "lon_bnds")) {
     nc.put_att_text(var.get_name(), "grid_mapping",
                     mapping.get_name());
   }
