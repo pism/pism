@@ -614,10 +614,12 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 
   write_attributes(nc, var, type, use_glaciological_units);
 
-  // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat_bnds and
-  // lon_bnds should not have the grid_mapping attribute to support CDO (see issue #384).
+  // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat, lon,
+  // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
+  // #384).
   const VariableMetadata &mapping = grid.get_mapping_info().mapping;
-  if (mapping.has_attributes() and not (name == "lat_bnds" or name == "lon_bnds")) {
+  if (mapping.has_attributes() and not
+      (name == "lat_bnds" or name == "lon_bnds" or name == "lat" or name == "lon")) {
     nc.put_att_text(var.get_name(), "grid_mapping",
                     mapping.get_name());
   }
