@@ -111,11 +111,13 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
   }
 
   {
-    m_basal_melt_rate.create(m_grid, "bmelt", WITHOUT_GHOSTS);
+    m_basal_melt_rate.create(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS);
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.set_attrs("model_state",
                                 "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)",
-                                "m s-1", "land_ice_basal_melt_rate");
+                                "m s-1", "");
+    // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
+    // have this standard name.
     m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
     m_basal_melt_rate.write_in_glaciological_units = true;
     m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
@@ -384,8 +386,8 @@ protected:
 std::map<std::string, Diagnostic::Ptr> EnergyModel::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result;
   result = {
-    {"enthalpy", Diagnostic::Ptr(new diagnostics::Enthalpy(this))},
-    {"bmelt",    Diagnostic::wrap(m_basal_melt_rate)}
+    {"enthalpy",                 Diagnostic::Ptr(new diagnostics::Enthalpy(this))},
+    {"basal_melt_rate_grounded", Diagnostic::wrap(m_basal_melt_rate)}
   };
   return result;
 }

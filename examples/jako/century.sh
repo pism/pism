@@ -76,7 +76,7 @@ echo
 cmd="$PISM_MPIDO $NN $PISM_EXEC -i $BOOT -bootstrap  \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz $Mz -Mbz $Mbz -z_spacing equal \
   -no_model_strip 10 $PHYS \
-  -ssa_dirichlet_bc -regrid_file $PREFILE -regrid_vars thk,bmelt,tillwat,enthalpy,litho_temp,vel_ssa_bc \
+  -ssa_dirichlet_bc -regrid_file $PREFILE -regrid_vars thk,basal_melt_rate_grounded,tillwat,enthalpy,litho_temp,vel_ssa_bc \
   $CLIMATE -y 0.01 -o jakofine_short.nc"
 $PISM_DO $cmd
 

@@ -25,12 +25,12 @@ ncatted -O -a standard_name,nbreen,d,c, $PISMDATA
 ncatted -O -a long_name,nbreen,o,c,"mask for Nordenskioldbreen glacier on Svalbard" $PISMDATA
 
 # input into subglacial aquifer is linear in surface elevation where nbreen==1, otherwise zero
-ncap2 -O -s "bmelt=(3.0/900.0)*(900.0-usurf)" $PISMDATA $PISMDATA
-ncap2 -O -s "where(usurf>900.0) bmelt=0.0" $PISMDATA $PISMDATA
-ncap2 -O -s "where(nbreen<=0.5) bmelt=0.0" $PISMDATA $PISMDATA
-ncatted -O -a units,bmelt,m,c,"m year-1" $PISMDATA
-ncatted -O -a standard_name,bmelt,d,c, $PISMDATA
-ncatted -O -a long_name,bmelt,o,c,"basal melt rate as input to subglacial hydrology" $PISMDATA
+ncap2 -O -s "basal_melt_rate_grounded=(3.0/900.0)*(900.0-usurf)" $PISMDATA $PISMDATA
+ncap2 -O -s "where(usurf>900.0) basal_melt_rate_grounded=0.0" $PISMDATA $PISMDATA
+ncap2 -O -s "where(nbreen<=0.5) basal_melt_rate_grounded=0.0" $PISMDATA $PISMDATA
+ncatted -O -a units,basal_melt_rate_grounded,m,c,"m year-1" $PISMDATA
+ncatted -O -a standard_name,basal_melt_rate_grounded,d,c, $PISMDATA
+ncatted -O -a long_name,basal_melt_rate_grounded,o,c,"basal melt rate as input to subglacial hydrology" $PISMDATA
 
 # 50 m/a basal speed; only the magnitude affects "-hydrology distributed"
 ncap2 -O -s "u_ssa_bc=0.0*topg+50.0" $PISMDATA $PISMDATA

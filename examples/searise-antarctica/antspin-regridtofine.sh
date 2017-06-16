@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015  PISM authors
+# Copyright (C) 2009-2015, 2017  PISM authors
 ##################################################################################
 # Complete spinup of Antarctic ice sheet model by regriding to a finer resolution (15 km).
 ##################################################################################
@@ -65,7 +65,7 @@ echo
 echo "$SCRIPTNAME  continue but regrid to $GRIDNAME and run for 2000 a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP \
     -i $PISM_INDATANAME -bootstrap $GRID \
-    -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
+    -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,basal_melt_rate_grounded \
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \
     -ts_file $TSNAME -ts_times 0:1:$RUNTIME \

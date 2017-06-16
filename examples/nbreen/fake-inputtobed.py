@@ -33,7 +33,7 @@ def get(name):
 
 x = get('x')
 y = get('y')
-bmelt = get('bmelt')
+bmelt = get('basal_melt_rate_grounded')
 Mx = len(x)
 My = len(y)
 zero = np.zeros((My, Mx))

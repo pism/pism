@@ -239,7 +239,7 @@ private:
   potential energy in the moving, presumably turbulent, subglacial water.  If we
   suppose that this heat is dissipated immediately as melt on the
   cavity/conduit walls then we get a formula for a wall melt contribution.  (This
-  is in addition to the `bmelt` field coming from conserving energy in the flowing
+  is in addition to the `basal_melt_rate_grounded` field coming from conserving energy in the flowing
   ice.)  See wall_melt().  At this time the wall melt is diagnostic only and does
   not add to the water amount W; such an addition is generally unstable.
 */

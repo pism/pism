@@ -58,7 +58,7 @@ consider setting optional environment variables (see script for meaning):
     PISM_EXEC    defaults to 'pismr'
     REGRIDFILE   set to file name to regrid from; defaults to empty (no regrid)
     REGRIDVARS   desired -regrid_vars; applies *if* REGRIDFILE set;
-                   defaults to 'bmelt,enthalpy,litho_temp,thk,tillwat'
+                   defaults to 'basal_melt_rate_grounded,enthalpy,litho_temp,thk,tillwat'
 
 example usage 1:
 
@@ -284,7 +284,7 @@ if [ -n "${REGRIDFILE:+1}" ] ; then  # check if env var is already set
   if [ -n "${REGRIDVARS:+1}" ] ; then  # check if env var is already set
     echo "$SCRIPTNAME      REGRIDVARS = $REGRIDVARS  (already set)"
   else
-    REGRIDVARS='litho_temp,thk,enthalpy,tillwat,bmelt'
+    REGRIDVARS='litho_temp,thk,enthalpy,tillwat,basal_melt_rate_grounded'
     # note: other vars which are "state":  Href, dbdt, shelfbtemp, shelfbmassflux
     echo "$SCRIPTNAME      REGRIDVARS = $REGRIDVARS"
   fi

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016 PISM Authors
+// Copyright (C) 2012-2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,9 +40,9 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
                         "hydrology model workspace for total input rate into subglacial water layer",
                         "m s-1", "");
 
-  m_bmelt_local.create(m_grid, "bmelt", WITHOUT_GHOSTS);
+  m_bmelt_local.create(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS);
   m_bmelt_local.set_attrs("internal",
-                        "hydrology model workspace for bmelt",
+                        "hydrology model workspace for basal_melt_rate_grounded",
                         "m s-1", "");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
@@ -65,14 +65,14 @@ void Hydrology::init() {
              "entering Hydrology::init() ...\n");
 
   options::String bmelt_file("-hydrology_bmelt_file",
-                             "Read time-independent values for bmelt from a file;"
-                             " replaces bmelt computed through conservation of energy");
+                             "Read time-independent values for basal_melt_rate_grounded from a file;"
+                             " replaces basal_melt_rate_grounded computed through conservation of energy");
   // itb = input_to_bed
   options::String itb_file("-hydrology_input_to_bed_file",
                            "A time- and space-dependent file with amount of water"
                            " (depth per time) which should be added to the amount of water"
                            " at the ice sheet bed at the given location at the given time;"
-                           " adds to bmelt");
+                           " adds to basal_melt_rate_grounded");
 
   options::Real itb_period_years("-hydrology_input_to_bed_period",
                                  "The period (i.e. duration before repeat), in years,"
@@ -87,7 +87,7 @@ void Hydrology::init() {
 
   if (bmelt_file.is_set()) {
     m_log->message(2,
-               "  option -hydrology_bmelt_file seen; reading bmelt from '%s'.\n", bmelt_file->c_str());
+               "  option -hydrology_bmelt_file seen; reading basal_melt_rate_grounded from '%s'.\n", bmelt_file->c_str());
     m_bmelt_local.regrid(bmelt_file, CRITICAL);
     m_hold_bmelt = true;
   }
@@ -123,7 +123,7 @@ void Hydrology::init() {
     m_inputtobed->set_n_records(n_records);
     m_inputtobed->create(m_grid, "inputtobed");
     m_inputtobed->set_attrs("climate_forcing",
-                            "amount of water (depth per time like bmelt)"
+                            "amount of water (depth per time like basal_melt_rate_grounded)"
                             " which should be put at the ice sheet bed",
                             "m s-1", "");
     m_log->message(2,
@@ -236,7 +236,7 @@ void Hydrology::check_Wtil_bounds() {
 /*!
 The user can specify the total of en- and supra-glacial drainage contributions
 to subglacial hydrology in a time-dependent input file using option -hydrology_input_to_bed.
-This method includes that possible input along with `bmelt` to get the total water
+This method includes that possible input along with `basal_melt_rate_grounded` to get the total water
 input into the subglacial hydrology.
 
 This method crops the input rate to the ice-covered region.  It

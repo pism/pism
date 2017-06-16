@@ -184,7 +184,7 @@ At the present time, two simple subglacial hydrology models are implemented \emp
 \label{tab:hydrologychoice}
 \end{table}
 
-See Table \ref{tab:hydrology} for options which apply to all hydrology models.  Note that the primary water source for these models is the energy conservation model which computes the basal melt rate \texttt{bmelt}.  There is, however, also option \intextoption{hydrology_input_to_bed_file} which allows the user to \emph{add} water directly into the subglacial layer, in addition to the computed \texttt{bmelt} values.  Thus \texttt{-hydrology_input_to_bed_file} allows the user to model drainage directly to the bed from surface runoff, for example.  Also option \intextoption{hydrology_bmelt_file} allows the user to replace the computed \texttt{bmelt} rate by values read from a file, thereby effectively decoupling the hydrology model from the ice dynamics (esp.~conservation of energy).
+See Table \ref{tab:hydrology} for options which apply to all hydrology models.  Note that the primary water source for these models is the energy conservation model which computes the basal melt rate \texttt{basal_melt_rate_grounded}.  There is, however, also option \intextoption{hydrology_input_to_bed_file} which allows the user to \emph{add} water directly into the subglacial layer, in addition to the computed \texttt{basal_melt_rate_grounded} values.  Thus \texttt{-hydrology_input_to_bed_file} allows the user to model drainage directly to the bed from surface runoff, for example.  Also option \intextoption{hydrology_bmelt_file} allows the user to replace the computed \texttt{basal_melt_rate_grounded} rate by values read from a file, thereby effectively decoupling the hydrology model from the ice dynamics (esp.~conservation of energy).
 
 \begin{table}
   \centering
@@ -192,14 +192,14 @@ See Table \ref{tab:hydrology} for options which apply to all hydrology models.  
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \fileopt{hydrology_bmelt_file} & Specifies a NetCDF file which contains a time-independent field \texttt{bmelt} which has units of water thickness per time.  This rate \emph{replaces} the conservation-of-energy computed \texttt{bmelt} rate. \\
+    \fileopt{hydrology_bmelt_file} & Specifies a NetCDF file which contains a time-independent field \texttt{basal_melt_rate_grounded} which has units of water thickness per time.  This rate \emph{replaces} the conservation-of-energy computed rate \texttt{basal_melt_rate_grounded}. \\
     \txtopt{hydrology_const_bmelt}{(m/s)} & If \texttt{-hydrology_use_const_bmelt} is set then use this to set the constant rate (water thickness per time). \\
-    \fileopt{hydrology_input_to_bed_file} & Specifies a NetCDF file which contains a time-dependent field \texttt{inputtobed} which has units of water thickness per time.  This rate is \emph{added to} the \texttt{bmelt} rate. \\
+    \fileopt{hydrology_input_to_bed_file} & Specifies a NetCDF file which contains a time-dependent field \texttt{inputtobed} which has units of water thickness per time.  This rate is \emph{added to} the \texttt{basal_melt_rate_grounded} rate. \\
     \txtopt{hydrology_input_to_bed_period}{(a)} & The period, in years, of \texttt{-hydrology_input_to_bed_file} data. \\
     \txtopt{hydrology_input_to_bed_reference_year}{(a)} & The reference year for periodizing the \texttt{-hydrology_input_to_bed_file} data. \\
     \txtopt{hydrology_tillwat_max}{(m)} &  Maximum effective thickness for water stored in till. \\
-    \txtopt{hydrology_tillwat_decay_rate}{(m/a)} &  Water accumulates in the till at the basal melt rate \texttt{bmelt}, minus this rate. \\
-    \intextoption{hydrology_use_const_bmelt} & Replace the conservation-of-energy basal melt rate \texttt{bmelt} with a constant. \\
+    \txtopt{hydrology_tillwat_decay_rate}{(m/a)} &  Water accumulates in the till at the basal melt rate \texttt{basal_melt_rate_grounded}, minus this rate. \\
+    \intextoption{hydrology_use_const_bmelt} & Replace the conservation-of-energy basal melt rate \texttt{basal_melt_rate_grounded} with a constant. \\
     \bottomrule
   \end{tabular}
 \caption{Subglacial hydrology command-line options which apply to all hydrology models.}
@@ -212,7 +212,7 @@ In particular, denoting \texttt{tillwat} by $W_{til}$, the till-stored water lay
 \begin{equation}  \label{eq:tillwatevolve}
   \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C
 \end{equation}
-where $m=$\texttt{bmelt} (kg $\text{m}^{-2}\,\text{s}^{-1}$), $\rho_w$ is the density of fresh water, and $C=$\texttt{hydrology_tillwat_decay_rate}.  At all times bounds $0 \le W_{til} \le W_{til}^{max}$ are satisfied.
+where $m=$\texttt{basal_melt_rate_grounded} (kg $\text{m}^{-2}\,\text{s}^{-1}$), $\rho_w$ is the density of fresh water, and $C=$\texttt{hydrology_tillwat_decay_rate}.  At all times bounds $0 \le W_{til} \le W_{til}^{max}$ are satisfied.
 
 This \texttt{-hydrology null} model has been extensively tested in combination with the Mohr-Coulomb till (subsection \ref{subsect:basestrength} above) for modelling ice streaming \cite[among others]{AschwandenAdalgeirsdottirKhroulev,BBssasliding}.
 

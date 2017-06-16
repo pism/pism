@@ -88,7 +88,7 @@ elif field == 'mask':
     myvmin = 0.0
     myvmax = 4.0
     ticklist = [0, 1, 2, 3, 4]
-elif field == 'bmelt':
+elif field == 'basal_melt_rate_grounded':
     fill = -2.0e+09
     logscale = True
     contour100 = False
@@ -155,7 +155,7 @@ if (field == 'surfvelmag'):
     myvar = np.ma.array(myvar, mask=(thkvar == 0.0))
 elif (field != 'mask'):
     maskvar = np.squeeze(nc.variables['mask'][:])
-    if (field == 'bmelt') | (field == 'bwat'):
+    if (field == 'basal_melt_rate_grounded') | (field == 'bwat'):
         myvar[myvar < myvmin] = myvmin
     if (field == 'usurf'):
         myvar = np.ma.array(myvar, mask=(maskvar == 4))
