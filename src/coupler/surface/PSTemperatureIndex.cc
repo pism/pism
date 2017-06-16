@@ -370,11 +370,12 @@ void TemperatureIndex::update_impl(double t, double dt) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // reset total accumulation, melt, and runoff
+      // reset total accumulation, melt, and runoff, and SMB
       {
-        m_accumulation(i, j) = 0.0;
-        m_melt(i, j)         = 0.0;
-        m_runoff(i, j)       = 0.0;
+        m_accumulation(i, j)          = 0.0;
+        m_melt(i, j)                  = 0.0;
+        m_runoff(i, j)                = 0.0;
+        m_climatic_mass_balance(i, j) = 0.0;
       }
 
       // the temperature time series from the AtmosphereModel and its modifiers
@@ -462,6 +463,10 @@ void TemperatureIndex::update_impl(double t, double dt) {
             m_melt(i, j)         += changes.melt * ice_density;
             m_runoff(i, j)       += changes.runoff * ice_density;
           }
+
+          // m_climatic_mass_balance (unlike m_accumulation, m_melt, and m_runoff), is a rate.
+          // m * (kg / m^3) / second = kg / m^2 / second
+          m_climatic_mass_balance(i, j) += changes.smb * ice_density / m_dt;
         } // end of the time-stepping loop
       }
 
