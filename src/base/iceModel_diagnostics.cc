@@ -137,17 +137,17 @@ public:
   BMBSplit(const IceModel *m, AreaType flag)
     : DiagAverageRate<IceModel>(m,
                             flag == GROUNDED
-                            ? "basal_grounded_mass_flux"
-                            : "basal_floating_mass_flux",
+                            ? "basal_mass_flux_grounded"
+                            : "basal_mass_flux_floating",
                             TOTAL_CHANGE), m_kind(flag) {
     assert(flag != BOTH);
 
     std::string name, description;
     if (m_kind == GROUNDED) {
-      name        = "basal_grounded_mass_flux";
+      name        = "basal_mass_flux_grounded";
       description = "average basal mass flux over the reporting interval (grounded areas)";
     } else {
-      name        = "basal_floating_mass_flux";
+      name        = "basal_mass_flux_floating";
       description = "average basal mass flux over the reporting interval (floating areas)";
     }
 
@@ -2053,8 +2053,8 @@ void IceModel::init_diagnostics() {
     {"tendency_of_ice_mass_due_to_discharge",          f(new DischargeFlux(this,                MASS))},
 
     // other rates and fluxes
-    {"basal_grounded_mass_flux", f(new BMBSplit(this, GROUNDED))},
-    {"basal_floating_mass_flux", f(new BMBSplit(this, FLOATING))},
+    {"basal_mass_flux_grounded", f(new BMBSplit(this, GROUNDED))},
+    {"basal_mass_flux_floating", f(new BMBSplit(this, FLOATING))},
     {"dHdt",                     f(new ThicknessRateOfChange(this))},
     {"bmelt",                    d::wrap(m_basal_melt_rate)},
 
