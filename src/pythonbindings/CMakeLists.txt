@@ -102,15 +102,27 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
     # has to be set *before* calling SWIG_ADD_MODULE
     set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps})
-    
-    SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc)
+
+    if (${CMAKE_VERSION} VERSION_LESS "3.8.0")
+      SWIG_ADD_MODULE(cpp python PISM.i pism_python.cc)
+    else()
+      SWIG_ADD_LIBRARY(cpp
+        LANGUAGE python
+        SOURCES PISM.i pism_python.cc)
+    endif()
     SWIG_LINK_LIBRARIES(cpp ${PYTHON_LIBRARY} ${PISM_PYTHON_BINDING_LIBRARIES})
 
     # Disable compiler warnings:
     SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
       PROPERTIES COMPILE_FLAGS "-w")
 
-    SWIG_ADD_MODULE(petsc_version python petsc_version.i petsc_version.cc)
+    if (${CMAKE_VERSION} VERSION_LESS "3.8.0")
+      SWIG_ADD_MODULE(petsc_version python petsc_version.i petsc_version.cc)
+    else()
+      SWIG_ADD_LIBRARY(petsc_version
+        LANGUAGE python
+        SOURCES petsc_version.i petsc_version.cc)
+    endif()
     SWIG_LINK_LIBRARIES(petsc_version ${PYTHON_LIBRARY})
 
     # Disable compiler warnings:
