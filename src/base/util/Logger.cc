@@ -18,6 +18,7 @@
  */
 
 #include <unistd.h>
+#include <cstdarg>
 
 #include "Logger.hh"
 #include "pism_const.hh"
