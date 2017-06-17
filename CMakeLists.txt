@@ -49,6 +49,7 @@ option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
 option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
 option (Pism_USE_JANSSON "Use Jansson to store configuration files." OFF)
+option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
@@ -216,10 +217,12 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples
 add_subdirectory (src)
 add_subdirectory (site-packages)
 
-if (Pism_BUILD_PDFS)
-  add_subdirectory (doc)
-else()
-  add_subdirectory (doc EXCLUDE_FROM_ALL)
+if (Pism_ENABLE_DOCUMENTATION)
+  if (Pism_BUILD_PDFS)
+    add_subdirectory (doc)
+  else()
+    add_subdirectory (doc EXCLUDE_FROM_ALL)
+  endif()
 endif()
 
 # PISM regression testing
