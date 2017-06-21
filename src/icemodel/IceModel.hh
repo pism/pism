@@ -420,6 +420,7 @@ protected:
   double m_last_extra;
   std::set<std::string> m_extra_vars;
   TimeBoundsMetadata m_extra_bounds;
+  std::unique_ptr<PIO> m_extra_file;
   void init_extras();
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);

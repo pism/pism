@@ -174,7 +174,6 @@ void IceModel::init_extras() {
       m_extra_times = tmp;
       m_next_extra = 0;
     }
-    file.close();
   }
 
   m_save_extra          = true;
@@ -295,24 +294,29 @@ void IceModel::write_extras() {
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
   {
-    PIO file(m_grid->com, m_config->get_string("output.format"), filename, mode);
+    if (not m_extra_file) {
+      m_extra_file.reset(new PIO(m_grid->com,
+                                 m_config->get_string("output.format"),
+                                 filename, mode));
+    }
+
     std::string time_name = m_config->get_string("time.dimension_name");
 
     if (not m_extra_file_is_ready) {
       // Prepare the file:
-      io::define_time(file, *m_ctx);
-      file.put_att_text(time_name, "bounds", "time_bounds");
+      io::define_time(*m_extra_file, *m_ctx);
+      m_extra_file->put_att_text(time_name, "bounds", "time_bounds");
 
-      io::define_time_bounds(m_extra_bounds, file);
+      io::define_time_bounds(m_extra_bounds, *m_extra_file);
 
-      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+      write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
 
       m_extra_file_is_ready = true;
     }
 
-    write_run_stats(file);
+    write_run_stats(*m_extra_file);
 
-    save_variables(file,
+    save_variables(*m_extra_file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                    m_extra_vars,
                    0.5 * (m_last_extra + current_time), // use the mid-point of the
@@ -320,14 +324,20 @@ void IceModel::write_extras() {
                    PISM_FLOAT);
 
     // Get the length of the time dimension *after* it is appended to.
-    unsigned int time_length = file.inq_dimlen(time_name);
+    unsigned int time_length = m_extra_file->inq_dimlen(time_name);
     size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
-    io::write_time_bounds(file, m_extra_bounds, time_start, {m_last_extra, current_time});
+    io::write_time_bounds(*m_extra_file, m_extra_bounds,
+                          time_start, {m_last_extra, current_time});
   }
   profiling.end("io.extra_file");
 
   flush_timeseries();
+
+  if (m_split_extra) {
+    // each record is saved to a new file, so we can close this one
+    m_extra_file.reset(nullptr);
+  }
 
   m_last_extra = current_time;
 
