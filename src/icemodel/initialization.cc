@@ -751,10 +751,10 @@ void IceModel::misc_setup() {
     std::string output_format = m_config->get_string("output.format");
     if (Mx * My * Mz * sizeof(double) > two_to_thirty_two - 4 and
         (output_format == "netcdf3" or output_format == "pnetcdf")) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "The computational grid is too big to fit in a NetCDF-3 file.\n"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "The computational grid is too big to fit in a NetCDF-3 file.\n"
                                     "Each 3D variable requires %lu Mb.\n"
-                                    "Please use re-build PISM with parallel NetCDF-4\n"
-                                    "and use '-o_format netcdf4_parallel' to proceed.",
+                                    "Please use '-o_format pnetcdf or -o_format netcdf4_parallel to proceed.",
                                     Mx * My * Mz * sizeof(double) / (1024 * 1024));
     }
   }
@@ -780,8 +780,7 @@ void IceModel::misc_setup() {
   init_timeseries();
   init_extras();
 
-  // Make sure that we use the output.variable_order that works with
-  // NetCDF-4 I/O.
+  // Make sure that we use the output.variable_order that works with NetCDF-4 parallel I/O.
   std::string o_format = m_config->get_string("output.format");
   if (o_format == "netcdf4_parallel" and m_config->get_string("output.variable_order") != "yxz") {
     throw RuntimeError(PISM_ERROR_LOCATION,

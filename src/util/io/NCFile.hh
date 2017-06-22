@@ -149,7 +149,7 @@ public:
   // misc
   void set_fill(int fillmode, int &old_modep) const;
 
-  std::string get_filename() const;
+  std::string filename() const;
 
   std::string get_format() const;
 
@@ -250,8 +250,6 @@ protected:
 
   virtual int integer_open_mode(IO_Mode input) const = 0;
 
-  std::string get_filename_impl() const;
-
   virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
 
 protected:
@@ -264,8 +262,6 @@ protected:                      // data members
   int m_file_id;
   std::string m_filename;
   mutable bool m_define_mode;
-  // negative values of m_[xy][ms] mean "not initialized"
-  mutable int m_xs, m_xm, m_ys, m_ym;
 };
 
 } // end of namespace io

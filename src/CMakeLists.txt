@@ -128,7 +128,7 @@ install (
 
 # Install executables.
 install (TARGETS
-  pismr pisms pismv ## executables
+  pismr pisms pismv # executables
   RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 install (FILES

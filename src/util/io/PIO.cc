@@ -238,7 +238,7 @@ void PIO::enddef() const {
 }
 
 string PIO::inq_filename() const {
-  return m_impl->nc->get_filename();
+  return m_impl->nc->filename();
 }
 
 
@@ -420,7 +420,7 @@ AxisType PIO::inq_dimtype(const string &name,
     bool exists;
 
     m_impl->nc->inq_varid(name, exists);
-    
+
     if (not exists) {
       throw RuntimeError(PISM_ERROR_LOCATION, "coordinate variable " + name + " is missing");
     }

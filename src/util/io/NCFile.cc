@@ -33,16 +33,14 @@ namespace pism {
 namespace io {
 
 NCFile::NCFile(MPI_Comm c)
-  : m_com(c) {
-  m_file_id = -1;
-  m_define_mode = false;
+  : m_com(c), m_file_id(-1), m_define_mode(false) {
 }
 
 NCFile::~NCFile() {
   // empty
 }
 
-std::string NCFile::get_filename() const {
+std::string NCFile::filename() const {
   return m_filename;
 }
 
