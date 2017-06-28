@@ -288,9 +288,9 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
                                     &nu, NULL);
 
     //get deviatoric stresses
-    result(i,j,0) = nu*u_x;
-    result(i,j,1) = nu*v_y;
-    result(i,j,2) = 0.5*nu*(u_y+v_x);
+    result(i,j,0) = 2.0*nu*u_x;
+    result(i,j,1) = 2.0*nu*v_y;
+    result(i,j,2) = nu*(u_y+v_x);
   }
 }
 
