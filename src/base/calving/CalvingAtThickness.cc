@@ -41,8 +41,8 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
                            m_config->get_double("grid.max_stencil_width"));
 
   m_calving_threshold.set_attrs("internal",
-                              "mask specifying fixed calving front locations",
-                              "", "");
+                              "calving thickness threshold",
+                              "m", "");
   m_calving_threshold.set_time_independent(true);
 
 
