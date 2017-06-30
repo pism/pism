@@ -37,10 +37,22 @@ public:
 
   virtual void init();
   void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
+  const IceModelVec2S& threshold() const;
 
 protected:
-  double m_calving_threshold;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  double m_calving_threshold_scalar;
+  IceModelVec2S m_calving_threshold;
   IceModelVec2CellType m_old_mask;
+};
+
+/*! @brief Calving at thickness threshold. */
+class CalvingAtThickness_threshold : public Diag<CalvingAtThickness>
+{
+public:
+  CalvingAtThickness_threshold(const CalvingAtThickness *m);
+protected:
+  IceModelVec::Ptr compute_impl() const;
 };
 
 } // end of namespace calving
