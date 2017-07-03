@@ -90,6 +90,7 @@ public:
   public:
     Changes();
 
+    double firn_depth;
     double snow_depth;
     double melt;
     double runoff;
@@ -101,11 +102,13 @@ public:
    *
    * @param[in] ddf degree day factors
    * @param[in] PDDs number of positive degree days during the time step [K day]
+   * @param[in] old_firn_depth firn depth [ice equivalent meters]
    * @param[in] old_snow_depth snow depth [ice equivalent meters]
    * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
    */
   virtual Changes step(const DegreeDayFactors &ddf,
                        double PDDs,
+                       double old_firn_depth,
                        double old_snow_depth,
                        double accumulation) = 0;
 
@@ -139,6 +142,7 @@ public:
 
   virtual Changes step(const DegreeDayFactors &ddf,
                        double PDDs,
+                       double firn_depth,
                        double snow_depth,
                        double accumulation);
 

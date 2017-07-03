@@ -190,14 +190,17 @@ void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
  */
 PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
                                              double PDDs,
+                                             double old_firn_depth,
                                              double old_snow_depth,
                                              double accumulation) {
 
   Changes result;
 
   double
+    firn_depth      = old_firn_depth,
     snow_depth      = old_snow_depth + accumulation,
     max_snow_melted = PDDs * ddf.snow,
+    firn_melted     = 0.0,
     snow_melted     = 0.0,
     excess_pdds     = 0.0;
 
@@ -210,25 +213,42 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
     // degree days (PDDs) were used up in melting snow.
 
     snow_melted = max_snow_melted;
+    firn_melted = 0.0;
+    excess_pdds = 0.0;
+  } else if ((max_snow_melted <= firn_depth + snow_depth) && (max_snow_melted >= snow_depth)) {
+    // Some of the snow melted and some is left; in any case, all of
+    // the energy available for melt, namely all of the positive
+    // degree days (PDDs) were used up in melting snow.
+
+    snow_melted = snow_depth;
+    firn_melted = max_snow_melted - snow_melted;
     excess_pdds = 0.0;
   } else {
     // All (snow_depth meters) of snow melted. Excess_pddsum is the
     // positive degree days available to melt ice.
+    firn_melted = firn_depth;
     snow_melted = snow_depth;
-    excess_pdds = PDDs - (snow_melted / ddf.snow); // units: K day
+    excess_pdds = PDDs - ((firn_melted + snow_melted) / ddf.snow); // units: K day
   }
 
   double
     ice_melted              = excess_pdds * ddf.ice,
-    melt                    = snow_melted + ice_melted,
+    melt                    = snow_melted + firn_melted + ice_melted,
     ice_created_by_refreeze = 0.0;
 
   if (refreeze_ice_melt) {
     ice_created_by_refreeze = melt * ddf.refreeze_fraction;
   } else {
-    ice_created_by_refreeze = snow_melted * ddf.refreeze_fraction;
+    ice_created_by_refreeze = (firn_melted + snow_melted) * ddf.refreeze_fraction;
   }
 
+  firn_depth -= firn_melted;
+  // FIXME: need to add snow that hasn't melted, is this correct?
+  firn_depth += snow_depth;
+  
+  if (firn_depth < 0.0) {
+    firn_depth = 0.0;
+  }
   snow_depth -= snow_melted;
   if (snow_depth < 0.0) {
     snow_depth = 0.0;
@@ -236,6 +256,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
 
   const double runoff = melt - ice_created_by_refreeze;
 
+  result.firn_depth = firn_depth - old_firn_depth;
   result.snow_depth = snow_depth - old_snow_depth;
   result.melt       = melt;
   result.runoff     = runoff;

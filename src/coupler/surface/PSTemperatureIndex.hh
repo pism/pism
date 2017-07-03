@@ -41,6 +41,7 @@ public:
   virtual ~TemperatureIndex();
 
   // diagnostics (for the last time step)
+  const IceModelVec2S& firn_depth() const;
   const IceModelVec2S& snow_depth() const;
   // these represent totals (not rates) over the time step
   const IceModelVec2S& air_temp_sd() const;
@@ -80,6 +81,9 @@ protected:
   //! cached surface mass balance rate
   IceModelVec2S m_climatic_mass_balance;
 
+  //! firn depth
+  IceModelVec2S m_firn_depth;
+
   //! snow depth (reset once a year)
   IceModelVec2S m_snow_depth;
 
@@ -96,6 +100,7 @@ protected:
   IceModelVec2S m_runoff;
 
   bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
+  bool m_firn_file_set;
   bool m_sd_use_param, m_sd_file_set;
   int m_sd_period, m_sd_period_years;
   double m_sd_ref_time, m_sd_param_a, m_sd_param_b;

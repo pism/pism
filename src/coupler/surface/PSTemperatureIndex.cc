@@ -39,6 +39,15 @@ namespace surface {
 
 namespace diagnostics {
 
+/*! @brief Firn cover depth. */
+class PDD_firn_depth : public Diag<TemperatureIndex>
+{
+public:
+  PDD_firn_depth(const TemperatureIndex *m);
+protected:
+  IceModelVec::Ptr compute_impl() const;
+};
+
 /*! @brief Snow cover depth. */
 class PDD_snow_depth : public Diag<TemperatureIndex>
 {
@@ -56,6 +65,26 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const;
 };
+
+PDD_firn_depth::PDD_firn_depth(const TemperatureIndex *m)
+  : Diag<TemperatureIndex>(m) {
+
+  /* set metadata: */
+  m_vars = {SpatialVariableMetadata(m_sys, "firn_depth")};
+
+  set_attrs("firn cover depth", "",
+            "m", "m", 0);
+}
+
+IceModelVec::Ptr PDD_firn_depth::compute_impl() const {
+
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "firn_depth", WITHOUT_GHOSTS));
+  result->metadata(0) = m_vars[0];
+
+  result->copy_from(model->firn_depth());
+
+  return result;
+}
 
 PDD_snow_depth::PDD_snow_depth(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
@@ -125,8 +154,11 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                                       "Set PDD parameters using formulas (6) and (7)"
                                       " in [Faustoetal2009]");
 
-  options::String file("-pdd_sd_file", "Read standard deviation from file");
-  m_sd_file_set = file.is_set();
+  options::String firn_file("-pdd_firn_depth_file", "Read firn depth from file");
+  m_firn_file_set = firn_file.is_set();
+
+  options::String sd_file("-pdd_sd_file", "Read standard deviation from file");
+  m_sd_file_set = sd_file.is_set();
 
   options::Integer period("-pdd_sd_period",
                           "Length of the standard deviation data period in years", 0);
@@ -160,7 +192,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
     unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
 
     {
-      PIO nc(m_grid->com, "netcdf3", file, PISM_READONLY);
+      PIO nc(m_grid->com, "netcdf3", sd_file, PISM_READONLY);
       n_records = nc.inq_nrecords(short_name, "", m_grid->ctx()->unit_system());
     }
 
@@ -173,7 +205,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 
     if (n_records < 1) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in %s.",
-                                    short_name.c_str(), file->c_str());
+                                    short_name.c_str(), sd_file->c_str());
     }
 
     m_air_temp_sd.set_n_records(n_records);
@@ -217,6 +249,12 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                          "snow cover depth (set to zero once a year)",
                          "m", "");
   m_snow_depth.set(0.0);
+
+  m_firn_depth.create(m_grid, "firn_depth", WITHOUT_GHOSTS);
+  m_firn_depth.set_attrs("diagnostic",
+                         "firn cover depth",
+                         "m", "");
+  m_firn_depth.set(0.0);
 }
 
 TemperatureIndex::~TemperatureIndex() {
@@ -253,12 +291,24 @@ void TemperatureIndex::init_impl() {
     m_base_pddStdDev = 2.53;
   }
 
-  options::String file("-pdd_sd_file", "Read standard deviation from file");
-  if (file.is_set()) {
+  options::String firn_file("-pdd_firn_depth_file", "Read firn depth from file");
+  if (firn_file.is_set()) {
+    m_log->message(2,
+               "  Reading firn depth from '%s'...\n",
+               firn_file->c_str());
+    m_firn_depth.regrid(firn_file, CRITICAL);
+  } else {
+    m_log->message(2,
+               "  Option -pdd_firn_depth_file is not set. Setting to 0m.\n");
+    m_firn_depth.set(0);
+  }
+
+  options::String sd_file("-pdd_sd_file", "Read standard deviation from file");
+  if (sd_file.is_set()) {
     m_log->message(2,
                "  Reading standard deviation of near-surface temperature from '%s'...\n",
-               file->c_str());
-    m_air_temp_sd.init(file, m_sd_period, m_sd_ref_time);
+               sd_file->c_str());
+    m_air_temp_sd.init(sd_file, m_sd_period, m_sd_ref_time);
   } else {
     m_log->message(2,
                "  Option -pdd_sd_file is not set. Using a constant value.\n");
@@ -337,7 +387,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
     *longitude        = NULL;
 
   IceModelVec::AccessList list{&mask, &m_air_temp_sd, &m_climatic_mass_balance,
-      &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
+      &m_firn_depth, &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
 
   if (fausto_greve != NULL) {
     surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
@@ -451,7 +501,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
           const double accumulation = P[k] * dtseries;
 
           LocalMassBalance::Changes changes;
-          changes = m_mbscheme->step(ddf, PDDs[k], m_snow_depth(i, j), accumulation);
+          changes = m_mbscheme->step(ddf, PDDs[k], m_firn_depth(i, j), m_snow_depth(i, j), accumulation);
 
           // update snow depth
           m_snow_depth(i, j) += changes.snow_depth;
@@ -471,6 +521,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
       }
 
       if (mask.ocean(i,j)) {
+        m_firn_depth(i,j) = 0.0;  // firn over the ocean does not stick
         m_snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
       }
     }
@@ -504,6 +555,10 @@ const IceModelVec2S& TemperatureIndex::runoff() const {
   return m_runoff;
 }
 
+const IceModelVec2S& TemperatureIndex::firn_depth() const {
+  return m_firn_depth;
+}
+
 const IceModelVec2S& TemperatureIndex::snow_depth() const {
   return m_snow_depth;
 }
@@ -514,11 +569,13 @@ const IceModelVec2S& TemperatureIndex::air_temp_sd() const {
 
 void TemperatureIndex::define_model_state_impl(const PIO &output) const {
   SurfaceModel::define_model_state_impl(output);
+  m_firn_depth.define(output, PISM_DOUBLE);
   m_snow_depth.define(output, PISM_DOUBLE);
 }
 
 void TemperatureIndex::write_model_state_impl(const PIO &output) const {
   SurfaceModel::write_model_state_impl(output);
+  m_firn_depth.write(output);
   m_snow_depth.write(output);
 }
 
@@ -613,6 +670,7 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
     {"srunoff",     Diagnostic::Ptr(new SurfaceRunoff(this))},
     {"air_temp_sd", Diagnostic::Ptr(new PDD_air_temp_sd(this))},
     {"snow_depth",  Diagnostic::Ptr(new PDD_snow_depth(this))},
+    {"firn_depth",  Diagnostic::Ptr(new PDD_firn_depth(this))},
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());
