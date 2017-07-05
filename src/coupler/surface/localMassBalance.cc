@@ -242,7 +242,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
 
   firn_depth -= firn_melted;
   // FIXME: need to add snow that hasn't melted, is this correct?
-  firn_depth += snow_depth;
+  firn_depth += (snow_depth - snow_melted);
   // Turn firn into ice at X times accumulation
   firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
   
