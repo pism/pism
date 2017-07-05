@@ -211,20 +211,18 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
     // Some of the snow melted and some is left; in any case, all of
     // the energy available for melt, namely all of the positive
     // degree days (PDDs) were used up in melting snow.
-
     snow_melted = max_snow_melted;
     firn_melted = 0.0;
     excess_pdds = 0.0;
   } else if ((max_snow_melted <= firn_depth + snow_depth) && (max_snow_melted >= snow_depth)) {
-    // Some of the snow melted and some is left; in any case, all of
+    // All of the snow is melted but some firn is left; in any case, all of
     // the energy available for melt, namely all of the positive
     // degree days (PDDs) were used up in melting snow.
-
     snow_melted = snow_depth;
     firn_melted = max_snow_melted - snow_melted;
     excess_pdds = 0.0;
   } else {
-    // All (snow_depth meters) of snow melted. Excess_pddsum is the
+    // All (firn and snow_depth meters) of snow melted. Excess_pddsum is the
     // positive degree days available to melt ice.
     firn_melted = firn_depth;
     snow_melted = snow_depth;
@@ -245,6 +243,8 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   firn_depth -= firn_melted;
   // FIXME: need to add snow that hasn't melted, is this correct?
   firn_depth += snow_depth;
+  // Turn firn into ice at X times accumulation
+  firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
   
   if (firn_depth < 0.0) {
     firn_depth = 0.0;

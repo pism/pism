@@ -503,6 +503,8 @@ void TemperatureIndex::update_impl(double t, double dt) {
           LocalMassBalance::Changes changes;
           changes = m_mbscheme->step(ddf, PDDs[k], m_firn_depth(i, j), m_snow_depth(i, j), accumulation);
 
+          // update firn depth
+          m_firn_depth(i, j) += changes.firn_depth;
           // update snow depth
           m_snow_depth(i, j) += changes.snow_depth;
 
