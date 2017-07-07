@@ -65,7 +65,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const;
 };
-
+  
 PDD_firn_depth::PDD_firn_depth(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
 

@@ -78,6 +78,9 @@ protected:
 
   double m_next_balance_year_start;
 
+  //! m; elevation of ELA 
+  double m_mean_ela;
+  
   //! cached surface mass balance rate
   IceModelVec2S m_climatic_mass_balance;
 

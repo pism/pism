@@ -26,8 +26,10 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/IceGrid.hh"
+#include "base/util/IceModelVec2CellType.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/iceModelVec.hh"
+#include "base/util/Mask.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
 
@@ -43,6 +45,16 @@ public:
   PS_climatic_mass_balance(const SurfaceModel *m);
 protected:
   IceModelVec::Ptr compute_impl() const;
+};
+
+
+/*! @brief Equilibrium line altitude. */
+  class PS_equilibrium_line_altitude : public TSDiag<TSSnapshotDiagnostic, SurfaceModel>
+{
+public:
+  PS_equilibrium_line_altitude(const SurfaceModel *m);
+protected:
+  double compute();
 };
 
 /*! @brief Ice surface temperature. */
@@ -116,7 +128,9 @@ std::map<std::string, TSDiagnostic::Ptr> SurfaceModel::ts_diagnostics_impl() con
   if (m_atmosphere) {
     return m_atmosphere->ts_diagnostics();
   } else {
-    return {};
+    return {
+      {"equilibrium_line_altitude", TSDiagnostic::Ptr(new PS_equilibrium_line_altitude(this))}
+    };
   }
 }
 
@@ -140,6 +154,8 @@ void SurfaceModel::init_impl() {
   assert(m_atmosphere != NULL);
   m_atmosphere->init();
 }
+
+
 
 //! \brief Returns mass held in the surface layer.
 /*!
@@ -172,6 +188,7 @@ void SurfaceModel::layer_thickness_impl(IceModelVec2S &result) const {
 void SurfaceModel::temperature(IceModelVec2S &result) const {
   this->temperature_impl(result);
 }
+
 //! \brief Returns the liquid water fraction of the ice at the top ice surface.
 /*!
  * Most PISM surface models return 0.
@@ -224,6 +241,45 @@ IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
 
   return result;
 }
+
+PS_equilibrium_line_altitude::PS_equilibrium_line_altitude(const SurfaceModel *m)
+  : TSDiag<TSSnapshotDiagnostic, SurfaceModel>(m, "equilibrium_line_altitude") {
+
+  m_ts.variable().set_string("units", "m");
+  m_ts.variable().set_string("long_name",
+                              "equilibrium line altitude");
+}
+
+double PS_equilibrium_line_altitude::compute() {
+  
+  double ela_sum = 0.0;
+  int no_points = 0;
+
+  // const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  // const IceModelVec2S
+  //   *climatic_mass_balance = m_grid->variables().get_2d_scalar("climatic_mass_balance"),
+  //   *surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
+
+  // IceModelVec::AccessList list{&mask, climatic_mass_balance, surface_altitude};
+
+  // ParallelSection loop(m_grid->com);
+  // try {
+  //   for (Points p(*m_grid); p; p.next()) {
+  //     const int i = p.i(), j = p.j();
+
+  //     if (mask.icy(i,j) && ( (*climatic_mass_balance)(i, j) < 100.) && ((*climatic_mass_balance)(i, j) > -100.)) {
+  //       ela_sum += (*surface_altitude)(i, j);
+  //       no_points += 1;
+  //     }
+  //   }
+  // } catch (...) {
+  //   loop.failed();
+  // }
+  // loop.check();
+
+  return 1500;
+}
+
 
 PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
