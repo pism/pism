@@ -40,6 +40,20 @@ protected:
   double m_smb_lapse_rate;
 };
 
+class LapseRatesSpatial : public PLapseRates<SurfaceModel,SurfaceModifier>
+{
+public:
+  LapseRatesSpatial(IceGrid::ConstPtr g, SurfaceModel* in);
+  virtual ~LapseRatesSpatial();
+protected:
+  virtual void init_impl();
+
+  virtual void mass_flux_impl(IceModelVec2S &result) const;
+  virtual void temperature_impl(IceModelVec2S &result) const;
+protected:
+  double m_smb_lapse_rate;
+};
+
 } // end of namespace surface
 } // end of namespace pism
 
