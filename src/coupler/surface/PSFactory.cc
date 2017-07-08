@@ -52,7 +52,7 @@ Factory::Factory(IceGrid::ConstPtr  g)
   add_modifier<Delta_T>("delta_T");
   add_modifier<ForceThickness>("forcing");
   add_modifier<LapseRates>("lapse_rate");
-  add_modifier<LapseRatesSpatial>("smb_gradients");
+  add_modifier<SpatialSMBGradients>("spatial_smb_gradients");
   add_modifier<StuffAsAnomaly>("turn_into_anomaly");
 }
 

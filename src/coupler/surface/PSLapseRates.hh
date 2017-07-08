@@ -40,11 +40,11 @@ protected:
   double m_smb_lapse_rate;
 };
 
-class LapseRatesSpatial : public PLapseRates<SurfaceModel,SurfaceModifier>
+class SpatialSMBGradients : public PLapseRates<SurfaceModel,SurfaceModifier>
 {
 public:
-  LapseRatesSpatial(IceGrid::ConstPtr g, SurfaceModel* in);
-  virtual ~LapseRatesSpatial();
+  SpatialSMBGradients(IceGrid::ConstPtr g, SurfaceModel* in);
+  virtual ~SpatialSMBGradients();
 protected:
   virtual void init_impl();
 

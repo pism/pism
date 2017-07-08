@@ -1011,6 +1011,43 @@ options.
   interpreted as corresponding to $t$ years since $T$.
 \end{itemize}
 
+\subsection{Modifier: Spatial SMB gradients}
+\label{sec:spatial-smb-gradients}
+\optsection{SB@\surfacemods!\texttt{spatial_smb_gradients}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-surface~...,spatial_smb_gradients} \index[options]{SB@\surfacemods!\texttt{spatial_smb_gradients}} \\
+    NetCDF variables: & \variable{surface_altitude} (CF standard name), \\
+    C++ class: & \class{PSLapseRates}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+The \texttt{spatial_smb_gradients} modifier allows correcting ice-surface temperature and a parameterization of surface mass balance gradients \cite{Edwards2014}. It uses the following options.
+
+\begin{itemize}
+\item \intextoption{temp_lapse_rate} gives the temperature lapse rate, in
+  $K/km$. Note that we use the following definition of the temperature lapse
+  rate:
+  \begin{displaymath}
+    \gamma = -\frac{dT}{dz}.
+  \end{displaymath}
+\item \intextoption{spatial_smb_gradients} \texttt{grad_ns,grad_ps,grad_nn,grad_pn,ns_lat}, where \texttt{grad_ns} is the SBM gradient south of \texttt{ns_lat} if SMB$<$0, \texttt{grad_ps} is the SBM gradient south of \texttt{ns_lat} if SMB$>$0, \texttt{grad_ns} is the SBM gradient north of \texttt{ns_lat} if SMB$<$0, \texttt{grad_ns} is the SBM gradient north of \texttt{ns_lat} if SMB$>0$, and \texttt{ns_lat} is the latitude that separates the north and south values. Units for the gradients are $kg/(m^2\,yr)$.
+\item \fileopt{surface_lapse_rate_file} specifies the file containing the reference
+  surface elevation field (standard name: \variable{surface_altitude}). This file
+  can contain several surface elevation records to use lapse rate corrections
+  relative to time-dependent surface. If one record is provided, the reference
+  surface elevation is assumed to be time-independent.
+\item \intextoption{surface_lapse_rate_period} gives the period, in model years, to
+  use when interpreting data in the file given with
+  \texttt{-surface_given_file},
+\item \intextoption{surface_lapse_rate_reference_year} takes the time $T$ in model
+  years. The record for $t$ years in \texttt{-surface_given_file} is
+  interpreted as corresponding to $t$ years since $T$.
+\end{itemize}
+
 \subsection{Modifier: Surface mass flux adjustment}
 \label{sec:smb-adjustment}
 \optsection{SB@\surfacemods!\texttt{forcing}}
