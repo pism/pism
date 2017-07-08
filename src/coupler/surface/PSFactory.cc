@@ -24,6 +24,7 @@
 #include "PSElevation.hh"
 #include "PSGivenClimate.hh"
 #include "PSLapseRates.hh"
+#include "PSLapseRatesSpatial.hh"
 #include "PSStuffAsAnomaly.hh"
 #include "PS_delta_T.hh"
 #include "PSTemperatureIndex.hh"
@@ -52,6 +53,7 @@ Factory::Factory(IceGrid::ConstPtr  g)
   add_modifier<Delta_T>("delta_T");
   add_modifier<ForceThickness>("forcing");
   add_modifier<LapseRates>("lapse_rate");
+  add_modifier<LapseRatesSpatial>("lapse_rate_spatial");
   add_modifier<StuffAsAnomaly>("turn_into_anomaly");
 }
 

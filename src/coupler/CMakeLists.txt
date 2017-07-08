@@ -36,6 +36,7 @@ add_library (pismboundary OBJECT
   ./surface/PSStuffAsAnomaly.cc
   ./surface/PSGivenClimate.cc
   ./surface/PSLapseRates.cc
+  ./surface/PSLapseRatesSpatial.cc
   ./surface/PS_delta_T.cc
   ./surface/PSSimple.cc
   ./surface/PSTemperatureIndex.cc
