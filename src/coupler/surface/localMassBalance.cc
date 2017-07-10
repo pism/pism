@@ -237,6 +237,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   if (refreeze_ice_melt) {
     ice_created_by_refreeze = melt * ddf.refreeze_fraction;
   } else {
+    // Should this only be snow melted?
     ice_created_by_refreeze = (firn_melted + snow_melted) * ddf.refreeze_fraction;
   }
 
