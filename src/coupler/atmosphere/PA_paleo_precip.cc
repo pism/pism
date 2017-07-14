@@ -43,22 +43,22 @@ PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in)
 
     if (m_precipexpfactor == NULL) {
       m_precipexpfactor = new Timeseries(*m_grid, "precip_exp_factor",
-                           m_config->get_string("time.dimension_name"));
+                                         m_config->get_string("time.dimension_name"));
       m_precipexpfactor->variable().set_string("units", "1");
       m_precipexpfactor->variable().set_string("long_name", "precip exponential scale factor");
       m_precipexpfactor->dimension().set_string("units", m_grid->ctx()->time()->units_string());
     }
 
     m_log->message(2,
-               "  Reading precip exponential scale factor from '%s'...\n",
-               precipexpfactor_file->c_str());
+                   "  Reading precip exponential scale factor from '%s'...\n",
+                   precipexpfactor_file->c_str());
 
     PIO nc(m_grid->com, "netcdf3", precipexpfactor_file, PISM_READONLY);    // OK to use netcdf3
     {
       m_precipexpfactor->read(nc, *m_grid->ctx()->time(), *m_grid->ctx()->log());
     }
     nc.close();
-
+    
   } else {
     if (m_precipexpfactor != NULL) {
       delete m_precipexpfactor;
@@ -67,8 +67,8 @@ PaleoPrecip::PaleoPrecip(IceGrid::ConstPtr g, AtmosphereModel* in)
   }
   
   m_precipexpfactor_scalar = m_config->get_double("atmosphere.precip_exponential_factor_for_temperature");
-
-
+  
+  
 }
 
 PaleoPrecip::~PaleoPrecip()
@@ -92,7 +92,7 @@ MaxTimestep PaleoPrecip::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep("atmosphere paleo_precip");
 }
-
+  
 void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {
   PAModifier::init_timeseries_impl(ts);
 
@@ -100,8 +100,12 @@ void PaleoPrecip::init_timeseries_impl(const std::vector<double> &ts) const {
 
   m_scaling_values.resize(N);
   for (unsigned int k = 0; k < N; ++k) {
+    if (m_precipexpfactor_file_set) {
     m_scaling_values[k] = exp((*m_precipexpfactor)(m_ts_times[k]) * (*m_offset)(m_ts_times[k]));
+  } else {
+    m_scaling_values[k] = exp(m_precipexpfactor_scalar * (*m_offset)(m_ts_times[k]));    
   }
+}
 }
 
 void PaleoPrecip::mean_precipitation_impl(IceModelVec2S &result) const {

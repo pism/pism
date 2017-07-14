@@ -28,6 +28,7 @@
 #include "PO_delta_SMB.hh"
 #include "PO_frac_MBP.hh"
 #include "PO_frac_SMB.hh"
+#include "PO_runoff_SMB.hh"
 #include "POCache.hh"
 #include "POGivenTH.hh" 
 
@@ -48,6 +49,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_modifier<Delta_SMB>("delta_SMB");
   add_modifier<Frac_SMB>("frac_SMB");
   add_modifier<Delta_T>("delta_T");
+  add_modifier<Runoff_SMB>("runoff_SMB");
   add_modifier<Delta_MBP>("frac_MBP");
   add_modifier<Delta_SL>("delta_SL");
 }
