@@ -1441,7 +1441,7 @@ pism_config:surface.pdd.interpret_precip_as_snow = "no";
     pism_config:surface.pressure_type = "scalar";
     pism_config:surface.pressure_units = "Pascal";
 
-    pism_config:surface.runoff_sensitivity = 3;
+    pism_config:surface.runoff_sensitivity = 2;
     pism_config:surface.runoff_sensitivity_doc = "Temperature increase that leads to a doubling in runoff";
     pism_config:surface.runoff_sensitivity_type = "scalar";
     pism_config:surface.runoff_sensitivity_units = "K";
