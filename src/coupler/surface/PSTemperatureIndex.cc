@@ -187,6 +187,11 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
     m_aschwanden = new AschwandenPDDObject(m_grid);
   }
 
+  if (m_use_aschwanden_params && m_use_fausto_params) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Both '-pdd_aschwanden' and '-pdd_fausto' are set.\n Choose one or the other.\n");
+
+  }
+  
   if (sd_ref_year.is_set()) {
     m_sd_ref_time = units::convert(m_sys, sd_ref_year, "years", "seconds");
   }
