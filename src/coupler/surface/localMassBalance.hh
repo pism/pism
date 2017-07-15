@@ -236,6 +236,41 @@ protected:
   IceModelVec2S m_temp_mj;
 };
 
+/*!
+  Aschwanden PDD parameters.
+
+  This may become a derived class of a LocationDependentPDDObject, if the idea
+  is needed more in the future.
+*/
+class AschwandenPDDObject {
+
+public:
+  AschwandenPDDObject(IceGrid::ConstPtr g);
+  virtual ~AschwandenPDDObject();
+
+  void update_temp_mj(const IceModelVec2S &surfelev,
+                              const IceModelVec2S &lat,
+                              const IceModelVec2S &lon);
+
+  /*! If this method is called, it is assumed that i,j is in the ownership range
+    for IceModelVec2S temp_mj. */
+  LocalMassBalance::DegreeDayFactors degree_day_factors(int i, int j, double latitude);
+
+protected:
+  IceGrid::ConstPtr m_grid;
+  const Config::ConstPtr m_config;
+
+  double m_beta_ice_w;
+  double m_beta_snow_w;
+  double m_beta_ice_c;
+  double m_beta_snow_c;
+  double m_fresh_water_density;
+  double m_ice_density;
+  double m_pdd_aschwanden_latitude_beta_w;
+  double m_refreeze_fraction;
+
+};
+  
 } // end of namespace surface
 } // end of namespace pism
 

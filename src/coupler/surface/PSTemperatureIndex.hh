@@ -70,6 +70,9 @@ protected:
   //! if not NULL then user wanted fausto PDD stuff
   FaustoGrevePDDObject *m_faustogreve;
 
+  //! if not NULL then user wanted Aschwanden PDD stuff
+  AschwandenPDDObject *m_aschwanden;
+
   //! holds degree-day factors in location-independent case
   LocalMassBalance::DegreeDayFactors m_base_ddf;
 
@@ -102,7 +105,7 @@ protected:
   //! total runoff during the last time step
   IceModelVec2S m_runoff;
 
-  bool m_randomized, m_randomized_repeatable, m_use_fausto_params;
+  bool m_randomized, m_randomized_repeatable, m_use_fausto_params, m_use_aschwanden_params;
   bool m_firn_file_set;
   bool m_sd_use_param, m_sd_file_set;
   int m_sd_period, m_sd_period_years;

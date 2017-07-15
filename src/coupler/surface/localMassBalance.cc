@@ -428,5 +428,50 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
   }
 }
 
+AschwandenPDDObject::AschwandenPDDObject(IceGrid::ConstPtr g)
+  : m_grid(g), m_config(g->ctx()->config()) {
+
+  m_beta_ice_w  = m_config->get_double("surface.pdd.aschwanden.beta_ice_w");
+  m_beta_snow_w = m_config->get_double("surface.pdd.aschwanden.beta_snow_w");
+
+  m_beta_ice_c  = m_config->get_double("surface.pdd.aschwanden.beta_ice_c");
+  m_beta_snow_c = m_config->get_double("surface.pdd.aschwanden.beta_snow_c");
+
+  m_fresh_water_density        = m_config->get_double("constants.fresh_water.density");
+  m_ice_density                = m_config->get_double("constants.ice.density");
+  m_pdd_aschwanden_latitude_beta_w = m_config->get_double("surface.pdd.aschwanden.latitude_beta_w");
+  m_refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
+
+
+}
+
+AschwandenPDDObject::~AschwandenPDDObject() {
+  // empty
+}
+
+LocalMassBalance::DegreeDayFactors AschwandenPDDObject::degree_day_factors(int i, int j,
+                                                                            double latitude) {
+
+  LocalMassBalance::DegreeDayFactors ddf;
+  ddf.refreeze_fraction = m_refreeze_fraction;
+
+  if (latitude < m_pdd_aschwanden_latitude_beta_w) { // case latitude < 77 deg N
+    ddf.ice  = m_beta_ice_w;
+    ddf.snow = m_beta_snow_w;
+  } else { // case > 77 deg N
+    ddf.ice  = m_beta_ice_c;
+    ddf.snow = m_beta_snow_c;
+  }
+
+  // degree-day factors in \ref Aschwanden are water-equivalent
+  //   thickness per degree day; ice-equivalent thickness melted per degree
+  //   day is slightly larger; for example, iwfactor = 1000/910
+  const double iwfactor = m_fresh_water_density / m_ice_density;
+  ddf.snow *= iwfactor;
+  ddf.ice  *= iwfactor;
+
+  return ddf;
+}
+
 } // end of namespace surface
 } // end of namespace pism

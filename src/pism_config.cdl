@@ -1334,6 +1334,31 @@ netcdf pism_config {
     pism_config:surface.pdd.balance_year_start_day_type = "integer";
     pism_config:surface.pdd.balance_year_start_day_units = "ordinal day number";
 
+    pism_config:surface.pdd.aschwanden.beta_ice_c = 0.006;
+    pism_config:surface.pdd.aschwanden.beta_ice_c_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_ice_c_type = "scalar";
+    pism_config:surface.pdd.aschwanden.beta_ice_c_units = "meter / (Kelvin day)";
+
+    pism_config:surface.pdd.aschwanden.beta_ice_w = 0.008;
+    pism_config:surface.pdd.aschwanden.beta_ice_w_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_ice_w_type = "scalar";
+    pism_config:surface.pdd.aschwanden.beta_ice_w_units = "meter / (Kelvin day)";
+
+    pism_config:surface.pdd.aschwanden.beta_snow_c = 0.0015;
+    pism_config:surface.pdd.aschwanden.beta_snow_c_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_snow_c_type = "scalar";
+    pism_config:surface.pdd.aschwanden.beta_snow_c_units = "meter / (Kelvin day)";
+
+    pism_config:surface.pdd.aschwanden.beta_snow_w = 0.003;
+    pism_config:surface.pdd.aschwanden.beta_snow_w_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_snow_w_type = "scalar";
+    pism_config:surface.pdd.aschwanden.beta_snow_w_units = "meter / (Kelvin day)";
+
+    pism_config:surface.pdd.aschwanden.latitude_beta_w = 77.0;
+    pism_config:surface.pdd.aschwanden.latitude_beta_w_doc = "latitude below which to use warm case, in formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.latitude_beta_w_type = "scalar";
+    pism_config:surface.pdd.aschwanden.latitude_beta_w_units = "degree_north";
+
     pism_config:surface.pdd.factor_ice = 0.00879120879120879;
     pism_config:surface.pdd.factor_ice_doc = "EISMINT-Greenland value [@ref RitzEISMINT]; = (8 mm liquid-water-equivalent) / (pos degree day)";
     pism_config:surface.pdd.factor_ice_type = "scalar";

@@ -133,6 +133,7 @@ IceModelVec::Ptr PDD_air_temp_sd::compute_impl() const {
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   : SurfaceModel(g) {
 
+  m_aschwanden                 = NULL;
   m_mbscheme                   = NULL;
   m_faustogreve                = NULL;
   m_sd_period                  = 0;
@@ -153,6 +154,9 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_use_fausto_params = options::Bool("-pdd_fausto",
                                       "Set PDD parameters using formulas (6) and (7)"
                                       " in [Faustoetal2009]");
+  m_use_aschwanden_params = options::Bool("-pdd_aschwanden",
+                                      "Set PDD parameters Aschwanden"
+                                      " in Aschwanden");
 
   options::String firn_file("-pdd_firn_depth_file", "Read firn depth from file");
   m_firn_file_set = firn_file.is_set();
@@ -177,6 +181,10 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 
   if (m_use_fausto_params) {
     m_faustogreve = new FaustoGrevePDDObject(m_grid);
+  }
+
+  if (m_use_aschwanden_params) {
+    m_aschwanden = new AschwandenPDDObject(m_grid);
   }
 
   if (sd_ref_year.is_set()) {
@@ -260,6 +268,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 TemperatureIndex::~TemperatureIndex() {
   delete m_mbscheme;
   delete m_faustogreve;
+  delete m_aschwanden;
 }
 
 void TemperatureIndex::init_impl() {
@@ -289,6 +298,12 @@ void TemperatureIndex::init_impl() {
                "  Setting PDD parameters from [Faustoetal2009] ...\n");
 
     m_base_pddStdDev = 2.53;
+  }
+
+  if (m_use_aschwanden_params) {
+    m_log->message(2,
+               "  Setting PDD parameters from Aschwanden ...\n");
+
   }
 
   options::String firn_file("-pdd_firn_depth_file", "Read firn depth from file");
@@ -358,6 +373,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
   // make a copy of the pointer to convince clang static analyzer that its value does not
   // change during the call
   FaustoGrevePDDObject *fausto_greve = m_faustogreve;
+  AschwandenPDDObject *aschwanden = m_aschwanden;
 
   m_t  = t;
   m_dt = dt;
@@ -389,13 +405,10 @@ void TemperatureIndex::update_impl(double t, double dt) {
   IceModelVec::AccessList list{&mask, &m_air_temp_sd, &m_climatic_mass_balance,
       &m_firn_depth, &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
 
-  if (fausto_greve != NULL) {
-    surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
+  if (aschwanden != NULL) {
     latitude         = m_grid->variables().get_2d_scalar("latitude");
-    longitude        = m_grid->variables().get_2d_scalar("longitude");
 
-    list.add({latitude, longitude, surface_altitude});
-    fausto_greve->update_temp_mj(*surface_altitude, *latitude, *longitude);
+    list.add({latitude});
   }
 
   const double
@@ -454,6 +467,12 @@ void TemperatureIndex::update_impl(double t, double dt) {
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
         ddf = fausto_greve->degree_day_factors(i, j, (*latitude)(i, j));
+      }
+
+      if (aschwanden != NULL) {
+        // we have been asked to set mass balance parameters according to
+        //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
+        ddf = aschwanden->degree_day_factors(i, j, (*latitude)(i, j));
       }
 
       // apply standard deviation lapse rate on top of prescribed values
