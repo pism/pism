@@ -67,13 +67,8 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 protected:
-  double m_precipexpfactor_scalar;
+  double m_precipexpfactor;
   mutable std::vector<double> m_scaling_values;
-
-  std::string m_precipexpfactor_name;
-  Timeseries *m_precipexpfactor;
-  bool m_precipexpfactor_file_set;
-
 };
 
 } // end of namespace atmosphere
