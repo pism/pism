@@ -477,7 +477,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
       if (aschwanden != NULL) {
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-        ddf = aschwanden->degree_day_factors(i, j, (*latitude)(i, j));
+        ddf = aschwanden->degree_day_factors((*latitude)(i, j));
       }
 
       // apply standard deviation lapse rate on top of prescribed values

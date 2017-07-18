@@ -254,7 +254,7 @@ public:
 
   /*! If this method is called, it is assumed that i,j is in the ownership range
     for IceModelVec2S temp_mj. */
-  LocalMassBalance::DegreeDayFactors degree_day_factors(int i, int j, double latitude);
+  LocalMassBalance::DegreeDayFactors degree_day_factors(double latitude);
 
 protected:
   IceGrid::ConstPtr m_grid;
@@ -267,6 +267,7 @@ protected:
   double m_fresh_water_density;
   double m_ice_density;
   double m_pdd_aschwanden_latitude_beta_w;
+  double m_pdd_aschwanden_transition_width;
   double m_refreeze_fraction;
 
 };

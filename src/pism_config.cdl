@@ -1359,6 +1359,12 @@ netcdf pism_config {
     pism_config:surface.pdd.aschwanden.latitude_beta_w_type = "scalar";
     pism_config:surface.pdd.aschwanden.latitude_beta_w_units = "degree_north";
 
+    pism_config:surface.pdd.aschwanden.warm_cold_transition_width = 1.0;
+    pism_config:surface.pdd.aschwanden.warm_cold_transition_width_doc = "smoothing width in degrees for linear transition between warm and cold values";
+    pism_config:surface.pdd.aschwanden.warm_cold_transition_with_type = "scalar";
+    pism_config:surface.pdd.aschwanden.warm_cold_transition_width_units = "degrees";
+
+
     pism_config:surface.pdd.factor_ice = 0.00879120879120879;
     pism_config:surface.pdd.factor_ice_doc = "EISMINT-Greenland value [@ref RitzEISMINT]; = (8 mm liquid-water-equivalent) / (pos degree day)";
     pism_config:surface.pdd.factor_ice_type = "scalar";

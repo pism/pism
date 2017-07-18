@@ -440,6 +440,7 @@ AschwandenPDDObject::AschwandenPDDObject(IceGrid::ConstPtr g)
   m_fresh_water_density        = m_config->get_double("constants.fresh_water.density");
   m_ice_density                = m_config->get_double("constants.ice.density");
   m_pdd_aschwanden_latitude_beta_w = m_config->get_double("surface.pdd.aschwanden.latitude_beta_w");
+  m_pdd_aschwanden_transition_width = m_config->get_double("surface.pdd.aschwanden.warm_cold_transition_width");
   m_refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
 
 
@@ -449,18 +450,20 @@ AschwandenPDDObject::~AschwandenPDDObject() {
   // empty
 }
 
-LocalMassBalance::DegreeDayFactors AschwandenPDDObject::degree_day_factors(int i, int j,
-                                                                            double latitude) {
+LocalMassBalance::DegreeDayFactors AschwandenPDDObject::degree_day_factors(double latitude) {
 
   LocalMassBalance::DegreeDayFactors ddf;
   ddf.refreeze_fraction = m_refreeze_fraction;
 
-  if (latitude < m_pdd_aschwanden_latitude_beta_w) { // case latitude < 77 deg N
+  if (latitude < m_pdd_aschwanden_latitude_beta_w - m_pdd_aschwanden_transition_width) { // case latitude < 77 deg N - smoothing
     ddf.ice  = m_beta_ice_w;
     ddf.snow = m_beta_snow_w;
-  } else { // case > 77 deg N
+  } else if  (latitude < m_pdd_aschwanden_latitude_beta_w + m_pdd_aschwanden_transition_width) { // case latitude > 77 deg N + smoothing
     ddf.ice  = m_beta_ice_c;
-    ddf.snow = m_beta_snow_c;
+    ddf.snow = m_beta_snow_c;    
+  } else { // intermediate case
+    ddf.ice  = (m_beta_ice_c - m_beta_ice_w) / (2 * m_pdd_aschwanden_transition_width) * (latitude - m_pdd_aschwanden_latitude_beta_w - m_pdd_aschwanden_transition_width);
+    ddf.snow = m_beta_snow_c + m_beta_snow_w;
   }
 
   // degree-day factors in \ref Aschwanden are water-equivalent
