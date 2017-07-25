@@ -461,8 +461,12 @@ LocalMassBalance::DegreeDayFactors AschwandenPDDObject::degree_day_factors(doubl
   } else if  (latitude < m_pdd_aschwanden_latitude_beta_w + m_pdd_aschwanden_transition_width / 2) { // case latitude > 77 deg N + smoothing
     ddf.ice  = m_beta_ice_c;
     ddf.snow = m_beta_snow_c;    
-  } else { // intermediate case
-    ddf.ice  = (m_beta_ice_c - m_beta_ice_w) / (2 * m_pdd_aschwanden_transition_width) * (latitude - m_pdd_aschwanden_latitude_beta_w - m_pdd_aschwanden_transition_width);
+  } else { // intermediate case, linear transition
+    double a_ice =  (m_beta_ice_c - m_beta_ice_w) / m_pdd_aschwanden_transition_width;
+    double b_ice = m_beta_ice_c - a_ice * (m_pdd_aschwanden_latitude_beta_w - m_pdd_aschwanden_transition_width / 2);
+    ddf.ice  = a_ice * latitude + b_ice;
+    double a_snow =  (m_beta_snow_c - m_beta_snow_w) / m_pdd_aschwanden_transition_width;
+    double b_snow = m_beta_snow_c - a_snow * (m_pdd_aschwanden_latitude_beta_w - m_pdd_aschwanden_transition_width / 2);
     ddf.snow = m_beta_snow_c + m_beta_snow_w;
   }
 
