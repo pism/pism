@@ -467,7 +467,7 @@ LocalMassBalance::DegreeDayFactors AschwandenPDDObject::degree_day_factors(doubl
     ddf.ice  = a_ice * latitude + b_ice;
     double a_snow =  (m_beta_snow_c - m_beta_snow_w) / m_pdd_aschwanden_transition_width;
     double b_snow = m_beta_snow_c - a_snow * (m_pdd_aschwanden_latitude_beta_w - m_pdd_aschwanden_transition_width / 2);
-    ddf.snow = m_beta_snow_c + m_beta_snow_w;
+    ddf.snow =  a_snow * latitude + b_snow;
   }
 
   // degree-day factors in \ref Aschwanden are water-equivalent
