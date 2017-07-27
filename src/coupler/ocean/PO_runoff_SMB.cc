@@ -65,9 +65,10 @@ void Runoff_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   m_input_model->shelf_base_mass_flux(result);
   double
     m_runoff_sensitivity = m_config->get_double("surface.runoff_sensitivity"),
-    m_runoff_to_ocean_melt_power = m_config->get_double("ocean.runoff_to_ocean_melt_power");
+    m_runoff_to_ocean_melt_power_alpha = m_config->get_double("ocean.runoff_to_ocean_melt_power_alpha"),
+    m_runoff_to_ocean_melt_power_beta = m_config->get_double("ocean.runoff_to_ocean_melt_power_beta");
 
-  result.scale(pow(1 + m_current_forcing / m_runoff_sensitivity, m_runoff_to_ocean_melt_power));
+  result.scale(pow(1 + m_current_forcing / m_runoff_sensitivity, m_runoff_to_ocean_melt_power_alpha) * pow(m_current_forcing, m_runoff_to_ocean_melt_power_beta));
 }
 
 } // end of namespace ocean

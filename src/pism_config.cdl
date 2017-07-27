@@ -963,6 +963,16 @@ netcdf pism_config {
     pism_config:ocean.runoff_to_ocean_melt_power_type = "scalar";
     pism_config:ocean.runoff_to_ocean_melt_power_units = "1";
 
+    pism_config:ocean.runoff_to_ocean_melt_power_alpha = 0.54;
+    pism_config:ocean.runoff_to_ocean_melt_power_alpha_doc = "Exponent n in  m = runoff^n";
+    pism_config:ocean.runoff_to_ocean_melt_power_alpha__type = "scalar";
+    pism_config:ocean.runoff_to_ocean_melt_power_alpha_units = "1";
+
+    pism_config:ocean.runoff_to_ocean_melt_power_beta = 1.17;
+    pism_config:ocean.runoff_to_ocean_melt_power_beta_doc = "Exponent n in  m = runoff^n";
+    pism_config:ocean.runoff_to_ocean_melt_power_beta__type = "scalar";
+    pism_config:ocean.runoff_to_ocean_melt_power_beta_units = "1";
+
     pism_config:ocean.sub_shelf_heat_flux_into_ice = 0.5;
     pism_config:ocean.sub_shelf_heat_flux_into_ice_doc = "= J meter-2 second-1; naively chosen default value for heat from ocean; see comments in @ref pism::ocean::Constant::shelf_base_mass_flux().";
     pism_config:ocean.sub_shelf_heat_flux_into_ice_type = "scalar";
