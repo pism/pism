@@ -63,7 +63,7 @@ Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in)
   m_runoff_to_ocean_melt_power_beta = m_config->get_double("ocean.runoff_to_ocean_melt_power_beta");
 
   int status = 0, iter = 0,  max_iter = 200;
-  double T0 = 0.0, T0_lo = 0.0, T0_hi = 0.0;
+  double T0 = 2.0, T0_lo = 0.0, T0_hi = 5.0;
   
   const gsl_root_fsolver_type *solvT;
   gsl_root_fsolver *solv;
@@ -76,13 +76,14 @@ Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in)
   params.b =  m_temp_to_runoff_b;
   params.alpha =  m_runoff_to_ocean_melt_power_alpha;
   params.beta =  m_runoff_to_ocean_melt_power_beta;
-
+  
   F.function = &temp_to_sgl;
   F.params   = &params;
   
   solvT      = gsl_root_fsolver_brent; /* faster than bisection but still bracketing */
   solv       = gsl_root_fsolver_alloc(solvT);
-
+  gsl_root_fsolver_set(solv, &F, T0_lo, T0_hi);
+  
   iter = 0;
   do {
     iter++;
@@ -104,8 +105,6 @@ Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in)
     printf("!!!ERROR: root finding iteration reached maximum iterations; QUITTING!\n");
     goto cleanup;
   }
-  
-  printf("%19.15e,\n", T0);
   
  cleanup:
   gsl_root_fsolver_free(solv);
