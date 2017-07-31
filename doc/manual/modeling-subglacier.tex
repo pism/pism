@@ -142,13 +142,13 @@ Omitting the \texttt{-topg_to_phi} option in the second run would make PISM cont
 
 \subsection*{Determining the effective pressure}  When using the default option \texttt{-yield_stress mohr_coulomb}, the effective pressure on the till $N_{til}$ is determined by the modeled amount of water in the till.  Lower effective pressure means that more of the weight of the ice is carried by the pressurized water in the till and thus the ice can slide more easily.  That is, equation \eqref{eq:mohrcoulomb} sets the value of $\tau_c$ proportionately to $N_{til}$.  The amount of water in the till is, however, a nontrivial output of the hydrology (subsection \ref{subsect:subhydro}) and conservation-of-energy (section \ref{subsect:energy}) submodels in PISM.
 
-Following \cite{Tulaczyketal2000}, based on laboratory experiments with till extracted from an ice stream in Antarctica, we use the following parameterization:
+Following \cite{Tulaczyketal2000}, based on laboratory experiments with till extracted from an ice stream in Antarctica, \cite{BuelervanPelt2015} propose the following parameterization which is used in PISM.  It is based on the ratio $s=W_{til}/W_{til}^{max}$ where $W_{til}=$ \texttt{tillwat} is the effective thickness of water in the till and $W_{til}^{max}=$\texttt{hydrology_tillwat_max} is the maximum amount of water in the till (see subsection \ref{subsect:subhydro}):
 \begin{equation}
-N_{til} = \delta P_o \, 10^{(e_0/C_c) \left(1 - (W_{til}/W_{til}^{max})\right).}  \label{eq:computeNtil}
+N_{til} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\} \label{eq:computeNtil}
 \end{equation}
-Here $P_o$ is the ice overburden pressure which is determined entirely by the ice thickness and density, $W_{til}=$ \texttt{tillwat} is the effective thickness of water in the till, $W_{til}^{max}=$\texttt{hydrology_tillwat_max} is the maximum amount of water in the till (see subsection \ref{subsect:subhydro}), and the remaining parameters are set by options in Table \ref{tab:effective-pressure}.  While there is experimental support for the default values of $e_0$ and $C_c$, the value of $\delta=$\texttt{till_effective_fraction_overburden} should be regarded as uncertain, important, and subject to parameter studies to assess its effect.
+Here $P_o$ is the ice overburden pressure, which is determined entirely by the ice thickness and density, and the remaining parameters are set by options in Table \ref{tab:effective-pressure}.  While there is experimental support for the default values of $C_c$, $e_0$, and $N_0$, the value of $\delta=$\texttt{till_effective_fraction_overburden} should be regarded as uncertain, important, and subject to parameter studies to assess its effect.
 
-FIXME:  THIS IS DOC ON EVOLVING CODE:  If the \texttt{tauc_add_transportable_water} configuration flag is set (either in the configuration file or using the \intextoption{tauc_add_transportable_water} option), then the above formula becomes FIXME
+FIXME: EVOLVING CODE:  If the \texttt{tauc_add_transportable_water} configuration flag is set (either in the configuration file or using the \intextoption{tauc_add_transportable_water} option), then the above formula becomes FIXME
 
 \begin{table}
   \centering
@@ -158,7 +158,8 @@ FIXME:  THIS IS DOC ON EVOLVING CODE:  If the \texttt{tauc_add_transportable_wat
     \\\midrule
     \intextoption{till_reference_void_ratio} & $= e_0$ in \eqref{eq:computeNtil}, dimensionless, with default value 0.69 \cite{Tulaczyketal2000} \\
     \intextoption{till_compressibility_coefficient} & $= C_c$ in \eqref{eq:computeNtil}, dimensionless, with default value 0.12 \cite{Tulaczyketal2000} \\
-    \intextoption{till_effective_fraction_overburden} & $= \delta$ in \eqref{eq:computeNtil}, dimensionless, with default value 0.02 \\ \bottomrule
+    \intextoption{till_effective_fraction_overburden} & $= \delta$ in \eqref{eq:computeNtil}, dimensionless, with default value 0.02 \cite{BuelervanPelt2015} \\
+    \intextoption{till_reference_effective_pressure} & $= N_0$ in \eqref{eq:computeNtil}, in Pa, with default value 1000.0 \cite{Tulaczyketal2000} \\ \bottomrule
   \end{tabular}
 \caption{Command-line options controlling how till effective pressure $N_{til}$ in equation \eqref{eq:mohrcoulomb} is determined.}
 \label{tab:effective-pressure}
@@ -168,7 +169,7 @@ FIXME:  THIS IS DOC ON EVOLVING CODE:  If the \texttt{tauc_add_transportable_wat
 \subsection{Subglacial hydrology}  \label{subsect:subhydro}
 \optsection{Subglacial hydrology}
 
-At the present time, two simple subglacial hydrology models are implemented \emph{and documented} in PISM, namely \texttt{-hydrology null} and \texttt{-hydrology routing}; see Table \ref{tab:hydrologychoice}.  In both models, some of the water in the subglacial layer is stored locally in a layer of subglacial till by the hydrology model.  In the  \texttt{routing} model water is conserved by horizontally-transporting the excess water (namely \texttt{bwat}) according to the gradient of the modeled hydraulic potential.  In both hydrology models a state variable \texttt{tillwat} is the effective thickness of the layer of liquid water in the till; it is used to compute the effective pressure on the till (see the previous subsection).  The pressure of the transportable water \texttt{bwat} in the \texttt{routing} model does not relate directly to the effective pressure on the till.
+At the present time, two simple subglacial hydrology models are implemented \emph{and documented} in PISM, namely \texttt{-hydrology null} and \texttt{-hydrology routing}; see Table \ref{tab:hydrologychoice} and \cite{BuelervanPelt2015}.  In both models, some of the water in the subglacial layer is stored locally in a layer of subglacial till by the hydrology model.  In the  \texttt{routing} model water is conserved by horizontally-transporting the excess water (namely \texttt{bwat}) according to the gradient of the modeled hydraulic potential.  In both hydrology models a state variable \texttt{tillwat} is the effective thickness of the layer of liquid water in the till; it is used to compute the effective pressure on the till (see the previous subsection).  The pressure of the transportable water \texttt{bwat} in the \texttt{routing} model does not relate directly to the effective pressure on the till.
 
 \begin{table}
   \centering
@@ -250,7 +251,7 @@ For most choices of the relevant parameters and most grid spacings, the \texttt{
 \end{table}
 
 %\subsubsection*{The mass-conserving \texttt{-hydrology distributed} model}
-% FIXME  -hydrology distributed is not documented; controlled by options
+% FIXME  -hydrology distributed is not documented except by  \cite{BuelervanPelt2015}; controlled by options
 % hydrology_roughness_scale, hydrology_cavitation_opening_coefficient,
 % hydrology_creep_closure_coefficient, hydrology_regularizing_porosity
 %    \intextoption{init_P_from_steady}  & Only applies to \texttt{-hydrology distributed}. \\
