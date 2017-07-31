@@ -1114,6 +1114,7 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 
     basalmeltrate_shelf(i,j) = 0.0;
     overturning(i,j) = 0.0;
+    T_pressure_melting(i,j)= 0.0;
 
     if ((ocean_box_mask(i,j) == 1) && (shelf_id > 0.0)){
 
