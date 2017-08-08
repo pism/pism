@@ -144,7 +144,7 @@ void Runoff_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
     alpha = m_runoff_to_ocean_melt_power_alpha,
     beta = m_runoff_to_ocean_melt_power_beta;
   
-  result.scale(1 + ((A * pow(a * m_current_forcing, alpha) + B) * pow(m_current_forcing, beta)) / (((A * pow(a * m_current_forcing_0, alpha) + B)) * pow(m_current_forcing_0, beta)));
+  result.scale(1 + ((A * pow(a * m_current_forcing + b, alpha) + B) * pow(m_current_forcing, beta)) / (((A * pow(a * m_current_forcing_0 + b, alpha) + B)) * pow(m_current_forcing_0, beta)));
 }
 
 } // end of namespace ocean
