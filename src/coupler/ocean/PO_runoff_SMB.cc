@@ -106,6 +106,9 @@ Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in)
     goto cleanup;
   }
   
+  m_log->message(2,
+             "  - root solver found offset T_0 = %2.4f\n", T0);
+
  cleanup:
   gsl_root_fsolver_free(solv);
   m_current_forcing_0 = T0;
@@ -123,7 +126,8 @@ void Runoff_SMB::init_impl() {
   m_input_model->init();
 
   m_log->message(2,
-             "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
+             "* Initializing ice shelf base mass flux forcing using scalar multiplier...\n"
+             "*   derived from delta_T air temperature modifier\n");
 
   init_internal();
 
@@ -142,9 +146,17 @@ void Runoff_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
     A = m_runoff_to_ocean_melt_a,
     B = m_runoff_to_ocean_melt_b,
     alpha = m_runoff_to_ocean_melt_power_alpha,
-    beta = m_runoff_to_ocean_melt_power_beta;
+    beta = m_runoff_to_ocean_melt_power_beta,
+    m_scale = ((A * pow(a * m_current_forcing + b, alpha) + B) * pow(m_current_forcing, beta)) / (((A * pow(a * m_current_forcing_0 + b, alpha) + B)) * pow(m_current_forcing_0, beta));
+
+  if (isnan(m_scale)) {
+      m_scale = 0.0;
+    }
+
+  m_log->message(5,
+                 "  - T_a = %2.1f, ocs = %2.4f\n", m_current_forcing, m_scale + 1);
   
-  result.scale(1 + ((A * pow(a * m_current_forcing + b, alpha) + B) * pow(m_current_forcing, beta)) / (((A * pow(a * m_current_forcing_0 + b, alpha) + B)) * pow(m_current_forcing_0, beta)));
+  result.scale(1 + m_scale);
 }
 
 } // end of namespace ocean
