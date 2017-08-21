@@ -71,7 +71,7 @@ int PNCFile::create_impl(const std::string &fname) {
 
   init_hints();
 
-  stat = ncmpi_create(m_com, fname.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
+  stat = ncmpi_create(m_com, fname.c_str(), NC_CLOBBER|NC_64BIT_DATA,
                       mpi_info, &m_file_id); check(PISM_ERROR_LOCATION, stat);
 
   return stat;
