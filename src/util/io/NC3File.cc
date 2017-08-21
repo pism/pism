@@ -1007,8 +1007,10 @@ std::string NC3File::get_format_impl() const {
 
   switch(format) {
   case NC_FORMAT_CLASSIC:
-  case NC_FORMAT_64BIT:
+  case NC_FORMAT_64BIT_OFFSET:
     return "netcdf3";
+  case NC_FORMAT_64BIT_DATA:
+    return "cdf5";
   case NC_FORMAT_NETCDF4:
   case NC_FORMAT_NETCDF4_CLASSIC:
   default:
