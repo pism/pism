@@ -47,16 +47,6 @@ protected:
   IceModelVec::Ptr compute_impl() const;
 };
 
-
-/*! @brief Equilibrium line altitude. */
-  class PS_equilibrium_line_altitude : public TSDiag<TSSnapshotDiagnostic, SurfaceModel>
-{
-public:
-  PS_equilibrium_line_altitude(const SurfaceModel *m);
-protected:
-  double compute();
-};
-
 /*! @brief Ice surface temperature. */
 class PS_ice_surface_temp : public Diag<SurfaceModel>
 {
@@ -122,16 +112,6 @@ std::map<std::string, Diagnostic::Ptr> SurfaceModel::diagnostics_impl() const {
   }
 
   return result;
-}
-
-std::map<std::string, TSDiagnostic::Ptr> SurfaceModel::ts_diagnostics_impl() const {
-  if (m_atmosphere) {
-    return m_atmosphere->ts_diagnostics();
-  } else {
-    return {
-      {"equilibrium_line_altitude", TSDiagnostic::Ptr(new PS_equilibrium_line_altitude(this))}
-    };
-  }
 }
 
 void SurfaceModel::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
@@ -241,45 +221,6 @@ IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
 
   return result;
 }
-
-PS_equilibrium_line_altitude::PS_equilibrium_line_altitude(const SurfaceModel *m)
-  : TSDiag<TSSnapshotDiagnostic, SurfaceModel>(m, "equilibrium_line_altitude") {
-
-  m_ts.variable().set_string("units", "m");
-  m_ts.variable().set_string("long_name",
-                              "equilibrium line altitude");
-}
-
-double PS_equilibrium_line_altitude::compute() {
-  
-  double ela_sum = 0.0;
-  int no_points = 0;
-
-  // const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-  // const IceModelVec2S
-  //   *climatic_mass_balance = m_grid->variables().get_2d_scalar("climatic_mass_balance"),
-  //   *surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
-
-  // IceModelVec::AccessList list{&mask, climatic_mass_balance, surface_altitude};
-
-  // ParallelSection loop(m_grid->com);
-  // try {
-  //   for (Points p(*m_grid); p; p.next()) {
-  //     const int i = p.i(), j = p.j();
-
-  //     if (mask.icy(i,j) && ( (*climatic_mass_balance)(i, j) < 100.) && ((*climatic_mass_balance)(i, j) > -100.)) {
-  //       ela_sum += (*surface_altitude)(i, j);
-  //       no_points += 1;
-  //     }
-  //   }
-  // } catch (...) {
-  //   loop.failed();
-  // }
-  // loop.check();
-
-  return 1500;
-}
-
 
 PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
