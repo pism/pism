@@ -16,9 +16,9 @@ grid="-Mx $xx -My $yy -Mz 3 -Mbz 1 -Lz 1500 -Lbz 0"
 
 stressbalance="-ssa_method fd -stress_balance ssa -ssa_dirichlet_bc $pc"
 
-calving="-calving thickness_calving -thickness_calving_threshold 300"
+calving="-calving thickness_calving -thickness_calving_threshold_file circular_noshelf.nc"
 
-diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,calving_mass_flux"
+diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,tendency_of_ice_mass_due_to_discharge"
 
 viewers="-view $diagnostics"
 

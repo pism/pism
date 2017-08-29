@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,7 +18,6 @@
  */
 
 #include "CalvingAtThickness.hh"
-#include "base/util/pism_options.hh"
 #include "base/util/Mask.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/IceGrid.hh"
@@ -33,19 +32,16 @@ namespace calving {
 
 CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
   : Component(g) {
-  m_calving_threshold_scalar = m_config->get_double("calving.thickness_calving.threshold");
 
   m_old_mask.create(m_grid, "old_mask", WITH_GHOSTS, 1);
 
-  m_calving_threshold.create(m_grid, "calving_threshold", WITH_GHOSTS,
-                           m_config->get_double("grid.max_stencil_width"));
+  m_calving_threshold.create(m_grid, "calving_threshold", WITHOUT_GHOSTS);
 
-  m_calving_threshold.set_attrs("internal",
-                              "calving thickness threshold",
-                              "m", "");
+  m_calving_threshold.set_attrs("diagnostic",
+                                "threshold used by the 'calving at threshold' calving method",
+                                "m",
+                                ""); // no standard name
   m_calving_threshold.set_time_independent(true);
-
-
 }
 
 CalvingAtThickness::~CalvingAtThickness() {
@@ -54,33 +50,27 @@ CalvingAtThickness::~CalvingAtThickness() {
 
 
 void CalvingAtThickness::init() {
-  
-  m_log->message(2,
-             "* Initializing the 'calving at a threshold thickness' mechanism...\n"
-             "  thickness threshold: %3.3f meters\n", m_calving_threshold_scalar);
 
-  options::String thickness_calving_threshold_file("-thickness_calving_threshold_file",
-                                  "Specifies a file to get thickness calving threshold from");
+  m_log->message(2, "* Initializing the 'calving at a threshold thickness' mechanism...\n");
 
-  if (thickness_calving_threshold_file.is_set()) {
+  std::string threshold_file = m_config->get_string("calving.thickness_calving.threshold_file");
 
-      m_log->message(2,
-                     "* Option '-thickness_calving_threshold_file' found...\n"
-                     "  reading thickness calving threshold from file %s\n"
-                     "  this will override thickness threshold: %3.3f meters\n", thickness_calving_threshold_file->c_str(), m_calving_threshold_scalar);
+  double calving_threshold = m_config->get_double("calving.thickness_calving.threshold");
 
-      m_calving_threshold.regrid(thickness_calving_threshold_file, CRITICAL);
+  m_calving_threshold.set(calving_threshold);
 
+  if (not threshold_file.empty()) {
+    m_log->message(2,
+                   "  Reading thickness calving threshold from file '%s'...\n",
+                   threshold_file.c_str());
+
+    m_calving_threshold.regrid(threshold_file, CRITICAL);
   } else {
-
-    // set m_calving_threshold to scalar m_calving_threshold_scalar everywhere
-    m_calving_threshold.set(m_calving_threshold_scalar);
+    m_log->message(2,
+                   "  Thickness threshold: %3.3f meters.\n", calving_threshold);
   }
-
-
 }
 
-  
 /**
  * Updates ice cover mask and the ice thickness according to the
  * calving rule removing ice at the shelf front that is thinner than a
@@ -118,30 +108,8 @@ const IceModelVec2S& CalvingAtThickness::threshold() const {
 }
 
 std::map<std::string, Diagnostic::Ptr> CalvingAtThickness::diagnostics_impl() const {
-  return {{"calving_threshold", Diagnostic::Ptr(new CalvingAtThickness_threshold(this))}};
+  return {{"calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
 }
 
-CalvingAtThickness_threshold::CalvingAtThickness_threshold(const CalvingAtThickness *m)
-  : Diag<CalvingAtThickness>(m) {
-
-  /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "calving_threshold"));
-
-  set_attrs("threshold used by the 'calving at threshold' calving method ", "",
-            "", "", 0);
-}
-
-IceModelVec::Ptr CalvingAtThickness_threshold::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "calving_threshold", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  result->metadata(0).set_output_type(PISM_INT);
-
-  result->copy_from(model->threshold());
-
-  return result;
-}
-
-  
 } // end of namespace calving
 } // end of namespace pism

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,18 +41,8 @@ public:
 
 protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  double m_calving_threshold_scalar;
   IceModelVec2S m_calving_threshold;
   IceModelVec2CellType m_old_mask;
-};
-
-/*! @brief Calving at thickness threshold. */
-class CalvingAtThickness_threshold : public Diag<CalvingAtThickness>
-{
-public:
-  CalvingAtThickness_threshold(const CalvingAtThickness *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
 };
 
 } // end of namespace calving
