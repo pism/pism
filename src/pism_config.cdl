@@ -1324,31 +1324,6 @@ netcdf pism_config {
     pism_config:surface.force_to_thickness.start_time_type = "scalar";
     pism_config:surface.force_to_thickness.start_time_units = "years";
 
-    pism_config:surface.lapse_rate.smb_grad_negative_south = 1.91;
-    pism_config:surface.lapse_rate.smb_grad_negative_south_doc = "SMB gradient for negative SMB south of .";
-    pism_config:surface.lapse_rate.smb_grad_negative_south_type = "scalar";
-    pism_config:surface.lapse_rate.smb_grad_negative_south_units = "kg m-2 yr-1";
-
-    pism_config:surface.lapse_rate.smb_grad_positive_south = 0.07;
-    pism_config:surface.lapse_rate.smb_grad_positive_south_doc = "SMB gradient for positive SMB south of .";
-    pism_config:surface.lapse_rate.smb_grad_positive_south_type = "scalar";
-    pism_config:surface.lapse_rate.smb_grad_positive_south_units = "kg m-2 yr-1";
-
-    pism_config:surface.lapse_rate.smb_grad_negative_north = 1.91;
-    pism_config:surface.lapse_rate.smb_grad_negative_north_doc = "SMB gradient for negative SMB north of .";
-    pism_config:surface.lapse_rate.smb_grad_negative_north_type = "scalar";
-    pism_config:surface.lapse_rate.smb_grad_negative_north_units = "kg m-2 yr-1";
-
-    pism_config:surface.lapse_rate.smb_grad_positive_north = 0.07;
-    pism_config:surface.lapse_rate.smb_grad_positive_north_doc = "SMB gradient for positive SMB north of .";
-    pism_config:surface.lapse_rate.smb_grad_positive_north_type = "scalar";
-    pism_config:surface.lapse_rate.smb_grad_positive_north_units = "kg m-2 yr-1";
-
-    pism_config:surface.lapse_rate.north_south_lat = 77.0;
-    pism_config:surface.lapse_rate.north_south_lat_doc = "SMB gradient for positive SMB north of .";
-    pism_config:surface.lapse_rate.north_south_lat_type = "scalar";
-    pism_config:surface.lapse_rate.north_south_lat_units = "degrees_north";
-
     pism_config:surface.pdd.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.pdd.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed surface.pdd.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";
     pism_config:surface.pdd.air_temp_all_precip_as_rain_type = "scalar";
