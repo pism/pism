@@ -61,7 +61,6 @@ void LapseRates::init_impl() {
   m_smb_lapse_rate *= m_config->get_double("constants.ice.density");
   m_smb_lapse_rate = units::convert(m_sys, m_smb_lapse_rate,
                                     "(kg m-2) year-1 / km", "(kg m-2) second-1 / m");
-
 }
 
 void LapseRates::mass_flux_impl(IceModelVec2S &result) const {

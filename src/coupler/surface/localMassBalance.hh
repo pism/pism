@@ -270,7 +270,7 @@ protected:
   double m_fresh_water_density;
   double m_ice_density;
 };
-  
+
 } // end of namespace surface
 } // end of namespace pism
 

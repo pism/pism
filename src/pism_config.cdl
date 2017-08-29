@@ -1444,7 +1444,7 @@ netcdf pism_config {
     pism_config:surface.pdd.firn_compaction_to_accumulation_ratio_type = "scalar";
     pism_config:surface.pdd.firn_compaction_to_accumulation_ratio_units = "1";
 
-pism_config:surface.pdd.interpret_precip_as_snow = "no";
+    pism_config:surface.pdd.interpret_precip_as_snow = "no";
     pism_config:surface.pdd.interpret_precip_as_snow_doc = "Interpret precipitation as snow fall.";
     pism_config:surface.pdd.interpret_precip_as_snow_type = "boolean";
 

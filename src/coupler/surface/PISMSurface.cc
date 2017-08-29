@@ -141,8 +141,6 @@ void SurfaceModel::init_impl() {
   m_atmosphere->init();
 }
 
-
-
 //! \brief Returns mass held in the surface layer.
 /*!
  * Basic surface models currently implemented in PISM do not model the mass of
@@ -174,7 +172,6 @@ void SurfaceModel::layer_thickness_impl(IceModelVec2S &result) const {
 void SurfaceModel::temperature(IceModelVec2S &result) const {
   this->temperature_impl(result);
 }
-
 //! \brief Returns the liquid water fraction of the ice at the top ice surface.
 /*!
  * Most PISM surface models return 0.

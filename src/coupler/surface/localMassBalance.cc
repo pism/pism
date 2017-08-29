@@ -253,7 +253,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   // firn_depth += (snow_depth - snow_melted);
   // Turn firn into ice at X times accumulation
   // firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
-  
+
   if (firn_depth < 0.0) {
     firn_depth = 0.0;
   }

@@ -162,7 +162,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                                   "Both '-pdd_aschwanden' and '-pdd_fausto' are set. "
                                   "Choose one or the other.\n");
   }
-  
+
   if (sd_ref_year.is_set()) {
     m_sd_ref_time = units::convert(m_sys, sd_ref_year, "years", "seconds");
   }
