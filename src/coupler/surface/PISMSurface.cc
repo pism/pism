@@ -26,10 +26,8 @@
 #include "base/util/PISMVars.hh"
 #include "base/util/PISMTime.hh"
 #include "base/util/IceGrid.hh"
-#include "base/util/IceModelVec2CellType.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/iceModelVec.hh"
-#include "base/util/Mask.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
 
@@ -112,6 +110,14 @@ std::map<std::string, Diagnostic::Ptr> SurfaceModel::diagnostics_impl() const {
   }
 
   return result;
+}
+
+std::map<std::string, TSDiagnostic::Ptr> SurfaceModel::ts_diagnostics_impl() const {
+  if (m_atmosphere) {
+    return m_atmosphere->ts_diagnostics();
+  } else {
+    return {};
+  }
 }
 
 void SurfaceModel::attach_atmosphere_model(atmosphere::AtmosphereModel *input) {
