@@ -81,9 +81,6 @@ protected:
 
   double m_next_balance_year_start;
 
-  //! m; elevation of ELA 
-  double m_mean_ela;
-  
   //! cached surface mass balance rate
   IceModelVec2S m_climatic_mass_balance;
 
@@ -105,7 +102,6 @@ protected:
   //! total runoff during the last time step
   IceModelVec2S m_runoff;
 
-  bool m_randomized, m_randomized_repeatable, m_use_fausto_params, m_use_aschwanden_params;
   bool m_firn_file_set;
   bool m_sd_use_param, m_sd_file_set;
   int m_sd_period, m_sd_period_years;

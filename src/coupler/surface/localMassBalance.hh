@@ -72,6 +72,8 @@ public:
   LocalMassBalance(Config::ConstPtr config, units::System::Ptr system);
   virtual ~LocalMassBalance();
 
+  std::string method() const;
+
   virtual unsigned int get_timeseries_length(double dt) = 0;
 
   //! Count positive degree days (PDDs).  Returned value in units of K day.
@@ -113,6 +115,8 @@ public:
                        double accumulation) = 0;
 
 protected:
+  std::string m_method;
+
   const Config::ConstPtr m_config;
   const units::System::Ptr m_unit_system;
   const double m_seconds_per_day;
@@ -245,31 +249,26 @@ protected:
 class AschwandenPDDObject {
 
 public:
-  AschwandenPDDObject(IceGrid::ConstPtr g);
+  AschwandenPDDObject(Config::ConstPtr config);
   virtual ~AschwandenPDDObject();
 
-  void update_temp_mj(const IceModelVec2S &surfelev,
-                              const IceModelVec2S &lat,
-                              const IceModelVec2S &lon);
-
-  /*! If this method is called, it is assumed that i,j is in the ownership range
-    for IceModelVec2S temp_mj. */
   LocalMassBalance::DegreeDayFactors degree_day_factors(double latitude);
 
 protected:
-  IceGrid::ConstPtr m_grid;
-  const Config::ConstPtr m_config;
-
+  // "warm" PDD factors
   double m_beta_ice_w;
   double m_beta_snow_w;
+  // "cold" PDD factors
   double m_beta_ice_c;
   double m_beta_snow_c;
+  // transition from warm to cold
+  double m_transition_latitude;
+  double m_transition_width;
+  // PDD parameters
+  double m_refreeze_fraction;
+  // physical constants
   double m_fresh_water_density;
   double m_ice_density;
-  double m_pdd_aschwanden_latitude_beta_w;
-  double m_pdd_aschwanden_transition_width;
-  double m_refreeze_fraction;
-
 };
   
 } // end of namespace surface

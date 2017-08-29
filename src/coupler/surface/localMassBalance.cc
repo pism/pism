@@ -49,6 +49,10 @@ LocalMassBalance::~LocalMassBalance() {
   // empty
 }
 
+std::string LocalMassBalance::method() const {
+  return m_method;
+}
+
 PDDMassBalance::PDDMassBalance(Config::ConstPtr config, units::System::Ptr system)
   : LocalMassBalance(config, system) {
   precip_as_snow     = m_config->get_boolean("surface.pdd.interpret_precip_as_snow");
@@ -56,6 +60,8 @@ PDDMassBalance::PDDMassBalance(Config::ConstPtr config, units::System::Ptr syste
   Tmax               = m_config->get_double("surface.pdd.air_temp_all_precip_as_rain");
   pdd_threshold_temp = m_config->get_double("surface.pdd.positive_threshold_temp");
   refreeze_ice_melt  = m_config->get_boolean("surface.pdd.refreeze_ice_melt");
+
+  m_method = "an expectation integral";
 }
 
 
@@ -204,8 +210,9 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
     snow_melted     = 0.0,
     excess_pdds     = 0.0;
 
-  if (PDDs <= 0.0) {       // The "no melt" case.
+  if (PDDs <= 0.0) {            // The "no melt" case.
     snow_melted = 0.0;
+    firn_melted = 0.0,
     excess_pdds = 0.0;
   } else if (max_snow_melted <= snow_depth) {
     // Some of the snow melted and some is left; in any case, all of
@@ -214,7 +221,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
     snow_melted = max_snow_melted;
     firn_melted = 0.0;
     excess_pdds = 0.0;
-  } else if ((max_snow_melted <= firn_depth + snow_depth) && (max_snow_melted >= snow_depth)) {
+  } else if (max_snow_melted <= firn_depth + snow_depth) {
     // All of the snow is melted but some firn is left; in any case, all of
     // the energy available for melt, namely all of the positive
     // degree days (PDDs) were used up in melting snow.
@@ -273,10 +280,14 @@ which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
 PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::Ptr system,
-                                       Kind repeatable)
+                                       Kind kind)
   : PDDMassBalance(config, system) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
-  gsl_rng_set(pddRandGen, repeatable == 1 ? 0 : time(0));
+  gsl_rng_set(pddRandGen, kind == REPEATABLE ? 0 : time(0));
+
+  m_method = (kind == NOT_REPEATABLE
+              ? "simulation of a random process"
+              : "repeatable simulation of a random process");
 }
 
 
@@ -428,22 +439,19 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
   }
 }
 
-AschwandenPDDObject::AschwandenPDDObject(IceGrid::ConstPtr g)
-  : m_grid(g), m_config(g->ctx()->config()) {
+AschwandenPDDObject::AschwandenPDDObject(Config::ConstPtr config) {
 
-  m_beta_ice_w  = m_config->get_double("surface.pdd.aschwanden.beta_ice_w");
-  m_beta_snow_w = m_config->get_double("surface.pdd.aschwanden.beta_snow_w");
+  m_beta_ice_w  = config->get_double("surface.pdd.aschwanden.beta_ice_w");
+  m_beta_snow_w = config->get_double("surface.pdd.aschwanden.beta_snow_w");
 
-  m_beta_ice_c  = m_config->get_double("surface.pdd.aschwanden.beta_ice_c");
-  m_beta_snow_c = m_config->get_double("surface.pdd.aschwanden.beta_snow_c");
+  m_beta_ice_c  = config->get_double("surface.pdd.aschwanden.beta_ice_c");
+  m_beta_snow_c = config->get_double("surface.pdd.aschwanden.beta_snow_c");
 
-  m_fresh_water_density        = m_config->get_double("constants.fresh_water.density");
-  m_ice_density                = m_config->get_double("constants.ice.density");
-  m_pdd_aschwanden_latitude_beta_w = m_config->get_double("surface.pdd.aschwanden.latitude_beta_w");
-  m_pdd_aschwanden_transition_width = m_config->get_double("surface.pdd.aschwanden.warm_cold_transition_width");
-  m_refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
-
-
+  m_transition_latitude = config->get_double("surface.pdd.aschwanden.latitude_beta_w");
+  m_transition_width    = config->get_double("surface.pdd.aschwanden.warm_cold_transition_width");
+  m_refreeze_fraction   = config->get_double("surface.pdd.refreeze");
+  m_fresh_water_density = config->get_double("constants.fresh_water.density");
+  m_ice_density         = config->get_double("constants.ice.density");
 }
 
 AschwandenPDDObject::~AschwandenPDDObject() {
@@ -455,25 +463,27 @@ LocalMassBalance::DegreeDayFactors AschwandenPDDObject::degree_day_factors(doubl
   LocalMassBalance::DegreeDayFactors ddf;
   ddf.refreeze_fraction = m_refreeze_fraction;
 
-  if (latitude < m_pdd_aschwanden_latitude_beta_w - m_pdd_aschwanden_transition_width / 2) { // case latitude < 77 deg N - smoothing
-    ddf.ice  = m_beta_ice_w;
-    ddf.snow = m_beta_snow_w;
-  } else if  (latitude > m_pdd_aschwanden_latitude_beta_w + m_pdd_aschwanden_transition_width / 2) { // case latitude > 77 deg N + smoothing
-    ddf.ice  = m_beta_ice_c;
-    ddf.snow = m_beta_snow_c;    
-  } else { // intermediate case, linear transition
-    double a_ice =  (m_beta_ice_c - m_beta_ice_w) / m_pdd_aschwanden_transition_width;
-    double b_ice = m_beta_ice_w - a_ice * (m_pdd_aschwanden_latitude_beta_w - m_pdd_aschwanden_transition_width / 2);
-    ddf.ice  = a_ice * latitude + b_ice;
-    double a_snow =  (m_beta_snow_c - m_beta_snow_w) / m_pdd_aschwanden_transition_width;
-    double b_snow = m_beta_snow_w - a_snow * (m_pdd_aschwanden_latitude_beta_w - m_pdd_aschwanden_transition_width / 2);
-    ddf.snow =  a_snow * latitude + b_snow;
+  double width = m_transition_width;
+  double L     = m_transition_latitude;
+
+  double lambda = 0.0;
+  if (latitude <= L - width / 2.0) {
+    // warm case: latitude <= 77 deg N - smoothing
+    lambda = 0.0;
+  } else if (latitude <= L + width / 2.0) {
+    // intermediate case: linear transition
+    lambda = (latitude - (L - width / 2.0)) / width;
+  } else {
+    // cold case: latitude > 77 deg N + smoothing
+    lambda = 1.0;
   }
 
-  // degree-day factors in \ref Aschwanden are water-equivalent
-  //   thickness per degree day; ice-equivalent thickness melted per degree
-  //   day is slightly larger; for example, iwfactor = 1000/910
-  const double iwfactor = m_fresh_water_density / m_ice_density;
+  ddf.ice  = (1.0 - lambda) * m_beta_ice_w  + lambda * m_beta_ice_c;
+  ddf.snow = (1.0 - lambda) * m_beta_snow_w + lambda * m_beta_snow_c;
+
+  // Convert degree-day factors from water-equivalent thickness per degree day to ice-equivalent
+  // thickness per degree day.
+  double iwfactor = m_fresh_water_density / m_ice_density;
   ddf.snow *= iwfactor;
   ddf.ice  *= iwfactor;
 

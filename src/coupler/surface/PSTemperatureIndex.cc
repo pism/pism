@@ -39,15 +39,6 @@ namespace surface {
 
 namespace diagnostics {
 
-/*! @brief Firn cover depth. */
-class PDD_firn_depth : public Diag<TemperatureIndex>
-{
-public:
-  PDD_firn_depth(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
 /*! @brief Snow cover depth. */
 class PDD_snow_depth : public Diag<TemperatureIndex>
 {
@@ -65,26 +56,6 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const;
 };
-  
-PDD_firn_depth::PDD_firn_depth(const TemperatureIndex *m)
-  : Diag<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "firn_depth")};
-
-  set_attrs("firn cover depth", "",
-            "m", "m", 0);
-}
-
-IceModelVec::Ptr PDD_firn_depth::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "firn_depth", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->firn_depth());
-
-  return result;
-}
 
 PDD_snow_depth::PDD_snow_depth(const TemperatureIndex *m)
   : Diag<TemperatureIndex>(m) {
@@ -146,17 +117,16 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_sd_param_a                 = m_config->get_double("surface.pdd.std_dev_param_a");
   m_sd_param_b                 = m_config->get_double("surface.pdd.std_dev_param_b");
 
-  m_randomized = options::Bool("-pdd_rand",
-                               "Use a PDD implementation based on simulating a random process");
-  m_randomized_repeatable = options::Bool("-pdd_rand_repeatable",
-                                          "Use a PDD implementation based on simulating a"
-                                          " repeatable random process");
-  m_use_fausto_params = options::Bool("-pdd_fausto",
-                                      "Set PDD parameters using formulas (6) and (7)"
-                                      " in [Faustoetal2009]");
-  m_use_aschwanden_params = options::Bool("-pdd_aschwanden",
-                                      "Set PDD parameters Aschwanden"
-                                      " in Aschwanden");
+  bool randomized = options::Bool("-pdd_rand",
+                                  "Use a PDD implementation based on simulating a random process");
+  bool randomized_repeatable = options::Bool("-pdd_rand_repeatable",
+                                             "Use a PDD implementation based on simulating a"
+                                             " repeatable random process");
+  bool use_fausto_params = options::Bool("-pdd_fausto",
+                                         "Set PDD parameters using formulas (6) and (7)"
+                                         " in [Faustoetal2009]");
+
+  bool use_aschwanden_params = options::Bool("-pdd_aschwanden", "Use Aschwanden's PDD parameters");
 
   options::String firn_file("-pdd_firn_depth_file", "Read firn depth from file");
   m_firn_file_set = firn_file.is_set();
@@ -171,25 +141,26 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   options::Integer sd_ref_year("-pdd_sd_reference_year",
                                "Standard deviation data reference year", 0);
 
-  if (m_randomized_repeatable) {
+  if (randomized_repeatable) {
     m_mbscheme = new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE);
-  } else if (m_randomized) {
+  } else if (randomized) {
     m_mbscheme = new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::NOT_REPEATABLE);
   } else {
     m_mbscheme = new PDDMassBalance(m_config, m_sys);
   }
 
-  if (m_use_fausto_params) {
+  if (use_fausto_params) {
     m_faustogreve = new FaustoGrevePDDObject(m_grid);
   }
 
-  if (m_use_aschwanden_params) {
-    m_aschwanden = new AschwandenPDDObject(m_grid);
+  if (use_aschwanden_params) {
+    m_aschwanden = new AschwandenPDDObject(m_grid->ctx()->config());
   }
 
-  if (m_use_aschwanden_params && m_use_fausto_params) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Both '-pdd_aschwanden' and '-pdd_fausto' are set.\n Choose one or the other.\n");
-
+  if (use_aschwanden_params and use_fausto_params) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Both '-pdd_aschwanden' and '-pdd_fausto' are set. "
+                                  "Choose one or the other.\n");
   }
   
   if (sd_ref_year.is_set()) {
@@ -289,26 +260,18 @@ void TemperatureIndex::init_impl() {
              "  See PISM User's Manual for control of degree-day factors.\n");
 
   m_log->message(2,
-             "  Computing number of positive degree-days by: ");
-  if (m_randomized) {
-    m_log->message(2, "simulation of a random process.\n");
-  } else if (m_randomized_repeatable) {
-    m_log->message(2, "repeatable simulation of a random process.\n");
-  } else {
-    m_log->message(2, "an expectation integral.\n");
-  }
+                 "  Computing number of positive degree-days by: %s.\n",
+                 m_mbscheme->method().c_str());
 
-  if (m_use_fausto_params) {
+  if (m_faustogreve) {
     m_log->message(2,
-               "  Setting PDD parameters from [Faustoetal2009] ...\n");
-
+                   "  Setting PDD parameters from [Faustoetal2009] ...\n");
     m_base_pddStdDev = 2.53;
   }
 
-  if (m_use_aschwanden_params) {
+  if (m_aschwanden) {
     m_log->message(2,
-               "  Setting PDD parameters from Aschwanden ...\n");
-
+                   "  Setting PDD parameters from Aschwanden ...\n");
   }
 
   options::String firn_file("-pdd_firn_depth_file", "Read firn depth from file");
@@ -402,27 +365,27 @@ void TemperatureIndex::update_impl(double t, double dt) {
   }
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-  const IceModelVec2S
-    *surface_altitude = NULL,
-    *latitude         = NULL,
-    *longitude        = NULL;
 
   IceModelVec::AccessList list{&mask, &m_air_temp_sd, &m_climatic_mass_balance,
       &m_firn_depth, &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
-
-  if (aschwanden != NULL) {
-    latitude         = m_grid->variables().get_2d_scalar("latitude");
-
-    list.add({latitude});
-  }
 
   const double
     sigmalapserate = m_config->get_double("surface.pdd.std_dev_lapse_lat_rate"),
     sigmabaselat   = m_config->get_double("surface.pdd.std_dev_lapse_lat_base");
 
-  if (sigmalapserate != 0.0) {
+  const IceModelVec2S *latitude = NULL;
+  if (aschwanden or fausto_greve or sigmalapserate != 0.0) {
     latitude = m_grid->variables().get_2d_scalar("latitude");
-    list.add(*latitude);
+
+    list.add({latitude});
+  }
+
+  if (fausto_greve) {
+    const IceModelVec2S
+      *longitude        = m_grid->variables().get_2d_scalar("longitude"),
+      *surface_altitude = m_grid->variables().get_2d_scalar("surface_altitude");
+
+    fausto_greve->update_temp_mj(*surface_altitude, *latitude, *longitude);
   }
 
   LocalMassBalance::DegreeDayFactors ddf = m_base_ddf;
@@ -468,13 +431,13 @@ void TemperatureIndex::update_impl(double t, double dt) {
         }
       }
 
-      if (fausto_greve != NULL) {
+      if (fausto_greve) {
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
         ddf = fausto_greve->degree_day_factors(i, j, (*latitude)(i, j));
       }
 
-      if (aschwanden != NULL) {
+      if (aschwanden) {
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
         ddf = aschwanden->degree_day_factors((*latitude)(i, j));
@@ -547,7 +510,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
       }
 
       if (mask.ocean(i,j)) {
-        m_firn_depth(i,j) = 0.0;  // firn over the ocean does not stick
+        m_firn_depth(i,j) = 0.0;  // no firn over the ocean
         m_snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
       }
     }
@@ -696,7 +659,7 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
     {"srunoff",     Diagnostic::Ptr(new SurfaceRunoff(this))},
     {"air_temp_sd", Diagnostic::Ptr(new PDD_air_temp_sd(this))},
     {"snow_depth",  Diagnostic::Ptr(new PDD_snow_depth(this))},
-    {"firn_depth",  Diagnostic::Ptr(new PDD_firn_depth(this))},
+    {"firn_depth",  Diagnostic::wrap(m_firn_depth)},
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());
