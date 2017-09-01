@@ -54,7 +54,7 @@ The very important fact that \f$0 \le \theta \le 1\f$ is proven in appendix A of
 
 @section application Practical application, and Taylor approximation
 
-The above formulas already reflect the recommendations Schoof gives on how to apply his formulas ([\ref Schoofbasaltopg2003], subsection 4.2).  The rest of this page is devoted to how the class PISMBedSmoother implements a practical version of this theory, based on these recommendations plus some additional approximation.
+The above formulas already reflect the recommendations Schoof gives on how to apply his formulas ([\ref Schoofbasaltopg2003], subsection 4.2).  The rest of this page is devoted to how the class pism::stressbalance::BedSmoother implements a practical version of this theory, based on these recommendations plus some additional approximation.
 
 The averages appearing in his scaling arguments are over an infinite domain, %e.g.
   \f[ f_s(x) = \lim_{R\to\infty} \frac{1}{2R} \int_{-R}^R f(\xi,x)\,d\xi. \f]
@@ -89,7 +89,7 @@ for \f$q=2,3,4\f$ and \f$k = (n+2)/n\f$.
 
 Note that the coefficients \f$C_q\f$ depend only on the bed topography, and not on the ice geometry.  Thus we will pre-process the original bed elevations \f$b_0\f$ to compute and store the fields \f$b_s,C_2,C_3,C_4\f$.  The computation of equation (thetaapprox) is fast and easily-parallelized if these fields are pre-stored.  The computation of the coefficients \f$C_q\f$ and the smoothed bed \f$b_s\f$ at the pre-processing stage is more involved, especially when done in parallel.
 
-The parameters \f$\lambda_1,\lambda_2\f$ must be set, but as noted above we use a default value of 5 km based on Schoof's recommendation.  This physical distance may be less than or more than the grid spacing.  In the case that the grid spacing is 1 km, for example, we see that there is a large smoothing domain in terms of the number of grid points.  Generally, the ghosting width (in PETSc sense) is unbounded.  Therefore move the unsmoothed topography to processor zero and do the smoothing and the coefficient-computing there.  The class PISMBedSmoother implements these details.
+The parameters \f$\lambda_1,\lambda_2\f$ must be set, but as noted above we use a default value of 5 km based on Schoof's recommendation.  This physical distance may be less than or more than the grid spacing.  In the case that the grid spacing is 1 km, for example, we see that there is a large smoothing domain in terms of the number of grid points.  Generally, the ghosting width (in PETSc sense) is unbounded.  Therefore move the unsmoothed topography to processor zero and do the smoothing and the coefficient-computing there.  The class pism::stressbalance::BedSmoother implements these details.
 
 \subsection proveconvex Convexity of P_4
 
