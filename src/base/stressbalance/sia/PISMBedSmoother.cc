@@ -102,7 +102,7 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
     // smoothing completely inactive.  we transfer the original bed topg,
     //   including ghosts, to public member topgsmooth ...
     topg.update_ghosts(m_topgsmooth);
-    // and we tell get_theta() to return theta=1
+    // and we tell theta() to return theta=1
     m_Nx = -1;
     m_Ny = -1;
     return;
@@ -363,7 +363,7 @@ void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const
   assert(m_C4.get_stencil_width()         >= GHOSTS);
   assert(m_maxtl.get_stencil_width()      >= GHOSTS);
   assert(m_topgsmooth.get_stencil_width() >= GHOSTS);
-  assert(usurf.get_stencil_width()      >= GHOSTS);
+  assert(usurf.get_stencil_width()        >= GHOSTS);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -377,8 +377,9 @@ void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const
         const double Hinv = 1.0 / std::max(H, 1.0);
         double omega = 1.0 + Hinv*Hinv * (m_C2(i, j) + Hinv * (m_C3(i, j) + Hinv*m_C4(i, j)));
         if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "omega is negative for i=%d, j=%d\n"
-                                        "in BedSmoother.get_theta() ... ending", i, j);
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "omega is negative for i=%d, j=%d\n"
+                                        "in BedSmoother.theta()", i, j);
         }
 
         if (omega < 0.001) {      // this check *should not* be necessary
