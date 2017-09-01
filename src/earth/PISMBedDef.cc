@@ -148,6 +148,14 @@ void BedDef::init_impl(const InputOptions &opts) {
   // during bootstrapping
   regrid("bed deformation", m_uplift);
 
+  std::string uplift_file = m_config->get_string("bed_deformation.bed_uplift_file");
+  if (not uplift_file.empty()) {
+    m_log->message(2,
+                   "    reading bed uplift from %s ... \n",
+                   uplift_file.c_str());
+    m_uplift.regrid(uplift_file, CRITICAL);
+  }
+
   std::string correction_file = m_config->get_string("bed_deformation.bed_topography_delta_file");
   if (not correction_file.empty()) {
     apply_topg_offset(correction_file);
