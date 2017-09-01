@@ -277,6 +277,7 @@ protected:
 
   Geometry m_geometry;
   std::unique_ptr<GeometryEvolution> m_geometry_evolution;
+  bool m_new_bed_elevation;
 
   //! ghosted
   IceModelVec2S m_basal_yield_stress;

@@ -37,6 +37,7 @@ namespace stressbalance {
 StressBalanceInputs::StressBalanceInputs() {
   sea_level = 0.0;
   geometry = NULL;
+  new_bed_elevation = true;
 
   basal_melt_rate       = NULL;
   melange_back_pressure = NULL;

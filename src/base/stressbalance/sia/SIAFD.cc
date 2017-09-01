@@ -130,10 +130,6 @@ void SIAFD::init() {
                    m_flow_law->enhancement_factor_interglacial(),
                    m_flow_law->enhancement_factor());
   }
-
-  // set bed_state_counter to -1 so that the smoothed bed is computed the first
-  // time update() is called.
-  m_bed_state_counter = -1;
 }
 
 //! \brief Do the update; if full_update == false skip the update of 3D velocities and strain
@@ -148,11 +144,10 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
 
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
-  if (bed.get_state_counter() > m_bed_state_counter) {
+  if (inputs.new_bed_elevation) {
     profiling.begin("sia.bed_smoother");
     m_bed_smoother->preprocess_bed(bed);
     profiling.end("sia.bed_smoother");
-    m_bed_state_counter = bed.get_state_counter();
   }
 
   profiling.begin("sia.gradient");

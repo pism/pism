@@ -125,6 +125,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
+    m_new_bed_elevation(true),
     m_discharge(m_grid, "discharge", WITH_GHOSTS),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_config->get_string("time.dimension_name"), m_sys),
@@ -433,6 +434,7 @@ void IceModel::step(bool do_mass_continuity,
     inputs.basal_yield_stress    = &m_basal_yield_stress;
     inputs.melange_back_pressure = &melange_back_pressure;
     inputs.geometry              = &m_geometry;
+    inputs.new_bed_elevation     = m_new_bed_elevation;
     inputs.enthalpy              = &m_energy_model->enthalpy();
     inputs.age                   = m_age_model ? &m_age_model->age() : NULL;
 
@@ -560,12 +562,19 @@ void IceModel::step(bool do_mass_continuity,
     profiling.end("bed_deformation");
 
     if (m_beddef->bed_elevation().get_state_counter() != topg_state_counter) {
-      // Bed elevation changed.
-      m_stdout_flags += "b";
-      enforce_consistency_of_geometry();
+      m_new_bed_elevation = true;
     } else {
-      m_stdout_flags += " ";
+      m_new_bed_elevation = false;
     }
+  } else {
+    m_new_bed_elevation = false;
+  }
+
+  if (m_new_bed_elevation) {
+    enforce_consistency_of_geometry();
+    m_stdout_flags += "b";
+  } else {
+    m_stdout_flags += " ";
   }
 
   //! \li call post_step_hook() to let derived classes do more

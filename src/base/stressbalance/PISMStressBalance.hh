@@ -40,6 +40,7 @@ public:
 
   double sea_level;             // FIXME: use the 2D field in Geometry
   const Geometry *geometry;
+  bool new_bed_elevation;
 
   const IceModelVec2S *basal_melt_rate;
   const IceModelVec2S *basal_yield_stress; // NOT USED YET

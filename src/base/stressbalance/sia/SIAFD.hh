@@ -113,7 +113,6 @@ protected:
   IceModelVec3 m_work_3d[2];
 
   BedSmoother *m_bed_smoother;
-  int m_bed_state_counter;
 
   // profiling
   int m_event_sia;
