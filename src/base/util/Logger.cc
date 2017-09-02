@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 #include <sstream>
+#include <stdarg.h>
 
 #include "Logger.hh"
 #include "pism_const.hh"
