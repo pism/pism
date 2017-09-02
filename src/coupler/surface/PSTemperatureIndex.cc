@@ -300,7 +300,7 @@ void TemperatureIndex::init_impl() {
 
   std::string input_file = process_input_options(m_grid->com).filename;
 
-  // read snow precipitation rate from file
+  // read snow depth from file
   m_log->message(2,
                  "    reading snow depth (ice equivalent meters) from %s ... \n",
                  input_file.c_str());
