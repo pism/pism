@@ -318,6 +318,11 @@ netcdf pism_config {
     pism_config:calving.thickness_calving.threshold_type = "scalar";
     pism_config:calving.thickness_calving.threshold_units = "meters";
 
+    pism_config:calving.thickness_calving.threshold_file = "";
+    pism_config:calving.thickness_calving.threshold_file_doc = "Name of the file containing the spatially-variable thickness calving threshold. ";
+    pism_config:calving.thickness_calving.threshold_file_option = "thickness_calving_threshold_file";
+    pism_config:calving.thickness_calving.threshold_file_type = "string";
+
     pism_config:calving.vonmises.sigma_max = 1.0e6;
     pism_config:calving.vonmises.sigma_max_doc = "Set maximum tensile stress.  Note references [@ref Morlighem2016] use 1.0e6 Pa.";
     pism_config:calving.vonmises.sigma_max_option = "vonmises_calving_sigma_max";
@@ -1309,6 +1314,36 @@ netcdf pism_config {
     pism_config:surface.pdd.balance_year_start_day_type = "integer";
     pism_config:surface.pdd.balance_year_start_day_units = "ordinal day number";
 
+    pism_config:surface.pdd.aschwanden.beta_ice_c = 0.006;
+    pism_config:surface.pdd.aschwanden.beta_ice_c_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_ice_c_type = "scalar";
+    pism_config:surface.pdd.aschwanden.beta_ice_c_units = "meter / (Kelvin day)";
+
+    pism_config:surface.pdd.aschwanden.beta_ice_w = 0.008;
+    pism_config:surface.pdd.aschwanden.beta_ice_w_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_ice_w_type = "scalar";
+    pism_config:surface.pdd.aschwanden.beta_ice_w_units = "meter / (Kelvin day)";
+
+    pism_config:surface.pdd.aschwanden.beta_snow_c = 0.0015;
+    pism_config:surface.pdd.aschwanden.beta_snow_c_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_snow_c_type = "scalar";
+    pism_config:surface.pdd.aschwanden.beta_snow_c_units = "meter / (Kelvin day)";
+
+    pism_config:surface.pdd.aschwanden.beta_snow_w = 0.003;
+    pism_config:surface.pdd.aschwanden.beta_snow_w_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_snow_w_type = "scalar";
+    pism_config:surface.pdd.aschwanden.beta_snow_w_units = "meter / (Kelvin day)";
+
+    pism_config:surface.pdd.aschwanden.latitude_beta_w = 77.0;
+    pism_config:surface.pdd.aschwanden.latitude_beta_w_doc = "latitude below which to use warm case, in formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.latitude_beta_w_type = "scalar";
+    pism_config:surface.pdd.aschwanden.latitude_beta_w_units = "degree_north";
+
+    pism_config:surface.pdd.aschwanden.warm_cold_transition_width = 1.0;
+    pism_config:surface.pdd.aschwanden.warm_cold_transition_width_doc = "smoothing width in degrees for linear transition between warm and cold values";
+    pism_config:surface.pdd.aschwanden.warm_cold_transition_width_type = "scalar";
+    pism_config:surface.pdd.aschwanden.warm_cold_transition_width_units = "degree_north";
+
     pism_config:surface.pdd.factor_ice = 0.00879120879120879;
     pism_config:surface.pdd.factor_ice_doc = "EISMINT-Greenland value [@ref RitzEISMINT]; = (8 mm liquid-water-equivalent) / (pos degree day)";
     pism_config:surface.pdd.factor_ice_type = "scalar";
@@ -1353,6 +1388,11 @@ netcdf pism_config {
     pism_config:surface.pdd.fausto.latitude_beta_w_doc = "latitude below which to use warm case, in formula (6) in [@ref Faustoetal2009] ";
     pism_config:surface.pdd.fausto.latitude_beta_w_type = "scalar";
     pism_config:surface.pdd.fausto.latitude_beta_w_units = "degree_north";
+
+    pism_config:surface.pdd.firn_compaction_to_accumulation_ratio = 0.75;
+    pism_config:surface.pdd.firn_compaction_to_accumulation_ratio_doc = "How much firn as a fraction of accumulation is turned into ice";
+    pism_config:surface.pdd.firn_compaction_to_accumulation_ratio_type = "scalar";
+    pism_config:surface.pdd.firn_compaction_to_accumulation_ratio_units = "1";
 
     pism_config:surface.pdd.interpret_precip_as_snow = "no";
     pism_config:surface.pdd.interpret_precip_as_snow_doc = "Interpret precipitation as snow fall.";

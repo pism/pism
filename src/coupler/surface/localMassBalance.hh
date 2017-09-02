@@ -72,6 +72,8 @@ public:
   LocalMassBalance(Config::ConstPtr config, units::System::Ptr system);
   virtual ~LocalMassBalance();
 
+  std::string method() const;
+
   virtual unsigned int get_timeseries_length(double dt) = 0;
 
   //! Count positive degree days (PDDs).  Returned value in units of K day.
@@ -90,6 +92,7 @@ public:
   public:
     Changes();
 
+    double firn_depth;
     double snow_depth;
     double melt;
     double runoff;
@@ -101,15 +104,19 @@ public:
    *
    * @param[in] ddf degree day factors
    * @param[in] PDDs number of positive degree days during the time step [K day]
+   * @param[in] old_firn_depth firn depth [ice equivalent meters]
    * @param[in] old_snow_depth snow depth [ice equivalent meters]
    * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
    */
   virtual Changes step(const DegreeDayFactors &ddf,
                        double PDDs,
+                       double old_firn_depth,
                        double old_snow_depth,
                        double accumulation) = 0;
 
 protected:
+  std::string m_method;
+
   const Config::ConstPtr m_config;
   const units::System::Ptr m_unit_system;
   const double m_seconds_per_day;
@@ -139,6 +146,7 @@ public:
 
   virtual Changes step(const DegreeDayFactors &ddf,
                        double PDDs,
+                       double firn_depth,
                        double snow_depth,
                        double accumulation);
 
@@ -230,6 +238,37 @@ protected:
   double m_refreeze_fraction;
 
   IceModelVec2S m_temp_mj;
+};
+
+/*!
+  Aschwanden PDD parameters.
+
+  This may become a derived class of a LocationDependentPDDObject, if the idea
+  is needed more in the future.
+*/
+class AschwandenPDDObject {
+
+public:
+  AschwandenPDDObject(Config::ConstPtr config);
+  virtual ~AschwandenPDDObject();
+
+  LocalMassBalance::DegreeDayFactors degree_day_factors(double latitude);
+
+protected:
+  // "warm" PDD factors
+  double m_beta_ice_w;
+  double m_beta_snow_w;
+  // "cold" PDD factors
+  double m_beta_ice_c;
+  double m_beta_snow_c;
+  // transition from warm to cold
+  double m_transition_latitude;
+  double m_transition_width;
+  // PDD parameters
+  double m_refreeze_fraction;
+  // physical constants
+  double m_fresh_water_density;
+  double m_ice_density;
 };
 
 } // end of namespace surface

@@ -49,6 +49,10 @@ LocalMassBalance::~LocalMassBalance() {
   // empty
 }
 
+std::string LocalMassBalance::method() const {
+  return m_method;
+}
+
 PDDMassBalance::PDDMassBalance(Config::ConstPtr config, units::System::Ptr system)
   : LocalMassBalance(config, system) {
   precip_as_snow     = m_config->get_boolean("surface.pdd.interpret_precip_as_snow");
@@ -56,6 +60,8 @@ PDDMassBalance::PDDMassBalance(Config::ConstPtr config, units::System::Ptr syste
   Tmax               = m_config->get_double("surface.pdd.air_temp_all_precip_as_rain");
   pdd_threshold_temp = m_config->get_double("surface.pdd.positive_threshold_temp");
   refreeze_ice_melt  = m_config->get_boolean("surface.pdd.refreeze_ice_melt");
+
+  m_method = "an expectation integral";
 }
 
 
@@ -190,45 +196,67 @@ void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
  */
 PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
                                              double PDDs,
+                                             double old_firn_depth,
                                              double old_snow_depth,
                                              double accumulation) {
 
   Changes result;
 
   double
+    firn_depth      = old_firn_depth,
     snow_depth      = old_snow_depth + accumulation,
     max_snow_melted = PDDs * ddf.snow,
+    firn_melted     = 0.0,
     snow_melted     = 0.0,
     excess_pdds     = 0.0;
 
-  if (PDDs <= 0.0) {       // The "no melt" case.
+  if (PDDs <= 0.0) {            // The "no melt" case.
     snow_melted = 0.0;
+    firn_melted = 0.0,
     excess_pdds = 0.0;
   } else if (max_snow_melted <= snow_depth) {
     // Some of the snow melted and some is left; in any case, all of
     // the energy available for melt, namely all of the positive
     // degree days (PDDs) were used up in melting snow.
-
     snow_melted = max_snow_melted;
+    firn_melted = 0.0;
+    excess_pdds = 0.0;
+  } else if (max_snow_melted <= firn_depth + snow_depth) {
+    // All of the snow is melted but some firn is left; in any case, all of
+    // the energy available for melt, namely all of the positive
+    // degree days (PDDs) were used up in melting snow.
+    snow_melted = snow_depth;
+    firn_melted = max_snow_melted - snow_melted;
     excess_pdds = 0.0;
   } else {
-    // All (snow_depth meters) of snow melted. Excess_pddsum is the
+    // All (firn and snow_depth meters) of snow melted. Excess_pddsum is the
     // positive degree days available to melt ice.
+    firn_melted = firn_depth;
     snow_melted = snow_depth;
-    excess_pdds = PDDs - (snow_melted / ddf.snow); // units: K day
+    excess_pdds = PDDs - ((firn_melted + snow_melted) / ddf.snow); // units: K day
   }
 
   double
     ice_melted              = excess_pdds * ddf.ice,
-    melt                    = snow_melted + ice_melted,
+    melt                    = snow_melted + firn_melted + ice_melted,
     ice_created_by_refreeze = 0.0;
 
   if (refreeze_ice_melt) {
     ice_created_by_refreeze = melt * ddf.refreeze_fraction;
   } else {
-    ice_created_by_refreeze = snow_melted * ddf.refreeze_fraction;
+    // Should this only be snow melted?
+    ice_created_by_refreeze = (firn_melted + snow_melted) * ddf.refreeze_fraction;
   }
 
+  firn_depth -= firn_melted;
+  // FIXME: need to add snow that hasn't melted, is this correct?
+  // firn_depth += (snow_depth - snow_melted);
+  // Turn firn into ice at X times accumulation
+  // firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
+
+  if (firn_depth < 0.0) {
+    firn_depth = 0.0;
+  }
   snow_depth -= snow_melted;
   if (snow_depth < 0.0) {
     snow_depth = 0.0;
@@ -236,6 +264,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
 
   const double runoff = melt - ice_created_by_refreeze;
 
+  result.firn_depth = firn_depth - old_firn_depth;
   result.snow_depth = snow_depth - old_snow_depth;
   result.melt       = melt;
   result.runoff     = runoff;
@@ -251,10 +280,14 @@ which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
 PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::Ptr system,
-                                       Kind repeatable)
+                                       Kind kind)
   : PDDMassBalance(config, system) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
-  gsl_rng_set(pddRandGen, repeatable == 1 ? 0 : time(0));
+  gsl_rng_set(pddRandGen, kind == REPEATABLE ? 0 : time(0));
+
+  m_method = (kind == NOT_REPEATABLE
+              ? "simulation of a random process"
+              : "repeatable simulation of a random process");
 }
 
 
@@ -404,6 +437,57 @@ void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
     const int i = p.i(), j = p.j();
     m_temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }
+}
+
+AschwandenPDDObject::AschwandenPDDObject(Config::ConstPtr config) {
+
+  m_beta_ice_w  = config->get_double("surface.pdd.aschwanden.beta_ice_w");
+  m_beta_snow_w = config->get_double("surface.pdd.aschwanden.beta_snow_w");
+
+  m_beta_ice_c  = config->get_double("surface.pdd.aschwanden.beta_ice_c");
+  m_beta_snow_c = config->get_double("surface.pdd.aschwanden.beta_snow_c");
+
+  m_transition_latitude = config->get_double("surface.pdd.aschwanden.latitude_beta_w");
+  m_transition_width    = config->get_double("surface.pdd.aschwanden.warm_cold_transition_width");
+  m_refreeze_fraction   = config->get_double("surface.pdd.refreeze");
+  m_fresh_water_density = config->get_double("constants.fresh_water.density");
+  m_ice_density         = config->get_double("constants.ice.density");
+}
+
+AschwandenPDDObject::~AschwandenPDDObject() {
+  // empty
+}
+
+LocalMassBalance::DegreeDayFactors AschwandenPDDObject::degree_day_factors(double latitude) {
+
+  LocalMassBalance::DegreeDayFactors ddf;
+  ddf.refreeze_fraction = m_refreeze_fraction;
+
+  double width = m_transition_width;
+  double L     = m_transition_latitude;
+
+  double lambda = 0.0;
+  if (latitude <= L - width / 2.0) {
+    // warm case: latitude <= 77 deg N - smoothing
+    lambda = 0.0;
+  } else if (latitude <= L + width / 2.0) {
+    // intermediate case: linear transition
+    lambda = (latitude - (L - width / 2.0)) / width;
+  } else {
+    // cold case: latitude > 77 deg N + smoothing
+    lambda = 1.0;
+  }
+
+  ddf.ice  = (1.0 - lambda) * m_beta_ice_w  + lambda * m_beta_ice_c;
+  ddf.snow = (1.0 - lambda) * m_beta_snow_w + lambda * m_beta_snow_c;
+
+  // Convert degree-day factors from water-equivalent thickness per degree day to ice-equivalent
+  // thickness per degree day.
+  double iwfactor = m_fresh_water_density / m_ice_density;
+  ddf.snow *= iwfactor;
+  ddf.ice  *= iwfactor;
+
+  return ddf;
 }
 
 } // end of namespace surface

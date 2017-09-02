@@ -1,3 +1,23 @@
+@techreport {AIAAGuidelines,
+    AUTHOR = {AIAA},
+     TITLE = {Guide for the {V}erification and {V}alidation of {C}omputational
+              {F}luid {D}ynamics {S}imulations},
+INSTITUTION = {American Institute of Aeronautics and Astronautics (AIAA)},
+    NUMBER = {AIAA G-077-1998},
+      YEAR = {1998},
+}
+
+@article {ASMEJFE,
+    AUTHOR = {P. J. Roache and K. Ghia and F. White},
+     TITLE = {Editorial policy statement on the control of numerical accuracy},
+      YEAR = {1986},
+   JOURNAL = {ASME Journal of Fluids Engineering},
+    VOLUME = {108},
+    NUMBER = {1},
+     PAGES = {2},
+}
+
+
 @book {AbramowitzStegun,
     EDITOR = {M. Abramowitz and I. A. Stegun},
      TITLE = {Handbook of {M}athematical {F}unctions, with {F}ormulas, {G}raphs,
@@ -27,16 +47,6 @@ NUMBER = {222},
 PAGES = {782--794},
 DOI = {10.3189/2014JoG13J202},
 YEAR = {2014},
-}
-
-
-@techreport {AIAAGuidelines,
-    AUTHOR = {AIAA},
-     TITLE = {Guide for the {V}erification and {V}alidation of {C}omputational
-              {F}luid {D}ynamics {S}imulations},
-INSTITUTION = {American Institute of Aeronautics and Astronautics (AIAA)},
-    NUMBER = {AIAA G-077-1998},
-      YEAR = {1998},
 }
 
 
@@ -120,14 +130,14 @@ DOI = {10.5194/tc-8-587-2014},
 }
 
 
-@article {AschwandenBlatter2005,
-    AUTHOR = {A. Aschwanden and H. Blatter},
-     TITLE = {Meltwater production due to strain heating in
-              {S}torglaci\"aren, {S}weden},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {110},
-      NOTE = {F04024, doi:10.1029/2005JF000328},
-      YEAR = {2005},
+@article {AschwandenAdalgeirsdottirKhroulev,
+    AUTHOR = {A. Aschwanden and G. Adalgeirsd{\'o}ttir and C. Khroulev},
+     TITLE = {Hindcasting to measure ice sheet model sensitivity to initial states},
+   JOURNAL = {The Cryosphere},
+    VOLUME = {7},
+      YEAR = {2013},
+     PAGES = {1083--1093},
+       DOI = {10.5194/tc-7-1083-2013},
 }
 
 
@@ -143,6 +153,17 @@ DOI = {10.5194/tc-8-587-2014},
 }
 
 
+@article {AschwandenBlatter2005,
+    AUTHOR = {A. Aschwanden and H. Blatter},
+     TITLE = {Meltwater production due to strain heating in
+              {S}torglaci\"aren, {S}weden},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {110},
+      NOTE = {F04024, doi:10.1029/2005JF000328},
+      YEAR = {2005},
+}
+
+
 @article {AschwandenBuelerKhroulevBlatter,
     AUTHOR = {A. Aschwanden and E. Bueler and C. Khroulev and H. Blatter},
      TITLE = {An enthalpy formulation for glaciers and ice sheets},
@@ -155,14 +176,88 @@ DOI = {10.5194/tc-8-587-2014},
 }
 
 
-@article {AschwandenAdalgeirsdottirKhroulev,
-    AUTHOR = {A. Aschwanden and G. Adalgeirsd{\'o}ttir and C. Khroulev},
-     TITLE = {Hindcasting to measure ice sheet model sensitivity to initial states},
-   JOURNAL = {The Cryosphere},
-    VOLUME = {7},
-      YEAR = {2013},
-     PAGES = {1083--1093},
-       DOI = {10.5194/tc-7-1083-2013},
+@unpublished {BB,
+    AUTHOR = {E. Bueler and J. Brown},
+     TITLE = {On exact solutions and numerics for cold, shallow, and thermocoupled
+              ice sheets},
+      NOTE = {preprint \texttt{arXiv:physics/0610106}},
+      YEAR = {2006},
+}
+
+@article {BBL,
+    AUTHOR = {E. Bueler and J. Brown and C. Lingle},
+     TITLE = {Exact solutions to the thermomechanically coupled shallow ice approximation:
+              effective tools for verification},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {53},
+    NUMBER = {182},
+     PAGES = {499--516},
+      YEAR = {2007},
+}
+
+
+@article {BBssasliding,
+    AUTHOR = {E. Bueler and J. Brown},
+     TITLE = {Shallow shelf approximation as a ``sliding law'' in a 
+              thermodynamically coupled ice sheet model},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {114},
+      NOTE = {F03008, doi:10.1029/2008JF001179},
+      YEAR = {2009},
+}
+
+
+@article {BEDMAP01,
+    AUTHOR = {M. B. Lythe and D. G. Vaughan},
+     TITLE = {{BEDMAP}: A new ice thickness and subglacial topographic model 
+              of {A}ntarctica},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {106},
+    NUMBER = {B6},
+     PAGES = {11335--11351},
+      YEAR = {2001},
+}
+
+
+@unpublished{BKAJS,
+   AUTHOR = {Ed Bueler and Constantine Khroulev and Andy Aschwanden
+             and Ian Joughin and Ben E. Smith},
+    TITLE = {Modeled and observed fast flow in the {G}reenland ice sheet},
+     YEAR = {2009},
+     NOTE = {submitted},
+}
+
+
+@unpublished {BLK2006earth,
+    AUTHOR = {E. Bueler and C. S. Lingle and J. A. Kallen-Brown},
+     TITLE = {Computation of a combined spherical-elastic and viscous-half-space
+              {E}arth model for ice sheet simulation},
+      NOTE = {preprint \texttt{arXiv:physics/0606074}},
+      YEAR = {2006},
+}
+
+
+@article {BLKCB,
+    AUTHOR = {E. Bueler and C. S. Lingle and J. A. Kallen-Brown and
+              D. N. Covey and L. N. Bowman},
+     TITLE = {Exact solutions and numerical verification
+              for isothermal ice sheets},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {51},
+    NUMBER = {173},
+     PAGES = {291--306},
+      YEAR = {2005},
+}
+
+
+@article {BLKfastearth,
+    AUTHOR = {E. Bueler and C. S. Lingle and J. A. Kallen-Brown},
+     TITLE = {Fast computation of a viscoelastic deformable {E}arth model for
+              ice sheet simulation},
+   JOURNAL = {Ann. Glaciol.},
+    VOLUME = {46},
+     PAGES = {97--105},
+      YEAR = {2007},
 }
 
 
@@ -172,6 +267,7 @@ DOI = {10.5194/tc-8-587-2014},
  PUBLISHER = {Springer},
       YEAR = {1999},
 }
+%AUTHOR = {Bamber, J. L. and Griggs, J. A. and Hurkmans, R. T. W. L. and Dowdeswell, J. A. and Gogineni, S. P. and Howat, I. and Mouginot, J. and Paden, J. and Palmer, S. and Rignot, E. and Steinhage, D.},
 
 
 @phdthesis{Bakerthesis2012,
@@ -207,17 +303,6 @@ DOI = {10.5194/tc-8-587-2014},
 }
 
 
-@article {BamberVaughanJoughin,
-    AUTHOR = {J. L. Bamber and D. G. Vaughan and I. Joughin},
-     TITLE = {Widespread complex flow in the interior of the {A}ntarctic
-              ice sheet},
-      YEAR = {2000},
-   JOURNAL = {Science},
-    VOLUME = {287},
-     PAGES = {1248--1250},
-}
-
-
 @article{BamberLayberryGogenini,
 	Author = {J.L. Bamber and R.L. Layberry and S.P. Gogenini},
 	fJournal = {Journal of Geophysical Research},
@@ -230,15 +315,14 @@ DOI = {10.5194/tc-8-587-2014},
 }
 
 
-@article{LayberryBamber,
-	Author = {R.L. Layberry and J.L. Bamber},
-	fJournal = {Journal of Geophysical Research},
-        JOURNAL = {J. Geophys. Res.},
-	Pages = {33,781--33,788},
-	Title = {A new ice thickness and bed data set for the {G}reenland 
-	         ice sheet 2: {R}elationship between dynamics and basal topography},
-	Volume = {106 (D24)},
-	Year = {2001},
+@article {BamberVaughanJoughin,
+    AUTHOR = {J. L. Bamber and D. G. Vaughan and I. Joughin},
+     TITLE = {Widespread complex flow in the interior of the {A}ntarctic
+              ice sheet},
+      YEAR = {2000},
+   JOURNAL = {Science},
+    VOLUME = {287},
+     PAGES = {1248--1250},
 }
 
 
@@ -252,7 +336,6 @@ NUMBER = {2},
 PAGES = {499--510},
 DOI = {10.5194/tc-7-499-2013}
 }
-%AUTHOR = {Bamber, J. L. and Griggs, J. A. and Hurkmans, R. T. W. L. and Dowdeswell, J. A. and Gogineni, S. P. and Howat, I. and Mouginot, J. and Paden, J. and Palmer, S. and Rignot, E. and Steinhage, D.},
 
 
 @article {Baraletal2001,
@@ -269,6 +352,14 @@ DOI = {10.5194/tc-7-499-2013}
 }
 
 
+@book {Barenblatt,
+    AUTHOR = {G. I. Barenblatt},
+     TITLE = {Scaling, {S}elf-similarity and {I}ntermediate {A}symptotics},
+ PUBLISHER = {Cambridge Univ. Press},
+      YEAR = {1996},
+}
+
+
 @article {Barenblatt1952,
     AUTHOR = {G. I. Barenblatt},
      TITLE = {On some unsteady motions of fluids and gases in a porous medium},
@@ -277,14 +368,6 @@ DOI = {10.5194/tc-7-499-2013}
     NUMBER = {1},
      pages = {67--78},
       YEAR = {1952},
-}
-
-
-@book {Barenblatt,
-    AUTHOR = {G. I. Barenblatt},
-     TITLE = {Scaling, {S}elf-similarity and {I}ntermediate {A}symptotics},
- PUBLISHER = {Cambridge Univ. Press},
-      YEAR = {1996},
 }
 
 
@@ -330,18 +413,6 @@ DOI = {10.5194/tc-7-499-2013}
 	author={Beckmann, A and Goosse, H},
 	year={2003},
 	pages={157--170}
-}
-
-
-@article {BEDMAP01,
-    AUTHOR = {M. B. Lythe and D. G. Vaughan},
-     TITLE = {{BEDMAP}: A new ice thickness and subglacial topographic model 
-              of {A}ntarctica},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {106},
-    NUMBER = {B6},
-     PAGES = {11335--11351},
-      YEAR = {2001},
 }
 
 
@@ -454,15 +525,6 @@ DOI = {10.5194/tc-7-499-2013}
 }
 
 
-@unpublished{BrownPresentation,
-    AUTHOR = {J. Brown},
-     TITLE = {Verifying {PISM}},
-      NOTE = "{UAF} {M}aster's project presentation 
-              \url{http://www.dms.uaf.edu/~bueler/slidesJBrown.pdf}",
-      YEAR = {2006},
-}
-
-
 @article {Brown2010,
     AUTHOR = {J. Brown},
      TITLE = {Efficient nonlinear solvers for nodal high-order finite elements
@@ -472,6 +534,24 @@ DOI = {10.5194/tc-7-499-2013}
     VOLUME = {45},
        DOI = {10.1007/s10915-010-9396-8},
      PAGES = {48--63},
+}
+
+
+@book {BrownChurchill,
+    AUTHOR = {J. W. Brown and R. V. Churchill},
+     TITLE = {Fourier {S}eries and {B}oundary {V}alue {P}roblems},
+ PUBLISHER = {McGraw-Hill},
+   EDITION = {6th},
+      YEAR = {2000},
+}
+
+
+@unpublished{BrownPresentation,
+    AUTHOR = {J. Brown},
+     TITLE = {Verifying {PISM}},
+      NOTE = "{UAF} {M}aster's project presentation 
+              \url{http://www.dms.uaf.edu/~bueler/slidesJBrown.pdf}",
+      YEAR = {2006},
 }
 
 
@@ -486,88 +566,6 @@ DOI = {10.5194/tc-7-499-2013}
 }
 
 
-@book {BrownChurchill,
-    AUTHOR = {J. W. Brown and R. V. Churchill},
-     TITLE = {Fourier {S}eries and {B}oundary {V}alue {P}roblems},
- PUBLISHER = {McGraw-Hill},
-   EDITION = {6th},
-      YEAR = {2000},
-}
-
-
-@unpublished {BuelerTestK,
-    AUTHOR = {E. Bueler},
-     TITLE = {An exact solution to the temperature equation in a column of ice and bedrock},
-      NOTE = {preprint \texttt{arXiv:0710.1314}},
-      YEAR = {2007},
-}
-
-
-@article {BLKCB,
-    AUTHOR = {E. Bueler and C. S. Lingle and J. A. Kallen-Brown and
-              D. N. Covey and L. N. Bowman},
-     TITLE = {Exact solutions and numerical verification
-              for isothermal ice sheets},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {51},
-    NUMBER = {173},
-     PAGES = {291--306},
-      YEAR = {2005},
-}
-
-
-@article {BBL,
-    AUTHOR = {E. Bueler and J. Brown and C. Lingle},
-     TITLE = {Exact solutions to the thermomechanically coupled shallow ice approximation:
-              effective tools for verification},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {53},
-    NUMBER = {182},
-     PAGES = {499--516},
-      YEAR = {2007},
-}
-
-
-@unpublished {BB,
-    AUTHOR = {E. Bueler and J. Brown},
-     TITLE = {On exact solutions and numerics for cold, shallow, and thermocoupled
-              ice sheets},
-      NOTE = {preprint \texttt{arXiv:physics/0610106}},
-      YEAR = {2006},
-}
-
-
-@article {BBssasliding,
-    AUTHOR = {E. Bueler and J. Brown},
-     TITLE = {Shallow shelf approximation as a ``sliding law'' in a 
-              thermodynamically coupled ice sheet model},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {114},
-      NOTE = {F03008, doi:10.1029/2008JF001179},
-      YEAR = {2009},
-}
-
-
-@unpublished {BLK2006earth,
-    AUTHOR = {E. Bueler and C. S. Lingle and J. A. Kallen-Brown},
-     TITLE = {Computation of a combined spherical-elastic and viscous-half-space
-              {E}arth model for ice sheet simulation},
-      NOTE = {preprint \texttt{arXiv:physics/0606074}},
-      YEAR = {2006},
-}
-
-
-@article {BLKfastearth,
-    AUTHOR = {E. Bueler and C. S. Lingle and J. A. Kallen-Brown},
-     TITLE = {Fast computation of a viscoelastic deformable {E}arth model for
-              ice sheet simulation},
-   JOURNAL = {Ann. Glaciol.},
-    VOLUME = {46},
-     PAGES = {97--105},
-      YEAR = {2007},
-}
-
-
 @techreport {Bueler,
     AUTHOR = {Ed Bueler},
      TITLE = {Numerical approximation of a two--dimensional thermomechanical
@@ -576,38 +574,6 @@ INSTITUTION = {University of Alaska, Fairbanks},
       TYPE = {Dept.~of Mathematical Sciences Tech.~Rep.},
     NUMBER = {02-02},
       YEAR = {2002},
-}
-
-
-@article{BuelerSpray,
-   AUTHOR = {Ed Bueler},
-    TITLE = {Lessons from the short history of ice sheet model intercomparison},
-  JOURNAL = {The Cryosphere Discussions},
-   VOLUME = {2},
-     YEAR = {2008},
-    PAGES = {399--412},
-     NOTE = {\url{http://www.the-cryosphere-discuss.net/2/399/2008/}},
-}
-
-
-@unpublished{BKAJS,
-   AUTHOR = {Ed Bueler and Constantine Khroulev and Andy Aschwanden
-             and Ian Joughin and Ben E. Smith},
-    TITLE = {Modeled and observed fast flow in the {G}reenland ice sheet},
-     YEAR = {2009},
-     NOTE = {submitted},
-}
-
-
-@article{BuelervanPelt2015,
-AUTHOR = {Bueler, E. and van Pelt, W.},
-TITLE = {Mass-conserving subglacial hydrology in the Parallel Ice Sheet Model version 0.6},
-JOURNAL = {Geoscientific Model Development},
-VOLUME = {8},
-YEAR = {2015},
-NUMBER = {6},
-PAGES = {1613--1635},
-note = {doi: 10.5194/gmd-8-1613-2015}
 }
 
 
@@ -634,6 +600,37 @@ note = {doi: 10.5194/gmd-8-1613-2015}
 }
 
 
+@article{BuelerSpray,
+   AUTHOR = {Ed Bueler},
+    TITLE = {Lessons from the short history of ice sheet model intercomparison},
+  JOURNAL = {The Cryosphere Discussions},
+   VOLUME = {2},
+     YEAR = {2008},
+    PAGES = {399--412},
+     NOTE = {\url{http://www.the-cryosphere-discuss.net/2/399/2008/}},
+}
+
+
+@unpublished {BuelerTestK,
+    AUTHOR = {E. Bueler},
+     TITLE = {An exact solution to the temperature equation in a column of ice and bedrock},
+      NOTE = {preprint \texttt{arXiv:0710.1314}},
+      YEAR = {2007},
+}
+
+
+@article{BuelervanPelt2015,
+AUTHOR = {Bueler, E. and van Pelt, W.},
+TITLE = {Mass-conserving subglacial hydrology in the Parallel Ice Sheet Model version 0.6},
+JOURNAL = {Geoscientific Model Development},
+VOLUME = {8},
+YEAR = {2015},
+NUMBER = {6},
+PAGES = {1613--1635},
+note = {doi: 10.5194/gmd-8-1613-2015}
+}
+
+
 @book {BurdenFaires,
     AUTHOR = {Burden, Richard L. and Faires, J. Douglas},
      TITLE = {Numerical {A}nalysis},
@@ -652,6 +649,41 @@ note = {doi: 10.5194/gmd-8-1613-2015}
     NUMBER = {F02004},
        DOI = {10.1029/2009JF001293},
       YEAR = {2010},
+}
+
+
+@article {CDV00,
+    AUTHOR = {N. Calvo and J. Durany and C. V\'azquez},
+     TITLE = {Numerical computation of ice sheet profiles with
+              free boundary models},
+      YEAR = {2000},
+   JOURNAL = {Appl. Numer. Math.},
+    VOLUME = {35},
+     PAGES = {111--128},
+}
+
+
+@article {CDV02,
+    AUTHOR = {N. Calvo and J. Durany and C. V\'azquez},
+     TITLE = {Numerical approach of thermomechanical coupled problems
+              with moving boundaries in theoretical glaciology},
+      YEAR = {2002},
+  FJOURNAL = {Mathematical Models and Methods in Applied Sciences},
+   JOURNAL = {Math. Models and Methods in Appl. Sci.},
+    VOLUME = {12},
+    NUMBER = {2},
+     PAGES = {229--248},
+}
+
+
+@article {CDV99,
+    AUTHOR = {N. Calvo and J. D\'iaz and C. V\'azquez},
+     TITLE = {Numerical approach of temperature distribution in a
+              free boundary model for polythermal ice sheets},
+      YEAR = {1999},
+   JOURNAL = {Numer. Math.},
+    VOLUME = {83},
+     PAGES = {557--580},
 }
 
 
@@ -691,76 +723,16 @@ note = {doi: 10.5194/gmd-8-1613-2015}
 }
 
 
+% author list on preprint and print version:
+%   AUTHOR = {N. Calvo and J. D\'iaz and J. Durany and E. Schiavi and C. V\'azquez},
+% copyright year of the print version:
+%     YEAR = {2002},
 @book {Cathles,
     AUTHOR = {Cathles, L. M.},
      TITLE = {The {V}iscosity of the {E}arth's {M}antle},
  PUBLISHER = {Princeton University Press},
    ADDRESS = {Princeton, NJ},
       YEAR = {1975},
-}
-
-
-% author list on preprint and print version:
-%   AUTHOR = {N. Calvo and J. D\'iaz and J. Durany and E. Schiavi and C. V\'azquez},
-% copyright year of the print version:
-%     YEAR = {2002},
-@article {Vazquezetal2003,
-    author = {C. V\'azquez and E. Schiavi and J. Durany and J. I. D\'iaz and N. Calvo},
-     TITLE = {On a doubly nonlinear parabolic obstacle problem modelling
-              ice sheet dynamics},
-      YEAR = {2003},
-   JOURNAL = {SIAM J. Appl. Math.},
-    VOLUME = {63},
-    NUMBER = {2},
-     PAGES = {683--707},
-       doi = {10.1137/S0036139901385345},
-}
-
-
-@article {CDV99,
-    AUTHOR = {N. Calvo and J. D\'iaz and C. V\'azquez},
-     TITLE = {Numerical approach of temperature distribution in a
-              free boundary model for polythermal ice sheets},
-      YEAR = {1999},
-   JOURNAL = {Numer. Math.},
-    VOLUME = {83},
-     PAGES = {557--580},
-}
-
-
-@article {CDV00,
-    AUTHOR = {N. Calvo and J. Durany and C. V\'azquez},
-     TITLE = {Numerical computation of ice sheet profiles with
-              free boundary models},
-      YEAR = {2000},
-   JOURNAL = {Appl. Numer. Math.},
-    VOLUME = {35},
-     PAGES = {111--128},
-}
-
-
-@article {CDV02,
-    AUTHOR = {N. Calvo and J. Durany and C. V\'azquez},
-     TITLE = {Numerical approach of thermomechanical coupled problems
-              with moving boundaries in theoretical glaciology},
-      YEAR = {2002},
-  FJOURNAL = {Mathematical Models and Methods in Applied Sciences},
-   JOURNAL = {Math. Models and Methods in Appl. Sci.},
-    VOLUME = {12},
-    NUMBER = {2},
-     PAGES = {229--248},
-}
-
-
-@article {DeLaChapelleEtAl98,
-    AUTHOR = {S. De La Chapelle and O. Castelnau and V. Lipenkov and P. Duval},
-     TITLE = {Dynamic recrystallization and texture development in ice as
-              revealed by the study of deep cores in {A}ntarctica and {G}reenland},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {103},
-    NUMBER = {B3},
-      YEAR = {1998},
-     PAGES = {5091--5105},
 }
 
 
@@ -785,6 +757,17 @@ note = {doi: 10.5194/gmd-8-1613-2015}
 }
 
 
+@article {Clarke05,
+    AUTHOR = {G. K. C. Clarke},
+     TITLE = {Subglacial processes},
+   JOURNAL = {Annu. Rev. Earth Planet. Sci.},
+    VOLUME = {33},
+     PAGES = {247--276},
+       doi = {10.1146/annurev.earth.33.092203.122621},
+      YEAR = {2005},
+}
+
+
 @article {Clarke2003,
 	author = "Clarke, G. K.C.",
 	title = "Hydraulics of subglacial outburst floods: new insights from the {Spring-Hutter} formulation",
@@ -794,17 +777,6 @@ note = {doi: 10.5194/gmd-8-1613-2015}
 	year = "2003",
 	pages = "299--313",
 	doi = "10.3189/172756503781830728",
-}
-
-
-@article {Clarke05,
-    AUTHOR = {G. K. C. Clarke},
-     TITLE = {Subglacial processes},
-   JOURNAL = {Annu. Rev. Earth Planet. Sci.},
-    VOLUME = {33},
-     PAGES = {247--276},
-       doi = {10.1146/annurev.earth.33.092203.122621},
-      YEAR = {2005},
 }
 
 
@@ -894,19 +866,6 @@ year = {2008},
 }
 
 
-@Article{deFleurianetal2014,
-AUTHOR = {de Fleurian, B. and Gagliardini, O. and Zwinger, T. and Durand, G. and Le Meur, E. and Mair, D. and R{\aa}back, P.},
-TITLE = {A double continuum hydrological model for glacier applications},
-JOURNAL = {The Cryosphere},
-VOLUME = {8},
-YEAR = {2014},
-NUMBER = {1},
-PAGES = {137--153},
-URL = {http://www.the-cryosphere.net/8/137/2014/},
-DOI = {10.5194/tc-8-137-2014}
-}
-
-
 @article{DeFooretal2011,
 author = {DeFoor, W. and M. Person and H. C. Larsen and D. Lizarralde and D. Cohen and B. Dugan},
 title = {Ice sheet-derived submarine groundwater discharge on {G}reenland's continental shelf},
@@ -915,6 +874,18 @@ volume = {47},
 number = {W07549},
 doi = {10.1029/2011WR010536},
 year = {2011},
+}
+
+
+@article {DeLaChapelleEtAl98,
+    AUTHOR = {S. De La Chapelle and O. Castelnau and V. Lipenkov and P. Duval},
+     TITLE = {Dynamic recrystallization and texture development in ice as
+              revealed by the study of deep cores in {A}ntarctica and {G}reenland},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {103},
+    NUMBER = {B3},
+      YEAR = {1998},
+     PAGES = {5091--5105},
 }
 
 
@@ -947,6 +918,19 @@ Distributed Scientific and Engineering Computing, May 2013, Boston}
 }
 
 
+@article{Dukowiczetal2010,
+    author = {Dukowicz, John K. and Price, Stephen F. and Lipscomb, William H.},
+    title = {Consistent approximations and boundary conditions for ice-sheet dynamics from a principle of least action},
+    year = {2010},
+    journal = {Journal of Glaciology},
+    volume = {56},
+    number = {197},
+    pages = {480--496},
+    publisher = {International Glaciological Society},
+    doi = {10.3189/002214310792447851},
+}
+
+
 @book {DuvautLions,
     AUTHOR = {Duvaut, G. and J. L. Lions},
      TITLE = {Inequalities in {M}echanics and {P}hysics},
@@ -955,47 +939,12 @@ Distributed Scientific and Engineering Computing, May 2013, Boston}
 }
 
 
-@article {Egholmetal2011,
-author = {Egholm, D. and Knudsen, M. and Clark, C. and Lesemann, J.},
-title = {Modeling the flow of glaciers in steep terrains: The integrated second-order shallow ice approximation {(iSOSIA)}},
-journal = {J. Geophys. Res.: Earth Surface},
-volume = {116},
-number = {F2},
-doi = {10.1029/2010JF001900},
-year = {2011},
-}
-
-
-@article {EgholmNielsen2010,
-author = {Egholm, D. and Nielsen, S.},
-title = {An adaptive finite volume solver for ice sheets and glaciers},
-journal = {J. Geophys. Res.: Earth Surface},
-volume = {115},
-number = {F1},
-doi = {10.1029/2009JF001394},
-year = {2010},
-}
-
-
-@article{Eisen2008,
-    AUTHOR = {O. Eisen},
-     TITLE = {Inference of velocity pattern from isochronous layers 
-              in firn, using an inverse method},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {54},
-    NUMBER = {187},
-     PAGES = {613--630},
-      YEAR = {2008},
-}
-
-
-@article {EISMINT96,
-    AUTHOR = {P. Huybrechts and others},
-     TITLE = {The {EISMINT} benchmarks for testing ice-sheet models},
-   JOURNAL = {Ann. Glaciol.},
-    VOLUME = {23},
-     PAGES = {1--12},
-      YEAR = {1996},
+@unpublished{EISIIdescribe,
+    AUTHOR = {A. Payne},
+     TITLE = {{EISMINT}: {I}ce sheet model intercomparison exercise
+              phase two.  {P}roposed simplified geometry experiments},
+      NOTE = "\href{http://homepages.vub.ac.be/~phuybrec/eismint/thermo-descr.pdf}{homepages.vub.ac.be/$\sim$phuybrec/eismint/thermo-descr.pdf}",
+      YEAR = {1997},
 }
 
 
@@ -1010,12 +959,74 @@ year = {2010},
 }
 
 
-@unpublished{EISIIdescribe,
-    AUTHOR = {A. Payne},
-     TITLE = {{EISMINT}: {I}ce sheet model intercomparison exercise
-              phase two.  {P}roposed simplified geometry experiments},
-      NOTE = "\href{http://homepages.vub.ac.be/~phuybrec/eismint/thermo-descr.pdf}{homepages.vub.ac.be/$\sim$phuybrec/eismint/thermo-descr.pdf}",
-      YEAR = {1997},
+@article {EISMINT96,
+    AUTHOR = {P. Huybrechts and others},
+     TITLE = {The {EISMINT} benchmarks for testing ice-sheet models},
+   JOURNAL = {Ann. Glaciol.},
+    VOLUME = {23},
+     PAGES = {1--12},
+      YEAR = {1996},
+}
+
+
+@techreport {ERCOFTACGuidelines,
+    AUTHOR = {ERCOFTAC},
+     TITLE = {Best {P}ractices {G}uidelines for {I}ndustrial
+              {C}omputational {F}luid {D}ynamics},
+INSTITUTION = {European Research Community On Flow, Turbulence And Combustion
+               (ERCOFTAC)},
+      NOTE = {Version 1.0},
+      YEAR = {2000},
+}
+
+
+@article{Edwards2014,
+author = {Edwards, T. L. and Fettweis, X. and Gagliardini, O. and Gillet-Chaulet, F. and Goelzer, H. and Gregory, J. M. and Hoffman, M. and Huybrechts, Philippe and Payne, a. J. and Perego, M. and Price, S. and Quiquet, A. and Ritz, C.},
+doi = {10.5194/tc-8-181-2014},
+file = {:Users/andy/pdfs/Edwards et al. - 2014 - Probabilistic parameterisation of the surface mass balance–elevation feedback in regional climate model simula.pdf:pdf},
+issn = {1994-0424},
+journal = {The Cryosphere},
+month = {jan},
+number = {1},
+pages = {181--194},
+title = {{Probabilistic parameterisation of the surface mass balance–elevation feedback in regional climate model simulations of the Greenland ice sheet}},
+url = {http://www.the-cryosphere.net/8/181/2014/},
+volume = {8},
+year = {2014}
+}
+
+
+@article {EgholmNielsen2010,
+author = {Egholm, D. and Nielsen, S.},
+title = {An adaptive finite volume solver for ice sheets and glaciers},
+journal = {J. Geophys. Res.: Earth Surface},
+volume = {115},
+number = {F1},
+doi = {10.1029/2009JF001394},
+year = {2010},
+}
+
+
+@article {Egholmetal2011,
+author = {Egholm, D. and Knudsen, M. and Clark, C. and Lesemann, J.},
+title = {Modeling the flow of glaciers in steep terrains: The integrated second-order shallow ice approximation {(iSOSIA)}},
+journal = {J. Geophys. Res.: Earth Surface},
+volume = {116},
+number = {F2},
+doi = {10.1029/2010JF001900},
+year = {2011},
+}
+
+
+@article{Eisen2008,
+    AUTHOR = {O. Eisen},
+     TITLE = {Inference of velocity pattern from isochronous layers 
+              in firn, using an inverse method},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {54},
+    NUMBER = {187},
+     PAGES = {613--630},
+      YEAR = {2008},
 }
 
 
@@ -1038,17 +1049,6 @@ year = {2010},
     NUMBER = {L12501},
        DOI = {10.1029/2009GL038110},
       YEAR = {2009},
-}
-
-
-@techreport {ERCOFTACGuidelines,
-    AUTHOR = {ERCOFTAC},
-     TITLE = {Best {P}ractices {G}uidelines for {I}ndustrial
-              {C}omputational {F}luid {D}ynamics},
-INSTITUTION = {European Research Community On Flow, Turbulence And Combustion
-               (ERCOFTAC)},
-      NOTE = {Version 1.0},
-      YEAR = {2000},
 }
 
 
@@ -1158,6 +1158,18 @@ INSTITUTION = {European Research Community On Flow, Turbulence And Combustion
 }
 
 
+@inproceedings{FoldvikKvinge1974,
+  title={Conditional instability of sea water at the freezing point},
+  author={Foldvik, Arne and Kvinge, Thor},
+  booktitle={Deep Sea Research and Oceanographic Abstracts},
+  volume={21},
+  number={3},
+  pages={169--174},
+  year={1974},
+  organization={Elsevier}
+}
+
+
 @article{FongSaunders2011,
   title={{LSMR}: {A}n iterative algorithm for sparse least-squares problems},
   author={D. Fong and M. Saunders},
@@ -1169,22 +1181,23 @@ INSTITUTION = {European Research Community On Flow, Turbulence And Combustion
 }
 
 
-@article {FowlerLarson1978,
-    AUTHOR = {A. C. Fowler and D. A. Larson},
-     TITLE = {On the flow of polythermal glaciers. {I}. 
-              {M}odel and preliminary analysis},
-   JOURNAL = {Proc. R. Soc. Lond. A},
-    VOLUME = {363},
-     PAGES = {217--242},
-      YEAR = {1978},
-}
-
-
 @book {Fowler,
     AUTHOR = {A. C. Fowler},
      TITLE = {Mathematical Models in the Applied Sciences},
  PUBLISHER = {Cambridge Univ. Press},
       YEAR = {1997},
+}
+
+
+@inproceedings{Fowler01,
+  AUTHOR    = {Andrew C. Fowler},
+  editor    = {Brian Straughan and others},
+  BOOKTITLE = {Continuum {M}echanics and {A}pplications in
+               {G}eophysics and the {E}nvironment},
+  TITLE     = {Modelling the flow of glaciers and ice sheets},
+  PUBLISHER = {Springer},
+  YEAR      = {2001},
+  PAGES     = {201--221},
 }
 
 
@@ -1210,15 +1223,14 @@ INSTITUTION = {European Research Community On Flow, Turbulence And Combustion
 }
 
 
-@inproceedings{Fowler01,
-  AUTHOR    = {Andrew C. Fowler},
-  editor    = {Brian Straughan and others},
-  BOOKTITLE = {Continuum {M}echanics and {A}pplications in
-               {G}eophysics and the {E}nvironment},
-  TITLE     = {Modelling the flow of glaciers and ice sheets},
-  PUBLISHER = {Springer},
-  YEAR      = {2001},
-  PAGES     = {201--221},
+@article {FowlerLarson1978,
+    AUTHOR = {A. C. Fowler and D. A. Larson},
+     TITLE = {On the flow of polythermal glaciers. {I}. 
+              {M}odel and preliminary analysis},
+   JOURNAL = {Proc. R. Soc. Lond. A},
+    VOLUME = {363},
+     PAGES = {217--242},
+      YEAR = {1978},
 }
 
 
@@ -1237,6 +1249,15 @@ INSTITUTION = {European Research Community On Flow, Turbulence And Combustion
      TITLE = {Variational inequalities and free boundary problems},
  PUBLISHER = {Wiley Interscience},
       YEAR = {1982},
+}
+
+
+@misc {GSL,
+  AUTHOR = {M. Galassi and others},
+   TITLE = {{GNU} {S}cientific {L}ibrary {R}eference {M}anual},
+ EDITION = {second},
+    NOTE = {\url{http://www.gnu.org/software/gsl/}},
+    YEAR = {2006},
 }
 
 
@@ -1296,18 +1317,6 @@ PAGES = {1095--1106},
 }
 
 
-@article {Goldbergetal2009,
-    AUTHOR = {D. Goldberg and D. M. Holland and C. Schoof},
-     TITLE = {Grounding line movement and ice shelf buttressing in 
-              marine ice sheets},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {114},
-    NUMBER = {F04026},
-       DOI = {10.1029/2008JF001227},
-      YEAR = {2009},
-}
-
-
 @article {Goldberg2011,
     AUTHOR = {D. Goldberg},
      TITLE = {A variationally derived, depth-integrated approximation to a
@@ -1320,14 +1329,15 @@ PAGES = {1095--1106},
 }
 
 
-@article {GoldsbyKohlstedt97,
-    AUTHOR = {D. L. Goldsby and D. L. Kohlstedt},
-     TITLE = {Grain boundary sliding in fine-grained ice {I}},
-   JOURNAL = {Scripta Materialia},
-    VOLUME = {37},
-    NUMBER = {9},
-     PAGES = {1399--1406},
-      YEAR = {1997},
+@article {Goldbergetal2009,
+    AUTHOR = {D. Goldberg and D. M. Holland and C. Schoof},
+     TITLE = {Grounding line movement and ice shelf buttressing in 
+              marine ice sheets},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {114},
+    NUMBER = {F04026},
+       DOI = {10.1029/2008JF001227},
+      YEAR = {2009},
 }
 
 
@@ -1339,6 +1349,17 @@ PAGES = {1095--1106},
     NUMBER = {M6},
      PAGES = {11017--11030},
       YEAR = {2001},
+}
+
+
+@article {GoldsbyKohlstedt97,
+    AUTHOR = {D. L. Goldsby and D. L. Kohlstedt},
+     TITLE = {Grain boundary sliding in fine-grained ice {I}},
+   JOURNAL = {Scripta Materialia},
+    VOLUME = {37},
+    NUMBER = {9},
+     PAGES = {1399--1406},
+      YEAR = {1997},
 }
 
 
@@ -1428,21 +1449,6 @@ PAGES = {1--44},
 }
 
 
-@article {Greve97Greenland,
-    AUTHOR = {Ralf Greve},
-     TITLE = {Application of a polythermal three-dimensional ice 
-               sheet model to the
-              {G}reenland ice sheet: {R}esponse to steady-state and transient 
-              climate scenarios},
-   JOURNAL = {J. Climate},
-  FJOURNAL = {Journal of Climate},
-    VOLUME = {10},
-    NUMBER = {5},
-     PAGES = {901--918},
-      YEAR = {1997},
-}
-
-
 @article {Greve00,
     AUTHOR = {Ralf Greve},
      TITLE = {On the response of the {G}reenland ice sheet to greenhouse 
@@ -1467,17 +1473,6 @@ of the {E}arth to varying ice loads},
 }
 
 
-@article {GreveWangMuegge2002,
-    AUTHOR = {R. Greve and Y. Wang and B. M\"ugge},
-     TITLE = {Comparison of numerical schemes for the solution of the
-              advective age equation in ice sheets},
-   JOURNAL = {Ann. Glaciol.},
-    VOLUME = {35},
-     PAGES = {487--494},
-      YEAR = {2002},
-}
-
-
 @article {Greve2005geothermal,
     AUTHOR = {R. Greve},
      TITLE = {Relation of measured basal temperatures and the spatial distribution
@@ -1489,11 +1484,18 @@ of the {E}arth to varying ice loads},
 }
 
 
-@unpublished{GreveNotes,
+@article {Greve97Greenland,
     AUTHOR = {Ralf Greve},
-     TITLE = {Dynamics of Ice Sheets and Glaciers},
-      NOTE = {Lecture notes Sapporo},
-      YEAR = {2005},
+     TITLE = {Application of a polythermal three-dimensional ice 
+               sheet model to the
+              {G}reenland ice sheet: {R}esponse to steady-state and transient 
+              climate scenarios},
+   JOURNAL = {J. Climate},
+  FJOURNAL = {Journal of Climate},
+    VOLUME = {10},
+    NUMBER = {5},
+     PAGES = {901--918},
+      YEAR = {1997},
 }
 
 
@@ -1507,6 +1509,14 @@ of the {E}arth to varying ice loads},
 }
 
 
+@unpublished{GreveNotes,
+    AUTHOR = {Ralf Greve},
+     TITLE = {Dynamics of Ice Sheets and Glaciers},
+      NOTE = {Lecture notes Sapporo},
+      YEAR = {2005},
+}
+
+
 @article {GreveTakahamaCalov,
     AUTHOR = {Ralf Greve and Ryoji Takahama and Reinhard Calov},
      TITLE = {Simulation of large-scale ice-sheet surges: The {ISMIP-HEINO} experiments},
@@ -1514,6 +1524,17 @@ of the {E}arth to varying ice loads},
     VOLUME = {20},
      PAGES = {1--15},
       YEAR = {2006},
+}
+
+
+@article {GreveWangMuegge2002,
+    AUTHOR = {R. Greve and Y. Wang and B. M\"ugge},
+     TITLE = {Comparison of numerical schemes for the solution of the
+              advective age equation in ice sheets},
+   JOURNAL = {Ann. Glaciol.},
+    VOLUME = {35},
+     PAGES = {487--494},
+      YEAR = {2002},
 }
 
 
@@ -1538,15 +1559,6 @@ of the {E}arth to varying ice loads},
 }
 
 
-@misc {GSL,
-  AUTHOR = {M. Galassi and others},
-   TITLE = {{GNU} {S}cientific {L}ibrary {R}eference {M}anual},
- EDITION = {second},
-    NOTE = {\url{http://www.gnu.org/software/gsl/}},
-    YEAR = {2006},
-}
-
-
 @article {Gudmundsson03,
     AUTHOR = {Gudmundsson, G. Hilmar},
      TITLE = {Transmission of basal variability to a glacier surface},
@@ -1568,6 +1580,35 @@ JOURNAL = {The Cryosphere},
    YEAR = {2008},
  NUMBER = {2},
   PAGES = {77--93},
+}
+
+
+@unpublished {HEINOwebpage,
+    AUTHOR = {Reinhard Calov and Ralf Greve},
+     TITLE = {{ISMIP-HEINO} {I}ce {S}heet {M}odel {I}ntercomparison {P}roject: {H}einrich {E}vent {IN}terc{O}mparison},
+      NOTE = "\url{http://www.pik-potsdam.de/~calov/heino.html}",
+      YEAR = {2008},
+}
+
+
+@article{HOMelmer,
+ AUTHOR = {Gagliardini, O. and Zwinger, T.},
+  TITLE = {The {ISMIP-HOM} benchmark experiments performed using the 
+           {F}inite-{E}lement code {E}lmer},
+JOURNAL = {The Cryosphere},
+ VOLUME = {2},
+   YEAR = {2008},
+ NUMBER = {1},
+  PAGES = {67--76},
+   NOTE = {\url{www.the-cryosphere.net/2/67/2008/}},
+}
+
+
+@unpublished {HOMwebpage,
+    AUTHOR = {Frank Pattyn and Tony Payne},
+     TITLE = {{ISMIP-HOM} {I}ce {S}heet {M}odel {I}ntercomparison {P}roject: benchmark experiments for {H}igher-{O}rder ice sheet {M}odels},
+      NOTE = "\url{http://homepages.ulb.ac.be/~fpattyn/ismip/}",
+      YEAR = {2008},
 }
 
 
@@ -1659,11 +1700,24 @@ DOI = {10.5194/tc-7-1679-2013}
 }
 
 
-@unpublished {HEINOwebpage,
-    AUTHOR = {Reinhard Calov and Ralf Greve},
-     TITLE = {{ISMIP-HEINO} {I}ce {S}heet {M}odel {I}ntercomparison {P}roject: {H}einrich {E}vent {IN}terc{O}mparison},
-      NOTE = "\url{http://www.pik-potsdam.de/~calov/heino.html}",
-      YEAR = {2008},
+@article{HellmerOlbers1989,
+  title={A two-dimensional model for the thermohaline circulation under an ice shelf},
+  author={Hellmer, HH and Olbers, DJ},
+  journal={Antarctic Science},
+  volume={1},
+  number={04},
+  pages={325--336},
+  year={1989},
+  publisher={Cambridge Univ Press}
+}
+
+
+@book{Hellmeretal1998,
+  title={{O}ceanic erosion of a floating {A}ntarctic glacier in the {A}mundsen {S}ea},
+  author={Hellmer, Hartmut H. and Jacobs, Stanley S. and Jenkins, Adrian},
+  year={1998},
+  pages={83--99},
+  publisher={American Geophysical Union}
 }
 
 
@@ -1679,17 +1733,6 @@ DOI = {10.5194/tc-7-1679-2013}
 }
 
 
-@article {Hewittetal2012,
-    AUTHOR = {I. J. Hewitt and C. Schoof and M. A. Werder},
-     TITLE = {Flotation and free surface flow in a model for
-              subglacial drainage.  {P}art {II}: {C}hannel flow},
-   JOURNAL = {J. Fluid Mech.},
-    VOLUME = {702},
-     PAGES = {157--188},
-      YEAR = {2012},
-}
-
-
 @article {Hewitt2013,
     AUTHOR = {I. J. Hewitt},
      TITLE = {Seasonal changes in ice sheet motion due to melt water lubrication},
@@ -1701,6 +1744,17 @@ DOI = {10.5194/tc-7-1679-2013}
 }
 
 
+@article {Hewittetal2012,
+    AUTHOR = {I. J. Hewitt and C. Schoof and M. A. Werder},
+     TITLE = {Flotation and free surface flow in a model for
+              subglacial drainage.  {P}art {II}: {C}hannel flow},
+   JOURNAL = {J. Fluid Mech.},
+    VOLUME = {702},
+     PAGES = {157--188},
+      YEAR = {2012},
+}
+
+
 @article {HighamTrefethen1993,
     AUTHOR = {D. Higham and L. N. Trefethen},
      TITLE = {Stiffness of {ODE}s},
@@ -1708,18 +1762,6 @@ DOI = {10.5194/tc-7-1679-2013}
     VOLUME = {33},
      PAGES = {285--303},
       YEAR = {1993},
-}
-
-
-@article{Hindmarsh1983ODEPACK,
-  title={{ODEPACK, A Systematized Collection of ODE Solvers}},
-  note={edited by Stepleman et al.},
-  author={Hindmarsh, A. C},
-  journal={IMACS Transactions on Scientific Computation},
-  volume={1},
-  pages={55--64},
-  year={1983},
-  publisher={North-Holland},
 }
 
 
@@ -1758,6 +1800,17 @@ DOI = {10.5194/tc-7-1679-2013}
 }
 
 
+@article {Hindmarsh04compare,
+    AUTHOR = {R. C. A. Hindmarsh},
+     TITLE = {A numerical comparison of approximations to the {S}tokes
+              equations used in ice sheet and glacier modeling},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {109},
+       doi = {10.1029/2003{JF}000065},
+      YEAR = {2004},
+}
+
+
 @article {Hindmarsh06,
     AUTHOR = {R. C. A. Hindmarsh},
      TITLE = {Stress gradient damping of thermoviscous ice flow instabilities},
@@ -1766,6 +1819,18 @@ DOI = {10.5194/tc-7-1679-2013}
     NUMBER = {B12409},
        doi = {10.1029/2005{JB}004019},
       YEAR = {2006},
+}
+
+
+@article{Hindmarsh1983ODEPACK,
+  title={{ODEPACK, A Systematized Collection of ODE Solvers}},
+  note={edited by Stepleman et al.},
+  author={Hindmarsh, A. C},
+  journal={IMACS Transactions on Scientific Computation},
+  volume={1},
+  pages={55--64},
+  year={1983},
+  publisher={North-Holland},
 }
 
 
@@ -1792,17 +1857,6 @@ DOI = {10.5194/tc-7-1679-2013}
 }
 
 
-@article {Hindmarsh04compare,
-    AUTHOR = {R. C. A. Hindmarsh},
-     TITLE = {A numerical comparison of approximations to the {S}tokes
-              equations used in ice sheet and glacier modeling},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {109},
-       doi = {10.1029/2003{JF}000065},
-      YEAR = {2004},
-}
-
-
 @article {Hindmarshetal2009,
 	author = "R. Hindmarsh and G. Leysinger Vieli and and F. Parrenin",
 	title = "A large-scale numerical model for computing isochrone geometry",
@@ -1811,37 +1865,6 @@ DOI = {10.5194/tc-7-1679-2013}
 	number = "51",
 	year = "2009",
 	pages = "130--140",
-}
-
-
-@article{HOMelmer,
- AUTHOR = {Gagliardini, O. and Zwinger, T.},
-  TITLE = {The {ISMIP-HOM} benchmark experiments performed using the 
-           {F}inite-{E}lement code {E}lmer},
-JOURNAL = {The Cryosphere},
- VOLUME = {2},
-   YEAR = {2008},
- NUMBER = {1},
-  PAGES = {67--76},
-   NOTE = {\url{www.the-cryosphere.net/2/67/2008/}},
-}
-
-
-@article{ISMIPHOM,
-AUTHOR = {Pattyn, F. and twenty others},
-TITLE = {Benchmark experiments for higher-order and full {S}tokes ice sheet models ({ISMIP-HOM})},
-JOURNAL = {The Cryosphere},
-VOLUME = {2},
-YEAR = {2008},
-PAGES = {95--108},
-}
-
-
-@unpublished {HOMwebpage,
-    AUTHOR = {Frank Pattyn and Tony Payne},
-     TITLE = {{ISMIP-HOM} {I}ce {S}heet {M}odel {I}ntercomparison {P}roject: benchmark experiments for {H}igher-{O}rder ice sheet {M}odels},
-      NOTE = "\url{http://homepages.ulb.ac.be/~fpattyn/ismip/}",
-      YEAR = {2008},
 }
 
 
@@ -1864,6 +1887,17 @@ title = {{A distributed surface energy-balance model for complex topography and 
 volume = {51},
 year = {2005}
 }
+
+@article{HollandJenkins1999,
+  title={Modeling thermodynamic ice-ocean interactions at the base of an ice shelf},
+  author={Holland, David M and Jenkins, Adrian},
+  journal={Journal of Physical Oceanography},
+  volume={29},
+  number={8},
+  pages={1787--1800},
+  year={1999}
+}
+
 
 @article {Hollandetal2008,
     AUTHOR = {D. M. Holland and R. H. Thomas and B. de Young and 
@@ -1977,6 +2011,18 @@ year = {2005}
 }
 
 
+@article {Hutter93,
+    AUTHOR = {K. Hutter},
+     TITLE = {Thermomechanically coupled ice--sheet response:
+              cold, polythermal, temperate},
+   JOURNAL = {J. Glaciology},
+    VOLUME = {39},
+    NUMBER = {131},
+     PAGES = {65--86},
+      YEAR = {1993},
+}
+
+
 @inproceedings{HutterFreeBoundary,
   AUTHOR    = {K. Hutter},
   editor    = {I. Athanasopoulos and others},
@@ -1989,15 +2035,15 @@ year = {2005}
 }
 
 
-@article {Hutter93,
-    AUTHOR = {K. Hutter},
-     TITLE = {Thermomechanically coupled ice--sheet response:
-              cold, polythermal, temperate},
-   JOURNAL = {J. Glaciology},
-    VOLUME = {39},
-    NUMBER = {131},
-     PAGES = {65--86},
-      YEAR = {1993},
+@article {Huybrechts02,
+    AUTHOR = {P. Huybrechts},
+     TITLE = {Sea-level changes at the {LGM} from ice-dynamic
+              reconstructions of the {G}reenland and {A}ntarctic
+              ice sheets during the glacial cycles},
+   JOURNAL = {Quat. Sci. Rev.},
+    VOLUME = {21},
+     PAGES = {203--231},
+      YEAR = {2002},
 }
 
 
@@ -2032,18 +2078,6 @@ year = {2005}
 }
 
 
-@article {Huybrechts02,
-    AUTHOR = {P. Huybrechts},
-     TITLE = {Sea-level changes at the {LGM} from ice-dynamic
-              reconstructions of the {G}reenland and {A}ntarctic
-              ice sheets during the glacial cycles},
-   JOURNAL = {Quat. Sci. Rev.},
-    VOLUME = {21},
-     PAGES = {203--231},
-      YEAR = {2002},
-}
-
-
 @article {Huybrechtsetal2004,
     AUTHOR = {P. Huybrechts and J. Gregory and I. Janssens and M. Wild},
      TITLE = {Modelling {A}ntarctic and {G}reenland volume changes 
@@ -2053,6 +2087,16 @@ year = {2005}
     VOLUME = {42},
      PAGES = {83--105},
       YEAR = {2004},
+}
+
+
+@article{ISMIPHOM,
+AUTHOR = {Pattyn, F. and twenty others},
+TITLE = {Benchmark experiments for higher-order and full {S}tokes ice sheet models ({ISMIP-HOM})},
+JOURNAL = {The Cryosphere},
+VOLUME = {2},
+YEAR = {2008},
+PAGES = {95--108},
 }
 
 
@@ -2115,17 +2159,6 @@ year = {2005}
 }
 
 
-@article {Jarosh2008,
-    AUTHOR = {A. H. Jarosch},
-     TITLE = {Icetools: a full {S}tokes finite element model for glaciers},
-   JOURNAL = {Computers \& Geosciences},
-    VOLUME = {34},
-     PAGES = {1005--1014},
-       DOI = {10.1016/j.cageo.2007.06.012},
-      YEAR = {2008},
-}
-
-
 @article{JaroschSchoofAnslow2013,
 AUTHOR = {Jarosch, A. H. and Schoof, C. G. and Anslow, F. S.},
 TITLE = {Restoring mass conservation to shallow ice flow models over complex terrain},
@@ -2135,6 +2168,17 @@ YEAR = {2013},
 NUMBER = {1},
 PAGES = {229--240},
 DOI = {10.5194/tc-7-229-2013},
+}
+
+
+@article {Jarosh2008,
+    AUTHOR = {A. H. Jarosch},
+     TITLE = {Icetools: a full {S}tokes finite element model for glaciers},
+   JOURNAL = {Computers \& Geosciences},
+    VOLUME = {34},
+     PAGES = {1005--1014},
+       DOI = {10.1016/j.cageo.2007.06.012},
+      YEAR = {2008},
 }
 
 
@@ -2159,15 +2203,6 @@ DOI = {10.5194/tc-7-229-2013},
 }
 
 
-@book {Johnson,
-    AUTHOR = {Claes Johnson},
-     TITLE = {Numerical solution of partial differential equations by
-              the finite element method},
- PUBLISHER = {Cambridge University Press},
-      YEAR = {1992},
-}
-
-
 @article {JohnsenetalGRIP,
     AUTHOR = {S. J. Johnsen and D. Dahl-Jensen and
               W. Dansgaard and N. Gundestrup},
@@ -2179,7 +2214,16 @@ DOI = {10.5194/tc-7-229-2013},
       YEAR = {1995},
 }
 
-
+                                                            
+@book {Johnson,
+    AUTHOR = {Claes Johnson},
+     TITLE = {Numerical solution of partial differential equations by
+              the finite element method},
+ PUBLISHER = {Cambridge University Press},
+      YEAR = {1992},
+}
+      
+                                                            
 @article {JohnsonFastook,
     AUTHOR = {J.V. Johnson and J. L. Fastook},
      TITLE = {Northern {H}emisphere glaciation and its sensitivity to
@@ -2190,18 +2234,7 @@ DOI = {10.5194/tc-7-229-2013},
       YEAR = {2002},
 }
 
-                                                            
-@article {Joughinetal1999northGreenland,
-    AUTHOR = {I. Joughin and M. Fahnestock and R. Kwok and P. Gogineni and C. Allen},
-     TITLE = {Ice flow of {H}umboldt, {P}etermann and {R}yder {G}letcher, northern {G}reenland},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {45},
-    NUMBER = {150},
-     PAGES = {231--241},
-      YEAR = {1999},
-}
-      
-                                                            
+
 @article {Joughin2002,
     AUTHOR = {I. Joughin},
      TITLE = {Ice-sheet velocity mapping: a combined interferometric
@@ -2222,30 +2255,6 @@ DOI = {10.5194/tc-7-229-2013},
     NUMBER = {23},
       YEAR = {2004},
      PAGES = {608--610},
-}
-
-
-@article {JoughinetalGrBal97,
-    AUTHOR = {I. Joughin and M. Fahnestock and S. Ekholm and R. Kwok},
-     TITLE = {Balance velocities of the {G}reenland ice sheet},
-   JOURNAL = {Geophysical Research Letters},
-    VOLUME = {24},
-    NUMBER = {23},
-      YEAR = {1997},
-     PAGES = {3045--3048},
-}
-
-
-@article {Joughinetal2001,
-    AUTHOR = {I. Joughin and M. Fahnestock and D. MacAyeal and 
-              J. L. Bamber and P. Gogineni},
-     TITLE = {Observation and analysis of ice flow in the largest 
-              {G}reenland ice stream},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {106},
-    NUMBER = {D24},
-      YEAR = {2001},
-     PAGES = {34021--34034},
 }
 
 
@@ -2272,6 +2281,30 @@ pages = {781-783},
 doi = {10.1126/science.1153288},
 year = {2008},
 note = {\url{http://www.sciencemag.org/cgi/content/abstract/320/5877/781}},
+}
+
+
+@article {Joughinetal1999northGreenland,
+    AUTHOR = {I. Joughin and M. Fahnestock and R. Kwok and P. Gogineni and C. Allen},
+     TITLE = {Ice flow of {H}umboldt, {P}etermann and {R}yder {G}letcher, northern {G}reenland},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {45},
+    NUMBER = {150},
+     PAGES = {231--241},
+      YEAR = {1999},
+}
+
+
+@article {Joughinetal2001,
+    AUTHOR = {I. Joughin and M. Fahnestock and D. MacAyeal and 
+              J. L. Bamber and P. Gogineni},
+     TITLE = {Observation and analysis of ice flow in the largest 
+              {G}reenland ice stream},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {106},
+    NUMBER = {D24},
+      YEAR = {2001},
+     PAGES = {34021--34034},
 }
 
 
@@ -2310,7 +2343,6 @@ note = {\url{http://www.sciencemag.org/cgi/content/abstract/320/5877/781}},
       PAGES = {415--430},
 }
 
-
 @article{Joughinetal2010-PIG,
   title={Sensitivity of 21st century sea level to ocean-induced thinning of {Pine Island Glacier, Antarctica}},
   author={Joughin, Ian and Smith, Benjamin E and Holland, David M},
@@ -2319,6 +2351,7 @@ note = {\url{http://www.sciencemag.org/cgi/content/abstract/320/5877/781}},
   number={20},
   year={2010},
 }
+
 
 @article{Joughinetal2014,
   title={Marine ice sheet collapse potentially under way for the {Thwaites Glacier Basin, West Antarctica}},
@@ -2331,15 +2364,27 @@ note = {\url{http://www.sciencemag.org/cgi/content/abstract/320/5877/781}},
 }
 
 
-@article {Jouvetetal2011,
-    AUTHOR = {G. Jouvet and J. Rappaz and E. Bueler and H. Blatter},
-     TITLE = {Existence and stability of steady state solutions of
-              the shallow ice sheet equation by an energy minimization approach},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {57},
-    NUMBER = {202},
-      YEAR = {2011},
-     PAGES = {345--354},
+@article {JoughinetalGrBal97,
+    AUTHOR = {I. Joughin and M. Fahnestock and S. Ekholm and R. Kwok},
+     TITLE = {Balance velocities of the {G}reenland ice sheet},
+   JOURNAL = {Geophysical Research Letters},
+    VOLUME = {24},
+    NUMBER = {23},
+      YEAR = {1997},
+     PAGES = {3045--3048},
+}
+
+
+@article {JouvetBueler2012,
+    AUTHOR = {G. Jouvet and E. Bueler},
+     TITLE = {Steady, shallow ice sheets as obstacle problems: well-posedness
+              and finite element approximation},
+   JOURNAL = {SIAM J. Appl. Math.},
+    VOLUME = {72},
+    NUMBER = {4},
+     PAGES = {1292--1314},
+       DOI = {10.1137/110856654},
+      YEAR = {2012},
 }
 
 
@@ -2354,16 +2399,15 @@ note = {\url{http://www.sciencemag.org/cgi/content/abstract/320/5877/781}},
 }
 
 
-@article {JouvetBueler2012,
-    AUTHOR = {G. Jouvet and E. Bueler},
-     TITLE = {Steady, shallow ice sheets as obstacle problems: well-posedness
-              and finite element approximation},
-   JOURNAL = {SIAM J. Appl. Math.},
-    VOLUME = {72},
-    NUMBER = {4},
-     PAGES = {1292--1314},
-       DOI = {10.1137/110856654},
-      YEAR = {2012},
+@article {Jouvetetal2011,
+    AUTHOR = {G. Jouvet and J. Rappaz and E. Bueler and H. Blatter},
+     TITLE = {Existence and stability of steady state solutions of
+              the shallow ice sheet equation by an energy minimization approach},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {57},
+    NUMBER = {202},
+      YEAR = {2011},
+     PAGES = {345--354},
 }
 
 
@@ -2494,18 +2538,6 @@ note = {\url{http://www.sciencemag.org/cgi/content/abstract/320/5877/781}},
 }
 
 
-@article {LarouretalRonne,
-    AUTHOR = {E. Larour and E. Rignot and I. Joughin and D. Aubry},
-     TITLE = {Rheology of the {R}onne {I}ce {S}helf, {A}ntarctica, inferred from 
-              satellite radar interferometry data using an inverse control method},
-   JOURNAL = {Geo. Res. Letters},
-    VOLUME = {32},
-    NUMBER = {L05503},
-      YEAR = {2005},
-       doi = {10.1029/2004GL021693},
-}
-
-
 @article {Larouretal2012,
     AUTHOR = {Larour, E. and Seroussi, H. and Morlighem, M. and Rignot, E.},
      TITLE = {Continental scale, high order, high spatial resolution, ice sheet
@@ -2518,6 +2550,18 @@ note = {\url{http://www.sciencemag.org/cgi/content/abstract/320/5877/781}},
 }
 
 
+@article {LarouretalRonne,
+    AUTHOR = {E. Larour and E. Rignot and I. Joughin and D. Aubry},
+     TITLE = {Rheology of the {R}onne {I}ce {S}helf, {A}ntarctica, inferred from 
+              satellite radar interferometry data using an inverse control method},
+   JOURNAL = {Geo. Res. Letters},
+    VOLUME = {32},
+    NUMBER = {L05503},
+      YEAR = {2005},
+       doi = {10.1029/2004GL021693},
+}
+
+
 @article {Larsenetal,
     AUTHOR = {Christopher F. Larsen and Roman J. Motyka and Jeffrey T. Freymuller
               and Keith A. Echelmeyer and Erik R. Ivins},
@@ -2527,6 +2571,18 @@ note = {\url{http://www.sciencemag.org/cgi/content/abstract/320/5877/781}},
     VOLUME = {237},
       YEAR = {2005},
      PAGES = {548--560},
+}
+
+
+@article{LayberryBamber,
+	Author = {R.L. Layberry and J.L. Bamber},
+	fJournal = {Journal of Geophysical Research},
+        JOURNAL = {J. Geophys. Res.},
+	Pages = {33,781--33,788},
+	Title = {A new ice thickness and bed data set for the {G}reenland 
+	         ice sheet 2: {R}elationship between dynamics and basal topography},
+	Volume = {106 (D24)},
+	Year = {2001},
 }
 
 
@@ -2568,6 +2624,26 @@ DOI = {10.5194/essd-2-247-2010}
 }
 
 
+@article {LeMeurHuybrechts,
+    AUTHOR = {E. Le Meur and P. Huybrechts},
+     TITLE = {A comparison of different ways of dealing with isostasy: examples
+              from modeling the {A}ntarctic ice sheet during the last glacial cycle},
+   JOURNAL = {Annals of Glaciology},
+    VOLUME = {23},
+      YEAR = {1996},
+     PAGES = {309--317},
+}
+
+
+@book {LeVeque,
+    AUTHOR = {R. J. LeVeque},
+     TITLE = {Finite Volume Methods for Hyperbolic Problems},
+    SERIES = {Cambridge Texts in Applied Mathematics},
+ PUBLISHER = {Cambridge University Press},
+      YEAR = {2002},
+}
+
+
 @Article{Leguyetal2014,
 AUTHOR = {Leguy, G. R. and Asay-Davis, X. S. and Lipscomb, W. H.},
 TITLE = {Parameterization of basal friction near grounding lines in a one-dimensional ice sheet model},
@@ -2588,17 +2664,6 @@ pages = "6531 - 6545",
 year = "2011",
 doi = "DOI: 10.1016/j.jcp.2011.04.037",
 author = "Jean-Fran{\,c}ois Lemieux and Stephen F. Price and Katherine J. Evans and Dana Knoll and Andrew G. Salinger and David M. Holland and Antony J. Payne",
-}
-
-
-@article {LeMeurHuybrechts,
-    AUTHOR = {E. Le Meur and P. Huybrechts},
-     TITLE = {A comparison of different ways of dealing with isostasy: examples
-              from modeling the {A}ntarctic ice sheet during the last glacial cycle},
-   JOURNAL = {Annals of Glaciology},
-    VOLUME = {23},
-      YEAR = {1996},
-     PAGES = {309--317},
 }
 
 
@@ -2626,15 +2691,6 @@ author = "Jean-Fran{\,c}ois Lemieux and Stephen F. Price and Katherine J. Evans 
 }
 
 
-@book {LeVeque,
-    AUTHOR = {R. J. LeVeque},
-     TITLE = {Finite Volume Methods for Hyperbolic Problems},
-    SERIES = {Cambridge Texts in Applied Mathematics},
- PUBLISHER = {Cambridge University Press},
-      YEAR = {2002},
-}
-
-
 @article {Levermann2011,
     AUTHOR = {A. Levermann},
      TITLE = {When glacial giants roll over},
@@ -2654,7 +2710,6 @@ YEAR = {2012},
 PAGES = {273--286},
 URL = {http://www.the-cryosphere.net/6/273/2012/tc-6-273-2012.html},
 }
-
 
 @article {LeysingerVieliGudmundsson,
     AUTHOR = {G. J.-M. C. {Leysinger Vieli} and G. H. Gudmundsson},
@@ -2688,6 +2743,7 @@ URL = {http://www.the-cryosphere.net/6/273/2012/tc-6-273-2012.html},
       YEAR = {1985},
      PAGES = {1100--1114},
 }
+
 
 @article {LingleTroshina,
     AUTHOR = {C. S. Lingle and E. N. Troshina},
@@ -2776,6 +2832,37 @@ journal = {Science}
 }
 
 
+@article{MISMIP2012,
+ AUTHOR = {F. Pattyn and C. Schoof and L. Perichon and 15 others},
+  TITLE = {Results of the {M}arine {I}ce {S}heet {M}odel {I}ntercomparison
+           {P}roject, {MISMIP}},
+JOURNAL = {The Cryosphere},
+ VOLUME = {6},
+   YEAR = {2012},
+  PAGES = {573--588},
+    DOI = {10.5194/tc-6-573-2012},
+}
+
+
+@article{MISMIP3d2013,
+AUTHOR = {F. Pattyn and L. Perichon and G. Durand and 25 others},
+TITLE = {Grounding-line migration in plan-view marine ice-sheet models: results of the ice2sea {MISMIP3d} intercomparison},
+JOURNAL = {J. Glaciol.},
+VOLUME = {59},
+NUMBER = {215},
+YEAR = {2013},
+PAGES = {410--422},
+}
+
+
+@unpublished {MISMIPwebpage,
+    AUTHOR = {Christian Schoof and Richard Hindmarsh and Frank Pattyn},
+     TITLE = {{M}arine {I}ce {S}heet {M}odel {I}ntercomparison {P}roject},
+      NOTE = "\url{http://homepages.ulb.ac.be/~fpattyn/mismip/}",
+      YEAR = {2008},
+}
+
+
 @article {MacAyeal,
     AUTHOR = {D. R. MacAyeal},
      TITLE = {Large-scale ice flow over a viscous basal sediment: theory and
@@ -2785,14 +2872,6 @@ journal = {Science}
     NUMBER = {B4},
       YEAR = {1989},
      PAGES = {4071--4087},
-}
-
-
-@unpublished {MacAyealLessons,
-    AUTHOR = {MacAyeal, D.R.},
-     TITLE = {{EISMINT}: {L}essons in {I}ce-{S}heet {M}odeling},
-      NOTE = {Department of Geophysical Sciences, University of Chicago, 428 pages, \url{http://homepages.vub.ac.be/~phuybrec/pdf/MacAyeal.lessons.pdf}},
-      YEAR = {1997},
 }
 
 
@@ -2808,14 +2887,11 @@ journal = {Science}
 }
 
 
-@article {MacAyealtutorial,
-    AUTHOR = {D. R. MacAyeal},
-     TITLE = {A tutorial on the use of control methods in ice-sheet modeling},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {39},
-    NUMBER = {131},
-      YEAR = {1993},
-     PAGES = {91--98},
+@unpublished {MacAyealLessons,
+    AUTHOR = {MacAyeal, D.R.},
+     TITLE = {{EISMINT}: {L}essons in {I}ce-{S}heet {M}odeling},
+      NOTE = {Department of Geophysical Sciences, University of Chicago, 428 pages, \url{http://homepages.vub.ac.be/~phuybrec/pdf/MacAyeal.lessons.pdf}},
+      YEAR = {1997},
 }
 
 
@@ -2827,6 +2903,17 @@ journal = {Science}
     VOLUME = {23},
       YEAR = {1996},
      PAGES = {46--51},
+}
+
+
+@article {MacAyealtutorial,
+    AUTHOR = {D. R. MacAyeal},
+     TITLE = {A tutorial on the use of control methods in ice-sheet modeling},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {39},
+    NUMBER = {131},
+      YEAR = {1993},
+     PAGES = {91--98},
 }
 
 
@@ -2878,18 +2965,6 @@ journal = {Science}
 }
 
 
-@Article{Martinetal2011,
-AUTHOR = {Martin, M. A. and Winkelmann, R. and Haseloff, M. and 
-          Albrecht, T. and Bueler, E. and Khroulev, C. and Levermann, A.},
-TITLE = {The {P}otsdam {P}arallel {I}ce {S}heet {M}odel ({PISM-PIK})
-         --{P}art 2: {D}ynamic equilibrium simulation of the {A}ntarctic ice sheet},
-JOURNAL = {The Cryosphere},
-VOLUME = {5},
-YEAR = {2011},
-PAGES = {727--740},
-}
-
-
 @article {MartinHindmarshNavarro2009,
 author = {C. Mart\'in and R. Hindmarsh and F. Navarro},
 title = {On the effects of divide migration, along-ridge flow, and basal sliding
@@ -2902,12 +2977,15 @@ year = {2009},
 }
 
 
-@unpublished {massbalanceglossary,
-    AUTHOR = {G. Cogley and others},
-     TITLE = {Glossary of {M}ass-{B}alance and {R}elated {T}erms},
-      NOTE = {IACS Working Group on Mass-balance Terminology and Methods, Draft 3, 10 July}, 
-       URL = {http://www.cryosphericsciences.org/mass_balance_glossary/massbalanceglossary.draft3.pdf},
-      YEAR = {2009},
+@Article{Martinetal2011,
+AUTHOR = {Martin, M. A. and Winkelmann, R. and Haseloff, M. and 
+          Albrecht, T. and Bueler, E. and Khroulev, C. and Levermann, A.},
+TITLE = {The {P}otsdam {P}arallel {I}ce {S}heet {M}odel ({PISM-PIK})
+         --{P}art 2: {D}ynamic equilibrium simulation of the {A}ntarctic ice sheet},
+JOURNAL = {The Cryosphere},
+VOLUME = {5},
+YEAR = {2011},
+PAGES = {727--740},
 }
 
 
@@ -2940,14 +3018,6 @@ YEAR = {2014},
    EDITION = {Second},
  PUBLISHER = {Oxford University Press},
       YEAR = {1999},
-}
-
-
-@unpublished {MISMIPwebpage,
-    AUTHOR = {Christian Schoof and Richard Hindmarsh and Frank Pattyn},
-     TITLE = {{M}arine {I}ce {S}heet {M}odel {I}ntercomparison {P}roject},
-      NOTE = "\url{http://homepages.ulb.ac.be/~fpattyn/mismip/}",
-      YEAR = {2008},
 }
 
 
@@ -2996,7 +3066,6 @@ YEAR = {2014},
   PAGES     = {99--116},
 }
 
-
 @article {Morland97,
     AUTHOR = {L. W. Morland},
      TITLE = {Radially symmetric ice sheet flow},
@@ -3005,7 +3074,6 @@ YEAR = {2014},
       YEAR = {1997},
      PAGES = {1873--1904},
 }
-
 
 @article {MorlandJohnson,
     AUTHOR = {L. W. Morland and I. R. Johnson},
@@ -3029,6 +3097,18 @@ YEAR = {2014},
 }
 
 
+@article{Morlighem2016,
+author = {Morlighem, M. and Bondzio, J. and Seroussi, H. and Rignot, E. and Larour, E. and Humbert, A. and Rebuffi, S.},
+doi = {10.1002/2016GL067695},
+journal = {Geophysical Research Letters},
+keywords = {10.1002/2016GL067695 and glaciology,Store Gletscher,calving,ice-ocean interactions,inverse modeling},
+pages = {n/a--n/a},
+title = {{Modeling of Store Gletscher's calving dynamics, West Greenland, in response to ocean thermal forcing}},
+url = {http://doi.wiley.com/10.1002/2016GL067695},
+year = {2016}
+}
+
+
 @article {Morlighemetal2010,
     AUTHOR = {M. Morlighem and E. Rignot and H. Seroussi and 
               E. Larour and H. Ben Dhia and D. Aubry},
@@ -3042,16 +3122,6 @@ YEAR = {2014},
      doi = {10.1029/2010GL043853},
 }
 
-@article{Morlighem2016,
-author = {Morlighem, M. and Bondzio, J. and Seroussi, H. and Rignot, E. and Larour, E. and Humbert, A. and Rebuffi, S.},
-doi = {10.1002/2016GL067695},
-journal = {Geophysical Research Letters},
-keywords = {10.1002/2016GL067695 and glaciology,Store Gletscher,calving,ice-ocean interactions,inverse modeling},
-pages = {n/a--n/a},
-title = {{Modeling of Store Gletscher's calving dynamics, West Greenland, in response to ocean thermal forcing}},
-url = {http://doi.wiley.com/10.1002/2016GL067695},
-year = {2016}
-}
 
 @book {MortonMayers,
     AUTHOR = {K. W. Morton and D. F. Mayers},
@@ -3107,28 +3177,6 @@ doi = {10.1002/jgrf.20076},
 }
 
 
-@article {Nye52,
-    AUTHOR = {J. F. Nye},
-     TITLE = {The mechanics of glacier flow},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {2},
-    NUMBER = {2},
-     PAGES = {82--93},
-      YEAR = {1952},
-}
-
-
-@article {Nye52plastic,
-    AUTHOR = {J. F. Nye},
-     TITLE = {A method of calculating the thicknesses of the ice-sheets},
-   JOURNAL = {Nature},
-    VOLUME = {169},
-    NUMBER = {4300},
-     PAGES = {529--530},
-      YEAR = {1952},
-}
-
-
 @article {Nye,
     AUTHOR = {J. F. Nye},
      TITLE = {The distribution of stress and velocity in glaciers and
@@ -3137,6 +3185,17 @@ doi = {10.1002/jgrf.20076},
     VOLUME = {239},
      PAGES = {113--133},
       YEAR = {1957},
+}
+
+
+@article {Nye00,
+    AUTHOR = {J. F. Nye},
+     TITLE = {A flow model for the polar caps of {M}ars},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {46},
+    NUMBER = {154},
+     PAGES = {438--444},
+      YEAR = {2000},
 }
 
 
@@ -3151,14 +3210,24 @@ doi = {10.1002/jgrf.20076},
 }
 
 
-@article {Nye00,
+@article {Nye52,
     AUTHOR = {J. F. Nye},
-     TITLE = {A flow model for the polar caps of {M}ars},
+     TITLE = {The mechanics of glacier flow},
    JOURNAL = {J. Glaciol.},
-    VOLUME = {46},
-    NUMBER = {154},
-     PAGES = {438--444},
-      YEAR = {2000},
+    VOLUME = {2},
+    NUMBER = {2},
+     PAGES = {82--93},
+      YEAR = {1952},
+}
+
+@article {Nye52plastic,
+    AUTHOR = {J. F. Nye},
+     TITLE = {A method of calculating the thicknesses of the ice-sheets},
+   JOURNAL = {Nature},
+    VOLUME = {169},
+    NUMBER = {4300},
+     PAGES = {529--530},
+      YEAR = {1952},
 }
 
 
@@ -3183,24 +3252,20 @@ doi = {10.1002/jgrf.20076},
 }
 
 
-@article {Ohmura87,
-    AUTHOR = {A. Ohmura},
-     TITLE = {New temperature distribution maps for {G}reenland},
-   JOURNAL = {Z. Gletscherkd. Glazialgeol.},
-    VOLUME = {23},
-    NUMBER = {1},
-     PAGES = {1--45},
-      YEAR = {1987},
+@book{Oerlemans2008minimal,
+    AUTHOR = {J. H. Oerlemans},
+     TITLE = {Minimal {G}lacier {M}odels},
+ PUBLISHER = {Igitur, Utrecht Publishing \& Archiving Services},
+   ADDRESS = {Utrecht},
+      YEAR = {2008},
 }
 
-@article {OhmuraReeh,
-    AUTHOR = {A. Ohmura and N. Reeh},
-     TITLE = {New precipitation and accumulation maps for {G}reenland},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {37},
-    NUMBER = {125},
-     PAGES = {140--148},
-      YEAR = {1991},
+
+@book{OerlemansVeen,
+    AUTHOR = {H. Oerlemans and C. J. van der Veen},
+     TITLE = {Ice {S}heets and {C}limate},
+ PUBLISHER = {D. Reidel},
+      YEAR = {1984},
 }
 
 
@@ -3214,20 +3279,25 @@ doi = {10.1002/jgrf.20076},
 }
 
 
-@book{OerlemansVeen,
-    AUTHOR = {H. Oerlemans and C. J. van der Veen},
-     TITLE = {Ice {S}heets and {C}limate},
- PUBLISHER = {D. Reidel},
-      YEAR = {1984},
+@article {Ohmura87,
+    AUTHOR = {A. Ohmura},
+     TITLE = {New temperature distribution maps for {G}reenland},
+   JOURNAL = {Z. Gletscherkd. Glazialgeol.},
+    VOLUME = {23},
+    NUMBER = {1},
+     PAGES = {1--45},
+      YEAR = {1987},
 }
 
 
-@book{Oerlemans2008minimal,
-    AUTHOR = {J. H. Oerlemans},
-     TITLE = {Minimal {G}lacier {M}odels},
- PUBLISHER = {Igitur, Utrecht Publishing \& Archiving Services},
-   ADDRESS = {Utrecht},
-      YEAR = {2008},
+@article {OhmuraReeh,
+    AUTHOR = {A. Ohmura and N. Reeh},
+     TITLE = {New precipitation and accumulation maps for {G}reenland},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {37},
+    NUMBER = {125},
+     PAGES = {140--148},
+      YEAR = {1991},
 }
 
 
@@ -3253,18 +3323,32 @@ doi = {10.1002/jgrf.20076},
 }
 
 
-@article{denOuden2010,
-   AUTHOR = {den Ouden, M. A. G. and Reijmer, C. H. and Pohjola, V. and
-             van de Wal, R. S. W. and Oerlemans, J. and Boot, W.},
-    TITLE = {Stand-alone single-frequency {GPS} ice velocity observations
-             on {N}ordenski\"oldbreen, {S}valbard},
-  JOURNAL = {The Cryosphere},
-   VOLUME = {4},
-     YEAR = {2010},
-   NUMBER = {4},
-    PAGES = {593--604},
-      URL = {http://www.the-cryosphere.net/4/593/2010/},
-      DOI = {10.5194/tc-4-593-2010},
+@unpublished {POLICEwebpage,
+    AUTHOR = {Philippe Huybrechts},
+     TITLE = {{ISMIP-POLICE}: A new intercomparison exercise to assess model uncertainties 
+              in polar ice sheet simulations under future climatic warming conditions},
+      NOTE = "\url{http://homepages.vub.ac.be/~phuybrec/police.html}",
+      YEAR = {2008},
+}
+
+
+@article {PaigeSaunders1982,
+    AUTHOR = {C. Paige and M. Saunders},
+     TITLE = {{LSQR}: {A}n algorithm for sparse linear equations and sparse
+              least squares},
+   JOURNAL = {ACM Transactions on Mathematical Software},
+    VOLUME = {8},
+    NUMBER = {1},
+     PAGES = {43--71},
+      YEAR = {1982},
+}
+
+
+@book{Parker,
+  title={Geophysical {I}nverse {T}heory},
+  author={R. Parker},
+  year={1994},
+  publisher={Princeton University Press},
 }
 
 
@@ -3345,49 +3429,6 @@ doi = {10.1002/jgrf.20076},
     NUMBER = {171},
      PAGES = {583--589},
       YEAR = {2004},
-}
-
-
-@article{MISMIP2012,
- AUTHOR = {F. Pattyn and C. Schoof and L. Perichon and 15 others},
-  TITLE = {Results of the {M}arine {I}ce {S}heet {M}odel {I}ntercomparison
-           {P}roject, {MISMIP}},
-JOURNAL = {The Cryosphere},
- VOLUME = {6},
-   YEAR = {2012},
-  PAGES = {573--588},
-    DOI = {10.5194/tc-6-573-2012},
-}
-
-
-@article{MISMIP3d2013,
-AUTHOR = {F. Pattyn and L. Perichon and G. Durand and 25 others},
-TITLE = {Grounding-line migration in plan-view marine ice-sheet models: results of the ice2sea {MISMIP3d} intercomparison},
-JOURNAL = {J. Glaciol.},
-VOLUME = {59},
-NUMBER = {215},
-YEAR = {2013},
-PAGES = {410--422},
-}
-
-
-@book{Parker,
-  title={Geophysical {I}nverse {T}heory},
-  author={R. Parker},
-  year={1994},
-  publisher={Princeton University Press},
-}
-
-
-@article {PaigeSaunders1982,
-    AUTHOR = {C. Paige and M. Saunders},
-     TITLE = {{LSQR}: {A}n algorithm for sparse linear equations and sparse
-              least squares},
-   JOURNAL = {ACM Transactions on Mathematical Software},
-    VOLUME = {8},
-    NUMBER = {1},
-     PAGES = {43--71},
-      YEAR = {1982},
 }
 
 
@@ -3489,32 +3530,6 @@ doi = {10.1017/jfm.2012.21},
 }
 
 
-@Misc{petsc-web-page,
-  Author    = "{PETSc web page}",
-   Note     = "\href{http://www.mcs.anl.gov/petsc/petsc-as/}{www.mcs.anl.gov/petsc/petsc-as}",
-   Year     = "2008",
-}
-
-
-@TechReport{petsc-user-ref,
-    Author     = "S. Balay and others",
-   Title       = "{PETS}c {U}sers {M}anual",
-   Number      = "ANL-95/11 - Revision 3.5",
-   Institution = "Argonne National Laboratory",
-   Year        = "2014",
-}
-
-
-@InProceedings{petsc-efficient,
-    Author     = "Satish Balay and William D. Gropp and Lois Curfman McInnes and Barry F. Smith",
-   Title          = "Efficient Management of Parallelism in Object Oriented Numerical Software Libraries",
-    Booktitle  = "Modern Software Tools in Scientific Computing",
-    Editor       = "E. Arge and A. M. Bruaset and H. P. Langtangen",
-    Pages       = "163--202",
-    Publisher = "Birkh{\"{a}}user Press",
-    Year           = "1997",
-}
-
 @book{Peyret,
     AUTHOR = {R. Peyret},
      TITLE = {Spectral {M}ethods for {I}ncompressible {V}iscous {F}low},
@@ -3523,7 +3538,6 @@ doi = {10.1017/jfm.2012.21},
     VOLUME = {148},
       YEAR = {2002},
 }
-
 
 @article{Pfefferetal2008,
 author = {W. T. Pfeffer and J. T. Harper and S. O'Neel},
@@ -3572,18 +3586,6 @@ year = {2010}
 }
 
 
-@article {PimentelFlowersSchoof2010,
-    AUTHOR = {Pimentel, S. and G. Flowers and C. Schoof},
-     TITLE = {A hydrologically coupled higher-order flow-band model of ice dynamics
-              with a {C}oulomb friction sliding law},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {115},
-    NUMBER = {F04023},
-       DOI = {10.1029/2009JF001621},
-      YEAR = {2010},
-}
-
-
 @article {PimentelFlowers2011,
     AUTHOR = {Pimentel, S. and G. Flowers},
      TITLE = {A numerical study of hydrologically driven glacier dynamics and subglacial flooding},
@@ -3595,36 +3597,15 @@ year = {2010}
 }
 
 
-@Misc{pism-web-page,
-  Author    = {{PISM authors}},
-  title     = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel},
-   Note     = {\url{http://www.pism-docs.org}},
-   Year     = {2013},
-}
-
-
-@unpublished{pism-user-manual,
-   Title    = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel: {U}ser's {M}anual},
-  Author    = {{PISM authors}},
-   Note     = "\url{http://www.pism-docs.org}",
-   Year     = "2013",
-}
-
-
-@unpublished{pism-installation-manual,
-   Title    = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel: {I}nstallation {M}anual},
-  Author    = {{PISM authors}},
-   Note     = "\url{http://www.pism-docs.org}",
-   Year     = "2013",
-}
-
-
-@unpublished {POLICEwebpage,
-    AUTHOR = {Philippe Huybrechts},
-     TITLE = {{ISMIP-POLICE}: A new intercomparison exercise to assess model uncertainties 
-              in polar ice sheet simulations under future climatic warming conditions},
-      NOTE = "\url{http://homepages.vub.ac.be/~phuybrec/police.html}",
-      YEAR = {2008},
+@article {PimentelFlowersSchoof2010,
+    AUTHOR = {Pimentel, S. and G. Flowers and C. Schoof},
+     TITLE = {A hydrologically coupled higher-order flow-band model of ice dynamics
+              with a {C}oulomb friction sliding law},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {115},
+    NUMBER = {F04023},
+       DOI = {10.1029/2009JF001621},
+      YEAR = {2010},
 }
 
 
@@ -3724,6 +3705,29 @@ pages = {1151--1161},
 }
 
 
+@article {RIGGS1,
+    AUTHOR = {C. R. Bentley},
+     TITLE = {The {R}oss {I}ce shelf {G}eophysical and {G}laciological {S}urvey ({RIGGS}):
+              {I}ntroduction and summary of measurments performed},
+      YEAR = {1984},
+   JOURNAL = {Antarctic Research Series},
+    VOLUME = {42},
+    NUMBER = {1},
+     PAGES = {1--20},
+}
+
+
+@article {RIGGS2,
+    AUTHOR = {C. R. Bentley},
+     TITLE = {Glaciological studies on the {R}oss {I}ce {S}helf, {A}ntarctica, 1973--1978},
+      YEAR = {1984},
+   JOURNAL = {Antarctic Research Series},
+    VOLUME = {42},
+    NUMBER = {2},
+     PAGES = {21--53},
+}
+
+
 @article{Rahmstorfetal2007,
     AUTHOR = {S. Rahmstorf and others},
      TITLE = {Recent climate observations compared to projections},
@@ -3780,6 +3784,15 @@ pages = {1151--1161},
 }
 
 
+@book {ReedSimon,
+    AUTHOR = {Reed, Michael and Simon, Barry},
+     TITLE = {Methods of {M}odern {M}athematical {P}hysics {I}},
+   EDITION = {2nd},
+ PUBLISHER = {Academic Press},
+      YEAR = {1980},
+}
+
+
 @article {Reehetal,
     AUTHOR = {Niels Reeh and Erik Lintz Christensen and Christoph Mayer
               and Ole B. Olesen},
@@ -3789,38 +3802,6 @@ pages = {1151--1161},
     VOLUME = {37},
     NUMBER = {1},
      PAGES = {83--89},
-}
-
-
-@article {RIGGS1,
-    AUTHOR = {C. R. Bentley},
-     TITLE = {The {R}oss {I}ce shelf {G}eophysical and {G}laciological {S}urvey ({RIGGS}):
-              {I}ntroduction and summary of measurments performed},
-      YEAR = {1984},
-   JOURNAL = {Antarctic Research Series},
-    VOLUME = {42},
-    NUMBER = {1},
-     PAGES = {1--20},
-}
-
-
-@article {RIGGS2,
-    AUTHOR = {C. R. Bentley},
-     TITLE = {Glaciological studies on the {R}oss {I}ce {S}helf, {A}ntarctica, 1973--1978},
-      YEAR = {1984},
-   JOURNAL = {Antarctic Research Series},
-    VOLUME = {42},
-    NUMBER = {2},
-     PAGES = {21--53},
-}
-
-
-@book {ReedSimon,
-    AUTHOR = {Reed, Michael and Simon, Barry},
-     TITLE = {Methods of {M}odern {M}athematical {P}hysics {I}},
-   EDITION = {2nd},
- PUBLISHER = {Academic Press},
-      YEAR = {1980},
 }
 
 
@@ -3858,18 +3839,6 @@ journal = {Science},
 }
 
 
-@article {Ritzetal2001,
-    AUTHOR = {Catherine Ritz and Vincent Rommelaere and Christophe Dumas},
-     TITLE = {Modeling the evolution of {A}ntarctic ice sheet over the last 420,000 years:
-              {I}mplications for altitude changes in the {V}ostok region},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {106},
-    NUMBER = {D23},
-     PAGES = {31943--31964},
-      YEAR = {2001},
-}
-
-
 @unpublished {RitzEISMINT,
     AUTHOR = {C. Ritz},
      TITLE = {{EISMINT} {I}ntercomparison {E}xperiment: {C}omparison of existing 
@@ -3892,6 +3861,18 @@ journal = {Science},
 }
 
 
+@article {Ritzetal2001,
+    AUTHOR = {Catherine Ritz and Vincent Rommelaere and Christophe Dumas},
+     TITLE = {Modeling the evolution of {A}ntarctic ice sheet over the last 420,000 years:
+              {I}mplications for altitude changes in the {V}ostok region},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {106},
+    NUMBER = {D23},
+     PAGES = {31943--31964},
+      YEAR = {2001},
+}
+
+
 @book {Roache,
     AUTHOR = {Roache, P.J.},
      TITLE = {{V}erification and {V}alidation in {C}omputational {S}cience and
@@ -3910,17 +3891,6 @@ journal = {Science},
     NUMBER = {5},
      PAGES = {30--38},
       YEAR = {2004},
-}
-
-
-@article {ASMEJFE,
-    AUTHOR = {P. J. Roache and K. Ghia and F. White},
-     TITLE = {Editorial policy statement on the control of numerical accuracy},
-      YEAR = {1986},
-   JOURNAL = {ASME Journal of Fluids Engineering},
-    VOLUME = {108},
-    NUMBER = {1},
-     PAGES = {2},
 }
 
 
@@ -3958,11 +3928,13 @@ journal = {Science},
   YEAR =         "1999",
 }
 
+
 @article{RogozhinaRau2014,
   author={Rogozhina, I. and Rau, D.},
   title={Vital role of daily temperature variability in surface mass balance parameterizations of the Greenland Ice Sheet},
   journal={The Cryosphere},volume=8,pages={575-585},year=2014,
   doi={10.5194/tc-8-575-2014}}
+
 
 @article {RommelaereMacAyeal,
     AUTHOR = {V. Rommelaere and D. R. MacAyeal},
@@ -3984,18 +3956,6 @@ journal = {Science},
 }
 
 
-@article {SaitoEISMINT,
-    AUTHOR = {F. Saito and A. Abe-Ouchi and H. Blatter},
-     TITLE = {European {I}ce {S}heet {M}odelling {I}nitiative ({EISMINT}) model
-              intercomparison experiments with first-order mechanics},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {111},
-    NUMBER = {{F}02012},
-       doi = {10.1029/2004{JF}000273},
-      YEAR = {2006},
-}
-
-
 @article {SaitoAbeOuchi,
     AUTHOR = {F. Saito and A. Abe-Ouchi},
      TITLE = {Sensitivity of {G}reenland ice sheet simulation to the numerical
@@ -4005,6 +3965,18 @@ journal = {Science},
     NUMBER = {1},
       YEAR = {2005},
      PAGES = {331--336},
+}
+
+
+@article {SaitoEISMINT,
+    AUTHOR = {F. Saito and A. Abe-Ouchi and H. Blatter},
+     TITLE = {European {I}ce {S}heet {M}odelling {I}nitiative ({EISMINT}) model
+              intercomparison experiments with first-order mechanics},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {111},
+    NUMBER = {{F}02012},
+       doi = {10.1029/2004{JF}000273},
+      YEAR = {2006},
 }
 
 
@@ -4019,7 +3991,6 @@ journal = {Science},
       YEAR = {2007},
 }
 
-
 @article{SargentFastook2010,
     AUTHOR = {Sargent, A. and Fastook, J. L.},
      TITLE = {Manufactured analytical solutions for isothermal full-Stokes ice sheet models},
@@ -4031,7 +4002,6 @@ journal = {Science},
        URL = {http://www.the-cryosphere.net/4/285/2010/},
        DOI = {10.5194/tc-4-285-2010},
 }
-
 
 @article {SavagePaterson,
     AUTHOR = {J. C. Savage and W. S. B. Paterson},
@@ -4085,40 +4055,6 @@ doi = {10.1017/jfm.2012.545},
       YEAR = {2005},
 }
 
-    
-@article {Schoofformdrag2002,
-    AUTHOR = {Schoof, C.},
-     TITLE = {Basal perturbations under ice streas: form drag and surface
-              expression},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {48},
-    NUMBER = {162},
-     PAGES = {407--416},
-      YEAR = {2002},
-}
-
-
-@article {Schoofbasaltopg2003,
-    AUTHOR = {Schoof, C.},
-     TITLE = {The effect of basal topography on ice sheet dynamics},
-   JOURNAL = {Continuum Mech. Thermodyn.},
-    VOLUME = {15},
-     PAGES = {295--307},
-      YEAR = {2003},
-       DOI = {10.1007/s00161-003-0119-3},
-}
-
-
-@article {SchoofMargins,
-    AUTHOR = {Schoof, C.},
-     TITLE = {On the mechanics of ice-stream shear margins},
-   JOURNAL = {J. Glaciol.},
-    VOLUME = {50},
-    NUMBER = {169},
-     PAGES = {208--218},
-      YEAR = {2004},
-}
-
 
 @article {Schoof2005cavitation,
     AUTHOR = {Schoof, C.},
@@ -4128,49 +4064,6 @@ doi = {10.1017/jfm.2012.545},
      PAGES = {609--627},
        doi = {10.1098/rspa.2004.1350},
       YEAR = {2005},
-}
-
-
-@article {SchoofTill,
-    AUTHOR = {Schoof, C.},
-     TITLE = {Variational methods for glacier flow over plastic till},
-   JOURNAL = {J. Fluid Mech.},
-  FJOURNAL = {Journal of Fluid Mechanics},
-    VOLUME = {555},
-      YEAR = {2006},
-     PAGES = {299--320},
-}
-
-
-@article {SchoofStream,
-    AUTHOR = {Schoof, C.},
-     TITLE = {A variational approach to ice stream flow},
-   JOURNAL = {J. Fluid Mech.},
-  FJOURNAL = {Journal of Fluid Mechanics},
-    VOLUME = {556},
-      YEAR = {2006},
-     PAGES = {227--251},
-}
-
-
-@article {SchoofMarine1,
-    AUTHOR = {Schoof, C.},
-     TITLE = {Marine ice-sheet dynamics. {P}art 1.  {T}he case of rapid sliding},
-   JOURNAL = {J. Fluid Mech.},
-  FJOURNAL = {Journal of Fluid Mechanics},
-    VOLUME = {573},
-      YEAR = {2007},
-     PAGES = {27--55},
-}
-
-
-@article {Schoofmarinedynamics,
-    AUTHOR = {Schoof, C.},
-     TITLE = {Ice sheet grounding line dynamics: Steady states, stability, and hysteresis},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {112},
-      YEAR = {2007},
-      NOTE = {F03S28, doi:10.1029/2006JF000664},
 }
 
 
@@ -4198,6 +4091,16 @@ doi = {10.1017/jfm.2012.545},
 }
 
 
+@article {SchoofHewitt2013,
+    AUTHOR = {C. Schoof and I. J. Hewitt},
+     TITLE = {Ice-sheet dynamics},
+   JOURNAL = {Annu. Rev. Fluid Mech.},
+    VOLUME = {45},
+     PAGES = {217--239},
+      YEAR = {2013},
+}
+
+
 @article {SchoofHindmarsh,
     AUTHOR = {Schoof, C. and Hindmarsh, R.},
      TITLE = {Thin-film flows with wall slip: an asymptotic analysis 
@@ -4211,6 +4114,28 @@ doi = {10.1017/jfm.2012.545},
 }
 
 
+@article {SchoofMargins,
+    AUTHOR = {Schoof, C.},
+     TITLE = {On the mechanics of ice-stream shear margins},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {50},
+    NUMBER = {169},
+     PAGES = {208--218},
+      YEAR = {2004},
+}
+
+    
+@article {SchoofMarine1,
+    AUTHOR = {Schoof, C.},
+     TITLE = {Marine ice-sheet dynamics. {P}art 1.  {T}he case of rapid sliding},
+   JOURNAL = {J. Fluid Mech.},
+  FJOURNAL = {Journal of Fluid Mechanics},
+    VOLUME = {573},
+      YEAR = {2007},
+     PAGES = {27--55},
+}
+
+
 @article {SchoofMarine2,
     AUTHOR = {C. Schoof},
      TITLE = {{Marine ice sheet dynamics. Part 2: A Stokes Flow contact problem}},
@@ -4221,14 +4146,36 @@ doi = {10.1017/jfm.2012.545},
 }
 
 
-@article {Schoofmeltsupply,
-    AUTHOR = {C. Schoof},
-     TITLE = {Ice sheet acceleration driven by melt supply variability},
-   JOURNAL = {Nature},
-      YEAR = {2010},
-    VOLUME = {468},
-    NUMBER = {7325},
-     PAGES = {803--806},
+@article {SchoofStream,
+    AUTHOR = {Schoof, C.},
+     TITLE = {A variational approach to ice stream flow},
+   JOURNAL = {J. Fluid Mech.},
+  FJOURNAL = {Journal of Fluid Mechanics},
+    VOLUME = {556},
+      YEAR = {2006},
+     PAGES = {227--251},
+}
+
+
+@article {SchoofTill,
+    AUTHOR = {Schoof, C.},
+     TITLE = {Variational methods for glacier flow over plastic till},
+   JOURNAL = {J. Fluid Mech.},
+  FJOURNAL = {Journal of Fluid Mechanics},
+    VOLUME = {555},
+      YEAR = {2006},
+     PAGES = {299--320},
+}
+
+
+@article {Schoofbasaltopg2003,
+    AUTHOR = {Schoof, C.},
+     TITLE = {The effect of basal topography on ice sheet dynamics},
+   JOURNAL = {Continuum Mech. Thermodyn.},
+    VOLUME = {15},
+     PAGES = {295--307},
+      YEAR = {2003},
+       DOI = {10.1007/s00161-003-0119-3},
 }
 
 
@@ -4243,22 +4190,38 @@ doi = {10.1017/jfm.2012.545},
 }
 
 
-@article {SchoofHewitt2013,
-    AUTHOR = {C. Schoof and I. J. Hewitt},
-     TITLE = {Ice-sheet dynamics},
-   JOURNAL = {Annu. Rev. Fluid Mech.},
-    VOLUME = {45},
-     PAGES = {217--239},
-      YEAR = {2013},
+@article {Schoofformdrag2002,
+    AUTHOR = {Schoof, C.},
+     TITLE = {Basal perturbations under ice streas: form drag and surface
+              expression},
+   JOURNAL = {J. Glaciol.},
+    VOLUME = {48},
+    NUMBER = {162},
+     PAGES = {407--416},
+      YEAR = {2002},
 }
 
 
-@Misc{scipy,
-  author =    {Eric Jones and Travis Oliphant and Pearu Peterson and others},
-  title =     {{SciPy}: Open source scientific tools for {Python}},
-  year =      {2001--},
-  note = "\url{http://www.scipy.org/}"
+@article {Schoofmarinedynamics,
+    AUTHOR = {Schoof, C.},
+     TITLE = {Ice sheet grounding line dynamics: Steady states, stability, and hysteresis},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {112},
+      YEAR = {2007},
+      NOTE = {F03S28, doi:10.1029/2006JF000664},
 }
+
+
+@article {Schoofmeltsupply,
+    AUTHOR = {C. Schoof},
+     TITLE = {Ice sheet acceleration driven by melt supply variability},
+   JOURNAL = {Nature},
+      YEAR = {2010},
+    VOLUME = {468},
+    NUMBER = {7325},
+     PAGES = {803--806},
+}
+
 
 @article{Seguinot2013,
   author={Seguinot, J.},
@@ -4271,6 +4234,7 @@ doi = {10.1017/jfm.2012.545},
   doi={10.3189/2013JoG13J081}
 }
 
+
 @article{SeguinotRogozhina2014,
   author  = {Seguinot, J. and Rogozhina, I.},
   title   = {Daily temperature variability predetermined by thermal conditions over ice sheet surfaces},
@@ -4278,6 +4242,7 @@ doi = {10.1017/jfm.2012.545},
   year    = {2014},
   doi     = {10.3189/2014JoG14J036}
 }
+
 
 @article {ShapiroRitzwoller,
     AUTHOR = {N. M. Shapiro and M. H. Ritzwoller},
@@ -4340,23 +4305,6 @@ publisher={Wiley-Blackwell},
 address={Malden, MA, USA},
 }
 
-@misc{siple-web-page,
-  author    = {David Maxwell},
-  title     = {{\tt siple}, a small inverse problems library},
-   note     = {\url{https://github.com/damaxwell/siple}},
-   year     = {2011},
-}
-
-
-@book{Smithetal1996,
-  title={Domain decomposition: parallel multilevel methods for
-         elliptic partial differential equations},
-  author={Smith, B. and Bjorstad, P. and Gropp, W.},
-  year={1996},
-  publisher={Cambridge University Press}
-}
-
-
 @article {SmithMorland,
     AUTHOR = {G. Smith and L. Morland},
      TITLE = {Viscous relations for the steady creep of polycrytalline ice},
@@ -4366,6 +4314,13 @@ address={Malden, MA, USA},
      PAGES = {141--150},
 }
 
+@book{Smithetal1996,
+  title={Domain decomposition: parallel multilevel methods for
+         elliptic partial differential equations},
+  author={Smith, B. and Bjorstad, P. and Gropp, W.},
+  year={1996},
+  publisher={Cambridge University Press}
+}
 
 @book {Sneddon,
     AUTHOR = {Ian N. Sneddon},
@@ -4373,6 +4328,15 @@ address={Malden, MA, USA},
  PUBLISHER = {McGraw-Hill Book Company},
    ADDRESS = {New York},
       YEAR = {1951},
+}
+
+
+@article{SolgaardLangen2012,
+author = {A. Solgaard and P. Langen},
+title = {Multistability of the Greenland ice sheet and the effects of an adaptive mass balance formulation},
+year = {2012},
+journal = {Climate Dynamics},
+doi = {10.1007/s00382-012-1305-4},
 }
 
 
@@ -4386,15 +4350,6 @@ Journal = {Journal of Glaciology},
  Volume = {57},
    Year = {2011},
     url = {http://www.ingentaconnect.com/content/igsoc/jog/2011/00000057/00000205/art00011},
-}
-
-
-@article{SolgaardLangen2012,
-author = {A. Solgaard and P. Langen},
-title = {Multistability of the Greenland ice sheet and the effects of an adaptive mass balance formulation},
-year = {2012},
-journal = {Climate Dynamics},
-doi = {10.1007/s00382-012-1305-4},
 }
 
 
@@ -4420,23 +4375,14 @@ DOI = {10.5194/tc-5-173-2011}
       YEAR = {1989},
 }
 
-@techreport{tao-user-ref,
-  author =       "Todd Munson and Jason Sarich and Stefan Wild and 
-                  Steven Benson and Lois Curfman McInnes",
-  title =        "TAO 2.0 Users Manual",
-  year =         "2012",
-  institution =  "Mathematics and Computer Science Division, Argonne  National Laboratory",
-  number =       "ANL/MCS-TM-322",
-  note =         "http://www.mcs.anl.gov/tao",
-}
-
 @book{Tarantola,
  AUTHOR    = {Tarantola, Albert},
  TITLE     = {Inverse Problem Theory and Methods for Model Parameter 
               Estimation},
  YEAR      = {2004},
  PUBLISHER = {SIAM Press},
-} 
+}
+
 
 @article {TarasovPeltier,
     AUTHOR = {L. Tarasov and W. R. Peltier},
@@ -4489,14 +4435,6 @@ DOI = {10.5194/tc-5-173-2011}
 }
 
 
-@book {TrefethenBau,
-    AUTHOR = {L. N. Trefethen and D. Bau},
-     TITLE = {Numerical {L}inear {A}lgebra},
- PUBLISHER = {SIAM Press},
-      YEAR = {1997},
-}
-
-
 @book {Trefethen2013,
     AUTHOR = {L. N. Trefethen},
      TITLE = {Approximation {T}heory and {A}pproximation {P}ractice},
@@ -4505,17 +4443,12 @@ DOI = {10.5194/tc-5-173-2011}
 }
 
 
-@article {TrufferEchelmeyerHarrison2001,
-author = "M. Truffer and K. Echelmeyer and W. Harrison",
-title = "Implications of till deformation on glacier dynamics",
-journal = "J. Glaciol.",
-volume = "47",
-number = "156",
-year = "2001",
-pages = "123-134",
-doi = "10.3189/172756501781832449",
+@book {TrefethenBau,
+    AUTHOR = {L. N. Trefethen and D. Bau},
+     TITLE = {Numerical {L}inear {A}lgebra},
+ PUBLISHER = {SIAM Press},
+      YEAR = {1997},
 }
-
 
 @article {TrufferEchelmeyer,
     AUTHOR = {M. Truffer and K. Echelmeyer},
@@ -4527,6 +4460,16 @@ doi = "10.3189/172756501781832449",
      PAGES = {66--72},
 }
 
+@article {TrufferEchelmeyerHarrison2001,
+author = "M. Truffer and K. Echelmeyer and W. Harrison",
+title = "Implications of till deformation on glacier dynamics",
+journal = "J. Glaciol.",
+volume = "47",
+number = "156",
+year = "2001",
+pages = "123-134",
+doi = "10.3189/172756501781832449",
+} 
 
 @article {TrufferFahnestock,
     AUTHOR = {M. Truffer and M. Fahnestock},
@@ -4584,19 +4527,6 @@ doi = "10.3189/172756501781832449",
 }
 
 
-@article{vandenBroeke2009,
-author = {van den Broeke, M. R. and Bamber, J. L. and Ettema, J. and Rignot, E. and Schrama, E. and van de Berg, W. J. and van Meijgaard, E. and Velicogna, I. and Wouters, B.},
-doi = {10.1126/science.1178176},
-journal = {Science},
-number = {5955},
-pages = {984--986},
-pmid = {19965509},
-title = {{Partitioning recent Greenland mass loss}},
-volume = {326},
-year = {2009}
-}
-
-
 @article {VandenBergetal2006,
     AUTHOR = {J. Van den Berg and R. S. W. Van de Wal and J. Oerlemans},
      TITLE = {Effects of spatial discretization in ice-sheet modelling
@@ -4609,148 +4539,15 @@ year = {2009}
 }
 
 
-@phdthesis{vanPeltthesis,
-  author       = {van Pelt, W.},
-  title        = {Modelling the dynamics and boundary processes of {S}valbard
-                  glaciers},
-  school       = {Institute for Marine and Atmospheric Research Utrecht (IMAU)},
-  year         = 2013,
-  address      = {The Netherlands},
-}
-
-
-@article{vanPeltetal,
-AUTHOR = {van Pelt, W. and Oerlemans, J. and Reijmer, C. and Pohjola, V.
-          and Pettersson, R. and van Angelen, J. H.},
-TITLE = {Simulating melt, runoff and refreezing on {N}ordenski\"oldbreen,
-           {S}valbard, using a coupled snow and energy balance model},
-JOURNAL = {The Cryosphere},
-VOLUME = {6},
-YEAR = {2012},
-NUMBER = {3},
-PAGES = {641--659},
-URL = {http://www.the-cryosphere.net/6/641/2012/},
-DOI = {10.5194/tc-6-641-2012}
-}
-
-
-@article{vanPeltOerlemans2012,
-author = {W. J. J. van Pelt and J. Oerlemans},
-title = {Numerical simulations of cyclic behaviour in the Parallel Ice Sheet Model (PISM)},
-year = {2012},
-journal = {Journal of Glaciology},
-volume = {58},
-number = {208},
-doi = {10.3189/2012JoG11J217},
-url = {http://www.igsoc.org/journal/58/208/t11J217.pdf},
-pages = {347--360},
-}
-
-
-@Article{vanPeltetal2013,
-AUTHOR = {van Pelt, W. J. J. and Oerlemans, J. and Reijmer, C. H. and Pettersson, R. and Pohjola, V. A. and Isaksson, E. and Divine, D.},
-TITLE = {An iterative inverse method to estimate basal topography and initialize ice flow models},
-JOURNAL = {The Cryosphere},
-VOLUME = {7},
-YEAR = {2013},
-NUMBER = {3},
-PAGES = {987--1006},
-DOI = {10.5194/tc-7-987-2013}
-}
-
-
-@unpublished{vanderVeen83,
-    AUTHOR = {C. J. van der Veen},
-     TITLE = {A note on the equilibrium profile of a free floating ice shelf},
-      NOTE = {{IMAU} Report V83-15. State University Utrecht, Utrecht},
-      YEAR = {1983},
-     PAGES = {257--267},
-}
-
-
-@article {vanderVeen85,
-    AUTHOR = {C. J. van der Veen},
-     TITLE = {Response of a marine ice sheet to changes at the grounding line},
-   JOURNAL = {Quat. Res.},
-    VOLUME = {24},
-      YEAR = {1985},
-     PAGES = {257--267},
-}
-
-
-@book{vanderVeen,
-    AUTHOR = {C. J. van der Veen},
-     TITLE = {Fundamentals of {G}lacier {D}ynamics},
-    EDITION = {2nd},
- PUBLISHER = {CRC Press},
-      YEAR = {2013},
-}
-
-
-@article {vanderVeenEval99,
-    AUTHOR = {C. J. van der Veen},
-     TITLE = {Evaluating the performance of cryospheric models},
-   JOURNAL = {Polar Geography},
-    VOLUME = {23},
-    NUMBER = {2},
-      YEAR = {1999},
-     PAGES = {83--96},
-}
-
-
-@article {vanderVeenWhillans1996,
-    AUTHOR = {C. J. van der Veen and I. M. Whillans},
-     TITLE = {Model experiments on the evolution and stability of ice streams},
-   JOURNAL = {Ann. Glaciol.},
-    VOLUME = {23},
-      YEAR = {1996},
-     PAGES = {129--137},
-}
-
-
-@article {vanderVeenetal2001precip,
-    AUTHOR = {C. J. van der Veen and D. H. Bromwich and B. Csatho and C. Kim},
-     TITLE = {Trend analysis of {G}reenland precipitation},
-   JOURNAL = {J. Geophys. Res.},
-    VOLUME = {106},
-    NUMBER = {D24},
-      YEAR = {2001},
-     PAGES = {33909--33918},
-}
-
-
-@inproceedings {vanderVeenPayne,
-    AUTHOR = {C. J. van der Veen and A. J. Payne},
-     TITLE = {Modelling land-ice dynamics},
-  editor   = {J. L. Bamber and A. J. Payne},
- BOOKTITLE = {Mass {B}alance of the {C}ryosphere: {O}bservations and {M}odelling of 
-              {C}ontemporary and {F}uture {C}hanges},
- PUBLISHER = {Cambridge University Press},
-     PAGES = {169--225},
-      YEAR = {2004},
-}
-
-
-@article{vandeWal2008,
-author = {van de Wal, R. S. W. and Boot, W. and van den Broeke, M. R. and Smeets, C. J. P. P. and Reijmer, C. H. and Donker, J. J. A. and Oerlemans, J.},
-title = {Large and Rapid Melt-Induced Velocity Changes in the Ablation Zone of the {G}reenland Ice Sheet},
-volume = {321},
-number = {5885},
-pages = {111-113},
-year = {2008},
-doi = {10.1126/science.1158540},
-journal = {Science},
-}
-
-
-@article{vanderWeletal2013,
-author = {N. van der Wel and P. Christoffersen and M. Bougamont},
-title = {The influence of subglacial hydrology on the flow of {K}amb {I}ce {S}tream, {W}est {A}ntarctica},
-journal = {J. Geophys. Res.: Earth Surface},
-volume = {118},
-pages = {1-14},
-year = {2013},
-doi = {10.1029/2012JF002570},
+@article {VaughanArthern,
+    AUTHOR = {David G. Vaughan and Robert Arthern},
+     TITLE = {Why is it hard to predict the future of ice sheets?},
+   JOURNAL = {Science},
+    VOLUME = {315},
+    NUMBER = {5818},
+      YEAR = {2007},
+     PAGES = {1503--1504},
+      doi  = {10.1126/science.1141111},
 }
 
 
@@ -4761,18 +4558,6 @@ doi = {10.1029/2012JF002570},
     VOLUME = {12},
       YEAR = {1999},
      PAGES = {933--946},
-}
-
-
-@article {VaughanArthern,
-    AUTHOR = {David G. Vaughan and Robert Arthern},
-     TITLE = {Why is it hard to predict the future of ice sheets?},
-   JOURNAL = {Science},
-    VOLUME = {315},
-    NUMBER = {5818},
-      YEAR = {2007},
-     PAGES = {1503--1504},
-      doi  = {10.1126/science.1141111},
 }
 
 
@@ -4794,6 +4579,19 @@ doi = {10.1029/2012JF002570},
  PUBLISHER = {The Clarendon Press Oxford University Press},
    ADDRESS = {Oxford},
       YEAR = {2007},
+}
+
+
+@article {Vazquezetal2003,
+    author = {C. V\'azquez and E. Schiavi and J. Durany and J. I. D\'iaz and N. Calvo},
+     TITLE = {On a doubly nonlinear parabolic obstacle problem modelling
+              ice sheet dynamics},
+      YEAR = {2003},
+   JOURNAL = {SIAM J. Appl. Math.},
+    VOLUME = {63},
+    NUMBER = {2},
+     PAGES = {683--707},
+       doi = {10.1137/S0036139901385345},
 }
 
 
@@ -4838,7 +4636,7 @@ doi = {10.1029/2012JF002570},
  YEAR      = {2002},
  PUBLISHER = {Society for Industrial and Applied Mathematics},
  ADDRESS   = {Philadelphia, PA, USA},
-} 
+}
 
 
 @article {VostokCore,
@@ -4870,6 +4668,22 @@ INSTITUTION = {University of British Columbia},
     NUMBER = {99},
       YEAR = {1982},
      PAGES = {273--293},
+}
+
+
+@article{Wangetal2013,
+   author = {{Wang}, Q. and {Danilov}, S. and {Sidorenko}, D. and {Timmermann}, R. and
+	{Wekerle}, C. and {Wang}, X. and {Jung}, T. and {Schr{\"o}ter}, J.
+	},
+    title = "{The Finite Element Sea ice-Ocean Model (FESOM): formulation of an unstructured-mesh ocean general circulation model}",
+  journal = {Geoscientific Model Development Discussions},
+     year = 2013,
+    month = jul,
+   volume = 6,
+    pages = {3893-3976},
+      doi = {10.5194/gmdd-6-3893-2013},
+   adsurl = {http://adsabs.harvard.edu/abs/2013GMDD....6.3893W},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 
 
@@ -4932,16 +4746,6 @@ INSTITUTION = {University of British Columbia},
 }
 
 
-@Article{Winkelmannetal2011,
-AUTHOR = {Winkelmann, R. and Martin, M. A. and Haseloff, M. and Albrecht, T. and Bueler, E. and Khroulev, C. and Levermann, A.},
-TITLE = {The {P}otsdam {P}arallel {I}ce {S}heet {M}odel ({PISM-PIK}) {P}art 1: {M}odel description},
-JOURNAL = {The Cryosphere},
-VOLUME = {5},
-YEAR = {2011},
-PAGES = {715--726},
-}
-
-
 @article{WinkelmannLevermann2012,
 AUTHOR = {Winkelmann, R. and Levermann, A.},
 TITLE = {Linear response functions to project contributions to future sea level},
@@ -4950,6 +4754,16 @@ VOLUME = {38},
 YEAR = {2012},
 URL = {http://www.pik-potsdam.de/~anders/publications/winkelmann_levermann12c.pdf},
 PAGES = {in press},
+}
+
+
+@Article{Winkelmannetal2011,
+AUTHOR = {Winkelmann, R. and Martin, M. A. and Haseloff, M. and Albrecht, T. and Bueler, E. and Khroulev, C. and Levermann, A.},
+TITLE = {The {P}otsdam {P}arallel {I}ce {S}heet {M}odel ({PISM-PIK}) {P}art 1: {M}odel description},
+JOURNAL = {The Cryosphere},
+VOLUME = {5},
+YEAR = {2011},
+PAGES = {715--726},
 }
 
 
@@ -4971,25 +4785,26 @@ JOURNAL = {Nature},
 }
 
 
+@article{Xu2013,
+abstract = {We present three-dimensional, high-resolution simulations of ice melting at the calving face of Store Glacier, a tidewater glacier in West Greenland, using the Massachusetts Institute of Technology general circulation model. We compare the simulated ice melt with an estimate derived from oceanographic data. The simulations show turbulent upwelling and spreading of the freshwater-laden plume along the ice face and the vigorous melting of ice at rates of meters per day. The simulated August 2010 melt rate of 2.0±0.3 m/d is within uncertainties of the melt rate of 3.0±1.0 m/d calculated from oceanographic data. Melting is greatest at depth, above the subglacial channels, causing glacier undercutting. Melt rates increase proportionally to thermal forcing raised to the power of 1.2–1.6 and to subglacial water flux raised to the power of 0.5–0.9. Therefore, in a warmer climate, Store Glacier melting by ocean may increase from both increased ocean temperature and subglacial discharge.},
+author = {Xu, Yun and Rignot, Eric and Fenty, Ian and Menemenlis, Dimitris and Flexas, M. Mar},
+doi = {10.1002/grl.50825},
+journal = {Geophysical Research Letters},
+keywords = {Greenland,climate change,glaciology,hydrology,ocean modeling},
+number = {17},
+pages = {4648--4653},
+title = {{Subaqueous melting of Store Glacier, west Greenland from three-dimensional, high-resolution numerical modeling and ocean observations}},
+volume = {40},
+year = {2013}
+}
+
+
 @unpublished{ZiemenEGU2012poster,
   AUTHOR = {Ziemen, F. and C. Rodehacke and U. Mikolajewicz},
   TITLE = {{LGM} ice sheets simulated with a complex fully coupled ice sheet--climate model},
   YEAR = {2012},
   NOTE = {poster presented at EGU General Assembly, Vienna, Austria},
   URL = {http://www.mpimet.mpg.de/fileadmin/staff/ziemenflorian/florian_ziemen_egu_2012.pdf},
-}
-
-
-@article {Zwallyetal02,
-    AUTHOR = {H. Jay Zwally and Waleed Abdalati and Tom Herring and Kristine Larson and
-              Jack Saba and Konrad Steffen},
-     TITLE = {Surface melt-induced acceleration of {G}reenland ice-sheet flow},
-   JOURNAL = {Science},
-    VOLUME = {297},
-    NUMBER = {5579},
-      YEAR = {2002},
-     PAGES = {218--222},
-       doi = {10.1126/science.1072708},
 }
 
 
@@ -5003,6 +4818,19 @@ JOURNAL = {Nature},
       YEAR = {2001},
      PAGES = {33717--33728},
        doi = {10.1029/2001JD900120},
+}
+
+
+@article {Zwallyetal02,
+    AUTHOR = {H. Jay Zwally and Waleed Abdalati and Tom Herring and Kristine Larson and
+              Jack Saba and Konrad Steffen},
+     TITLE = {Surface melt-induced acceleration of {G}reenland ice-sheet flow},
+   JOURNAL = {Science},
+    VOLUME = {297},
+    NUMBER = {5579},
+      YEAR = {2002},
+     PAGES = {218--222},
+       doi = {10.1126/science.1072708},
 }
 
 
@@ -5029,69 +4857,269 @@ JOURNAL = {Nature},
      PAGES = {29--37},
 }
 
-@article{Dukowiczetal2010,
-    author = {Dukowicz, John K. and Price, Stephen F. and Lipscomb, William H.},
-    title = {Consistent approximations and boundary conditions for ice-sheet dynamics from a principle of least action},
-    year = {2010},
-    journal = {Journal of Glaciology},
-    volume = {56},
-    number = {197},
-    pages = {480--496},
-    publisher = {International Glaciological Society},
-    doi = {10.3189/002214310792447851},
+
+@Article{deFleurianetal2014,
+AUTHOR = {de Fleurian, B. and Gagliardini, O. and Zwinger, T. and Durand, G. and Le Meur, E. and Mair, D. and R{\aa}back, P.},
+TITLE = {A double continuum hydrological model for glacier applications},
+JOURNAL = {The Cryosphere},
+VOLUME = {8},
+YEAR = {2014},
+NUMBER = {1},
+PAGES = {137--153},
+URL = {http://www.the-cryosphere.net/8/137/2014/},
+DOI = {10.5194/tc-8-137-2014}
 }
 
-@article{HellmerOlbers1989,
-  title={A two-dimensional model for the thermohaline circulation under an ice shelf},
-  author={Hellmer, HH and Olbers, DJ},
-  journal={Antarctic Science},
-  volume={1},
-  number={04},
-  pages={325--336},
-  year={1989},
-  publisher={Cambridge Univ Press}
+
+@article{denOuden2010,
+   AUTHOR = {den Ouden, M. A. G. and Reijmer, C. H. and Pohjola, V. and
+             van de Wal, R. S. W. and Oerlemans, J. and Boot, W.},
+    TITLE = {Stand-alone single-frequency {GPS} ice velocity observations
+             on {N}ordenski\"oldbreen, {S}valbard},
+  JOURNAL = {The Cryosphere},
+   VOLUME = {4},
+     YEAR = {2010},
+   NUMBER = {4},
+    PAGES = {593--604},
+      URL = {http://www.the-cryosphere.net/4/593/2010/},
+      DOI = {10.5194/tc-4-593-2010},
+} 
+
+
+@unpublished {massbalanceglossary,
+    AUTHOR = {G. Cogley and others},
+     TITLE = {Glossary of {M}ass-{B}alance and {R}elated {T}erms},
+      NOTE = {IACS Working Group on Mass-balance Terminology and Methods, Draft 3, 10 July}, 
+       URL = {http://www.cryosphericsciences.org/mass_balance_glossary/massbalanceglossary.draft3.pdf},
+      YEAR = {2009},
 }
 
-@book{Hellmeretal1998,
-  title={{O}ceanic erosion of a floating {A}ntarctic glacier in the {A}mundsen {S}ea},
-  author={Hellmer, Hartmut H. and Jacobs, Stanley S. and Jenkins, Adrian},
-  year={1998},
-  pages={83--99},
-  publisher={American Geophysical Union}
+
+@InProceedings{petsc-efficient,
+    Author     = "Satish Balay and William D. Gropp and Lois Curfman McInnes and Barry F. Smith",
+   Title          = "Efficient Management of Parallelism in Object Oriented Numerical Software Libraries",
+    Booktitle  = "Modern Software Tools in Scientific Computing",
+    Editor       = "E. Arge and A. M. Bruaset and H. P. Langtangen",
+    Pages       = "163--202",
+    Publisher = "Birkh{\"{a}}user Press",
+    Year           = "1997",
 }
 
-@article{Wangetal2013,
-   author = {{Wang}, Q. and {Danilov}, S. and {Sidorenko}, D. and {Timmermann}, R. and
-	{Wekerle}, C. and {Wang}, X. and {Jung}, T. and {Schr{\"o}ter}, J.
-	},
-    title = "{The Finite Element Sea ice-Ocean Model (FESOM): formulation of an unstructured-mesh ocean general circulation model}",
-  journal = {Geoscientific Model Development Discussions},
-     year = 2013,
-    month = jul,
-   volume = 6,
-    pages = {3893-3976},
-      doi = {10.5194/gmdd-6-3893-2013},
-   adsurl = {http://adsabs.harvard.edu/abs/2013GMDD....6.3893W},
-  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+
+@TechReport{petsc-user-ref,
+    Author     = "S. Balay and others",
+   Title       = "{PETS}c {U}sers {M}anual",
+   Number      = "ANL-95/11 - Revision 3.5",
+   Institution = "Argonne National Laboratory",
+   Year        = "2014",
 }
 
-@inproceedings{FoldvikKvinge1974,
-  title={Conditional instability of sea water at the freezing point},
-  author={Foldvik, Arne and Kvinge, Thor},
-  booktitle={Deep Sea Research and Oceanographic Abstracts},
-  volume={21},
-  number={3},
-  pages={169--174},
-  year={1974},
-  organization={Elsevier}
+
+@Misc{petsc-web-page,
+  Author    = "{PETSc web page}",
+   Note     = "\href{http://www.mcs.anl.gov/petsc/petsc-as/}{www.mcs.anl.gov/petsc/petsc-as}",
+   Year     = "2008",
 }
 
-@article{HollandJenkins1999,
-  title={Modeling thermodynamic ice-ocean interactions at the base of an ice shelf},
-  author={Holland, David M and Jenkins, Adrian},
-  journal={Journal of Physical Oceanography},
-  volume={29},
-  number={8},
-  pages={1787--1800},
-  year={1999}
+
+@unpublished{pism-installation-manual,
+   Title    = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel: {I}nstallation {M}anual},
+  Author    = {{PISM authors}},
+   Note     = "\url{http://www.pism-docs.org}",
+   Year     = "2013",
+}
+
+
+@unpublished{pism-user-manual,
+   Title    = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel: {U}ser's {M}anual},
+  Author    = {{PISM authors}},
+   Note     = "\url{http://www.pism-docs.org}",
+   Year     = "2013",
+}
+
+
+@Misc{pism-web-page,
+  Author    = {{PISM authors}},
+  title     = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel},
+   Note     = {\url{http://www.pism-docs.org}},
+   Year     = {2013},
+}
+
+
+@Misc{scipy,
+  author =    {Eric Jones and Travis Oliphant and Pearu Peterson and others},
+  title =     {{SciPy}: Open source scientific tools for {Python}},
+  year =      {2001--},
+  note = "\url{http://www.scipy.org/}"
+}
+
+
+@misc{siple-web-page,
+  author    = {David Maxwell},
+  title     = {{\tt siple}, a small inverse problems library},
+   note     = {\url{https://github.com/damaxwell/siple}},
+   year     = {2011},
+}
+
+
+@techreport{tao-user-ref,
+  author =       "Todd Munson and Jason Sarich and Stefan Wild and 
+                  Steven Benson and Lois Curfman McInnes",
+  title =        "TAO 2.0 Users Manual",
+  year =         "2012",
+  institution =  "Mathematics and Computer Science Division, Argonne  National Laboratory",
+  number =       "ANL/MCS-TM-322",
+  note =         "http://www.mcs.anl.gov/tao",
+}
+
+
+@article{vanPeltOerlemans2012,
+author = {W. J. J. van Pelt and J. Oerlemans},
+title = {Numerical simulations of cyclic behaviour in the Parallel Ice Sheet Model (PISM)},
+year = {2012},
+journal = {Journal of Glaciology},
+volume = {58},
+number = {208},
+doi = {10.3189/2012JoG11J217},
+url = {http://www.igsoc.org/journal/58/208/t11J217.pdf},
+pages = {347--360},
+}
+
+
+@article{vanPeltetal,
+AUTHOR = {van Pelt, W. and Oerlemans, J. and Reijmer, C. and Pohjola, V.
+          and Pettersson, R. and van Angelen, J. H.},
+TITLE = {Simulating melt, runoff and refreezing on {N}ordenski\"oldbreen,
+           {S}valbard, using a coupled snow and energy balance model},
+JOURNAL = {The Cryosphere},
+VOLUME = {6},
+YEAR = {2012},
+NUMBER = {3},
+PAGES = {641--659},
+URL = {http://www.the-cryosphere.net/6/641/2012/},
+DOI = {10.5194/tc-6-641-2012}
+}
+
+
+@Article{vanPeltetal2013,
+AUTHOR = {van Pelt, W. J. J. and Oerlemans, J. and Reijmer, C. H. and Pettersson, R. and Pohjola, V. A. and Isaksson, E. and Divine, D.},
+TITLE = {An iterative inverse method to estimate basal topography and initialize ice flow models},
+JOURNAL = {The Cryosphere},
+VOLUME = {7},
+YEAR = {2013},
+NUMBER = {3},
+PAGES = {987--1006},
+DOI = {10.5194/tc-7-987-2013}
+}
+
+
+@phdthesis{vanPeltthesis,
+  author       = {van Pelt, W.},
+  title        = {Modelling the dynamics and boundary processes of {S}valbard
+                  glaciers},
+  school       = {Institute for Marine and Atmospheric Research Utrecht (IMAU)},
+  year         = 2013,
+  address      = {The Netherlands},
+}
+
+
+@article{vandeWal2008,
+author = {van de Wal, R. S. W. and Boot, W. and van den Broeke, M. R. and Smeets, C. J. P. P. and Reijmer, C. H. and Donker, J. J. A. and Oerlemans, J.},
+title = {Large and Rapid Melt-Induced Velocity Changes in the Ablation Zone of the {G}reenland Ice Sheet},
+volume = {321},
+number = {5885},
+pages = {111-113},
+year = {2008},
+doi = {10.1126/science.1158540},
+journal = {Science},
+}
+
+
+@article{vandenBroeke2009,
+author = {van den Broeke, M. R. and Bamber, J. L. and Ettema, J. and Rignot, E. and Schrama, E. and van de Berg, W. J. and van Meijgaard, E. and Velicogna, I. and Wouters, B.},
+doi = {10.1126/science.1178176},
+journal = {Science},
+number = {5955},
+pages = {984--986},
+pmid = {19965509},
+title = {{Partitioning recent Greenland mass loss}},
+volume = {326},
+year = {2009}
+}
+
+
+@book{vanderVeen,
+    AUTHOR = {C. J. van der Veen},
+     TITLE = {Fundamentals of {G}lacier {D}ynamics},
+    EDITION = {2nd},
+ PUBLISHER = {CRC Press},
+      YEAR = {2013},
+}
+
+
+@unpublished{vanderVeen83,
+    AUTHOR = {C. J. van der Veen},
+     TITLE = {A note on the equilibrium profile of a free floating ice shelf},
+      NOTE = {{IMAU} Report V83-15. State University Utrecht, Utrecht},
+      YEAR = {1983},
+     PAGES = {257--267},
+}
+
+@article {vanderVeen85,
+    AUTHOR = {C. J. van der Veen},
+     TITLE = {Response of a marine ice sheet to changes at the grounding line},
+   JOURNAL = {Quat. Res.},
+    VOLUME = {24},
+      YEAR = {1985},
+     PAGES = {257--267},
+}
+
+@article {vanderVeenEval99,
+    AUTHOR = {C. J. van der Veen},
+     TITLE = {Evaluating the performance of cryospheric models},
+   JOURNAL = {Polar Geography},
+    VOLUME = {23},
+    NUMBER = {2},
+      YEAR = {1999},
+     PAGES = {83--96},
+}
+
+@inproceedings {vanderVeenPayne,
+    AUTHOR = {C. J. van der Veen and A. J. Payne},
+     TITLE = {Modelling land-ice dynamics},
+  editor   = {J. L. Bamber and A. J. Payne},
+ BOOKTITLE = {Mass {B}alance of the {C}ryosphere: {O}bservations and {M}odelling of 
+              {C}ontemporary and {F}uture {C}hanges},
+ PUBLISHER = {Cambridge University Press},
+     PAGES = {169--225},
+      YEAR = {2004},
+}
+
+@article {vanderVeenWhillans1996,
+    AUTHOR = {C. J. van der Veen and I. M. Whillans},
+     TITLE = {Model experiments on the evolution and stability of ice streams},
+   JOURNAL = {Ann. Glaciol.},
+    VOLUME = {23},
+      YEAR = {1996},
+     PAGES = {129--137},
+}
+
+@article {vanderVeenetal2001precip,
+    AUTHOR = {C. J. van der Veen and D. H. Bromwich and B. Csatho and C. Kim},
+     TITLE = {Trend analysis of {G}reenland precipitation},
+   JOURNAL = {J. Geophys. Res.},
+    VOLUME = {106},
+    NUMBER = {D24},
+      YEAR = {2001},
+     PAGES = {33909--33918},
+}
+
+@article{vanderWeletal2013,
+author = {N. van der Wel and P. Christoffersen and M. Bougamont},
+title = {The influence of subglacial hydrology on the flow of {K}amb {I}ce {S}tream, {W}est {A}ntarctica},
+journal = {J. Geophys. Res.: Earth Surface},
+volume = {118},
+pages = {1-14},
+year = {2013},
+doi = {10.1029/2012JF002570},
 }

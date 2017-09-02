@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,9 +37,11 @@ public:
 
   virtual void init();
   void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
+  const IceModelVec2S& threshold() const;
 
 protected:
-  double m_calving_threshold;
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  IceModelVec2S m_calving_threshold;
   IceModelVec2CellType m_old_mask;
 };
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012, 2013, 2014, 2015 Ricarda Winkelmann, Torsten Albrecht,
+# Copyright (C) 2012, 2013, 2014, 2015, 2017 Ricarda Winkelmann, Torsten Albrecht,
 # Ed Bueler, and Constantine Khroulev
 
 import numpy as np
@@ -28,6 +28,11 @@ if options.shelf:
     thk[thk > p.H0] = p.H0
 else:
     thk[radius <= p.r_gl] = p.H0
+
+# Ice thickness threshold for "calving at a threshold thickness"
+thk_threshold = np.zeros((options.My, options.Mx))  # sheet/shelf thickness
+thk_threshold[:] = 400.0
+thk_threshold[xx < 0.0] = 200.0
 
 # Bed topography
 bed = np.zeros_like(thk)                 # bedrock surface elevation
@@ -63,9 +68,12 @@ variables = {"thk": thk,
              "climatic_mass_balance": accum,
              "bc_mask": bc_mask,
              "u_ssa_bc": ubar,
-             "v_ssa_bc": vbar}
+             "v_ssa_bc": vbar,
+             "calving_threshold" : thk_threshold}
 
 piktests_utils.write_data(ncfile, variables)
+
+ncfile.variables["calving_threshold"].units = "m"
 ncfile.close()
 
 print "Successfully created %s" % options.output_filename
