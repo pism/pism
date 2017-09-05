@@ -47,6 +47,10 @@ parser.add_argument("-a", "--start_date", dest="start_date",
 parser.add_argument("-e", "--end_date", dest="end_date",
                     help='''End date in ISO format. Default=2012-1-1''',
                     default='2012-1-1')
+parser.add_argument("-i", "--interval_type", dest="interval_type",
+                    choices=['mid', 'end'],
+                    help='''Defines whether the time values t_k are the end points of the time bounds tb_k or the mid points 1/2*(tb_k -tb_(k-1)). Default="mid".''',
+                    default='mid')
 parser.add_argument("-u", "--ref_unit", dest="ref_unit",
                     help='''Reference unit. Default=days. Use of months or
                     years is NOT recommended.''', default='days')
@@ -55,6 +59,7 @@ parser.add_argument("-d", "--ref_date", dest="ref_date",
                     default='1960-1-1')
 
 options = parser.parse_args()
+interval_type = options.interval_type
 periodicity = options.periodicity.upper()
 start_date = parse(options.start_date)
 end_date = parse(options.end_date)
@@ -97,11 +102,14 @@ refdate = datetime(int(r[0]), int(r[1]), int(r[2]))
 bnds_datelist = list(rrule.rrule(prule, dtstart=start_date, until=end_date))
 
 # calculate the days since refdate, including refdate, with time being the
-# mid-point value:
-# time[n] = (bnds[n] + bnds[n+1]) / 2
 bnds_interval_since_refdate = cdftime.date2num(bnds_datelist)
-time_interval_since_refdate = (bnds_interval_since_refdate[0:-1] +
-                               np.diff(bnds_interval_since_refdate) / 2)
+if interval_type == 'mid':
+    # mid-point value:
+    # time[n] = (bnds[n] + bnds[n+1]) / 2
+    time_interval_since_refdate = (bnds_interval_since_refdate[0:-1] +
+                                   np.diff(bnds_interval_since_refdate) / 2)
+else:
+    time_interval_since_refdate = bnds_interval_since_refdate[1::]
 
 # create a new dimension for bounds only if it does not yet exist
 time_dim = "time"
