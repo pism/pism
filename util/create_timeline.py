@@ -48,7 +48,7 @@ parser.add_argument("-e", "--end_date", dest="end_date",
                     help='''End date in ISO format. Default=2012-1-1''',
                     default='2012-1-1')
 parser.add_argument("-i", "--interval_type", dest="interval_type",
-                    choices=['mid', 'end'],
+                    choices=['start', 'mid', 'end'],
                     help='''Defines whether the time values t_k are the end points of the time bounds tb_k or the mid points 1/2*(tb_k -tb_(k-1)). Default="mid".''',
                     default='mid')
 parser.add_argument("-u", "--ref_unit", dest="ref_unit",
@@ -108,8 +108,10 @@ if interval_type == 'mid':
     # time[n] = (bnds[n] + bnds[n+1]) / 2
     time_interval_since_refdate = (bnds_interval_since_refdate[0:-1] +
                                    np.diff(bnds_interval_since_refdate) / 2)
+elif interval_type == 'start':
+    time_interval_since_refdate = bnds_interval_since_refdate[:-1]
 else:
-    time_interval_since_refdate = bnds_interval_since_refdate[1::]
+    time_interval_since_refdate = bnds_interval_since_refdate[1:]
 
 # create a new dimension for bounds only if it does not yet exist
 time_dim = "time"
