@@ -366,7 +366,7 @@ public:
   double compute();
 };
 
-//! \brief Reports the total surface ice flux.
+//! \brief Reports the total top surface ice flux.
 class MassFluxSurface : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:

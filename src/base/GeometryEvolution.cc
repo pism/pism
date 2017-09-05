@@ -237,7 +237,7 @@ const IceModelVec2S& GeometryEvolution::conservation_error() const {
  * @param[in] velocity_bc_values advective velocity Dirichlet B.C. values
  * @param[in] thickness_bc_mask ice thickness Dirichlet B.C. mask
  * @param[in] surface_mass_balance_rate top surface mass balance rate (m / second)
- * @param[in] basal_melt_rate basal (bottom surface) melt rate (m/ second)
+ * @param[in] basal_melt_rate basal (bottom surface) melt rate (m / second)
  *
  * Results are stored in internal fields accessible using getters.
  */
