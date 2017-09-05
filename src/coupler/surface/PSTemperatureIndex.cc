@@ -108,7 +108,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_mbscheme                   = NULL;
   m_faustogreve                = NULL;
   m_sd_period                  = 0;
-  m_sd_ref_time                = 0.0;
   m_base_ddf.snow              = m_config->get_double("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_double("surface.pdd.factor_ice");
   m_base_ddf.refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
@@ -128,18 +127,13 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 
   bool use_aschwanden_params = options::Bool("-pdd_aschwanden", "Use Aschwanden's PDD parameters");
 
-  options::String firn_file("-pdd_firn_depth_file", "Read firn depth from file");
-  m_firn_file_set = firn_file.is_set();
+  std::string sd_file = m_config->get_string("surface.pdd.temperature_standard_deviation_file");
 
-  options::String sd_file("-pdd_sd_file", "Read standard deviation from file");
-  m_sd_file_set = sd_file.is_set();
+  m_sd_file_set = not sd_file.empty();
 
   options::Integer period("-pdd_sd_period",
                           "Length of the standard deviation data period in years", 0);
   m_sd_period = period;
-
-  options::Integer sd_ref_year("-pdd_sd_reference_year",
-                               "Standard deviation data reference year", 0);
 
   if (randomized_repeatable) {
     m_mbscheme = new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE);
@@ -151,6 +145,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 
   if (use_fausto_params) {
     m_faustogreve = new FaustoGrevePDDObject(m_grid);
+    m_base_pddStdDev = 2.53;
   }
 
   if (use_aschwanden_params) {
@@ -163,9 +158,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                                   "Choose one or the other.\n");
   }
 
-  if (sd_ref_year.is_set()) {
-    m_sd_ref_time = units::convert(m_sys, sd_ref_year, "years", "seconds");
-  }
 
   if (m_sd_file_set) {
     // find out how many records there are in the file and set the
@@ -189,7 +181,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 
     if (n_records < 1) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in %s.",
-                                    short_name.c_str(), sd_file->c_str());
+                                    short_name.c_str(), sd_file.c_str());
     }
 
     m_air_temp_sd.set_n_records(n_records);
@@ -253,64 +245,98 @@ void TemperatureIndex::init_impl() {
   // call the default implementation (not the interface method init())
   SurfaceModel::init_impl();
 
-  m_log->message(2,
-             "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
-             "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
-             "  Surface mass balance and ice upper surface temperature are outputs.\n"
-             "  See PISM User's Manual for control of degree-day factors.\n");
-
-  m_log->message(2,
-                 "  Computing number of positive degree-days by: %s.\n",
-                 m_mbscheme->method().c_str());
-
-  if (m_faustogreve) {
+  // report user's modeling choices
+  {
     m_log->message(2,
-                   "  Setting PDD parameters from [Faustoetal2009] ...\n");
-    m_base_pddStdDev = 2.53;
+                   "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
+                   "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
+                   "  Surface mass balance and ice upper surface temperature are outputs.\n"
+                   "  See PISM User's Manual for control of degree-day factors.\n");
+
+    m_log->message(2,
+                   "  Computing number of positive degree-days by: %s.\n",
+                   m_mbscheme->method().c_str());
+
+    if (m_faustogreve) {
+      m_log->message(2,
+                     "  Setting PDD parameters from [Faustoetal2009].\n");
+    } else if (m_aschwanden) {
+      m_log->message(2,
+                     "  Setting PDD parameters from Aschwanden.\n");
+    } else {
+      m_log->message(2,
+                     "  Using default PDD parameters.\n");
+    }
   }
 
-  if (m_aschwanden) {
-    m_log->message(2,
-                   "  Setting PDD parameters from Aschwanden ...\n");
+  // initialize the spatially-variable air temperature standard deviation
+  {
+    std::string sd_file = m_config->get_string("surface.pdd.temperature_standard_deviation_file");
+    if (sd_file.empty()) {
+      m_log->message(2,
+                     "  Using constant standard deviation of near-surface temperature.\n");
+      m_air_temp_sd.init_constant(m_base_pddStdDev);
+    } else {
+      m_log->message(2,
+                     "  Reading standard deviation of near-surface temperature from '%s'...\n",
+                     sd_file.c_str());
+
+      options::Integer sd_ref_year("-pdd_sd_reference_year",
+                                   "Standard deviation data reference year", 0);
+
+      double sd_ref_time = units::convert(m_sys, sd_ref_year, "years", "seconds");
+
+      m_air_temp_sd.init(sd_file, m_sd_period, sd_ref_time);
+    }
   }
 
-  options::String firn_file("-pdd_firn_depth_file", "Read firn depth from file");
-  if (firn_file.is_set()) {
-    m_log->message(2,
-               "  Reading firn depth from '%s'...\n",
-               firn_file->c_str());
-    m_firn_depth.regrid(firn_file, CRITICAL);
+  // initializing the model state
+  InputOptions input = process_input_options(m_grid->com);
+
+  std::string firn_file = m_config->get_string("surface.pdd.firn_depth_file");
+
+  if (input.type == INIT_RESTART) {
+    if (not firn_file.empty()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "surface.pdd.firn_depth_file is not allowed when"
+                                    " re-starting from a PISM output file.");
+    }
+
+    m_firn_depth.read(input.filename, input.record);
+    m_snow_depth.read(input.filename, input.record);
+  } else if (input.type == INIT_BOOTSTRAP) {
+
+    m_snow_depth.regrid(input.filename, OPTIONAL, 0.0);
+
+    if (firn_file.empty()) {
+      m_firn_depth.regrid(input.filename, OPTIONAL, 0.0);
+    } else {
+      m_firn_depth.regrid(firn_file, CRITICAL);
+    }
   } else {
-    m_log->message(2,
-               "  Option -pdd_firn_depth_file is not set. Setting to 0m.\n");
-    m_firn_depth.set(0);
+
+    m_snow_depth.set(0.0);
+
+    if (firn_file.empty()) {
+      m_firn_depth.set(0.0);
+    } else {
+      m_firn_depth.regrid(firn_file, CRITICAL);
+    }
   }
 
-  options::String sd_file("-pdd_sd_file", "Read standard deviation from file");
-  if (sd_file.is_set()) {
-    m_log->message(2,
-               "  Reading standard deviation of near-surface temperature from '%s'...\n",
-               sd_file->c_str());
-    m_air_temp_sd.init(sd_file, m_sd_period, m_sd_ref_time);
-  } else {
-    m_log->message(2,
-               "  Option -pdd_sd_file is not set. Using a constant value.\n");
-    m_air_temp_sd.init_constant(m_base_pddStdDev);
+  {
+    regrid("PDD surface model", m_snow_depth);
+    regrid("PDD surface model", m_firn_depth);
   }
 
-  std::string input_file = process_input_options(m_grid->com).filename;
+  // finish up
+  {
+    m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 
-  // read snow depth from file
-  m_log->message(2,
-                 "    reading snow depth (ice equivalent meters) from %s ... \n",
-                 input_file.c_str());
-  m_snow_depth.regrid(input_file, OPTIONAL, 0.0);
-
-  m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
-
-  m_accumulation.set(0.0);
-  m_melt.set(0.0);
-  m_runoff.set(0.0);
+    m_accumulation.set(0.0);
+    m_melt.set(0.0);
+    m_runoff.set(0.0);
+  }
 }
 
 MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) const {

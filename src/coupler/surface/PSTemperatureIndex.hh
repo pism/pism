@@ -102,10 +102,9 @@ protected:
   //! total runoff during the last time step
   IceModelVec2S m_runoff;
 
-  bool m_firn_file_set;
   bool m_sd_use_param, m_sd_file_set;
-  int m_sd_period, m_sd_period_years;
-  double m_sd_ref_time, m_sd_param_a, m_sd_param_b;
+  int m_sd_period;
+  double m_sd_param_a, m_sd_param_b;
 };
 
 } // end of namespace surface

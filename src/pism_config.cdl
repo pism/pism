@@ -1424,6 +1424,16 @@ netcdf pism_config {
     pism_config:surface.pdd.firn_compaction_to_accumulation_ratio_type = "scalar";
     pism_config:surface.pdd.firn_compaction_to_accumulation_ratio_units = "1";
 
+    pism_config:surface.pdd.firn_depth_file = "";
+    pism_config:surface.pdd.firn_depth_file_option = "pdd_firn_depth_file";
+    pism_config:surface.pdd.firn_depth_file_doc = "The name of the file to read the firn_depth from.";
+    pism_config:surface.pdd.firn_depth_file_type = "string";
+
+    pism_config:surface.pdd.temperature_standard_deviation_file = "";
+    pism_config:surface.pdd.temperature_standard_deviation_file_option = "pdd_sd_file";
+    pism_config:surface.pdd.temperature_standard_deviation_file_doc = "The name of the file to read air_temp_sd from.";
+    pism_config:surface.pdd.temperature_standard_deviation_file_type = "string";
+
     pism_config:surface.pdd.interpret_precip_as_snow = "no";
     pism_config:surface.pdd.interpret_precip_as_snow_doc = "Interpret precipitation as snow fall.";
     pism_config:surface.pdd.interpret_precip_as_snow_type = "boolean";
