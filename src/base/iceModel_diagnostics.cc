@@ -138,7 +138,7 @@ public:
     : DiagAverageRate<IceModel>(m,
                             flag == GROUNDED
                             ? "basal_mass_flux_grounded"
-                            : "basal_mass_flux_shelf",
+                            : "basal_mass_flux_floating",
                             TOTAL_CHANGE), m_kind(flag) {
     assert(flag != BOTH);
 
@@ -147,7 +147,7 @@ public:
       name        = "basal_mass_flux_grounded";
       description = "average basal mass flux over the reporting interval (grounded areas)";
     } else {
-      name        = "basal_mass_flux_shelf";
+      name        = "basal_mass_flux_floating";
       description = "average basal mass flux over the reporting interval (floating areas)";
     }
 
@@ -1103,7 +1103,7 @@ double AreaGlacierizedGrounded::compute() {
 }
 
 AreaGlacierizedShelf::AreaGlacierizedShelf(IceModel *m)
-  : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "area_glacierized_shelf") {
+  : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "area_glacierized_floating") {
 
   m_ts.variable().set_string("units", "m2");
   m_ts.variable().set_string("long_name", "area of ice shelves in glacierized areas");
@@ -1256,7 +1256,7 @@ class MassFluxBasalGrounded : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   MassFluxBasalGrounded(const IceModel *m)
-    : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_ice_flux_grounded") {
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_grounded") {
 
     m_ts.variable().set_string("units", "kg s-1");
     m_ts.variable().set_string("glaciological_units", "kg year-1");
@@ -1274,7 +1274,7 @@ class MassFluxBasalFloating : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   MassFluxBasalFloating(const IceModel *m)
-    : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_ice_flux_shelf") {
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_floating") {
 
     m_ts.variable().set_string("units", "kg s-1");
     m_ts.variable().set_string("glaciological_units", "kg year-1");
@@ -1440,7 +1440,7 @@ double VolumeGlacierizedGrounded::compute() {
 }
 
 VolumeGlacierizedShelf::VolumeGlacierizedShelf(IceModel *m)
-  : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "volume_glacierized_shelf") {
+  : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "volume_glacierized_floating") {
 
   m_ts.variable().set_string("units", "m3");
   m_ts.variable().set_string("long_name", "volume of ice shelves in glacierized areas");
@@ -2179,7 +2179,7 @@ void IceModel::init_diagnostics() {
 
     // other rates and fluxes
     {"basal_mass_flux_grounded", f(new BMBSplit(this, GROUNDED))},
-    {"basal_mass_flux_shelf",    f(new BMBSplit(this, SHELF))},
+    {"basal_mass_flux_floating",    f(new BMBSplit(this, SHELF))},
     {"dHdt",                     f(new ThicknessRateOfChange(this))},
     {"bmelt",                    d::wrap(m_basal_melt_rate)},
 
@@ -2201,7 +2201,7 @@ void IceModel::init_diagnostics() {
     {"area_glacierized",                s(new AreaGlacierized(this))},
     {"area_glacierized_cold_base",      s(new AreaGlacierizedColdBase(this))},
     {"area_glacierized_grounded",       s(new AreaGlacierizedGrounded(this))},
-    {"area_glacierized_shelf",          s(new AreaGlacierizedShelf(this))},
+    {"area_glacierized_floating",          s(new AreaGlacierizedShelf(this))},
     {"area_glacierized_temperate_base", s(new AreaGlacierizedTemperateBase(this))},
     // mass
     {"mass_glacierized",                   s(new MassGlacierized(this))},
@@ -2214,7 +2214,7 @@ void IceModel::init_diagnostics() {
     {"volume_glacierized",                   s(new VolumeGlacierized(this))},
     {"volume_glacierized_cold",              s(new VolumeGlacierizedCold(this))},
     {"volume_glacierized_grounded",          s(new VolumeGlacierizedGrounded(this))},
-    {"volume_glacierized_shelf",             s(new VolumeGlacierizedShelf(this))},
+    {"volume_glacierized_floating",             s(new VolumeGlacierizedShelf(this))},
     {"volume_glacierized_temperate",         s(new VolumeGlacierizedTemperate(this))},
     {"volume_nonglacierized",                s(new VolumeNonGlacierized(this))},
     {"volume_nonglacierized_cold",           s(new VolumeNonGlacierizedCold(this))},
@@ -2236,8 +2236,8 @@ void IceModel::init_diagnostics() {
     {"tendency_of_ice_mass_due_to_surface_mass_balance", s(new MassFluxSurface(this))},
     {"tendency_of_ice_mass_due_to_discharge",            s(new MassFluxDischarge(this))},
     // other fluxes
-    {"basal_ice_flux_grounded", s(new MassFluxBasalGrounded(this))},
-    {"basal_ice_flux_shelf",    s(new MassFluxBasalFloating(this))},
+    {"basal_mass_flux_grounded", s(new MassFluxBasalGrounded(this))},
+    {"basal_mass_flux_floating",    s(new MassFluxBasalFloating(this))},
   };
 
   // get diagnostics from submodels
