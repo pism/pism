@@ -54,9 +54,9 @@ static const char* floating_ice_sheet_area_fraction_name = "sftflf";
 
 namespace diagnostics {
 
-enum AreaType {GROUNDED, FLOATING, BOTH};
+enum AreaType {GROUNDED, SHELF, BOTH};
 
-enum SurfaceType {TOP, BOTTOM};
+enum TermType {SMB, BMB, FLOW, ERROR};
 
 /*! @brief Ocean pressure difference at calving fronts. Used to debug CF boundary conditins. */
 class CalvingFrontPressureDifference : public Diag<IceModel>
@@ -138,7 +138,7 @@ public:
     : DiagAverageRate<IceModel>(m,
                             flag == GROUNDED
                             ? "basal_mass_flux_grounded"
-                            : "basal_mass_flux_floating",
+                            : "basal_mass_flux_shelf",
                             TOTAL_CHANGE), m_kind(flag) {
     assert(flag != BOTH);
 
@@ -147,7 +147,7 @@ public:
       name        = "basal_mass_flux_grounded";
       description = "average basal mass flux over the reporting interval (grounded areas)";
     } else {
-      name        = "basal_mass_flux_floating";
+      name        = "basal_mass_flux_shelf";
       description = "average basal mass flux over the reporting interval (floating areas)";
     }
 
@@ -170,23 +170,17 @@ protected:
 
     IceModelVec::AccessList list{&input, &cell_type, &m_accumulator};
 
-    ParallelSection loop(m_grid->com);
-    try {
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-        if (m_kind == GROUNDED and cell_type.grounded(i, j)) {
-          m_accumulator(i, j) += input(i, j);
-        } else if (m_kind == FLOATING and cell_type.ocean(i, j)) {
-          m_accumulator(i, j) += input(i, j);
-        } else {
-          m_accumulator(i, j) = 0.0;
-        }
+      if (m_kind == GROUNDED and cell_type.grounded(i, j)) {
+        m_accumulator(i, j) += input(i, j);
+      } else if (m_kind == SHELF and cell_type.ocean(i, j)) {
+        m_accumulator(i, j) += input(i, j);
+      } else {
+        m_accumulator(i, j) = 0.0;
       }
-    } catch (...) {
-      loop.failed();
     }
-    loop.check();
 
     m_interval_length += dt;
   }
@@ -937,6 +931,47 @@ double MassRateOfChangeGlacierized::compute() {
   return ice_volume * ice_density;
 }
 
+
+//! \brief Computes the rate of change of the total ice mass due to influx.
+/*!
+ * This is the change in mass resulting from prescribing (fixing) ice thickness.
+ */
+class MassRateOfChangeDueToInflux : public TSDiag<TSRateDiagnostic, IceModel>
+{
+public:
+  MassRateOfChangeDueToInflux(IceModel *m)
+    : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_influx") {
+
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "rate of change of the mass of ice due to influx"
+                               " (i.e. prescribed ice thickness)");
+  }
+
+  double compute() {
+
+    const double
+      ice_density = m_grid->ctx()->config()->get_double("constants.ice.density");
+
+    const IceModelVec2S
+      &dH_flow   = model->geometry_evolution().thickness_change_due_to_flow(),
+      &cell_area = model->geometry().cell_area;
+
+    IceModelVec::AccessList list{&dH_flow, &cell_area};
+
+    double volume_change = 0.0;
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      // m * m^2 = m^3
+      volume_change += dH_flow(i, j) * cell_area(i, j);
+    }
+
+    // (kg/m^3) * m^3 = kg
+    return ice_density * GlobalSum(m_grid->com, volume_change);
+  }
+};
+
+
 MassRateOfChangeNonGlacierized::MassRateOfChangeNonGlacierized(IceModel *m)
   : TSDiag<TSRateDiagnostic, IceModel>(m, "mass_rate_of_change_nonglacierized") {
 
@@ -1104,7 +1139,31 @@ double MaxDiffusivity::compute() {
   return model->stress_balance()->max_diffusivity();
 }
 
-double mass_change(const IceModel *model, SurfaceType surface, AreaType area) {
+/*!
+ * Return total mass change due to one of the terms in the mass continuity equation.
+ *
+ * Possible terms are
+ *
+ * - SMB: surface mass balance
+ * - BMB: basal mass balance
+ * - FLOW: ice flow
+ * - ERROR: numerical flux needed to preserve non-negativity of thickness
+ *
+ * This computation can be restricted to grounded and floating areas
+ * using the `area` argument.
+ *
+ * - BOTH: include all contributions
+ * - GROUNDED: include grounded areas only
+ * - SHELF: include floating areas only
+ *
+ * When computing mass changes due to flow it is important to remember
+ * that ice mass in a cell can be represented by its thickness *or* an
+ * "area specific volume". Transferring mass from one representation
+ * to the other does not change the mass in a cell. This explains the
+ * special case used when `term == FLOW`. (Note that surface and basal
+ * mass balances do not affect the area specific volume field.)
+ */
+double mass_change(const IceModel *model, TermType term, AreaType area) {
   const IceGrid &grid = *model->grid();
   const Config &config = *grid.ctx()->config();
 
@@ -1113,110 +1172,176 @@ double mass_change(const IceModel *model, SurfaceType surface, AreaType area) {
   const IceModelVec2S &cell_area = model->geometry().cell_area;
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
 
-  const IceModelVec2S &thickness_change = (surface == TOP) ?
-    model->geometry_evolution().top_surface_mass_balance() :
-    model->geometry_evolution().bottom_surface_mass_balance();
+  const IceModelVec2S *thickness_change = nullptr;
 
-  IceModelVec::AccessList list{&cell_area, &cell_type, &thickness_change};
+  switch (term) {
+  case FLOW:
+    thickness_change = &model->geometry_evolution().thickness_change_due_to_flow();
+  case SMB:
+    thickness_change = &model->geometry_evolution().top_surface_mass_balance();
+  case BMB:
+    thickness_change = &model->geometry_evolution().bottom_surface_mass_balance();
+  case ERROR:
+    thickness_change = &model->geometry_evolution().conservation_error();
+  default:
+    // can't happen
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid term type");
+  }
+
+  const IceModelVec2S &dV_flow = model->geometry_evolution().area_specific_volume_change_due_to_flow();
+
+  IceModelVec::AccessList list{&cell_area, &cell_type, thickness_change};
+
+  if (term == FLOW) {
+    list.add(dV_flow);
+  }
 
   double volume_change = 0.0;
-  ParallelSection loop(grid.com);
-  try {
-    for (Points p(grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if ((area == BOTH) or
-          (area == GROUNDED and cell_type.grounded(i, j)) or
-          (area == FLOATING and cell_type.ocean(i, j))) {
+    if ((area == BOTH) or
+        (area == GROUNDED and cell_type.grounded(i, j)) or
+        (area == SHELF and cell_type.ocean(i, j))) {
 
-        // m^3 = m^2 * m
-        volume_change += cell_area(i, j) * thickness_change(i, j);
-      }
+      double dV = term == FLOW ? dV_flow(i, j) : 0.0;
+
+      // m^3 = m^2 * m
+      volume_change += cell_area(i, j) * ((*thickness_change)(i, j) + dV);
     }
-  } catch (...) {
-    loop.failed();
   }
-  loop.check();
 
-  // (kg / m3) * m3 = kg
+  // (kg / m^3) * m^3 = kg
   return ice_density * GlobalSum(grid.com, volume_change);
 }
 
-MassFluxSurface::MassFluxSurface(const IceModel *m)
-  : TSDiag<TSFluxDiagnostic, IceModel>(m, "surface_ice_flux") {
+//! \brief Reports the total bottom surface ice flux.
+class MassFluxBasal : public TSDiag<TSFluxDiagnostic, IceModel>
+{
+public:
+  MassFluxBasal(const IceModel *m)
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_basal_mass_balance") {
 
-  m_ts.variable().set_string("units", "kg s-1");
-  m_ts.variable().set_string("glaciological_units", "kg year-1");
-  m_ts.variable().set_string("long_name", "total over ice domain of top surface ice mass flux");
-  m_ts.variable().set_string("comment", "positive means ice gain");
-}
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "total over ice domain of bottom surface ice mass flux");
+    m_ts.variable().set_string("comment", "positive means ice gain");
+  }
 
-double MassFluxSurface::compute() {
-  return mass_change(model, TOP, BOTH);
-}
+  double compute() {
+    return mass_change(model, BMB, BOTH);
+  }
+};
 
-MassFluxBasalGrounded::MassFluxBasalGrounded(const IceModel *m)
-  : TSDiag<TSFluxDiagnostic, IceModel>(m, "grounded_basal_ice_flux") {
+//! \brief Reports the total top surface ice flux.
+class MassFluxSurface : public TSDiag<TSFluxDiagnostic, IceModel>
+{
+public:
+  MassFluxSurface(const IceModel *m)
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_surface_mass_balance") {
 
-  m_ts.variable().set_string("units", "kg s-1");
-  m_ts.variable().set_string("glaciological_units", "kg year-1");
-  m_ts.variable().set_string("long_name", "total over grounded ice domain of basal mass flux");
-  m_ts.variable().set_string("comment", "positive means ice gain");
-}
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "total over ice domain of top surface ice mass flux");
+    m_ts.variable().set_string("comment", "positive means ice gain");
+  }
 
-double MassFluxBasalGrounded::compute() {
-  return mass_change(model, BOTTOM, GROUNDED);
-}
+  double compute() {
+    return mass_change(model, SMB, BOTH);
+  }
+};
 
-MassFluxBasalFloating::MassFluxBasalFloating(const IceModel *m)
-  : TSDiag<TSFluxDiagnostic, IceModel>(m, "sub_shelf_ice_flux") {
+//! \brief Reports the total basal ice flux over the grounded region.
+class MassFluxBasalGrounded : public TSDiag<TSFluxDiagnostic, IceModel>
+{
+public:
+  MassFluxBasalGrounded(const IceModel *m)
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_ice_flux_grounded") {
 
-  m_ts.variable().set_string("units", "kg s-1");
-  m_ts.variable().set_string("glaciological_units", "kg year-1");
-  m_ts.variable().set_string("long_name", "total sub-shelf ice flux");
-  m_ts.variable().set_string("comment", "positive means ice gain");
-}
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "total over grounded ice domain of basal mass flux");
+    m_ts.variable().set_string("comment", "positive means ice gain");
+  }
 
-double MassFluxBasalFloating::compute() {
-  return mass_change(model, BOTTOM, FLOATING);
-}
+  double compute() {
+    return mass_change(model, BMB, GROUNDED);
+  }
+};
 
-MassFluxDischarge::MassFluxDischarge(const IceModel *m)
-  : TSDiag<TSFluxDiagnostic, IceModel>(m, "discharge_flux") {
+//! \brief Reports the total sub-shelf ice flux.
+class MassFluxBasalFloating : public TSDiag<TSFluxDiagnostic, IceModel>
+{
+public:
+  MassFluxBasalFloating(const IceModel *m)
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_ice_flux_shelf") {
 
-  m_ts.variable().set_string("units", "kg s-1");
-  m_ts.variable().set_string("glaciological_units", "kg year-1");
-  m_ts.variable().set_string("long_name", "discharge (calving & icebergs) flux");
-  m_ts.variable().set_string("comment", "positive means ice gain");
-}
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "total sub-shelf ice flux");
+    m_ts.variable().set_string("comment", "positive means ice gain");
+  }
 
-double MassFluxDischarge::compute() {
+  double compute() {
+    return mass_change(model, BMB, SHELF);
+  }
+};
 
-  const double ice_density = m_config->get_double("constants.ice.density");
+//! \brief Reports the total numerical mass flux needed to preserve
+//! non-negativity of ice thickness.
+class MassFluxConservationError : public TSDiag<TSFluxDiagnostic, IceModel>
+{
+public:
+  MassFluxConservationError(const IceModel *m)
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_conservation_error") {
 
-  const IceModelVec2S
-    &cell_area = model->geometry().cell_area,
-    &discharge = model->discharge();
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "total numerical flux needed to preserve non-negativity"
+                               " of ice thickness");
+    m_ts.variable().set_string("comment", "positive means ice gain");
+  }
 
-  double total_discharge = 0.0;
+  double compute() {
+    return mass_change(model, ERROR, BOTH);
+  }
+};
 
-  IceModelVec::AccessList list{&cell_area, &discharge};
+//! \brief Reports the total discharge flux.
+class MassFluxDischarge : public TSDiag<TSFluxDiagnostic, IceModel>
+{
+public:
+  MassFluxDischarge(const IceModel *m)
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_discharge") {
 
-  ParallelSection loop(m_grid->com);
-  try {
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "discharge (calving & icebergs) flux");
+    m_ts.variable().set_string("comment", "positive means ice gain");
+  }
+
+  double compute() {
+    const double ice_density = m_config->get_double("constants.ice.density");
+
+    const IceModelVec2S
+      &cell_area = model->geometry().cell_area,
+      &discharge = model->discharge();
+
+    double volume_change = 0.0;
+
+    IceModelVec::AccessList list{&cell_area, &discharge};
+
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-
-      // (kg/m^3) * m^2 * m = kg
-      total_discharge += ice_density * cell_area(i, j) * discharge(i, j);
+      // m^2 * m = m^3
+      volume_change += cell_area(i, j) * discharge(i, j);
     }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
 
-  return GlobalSum(m_grid->com, total_discharge);
-}
+    // (kg/m^3) * m^3 = kg
+    return ice_density * GlobalSum(m_grid->com, volume_change);
+  }
+};
+
 
 //! \brief Computes dHdt, the ice thickness rate of change.
 class ThicknessRateOfChange : public Diag<IceModel>
@@ -2054,7 +2179,7 @@ void IceModel::init_diagnostics() {
 
     // other rates and fluxes
     {"basal_mass_flux_grounded", f(new BMBSplit(this, GROUNDED))},
-    {"basal_mass_flux_floating", f(new BMBSplit(this, FLOATING))},
+    {"basal_mass_flux_shelf",    f(new BMBSplit(this, SHELF))},
     {"dHdt",                     f(new ThicknessRateOfChange(this))},
     {"bmelt",                    d::wrap(m_basal_melt_rate)},
 
@@ -2104,17 +2229,15 @@ void IceModel::init_diagnostics() {
     {"max_hor_vel",     s(new MaxHorizontalVelocity(this))},
     {"dt",              s(new TimeStepLength(this))},
     // balancing the books
-    // {"tendency_of_ice_mass",                             FIXME},
-    // {"tendency_of_ice_mass_due_to_influx",               FIXME}, // sum(divQ)
-    // {"tendency_of_ice_mass_due_to_conservation_error",   FIXME},
-    // {"tendency_of_ice_mass_due_to_surface_mass_balance", FIXME},
-    // {"tendency_of_ice_mass_due_to_basal_mass_balance",   FIXME},
-    // {"tendency_of_ice_mass_due_to_discharge",            FIXME},
+    {"tendency_of_ice_mass",                             s(new MassRateOfChangeNonGlacierized(this))},
+    {"tendency_of_ice_mass_due_to_influx",               s(new MassRateOfChangeDueToInflux(this))},
+    {"tendency_of_ice_mass_due_to_conservation_error",   s(new MassFluxConservationError(this))},
+    {"tendency_of_ice_mass_due_to_basal_mass_balance",   s(new MassFluxBasal(this))},
+    {"tendency_of_ice_mass_due_to_surface_mass_balance", s(new MassFluxSurface(this))},
+    {"tendency_of_ice_mass_due_to_discharge",            s(new MassFluxDischarge(this))},
     // other fluxes
-    {"discharge_flux",          s(new MassFluxDischarge(this))},     // FIXME: duplicate
-    {"grounded_basal_ice_flux", s(new MassFluxBasalGrounded(this))}, // FIXME: rename
-    {"sub_shelf_ice_flux",      s(new MassFluxBasalFloating(this))}, // FIXME: rename
-    {"surface_ice_flux",        s(new MassFluxSurface(this))},
+    {"basal_ice_flux_grounded", s(new MassFluxBasalGrounded(this))},
+    {"basal_ice_flux_shelf",    s(new MassFluxBasalFloating(this))},
   };
 
   // get diagnostics from submodels
