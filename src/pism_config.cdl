@@ -1092,7 +1092,7 @@ netcdf pism_config {
     pism_config:output.sizes.big_2d_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium) if 'big_2d' output size is selected. Does not include fields written by boundary models.";
     pism_config:output.sizes.big_2d_type = "string";
 
-    pism_config:output.sizes.medium = "IcebergMask,bwat,bwatvel,climatic_mass_balance,diffusivity,enthalpy,flux,flux_mag,ice_surface_temp,liqfrac,mask,schoofs_theta,strain_rates,taub_mag,tauc,taud_mag,temp_pa,tillwat,topgsmooth,usurf,velbar_mag,velbase_mag,velsurf,velsurf_mag,wvelsurf";
+    pism_config:output.sizes.medium = "bwat,bwatvel,climatic_mass_balance,diffusivity,enthalpy,flux,flux_mag,ice_surface_temp,liqfrac,mask,schoofs_theta,strain_rates,taub_mag,tauc,taud_mag,temp_pa,tillwat,topgsmooth,usurf,velbar_mag,velbase_mag,velsurf,velsurf_mag,wvelsurf";
     pism_config:output.sizes.medium_doc = "Comma-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by sub-models.";
     pism_config:output.sizes.medium_type = "string";
 
