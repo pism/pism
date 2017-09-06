@@ -132,7 +132,7 @@ protected:
   virtual void check_Wtil_bounds();
 protected:
   // this model's state
-  IceModelVec2S m_Wtil;      // effective thickness of till
+  IceModelVec2S m_Wtil;      // effective thickness of basal water stored in till
   // this model's workspace
   IceModelVec2S m_total_input, m_bmelt_local;
 

@@ -37,19 +37,19 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
 
   m_total_input.create(m_grid, "total_input", WITHOUT_GHOSTS);
   m_total_input.set_attrs("internal",
-                        "hydrology model workspace for total input rate into subglacial water layer",
-                        "m s-1", "");
+                          "hydrology model workspace for total input rate into subglacial water layer",
+                          "m s-1", "");
 
   m_bmelt_local.create(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS);
   m_bmelt_local.set_attrs("internal",
-                        "hydrology model workspace for basal_melt_rate_grounded",
-                        "m s-1", "");
+                          "hydrology model workspace for basal_melt_rate_grounded",
+                          "m s-1", "");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
   m_Wtil.create(m_grid, "tillwat", WITHOUT_GHOSTS);
   m_Wtil.set_attrs("model_state",
-                 "effective thickness of subglacial water stored in till",
-                 "m", "");
+                   "effective thickness of subglacial water stored in till",
+                   "m", "");
   m_Wtil.metadata().set_double("valid_min", 0.0);
 }
 
@@ -60,9 +60,6 @@ Hydrology::~Hydrology() {
 
 
 void Hydrology::init() {
-
-  m_log->message(4,
-             "entering Hydrology::init() ...\n");
 
   options::String bmelt_file("-hydrology_bmelt_file",
                              "Read time-independent values for basal_melt_rate_grounded from a file;"
@@ -162,6 +159,7 @@ std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
     {"hydrobmelt", Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
     {"hydroinput", Diagnostic::Ptr(new Hydrology_hydroinput(this))},
     {"wallmelt",   Diagnostic::Ptr(new Hydrology_wallmelt(this))},
+    {"tillwat",    Diagnostic::wrap(m_Wtil)},
   };
   return result;
 }
