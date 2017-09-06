@@ -869,6 +869,43 @@ const IceModelVec2S& IceModel::discharge() const {
   return m_discharge;
 }
 
+void warn_about_missing(const Logger &log,
+                        const std::set<std::string> &vars,
+                        const std::string &type,
+                        const std::set<std::string> &available,
+                        bool stop) {
+  std::vector<std::string> missing;
+  for (auto v : vars) {
+    if (available.find(v) == available.end()) {
+      missing.push_back(v);
+    }
+  }
+
+  if (not missing.empty()) {
+    size_t N = missing.size();
+    const char
+      *ending = N > 1 ? "s" : "",
+      *verb   = N > 1 ? "are" : "is";
+    if (stop) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "%s variable%s %s %s not available!\n"
+                                    "Available variables:\n- %s",
+                                    type.c_str(),
+                                    ending,
+                                    join(missing, ",").c_str(),
+                                    verb,
+                                    set_join(available, ",\n- ").c_str());
+    } else {
+      log.message(2,
+                  "\nWARNING: %s variable%s %s %s not available!\n\n",
+                  type.c_str(),
+                  ending,
+                  join(missing, ",").c_str(),
+                  verb);
+    }
+  }
+}
+
 /*!
  * De-allocate diagnostics that were not requested.
  *
@@ -885,6 +922,11 @@ void IceModel::prune_diagnostics() {
     available.insert(d.first);
   }
 
+  warn_about_missing(*m_log, m_output_vars,   "output",     available, false);
+  warn_about_missing(*m_log, m_snapshot_vars, "snapshot",   available, false);
+  warn_about_missing(*m_log, m_backup_vars,   "backup",     available, false);
+  warn_about_missing(*m_log, m_extra_vars,    "diagnostic", available, true);
+
   // get the list of requested diagnostics
   auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
   requested = combine(requested, m_output_vars);
@@ -892,6 +934,7 @@ void IceModel::prune_diagnostics() {
   requested = combine(requested, m_extra_vars);
   requested = combine(requested, m_backup_vars);
 
+  // de-allocate diagnostics that were not requested
   for (auto v : available) {
     if (requested.find(v) == requested.end()) {
       m_diagnostics.erase(v);
@@ -899,6 +942,7 @@ void IceModel::prune_diagnostics() {
   }
 
   // scalar time series
+  std::vector<std::string> missing;
   std::set<std::string> vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
   if (not m_ts_filename.empty() and vars.empty()) {
     // use all diagnostics
@@ -908,13 +952,17 @@ void IceModel::prune_diagnostics() {
       if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
         diagnostics[v] = m_ts_diagnostics[v];
       } else {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "scalar diagnostic '%s' is not available",
-                                      v.c_str());
+        missing.push_back(v);
       }
     }
     // replace m_ts_diagnostics with requested diagnostics, de-allocating the rest
     m_ts_diagnostics = diagnostics;
+  }
+
+  if (not missing.empty()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "requested scalar diagnostics %s are not available",
+                                  join(missing, ",").c_str());
   }
 }
 
