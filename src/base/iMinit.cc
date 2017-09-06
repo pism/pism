@@ -686,9 +686,10 @@ void IceModel::misc_setup() {
     }
   }
 
+  m_output_vars = output_variables(m_config->get_string("output.size"));
+
 #if (PISM_USE_PROJ4==1)
   {
-    m_output_vars = output_variables(m_config->get_string("output.size"));
     std::string proj_string = m_grid->get_mapping_info().proj4;
     if (not proj_string.empty()) {
       m_output_vars.insert("lon_bnds");
