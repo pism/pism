@@ -61,12 +61,9 @@ protected:
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 
   double m_temp_to_runoff_a,
-    m_temp_to_runoff_b,
-    m_runoff_to_ocean_melt_a,
     m_runoff_to_ocean_melt_b,
     m_runoff_to_ocean_melt_power_alpha,
-    m_runoff_to_ocean_melt_power_beta,
-    m_current_forcing_0;
+    m_runoff_to_ocean_melt_power_beta;
 };
 
 } // end of namespace ocean

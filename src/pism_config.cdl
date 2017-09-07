@@ -968,23 +968,8 @@ netcdf pism_config {
     pism_config:ocean.pik_melt_factor_type = "scalar";
     pism_config:ocean.pik_melt_factor_units = "1";
 
-    pism_config:ocean.temp_to_runoff_a = 0.5;
-    pism_config:ocean.temp_to_runoff_a_doc = "a in runoff=a * temp + b";
-    pism_config:ocean.temp_to_runoff_a_type = "scalar";
-    pism_config:ocean.temp_to_runoff_a_units = "K-1";
-
-    pism_config:ocean.temp_to_runoff_b = 0.8;
-    pism_config:ocean.temp_to_runoff_b_doc = "b in runoff=a * temp + b";
-    pism_config:ocean.temp_to_runoff_b_type = "scalar";
-    pism_config:ocean.temp_to_runoff_b_units = "K";
-
-    pism_config:ocean.runoff_to_ocean_melt_a = 0.075;
-    pism_config:ocean.runoff_to_ocean_melt_a_doc = "parameter A in eqn. 1 in @ref Xu2013";
-    pism_config:ocean.runoff_to_ocean_melt_a_type = "scalar";
-    pism_config:ocean.runoff_to_ocean_melt_a_units = "1";
-
-    pism_config:ocean.runoff_to_ocean_melt_b = 0.07;
-    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in @ref Xu2013";
+    pism_config:ocean.runoff_to_ocean_melt_b = 0.15;
+    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in @ref Aschwanden";
     pism_config:ocean.runoff_to_ocean_melt_b_type = "scalar";
     pism_config:ocean.runoff_to_ocean_melt_b_units = "1";
 
@@ -1495,11 +1480,6 @@ netcdf pism_config {
     pism_config:surface.temp_to_runoff_a_doc = "a in runoff=a * temp + b";
     pism_config:surface.temp_to_runoff_a_type = "scalar";
     pism_config:surface.temp_to_runoff_a_units = "K-1";
-
-    pism_config:surface.temp_to_runoff_b = 0.8;
-    pism_config:surface.temp_to_runoff_b_doc = "b in runoff=a * temp + b";
-    pism_config:surface.temp_to_runoff_b_type = "scalar";
-    pism_config:surface.temp_to_runoff_b_units = "K";
 
     pism_config:time.calendar = "365_day";
     pism_config:time.calendar_choices = "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none";
