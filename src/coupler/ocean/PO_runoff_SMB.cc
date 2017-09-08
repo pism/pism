@@ -16,12 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_math.h>       // GSL_NAN
 #include "PO_runoff_SMB.hh"
 #include "base/util/PISMConfigInterface.hh"
-#include "base/util/io/io_helpers.hh"
-#include "base/util/pism_utilities.hh"
 
 namespace pism {
 namespace ocean {
@@ -38,16 +35,14 @@ Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, OceanModel* in)
   m_offset->variable().set_string("long_name", "air temperature offsets");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
 
-  m_temp_to_runoff_a = m_config->get_double("surface.temp_to_runoff_a");
+  m_temp_to_runoff_a       = m_config->get_double("surface.temp_to_runoff_a");
   m_runoff_to_ocean_melt_b = m_config->get_double("ocean.runoff_to_ocean_melt_b");
 
   m_runoff_to_ocean_melt_power_alpha = m_config->get_double("ocean.runoff_to_ocean_melt_power_alpha");
-  m_runoff_to_ocean_melt_power_beta = m_config->get_double("ocean.runoff_to_ocean_melt_power_beta");
-  
+  m_runoff_to_ocean_melt_power_beta  = m_config->get_double("ocean.runoff_to_ocean_melt_power_beta");
 }
 
-Runoff_SMB::~Runoff_SMB()
-{
+Runoff_SMB::~Runoff_SMB() {
   // empty
 }
 
@@ -57,11 +52,10 @@ void Runoff_SMB::init_impl() {
   m_input_model->init();
 
   m_log->message(2,
-             "* Initializing ice shelf base mass flux forcing using scalar multiplier...\n"
-             "*   derived from delta_T air temperature modifier\n");
+                 "* Initializing ice shelf base mass flux forcing using scalar multiplier...\n"
+                 "*   derived from delta_T air temperature modifier\n");
 
   init_internal();
-
 }
 
 MaxTimestep Runoff_SMB::max_timestep_impl(double t) const {
@@ -72,12 +66,17 @@ MaxTimestep Runoff_SMB::max_timestep_impl(double t) const {
 void Runoff_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
   m_input_model->shelf_base_mass_flux(result);
 
-  double a = m_temp_to_runoff_a,
-    B = m_runoff_to_ocean_melt_b,
-    alpha = m_runoff_to_ocean_melt_power_alpha,
-    beta = m_runoff_to_ocean_melt_power_beta;
+  // m_current_forcing is set by PScalarForcing::update_impl()
+  double delta_T = m_current_forcing;
 
-    result.scale(1 + B * pow(a * m_current_forcing, alpha) * pow(m_current_forcing, beta));
+  // short-cuts, just to make the formula below easier to read
+  double
+    a     = m_temp_to_runoff_a,
+    B     = m_runoff_to_ocean_melt_b,
+    alpha = m_runoff_to_ocean_melt_power_alpha,
+    beta  = m_runoff_to_ocean_melt_power_beta;
+
+  result.scale(1.0 + B * pow(a * delta_T, alpha) * pow(delta_T, beta));
 }
 
 } // end of namespace ocean

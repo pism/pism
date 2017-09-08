@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,29 +25,28 @@
 namespace pism {
 namespace ocean {
 
-/** "SMB Correction"
+/** Modify the shelf base mass flux using a function of air temperature changes.
  *
- * This class implements the temperature-offset based SMB correction
+ * This modifier multiplies the input shelf base mass flux by a factor
+ * @f$ F @f$, which depends on the change in the global average
+ * near-surface air temperature =delta_T= read from an input file.
  *
- * @f[
- * P_{G}(x,y,t) = P_{G}(x,y,0)exp\left[\frac{0.169}{d}\left({\Delta}T(t)+ {\Delta}T_{SC}(t)\right)\right]
- * @f]
-
- * where @f$P_G(x,y,0)@f$ is the precipitation for the present
- * Greenland ice sheet, obtained from the atmosphere model used as an
- * input of this class. The time dependent precipitation is
- * @f$P_G(x,y,t)@f$, @f$d@f$ is the @f${\delta}_{18}@f$ conversion factor
- * of @f$2.4^{\circ}C/\frac{0}{00}@f$, and @f${\Delta}T_{SC}@f$ is a
- * correction term for the change of altitude of the central dome
- * during the Greenland ice sheet's evolution. The coefficient
- * " @f$ 0.169/d @f$ " corresponds to a 7.3% change of precipitation rate
- * for every @f$1^{\circ}C@f$ of temperature change (Huybrechts et al.
- * 2002).
+ * The parameterization described below is inspired by [@ref Xu2013]
+ * with the relationship between air temperatures and subglacial
+ * runoff flux parameterized using a linear function (a fit to
+ * results of GCM simulations).
  *
- * One possible scheme for @f${\Delta}T_{SC}(t)@f$ (used in PISM) is
- * to take it to be zero, which regards the height correction as
- * belonging to the set of uncertainties related to the conversion
- * between isotopic and temperature signals.
+ * @f[ F(\Delta T) = 1 + B \times (a \Delta T)^\alpha \times (\Delta T)^\beta. @f]
+ *
+ * Here @f$ a @f$, @f$ B @f$, @f$ \alpha @f$, and @f$ \beta @f$ are constants.
+ *
+ * The paper [@ref Xu2013] approximates the sub-shelf melt rate as a
+ * function of *ocean* temperature above the freezing point and the
+ * subglacial runoff.
+ *
+ * We assume that the lag between the air and ocean temperatures is
+ * negligible and a change in air temperature is directly translated
+ * into a change in ocean temperature.
  */
 class Runoff_SMB : public PScalarForcing<OceanModel,OceanModifier>
 {
@@ -60,10 +59,14 @@ protected:
   virtual void init_impl();
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 
-  double m_temp_to_runoff_a,
-    m_runoff_to_ocean_melt_b,
-    m_runoff_to_ocean_melt_power_alpha,
-    m_runoff_to_ocean_melt_power_beta;
+  // @brief constant in the parameterization of the subglacial
+  // runoff flux as a function of air temperature
+  double m_temp_to_runoff_a;
+
+  // Constants in the parameterization of the sub-shelf melt rate.
+  double m_runoff_to_ocean_melt_b;
+  double m_runoff_to_ocean_melt_power_alpha;
+  double m_runoff_to_ocean_melt_power_beta;
 };
 
 } // end of namespace ocean
