@@ -1177,12 +1177,16 @@ double mass_change(const IceModel *model, TermType term, AreaType area) {
   switch (term) {
   case FLOW:
     thickness_change = &model->geometry_evolution().thickness_change_due_to_flow();
+    break;
   case SMB:
     thickness_change = &model->geometry_evolution().top_surface_mass_balance();
+    break;
   case BMB:
     thickness_change = &model->geometry_evolution().bottom_surface_mass_balance();
+    break;
   case ERROR:
     thickness_change = &model->geometry_evolution().conservation_error();
+    break;
   default:
     // can't happen
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid term type");
