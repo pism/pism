@@ -229,6 +229,11 @@ void IceModelVec2T::init_constant(double value) {
 void IceModelVec2T::update(double t, double dt) {
   unsigned int m, n, last;
 
+  if (m_filename.empty()) {
+    // We are not reading data from a file.
+    return;
+  }
+
   if (m_time_bounds.size() == 0) {
     update(0);
     return;
