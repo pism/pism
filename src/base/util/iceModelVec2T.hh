@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2016 Constantine Khroulev
+// Copyright (C) 2009--2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace pism {
 /*! This class was created to read time-dependent and spatially-varying climate
   forcing data, in particular snow temperatures and precipitation.
 
-  It allocates a number (given as an argument to the create() method) of
+  It allocates a number (given as an argument to the set_n_records() method) of
   records and reads them from a file if necessary.
 
   If requests (calls to update()) go in sequence, every records should be read
@@ -42,58 +42,6 @@ namespace pism {
 
   Both versions of interp() use piecewise-constant interpolation and
   extrapolate (by a constant) outside the available range.
-
-  Usage example:
-  \code
-  // initialization:
-  std::string filename = "climate_inputs.nc";
-  IceModelVec2T v;
-  v.set_n_records(config.get_double("climate_forcing.buffer_size"))));
-  ierr = v.create(grid, "snowtemp", false); CHKERRQ(ierr);
-  ierr = v.set_attrs("climate_forcing", "snow surface temperature", "K", ""); CHKERRQ(ierr);
-  ierr = v.init(filename); CHKERRQ(ierr);
-
-  // actual use:
-
-  // ask it how long a time-step is possible:
-  double t = 0, max_dt = 1e16;
-  ierr = v.max_timestep(t, max_dt); CHKERRQ(ierr);
-
-  // update (this might read more data from the file)
-  ierr = v.update(t, max_dt); CHKERRQ(ierr);
-
-  // get a 2D field (such as precipitation):
-  ierr = v.interp(t + max_dt / 2.0); CHKERRQ(ierr);
-  // at this point v "looks" almost like an IceModelVec2S with data we need (and
-  // can be type-cast to IceModelVec2S)
-
-  // get a time-series for every grid location:
-  int N = 21;
-  vector<double> ts(N), values(N);
-  double dt = max_dt / (N - 1);
-
-  for (int j = 0; j < N; ++j) {
-  ts[j] = t + dt * j;
-  }
-
-  // is is OK to call update() again, it will not re-read data if at all possible
-  ierr = v.update(t, max_dt); CHKERRQ(ierr);
-
-  IceModelVec::AccessList list(v);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    ierr = v.interp(i, j, N, &ts[0], &values[0]); CHKERRQ(ierr);
-    // do more
-  }
-
-  // compute an average value over a time interval at a certain grid location:
-
-  double average;
-  IceModelVec::AccessList list(v);
-  ierr = v.average(grid.xs, grid.ys, t, max_dt, average); CHKERRQ(ierr);
-
-  \endcode
 */
 class IceModelVec2T : public IceModelVec2S {
 public:
