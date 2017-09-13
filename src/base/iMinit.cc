@@ -155,7 +155,6 @@ void IceModel::model_state_setup() {
   // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
   // which may need ice thickness to bootstrap.
   {
-    m_log->message(2, "* Initializing the ocean model...\n");
     m_ocean->init();
   }
 
