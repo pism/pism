@@ -482,7 +482,7 @@ Footnotes
 .. _NCO: http://nco.sourceforge.net/
 .. _NetCDF: http://www.unidata.ucar.edu/software/netcdf/
 .. _NumPy: http://www.numpy.org/
-.. _PETSc: http://www.mcs.anl.gov/petsc/petsc-as/
+.. _PETSc: http://www.mcs.anl.gov/petsc/
 .. _PETSc-installation: http://www.mcs.anl.gov/petsc/documentation/installation.html
 .. _PROJ.4: http://proj4.org/
 .. _PnetCDF: http://trac.mcs.anl.gov/projects/parallel-netcdf
