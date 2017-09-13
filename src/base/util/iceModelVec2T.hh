@@ -53,7 +53,7 @@ public:
   virtual unsigned int get_n_records();
   void create(IceGrid::ConstPtr mygrid, const std::string &my_short_name);
   virtual void init(const std::string &filename, unsigned int period,
-                              double reference_time);
+                    double reference_time);
   virtual void init_constant(double value);
   virtual void update(double my_t, double my_dt);
   MaxTimestep max_timestep(double my_t) const;
