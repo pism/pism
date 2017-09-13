@@ -411,7 +411,7 @@ void IceModelVec2T::get_record(int n) {
 /*!
   Returns -1 if any time step is OK at t.
  */
-MaxTimestep IceModelVec2T::max_timestep(double t) {
+MaxTimestep IceModelVec2T::max_timestep(double t) const {
   // only allow going to the next record
   auto l = upper_bound(m_time_bounds.begin(), m_time_bounds.end(), t);
   if (l != m_time_bounds.end()) {

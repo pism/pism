@@ -58,7 +58,7 @@ public:
   virtual void update(double my_t, double my_dt);
   virtual void set_record(int n);
   virtual void get_record(int n);
-  MaxTimestep max_timestep(double my_t);
+  MaxTimestep max_timestep(double my_t) const;
 
   virtual void interp(double my_t);
 
