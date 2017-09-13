@@ -56,8 +56,6 @@ public:
                               double reference_time);
   virtual void init_constant(double value);
   virtual void update(double my_t, double my_dt);
-  virtual void set_record(int n);
-  virtual void get_record(int n);
   MaxTimestep max_timestep(double my_t) const;
 
   virtual void interp(double my_t);
@@ -65,7 +63,6 @@ public:
   virtual void interp(int i, int j, std::vector<double> &results);
 
   virtual void average(double my_t, double my_dt);
-  virtual double average(int i, int j);
 
   virtual void begin_access() const;
   virtual void end_access() const;
@@ -92,6 +89,9 @@ protected:
   double*** get_array3();
   virtual void update(unsigned int start);
   virtual void discard(int N);
+  virtual double average(int i, int j);
+  virtual void set_record(int n);
+  virtual void get_record(int n);
 };
 
 
