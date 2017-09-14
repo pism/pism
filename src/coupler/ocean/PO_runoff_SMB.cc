@@ -74,9 +74,18 @@ void Runoff_SMB::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
     a     = m_temp_to_runoff_a,
     B     = m_runoff_to_ocean_melt_b,
     alpha = m_runoff_to_ocean_melt_power_alpha,
-    beta  = m_runoff_to_ocean_melt_power_beta;
+    beta = m_runoff_to_ocean_melt_power_beta,
+    scale_factor = 1.0;
 
-  result.scale(1.0 + B * pow(a * delta_T, alpha) * pow(delta_T, beta));
+  /* 
+     This parameterization only works if delta_T > 0 because
+     negative numbers cannot be raised to a fractional power
+     so we do not scale the forcing if delta_T < 0
+  */
+  if (delta_T > 0.0) {
+    scale_factor = 1 + B * pow(a * delta_T, alpha) * pow(delta_T, beta);
+  }
+    result.scale(scale_factor);
 }
 
 } // end of namespace ocean
