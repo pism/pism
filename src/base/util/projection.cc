@@ -74,6 +74,37 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj4_
     mapping.set_string("grid_mapping_name", "polar_stereographic");
     mapping.set_double("false_easting", 0.0);
     break;
+  case 26710:
+    mapping.set_double("central_meridian", -123.0);
+    mapping.set_double("false_easting", 500000.0);
+    mapping.set_double("false_northing", 0.0);
+    mapping.set_string("grid_mapping_name", "transverse_mercator");
+    mapping.set_double("latitude_of_origin", 0.0);
+    mapping.set_double("scale_factor", 0.9996);
+    mapping.set_string("unit", "metre");
+    break;
+    // PROJCS["NAD27 / UTM zone 10N",
+    // GEOGCS["NAD27",
+    //     DATUM["North_American_Datum_1927",
+    //         SPHEROID["Clarke 1866",6378206.4,294.9786982139006,
+    //             AUTHORITY["EPSG","7008"]],
+    //         AUTHORITY["EPSG","6267"]],
+    //     PRIMEM["Greenwich",0,
+    //         AUTHORITY["EPSG","8901"]],
+    //     UNIT["degree",0.0174532925199433,
+    //         AUTHORITY["EPSG","9122"]],
+    //     AUTHORITY["EPSG","4267"]],
+    // PROJECTION["Transverse_Mercator"],
+    // PARAMETER["latitude_of_origin",0],
+    // PARAMETER["central_meridian",-123],
+    // PARAMETER["scale_factor",0.9996],
+    // PARAMETER["false_easting",500000],
+    // PARAMETER["false_northing",0],
+    // UNIT["metre",1,
+    //     AUTHORITY["EPSG","9001"]],
+    // AXIS["Easting",EAST],
+    // AXIS["Northing",NORTH],
+    // AUTHORITY["EPSG","26710"]]
   default:
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown EPSG code '%d' in PROJ.4 string '%s'",
                                   (int)epsg, proj4_string.c_str());
