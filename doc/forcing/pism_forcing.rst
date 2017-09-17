@@ -221,7 +221,10 @@ Examples: Antarctic paleo-climate runs
               :var:`delta_T`,
               :var:`delta_SL`
 :|options|: :opt:`-surface given,delta_T -surface_delta_T_file delta_T.nc -ocean constant,delta_SL -ocean_delta_SL_file delta_SL.nc`
-:|seealso|: See also ``-surface given``: \ref{sec-surface-given}, ``delta_T``: \ref{sec-surface-delta-T}, ``-ocean constant``: \ref{sec-ocean-constant}, ``delta_SL``: \ref{sec-delta-sea-level}
+:|seealso|: See also `Surface given: Reading top-surface boundary conditions from a file`_,
+            `Surface delta_T: scalar temperature offsets`_,
+            `Ocean constant: constant in time and space`_
+            `Ocean delta_SL: scalar sea level offsets`_
 
 Testing if forcing data is used correctly
 ------------------------------------------
@@ -608,8 +611,8 @@ It takes the following options:
 
 See also to ``-atmosphere ...,anomaly`` (section \ref{sec-atmosphere-anomaly}), which is similar, but applies anomalies at the atmosphere level.
 
-Surface cache: Caching modifier
-+++++++++++++++++++++++++++++++
+Surface cache: the caching modifier
++++++++++++++++++++++++++++++++++++
 
 :|options|: ``-surface ...,cache``
 :|implementation|: ``PSCache``
@@ -622,7 +625,7 @@ It takes the following options:
 
 - :opt:`surface_cache_update_interval` (*years*) Specifies the minimum interval between updates. PISM may take longer time-steps if the adaptive scheme allows it, though.
 
-See also section \ref{sec-ocean-cache}.
+See also section `Ocean cache: the caching modifier`_.
 
 Atmosphere model components
 ---------------------------
@@ -639,8 +642,8 @@ Atmosphere given: Reading boundary conditions from a file
 Command-line options:
 
 - :opt:`atmosphere_given_file` prescribes an input file
-- :opt:`atmosphere_given_period` (*years*) makes PISM interpret data in ``-atmosphere_given_file`` as periodic. See section \ref{sec-periodic-forcing}.
-- :opt:`atmosphere_given_reference_year` sets the reference model year; see section \ref{sec-periodic-forcing}.
+- :opt:`atmosphere_given_period` (*years*) makes PISM interpret data in ``-atmosphere_given_file`` as periodic. See section `Periodic climate data`_.
+- :opt:`atmosphere_given_reference_year` sets the reference model year; see section `Periodic climate data`_.
 
 A file ``foo.nc`` used with ``-atmosphere given -atmosphere_given_file foo.nc`` should contain several records; the :var:`time` variable should describe what model time these records correspond to.
 
@@ -760,7 +763,7 @@ Atmosphere paleo_precip: precipitation correction using scalar temperature offse
 :|variables|: :var:`delta_T` [degrees Kelvin]
 :|implementation|: ``PA_paleo_precip``
 
-This modifier implements the SeaRISE-Greenland formula for paleo-precipitation correction from present; a 7.3\% change of precipitation rate for every one degree Celsius of air temperature change [Huybrechts02]_. See `SeaRISE Greenland model initialization <SeaRISE-Greenland_>`_ for details. The input file should contain air temperature offsets in the format used by ``-atmosphere ...,delta_T`` modifier, see section `Modifier: Scalar temperature offsets`_.
+This modifier implements the SeaRISE-Greenland formula for a precipitation correction from present; a 7.3\% change of precipitation rate for every one degree Celsius of air temperature change [Huybrechts02]_. See `SeaRISE Greenland model initialization <SeaRISE-Greenland_>`_ for details. The input file should contain air temperature offsets in the format used by ``-atmosphere ...,delta_T`` modifier, see section `Modifier: Scalar temperature offsets`_.
 
 It takes the following command-line options.
 
@@ -919,8 +922,8 @@ It takes the following command-line options:
 - :opt:`ocean_delta_T_reference_year` specifies the reference date; see section `Periodic climate data`_.
 
 
-Modifier: Scalar sub-shelf mass flux offsets
-++++++++++++++++++++++++++++++++++++++++++++
+Ocean delta_SMB: scalar sub-shelf mass flux offsets
++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 :|options|: ``-ocean ...,delta_SMB``
@@ -935,8 +938,8 @@ It takes the following command-line options:
 - :opt:`ocean_delta_SMB_reference_year` specifies the reference date; see section `Periodic climate data`_.
 
 
-Modifier: Scalar sub-shelf mass flux fraction offsets
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
+Ocean frac_SMB: scalar sub-shelf mass flux fraction offsets
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 :|options|: ``-ocean ...,frac_SMB``
@@ -950,8 +953,8 @@ It takes the following command-line options:
 - :opt:`ocean_frac_SMB_period` specifies the length of the period of the forcing data, in model years; see section `Periodic climate data`_.
 - :opt:`ocean_frac_SMB_reference_year` specifies the reference date; see section `Periodic climate data`_.
 
-Modifier: Scalar melange back pressure fraction
-+++++++++++++++++++++++++++++++++++++++++++++++
+Ocean frac_MBP: scalar melange back pressure fraction
++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 :|options|: :opt:`-ocean ...,frac_MBP`
@@ -967,8 +970,8 @@ This modifier takes the following command-line options:
 - :opt:`ocean_frac_MBP_period` specifies the length of the period of the forcing data, in model years; see section `Periodic climate data`_.
 - :opt:`ocean_frac_MBP_reference_year` specifies the reference date; see section `Periodic climate data`_.
 
-Modifier: Caching
-+++++++++++++++++
+Ocean cache: the caching modifier
++++++++++++++++++++++++++++++++++
 
 :|options|: :opt:`-ocean ...,cache`
 :|implementation|: ``POCache``
