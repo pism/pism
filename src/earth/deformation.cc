@@ -422,7 +422,13 @@ void BedDeformLC::step(double dt_seconds, Vec H) {
   update_displacement(m_Uv, m_Ue, m_U);
 }
 
-void BedDeformLC::compute_elastic_response(Vec H, Vec dE){
+/*!
+ * Compute elastic response to the load H
+ *
+ * @param[in] H load thickness (ice equivalent meters)
+ * @param[out] dE elastic plate displacement
+ */
+void BedDeformLC::compute_elastic_response(Vec H, Vec dE) {
 
   conv2_same(H, m_Mx, m_My, m_load_response_matrix, m_Nxge, m_Nyge, dE);
 
