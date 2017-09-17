@@ -10,12 +10,10 @@ This document describes how to download the PISM source code and install PISM an
 
 http://www.pism-docs.org
 
-The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g. Ubuntu_): Start by following subsection `Installing prerequisites using a Debian package manager <debian_>`_, then `Building PETSc <build-petsc_>`_, then `Building PISM <build-pism_>`_ to install PISM itself.
+The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g. Ubuntu_): Start by following subsection `Installing prerequisites from Debian packages`_, then `Building PETSc`_, then `Building PISM`_ to install PISM itself.
 
 Libraries and programs needed by PISM
 =====================================
-
-.. _required:
 
 This table lists required dependencies for PISM alphabetically.
 
@@ -29,7 +27,7 @@ This table lists required dependencies for PISM alphabetically.
    PETSc_ [1]_, version ≥ 3.5
    UDUNITS_,    any recent version
 
-Before installing these "by hand", check the `Debian <debian_>`_ and `Mac OS X <macos_>`_ sections below for specific how-to. In particular, if multiple MPI implementations (e.g. MPICH and Open-MPI) are installed then PETSc can under some situations "get confused" and throw MPI-related errors. Even package systems have been known to allow this confusion.
+Before installing these "by hand", check sections `Installing prerequisites from Debian packages`_ and `Installing prerequisites using MacPorts on Mac OS X`_ for specific how-to. In particular, if multiple MPI implementations (e.g. MPICH and Open-MPI) are installed then PETSc can under some situations "get confused" and throw MPI-related errors. Even package systems have been known to allow this confusion.
 
 Optional libraries listed below are needed for certain PISM features, namely cell-area correction and parallel I/O. These libraries are recommended, but not strictly required:
 
@@ -52,14 +50,12 @@ The following Python packages are needed to do all the examples in the *User’s
    netcdf4-python_, used in *most* scripts
 
 Installation Cookbook
-======================
+=====================
 
-Installing PISM requires getting its `prerequisites <required_>`_ and then `building PISM itself <build-pism_>`_. Sections below cover some cases; please `e-mail us <pism-email_>`_ if you need help.
+Installing PISM requires getting its `prerequisites <Libraries and programs needed by PISM_>`_ and then `building PISM itself <Building PISM_>`_. Sections below cover some cases; please `e-mail us <pism-email_>`_ if you need help.
 
 Installing prerequisites from Debian packages
-----------------------------------------------
-
-.. _debian:
+---------------------------------------------
 
 You should be able to use your package manager to get the prerequisites
 for PISM. Install the following packages using ``apt-get`` or
@@ -93,7 +89,7 @@ requirements for building or running PISM.
 
 You may be able to install these by running
 
-::
+.. code::
 
    sudo apt-get install cmake libfftw3-dev g++ libgsl0-dev netcdf-bin \
                         libnetcdf-dev libudunits2-dev cdo cmake-curses-gui \
@@ -103,12 +99,10 @@ You may be able to install these by running
 
 (You may need to change this command to match your package system.)
 
-Once done, see `Building PETSc <build-petsc_>`_ to install PETSc from source and then `Building PISM <build-pism_>`_ for building PISM itself.
+Once done, see `Building PETSc`_ to install PETSc from source and then `Building PISM`_ for building PISM itself.
 
 Installing prerequisites using MacPorts on Mac OS X
-----------------------------------------------------
-
-.. _macos:
+---------------------------------------------------
 
 Follow these steps to install PISM's prerequisites on the Mac OS X
 operating system.
@@ -131,18 +125,18 @@ operating system.
 
       sudo port install git cmake fftw-3 gsl mpich-default netcdf udunits2 libproj4 ncview
 
-#. At this point, all the PISM prerequisites except PETSc are installed. Follow instructions in `Building PETSc <build-petsc_>`_ to install it.
+#. At this point, all the PISM prerequisites except PETSc are installed. Follow instructions in `Building PETSc`_ to install it.
 
-#. Now you can build PISM as described in section `Building PISM <build-pism_>`_.
+#. Now you can build PISM as described in section `Building PISM`_.
 
 Installing prerequisites from sources
---------------------------------------
+-------------------------------------
 
 From now on, this manual assumes the use of the Bash_ shell.
 
 #. You will need Python_ and Git_ installed. To use the (recommended) graphical output of PISM you will need an `X Window server <X_>`_.
 
-#. Generally the "header files" for its prerequisite libraries are required for building PISM. (This means that the "developer’s versions" of the libraries are needed if the libraries are downloaded from package repositories like Debian's; see the `prerequisite list <required_>`_.)
+#. Generally the "header files" for its prerequisite libraries are required for building PISM. (This means that the "developer’s versions" of the libraries are needed if the libraries are downloaded from package repositories like Debian's; see the `prerequisite list <Libraries and programs needed by PISM_>`_.)
 
 #. PISM uses `NetCDF <NetCDF_>`_ as an input and output file format. If it is not already present, install it using the instructions at the web-page or using a package management system.
 
@@ -150,14 +144,14 @@ From now on, this manual assumes the use of the Bash_ shell.
 
 #. PISM uses the `FFTW library <FFTW_>`_ for the deformation of the solid earth (bed) under ice loads. Install FFTW version 3.1 or later, or check that it is installed already.
 
-#. You will need a version of `MPI <MPI_>`_. Your system may have an existing MPI installation, in which case it should probably be used when `building PETSc <build-petsc_>`_. The goal is to have the PETSc installation use the same version of MPI which is called by the ``mpiexec`` or ``mpirun`` executable.
+#. You will need a version of `MPI <MPI_>`_. Your system may have an existing MPI installation, in which case it should probably be used when `building PETSc <Building PETSc_>`_. The goal is to have the PETSc installation use the same version of MPI which is called by the ``mpiexec`` or ``mpirun`` executable.
 
    If you had to install an MPI library "by hand" you will want to add
    the MPI ``bin`` directory to your path so that you can run parallel
    programs using the ``mpiexec`` or ``mpirun`` command. For example,
    you can add it with the statement
 
-   ::
+   .. code:: bash
 
       export PATH=/home/user/mympi/bin:$PATH
 
@@ -172,13 +166,11 @@ From now on, this manual assumes the use of the Bash_ shell.
 Building PETSc
 --------------
 
-.. _build-petsc:
-
 PISM is built on top of PETSc_, which is actively developed and an up-to-date PETSc distribution is unlikely to be available in package repositories. Download the PETSc source by grabbing the current gzipped tarball at:
 
 http://www.mcs.anl.gov/petsc/download/index.html
 
-(See `PISM's prerequisite list <required_>`_ for the minimum supported PETSc version.) The "lite" form of the tarball is fine if you are willing to depend on an Internet connection for accessing PETSc documentation.
+(See `PISM's prerequisite list <Libraries and programs needed by PISM_>`_ for the minimum supported PETSc version.) The "lite" form of the tarball is fine if you are willing to depend on an Internet connection for accessing PETSc documentation.
 
 You should configure and build PETSc as described on the PETSc installation page, but it might be best to read the following comments on the PETSc configure and build process first:
 
@@ -209,9 +201,7 @@ You should configure and build PETSc as described on the PETSc installation page
 #. After ``configure.py`` finishes, you will need to ``make all test`` in the PETSc directory and watch the result. If the X Windows system is functional some example viewers will appear; as noted you will need the X header files for this to work.
 
 Building PISM
---------------
-
-.. _build-pism:
+-------------
 
 At this point you have configured the environment which PISM needs.
 
@@ -292,7 +282,7 @@ You are ready to build PISM itself, which is a much quicker procedure, as follow
 
       export PATH=~/pism/bin:$PATH
 
-#. Now see section `Quick tests of the installation <quick-test_>`_ or the *Getting Started* section of the *User’s Manual* to continue.
+#. Now see section `Quick tests of the installation`_ or the *Getting Started* section of the *User’s Manual* to continue.
 
 Common build problems and solutions
 -----------------------------------
@@ -322,8 +312,6 @@ Here are some issues we know about.
 Quick tests of the installation
 ===============================
 
-.. _quick-test:
-
 Once you’re done with the installation, a few tests can confirm that PISM is functioning correctly.
 
 #. Try a MPI four process verification run:
@@ -338,13 +326,13 @@ Once you’re done with the installation, a few tests can confirm that PISM is f
 
 #. Try an EISMINT II run using the PETSc viewers (under the X window system):
 
-   ::
+   .. code::
 
       pisms -y 5000 -view thk,temppabase,velsurf_mag
 
    When using such viewers and ``mpiexec`` the additional final option ``-display :0`` is sometimes required to enable MPI to use X, like this:
 
-   ::
+   .. code::
 
        mpiexec -n 2 pisms -y 5000 -view thk,temppabase,velsurf_mag -display :0
 
@@ -414,7 +402,7 @@ Sphinx_ can be installed using ``apt-get`` or MacPorts_; see the website for mor
 
 The bindings documentation also requires the Sphinx extension called ``sphinxcontrib.bibtex``, which may come with some Sphinx packages (but not with Debian packages at this time). Without it you will see this error when you try to build the bindings documentation:
 
-::
+.. code::
 
    Extension error:
    Could not import extension sphinxcontrib.bibtex (exception: No module named bibtex)
