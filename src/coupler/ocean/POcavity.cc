@@ -151,6 +151,11 @@ Cavity::Cavity(IceGrid::ConstPtr g)
                     "", "");
   m_variables.push_back(&cbasins);
 
+  // mask to identify ice shelves
+  shelf_mask.create(m_grid, "shelf_mask", WITH_GHOSTS);
+  shelf_mask.set_attrs("model_state", "mask displaying ice shelves","", "");
+  m_variables.push_back(&shelf_mask);
+
   // mask to identify the ocean boxes
   ocean_box_mask.create(m_grid, "ocean_box_mask", WITH_GHOSTS);
   ocean_box_mask.set_attrs("model_state", "mask displaying ocean box model grid","", "");
@@ -297,6 +302,7 @@ void Cavity::melange_back_pressure_fraction_impl(IceModelVec2S &result) const {
 void Cavity::define_model_state_impl(const PIO &output) const {
   
   cbasins.define(output);
+  shelf_mask.define(output);
   ocean_box_mask.define(output);
   icerise_mask.define(output);
   ocean_contshelf_mask.define(output);
@@ -319,6 +325,7 @@ void Cavity::define_model_state_impl(const PIO &output) const {
 void Cavity::write_model_state_impl(const PIO &output) const {
   
   cbasins.write(output);
+  shelf_mask.write(output);
   ocean_box_mask.write(output);
   icerise_mask.write(output);
   ocean_contshelf_mask.write(output);
@@ -417,6 +424,7 @@ void Cavity::update_impl(double my_t, double my_dt) {
     identifyMASK(icerise_mask,"icerises");}
   identifyMASK(ocean_mask,"ocean");
   identifyMASK(lake_mask,"lakes");
+  identify_shelf_mask();
   round_basins();
   compute_distances();
   identify_ocean_box_mask(cc);
@@ -602,6 +610,192 @@ void Cavity::identifyMASK(IceModelVec2S &inputmask, std::string masktype) {
   }
 
 }
+
+
+
+//! Create mask that indicates indicidual ice shelves
+
+// FIXME, this is ugly code, would be nice to make a breadth/depth first search here
+void Cavity::identify_shelf_mask() {
+
+  m_log->message(5, "starting identify_shelf_mask routine \n");
+
+  const IceModelVec2CellType &m_mask = *m_grid->variables().get_2d_cell_type("mask");
+
+  IceModelVec::AccessList list;
+  list.add(shelf_mask);
+  list.add(m_mask);
+  list.add(lake_mask);
+  if (exicerises_set) { list.add(icerise_mask); list.add(ocean_mask); }
+
+
+  shelf_mask.set(0);
+
+  std::vector<double> labels_counter (Mx*My,0);// labels_couter[i] = number of ice shelf cells with the number i, at maximum each cells has a different counter 
+  std::vector<double> labels_counter_global (Mx*My,0);// labels_couter[i] = number of ice shelf cells with the number i, at maximum each cells has a different counter 
+
+
+  double global_continue_loop = 1;
+  double local_continue_loop  = 0;
+
+  // label all shelf cells:
+  while( global_continue_loop !=0 ) { 
+    m_log->message(5, "starting while loop \n");
+    local_continue_loop = 0;
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      bool condition;
+      if (exicerises_set) { // either floating or an ice rise..
+        condition = ( (m_mask(i,j)==maskfloating  && lake_mask(i,j)!=1) || icerise_mask(i,j)==imask_exclude );
+      }
+      else {
+        condition = (m_mask(i,j)==maskfloating && lake_mask(i,j)!=1);
+      }
+
+      if (condition){
+        
+        if (shelf_mask(i,j)==0){ // if not labeled yet, set to the minimum label of any neighbor
+          
+          if (shelf_mask(i-1,j)>0 && (shelf_mask(i+1,j)>0 && shelf_mask(i+1,j)>=shelf_mask(i-1,j) || shelf_mask(i+1,j)==0) && (shelf_mask(i,j-1)>0 && shelf_mask(i,j-1)>=shelf_mask(i-1,j) || shelf_mask(i,j-1)==0) && (shelf_mask(i,j+1)>0 && shelf_mask(i,j+1)>=shelf_mask(i-1,j) || shelf_mask(i,j+1)==0)){
+            shelf_mask(i,j) = shelf_mask(i-1,j);
+            labels_counter[static_cast<int>(shelf_mask(i-1,j))]++;
+            local_continue_loop = 1;
+          }
+          if (shelf_mask(i+1,j)>0 && (shelf_mask(i-1,j)>0 && shelf_mask(i-1,j)>shelf_mask(i+1,j) || shelf_mask(i-1,j)==0) && (shelf_mask(i,j-1)>0 && shelf_mask(i,j-1)>=shelf_mask(i+1,j) || shelf_mask(i,j-1)==0) && (shelf_mask(i,j+1)>0 && shelf_mask(i,j+1)>=shelf_mask(i+1,j) || shelf_mask(i,j+1)==0) ){
+            shelf_mask(i,j) = shelf_mask(i+1,j);
+            labels_counter[static_cast<int>(shelf_mask(i+1,j))]++;
+            local_continue_loop = 1;
+          }
+          if (shelf_mask(i,j-1)>0 && (shelf_mask(i-1,j)>0 && shelf_mask(i-1,j)>shelf_mask(i,j-1) || shelf_mask(i-1,j)==0) && (shelf_mask(i+1,j)>0 && shelf_mask(i+1,j)>shelf_mask(i,j-1) || shelf_mask(i+1,j)==0) && (shelf_mask(i,j+1)>0 && shelf_mask(i,j+1)>=shelf_mask(i,j-1) || shelf_mask(i,j+1)==0)){
+            shelf_mask(i,j) = shelf_mask(i,j-1);
+            labels_counter[static_cast<int>(shelf_mask(i,j-1))]++;
+            local_continue_loop = 1;
+          }
+          if (shelf_mask(i,j+1)>0 && (shelf_mask(i-1,j)>0 && shelf_mask(i-1,j)>shelf_mask(i,j+1) || shelf_mask(i-1,j)==0) && (shelf_mask(i+1,j)>0 && shelf_mask(i+1,j)>shelf_mask(i,j+1) || shelf_mask(i+1,j)==0) && (shelf_mask(i,j-1)>0 && shelf_mask(i,j-1)>shelf_mask(i,j+1) || shelf_mask(i,j-1)==0)){
+            shelf_mask(i,j) = shelf_mask(i,j+1);
+            labels_counter[static_cast<int>(shelf_mask(i,j+1))]++;
+            local_continue_loop = 1;
+          }
+          if (shelf_mask(i-1,j)==0 && shelf_mask(i+1,j)==0 && shelf_mask(i,j-1)==0 && shelf_mask(i,j+1)==0 ) {
+            shelf_mask(i,j) = Mx*i + j; //just make sure that each shelf cell is initialized to a different value
+            labels_counter[static_cast<int>(shelf_mask(i,j))]++;
+            local_continue_loop = 1;
+          }
+        } else { // if there is a neighbor with label smaller than (i,j)
+          
+          if ( shelf_mask(i-1,j)>0 && shelf_mask(i-1,j)<shelf_mask(i,j) ){
+            labels_counter[static_cast<int>(shelf_mask(i,j))]--;
+            shelf_mask(i,j) = shelf_mask(i-1,j);
+            labels_counter[static_cast<int>(shelf_mask(i-1,j))]++;
+            local_continue_loop = 1;
+          }          
+          if ( shelf_mask(i+1,j)>0 && shelf_mask(i+1,j)<shelf_mask(i,j) ){
+            labels_counter[static_cast<int>(shelf_mask(i,j))]--;
+            shelf_mask(i,j) = shelf_mask(i+1,j);
+            labels_counter[static_cast<int>(shelf_mask(i+1,j))]++;
+            local_continue_loop = 1;
+          } 
+          if ( shelf_mask(i,j-1)>0 && shelf_mask(i,j-1)<shelf_mask(i,j) ){
+            labels_counter[static_cast<int>(shelf_mask(i,j))]--;
+            shelf_mask(i,j) = shelf_mask(i,j-1);
+            labels_counter[static_cast<int>(shelf_mask(i,j-1))]++;
+            local_continue_loop = 1;
+          } 
+          if ( shelf_mask(i,j+1)>0 && shelf_mask(i,j+1)<shelf_mask(i,j) ){
+            labels_counter[static_cast<int>(shelf_mask(i,j))]--;
+            shelf_mask(i,j) = shelf_mask(i,j+1);
+            labels_counter[static_cast<int>(shelf_mask(i,j+1))]++;
+            local_continue_loop = 1;
+          } 
+          // full eight neigbors, also valid above, should not make a difference...
+          if ( shelf_mask(i-1,j-1)>0 && shelf_mask(i-1,j-1)<shelf_mask(i,j) ){
+            labels_counter[static_cast<int>(shelf_mask(i,j))]--;
+            shelf_mask(i,j) = shelf_mask(i-1,j-1);
+            labels_counter[static_cast<int>(shelf_mask(i-1,j-1))]++;
+            local_continue_loop = 1;
+          } 
+          if ( shelf_mask(i-1,j+1)>0 && shelf_mask(i-1,j+1)<shelf_mask(i,j) ){
+            labels_counter[static_cast<int>(shelf_mask(i,j))]--;
+            shelf_mask(i,j) = shelf_mask(i-1,j+1);
+            labels_counter[static_cast<int>(shelf_mask(i-1,j+1))]++;
+            local_continue_loop = 1;
+          } 
+          if ( shelf_mask(i+1,j-1)>0 && shelf_mask(i+1,j-1)<shelf_mask(i,j) ){
+            labels_counter[static_cast<int>(shelf_mask(i,j))]--;
+            shelf_mask(i,j) = shelf_mask(i+1,j-1);
+            labels_counter[static_cast<int>(shelf_mask(i+1,j-1))]++;
+            local_continue_loop = 1;
+          } 
+          if ( shelf_mask(i+1,j+1)>0 && shelf_mask(i+1,j+1)<shelf_mask(i,j) ){
+            labels_counter[static_cast<int>(shelf_mask(i,j))]--;
+            shelf_mask(i,j) = shelf_mask(i+1,j+1);
+            labels_counter[static_cast<int>(shelf_mask(i+1,j+1))]++;
+            local_continue_loop = 1;
+          } 
+        } // check whether labeled or neighboring a cell with smaller label
+      } // if cell of interest  
+    } // walk trough grid
+    
+    m_log->message(5, "end of while loop, ghost update \n");
+    shelf_mask.update_ghosts();
+    global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
+
+  } // while set shelf_cell_labels
+  
+  
+  for (int k=0;k<Mx*My;k++){ labels_counter_global[k] = GlobalSum(m_grid->com, labels_counter[k]);}
+  
+  // remove non-existing labels
+  double new_label_current = 1;
+  std::vector<double> new_labels (Mx*My,0);// labels_couter[i] = number of ice shelf cells with the number i, at maximum each cells has a different counter 
+  //m_log->message(5, "labels_counter[1]=%f, [10]=%f, [37]=%f \n", labels_counter_global[1], labels_counter_global[10], labels_counter_global[37]);
+  
+  for (int k=0;k<Mx*My;k++){
+    if (labels_counter_global[k] != 0){
+      new_labels[k] = new_label_current;
+      new_label_current++;
+    } // no else case, skip 
+  }
+  //m_log->message(5, "newlabels[1]=%f, [10]=%f, [37]=%f \n", new_labels[1], new_labels[10], new_labels[37]);
+  
+  // set the new shelf mask labels
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    int label = static_cast<int>(shelf_mask(i,j));   
+    shelf_mask(i,j) = new_labels[label];
+  }
+/*  // NOTE: This was the try to use a depth-search to identify the connected components, does not work this way... 
+  // NOTE: This does not work since accessing the physical neighbors of a grid point is not possible...
+  // using own points instead (i,j) will probably be problematic with parallel computing...
+   for (Points p(*m_grid); p; p.next()) { //FIXME correct? or do we need PointsWithGhosts?
+    const int i = p.i(), j = p.j();
+    // if current cell is floating and not labeled...
+    if (m_mask(i,j) == maskfloating && shelf_mask(i,j)==0){
+      m_log->message(5, "starting a depth-first search... \n");
+      std::vector<Points> stack; // create a stack for the queue
+      stack.push_back(p); // add current grid point to the stack
+      while (!stack.empty()) { // as long as the stack is non-empty
+        Points q = stack.back(); // get the last element and
+        stack.pop_back(); // remove the last element on the stack
+        const int k = q.i(), l = q.j(); // get the coordinates of q 
+        if (m_mask(k,l) == maskfloating && shelf_mask(k,l)==0){
+          shelf_mask(k,l) = label_current; // label as current
+          // all all neigbors that are floating and not labeled to the stack
+          //if (k>=1 && shelf_mask(k-1,l)==0 && m_mask(k-1,l)==maskfloating){
+          Points q_new;
+          q_new.i = k-1; 
+          q_new.j = l;  
+          stack.push_back(q_new); 
+        }
+      }
+      label_current++;
+    }
+  }
+*/
+}
+
 
 
 //! Compute temperature and salinity input from ocean data by averaging.
