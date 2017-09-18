@@ -793,7 +793,7 @@ The ``lapse_rate`` modifier allows for correcting air temperature and precipitat
 
 
 Atmosphere anomaly: using climate data anomalies
-+++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: :opt:`-atmosphere ...,anomaly`
 :|variables|: :var:`air_temp_anomaly`,
