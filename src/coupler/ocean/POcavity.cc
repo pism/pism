@@ -375,6 +375,7 @@ void Cavity::initBasinsOptions(const Constants &cc) {
   Soc_box0_vec.resize(numberOfBasins);
 
   counter_boxes.resize(numberOfBasins, std::vector<double>(2,0));
+  counter_boxes_new.resize(numberOfShelves, std::vector<double>(2,0));
   mean_salinity_boundary_vector.resize(numberOfBasins);
   mean_temperature_boundary_vector.resize(numberOfBasins);
   mean_overturning_box1_vector.resize(numberOfBasins);
@@ -1168,6 +1169,7 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
 
   // Compute the number of cells per box and basin and save to counter_boxes.
   const int nBoxes = numberOfBoxes+2;
+  //FIXME remove the flllowing and rename '_new' to without '_new'
   std::vector<std::vector<int> > lcounter_boxes(numberOfBasins, std::vector<int>(nBoxes));
 
   for (int basin_id=0;basin_id<numberOfBasins;basin_id++){
@@ -1191,7 +1193,38 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
       counter_boxes[basin_id][l] = GlobalSum(m_grid->com, lcounter_boxes[basin_id][l]);
     }
   }
+  //FIXME end of delte and rename then below:
 
+  // Compute the number of cells per box and shelf and save to counter_boxes_new.
+  counter_boxes_new.resize(numberOfShelves, std::vector<double>(2,0));
+  std::vector<std::vector<int> > lcounter_boxes_new(numberOfShelves, std::vector<int>(nBoxes));
+
+  for (int shelf_id=0;shelf_id<numberOfShelves;shelf_id++){
+    for (int l=0;l<nBoxes;l++){ 
+      lcounter_boxes_new[shelf_id][l]=0;
+    }
+  }
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    int box_id = static_cast<int>(round(ocean_box_mask(i,j)));
+    if (box_id > 0){ // floating
+      int shelf_id = shelf_mask(i,j);
+      lcounter_boxes_new[shelf_id][box_id]++;
+    }
+  }
+
+  for (int shelf_id=0;shelf_id<numberOfShelves;shelf_id++){
+    counter_boxes_new[shelf_id].resize(nBoxes);
+    for (int l=0;l<nBoxes;l++){
+      counter_boxes_new[shelf_id][l] = GlobalSum(m_grid->com, lcounter_boxes_new[shelf_id][l]);
+    }
+  }
+
+  //if (numberOfShelves>28){
+  //  m_log->message(5, "counter boxes new [FRIS], box1=%f, box2=%f, box3=%f, box4=%f, box5=%f \n", counter_boxes_new[27][1], counter_boxes_new[27][2], counter_boxes_new[27][3], counter_boxes_new[27][4], counter_boxes_new[27][5]);
+  //}
+  
 }
 
 

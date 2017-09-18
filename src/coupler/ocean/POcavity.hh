@@ -123,7 +123,7 @@ private:
                       mean_temperature_boundary_vector, // temperature input for box i>1 per basin
                       mean_overturning_box1_vector; // mean overturning, computed in box 1, as input for box i>1 per basin
 
-  std::vector< std::vector<double> >  counter_boxes; // matrix containing the number of shelf cells per basin and box
+  std::vector< std::vector<double> >  counter_boxes, counter_boxes_new; // matrix containing the number of shelf cells per basin and box
                                                      // used for area calculation
 
   // standard values are defined in Constants
