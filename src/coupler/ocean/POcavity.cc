@@ -239,6 +239,7 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   // in Cavity::init_impl(). This number is hard-wired, so I don't think it matters that it did not
   // come from Cavity::Constants.
   numberOfBasins = 20;
+  numberOfShelves = numberOfBasins; //FIXME necessary here?
 }
 
 Cavity::~Cavity() {
@@ -348,9 +349,9 @@ void Cavity::write_model_state_impl(const PIO &output) const {
 
 //! initialize SIMPEL model variables, can be user-defined.
 
-//! numberOfBasins: number of drainage basins for SIMPEL model
+//! numberOfBasins: number of drainage basins for PICO model
 //!                 FIXME: we should infer that from the read-in basin mask
-//! numberOfBoxes: maximum number of ocean boxes for SIMPEL model
+//! numberOfBoxes: maximum number of ocean boxes for PICO model
 //!                for smaller shelves, the model may use less.
 //! gamma_T: turbulent heat exchange coefficient for ice-ocean boundary layer
 //! overturning_coeff: coefficient that scales strength of overturning circulation
@@ -640,7 +641,7 @@ void Cavity::identify_shelf_mask() {
 
   // label all shelf cells:
   while( global_continue_loop !=0 ) { 
-    m_log->message(5, "starting while loop \n");
+    //m_log->message(5, "starting while loop \n");
     local_continue_loop = 0;
 
     for (Points p(*m_grid); p; p.next()) {
@@ -738,7 +739,7 @@ void Cavity::identify_shelf_mask() {
       } // if cell of interest  
     } // walk trough grid
     
-    m_log->message(5, "end of while loop, ghost update \n");
+    //m_log->message(5, "end of while loop, ghost update \n");
     shelf_mask.update_ghosts();
     global_continue_loop = GlobalMax(m_grid->com, local_continue_loop);
 
@@ -766,6 +767,9 @@ void Cavity::identify_shelf_mask() {
     int label = static_cast<int>(shelf_mask(i,j));   
     shelf_mask(i,j) = new_labels[label];
   }
+
+  numberOfShelves = new_label_current; // total numer of shelves +1
+  m_log->message(5, "numerOfShelves=%d\n", numberOfShelves);
 /*  // NOTE: This was the try to use a depth-search to identify the connected components, does not work this way... 
   // NOTE: This does not work since accessing the physical neighbors of a grid point is not possible...
   // using own points instead (i,j) will probably be problematic with parallel computing...
@@ -1048,18 +1052,25 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
 
   m_log->message(5, "starting identify_ocean_box_mask routine\n");
 
+  m_log->message(5, "numerOfShelves=%d\n", numberOfShelves);
+
   // Find the maximal DistGL and DistIF for each basin
-  std::vector<double> max_distGL(numberOfBasins);
-  std::vector<double> max_distIF(numberOfBasins);
-  std::vector<double> lmax_distGL(numberOfBasins);
-  std::vector<double> lmax_distIF(numberOfBasins);
+  //std::vector<double> max_distGL(numberOfBasins); 
+  std::vector<double> max_distGL(numberOfShelves); 
+  //std::vector<double> max_distIF(numberOfBasins);
+  std::vector<double> max_distIF(numberOfShelves); 
+  //std::vector<double> lmax_distGL(numberOfBasins);
+  std::vector<double> lmax_distGL(numberOfShelves); 
+  //std::vector<double> lmax_distIF(numberOfBasins);
+  std::vector<double> lmax_distIF(numberOfShelves); 
 
   double lmax_distGL_ref = 0.0; 
   double max_distGL_ref = 0.0; 
 
   const IceModelVec2CellType &m_mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  for(int basin_id=0;basin_id<numberOfBasins;basin_id++){ max_distGL[basin_id]=0.0; max_distIF[basin_id]=0.0;lmax_distGL[basin_id]=0.0; lmax_distIF[basin_id]=0.0;}
+  //for(int basin_id=0;basin_id<numberOfBasins;basin_id++){ max_distGL[basin_id]=0.0; max_distIF[basin_id]=0.0;lmax_distGL[basin_id]=0.0; lmax_distIF[basin_id]=0.0;}
+  for(int shelf_id=0;shelf_id<numberOfShelves;shelf_id++){ max_distGL[shelf_id]=0.0; max_distIF[shelf_id]=0.0;lmax_distGL[shelf_id]=0.0; lmax_distIF[shelf_id]=0.0;}
 
   IceModelVec::AccessList list;
   list.add(cbasins);
@@ -1068,24 +1079,23 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   list.add(ocean_box_mask);
   list.add(lake_mask);
   list.add(m_mask);
+  list.add(shelf_mask);
 
   for (Points p(*m_grid); p; p.next()) {
   const int i = p.i(), j = p.j();
-    int basin_id = (cbasins)(i,j);
-
-    if ( DistGL(i,j)> lmax_distGL[basin_id] ) {
-      lmax_distGL[basin_id] = DistGL(i,j);
+    int shelf_id = shelf_mask(i,j);
+    if ( DistGL(i,j)> lmax_distGL[shelf_id] ) {
+      lmax_distGL[shelf_id] = DistGL(i,j);
     }
-    if ( DistIF(i,j)> lmax_distIF[basin_id] ) {
-      lmax_distIF[basin_id] = DistIF(i,j);
+    if ( DistIF(i,j)> lmax_distIF[shelf_id] ) {
+      lmax_distIF[shelf_id] = DistIF(i,j);
     }
     if (DistGL(i,j)>lmax_distGL_ref){
       lmax_distGL_ref = DistGL(i,j);
     }
   }
 
-
-  for (int l=0;l<numberOfBasins;l++){
+  for (int l=0;l<numberOfShelves;l++){
     max_distGL[l] = GlobalMax(m_grid->com, lmax_distGL[l]);
     max_distIF[l] = GlobalMax(m_grid->com, lmax_distIF[l]);
   }
@@ -1096,12 +1106,12 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
   // this is done by interpolating between nmin=1 and nmax=numberOfBoxes
   // this will be equal to numberOfBoxes for a 'large' ice shelf
 
-  std::vector<int> lnumberOfBoxes_perBasin(numberOfBasins);
+  std::vector<int> lnumberOfBoxes_perBasin(numberOfShelves); //FIXME rename! Shelves
 
   int n_min = 1; //
   double zeta = 0.5; // hard coded for now
 
-  for (int l=0;l<numberOfBasins;l++){
+  for (int l=0;l<numberOfShelves;l++){
     lnumberOfBoxes_perBasin[l] = 0;
     lnumberOfBoxes_perBasin[l] = n_min + static_cast<int>( 
     		round(pow((max_distGL[l]/max_distGL_ref), zeta) *(numberOfBoxes-n_min))); 
@@ -1119,8 +1129,8 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
     const int i = p.i(), j = p.j();
 
     if (m_mask(i,j)==maskfloating && DistGL(i,j)>0 && DistIF(i,j)>0 && ocean_box_mask(i,j)==0){
-      int basin_id = (cbasins)(i,j);
-      int n = lnumberOfBoxes_perBasin[basin_id];
+      int shelf_id = shelf_mask(i,j);
+      int n = lnumberOfBoxes_perBasin[shelf_id];
       // relative distance between grounding line and ice front
       double r = DistGL(i,j)*1.0/(DistGL(i,j)*1.0+DistIF(i,j)*1.0);
 

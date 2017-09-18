@@ -131,7 +131,7 @@ private:
   double        gamma_T, overturning_coeff,
                 continental_shelf_depth;
 
-  int      numberOfBasins, numberOfBoxes,
+  int      numberOfBasins, numberOfBoxes, numberOfShelves,
            Mx, My, dx, dy;
 };
 
