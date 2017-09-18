@@ -1197,7 +1197,7 @@ void Cavity::identify_ocean_box_mask(const Constants &cc) {
 
   // Compute the number of cells per box and shelf and save to counter_boxes_new.
   counter_boxes_new.resize(numberOfShelves, std::vector<double>(2,0));
-  std::vector<std::vector<int> > lcounter_boxes_new(numberOfShelves, std::vector<int>(nBoxes));
+  std::vector<std::vector<double> > lcounter_boxes_new(numberOfShelves, std::vector<double>(nBoxes));
 
   for (int shelf_id=0;shelf_id<numberOfShelves;shelf_id++){
     for (int l=0;l<nBoxes;l++){ 
@@ -1250,7 +1250,45 @@ void Cavity::set_ocean_input_fields(const Constants &cc) {
   list.add(Toc_box0);
   list.add(Toc);
   list.add(m_mask);
+  list.add(shelf_mask);
 
+
+  // compute for each shelf the number of cells  within each basin
+  std::vector<std::vector<double> > lcounter_shelf_cells_in_basin(numberOfShelves, std::vector<double>(numberOfBasins));
+  std::vector<std::vector<double> > counter_shelf_cells_in_basin(numberOfShelves, std::vector<double>(numberOfBasins)); 
+
+  // compute the number of all shelf cells
+  std::vector<double> lcounter_shelf_cells(numberOfShelves);  
+  std::vector<double> counter_shelf_cells(numberOfShelves);  
+
+  for (int shelf_id=0;shelf_id<numberOfShelves;shelf_id++){
+    lcounter_shelf_cells[shelf_id] =0;
+    for (int basin_id=0;basin_id<numberOfBasins;basin_id++){ 
+      lcounter_shelf_cells_in_basin[shelf_id][basin_id]=0;
+    }
+  }
+  
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    int shelf_id = shelf_mask(i,j);
+    int basin_id = (cbasins)(i,j);
+    lcounter_shelf_cells_in_basin[shelf_id][basin_id]++;  
+    lcounter_shelf_cells[shelf_id]++;
+  }
+  
+  for (int shelf_id=0;shelf_id<numberOfShelves;shelf_id++){
+    counter_shelf_cells[shelf_id] = GlobalSum(m_grid->com, lcounter_shelf_cells[shelf_id]);
+    for (int basin_id=0;basin_id<numberOfBasins;basin_id++){
+      counter_shelf_cells_in_basin[shelf_id][basin_id] = GlobalSum(m_grid->com, lcounter_shelf_cells_in_basin[shelf_id][basin_id]);
+    }
+  }
+  
+  // print one example:
+  //if (numberOfShelves>28){
+  //  m_log->message(5, "counter shelf cells in basin for shelf=FRIS, basin1=%f, basin 2=%f, all cells=%f, factor=%f\n", counter_shelf_cells_in_basin[27][1], counter_shelf_cells_in_basin[27][2], counter_shelf_cells[27], counter_shelf_cells_in_basin[27][1]/counter_shelf_cells[27] );
+  //} 
+
+  // now set temp and salinity box 0:
   double counterTpmp=0.0,
          lcounterTpmp = 0.0;
 
@@ -1259,14 +1297,24 @@ void Cavity::set_ocean_input_fields(const Constants &cc) {
 
     // make sure all temperatures are zero at the beginning of each timestep
     Toc(i,j) = 273.15; // in K 
-    Toc_box0(i,j) = 273.15;  // in K
+    Toc_box0(i,j) = 0.0;  // in K
     Soc_box0(i,j) = 0.0; // in psu
 
 
-    if (m_mask(i,j)==maskfloating){
-      int basin_id = (cbasins)(i,j);
-      Toc_box0(i,j) = Toc_box0_vec[basin_id];
-      Soc_box0(i,j) =  Soc_box0_vec[basin_id];
+    if (m_mask(i,j)==maskfloating && shelf_mask(i,j)>0){ // shelf_mask = 0 in lakes 
+      int shelf_id = shelf_mask(i,j);
+      
+      // weighted input depending on the number of shelf cells in each basin
+      for (int basin_id=1;basin_id<numberOfBasins;basin_id++){ //Note: basin_id=0 yields nan
+        //if (counter_shelf_cells_in_basin[shelf_id][basin_id]>0){
+          Toc_box0(i,j) += Toc_box0_vec[basin_id]*counter_shelf_cells_in_basin[shelf_id][basin_id]/counter_shelf_cells[shelf_id];
+          Soc_box0(i,j) += Soc_box0_vec[basin_id]*counter_shelf_cells_in_basin[shelf_id][basin_id]/counter_shelf_cells[shelf_id];
+          //m_log->message(5, "basin =%d, Toc_box_0=%f,factor=%f \n", basin_id, Toc_box0(i,j), counter_shelf_cells_in_basin[shelf_id][basin_id]/counter_shelf_cells[shelf_id] );
+      }
+      //int basin_id = (cbasins)(i,j);
+      //Toc_box0(i,j) = Toc_box0_vec[basin_id];
+      //Soc_box0(i,j) = Soc_box0_vec[basin_id];
+
 
       // pressure in dbar, 1dbar = 10000 Pa = 1e4 kg m-1 s-2
       const double pressure = cc.rhoi * cc.earth_grav * (*ice_thickness)(i,j) * 1e-4;
