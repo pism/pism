@@ -1,1062 +1,788 @@
 
-\section{Practical usage}
+.. role:: opt(code)
+   :class: option
+
+.. contents::
+
+Practical usage
+===============
 \label{sec:practical-usage}
 
-\newcommand{\allextras}{\ref{tab:three-d-diagnostics},~\ref{tab:three-d-diagnostics-vector},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~\ref{tab:two-d-diagnostics-3},~and~\ref{tab:two-d-diagnostics-vector}}
-
-\subsection{Input and output}
+Input and output
+----------------
 \label{sec:input-output}
-\optsection{Input and output}
-\optseealso{Bootstrapping}
-\optseealso{Regridding}
 
 PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table \ref{tab:input-output-options} summarizes command-line options controlling the most basic ways to input and output NetCDF files when starting and ending PISM runs.
 
-\begin{table}[ht]
-  \centering
- \begin{tabular}{lp{0.6\linewidth}}
-    \toprule
-    \textbf{Option} & \textbf{Description} \\
-    \midrule
-    \fileopt{i} & Chooses a PISM output file (NetCDF format) to initialize or restart from.  See section \ref{sec:initboot}. \\
-    \intextoption{bootstrap} & Bootstrap from the file set using \texttt{-i} using heuristics to ``fill in'' missing fields.  See section \ref{sec:initboot}. \\
-    \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa} and \texttt{vbar_ssa} velocities saved by a previous run using the \texttt{ssa} or \texttt{ssa+sia} stress balance (see section \ref{subsect:stressbalance}). \\ \midrule
-    \fileopt{o} & Chooses the output file name.  Default name is \texttt{unnamed.nc}.\\
-    \txtopt{o_size}{$\left<\text{size}\right>$} & Chooses the ``size'' of the output file to produce.  Possible sizes are \texttt{none} (\emph{no} output file at all), \texttt{small} (only variables necessary to restart PISM), \texttt{medium} (the default, includes a few diagnostic quantities), \texttt{big} (writes all the variables mentioned in Tables~\allextras), and \texttt{big_2d} writes all 2D variables but only 3D variables that are model state.  Configuration variables \texttt{output.sizes.medium}, \texttt{output.sizes.big}, and \texttt{output.sizes.big_2d} list the written variables for those sizes. \\
-    \bottomrule
- \end{tabular}
-\caption{Basic NetCDF input and output options}
-\label{tab:input-output-options}
-\end{table}
+.. list-table:: Basic NetCDF input and output options
+   :name: tab-input-output-options
+   :header-rows: 1
+   :widths: 20, 80
 
-Table \ref{tab:stdout} lists the controls on what is printed to the standard output.  Note the \texttt{-help} and \texttt{-usage} options for getting help at the command line.
+   * - Option
+     - Description
+   * - :opt:`-i`
+     - Chooses a PISM output file (NetCDF format) to initialize or restart from.  See section \ref{sec:initboot}.
+   * - :opt:`-bootstrap`
+     - Bootstrap from the file set using :opt:`-i` using heuristics to "fill in" missing fields.  See section \ref{sec:initboot}.
+   * - :opt:`-dontreadSSAvels`
+     - Turns off reading the ``ubar_ssa`` and ``vbar_ssa`` velocities saved by a previous run using the ``ssa`` or ``ssa+sia`` stress balance (see section \ref{subsect:stressbalance}).
+   * - :opt:`-o`
+     - Chooses the output file name.  Default name is ``unnamed.nc``.
+   * - :opt:`-o_size` ``size_keyword``
+     - Chooses the size of the output file to produce. Possible sizes are ``none`` (*no* output file at all), ``small`` (only variables necessary to restart PISM), ``medium`` (the default, includes a few diagnostic quantities), ``big`` (writes all the variables mentioned in Tables \allextras), and ``big_2d`` writes all 2D variables but only 3D variables that are model state. Configuration variables ``output.sizes.medium``, ``output.sizes.big``, and ``output.sizes.big_2d`` list the written variables for those sizes.
 
-\begin{table}[ht]
-  \centering
- \begin{tabular}{lp{0.7\linewidth}}
-    \toprule
-    \textbf{Option} & \textbf{Description} \\
-    \midrule 
-    \intextoption{help} &  Brief descriptions of the many PISM and PETSc options.  The run occurs as usual according to the other options.  (The option documentation does not get listed if the run didn't get started properly.)  Use with a pipe into \texttt{grep} to get usefully-filtered information on options, for example ``\texttt{pisms -help | grep cold}''. \\
-    \intextoption{info} & Gives information about PETSc operations during the run. \\
-   \intextoption{list_diagnostics}  & Prints a list of all available diagnostic outputs (time series and spatial) for the run with the given options.  Stops run after printing the list. \\
-   \intextoption{log_summary}  & At the end of the run gives a performance summary and also a synopsis of the PETSc configuration in use.\\
-   \intextoption{options_left} & At the end of the run shows an options table which will indicate if
-   a user option was not read or was misspelled.\\
-   \intextoption{usage} &   Short summary of PISM executable usage, without listing all the options, and without doing the run.\\
-   \midrule
-   \intextoption{verbose} & Increased verbosity of standard output.  Usually given with an integer level; 0,1,2,3,4,5 are allowed.  If given without argument then sets level 3, while ``\texttt{-verbose 2}'' is the default (i.e.~equivalent to no option).  At the extremes, \texttt{-verbose 0} produces no stdout at all, \texttt{-verbose 1} prints only warnings and a few high priority messages, and \texttt{-verbose 5} spews a lot of usually-undesirable stuff.  \texttt{-verbose 3} output regarding initialization may be useful.  \\
-   \midrule
-   \intextoption{version} &   Show version numbers of PETSc and PISM.\\
-   \bottomrule
-  \end{tabular}
-\caption{Options controlling PISM's standard output}
-\label{tab:stdout}
-\end{table}
+Table \ref{tab:stdout} lists the controls on what is printed to the standard output.  Note the ``-help`` and ``-usage`` options for getting help at the command line.
 
-The following sections describe more input and output options, especially related to saving quantities during a run, or adding to the ``diagnostic'' outputs of PISM.
+.. csv-table:: Options controlling PISM's standard output
+   :header: Option, Description
+   :name: tab-stdout
+   :widths: 20, 80
 
-\clearpage
+   :opt:`-help`,  "Brief descriptions of the many PISM and PETSc options. The run occurs as usual according to the other options.  (The option documentation does not get listed if the run didn't get started properly.)  Use with a pipe into ``grep`` to get usefully-filtered information on options, for example ``pisms -help | grep cold``."
+   :opt:`-info`, "Gives information about PETSc operations during the run."
+   :opt:`-list_diagnostics` , "Prints a list of all available diagnostic outputs (time series and spatial) for the run with the given options.  Stops run after printing the list."
+   :opt:`-log_summary` , "At the end of the run gives a performance summary and also a synopsis of the PETSc configuration in use."
+   :opt:`-options_left`, "At the end of the run shows an options table which will indicate if a user option was not read or was misspelled."
+   :opt:`-usage`,   "Short summary of PISM executable usage, without listing all the options, and without doing the run."
+   :opt:`-verbose`, "Increased verbosity of standard output.  Usually given with an integer level; 0,1,2,3,4,5 are allowed.  If given without argument then sets level 3, while ``-verbose 2`` is the default (i.e. equivalent to no option).  At the extremes, ``-verbose 0`` produces no stdout at all, ``-verbose 1`` prints only warnings and a few high priority messages, and ``-verbose 5`` spews a lot of usually-undesirable stuff.  ``-verbose 3`` output regarding initialization may be useful."
+   :opt:`-version`,   "Show version numbers of PETSc and PISM."
 
-\subsubsection{PISM file I/O performance}
+The following sections describe more input and output options, especially related to saving quantities during a run, or adding to the "diagnostic" outputs of PISM.
+
+PISM file I/O performance
+^^^^^^^^^^^^^^^^^^^^^^^^^
 \label{sec:pism-io-performance}
 
 When working with fine grids\footnote{For example, resolutions of 2km and higher on the whole-Greenland scale.}, the time PISM spends writing output files, spatially-varying diagnostic files, or backup files can become significant.
 
-It turns out that it is a lot faster to read and write files using the \texttt{t,y,x,z} storage order, as opposed to the more convenient (e.g.~for NetCDF tools) \texttt{t,z,y,x} order.  The reason is that PISM uses the \texttt{y,x,z} order internally,\footnote{This is not likely to change.} and therefore writing an array in a different order is an inherently-expensive operation.
+It turns out that it is a lot faster to read and write files using the ``t,y,x,z`` storage order, as opposed to the more convenient (e.g. for NetCDF tools) ``t,z,y,x`` order.  The reason is that PISM uses the ``y,x,z`` order internally,\footnote{This is not likely to change.} and therefore writing an array in a different order is an inherently-expensive operation.
 
-You can, however, choose any one of the three supported output orders using the \intextoption{o_order} option with one of \texttt{xyz}, \texttt{yxz}, and \texttt{zyx} as the argument.
+You can, however, choose any one of the three supported output orders using the :opt:`-o_order` option with one of ``xyz``, ``yxz``, and ``zyx`` as the argument.
 
-To transpose dimensions in an existing file, use the \texttt{ncpdq} (``permute dimensions quickly'') tool from the NCO (\emph{NetCDF Operators}) suite.  For example, run
-\begin{verbatim}
-$ ncpdq -a t,z,zb,y,x bad.nc good.nc
-\end{verbatim}
-%$ - match dollar signs to make emacs happy
-to turn \texttt{bad.nc} (with any inconvenient storage order) into \texttt{good.nc} using the \texttt{t,z,y,x} order.
+To transpose dimensions in an existing file, use the ``ncpdq`` ("permute dimensions quickly") tool from the NCO (*NetCDF Operators*) suite.  For example, run
 
-PISM also supports NetCDF-4 parallel I/O, which gives better performance in
-high-resolution runs and avoids NetCDF-3 file format limitations. (In a
-NetCDF-3 file a variable record cannot exceed 4 gigabytes.) Build PISM with
-parallel NetCDF-4 and use \intextoption{o_format} \texttt{netcdf4_parallel} to
-enable this code.
+.. code::
 
-In addition to \texttt{-o_format netcdf4_parallel} and \texttt{netcdf3}
-(default) modes, PISM can be built with PnetCDF for best I/O performance. The
-option \texttt{-o_format pnetcdf} turns ``on'' PnetCDF I/O code. (PnetCDF seems
-to be somewhat fragile, though, so use at your own risk.)
+   ncpdq -a t,z,zb,y,x bad.nc good.nc
 
 
-\subsection{Saving time series of scalar diagnostic quantities}
-\index{time-series}\index{PISM!saving time-series}
+to turn ``bad.nc`` (with any inconvenient storage order) into ``good.nc`` using the ``t,z,y,x`` order.
+
+PISM also supports NetCDF-4 parallel I/O, which gives better performance in high-resolution runs and avoids NetCDF-3 file format limitations. (In a NetCDF-3 file a variable record cannot exceed 4 gigabytes.) Build PISM with parallel NetCDF-4 and use :opt:`-o_format` ``netcdf4_parallel`` to enable this code.
+
+In addition to ``-o_format netcdf4_parallel`` and ``netcdf3`` (default) modes, PISM can be built with PnetCDF for best I/O performance. The option ``-o_format pnetcdf`` turns "on" PnetCDF I/O code. (PnetCDF seems to be somewhat fragile, though, so use at your own risk.)
+
+
+Saving time series of scalar diagnostic quantities
+--------------------------------------------------
+
 \label{sec:saving-time-series}
-\optsection{Saving scalar time-series}
 
-\newcommand{\alltsvars}{\ref{tab:time-series-1},~\ref{tab:time-series-2},~and~\ref{tab:time-series-3}}
 
- It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \texttt{-ts_file}, \texttt{-ts_times}, and \texttt{-ts_vars}.  For example,
-\begin{verbatim}
-$ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
-        -ts_times 0:1:1e4 -ts_vars volume_glacierized,area_glacierized_grounded
-\end{verbatim}
-%$ - match dollar signs to make emacs happy
-will run for 10000 years, saving total ice volume and grounded ice area to \texttt{time-series.nc} \emph{yearly}. See tables \ref{tab:time-series-opts} for the list of options and tables \alltsvars{} for the full list of supported time-series.
+\newcommand{\alltsvars}{\ref{tab:time-series-1}, \ref{tab:time-series-2}, and \ref{tab:time-series-3}}
 
-Note that, similarly to the snapshot-saving code (section \ref{sec:snapshots}), this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
+ It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options ``-ts_file``, ``-ts_times``, and ``-ts_vars``.  For example,
 
-Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} available
-variables, as listed in tables \alltsvars{}.  Because scalar
-time-series take minimal storage space, compared to spatially-varying data,
-this is usually a reasonable choice. Run PISM with the
-\intextoption{list_diagnostics} option to see the list of all available time-series.
+.. code::
 
-If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-ts_append}.
+   pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
+         -ts_times 0:1:1e4 -ts_vars volume_glacierized,area_glacierized_grounded
 
-PISM buffers time-series data and writes it at the end of the run, once 10000
-values are stored, or when an \texttt{-extra_file} is saved, whichever comes first. Sending an \texttt{USR1} (or
-\texttt{USR2}) signal to a PISM process flushes these buffers, making it
-possible to monitor the run. (See section \ref{subsect:signal} for more about
-PISM's signal handling.)
 
-\begin{table}[ht]
- \centering
- \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
-    \textbf{Option} & \textbf{Description} \\
-    \midrule
-    \fileopt{ts_file} & Specifies the file to save to.\\
-    \timeopt{ts_times} & Specifies times to save at as a MATLAB-style range $a:\Delta t:b$, a comma-separated list, or a keyword (\texttt{hourly}, \texttt{daily}, \texttt{monthly}, \texttt{yearly}). See section \ref{sec:saving-spat-vari}. \\
-    \listopt{ts_vars} & Comma-separated list of variables, see
-    tables~\alltsvars. Omitting this
-    option is equivalent to listing the \emph{all} variables.\\
-    \intextoption{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
-    \bottomrule
-  \end{tabular}
-\caption{Command-line options controlling saving scalar time-series}
-\label{tab:time-series-opts}
-\end{table}
+will run for 10000 years, saving total ice volume and grounded ice area to ``time-series.nc`` *yearly*. See tables \ref{tab:time-series-opts} for the list of options and tables \alltsvars{} for the full list of supported time-series.
 
-Besides the above information on usage, here are comments on the physical significance of several scalar diagnostics which appear in tables \alltsvars:\index{PISM!physical meaning of scalar diagnostics}
-\begin{itemize}
-  \item For each variable named \dots\texttt{_flux}, positive values mean ice sheet mass gain.
-  \item PISM reports ice volume, ice mass, and several other quantities for ``glacierized'' areas. These quantities do not include contributions from areas where the ice thickness is equal to or below the value of the configuration parameter \texttt{output.ice_free_thickness_standard} (in meters). Corresponding ``nonglacierized'' quantities \emph{do} include areas with a thin, ``seasonal'' ice cover.
-  \item The \texttt{sub_shelf_ice_flux} may be non-zero even if \texttt{area_glacierized_shelf} (floating ice area) is zero. This is due to the fact that during time-stepping fluxes are computed before calving is applied, and the ice area is computed \emph{after} calving. Hence ice that is calved off experiences top-surface and basal fluxes, but does not contribute to the reported area. This is a small error that approaches zero as the grid is refined. In this case \texttt{sub_shelf_ice_flux} should be added to the calving flux during post-processing.
-%FIXME \footnote{This will be fixed in a later release of PISM.}
-  \item Ice volume and area are computed and then split among floating and grounded portions: \texttt{volume_glacierized} $\mapsto$ (\texttt{volume_glacierized_shelf}, \texttt{volume_glacierized_grounded}) while \texttt{area_glacierized} $\mapsto$ (\texttt{area_glacierized_shelf},\texttt{area_glacierized_grounded}).  The volumes have units \textsl{$m^3$} and the areas have units \textsl{$m^2$}.
-  \item The thermodynamic state of the ice sheet can be assessed, in part, by the amount of cold or temperate (``\texttt{temp}'') ice.  Thus there is another splitting: \texttt{volume_glacierized} $\mapsto$ (\texttt{volume_glacierized_cold}, \texttt{volume_glacierized_temperate}) and \texttt{area_glacierized} $\mapsto$ (\texttt{area_glacierized_cold_base},\texttt{area_glacierized_temperate_base}).
-  \item If a PISM input file contains the \texttt{proj4} global attribute with a PROJ.4 string defining the projection then PISM computes corrected cell areas
-using this information, grid parameters, and the WGS84 reference ellipsoid. This yields areas and volumes with greater accuracy.
-  \item The sea-level-relevant ice volume \texttt{slvol} is the total grounded ice volume minus the amount of ice, that, in liquid form, would fill up the regions with bedrock below sea level, if this ice were removed.  That is, \texttt{slvol} is the sea level rise potential of the ice sheet at that time.  The result is reported  in sea-level equivalent, i.e.~meters of sea level rise.
-  \item Fields \texttt{max_diffusivity} and \texttt{max_hor_vel} relate to PISM time-stepping.  These quantities appear in per-time-step form in the standard output from PISM (i.e.~at default verbosity).  \texttt{max_diffusivity} determines the length of the mass continuity sub-steps for the SIA stress balance (sub-)model.  \texttt{max_hor_vel} determines the CFL-type restriction for mass continuity and conservation of energy contributions of the SSA stress balance (i.e.~sliding) velocity.
-\end{itemize}
+Note that, similarly to the snapshot-saving code (section \ref{sec:snapshots}), this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, *linearly interpolated onto requested times*.
 
-\begin{table}[ht]
-  \centering
- \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}
-    \toprule
-    \textbf{Name} & \textbf{Units} & \textbf{Description}\\
-    \midrule
-    \texttt{grounded_basal_ice_flux_cumulative} & \textsl{kg} &  cumulative total grounded basal ice flux \\
-    \texttt{discharge_flux_cumulative} & \textsl{kg} &  cumulative discharge (calving etc.) flux \\
-    \texttt{nonneg_rule_flux_cumulative} & \textsl{kg} &  cumulative \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
-    \texttt{sub_shelf_ice_flux_cumulative} & \textsl{kg} &  cumulative total sub-shelf ice flux \\
-    \texttt{surface_ice_flux_cumulative} & \textsl{kg} &  cumulative total over ice domain of top surface ice mass flux \\
-    \texttt{mass_rate_of_change_glacierized} & \textsl{kg  / s} &  rate of change of the ice mass in glacierized areas \\
-    \texttt{mass_rate_of_change_nonglacierized} & \textsl{kg  / s} &  total ice mass rate of change \\
-    \texttt{discharge_flux} & \textsl{kg  / s} &  discharge (calving and icebergs) flux \\
-    \texttt{volume_rate_of_change_glacierized} & \textsl{$m^{3}$  / s} &  rate of change of the ice volume in glacierized areas \\
-    \texttt{volume_rate_of_change_nonglacierized} & \textsl{$m^{3}$  / s} &  total ice volume rate of change \\
-    \texttt{dt} & \textsl{second} &  mass continuity time step \\
-    \texttt{grounded_basal_ice_flux} & \textsl{kg  / s} &  total, over grounded ice, of basal ice flux \\
-    \texttt{area_glacierized} & \textsl{$m^{2}$} &  total glacierized area \\
-    \texttt{area_glacierized_cold_base} & \textsl{$m^{2}$} &  glacierized area where basal ice is cold \\
-    \texttt{area_glacierized_shelf} & \textsl{$m^{2}$} &  total ice shelf area \\
-    \texttt{area_glacierized_grounded} & \textsl{$m^{2}$} &  total grounded glacierized area \\
-    \texttt{area_glacierized_temperate_base} & \textsl{$m^{2}$} &  glacierized area where basal ice is temperate \\
-    \texttt{enthalpy_glacierized} & \textsl{J} &  total ice enthalpy in glacierized areas \\
-    \texttt{enthalpy_nonglacierized} & \textsl{J} &  total ice enthalpy \\
-    \multicolumn{3}{c}{Continued in Table \ref{tab:time-series-2}}\\
-    \bottomrule
-  \end{tabular}
-\caption{Scalar time-series supported by PISM, part 1}
-\label{tab:time-series-1}
-\end{table}
+Omitting the ``-ts_vars`` option makes PISM save *all* available variables, as listed in tables \alltsvars{}. Because scalar time-series take minimal storage space, compared to spatially-varying data, this is usually a reasonable choice. Run PISM with the :opt:`-list_diagnostics` option to see the list of all available time-series.
 
-\begin{table}[ht]
-  \centering
- \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}
-    \toprule
-    \textbf{Name} & \textbf{Units} & \textbf{Description}\\
-    \midrule
-    \multicolumn{3}{c}{Continued from Table \ref{tab:time-series-1}}\\
-    \texttt{mass_glacierized} & \textsl{kg} &  total mass of the ice in glacierized areas \\
-    \texttt{mass_nonglacierized} & \textsl{kg} &  total ice mass \\
-    \texttt{volume_glacierized} & \textsl{$m^{3}$} &  total ice volume in glacierized areas \\
-    \texttt{volume_nonglacierized} & \textsl{$m^{3}$} &  total ice volume, including seasonal cover \\
-    \texttt{volume_glacierized_cold} & \textsl{$m^{3}$} &  volume of cold ice in glacierized areas \\
-    \texttt{volume_nonglacierized_cold} & \textsl{$m^{3}$} &  total volume of cold ice \\
-    \texttt{volume_glacierized_shelf} & \textsl{$m^{3}$} &  total volume of ice shelves \\
-    \texttt{volume_glacierized_grounded} & \textsl{$m^{3}$} &  total volume of grounded glaciers \\
-    \texttt{volume_glacierized_temperate} & \textsl{$m^{3}$} &  total volume of temperate ice in glacierized areas \\
-    \texttt{volume_nonglacierized_temperate} & \textsl{$m^{3}$} &  total volume of temperate ice \\
-    \texttt{max_diffusivity} & \textsl{$m^{2}$  / s} &  maximum diffusivity \\
-    \texttt{max_hor_vel} & \textsl{m  / s} &  maximum (absolute) component of horizontal ice velocity over the grid \\
-    \texttt{nonneg_rule_flux} & \textsl{kg  / s} &  \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
-    \texttt{slvol} & \textsl{m} &  total sea-level relevant ice \textbf{in sea-level equivalent} \\
-    \texttt{sub_shelf_ice_flux} & \textsl{kg  / s} &  total sub-shelf ice flux \\
-    \texttt{surface_ice_flux} & \textsl{kg  / s} &  total over ice domain of top surface ice mass flux \\
-    \multicolumn{3}{c}{Continued in Table \ref{tab:time-series-3}}\\
-    \bottomrule
-  \end{tabular}
-\caption{Scalar time-series supported by PISM, part 2}
-\label{tab:time-series-2}
-\end{table}
+If the file ``foo.nc``, specified by ``-ts_file foo.nc``, already exists then by default the existing file will be moved to ``foo.nc~`` and the new time series will go into ``foo.nc``. To append the time series onto the end of the existing file, use option ``-ts_append``.
 
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}
-    \toprule
-    \textbf{Name} & \textbf{Units} & \textbf{Description}\\
-    \midrule
-    \multicolumn{3}{c}{Continued from Table \ref{tab:time-series-2}}\\
-    \texttt{hydro_ice_free_land_loss_cumulative} & \textsl{kg} & cumulative liquid water loss from subglacial hydrology into cells with mask as ice free land \\
-    \texttt{hydro_ice_free_land_loss} & \textsl{ks / s} & rate of liquid water loss from subglacial hydrology into cells with mask as ice free land \\
-    \texttt{hydro_ocean_loss_cumulative} & \textsl{kg} & cumulative liquid water loss from subglacial hydrology into cells with mask as ocean \\
-    \texttt{hydro_ocean_loss} & \textsl{kg / s} & rate of liquid water loss from subglacial hydrology into cells with mask as ocean \\
-    \texttt{hydro_negative_thickness_gain_cumulative} & \textsl{kg} & cumulative non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero \\
-    \texttt{hydro_negative_thickness_gain} & \textsl{kg / s} & rate of non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero \\
-    \texttt{hydro_null_strip_loss_cumulative} & \textsl{kg} & cumulative liquid water loss from subglacial hydrology into cells inside the null strip \\
-    \texttt{hydro_null_strip_loss} & \textsl{kg / s} & rate of liquid water loss from subglacial hydrology into cells inside the null strip\\
-    \bottomrule
-  \end{tabular}
-\caption{Scalar time-series supported by PISM (with a mass-conserving subglacial hydrology model), part 3}
-\label{tab:time-series-3}
-\end{table}
+PISM buffers time-series data and writes it at the end of the run, once 10000 values are stored, or when an ``-extra_file`` is saved, whichever comes first. Sending an ``USR1`` (or ``USR2``) signal to a PISM process flushes these buffers, making it possible to monitor the run. (See section \ref{subsect:signal} for more about PISM's signal handling.)
 
-\clearpage
+.. csv-table:: Command-line options controlling saving scalar time-series
+   :name: tab-time-series-opts
+   :header: Option, Description
+   :widths: 20, 80
 
-\subsection{Saving time series of spatially-varying diagnostic quantities}
+   :opt:`-ts_file`, "Specifies the file to save to."
+   :opt:`-ts_times`, "Specifies times to save at as a MATLAB-style range :math:`a:\Delta t:b`, a comma-separated list, or a keyword (``hourly``, ``daily``, ``monthly``, ``yearly``). See section \ref{sec:saving-spat-vari}."
+   :opt:`-ts_vars`, "Comma-separated list of variables. Omitting this option is equivalent to listing the *all* variables."
+   :opt:`-ts_append`, "Append time series to file if it already exists.  No effect if file does not yet exist."
+
+Besides the above information on usage, here are comments on the physical significance of several scalar diagnostics:
+
+- For each variable named ``..._flux``, positive values mean ice sheet mass gain.
+- PISM reports ice volume, ice mass, and several other quantities for "glacierized" areas. These quantities do not include contributions from areas where the ice thickness is equal to or below the value of the configuration parameter ``output.ice_free_thickness_standard`` (in meters). Corresponding "nonglacierized" quantities *do* include areas with a thin, "seasonal" ice cover.
+- The ``sub_shelf_ice_flux`` may be non-zero even if ``area_glacierized_shelf`` (floating ice area) is zero. This is due to the fact that during time-stepping fluxes are computed before calving is applied, and the ice area is computed *after* calving. Hence ice that is calved off experiences top-surface and basal fluxes, but does not contribute to the reported area. This is a small error that approaches zero as the grid is refined. In this case ``sub_shelf_ice_flux`` should be added to the calving flux during post-processing. %FIXME \footnote{This will be fixed in a later release of PISM.}
+- Ice volume and area are computed and then split among floating and grounded portions: ``volume_glacierized`` :math:`\mapsto` (``volume_glacierized_shelf``, ``volume_glacierized_grounded``) while ``area_glacierized`` :math:`\mapsto` (``area_glacierized_shelf``,``area_glacierized_grounded``).  The volumes have units :math:`m^3` and the areas have units :math:`m^2`.
+- The thermodynamic state of the ice sheet can be assessed, in part, by the amount of cold or temperate ("``temp``") ice.  Thus there is another splitting: ``volume_glacierized`` :math:`\mapsto` (``volume_glacierized_cold``, ``volume_glacierized_temperate``) and ``area_glacierized`` :math:`\mapsto` (``area_glacierized_cold_base``,``area_glacierized_temperate_base``).
+- If a PISM input file contains the ``proj4`` global attribute with a PROJ.4 string defining the projection then PISM computes corrected cell areas using this information, grid parameters, and the WGS84 reference ellipsoid. This yields areas and volumes with greater accuracy.
+- The sea-level-relevant ice volume ``slvol`` is the total grounded ice volume minus the amount of ice, that, in liquid form, would fill up the regions with bedrock below sea level, if this ice were removed.  That is, ``slvol`` is the sea level rise potential of the ice sheet at that time.  The result is reported  in sea-level equivalent, i.e. meters of sea level rise.
+- Fields ``max_diffusivity`` and ``max_hor_vel`` relate to PISM time-stepping.  These quantities appear in per-time-step form in the standard output from PISM (i.e. at default verbosity).  ``max_diffusivity`` determines the length of the mass continuity sub-steps for the SIA stress balance (sub-)model.  ``max_hor_vel`` determines the CFL-type restriction for mass continuity and conservation of energy contributions of the SSA stress balance (i.e. sliding) velocity.
+
+.. note:: Document "Scalar time-series supported by PISM"
+
+          (with or without the hydrology model)
+
+Saving time series of spatially-varying diagnostic quantities
+-------------------------------------------------------------
 \label{sec:saving-spat-vari}
-\optsection{Saving 2D and 3D time-series}
-\index{PISM!saving diagnostic quantities regularly}
-\index{PISM!diagnostic quantities}
+
+Sometimes it is useful to have PISM save a handful of diagnostic *maps* at some interval like every 10 years or even every month.  One can use snapshots (section \ref{sec:snapshots}), but doing so can easily fill your hard-drive because snapshots are complete (i.e. re-startable) model states.  Sometimes you want a *subset* of model variables saved frequently in an output file.
+
+Use options ``-extra_file``, ``-extra_times``, and ``-extra_vars`` for this.  For example,
+
+.. code::
+
+   pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
+         -extra_times 0:10:1e4 -extra_vars velsurf_mag,velbase_mag
 
 
-Sometimes it is useful to have PISM save a handful of diagnostic \emph{maps} at some interval like every 10 years or even every month.  One can use snapshots (section \ref{sec:snapshots}), but doing so can easily fill your hard-drive because snapshots are complete (i.e.~re-startable) model states.  Sometimes you want a \emph{subset} of model variables saved frequently in an output file.
+will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years.  Times are specified using a comma-separated list or a MATLAB-style range.  See Table \ref{tab:extras} for all the options controlling this feature.  Tables \allextras{} list all the variable choices.
 
-Use options \texttt{-extra_file}, \texttt{-extra_times}, and \texttt{-extra_vars} for this.  For example,
-\begin{verbatim}
-$ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
-        -extra_times 0:10:1e4 -extra_vars velsurf_mag,velbase_mag
-\end{verbatim}
-%$ - match dollar signs to make emacs happy
-will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years.  Times are specified using a comma-separated list or a MATLAB-style range.  See Table \ref{tab:extras} for all the options controlling this feature.  Tables~\allextras{} list all the variable choices.
+Note that options :opt:`-extra_times`, :opt:`-save_times`, :opt:`-ts_times` take *dates* if a non-trivial calendar is selected. For example,
 
-Note that options \intextoption{extra_times},
-\intextoption{save_times}, \intextoption{ts_times} take \emph{dates}
-if a non-trivial calendar is selected. For example,
-\begin{verbatim}
-pismr ... -extra_times 10       # every 10 years
-pismr ... -extra_times 2days    # every 2 days
-pismr ... -calendar gregorian -extra_times 1-1-1:daily:11-1-1 # daily for 10 years
-pismr ... -calendar gregorian -extra_times daily -ys 1-1-1 -ye 11-1-1
-pismr ... -calendar gregorian -extra_times 2hours -ys 1-1-1 -ye 1-2-1
-\end{verbatim}
+.. code::
 
-The step in the range specification can have the form \texttt{Nunit},
-for example \texttt{5days}. Units based on ``months'' and ``years''
-are not supported if a non-trivial calendar is selected.
+   pismr ... -extra_times 10       # every 10 years
+   pismr ... -extra_times 2days    # every 2 days
+   pismr ... -calendar gregorian -extra_times 1-1-1:daily:11-1-1 # daily for 10 years
+   pismr ... -calendar gregorian -extra_times daily -ys 1-1-1 -ye 11-1-1
+   pismr ... -calendar gregorian -extra_times 2hours -ys 1-1-1 -ye 1-2-1
 
-In addition to specifying a constant step in \texttt{-extra_times a:step:b} one can save every hour, day, month, or every year by using \texttt{hourly}, \texttt{daily}, \texttt{monthly} or \texttt{yearly} instead of a number; for example
-\begin{verbatim}
-$ pismr -i foo.nc -y 100 -o output.nc -extra_file extras.nc \
-        -extra_times 0:monthly:100 -extra_vars dHdt
-\end{verbatim}
-%$ - match dollar signs to make emacs happy
-will save the rate of change of the ice thickness every month for 100
-years. With \texttt{-calendar none} (the default), ``monthly'' means
-``every $\frac 1 {12}$ of the year'', and ``yearly'' is ``every
-$3.14\dots\times10^7$ seconds, otherwise PISM uses month lengths
-computed using the selected calendar.
 
-It is frequently desirable to save diagnostic quantities at regular intervals for the whole duration of the run; options \intextoption{extra_times}, \intextoption{ts_times}, and \intextoption{save_times} provide a shortcut. For example, use \texttt{-extra_times yearly} to save at the end of every year.
+The step in the range specification can have the form ``Nunit``, for example ``5days``. Units based on "months" and "years" are not supported if a non-trivial calendar is selected.
+
+In addition to specifying a constant step in ``-extra_times a:step:b`` one can save every hour, day, month, or every year by using ``hourly``, ``daily``, ``monthly`` or ``yearly`` instead of a number; for example
+
+.. code::
+
+   pismr -i foo.nc -y 100 -o output.nc -extra_file extras.nc \
+         -extra_times 0:monthly:100 -extra_vars dHdt
+
+
+will save the rate of change of the ice thickness every month for 100 years. With ``-calendar none`` (the default), "monthly" means "every :math:`\frac 1 {12}` of the year", and "yearly" is "every :math:`3.14\dots\times10^7`" seconds, otherwise PISM uses month lengths computed using the selected calendar.
+
+It is frequently desirable to save diagnostic quantities at regular intervals for the whole duration of the run; options :opt:`-extra_times`, :opt:`-ts_times`, and :opt:`-save_times` provide a shortcut. For example, use ``-extra_times yearly`` to save at the end of every year.
 
 This is especially useful when using a climate forcing file to set run duration:
-\begin{verbatim}
-$ pismr -i foo.nc -surface given -surface_given_file climate.nc \
-        -calendar gregorian -time_file climate.nc \
-        -extra_times monthly -extra_file ex.nc -extra_vars thk
-\end{verbatim}
-%$ - match dollar signs to make emacs happy
-will save ice thickness at the end of every month while running PISM for the duration of climate forcing data in \texttt{climate.nc}.
 
-Times given using \texttt{-extra_times} describe the reporting intervals by giving the endpoints of these reporting intervals.  The save itself occurs at the end of each interval.  This implies, for example, that \texttt{0:1:10} will produce 10 records at times 1,\dots,10 and \emph{not} 11 records.
+.. code::
 
-If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc\~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-extra_append}.
+   pismr -i foo.nc -surface given -surface_given_file climate.nc \
+         -calendar gregorian -time_file climate.nc \
+         -extra_times monthly -extra_file ex.nc -extra_vars thk
+
+
+will save ice thickness at the end of every month while running PISM for the duration of climate forcing data in ``climate.nc``.
+
+Times given using ``-extra_times`` describe the reporting intervals by giving the endpoints of these reporting intervals.  The save itself occurs at the end of each interval.  This implies, for example, that ``0:1:10`` will produce 10 records at times 1,...,10 and *not* 11 records.
+
+If the file ``foo.nc``, specified by ``-extra_file foo.nc``, already exists then by default the existing file will be moved to ``foo.nc~`` and the new time series will go into ``foo.nc``.  To append the time series onto the end of the existing file, use option ``-extra_append``.
 
 The list of available diagnostic quantities depends on the model setup. For
 example, a run with only one vertical grid level in the bedrock thermal layer
-will not be able to save \texttt{litho_temp}, an SIA-only run does not use a
-basal yield stress model and so will not provide \texttt{tauc}, etc. To see
+will not be able to save ``litho_temp``, an SIA-only run does not use a
+basal yield stress model and so will not provide ``tauc``, etc. To see
 which quantities are available in a particular setup, use the
-\intextoption{list_diagnostics} option, which prints the list of diagnostics
+:opt:`-list_diagnostics` option, which prints the list of diagnostics
 and stops.
 
-The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme so as to step to, and save at,
-\emph{exactly} the times requested.  By contrast, as noted in subsection \ref{sec:saving-time-series}, the \texttt{-ts_file} mechanism does not alter PISM's time-steps and instead uses linear interpolation to save at the requested times in between PISM's actual time-steps.
+The ``-extra_file`` mechanism modifies PISM's adaptive time-stepping scheme so as to step to, and save at,
+*exactly* the times requested.  By contrast, as noted in subsection \ref{sec:saving-time-series}, the ``-ts_file`` mechanism does not alter PISM's time-steps and instead uses linear interpolation to save at the requested times in between PISM's actual time-steps.
 
-\begin{table}[ht]
- \centering
- \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
-    \textbf{Option} & \textbf{Description}\\
-    \midrule
-    \fileopt{extra_file} & Specifies the file to save to; should be different from the output \texttt{o} file.\\
-    \timeopt{extra_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
-    \listopt{extra_vars} & Comma-separated list of variables, see
-    tables~\allextras \\
-    \intextoption{extra_split} & Save to separate files, similar to \texttt{-save_split}\\
-    \intextoption{extra_append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \intextoption{extra_split} is set. \\
-    \bottomrule
-  \end{tabular}
-\caption{Command-line options controlling extra diagnostic output}
-\label{tab:extras}
-\end{table}
+.. csv-table:: Command-line options controlling extra diagnostic output
+   :name: tab-extras
+   :header: Option, Description
+   :widths: 20, 80
 
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
-    \toprule
-    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
-    \midrule
-    \texttt{age} & \textsl{s} & age of ice \\
-    \texttt{enthalpy} & \textsl{J $\mathrm{kg}^{-1}$} & ice enthalpy (includes sensible heat, latent heat, pressure) \\
-    \texttt{hardness} & \textsl{Pa s$^{1/n}$} & ice hardness ($n$ is the Glen exponent) \\
-    \texttt{effective_viscosity} & \textsl{kPa s} & effective ice viscosity \\
-    \texttt{cts} & \textsl{none} &  $\mathrm{cts} = E/E_s(p)$; cold-temperate transition surface is $\mathrm{cts} = 1$ \\
-    \texttt{liqfrac} & \textsl{none} &  liquid water fraction in ice (between $0$ and $1$) \\
-    \texttt{litho_temp} & \textsl{K} & lithosphere (bedrock) temperature, in \texttt{PISMBedThermalUnit} \\
-    \texttt{pressure} & \textsl{Pa} &  ice pressure (in hydrostatic approximation) \\
-    \texttt{strainheat} & \textsl{mW / $m^3$} & rate of strain heating in ice (dissipation heating) \\
-    \texttt{tauxz} & \textsl{Pa} &  stress component $\tau_{xz}$ (in shallow ice approximation) \\
-    \texttt{tauyz} & \textsl{Pa} &  stress component $\tau_{yz}$ (in shallow ice approximation) \\
-    \texttt{temp} & \textsl{K} &  ice temperature \\
-    \texttt{temp_pa} & \textsl{degrees Celsius} &  pressure-adjusted ice temperature (degrees above pressure-melting point) \\
-    \bottomrule
-  \end{tabular}
-\caption{Scalar 3D diagnostic quantities}
-\label{tab:three-d-diagnostics}
-\end{table}
+   :opt:`-extra_file`, "Specifies the file to save to; should be different from the output (:opt:`-o`) file."
+   :opt:`-extra_times`, "Specifies times to save at either as a MATLAB-style range :math:`a:\Delta t:b` or a comma-separated list."
+   :opt:`-extra_vars`, "Comma-separated list of variables"
+   :opt:`-extra_split`, "Save to separate files, similar to :opt:`-save_split`."
+   :opt:`-extra_append`, "Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if :opt:`-extra_split` is set."
 
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
-    \toprule
-    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
-    \midrule
-    \texttt{uvel} & \textsl{m / year} &  horizontal velocity of ice in the X direction \\
-    \texttt{vvel} & \textsl{m / year} &  horizontal velocity of ice in the Y direction \\
-    \texttt{wvel} & \textsl{m / year} &  vertical velocity of ice, relative to geoid \\
-    \texttt{wvel_rel} & \textsl{m / year} &  vertical velocity of ice, relative to base of ice directly below \\
-    \bottomrule
-  \end{tabular}
-\caption{Vector 3D diagnostic quantities}
-\label{tab:three-d-diagnostics-vector}
-\end{table}
+.. note:: Document "Scalar 3D diagnostic quantities"
 
-% about 20 diagnostics per table seems to fit fine
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
-    \toprule
-    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
-    \midrule
-    \texttt{bedtoptemp} & \textsl{K} & temperature of top of bedrock thermal layer \\
-    \texttt{beta} & \textsl{Pa s / m} & basal drag coefficient\\
-    \texttt{bfrict} & \textsl{W  / $m^2$} &  basal frictional heating \\
-    \texttt{bheatflx} & \textsl{W  / $m^2$} & upward geothermal flux at bedrock surface \\
-    \texttt{bmelt} & \textsl{m / year} & ice basal melt rate in ice thickness per time \\
-    \texttt{bwat} & \textsl{m} & effective thickness of subglacial melt water \\
-    \texttt{bwprel} & \textsl{1} & pressure of transportable water in subglacial layer as fraction of the overburden pressure\\
-    \texttt{bwp} & \textsl{Pa} & subglacial (pore) water pressure \\
-    \texttt{cell_area} & \textsl{$m^{2}$} & cell areas \\
-    \texttt{ice_mass} & \textsl{$kg$} & mass of the ice in a cell \\
-    \texttt{climatic_mass_balance_cumulative} & \textsl{kg / m$^2$} & cumulative surface mass balance (accumulation/ablation) \\
-    \texttt{climatic_mass_balance} & \textsl{kg / m$^2$ / year} & surface mass balance (accumulation/ablation) rate \\
-    \texttt{dHdt} & \textsl{m / year} &  ice thickness rate of change \\
-    \texttt{dbdt} & \textsl{m / year} & bedrock uplift rate \\
-    \texttt{deviatoric_stresses} & \textsl{Pa} & 2D deviatoric stresses (this saves 3 fields: in the $X$ direction, in the $Y$ direction, and the shear stress) \\
-    \texttt{diffusivity_staggered} & \textsl{$m^{2}$  / s} &  diffusivity of SIA mass continuity equation, on the staggered grid \\
-    \texttt{diffusivity} & \textsl{$m^{2}$  / s} &  diffusivity of SIA mass continuity equation \\
-    \texttt{discharge_flux_cumulative} & \textsl{Gt} & cumulative ice discharge (calving) flux \\
-    \texttt{effbwp} & \textsl{Pa} & effective pressure of transportable water in subglacial layer (overburden pressure minus water pressure)\\
-    \texttt{enthalpybase} & \textsl{J  / kg} &  ice enthalpy at the base of ice \\
-    \texttt{enthalpysurf} & \textsl{J  / kg} &  ice enthalpy at 1m below the ice surface \\
-   \multicolumn{3}{c}{Continued in Table \ref{tab:two-d-diagnostics-2}}\\
-  \bottomrule
-  \end{tabular}
-  \caption{Scalar 2D diagnostic quantities, part 1}
-  \label{tab:two-d-diagnostics-1}
-\end{table}
+.. note:: Document "Vector 3D diagnostic quantities"
 
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
-    \toprule
-    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
-    \midrule
-    \multicolumn{3}{c}{Continued from Table \ref{tab:two-d-diagnostics-1}}\\
-    \texttt{floating_basal_flux_cumulative} & \textsl{Gt} & cumulative basal flux into the ice in floating areas \\
-    \texttt{flux_divergence} & \textsl{m / year} &  flux divergence \\
-    \texttt{flux_mag} & \textsl{$m^{2}$ / year} &  magnitude of vertically-integrated horizontal flux of ice \\
-    \texttt{grounded_basal_flux_cumulative} & \textsl{Gt} & cumulative basal flux into the ice in grounded areas \\
-    \texttt{hardav} & $Pa\, s^{1/n}$ &  vertical average of ice hardness \\
-    \texttt{height_above_flotation} & $m$ &  height above flotation \\
-    \texttt{hydrobmelt} & \textsl{m / year} & the version of \texttt{bmelt} seen by the hydrology model\\
-    \texttt{hydroinput} & \textsl{m / year} & total water input into subglacial hydrology layer\\
-    \texttt{hydrovelbase_mag} & \textsl{m / s} & the version of \texttt{velbase_mag} seen by the 'distributed' hydrology model\\
-    \texttt{ice_surface_temp} & \textsl{K} & annual average ice surface temperature, below firn processes \\
-    \texttt{lat} & \textsl{degrees north} & latitude \\
-    \texttt{lon} & \textsl{degrees east} & longitude \\
-    \texttt{mask} & \textsl{none} & grounded/dragging/floating integer mask \\
-    \texttt{nonneg_flux_cumulative} & \textsl{Gt} & cumulative numerical flux created by enforcing non-negativity of ice thickness \\
-    \texttt{nuH} & \textsl{kPa s m} & ice thickness times effective viscosity, on the staggered grid\\
-    \texttt{rank} & \textsl{none} &  processor rank \\
-    \texttt{schoofs_theta} & \textsl{1} &  multiplier $\theta$ in \cite{Schoofbasaltopg2003} \\
-    \texttt{shelfbmassflux} & \textsl{m / year} & ice mass flux from ice shelf base (positive flux is loss from ice shelf) \\
-    \texttt{shelfbtemp} & \textsl{Kelvin} & absolute temperature at ice shelf base \\
-    \texttt{strain_rates} & \textsl{1/s} & eigenvalues of the horizontal, vertically-integrated strain rate tensor \\
-   \multicolumn{3}{c}{Continued in Table \ref{tab:two-d-diagnostics-3}}\\
-  \bottomrule
-  \end{tabular}
-  \caption{Scalar 2D diagnostic quantities, part 2}
-  \label{tab:two-d-diagnostics-2}
-\end{table}
+.. note:: Document "Scalar 2D diagnostic quantities"
 
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
-    \toprule
-    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
-    \midrule
-    \multicolumn{3}{c}{Continued from Table \ref{tab:two-d-diagnostics-2}}\\
-    \texttt{taub_mag} & \textsl{Pa} & magnitude of the basal shear stress \\
-    \texttt{tauc} & \textsl{Pa} & yield stress for basal till (plastic or pseudo-plastic model) \\
-    \texttt{taud_mag} & \textsl{Pa} &  magnitude of the driving stress at the base of ice \\
-    \texttt{tempbase} & \textsl{K} &  ice temperature at the base of ice \\
-    \texttt{tempicethk_basal} & \textsl{m} &  thickness of the basal layer of temperate ice \\
-    \texttt{tempicethk} & \textsl{m} &  temperate ice thickness (total column content) \\
-    \texttt{temppabase} & \textsl{Celsius} &  pressure-adjusted ice temperature at the base of ice \\
-    \texttt{tempsurf} & \textsl{K} &  ice temperature at 1m below the ice surface \\
-    \texttt{thksmooth} & \textsl{m} &  thickness relative to smoothed bed elevation in \cite{Schoofbasaltopg2003} \\
-    \texttt{thk} & \textsl{m} & land ice thickness \\
-    \texttt{tillphi} & \textsl{degrees} & friction angle for till under grounded ice sheet \\
-    \texttt{topgsmooth} & \textsl{m} &  smoothed bed elevation in \cite{Schoofbasaltopg2003}\\
-    \texttt{topg} & \textsl{m} & bedrock surface elevation \\
-    \texttt{usurf} & \textsl{m} & ice upper surface elevation \\
-    \texttt{velbar_mag} & \textsl{m / year} &  magnitude of vertically-integrated horizontal velocity of ice \\
-    \texttt{velbase_mag} & \textsl{m / year} &  magnitude of horizontal velocity of ice at base of ice \\
-    \texttt{velsurf_mag} & \textsl{m / year} &  magnitude of horizontal velocity of ice at ice surface \\
-    \texttt{wallmelt} & \textsl{m / year} & wall melt into subglacial hydrology layer from (turbulent) dissipation of energy in transportable water\\
-    \bottomrule
-  \end{tabular}
-  \caption{Scalar 2D diagnostic quantities, part 3}
-  \label{tab:two-d-diagnostics-3}
-\end{table}
+.. note:: Document "Vector 2D diagnostic quantities"
 
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
-    \toprule
-    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
-    \midrule
-    \texttt{h_x} & \textsl{none} &  the x-component of the surface gradient, on the staggered grid\\
-    \texttt{h_y} & \textsl{none} &  the y-component of the surface gradient, on the staggered grid\\
-    \texttt{taub} & \textsl{Pa} & basal shear stress, X and Y components. See also \texttt{taub_mag}. \\
-    \texttt{taud} & \textsl{Pa} & driving stress at the base of ice, X and Y components. See also \texttt{taud_mag}. \\
-    \texttt{flux} & \textsl{$m^{2}$ / year} & vertically-integrated horizontal flux of ice, X and Y components. See also \texttt{flux_mag}. \\
-    \texttt{velbar} & \textsl{m / year} &  vertical mean of horizontal ice velocity in the X and Y directions. See also \texttt{velbar_mag}. \\
-    \texttt{velbase} & \textsl{m / year} &  horizontal velocity of ice at the base of ice in the X and Y directions. See also \texttt{velbase_mag}. \\
-    \texttt{velsurf} & \textsl{m / year} &  horizontal velocity of ice at ice surface in the X and Y directions. See also \texttt{velsurf_mag}.\\
-    \texttt{wvelbase} & \textsl{m / year} &  vertical velocity of ice at the base of ice, relative to the geoid \\
-    \texttt{wvelsurf} & \textsl{m / year} &  vertical velocity of ice at ice surface, relative to the geoid \\
-    \texttt{bwatvel} & \textsl{m / year} & velocity of water in subglacial layer, on the staggered grid\\
-    \bottomrule
-  \end{tabular}
-  \caption{Vector 2D diagnostic quantities (vector)}
-  \label{tab:two-d-diagnostics-vector}
-\end{table}
-
-\clearpage
-
-\subsection{Saving re-startable snapshots of the model state}\index{snapshots of the model state}\index{PISM!saving snapshots of the model state}
+Saving re-startable snapshots of the model state
+------------------------------------------------
 \label{sec:snapshots}
-\optsection{Saving snapshots}
-Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
 
-If saving exactly at specified times is not critical, then use the \texttt{-save_file} and \texttt{-save_times} options.  For example,
-\begin{verbatim}
-$ pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots.nc \
-        -save_times 1000:1000:10000
-\end{verbatim}
-starts a PISM evolution run, initializing from \texttt{foo.nc}, running for
-10000 years and saving snapshots to \texttt{snapshots.nc} at the first time-step
-after each of the years 1000, 2000, \dots, 10000.
+Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop *exactly* at multiples of 1000 years, which may be desirable in some cases.
 
-We use a MATLAB-style range specification, $a:\Delta t:b$, where $a,\Delta t,b$ are in years.  The time-stepping scheme is not affected, but as a consequence we do not guarantee producing the exact number of snapshots requested if the requested save times have spacing comparable to the model time-steps.  This is not a problem in the typical case in which snapshot spacing is much greater than the length of a typical time step.
+If saving exactly at specified times is not critical, then use the ``-save_file`` and ``-save_times`` options.  For example,
+
+.. code::
+
+   pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots.nc \
+         -save_times 1000:1000:10000
+
+starts a PISM evolution run, initializing from ``foo.nc``, running for
+10000 years and saving snapshots to ``snapshots.nc`` at the first time-step
+after each of the years 1000, 2000, ..., 10000.
+
+We use a MATLAB-style range specification, :math:`a:\Delta t:b`, where :math:`a,\Delta t,b` are in years.  The time-stepping scheme is not affected, but as a consequence we do not guarantee producing the exact number of snapshots requested if the requested save times have spacing comparable to the model time-steps.  This is not a problem in the typical case in which snapshot spacing is much greater than the length of a typical time step.
 
 It is also possible to save snapshots at intervals that are not equally-spaced
-by giving the \texttt{-save_times} option a comma-separated list. For example,
-\begin{verbatim}
-$ pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots.nc \
-        -save_times 1000,1500,2000,5000
-\end{verbatim}
-will save snapshots on the first time-step after years 1000, 1500, 2000 and 5000.
-The comma-separated list given to the \texttt{-save_times} option can be at most 200 numbers long.
+by giving the ``-save_times`` option a comma-separated list. For example,
 
-If \texttt{snapshots.nc} was created by the command above, running
-\begin{verbatim}
-$ pismr -i snapshots.nc -y 1000 -o output_2.nc
-\end{verbatim}
-will initialize using the last record in the file, at about $5000$ years.  By contrast, to restart from $1500$ years (for example) it is necessary to extract the corresponding record using \texttt{ncks}\index{NCO (NetCDF Operators)!ncks}
-\begin{verbatim}
-$ ncks -d t,1500years snapshots.nc foo.nc
-\end{verbatim}
-and then restart from \texttt{foo.nc}.  Note that \texttt{-d t,N} means ``extract the $N$-th record'' (counting from zero).  So, this command is equivalent to
-\begin{verbatim}
-$ ncks -d t,1 snapshots.nc foo.nc
-\end{verbatim}
-Also note that the second snapshot will probably be \emph{around} $1500$ years and \texttt{ncks} handles this correctly: it takes the record closest to $1500$ years.
+.. code::
+
+   pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots.nc \
+         -save_times 1000,1500,2000,5000
+
+will save snapshots on the first time-step after years 1000, 1500, 2000 and 5000.
+The comma-separated list given to the ``-save_times`` option can be at most 200 numbers long.
+
+If ``snapshots.nc`` was created by the command above, running
+
+.. code::
+
+   pismr -i snapshots.nc -y 1000 -o output_2.nc
+
+will initialize using the last record in the file, at about :math:`5000` years.  By contrast, to restart from :math:`1500` years (for example) it is necessary to extract the corresponding record using ``ncks``
+
+.. code::
+
+   ncks -d t,1500years snapshots.nc foo.nc
+
+and then restart from ``foo.nc``.  Note that ``-d t,N`` means "extract the :math:`N`-th record" (counting from zero).  So, this command is equivalent to
+
+.. code::
+
+   ncks -d t,1 snapshots.nc foo.nc
+
+Also note that the second snapshot will probably be *around* :math:`1500` years and ``ncks`` handles this correctly: it takes the record closest to :math:`1500` years.
 
 By default re-startable snapshots contain only the variables needed for
-restarting PISM. Use the command-line option \texttt{-save_size} to change what is saved.
+restarting PISM. Use the command-line option ``-save_size`` to change what is saved.
 
-Another possible use of snapshots is for restarting runs on a batch system which kills jobs which go over their allotted time.  Running PISM with options \texttt{-y 1500} \texttt{-save_times 1000:100:1400} would mean that if the job is killed before completing the whole 1500 year run, we can restart from near the last multiple of $100$ years.  Restarting with option \texttt{-ye} would finish the run on the desired year.
+Another possible use of snapshots is for restarting runs on a batch system which kills jobs which go over their allotted time.  Running PISM with options ``-y 1500`` ``-save_times 1000:100:1400`` would mean that if the job is killed before completing the whole 1500 year run, we can restart from near the last multiple of :math:`100` years.  Restarting with option ``-ye`` would finish the run on the desired year.
 
 When running PISM on such a batch system it is also possible to save
 re-startable snapshots at equal wall-clock time (as opposed to model time)
-intervals by adding the ``\txtopt{backup_interval}{hours}'' option.
+intervals by adding the ":opt:`-backup_interval` (hours)" option.
 
-\textbf{A note of caution:} if the wall-clock limit is equal to $N$ times backup
-interval for a whole number $N$ PISM will likely get killed while writing the
+\textbf{A note of caution:} if the wall-clock limit is equal to :math:`N` times backup
+interval for a whole number :math:`N` PISM will likely get killed while writing the
 last backup.
 
 It is also possible to save snapshots to separate files using the
-\texttt{-save_split} option.  For example, the run above can be changed to
-\begin{verbatim}
-$ pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots \
-        -save_times 1000,1500,2000,5000 -save_split
-\end{verbatim}
+``-save_split`` option.  For example, the run above can be changed to
+
+.. code::
+
+   pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots \
+         -save_times 1000,1500,2000,5000 -save_split
+
 for this purpose.  This will produce files called
-\texttt{snapshots-}year\texttt{.nc}.  This option is generally faster if many
+``snapshots-year.nc``.  This option is generally faster if many
 snapshots are needed, apparently because of the time necessary to reopen a
-large file at each snapshot when \texttt{-save_split} is not used.  Note
-that tools like NCO\index{NCO (NetCDF Operators)!wildcards} and
-\texttt{ncview}\index{NetCDF!tools!work with wildcards} usually behave as desired with wildcards like ``\texttt{snapshots-*.nc}''.
+large file at each snapshot when ``-save_split`` is not used.  Note
+that tools like NCO and
+``ncview`` usually behave as desired with wildcards like "``snapshots-*.nc``".
 
 Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of the model state.
 
-\begin{table}[ht]
-  \centering
- \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
-    \textbf{Option} & \textbf{Description} \\
-    \midrule
-    \fileopt{save_file} & Specifies the file to save to.\\
-    \timeopt{save_times} & Specifies times at which to save snapshots, by either a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-    \intextoption{save_split} & Separate the snapshot output into files
-    named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more
-    than a dozen or so snapshots. \\
-    \txtopt{save_size}{[none,small,medium,big,big_2d]} & similar to \texttt{o_size},
-    changes the ``size'' of the file (or files) written; the default is ``small''\\
-    \bottomrule
-  \end{tabular}
-\caption{Command-line options controlling saving snapshots of the model state.}
-\label{tab:snapshot-opts}
-\end{table}
+.. list-table:: Command-line options controlling saving snapshots of the model state.
+   :name: tab-snapshot-opts
+   :header-rows: 1
+   :widths: 20, 80
+
+   * - Option
+     - Description
+   * - :opt:`-save_file`
+     - Specifies the file to save to.
+   * - :opt:`-save_times`
+     - Specifies times at which to save snapshots, by either a MATLAB-style range :math:`a:\Delta t:b` or a comma-separated list.
+   * - :opt:`-save_split`
+     - Separate the snapshot output into files named ``snapshots-year.nc``. Faster if you are saving more than a dozen or so snapshots.
+   * - :opt:`-save_size` ``[none,small,medium,big,big_2d]``
+     - Similar to ``o_size``, changes the "size" of the file (or files) written; the default is "small"
 
 
-\subsection{Run-time diagnostic viewers}
+Run-time diagnostic viewers
+---------------------------
 \label{sec:diagnostic-viewers}
-\optsection{Run-time diagnostic viewers}
-Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.  All the quantities listed in tables~\allextras{} are available.  Additionally, a couple of diagnostic quantities are \emph{only} available as run-time viewers; these are shown in table \ref{tab:special-diag-viewers}.
+
+Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.  All the quantities listed in tables \allextras{} are available.  Additionally, a couple of diagnostic quantities are *only* available as run-time viewers; these are shown in table \ref{tab:special-diag-viewers}.
 
 Note that (for performance and implementation reasons) map viewers
 are transposed.
 
-\begin{table}[ht]
- \centering
-  \begin{tabular}{p{0.4\linewidth}p{0.5\linewidth}}\toprule
-    \textbf{Option} & \textbf{Description}\\
-    \midrule
-    \listopt{view} & Turns on map-plane views of one or several variables, see tables~\allextras \\
-    \txtopt{view_size}{number} & desired viewer size, in pixels\\
-    \intextoption{display} & The option \texttt{-display :0} seems to
-    frequently be needed to let PETSc use Xwindows when running multiple
-    processes.  \emph{It must be given as a \emph{final} option, after all the
-      others.}\\
-   \bottomrule
-  \end{tabular}
-\caption{Options controlling run-time diagnostic viewers}
-\label{tab:diag-viewers}
-\end{table}
 
-The option \texttt{-view} shows map-plane views of 2D fields and surface
-and basal views of 3D fields (see tables~\allextras); for example:
-\begin{verbatim}
-$ pismr -i input.nc -y 1000 -o output.nc -view thk,tempsurf
-\end{verbatim}
+.. list-table:: Options controlling run-time diagnostic viewers
+   :name: tab-diag-viewers
+   :header-rows: 1
+   :widths: 20, 80
+
+   * - Option
+     - Description
+   * - :opt:`view`
+     - Turns on map-plane views of one or several variables, see tables FIXME
+   * - :opt:`-view_size` (number)
+     - desired viewer size, in pixels
+   * - :opt:`-display`
+     - The option ``-display :0`` seems to frequently be needed to let PETSc use Xwindows when running multiple processes. It must be given as a *final* option, after all the others.
+
+The option ``-view`` shows map-plane views of 2D fields and surface and basal views of 3D fields (see tables \allextras); for example:
+
+.. code::
+
+   pismr -i input.nc -y 1000 -o output.nc -view thk,tempsurf
+
 shows ice thickness and ice temperature at the surface.
 
-\begin{table}[ht]
-  \centering
- \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
-    \textbf{Variable name or an option} & \textbf{Description}\\\midrule
-  \intextoption{ssa_view_nuh} & log base ten of \texttt{nuH}, only available
-    if the finite-difference SSA solver is active. You can adjust the viewer
-    size with \txtopt{ssa_nuh_viewer_size}{\emph{number}}. \\
-    \intextoption{ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Residual norm versus iteration number.\\
-    \bottomrule
-  \end{tabular}
-\caption{Special run-time-only diagnostic viewers}
-\label{tab:special-diag-viewers}
-\end{table}
+.. list-table:: Special run-time-only diagnostic viewers
+   :name: tab-special-diag-viewers
+   :header-rows: 1
+   :widths: 20, 80
+
+   * - Option
+     - Description
+   * - :opt:`-ssa_view_nuh`
+     - log base ten of ``nuH``, only available if the finite-difference SSA solver is active.
+   * - :opt:`-ssa_nuh_viewer_size` (number)
+     - Adjust the viewer size.
+   * - :opt:`-ksp_monitor_draw`
+     - Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Residual norm versus iteration number.
 
 
-\subsection{PISM's configuration flags and parameters, and how to change them}
+PISM's configuration flags and parameters, and how to change them
+-----------------------------------------------------------------
 \label{sec:pism-defaults}
-\optsection{PISM configuration file}
+
 
 PISM's behavior depends on values of many flags and physical parameters (see
-\href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser} for details). Most of parameters have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that must be set at bootstrapping, are exceptions.} which are read from the configuration file \texttt{pism_config.nc} in the \texttt{lib} sub-directory.
+\href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser} for details). Most of parameters have default values\footnote{For ``pismr``, grid parameters :math:`Mx`, :math:`My`, :math:`Mz`, :math:`Mbz`, :math:`Lz`, :math:`Lbz`, that must be set at bootstrapping, are exceptions.} which are read from the configuration file ``pism_config.nc`` in the ``lib`` sub-directory.
 
-It is possible to run PISM with an alternate configuration file using the \fileopt{config} command-line option:
-\begin{verbatim}
-$ pismr -i foo.nc -y 1000 -config my_config.nc
-\end{verbatim}
-The file \texttt{my_config.nc} has to contain \emph{all} of the flags and parameters present in \texttt{pism_config.nc}.
+It is possible to run PISM with an alternate configuration file using the :opt:`-config` command-line option:
+
+.. code::
+
+   pismr -i foo.nc -y 1000 -config my_config.nc
+
+The file ``my_config.nc`` has to contain *all* of the flags and parameters present in ``pism_config.nc``.
 
 The list of parameters is too long to include here; please see the \href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser} for an automatically-generated table describing them.
 
-Some command-line options \emph{set} configuration parameters; some PISM executables have special parameter defaults. To examine what parameters were used in a particular run, look at the attributes of the \texttt{pism_config} variable in a PISM output file.
+Some command-line options *set* configuration parameters; some PISM executables have special parameter defaults. To examine what parameters were used in a particular run, look at the attributes of the ``pism_config`` variable in a PISM output file.
 
-\subsubsection*{Managing parameter studies}
+Managing parameter studies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 \label{sec:parameter-studies}
-Keeping all PISM output files in a parameter study straight can be a challenge.  If the parameters of interest were controlled using command-line options then one can use \texttt{ncdump -h} and look at the \texttt{history} global attribute.
+Keeping all PISM output files in a parameter study straight can be a challenge.  If the parameters of interest were controlled using command-line options then one can use ``ncdump -h`` and look at the ``history`` global attribute.
 
-Alternatively, one can change parameter values by using an ``overriding'' configuration file.  The \fileopt{config_override} command-line option provides this alternative.  A file used with this option can have a subset of the configuration flags and parameters present in \texttt{pism_config.nc}. Moreover, PISM adds the \texttt{pism_config} variable with values used in a run to the output file, making it easy to see which parameters were used.
+Alternatively, one can change parameter values by using an "overriding" configuration file.  The :opt:`-config_override` command-line option provides this alternative.  A file used with this option can have a subset of the configuration flags and parameters present in ``pism_config.nc``. Moreover, PISM adds the ``pism_config`` variable with values used in a run to the output file, making it easy to see which parameters were used.
 
 Here's an example.  Suppose we want to compare the dynamics of an ice-sheet on Earth to the same ice-sheet on Mars, where the only physical change was to the value of the acceleration due to gravity.  Running
-\begin{verbatim}
-$ pismr -i input.nc -y 1e5 -o earth.nc <other PISM options>
-\end{verbatim}
-produces the ``Earth'' result, since PISM's defaults correspond to this planet.  Next, we create \texttt{mars.cdl} containing the following:
-\small
-\begin{verbatim}
-netcdf mars {
-    variables:
-    byte pism_overrides;
-    pism_overrides:constants.standard_gravity = 3.728;
-    pism_overrides:constants.standard_gravity_doc = "m s-2; standard gravity on Mars";
-}
-\end{verbatim}
-\normalsize
-Notice that the variable name is \texttt{pism_overrides} and not \texttt{pism_config} above. Now
-\small
-\begin{verbatim}
-$ ncgen -o mars_config.nc mars.cdl
-$ pismr -i input.nc -y 1e5 -config_override mars_config.nc -o mars.nc <other PISM options>
-\end{verbatim}
-\normalsize
-will create \texttt{mars.nc}, the result of the ``Mars'' run.  Then we can use \texttt{ncdump} to see what was different about \texttt{mars.nc}:
-\small
-\begin{verbatim}
-$ ncdump -h earth.nc | grep pism_config: > earth_config.txt
-$ ncdump -h mars.nc | grep pism_config: > mars_config.txt
-$ diff -U 1 earth_config.txt mars_config.txt
---- earth_config.txt	2015-05-08 12:44:43.000000000 -0800
-+++ mars_config.txt	2015-05-08 12:44:51.000000000 -0800
-@@ -734,3 +734,3 @@
-                pism_config:ssafd_relative_convergence_units = "1" ;
--               pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid" ;
-+               pism_config:constants.standard_gravity_doc = "m s-2; standard gravity on Mars" ;
-                pism_config:constants.standard_gravity_type = "scalar" ;
-@@ -1057,3 +1057,3 @@
-                pism_config:ssafd_relative_convergence = 0.0001 ;
--               pism_config:constants.standard_gravity = 9.81 ;
-+               pism_config:constants.standard_gravity = 3.728 ;
-                pism_config:start_year = 0. ;
-\end{verbatim}
-\normalsize
 
-\subsubsection*{Saving PISM's configuration for post-processing}
+.. code::
+
+   pismr -i input.nc -y 1e5 -o earth.nc <other PISM options>
+
+produces the "Earth" result, since PISM's defaults correspond to this planet.  Next, we create ``mars.cdl`` containing the following:
+
+.. code::
+
+   netcdf mars {
+       variables:
+       byte pism_overrides;
+       pism_overrides:constants.standard_gravity = 3.728;
+       pism_overrides:constants.standard_gravity_doc = "m s-2; standard gravity on Mars";
+   }
+
+
+Notice that the variable name is ``pism_overrides`` and not ``pism_config`` above. Now
+
+.. code::
+
+   ncgen -o mars_config.nc mars.cdl
+   pismr -i input.nc -y 1e5 -config_override mars_config.nc -o mars.nc <other PISM options>
+
+will create ``mars.nc``, the result of the "Mars" run.  Then we can use ``ncdump`` to see what was different about ``mars.nc``:
+
+.. code::
+
+   ncdump -h earth.nc | grep pism_config: > earth_config.txt
+   ncdump -h mars.nc | grep pism_config: > mars_config.txt
+   diff -U 1 earth_config.txt mars_config.txt
+   --- earth_config.txt	2015-05-08 12:44:43.000000000 -0800
+   +++ mars_config.txt	2015-05-08 12:44:51.000000000 -0800
+   @@ -734,3 +734,3 @@
+                   pism_config:ssafd_relative_convergence_units = "1" ;
+   -               pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid" ;
+   +               pism_config:constants.standard_gravity_doc = "m s-2; standard gravity on Mars" ;
+                   pism_config:constants.standard_gravity_type = "scalar" ;
+   @@ -1057,3 +1057,3 @@
+                   pism_config:ssafd_relative_convergence = 0.0001 ;
+   -               pism_config:constants.standard_gravity = 9.81 ;
+   +               pism_config:constants.standard_gravity = 3.728 ;
+                   pism_config:start_year = 0. ;
+
+Saving PISM's configuration for post-processing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 \label{sec:saving-pism-config}
 
-In addition to saving \texttt{pism_config} in the output file, PISM automatically adds this  variable to all files it writes (snap shots, time series of scalar and spatially-varying diagnostic quantities, and backups). This may be useful for post-processing and analysis of parameter sties as the user has easy access to all configuration options, model choices, etc., without the need to keep run scripts around.
+In addition to saving ``pism_config`` in the output file, PISM automatically adds this  variable to all files it writes (snap shots, time series of scalar and spatially-varying diagnostic quantities, and backups). This may be useful for post-processing and analysis of parameter sties as the user has easy access to all configuration options, model choices, etc., without the need to keep run scripts around.
 
-\subsection{Regridding}
+Regridding
+----------
 \label{sec:regridding}
-\optsection{Regridding}
-\optseealso{Bootstrapping}
 
-It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment on the default grid, producing output \texttt{foo.nc}, but then interpolate both the ice thickness and the temperature onto a finer grid.  The basic idea of ``regridding'' in PISM is that one starts over from the beginning on the finer grid, but one extracts the desired variables stored in the coarse grid file and interpolates these onto the finer grid before proceeding with the actual computation.
+It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment on the default grid, producing output ``foo.nc``, but then interpolate both the ice thickness and the temperature onto a finer grid.  The basic idea of "regridding" in PISM is that one starts over from the beginning on the finer grid, but one extracts the desired variables stored in the coarse grid file and interpolates these onto the finer grid before proceeding with the actual computation.
 
-The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
+The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension :math:`x,y,z`---but the transfer must always be done by *interpolation* and never *extrapolation*.  (An attempt to do the latter will always produce a PISM error.)
 
-Such ``regridding'' is done using the \fileopt{regrid_file} and
-\listopt{regrid_vars} commands as in this example: \index{executables!\texttt{pisms}}
+Such "regridding" is done using the :opt:`-regrid_file` and \listopt{regrid_vars} commands as in this example: }
 
-\begin{verbatim}
-$  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
-         -regrid_file foo.nc -regrid_vars thk,temp -o bar.nc
-\end{verbatim}
-\noindent By specifying regridded variables ``\texttt{thk,temp}'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Here one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
-A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sec:initboot} and illustrated by example in section \ref{sec:start}.
+.. code::
+
+    pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
+          -regrid_file foo.nc -regrid_vars thk,temp -o bar.nc
+
+ By specifying regridded variables "``thk,temp``", the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Here one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
+
+A slightly different use of regridding occurs when "bootstrapping", as described in section \ref{sec:initboot} and illustrated by example in section \ref{sec:start}.
 
 See table \ref{tab:regridvar} for the regriddable variables using
-\texttt{-regrid_file}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
+``-regrid_file``.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
 
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{ll}\toprule
-    \textbf{Name} & \textbf{Description}\\ \midrule
-    \texttt{age} & age of ice\\
-    \texttt{bwat} & effective thickness of subglacial melt water \\
-    \texttt{bmelt} & basal melt rate \\
-    \texttt{dbdt} & bedrock uplift rate \\
-    \texttt{litho_temp} & lithosphere (bedrock) temperature \\
-    \texttt{mask} & grounded/dragging/floating integer mask, see section \ref{sec:floatmask} \\
-    \texttt{temp} & ice temperature \\
-    \texttt{thk} & land ice thickness \\
-    \texttt{topg} & bedrock surface elevation \\
-    \texttt{enthalpy} & ice enthalpy\\
-    \bottomrule
-  \end{tabular}
-\caption{Regriddable variables.\index{regrid}  Use \texttt{-regrid_vars} with these names.}
-\label{tab:regridvar}
-\end{table}
+.. list-table:: Regriddable variables.  Use ``-regrid_vars`` with these names.
+   :header-rows: 1
+   :name: tab-regridvar
+   :widths: 20, 80
+
+   * - Name
+     - Description
+   * - ``age``
+     - age of ice
+   * - ``bwat``
+     - effective thickness of subglacial melt water
+   * - ``bmelt``
+     - basal melt rate
+   * - ``dbdt``
+     - bedrock uplift rate
+   * - ``litho_temp``
+     - lithosphere (bedrock) temperature
+   * - ``mask``
+     - grounded/dragging/floating integer mask, see section \ref{sec:floatmask}
+   * - ``temp``
+     - ice temperature
+   * - ``thk``
+     - land ice thickness
+   * - ``topg``
+     - bedrock surface elevation
+   * - ``enthalpy``
+     - ice enthalpy
 
 Here is another example: suppose you have an output of a PISM run on a fairly
-coarse grid (stored in \texttt{foo.nc}) and you want to continue this run on a
-finer grid. This can be done using \texttt{-regrid_file} along with
-\texttt{-bootstrap}\index{refining the grid}:
-\begin{verbatim}
-$ pismr -i foo.nc -bootstrap -Mx 201 -My 201 -Mz 21 -Lz 4000 \
-        -regrid_file foo.nc -regrid_vars litho_temp,enthalpy -y 100 -o bar.nc \
-        -surface constant
-\end{verbatim}
-% matching $ sign
-In this case all the model-state 2D variables present in \texttt{foo.nc} will
+coarse grid (stored in ``foo.nc``) and you want to continue this run on a
+finer grid. This can be done using ``-regrid_file`` along with
+``-bootstrap``:
+
+.. code::
+
+   pismr -i foo.nc -bootstrap -Mx 201 -My 201 -Mz 21 -Lz 4000 \
+         -regrid_file foo.nc -regrid_vars litho_temp,enthalpy -y 100 -o bar.nc \
+         -surface constant
+
+In this case all the model-state 2D variables present in ``foo.nc`` will
 be interpolated onto the new grid during bootstrapping, which happens first,
 while three-dimensional variables are filled using heuristics mentioned in
-section \ref{sec:initboot}.  Then temperature in bedrock (\texttt{litho_temp}) and
-ice enthalpy (\texttt{enthalpy}) will be interpolated from \texttt{foo.nc} onto the
+section \ref{sec:initboot}.  Then temperature in bedrock (``litho_temp``) and
+ice enthalpy (``enthalpy``) will be interpolated from ``foo.nc`` onto the
 new grid during the regridding stage, overriding values set at the
 bootstrapping stage.  All of this, bootstrapping and regridding, occurs before
 the first time step.
 
-By default PISM checks the grid overlap and stops if the current computational domain is not a subset of the one in a \texttt{-regrid_file}. It is possible to disable this check and allow constant extrapolation: use the option \intextoption{allow_extrapolation}.
+By default PISM checks the grid overlap and stops if the current computational domain is not a subset of the one in a ``-regrid_file``. It is possible to disable this check and allow constant extrapolation: use the option :opt:`-allow_extrapolation`.
 
-For example, in a PISM run the ice thickness has to be lower than the vertical extent of the computational domain. If the ice thickness exceeds \texttt{Lz} PISM saves the model state and stops with an error message.
-\begin{verbatim}
-$ pismr -i input.nc -bootstrap -Mz 11 -Lz 1000 -z_spacing equal \
-        -y 3e3 \
-        -o too-short.nc
-PISM ERROR: Ice thickness exceeds the height of the computational box (1000.0000 m).
-            The model state was saved to 'too-short_max_thickness.nc'.
-            To continue this simulation, run with
-            -i too-short_max_thickness.nc -bootstrap -regrid_file too-short_max_thickness.nc \
-            -allow_extrapolation -Lz N [other options]
-            where N > 1000.0000.
-\end{verbatim}
-% matching $ sign
+For example, in a PISM run the ice thickness has to be lower than the vertical extent of the computational domain. If the ice thickness exceeds ``Lz`` PISM saves the model state and stops with an error message.
+
+.. code::
+
+   pismr -i input.nc -bootstrap -Mz 11 -Lz 1000 -z_spacing equal \
+         -y 3e3 \
+         -o too-short.nc
+   PISM ERROR: Ice thickness exceeds the height of the computational box (1000.0000 m).
+               The model state was saved to 'too-short_max_thickness.nc'.
+               To continue this simulation, run with
+               -i too-short_max_thickness.nc -bootstrap -regrid_file too-short_max_thickness.nc \
+               -allow_extrapolation -Lz N [other options]
+               where N > 1000.0000.
 
 Regridding with extrapolation makes it possible to extend the vertical grid and continue a simulation like this one --- just follow the instructions provided in the error message.
 
-\newcommand\pid{\textsl{pid}s}
+.. |pid| replace:: *PID*\s
 
-\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM,-USR1,-USR2}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.  A convenient form of \texttt{kill}, for Linux users, is \texttt{pkill} which will find processes by executable name.  Thus ``\texttt{pkill -USR1 pismr}'' might be used to send all PISM processes the same signal, avoiding an explicit list of \pid.
+Signals, to control a running PISM model
+----------------------------------------
+\label{subsect:signal}
+Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using "signals" from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.  A convenient form of ``kill``, for Linux users, is ``pkill`` which will find processes by executable name.  Thus "``pkill -USR1 pismr``" might be used to send all PISM processes the same signal, avoiding an explicit list of \pid.
 
-\begin{table}[ht]
-\centering
-\begin{tabular}{llp{0.60\linewidth}}\toprule
-\textbf{Command} & \textbf{Signal} & \textbf{PISM behavior} \\
-\midrule
-\texttt{kill -KILL} \pid & \texttt{SIGKILL} & Terminate with extreme prejudice. PISM cannot catch it and no state is saved. \\
-\texttt{kill -TERM} \pid & \texttt{SIGTERM} & End process(es), but save the last model state in the output file, using \texttt{-o} name or default name as normal.  Note that the \texttt{history} string in the output file will contain an ``\texttt{EARLY EXIT caused by signal SIGTERM}'' indication. \\
-\texttt{kill -USR1} \pid & \texttt{SIGUSR1} & Process(es) will continue after saving the model state at the end of the current time step, using name ``\texttt{pism}\textsl{X}\texttt{-}\textsl{year}\texttt{.nc}''.  Time-stepping is not altered.  Also flushes time-series output buffers. \\
-\texttt{kill -USR2} \pid & \texttt{SIGUSR2} & Just flush time-series output buffers.\index{signals!USR2} \\
-\bottomrule
-\end{tabular}
-\caption{Signalling running PISM processes.  ``\pid''~stands for list of all identifiers of the PISM processes.}
-\label{tab:signals}
-\end{table}
+.. list-table:: Signalling running PISM processes.  "|pid|" stands for list of all identifiers of the PISM processes.
+   :name: tab-signals
+   :header-rows: 1
+   :widths: 20, 10, 70
 
-Here is an example.  Suppose we start a long verification run in the
-background, with standard out redirected into a file: \index{executables!\texttt{pismv}}
-
-\begin{verbatim}
-pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &
-\end{verbatim}
-
-\noindent This run gets a Unix process id,\index{signals!pid (process id)} which we assume is ``8920''.  (Get it using \texttt{ps} or \texttt{pgrep}.)  If we want to observe the run without stopping it we send the \texttt{USR1} signal:\index{signals!USR1}
-
-\begin{verbatim}
-kill -USR1 8920
-\end{verbatim}
-
-\noindent (With \texttt{pkill} one can usually type ``\texttt{pkill -usr1 pismv}''.)  Suppose it happens that we caught the run at year 31871.5.  Then, for example, a NetCDF file \texttt{pismv-31871.495.nc} is produced.  Note also that in the standard out log file \texttt{log.txt} the line
-
-\begin{verbatim}
-caught signal SIGUSR1:  Writing intermediate file ... and flushing time series.
-\end{verbatim}
-\noindent appears around that time step.  Suppose, on the other hand, that the run needs to be stopped.  Then a graceful way is\index{signals!term}
-
-\begin{verbatim}
-kill -TERM 8920
-\end{verbatim}
-
-\noindent because the model state is saved and can be inspected.
+   * - Command
+     - Signal
+     - PISM behavior
+   * - ``kill -KILL`` |pid|
+     - ``SIGKILL``
+     - Terminate with extreme prejudice. PISM cannot catch it and no state is saved.
+   * - ``kill -TERM`` |pid|
+     - ``SIGTERM``
+     - End process(es), but save the last model state in the output file, using ``-o`` name or default name as normal.  Note that the ``history`` string in the output file will contain an "``EARLY EXIT caused by signal SIGTERM``" indication.
+   * - ``kill -USR1`` |pid|
+     - ``SIGUSR1``
+     - Process(es) will continue after saving the model state at the end of the current time step, using name "``pism``\textsl{X}``-``\textsl{year}``.nc``".  Time-stepping is not altered.  Also flushes time-series output buffers.
+   * - ``kill -USR2`` |pid|
+     - ``SIGUSR2``
+     - Just flush time-series output buffers.
+   
+Here is an example. Suppose we start a long verification run in the background, with standard out redirected into a file: }
 
 
+.. code::
 
-\subsection{Understanding adaptive time-stepping} \label{subsect:adapt}
-\index{PISM!adaptive time stepping scheme}
-\optsection{Adaptive time-stepping}
+   pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &
 
-At each time step the PISM standard output includes ``flags'' and then a summary of the model state using a few numbers.  A typical example is
-\small
-\begin{verbatim}
-v$Eh  diffusivity (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)
-S -124791.571:  3.11640   2.25720      3.62041    18099.93737
-y  SSA:     3 outer iterations, ~17.0 KSP iterations each
-\end{verbatim}
-\normalsize
 
-The characters ``\texttt{v\$Eh}'' at the beginning of the flags line, the first line in the above example, give a very terse description of which physical processes were modeled in that time step.  Here ``\texttt{v}'' means that a stress balance was solved to compute the velocity.  Then the enthalpy was updated (``\texttt{E}'') and the ice thickness and surface elevation were updated (``\texttt{h}'').  The rest of the flags line looks like
+This run gets a Unix process id, which we assume is "8920".  (Get it using ``ps`` or ``pgrep``.)  If we want to observe the run without stopping it we send the ``USR1`` signal:
 
-  ``\texttt{diffusivity (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)}''
 
-\noindent Recall that the PISM time step is determined by an
-adaptive mechanism.  Stable mass conservation and conservation of energy solutions
-require such an adaptive time-stepping scheme \cite{BBL}.  The first character
-we see here, namely ``\texttt{diffusivity}'', is the adaptive-timestepping ``reason''
-flag.  See Table \ref{tab:adaptiveflag}.  We also see that
-there was a major time step of $0.83945$ model years divided into $2$ substeps of
-about $0.42$ years.  The \intextoption{skip} option enables this mechanism, while
-\intextoption{skip_max} sets the maximum number of such substeps.  The adaptive
-mechanism may choose to take fewer substeps than \texttt{-skip_max} so as to
-satisfy certain numerical stability criteria, however.
+.. code::
 
-The second line in the above, the line which starts with ``\texttt{S}'', is the summary.  Its format, and the units for these numbers, is simple and is given by a couple of lines printed near the beginning of the standard output for the run:
-\small
-\begin{verbatim}
-P       YEAR:       ivol      iarea  max_diffusivity  max_hor_vel
-U      years   10^6_km^3  10^6_km^2         m^2 s^-1       m/year
-\end{verbatim}
-\normalsize
-That is, in each summary we have the total ice volume, total ice area, maximum diffusivity (of the SIA mass conservation equation), and maximum horizontal velocity (i.e.~$\max(\max(|u|), \max(|v|))$).
+   kill -USR1 8920
+
+(With ``pkill`` one can usually type "``pkill -usr1 pismv``".)  Suppose it happens that we caught the run at year 31871.5.  Then, for example, a NetCDF file ``pismv-31871.495.nc`` is produced.  Note also that in the standard out log file ``log.txt`` the line
+
+
+.. code::
+
+   caught signal SIGUSR1:  Writing intermediate file ... and flushing time series.
+
+appears around that time step.  Suppose, on the other hand, that the run needs to be stopped.  Then a graceful way is
+
+
+.. code::
+
+   kill -TERM 8920
+
+because the model state is saved and can be inspected.
+
+Understanding adaptive time-stepping
+------------------------------------
+\label{subsect:adapt}
+
+At each time step the PISM standard output includes "flags" and then a summary of the model state using a few numbers.  A typical example is
+
+.. code::
+
+   v$Eh  diffusivity (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)
+   S -124791.571:  3.11640   2.25720      3.62041    18099.93737
+   y  SSA:     3 outer iterations, ~17.0 KSP iterations each
+
+The characters "``v$Eh``" at the beginning of the flags line, the first line in the above example, give a very terse description of which physical processes were modeled in that time step.  Here "``v``" means that a stress balance was solved to compute the velocity.  Then the enthalpy was updated ("``E``") and the ice thickness and surface elevation were updated ("``h``").  The rest of the flags line looks like
+
+.. code::
+
+   diffusivity (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)
+
+Recall that the PISM time step is determined by an adaptive mechanism. Stable mass conservation and conservation of energy solutions require such an adaptive time-stepping scheme \cite{BBL}. The first character we see here, namely "``diffusivity``", is the adaptive-timestepping "reason" flag. See Table \ref{tab:adaptiveflag}. We also see that there was a major time step of :math:`0.83945` model years divided into :math:`2` substeps of about :math:`0.42` years. The :opt:`-skip` option enables this mechanism, while :opt:`-skip_max` sets the maximum number of such substeps. The adaptive mechanism may choose to take fewer substeps than ``-skip_max`` so as to satisfy certain numerical stability criteria, however.
+
+The second line in the above, the line which starts with "``S``", is the summary.  Its format, and the units for these numbers, is simple and is given by a couple of lines printed near the beginning of the standard output for the run:
+
+.. code::
+
+   P       YEAR:       ivol      iarea  max_diffusivity  max_hor_vel
+   U      years   10^6_km^3  10^6_km^2         m^2 s^-1       m/year
+
+That is, in each summary we have the total ice volume, total ice area, maximum diffusivity (of the SIA mass conservation equation), and maximum horizontal velocity (i.e. :math:`\max(\max(|u|), \max(|v|))`).
 
 The third line of the above example shows that the SSA stress balance was solved.  Information on the number of nonlinear (outer) and linear (inner) iterations is provided \cite{BBssasliding}.
 
-\begin{table}[ht]
-\centering
-\begin{tabular}{p{0.3\linewidth}p{0.65\linewidth}}\toprule
-  \textbf{PISM output} & \textbf{Active adaptive constraint or PISM sub-system \mbox{that limited time-step size}} \\ \midrule
-  \texttt{3D CFL} & three-dimensional CFL for temperature/age advection \cite{BBL} \\
-  \texttt{diffusivity} & diffusivity for SIA mass conservation \cite{BBL,HindmarshPayne} \\
-  \texttt{end of the run} & end of prescribed run time \\
-  \texttt{max} & maximum allowed $\Delta t$ applies; set with \texttt{-max_dt} \\
-  \texttt{internal (derived class)} & maximum $\Delta t$ was temporarily set by a derived class \\
-  \texttt{2D CFL} & 2D CFL for mass conservation in SSA regions (upwinded; \cite{BBssasliding})\\
-  \texttt{-ts_... reporting} & the \texttt{-ts_times} option and the \mbox{\texttt{time_stepping.hit_ts_times}} \mbox{configuration flag}; see section \ref{sec:saving-time-series} \\
-  \texttt{-extra_... reporting} & the \texttt{-extra_times} option; see section \ref{sec:saving-spat-vari} \\
-  \texttt{surface} & a surface or an atmosphere model \\
-  \texttt{ocean} & an ocean model \\
-  \texttt{hydrology} & a hydrology model stability criterion, see section \ref{subsect:subhydro} \\
-  \texttt{BTU} & time-the bedrock thermal layer model, see section \ref{subsect:energy} \\
-  \texttt{eigencalving} & the eigen-calving model, see section \ref{sec:calving} \\
-  
-  \bottomrule
-  \normalsize
-\end{tabular}
-\caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}
-\label{tab:adaptiveflag}
-\end{table}
+.. csv-table:: Meaning of the adaptive time-stepping "reason" flag in the standard output flag line.
+   :header: PISM output, Active adaptive constraint or PISM sub-system that limited time-step size
+   :name: tab-adaptiveflag
+   :widths: 20, 80
 
-\begin{table}[ht]
-  \centering
- \begin{tabular}{lp{0.6\linewidth}}
-    \toprule
-    \textbf{Option} & \textbf{Description} \\
-    \midrule
-    \intextoption{adapt_ratio} & Adaptive time stepping ratio for the explicit
-    scheme for the mass balance equation. \\
-    \txtopt{max_dt}{(years)} & The maximum time-step in years.  The adaptive
-    time-stepping scheme will make the time-step shorter than this as needed
-    for stability, but not longer.\\
-    \intextoption{skip} & Enables time-step skipping, see below. \\
-    \intextoption{skip_max} & Number of mass-balance steps, including SIA
-    diffusivity updates, to perform before temperature, age, and SSA
-    stress balance computations are done.  This is only effective if the time
-    step is being limited by the diffusivity time step restriction associated
-    to mass continuity using the SIA.  The maximum recommended value for
-    \texttt{-skip_max} is, unfortunately, dependent on the context.  The
-    temperature field should be updated when the surface changes significantly,
-    and likewise the basal sliding velocity if it comes (as it should) from the
-    SSA calculation.\\
+   ``3D CFL``, "three-dimensional CFL for temperature/age advection \cite{BBL}"
+   ``diffusivity``, "diffusivity for SIA mass conservation \cite{BBL,HindmarshPayne}"
+   ``end of the run``, "end of prescribed run time"
+   ``max``, "maximum allowed :math:`\Delta t` applies; set with ``-max_dt``"
+   ``internal (derived class)``, "maximum :math:`\Delta t` was temporarily set by a derived class"
+   ``2D CFL``, "2D CFL for mass conservation in SSA regions (upwinded; \cite{BBssasliding})"
+   ``-ts_... reporting``, "the ``-ts_times`` option and the \mbox{``time_stepping.hit_ts_times``} \mbox{configuration flag}; see section \ref{sec:saving-time-series}"
+   ``-extra_... reporting``, "the ``-extra_times`` option; see section \ref{sec:saving-spat-vari}"
+   ``surface``, "a surface or an atmosphere model"
+   ``ocean``, "an ocean model"
+   ``hydrology``, "a hydrology model stability criterion, see section \ref{subsect:subhydro}"
+   ``BTU``, "time-the bedrock thermal layer model, see section \ref{subsect:energy}"
+   ``eigencalving``, "the eigen-calving model, see section \ref{sec:calving}"
 
-   \txtopt{timestep_hit_multiples}{(years)} & Hit multiples of the number of model years specified. For example, if stability criteria require a time-step of 11 years and the \texttt{-timestep_hit_multiples 3} option is set, PISM will take a 9 model year long time step. This can be useful to enforce consistent sampling of periodic climate data.\\
-   \bottomrule
-  \end{tabular}
-\caption{Options controlling time-stepping}
-\label{tab:time-stepping}
-\end{table}
+.. csv-table:: Options controlling time-stepping
+   :header: Option, Description
+   :name: tab-time-stepping
+   :widths: 20, 80
 
-\subsection{PETSc options for PISM users}\label{subsect:petscoptions}
-\optsection{PETSc options for PISM users}
+   :opt:`-adapt_ratio` , "Adaptive time stepping ratio for the explicit scheme for the mass balance equation."
+   :opt:`-max_dt` (years) , "The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer."
+   :opt:`-skip` , "Enables time-step skipping, see below."
+   :opt:`-skip_max` , "Number of mass-balance steps, including SIA diffusivity updates, to perform before temperature, age, and SSA stress balance computations are done. This is only effective if the time step is being limited by the diffusivity time step restriction associated to mass continuity using the SIA. The maximum recommended value for ``-skip_max`` is, unfortunately, dependent on the context. The temperature field should be updated when the surface changes significantly, and likewise the basal sliding velocity if it comes (as it should) from the SSA calculation."
+   :opt:`-timestep_hit_multiples` (years) , "Hit multiples of the number of model years specified. For example, if stability criteria require a time-step of 11 years and the ``-timestep_hit_multiples 3`` option is set, PISM will take a 9 model year long time step. This can be useful to enforce consistent sampling of periodic climate data."
+
+PETSc options for PISM users
+----------------------------
+\label{subsect:petscoptions}
+
 
 All PETSc programs including PISM accept command line options which control how PETSc distributes jobs among parallel processors, how it solves linear systems, what additional information it provides, and so on.  The PETSc manual \cite{petsc-user-ref} is the complete reference on these options.  We list some here that are useful to PISM users.  They can be mixed in any order with PISM options.
 
 Both for PISM and PETSc options, there are ways of avoiding the inconvenience of long commands with many runtime options.  Obviously, and as illustrated by examples in the previous sections, shell scripts can be set up to run PISM.  But PETSc also provides two mechanisms to give runtime options without retyping at each run command.
 
-First, the environment variable \texttt{PETSC_OPTIONS} can be set.  For example, a sequence of runs might need the same refined grid, and you might want to know if other options are read, ignored, or misspelled.  Set (in bash):
+First, the environment variable ``PETSC_OPTIONS`` can be set.  For example, a sequence of runs might need the same refined grid, and you might want to know if other options are read, ignored, or misspelled.  Set (in bash):
 
-\texttt{export PETSC_OPTIONS="-Mx 101 -My 101 -Mz 51 -options_left"}
+``export PETSC_OPTIONS="-Mx 101 -My 101 -Mz 51 -options_left"``
 
-\noindent The runs 
-\begin{verbatim}
-$ pismv -test F -y 100
-$ pismv -test G -y 100
-\end{verbatim}
-\noindent then have the same refined grid in each run, and the runs report on which options were read.
+ The runs
 
-Alternatively, the file \texttt{.petscrc} is always read, if present, from the directory where PISM (i.e.~the PETSc program) is started.  It can have a list of options, one per line.   In theory, these two PETSc mechanisms (\verb|PETSC_OPTIONS| and \verb|.petscrc|) can be used together.
+.. code::
 
-% "-da_processors_x M -da_processors_y N" should not be documented in this sub-appendix
-% because they do not work.  the reason is that IceModelVec2 and IceModelVec3 put 
-% the Mx, My dimensions in different arguments to the DACreate commands
+   pismv -test F -y 100
+   pismv -test G -y 100
 
-Now we address controls on how PETSc solves systems of linear equations, which uses the PETSc ``KSP'' component (Krylov methods).  Such linear solves are needed each time the nonlinear SSA stress balance equations are used (e.g.~with the option \texttt{-stress_balance ssa -ssa_method fd}).
+then have the same refined grid in each run, and the runs report on which options were read.
 
-Especially for solving the SSA equations with high resolution on multiple processors, it is recommended that the option \intextoption{ssafd_ksp_rtol} be set lower than its default value of $10^{-5}$.  For example, 
+Alternatively, the file ``.petscrc`` is always read, if present, from the directory where PISM (i.e. the PETSc program) is started.  It can have a list of options, one per line.   In theory, these two PETSc mechanisms (``PETSC_OPTIONS`` and ``.petscrc``) can be used together.
 
-\begin{verbatim}
-$  mpiexec -n 8 ssa_testi -Mx 3 -My 769 -ssa_method fd
-\end{verbatim}
+.. "-da_processors_x M -da_processors_y N" should not be documented in this sub-appendix
+   because they do not work.  the reason is that IceModelVec2 and IceModelVec3 put
+   the Mx, My dimensions in different arguments to the DACreate commands
 
-\noindent may fail to converge on a certain machine, but adding ``\verb|-ssafd_ksp_rtol 1e-10|'' works fine.
+Now we address controls on how PETSc solves systems of linear equations, which uses the PETSc "KSP" component (Krylov methods). Such linear solves are needed each time the nonlinear SSA stress balance equations are used (e.g. with the option ``-stress_balance ssa -ssa_method fd``).
 
-There is also the question of solver \emph{type}, using option \intextoption{ssafd_ksp_type}.  Based on one processor evidence from \texttt{ssa_testi}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \texttt{cg}, \texttt{bicg}, \texttt{gmres}, \texttt{bcgs}, \texttt{cgs}, \texttt{tfqmr}, \texttt{tcqmr}, and \texttt{cr}.  It appears \texttt{bicg}, \texttt{gmres}, \texttt{bcgs}, and \texttt{tfqmr}, at least, are all among the best.  The default is \texttt{gmres}.
+Especially for solving the SSA equations with high resolution on multiple processors, it is recommended that the option :opt:`-ssafd_ksp_rtol` be set lower than its default value of :math:`10^{-5}`. For example,
 
-Actually the KSP uses preconditioning.  This aspect of the solve is critical for parallel scalability, but it gives results which are dependent on the number of processors.  The preconditioner type can be chosen with \intextoption{ssafd_pc_type}. Several choices are possible, but for solving the ice stream and shelf equations we recommend only \texttt{bjacobi}, \texttt{ilu}, and \texttt{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{ssa_testi} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ssafd_ksp_rtol 1e-12}).  The default (as set by PISM) is \texttt{bjacobi}.  To force no preconditioning, which removes processor-number-dependence of results but may make the solves fail, use \texttt{-ssafd_pc_type none}.
+
+.. code::
+
+   mpiexec -n 8 ssa_testi -Mx 3 -My 769 -ssa_method fd
+
+may fail to converge on a certain machine, but adding "``-ssafd_ksp_rtol 1e-10``" works fine.
+
+There is also the question of solver *type*, using option :opt:`-ssafd_ksp_type`. Based on one processor evidence from ``ssa_testi``, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: ``cg``, ``bicg``, ``gmres``, ``bcgs``, ``cgs``, ``tfqmr``, ``tcqmr``, and ``cr``. It appears ``bicg``, ``gmres``, ``bcgs``, and ``tfqmr``, at least, are all among the best. The default is ``gmres``.
+
+Actually the KSP uses preconditioning. This aspect of the solve is critical for parallel scalability, but it gives results which are dependent on the number of processors. The preconditioner type can be chosen with :opt:`-ssafd_pc_type`. Several choices are possible, but for solving the ice stream and shelf equations we recommend only ``bjacobi``, ``ilu``, and ``asm``. Of these it is not currently clear which is fastest; they are all about the same for ``ssa_testi`` with high tolerances (e.g. ``-ssa_rtol 1e-7`` ``-ssafd_ksp_rtol 1e-12``). The default (as set by PISM) is ``bjacobi``. To force no preconditioning, which removes processor-number-dependence of results but may make the solves fail, use ``-ssafd_pc_type none``.
 
 For the full list of PETSc options controlling the SSAFD solver, run
-\begin{verbatim}
-$ ssa_testi -ssa_method fd -help | grep ssafd_ | less
-\end{verbatim}
-% $
 
-\subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} In the \verb|test/| and \verb|util/| subdirectories of the PISM directory the user will find some python scripts and one Matlab script, listed in Table \ref{tab:scripts-overview}.  The python scripts are all documented at the \textsl{Packages} tab on the \href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser}.  The python scripts all take option \texttt{--help}.
+.. code::
 
-\newcommand{\scripthead}[1]{\texttt{#1}}
+   ssa_testi -ssa_method fd -help | grep ssafd_ | less
 
-\begin{table}[ht]
-  \centering
- \begin{tabular}{p{0.35\linewidth}p{0.65\linewidth}}
-    \toprule
-    \textbf{Script} & \textbf{Purpose}\\
-    \midrule
-    \scripthead{test/vfnow.py} & Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section \ref{sec:verif}). \\
-    \scripthead{test/vnreport.py} & Automates the creation of convergence graphs like figures \ref{fig:thickerrsB}--~\ref{fig:velerrsI}. \\
-    \scripthead{util/fill_missing.py} & Uses an approximation to Laplace's equation $\grad^2 u = 0$ to smoothly replace missing values in a two-dimensional NetCDF variable.  The ``hole'' is filled with an average of the boundary non-missing values. Depends on \texttt{netcdf4-python} and \texttt{scipy} Python packages. \\
-    \scripthead{util/flowline.py} &  See subsection \ref{sec:flowline-modeling}. \\
-    \scripthead{util/flowlineslab.py} &  See subsection \ref{sec:flowline-modeling}. \\
-   \scripthead{util/check_stationarity.py} & Evaluate stationarity of a variable in a PISM \texttt{-ts_file} output. \\
-    \scripthead{util/nc2cdo.py} & Makes a netCDF file ready for Climate Data Operators (CDO). \\
-    \scripthead{util/nc2mat.py} & Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format \texttt{.mat}, supported by MATLAB version 5 and later.  Depends on \texttt{netcdf4-python} and \texttt{scipy} Python packages. \\
-    \scripthead{util/nccmp.py} & A script comparing variables in a given pair
-    of NetCDF files; used by PISM software tests. \\
-    \scripthead{util/pism_config_editor.py} & Makes modifying or
-    creating PISM configuration files easier. \\
-    \scripthead{util/pism_matlab.m} & An example MATLAB script showing how to
-    create a simple NetCDF file PISM can bootstrap from.\index{bootstrapping!preparing data using MATLAB}\\
-    \scripthead{util/PISMNC.py} & Used by many Python example scripts to generate a PISM-compatible file with the right dimensions and time-axis. \\
-   \bottomrule
-  \end{tabular}
-\caption{Some scripts which help in using PISM.}
-\label{tab:scripts-overview}
-\end{table}
+Utility and test scripts
+------------------------
+\label{subsect:scripts} In the ``test/`` and ``util/`` subdirectories of the PISM directory the user will find some python scripts and one Matlab script, listed in Table \ref{tab:scripts-overview}. The python scripts are all documented at the \textsl{Packages} tab on the \href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser}. The python scripts all take option ``--help``.
 
-\clearpage
+.. list-table:: Some scripts which help in using PISM
+   :name: tab-scripts-overview
+   :header-rows: 1
+   :widths: 20, 80
 
-\subsection{Using PISM for flow-line modeling}
+   * - Script
+     - Function
+   * - ``test/vfnow.py``
+     - Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section \ref{sec:verif}).
+   * - ``test/vnreport.py``
+     - Automates the creation of convergence graphs like figures \ref{fig:thickerrsB}-- \ref{fig:velerrsI}.
+   * - ``util/fill_missing.py``
+     - Uses an approximation to Laplace's equation :math:`\grad^2 u = 0` to smoothly replace missing values in a two-dimensional NetCDF variable.  The "hole" is filled with an average of the boundary non-missing values. Depends on ``netcdf4-python`` and ``scipy`` Python packages.
+   * - ``util/flowline.py``
+     - See subsection \ref{sec:flowline-modeling}.
+   * - ``util/flowlineslab.py``
+     - See subsection \ref{sec:flowline-modeling}.
+   * - ``util/check_stationarity.py``
+     - Evaluate stationarity of a variable in a PISM ``-ts_file`` output.
+   * - ``util/nc2cdo.py``
+     - Makes a netCDF file ready for Climate Data Operators (CDO).
+   * - ``util/nc2mat.py``
+     - Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format ``.mat``, supported by MATLAB version 5 and later.  Depends on ``netcdf4-python`` and ``scipy`` Python packages.
+   * - ``util/nccmp.py``
+     - A script comparing variables in a given pair of NetCDF files; used by PISM software tests.
+   * - ``util/pism_config_editor.py``
+     - Makes modifying or creating PISM configuration files easier.
+   * - ``util/pism_matlab.m``
+     - An example MATLAB script showing how to create a simple NetCDF file PISM can bootstrap from.
+   * - ``util/PISMNC.py``
+     - Used by many Python example scripts to generate a PISM-compatible file with the right dimensions and time-axis.
+
+
+Using PISM for flow-line modeling
+---------------------------------
 \label{sec:flowline-modeling}
-\optsection{Flow-line modeling}
 
-As described in sections \ref{subsect:coords} and \ref{subsect:grid}, PISM is a
-three-dimensional model. Moreover, parameters
-\texttt{Mx} and \texttt{My} have to be greater than or equal to three, so it is
-not possible to turn PISM into a 2D (flow-line) model by setting \texttt{Mx} or
-\texttt{My} to 1.
+As described in sections \ref{subsect:coords} and \ref{subsect:grid}, PISM is a three-dimensional model. Moreover, parameters ``Mx`` and ``My`` have to be greater than or equal to three, so it is not possible to turn PISM into a 2D (flow-line) model by setting ``Mx`` or ``My`` to 1.
 
-There is a way around this, though: by using the \intextoption{periodicity}
-option to tell PISM to make the computational grid $y$-periodic and providing
-initial and boundary conditions that are functions of $x$ only one can ensure
-that there is no flow in the $y$-direction. (Option \intextoption{periodicity}
-takes an argument specifying the direction: \texttt{none}, \texttt{x},
-\texttt{y} and \texttt{xy}--- for ``periodic in both X- and Y-directions''.)
+There is a way around this, though: by using the :opt:`-periodicity` option to tell PISM to make the computational grid :math:`y`-periodic and providing initial and boundary conditions that are functions of :math:`x` only one can ensure that there is no flow in the :math:`y`\-direction. (Option :opt:`-periodicity` takes an argument specifying the direction: ``none``, ``x``, ``y`` and ``xy``--- for "periodic in both X- and Y-directions".)
 
-In this case \texttt{Mx} can be any number; we want to avoid unnecessary
-computations, though, so ``\texttt{-Mx 3}'' is the obvious choice.
+In this case ``Mx`` can be any number; we want to avoid unnecessary computations, though, so "``-Mx 3``" is the obvious choice.
 
-One remaining problem is that PISM still expects input files to contain both
-\texttt{x} and \texttt{y} dimensions. To help with this, PISM comes with a
-Python script \texttt{flowline.py} that turns NetCDF files with $N$ grid points
-along a flow line into files with 2D fields containing $N\times3$ grid
-points.\footnote{This script requires the \texttt{numpy} and
-  \texttt{netCDF4} Python modules.  Run \texttt{flowline.py --help} for a
-  full list of options.}
+One remaining problem is that PISM still expects input files to contain both ``x`` and ``y`` dimensions. To help with this, PISM comes with a Python script ``flowline.py`` that turns NetCDF files with :math:`N` grid points along a flow line into files with 2D fields containing :math:`N\times3` grid points.\footnote{This script requires the ``numpy`` and ``netCDF4`` Python modules. Run ``flowline.py --help`` for a full list of options.}
 
-Here's an example which uses the script \texttt{util/flowlineslab.py} to create a minimal, and obviously unrealistic, dataset.  A file \texttt{slab.nc} is created by \texttt{util/flowlineslab.py}, but it is not ready to use with PISM.  Proceed as follows, after checking that \texttt{util/} is on your path:
-\begin{verbatim}
-$ flowlineslab.py                         # creates slab.nc with only an x-direction
-$ flowline.py -o slab-in.nc --expand -d y slab.nc
-\end{verbatim}
-%$ - match dollar signs to make emacs happy
-produces  a PISM-ready \texttt{slab-in.nc}.  Specifically, \texttt{flowline.py} ``expands'' its input file in the y-direction.  Now we can ``bootstrap'' from \texttt{slab-in.nc}:
-\begin{verbatim}
-$ mpiexec -n 2 pismr -surface given -i slab-in.nc -bootstrap -periodicity y \
-    -Mx 201 -My 3 -Lx 1000 -Ly 4 -Lz 2000 -Mz 11 -y 10000 -o pism-out.nc
-\end{verbatim}
-%$ - match dollar signs to make emacs happy
-To make it easier to visualize data in the file created by PISM, ``collapse'' it:
-\begin{verbatim}
-$ flowline.py -o slab-out.nc --collapse -d y pism-out.nc
-\end{verbatim}
-%$ - match dollar signs to make emacs happy
+Here's an example which uses the script ``util/flowlineslab.py`` to create a minimal, and obviously unrealistic, dataset.  A file ``slab.nc`` is created by ``util/flowlineslab.py``, but it is not ready to use with PISM.  Proceed as follows, after checking that ``util/`` is on your path:
 
-\subsection{Managing source code modifications}
+.. code::
+
+   flowlineslab.py                         # creates slab.nc with only an x-direction
+   flowline.py -o slab-in.nc --expand -d y slab.nc
+
+
+produces  a PISM-ready ``slab-in.nc``.  Specifically, ``flowline.py`` "expands" its input file in the y-direction.  Now we can "bootstrap" from ``slab-in.nc``:
+
+.. code::
+
+   mpiexec -n 2 pismr -surface given -i slab-in.nc -bootstrap -periodicity y \
+           -Mx 201 -My 3 -Lx 1000 -Ly 4 -Lz 2000 -Mz 11 -y 10000 -o pism-out.nc
+
+
+To make it easier to visualize data in the file created by PISM, "collapse" it:
+
+.. code::
+
+   flowline.py -o slab-out.nc --collapse -d y pism-out.nc
+
+
+Managing source code modifications
+----------------------------------
 \label{sec:code-modifications}
 
-``Practical usage'' may include editing the source code to extend, fix
+"Practical usage" may include editing the source code to extend, fix
 or replace parts of PISM.
 
 We provide both user-level (this manual) and developer-level documentation.
 Please see source code browsers at \url{http://www.pism-docs.org} for the latter.
 
-\begin{itemize}
-\item To use your (modified) version of PISM, you will need to follow the
-  compilation from sources instructions in the \emph{Installation Manual}
-\item We find it very useful to be able to check if a recent source code change
-  broke something. PISM comes with ``regression tests'', which check if certain
-  parts of PISM perform the way it should.\footnote{This automates running
-    verification tests described in section \ref{sec:verif}, for example.}
+- To use your (modified) version of PISM, you will need to follow the compilation from sources instructions in the *Installation Manual*
+- We find it very useful to be able to check if a recent source code change broke something. PISM comes with "regression tests", which check if certain parts of PISM perform the way it should.\footnote{This automates running verification tests described in section \ref{sec:verif}, for example.}
 
-  Run ``\texttt{make test}'' in the build directory to run PISM's regression tests.
+  Run "``make test``" in the build directory to run PISM's regression tests.
 
-  Note, though, that while a test failure usually means that the new code needs
-  more work, passing all the tests does not guarantee that everything works as
-  it should. We are constantly adding new tests, but so far only a subset
-  of PISM's functionality can be tested automatically.
-\item We strongly recommend using a version control system to manage code
-  changes. Not only is it safer than the alternative, it is also more efficient.
-\end{itemize}
+  Note, though, that while a test failure usually means that the new code needs more work, passing all the tests does not guarantee that everything works as it should. We are constantly adding new tests, but so far only a subset of PISM's functionality can be tested automatically.
+- We strongly recommend using a version control system to manage code changes. Not only is it safer than the alternative, it is also more efficient.
 
+..
+   Local Variables:
+   eval: (visual-line-mode nil)
+   fill-column: 1000
+   End:
