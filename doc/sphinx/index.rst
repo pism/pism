@@ -19,6 +19,7 @@ Welcome to PISM, a Parallel Ice Sheet Model's documentation!
 
    INSTALL
    getting-started
+   modeling-subglacier
    practical-usage
    verification
    vertchange

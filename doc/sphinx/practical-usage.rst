@@ -701,7 +701,7 @@ In the ``test/`` and ``util/`` subdirectories of the PISM directory the user wil
    * - ``test/vnreport.py``
      - Automates the creation of convergence graphs like figures fig-thickerrsB_ -- fig-velerrsI_.
    * - ``util/fill_missing.py``
-     - Uses an approximation to Laplace's equation :math:`\grad^2 u = 0` to smoothly replace missing values in a two-dimensional NetCDF variable.  The "hole" is filled with an average of the boundary non-missing values. Depends on ``netcdf4-python`` and ``scipy`` Python packages.
+     - Uses an approximation to Laplace's equation :math:`\nabla^2 u = 0` to smoothly replace missing values in a two-dimensional NetCDF variable.  The "hole" is filled with an average of the boundary non-missing values. Depends on ``netcdf4-python`` and ``scipy`` Python packages.
    * - ``util/flowline.py``
      - See subsection sec-flowline-modeling_.
    * - ``util/flowlineslab.py``
