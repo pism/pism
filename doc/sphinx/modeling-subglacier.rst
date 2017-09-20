@@ -1,9 +1,3 @@
-.. role:: var(code)
-   :class: variable
-
-.. role:: opt(code)
-   :class: option
-
 .. math::
 
    \newcommand{\eps}{\epsilon}

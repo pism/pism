@@ -21,6 +21,7 @@ Welcome to PISM, a Parallel Ice Sheet Model's documentation!
    getting-started
    highlevelview
    modeling-subglacier
+   init-boot
    practical-usage
    verification
    vertchange

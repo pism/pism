@@ -1,11 +1,3 @@
-.. role:: var(code)
-   :class: variable
-
-.. role:: opt(code)
-   :class: option
-
-.. role:: config(code)
-   :class: config
 
 .. |date| date::
 .. |flux| replace:: :math:`kg / (m^{2} s)`

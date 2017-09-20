@@ -1,14 +1,5 @@
 .. |diagnostics| replace:: **FIXME: link to the list of diagnostics**
 
-.. role:: var(code)
-   :class: variable
-
-.. role:: config(code)
-   :class: config
-
-.. role:: opt(code)
-   :class: option
-
 .. contents::
 
 .. _sec-practical-usage:
@@ -21,7 +12,7 @@ Practical usage
 Input and output
 ----------------
 
-PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table tab-input-output-options_ summarizes command-line options controlling the most basic ways to input and output NetCDF files when starting and ending PISM runs.
+PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table :numref:`tab-input-output-options` summarizes command-line options controlling the most basic ways to input and output NetCDF files when starting and ending PISM runs.
 
 .. list-table:: Basic NetCDF input and output options
    :name: tab-input-output-options
@@ -30,17 +21,17 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
    * - Option
      - Description
    * - :opt:`-i`
-     - Chooses a PISM output file (NetCDF format) to initialize or restart from.  See section sec-initboot_.
+     - Chooses a PISM output file (NetCDF format) to initialize or restart from.  See section :ref:`sec-initboot`.
    * - :opt:`-bootstrap`
-     - Bootstrap from the file set using :opt:`-i` using heuristics to "fill in" missing fields.  See section sec-initboot_.
+     - Bootstrap from the file set using :opt:`-i` using heuristics to "fill in" missing fields.  See section :ref:`sec-initboot`.
    * - :opt:`-dontreadSSAvels`
-     - Turns off reading the ``ubar_ssa`` and ``vbar_ssa`` velocities saved by a previous run using the ``ssa`` or ``ssa+sia`` stress balance (see section subsect-stressbalance_).
+     - Turns off reading the ``ubar_ssa`` and ``vbar_ssa`` velocities saved by a previous run using the ``ssa`` or ``ssa+sia`` stress balance (see section :ref:`subsect-stressbalance`).
    * - :opt:`-o`
      - Chooses the output file name.  Default name is ``unnamed.nc``.
    * - :opt:`-o_size` ``size_keyword``
-     - Chooses the size of the output file to produce. Possible sizes are ``none`` (*no* output file at all), ``small`` (only variables necessary to restart PISM), ``medium`` (the default, includes a few diagnostic quantities), ``big`` (writes all the variables mentioned in |diagnostics|), and ``big_2d`` writes all 2D variables but only 3D variables that are model state. Configuration variables ``output.sizes.medium``, ``output.sizes.big``, and ``output.sizes.big_2d`` list the written variables for those sizes.
+     - Chooses the size of the output file to produce. Possible sizes are ``none`` (*no* output file at all), ``small`` (only variables necessary to restart PISM), ``medium`` (the default, includes a few diagnostic quantities), ``big`` (writes all the variables mentioned in |diagnostics|), and ``big_2d`` writes all 2D variables but only 3D variables that are model state. Configuration variables :config:`output.sizes.medium`, :config:`output.sizes.big`, and :config:`output.sizes.big_2d` list the written variables for those sizes.
 
-Table tab-stdout_ lists the controls on what is printed to the standard output.  Note the ``-help`` and ``-usage`` options for getting help at the command line.
+Table :numref:`tab-stdout` lists the controls on what is printed to the standard output.  Note the ``-help`` and ``-usage`` options for getting help at the command line.
 
 .. csv-table:: Options controlling PISM's standard output
    :header: Option, Description
@@ -96,22 +87,22 @@ It is also possible to save time-series of certain scalar diagnostic quantities 
          -ts_times 0:1:1e4 -ts_vars volume_glacierized,area_glacierized_grounded
 
 
-will run for 10000 years, saving total ice volume and grounded ice area to ``time-series.nc`` *yearly*. See tables tab-time-series-opts_ for the list of options and tables |diagnostics| for the full list of supported time-series.
+will run for 10000 years, saving total ice volume and grounded ice area to ``time-series.nc`` *yearly*. See tables :numref:`tab-time-series-opts` for the list of options and tables |diagnostics| for the full list of supported time-series.
 
-Note that, similarly to the snapshot-saving code (section sec-snapshots_), this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, *linearly interpolated onto requested times*.
+Note that, similarly to the snapshot-saving code (section :ref:`sec-snapshots`), this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, *linearly interpolated onto requested times*.
 
 Omitting the ``-ts_vars`` option makes PISM save *all* available variables, as listed in tables |diagnostics|. Because scalar time-series take minimal storage space, compared to spatially-varying data, this is usually a reasonable choice. Run PISM with the :opt:`-list_diagnostics` option to see the list of all available time-series.
 
 If the file ``foo.nc``, specified by ``-ts_file foo.nc``, already exists then by default the existing file will be moved to ``foo.nc~`` and the new time series will go into ``foo.nc``. To append the time series onto the end of the existing file, use option ``-ts_append``.
 
-PISM buffers time-series data and writes it at the end of the run, once 10000 values are stored, or when an ``-extra_file`` is saved, whichever comes first. Sending an ``USR1`` (or ``USR2``) signal to a PISM process flushes these buffers, making it possible to monitor the run. (See section subsect-signal_ for more about PISM's signal handling.)
+PISM buffers time-series data and writes it at the end of the run, once 10000 values are stored, or when an ``-extra_file`` is saved, whichever comes first. Sending an ``USR1`` (or ``USR2``) signal to a PISM process flushes these buffers, making it possible to monitor the run. (See section :ref:`subsect-signal` for more about PISM's signal handling.)
 
 .. csv-table:: Command-line options controlling saving scalar time-series
    :name: tab-time-series-opts
    :header: Option, Description
 
    :opt:`-ts_file`, "Specifies the file to save to."
-   :opt:`-ts_times`, "Specifies times to save at as a MATLAB-style range :math:`a:\Delta t:b`, a comma-separated list, or a keyword (``hourly``, ``daily``, ``monthly``, ``yearly``). See section sec-saving-spat-vari_."
+   :opt:`-ts_times`, "Specifies times to save at as a MATLAB-style range :math:`a:\Delta t:b`, a comma-separated list, or a keyword (``hourly``, ``daily``, ``monthly``, ``yearly``). See section :ref:`sec-saving-spat-vari`."
    :opt:`-ts_vars`, "Comma-separated list of variables. Omitting this option is equivalent to listing the *all* variables."
    :opt:`-ts_append`, "Append time series to file if it already exists.  No effect if file does not yet exist."
 
@@ -135,7 +126,7 @@ Besides the above information on usage, here are comments on the physical signif
 Saving time series of spatially-varying diagnostic quantities
 -------------------------------------------------------------
 
-Sometimes it is useful to have PISM save a handful of diagnostic *maps* at some interval like every 10 years or even every month.  One can use snapshots (section sec-snapshots_), but doing so can easily fill your hard-drive because snapshots are complete (i.e. re-startable) model states.  Sometimes you want a *subset* of model variables saved frequently in an output file.
+Sometimes it is useful to have PISM save a handful of diagnostic *maps* at some interval like every 10 years or even every month.  One can use snapshots (section :ref:`sec-snapshots`), but doing so can easily fill your hard-drive because snapshots are complete (i.e. re-startable) model states.  Sometimes you want a *subset* of model variables saved frequently in an output file.
 
 Use options ``-extra_file``, ``-extra_times``, and ``-extra_vars`` for this.  For example,
 
@@ -145,7 +136,7 @@ Use options ``-extra_file``, ``-extra_times``, and ``-extra_vars`` for this.  Fo
          -extra_times 0:10:1e4 -extra_vars velsurf_mag,velbase_mag
 
 
-will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years.  Times are specified using a comma-separated list or a MATLAB-style range.  See Table tab-extras_ for all the options controlling this feature.  Tables |diagnostics| list all the variable choices.
+will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years.  Times are specified using a comma-separated list or a MATLAB-style range.  See Table :numref:`tab-extras` for all the options controlling this feature.  Tables |diagnostics| list all the variable choices.
 
 Note that options :opt:`-extra_times`, :opt:`-save_times`, :opt:`-ts_times` take *dates* if a non-trivial calendar is selected. For example,
 
@@ -196,7 +187,7 @@ which quantities are available in a particular setup, use the
 and stops.
 
 The ``-extra_file`` mechanism modifies PISM's adaptive time-stepping scheme so as to step to, and save at,
-*exactly* the times requested.  By contrast, as noted in subsection sec-saving-time-series_, the ``-ts_file`` mechanism does not alter PISM's time-steps and instead uses linear interpolation to save at the requested times in between PISM's actual time-steps.
+*exactly* the times requested.  By contrast, as noted in subsection :ref:`sec-saving-time-series`, the ``-ts_file`` mechanism does not alter PISM's time-steps and instead uses linear interpolation to save at the requested times in between PISM's actual time-steps.
 
 .. csv-table:: Command-line options controlling extra diagnostic output
    :name: tab-extras
@@ -287,7 +278,7 @@ It is also possible to save snapshots to separate files using the
 
 for this purpose. This will produce files called ``snapshots-year.nc``. This option is generally faster if many snapshots are needed, apparently because of the time necessary to reopen a large file at each snapshot when ``-save_split`` is not used. Note that tools like NCO and ``ncview`` usually behave as desired with wildcards like "``snapshots-*.nc``".
 
-Table tab-snapshot-opts_ lists the options related to saving snapshots of the model state.
+Table :numref:`tab-snapshot-opts` lists the options related to saving snapshots of the model state.
 
 .. list-table:: Command-line options controlling saving snapshots of the model state.
    :name: tab-snapshot-opts
@@ -309,7 +300,7 @@ Table tab-snapshot-opts_ lists the options related to saving snapshots of the mo
 Run-time diagnostic viewers
 ---------------------------
 
-Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table tab-diag-viewers_.  All the quantities listed in tables |diagnostics| are available.  Additionally, a couple of diagnostic quantities are *only* available as run-time viewers; these are shown in table tab-special-diag-viewers_.
+Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table :numref:`tab-diag-viewers`.  All the quantities listed in tables |diagnostics| are available.  Additionally, a couple of diagnostic quantities are *only* available as run-time viewers; these are shown in table :numref:`tab-special-diag-viewers`.
 
 Note that (for performance and implementation reasons) map viewers
 are transposed.
@@ -448,9 +439,9 @@ Such "regridding" is done using the :opt:`-regrid_file` and :opt:`-regrid_vars` 
 
 By specifying regridded variables "``thk,temp``", the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Here one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
-A slightly different use of regridding occurs when "bootstrapping", as described in section sec-initboot_ and illustrated by example in section sec-start_.
+A slightly different use of regridding occurs when "bootstrapping", as described in section :ref:`sec-initboot` and illustrated by example in section :ref:`sec-start`.
 
-See table tab-regridvar_ for the regriddable variables using
+See table :numref:`tab-regridvar` for the regriddable variables using
 ``-regrid_file``.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
 
 .. list-table:: Regriddable variables.  Use ``-regrid_vars`` with these names.
@@ -470,7 +461,7 @@ See table tab-regridvar_ for the regriddable variables using
    * - :var:`litho_temp`
      - lithosphere (bedrock) temperature
    * - :var:`mask`
-     - grounded/dragging/floating integer mask, see section sec-floatmask_
+     - grounded/dragging/floating integer mask, see section :ref:`sec-floatmask`
    * - :var:`temp`
      - ice temperature
    * - :var:`thk`
@@ -494,7 +485,7 @@ finer grid. This can be done using ``-regrid_file`` along with
 In this case all the model-state 2D variables present in ``foo.nc`` will
 be interpolated onto the new grid during bootstrapping, which happens first,
 while three-dimensional variables are filled using heuristics mentioned in
-section sec-initboot_.  Then temperature in bedrock (``litho_temp``) and
+section :ref:`sec-initboot`.  Then temperature in bedrock (``litho_temp``) and
 ice enthalpy (``enthalpy``) will be interpolated from ``foo.nc`` onto the
 new grid during the regridding stage, overriding values set at the
 bootstrapping stage.  All of this, bootstrapping and regridding, occurs before
@@ -525,7 +516,7 @@ Regridding with extrapolation makes it possible to extend the vertical grid and 
 Signals, to control a running PISM model
 ----------------------------------------
 
-Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using "signals" from the POSIX standard, included in Linux and most flavors of Unix.  Table tab-signals_ summarizes how PISM responds to signals.  A convenient form of ``kill``, for Linux users, is ``pkill`` which will find processes by executable name.  Thus "``pkill -USR1 pismr``" might be used to send all PISM processes the same signal, avoiding an explicit list of |pid|.
+Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using "signals" from the POSIX standard, included in Linux and most flavors of Unix.  Table :numref:`tab-signals` summarizes how PISM responds to signals.  A convenient form of ``kill``, for Linux users, is ``pkill`` which will find processes by executable name.  Thus "``pkill -USR1 pismr``" might be used to send all PISM processes the same signal, avoiding an explicit list of |pid|.
 
 .. list-table:: Signalling running PISM processes.  "|pid|" stands for list of all identifiers of the PISM processes.
    :name: tab-signals
@@ -593,7 +584,7 @@ The characters "``v$Eh``" at the beginning of the flags line, the first line in 
 
    diffusivity (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)
 
-Recall that the PISM time step is determined by an adaptive mechanism. Stable mass conservation and conservation of energy solutions require such an adaptive time-stepping scheme [BBL]_. The first character we see here, namely "``diffusivity``", is the adaptive-timestepping "reason" flag. See Table tab-adaptiveflag_. We also see that there was a major time step of :math:`0.83945` model years divided into :math:`2` substeps of about :math:`0.42` years. The :opt:`-skip` option enables this mechanism, while :opt:`-skip_max` sets the maximum number of such substeps. The adaptive mechanism may choose to take fewer substeps than ``-skip_max`` so as to satisfy certain numerical stability criteria, however.
+Recall that the PISM time step is determined by an adaptive mechanism. Stable mass conservation and conservation of energy solutions require such an adaptive time-stepping scheme [BBL]_. The first character we see here, namely "``diffusivity``", is the adaptive-timestepping "reason" flag. See Table :numref:`tab-adaptiveflag`. We also see that there was a major time step of :math:`0.83945` model years divided into :math:`2` substeps of about :math:`0.42` years. The :opt:`-skip` option enables this mechanism, while :opt:`-skip_max` sets the maximum number of such substeps. The adaptive mechanism may choose to take fewer substeps than ``-skip_max`` so as to satisfy certain numerical stability criteria, however.
 
 The second line in the above, the line which starts with "``S``", is the summary.  Its format, and the units for these numbers, is simple and is given by a couple of lines printed near the beginning of the standard output for the run:
 
@@ -616,13 +607,13 @@ The third line of the above example shows that the SSA stress balance was solved
    ``max``, "maximum allowed :math:`\Delta t` applies; set with ``-max_dt``"
    ``internal (derived class)``, "maximum :math:`\Delta t` was temporarily set by a derived class"
    ``2D CFL``, "2D CFL for mass conservation in SSA regions (upwinded; [BBssasliding]_)"
-   ``-ts_... reporting``, "the ``-ts_times`` option and the configuration flag :config:`time_stepping.hit_ts_times`; see section sec-saving-time-series_"
-   ``-extra_... reporting``, "the ``-extra_times`` option; see section sec-saving-spat-vari_"
+   ``-ts_... reporting``, "the ``-ts_times`` option and the configuration flag :config:`time_stepping.hit_ts_times`; see section :ref:`sec-saving-time-series`"
+   ``-extra_... reporting``, "the ``-extra_times`` option; see section :ref:`sec-saving-spat-vari`"
    ``surface``, "a surface or an atmosphere model"
    ``ocean``, "an ocean model"
-   ``hydrology``, "a hydrology model stability criterion, see section subsect-subhydro_"
-   ``BTU``, "time-the bedrock thermal layer model, see section subsect-energy_"
-   ``eigencalving``, "the eigen-calving model, see section sec-calving_"
+   ``hydrology``, "a hydrology model stability criterion, see section :ref:`subsect-subhydro`"
+   ``BTU``, "time-the bedrock thermal layer model, see section :ref:`subsect-energy`"
+   ``eigencalving``, "the eigen-calving model, see section :ref:`sec-calving`"
 
 .. csv-table:: Options controlling time-stepping
    :header: Option, Description
@@ -688,7 +679,7 @@ For the full list of PETSc options controlling the SSAFD solver, run
 Utility and test scripts
 ------------------------
 
-In the ``test/`` and ``util/`` subdirectories of the PISM directory the user will find some python scripts and one Matlab script, listed in Table tab-scripts-overview_. The python scripts are all documented at the *Packages* tab on the `PISM Source Code Browser`_. The Python scripts all take option ``--help``.
+In the ``test/`` and ``util/`` subdirectories of the PISM directory the user will find some python scripts and one Matlab script, listed in Table :numref:`tab-scripts-overview`. The python scripts are all documented at the *Packages* tab on the `PISM Source Code Browser`_. The Python scripts all take option ``--help``.
 
 .. list-table:: Some scripts which help in using PISM
    :name: tab-scripts-overview
@@ -697,15 +688,15 @@ In the ``test/`` and ``util/`` subdirectories of the PISM directory the user wil
    * - Script
      - Function
    * - ``test/vfnow.py``
-     - Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section sec-verif_).
+     - Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section :ref:`sec-verif`).
    * - ``test/vnreport.py``
-     - Automates the creation of convergence graphs like figures fig-thickerrsB_ -- fig-velerrsI_.
+     - Automates the creation of convergence graphs like figures :numref:`fig-thickerrsB` -- :numref:`fig-velerrsI`.
    * - ``util/fill_missing.py``
      - Uses an approximation to Laplace's equation :math:`\nabla^2 u = 0` to smoothly replace missing values in a two-dimensional NetCDF variable.  The "hole" is filled with an average of the boundary non-missing values. Depends on ``netcdf4-python`` and ``scipy`` Python packages.
    * - ``util/flowline.py``
-     - See subsection sec-flowline-modeling_.
+     - See subsection :ref:`sec-flowline-modeling`.
    * - ``util/flowlineslab.py``
-     - See subsection sec-flowline-modeling_.
+     - See subsection :ref:`sec-flowline-modeling`.
    * - ``util/check_stationarity.py``
      - Evaluate stationarity of a variable in a PISM ``-ts_file`` output.
    * - ``util/nc2cdo.py``
@@ -727,7 +718,7 @@ In the ``test/`` and ``util/`` subdirectories of the PISM directory the user wil
 Using PISM for flow-line modeling
 ---------------------------------
 
-As described in sections subsect-coords_ and subsect-grid_, PISM is a three-dimensional model. Moreover, parameters ``Mx`` and ``My`` have to be greater than or equal to three, so it is not possible to turn PISM into a 2D (flow-line) model by setting ``Mx`` or ``My`` to 1.
+As described in sections :ref:`subsect-coords` and :ref:`subsect-grid`, PISM is a three-dimensional model. Moreover, parameters ``Mx`` and ``My`` have to be greater than or equal to three, so it is not possible to turn PISM into a 2D (flow-line) model by setting ``Mx`` or ``My`` to 1.
 
 There is a way around this, though: by using the :opt:`-periodicity` option to tell PISM to make the computational grid :math:`y`-periodic and providing initial and boundary conditions that are functions of :math:`x` only one can ensure that there is no flow in the :math:`y`\-direction. (Option :opt:`-periodicity` takes an argument specifying the direction: ``none``, ``x``, ``y`` and ``xy`` --- for "periodic in both X- and Y-directions".)
 
@@ -781,7 +772,7 @@ We provide both user-level (this manual) and developer-level documentation. Plea
 .. [#] This will be fixed in a later release of PISM.
 .. [#] For ``pismr``, grid parameters ``Mx``, ``My``, ``Mz``, ``Mbz``, ``Lz``, ``Lbz``, that must be set at bootstrapping, are exceptions.
 .. [#] This script requires the ``numpy`` and ``netCDF4`` Python modules. Run ``flowline.py --help`` for a full list of options.
-.. [#] This automates running verification tests described in section sec-verif_, for example.
+.. [#] This automates running verification tests described in section :ref:`sec-verif`, for example.
 
 .. external links
 

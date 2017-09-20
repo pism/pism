@@ -75,7 +75,7 @@ For the key issue of what heuristic is used to determine the temperatures at dep
 
 Allowed formats for a bootstrapping file are relatively simple to describe. 
 
-#. NetCDF variables should have the ``units`` containing a UDUNITS-2-compatible string. If this attribute is missing, PISM will assume that a field uses MKS units.[#]
+#. NetCDF variables should have the ``units`` containing a UDUNITS-2-compatible string. If this attribute is missing, PISM will assume that a field uses MKS units. [#]_
 #. NetCDF coordinate variables should have ``standard_name`` or ``axis`` attributes. These are used to determine which *spatial* dimension a NetCDF dimension corresponds to; for example see ``ncdump -h`` output from a file produced by PISM. The :var:`x` and :var:`y` dimensions need not be called ":var:`x`" and ":var:`y`".
 #. Coordinate variables have to be strictly-increasing.
 #. Three-dimensional variables will be ignored in bootstrapping.
