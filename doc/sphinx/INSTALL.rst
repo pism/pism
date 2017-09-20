@@ -450,16 +450,16 @@ Footnotes
 .. _Bash: http://www.gnu.org/software/bash/
 .. _CMake-cross-compiling: https://cmake.org/Wiki/CMake_Cross_Compiling
 .. _doxygen: http://www.stack.nl/~dimitri/doxygen/
-.. _Enthought: http://www.enthought.com/
+.. _Enthought: https://www.enthought.com/
 .. _FFTW: http://www.fftw.org/
 .. _Fink: http://www.finkproject.org/
 .. _GSL: http://www.gnu.org/software/gsl/
-.. _Git: http://git-scm.com/
+.. _Git: https://git-scm.com/
 .. _graphviz: http://www.graphviz.org/
-.. _Homebrew: http://brew.sh/
+.. _Homebrew: https://brew.sh/
 .. _LaTeX: http://www.latex-project.org/
 .. _MPI: http://www.mcs.anl.gov/research/projects/mpi/
-.. _MacPorts: http://www.macports.org/
+.. _MacPorts: https://www.macports.org/
 .. _NCO: http://nco.sourceforge.net/
 .. _NetCDF: http://www.unidata.ucar.edu/software/netcdf/
 .. _NumPy: http://www.numpy.org/
@@ -467,19 +467,19 @@ Footnotes
 .. _PETSc-installation: http://www.mcs.anl.gov/petsc/documentation/installation.html
 .. _PROJ.4: http://proj4.org/
 .. _PnetCDF: http://trac.mcs.anl.gov/projects/parallel-netcdf
-.. _Python: http://www.python.org
-.. _Sphinx: http://sphinx-doc.org/latest/install.html
+.. _Python: https://www.python.org
+.. _Sphinx: http://www.sphinx-doc.org/en/stable/install.html
 .. _UDUNITS: http://www.unidata.ucar.edu/software/udunits/
-.. _Ubuntu: http://www.ubuntu.com/desktop
-.. _X: http://www.x.org/
-.. _XCode: http://developer.apple.com/xcode/
-.. _XQuartz: http://www.xquartz.org/
+.. _Ubuntu: https://www.ubuntu.com/desktop
+.. _X: https://www.x.org/wiki/
+.. _XCode: https://developer.apple.com/xcode/
+.. _XQuartz: https://www.xquartz.org/
 .. _matplotlib: http://matplotlib.org/
-.. _netcdf4-python: http://pypi.python.org/pypi/netCDF4
+.. _netcdf4-python: https://pypi.python.org/pypi/netCDF4
 
-.. _HPC-builds: http://github.com/pism/hpc-builds
+.. _HPC-builds: https://github.com/pism/hpc-builds
 .. _pism-email: mailto:uaf-pism@alaska.edu
-.. _PISM: http://www.pism-docs.org
+.. _PISM: http://www.pism-docs.org/wiki/doku.php
 .. _pism-code-browser: http://www.pism-docs.org/doxy/html/index.html
 
 ..

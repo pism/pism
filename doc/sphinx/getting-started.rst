@@ -538,12 +538,12 @@ See Table \ref{tab:modelhierarchy} in subsection \ref{sec:model-hierarchy} for a
    
 .. external links
 
-.. _MPI: http://www.mcs.anl.gov/mpi/
-.. _PISM: http://www.pism-docs.org
+.. _MPI: http://www.mcs.anl.gov/research/projects/mpi/
+.. _PISM: http://www.pism-docs.org/wiki/doku.php
 .. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
 .. _searise-greenland: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 .. _ncview: http://meteora.ucsd.edu/~pierce/ncview_home_page.html
-.. _CDO: http://code.zmaw.de/projects/cdo
+.. _CDO: https://code.mpimet.mpg.de/projects/cdo
 .. _NCO: http://nco.sourceforge.net/
 .. _pyngl: http://www.pyngl.ucar.edu
 .. _NCL: http://www.ncl.ucar.edu

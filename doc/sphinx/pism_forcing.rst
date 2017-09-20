@@ -985,7 +985,7 @@ See also `Surface: Caching modifier (``cache``)`_.
 .. URLs
 
 .. _pism-manual: http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=pism_manual.pdf
-.. _CF-Conventions: http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#cell-boundaries
+.. _CF-Conventions: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#cell-boundaries
 .. _SeaRISE-Greenland: http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
 .. _pism-email: mailto:uaf-pism@alaska.edu
 .. _pism-browser: http://www.pism-docs.org/doxy/html/index.html
