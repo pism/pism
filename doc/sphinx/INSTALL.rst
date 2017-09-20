@@ -432,8 +432,7 @@ then re-run ``cmake ..`` or ``ccmake ..``, making sure that Sphinx is installed 
 
 The main page for the documentation is then in ``doc/pismpython/html/index.html`` inside your build directory. The documentation build can take some time while it builds a large number of small images from LaTeX formulas.
 
-Footnotes
-=========
+.. rubric:: Footnotes
 
 .. [1] "PETSc" is pronounced "pet-see".
 

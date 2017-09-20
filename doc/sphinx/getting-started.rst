@@ -561,45 +561,6 @@ See Table \ref{tab:modelhierarchy} in subsection \ref{sec:model-hierarchy} for a
 
 .. [5] It is not quite "multigrid." That would both involve refinement and coarsening stages in computing the fine grid solution.
 
-.. rubric:: References
-
-.. [AschwandenAdalgeirsdottirKhroulev] FIXME
-.. [AschwandenBuelerKhroulevBlatter] FIXME
-.. [BBL] FIXME
-.. [BBssasliding] FIXME
-.. [BKAJS] FIXME
-.. [BLKfastearth] FIXME
-.. [Balesetal2001] FIXME
-.. [BamberLayberryGogenini] FIXME
-.. [Bindschadler2013SeaRISE] FIXME
-.. [Clarke05] FIXME
-.. [CuffeyPaterson] FIXME
-.. [DickensMorey2013] FIXME
-.. [EISMINT00] FIXME
-.. [Ettemaetal2009] FIXME
-.. [Golledgeetal2012] FIXME
-.. [Golledgeetal2013] FIXME
-.. [Habermannetal2013] FIXME
-.. [Hock05] FIXME
-.. [Huybrechts02] FIXME
-.. [Imbrieetal1984] FIXME
-.. [JohnsenetalGRIP] FIXME
-.. [Joughin2002] FIXME
-.. [Joughinetal08] FIXME
-.. [Joughinetal2001] FIXME
-.. [Larouretal2012] FIXME
-.. [LliboutryDuval1985] FIXME
-.. [MacAyeal] FIXME
-.. [PatersonBudd] FIXME
-.. [Pfefferetal2008] FIXME
-.. [Priceetal2011] FIXME
-.. [SchoofStream] FIXME
-.. [Tulaczyketal2000] FIXME
-.. [WeisGreveHutter] FIXME
-.. [Winkelmannetal2011] FIXME
-.. [vanPeltOerlemans2012] FIXME
-.. [vanPeltetal2013] FIXME
-
 ..
    Local Variables:
    eval: (visual-line-mode nil)

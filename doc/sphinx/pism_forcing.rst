@@ -34,7 +34,7 @@ PISM's climate forcing code has two kinds of components.
 - Ones that can be used as "stand-alone" models, such as the implementation of the PDD scheme (section `Surface: Temperature-index scheme (pdd)`_). These are *model components*.
 - Ones implementing "corrections" of various kinds, such as lapse rate corrections (sections `Surface: lapse rate corrections`_ and `Atmosphere: lapse rate corrections`_) or ice-core derived offsets (sections `Surface: scalar temperature offsets`_ and `Ocean: Scalar sea level offsets`_, for example). These are called *modifier components* or *modifiers*.
 
-Model components and modifiers can be chained as shown in Figure \ref{fig-climate-input-data-flow}. For example,
+Model components and modifiers can be chained as shown in Figure :ref:`fig-climate-input-data-flow`. For example,
 
 .. code::
 
@@ -46,12 +46,7 @@ Section `Examples and corresponding options`_ gives examples of combining compon
 
 .. note:: Summary of the main idea in using this manual
 
-   Setting up PISM's climate interface *requires* selecting one surface and one ocean component. The surface component may use an atmosphere component also; see Figure \ref{fig-climate-input-data-flow}. Command-line options ``-atmosphere``, ``-surface`` and ``-ocean`` each take a comma-separated list of keywords as an argument; the first keyword *has* to correspond to a model component, the rest can be "modifier" components. Any of these options can be omitted to use the default atmosphere, surface or ocean model components, but one has to explicitly choose a model component to use a modifier. Model components and modifiers are chained as in Figure \ref{fig-climate-input-data-flow}.
-
-.. _fig-climate-input-data-flow:
-.. figure:: data-flow.pdf
-
-   PISM climate input data flow. Colored arrows match colored interfaces between mediums in a figure in the User's Manual (FIXME). An atmosphere component is only needed for some surface models.
+   Setting up PISM's climate interface *requires* selecting one surface and one ocean component. The surface component may use an atmosphere component also; see Figure :ref:`fig-climate-input-data-flow`. Command-line options ``-atmosphere``, ``-surface`` and ``-ocean`` each take a comma-separated list of keywords as an argument; the first keyword *has* to correspond to a model component, the rest can be "modifier" components. Any of these options can be omitted to use the default atmosphere, surface or ocean model components, but one has to explicitly choose a model component to use a modifier. Model components and modifiers are chained as in Figure :ref:`fig-climate-input-data-flow`.
 
 Managing model time
 -------------------
@@ -280,7 +275,7 @@ Testing: Visualizing the climate inputs in the Greenland case
 
 
 Assuming that ``g20km_pre100.nc`` was produced by the run described in section
-\ref{manual-sec-start}), one can run the following to check if the PDD
+:ref:`manual-sec-start`), one can run the following to check if the PDD
 model in PISM (see section `Temperature-index (positive degree-day) scheme`_) is "reasonable":
 
 .. code::
@@ -295,7 +290,7 @@ This produces the file ``pddmovie.nc`` with several variables: :var:`climatic_ma
 
 The variable :var:`precipitation` does not evolve over time because it is part of the SeaRISE-Greenland data and is read in from the input file.
 
-The other two variables were used to create figure \ref{fig-pddseries}, which shows the time-series of the accumulation rate (top graph) and the air temperature (bottom graph) with the map view of the surface elevation on the left.
+The other two variables were used to create figure :ref:`fig-pddseries`, which shows the time-series of the accumulation rate (top graph) and the air temperature (bottom graph) with the map view of the surface elevation on the left.
 
 Here are two things to notice:
 
@@ -321,7 +316,7 @@ We can also test the surface temperature forcing code with the following command
           -extra_file dT_movie.nc -o_order zyx \
           -test_climate_models -no_mass
     
-The output ``dT_movie.nc`` and ``pism_dT.nc`` were used to create figure \ref{fig-artm-timeseries}.
+The output ``dT_movie.nc`` and ``pism_dT.nc`` were used to create figure :ref:`fig-artm-timeseries`.
 
 This figure shows the GRIP temperature offsets and the time-series of the temperature at the ice surface at a point in southern Greenland (bottom graph), confirming that the temperature offsets are used correctly.
 
@@ -485,17 +480,17 @@ The number of positive degree days is computed as the magnitude of the temperatu
 
 In PISM there are two methods for computing the number of positive degree days. The first computes only the expected value, by the method described in [CalovGreve05]_. This is the default when a PDD is chosen (i.e. option ``-surface pdd``). The second is a Monte Carlo simulation of the white noise itself, chosen by adding the option :opt:`pdd_rand`. This Monte Carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent. If repeatable randomness is desired use :opt:`pdd_rand_repeatable` instead of ``-pdd_rand``.
 
-By default, the computation summarized in Figure \ref{fig-pdd-model} is performed every week. (This frequency is controlled by the :config:`pdd_max_evals_per_year` parameter.) To compute mass balance during each week-long time-step, PISM keeps track of the current snow depth (using units of ice-equivalent thickness). This is necessary to determine if melt should be computed using the degree day factor for snow (:config:`pdd_factor_snow`) or the corresponding factor for ice (:config:`pdd_factor_ice`).
+By default, the computation summarized in Figure :ref:`fig-pdd-model` is performed every week. (This frequency is controlled by the :config:`pdd_max_evals_per_year` parameter.) To compute mass balance during each week-long time-step, PISM keeps track of the current snow depth (using units of ice-equivalent thickness). This is necessary to determine if melt should be computed using the degree day factor for snow (:config:`pdd_factor_snow`) or the corresponding factor for ice (:config:`pdd_factor_ice`).
 
-A fraction of the melt controlled by the configuration parameter :config:`pdd_refreeze` (:math:`\theta_{\text{refreeze}}` in Figure \ref{fig-pdd-model}, default: :math:`0.6`) refreezes. The user can select whether melted ice should be allowed to refreeze using the :config:`pdd_refreeze_ice_melt` configuration flag.
+A fraction of the melt controlled by the configuration parameter :config:`pdd_refreeze` (:math:`\theta_{\text{refreeze}}` in Figure :ref:`fig-pdd-model`, default: :math:`0.6`) refreezes. The user can select whether melted ice should be allowed to refreeze using the :config:`pdd_refreeze_ice_melt` configuration flag.
 
 Since PISM does not have a principled firn model, the snow depth is set to zero at the beginning of the balance year. See :config:`pdd_balance_year_start_day`. Default is :math:`274`, corresponding to October 1:math:`^{\text{st}}`.
 
-Our PDD implementation is meant to be used with an atmosphere model implementing a cosine yearly cycle such as ``searise_greenland`` (section \ref{sec-atmosphere-searise-greenland}), but it is not restricted to parameterizations like these.
+Our PDD implementation is meant to be used with an atmosphere model implementing a cosine yearly cycle such as ``searise_greenland`` (section :ref:`sec-atmosphere-searise-greenland`), but it is not restricted to parameterizations like these.
 
 This code also implements latitude- and mean July temperature dependent ice and snow factors using formulas (6) and (7) in [Faustoetal2009]_; set :opt:`pdd_fausto` to enable. The default standard deviation of the daily variability (:opt:`pdd_std_dev` option) is 2.53 degrees under the :opt:`pdd_fausto` option [Faustoetal2009]_. See also configuration parameters with the ``pdd_fausto`` prefix.
 
-Note that when used with periodic climate data (air temperature and precipitation) that is read from a file (see section \ref{sec-atmosphere-given}), use of ``-timestep_hit_multiplies X`` is recommended. (Here ``X`` is the length of the climate data period in years.)
+Note that when used with periodic climate data (air temperature and precipitation) that is read from a file (see section :ref:`sec-atmosphere-given`), use of ``-timestep_hit_multiplies X`` is recommended. (Here ``X`` is the length of the climate data period in years.)
 
 Surface PIK
 +++++++++++
@@ -517,8 +512,8 @@ Surface delta_T: scalar temperature offsets
 Command-line options:
 
 - :opt:`surface_delta_T_file` sets the name of the file PISM will read :var:`delta_T` from.
-- :opt:`surface_delta_T_period` (*years*) sets the period of the forcing data (section \ref{sec-periodic-forcing})
-- :opt:`surface_delta_T_reference_year` sets the reference year (section \ref{sec-periodic-forcing}).
+- :opt:`surface_delta_T_period` (*years*) sets the period of the forcing data (section :ref:`sec-periodic-forcing`)
+- :opt:`surface_delta_T_reference_year` sets the reference year (section :ref:`sec-periodic-forcing`).
 
 The time-dependent scalar offsets :var:`delta_T` are added to :var:`ice_surface_temp` computed by a surface model.
 
@@ -596,7 +591,7 @@ It takes the following options:
 - :opt:`surface_anomaly_period` (years) specifies the period of the forcing data, in model years; see `Periodic climate data`_
 - :opt:`surface_anomaly_reference_year` specifies the reference year; see `Periodic climate data`_
 
-See also to ``-atmosphere ...,anomaly`` (section \ref{sec-atmosphere-anomaly}), which is similar, but applies anomalies at the atmosphere level.
+See also to ``-atmosphere ...,anomaly`` (section :ref:`sec-atmosphere-anomaly`), which is similar, but applies anomalies at the atmosphere level.
 
 Surface cache: the caching modifier
 +++++++++++++++++++++++++++++++++++
@@ -776,7 +771,7 @@ The ``lapse_rate`` modifier allows for correcting air temperature and precipitat
 - :opt:`precip_lapse_rate` gives the precipitation lapse rate, in :math:`(m/year)/km`. Here :math:`\gamma = -\frac{dM}{dz}`.
 - :opt:`atmosphere_lapse_rate_file` specifies a file containing the reference surface elevation field (standard name: :var:`surface_altitude`). This file may contain several surface elevation records to use lapse rate corrections relative to a time-dependent surface. If one record is provided, the reference surface elevation is assumed to be time-independent.
 - :opt:`atmosphere_lapse_rate_period` gives the period, in model years; see section `Periodic climate data`_.
-- :opt:`atmosphere_lapse_rate_reference_year` specifies the reference date; see section \ref{sec-periodic-forcing}.
+- :opt:`atmosphere_lapse_rate_reference_year` specifies the reference date; see section :ref:`sec-periodic-forcing`.
 
 
 Atmosphere anomaly: using climate data anomalies
@@ -795,7 +790,7 @@ It takes the following options:
 - :opt:`atmosphere_anomaly_period` (years) specifies the period of the forcing data, in model years; section `Periodic climate data`_.
 - :opt:`atmosphere_anomaly_reference_year` specifies the reference year; section `Periodic climate data`_.
 
-See also to ``-surface ...,anomaly`` (section \ref{sec-surface-anomaly}), which is similar, but applies anomalies at the surface level.
+See also to ``-surface ...,anomaly`` (section :ref:`sec-surface-anomaly`), which is similar, but applies anomalies at the surface level.
 
 Ocean model components
 ----------------------

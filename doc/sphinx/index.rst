@@ -19,10 +19,12 @@ Welcome to PISM, a Parallel Ice Sheet Model's documentation!
 
    INSTALL
    getting-started
+   highlevelview
    modeling-subglacier
    practical-usage
    verification
    vertchange
    pism_forcing
+   references
 
 .. _pism-email: mailto:uaf-pism@alaska.edu
