@@ -18,6 +18,7 @@ Welcome to PISM, a Parallel Ice Sheet Model's documentation!
    :titlesonly:
 
    INSTALL
+   getting-started
    practical-usage
    verification
    vertchange
