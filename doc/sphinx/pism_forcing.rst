@@ -10,8 +10,8 @@
 .. |date| date::
 .. |flux| replace:: :math:`kg / (m^{2} s)`
 
-.. |variables| replace:: Variable names
-.. |options| replace:: Command-line options
+.. |variables| replace:: Variables
+.. |options| replace:: Options
 .. |seealso| replace:: See also
 .. |implementation| replace:: C++ class
 
@@ -640,7 +640,7 @@ It can also used to drive a temperature-index (PDD) climatic mass balance comput
 
 See also section `Reading top-surface boundary conditions from a file`_, which describes a similar surface model component (``-surface given``).
 
-atmosphere yearly_cycle: Cosine yearly cycle
+Atmosphere yearly_cycle: Cosine yearly cycle
 ++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: :opt:`-atmosphere yearly_cycle`

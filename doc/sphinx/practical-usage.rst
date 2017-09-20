@@ -1,5 +1,8 @@
 .. |diagnostics| replace:: **FIXME: link to the list of diagnostics**
 
+.. role:: var(code)
+   :class: variable
+
 .. role:: config(code)
    :class: config
 
@@ -23,7 +26,6 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
 .. list-table:: Basic NetCDF input and output options
    :name: tab-input-output-options
    :header-rows: 1
-   :widths: 20, 80
 
    * - Option
      - Description
@@ -43,7 +45,6 @@ Table tab-stdout_ lists the controls on what is printed to the standard output. 
 .. csv-table:: Options controlling PISM's standard output
    :header: Option, Description
    :name: tab-stdout
-   :widths: 20, 80
 
    :opt:`-help`,  "Brief descriptions of the many PISM and PETSc options. The run occurs as usual according to the other options.  (The option documentation does not get listed if the run didn't get started properly.)  Use with a pipe into ``grep`` to get usefully-filtered information on options, for example ``pisms -help | grep cold``."
    :opt:`-info`, "Gives information about PETSc operations during the run."
@@ -87,7 +88,7 @@ Saving time series of scalar diagnostic quantities
 --------------------------------------------------
 
 
- It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options ``-ts_file``, ``-ts_times``, and ``-ts_vars``.  For example,
+It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options ``-ts_file``, ``-ts_times``, and ``-ts_vars``.  For example,
 
 .. code::
 
@@ -108,7 +109,6 @@ PISM buffers time-series data and writes it at the end of the run, once 10000 va
 .. csv-table:: Command-line options controlling saving scalar time-series
    :name: tab-time-series-opts
    :header: Option, Description
-   :widths: 20, 80
 
    :opt:`-ts_file`, "Specifies the file to save to."
    :opt:`-ts_times`, "Specifies times to save at as a MATLAB-style range :math:`a:\Delta t:b`, a comma-separated list, or a keyword (``hourly``, ``daily``, ``monthly``, ``yearly``). See section sec-saving-spat-vari_."
@@ -119,8 +119,8 @@ Besides the above information on usage, here are comments on the physical signif
 
 - For each variable named ``..._flux``, positive values mean ice sheet mass gain.
 - PISM reports ice volume, ice mass, and several other quantities for "glacierized" areas. These quantities do not include contributions from areas where the ice thickness is equal to or below the value of the configuration parameter ``output.ice_free_thickness_standard`` (in meters). Corresponding "nonglacierized" quantities *do* include areas with a thin, "seasonal" ice cover.
-- The ``sub_shelf_ice_flux`` may be non-zero even if ``area_glacierized_shelf`` (floating ice area) is zero. This is due to the fact that during time-stepping fluxes are computed before calving is applied, and the ice area is computed *after* calving. Hence ice that is calved off experiences top-surface and basal fluxes, but does not contribute to the reported area. This is a small error that approaches zero as the grid is refined. In this case ``sub_shelf_ice_flux`` should be added to the calving flux during post-processing. %FIXME [#]_
-- Ice volume and area are computed and then split among floating and grounded portions: ``volume_glacierized`` :math:`\mapsto` (``volume_glacierized_shelf``, ``volume_glacierized_grounded``) while ``area_glacierized`` :math:`\mapsto` (``area_glacierized_shelf``,``area_glacierized_grounded``).  The volumes have units :math:`m^3` and the areas have units :math:`m^2`.
+- The ``sub_shelf_ice_flux`` may be non-zero even if ``area_glacierized_shelf`` (floating ice area) is zero. This is due to the fact that during time-stepping fluxes are computed before calving is applied, and the ice area is computed *after* calving. Hence ice that is calved off experiences top-surface and basal fluxes, but does not contribute to the reported area. This is a small error that approaches zero as the grid is refined. In this case ``sub_shelf_ice_flux`` should be added to the calving flux during post-processing. [#]_
+- Ice volume and area are computed and then split among floating and grounded portions: ``volume_glacierized`` :math:`\mapsto` (``volume_glacierized_shelf``, ``volume_glacierized_grounded``) while ``area_glacierized`` :math:`\mapsto` (``area_glacierized_shelf``, ``area_glacierized_grounded``).  The volumes have units :math:`m^3` and the areas have units :math:`m^2`.
 - The thermodynamic state of the ice sheet can be assessed, in part, by the amount of cold or temperate ("``temp``") ice.  Thus there is another splitting: ``volume_glacierized`` :math:`\mapsto` (``volume_glacierized_cold``, ``volume_glacierized_temperate``) and ``area_glacierized`` :math:`\mapsto` (``area_glacierized_cold_base``,``area_glacierized_temperate_base``).
 - If a PISM input file contains the ``proj4`` global attribute with a PROJ.4 string defining the projection then PISM computes corrected cell areas using this information, grid parameters, and the WGS84 reference ellipsoid. This yields areas and volumes with greater accuracy.
 - The sea-level-relevant ice volume ``slvol`` is the total grounded ice volume minus the amount of ice, that, in liquid form, would fill up the regions with bedrock below sea level, if this ice were removed.  That is, ``slvol`` is the sea level rise potential of the ice sheet at that time.  The result is reported  in sea-level equivalent, i.e. meters of sea level rise.
@@ -201,7 +201,6 @@ The ``-extra_file`` mechanism modifies PISM's adaptive time-stepping scheme so a
 .. csv-table:: Command-line options controlling extra diagnostic output
    :name: tab-extras
    :header: Option, Description
-   :widths: 20, 80
 
    :opt:`-extra_file`, "Specifies the file to save to; should be different from the output (:opt:`-o`) file."
    :opt:`-extra_times`, "Specifies times to save at either as a MATLAB-style range :math:`a:\Delta t:b` or a comma-separated list."
@@ -293,7 +292,6 @@ Table tab-snapshot-opts_ lists the options related to saving snapshots of the mo
 .. list-table:: Command-line options controlling saving snapshots of the model state.
    :name: tab-snapshot-opts
    :header-rows: 1
-   :widths: 20, 80
 
    * - Option
      - Description
@@ -320,7 +318,6 @@ are transposed.
 .. list-table:: Options controlling run-time diagnostic viewers
    :name: tab-diag-viewers
    :header-rows: 1
-   :widths: 20, 80
 
    * - Option
      - Description
@@ -342,7 +339,6 @@ shows ice thickness and ice temperature at the surface.
 .. list-table:: Special run-time-only diagnostic viewers
    :name: tab-special-diag-viewers
    :header-rows: 1
-   :widths: 20, 80
 
    * - Option
      - Description
@@ -460,29 +456,28 @@ See table tab-regridvar_ for the regriddable variables using
 .. list-table:: Regriddable variables.  Use ``-regrid_vars`` with these names.
    :header-rows: 1
    :name: tab-regridvar
-   :widths: 20, 80
 
    * - Name
      - Description
-   * - ``age``
+   * - :var:`age`
      - age of ice
-   * - ``bwat``
+   * - :var:`bwat`
      - effective thickness of subglacial melt water
-   * - ``bmelt``
+   * - :var:`bmelt`
      - basal melt rate
-   * - ``dbdt``
+   * - :var:`dbdt`
      - bedrock uplift rate
-   * - ``litho_temp``
+   * - :var:`litho_temp`
      - lithosphere (bedrock) temperature
-   * - ``mask``
+   * - :var:`mask`
      - grounded/dragging/floating integer mask, see section sec-floatmask_
-   * - ``temp``
+   * - :var:`temp`
      - ice temperature
-   * - ``thk``
+   * - :var:`thk`
      - land ice thickness
-   * - ``topg``
+   * - :var:`topg`
      - bedrock surface elevation
-   * - ``enthalpy``
+   * - :var:`enthalpy`
      - ice enthalpy
 
 Here is another example: suppose you have an output of a PISM run on a fairly
@@ -535,7 +530,6 @@ Ice sheet model runs sometimes take a long time, so the state of a run may need 
 .. list-table:: Signalling running PISM processes.  "|pid|" stands for list of all identifiers of the PISM processes.
    :name: tab-signals
    :header-rows: 1
-   :widths: 20, 10, 70
 
    * - Command
      - Signal
@@ -615,7 +609,6 @@ The third line of the above example shows that the SSA stress balance was solved
 .. csv-table:: Meaning of the adaptive time-stepping "reason" flag in the standard output flag line.
    :header: PISM output, Active adaptive constraint or PISM sub-system that limited time-step size
    :name: tab-adaptiveflag
-   :widths: 20, 80
 
    ``3D CFL``, "three-dimensional CFL for temperature/age advection [BBL]_"
    ``diffusivity``, "diffusivity for SIA mass conservation [BBL]_, [HindmarshPayne]_"
@@ -634,7 +627,6 @@ The third line of the above example shows that the SSA stress balance was solved
 .. csv-table:: Options controlling time-stepping
    :header: Option, Description
    :name: tab-time-stepping
-   :widths: 20, 80
 
    :opt:`-adapt_ratio` , "Adaptive time stepping ratio for the explicit scheme for the mass balance equation."
    :opt:`-max_dt` (years) , "The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer."
@@ -701,7 +693,6 @@ In the ``test/`` and ``util/`` subdirectories of the PISM directory the user wil
 .. list-table:: Some scripts which help in using PISM
    :name: tab-scripts-overview
    :header-rows: 1
-   :widths: 20, 80
 
    * - Script
      - Function
@@ -788,7 +779,7 @@ We provide both user-level (this manual) and developer-level documentation. Plea
 .. [#] For example, resolutions of 2km and higher on the whole-Greenland scale.
 .. [#] This is not likely to change.
 .. [#] This will be fixed in a later release of PISM.
-.. [#] For ``pismr``, grid parameters :math:`Mx`, :math:`My`, :math:`Mz`, :math:`Mbz`, :math:`Lz`, :math:`Lbz`, that must be set at bootstrapping, are exceptions.
+.. [#] For ``pismr``, grid parameters ``Mx``, ``My``, ``Mz``, ``Mbz``, ``Lz``, ``Lbz``, that must be set at bootstrapping, are exceptions.
 .. [#] This script requires the ``numpy`` and ``netCDF4`` Python modules. Run ``flowline.py --help`` for a full list of options.
 .. [#] This automates running verification tests described in section sec-verif_, for example.
 
