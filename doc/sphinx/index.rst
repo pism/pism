@@ -23,6 +23,7 @@ Welcome to PISM, a Parallel Ice Sheet Model's documentation!
    modeling-subglacier
    init-boot
    practical-usage
+   jako
    verification
    vertchange
    pism_forcing
