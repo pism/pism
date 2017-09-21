@@ -1,0 +1,378 @@
+.. default-role:: math
+
+.. _sec-validation:
+
+Validation case studies
+=======================
+
+
+"Validation" describes the comparison of numerical model output with physical observations
+in cases where the observations are sufficiently-complete and of sufficient quality so
+that the performance of the numerical model can be assessed [Roache]_, [Wesseling]_.
+Roughly speaking, validation can happen when the observations or data are better than the
+model, so the comparison measures the quality of the numerical model and not merely errors
+in, or incompleteness of, the data. Because of the difficulty of measuring boundary
+conditions for real ice flows, this situation is not automatic in glaciology, or even
+common. [#]_ Nonetheless we try two cases, first where PISM is applied on
+millimeter scale to model a laboratory experiment, and second for a large-scale ice flow
+in which all uncertainties of bedrock topography, basal sliding, and subglacial hydrology
+are removed, namely a present-day ice shelf.
+
+.. _sec-labgum:
+
+An SIA flow model for a table-top laboratory experiment
+-------------------------------------------------------
+
+Though there are additional complexities to the flow of real ice sheets, an ice sheet is a
+shear-thinning fluid with a free surface. PISM ought to be able to model such flows in
+some generality. We test that ability here by comparing PISM's isothermal SIA numerical
+model to a laboratory observations of a 1% Xanthan gum suspension in water in a
+table-top, moving-margin experiment by R.~Sayag and M.~Worster
+[SayagWorster2013]_, [SayagPeglerWorster2012]_. The "gum" fluid is more shear-thinning
+than ice, and it has much lower absolute viscosity values, but it has the same density.
+This flow has total mass `\sim 1` kg, compared to `\sim 10^{18}` kg for the Greenland ice
+sheet.
+
+We compare our numerical results to the "constant-flux" experiment from
+[SayagWorster2013]_. Figure :numref:`fig-labgumexperiment` shows the experimental setup by
+reproducing Figures 2(c) and 2(d) from that reference. A pump pushes the translucent
+blue-dyed fluid through a round 8 mm hole in the middle of a clear table-top at a mass
+rate of about 3 gm/s. The downward-pointing camera, which produced the right-hand figure,
+allows measurement of the location of margin of the "ice cap", and in particular of its
+radius. The measured radii data are the black dots in Figure :numref:`fig-labgumresult`.
+
+.. figure:: labgumexperiment
+   :name: fig-labgumexperiment
+
+   Reproduction of Figures 2(c) and 2(d) from [SayagWorster2013]_. Left: experimental
+   apparatus used for "constant-flux release" experiment. Right: snapshot of constant-flux
+   experiment (plan view), showing an axisymmetric front.
+
+The closest glaciological analog would be an ice sheet on a flat bed fed by positive basal
+mass balance (i.e.~"refreeze") underneath the dome, but with zero mass balance elsewhere
+on the lower and upper surfaces. However, noting that the mass-continuity equation is
+vertically-integrated, we may model the input flux (mass balance) as arriving at the
+*top* of the ice sheet, to use PISM's climate-input mechanisms. The flow though the
+input hole is simply modeled as constant across the hole, so the input "climate" uses
+``-surface given`` with a field ``climatic_mass_balance``, in the bootstrapping
+file, which is a positive constant in the hole and zero outside. While our replacement of
+flow into the base by mass balance at the top represents a very large change in the
+vertical component of the velocity field, we still see good agreement in the overall shape
+of the "ice sheet", and specifically in the rate of margin advance.
+
+Sayag & Worster estimate Glen exponent `n = 5.9` and a softness coefficient `A = 9.7
+\times 10^{-9}\,\text{Pa}^{-5.9}\,\text{s}^{-1}` for the flow law of their gum suspension,
+using regression of laboratory measurements of the radius. (Compare PISM defaults `n=3`
+and `A\approx 4\times 10^{-25}\,\text{Pa}^{-3}\,\text{s}^{-1}` for ice.) Setting the Sayag
+\& Worster values is one of several changes to the configuration parameters, compared to
+PISM ice sheet defaults, which are done in part by overriding parameters at run time by
+using the ``-config_override`` option. See ``examples/labgum/preprocess.py`` for
+the generation of a configuration ``.nc`` file with these settings.
+
+To run the example on the default 10 mm grid, first do
+
+.. code-block:: none
+
+   python preprocess.py
+
+
+and then do a run for 746 model seconds [SayagWorster2013]_ on the 10 mm grid on a
+`520\,\text{mm}\,\times 520\,\text{mm}` square domain using 4 processors:
+
+.. code-block:: none
+
+   ./rungum.sh 4 52 &> out.lab52 &
+
+This run generates text file ``out.lab52``, diagnostic files ``ts_lab52.nc`` and
+``ex_lab52.nc``, and final output ``lab52.nc``. This run took about 5 minutes on
+a 2013 laptop, thus roughly real time! When it is done, you can compare the modeled radius
+to the experimental data:
+
+.. code-block:: none
+
+   ./showradius.py -o r52.png -d constantflux3.txt ts_lab52.nc
+
+
+
+You can also redo the whole thing on higher resolution grids (here: 5 and 2.5 mm), here
+using 6 MPI processes if the runs are done simultaneously, and when it is done after
+several hours, make a combined figure just like Figure :numref:`fig-labgumresult`:
+
+.. code-block:: none
+   :name: fig-labgumresult
+
+   ./preprocess.py -Mx 104 -o initlab104.nc
+   ./preprocess.py -Mx 208 -o initlab208.nc
+   ./rungum.sh 2 104 &> out.lab104 &
+   ./rungum.sh 4 208 &> out.lab208 &
+   ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
+
+.. figure:: labgumradius
+
+   Radius `r_N(t)` for runs with 10 mm (``ts_lab52.nc``), 5 mm
+   (``ts_lab104.nc``), and 2.5 mm (``ts_lab208.nc``) grids, compared to
+   observations from Sayag & Worster's [SayagWorster2013]_ table-top "ice cap"
+   (gravity current) made from a 1% Xanthan gum suspension, as shown in Figure
+   :numref:`fig-labgumexperiment`.
+
+We see that on the coarsest grid the modeled volume has "steps" because the margin
+advances discretely. Note we are computing the radius by first computing the fluid-covered
+area `a` on the cartesian grid, and then using `a=\pi r^2` to compute the radius.
+
+Results are better on finer grids, especially at small times, because the input hole has
+radius of only 8 mm. Furthermore this "ice cap" has radius comparable to the hole for the
+first few model seconds. The early evolution is thus distinctly non-shallow, but we see
+that increasing the model resolution reduces most of the observation-model difference. In
+fact there is little need for "higher-order" stresses because the exact similarity
+solution of the shallow continuum equations, used by Sayag & Worster, closely-fits the
+data even for small radius and time (see [SayagWorster2013]_, Figure 4).
+
+In any case, the large-time observations are very closely-fit by the numerical results at
+all grid resolutions. We have used the Glen-law parameters `n,A` as calculated by Sayag &
+Worster, but one could do parameter-fitting to get the "best" values if desired. In
+particular, roughly speaking, `n` controls the slope of the results in Figure
+:numref:`fig-labgumresult` and `A` controls their vertical displacement.
+
+.. _sec-ross:
+
+An SSA flow model for the Ross Ice Shelf in Antarctica
+------------------------------------------------------
+
+As part of the EISMINT series of intercomparisons, MacAyeal and others [MacAyealetal]_
+successfully validated early-1990s ice shelf numerical models using velocity data for the
+Ross ice shelf. The data were from the RIGGS survey [RIGGS2]_, acquired in the period
+1973--1978 and measured at a few hundred locations in a grid across the shelf. Substantial
+modelling developments followed EISMINT-Ross, including inverse modeling to recover
+depth-averaged viscosity [RommelaereMacAyeal]_ and parameter-sensitivity studies
+[HumbertGreveHutter]_. Previous PISM versions set up the EISMINT-Ross flow model and
+performed the diagnostic computation, with RIGGS data for validation.
+
+However, availability of rich new data sets for ice sheet modeling, including the ALBMAP
+v1 [LeBrocqetal2010]_ ice sheet geometry, bedrock, and climate data set, and the
+radar-derived (InSAR) MEaSUREs Antarctica Velocity Map [Rignotetal2011]_, allows us to
+use more complete, recent, and higher-resolution data for the same basic job. Furthermore
+one can extend the diagnostic Ross ice shelf calculation both to other ice shelves around
+Antarctica and to time-evolving ("prognostic") cases using the eigencalving
+[Levermannetal2012]_ mechanisms.
+
+The scripts in this subsection are found in directory ``examples/ross/``. In summary, the
+script ``preprocess.py`` downloads data and builds a NetCDF input file for PISM. For the
+diagnostic computation we document first, the script ``run_diag.sh`` (in subdirectory
+``examples/ross/diagnostic/``) runs PISM. The script ``plot.py`` shows a comparison of
+observations and model results, as in Figure :numref:`fig-rosspython`.
+
+Preprocessing the data
+----------------------
+
+The script ``preprocess.py`` downloads ALBMAP and MEaSUREs NetCDF files using
+``wget``; these files total around 100 Mb. Then it uses NCO_ to cut out the relevant
+portion of the grid and CDO_ to conservatively-interpolate the high-resolution (500 m)
+velocity data onto the coarser (5 km) geometry grid used in ALBMAP. The script
+``nc2cdo.py`` from directory ``util/``, prepares the NetCDF file for the
+application of CDO, which requires complete projection information. Do
+
+.. code-block:: none
+
+   cd examples/ross/
+   ./preprocess.py
+
+The NetCDF file ``Ross_combined.nc`` produced by ``preprocess.py`` contains ice
+thickness, bed elevations, surface temperature, net accumulation, as well as latitude and
+longitude values. All of these are typical of ice sheet modelling data, both in diagnostic
+runs and as needed to initialize and provide boundary conditions for prognostic
+(evolutionary) runs; see below for the prognostic case with these data. The
+``_combined`` file also has variables ``u_ssa_bc`` and ``v_ssa_bc`` for the
+boundary values used in the (diagnostic and prognostic) computation of velocity. They are
+used at all grounded locations and at ice shelf cells that are immediate neighbors of
+grounded ice. The variable ``bc_mask`` specifies these locations. Finally the
+variables ``u_ssa_bc,v_ssa_bc``, which contain observed values, are used after the
+run to compare to the computed interior velocities.
+
+Diagnostic computation of ice shelf velocity
+--------------------------------------------
+
+The diagnostic velocity computation bootstraps from ``Ross_combined.nc`` and does a
+zero-year run; in the `211\times 211` grid case we demonstrate below, the key parts of the
+PISM command are
+
+.. code-block:: none
+
+   pismr -i ../Ross_combined.nc -bootstrap -Mx 211 -My 211 -Mz 3 -Lz 3000 -z_spacing equal \
+       -surface given -stress_balance ssa -energy none -yield_stress constant -tauc 1e6 \
+       -pik -ssa_dirichlet_bc -y 0 -ssa_e 0.6 -ssafd_ksp_monitor
+
+
+The computational grid here is the "native" `5` km data grid used in ALBMAP. Regarding the
+options,
+
+- The maximum thickness of the ice is `2766` m so we choose a height for the computational
+  box large enough to contain the ice (i.e.~``-Lz 3000``). Vertical grid resolution
+  is, however, unimportant in this case because we use the SSA stress balance only, and
+  the temperature set at bootstrapping suffices to determine the ice softness; thus the
+  options ``-Mz 3 -z_spacing equal -energy none``.
+
+- Option ``-stress_balance ssa`` selects the SSA stress balance and turns off the SIA
+  stress balance computation, since our goal is to model the ice shelf. It also side-steps
+  a technical issue: PISM uses periodic boundary conditions at domain boundaries and most
+  fields in this setup are not periodic. Turning off SIA avoids operations such as
+  differencing surface elevation across the domain edges. For a more complete solution to
+  this technical issue see section :ref:`sec-jako` about a regional model using option
+  :opt:`-no_model_strip` and executable ``pismo``.
+
+- Option ``-y 0`` chooses a diagnostic run.
+
+- Option ``-pik`` is equivalent to ``-cfbc -kill_icebergs`` in this non-evolving
+  example. Note that ``-kill_icebergs`` removes effectively-detached bits of ice,
+  especially in McMurdo sound area, so that the SSA problem is well-posed for the
+  grounded-ice-sheet-connected ice shelf.
+
+- Option :opt:`-ssa_dirichlet_bc` forces the use of fields
+  ``u_ssa_bc,v_ssa_bc,bc_mask`` described above. The field ``bc_mask`` is `1` at
+  boundary condition locations, and `0` elsewhere. For the prognostic runs below, the ice
+  thickness is also fixed at boundary condition locations, so as to prescribe ice flux as
+  an ice shelf input.
+
+- Options ``-yield_stress constant -tauc 1e6`` essentially just turn off the
+  grounded-ice evolving yield stress mechanism, which is inactive anyway, and force a high
+  resistance under grounded ice so it does not slide.
+
+- Option ``-ssa_e 0.6`` is the single tuned parameter; this value gives good
+  correlation between observed and modeled velocity magnitudes.
+
+- Option ``-ssafd_ksp_monitor`` provides feedback on the linear solver iterations
+  "underneath" the nonlinear (shear-thinning) SSA solver iteration.
+
+
+There is no need to type in the above command; just do
+
+.. code-block:: none
+
+   cd diagnostic/
+   ./run_diag.sh 2 211 0.6
+
+
+Note ``run_diag.sh`` accepts three arguments: ``run_diag.sh N Mx E`` does a run
+with ``N`` MPI processes, an ``Mx`` by ``Mx`` grid, and option
+``-ssa_e E``. The choices above give a run which only takes a few seconds, and it
+produces output file ``diag_Mx211.nc``.
+
+There are many reasonable choices for the effective softness of an ice shelf, as ice
+density, temperature, and the presence of fractures all influence the effective softness.
+Using an enhancement factor ``-ssa_e 0.6`` acknowledges that the physical justification
+for tuning the ice softness is uncertain. One could instead use the temperature itself or
+the ice density [#]_ as tuning parameters, and these are worthwhile experiments for the
+interested PISM user.
+
+The script ``plot.py`` takes PISM output such as ``diag_Mx211.nc`` to produce
+Figure :numref:`fig-rosspython`. The run shown in the figure used an enhancement factor of
+`0.6` as above. The thin black line outlines the floating shelf, which is the actual
+modeling domain here. To generate this Figure yourself, do
+
+.. code-block:: none
+
+   ../plot.py diag_Mx211.nc
+
+.. figure:: rossquiver rossscatter
+   :name: fig-rosspython
+
+   *Left*: Color is speed in m/a. Arrows are observed (white) and modeled (black)
+   velocities. *Right*: Comparison between modeled and observed speeds at points plotted
+   on the left.
+
+Extending this example to other ice shelves
+-------------------------------------------
+
+The SSA diagnostic solution described in this section can be easily applied to other ice
+shelves in Antarctica, such as the Filchner-Ronne Ice Shelf modeled using PISM in
+[AlbrechtLevermann2012]_, for example.
+
+Simply choose a different rectangular domain, within the area covered by the
+whole-Antarctic data-sets used here, at the preprocessing stage. In particular you should
+modify the lines "``ncks -O -d x1,439,649 -d y1,250,460 ...``" (for ALBMAP data) and
+"``ncks -d x,2200,3700 -d y,3500,4700 ...``" (for MEaSUREs velocity data) in the
+script ``examples/ross/preprocess.py``.
+
+Prognostic modelling using eigencalving
+---------------------------------------
+
+Next we summarize how you can create an evolving-geometry model of the Ross ice shelf with
+constant-in-time inflow across the fixed grounding line. See ``README.md`` and
+``run_prog.sh`` in ``examples/ross/prognostic/``. This example also demonstrates the
+:opt:`-calving eigen_calving` model for a moving calving front [Levermannetal2012]_.
+
+Start by running ``preprocess.py`` in ``examples/ross/`` as described above. If
+you have already done the diagnostic example above, then this stage is complete.
+
+Then change to the ``prognostic/`` directory and run the default example:
+
+.. code-block:: none
+
+   cd examples/ross/prognostic/
+   ./run_prog.sh 4 211 0.6 100
+
+This 100 model year run on 4 processes and a 5 km grid took about twenty minutes on a 2013
+laptop. It starts with a bootstrapping stage which does a ``y 0`` run, which generates
+``startfile_Mx211.nc``. It then re-initializes to start the prognostic run itself. See the
+``README.md`` for a bit more on the arguments taken by ``run_prog.sh`` and on viewing the
+output files.
+
+The PISM command done here is (essentially, and without showing diagnostic output choices)
+
+.. code-block:: none
+
+   pismr -i startfile_Mx211.nc -surface given -stress_balance ssa \
+       -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e 0.6 \
+       -y 100 -o prog_Mx211_yr100.nc -o_order zyx -o_size big \
+       -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
+       -calving_cfl -thickness_calving_threshold 150.0 \
+       -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned \
+       -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu
+
+
+Several of these options are different from those used in the diagnostic case. First,
+while the command ``-pik`` is the same as before, now each part of its expansion, namely
+``-cfbc -kill_icebergs -part_grid``, is important. As the calving front evolves
+(i.e.~regardless of the calving law choices), option ``-part_grid`` moves the calving
+front by one grid cell only when the cell is full of the ice flowing into it; see
+[Albrechtetal2011]_. The option ``-kill_icebergs`` is essential to maintain well-posedness
+of the SSA velocity problem at each time step [Winkelmannetal2011]_. See section
+:ref:`sec-pism-pik`.
+
+Option combination
+
+.. code-block:: none
+
+       -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
+       -calving_cfl -thickness_calving_threshold 150.0
+
+specifies that ice at the calving front will be removed if either a criterion on the
+product of principal stresses is satisfied [Levermannetal2012]_, namely ``eigen_calving``
+with the given constant `K`, or if the ice thickness goes below the given threshold of 150
+meters. See subsection :ref:`sec-calving`.
+
+There is also an extended option combination
+
+.. code-block:: none
+
+       -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned \
+       -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu
+
+which tells the PETSc KSP object used by the SSA solver to solve in the most robust,
+though not necessarily fastest, way. In particular, the linear problem is spread across
+processors using an additive Schwarz domain decomposition preconditioning method
+(``pc_type asm``) [Smithetal1996]_, along with the standard ``gmres`` KSP solver, and then
+on each processor the local part of the linear system is solved by a direct method by the
+preconditioner (``sub_pc_type lu``). These choices seem to be effective for solving SSA
+stress balances on the complicated-geometry domains which arise from nontrivial calving
+laws.
+
+.. %FIXME Evolving fracture density. See ``README.md``, ``preprocess_frac.py``, and
+   ``run_frac.sh`` in directory ``examples/ross/fracture_density/``. This example
+   demonstrates the fracture density transport model in [AlbrechtLevermann2012]_.
+
+.. rubric:: Footnotes
+
+.. [#] Which explains the rise of "simplified geometry intercomparisons"; see section
+       :ref:`sec-simp`.
+.. [#] High accumulation rates, cold firn with minimal compression, and basal freeze-on of
+       marine ice may all generate significant variation in shelf density.
