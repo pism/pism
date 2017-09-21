@@ -347,7 +347,7 @@ PISM's configuration flags and parameters, and how to change them
 
 
 PISM's behavior depends on values of many flags and physical parameters (see
-`PISM Source Code Browser`_ for details). Most of parameters have default values [#]_ which are read from the configuration file ``pism_config.nc`` in the ``lib`` sub-directory.
+`PISM Source Code Browser <pism-browser_>`_ for details). Most of parameters have default values [#]_ which are read from the configuration file ``pism_config.nc`` in the ``lib`` sub-directory.
 
 It is possible to run PISM with an alternate configuration file using the :opt:`-config` command-line option:
 
@@ -511,7 +511,7 @@ Regridding with extrapolation makes it possible to extend the vertical grid and 
 
 .. |pid| replace:: *PID*\s
 
-.. _subsect-signal:
+.. _sec-signal:
 
 Signals, to control a running PISM model
 ----------------------------------------
@@ -565,7 +565,7 @@ appears around that time step.  Suppose, on the other hand, that the run needs t
 
 because the model state is saved and can be inspected.
 
-.. _subsect-adapt:
+.. _sec-adapt:
 
 Understanding adaptive time-stepping
 ------------------------------------
@@ -625,7 +625,7 @@ The third line of the above example shows that the SSA stress balance was solved
    :opt:`-skip_max` , "Number of mass-balance steps, including SIA diffusivity updates, to perform before temperature, age, and SSA stress balance computations are done. This is only effective if the time step is being limited by the diffusivity time step restriction associated to mass continuity using the SIA. The maximum recommended value for ``-skip_max`` is, unfortunately, dependent on the context. The temperature field should be updated when the surface changes significantly, and likewise the basal sliding velocity if it comes (as it should) from the SSA calculation."
    :opt:`-timestep_hit_multiples` (years) , "Hit multiples of the number of model years specified. For example, if stability criteria require a time-step of 11 years and the ``-timestep_hit_multiples 3`` option is set, PISM will take a 9 model year long time step. This can be useful to enforce consistent sampling of periodic climate data."
 
-.. _subsect-petscoptions:
+.. _sec-petscoptions:
 
 PETSc options for PISM users
 ----------------------------
@@ -674,7 +674,7 @@ For the full list of PETSc options controlling the SSAFD solver, run
 
    ssa_testi -ssa_method fd -help | grep ssafd_ | less
 
-.. _subsect-scripts:
+.. _sec-scripts:
 
 Utility and test scripts
 ------------------------
@@ -773,13 +773,3 @@ We provide both user-level (this manual) and developer-level documentation. Plea
 .. [#] For ``pismr``, grid parameters ``Mx``, ``My``, ``Mz``, ``Mbz``, ``Lz``, ``Lbz``, that must be set at bootstrapping, are exceptions.
 .. [#] This script requires the ``numpy`` and ``netCDF4`` Python modules. Run ``flowline.py --help`` for a full list of options.
 .. [#] This automates running verification tests described in section :ref:`sec-verif`, for example.
-
-.. external links
-
-.. _`PISM Source Code Browser`: http://www.pism-docs.org/doxy/html/index.html
-
-..
-   Local Variables:
-   eval: (visual-line-mode nil)
-   fill-column: 1000
-   End:

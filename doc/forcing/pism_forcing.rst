@@ -1003,8 +1003,3 @@ See also `Surface: Caching modifier (``cache``)`_.
 .. _pism-email: mailto:uaf-pism@alaska.edu
 .. _pism-browser: http://www.pism-docs.org/doxy/html/index.html
 
-..
-   Local Variables:
-   eval: (visual-line-mode nil)
-   fill-column: 1000
-   End:

@@ -1,9 +1,3 @@
-.. math::
-
-   \newcommand{\eps}{\epsilon}
-   \newcommand{\bq}{\mathbf{q}}
-   \newcommand{\grad}{\nabla}
-
 .. _sec-modeling-subglacier:
 
 Modeling choices:  The subglacier
@@ -11,7 +5,7 @@ Modeling choices:  The subglacier
 
 .. contents::
 
-.. _subsect-basestrength:
+.. _sec-basestrength:
 
 Controlling basal strength
 --------------------------
@@ -24,7 +18,7 @@ When using option :opt:`-stress_balance ssa+sia`, the SIA+SSA hybrid stress bala
 
 This subsection explains the relevant options.
 
-The primary example of ``-stress_balance ssa+sia`` usage is in section sec-start_ of this Manual, but the option is also used in sections :ref:`subsect-MISMIP`, :ref:`subsect-MISMIP3d`, and :ref:`sec-jako`.
+The primary example of ``-stress_balance ssa+sia`` usage is in section :ref:`sec-start` of this Manual, but the option is also used in sections :ref:`subsect-MISMIP`, :ref:`subsect-MISMIP3d`, and :ref:`sec-jako`.
 
 In PISM the key coefficient in the sliding is always denoted as yield stress :math:`\tau_c`, which is :var:`tauc` in PISM output files.  This parameter represents the strength of the aggregate material at the base of an ice sheet, a poorly-observed mixture of pressurized liquid water, ice, granular till, and bedrock bumps.  The yield stress concept also extends to the power law form, and thus most standard sliding laws can be chosen by user options (below).  One reason that the yield stress is a useful parameter is that it can be compared, when looking at PISM output files, to the driving stress (:var:`taud_mag` in PISM output files).  Specifically, where :var:`tauc` :math:`<` :var:`taud_mag` you are likely to see sliding if option ``-stress_balance ssa+sia`` is used.
 
@@ -80,7 +74,7 @@ Equation :eq:`eq-pseudoplastic` is a very flexible power law form.  For example,
 
 (The ":math:`\beta`" coefficient is also called :math:`\beta^2` in some sources (see [MacAyeal]_, for example).)  If you want such a linear sliding law, and you have a value :math:`\beta=```beta`` in :math:`\text{Pa}\,\text{s}\,\text{m}^{-1}`, then use this option combination:
 
-.. code::
+.. code-block:: none
 
    -pseudo_plastic \
    -pseudo_plastic_q 1.0 \
@@ -97,7 +91,7 @@ More generally, it is common in the literature to see power-law sliding relation
 
 where :math:`C` is a constant, as for example in sections :ref:`subsect-MISMIP` and :ref:`subsect-MISMIP3d`.  In that case, use this option combination:
 
-.. code::
+.. code-block:: none
 
    -pseudo_plastic \
    -pseudo_plastic_q m \
@@ -149,7 +143,7 @@ Option combination ``-yield_stress constant -tauc X`` can be used to fix the yie
 
 We find that an effective, though heuristic, way to determine :math:`\phi=```tillphi`` in :eq:`eq-mohrcoulomb` is to make it a function of bed elevation [AschwandenAdalgeirsdottirKhroulev]_, [Martinetal2011]_, [Winkelmannetal2011]_.  This heuristic is motivated by hypothesis that basal material with a marine history should be weak [HuybrechtsdeWolde]_.  PISM has a mechanism setting :math:`\phi`=``tillphi`` to be a *piecewise-linear* function of bed elevation.  The option is
 
-.. code::
+.. code-block:: none
 
    -topg_to_phi phimin,phimax,bmin,bmax
 
@@ -174,14 +168,14 @@ Thus the user supplies 4 parameters: :math:`\phimin`, :math:`\phimax`, :math:`\b
 
 It is worth noting that an earth deformation model (see section :ref:`subsect-beddef`) changes :math:`b(x,y)=\mathrm{topg}` used in :eq:`eq-phipiecewise`, so that a sequence of runs such as
 
-.. code::
+.. code-block:: none
 
    pismr -i foo.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o bar.nc
    pismr -i bar.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o baz.nc
 
 will use *different* ``tillphi`` fields in the first and second runs.  PISM will print a warning during initialization of the second run:
 
-.. code::
+.. code-block:: none
 
    * Initializing the default basal yield stress model...
      option -topg_to_phi seen; creating tillphi map from bed elev ...
@@ -221,7 +215,7 @@ FIXME: EVOLVING CODE:  If the ``tauc_add_transportable_water`` configuration fla
    * - :opt:`-till_reference_effective_pressure`
      - :math:`= N_0` in :eq:`eq-computeNtil`, in Pa, with default value 1000.0 [Tulaczyketal2000]_
 
-.. _subsect-subhydro:
+.. _sec-subhydro:
 
 Subglacial hydrology
 --------------------
@@ -324,7 +318,7 @@ For most choices of the relevant parameters and most grid spacings, the ``routin
 
 .. FIXME -hydrology distributed is not documented except by [BuelervanPelt2015]_
 
-.. _subsect-beddef:
+.. _sec-beddef:
 
 Earth deformation models
 ------------------------
@@ -337,7 +331,7 @@ The second model ``-bed_def lc`` is much more physical.  It is based on papers b
 
 Here are minimal example runs to compare these models:
 
-.. code::
+.. code-block:: none
 
    mpiexec -n 4 pisms -eisII A -y 8000 -o eisIIA_nobd.nc
    mpiexec -n 4 pisms -eisII A -bed_def iso -y 8000 -o eisIIA_bdiso.nc
@@ -358,21 +352,15 @@ Here :math:`b_{0}` is the bed topography (:var:`topg`) read in from an input fil
 
 A correction like this can be used to get a bed topography field at the end of a paleo-climate run that is closer to observed present day topography. The correction is computed by performing a "preliminary" run and subtracting modeled bed topography from present day observations. A subsequent run with this correction should produce a bed elevations that are closer to observed values.
 
-.. _subsect-bedsmooth:
+.. _sec-bedsmooth:
 
 Parameterization of bed roughness in the SIA
 --------------------------------------------
 
-Schoof [Schoofbasaltopg2003]_ describes how to alter the SIA stress balance to model ice flow over bumpy bedrock topgraphy. One computes the amount by which bumpy topography lowers the SIA diffusivity. An internal quantity used in this method is a smoothed version of the bedrock topography. As a practical matter for PISM, this theory improves the SIA's ability to handle bed roughness because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bumps. For additional technical description of PISM's implementation, see the *Browser* page ``Using Schoof's (2003) parameterized bed roughness technique in PISM''.
+Schoof [Schoofbasaltopg2003]_ describes how to alter the SIA stress balance to model ice flow over bumpy bedrock topgraphy. One computes the amount by which bumpy topography lowers the SIA diffusivity. An internal quantity used in this method is a smoothed version of the bedrock topography. As a practical matter for PISM, this theory improves the SIA's ability to handle bed roughness because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bumps. For additional technical description of PISM's implementation, see the `Browser <pism-browser_>`_ page *Using Schoof's (2003) parameterized bed roughness technique in PISM*.
 
 This parameterization is "on" by default when using ``pismr``. There is only one associated option: :opt:`-bed_smoother_range` gives the half-width of the square smoothing domain in meters. If zero is given, ``-bed_smoother_range 0`` then the mechanism is turned off. The mechanism is on by default using executable ``pismr``, with the half-width set to 5 km (``-bed_smoother_range 5.0e3``), giving Schoof's recommended smoothing size of 10 km [Schoofbasaltopg2003]_.
 
 This mechanism is turned off by default in executables ``pisms`` and ``pismv``.
 
 Under the default setting ``-o_size medium``, PISM writes fields :var:`topgsmooth` and :var:`schoofs_theta` from this mechanism. The thickness relative to the smoothed bedrock elevation, namely :var:`topgsmooth`, is the difference between the unsmoothed surface elevation and the smoothed bedrock elevation. It is *only used internally by this mechanism*, to compute a modified value of the diffusivity; the rest of PISM does not use this or any other smoothed bed. The field :var:`schoofs_theta` is a number :math:`\theta` between :math:`0` and :math:`1`, with values significantly below zero indicating a reduction in diffusivity, essentially a drag coefficient, from bumpy bed.
-
-..
-   Local Variables:
-   eval: (visual-line-mode nil)
-   fill-column: 1000
-   End:

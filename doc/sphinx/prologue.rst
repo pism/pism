@@ -1,0 +1,89 @@
+.. math stuff
+
+.. math::
+
+   \newcommand{\eps}{\epsilon}
+   \newcommand{\bq}{\mathbf{q}}
+   \newcommand{\grad}{\nabla}
+   \newcommand{\diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
+
+.. Unfortunately \newcommand included in a math environment in LaTeX
+   is limited to this environment, so we need to define custom
+   commands twice: once for HTML (MathJax), once for LaTeX.
+
+.. raw:: latex
+
+   % all \newcommands above will have to be repeated to build a PDF manual
+
+.. roles
+
+.. role:: red
+   :class: red
+
+.. role:: green
+   :class: green
+
+.. role:: blue
+   :class: blue
+
+.. role:: var(code)
+   :class: variable
+
+.. role:: opt(code)
+   :class: option
+
+.. role:: config(code)
+   :class: config
+
+.. external links
+
+.. _Bash: http://www.gnu.org/software/bash/
+.. _CalCalcs: http://meteora.ucsd.edu/~pierce/calcalcs/calendars.html
+.. _CDO: https://code.mpimet.mpg.de/projects/cdo
+.. _CF-cell-boundaries: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#cell-boundaries
+.. _CF Conventions: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#cell-boundaries
+.. _CF-Calendars: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar
+.. _CMake-cross-compiling: https://cmake.org/Wiki/CMake_Cross_Compiling
+.. _Enthought: https://www.enthought.com/
+.. _FFTW: http://www.fftw.org/
+.. _Fink: http://www.finkproject.org/
+.. _GSL: http://www.gnu.org/software/gsl/
+.. _Git: https://git-scm.com/
+.. _Homebrew: https://brew.sh/
+.. _IDV: http://www.unidata.ucar.edu/software/idv/
+.. _LaTeX: http://www.latex-project.org/
+.. _MPI: http://www.mcs.anl.gov/research/projects/mpi/
+.. _MacPorts: https://www.macports.org/
+.. _NCL: http://www.ncl.ucar.edu
+.. _NCO: http://nco.sourceforge.net/
+.. _NetCDF: http://www.unidata.ucar.edu/software/netcdf/
+.. _NumPy: http://www.numpy.org/
+.. _PETSc-installation: http://www.mcs.anl.gov/petsc/documentation/installation.html
+.. _PETSc: http://www.mcs.anl.gov/petsc/
+.. _PISM: http://www.pism-docs.org/wiki/doku.php
+.. _PROJ.4: http://proj4.org/
+.. _PnetCDF: http://trac.mcs.anl.gov/projects/parallel-netcdf
+.. _Python: https://www.python.org
+.. _Sphinx: http://www.sphinx-doc.org/en/stable/install.html
+.. _UDUNITS: http://www.unidata.ucar.edu/software/udunits/
+.. _Ubuntu: https://www.ubuntu.com/desktop
+.. _X: https://www.x.org/wiki/
+.. _XCode: https://developer.apple.com/xcode/
+.. _XQuartz: https://www.xquartz.org/
+.. _doxygen: http://www.stack.nl/~dimitri/doxygen/
+.. _graphviz: http://www.graphviz.org/
+.. _matplotlib: http://matplotlib.org/
+.. _ncview: http://meteora.ucsd.edu/~pierce/ncview_home_page.html
+.. _netcdf4-python: https://pypi.python.org/pypi/netCDF4
+.. _pyngl: http://www.pyngl.ucar.edu
+.. _SeaRISE-Greenland: http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
+.. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
+.. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
+
+
+.. _HPC-builds: https://github.com/pism/hpc-builds
+.. _pism-email: mailto:uaf-pism@alaska.edu
+.. _PISM: http://www.pism-docs.org/wiki/doku.php
+.. _pism-manual: http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=pism_manual.pdf
+.. _pism-email: mailto:uaf-pism@alaska.edu
+.. _pism-browser: http://www.pism-docs.org/doxy/html/index.html

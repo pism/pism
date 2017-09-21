@@ -258,10 +258,4 @@ Class definition
 
 All ocean models need to provide implementatons (``_impl(...)`` methods) corresponding to the public API of ``pism::ocean::OceanModel``. (See ``src/coupler/PISMOcean.hh`` and note that some have default implementations.)
 
-..
-   Local Variables:
-   eval: (visual-line-mode nil)
-   fill-column: 1000
-   End:
-
 

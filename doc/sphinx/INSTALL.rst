@@ -82,7 +82,7 @@ requirements for building or running PISM.
 
 You may be able to install these by running
 
-.. code::
+.. code-block:: none
 
    sudo apt-get install cmake libfftw3-dev g++ libgsl0-dev netcdf-bin \
                         libnetcdf-dev libudunits2-dev cdo cmake-curses-gui \
@@ -319,13 +319,13 @@ Once you’re done with the installation, a few tests can confirm that PISM is f
 
 #. Try an EISMINT II run using the PETSc viewers (under the X window system):
 
-   .. code::
+   .. code-block:: none
 
       pisms -y 5000 -view thk,temppabase,velsurf_mag
 
    When using such viewers and ``mpiexec`` the additional final option ``-display :0`` is sometimes required to enable MPI to use X, like this:
 
-   .. code::
+   .. code-block:: none
 
        mpiexec -n 2 pisms -y 5000 -view thk,temppabase,velsurf_mag -display :0
 
@@ -343,7 +343,7 @@ Once you’re done with the installation, a few tests can confirm that PISM is f
 Next steps
 ==========
 
-Start with the *User’s Manual*, which has a "Getting started" section. A copy is on-line at the `PISM homepage <PISM_>`_, along with a `source code <pism-code-browser_>`_ (HTML). Completely up-to-date documentation can be built from LaTeX source in the ``doc/`` sub-directory, as described in the next section.
+Start with the *User’s Manual*, which has a "Getting started" section. A copy is on-line at the `PISM homepage <PISM_>`_, along with a `source code <pism-browser_>`_ (HTML). Completely up-to-date documentation can be built from LaTeX source in the ``doc/`` sub-directory, as described in the next section.
 
 A final reminder with respect to installation: Let’s assume you have checked out a copy of PISM using Git, `as described above <git-clone_>`_. You can then update your copy of PISM to the latest version by running ``git pull`` in the PISM directory and ``make install`` in your build directory.
 
@@ -395,7 +395,7 @@ Sphinx_ can be installed using ``apt-get`` or MacPorts_; see the website for mor
 
 The bindings documentation also requires the Sphinx extension called ``sphinxcontrib.bibtex``, which may come with some Sphinx packages (but not with Debian packages at this time). Without it you will see this error when you try to build the bindings documentation:
 
-.. code::
+.. code-block:: none
 
    Extension error:
    Could not import extension sphinxcontrib.bibtex (exception: No module named bibtex)
@@ -404,13 +404,13 @@ To install it see http://sphinxcontrib-bibtex.readthedocs.io/en/latest/.
 
 Note that if you install Sphinx using MacPorts_, you will install a version that depends on your Python version, and its executables will have names that depend on the Python version, e.g. ``sphinx-build-2.7`` rather than ``sphinx-build`` for Python 2.7. You will want to set up aliases so that the standard names work as well. To do this,
 
-.. code::
+.. code-block:: none
 
     sudo port select sphinx py27-sphinx
 
 (replacing ``py27-sphinx`` with ``py26-sphinx`` for Python 2.6, etc.) If you opt not to do this, you can tell CMake the name of your Sphinx executable using
 
-.. code::
+.. code-block:: none
 
    cmake -DSPHINX_EXECUTABLE=sphinx-build-2.7 ...
 
@@ -418,13 +418,13 @@ for example.
 
 Now you can build the documentation. In the PISM build directory, do
 
-.. code::
+.. code-block:: none
 
     make pismpython_docs
 
 If you get an error like
 
-.. code::
+.. code-block:: none
 
    make: *** No rule to make target `pismpython_docs'.  Stop.
 
@@ -445,44 +445,3 @@ The main page for the documentation is then in ``doc/pismpython/html/index.html`
 .. [5] Install the ``cmake-curses-gui`` package to get ``ccmake`` on Ubuntu_.
 
 .. [6] The ``PETSC_ARCH`` variable is just a string you can use to choose different PETSc configurations and does not have any other significance.
-
-.. _Bash: http://www.gnu.org/software/bash/
-.. _CMake-cross-compiling: https://cmake.org/Wiki/CMake_Cross_Compiling
-.. _doxygen: http://www.stack.nl/~dimitri/doxygen/
-.. _Enthought: https://www.enthought.com/
-.. _FFTW: http://www.fftw.org/
-.. _Fink: http://www.finkproject.org/
-.. _GSL: http://www.gnu.org/software/gsl/
-.. _Git: https://git-scm.com/
-.. _graphviz: http://www.graphviz.org/
-.. _Homebrew: https://brew.sh/
-.. _LaTeX: http://www.latex-project.org/
-.. _MPI: http://www.mcs.anl.gov/research/projects/mpi/
-.. _MacPorts: https://www.macports.org/
-.. _NCO: http://nco.sourceforge.net/
-.. _NetCDF: http://www.unidata.ucar.edu/software/netcdf/
-.. _NumPy: http://www.numpy.org/
-.. _PETSc: http://www.mcs.anl.gov/petsc/
-.. _PETSc-installation: http://www.mcs.anl.gov/petsc/documentation/installation.html
-.. _PROJ.4: http://proj4.org/
-.. _PnetCDF: http://trac.mcs.anl.gov/projects/parallel-netcdf
-.. _Python: https://www.python.org
-.. _Sphinx: http://www.sphinx-doc.org/en/stable/install.html
-.. _UDUNITS: http://www.unidata.ucar.edu/software/udunits/
-.. _Ubuntu: https://www.ubuntu.com/desktop
-.. _X: https://www.x.org/wiki/
-.. _XCode: https://developer.apple.com/xcode/
-.. _XQuartz: https://www.xquartz.org/
-.. _matplotlib: http://matplotlib.org/
-.. _netcdf4-python: https://pypi.python.org/pypi/netCDF4
-
-.. _HPC-builds: https://github.com/pism/hpc-builds
-.. _pism-email: mailto:uaf-pism@alaska.edu
-.. _PISM: http://www.pism-docs.org/wiki/doku.php
-.. _pism-code-browser: http://www.pism-docs.org/doxy/html/index.html
-
-..
-   Local Variables:
-   eval: (visual-line-mode nil)
-   fill-column: 1000
-   End:

@@ -137,9 +137,3 @@ Thus it looks just like the conservation of energy equation in the original vert
 Under option ``-o_size big``, all of these vertical velocity fields are available as fields in the output NetCDF file.  The vertical velocity relative to the geoid, as a three-dimensional field, is written as the diagnostic variable ``wvel``.  This is the "actual" vertical velocity :math:`w = \tilde w + \diff{b}{t} + \mathbf{U}(s)\cdot\nabla b` .  Its surface value is written as ``wvelsurf``, and its basal value as ``wvelbase``.  The relative vertical velocity :math:`\tilde w` is written to the NetCDF output file as ``wvel_rel``.
 
 .. [Jenssen] FIXME: missing reference
-
-..
-   Local Variables:
-   eval: (visual-line-mode nil)
-   fill-column: 1000
-   End:

@@ -10,7 +10,7 @@ its floating tongue in the 1990s [JoughinAbdalatiFahnestock]_, an
 event which seems to have been driven by warmer ocean temperatures
 [Hollandetal2008]_. Because it is thick, has a steep surface slope,
 has a deep trough in its bedrock topography (Figure
-:ref:`fig-jako-basin-topg`), and has a thick layer of low-viscosity
+:numref:`fig-jako-basin-topg`), and has a thick layer of low-viscosity
 temperate ice at its base [Luethietal2009]_, this ice flow is
 different from the ice streams in West Antarctica or Northeast
 Greenland [TrufferEchelmeyer]_.
@@ -61,7 +61,7 @@ it up as directed in its ``README.md``. Then come back to the
 ``examples/jako/`` directory and link the script. Here is the quick
 summary:
 
-.. code::
+.. code-block:: bash
 
    cd ~/usr/local/                                      # the location you want
    git clone https://github.com/pism/regional-tools.git
@@ -82,7 +82,7 @@ data set). If you have already run the example in Section
 :ref:`sec-start` then you already have this file and you can link to
 it to avoid downloading:
 
-.. code::
+.. code-block:: none
 
    ln -s ../std-greenland/Greenland_5km_v1.1.nc
 
@@ -94,7 +94,7 @@ the regional flow model we are building. If you have already generated
 it by running the script in subsection :ref:`sec-gridseq` then link to
 it,
 
-.. code::
+.. code-block:: none
 
    ln -s ../std-greenland/g5km_gridseq.nc
 
@@ -103,14 +103,14 @@ about 0.6 Gb this may take some time.
 
 So now let's actual run the preprocessing script:
 
-.. code::
+.. code-block:: none
 
    ./preprocess.sh
 
 Files ``gr1km.nc``, ``g5km_climate.nc``, and ``g5km_bc.nc`` will
 appear. These can be examined in the usual ways, for example:
 
-.. code::
+.. code-block:: none
 
    ncdump -h gr1km.nc | less            # read metadata
    ncview gr1km.nc                      # view fields
@@ -147,13 +147,13 @@ models or use the whole ice sheet results as boundary conditions.
 
 The script ``pism_regional.py`` computes the drainage basin mask based
 on a user choice of a "terminus rectangle"; see Figure
-:ref:`fig-jako-basin-topg`. There are two ways to use this script:
+:numref:`fig-jako-basin-topg`. There are two ways to use this script:
 
 - To use the graphical user interface (GUI) mode.
 
   Run
 
-  .. code::
+  .. code-block:: none
 
      python pism_regional.py
 
@@ -178,7 +178,7 @@ on a user choice of a "terminus rectangle"; see Figure
   In fact, for repeatability, we will assume you have used this
   command to calculate the drainage basin:
 
-  .. code::
+  .. code-block:: none
 
      python pism_regional.py -i gr1km.nc -o jakomask.nc -x 360,382 -y 1135,1176 -b 50
 
@@ -202,19 +202,19 @@ You may have noticed that the text output from running
 from the NCO tools. This command also appears as a global attribute of
 ``jakomask.nc``:
 
-.. code::
+.. code-block:: none
 
    ncdump -h jakomask.nc | grep cutout
 
 Copy and run the command that appears, something like
 
-.. code::
+.. code-block:: none
 
    ncks -d x,299,918 -d y,970,1394 gr1km.nc jako.nc
 
 This command is also applied to the mask file; note the option ``-A`` for "append":
 
-.. code::
+.. code-block:: none
 
    ncks -A -d x,299,918 -d y,970,1394 jakomask.nc jako.nc
 
@@ -235,7 +235,7 @@ above, then using the command-line version of ``pism_regional.py``,
 and then doing the ``ncks`` cut-out steps, are all accomplished in one
 script,
 
-.. code::
+.. code-block:: none
 
    ./quickjakosetup.sh
 
@@ -246,7 +246,7 @@ Spinning-up the regional model on a 5 km grid
 
 To run the PISM regional model we will need to know the number of grid points in the 1 km grid in ``jako.nc``.  Do this:
 
-.. code::
+.. code-block:: none
 
    ncdump -h jako.nc |head
        netcdf jako {
@@ -263,7 +263,7 @@ We will get first an equilibrium 5 km regional model, and then do a century run 
 
 The 5 km grid [#]_ uses ``-Mx 125 -My 86``.  So now we do a basic run using 4 MPI processes:
 
-.. code::
+.. code-block:: none
 
    ./spinup.sh 4 125 86 &> out.spin5km &
 
@@ -274,7 +274,7 @@ It produces three files which can be viewed (e.g. with ``ncview``): ``spunjako_0
   spin-up run are recommended for regional modeling. Read the actual
   run command by
 
-  .. code::
+  .. code-block:: none
   
      PISM_DO=echo ./spinup.sh 4 125 86 | less
 
@@ -295,7 +295,7 @@ It produces three files which can be viewed (e.g. with ``ncview``): ``spunjako_0
   model. A key part of putting these boundary conditions into the
   model strip are the options
 
-  .. code::
+  .. code-block:: none
   
        -regrid_file g5km_bc.nc -regrid_vars bmelt,tillwat,enthalpy,litho_temp,vel_ssa_bc
 
@@ -310,7 +310,7 @@ It produces three files which can be viewed (e.g. with ``ncview``): ``spunjako_0
 
 - The calving front of the glacier is handled by the following option combination:
 
-  .. code::
+  .. code-block:: none
   
         -calving ocean_kill -ocean_kill_file jako.nc -pik
 
@@ -327,7 +327,7 @@ It produces three files which can be viewed (e.g. with ``ncview``): ``spunjako_0
 
    Left: modeled surface speed at the end of a 2 km grid, 100 model year, steady present-day climate run.  Right: observed surface speed, an average of four winter velocity maps (2000,2006--2008) derived from RADARSAT data, as included in the SeaRISE  5 km data set [Joughinetal2010]_, for the same region.  Scales are in meters per year.
 
-  includegraphics{jako-csurf}
+   includegraphics{jako-csurf}
 
 
 Century run on a 2 km grid
@@ -335,19 +335,19 @@ Century run on a 2 km grid
 
 Now that we have a spun-up state, here is a 100 model year run on a 2 km grid with a 10 m grid in the vertical:
 
-.. code::
+.. code-block:: none
 
    ./century.sh 4 311 213 spunjako_0.nc &> out.2km_100a &
 
 This run requires at least 6 GB of memory, and it takes about 16 processor-hours.
 
-It produces a file ``jakofine_short.nc`` almost immediately and then restarts from it because we need to regrid fields from the end of the previous 5 km regional run (in ``spunjako_0.nc``) and then to "go back" and regrid the SSA boundary conditions from the 5 km whole ice sheet results ``g5km_bc.nc``.  At the end of the run the final file ``jakofine.nc`` is produced.  Also there is a time-series file ``ts_jakofine.nc`` with monthly scalar time-series and a spatial time-dependent file ``ex_jakofine.nc``.  The surface speed at the end of this run is shown in Figure :ref:`fig-jako-csurf`, with a comparison to observations.
+It produces a file ``jakofine_short.nc`` almost immediately and then restarts from it because we need to regrid fields from the end of the previous 5 km regional run (in ``spunjako_0.nc``) and then to "go back" and regrid the SSA boundary conditions from the 5 km whole ice sheet results ``g5km_bc.nc``.  At the end of the run the final file ``jakofine.nc`` is produced.  Also there is a time-series file ``ts_jakofine.nc`` with monthly scalar time-series and a spatial time-dependent file ``ex_jakofine.nc``.  The surface speed at the end of this run is shown in Figure :numref:`fig-jako-csurf`, with a comparison to observations.
 
 Over this 100 year period the flow appears to be relatively steady state.  Though this is not surprising because the climate forcing and boundary conditions are time-independent, a longer run reveals ongoing speed variability associated to subglacially-driven sliding cyclicity; compare [vanPeltOerlemans2012]_.
 
 The ice dynamics parameters chosen in ``spinup.sh`` and ``century.sh``, especially the combination
 
-.. code::
+.. code-block:: none
 
       -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 \
          -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines
@@ -357,9 +357,9 @@ are a topic for a parameter study (compare [AschwandenAdalgeirsdottirKhroulev]_)
 Plotting the results
 --------------------
 
-Figure :ref:`fig-jako-csurf` was generated using pypismtools_, NCO_ and CDO_.  Do
+Figure :numref:`fig-jako-csurf` was generated using pypismtools_, NCO_ and CDO_.  Do
 
-.. code::
+.. code-block:: none
 
    ncpdq -a time,z,y,x spunjako_0.nc jako5km.nc
    nc2cdo.py jako5km.nc

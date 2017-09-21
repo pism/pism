@@ -12,25 +12,66 @@ Reference [Roache]_ gives a broad discussion of verification and validation in c
 
 In PISM there is a separate executable ``pismv`` which is used for SIA-related verification, and there are additional scripts for SSA-related verification.  The source codes which are verified by ``pismv`` are, however, exactly the same source files as are run by the normal PISM executable ``pismr``.  In technical terms, ``pismv`` runs a derived class of the PISM base class.
 
-.. csv-table:: Exact solutions for verification
-   :header: Test, Continuum model tested, Comments, Reference
+.. list-table:: Exact solutions for verification
+   :header-rows: 1
    :name: tab-tests
    :widths: auto
 
-   A, "isothermal SIA, steady,  flat bed, constant accumulation",, [BLKCB]_
-   B, "isothermal SIA, flat bed, zero accum", similarity solution, "[BLKCB]_, [Halfar83]_ "
-   C, "isothermal SIA, flat bed, growing accum", similarity solution, [BLKCB]_
-   D, "isothermal SIA, flat bed, oscillating accum", compensatory accumulation, [BLKCB]_
-   E, "isothermal SIA; as A  but with sliding in a sector",  compensatory accumulation, [BLKCB]_
-   F, "thermomechanically coupled SIA (mass and energy cons.), steady, flat bed",  compensatory accumulation and heating, "[BB]_, [BBL]_"
-   G, "thermomechanically coupled SIA; as F  but with oscillating accumulation ", ditto, "[BB]_, [BBL]_"
-   H, "bed deformation coupled with isothermal SIA", joined similarity, [BLKfastearth]_
-   I, "stream velocity computation using SSA (plastic till)",, "[SchoofStream]_, [BBssasliding]_"
-   J, "shelf velocity computation using SSA ",, (source code)
-   K, "pure conduction in ice and bedrock",, [BuelerTestK]_
-   L, "isothermal SIA, steady, non-flat bed", numerical ODE solution, (source code)
+   * - Test
+     - Continuum model tested
+     - Reference
+     - Comments
+   * - A
+     - "isothermal SIA, steady,  flat bed, constant accumulation"
+     - [BLKCB]_
+     -
+   * - B
+     - "isothermal SIA, flat bed, zero accum"
+     - "[BLKCB]_, [Halfar83]_ "
+     - similarity solution
+   * - C
+     - "isothermal SIA, flat bed, growing accum"
+     - [BLKCB]_
+     - similarity solution
+   * - D
+     - "isothermal SIA, flat bed, oscillating accum"
+     - [BLKCB]_
+     - uses compensatory accumulation
+   * - E
+     - "isothermal SIA; as A  but with sliding in a sector"
+     - [BLKCB]_
+     - uses compensatory accumulation
+   * - F
+     - "thermomechanically coupled SIA (mass and energy cons.), steady, flat bed"
+     - "[BB]_, [BBL]_"
+     - uses compensatory accumulation and heating
+   * - G
+     - "thermomechanically coupled SIA; as F  but with oscillating accumulation "
+     - "[BB]_, [BBL]_"
+     - ditto
+   * - H
+     - "bed deformation coupled with isothermal SIA"
+     - [BLKfastearth]_
+     - joined similarity solution
+   * - I
+     - "stream velocity computation using SSA (plastic till)"
+     - "[SchoofStream]_, [BBssasliding]_"
+     -
+   * - J
+     - "shelf velocity computation using SSA "
+     - (source code)
+     -
+   * - K
+     - "pure conduction in ice and bedrock"
+     - [BuelerTestK]_
+     -
+   * - L
+     - "isothermal SIA, steady, non-flat bed"
+     - (source code)
+     - numerical ODE solution
 
-.. csv-table:: Canonical PISM verification runs using the exact solutions listed in Table `ref-tests`_.
+.. csv-table:: Canonical PISM verification runs using the exact
+               solutions listed in Table :numref:`tab-tests`.
    :header: Test, Example invocation
    :name: tab-tests-exec
    :widths: auto
@@ -85,7 +126,7 @@ For a grid refinement path example, in tests of the thermomechanically-coupled S
 
 The last two runs require a supercomputer!  In fact the :math:`361\times 361\times 361` run involves more than :math:`100` million unknowns, updated at each of millions of time steps. Appropriate use of parallelism (``mpiexec -n NN pismv``) and of the ``-skip`` modification to adaptive timestepping accelerates such fine-grid runs; see section :ref:`sec-adapt`.
 
-Figures :numref:`fig-thickerrsB` through :numref:`fig-velerrsI` show a sampling of the results of verifying PISM using the tests described above. These figures were produced automatically using Python scripts ``test/vfnow.py`` } and ``test/vnreport.py``.} See subsection :ref:`sec-scripts`.
+Figures :numref:`fig-thickerrsB` through :numref:`fig-velerrsI` show a sampling of the results of verifying PISM using the tests described above. These figures were produced automatically using Python scripts ``test/vfnow.py`` } and ``test/vnreport.py``.} See section :ref:`sec-scripts`.
 
 These figures *do not* show outstanding rates of convergence, relative to textbook partial differential equation examples.  For the errors in tests B and G, see the discussion of free margin shape in [BLKCB]_.  For the errors in test I, the exact continuum solution is not very smooth at the free boundary [SchoofStream]_.
 

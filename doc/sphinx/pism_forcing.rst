@@ -26,7 +26,7 @@ PISM's climate forcing code has two kinds of components.
 - Ones that can be used as "stand-alone" models, such as the implementation of the PDD scheme (section `Surface: Temperature-index scheme (pdd)`_). These are *model components*.
 - Ones implementing "corrections" of various kinds, such as lapse rate corrections (sections `Surface: lapse rate corrections`_ and `Atmosphere: lapse rate corrections`_) or ice-core derived offsets (sections `Surface: scalar temperature offsets`_ and `Ocean: Scalar sea level offsets`_, for example). These are called *modifier components* or *modifiers*.
 
-Model components and modifiers can be chained as shown in Figure :ref:`fig-climate-input-data-flow`. For example,
+Model components and modifiers can be chained as shown in Figure :numref:`fig-climate-input-data-flow`. For example,
 
 .. code::
 
@@ -38,7 +38,7 @@ Section `Examples and corresponding options`_ gives examples of combining compon
 
 .. note:: Summary of the main idea in using this manual
 
-   Setting up PISM's climate interface *requires* selecting one surface and one ocean component. The surface component may use an atmosphere component also; see Figure :ref:`fig-climate-input-data-flow`. Command-line options ``-atmosphere``, ``-surface`` and ``-ocean`` each take a comma-separated list of keywords as an argument; the first keyword *has* to correspond to a model component, the rest can be "modifier" components. Any of these options can be omitted to use the default atmosphere, surface or ocean model components, but one has to explicitly choose a model component to use a modifier. Model components and modifiers are chained as in Figure :ref:`fig-climate-input-data-flow`.
+   Setting up PISM's climate interface *requires* selecting one surface and one ocean component. The surface component may use an atmosphere component also; see Figure :numref:`fig-climate-input-data-flow`. Command-line options ``-atmosphere``, ``-surface`` and ``-ocean`` each take a comma-separated list of keywords as an argument; the first keyword *has* to correspond to a model component, the rest can be "modifier" components. Any of these options can be omitted to use the default atmosphere, surface or ocean model components, but one has to explicitly choose a model component to use a modifier. Model components and modifiers are chained as in Figure :numref:`fig-climate-input-data-flow`.
 
 Managing model time
 -------------------
@@ -267,7 +267,7 @@ Testing: Visualizing the climate inputs in the Greenland case
 
 
 Assuming that ``g20km_pre100.nc`` was produced by the run described in section
-:ref:`manual-sec-start`), one can run the following to check if the PDD
+:ref:`sec-start`), one can run the following to check if the PDD
 model in PISM (see section `Temperature-index (positive degree-day) scheme`_) is "reasonable":
 
 .. code::
@@ -282,7 +282,7 @@ This produces the file ``pddmovie.nc`` with several variables: :var:`climatic_ma
 
 The variable :var:`precipitation` does not evolve over time because it is part of the SeaRISE-Greenland data and is read in from the input file.
 
-The other two variables were used to create figure :ref:`fig-pddseries`, which shows the time-series of the accumulation rate (top graph) and the air temperature (bottom graph) with the map view of the surface elevation on the left.
+The other two variables were used to create figure :numref:`fig-pddseries`, which shows the time-series of the accumulation rate (top graph) and the air temperature (bottom graph) with the map view of the surface elevation on the left.
 
 Here are two things to notice:
 
@@ -308,7 +308,7 @@ We can also test the surface temperature forcing code with the following command
           -extra_file dT_movie.nc -o_order zyx \
           -test_climate_models -no_mass
     
-The output ``dT_movie.nc`` and ``pism_dT.nc`` were used to create figure :ref:`fig-artm-timeseries`.
+The output ``dT_movie.nc`` and ``pism_dT.nc`` were used to create figure :numref:`fig-artm-timeseries`.
 
 This figure shows the GRIP temperature offsets and the time-series of the temperature at the ice surface at a point in southern Greenland (bottom graph), confirming that the temperature offsets are used correctly.
 
@@ -386,7 +386,6 @@ Surface elevation: Elevation-dependent temperature and mass balance
   \newcommand{\T}[1]{ \var{T}{#1} }
   \newcommand{\m}[1]{ \var{m}{#1} }
   \newcommand{\ms}[1]{ \var{m^{*}}{#1} }
-  \newcommand{\diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
 
 This surface model component parameterizes the ice surface temperature :math:`T_{h}` = :var:`ice_surface_temp` and the mass balance :math:`m` = :var:`climatic_mass_balance` as *piecewise-linear* functions of surface elevation :math:`h`.
 
@@ -452,8 +451,11 @@ Surface pdd: Temperature-index scheme
 :|variables|: :var:`air_temp_sd`, :var:`snow_depth`
 :|implementation|: ``PSTemperatureIndex``
 
-FIXME: tikz picture
+.. figure:: pdd-model.png
+   :name: fig-pdd-model
 
+   PISM's positive degree day model. :math:`F_s` and :math:`F_i` are PDD factors for snow and ice, respectively; :math:`\theta_{\text{refreeze}}` is the refreeze fraction.
+                   
 The default PDD model used by PISM, turned on by option :opt:`-surface pdd`, is based on [CalovGreve05]_ and EISMINT-Greenland intercomparison (see [RitzEISMINT]_).
 
 Our model computes the solid (snow) precipitation rate using the air temperature threshold with a linear transition. All precipitation during periods with air temperatures above :config:`air_temp_all_precip_as_rain` (default of :math:`2^\circ C`) is interpreted as rain; all precipitation during periods with air temperatures below :config:`air_temp_all_precip_as_snow` (default of :math:`0^\circ C`) is interpreted as snow.
@@ -472,9 +474,9 @@ The number of positive degree days is computed as the magnitude of the temperatu
 
 In PISM there are two methods for computing the number of positive degree days. The first computes only the expected value, by the method described in [CalovGreve05]_. This is the default when a PDD is chosen (i.e. option ``-surface pdd``). The second is a Monte Carlo simulation of the white noise itself, chosen by adding the option :opt:`pdd_rand`. This Monte Carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent. If repeatable randomness is desired use :opt:`pdd_rand_repeatable` instead of ``-pdd_rand``.
 
-By default, the computation summarized in Figure :ref:`fig-pdd-model` is performed every week. (This frequency is controlled by the :config:`pdd_max_evals_per_year` parameter.) To compute mass balance during each week-long time-step, PISM keeps track of the current snow depth (using units of ice-equivalent thickness). This is necessary to determine if melt should be computed using the degree day factor for snow (:config:`pdd_factor_snow`) or the corresponding factor for ice (:config:`pdd_factor_ice`).
+By default, the computation summarized in Figure :numref:`fig-pdd-model` is performed every week. (This frequency is controlled by the :config:`pdd_max_evals_per_year` parameter.) To compute mass balance during each week-long time-step, PISM keeps track of the current snow depth (using units of ice-equivalent thickness). This is necessary to determine if melt should be computed using the degree day factor for snow (:config:`pdd_factor_snow`) or the corresponding factor for ice (:config:`pdd_factor_ice`).
 
-A fraction of the melt controlled by the configuration parameter :config:`pdd_refreeze` (:math:`\theta_{\text{refreeze}}` in Figure :ref:`fig-pdd-model`, default: :math:`0.6`) refreezes. The user can select whether melted ice should be allowed to refreeze using the :config:`pdd_refreeze_ice_melt` configuration flag.
+A fraction of the melt controlled by the configuration parameter :config:`pdd_refreeze` (:math:`\theta_{\text{refreeze}}` in Figure :numref:`fig-pdd-model`, default: :math:`0.6`) refreezes. The user can select whether melted ice should be allowed to refreeze using the :config:`pdd_refreeze_ice_melt` configuration flag.
 
 Since PISM does not have a principled firn model, the snow depth is set to zero at the beginning of the balance year. See :config:`pdd_balance_year_start_day`. Default is :math:`274`, corresponding to October 1:math:`^{\text{st}}`.
 
@@ -964,21 +966,3 @@ See also `Surface: Caching modifier (``cache``)`_.
 
 .. [1] PDF for latest stable release in the `PISM's website <pism-manual_>`_.
 .. [2] You can use other time units supported by UDUNITS.
-
-.. rubric:: Bibliography
-
-.. [RitzEISMINT] Ritz
-
-.. URLs
-
-.. _pism-manual: http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=pism_manual.pdf
-.. _CF-Conventions: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#cell-boundaries
-.. _SeaRISE-Greenland: http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
-.. _pism-email: mailto:uaf-pism@alaska.edu
-.. _pism-browser: http://www.pism-docs.org/doxy/html/index.html
-
-..
-   Local Variables:
-   eval: (visual-line-mode nil)
-   fill-column: 1000
-   End:

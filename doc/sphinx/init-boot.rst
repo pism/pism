@@ -16,14 +16,14 @@ Initialization from a saved model state
 
 "Initialization" has the specific, simple meaning in PISM that option ":opt:`-i`" was used.  If a previous PISM run has saved a NetCDF file using ":opt:`-o`" then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ":opt:`-i`": }
 
-.. code::
+.. code-block:: none
 
    pisms -eisII A -y 100 -o foo.nc
    pisms -eisII A -i foo.nc -y 100 -o bar.nc
 
 As noted verification tests (section :ref:`sec-verif`) and simplified-geometry experiments (section :ref:`sec-simp`) do not need input files at all because they initialize from formulas in the source code.  They can, however, be continued from saved model states using :opt:`-i`.  Specifying the simplified geometry experiment or verification test *is*, however, necessary if the run is to continue with the climate inputs for that experiment or test.  For example, based on the above ``pisms`` runs, it is valid to do
 
-.. code::
+.. code-block:: none
 
    pismr -i foo.nc -y 100 -o bar.nc
 
@@ -38,7 +38,7 @@ As a technical note about saved states, a PISM run with :opt:`-stress_balance ss
 
 PISM produces CF-1.5 compliant NetCDF files.  The easiest way to learn the output format *and* the :opt:`-i` format is to do a simple run and then look at the metadata in the resulting file, like this:
 
-.. code::
+.. code-block:: none
 
    pisms -eisII A -y 10 -o foo.nc
    ncdump -h foo.nc | less
@@ -80,13 +80,7 @@ Allowed formats for a bootstrapping file are relatively simple to describe.
 #. Coordinate variables have to be strictly-increasing.
 #. Three-dimensional variables will be ignored in bootstrapping.
 #. The ``standard_name`` attribute is used, when available, to identify a variable, so variable names need not match corresponding variables in a PISM output file. See the `PISM Source Code browser <pism-code-browser_>` for a list of CF standard names used in PISM. Specifically, the bed elevation (topography) is read by ``standard_name`` = ``bedrock_altitude`` and the ice thickness by ``standard_name`` = ``land_ice_thickness``.
-#. Any two-dimensional variable except bed topography and ice thickness may be missing. For missing variables some heuristic will be applied. See table :ref:`tab-modelhierarchy` for a sketch of the data necessary for bootstrapping; see ``src/base/iMbootstrap.cc`` for all further details.
+#. Any two-dimensional variable except bed topography and ice thickness may be missing. For missing variables some heuristic will be applied. See table :numref:`tab-modelhierarchy` for a sketch of the data necessary for bootstrapping; see ``src/base/iMbootstrap.cc`` for all further details.
 #. Surface elevation is ignored if present. Users with surface elevation and bed elevation data should compute the ice thickness variable, put it in the bootstrapping file, and set its ``standard_name`` to ``land_ice_thickness``.
 
 .. [#] PISM uses a library called UDUNITS-2 to convert data present in an input file to MKS. This means that having ice thickness in feet or temperature in Fahrenheit *is* allowed.
-
-..
-   Local Variables:
-   eval: (visual-line-mode nil)
-   fill-column: 1000
-   End:
