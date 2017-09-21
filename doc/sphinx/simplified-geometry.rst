@@ -271,7 +271,7 @@ this ``README.md``, the commands
 
 first generate a bash script, then use it to do a run which takes about 20 minutes, and
 then generate an image in ``.png`` format. Note that step 7 is in the middle of the
-experiment. It is shown in Figure :numref:`fig-MISMIPmodel1exper1aA7` (left).
+experiment. It is shown in :numref:`fig-MISMIPmodel1exper1aA7` (left).
 
 
 .. figure:: profileA7 profileA7-M3
@@ -296,7 +296,7 @@ codes <mismip-code_>`_. For example,
 
    python MISMIP.py -o mismip_analytic.png
 
-produces a ``.png`` image file with Figure :numref:`fig-SMexper1aM1A1`. By default
+produces a ``.png`` image file with :numref:`fig-SMexper1aM1A1`. By default
 ``run.py`` uses the asymptotic-matching thickness result from the [SchoofMarine1]_ theory
 to initialize the initial ice thickness, as allowed by the MISMIP specification.
 
@@ -304,13 +304,13 @@ to initialize the initial ice thickness, as allowed by the MISMIP specification.
    :name: fig-MISMIPmode2results
 
    Results from MISMIP grid mode 2, with 1.2 km spacing, for steady state of experiment
-   1a: profile at step 7 (compare Figure :numref:`fig-MISMIPmodel1exper1aA7`).
+   1a: profile at step 7 (compare :numref:`fig-MISMIPmodel1exper1aA7`).
 
 Generally the PISM result does not put the grounding line in the same location as Schoof's
 boundary layer theory, and at least at coarser resolutions the problem is with PISM's
 numerical solution, not with Schoof's semi-analytic theory. The result improves under grid
 refinement, however. Results from grid mode 3 with 6 km spacing, instead of 12 km in mode
-1, are the right part of Figure :numref:`fig-MISMIPmodel1exper1aA7`. The corresponding
+1, are the right part of :numref:`fig-MISMIPmodel1exper1aA7`. The corresponding
 results from grid mode 2, with 1.2 km spacing, are in Figure
 :numref:`fig-MISMIPmode2results`. Note that the difference between the numerical grounding
 line location and the semi-analytical location has been reduced from 76 km for grid mode 1
@@ -379,7 +379,7 @@ discussed in [Feldmannetal2014]_.
 We observed a considerable improvement of the results with respect to the absolute
 grounding line positions compared to other models (e.g. the FE reference model Elmer/Ice)
 and to the reversibility when applying the subgrid grounding line interpolation method;
-see Figure :numref:`fig-Subgl`. Furthermore, we observed that only using SSA yields almost
+see :numref:`fig-Subgl`. Furthermore, we observed that only using SSA yields almost
 the same results as the full hybrid SIA+SSA computation for the MISMIP3D (and also the
 MISMIP) experiments, but, when not applying the SIA computation, after a considerably
 shorter computation time (about 10 times shorter). We explain the small and almost

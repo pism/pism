@@ -35,7 +35,7 @@ The script ``preprocess.sh`` requires ``wget`` and also the `NetCDF Operators <N
 
 In particular, it creates three new NetCDF files which can be read by PISM.  The spatially-varying fields, with adjusted metadata, go in ``pism_Greenland_5km_v1.1.nc``.  The other two new files contain famous time-dependent paleo-climate records from ice and seabed cores: ``pism_dT.nc`` has the GRIP temperature record [JohnsenetalGRIP]_ and ``pism_dSL.nc`` has the SPECMAP sea level record [Imbrieetal1984]_.
 
-Any of these NetCDF files can be viewed with ``ncview`` or other NetCDF visualization tools; see Table :numref:`tab-NetCDFview` below.  An application of IDV to the master data set produced Figure :numref:`fig-sr-input`, for example.  Use ``ncdump -h`` to see the metadata and history of the files.
+Any of these NetCDF files can be viewed with ``ncview`` or other NetCDF visualization tools; see Table :numref:`tab-NetCDFview` below.  An application of IDV to the master data set produced :numref:`fig-sr-input`, for example.  Use ``ncdump -h`` to see the metadata and history of the files.
 
 .. figure:: FIXME.png
    :name: fig-sr-input
@@ -117,7 +117,7 @@ To look at the spatial-fields output graphically, do:
 
    ncview ex_g20km_10ka.nc
 
-We see that ``ex_g20km_10ka.nc`` contains growing "movies" of the fields chosen by the ``-extra_vars`` option.  A frame of the ice thickness field ``thk`` is shown in Figure :numref:`fig-growing` (left).
+We see that ``ex_g20km_10ka.nc`` contains growing "movies" of the fields chosen by the ``-extra_vars`` option.  A frame of the ice thickness field ``thk`` is shown in :numref:`fig-growing` (left).
 
 The time-series file ``ts_g20km_10ka.nc`` is also growing.  It contains spatially-averaged "scalar" diagnostics like the total ice volume or the ice-sheet-wide maximum velocity (variable ``volume_glacierized`` and ``max_hor_vel``, respectively).  It can be viewed
 
@@ -125,7 +125,7 @@ The time-series file ``ts_g20km_10ka.nc`` is also growing.  It contains spatiall
 
    ncview ts_g20km_10ka.nc
 
-The growing time series for ``volume_glacierized`` is shown in Figure :numref:`fig-growing` (right).  Recall that our intention was to generate a minimal model of the Greenland ice sheet in approximate steady-state with a steady (constant-in-time) climate.  The measurable steadiness of the ``volume_glacierized`` time series is a possible standard for steady state (see [EISMINT00]_, for exampe).
+The growing time series for ``volume_glacierized`` is shown in :numref:`fig-growing` (right).  Recall that our intention was to generate a minimal model of the Greenland ice sheet in approximate steady-state with a steady (constant-in-time) climate.  The measurable steadiness of the ``volume_glacierized`` time series is a possible standard for steady state (see [EISMINT00]_, for exampe).
 
 \begin{figure}[ht]
 \includegraphics{ex-growing-thk-g20km}
@@ -134,7 +134,7 @@ The growing time series for ``volume_glacierized`` is shown in Figure :numref:`f
 \label{fig-growing}
 \end{figure}
 
-At the end of the run the output file ``g20km_10ka.nc`` is generated.  Figure :numref:`fig-firstoutput` shows some fields from this file.  In the next subsections we consider their "quality" as model results.  To see a report on computational performance, we do:
+At the end of the run the output file ``g20km_10ka.nc`` is generated.  :numref:`fig-firstoutput` shows some fields from this file.  In the next subsections we consider their "quality" as model results.  To see a report on computational performance, we do:
 
 .. code-block:: none
 
@@ -184,7 +184,7 @@ When this run is finished it produces ``g20km_10ka_hy.nc``.  As before do
 
 to see performance results for your machine.  The number reported as "``PETSc MFlops``" from this run is about :math:`3 \times 10^5`, much larger than the previous run, because now calls to the PETSc library are used when solving the non-local SSA stress balance in parallel.
 
-The results of this run are shown in Figure :numref:`fig-secondoutputcoarse`.  We show the basal sliding speed field ``velbase_mag`` in this Figure, where Figure :numref:`fig-firstoutput` had the ``mask``, but the reader can check that ``velbase_mag``=0 in the nonsliding SIA-only result ``g20km_10ka.nc``.
+The results of this run are shown in :numref:`fig-secondoutputcoarse`.  We show the basal sliding speed field ``velbase_mag`` in this Figure, where :numref:`fig-firstoutput` had the ``mask``, but the reader can check that ``velbase_mag``=0 in the nonsliding SIA-only result ``g20km_10ka.nc``.
 
 \begin{figure}[ht]
 \includegraphics{g20km-10ka-hy-usurf}
@@ -196,7 +196,7 @@ The results of this run are shown in Figure :numref:`fig-secondoutputcoarse`.  W
 
 The hybrid model includes sliding, and it is important to evaluate that aspect of the output.  However, though it is critical to the response of the ice to changes in climate, basal sliding velocity is essentially unobservable in real ice sheets.  On the other hand, because of relatively-recent advances in radar and image technology and processing [Joughin2002]_, the surface velocity of an ice sheet is an observable.
 
-So, how good is our model result ``velsurf_mag``?  Figure :numref:`fig-csurfvsobserved` compares the radar-observed ``surfvelmag`` field in the downloaded SeaRISE-Greenland data file ``Greenland_5km_v1.1.nc`` with the just-computed PISM result.  The reader might agree with these broad qualitative judgements:
+So, how good is our model result ``velsurf_mag``?  :numref:`fig-csurfvsobserved` compares the radar-observed ``surfvelmag`` field in the downloaded SeaRISE-Greenland data file ``Greenland_5km_v1.1.nc`` with the just-computed PISM result.  The reader might agree with these broad qualitative judgements:
 
 \begin{figure}[ht]
 \includegraphics{Greenland-5km-v1p1-surfvelmag} \includegraphics{g20km-10ka-hy-csurf} \includegraphics{g10km-10ka-hy-csurf}
@@ -230,11 +230,11 @@ This run might take 4 to 6 hours.  However, supposing you have a larger parallel
 
 \begin{figure}[ht]
 \includegraphics{g10km-10ka-hy-usurf} \includegraphics{g10km-10ka-hy-csurf} \includegraphics{g10km-10ka-hy-cbase}
-\caption{Fields from output file ``g10km_10ka_hy.nc``.  Compare Figure :numref:`fig-secondoutputcoarse`, which only differs by resolution.  Left: ``usurf`` in meters.  Middle: ``velsurf_mag`` in m/a.  Right: ``velbase_mag`` in m/a.}
+\caption{Fields from output file ``g10km_10ka_hy.nc``.  Compare :numref:`fig-secondoutputcoarse`, which only differs by resolution.  Left: ``usurf`` in meters.  Middle: ``velsurf_mag`` in m/a.  Right: ``velbase_mag`` in m/a.}
 \label{fig-secondoutputfiner}
 \end{figure}
 
-Some fields from the result ``g10km_10ka_hy.nc`` are shown in Figure :numref:`fig-secondoutputfiner`.  Figure :numref:`fig-csurfvsobserved` also compares observed velocity to the model results from 20 km and 10 km grids.  As a different comparison, Figure :numref:`fig-ivolboth` shows ice volume time series ``volume_glacierized`` for 20 km and 10 km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare [Pfefferetal2008]_).  However, because the total ice sheet volume is a highly-averaged quantity, the ``volume_glacierized`` difference from 20 km and 10 km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure :numref:`fig-csurfvsobserved`, the ice velocity at a particular location may change by 100\% when the resolution changes from 20 km to 10 km.
+Some fields from the result ``g10km_10ka_hy.nc`` are shown in :numref:`fig-secondoutputfiner`.  :numref:`fig-csurfvsobserved` also compares observed velocity to the model results from 20 km and 10 km grids.  As a different comparison, :numref:`fig-ivolboth` shows ice volume time series ``volume_glacierized`` for 20 km and 10 km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare [Pfefferetal2008]_).  However, because the total ice sheet volume is a highly-averaged quantity, the ``volume_glacierized`` difference from 20 km and 10 km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in :numref:`fig-csurfvsobserved`, the ice velocity at a particular location may change by 100\% when the resolution changes from 20 km to 10 km.
 
 Roughly speaking, the reader should only consider trusting those model results which are demonstrated to be robust across a range of model parameters, and, in particular, which are shown to be relatively-stable among relatively-high resolution results for a particular case.  Using a supercomputer is justified merely to confirm that lower-resolution runs were already "getting" a given feature or result.
 
@@ -298,17 +298,17 @@ To actually start the run, which we rather arbitrarily start at year -25000, ess
 
 This run should only take one or two hours, noting it is at a coarse 20 km resolution.
 
-The fields ``usurf``, ``velsurf_mag``, and ``velbase_mag`` from file ``g20km_25ka_paleo.nc`` are sufficiently similar to those shown in Figure :numref:`fig-secondoutputcoarse` that they are not shown here.  Close inspection reveals differences, but of course these runs only differ in the applied climate and run duration and not in resolution or ice dynamics parameters.
+The fields ``usurf``, ``velsurf_mag``, and ``velbase_mag`` from file ``g20km_25ka_paleo.nc`` are sufficiently similar to those shown in :numref:`fig-secondoutputcoarse` that they are not shown here.  Close inspection reveals differences, but of course these runs only differ in the applied climate and run duration and not in resolution or ice dynamics parameters.
 
 \begin{figure}[ht]
 \includegraphics{ivoltemp-const-paleo}
-\caption{Time series of temperate ice volume ``volume_glacierized_temperate`` from constant-climate (blue; ``ts_g20km_10ka_hy.nc``) and paleo-climate (red; ``ts_g20km_25ka_paleo.nc``) spinup runs.  The cold of the last ice age affects the fraction of temperate ice.  Note different volume scale compared to that in Figure :numref:`fig-ivolconstpaleo`; only about 1\% of ice is temperate (by volume).}
+\caption{Time series of temperate ice volume ``volume_glacierized_temperate`` from constant-climate (blue; ``ts_g20km_10ka_hy.nc``) and paleo-climate (red; ``ts_g20km_25ka_paleo.nc``) spinup runs.  The cold of the last ice age affects the fraction of temperate ice.  Note different volume scale compared to that in :numref:`fig-ivolconstpaleo`; only about 1\% of ice is temperate (by volume).}
 \label{fig-ivoltempconstpaleo}
 \end{figure}
 
-To see the difference between runs more clearly, Figure :numref:`fig-ivolconstpaleo` compares the time-series variable ``volume_glacierized``.  We see the effect of option ``-regrid_file g20km_10ka_hy.nc -regrid_vars ...,thk,...``, which implies that the paleo-climate run starts with the ice geometry from the end of the constant-climate run.
+To see the difference between runs more clearly, :numref:`fig-ivolconstpaleo` compares the time-series variable ``volume_glacierized``.  We see the effect of option ``-regrid_file g20km_10ka_hy.nc -regrid_vars ...,thk,...``, which implies that the paleo-climate run starts with the ice geometry from the end of the constant-climate run.
 
-Another time-series comparison, of the variable ``volume_glacierized_temperate``, the total volume of temperate (at 0:math:`^\circ`C) ice, appears in Figure :numref:`fig-ivoltempconstpaleo`.  The paleo-climate run shows the cold period from :math:`\approx -25` ka to :math:`\approx -12` ka.  Both constant-climate and paleo-climate runs then come into rough equilibrium in the holocene.  The bootstrapping artifact, seen at the start of the constant-climate run, which disappears in less than 1000 years, is avoided in the paleo-climate run by starting with the constant-climate end-state.  The reader is encouraged to examine the diagnostic files ``ts_g20km_25ka_paleo.nc`` and ``ex_g20km_25ka_paleo.nc`` to find more evidence of the (modeled) climate impact on the ice dynamics.
+Another time-series comparison, of the variable ``volume_glacierized_temperate``, the total volume of temperate (at 0:math:`^\circ`C) ice, appears in :numref:`fig-ivoltempconstpaleo`.  The paleo-climate run shows the cold period from :math:`\approx -25` ka to :math:`\approx -12` ka.  Both constant-climate and paleo-climate runs then come into rough equilibrium in the holocene.  The bootstrapping artifact, seen at the start of the constant-climate run, which disappears in less than 1000 years, is avoided in the paleo-climate run by starting with the constant-climate end-state.  The reader is encouraged to examine the diagnostic files ``ts_g20km_25ka_paleo.nc`` and ``ex_g20km_25ka_paleo.nc`` to find more evidence of the (modeled) climate impact on the ice dynamics.
 
 
 .. _sec-gridseq:
@@ -377,7 +377,7 @@ The 10 km run takes under two wall-clock hours (8 processor-hours) and the 5 km 
 \label{fig-gridseqdetail}
 \end{figure}
 
-Figure :numref:`fig-gridseqdetail`, showing only a detail of the western coast of Greenland, with several outlet glaciers visible, suggests what is accomplished: the high resolution runs have separated outlet glacier flows, as they are in fact.  Note that all of these results were generated in a few wall clock hours on a laptop!  The surface speed ``velsurf_mag`` from files ``g10km_gridseq.nc`` and ``g5km_gridseq.nc`` is shown (two right-most subfigures).  In the two left-hand subfigures we show the same field from NetCDF files ``g40km_10ka_hy.nc`` and ``g20km_10ka_hy.nc``; the former is an added 40 km result using an obvious modification of the run in section :ref:`sec-ssarun`.
+:numref:`fig-gridseqdetail`, showing only a detail of the western coast of Greenland, with several outlet glaciers visible, suggests what is accomplished: the high resolution runs have separated outlet glacier flows, as they are in fact.  Note that all of these results were generated in a few wall clock hours on a laptop!  The surface speed ``velsurf_mag`` from files ``g10km_gridseq.nc`` and ``g5km_gridseq.nc`` is shown (two right-most subfigures).  In the two left-hand subfigures we show the same field from NetCDF files ``g40km_10ka_hy.nc`` and ``g20km_10ka_hy.nc``; the former is an added 40 km result using an obvious modification of the run in section :ref:`sec-ssarun`.
 
 \begin{figure}[ht]
 \includegraphics{ivol-gridseq}
@@ -385,7 +385,7 @@ Figure :numref:`fig-gridseqdetail`, showing only a detail of the western coast o
 \label{fig-ivolgridseq}
 \end{figure}
 
-Figure :numref:`fig-ivolgridseq`, which shows time series of ice volume, also shows the cost of high resolution, however.  The short 200 a run on the 5 km grid took about 3 wall-clock hours compared to the 10 minutes taken by the 10 ka run on a 20 km grid.  The fact that the time series for ice volume on 10 km and 5 km grids are not very "steady" also suggests that these runs should actually be longer.
+:numref:`fig-ivolgridseq`, which shows time series of ice volume, also shows the cost of high resolution, however.  The short 200 a run on the 5 km grid took about 3 wall-clock hours compared to the 10 minutes taken by the 10 ka run on a 20 km grid.  The fact that the time series for ice volume on 10 km and 5 km grids are not very "steady" also suggests that these runs should actually be longer.
 
 In this vein, if you have an available supercomputer then a good exercise is to extend our grid sequencing example to 3 km or 2 km resolutions [AschwandenAdalgeirsdottirKhroulev]_; these grids are already supported in the script ``spinup.sh``.  Note that the vertical grid also generally gets refined as the horizontal grid is refined.
 
@@ -508,7 +508,7 @@ On a supercomputer, the ``runparallel.sh`` script generally should be modified t
 
 Results from these runs are seen in Figures :numref:`fig-ivolparamstudy` and :numref:`fig-paramstudy`.  In the former we see that the :math:`(0.5,3)` run simply continues the previous initialization run.  In some other graphs we see abrupt initial changes, caused by abrupt parameter change, e.g. when the basal sliding becomes much more plastic (:math:`q=0.1`).  In all cases with :math:`e=1` the flow slows and the sheet grows in volume as discharge decreases, while in all cases with :math:`e=6` the flow accelerates and the sheet shrinks in volume as discharge increases.
 
-In Figure :numref:`fig-paramstudy` we can compare the surface speed model results to observations.  Roughly speaking, the ice softness parameter :math:`e` has effects seen most-clearly by comparing the interior of the ice sheet; scan left-to-right for the :math:`e=1,3,6` subfigures.  The basal sliding exponent :math:`q` has effects seen most-clearly by comparing flow along the very steep margin, especially in the southern half of the ice sheet; scan top-to-bottom for :math:`q=0.1,0.5,1.0`, going from nearly-plastic at top to linear at bottom.
+In :numref:`fig-paramstudy` we can compare the surface speed model results to observations.  Roughly speaking, the ice softness parameter :math:`e` has effects seen most-clearly by comparing the interior of the ice sheet; scan left-to-right for the :math:`e=1,3,6` subfigures.  The basal sliding exponent :math:`q` has effects seen most-clearly by comparing flow along the very steep margin, especially in the southern half of the ice sheet; scan top-to-bottom for :math:`q=0.1,0.5,1.0`, going from nearly-plastic at top to linear at bottom.
 
 From such figures we can make an informal assessment and comparison of the results, but objective assessment is important.  Example objective functionals include: *(i)* compute the integral of the square (or other power) of the difference between the model and observed surface velocity [AschwandenAdalgeirsdottirKhroulev]_, or *(ii)* compute the model-observed differences between the histogram of the number of cells with a given surface speed [BKAJS]_.  Note that these functionals are measuring the effects of changing a small number of parameters, namely two parameters in the current study.  So-called "inversion" might use the same objective functionals but with a much larger parameter space.  Inversion is therefore capable of achieving much smaller objective measures [Habermannetal2013]_, [Larouretal2012]_, [Priceetal2011]_, though at the cost of less understanding, perhaps, of the meaning of the optimal parameter values.
 

@@ -683,7 +683,7 @@ Monte Carlo simulation adds the same daily variation at every point, though the 
 cycle is (generally) location dependent. If repeatable randomness is desired use
 :opt:`-pdd_rand_repeatable` instead of ``-pdd_rand``.
 
-By default, the computation summarized in Figure :numref:`fig-pdd-model` is performed
+By default, the computation summarized in :numref:`fig-pdd-model` is performed
 every week. (This frequency is controlled by the :config:`pdd_max_evals_per_year`
 parameter.) To compute mass balance during each week-long time-step, PISM keeps track of
 the current snow depth (using units of ice-equivalent thickness). This is necessary to
@@ -692,7 +692,7 @@ determine if melt should be computed using the degree day factor for snow
 (:config:`pdd_factor_ice`).
 
 A fraction of the melt controlled by the configuration parameter :config:`pdd_refreeze`
-(`\theta_{\text{refreeze}}` in Figure :numref:`fig-pdd-model`, default: `0.6`)
+(`\theta_{\text{refreeze}}` in :numref:`fig-pdd-model`, default: `0.6`)
 refreezes. The user can select whether melted ice should be allowed to refreeze using the
 :config:`pdd_refreeze_ice_melt` configuration flag.
 

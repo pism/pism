@@ -1,5 +1,7 @@
 .. default-role:: math
 
+.. contents::
+
 .. _sec-validation:
 
 Validation case studies
@@ -34,12 +36,12 @@ This flow has total mass `\sim 1` kg, compared to `\sim 10^{18}` kg for the Gree
 sheet.
 
 We compare our numerical results to the "constant-flux" experiment from
-[SayagWorster2013]_. Figure :numref:`fig-labgumexperiment` shows the experimental setup by
+[SayagWorster2013]_. :numref:`fig-labgumexperiment` shows the experimental setup by
 reproducing Figures 2(c) and 2(d) from that reference. A pump pushes the translucent
 blue-dyed fluid through a round 8 mm hole in the middle of a clear table-top at a mass
 rate of about 3 gm/s. The downward-pointing camera, which produced the right-hand figure,
 allows measurement of the location of margin of the "ice cap", and in particular of its
-radius. The measured radii data are the black dots in Figure :numref:`fig-labgumresult`.
+radius. The measured radii data are the black dots in :numref:`fig-labgumresult`.
 
 .. figure:: figures/labgumexperiment.png
    :name: fig-labgumexperiment
@@ -92,14 +94,11 @@ to the experimental data:
 
    ./showradius.py -o r52.png -d constantflux3.txt ts_lab52.nc
 
-
-
 You can also redo the whole thing on higher resolution grids (here: 5 and 2.5 mm), here
 using 6 MPI processes if the runs are done simultaneously, and when it is done after
-several hours, make a combined figure just like Figure :numref:`fig-labgumresult`:
+several hours, make a combined figure just like :numref:`fig-labgumresult`:
 
 .. code-block:: none
-   :name: fig-labgumresult
 
    ./preprocess.py -Mx 104 -o initlab104.nc
    ./preprocess.py -Mx 208 -o initlab208.nc
@@ -108,6 +107,7 @@ several hours, make a combined figure just like Figure :numref:`fig-labgumresult
    ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
 
 .. figure:: figures/labgumradius.png
+   :name: fig-labgumresult
 
    Radius `r_N(t)` for runs with 10 mm (``ts_lab52.nc``), 5 mm
    (``ts_lab104.nc``), and 2.5 mm (``ts_lab208.nc``) grids, compared to
@@ -159,7 +159,7 @@ The scripts in this subsection are found in directory ``examples/ross/``. In sum
 script ``preprocess.py`` downloads data and builds a NetCDF input file for PISM. For the
 diagnostic computation we document first, the script ``run_diag.sh`` (in subdirectory
 ``examples/ross/diagnostic/``) runs PISM. The script ``plot.py`` shows a comparison of
-observations and model results, as in Figure :numref:`fig-rosspython`.
+observations and model results, as in :numref:`fig-rosspython`.
 
 Preprocessing the data
 ----------------------
@@ -264,7 +264,7 @@ the ice density [#]_ as tuning parameters, and these are worthwhile experiments 
 interested PISM user.
 
 The script ``plot.py`` takes PISM output such as ``diag_Mx211.nc`` to produce
-Figure :numref:`fig-rosspython`. The run shown in the figure used an enhancement factor of
+:numref:`fig-rosspython`. The run shown in the figure used an enhancement factor of
 `0.6` as above. The thin black line outlines the floating shelf, which is the actual
 modeling domain here. To generate this Figure yourself, do
 

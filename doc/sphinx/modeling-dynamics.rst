@@ -101,11 +101,11 @@ the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice s
    * - :opt:`-ssa_eps` (`10^{13}`)
      - The numerical schemes for the SSA compute an effective viscosity `\nu` which
        depends on strain rates and ice hardness (thus temperature). The minimum value of
-       the effective viscosity times the thickness (i.e. `\nu H`) largely determines
-       the difficulty of solving the numerical SSA. This constant is added to keep
-       `\nu H` bounded away from zero: `\nu H \to \nu H + \text{``ssa_eps``}`.
-       Units of ``ssa_eps`` are `\text{Pa}\,\text{m}\,\text{s}`. Set to zero to turn
-       off this lower bound.
+       the effective viscosity times the thickness (i.e. `\nu H`) largely determines the
+       difficulty of solving the numerical SSA. This constant is added to keep `\nu H`
+       bounded away from zero: `\nu H \to \nu H + \eps_{\text{SSA}}`, where
+       `\eps_{\text{SSA}}` is set using this option. Units of :opt:`ssa_eps` are
+       `\text{Pa}\,\text{m}\,\text{s}`. Set to zero to turn off this lower bound.
 
    * - :opt:`-ssa_view_nuh`
      - View the product `\nu H` for your simulation as a runtime viewer (section

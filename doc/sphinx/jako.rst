@@ -341,7 +341,7 @@ Now that we have a spun-up state, here is a 100 model year run on a 2 km grid wi
 
 This run requires at least 6 GB of memory, and it takes about 16 processor-hours.
 
-It produces a file ``jakofine_short.nc`` almost immediately and then restarts from it because we need to regrid fields from the end of the previous 5 km regional run (in ``spunjako_0.nc``) and then to "go back" and regrid the SSA boundary conditions from the 5 km whole ice sheet results ``g5km_bc.nc``.  At the end of the run the final file ``jakofine.nc`` is produced.  Also there is a time-series file ``ts_jakofine.nc`` with monthly scalar time-series and a spatial time-dependent file ``ex_jakofine.nc``.  The surface speed at the end of this run is shown in Figure :numref:`fig-jako-csurf`, with a comparison to observations.
+It produces a file ``jakofine_short.nc`` almost immediately and then restarts from it because we need to regrid fields from the end of the previous 5 km regional run (in ``spunjako_0.nc``) and then to "go back" and regrid the SSA boundary conditions from the 5 km whole ice sheet results ``g5km_bc.nc``.  At the end of the run the final file ``jakofine.nc`` is produced.  Also there is a time-series file ``ts_jakofine.nc`` with monthly scalar time-series and a spatial time-dependent file ``ex_jakofine.nc``.  The surface speed at the end of this run is shown in :numref:`fig-jako-csurf`, with a comparison to observations.
 
 Over this 100 year period the flow appears to be relatively steady state.  Though this is not surprising because the climate forcing and boundary conditions are time-independent, a longer run reveals ongoing speed variability associated to subglacially-driven sliding cyclicity; compare [vanPeltOerlemans2012]_.
 
@@ -357,7 +357,7 @@ are a topic for a parameter study (compare [AschwandenAdalgeirsdottirKhroulev]_)
 Plotting the results
 --------------------
 
-Figure :numref:`fig-jako-csurf` was generated using pypismtools_, NCO_ and CDO_.  Do
+:numref:`fig-jako-csurf` was generated using pypismtools_, NCO_ and CDO_.  Do
 
 .. code-block:: none
 
