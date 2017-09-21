@@ -41,7 +41,7 @@ rate of about 3 gm/s. The downward-pointing camera, which produced the right-han
 allows measurement of the location of margin of the "ice cap", and in particular of its
 radius. The measured radii data are the black dots in Figure :numref:`fig-labgumresult`.
 
-.. figure:: labgumexperiment
+.. figure:: figures/labgumexperiment.png
    :name: fig-labgumexperiment
 
    Reproduction of Figures 2(c) and 2(d) from [SayagWorster2013]_. Left: experimental
@@ -107,7 +107,7 @@ several hours, make a combined figure just like Figure :numref:`fig-labgumresult
    ./rungum.sh 4 208 &> out.lab208 &
    ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
 
-.. figure:: labgumradius
+.. figure:: figures/labgumradius.png
 
    Radius `r_N(t)` for runs with 10 mm (``ts_lab52.nc``), 5 mm
    (``ts_lab104.nc``), and 2.5 mm (``ts_lab208.nc``) grids, compared to

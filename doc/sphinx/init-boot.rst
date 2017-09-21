@@ -5,8 +5,8 @@ Initialization and bootstrapping
 
 There are three ways to start PISM:
 
-- option :opt:`i` reads a previously-saved "complete" PISM model state in a NetCDF file, or
-- option :opt:`i` :opt:`bootstrap` reads an "incomplete" NetCDF file and uses heuristics to fill in needed fields, or
+- option :opt:`-i` reads a previously-saved "complete" PISM model state in a NetCDF file, or
+- option :opt:`-i` :opt:`-bootstrap` reads an "incomplete" NetCDF file and uses heuristics to fill in needed fields, or
 - one of the executables ``pisms`` or ``pismv`` is used to initialize simplified-geometry experiments or verification tests from formulas in the source code, and thus no input file is required.
 
 One of the first two choices is required when using the executable ``pismr``.  Modeling usually starts with the ``-i input.nc -bootstrap`` option because real ice sheet observations are never complete initial conditions.  Runs with multiple stages often use the :opt:`-i` option after the first stage.
@@ -29,7 +29,7 @@ As noted verification tests (section :ref:`sec-verif`) and simplified-geometry e
 
 but the climate and other parameters use PISM default values, and thus are not (necessarily) the values specified in EISMINT II.
 
-As a technical note about saved states, a PISM run with :opt:`-stress_balance ssa` also saves the last SSA velocities to the output file in variables :var:`u_ssa` and :var:`v_ssa`.  The presence of these velocities adds efficiency in restarting because an initial estimate speeds up the solution of the SSA stress balance equations.  If you want to use :opt:`-i` but also ignore these velocities then use option :opt:`dontreadSSAvels`.
+As a technical note about saved states, a PISM run with :opt:`-stress_balance ssa` also saves the last SSA velocities to the output file in variables :var:`u_ssa` and :var:`v_ssa`.  The presence of these velocities adds efficiency in restarting because an initial estimate speeds up the solution of the SSA stress balance equations.  If you want to use :opt:`-i` but also ignore these velocities then use option :opt:`-dontreadSSAvels`.
 
 .. _sec-i-format:
 
@@ -53,7 +53,7 @@ The automatically-produced :var:`time` variable has a ``units`` attribute like `
 Bootstrapping
 -------------
 
-"Bootstrapping" in PISM means starting a modeling run with less than sufficient data, and letting essentially heuristic models fill in needed fields.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option :opt:`bootstrap`; see subsection :ref:`sec-runscript` for an example.
+"Bootstrapping" in PISM means starting a modeling run with less than sufficient data, and letting essentially heuristic models fill in needed fields.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option :opt:`-bootstrap`; see subsection :ref:`sec-runscript` for an example.
 
 The need for an identified stage like "bootstrapping" comes from the fact that initial conditions for the evolution equations describing an ice sheet are not all observable. As a principal example of this problem, these initial conditions include the temperature within the ice. Glaciological observations, specifically remote-sensed observations which cover a large fraction or all of an ice sheet, never include this temperature field in practice. Thus ice sheet modelling often does something like this to get "reasonable" initial fields within the ice:
 
@@ -62,11 +62,11 @@ The need for an identified stage like "bootstrapping" comes from the fact that i
 #. #. *either* do a long run, often holding the current geometry and surface conditions steady, to evolve toward a steady state which has compatible temperature, stress, and velocity fields,
    #. *or* do a long run using an additional (typically spatially-imprecise) historical record from an ice core or a sea bed core (or both), to apply forcing to the surface temperature or sea level (for instance), but with the same functional result of filling in temperature, stress, and velocity fields.
       
-When using :opt:`bootstrap` you will need to specify both grid dimensions (using :opt:`-Mx`, :opt:`-My` and :opt:`-Mz`; see subsection :ref:`sec-grid`) and the height of the computational box for the ice with :opt:`-Lz` (subsection :ref:`sec-coords`). The data read from the file can determine the horizontal extent of the model, if options :opt:`-Lx`, :opt:`-Ly` are not set. The additional required specification of vertical extent by :opt:`-Lz` is reasonably natural because typical data used in "bootstrapping" are two-dimensional. Using :opt:`-bootstrap` without specifying all four options :opt:`-Mx`, :opt:`-My`, :opt:`-Mz`, :opt:`-Lz` is an error.
+When using :opt:`-bootstrap` you will need to specify both grid dimensions (using :opt:`-Mx`, :opt:`-My` and :opt:`-Mz`; see subsection :ref:`sec-grid`) and the height of the computational box for the ice with :opt:`-Lz` (subsection :ref:`sec-coords`). The data read from the file can determine the horizontal extent of the model, if options :opt:`-Lx`, :opt:`-Ly` are not set. The additional required specification of vertical extent by :opt:`-Lz` is reasonably natural because typical data used in "bootstrapping" are two-dimensional. Using :opt:`-bootstrap` without specifying all four options :opt:`-Mx`, :opt:`-My`, :opt:`-Mz`, :opt:`-Lz` is an error.
 
-If :opt:`-Lx` and :opt:`-Ly` specify horizontal grid dimensions smaller than in the bootstrapping file, PISM will cut out the center portion of the domain. Alternatively, options :opt:`x_range` and :opt:`y_range` each take a list of two numbers, a list of minimum and maximum :math:`x` and :math:`y` coordinates, respectively (in meters), which makes it possible to select a subset that is not centered in the bootstrapping file's grid.
+If :opt:`-Lx` and :opt:`-Ly` specify horizontal grid dimensions smaller than in the bootstrapping file, PISM will cut out the center portion of the domain. Alternatively, options :opt:`-x_range` and :opt:`-y_range` each take a list of two numbers, a list of minimum and maximum :math:`x` and :math:`y` coordinates, respectively (in meters), which makes it possible to select a subset that is not centered in the bootstrapping file's grid.
 
-For the key issue of what heuristic is used to determine the temperatures at depth, there are two methods. The default method uses ice thickness, surface temperature, surface mass balance, and geothermal flux. The temperature is set to the solution of a steady one-dimensional differential equation in which conduction and vertical advection are in balance, and the vertical velocity linearly-interpolates between the surface mass balance rate at the top and zero at the bottom. The non-default method, set with option :opt:`boot_temperature_heuristic quartic_guess`, was the default in older PISM versions (``stable0.5`` and earlier); it does not use the surface mass balance and instead makes a more-heuristic estimate of the vertical temperature profile based only on the ice thickness, surface temperature, and geothermal flux.
+For the key issue of what heuristic is used to determine the temperatures at depth, there are two methods. The default method uses ice thickness, surface temperature, surface mass balance, and geothermal flux. The temperature is set to the solution of a steady one-dimensional differential equation in which conduction and vertical advection are in balance, and the vertical velocity linearly-interpolates between the surface mass balance rate at the top and zero at the bottom. The non-default method, set with option :opt:`-boot_temperature_heuristic quartic_guess`, was the default in older PISM versions (``stable0.5`` and earlier); it does not use the surface mass balance and instead makes a more-heuristic estimate of the vertical temperature profile based only on the ice thickness, surface temperature, and geothermal flux.
 
 .. _sec-bootstrapping-format:
 

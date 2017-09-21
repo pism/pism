@@ -71,7 +71,7 @@ the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice s
 
    * - :opt:`-stress_balance prescribed_sliding`
      - Use the constant-in-time prescribed sliding velocity field read from a file set
-       using :opt:`prescribed_sliding_file`, variables ``ubar`` and ``vbar``.
+       using :opt:`-prescribed_sliding_file`, variables ``ubar`` and ``vbar``.
        Horizontal ice velocity is constant throughout ice columns.
 
    * - :opt:`-stress_balance ssa+sia`

@@ -95,13 +95,14 @@ numfig = True
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {"logo" : "pism-logo.png",
+html_theme_options = {"logo" : "figures/pism-logo.png",
                       "github_user" : "pism",
                       "github_repo" : "pism",
                       "show_related" : True,
 }
                       # "show_powered_by" : False,
                       # "body_text_align" : "justify"
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".

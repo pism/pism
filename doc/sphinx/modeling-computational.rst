@@ -1,3 +1,5 @@
+.. default-role:: math
+
 .. _sec-modeling-computational:
 
 Modeling choices: Grid and time
@@ -8,36 +10,53 @@ Modeling choices: Grid and time
 Computational box
 -----------------
 
+.. FIXME: This assumes that the sea (i.e. floatation) level is zero.
+
 PISM does all simulations in a computational box which is rectangular in the PISM
-coordinates. The coordinate system has horizontal coordinates :math:`x,y` and a vertical
-coordinate :math:`z`. The :math:`z` coordinate is measured positive upward from the base
-of the ice. The vector of gravity is in the negative :math:`z` direction. The surface
-:math:`z=0` is the base of the ice, however, and thus is usually not horizontal in the
-sense of being parallel to the geoid. The surface :math:`z=0` is the base of the ice both
+coordinates. The coordinate system has horizontal coordinates `x,y` and a vertical
+coordinate `z`. The `z` coordinate is measured positive upward from the base
+of the ice. The vector of gravity is in the negative `z` direction. The surface
+`z=0` is the base of the ice, however, and thus is usually not horizontal in the
+sense of being parallel to the geoid. The surface `z=0` is the base of the ice both
 when the ice is grounded and when the ice is floating.
 
-When the ice is grounded, the true physical vertical coordinate :math:`z'`, namely the
-coordinate measure relative to a reference geoid, is given by :math:`z'=z+b(x,y)` where
-:math:`b(x,y)` is the bed topography. The surface :math:`z'=h(x,y)` is the surface of the
-ice. In the grounded case the equation :math:`h(x,y)=H(x,y)+b(x,y)` always applies if
-:math:`H(x,y)` is the thickness of the ice.
+When the ice is grounded, the true physical vertical coordinate `z'`, namely the
+coordinate measure relative to a reference geoid, is given by `z'=z+b(x,y)` where
+`b(x,y)` is the bed topography. The surface `z'=h(x,y)` is the surface of the
+ice. In the grounded case the equation `h(x,y)=H(x,y)+b(x,y)` always applies if
+`H(x,y)` is the thickness of the ice.
 
-In the floating case, the physical vertical coordinate is :math:`z'=z-(\rho_i/\rho_s)
-H(x,y)` where :math:`\rho_i` is the density of ice and :math:`\rho_s` the density of sea
-water. Again :math:`z=0` is the base of the ice, which is the surface :math:`z' =
--(\rho_i/\rho_s) H(x,y)`. The surface of the ice is :math:`h(x,y) = (1-\rho_i/\rho_s)
-H(x,y)`. The *flotation criterion* :math:`-(\rho_i/\rho_s) H(x,y) > b(x,y)` applies.
+In the floating case, the physical vertical coordinate is
 
-The computational box can extend downward into the bedrock. As :math:`z=0` is the base of
-the ice, the bedrock corresponds to negative :math:`z` values regardless of its true (i.e.
-:math:`z'`) elevation.
+.. math::
+
+   z'=z-\frac{\rho_i}{\rho_s} H(x,y)
+
+where `\rho_i` is the density of ice and `\rho_s` the density of sea
+water. Again `z=0` is the base of the ice, which is the surface
+
+.. math::
+
+   z' = -\frac{\rho_i}{\rho_s} H(x,y).
+
+The surface of the ice is
+
+.. math::
+
+   h(x,y) = \left(1-\frac{\rho_i}{\rho_s}\right) H(x,y).
+
+The *flotation criterion* `-\frac{\rho_i}{\rho_s} H(x,y) > b(x,y)` applies.
+
+The computational box can extend downward into the bedrock. As `z=0` is the base of
+the ice, the bedrock corresponds to negative `z` values regardless of its true (i.e.
+`z'`) elevation.
 
 The extent of the computational box, along with its bedrock extension downward, is
 determined by four numbers ``Lx``, ``Ly``, ``Lz``, and ``Lbz`` (see Figure
 :numref:`fig-rectilinearbox` and Table :numref:`tab-compbox`). The first two of these are
 half-widths and have units of kilometers when set by options or displayed.
 
-.. figure:: rectilinearbox
+.. figure:: figures/rectilinearbox.png
    :name: fig-rectilinearbox
 
    PISM's computational box
@@ -50,9 +69,9 @@ half-widths and have units of kilometers when set by options or displayed.
    * - Option
      - Description
    * - :opt:`-Lx` (km)
-     - Half-width of the computational domain (in the :math:`x`\-direction) 
+     - Half-width of the computational domain (in the `x`\-direction) 
    * - :opt:`-Ly` (km)
-     - Half-width of the computational domain (in the :math:`y`\-direction) 
+     - Half-width of the computational domain (in the `y`\-direction) 
    * - :opt:`-Lz` (meters)
      - Height of the computational domain; must exceed maximum ice thickness 
    * - :opt:`-Lbz` (meters)
@@ -63,23 +82,23 @@ half-widths and have units of kilometers when set by options or displayed.
 Spatial grid
 ------------
 
-The PISM grid covering the computational box is equally spaced in horizontal (:math:`x`
-and :math:`y`) directions. Vertical spacing in the ice is quadratic by default but
+The PISM grid covering the computational box is equally spaced in horizontal (`x`
+and `y`) directions. Vertical spacing in the ice is quadratic by default but
 optionally equal spacing can be chosen; choose with options :opt:`-z_spacing`
 [``quadratic``, ``equal``] at bootstrapping. The grid read from a "``-i``" input file is
 used as is. The bedrock thermal layer model always uses equal vertical spacing.
 
 The grid is described by four numbers, namely the number of grid points ``Mx`` in the
-:math:`x` direction, the number ``My`` in the :math:`y` direction, the number ``Mz`` in
-the :math:`z` direction within the ice, and the number ``Mbz`` in the :math:`z` direction
+`x` direction, the number ``My`` in the `y` direction, the number ``Mz`` in
+the `z` direction within the ice, and the number ``Mbz`` in the `z` direction
 within the bedrock thermal layer. These are specified by options :opt:`-Mx`, :opt:`-My`,
 :opt:`-Mz`, and :opt:`-Mbz`, respectively. The defaults are 61, 61, 31, and 1,
 respectively. Note that ``Mx``, ``My``, ``Mz``, and ``Mbz`` all indicate the number of
 grid *points* so the number of grid *spaces* are one less, thus 60, 60, 30, and 0 in the
 default case.
 
-The lowest grid point in a column of ice, at :math:`z=0`, coincides with the highest grid
-point in the bedrock, so ``Mbz`` must always be at least one. Choosing ``Mbz``:math:`>1`
+The lowest grid point in a column of ice, at `z=0`, coincides with the highest grid
+point in the bedrock, so ``Mbz`` must always be at least one. Choosing ``Mbz```>1`
 is required to use the bedrock thermal model. When a thermal bedrock layer is used, the
 distance ``Lbz`` is controlled by the ``-Lbz`` option. Note that ``Mbz`` is unrelated to
 the bed deformation model (glacial isostasy model); see section :ref:`sec-beddef`.
@@ -115,26 +134,26 @@ Parallel domain distribution
 
 
 When running PISM in parallel with ``mpiexec -n N``, the horizontal grid is distributed
-across :math:`N` processes [#]_. PISM divides the grid into :math:`N_x` parts in the
-:math:`x` direction and :math:`N_y` parts in the :math:`y` direction. By default this is
-done automatically, with the goal that :math:`N_x\times N_y = N` and :math:`N_x` is as
-close to :math:`N_y` as possible. Note that :math:`N` should, therefore, be a composite
+across `N` processes [#]_. PISM divides the grid into `N_x` parts in the
+`x` direction and `N_y` parts in the `y` direction. By default this is
+done automatically, with the goal that `N_x\times N_y = N` and `N_x` is as
+close to `N_y` as possible. Note that `N` should, therefore, be a composite
 (not prime) number.
 
-Users seeking to override this default can specify :math:`N_x` and :math:`N_y` using the
+Users seeking to override this default can specify `N_x` and `N_y` using the
 :opt:`-Nx` and :opt:`-Ny` command-line options.
 
-Once :math:`N_x` and :math:`N_y` are computed, PISM computes sizes of sub-domains
-:math:`M_{x,i}` so that :math:`\sum_{i=1}^{N_x}M_{x,i} = \mathrm{Mx}` and :math:`M_{x,i} -
-\left\lfloor \mathrm{Mx} / N_x \right\rfloor < 1`. To specify strip widths :math:`M_{x,i}`
-and :math:`M_{y,i}`, use command-line options :opt:`-procs_x` and :opt:`-procs_y`. Each
+Once `N_x` and `N_y` are computed, PISM computes sizes of sub-domains
+`M_{x,i}` so that `\sum_{i=1}^{N_x}M_{x,i} = \mathrm{Mx}` and `M_{x,i} -
+\left\lfloor \mathrm{Mx} / N_x \right\rfloor < 1`. To specify strip widths `M_{x,i}`
+and `M_{y,i}`, use command-line options :opt:`-procs_x` and :opt:`-procs_y`. Each
 option takes a comma-separated list of numbers as its argument. For example,
 
 .. code-block:: none
 
    mpiexec -n 3 pisms -Mx 101 -My 101 -Nx 1 -Ny 3 -procs_x 101 -procs_y 20,61,20
 
-splits a :math:`101 \times 101` grid into 3 strips along the :math:`x` axis.
+splits a `101 \times 101` grid into 3 strips along the `x` axis.
 
 To see the parallel domain decomposition from a completed run, see the ``rank`` variable
 in the output file, e.g. using ``-o_size big``. The same ``rank`` variable is available as
@@ -234,7 +253,7 @@ Selecting a calendar using the :config:`time.calendar` configuration parameter o
 - It is important to use units that are a fixed multiple of "seconds", such as "``minutes
   since 1989-1-1``" or "``days since 1999-12-31``" and avoid "months" and "years". (PISM
   uses UDUNITS-2 to convert units, and in UDUNITS one month is always interpreted as
-  :math:`\frac{1}{12}\cdot 365.242198781` days.) Please see the `CF Conventions`_ document
+  `\frac{1}{12}\cdot 365.242198781` days.) Please see the `CF Conventions`_ document
   for details.
 
 - PISM uses dates in standard output:
@@ -257,7 +276,7 @@ Selecting a calendar using the :config:`time.calendar` configuration parameter o
 
 - options ``-ys`` and ``-ye`` take *dates* as arguments.
 
-For example, either of the following commands sets up a run covering the 21:math:`^{st}`
+For example, either of the following commands sets up a run covering the 21`^{st}`
 century:
 
 .. code-block:: none
@@ -268,7 +287,7 @@ century:
 (These option combinations are equivalent.)
 
 It is also possible to run PISM for the duration of the available forcing data using the
-:opt:`time_file` option. The command
+:opt:`-time_file` option. The command
 
 .. code-block:: none
 
@@ -316,7 +335,7 @@ Diagnostic computations
 A "diagnostic" computation can be defined as one where the internal state does not evolve.
 The internal state of PISM is the set of variables read by "``-i``". You can ask PISM to
 do a diagnostic computation by setting the run duration to a small number such as
-:math:`0.001` years (about :math:`9` hours). The duration to use depends on the modeling
+`0.001` years (about `9` hours). The duration to use depends on the modeling
 setup, but should be smaller than the maximum time-step allowed by PISM's stability
 criteria. Such short runs can also be used to look at additional fields corresponding to
 the current model state.
@@ -342,7 +361,7 @@ shelf [MacAyealetal]_. Verification tests I and J, section :ref:`sec-verif`, are
 diagnostic calculations using the SSA.
 
 The NetCDF model state saved by PISM at the end of an *evolution* run (i.e. with "``-y
-Y``" for :math:`Y>0`) does not, under the default ``-o_size medium`` output size, contain
+Y``" for `Y>0`) does not, under the default ``-o_size medium`` output size, contain
 the three-dimensional velocity field. Instead, it contains just a few more variables than
 those which are needed to restart the run with ``-i``. One can force PISM to save all the
 supported diagnostic quantities at the end of a time-stepping run using the option

@@ -280,7 +280,7 @@ experiment. It is shown in Figure :numref:`fig-MISMIPmodel1exper1aA7` (left).
    A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a,
    at step 7. Left: grid mode 1 (12 km grid). Right: grid mode 3 (6 km grid).
 
-.. figure:: SM-1a-A1
+.. figure:: figures/SM-1a-A1.png
    :name: fig-SMexper1aM1A1
 
    Analytical profile for steady state of experiment 1a, step 1, from theory in
@@ -396,7 +396,7 @@ x = \Delta y = 1` km.
    experiments performed with PISM when using the subgrid grounding line interpolation
    method (left) or not using it (right). In both cases the SIA+SSA hybrid is used.
 
-.. figure:: comp-SIA-SSA
+.. figure:: figures/comp-SIA-SSA.png
    :name: fig-compSIASSA
 
    The SIA velocities are negligible in the MISMIP3d standard experiment ("``Stnd``"). The

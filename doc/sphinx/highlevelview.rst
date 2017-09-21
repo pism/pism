@@ -164,11 +164,11 @@ A hierarchy of simplifying assumptions for grounded ice flow
 ------------------------------------------------------------
 
 :numref:`tab-modelhierarchy` describes a hierarchy of models, listed roughly in order of
-        increasing effectiveness in modeling grounded ice sheets with fast flow features.
-        This is also the order of increasing need for data to serve as boundary and
-        initial conditions, however, as also described in the Table.
+increasing effectiveness in modeling grounded ice sheets with fast flow features. This is
+also the order of increasing need for data to serve as boundary and initial conditions,
+however, as also described in the Table.
 
-.. figure:: stressbalance
+.. figure:: figures/stressbalance.png
    :name: fig-stressbalance
 
    The SIA-only, SSA-only, and SIA+SSA hybrid models represent different "routes" through
@@ -220,7 +220,7 @@ Ross ice shelf.
 Climate inputs, and their interface with ice dynamics
 -----------------------------------------------------
 
-.. figure:: figs/climate-cartoon.pdf
+.. figure:: figures/climate-cartoon.png
    :name: fig-climate-inputs
 
    PISM's view of interfaces between an ice sheet and the outside world
@@ -293,7 +293,7 @@ might use components that are responsible for modeling surface (snow) processes 
 sub-shelf/ocean interaction. These components might be very minimal, merely turning data
 that we already have into data in the right units and with the right metadata.
 
-.. figure:: figs/data-flow.pdf
+.. figure:: figures/data-flow.png
    :name: fig-climate-input-data-flow
 
    PISM climate input data flow. Colored arrows correspond to interfaces in
