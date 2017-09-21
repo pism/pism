@@ -18,7 +18,7 @@ When using option :opt:`-stress_balance ssa+sia`, the SIA+SSA hybrid stress bala
 
 This subsection explains the relevant options.
 
-The primary example of ``-stress_balance ssa+sia`` usage is in section :ref:`sec-start` of this Manual, but the option is also used in sections :ref:`subsect-MISMIP`, :ref:`subsect-MISMIP3d`, and :ref:`sec-jako`.
+The primary example of ``-stress_balance ssa+sia`` usage is in section :ref:`sec-start` of this Manual, but the option is also used in sections :ref:`sec-MISMIP`, :ref:`sec-MISMIP3d`, and :ref:`sec-jako`.
 
 In PISM the key coefficient in the sliding is always denoted as yield stress :math:`\tau_c`, which is :var:`tauc` in PISM output files.  This parameter represents the strength of the aggregate material at the base of an ice sheet, a poorly-observed mixture of pressurized liquid water, ice, granular till, and bedrock bumps.  The yield stress concept also extends to the power law form, and thus most standard sliding laws can be chosen by user options (below).  One reason that the yield stress is a useful parameter is that it can be compared, when looking at PISM output files, to the driving stress (:var:`taud_mag` in PISM output files).  Specifically, where :var:`tauc` :math:`<` :var:`taud_mag` you are likely to see sliding if option ``-stress_balance ssa+sia`` is used.
 
@@ -89,7 +89,7 @@ More generally, it is common in the literature to see power-law sliding relation
 
    \boldsymbol{\tau}_b = - C |\mathbf{u}|^{m-1} \mathbf{u},
 
-where :math:`C` is a constant, as for example in sections :ref:`subsect-MISMIP` and :ref:`subsect-MISMIP3d`.  In that case, use this option combination:
+where :math:`C` is a constant, as for example in sections :ref:`sec-MISMIP` and :ref:`sec-MISMIP3d`.  In that case, use this option combination:
 
 .. code-block:: none
 
@@ -108,7 +108,7 @@ Other than setting it to a constant, which only applies in some special cases, t
 - ``-yield_stress constant`` allows the yield stress to be supplied as time-independent data, read from the input file.
 
 
-In normal modelling cases, variations in yield stress are part of the explanation of the locations of ice streams [SchoofStream]_.  The default model ``-yield_stress mohr_coulomb`` determines these variations in time and space.  The value of :math:`\tau_c` is determined in part by a subglacial hydrology model, including the modeled till-pore water amount ``tillwat`` (subsection :ref:`subsect-subhydro`), which then determines the effective pressure :math:`N_{til}` (see below).  The value of :math:`\tau_c` is also determined in part by a material property field :math:`\phi=```tillphi``, the "till friction angle".  These quantities are related by the Mohr-Coulomb criterion [CuffeyPaterson]_:
+In normal modelling cases, variations in yield stress are part of the explanation of the locations of ice streams [SchoofStream]_.  The default model ``-yield_stress mohr_coulomb`` determines these variations in time and space.  The value of :math:`\tau_c` is determined in part by a subglacial hydrology model, including the modeled till-pore water amount ``tillwat`` (subsection :ref:`sec-subhydro`), which then determines the effective pressure :math:`N_{til}` (see below).  The value of :math:`\tau_c` is also determined in part by a material property field :math:`\phi=```tillphi``, the "till friction angle".  These quantities are related by the Mohr-Coulomb criterion [CuffeyPaterson]_:
 
 .. math::
    :name: eq-mohrcoulomb
@@ -166,7 +166,7 @@ Thus the user supplies 4 parameters: :math:`\phimin`, :math:`\phimax`, :math:`\b
      \phimax, & \bmax \le b(x,y).
    \end{cases}
 
-It is worth noting that an earth deformation model (see section :ref:`subsect-beddef`) changes :math:`b(x,y)=\mathrm{topg}` used in :eq:`eq-phipiecewise`, so that a sequence of runs such as
+It is worth noting that an earth deformation model (see section :ref:`sec-beddef`) changes :math:`b(x,y)=\mathrm{topg}` used in :eq:`eq-phipiecewise`, so that a sequence of runs such as
 
 .. code-block:: none
 
@@ -187,9 +187,9 @@ Omitting the ``-topg_to_phi`` option in the second run would make PISM continue 
 Determining the effective pressure
 ----------------------------------
 
-When using the default option ``-yield_stress mohr_coulomb``, the effective pressure on the till :math:`N_{til}` is determined by the modeled amount of water in the till.  Lower effective pressure means that more of the weight of the ice is carried by the pressurized water in the till and thus the ice can slide more easily.  That is, equation :eq:`eq-mohrcoulomb` sets the value of :math:`\tau_c` proportionately to :math:`N_{til}`.  The amount of water in the till is, however, a nontrivial output of the hydrology (subsection :ref:`subsect-subhydro`) and conservation-of-energy (section :ref:`subsect-energy`) submodels in PISM.
+When using the default option ``-yield_stress mohr_coulomb``, the effective pressure on the till :math:`N_{til}` is determined by the modeled amount of water in the till.  Lower effective pressure means that more of the weight of the ice is carried by the pressurized water in the till and thus the ice can slide more easily.  That is, equation :eq:`eq-mohrcoulomb` sets the value of :math:`\tau_c` proportionately to :math:`N_{til}`.  The amount of water in the till is, however, a nontrivial output of the hydrology (subsection :ref:`sec-subhydro`) and conservation-of-energy (section :ref:`sec-energy`) submodels in PISM.
 
-Following [Tulaczyketal2000]_, based on laboratory experiments with till extracted from an ice stream in Antarctica, [BuelervanPelt2015]_ propose the following parameterization which is used in PISM.  It is based on the ratio :math:`s=W_{til}/W_{til}^{max}` where :math:`W_{til}=` ``tillwat`` is the effective thickness of water in the till and :math:`W_{til}^{max}=` ``hydrology_tillwat_max`` is the maximum amount of water in the till (see subsection :ref:`subsect-subhydro`):
+Following [Tulaczyketal2000]_, based on laboratory experiments with till extracted from an ice stream in Antarctica, [BuelervanPelt2015]_ propose the following parameterization which is used in PISM.  It is based on the ratio :math:`s=W_{til}/W_{til}^{max}` where :math:`W_{til}=` ``tillwat`` is the effective thickness of water in the till and :math:`W_{til}^{max}=` ``hydrology_tillwat_max`` is the maximum amount of water in the till (see subsection :ref:`sec-subhydro`):
 
 .. math::
    :name: eq-computeNtil
@@ -272,7 +272,7 @@ In particular, denoting ``tillwat`` by :math:`W_{til}`, the till-stored water la
 
 where :math:`m=` :var:`basal_melt_rate_grounded}` (kg :math:`\text{m}^{-2}\,\text{s}^{-1}`), :math:`\rho_w` is the density of fresh water, and :math:`C` :var:`hydrology_tillwat_decay_rate`.  At all times bounds :math:`0 \le W_{til} \le W_{til}^{max}` are satisfied.
 
-This ``-hydrology null`` model has been extensively tested in combination with the Mohr-Coulomb till (subsection :ref:`subsect-basestrength` above) for modelling ice streaming (see [AschwandenAdalgeirsdottirKhroulev]_ and [BBssasliding]_, among others).
+This ``-hydrology null`` model has been extensively tested in combination with the Mohr-Coulomb till (subsection :ref:`sec-basestrength` above) for modelling ice streaming (see [AschwandenAdalgeirsdottirKhroulev]_ and [BBssasliding]_, among others).
 
 The mass-conserving model: ``-hydrology routing``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

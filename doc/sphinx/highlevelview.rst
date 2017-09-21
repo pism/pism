@@ -70,8 +70,8 @@ the hybrid concept.
 By default, however, PISM does not turn on (activate) the SSA solver. This is because a
 decision to solve the SSA must go with a conscious user choice about basal strength. The
 user must both use a command-line option to turn on the SSA (e.g. option ``-stress_balance
-ssa``; see section :ref:`subsect-stressbalance`) and also make choices in input files and
-runtime options about basal strength (see section :ref:`subsect-basestrength`). Indeed,
+ssa``; see section :ref:`sec-stressbalance`) and also make choices in input files and
+runtime options about basal strength (see section :ref:`sec-basestrength`). Indeed,
 uncertainties in basal strength boundary conditions usually dominate the modeling error
 made by not including higher-order stresses in the balance.
 
@@ -276,8 +276,8 @@ fields from a file or otherwise transfers them from a climate model.
 
 Regarding the base of the ice, the temperature of a layer of bedrock in contact with
 grounded ice is generally included in PISM's conservation of energy model; see subsections
-:ref:`subsect-coords` and :ref:`subsect-grid`. Also, as described in section
-:ref:`subsect-beddef`, PISM can apply an optional bed deformation component approximating
+:ref:`sec-coords` and :ref:`sec-grid`. Also, as described in section
+:ref:`sec-beddef`, PISM can apply an optional bed deformation component approximating
 the movement of the Earth's crust and upper mantle in response to changing ice load. In
 these senses everything below the black dashed line in :numref:`fig-climate-inputs` is
 always "owned" by PISM.

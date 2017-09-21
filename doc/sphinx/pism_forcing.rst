@@ -28,7 +28,7 @@ PISM's climate forcing code has two kinds of components.
 
 Model components and modifiers can be chained as shown in Figure :numref:`fig-climate-input-data-flow`. For example,
 
-.. code::
+.. code-block:: none
 
     -ocean constant,delta_SL -ocean_delta_SL_file delta_SL.nc
 
@@ -50,7 +50,7 @@ Periodic climate data
 
 All components reading time-dependent forcing data from files can interpret it as "periodic". The length of the period (in years) is specified using a :opt:`-..._period` option. For example, to prescribe a periodic climate which has the same values each year but which includes inter-annual variations, using the :opt:`-surface given` option, set:
 
-.. code::
+.. code-block:: none
 
     -surface given -surface_given_period 1 -surface_given_file forcing.nc
 
@@ -60,7 +60,7 @@ If forcing data has the period other than one year it is also necessary to speci
 
 For example, to use a 20 year long climate record as periodic climate starting at the beginning of the model year 10, do
 
-.. code::
+.. code-block:: none
 
     -surface given -surface_given_period 20 -surface_given_file forcing.nc \
     -surface_given_reference_year 10
@@ -77,7 +77,7 @@ PISM interprets climate forcing data as piecewise-constant in time. A forcing fi
 
 PISM follows the CF (Climate and Forecasting) meta-data conventions. The ``ncdump -h`` output from a conforming file would look similar to:
 
-.. code::
+.. code-block:: none
 
     netcdf forcing {
     dimensions:
@@ -218,7 +218,7 @@ Turning "off" ice dynamics saves computational time while allowing one to use th
 
 As an example, set up an ice sheet state file and check if climate data is read in correctly:
 
-.. code::
+.. code-block:: none
 
    mpiexec -n 2 pisms -eisII A -y 1000 -o state.nc
    pismr -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
@@ -231,7 +231,7 @@ A more interesting example uses a `positive degree-day scheme<Temperature-index 
 
 Assuming that ``g20km_pre100.nc`` was created as described in the *User's Manual*, running
 
-.. code::
+.. code-block:: none
 
     pismr -test_climate_models -no_mass -i g20km_pre100.nc \
           -atmosphere searise_greenland -surface pdd \
@@ -248,7 +248,7 @@ Sometimes a run like the one above is still too costly. In this case it might be
 
 The command
 
-.. code::
+.. code-block:: none
 
     pismr -i g20km_pre100.nc -bootstrap -Mx 51 -My 101 -Mz 11 \
           -atmosphere searise_greenland \
@@ -270,7 +270,7 @@ Assuming that ``g20km_pre100.nc`` was produced by the run described in section
 :ref:`sec-start`), one can run the following to check if the PDD
 model in PISM (see section `Temperature-index (positive degree-day) scheme`_) is "reasonable":
 
-.. code::
+.. code-block:: none
 
    pismr -i g20km_pre100.nc -atmosphere searise_greenland,paleo_precip \
          -surface pdd -atmosphere_paleo_precip_file pism_dT.nc \
@@ -298,7 +298,7 @@ Here are two things to notice:
 
 We can also test the surface temperature forcing code with the following command.
 
-.. code::
+.. code-block:: none
 
     pismr -i g20km_pre100.nc -surface simple \
           -atmosphere searise_greenland,delta_T \
@@ -354,7 +354,7 @@ A file ``foo.nc`` used with ``-surface given -surface_given_file foo.nc`` should
 
 For example, to use monthly records and period of 1 year, create a file (say, "``foo.nc``") with 12 records. The :var:`time` variable may contain :math:`0, 1, 2, 3, \dots, 11` and have the units of "month" [2]_. Then, run
 
-.. code::
+.. code-block:: none
 
     pismr -surface given -surface_given_file foo.nc -surface_given_period 1
 
@@ -366,7 +366,7 @@ For example, to use monthly records and period of 1 year, create a file (say, "`
    
      To change the storage order in a NetCDF file, use ``ncpdq``:
    
-     .. code::
+     .. code-block:: none
    
        ncpdq -a t,y,x input.nc output.nc
    
@@ -561,7 +561,7 @@ where :math:`\alpha>0`. We are adding mass (:math:`\Delta M>0`) where :math:`H_{
 
 Option :opt:`force_to_thickness_file` identifies the file containing the target ice thickness field ``thk`` and the mask ``ftt_mask``. A basic run modifying surface model ``given`` would look like
 
-.. code::
+.. code-block:: none
 
     pismr -i foo.nc -surface given,forcing -force_to_thickness_file bar.nc
 

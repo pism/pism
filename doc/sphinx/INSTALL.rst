@@ -30,7 +30,6 @@ Optional libraries listed below are needed for certain PISM features, namely cel
    PROJ.4_,  Used to compute cell areas and cell bounds
    PnetCDF_, Can be used for parallel I/O
 
-
 Python_ is needed both in the PETSc installation process and in scripts related to PISM pre- and post-processing, while Git_ is usually needed to download the PISM code. Both should be included in any Linux/Unix distribution.
 
 The following Python packages are needed to do all the examples in the *User’s Manual* (which run Python scripts):

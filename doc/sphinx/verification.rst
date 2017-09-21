@@ -1,10 +1,11 @@
+.. _sec-verif:
+
 Verification
 ============
 
   Two types of errors may be distinguished: modeling errors and numerical errors.  Modeling errors arise from not solving the right equations.  Numerical errors result from not solving the equations right.  The assessment of modeling errors is *validation*, whereas the assessment of numerical errors is called *verification*...  Validation makes sense only after verification, otherwise agreement between measured and computed results may well be fortuitous.
 
   P. Wesseling, (2001)  *Principles of Computational Fluid Dynamics*, pp. 560--561 [Wesseling]_
-
 
 Verification is the essentially mathematical task of checking that the predictions of the numerical code are close to the predictions of a continuum model, the one which the numerical code claims to approximate.  It is a crucial task for a code as complicated as PISM. In verification there is no comparison between model output and observations of nature.  Instead, one compares exact solutions of the continuum model, in circumstances in which they are available, to their numerical approximations.
 
@@ -22,56 +23,56 @@ In PISM there is a separate executable ``pismv`` which is used for SIA-related v
      - Reference
      - Comments
    * - A
-     - "isothermal SIA, steady,  flat bed, constant accumulation"
+     - isothermal SIA, steady,  flat bed, constant accumulation
      - [BLKCB]_
      -
    * - B
-     - "isothermal SIA, flat bed, zero accum"
-     - "[BLKCB]_, [Halfar83]_ "
+     - isothermal SIA, flat bed, zero accumulation
+     - [BLKCB]_, [Halfar83]_
      - similarity solution
    * - C
-     - "isothermal SIA, flat bed, growing accum"
+     - isothermal SIA, flat bed, growing accumulation
      - [BLKCB]_
      - similarity solution
    * - D
-     - "isothermal SIA, flat bed, oscillating accum"
+     - isothermal SIA, flat bed, oscillating accumulation
      - [BLKCB]_
      - uses compensatory accumulation
    * - E
-     - "isothermal SIA; as A  but with sliding in a sector"
+     - isothermal SIA; as A, but with sliding in a sector
      - [BLKCB]_
      - uses compensatory accumulation
    * - F
-     - "thermomechanically coupled SIA (mass and energy cons.), steady, flat bed"
-     - "[BB]_, [BBL]_"
+     - thermomechanically coupled SIA (mass and energy conservation), steady, flat bed
+     - [BB]_, [BBL]_
      - uses compensatory accumulation and heating
    * - G
-     - "thermomechanically coupled SIA; as F  but with oscillating accumulation "
-     - "[BB]_, [BBL]_"
+     - thermomechanically coupled SIA; as F  but with oscillating accumulation
+     - [BB]_, [BBL]_
      - ditto
    * - H
-     - "bed deformation coupled with isothermal SIA"
+     - bed deformation coupled with isothermal SIA
      - [BLKfastearth]_
      - joined similarity solution
    * - I
-     - "stream velocity computation using SSA (plastic till)"
-     - "[SchoofStream]_, [BBssasliding]_"
+     - stream velocity computation using SSA (plastic till)
+     - [SchoofStream]_, [BBssasliding]_
      -
    * - J
-     - "shelf velocity computation using SSA "
+     - shelf velocity computation using SSA
      - (source code)
      -
    * - K
-     - "pure conduction in ice and bedrock"
+     - pure conduction in ice and bedrock
      - [BuelerTestK]_
      -
    * - L
-     - "isothermal SIA, steady, non-flat bed"
+     - isothermal SIA, steady, non-flat bed
      - (source code)
      - numerical ODE solution
 
 .. csv-table:: Canonical PISM verification runs using the exact
-               solutions listed in Table :numref:`tab-tests`.
+               solutions listed in :numref:`tab-tests`.
    :header: Test, Example invocation
    :name: tab-tests-exec
    :widths: auto
@@ -89,13 +90,15 @@ In PISM there is a separate executable ``pismv`` which is used for SIA-related v
    K, ``pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000``
    L, ``pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000``
 
+.. FIXME: the table below is out of date
+
 .. csv-table:: ``pismv`` command-line options
    :header: Option, Description
    :name: tab-pismv-options
 
-   ``-test``, Choose verification test by single character name; see :numref:`tab-tests`.
+   ``-test``,      Choose verification test by single character name; see :numref:`tab-tests`.
    ``-no_report``, Do not report errors at the end of a verification run.
-   ``-eo``, Only evaluate the exact solution; no numerical approximation at all.
+   ``-eo``,        Only evaluate the exact solution; no numerical approximation at all.
 
 :numref:`tab-tests` summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of *free boundary problems* for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.
 
@@ -115,7 +118,7 @@ Therefore one must "go down" a grid refinement "path" and measure numerical erro
 
 For a grid refinement path example, in tests of the thermomechanically-coupled SIA model one refines in three dimensions, and these runs produced Figures 13, 14, and 15 of [BBL]_:
 
-.. code::
+.. code-block:: none
 
    pismv -test G -max_dt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61 -z_spacing equal
    pismv -test G -max_dt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91 -z_spacing equal
@@ -154,4 +157,3 @@ These figures *do not* show outstanding rates of convergence, relative to textbo
    :name: fig-velerrsI
 
    Numerical errors in horizontal velocities in test I, an ice stream. See [SchoofStream]_, [BBssasliding]_.
-

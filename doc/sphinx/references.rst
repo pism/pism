@@ -1,97 +1,121 @@
 References
 ==========
 
+.. [BuelerSpray]
+.. [Hindmarsh04]
+.. [Hindmarsh06]
+.. [SaitoEISMINT]
+.. [PayneDongelmans]
+.. [ISMIPHOM]
+.. [HOMelmer]
+.. [GreveTakahamaCalov]
+.. [MISMIP2012]
+.. [MISMIP3d2013]
+.. [EISIIdescribe]
+.. [SchoofMarine1]
+.. [Goldbergetal2009]
 .. [Albrechtetal2011]
-.. [Levermannetal2012]
-.. [Winkelmannetal2012]
-.. [Feldmannetal2014]
-.. [Gladstoneetal2010]
-.. [Gladstoneetal2010]
 .. [Amundsonetal2010]
+.. [AschwandenAdalgeirsdottirKhroulev]
+.. [AschwandenBlatter]
+.. [AschwandenBuelerKhroulevBlatter]
+.. [BBL]
+.. [BB]
+.. [BBssasliding]
+.. [BKAJS]
+.. [BLKCB]
+.. [BLKfastearth]
+.. [Balesetal2001]
+.. [BamberLayberryGogenini]
+.. [BamberVaughanJoughin]
+.. [BeckmannGoosse2003]
+.. [Bindschadler2013SeaRISE]
+.. [Blatter]
+.. [BrownSmithAhmadia2013]
+.. [BuelerTestK]
+.. [BuelervanPelt2015]
+.. [CalovGreve05]
+.. [Calovetal2009HEINOfinal]
+.. [Clarke05]
+.. [CuffeyPaterson]
+.. [DellaGiustina2011]
+.. [DickensMorey2013]
+.. [EISMINT00]
+.. [EISMINT96]
+.. [Ettemaetal2009]
+.. [Faustoetal2009]
+.. [Feldmannetal2014]
+.. [Fowler01]
+.. [Fowler]
+.. [Gladstoneetal2010]
+.. [GoldsbyKohlstedt]
+.. [Golledgeetal2012]
+.. [Golledgeetal2012ant]
+.. [Golledgeetal2013]
+.. [Greve2001]
+.. [GreveBlatter2009]
+.. [Greve]
+.. [Habermannetal2013]
+.. [Halfar83]
+.. [Hellmeretal1998]
+.. [HindmarshPayne]
+.. [Hock05]
+.. [HollandJenkins1999]
+.. [Hollandetal2008]
+.. [Hooke]
+.. [Hutter]
+.. [Huybrechts02]
+.. [HuybrechtsdeWolde]
+.. [Imbrieetal1984]
+.. [Jenssen]
+.. [JohnsenetalGRIP]
+.. [Joughin2002]
+.. [JoughinAbdalatiFahnestock]
+.. [Joughinetal08]
+.. [Joughinetal2001]
+.. [Joughinetal2010]
+.. [JoughinetalGrBal97]
+.. [Larouretal2012]
+.. [Levermannetal2012]
+.. [LingleClark]
+.. [LliboutryDuval1985]
+.. [Luethietal2009]
+.. [MacAyeal]
+.. [MacAyealetal]
+.. [Mahaffy]
+.. [Martinetal2011]
+.. [MorlandZainuddin]
+.. [Morland]
 .. [Morlighem2016]
-.. [AschwandenAdalgeirsdottirKhroulev] FIXME
-.. [AschwandenBuelerKhroulevBlatter] FIXME
-.. [BBL] FIXME
-.. [BB] FIXME
-.. [BBssasliding] FIXME
-.. [BKAJS] FIXME
-.. [BLKCB] FIXME
-.. [BLKfastearth] FIXME
-.. [Balesetal2001] FIXME
-.. [BamberLayberryGogenini] FIXME
-.. [BamberVaughanJoughin] FIXME
-.. [BeckmannGoosse2003] FIXME
-.. [Bindschadler2013SeaRISE] FIXME
-.. [Blatter] FIXME
-.. [BrownSmithAhmadia2013] FIXME
-.. [BuelerTestK] FIXME
-.. [CalovGreve05] FIXME
-.. [Clarke05] FIXME
-.. [CuffeyPaterson] FIXME
-.. [DellaGiustina2011] FIXME
-.. [DickensMorey2013] FIXME
-.. [EISMINT00] FIXME
-.. [EISMINT96] FIXME
-.. [Ettemaetal2009] FIXME
-.. [Faustoetal2009] FIXME
-.. [Fowler01] FIXME
-.. [Fowler] FIXME
-.. [Golledgeetal2012] FIXME
-.. [Golledgeetal2012ant] FIXME
-.. [Golledgeetal2013] FIXME
-.. [GreveBlatter2009] FIXME
-.. [Greve] FIXME
-.. [Habermannetal2013] FIXME
-.. [Halfar83] FIXME
-.. [Hellmeretal1998] FIXME
-.. [Hock05] FIXME
-.. [Hollandetal2008] FIXME
-.. [HollandJenkins1999] FIXME
-.. [Hutter] FIXME
-.. [Huybrechts02] FIXME
-.. [HuybrechtsdeWolde] FIXME
-.. [Imbrieetal1984] FIXME
-.. [JohnsenetalGRIP] FIXME
-.. [JoughinAbdalatiFahnestock] FIXME
-.. [Joughin2002] FIXME
-.. [Joughinetal08] FIXME
-.. [Joughinetal2001] FIXME
-.. [Joughinetal2010] FIXME
-.. [JoughinetalGrBal97] FIXME
-.. [Larouretal2012] FIXME
-.. [LliboutryDuval1985] FIXME
-.. [Luethietal2009] FIXME
-.. [MacAyeal] FIXME
-.. [MacAyealetal] FIXME
-.. [Martinetal2011] FIXME
-.. [MorlandZainuddin] FIXME
-.. [Morland] FIXME
-.. [MortonMayers] FIXME
-.. [PatersonBudd] FIXME
-.. [Paterson] FIXME
-.. [Pattyn03] FIXME
-.. [PayneBaldwin] FIXME
-.. [Pfefferetal2008] FIXME
-.. [PollardDeConto] FIXME
-.. [Priceetal2011] FIXME
-.. [Roache] FIXME
-.. [RogozhinaRau2014] FIXME
-.. [SchoofCoulombBlatter] FIXME
-.. [SchoofHindmarsh] FIXME
-.. [SchoofStream] FIXME
-.. [Seguinot2013] FIXME
-.. [SeguinotRogozhina2014] FIXME
-.. [TrufferEchelmeyer] FIXME
-.. [Tulaczyketal2000] FIXME
-.. [WeisGreveHutter] FIXME
-.. [Wesseling] FIXME
-.. [Winkelmannetal2011] FIXME
-.. [massbalanceglossary] FIXME
-.. [vanPeltOerlemans2012] FIXME
-.. [vanPeltetal2013] FIXME
-.. [RitzEISMINT] FIXME
-.. [AschwandenBlatter] FIXME
-.. [SaitoMargin] FIXME
-.. [Mahaffy] FIXME
-.. [GoldsbyKohlstedt] FIXME
-.. [Hooke] FIXME
+.. [MortonMayers]
+.. [PatersonBudd]
+.. [Paterson]
+.. [Pattyn03]
+.. [PayneBaldwin]
+.. [Pfefferetal2008]
+.. [PollardDeConto]
+.. [Priceetal2011]
+.. [RitzEISMINT]
+.. [Roache]
+.. [RogozhinaRau2014]
+.. [SaitoMargin]
+.. [SchoofCoulombBlatter]
+.. [SchoofHindmarsh]
+.. [SchoofStream]
+.. [SchoofTill]
+.. [Schoofbasaltopg2003]
+.. [Schoofetal2012]
+.. [Seguinot2013]
+.. [SeguinotRogozhina2014]
+.. [Siegertetal2009]
+.. [TrufferEchelmeyer]
+.. [Tulaczyketal2000]
+.. [Tulaczyketal2000b]
+.. [WeisGreveHutter]
+.. [Wesseling]
+.. [Winkelmannetal2011]
+.. [Winkelmannetal2012]
+.. [massbalanceglossary]
+.. [petsc-user-ref]
+.. [vanPeltOerlemans2012]
+.. [vanPeltetal2013]

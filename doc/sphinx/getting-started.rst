@@ -523,18 +523,36 @@ The PISM authors use ``ncview`` and "``ncdump -h``" for quick visualization and 
 
 See Table :numref:`tab-modelhierarchy` in subsection :ref:`sec-model-hierarchy` for an overview on the data necessary for modeling.  For more information on the format of input files for PISM, see section :ref:`sec-initboot`.
 
-.. csv-table:: A selection of tools for viewing and modifying NetCDF files.
+.. list-table:: A selection of tools for viewing and modifying NetCDF files.
    :name: tab-NetCDFview
-   :header: Tool, Function
+   :header-rows: 1
 
-   ``ncdump``, dump binary NetCDF as ``.cdl`` (text) file
-   ``ncgen``, convert ``.cdl`` file to binary NetCDF
-   ncview_,  quick graphical view
-   CDO_, "Climate Data Operators; command-line tools, including conservative re-mapping"
-   IDV_, more complete visualization
-   NCO_, NetCDF Operators; command-line tools for pre- and post-processing
-   NCL_, NCAR Command Language
-   PyNGL_, Python version of NCL
+   * - Tool
+     - Function
+
+   * - ``ncdump``
+     - dump binary NetCDF as ``.cdl`` (text) file
+
+   * - ``ncgen``
+     - convert ``.cdl`` file to binary NetCDF
+
+   * - ncview_
+     - quick graphical view
+
+   * - CDO_
+     - Climate Data Operators; command-line tools, including conservative re-mapping
+
+   * - IDV_
+     - more complete visualization
+
+   * - NCO_
+     - NetCDF Operators; command-line tools for pre- and post-processing
+
+   * - NCL_
+     - NCAR Command Language
+
+   * - PyNGL_
+     - Python version of NCL
    
 .. rubric:: Footnotes
 
