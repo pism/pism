@@ -1,6 +1,14 @@
 References
 ==========
 
+.. [Albrechtetal2011]
+.. [Levermannetal2012]
+.. [Winkelmannetal2012]
+.. [Feldmannetal2014]
+.. [Gladstoneetal2010]
+.. [Gladstoneetal2010]
+.. [Amundsonetal2010]
+.. [Morlighem2016]
 .. [AschwandenAdalgeirsdottirKhroulev] FIXME
 .. [AschwandenBuelerKhroulevBlatter] FIXME
 .. [BBL] FIXME
