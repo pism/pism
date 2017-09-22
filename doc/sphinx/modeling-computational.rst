@@ -357,7 +357,7 @@ during the run.
 
 This diagnostic mode is often associated to the modeling of ice shelves and ice streams.
 Subsection :ref:`sec-ross` describes using a short "diagnostic" run to model the Ross ice
-shelf [MacAyealetal]_. Verification tests I and J, section :ref:`sec-verif`, are
+shelf :cite:`MacAyealetal`. Verification tests I and J, section :ref:`sec-verif`, are
 diagnostic calculations using the SSA.
 
 The NetCDF model state saved by PISM at the end of an *evolution* run (i.e. with "``-y

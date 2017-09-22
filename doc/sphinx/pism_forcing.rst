@@ -182,7 +182,7 @@ precipitation, these data need to be converted into top-of-the-ice temperature a
 climatic mass balance.
 
 One way to do that is by using a temperature index (PDD) model component included in PISM.
-This component has adjustable parameters; default values come from [RitzEISMINT]_.
+This component has adjustable parameters; default values come from :cite:`RitzEISMINT`.
 
 :|variables|: :var:`precipitation`, :var:`air_temp`
 :|options|: :opt:`-atmosphere given -atmosphere_given_file forcing.nc -surface pdd`
@@ -224,7 +224,7 @@ SeaRISE-Greenland
 +++++++++++++++++
 
 The SeaRISE-Greenland setup uses a parameterized near-surface air temperature
-[Faustoetal2009]_ and a constant-in-time precipitation field read from an input
+:cite:`Faustoetal2009` and a constant-in-time precipitation field read from an input
 (:opt:`-i`) file. A temperature-index (PDD) scheme is used to compute the climatic mass
 balance.
 
@@ -247,8 +247,8 @@ SeaRISE-Greenland paleo-climate run
 The air temperature parameterization in the previous section is appropriate for present
 day modeling. PISM includes some mechanisms allowing for corrections taking into account
 differences between present and past climates. In particular, one can use ice-core derived
-scalar air temperature offsets [JohnsenetalGRIP]_, precipitation adjustments
-[Huybrechts02]_, and sea level offsets from SPECMAP [Imbrieetal1984]_.
+scalar air temperature offsets :cite:`JohnsenetalGRIP`, precipitation adjustments
+:cite:`Huybrechts02`, and sea level offsets from SPECMAP :cite:`Imbrieetal1984`.
 
 :|variables|: :var:`precipitation`,
               :var:`delta_T`,
@@ -323,7 +323,7 @@ correctly:
          -ys 0 -ye 2.5
 
 Using ``pisms`` merely generates demonstration climate data, using EISMINT II choices
-[EISMINT00]_. The next run extracts the surface mass balance :var:`climatic_mass_balance`
+:cite:`EISMINT00`. The next run extracts the surface mass balance :var:`climatic_mass_balance`
 and surface temperature :var:`ice_surface_temp` from ``state.nc``. It then does nothing
 interesting, exactly because a constant climate is used. Viewing ``movie.nc`` we see these
 same values as from ``state.nc``, in variables :var:`climatic_mass_balance`,
@@ -347,7 +347,7 @@ produces ``foo.nc``. Viewing in with ``ncview`` shows an annual cycle in the var
 :var:`air_temp` and a noticeable decrease in the surface mass balance during summer months
 (see variable :var:`climatic_mass_balance`). Note that :var:`ice_surface_temp` is constant
 in time: this is the temperature *at the ice surface but below firn* and it does not
-include seasonal variations [Hock05]_.
+include seasonal variations :cite:`Hock05`.
 
 Using low-resolution test runs
 ++++++++++++++++++++++++++++++
@@ -416,7 +416,7 @@ Here are two things to notice:
    Recall the air temperature graph does not show random daily variations. Even though it
    has the maximum of about `266` Kelvin, the parameterized instantaneous air
    temperature can be above freezing. A positive value for positive degree-days is
-   expected [CalovGreve05]_.
+   expected :cite:`CalovGreve05`.
 
 .. figure:: figures/pdd-movie.png
    :name: fig-pddseries
@@ -630,7 +630,7 @@ Temperature-index scheme
    and ice, respectively; `\theta_{\text{refreeze}}` is the refreeze fraction.
                    
 The default PDD model used by PISM, turned on by option :opt:`-surface pdd`, is based on
-[CalovGreve05]_ and EISMINT-Greenland intercomparison (see [RitzEISMINT]_).
+:cite:`CalovGreve05` and EISMINT-Greenland intercomparison (see :cite:`RitzEISMINT`).
 
 Our model computes the solid (snow) precipitation rate using the air temperature threshold
 with a linear transition. All precipitation during periods with air temperatures above
@@ -658,9 +658,9 @@ A file ``foo.nc`` used with ``-surface pdd -pdd_sd_file foo.nc`` should contain 
 deviation of near-surface air temperature in variable :var:`air_temp_sd`, and the
 corresponding time coordinate in variable :var:`time`. If ``-pdd_sd_file`` is not set,
 PISM uses a constant value for standard deviation, which is set by the ``pdd_std_dev``
-configuration parameter. The default value is `5.0` degrees [RitzEISMINT]_. However,
+configuration parameter. The default value is `5.0` degrees :cite:`RitzEISMINT`. However,
 this approach is not recommended as it induces significant errors in modeled surface mass
-balance in both ice-covered and ice-free regions [RogozhinaRau2014]_, [Seguinot2013]_.
+balance in both ice-covered and ice-free regions :cite:`RogozhinaRau2014`, :cite:`Seguinot2013`.
 
 Over ice-covered grid cells, daily variability can also be parameterized as a linear
 function of near-surface air temperature `\sigma = a \cdot T + b` using the
@@ -669,14 +669,14 @@ function of near-surface air temperature `\sigma = a \cdot T + b` using the
 replaces prescribed standard deviation values over glacierized grid cells as defined by
 the :var:`mask` variable (see :config:`geometry.ice_free_thickness_standard`). Default
 values for the slope `a` and intercept `b` were derived from the ERA-40
-reanalysis over the Greenland ice sheet [SeguinotRogozhina2014]_.
+reanalysis over the Greenland ice sheet :cite:`SeguinotRogozhina2014`.
 
 The number of positive degree days is computed as the magnitude of the temperature
 excursion above `0\!\phantom{|}^\circ \text{C}` multiplied by the duration (in days)
 when it is above zero.
 
 In PISM there are two methods for computing the number of positive degree days. The first
-computes only the expected value, by the method described in [CalovGreve05]_. This is the
+computes only the expected value, by the method described in :cite:`CalovGreve05`. This is the
 default when a PDD is chosen (i.e. option ``-surface pdd``). The second is a Monte Carlo
 simulation of the white noise itself, chosen by adding the option :opt:`-pdd_rand`. This
 Monte Carlo simulation adds the same daily variation at every point, though the seasonal
@@ -706,9 +706,9 @@ yearly cycle such as ``searise_greenland`` (section
 like these.
 
 This code also implements latitude- and mean July temperature dependent ice and snow
-factors using formulas (6) and (7) in [Faustoetal2009]_; set :opt:`-pdd_fausto` to enable.
+factors using formulas (6) and (7) in :cite:`Faustoetal2009`; set :opt:`-pdd_fausto` to enable.
 The default standard deviation of the daily variability (:opt:`-pdd_std_dev` option) is
-2.53 degrees under the :opt:`-pdd_fausto` option [Faustoetal2009]_. See also configuration
+2.53 degrees under the :opt:`-pdd_fausto` option :cite:`Faustoetal2009`. See also configuration
 parameters with the ``surface.pdd.fausto`` prefix.
 
 Note that when used with periodic climate data (air temperature and precipitation) that is
@@ -726,10 +726,10 @@ PIK
               :var:`lat` (latitude), (degrees north)
 :|implementation|: ``PSConstantPIK``
 
-This surface model component implements the setup used in [Martinetal2011]_. The
+This surface model component implements the setup used in :cite:`Martinetal2011`. The
 :var:`climatic_mass_balance` is read from an input (``-i``) file; the ice surface
 temperature is computed as a function of latitude (variable :var:`lat`) and surface
-elevation (dynamically updated by PISM). See equation (1) in [Martinetal2011]_.
+elevation (dynamically updated by PISM). See equation (1) in :cite:`Martinetal2011`.
 
 .. _sec-surface-delta-t:
 
@@ -974,7 +974,7 @@ SeaRISE-Greenland
 
 This atmosphere model component implements a longitude, latitude, and elevation dependent
 near-surface air temperature parameterization and a cosine yearly cycle described in
-[Faustoetal2009]_ and uses a constant in time ice-equivalent precipitation field (in units
+:cite:`Faustoetal2009` and uses a constant in time ice-equivalent precipitation field (in units
 of thickness per time, variable :var:`precipitation`) that is read from an input (``-i``)
 file. To read time-independent precipitation from a different file, use the option
 :opt:`-atmosphere_searise_greenland_file`.
@@ -985,7 +985,7 @@ The air temperature parameterization is controlled by configuration parameters w
 See also the ``-atmosphere ...,paleo_precip`` modifier, section
 :ref:`sec-atmosphere-paleo-precip`, for an implementation of the SeaRISE-Greenland formula
 for paleo-precipitation correction from present; a 7.3\% change of precipitation rate for
-every one degree Celsius of temperature change [Huybrechts02]_.
+every one degree Celsius of temperature change :cite:`Huybrechts02`.
 
 .. _sec-atmosphere-pik:
 
@@ -1095,7 +1095,7 @@ Precipitation correction using scalar temperature offsets
 
 This modifier implements the SeaRISE-Greenland formula for a precipitation correction from
 present; a 7.3\% change of precipitation rate for every one degree Celsius of air
-temperature change [Huybrechts02]_. See `SeaRISE Greenland model initialization
+temperature change :cite:`Huybrechts02`. See `SeaRISE Greenland model initialization
 <SeaRISE-Greenland_>`_ for details. The input file should contain air temperature offsets
 in the format used by ``-atmosphere ...,delta_T`` modifier, see section :ref:`sec-atmosphere-delta-t`.
 
@@ -1230,14 +1230,14 @@ PIK
 :|variables|: none
 :|implementation|: ``POConstantPIK``
 
-This ocean model component implements the ocean forcing setup used in [Martinetal2011]_.
+This ocean model component implements the ocean forcing setup used in :cite:`Martinetal2011`.
 The sub-shelf ice temperature is set to pressure-melting; the sub-shelf mass flux
-computation follows [BeckmannGoosse2003]_.
+computation follows :cite:`BeckmannGoosse2003`.
 
 It takes one command-line option:
 
 - :opt:`-meltfactor_pik`: a melt factor `F_{\mathrm{melt}}` in sub-shelf-melting
-  parameterization, see equation (5) in [Martinetal2011]_.
+  parameterization, see equation (5) in :cite:`Martinetal2011`.
 
 .. _sec-ocean-th:
 
@@ -1257,7 +1257,7 @@ equations describing
 #. the salt flux balance,
 #. the pressure and salinity dependent freezing point in the boundary layer.
 
-This model is described in [HollandJenkins1999]_ and [Hellmeretal1998]_.
+This model is described in :cite:`HollandJenkins1999` and :cite:`Hellmeretal1998`.
 
 Inputs are potential temperature (variable :var:`theta_ocean`) and salinity (variable
 :var:`salinity_ocean`) read from a file.
@@ -1267,7 +1267,7 @@ the surrounding ocean.
 
 This implementation uses different approximations of the temperature gradient at the base
 of an ice shelf column depending on whether there is sub-shelf melt, sub-shelf freeze-on,
-or neither (see [HollandJenkins1999]_ for details).
+or neither (see :cite:`HollandJenkins1999` for details).
 
 It takes two command-line option:
 
@@ -1276,7 +1276,7 @@ It takes two command-line option:
 - :opt:`-clip_shelf_base_salinity`: if this is set (which is the default), the sub-shelf
   salinity is clipped so that it stays in the `[4, 40]` psu range. This is done to
   ensure that we stay in the range of applicability of the melting point temperature
-  parameterization; see [HollandJenkins1999]_. To disable salinity clipping, use the
+  parameterization; see :cite:`HollandJenkins1999`. To disable salinity clipping, use the
   :opt:`-no_clip_shelf_base_salinity` option or set the
   :config:`ocean_three_equation_model_clip_salinity` configuration parameter to "no".
 

@@ -11,7 +11,7 @@ Verification
   well be fortuitous.
 
   P. Wesseling, (2001) *Principles of Computational Fluid Dynamics*, pp. 560--561
-  [Wesseling]_
+  :cite:`Wesseling`
 
 Verification is the essentially mathematical task of checking that the predictions of the
 numerical code are close to the predictions of a continuum model, the one which the
@@ -20,11 +20,11 @@ PISM. In verification there is no comparison between model output and observatio
 nature. Instead, one compares exact solutions of the continuum model, in circumstances in
 which they are available, to their numerical approximations.
 
-Reference [Roache]_ gives a broad discussion of verification and validation in
-computational fluid dynamics. See [BLKCB]_ and [BBL]_ for discussion of verification
+Reference :cite:`Roache` gives a broad discussion of verification and validation in
+computational fluid dynamics. See :cite:`BLKCB` and :cite:`BBL` for discussion of verification
 issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA),
-respectively, and for exact solutions to these models, and [BBssasliding]_,
-[SchoofStream]_ for verification using an exact solution to the SSA equations for ice
+respectively, and for exact solutions to these models, and :cite:`BBssasliding`,
+:cite:`SchoofStream` for verification using an exact solution to the SSA equations for ice
 streams.
 
 In PISM there is a separate executable ``pismv`` which is used for SIA-related
@@ -44,39 +44,39 @@ class of the PISM base class.
      - Comments
    * - A
      - isothermal SIA, steady,  flat bed, constant accumulation
-     - [BLKCB]_
+     - :cite:`BLKCB`
      -
    * - B
      - isothermal SIA, flat bed, zero accumulation
-     - [BLKCB]_, [Halfar83]_
+     - :cite:`BLKCB`, :cite:`Halfar83`
      - similarity solution
    * - C
      - isothermal SIA, flat bed, growing accumulation
-     - [BLKCB]_
+     - :cite:`BLKCB`
      - similarity solution
    * - D
      - isothermal SIA, flat bed, oscillating accumulation
-     - [BLKCB]_
+     - :cite:`BLKCB`
      - uses compensatory accumulation
    * - E
      - isothermal SIA; as A, but with sliding in a sector
-     - [BLKCB]_
+     - :cite:`BLKCB`
      - uses compensatory accumulation
    * - F
      - thermomechanically coupled SIA (mass and energy conservation), steady, flat bed
-     - [BB]_, [BBL]_
+     - :cite:`BB`, :cite:`BBL`
      - uses compensatory accumulation and heating
    * - G
      - thermomechanically coupled SIA; as F  but with oscillating accumulation
-     - [BB]_, [BBL]_
+     - :cite:`BB`, :cite:`BBL`
      - ditto
    * - H
      - bed deformation coupled with isothermal SIA
-     - [BLKfastearth]_
+     - :cite:`BLKfastearth`
      - joined similarity solution
    * - I
      - stream velocity computation using SSA (plastic till)
-     - [SchoofStream]_, [BBssasliding]_
+     - :cite:`SchoofStream`, :cite:`BBssasliding`
      -
    * - J
      - shelf velocity computation using SSA
@@ -84,7 +84,7 @@ class of the PISM base class.
      -
    * - K
      - pure conduction in ice and bedrock
-     - [BuelerTestK]_
+     - :cite:`BuelerTestK`
      -
    * - L
      - isothermal SIA, steady, non-flat bed
@@ -150,8 +150,8 @@ Knowing the error decay rate may give a prediction of how fine a grid is necessa
 achieve a desired smallness for the numerical error.
 
 Therefore one must "go down" a grid refinement "path" and measure numerical error for each
-grid [Roache]_. The refinement path is defined by a sequence of spatial grid cell sizes
-which decrease toward the refinement limit of zero size [MortonMayers]_. In PISM the
+grid :cite:`Roache`. The refinement path is defined by a sequence of spatial grid cell sizes
+which decrease toward the refinement limit of zero size :cite:`MortonMayers`. In PISM the
 timestep :math:`\Delta t` is determined adaptively by a stability criterion (see
 subsection :ref:`sec-adapt`). In PISM one specifies the number of grid points, thus the
 grid cell sizes because the overall dimensions of the computational box are normally
@@ -160,7 +160,7 @@ computing a norm (or norms) of the difference between the numerical solution and
 solution.
 
 For a grid refinement path example, in tests of the thermomechanically-coupled SIA model
-one refines in three dimensions, and these runs produced Figures 13, 14, and 15 of [BBL]_:
+one refines in three dimensions, and these runs produced Figures 13, 14, and 15 of :cite:`BBL`:
 
 .. code-block:: none
 
@@ -184,23 +184,23 @@ section :ref:`sec-scripts`.
 
 These figures *do not* show outstanding rates of convergence, relative to textbook partial
 differential equation examples. For the errors in tests B and G, see the discussion of
-free margin shape in [BLKCB]_. For the errors in test I, the exact continuum solution is
-not very smooth at the free boundary [SchoofStream]_.
+free margin shape in :cite:`BLKCB`. For the errors in test I, the exact continuum solution is
+not very smooth at the free boundary :cite:`SchoofStream`.
 
 .. figure:: figures/test-B-thickness.png
    :name: fig-thickerrsB
 
-   Numerical thickness errors in test B. See [BLKCB]_ for discussion.
+   Numerical thickness errors in test B. See :cite:`BLKCB` for discussion.
 
 .. figure:: figures/test-G-thickness.png
    :name: fig-thickerrsG
 
-   Numerical thickness errors in test G.  See [BBL]_ and [BLKCB]_.
+   Numerical thickness errors in test G.  See :cite:`BBL` and :cite:`BLKCB`.
 
 .. figure:: figures/test-G-temp.png
    :name: fig-temperrsG
 
-   Numerical temperature errors in test G. See [BBL]_.
+   Numerical temperature errors in test G. See :cite:`BBL`.
 
 .. figure:: figures/test-G-surfvels.png
    :name: fig-surfvelerrsG
@@ -211,4 +211,4 @@ not very smooth at the free boundary [SchoofStream]_.
    :name: fig-velerrsI
 
    Numerical errors in horizontal velocities in test I, an ice stream.
-   See [SchoofStream]_, [BBssasliding]_.
+   See :cite:`SchoofStream`, :cite:`BBssasliding`.

@@ -34,5 +34,5 @@ Welcome to PISM, a Parallel Ice Sheet Model's documentation!
 
    vertchange
    pism_forcing
-   references
+   zzz_references
 

@@ -6,51 +6,51 @@ Simplified geometry experiments with PISM
 =========================================
 
 There have been three stages of ice sheet model intercomparisons based on simplified
-geometry experiments since the early 1990s [BuelerSpray]_.
+geometry experiments since the early 1990s :cite:`BuelerSpray`.
 
-EISMINT I (European Ice Sheet Modeling INiTiative) [EISMINT96]_\ [#]_ was the first of
+EISMINT I (European Ice Sheet Modeling INiTiative) :cite:`EISMINT96`\ [#]_ was the first of
 these and involved only the isothermal shallow ice approximation (SIA). Both fixed margin
 and moving margin experiments were performed in EISMINT I, and various conclusions were
 drawn about the several numerical schemes used in the intercomparison. EISMINT I is
 superceded, however, by verification using the full variety of known exact solutions to
-the isothermal SIA [BLKCB]_. The "rediscovery", since EISMINT I, of the Halfar similarity
-solution with zero accumulation [Halfar83]_, and verification runs using that solution,
+the isothermal SIA :cite:`BLKCB`. The "rediscovery", since EISMINT I, of the Halfar similarity
+solution with zero accumulation :cite:`Halfar83`, and verification runs using that solution,
 already suffices to measure the isothermal SIA performance of PISM more precisely than
 would be allowed by comparison to EISMINT I results.
 
-EISMINT II [EISMINT00]_ pointed out interesting and surprising properties of the
-thermocoupled SIA. References [BBL]_, [Hindmarsh04]_, [Hindmarsh06]_, [PayneBaldwin]_,
-[SaitoEISMINT]_, [BBssasliding]_ each interpret the EISMINT II experiments and/or describe
+EISMINT II :cite:`EISMINT00` pointed out interesting and surprising properties of the
+thermocoupled SIA. References :cite:`BBL`, :cite:`Hindmarsh04`, :cite:`Hindmarsh06`, :cite:`PayneBaldwin`,
+:cite:`SaitoEISMINT`, :cite:`BBssasliding` each interpret the EISMINT II experiments and/or describe
 attempts to add more complete physical models to "fix" the (perceived and real) shortfalls
 of ice sheet model behavior on EISMINT II experiments. We believe that the discussion in
-[PayneDongelmans]_, [PayneBaldwin]_, [BBL]_ adequately explains the "spokes" in EISMINT II
-experiment F as a genuine fluid instability, while [Fowler01]_ and Appendix B of
-[BBssasliding]_ adequately cautions against the continuum model that generates the
+:cite:`PayneDongelmans`, :cite:`PayneBaldwin`, :cite:`BBL` adequately explains the "spokes" in EISMINT II
+experiment F as a genuine fluid instability, while :cite:`Fowler01` and Appendix B of
+:cite:`BBssasliding` adequately cautions against the continuum model that generates the
 "spokes" in EISMINT II experiment H. Thus we can move on from that era of controversy. In
 any case, PISM has built-in support for all of the published and unpublished EISMINT II
 experiments; these are described in the next subsection.
 
 The ISMIP (Ice Sheet Model Intercomparison Project) [#]_ round of intercomparisons covers
 2008--2013 (at least). There are four components of ISMIP substantially completed, namely
-HOM = Higher Order Models [ISMIPHOM]_, [HOMelmer]_, HEINO = Heinrich Event INtercOmparison
-[GreveTakahamaCalov]_, [Calovetal2009HEINOfinal]_, MISMIP (below), and MISMIP3d (also
+HOM = Higher Order Models :cite:`ISMIPHOM`, :cite:`HOMelmer`, HEINO = Heinrich Event INtercOmparison
+:cite:`GreveTakahamaCalov`, :cite:`Calovetal2009HEINOfinal`, MISMIP (below), and MISMIP3d (also
 below).
 
 PISM participated in HEINO, but this ability is unmaintained. We believe the continuum
 problem described by HEINO, also used in EISMINT II experiment H (above), is not
 meaningfully approximate-able because of a required discontinuous jump in the basal
 velocity field. The continuum problem predicts infinite vertical velocity because of this
-jump ([BBssasliding]_, Appendix B). Details of the numerical schemes and their results are
+jump (:cite:`BBssasliding`, Appendix B). Details of the numerical schemes and their results are
 irrelevant if the continuum model makes such a prediction. PISM offers the physical
-continuum model described in [BBssasliding]_, an SIA+SSA hybrid, as an alternative to the
+continuum model described in :cite:`BBssasliding`, an SIA+SSA hybrid, as an alternative to the
 continuum model used in ISMIP-HEINO and EISMINT II experiment H. Indeed the SIA+SSA hybrid
 is offered as a unified shallow model for real ice sheets (section :ref:`sec-dynamics`).
 
-There is no current plan to support ISMIP-HOM [ISMIPHOM]_, [HOMelmer]_, but comparison of
+There is no current plan to support ISMIP-HOM :cite:`ISMIPHOM`, :cite:`HOMelmer`, but comparison of
 shallow PISM results to exact Stokes solutions is a goal for PISM evaluation.
 
 A third and fourth ISMIP parts are the two parts of the Marine Ice Sheet Model
-Intercomparison Project, MISMIP [MISMIP2012]_ and MISMIP3D [MISMIP3d2013]_. These
+Intercomparison Project, MISMIP :cite:`MISMIP2012` and MISMIP3D :cite:`MISMIP3d2013`. These
 experiments are supported in PISM, as described in subsections :ref:`sec-MISMIP` and
 :ref:`sec-MISMIP3d` below.
 
@@ -59,7 +59,7 @@ experiments are supported in PISM, as described in subsections :ref:`sec-MISMIP`
 EISMINT II
 ----------
 
-There are seven experiments described in the published EISMINT II writeup [EISMINT00]_.
+There are seven experiments described in the published EISMINT II writeup :cite:`EISMINT00`.
 They are named A, B, C, D, F, G, and H. They have these common features:
 
 - runs are for `2\times 10^5` years, with no prescribed time step;
@@ -67,17 +67,17 @@ They are named A, B, C, D, F, G, and H. They have these common features:
 - surface inputs (temperature and mass balance) have angular symmetry around the grid center;
 - the bed is flat and does not move (no isostasy);
 - the temperature in the bedrock is not modeled;
-- only the cold (not polythermal) thermomechanically-coupled SIA is used [EISMINT00]_; and
+- only the cold (not polythermal) thermomechanically-coupled SIA is used :cite:`EISMINT00`; and
 - basal melt rates do not affect the evolution of the ice sheet.
 
 The experiments differ from each other in their various combinations of surface
 temperature and mass balance parameterizations. Experiments H and G involve basal sliding,
-under the physically-dubious SIA sliding rubric ([BBssasliding]_, Appendix B), while the
+under the physically-dubious SIA sliding rubric (:cite:`BBssasliding`, Appendix B), while the
 others don't. Four experiments start with zero ice (A,F,G,H), while the other experiments
 (B,C,D) start from the final state of experiment A.
 
-In addition to the seven experiments published in [EISMINT00]_, there were an additional
-five experiments described in the EISMINT II intercomparison description [EISIIdescribe]_,
+In addition to the seven experiments published in :cite:`EISMINT00`, there were an additional
+five experiments described in the EISMINT II intercomparison description :cite:`EISIIdescribe`,
 labeled E, I, J, K, and L. These experiments share most features listed above, but with
 the following differences. Experiment E is the same as experiment A except that the peak
 of the accumulation, and also the low point of the surface temperature, are shifted by 100
@@ -87,7 +87,7 @@ bed topography. Experiments K and L are similar to experiment C but with non-fla
 bed topography.
 
 See :numref:`tab-eisII` for how to run all EISMINT II experiments in PISM.
-Experiments below the horizontal line are only documented in [EISIIdescribe]_.
+Experiments below the horizontal line are only documented in :cite:`EISIIdescribe`.
 
 .. list-table:: Running the EISMINT II experiments in PISM. Use ``-skip -skip_max 5``, on
                 the `61\times 61` default grid, for significant speedup.
@@ -106,7 +106,7 @@ Experiments below the horizontal line are only documented in [EISIIdescribe]_.
    * - ``-eisII D -i eisIIA.nc -y 2e5 -o eisIID.nc``
      - smaller area of accumulation
    * - ``-eisII F -Mx 61 -My 61 -Mz 81 -Lz 6000 -y 2e5 -o eisIIF.nc``
-     - colder; famous spokes [BBL]_
+     - colder; famous spokes :cite:`BBL`
    * - ``-eisII G -Mx 61 -My 61 -Mz 201 -Lz 5000 -y 2e5 -o eisIIG.nc``
      - sliding (regardless of temperature)
    * - ``-eisII H -Mx 61 -My 61 -Mz 201 -Lz 5000 -y 2e5 -o eisIIH.nc``
@@ -158,7 +158,7 @@ EISMINT II experiments.
    * - :opt:`-eisII`
      - A
      -
-     - Choose single character name of EISMINT II [EISMINT00]_ simplified geometry
+     - Choose single character name of EISMINT II :cite:`EISMINT00` simplified geometry
        experiment. See :numref:`tab-eisII`.
 
    * - :opt:`-Mmax`
@@ -208,17 +208,17 @@ on reverse-slope beds is tested. The intercomparison process is described at the
    http://homepages.ulb.ac.be/~fpattyn/mismip/
 
 Find a full text description there, along with the published report on the results
-[MISMIP2012]_; that paper includes results from PISM version 0.1. These documents are
+:cite:`MISMIP2012`; that paper includes results from PISM version 0.1. These documents are
 essential reading for understanding MISMIP results generally, and for appreciating the
 brief discussion in this subsection.
 
 PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is
-theoretically unnecessary in the flow line case. The analysis in [SchoofMarine1]_ shows
+theoretically unnecessary in the flow line case. The analysis in :cite:`SchoofMarine1` shows
 that the only effect of an ice shelf, in the flow line case, is to transfer the force
 imbalance at the calving front directly to the ice column at the grounding line. Such an
 analysis does not apply to ice shelves with two horizontal dimensions; real ice shelves
 have "buttressing" and "side drag" and other forces not present in the flow line
-[Goldbergetal2009]_. See the next subsection on MISMIP3d and the Ross ice shelf example in
+:cite:`Goldbergetal2009`. See the next subsection on MISMIP3d and the Ross ice shelf example in
 section :ref:`sec-ross`, among other examples.
 
 We must adapt the usual 3D PISM model to two horizontal dimensions, i.e. to do flow-line
@@ -229,7 +229,7 @@ this in the cross-flow direction confuses the finite difference scheme.
 
 PISM can do MISMIP experiments with either of two applicable ice dynamics models. Model 1
 is a pure SSA model; "category 2" in the MISMIP classification. Model 2 combines SIA and
-SSA velocities as described in [Winkelmannetal2011]_; "category 3" because it resolves
+SSA velocities as described in :cite:`Winkelmannetal2011`; "category 3" because it resolves
 "vertical" shear (i.e. using SIA flow).
 
 There are many runs for a complete MISMIP intercomparison submission. Specifically, for a
@@ -284,11 +284,11 @@ experiment. It is shown in :numref:`fig-MISMIPmodel1exper1aA7` (left).
    :name: fig-SMexper1aM1A1
 
    Analytical profile for steady state of experiment 1a, step 1, from theory in
-   [SchoofMarine1]_. This is a boundary layer asymptotic matching result, but not the
+   :cite:`SchoofMarine1`. This is a boundary layer asymptotic matching result, but not the
    exact solution to the equations.
 
 The script ``MISMIP.py`` in ``examples/mismip/mismip2d`` has the ability to compute the
-profile from the Schoof's [SchoofMarine1]_ asymptotic-matching boundary layer theory. This
+profile from the Schoof's :cite:`SchoofMarine1` asymptotic-matching boundary layer theory. This
 script is a Python translation, using ``scipy`` and ``pylab``, of the `provided MATLAB
 codes <mismip-code_>`_. For example,
 
@@ -297,7 +297,7 @@ codes <mismip-code_>`_. For example,
    python MISMIP.py -o mismip_analytic.png
 
 produces a ``.png`` image file with :numref:`fig-SMexper1aM1A1`. By default
-``run.py`` uses the asymptotic-matching thickness result from the [SchoofMarine1]_ theory
+``run.py`` uses the asymptotic-matching thickness result from the :cite:`SchoofMarine1` theory
 to initialize the initial ice thickness, as allowed by the MISMIP specification.
 
 .. figure:: profileA7-M2
@@ -335,7 +335,7 @@ A full description of the MISMIP3d experiments can be found at
 
    http://homepages.ulb.ac.be/~fpattyn/mismip3d/
 
-and the results are published in [MISMIP3d2013]_.
+and the results are published in :cite:`MISMIP3d2013`.
 
 A complete set of MISMIP3d experiments consists of three runs: Firstly, a flowline
 solution on a linearly-sloped bed, similar to the flowline MISMIP experiments of the
@@ -371,10 +371,10 @@ the symmetric computational domain increases computational cost, it allows us to
 standard PISM without fixing certain boundary conditions in the code. (That is, it avoids
 the issues addressed in the regional mode of PISM; see section :ref:`sec-jako`.)
 
-PISM participated in the MISMIP3d intercomparison project [MISMIP3d2013]_ using version
+PISM participated in the MISMIP3d intercomparison project :cite:`MISMIP3d2013` using version
 pism0.5, and the exact results can be reproduced using that version. PISM's results, and
 the role of resolution and the new subgrid grounding line interpolation scheme are
-discussed in [Feldmannetal2014]_.
+discussed in :cite:`Feldmannetal2014`.
 
 We observed a considerable improvement of the results with respect to the absolute
 grounding line positions compared to other models (e.g. the FE reference model Elmer/Ice)

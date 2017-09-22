@@ -62,7 +62,7 @@ In PISM the computational domain (region)
 
 is divided into a three-dimensional grid. See ``IceGrid``.
 
-The change of variable `z\to s` used here *is not* the [Jenssen]_ change of variable
+The change of variable `z\to s` used here *is not* the :cite:`Jenssen` change of variable
 `\tilde s=(z-b)/H` . That change causes the conservation of energy equation to
 become singular at the boundaries of the ice sheet. Specifically, the Jenssen change
 replaces the vertical conduction term by a manifestly-singular term at ice sheet margins

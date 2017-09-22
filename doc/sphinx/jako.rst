@@ -6,17 +6,17 @@ Example: A regional model of the Jakobshavn outlet glacier in Greenland
 Jakobshavn Isbrae is a fast-flowing outlet glacier in western
 Greenland that drains approximately 7\% of the area of the Greenland
 ice sheet. It experienced a large acceleration following the loss of
-its floating tongue in the 1990s [JoughinAbdalatiFahnestock]_, an
+its floating tongue in the 1990s :cite:`JoughinAbdalatiFahnestock`, an
 event which seems to have been driven by warmer ocean temperatures
-[Hollandetal2008]_. Because it is thick, has a steep surface slope,
+:cite:`Hollandetal2008`. Because it is thick, has a steep surface slope,
 has a deep trough in its bedrock topography (Figure
 :numref:`fig-jako-basin-topg`), and has a thick layer of low-viscosity
-temperate ice at its base [Luethietal2009]_, this ice flow is
+temperate ice at its base :cite:`Luethietal2009`, this ice flow is
 different from the ice streams in West Antarctica or Northeast
-Greenland [TrufferEchelmeyer]_.
+Greenland :cite:`TrufferEchelmeyer`.
 
 This section describes how to build a PISM regional model of this
-outlet glacier [DellaGiustina2011]_ using scripts from
+outlet glacier :cite:`DellaGiustina2011` using scripts from
 ``examples/jako/``. The same strategy should work for other outlet
 glaciers. We also demonstrate the PISM executable ``pismo``
 ("outlet-glacier mode"), and Python `drainage-basin-delineation tools
@@ -25,11 +25,11 @@ website. Such regional models allow modest-size computers to run high
 resolution models [#]_ and large ensembles. Regional analysis is
 justified if detailed data is available for the region.
 
-The geometric data used here is the SeaRISE [Bindschadler2013SeaRISE]_
+The geometric data used here is the SeaRISE :cite:`Bindschadler2013SeaRISE`
 1 km dataset for the whole Greenland ice sheet. It contains bedrock
 topography from recent CReSIS radar in the Jakobshavn area. We also
 use the SeaRISE 5 km data set which has climatic mass balance from the
-Greenland-region climate model RACMO [Ettemaetal2009]_.
+Greenland-region climate model RACMO :cite:`Ettemaetal2009`.
 
 A regional ice flow model generally needs ice flow and stress boundary
 conditions. For this we use a 5 km grid, whole ice sheet, spun-up
@@ -325,7 +325,7 @@ It produces three files which can be viewed (e.g. with ``ncview``): ``spunjako_0
 .. figure:: FIXME
    :name: fig:jako-csurf
 
-   Left: modeled surface speed at the end of a 2 km grid, 100 model year, steady present-day climate run.  Right: observed surface speed, an average of four winter velocity maps (2000,2006--2008) derived from RADARSAT data, as included in the SeaRISE  5 km data set [Joughinetal2010]_, for the same region.  Scales are in meters per year.
+   Left: modeled surface speed at the end of a 2 km grid, 100 model year, steady present-day climate run.  Right: observed surface speed, an average of four winter velocity maps (2000,2006--2008) derived from RADARSAT data, as included in the SeaRISE  5 km data set :cite:`Joughinetal2010`, for the same region.  Scales are in meters per year.
 
    includegraphics{jako-csurf}
 
@@ -343,7 +343,7 @@ This run requires at least 6 GB of memory, and it takes about 16 processor-hours
 
 It produces a file ``jakofine_short.nc`` almost immediately and then restarts from it because we need to regrid fields from the end of the previous 5 km regional run (in ``spunjako_0.nc``) and then to "go back" and regrid the SSA boundary conditions from the 5 km whole ice sheet results ``g5km_bc.nc``.  At the end of the run the final file ``jakofine.nc`` is produced.  Also there is a time-series file ``ts_jakofine.nc`` with monthly scalar time-series and a spatial time-dependent file ``ex_jakofine.nc``.  The surface speed at the end of this run is shown in :numref:`fig-jako-csurf`, with a comparison to observations.
 
-Over this 100 year period the flow appears to be relatively steady state.  Though this is not surprising because the climate forcing and boundary conditions are time-independent, a longer run reveals ongoing speed variability associated to subglacially-driven sliding cyclicity; compare [vanPeltOerlemans2012]_.
+Over this 100 year period the flow appears to be relatively steady state.  Though this is not surprising because the climate forcing and boundary conditions are time-independent, a longer run reveals ongoing speed variability associated to subglacially-driven sliding cyclicity; compare :cite:`vanPeltOerlemans2012`.
 
 The ice dynamics parameters chosen in ``spinup.sh`` and ``century.sh``, especially the combination
 
@@ -352,7 +352,7 @@ The ice dynamics parameters chosen in ``spinup.sh`` and ``century.sh``, especial
       -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 \
          -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines
 
-are a topic for a parameter study (compare [AschwandenAdalgeirsdottirKhroulev]_) or a study of their relation to inverse modeling results (e.g. [Habermannetal2013]_).
+are a topic for a parameter study (compare :cite:`AschwandenAdalgeirsdottirKhroulev`) or a study of their relation to inverse modeling results (e.g. :cite:`Habermannetal2013`).
 
 Plotting the results
 --------------------

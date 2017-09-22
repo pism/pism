@@ -11,27 +11,27 @@ Choosing the stress balance
 ---------------------------
 
 The basic stress balance used for all grounded ice in PISM is the non-sliding,
-thermomechanically-coupled SIA [BBL]_. For the vast majority of most ice sheets, as
+thermomechanically-coupled SIA :cite:`BBL`. For the vast majority of most ice sheets, as
 measured by area or volume, this is an appropriate model, which is an `O(\eps^2)`
 approximation to the Stokes model if `\eps` is the depth-to-length ratio of the ice
-sheet [Fowler]_.
+sheet :cite:`Fowler`.
 
 The shallow shelf approximation (SSA) stress balance applies to floating ice. See the Ross
 ice shelf example in section :ref:`sec-ross` for an example in which the SSA is only
 applied to floating ice.
 
 The SSA is also used in PISM to describe the sliding of grounded ice and the formation of
-ice streams [BBssasliding]_. Specifically for the SSA with "plastic" (Coulomb friction)
+ice streams :cite:`BBssasliding`. Specifically for the SSA with "plastic" (Coulomb friction)
 basal resistance, the locations of ice streams are determined as part of a free boundary
-problem of Schoof [SchoofStream]_, a model for emergent ice streams within a ice sheet and
+problem of Schoof :cite:`SchoofStream`, a model for emergent ice streams within a ice sheet and
 ice shelf system. This model explains ice streams through a combination of plastic till
 failure and SSA stress balance.
 
 This SSA description of ice streams is, however, also the preferred "sliding law" for the
-SIA [BBssasliding]_, [Winkelmannetal2011]_. The SSA should be combined with the SIA, in
+SIA :cite:`BBssasliding`, :cite:`Winkelmannetal2011`. The SSA should be combined with the SIA, in
 this way, in preference to classical SIA sliding laws which make ice basal velocity a
 local function of the basal value of the driving stress. The resulting combination of SIA
-and SSA is a "hybrid" approximation of the Stokes model [Winkelmannetal2011]_. Option
+and SSA is a "hybrid" approximation of the Stokes model :cite:`Winkelmannetal2011`. Option
 ``-stress_balance ssa+sia`` turns on this "hybrid" model. In this use of the SSA as a
 sliding law, floating ice is also subject to the SSA.
 
@@ -77,8 +77,8 @@ the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice s
    * - :opt:`-stress_balance ssa+sia`
      - The recommended sliding law, which gives the SIA+SSA hybrid stress balance.
        Combines SSA-computed velocity, using pseudo-plastic till, with SIA-computed
-       velocity according to the combination in [Winkelmannetal2011]_; similar to
-       [BBssasliding]_. Floating ice uses SSA only.
+       velocity according to the combination in :cite:`Winkelmannetal2011`; similar to
+       :cite:`BBssasliding`. Floating ice uses SSA only.
 
    * - :opt:`-stress_balance prescribed_sliding+sia`
      - Use the constant-in-time prescribed sliding velocity in combination with the
@@ -95,8 +95,8 @@ the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice s
      - Both finite difference (``fd``; the default) and finite element (``fem``) versions
        of the SSA numerical solver are implemented in PISM. The ``fd`` solver is the only
        one which allows PIK options (section :ref:`sec-pism-pik`). ``fd`` uses Picard
-       iteration [BBssasliding]_, while ``fem`` uses a Newton method. The ``fem`` solver
-       has surface velocity inversion capability [Habermannetal2013]_.
+       iteration :cite:`BBssasliding`, while ``fem`` uses a Newton method. The ``fem`` solver
+       has surface velocity inversion capability :cite:`Habermannetal2013`.
 
    * - :opt:`-ssa_eps` (`10^{13}`)
      - The numerical schemes for the SSA compute an effective viscosity `\nu` which
@@ -155,7 +155,7 @@ Ice rheology
 ------------
 
 
-The "rheology" of a viscous fluid refers to the relation between the applied stress and the resulting deformation, the strain rate.  The models of ice rheology available in PISM are all isotropic [Paterson]_.   A rheology in this class is described by a "flow law", which is, in the most general case in PISM, a function `F(\sigma,T,\omega,P,d)` in the "constitutive relation" form
+The "rheology" of a viscous fluid refers to the relation between the applied stress and the resulting deformation, the strain rate.  The models of ice rheology available in PISM are all isotropic :cite:`Paterson`.   A rheology in this class is described by a "flow law", which is, in the most general case in PISM, a function `F(\sigma,T,\omega,P,d)` in the "constitutive relation" form
 
 .. math::
    :name: eq-constitutive
@@ -164,7 +164,7 @@ The "rheology" of a viscous fluid refers to the relation between the applied str
 
 Here `D_{ij}` is the strain rate tensor, `\sigma_{ij}'` is the stress deviator tensor, `T` is the ice temperature, `\omega` is the liquid water fraction, `P` is the pressure, `d` is the grain size, and `\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F = \frac{1}{2} \sigma_{ij}' \sigma_{ij}'` defines the second invariant `\sigma` of the stress deviator tensor.
 
-Form :eq:`eq-constitutive` of the flow law is used in the SIA, but the "viscosity" form of a flow law, found by inverting the constitutive relation :eq:`eq-constitutive`, is needed for ice shelf and ice stream (SSA) flow [BBssasliding]_:
+Form :eq:`eq-constitutive` of the flow law is used in the SIA, but the "viscosity" form of a flow law, found by inverting the constitutive relation :eq:`eq-constitutive`, is needed for ice shelf and ice stream (SSA) flow :cite:`BBssasliding`:
 
 .. math::
    :name: eq-viscosityform
@@ -181,7 +181,7 @@ Most of the flow laws in PISM are of Glen-Nye single-power type.  For example,
 
    F(\sigma,T) = A(T) \sigma^{n-1}
 
-is the common temperature-dependent Glen law [PatersonBudd]_, [BBL]_ (which has no
+is the common temperature-dependent Glen law :cite:`PatersonBudd`, :cite:`BBL` (which has no
 dependence on liquid water fraction, pressure, or grain size). If the ice softness
 `A(T)=A_0` is constant then the law is isothermal, whereas if there is dependence on
 temperature then `A(T)` is usually a generalization of "Arrhenius" form
@@ -190,15 +190,15 @@ temperature then `A(T)` is usually a generalization of "Arrhenius" form
 
    A(T) = A \exp(-Q/(R T)).
 
-The more elaborate Goldsby-Kohlstedt law [GoldsbyKohlstedt]_ is a function
+The more elaborate Goldsby-Kohlstedt law :cite:`GoldsbyKohlstedt` is a function
 `F(\sigma,T,P,d)`, but in this case the function `F` cannot be factored into a
 product of a function of `T,P,d` and a single power of `\sigma`, as in form
 :eq:`eq-glen`.
 
 There is only one choice for the flow law which takes full advantage of the enthalpy mode
 of PISM, which is the thermodynamical modeling (i.e. conservation of energy) default.
-Namely the Glen-Paterson-Budd-Lliboutry-Duval flow law [AschwandenBuelerKhroulevBlatter]_,
-[LliboutryDuval1985]_, [PatersonBudd]_, which is a function `F(\sigma,T,\omega,P)`.
+Namely the Glen-Paterson-Budd-Lliboutry-Duval flow law :cite:`AschwandenBuelerKhroulevBlatter`,
+:cite:`LliboutryDuval1985`, :cite:`PatersonBudd`, which is a function `F(\sigma,T,\omega,P)`.
 This law is the only one in the literature where the ice softness depends on both the
 temperature and the liquid water fraction, so it parameterizes the (observed) softening of
 pressure-melting-temperature ice as its liquid fraction increases. One can use this
@@ -220,7 +220,7 @@ Choosing the flow laws for SIA and SSA stress balances
 Command-line options :opt:`-sia_flow_law` and :opt:`-ssa_flow_law` choose which flow law
 is used by the SIA and SSA stress balances, respectively. Allowed arguments are listed in
 Tables :numref:`tab-flowlaw` and :numref:`tab-flowlawgk` below. Viscosity form
-:eq:`eq-viscosityform` is not known for the Goldsby-Kohlstedt law [GoldsbyKohlstedt]_,
+:eq:`eq-viscosityform` is not known for the Goldsby-Kohlstedt law :cite:`GoldsbyKohlstedt`,
 so option "``-ssa_flow_law gk``" is an error.
 
 .. list-table:: Single-power flow laws. Choose the ice rheology using ``-sia_flow_law``
@@ -236,8 +236,8 @@ so option "``-ssa_flow_law gk``" is an error.
 
    * - ``gpbld``
      - :class:`rheology::GPBLD`
-     - Glen-Paterson-Budd-Lliboutry-Duval law [LliboutryDuval1985]_, the enthalpy-based
-       default in PISM [AschwandenBuelerKhroulevBlatter]_. Extends the Paterson-Budd law
+     - Glen-Paterson-Budd-Lliboutry-Duval law :cite:`LliboutryDuval1985`, the enthalpy-based
+       default in PISM :cite:`AschwandenBuelerKhroulevBlatter`. Extends the Paterson-Budd law
        (below) to positive liquid water fraction. If `A_{c}(T)` is from Paterson-Budd then
        this law returns
 
@@ -270,14 +270,14 @@ so option "``-ssa_flow_law gk``" is an error.
 
        if `T^* > 263` K;
 
-       here `T^*` is pressure-adjusted temperature [PatersonBudd]_.
+       here `T^*` is pressure-adjusted temperature :cite:`PatersonBudd`.
  
    * - ``arr``
      - :class:`rheology::PatersonBuddCold`
      - *Cold* part of Paterson-Budd. Regardless of temperature, the `A` and `Q` values for
        `T^*<263` K in the Paterson-Budd law apply. This is the flow law used in the
        thermomechanically-coupled exact solutions run by ``pismv -test F`` and
-       ``pismv -test G`` [BBL]_, [BB]_.
+       ``pismv -test G`` :cite:`BBL`, :cite:`BB`.
        
    * - ``arrwarm``
      - :class:`rheology::PatersonBuddWarm`
@@ -292,7 +292,7 @@ so option "``-ssa_flow_law gk``" is an error.
 
           A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa).
 
-       Fixed Glen exponent `n=3` and constants as in [Hooke]_, [PayneBaldwin]_.
+       Fixed Glen exponent `n=3` and constants as in :cite:`Hooke`, :cite:`PayneBaldwin`.
        
    * - ``isothermal_glen``
      - :class:`rheology::IsothermalGlen`
@@ -311,7 +311,7 @@ so option "``-ssa_flow_law gk``" is an error.
    * - ``gk``
      - :class:`rheology::GoldsbyKohlstedt`
      - This law has a combination of exponents from `n=1.8` to `n=4`
-       [GoldsbyKohlstedt]_. It can only be used by the SIA stress balance. Because it has
+       :cite:`GoldsbyKohlstedt`. It can only be used by the SIA stress balance. Because it has
        more than one power, option ``-sia_n`` has no effect, though ``-sia_e`` works as
        expected. This law does not use the liquid water fraction, but only the
        temperature.
@@ -331,7 +331,7 @@ Options :opt:`-sia_n` and :opt:`-ssa_n` set the exponent when a single-power flo
 used (see Table :numref:`tab-flowlaw`). Simply changing to a different value from the default
 `n=3` is not recommended without a corresponding change to the enhancement factor,
 however. This is because the coefficient and the power are non-trivially linked when a
-power law is fit to experimental data [CuffeyPaterson]_, [PatersonBudd]_.
+power law is fit to experimental data :cite:`CuffeyPaterson`, :cite:`PatersonBudd`.
 
 Here is a possible approach to adjusting both the enhancement factor and the exponent.
 Suppose `\sigma_0` is preferred as a scale (reference) for the driving stress that
@@ -383,8 +383,8 @@ A corresponding formula applies to ``-ssa_e`` if the ``-ssa_n`` value changes.
 
    * - :opt:`-sia_e` (1.0)
      - ``stress_balance.sia.enhancement_factor``
-     - Note (see the supplement of [AschwandenAdalgeirsdottirKhroulev]_) used `3.0`
-       for Greenland ice sheet simulations while [Martinetal2011]_ used `4.5` for
+     - Note (see the supplement of :cite:`AschwandenAdalgeirsdottirKhroulev`) used `3.0`
+       for Greenland ice sheet simulations while :cite:`Martinetal2011` used `4.5` for
        simulations of the Antarctic ice sheet with PISM-PIK.
 
    * - :opt:`-sia_n` (3.0)
@@ -393,7 +393,7 @@ A corresponding formula applies to ``-ssa_e`` if the ``-ssa_n`` value changes.
 
    * - :opt:`-ssa_e` (1.0)
      - ``stress_balance.ssa.enhancement_factor``
-     - Note [Martinetal2011]_ used `0.512` for simulations of the Antarctic ice sheet with
+     - Note :cite:`Martinetal2011` used `0.512` for simulations of the Antarctic ice sheet with
        PISM-PIK.
 
    * - :opt:`-ssa_n` (3.0)
@@ -432,7 +432,7 @@ is no theoretical advice on the best, most robust mechanism. There are three
 
    * - :opt:`-gradient mahaffy`
      - This most "standard" way computes the surface slope onto the staggered grid for the
-       SIA [Mahaffy]_. It makes `O(\Delta x^2,\Delta y^2)` errors. For computations
+       SIA :cite:`Mahaffy`. It makes `O(\Delta x^2,\Delta y^2)` errors. For computations
        of driving stress on the regular grid, centered differencing is used instead.
 
    * - :opt:`-gradient haseloff`
@@ -453,8 +453,8 @@ is no theoretical advice on the best, most robust mechanism. There are three
        Here `b` is the bed elevation and `h` is the surface elevation. This
        transformation sometimes has the benefits that the surface values of the horizontal
        velocity and vertical velocity, and the driving stress, are better behaved near the
-       margin. See [BLKCB]_ for technical explanation of this transformation and compare
-       [SaitoMargin]_. The actual finite difference schemes applied to compute the surface
+       margin. See :cite:`BLKCB` for technical explanation of this transformation and compare
+       :cite:`SaitoMargin`. The actual finite difference schemes applied to compute the surface
        slope are similar to option ``mahaffy``.
 
 .. _sec-energy:
@@ -464,7 +464,7 @@ Modeling conservation of energy
 
 In normal use PISM solves the conservation of energy problem within the ice, the thin
 subglacial layer, and a layer of thermal bedrock. For the ice and the subglacial layer it
-uses an enthalpy-based scheme [AschwandenBuelerKhroulevBlatter]_ which allows the energy
+uses an enthalpy-based scheme :cite:`AschwandenBuelerKhroulevBlatter` which allows the energy
 to be conserved even when the temperature is at the pressure-melting point.
 
 Ice at the melting point is called "temperate" ice. Part of the thermal energy of
@@ -472,14 +472,14 @@ temperate ice is in the latent heat of the liquid water stored between the cryst
 temperate ice. Part of the thermal energy of the whole glacier is in the latent heat of
 the liquid water under the glacier. The enthalpy scheme correctly models these storehouses
 of thermal energy, and thus it allows polythermal and fully-temperate glaciers to be
-modeled [AschwandenBlatter]_.
+modeled :cite:`AschwandenBlatter`.
 
 The state of the full conservation of energy model includes the 3D ``enthalpy`` variable
 plus the 2D ``bwat`` and ``tillwat`` subglacial hydrology state variables (subsection
 :ref:`sec-subhydro`), all of which are seen in output files. The important basal melt rate
 computation involves all of these energy state variables, because the basal melt rate
 (``bmelt`` in output files) comes from conserving energy across the ice-bedrock layer
-[AschwandenBuelerKhroulevBlatter]_. Fields ``temp``, ``liqfrac``, and ``temp_pa`` seen in
+:cite:`AschwandenBuelerKhroulevBlatter`. Fields ``temp``, ``liqfrac``, and ``temp_pa`` seen in
 output files are all actually diagnostic outputs because all of these can be recovered
 from the enthalpy and the ice geometry.
 
@@ -487,7 +487,7 @@ Because this part of PISM is just a conservation law, there is little need for t
 worry about controlling it. If desired, however, conservation of energy can be turned off
 entirely with :opt:`-energy none`. The default enthalpy-based conservation of energy model
 (i.e. ``-energy enthalpy``) can be replaced by the temperature-based (i.e. "cold ice")
-method used in [BBssasliding]_ and verified in [BBL]_ by setting option :opt:`-energy
+method used in :cite:`BBssasliding` and verified in :cite:`BBL` by setting option :opt:`-energy
 cold`.
 
 The thermal bedrock layer model is turned off by setting ``-Mbz 1`` (i.e. zero spaces)
@@ -508,3 +508,4 @@ ice flow when using the default flow laws. It is very easy to turn on. Just set
 ``-age`` is set and otherwise it is ignored even if present in the input file. If ``-age``
 is set and the variable ``age`` is absent in the input file then the initial age is set to
 zero.
+

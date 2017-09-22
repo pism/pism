@@ -848,7 +848,7 @@ updated ("``h``"). The rest of the flags line looks like
 
 Recall that the PISM time step is determined by an adaptive mechanism. Stable mass
 conservation and conservation of energy solutions require such an adaptive time-stepping
-scheme [BBL]_. The first character we see here, namely "``diffusivity``", is the
+scheme :cite:`BBL`. The first character we see here, namely "``diffusivity``", is the
 adaptive-timestepping "reason" flag. See Table :numref:`tab-adaptiveflag`. We also see
 that there was a major time step of :math:`0.83945` model years divided into :math:`2`
 substeps of about :math:`0.42` years. The :opt:`-skip` option enables this mechanism,
@@ -871,7 +871,7 @@ That is, in each summary we have the total ice volume, total ice area, maximum d
 
 The third line of the above example shows that the SSA stress balance was solved.
 Information on the number of nonlinear (outer) and linear (inner) iterations is provided
-[BBssasliding]_.
+:cite:`BBssasliding`.
 
 .. list-table:: Meaning of the adaptive time-stepping "reason" flag in the standard output
                 flag line.
@@ -882,10 +882,10 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
      - Active adaptive constraint or PISM sub-system that limited time-step size
 
    * - ``3D CFL``
-     - three-dimensional CFL for temperature/age advection [BBL]_
+     - three-dimensional CFL for temperature/age advection :cite:`BBL`
 
    * - ``diffusivity``
-     - diffusivity for SIA mass conservation [BBL]_, [HindmarshPayne]_
+     - diffusivity for SIA mass conservation :cite:`BBL`, :cite:`HindmarshPayne`
 
    * - ``end of the run``
      - end of prescribed run time
@@ -897,7 +897,7 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
      - maximum :math:`\Delta t` was temporarily set by a derived class
 
    * - ``2D CFL``
-     - 2D CFL for mass conservation in SSA regions (upwinded; [BBssasliding]_)
+     - 2D CFL for mass conservation in SSA regions (upwinded; :cite:`BBssasliding`)
 
    * - ``-ts_... reporting``
      - the ``-ts_times`` option and the configuration flag

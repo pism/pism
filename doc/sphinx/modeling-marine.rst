@@ -12,12 +12,12 @@ PISM is often used to model whole ice sheets surrounded by ocean, with attached 
 PIK options for marine ice sheets
 ---------------------------------
 
-References [Albrechtetal2011]_, [Levermannetal2012]_, [Winkelmannetal2011]_ by the
+References :cite:`Albrechtetal2011`, :cite:`Levermannetal2012`, :cite:`Winkelmannetal2011` by the
 research group of Prof. Anders Levermann at the Potsdam Institute for Climate Impact
 Research ("PIK"), Germany, describe most of the mechanisms covered in this section. These
-are all improvements to the grounded, SSA-as-a-sliding law model of [BBssasliding]_. These
+are all improvements to the grounded, SSA-as-a-sliding law model of :cite:`BBssasliding`. These
 improvements make PISM an effective Antarctic model, as demonstrated by
-[Golledgeetal2013]_, [Martinetal2011]_, [Winkelmannetal2012]_, among other publications.
+:cite:`Golledgeetal2013`, :cite:`Martinetal2011`, :cite:`Winkelmannetal2012`, among other publications.
 These improvements had a separate existence as the "PISM-PIK" model from 2009--2010, but
 since PISM stable0.4 are part of PISM itself.
 
@@ -31,22 +31,22 @@ since PISM stable0.4 are part of PISM itself.
 
    * - :opt:`-cfbc`
      - apply the stress boundary condition along the ice shelf calving front
-       [Winkelmannetal2011]_
+       :cite:`Winkelmannetal2011`
 
    * - :opt:`-kill_icebergs`
      - identify and eliminate free-floating icebergs, which cause well-posedness problems
-       for the SSA stress balance solver [Winkelmannetal2011]_
+       for the SSA stress balance solver :cite:`Winkelmannetal2011`
 
    * - :opt:`-part_grid`
      - allow the ice shelf front to advance by a part of a grid cell, avoiding
-       the development of unphysically-thinned ice shelves [Albrechtetal2011]_ 
+       the development of unphysically-thinned ice shelves :cite:`Albrechtetal2011` 
 
    * - :opt:`-subgl`
-     - apply interpolation to compute basal shear stress and basal melt near the grounding line [Feldmannetal2014]_ 
+     - apply interpolation to compute basal shear stress and basal melt near the grounding line :cite:`Feldmannetal2014` 
 
    * - :opt:`-no_subgl_basal_melt`
      - **don't** apply interpolation to compute basal melt near the grounding line if
-       :opt:`-subgl` is set [Feldmannetal2014]_
+       :opt:`-subgl` is set :cite:`Feldmannetal2014`
     
    * - :opt:`-pik`
      - equivalent to option combination ``-cfbc -kill_icebergs -part_grid -subgl``
@@ -69,7 +69,7 @@ Stress condition at calving fronts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-The vertically integrated force balance at floating calving fronts has been formulated by [Morland]_ as
+The vertically integrated force balance at floating calving fronts has been formulated by :cite:`Morland` as
 
 .. math::
    :name: eq-cfbc
@@ -79,14 +79,14 @@ The vertically integrated force balance at floating calving fronts has been form
 
 with `\mathbf{n}` being the horizontal normal vector pointing from the ice boundary oceanward, `\mathbf{\sigma}` the *Cauchy* stress tensor, `H` the ice thickness and `\rho` and `\rho_{w}` the densities of ice and seawater, respectively, for a sea level of `z_s`. The integration limits on the right hand side of equation :eq:`eq-cfbc` account for the pressure exerted by the ocean on that part of the shelf, which is below sea level (bending and torque neglected). The limits on the left hand side change for water-terminating outlet glacier or glacier fronts above sea level according to the bed topography.  By applying the ice flow law (section :ref:`sec-rheology`), equation :eq:`eq-cfbc` can be rewritten in terms of strain rates (velocity derivatives), as one does with the SSA stress balance itself.
 
-Note that the discretized SSA stress balance, in the default finite difference discretization chosen by :opt:`-ssa_method` ``fd``, is solved with an iterative matrix scheme.  If option :opt:`-cfbc` is set then, during matrix assembly, those equations which are for fully-filled grid cells along the ice domain boundary have terms replaced according to equation :eq:`eq-cfbc`, so as to apply the correct stresses [Albrechtetal2011]_, [Winkelmannetal2011]_.
+Note that the discretized SSA stress balance, in the default finite difference discretization chosen by :opt:`-ssa_method` ``fd``, is solved with an iterative matrix scheme.  If option :opt:`-cfbc` is set then, during matrix assembly, those equations which are for fully-filled grid cells along the ice domain boundary have terms replaced according to equation :eq:`eq-cfbc`, so as to apply the correct stresses :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.
 
 .. _sec-part-grid:
 
 Partially-filled cells at the boundaries of ice shelves
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Albrecht et al [Albrechtetal2011]_ argue that the correct movement of the ice shelf calving front on a finite-difference grid, assuming for the moment that ice velocities are correctly determined (see below), requires tracking some cells as being partially-filled (option :opt:`-part_grid`).  If the calving front is moving forward, for example, then the neighboring cell gets a little ice at the next time step.  It is not correct to add that little mass as a thin layer of ice which fills the cell's horizontal extent, as that would smooth the steep ice front after a few time steps.  Instead the cell must be regarded as having ice which is comparably thick to the upstream cells, but where the ice only partially fills the cell.
+Albrecht et al :cite:`Albrechtetal2011` argue that the correct movement of the ice shelf calving front on a finite-difference grid, assuming for the moment that ice velocities are correctly determined (see below), requires tracking some cells as being partially-filled (option :opt:`-part_grid`).  If the calving front is moving forward, for example, then the neighboring cell gets a little ice at the next time step.  It is not correct to add that little mass as a thin layer of ice which fills the cell's horizontal extent, as that would smooth the steep ice front after a few time steps.  Instead the cell must be regarded as having ice which is comparably thick to the upstream cells, but where the ice only partially fills the cell.
 
 Specifically, the PIK mechanism turned on by ``-part_grid`` adds mass to the partially-filled cell which the advancing front enters, and it determines the coverage ratio according to the ice thickness of neighboring fully-filled ice shelf cells.  If option ``-part_grid`` is used then the PISM output file will have field ``Href`` which shows the amount of ice in the partially-filled cells as a thickness.  When a cell becomes fully-filled, in the sense that the ``Href`` thickness equals the average of neighbors, then the residual mass is redistributed to neighboring partially-filled or empty grid cells.
 
@@ -99,7 +99,7 @@ Iceberg removal
 
 Any calving mechanism (see subsection :ref:`sec-calving`) removes ice along the seaward front of the ice shelf domain.  This can lead to isolated cells either filled or partially-filled with floating ice, or to patches of floating ice (icebergs) fully surrounded by ice free ocean neighbors.  This ice is detached from the flowing and partly-grounded ice sheet.  That is, calving can lead to icebergs.
 
-In terms of our basic model of ice as a viscous fluid, however, the stress balance for an iceberg is not well-posed because the ocean applies no resistance to balance the driving stress.  (See [SchoofStream]_.)  In this situation the numerical SSA stress balance solver will fail.
+In terms of our basic model of ice as a viscous fluid, however, the stress balance for an iceberg is not well-posed because the ocean applies no resistance to balance the driving stress.  (See :cite:`SchoofStream`.)  In this situation the numerical SSA stress balance solver will fail.
 
 Option :opt:`-kill_icebergs` turns on the mechanism which cleans this up.  This option is therefore generally needed if there is nontrivial calving.  The mechanism identifies free-floating icebergs by using a 2-scan connected-component labeling algorithm.  It then eliminates such icebergs, with the corresponding mass loss reported as a part of the 2D discharge flux diagnostic (see subsection :ref:`sec-saving-spat-vari`).
 
@@ -109,8 +109,8 @@ Sub-grid treatment of the grounding line position
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The command-line option :opt:`-subgl` turns on a parameterization of the grounding line
-position based on the "LI" parameterization described in [Gladstoneetal2010]_ and
-[Feldmannetal2014]_. With this option PISM computes an extra flotation mask, available as
+position based on the "LI" parameterization described in :cite:`Gladstoneetal2010` and
+:cite:`Feldmannetal2014`. With this option PISM computes an extra flotation mask, available as
 the ``gl_mask`` output variable, which corresponds to the fraction of the cell that is
 grounded. Cells that are ice-free or fully floating are assigned the value of `0` while
 fully-grounded icy cells get the value of `1`. Partially grounded cells, the ones which
@@ -134,7 +134,7 @@ Flotation criterion, mask, and sea level
 
 The most basic decision about marine ice sheet dynamics made internally by PISM is whether
 a ice-filled grid cell is floating. That is, PISM applies the "flotation criterion"
-[Winkelmannetal2011]_ at every time step and at every grid location to determine whether
+:cite:`Winkelmannetal2011` at every time step and at every grid location to determine whether
 the ice is floating on the ocean or not. The result is stored in the ``mask`` variable.
 The ``mask`` variable has ``pism_intent`` = ``diagnostic``, and thus it does *not* need to
 be included in the input file set using the ``-i`` option.
@@ -183,7 +183,7 @@ Calving
 Eigen calving
 ^^^^^^^^^^^^^
 
-PISM-PIK introduced a physically-based 2D-calving parameterization [Levermannetal2012]_. This calving parameterization is turned on in PISM by option :opt:`-calving eigen_calving`.  Average calving rates, `c`, are proportional to the product of principal components of the horizontal strain rates, `\dot{\epsilon}_{_\pm}`, derived from SSA-velocities 
+PISM-PIK introduced a physically-based 2D-calving parameterization :cite:`Levermannetal2012`. This calving parameterization is turned on in PISM by option :opt:`-calving eigen_calving`.  Average calving rates, `c`, are proportional to the product of principal components of the horizontal strain rates, `\dot{\epsilon}_{_\pm}`, derived from SSA-velocities 
 
 .. math::
    :name: eq-calv2
@@ -229,7 +229,7 @@ Von Mises stress calving
    ice shelves, it does not work for outlet glaciers that flow in narrow fjords. Along
    valleys with nearly parallel walls, the transverse component of the velocity is close
    to zero, and the transversal strain rate is therefore also close to zero and noisy.
-   Instead of the product of the eigen strain rates, [Morlighem2016]_ proposes a calving
+   Instead of the product of the eigen strain rates, :cite:`Morlighem2016` proposes a calving
    law where the calving rate `c` is a functionally related to tensile stresses:
 
 .. math::
@@ -249,7 +249,7 @@ strain rate is defined as
    \tilde{\dot{\epsilon}}_e = \left(\frac{1}{2}\left(\max(0,\dot{\epsilon}_{_+})^2 +
    \max(0,\dot{\epsilon}_{_-})^2\right)\right)^{1/2}.
 
-Following [Morlighem2016]_ `\tilde{\sigma}` is given by
+Following :cite:`Morlighem2016` `\tilde{\sigma}` is given by
 
 .. math::
    :name: eq-calv5
@@ -309,15 +309,15 @@ Table :numref:`tab-calving`:
      - Description
     
    * - :opt:`-calving eigen_calving`
-     - Physically-based calving parameterization [Levermannetal2012]_,
-       [Winkelmannetal2011]_. Whereever the product of principal strain rates is positive,
+     - Physically-based calving parameterization :cite:`Levermannetal2012`,
+       :cite:`Winkelmannetal2011`. Whereever the product of principal strain rates is positive,
        the calving rate is proportional to this product.
 
    * - :opt:`-eigen_calving_K` (`m s`)
      - Sets the proportionality parameter `K` in `\text{m}\,\text{s}`.
 
    * - :opt:`-calving vonmises_calving`
-     - Physically-based calving parameterization [Morlighem2016]_ that uses the tensile
+     - Physically-based calving parameterization :cite:`Morlighem2016` that uses the tensile
        von Mises stresses.
 
    * - :opt:`-calving_cfl`
@@ -373,7 +373,7 @@ the ice top surface elevation, and `\psw` and `\pice` are pressures of the colum
 water and ice, respectively.
 
 We call the integral on the right hand side of :eq:`eq-cfbc-uv` the "pressure imbalance
-term". To model the effect of melange [Amundsonetal2010]_ on the stress boundary
+term". To model the effect of melange :cite:`Amundsonetal2010` on the stress boundary
 condition, we assume that the melange back-pressure `\pmelange` does not exceed `\pice -
 \psw`. Therefore we introduce `\lambda \in [0,1]` (the melange back pressure fraction)
 such that
