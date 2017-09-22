@@ -309,7 +309,7 @@ If a run using ``-time_file`` gets interrupted but manages to save a backup, re-
 with ``-time_file`` will attempt to re-do the entire run because options ``-y``, ``-ys``,
 and ``-ye`` are ignored:
 
-.. code:: bash
+.. code-block:: bash
 
    # This run gets killed but leaves backup.nc:
    pismr -i input.nc -time_file time.nc -o output.nc

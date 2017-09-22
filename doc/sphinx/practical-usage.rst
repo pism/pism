@@ -614,7 +614,7 @@ Notice that the variable name is ``pism_overrides`` and not ``pism_config`` abov
 will create ``mars.nc``, the result of the "Mars" run. Then we can use ``ncdump`` to see
 what was different about ``mars.nc``:
 
-.. code:: diff
+.. code-block:: diff
 
    ncdump -h earth.nc | grep pism_config: > earth_config.txt
    ncdump -h mars.nc | grep pism_config: > mars_config.txt
@@ -961,7 +961,7 @@ PETSc options for PISM users
 
 All PETSc programs including PISM accept command line options which control how PETSc
 distributes jobs among parallel processors, how it solves linear systems, what additional
-information it provides, and so on. The PETSc manual [petsc-user-ref]_ is the complete
+information it provides, and so on. The PETSc manual :cite:`petsc-user-ref` is the complete
 reference on these options. We list some here that are useful to PISM users. They can be
 mixed in any order with PISM options.
 

@@ -103,7 +103,7 @@ operating system.
 
 #. The use of MacPorts_ (or Fink_, or Homebrew_) is recommended, as it significantly simplifies installing many open-source libraries. These instructions assume that you use MacPorts_. Download a package from the MacPorts_, install, and set the environment:
 
-   .. code:: bash
+   .. code-block:: bash
 
       export PATH=/opt/local/bin:/opt/local/sbin:$PATH
 
@@ -113,7 +113,7 @@ operating system.
 
 #. If you are using MacPorts, do
 
-   .. code:: bash
+   .. code-block:: bash
 
       sudo port install git cmake fftw-3 gsl mpich-default netcdf udunits2 libproj4 ncview
 
@@ -143,7 +143,7 @@ From now on, this manual assumes the use of the Bash_ shell.
    programs using the ``mpiexec`` or ``mpirun`` command. For example,
    you can add it with the statement
 
-   .. code:: bash
+   .. code-block:: bash
 
       export PATH=/home/user/mympi/bin:$PATH
 
@@ -168,7 +168,7 @@ You should configure and build PETSc as described on the PETSc installation page
 
 #. Untar in your preferred location and enter the new PETSc directory. Note PETSc should *not* be configured using root privileges. When you run the configure script the following options are recommended; note PISM uses shared libraries by default:
 
-   .. code:: bash
+   .. code-block:: bash
 
       export PETSC_DIR=$PWD
       export PETSC_ARCH=opt
@@ -180,7 +180,7 @@ You should configure and build PETSc as described on the PETSc installation page
 
 #. If there is an existing MPI installation, for example at ``/home/user/mympi/``, one can point PETSc to it by adding the option "``--with-mpi-dir=/home/user/mympi/``". The path used in this option must have MPI executables ``mpicxx`` and ``mpicc``, and either ``mpiexec`` or ``mpirun``, in sub-directory ``bin/`` and MPI library files in sub-directory ``lib/``. Alternatively, use MPI's compiler wrappers to specify an MPI library when installing PETSc, for example:
 
-   .. code:: shell
+   .. code-block:: bash
 
       CC=mpicc CXX=mpicxx ./config/configure.py --with-shared-libraries --with-debugging=0 --with-fc=0
 
@@ -199,7 +199,7 @@ At this point you have configured the environment which PISM needs.
 
 To make sure that the key PETSc and MPI prerequisites work properly together, so that you can run PISM in parallel, you might want to make sure that the correct ``mpiexec`` can be found, by setting your ``PATH``. For instance, if you used the option ``--download-mpich=1`` in the PETSc configure, the MPI ``bin`` directory will have a path like ``$PETSC_DIR/$PETSC_ARCH/bin``. Thus the following lines might appear in your ``.bashrc`` or ``.profile``, if not there already:
 
-.. code:: bash
+.. code-block:: bash
 
    export PETSC_DIR=/home/user/petsc-3.7.0/
    export PETSC_ARCH=opt
@@ -217,7 +217,7 @@ You are ready to build PISM itself, which is a much quicker procedure, as follow
 
    Run
 
-   .. code:: bash
+   .. code-block:: bash
 
       git clone git://github.com/pism/pism.git pism-stable
 
@@ -225,7 +225,7 @@ You are ready to build PISM itself, which is a much quicker procedure, as follow
 
 #. Build PISM:[3]_
 
-   .. code:: bash
+   .. code-block:: bash
 
       mkdir -p pism-stable/build
       cd pism-stable/build
@@ -236,7 +236,7 @@ You are ready to build PISM itself, which is a much quicker procedure, as follow
 
    You might need to add ``CC`` and ``CXX`` to the ``cmake`` command:
 
-   .. code:: bash
+   .. code-block:: bash
 
       PISM_INSTALL_PREFIX=~/pism CC=mpicc CXX=mpicxx cmake ..
 
@@ -246,13 +246,13 @@ You are ready to build PISM itself, which is a much quicker procedure, as follow
 
    If your operating system does not support shared libraries [4]_, then set ``Pism_LINK_STATICALLY`` to "ON". This can be done by either running
 
-   .. code:: bash
+   .. code-block:: bash
 
       cmake -DPism_LINK_STATICALLY=ON ..
 
    or by using ``ccmake`` [5]_ run
 
-   .. code:: bash
+   .. code-block:: bash
 
       ccmake ..
 
@@ -262,7 +262,7 @@ You are ready to build PISM itself, which is a much quicker procedure, as follow
 
    Note that when using Intel's compiler high optimization settings such as ``-O3``, ``-fp-model precise`` may be needed to get reproducible model results. Set it using ``ccmake`` or by setting ``CFLAGS`` and ``CXXFLAGS`` environment variables when building PISM's prerequisites and PISM itself.
 
-   .. code:: bash
+   .. code-block:: bash
 
       export CFLAGS="-fp-model precise"
       export CXXFLAGS="-fp-model precise"
@@ -270,7 +270,7 @@ You are ready to build PISM itself, which is a much quicker procedure, as follow
 
 #. PISM executables can be run most easily by adding the ``bin/`` sub-directory in your selected install path (``~/pism/bin`` in the example above) to your ``PATH``. For instance, this command can be done in the Bash_ shell or in your ``.bashrc`` file:
 
-   .. code:: bash
+   .. code-block:: bash
 
       export PATH=~/pism/bin:$PATH
 
@@ -285,7 +285,7 @@ Here are some issues we know about.
 
 -  Sometimes, if a system has more than one MPI installation CMake finds the wrong one. To tell it which one to use, set ``MPI_LIBRARY`` and related variables by using ``ccmake``. You can also set environment variables ``CC`` and ``CXX`` to point to MPI wrappers:
 
-   .. code:: bash
+   .. code-block:: bash
 
       CC=mpicc CXX=mpicxx cmake path/to/pism-source
 
@@ -308,7 +308,7 @@ Once you’re done with the installation, a few tests can confirm that PISM is f
 
 #. Try a MPI four process verification run:
 
-   .. code:: bash
+   .. code-block:: bash
 
       mpiexec -n 4 pismv -test G -y 200
 
@@ -332,7 +332,7 @@ Once you’re done with the installation, a few tests can confirm that PISM is f
 
 #. Run a basic suite of software tests. To do this, make sure that NCO_ and Python packages NumPy_ and netcdf4-python_ are installed. Also, the CMake flag ``Pism_BUILD_EXTRA_EXECS`` should be ``ON``. Then run:
 
-   .. code:: bash
+   .. code-block:: bash
 
       make       # do this if you changed something with CMake
       make test
@@ -372,7 +372,7 @@ To build documentation on a system without PISM’s prerequisite libraries
 (such as MPI and PETSc), assuming that PISM sources are in
 ``~/pism-stable``, do the following:
 
-.. code:: shell
+.. code-block:: bash
 
    cd ~/pism-stable
    mkdir doc-build # create a build directory
@@ -388,7 +388,7 @@ The documentation for PISM’s Python bindings uses the documentation-generation
 
 Sphinx_ can be installed using ``apt-get`` or MacPorts_; see the website for more details. For example, do
 
-.. code:: shell
+.. code-block:: bash
 
    sudo apt-get install sphinx-common
 

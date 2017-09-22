@@ -79,8 +79,9 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
-rst_prolog = """.. include:: prologue.rst
-"""
+# include some custom stuff. Note that this screws up line numbers in
+# warning and error messages.
+rst_prolog = """.. include:: prologue.rst"""
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -117,10 +118,9 @@ html_static_path = ['_static', 'logo']
 html_sidebars = {
     '**': [
         'about.html',
+        'searchbox.html',
         'navigation.html',
         'relations.html',  # needs 'show_related': True theme option to display
-        'searchbox.html',
-        'donate.html',
     ]
 }
 

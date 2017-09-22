@@ -274,7 +274,7 @@ then generate an image in ``.png`` format. Note that step 7 is in the middle of 
 experiment. It is shown in :numref:`fig-MISMIPmodel1exper1aA7` (left).
 
 
-.. figure:: profileA7 profileA7-M3
+.. figure:: figures/mismip-resolution.png
    :name: fig-MISMIPmodel1exper1aA7
 
    A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a,
@@ -300,7 +300,7 @@ produces a ``.png`` image file with :numref:`fig-SMexper1aM1A1`. By default
 ``run.py`` uses the asymptotic-matching thickness result from the :cite:`SchoofMarine1` theory
 to initialize the initial ice thickness, as allowed by the MISMIP specification.
 
-.. figure:: figures/profileA7-M2
+.. figure:: figures/profileA7-M2.png
    :name: fig-MISMIPmode2results
 
    Results from MISMIP grid mode 2, with 1.2 km spacing, for steady state of experiment
@@ -389,7 +389,7 @@ comparison of SSA and SIA velocities in the MISMIP3D geometry. Note that both Fi
 :numref:`fig-Subgl` and :numref:`fig-compSIASSA` were generated with resolution of `\Delta
 x = \Delta y = 1` km.
 
-.. figure:: Subgl NoSubgl
+.. figure:: figures/mismip3d-subgl.png
    :name: fig-Subgl
 
    Comparison between the grounding lines of the higher-amplitude ("``P75``") MISMIP3d

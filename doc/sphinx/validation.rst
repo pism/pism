@@ -162,7 +162,7 @@ diagnostic computation we document first, the script ``run_diag.sh`` (in subdire
 observations and model results, as in :numref:`fig-rosspython`.
 
 Preprocessing the data
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 The script ``preprocess.py`` downloads ALBMAP and MEaSUREs NetCDF files using
 ``wget``; these files total around 100 Mb. Then it uses NCO_ to cut out the relevant
@@ -189,7 +189,7 @@ variables ``u_ssa_bc,v_ssa_bc``, which contain observed values, are used after t
 run to compare to the computed interior velocities.
 
 Diagnostic computation of ice shelf velocity
---------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The diagnostic velocity computation bootstraps from ``Ross_combined.nc`` and does a
 zero-year run; in the `211\times 211` grid case we demonstrate below, the key parts of the
@@ -272,7 +272,7 @@ modeling domain here. To generate this Figure yourself, do
 
    ../plot.py diag_Mx211.nc
 
-.. figure:: rossquiver rossscatter
+.. figure:: figures/ross-results.png
    :name: fig-rosspython
 
    *Left*: Color is speed in m/a. Arrows are observed (white) and modeled (black)
@@ -280,7 +280,7 @@ modeling domain here. To generate this Figure yourself, do
    on the left.
 
 Extending this example to other ice shelves
--------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The SSA diagnostic solution described in this section can be easily applied to other ice
 shelves in Antarctica, such as the Filchner-Ronne Ice Shelf modeled using PISM in
@@ -293,7 +293,7 @@ modify the lines "``ncks -O -d x1,439,649 -d y1,250,460 ...``" (for ALBMAP data)
 script ``examples/ross/preprocess.py``.
 
 Prognostic modelling using eigencalving
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Next we summarize how you can create an evolving-geometry model of the Ross ice shelf with
 constant-in-time inflow across the fixed grounding line. See ``README.md`` and

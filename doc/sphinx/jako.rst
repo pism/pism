@@ -32,7 +32,7 @@ Section :ref:`sec-start` of this *Manual*. You can download the large NetCDF res
 the PISM website, or you can generate it by running a Section :ref:`sec-start` script.
 
 
-.. figure:: jako-ftt-mask jako-topg
+.. figure:: figures/jako-mask-topg.png
    :name: fig-jako-basin-topg
 
    A ``regional-tools`` script computes a drainage basin mask from the surface DEM (left;

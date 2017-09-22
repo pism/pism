@@ -74,11 +74,11 @@ tools; see Table :numref:`tab-NetCDFview` below. An application of IDV to the ma
 set produced :numref:`fig-sr-input`, for example. Use ``ncdump -h`` to see the metadata
 and history of the files.
 
-.. figure:: sr-greenland-thk sr-greenland-topg sr-greenland-prcp
+.. figure:: figures/sr-greenland-input.png
    :name: fig-sr-input
 
    The input file contains present-day ice thickness (left; m), bedrock elevation (center;
-   m), and present-day precipitation (right; m `\text{a}^{-1}` ice equivalent) for
+   m), and present-day precipitation (right; `m / a` ice equivalent) for
    SeaRISE-Greenland. These are fields :var:`thk`, :var:`topg`, and :var:`precipitation`,
    respectively, in ``pism_Greenland_5km_v1.1.nc``.
 
@@ -218,7 +218,9 @@ sheet in approximate steady-state with a steady (constant-in-time) climate. The 
 steadiness of the ``volume_glacierized`` time series is a possible standard for steady
 state (see :cite:`EISMINT00`, for exampe).
 
-.. figure:: ex-growing-thk-g20km ts-growing-ivol-g20km
+.. FIXME: this is so out of date (e.g. the transpose)
+
+.. figure:: figures/growing-thk-ivol-g20km.png
    :name: fig-growing
 
    Two views produced by ``ncview`` during a PISM model run. Left: ``thk``, the ice sheet
@@ -238,13 +240,13 @@ we do:
    0.3435 wall clock hours, 1.3738 proc.-hours, 7274.0065 model years per proc.-hour,
    PETSc MFlops = 0.03.\n",
 
-.. figure:: g20km-10ka-usurf g20km-10ka-csurf g20km-10ka-mask
+.. figure:: figures/g20km-10ka-usurf-csurf-mask.png
    :name: fig-firstoutput
 
    Fields from output file ``g20km_10ka.nc``. Left: ``usurf``, the ice sheet surface
-   elevation in meters. Middle: ``velsurf_mag``, the surface speed in meters/year (= m/a),
-   including the 100 m/a contour (solid black). Right: ``mask``, with 0 = ice-free land, 2
-   = grounded ice, 4 = ice-free ocean.
+   elevation in meters. Middle: ``velsurf_mag``, the surface speed in meters/year,
+   including the 100 m/year contour (solid black). Right: ``mask``, with 0 = ice-free
+   land, 2 = grounded ice, 4 = ice-free ocean.
 
 .. _sec-ssarun:
 
@@ -310,12 +312,12 @@ sliding speed field ``velbase_mag`` in this Figure, where :numref:`fig-firstoutp
 the ``mask``, but the reader can check that ``velbase_mag``=0 in the nonsliding SIA-only
 result ``g20km_10ka.nc``.
 
-.. figure:: g20km-10ka-hy-usurf g20km-10ka-hy-csurf g20km-10ka-hy-cbase
+.. figure:: figures/g20km-10ka-hy-usurf-csurf-cbase.png
    :name: fig-secondoutputcoarse
 
    Fields from output file ``g20km_10ka_hy.nc``. Left: ``usurf``, the ice sheet surface
-   elevation in meters. Middle: ``velsurf_mag``, the surface speed in m/a, including the
-   100 m/a contour (solid black). Right: the sliding speed ``velbase_mag``, shown the same
+   elevation in meters. Middle: ``velsurf_mag``, the surface speed in m/year, including the
+   100 m/year contour (solid black). Right: the sliding speed ``velbase_mag``, shown the same
    way as ``velsurf_mag``.
 
 The hybrid model includes sliding, and it is important to evaluate that aspect of the
@@ -332,8 +334,8 @@ these broad qualitative judgements:
 .. figure:: Greenland-5km-v1p1-surfvelmag g20km-10ka-hy-csurf g10km-10ka-hy-csurf
    :name: fig-csurfvsobserved
 
-   Comparing observed and modeled surface speed. All figures have a common scale (m/a),
-   with 100 m/a contour shown (solid black). Left: ``surfvelmag``, the observed values
+   Comparing observed and modeled surface speed. All figures have a common scale (m/year),
+   with 100 m/year contour shown (solid black). Left: ``surfvelmag``, the observed values
    from SeaRISE data file ``Greenland_5km_v1.1.nc``. Middle: ``velsurf_mag`` from
    ``g20km_10ka_hy.nc``. Right: ``velsurf_mag`` from ``g10km_10ka_hy.nc``.
 
@@ -382,7 +384,7 @@ larger number, up to 100 or so with an expectation of reasonable scaling on this
 
    Fields from output file ``g10km_10ka_hy.nc``. Compare :numref:`fig-secondoutputcoarse`,
    which only differs by resolution. Left: ``usurf`` in meters. Middle: ``velsurf_mag`` in
-   m/a. Right: ``velbase_mag`` in m/a.
+   m/year. Right: ``velbase_mag`` in m/year.
 
 Some fields from the result ``g10km_10ka_hy.nc`` are shown in
 :numref:`fig-secondoutputfiner`. :numref:`fig-csurfvsobserved` also compares observed
@@ -591,9 +593,9 @@ Generally the fine grid run duration in grid sequencing should be at least `t =
 `v_{\text{min}}` is the lowest ice flow speed that we expect to be relevant to our
 modeling purposes. That is, the duration should be such that slow ice at least has a
 chance to cross one grid cell. In this case, if `\Delta x = 5` km and
-`v_{\text{min}} = 25` m/a then we get `t=200` a. Though we use this as the
+`v_{\text{min}} = 25` m/year then we get `t=200` a. Though we use this as the
 duration, it is a bit short, and the reader might compare `t=500` results (i.e.
-using `v_{\text{min}} = 10` m/a).
+using `v_{\text{min}} = 10` m/year).
 
 Actually we will demonstrate how to go from `20\,\text{km}` to `5\,\text{km}`
 in two steps, `20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}`, with durations
@@ -602,7 +604,7 @@ result is in ``g20km_10ka_hy.nc``. So we run the following script which is ``gri
 in ``examples/std-greenland/``. It calls ``spinup.sh`` to collect all the right PISM
 options:
 
-.. code:: bash
+.. code-block:: bash
 
    #!/bin/bash
    NN=4
@@ -639,12 +641,12 @@ Run the script like this:
 The 10 km run takes under two wall-clock hours (8 processor-hours) and the 5 km run takes
 about 6 wall-clock hours (24 processor-hours).
 
-.. figure:: g40km-detail g20km-detail g10km-detail g5km-detail
+.. figure:: figures/g40-20-10-5km-detail.png
    :name: fig-gridseqdetail
 
    Detail of field ``velsurf_mag`` showing the central western coast of Greenland,
    including Jakobshavn Isbrae (lowest major flow), from runs of resolution 40, 20, 10, 5
-   km (left-to-right). Color scheme and scale, including 100 m/a contour (solid black),
+   km (left-to-right). Color scheme and scale, including 100 m/year contour (solid black),
    are all identical to ``velsurf_mag`` Figures :numref:`fig-secondoutputcoarse`,
    :numref:`fig-csurfvsobserved`, and :numref:`fig-secondoutputfiner`.
 
@@ -805,7 +807,7 @@ fully in parallel (this is ``runparallel.sh`` in ``examples/std-greenland/``):
 Otherwise you should do them in sequence (this is ``runsequential.sh`` in
 ``examples/std-greenland/``):
 
-.. code:: bash
+.. code-block:: bash
 
    #!/bin/bash
    for scriptname in $(ls p10km*sh) ; do
@@ -823,14 +825,14 @@ that even small changes in overall ice sheet state (geometry, energy, \dots) wil
 shorten the time steps. By contrast, the `e` value is much less significant in
 determining run times.
 
-.. figure:: p10km-01-1-csurf.png p10km-01-3-csurf.png p10km-01-6-csurf.png p10km-05-1-csurf.png p10km-05-3-csurf.png p10km-05-6-csurf.png Greenland-5km-v1p1-surfvelmag p10km-1-1-csurf.png p10km-1-3-csurf.png p10km-1-6-csurf.png
+.. figure:: figures/p10km-comparison.png
    :name: fig-paramstudy
 
    Surface speed ``velsurf_mag`` from a 10 km grid parameter study. Right-most subfigure
    is observed data from ``Greenland_5km_v1.1.nc``. Top row: `q=0.1` and
    `e=1,3,6` (left-to-right). Middle row: `q=0.5`. Bottom row: `q=1.0`.
-   All subfigures have common color scale (velocity m/a), as shown in the right-most
-   figure, with 100 m/a contour shown in all cases (solid black).
+   All subfigures have common color scale (velocity m/year), as shown in the right-most
+   figure, with 100 m/year contour shown in all cases (solid black).
 
 On a supercomputer, the ``runparallel.sh`` script generally should be modified to submit
 jobs to the scheduler. See example scripts ``advanced/paramspawn.sh`` and
