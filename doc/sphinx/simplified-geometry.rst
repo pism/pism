@@ -300,7 +300,7 @@ produces a ``.png`` image file with :numref:`fig-SMexper1aM1A1`. By default
 ``run.py`` uses the asymptotic-matching thickness result from the :cite:`SchoofMarine1` theory
 to initialize the initial ice thickness, as allowed by the MISMIP specification.
 
-.. figure:: profileA7-M2
+.. figure:: figures/profileA7-M2
    :name: fig-MISMIPmode2results
 
    Results from MISMIP grid mode 2, with 1.2 km spacing, for steady state of experiment

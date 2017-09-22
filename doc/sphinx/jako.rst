@@ -300,7 +300,7 @@ appropriate:
   condition at the calving front. The other PIK mechanisms are largely inactive because of
   ``-calving ocean_kill``, but they should do no harm (see section :ref:`sec-pism-pik`).
 
-.. figure:: jako-csurf
+.. figure:: figures/jako-csurf.png
    :name: fig-jako-csurf
 
    Left: modeled surface speed at the end of a 2 km grid, 100 model year, steady

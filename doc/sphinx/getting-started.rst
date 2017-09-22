@@ -1,59 +1,105 @@
+.. default-role:: math
+
 .. _sec-start:
 
 Getting started
 ===============
 
-This introduction is intended to be interactive and participatory, and it should work on *your personal machine* as well as on a supercomputer.  Please try the commands and view the resulting files.  Do the runs with your own values for the options.  We can't hide the fact that PISM has lots of "control knobs," but fiddling with them will help you get going.  Give it a try!
+This introduction is intended to be interactive and participatory, and it should work on
+*your personal machine* as well as on a supercomputer. Please try the commands and view
+the resulting files. Do the runs with your own values for the options. We can't hide the
+fact that PISM has lots of "control knobs," but fiddling with them will help you get
+going. Give it a try!
 
-To install PISM see the *Getting PISM* tab on the `PISM website <PISM_>`_.  Once PISM is installed, the executable ``pismr`` should be available on your system's "path"; confirm this with "``which pismr``".  The instructions below assume you are using a ``bash`` shell or one that accepts ``bash`` syntax.  They also assume you have the PISM source code in the directory "``pism/``".
+To install PISM see the *Getting PISM* tab on the `PISM website <PISM_>`_. Once PISM is
+installed, the executable ``pismr`` should be available on your system's "path"; confirm
+this with "``which pismr``". The instructions below assume you are using a ``bash`` shell
+or one that accepts ``bash`` syntax. They also assume you have the PISM source code in the
+directory "``pism/``".
 
 A Greenland ice sheet example
 -----------------------------
 
-We get started with an extended example showing how to generate initial states for prognostic model experiments on the Greenland ice sheet.  Ice sheet and glacier model studies often involve modeling present and past states using actions like the ones demonstrated here.  Our particular choices made here are motivated by the evaluation of initialization methods in :cite:`AschwandenAdalgeirsdottirKhroulev`.
+We get started with an extended example showing how to generate initial states for
+prognostic model experiments on the Greenland ice sheet. Ice sheet and glacier model
+studies often involve modeling present and past states using actions like the ones
+demonstrated here. Our particular choices made here are motivated by the evaluation of
+initialization methods in :cite:`AschwandenAdalgeirsdottirKhroulev`.
 
-We use data assembled by the `Sea-level Response to Ice Sheet Evolution (SeaRISE) <searise_>`_ assessment process :cite:`Bindschadler2013SeaRISE`.  SeaRISE is a community-organized assessment process providing an upper bound on ice sheet contributions to sea level in the next 100--200 years, especially for the IPCC AR5 report in 2013.
+We use data assembled by the `Sea-level Response to Ice Sheet Evolution (SeaRISE)
+<searise_>`_ assessment process :cite:`Bindschadler2013SeaRISE`. SeaRISE is a
+community-organized assessment process providing an upper bound on ice sheet contributions
+to sea level in the next 100--200 years, especially for the IPCC AR5 report in 2013.
 
-This example is a hands-on first look at PISM.  It is not an in-depth tutorial, and some details of what is happening are only explained later in this Manual, which thoroughly discusses PISM options, nontrivial modeling choices, and how to preprocess input data.
+This example is a hands-on first look at PISM. It is not an in-depth tutorial, and some
+details of what is happening are only explained later in this Manual, which thoroughly
+discusses PISM options, nontrivial modeling choices, and how to preprocess input data.
 
-The basic runs here, mostly on coarse :math:`20` and :math:`10\,\textrm{km}` grids, can be done on a typical workstation or laptop.  PISM is, however, designed to make high resolution (e.g. :math:`5\,\textrm{km}` to :math:`\sim 500\,\textrm{m}` grids for whole-Greenland ice sheet modeling) possible by exploiting large-scale parallel processing.  See :cite:`AschwandenAdalgeirsdottirKhroulev`, :cite:`Golledgeetal2012`, :cite:`Golledgeetal2013`, among other published high-resolution PISM examples.
+The basic runs here, mostly on coarse `20` and `10\,\textrm{km}` grids, can be
+done on a typical workstation or laptop. PISM is, however, designed to make high
+resolution (e.g. `5\,\textrm{km}` to `\sim 500\,\textrm{m}` grids for
+whole-Greenland ice sheet modeling) possible by exploiting large-scale parallel
+processing. See :cite:`AschwandenAdalgeirsdottirKhroulev`, :cite:`Golledgeetal2012`,
+:cite:`Golledgeetal2013`, among other published high-resolution PISM examples.
 
 
 Input data
 ----------
 
-The NetCDF data used to initialize SeaRISE runs is `freely-available online <searise-greenland_>`_.
+The NetCDF data used to initialize SeaRISE runs is `freely-available online
+<searise-greenland_>`_.
 
-To download the specific file we want, namely ``Greenland_5km_v1.1.nc``, and preprocess it for PISM, do:
+To download the specific file we want, namely ``Greenland_5km_v1.1.nc``, and preprocess it
+for PISM, do:
 
 .. code-block:: none
 
    cd pism/examples/std-greenland
    ./preprocess.sh
 
-The script ``preprocess.sh`` requires ``wget`` and also the `NetCDF Operators <NCO_>`_.  It downloads the version 1.1 of the SeaRISE "master" present-day data set, which contains ice thickness and bedrock topography from BEDMAP :cite:`BamberLayberryGogenini`, and modeled precipitation and surface mass balance rates from RACMO :cite:`Ettemaetal2009`, among other fields.
+The script ``preprocess.sh`` requires ``wget`` and also the `NetCDF Operators <NCO_>`_. It
+downloads the version 1.1 of the SeaRISE "master" present-day data set, which contains ice
+thickness and bedrock topography from BEDMAP :cite:`BamberLayberryGogenini`, and modeled
+precipitation and surface mass balance rates from RACMO :cite:`Ettemaetal2009`, among
+other fields.
 
-In particular, it creates three new NetCDF files which can be read by PISM.  The spatially-varying fields, with adjusted metadata, go in ``pism_Greenland_5km_v1.1.nc``.  The other two new files contain famous time-dependent paleo-climate records from ice and seabed cores: ``pism_dT.nc`` has the GRIP temperature record :cite:`JohnsenetalGRIP` and ``pism_dSL.nc`` has the SPECMAP sea level record :cite:`Imbrieetal1984`.
+In particular, it creates three new NetCDF files which can be read by PISM. The
+spatially-varying fields, with adjusted metadata, go in ``pism_Greenland_5km_v1.1.nc``.
+The other two new files contain famous time-dependent paleo-climate records from ice and
+seabed cores: ``pism_dT.nc`` has the GRIP temperature record :cite:`JohnsenetalGRIP` and
+``pism_dSL.nc`` has the SPECMAP sea level record :cite:`Imbrieetal1984`.
 
-Any of these NetCDF files can be viewed with ``ncview`` or other NetCDF visualization tools; see Table :numref:`tab-NetCDFview` below.  An application of IDV to the master data set produced :numref:`fig-sr-input`, for example.  Use ``ncdump -h`` to see the metadata and history of the files.
+Any of these NetCDF files can be viewed with ``ncview`` or other NetCDF visualization
+tools; see Table :numref:`tab-NetCDFview` below. An application of IDV to the master data
+set produced :numref:`fig-sr-input`, for example. Use ``ncdump -h`` to see the metadata
+and history of the files.
 
-.. figure:: FIXME.png
+.. figure:: sr-greenland-thk sr-greenland-topg sr-greenland-prcp
    :name: fig-sr-input
 
-   The input file contains present-day ice thickness (left; m), bedrock elevation (center; m), and present-day precipitation (right; m :math:`\text{a}^{-1}` ice equivalent) for SeaRISE-Greenland. These are fields :var:`thk`, :var:`topg`, and :var:`precipitation`, respectively, in ``pism_Greenland_5km_v1.1.nc``.
-
-   \includegraphics{sr-greenland-thk}
-   \includegraphics{sr-greenland-topg}
-   \includegraphics{sr-greenland-prcp}
+   The input file contains present-day ice thickness (left; m), bedrock elevation (center;
+   m), and present-day precipitation (right; m `\text{a}^{-1}` ice equivalent) for
+   SeaRISE-Greenland. These are fields :var:`thk`, :var:`topg`, and :var:`precipitation`,
+   respectively, in ``pism_Greenland_5km_v1.1.nc``.
 
 .. _sec-runscript:
 
 First run
 ---------
 
-Like many Unix programs, PISM allows a lot of command-line options.  In fact, because the variety of allowed ice sheet, shelf, and glacier configurations, and included sub-models, is so large, the list of possible command-line options covers sections :ref:`sec-initboot` through :ref:`sec-practical-usage` of this manual.  In practice one often builds scripts to run PISM with the correct options, which is what we show here.  The script we use is "``spinup.sh``" in the ``examples/std-greenland/`` subdirectory of ``pism/``.
+Like many Unix programs, PISM allows a lot of command-line options. In fact, because the
+variety of allowed ice sheet, shelf, and glacier configurations, and included sub-models,
+is so large, the list of possible command-line options covers sections :ref:`sec-initboot`
+through :ref:`sec-practical-usage` of this manual. In practice one often builds scripts to
+run PISM with the correct options, which is what we show here. The script we use is
+"``spinup.sh``" in the ``examples/std-greenland/`` subdirectory of ``pism/``.
 
-Note that initializing ice sheets, generically called "spin-up", can be done by computing approximate steady states with constant boundary data, or, in some cases, by integrating paleo-climatic and long-time-scale information, also applied at the ice sheet boundary, to build a model for the present state of the ice sheet.  Both of these possibilities are illustrated in the ``spinup.sh`` script.  The spin-up stage of using an ice sheet model may actually require more processor-hours than follow-on "experiment" or "forecast" stages.
+Note that initializing ice sheets, generically called "spin-up", can be done by computing
+approximate steady states with constant boundary data, or, in some cases, by integrating
+paleo-climatic and long-time-scale information, also applied at the ice sheet boundary, to
+build a model for the present state of the ice sheet. Both of these possibilities are
+illustrated in the ``spinup.sh`` script. The spin-up stage of using an ice sheet model may
+actually require more processor-hours than follow-on "experiment" or "forecast" stages.
 
 To see what can be done with the script, read the usage message it produces:
 
@@ -61,13 +107,15 @@ To see what can be done with the script, read the usage message it produces:
 
    ./spinup.sh
 
-The simplest spin-up approach is to use a "constant-climate" model.  We take this approach first.  To see a more detailed view of the PISM command for the first run, do:
+The simplest spin-up approach is to use a "constant-climate" model. We take this approach
+first. To see a more detailed view of the PISM command for the first run, do:
 
 .. code-block:: none
 
    PISM_DO=echo ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc
 
-Setting the environment variable ``PISM_DO`` in this way tells ``spinup.sh`` just to print out the commands it is about to run, not do them.  The "proposed" run looks like this:
+Setting the environment variable ``PISM_DO`` in this way tells ``spinup.sh`` just to print
+out the commands it is about to run, not do them. The "proposed" run looks like this:
 
 .. code-block:: none
    :name: firstcommand
@@ -83,17 +131,44 @@ Setting the environment variable ``PISM_DO`` in this way tells ``spinup.sh`` jus
 
 Let's briefly deconstruct this run.
 
-At the front is "``mpiexec -n 4 pismr``".  This means that the PISM executable ``pismr`` is run in parallel on four processes parallel standard (e.g. cores) under the `Message Passing Interface <MPI_>`_.  Though we are assuming you have a workstation or laptop with at least 4 cores, this example will work with 1 to about 50 processors, with reasonably good scaling in speed.  Scaling can be good with more processors if we run at higher spatial resolution :cite:`BBssasliding`, :cite:`DickensMorey2013`.  The executable name "``pismr``" stands for the standard "run" mode of PISM (in contrast to specialized modes described later in sections :ref:`sec-verif` and :ref:`sec-simp`).
+At the front is "``mpiexec -n 4 pismr``". This means that the PISM executable ``pismr`` is
+run in parallel on four processes parallel standard (e.g. cores) under the `Message
+Passing Interface <MPI_>`_. Though we are assuming you have a workstation or laptop with
+at least 4 cores, this example will work with 1 to about 50 processors, with reasonably
+good scaling in speed. Scaling can be good with more processors if we run at higher
+spatial resolution :cite:`BBssasliding`, :cite:`DickensMorey2013`. The executable name
+"``pismr``" stands for the standard "run" mode of PISM (in contrast to specialized modes
+described later in sections :ref:`sec-verif` and :ref:`sec-simp`).
 
-Next, the proposed run uses option ``-bootstrap`` to start the run by "bootstrapping." This term describes the creation, by heuristics and highly-simplified models, of the mathematical initial conditions required for a deterministic, time-dependent ice dynamics model.  Then the options describe a :math:`76\times 141` point grid in the horizontal, which gives 20\,km grid spacing in both directions.  Then there are choices about the vertical extent and resolution of the computational grid; more on those later.  After that we see a description of the time-axis, with a start and end time given: "``-ys -10000 -ye 0``".
+Next, the proposed run uses option ``-bootstrap`` to start the run by "bootstrapping."
+This term describes the creation, by heuristics and highly-simplified models, of the
+mathematical initial conditions required for a deterministic, time-dependent ice dynamics
+model. Then the options describe a `76\times 141` point grid in the horizontal,
+which gives 20\,km grid spacing in both directions. Then there are choices about the
+vertical extent and resolution of the computational grid; more on those later. After that
+we see a description of the time-axis, with a start and end time given: "``-ys -10000 -ye
+0``".
 
-Then we get the instructions that tell PISM to read the upper surface boundary conditions (i.e. climate) from a file: "``-surface given -surface_given_file pism_Greenland_5km_v1.1.nc``".  For more on these choices, see subsection :ref:`sec-climate-inputs`, and also the PISM Climate Forcing Manual.
+Then we get the instructions that tell PISM to read the upper surface boundary conditions
+(i.e. climate) from a file: "``-surface given -surface_given_file
+pism_Greenland_5km_v1.1.nc``". For more on these choices, see subsection
+:ref:`sec-climate-inputs`, and also the PISM Climate Forcing Manual.
 
-Then there are a couple of options related to ice dynamics.  First is a minimal calving model which removes ice at the calving front location given by a thickness field in the input file ("``-calving ocean_kill``"); see subsection :ref:`sec-calving` for this and other calving options).  Then there is a setting for enhanced ice softness ("``-sia_e 3.0``").  See subsection :ref:`sec-rheology` for more on this enhancement parameter, which we also return to later in the current section in a parameter study.
+Then there are a couple of options related to ice dynamics. First is a minimal calving
+model which removes ice at the calving front location given by a thickness field in the
+input file ("``-calving ocean_kill``"); see subsection :ref:`sec-calving` for this and
+other calving options). Then there is a setting for enhanced ice softness ("``-sia_e
+3.0``"). See subsection :ref:`sec-rheology` for more on this enhancement parameter, which
+we also return to later in the current section in a parameter study.
 
-Then there are longish options describing the fields we want as output, including scalar time series ("``-ts_file ts_g20km_10ka.nc -ts_times -10000:yearly:0``"; see section :ref:`sec-practical-usage`) and space-dependent fields ("``-extra_file ...``"; again see section :ref:`sec-practical-usage`), and finally the named output file ("``-o g20km_10ka.nc``").
+Then there are longish options describing the fields we want as output, including scalar
+time series ("``-ts_file ts_g20km_10ka.nc -ts_times -10000:yearly:0``"; see section
+:ref:`sec-practical-usage`) and space-dependent fields ("``-extra_file ...``"; again see
+section :ref:`sec-practical-usage`), and finally the named output file ("``-o
+g20km_10ka.nc``").
 
-Note that the modeling choices here are reasonable, but they are not the only way to do it! The user is encouraged to experiment; that is the point of a model.
+Note that the modeling choices here are reasonable, but they are not the only way to do
+it! The user is encouraged to experiment; that is the point of a model.
 
 Now let's actually get the run going:
 
@@ -101,7 +176,11 @@ Now let's actually get the run going:
 
    ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc &> out.g20km_10ka &
 
-The terminating "``&``", which is optional, asks unix to run the command in the background, so we can keep working in the current shell.  Because we have re-directed the text output ("``&> out.g20km_10ka``"), PISM will show what it is doing in the text file ``out.g20km_10ka``.  Using ``less`` is a good way to watch such a growing text-output file.  This run should take 20 minutes or less.
+The terminating "``&``", which is optional, asks unix to run the command in the
+background, so we can keep working in the current shell. Because we have re-directed the
+text output ("``&> out.g20km_10ka``"), PISM will show what it is doing in the text file
+``out.g20km_10ka``. Using ``less`` is a good way to watch such a growing text-output file.
+This run should take 20 minutes or less.
 
 
 .. _sec-watchrun:
@@ -109,7 +188,11 @@ The terminating "``&``", which is optional, asks unix to run the command in the 
 Watching the first run
 ----------------------
 
-As soon as the run starts it creates time-dependent NetCDF files ``ts_g20km_10ka.nc`` and ``ex_g20km_10ka.nc``.  The latter file, which has spatially-dependent fields at each time, is created after the first 100 model years, a few wall clock seconds in this case.  The command ``-extra_file ex_g20km_10ka.nc -extra_times -10000:100:0`` adds a spatially-dependent "frame" at model times -9900, -9800, ..., 0.
+As soon as the run starts it creates time-dependent NetCDF files ``ts_g20km_10ka.nc`` and
+``ex_g20km_10ka.nc``. The latter file, which has spatially-dependent fields at each time,
+is created after the first 100 model years, a few wall clock seconds in this case. The
+command ``-extra_file ex_g20km_10ka.nc -extra_times -10000:100:0`` adds a
+spatially-dependent "frame" at model times -9900, -9800, ..., 0.
 
 To look at the spatial-fields output graphically, do:
 
@@ -117,15 +200,23 @@ To look at the spatial-fields output graphically, do:
 
    ncview ex_g20km_10ka.nc
 
-We see that ``ex_g20km_10ka.nc`` contains growing "movies" of the fields chosen by the ``-extra_vars`` option.  A frame of the ice thickness field ``thk`` is shown in :numref:`fig-growing` (left).
+We see that ``ex_g20km_10ka.nc`` contains growing "movies" of the fields chosen by the
+``-extra_vars`` option. A frame of the ice thickness field ``thk`` is shown in
+:numref:`fig-growing` (left).
 
-The time-series file ``ts_g20km_10ka.nc`` is also growing.  It contains spatially-averaged "scalar" diagnostics like the total ice volume or the ice-sheet-wide maximum velocity (variable ``volume_glacierized`` and ``max_hor_vel``, respectively).  It can be viewed
+The time-series file ``ts_g20km_10ka.nc`` is also growing. It contains spatially-averaged
+"scalar" diagnostics like the total ice volume or the ice-sheet-wide maximum velocity
+(variable ``volume_glacierized`` and ``max_hor_vel``, respectively). It can be viewed
 
 .. code-block:: none
 
    ncview ts_g20km_10ka.nc
 
-The growing time series for ``volume_glacierized`` is shown in :numref:`fig-growing` (right).  Recall that our intention was to generate a minimal model of the Greenland ice sheet in approximate steady-state with a steady (constant-in-time) climate.  The measurable steadiness of the ``volume_glacierized`` time series is a possible standard for steady state (see :cite:`EISMINT00`, for exampe).
+The growing time series for ``volume_glacierized`` is shown in :numref:`fig-growing`
+(right). Recall that our intention was to generate a minimal model of the Greenland ice
+sheet in approximate steady-state with a steady (constant-in-time) climate. The measurable
+steadiness of the ``volume_glacierized`` time series is a possible standard for steady
+state (see :cite:`EISMINT00`, for exampe).
 
 .. figure:: ex-growing-thk-g20km ts-growing-ivol-g20km
    :name: fig-growing
@@ -135,7 +226,10 @@ The growing time series for ``volume_glacierized`` is shown in :numref:`fig-grow
    ``volume_glacierized``, the total ice sheet volume time-series, from file
    ``ts_g20km_10ka.nc``.
 
-At the end of the run the output file ``g20km_10ka.nc`` is generated.  :numref:`fig-firstoutput` shows some fields from this file.  In the next subsections we consider their "quality" as model results.  To see a report on computational performance, we do:
+At the end of the run the output file ``g20km_10ka.nc`` is generated.
+:numref:`fig-firstoutput` shows some fields from this file. In the next subsections we
+consider their "quality" as model results. To see a report on computational performance,
+we do:
 
 .. code-block:: none
 
@@ -182,10 +276,10 @@ subglacial water, which is itself computed through the conservation of energy mo
 Started section.
 
 While the ``spinup.sh`` script has default sliding-related parameters, for demonstration
-purposes we change one parameter. We replace the default power :math:`q=0.25` in the
+purposes we change one parameter. We replace the default power `q=0.25` in the
 sliding law (the equation which relates both the subglacial sliding velocity and the till
 yield stress to the basal shear stress which appears in the SSA stress balance) by a less
-"plastic" and more "linear" choice :math:`q=0.5`. See subsection :ref:`sec-basestrength`
+"plastic" and more "linear" choice `q=0.5`. See subsection :ref:`sec-basestrength`
 for more on sliding laws. To see the run we propose, do
 
 .. code-block:: none
@@ -207,7 +301,7 @@ When this run is finished it produces ``g20km_10ka_hy.nc``.  As before do
    ncdump -h g20km_10ka_hy.nc |grep history
 
 to see performance results for your machine. The number reported as "``PETSc MFlops``"
-from this run is about :math:`3 \times 10^5`, much larger than the previous run, because
+from this run is about `3 \times 10^5`, much larger than the previous run, because
 now calls to the PETSc library are used when solving the non-local SSA stress balance in
 parallel.
 
@@ -224,7 +318,11 @@ result ``g20km_10ka.nc``.
    100 m/a contour (solid black). Right: the sliding speed ``velbase_mag``, shown the same
    way as ``velsurf_mag``.
 
-The hybrid model includes sliding, and it is important to evaluate that aspect of the output.  However, though it is critical to the response of the ice to changes in climate, basal sliding velocity is essentially unobservable in real ice sheets.  On the other hand, because of relatively-recent advances in radar and image technology and processing :cite:`Joughin2002`, the surface velocity of an ice sheet is an observable.
+The hybrid model includes sliding, and it is important to evaluate that aspect of the
+output. However, though it is critical to the response of the ice to changes in climate,
+basal sliding velocity is essentially unobservable in real ice sheets. On the other hand,
+because of relatively-recent advances in radar and image technology and processing
+:cite:`Joughin2002`, the surface velocity of an ice sheet is an observable.
 
 So, how good is our model result ``velsurf_mag``? :numref:`fig-csurfvsobserved` compares
 the radar-observed ``surfvelmag`` field in the downloaded SeaRISE-Greenland data file
@@ -258,7 +356,6 @@ parameters.
 We have only tried two of the many models possible in PISM, and we are free to identify
 and adjust important parameters. The first parameter change we consider, in the next
 subsection, is one of the most important: grid resolution.
-
 
 .. _sec-higherresrun:
 
@@ -306,11 +403,11 @@ are shown to be relatively-stable among relatively-high resolution results for a
 particular case. Using a supercomputer is justified merely to confirm that
 lower-resolution runs were already "getting" a given feature or result.
 
-.. figure:: ivol-both-g20km-g10km
+.. figure:: figures/ivol-both-g20km-g10km.png
    :name: fig-ivolboth
 
    Time series of modeled ice sheet volume ``volume_glacierized`` on 20km and 10km grids.
-   The present-day ice sheet has volume about :math:`2.9\times 10^6\,\text{km}^3`
+   The present-day ice sheet has volume about `2.9\times 10^6\,\text{km}^3`
    :cite:`BamberLayberryGogenini`, the initial value seen in both runs.
 
 .. _sec-paleorun:
@@ -364,7 +461,7 @@ To see how all this translates into PISM options, do
    PISM_DO=echo PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
      ./spinup.sh 4 paleo 25000 20 hybrid g20km_25ka_paleo.nc
 
-.. figure:: ivol-const-paleo
+.. figure:: figures/ivol-const-paleo.png
    :name: fig-ivolconstpaleo
 
    Time series of modeled ice sheet volume ``volume_glacierized`` from constant-climate
@@ -412,7 +509,7 @@ The fields ``usurf``, ``velsurf_mag``, and ``velbase_mag`` from file
 differences, but of course these runs only differ in the applied climate and run duration
 and not in resolution or ice dynamics parameters.
 
-.. figure:: ivoltemp-const-paleo
+.. figure:: figures/ivoltemp-const-paleo.png
    :name: fig-ivoltempconstpaleo
 
    Time series of temperate ice volume ``volume_glacierized_temperate`` from
@@ -427,13 +524,13 @@ g20km_10ka_hy.nc -regrid_vars ...,thk,...``, which implies that the paleo-climat
 starts with the ice geometry from the end of the constant-climate run.
 
 Another time-series comparison, of the variable ``volume_glacierized_temperate``, the
-total volume of temperate (at 0:math:`^\circ`C) ice, appears in
+total volume of temperate (at `0^\circ C`) ice, appears in
 :numref:`fig-ivoltempconstpaleo`. The paleo-climate run shows the cold period from
-:math:`\approx -25` ka to :math:`\approx -12` ka. Both constant-climate and paleo-climate
-runs then come into rough equilibrium in the holocene. The bootstrapping artifact, seen at
-the start of the constant-climate run, which disappears in less than 1000 years, is
-avoided in the paleo-climate run by starting with the constant-climate end-state. The
-reader is encouraged to examine the diagnostic files ``ts_g20km_25ka_paleo.nc`` and
+`\approx -25` ka to `\approx -12` ka. Both constant-climate and paleo-climate runs then
+come into rough equilibrium in the holocene. The bootstrapping artifact, seen at the start
+of the constant-climate run, which disappears in less than 1000 years, is avoided in the
+paleo-climate run by starting with the constant-climate end-state. The reader is
+encouraged to examine the diagnostic files ``ts_g20km_25ka_paleo.nc`` and
 ``ex_g20km_25ka_paleo.nc`` to find more evidence of the (modeled) climate impact on the
 ice dynamics.
 
@@ -489,17 +586,17 @@ computational effort is reduced by doing a short run on the fine grid. Note that
 previous subsection we also used regridding. In that application, however,
 ``-regrid_file`` only "brings in" fields from a run on the same resolution.
 
-Generally the fine grid run duration in grid sequencing should be at least :math:`t =
-\Delta x / v_{\text{min}}` where :math:`\Delta x` is the fine grid resolution and
-:math:`v_{\text{min}}` is the lowest ice flow speed that we expect to be relevant to our
+Generally the fine grid run duration in grid sequencing should be at least `t =
+\Delta x / v_{\text{min}}` where `\Delta x` is the fine grid resolution and
+`v_{\text{min}}` is the lowest ice flow speed that we expect to be relevant to our
 modeling purposes. That is, the duration should be such that slow ice at least has a
-chance to cross one grid cell. In this case, if :math:`\Delta x = 5` km and
-:math:`v_{\text{min}} = 25` m/a then we get :math:`t=200` a. Though we use this as the
-duration, it is a bit short, and the reader might compare :math:`t=500` results (i.e.
-using :math:`v_{\text{min}} = 10` m/a).
+chance to cross one grid cell. In this case, if `\Delta x = 5` km and
+`v_{\text{min}} = 25` m/a then we get `t=200` a. Though we use this as the
+duration, it is a bit short, and the reader might compare `t=500` results (i.e.
+using `v_{\text{min}} = 10` m/a).
 
-Actually we will demonstrate how to go from :math:`20\,\text{km}` to :math:`5\,\text{km}`
-in two steps, :math:`20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}`, with durations
+Actually we will demonstrate how to go from `20\,\text{km}` to `5\,\text{km}`
+in two steps, `20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}`, with durations
 of 10 ka, 2 ka, and 200 a, respectively. The 20 km coarse grid run is already done; the
 result is in ``g20km_10ka_hy.nc``. So we run the following script which is ``gridseq.sh``
 in ``examples/std-greenland/``. It calls ``spinup.sh`` to collect all the right PISM
@@ -531,7 +628,7 @@ If you try it without at least 8 Gb of memory then your machine will "bog down" 
 using the hard disk for swap space! The run will not complete and your hard disk will get
 a lot of wear! (If you have less than 8 Gb memory, comment out the last three lines of the
 above script---e.g. using the "``#``" character at the beginning of the line---so that you
-only do the 20 km :math:`\to` 10 km refinement.)
+only do the 20 km `\to` 10 km refinement.)
 
 Run the script like this:
 
@@ -560,7 +657,7 @@ subfigures). In the two left-hand subfigures we show the same field from NetCDF 
 ``g40km_10ka_hy.nc`` and ``g20km_10ka_hy.nc``; the former is an added 40 km result using
 an obvious modification of the run in section :ref:`sec-ssarun`.
 
-.. figure:: ivol-gridseq
+.. figure:: figures/ivol-gridseq.png
    :name: fig-ivolgridseq
 
    Time series of ice volume ``volume_glacierized`` from the three runs in our grid
@@ -620,24 +717,24 @@ glaciological understanding :cite:`CuffeyPaterson`.
 To illustrate a parameter study in this Manual we restrict consideration to just two
 important parameters for ice dynamics,
 
-- :math:`q=` ``pseudo_plastic_q``: exponent used in the sliding law which relates basal
+- `q=` ``pseudo_plastic_q``: exponent used in the sliding law which relates basal
   sliding velocity to basal shear stress in the SSA stress balance; see subsection
   :ref:`sec-basestrength` for more on this parameter, and
-- :math:`e=` ``sia_enhancement_factor``: values larger than one give flow "enhancement" by
+- `e=` ``sia_enhancement_factor``: values larger than one give flow "enhancement" by
   making the ice deform more easily in shear than is determined by the standard flow law
   :cite:`LliboutryDuval1985`, :cite:`PatersonBudd`; applied only in the SIA stress
   balance; see subsection :ref:`sec-rheology` for more on this parameter.
 
-By varying these parameters over full intervals of values, say :math:`0.1\le q \le 1.0`
-and :math:`1 \le e \le 6`, we could explore a two-dimensional parameter space. But of
-course each :math:`(q,e)` pair needs a full computation, so we can only sample this
+By varying these parameters over full intervals of values, say `0.1\le q \le 1.0`
+and `1 \le e \le 6`, we could explore a two-dimensional parameter space. But of
+course each `(q,e)` pair needs a full computation, so we can only sample this
 two-dimensional space. Furthermore we must specify a concrete run for each parameter pair.
 In this case we choose to run for 1000 model years, in every case initializing from the
 stored state ``g10km_gridseq.nc`` generated in the previous subsection :ref:`sec-gridseq`.
 
 The next script, which is ``param.sh`` in ``examples/std-greenland/``, gets values
-:math:`q\in\{0.1,0.5,1.0\}` and :math:`e\in\{1,3,6\}` in a double ``for``-loop. It
-generates a run-script for each :math:`(q,e)` pair. For each parameter setting it calls
+`q \in \{0.1,0.5,1.0\}` and `e\in\{1,3,6\}` in a double ``for``-loop. It
+generates a run-script for each `(q,e)` pair. For each parameter setting it calls
 ``spinup.sh``, with the environment variable ``PISM_DO=echo`` so that ``spinup.sh`` simply
 outputs the run command. This run command is then redirected into an appropriately-named
 ``.sh`` script file:
@@ -656,8 +753,8 @@ outputs the run command. This run command is then redirected into an appropriate
      done
    done
 
-Notice that, because the stored state ``g10km_gridseq.nc`` used :math:`q=0.5` and
-:math:`e=3`, one of these runs simply continues with no change in the physics.
+Notice that, because the stored state ``g10km_gridseq.nc`` used `q=0.5` and
+`e=3`, one of these runs simply continues with no change in the physics.
 
 To set up and run the parameter study, without making a mess from all the generated files,
 do:
@@ -685,16 +782,16 @@ The reader should inspect a few of these scripts. They are all very similar, of 
 but, for instance, the ``p10km_0.1_1.sh`` script uses options ``-pseudo_plastic_q 0.1``
 and ``-sia_e 1``.
 
-.. figure:: ivol-param
+.. figure:: figures/ivol-param.png
    :name: fig-ivolparamstudy
 
    Time series of ice volume ``volume_glacierized`` from nine runs in our parameter study
-   example, with parameter choices :math:`(q,e)` given.
+   example, with parameter choices `(q,e)` given.
 
 We have not yet run PISM, but only asked one script to create nine others. We now have the
 option of running them sequentially or in parallel. Each script itself does a parallel
 run, over the ``NN=4`` processes specified by ``param.sh`` when generating the run
-scripts. If you have :math:`4 \times 9 = 36` cores available then you can do the runs
+scripts. If you have `4 \times 9 = 36` cores available then you can do the runs
 fully in parallel (this is ``runparallel.sh`` in ``examples/std-greenland/``):
 
 .. code-block:: bash
@@ -717,21 +814,21 @@ Otherwise you should do them in sequence (this is ``runsequential.sh`` in
    done
 
 On the same old 2012-era 4 core laptop, ``runsequential.sh`` took a total of just under 7
-hours to complete the whole parameter study. The runs with :math:`q=0.1` (the more
+hours to complete the whole parameter study. The runs with `q=0.1` (the more
 "plastic" end of the basal sliding spectrum) took up to four times longer than the
-:math:`q=0.5` and :math:`q=1.0` runs. Roughly speaking, values of :math:`q` which are
+`q=0.5` and `q=1.0` runs. Roughly speaking, values of `q` which are
 close to zero imply a subglacial till model with a true yield stress, and the result is
 that even small changes in overall ice sheet state (geometry, energy, \dots) will cause
 *some* location to exceed its yield stress and suddenly change flow regime. This will
-shorten the time steps. By contrast, the :math:`e` value is much less significant in
+shorten the time steps. By contrast, the `e` value is much less significant in
 determining run times.
 
 .. figure:: p10km-01-1-csurf.png p10km-01-3-csurf.png p10km-01-6-csurf.png p10km-05-1-csurf.png p10km-05-3-csurf.png p10km-05-6-csurf.png Greenland-5km-v1p1-surfvelmag p10km-1-1-csurf.png p10km-1-3-csurf.png p10km-1-6-csurf.png
    :name: fig-paramstudy
 
    Surface speed ``velsurf_mag`` from a 10 km grid parameter study. Right-most subfigure
-   is observed data from ``Greenland_5km_v1.1.nc``. Top row: :math:`q=0.1` and
-   :math:`e=1,3,6` (left-to-right). Middle row: :math:`q=0.5`. Bottom row: :math:`q=1.0`.
+   is observed data from ``Greenland_5km_v1.1.nc``. Top row: `q=0.1` and
+   `e=1,3,6` (left-to-right). Middle row: `q=0.5`. Bottom row: `q=1.0`.
    All subfigures have common color scale (velocity m/a), as shown in the right-most
    figure, with 100 m/a contour shown in all cases (solid black).
 
@@ -742,19 +839,19 @@ administrator if you don't know what a "job scheduler" is!) Of course, if you ha
 supercomputer then you can redo this parameter study on a 5 km grid.
 
 Results from these runs are seen in Figures :numref:`fig-ivolparamstudy` and
-:numref:`fig-paramstudy`. In the former we see that the :math:`(0.5,3)` run simply
+:numref:`fig-paramstudy`. In the former we see that the `(0.5,3)` run simply
 continues the previous initialization run. In some other graphs we see abrupt initial
 changes, caused by abrupt parameter change, e.g. when the basal sliding becomes much more
-plastic (:math:`q=0.1`). In all cases with :math:`e=1` the flow slows and the sheet grows
-in volume as discharge decreases, while in all cases with :math:`e=6` the flow accelerates
+plastic (`q=0.1`). In all cases with `e=1` the flow slows and the sheet grows
+in volume as discharge decreases, while in all cases with `e=6` the flow accelerates
 and the sheet shrinks in volume as discharge increases.
 
 In :numref:`fig-paramstudy` we can compare the surface speed model results to
-observations. Roughly speaking, the ice softness parameter :math:`e` has effects seen
+observations. Roughly speaking, the ice softness parameter `e` has effects seen
 most-clearly by comparing the interior of the ice sheet; scan left-to-right for the
-:math:`e=1,3,6` subfigures. The basal sliding exponent :math:`q` has effects seen
+`e=1,3,6` subfigures. The basal sliding exponent `q` has effects seen
 most-clearly by comparing flow along the very steep margin, especially in the southern
-half of the ice sheet; scan top-to-bottom for :math:`q=0.1,0.5,1.0`, going from
+half of the ice sheet; scan top-to-bottom for `q=0.1,0.5,1.0`, going from
 nearly-plastic at top to linear at bottom.
 
 From such figures we can make an informal assessment and comparison of the results, but
