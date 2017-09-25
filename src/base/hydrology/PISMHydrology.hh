@@ -204,7 +204,7 @@ private:
   of the *top* of the water layer.
 
   This (essential) model has been used for finding locations of subglacial lakes
-  [\ref Siegertetal2009, \ref Livingstoneetal2013].  Subglacial lakes occur
+  [\ref Siegertetal2007, \ref Livingstoneetal2013].  Subglacial lakes occur
   at local minima of the hydraulic potential.  If water builds up significantly
   (e.g. thickness of 10s of meters or more) then in the model here the resulting
   lakes diffuse instead of becoming infinitely deep.  Thus we avoid delta
