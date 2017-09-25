@@ -34,8 +34,11 @@
 .. role:: config(code)
    :class: config
 
+.. substitutions
+
 .. |pism-email| replace:: uaf-pism@alaska.edu
 .. |pism-docs| replace:: http://www.pism-docs.org
+.. |petsc-download| replace:: http://www.mcs.anl.gov/petsc/download/index.html
 
 .. external links
 

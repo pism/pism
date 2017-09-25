@@ -17,10 +17,10 @@ shelf in Antarctica, and a number of simplified geometry tests. It documents all
 options. It summarizes the continuum models used by PISM, and it illustrates how PISM's
 numerical approximations are verified.
 
-See the `PISM Installation Manual <sec-installation_>`_ for how to download the PISM
-source code and install it, along with needed libraries. The `PISM Climate Forcing Manual
-<sec-climate-forcing_>`_ extends this Manual to cover additional couplings to atmosphere
-and ocean models and data.
+See the :ref:`PISM Installation Manual <sec-installation>` for how to download the PISM
+source code and install it, along with needed libraries. The :ref:`PISM Climate Forcing
+Manual <sec-climate-forcing>` extends this Manual to cover additional couplings to
+atmosphere and ocean models and data.
 
 Users who want to understand more deeply how PISM is designed, or who want to extend it,
 will need to go beyond what is described here. See the `Source Code Browser
