@@ -1,3 +1,4 @@
+.. include:: ../prologue.rst
 .. default-role:: math
 
 .. _sec-start:
@@ -156,9 +157,9 @@ pism_Greenland_5km_v1.1.nc``". For more on these choices, see subsection
 
 Then there are a couple of options related to ice dynamics. First is a minimal calving
 model which removes ice at the calving front location given by a thickness field in the
-input file ("``-calving ocean_kill``"); see subsection :ref:`sec-calving` for this and
+input file ("``-calving ocean_kill``"); see section :ref:`sec-calving` for this and
 other calving options). Then there is a setting for enhanced ice softness ("``-sia_e
-3.0``"). See subsection :ref:`sec-rheology` for more on this enhancement parameter, which
+3.0``"). See section :ref:`sec-rheology` for more on this enhancement parameter, which
 we also return to later in the current section in a parameter study.
 
 Then there are longish options describing the fields we want as output, including scalar
@@ -223,10 +224,12 @@ state (see :cite:`EISMINT00`, for exampe).
 .. figure:: figures/growing-thk-ivol-g20km.png
    :name: fig-growing
 
-   Two views produced by ``ncview`` during a PISM model run. Left: ``thk``, the ice sheet
-   thickness, a space-dependent field, from file ``ex_g20km_10ka.nc``. Right:
-   ``volume_glacierized``, the total ice sheet volume time-series, from file
-   ``ts_g20km_10ka.nc``.
+   Two views produced by ``ncview`` during a PISM model run.
+
+   :Left: :var:`thk`, the ice sheet thickness, a space-dependent field, from file
+          ``ex_g20km_10ka.nc``.
+   :Right: :var:`volume_glacierized`, the total ice sheet volume time-series, from file
+           ``ts_g20km_10ka.nc``.
 
 At the end of the run the output file ``g20km_10ka.nc`` is generated.
 :numref:`fig-firstoutput` shows some fields from this file. In the next subsections we
@@ -243,10 +246,12 @@ we do:
 .. figure:: figures/g20km-10ka-usurf-csurf-mask.png
    :name: fig-firstoutput
 
-   Fields from output file ``g20km_10ka.nc``. Left: ``usurf``, the ice sheet surface
-   elevation in meters. Middle: ``velsurf_mag``, the surface speed in meters/year,
-   including the 100 m/year contour (solid black). Right: ``mask``, with 0 = ice-free
-   land, 2 = grounded ice, 4 = ice-free ocean.
+   Fields from output file ``g20km_10ka.nc``.
+
+   :Left: :var:`usurf`, the ice sheet surface elevation in meters.
+   :Middle: :var:`velsurf_mag`, the surface speed in meters/year, including the 100 m/year
+            contour (solid black).
+   :Right: :var:`mask`, with 0 = ice-free land, 2 = grounded ice, 4 = ice-free ocean.
 
 .. _sec-ssarun:
 
@@ -281,7 +286,7 @@ While the ``spinup.sh`` script has default sliding-related parameters, for demon
 purposes we change one parameter. We replace the default power `q=0.25` in the
 sliding law (the equation which relates both the subglacial sliding velocity and the till
 yield stress to the basal shear stress which appears in the SSA stress balance) by a less
-"plastic" and more "linear" choice `q=0.5`. See subsection :ref:`sec-basestrength`
+"plastic" and more "linear" choice `q=0.5`. See section :ref:`sec-basestrength`
 for more on sliding laws. To see the run we propose, do
 
 .. code-block:: none
@@ -315,10 +320,12 @@ result ``g20km_10ka.nc``.
 .. figure:: figures/g20km-10ka-hy-usurf-csurf-cbase.png
    :name: fig-secondoutputcoarse
 
-   Fields from output file ``g20km_10ka_hy.nc``. Left: ``usurf``, the ice sheet surface
-   elevation in meters. Middle: ``velsurf_mag``, the surface speed in m/year, including the
-   100 m/year contour (solid black). Right: the sliding speed ``velbase_mag``, shown the same
-   way as ``velsurf_mag``.
+   Fields from output file ``g20km_10ka_hy.nc``.
+
+   :Left: :var:`usurf`, the ice sheet surface elevation in meters.
+   :Middle: :var:`velsurf_mag`, the surface speed in m/year, including the 100 m/year
+            contour (solid black).
+   :Right: the sliding speed :var:`velbase_mag`, shown the same way as :var:`velsurf_mag`.
 
 The hybrid model includes sliding, and it is important to evaluate that aspect of the
 output. However, though it is critical to the response of the ice to changes in climate,
@@ -331,18 +338,22 @@ the radar-observed ``surfvelmag`` field in the downloaded SeaRISE-Greenland data
 ``Greenland_5km_v1.1.nc`` with the just-computed PISM result. The reader might agree with
 these broad qualitative judgements:
 
-.. figure:: Greenland-5km-v1p1-surfvelmag g20km-10ka-hy-csurf g10km-10ka-hy-csurf
-   :name: fig-csurfvsobserved
-
-   Comparing observed and modeled surface speed. All figures have a common scale (m/year),
-   with 100 m/year contour shown (solid black). Left: ``surfvelmag``, the observed values
-   from SeaRISE data file ``Greenland_5km_v1.1.nc``. Middle: ``velsurf_mag`` from
-   ``g20km_10ka_hy.nc``. Right: ``velsurf_mag`` from ``g10km_10ka_hy.nc``.
-
 - the model results and the observed surface velocity look similar, and
 - slow near-divide flow is generally in the right areas and of generally the right
   magnitude, but
 - the observed Northeast Greenland ice stream is more distinct than in the model.
+
+.. figure:: figures/g-insar-20km-10km-comparison.png
+   :name: fig-csurfvsobserved
+
+   Comparing observed and modeled surface speed.
+
+   All figures have a common scale (m/year), with 100 m/year contour shown (solid black).
+
+   :Left: :var:`surfvelmag`, the observed values from SeaRISE data file
+          ``Greenland_5km_v1.1.nc``.
+   :Middle: :var:`velsurf_mag` from ``g20km_10ka_hy.nc``.
+   :Right: :var:`velsurf_mag` from ``g10km_10ka_hy.nc``.
 
 We can compare these PISM results to other observed-vs-model comparisons of surface
 velocity maps, for example Figure 1 in :cite:`Priceetal2011` and Figure 8 in
@@ -379,12 +390,16 @@ you can change "``mpiexec -n 4``" to "``mpiexec -n N``" where ``N`` is a substan
 larger number, up to 100 or so with an expectation of reasonable scaling on this grid
 :cite:`BBssasliding`, :cite:`DickensMorey2013`.
 
-.. figure:: g10km-10ka-hy-usurf g10km-10ka-hy-csurf g10km-10ka-hy-cbase
+.. figure:: figures/g10km-10ka-hy-usurf-csurf-cbase.png
    :name: fig-secondoutputfiner
 
-   Fields from output file ``g10km_10ka_hy.nc``. Compare :numref:`fig-secondoutputcoarse`,
-   which only differs by resolution. Left: ``usurf`` in meters. Middle: ``velsurf_mag`` in
-   m/year. Right: ``velbase_mag`` in m/year.
+   Fields from output file ``g10km_10ka_hy.nc``.
+
+   Compare :numref:`fig-secondoutputcoarse`, which only differs by resolution.
+
+   :Left: :var:`usurf` in meters.
+   :Middle: :var:`velsurf_mag` in m/year.
+   :Right: :var:`velbase_mag` in m/year.
 
 Some fields from the result ``g10km_10ka_hy.nc`` are shown in
 :numref:`fig-secondoutputfiner`. :numref:`fig-csurfvsobserved` also compares observed
@@ -479,8 +494,8 @@ but instead from a previously computed near-equilibrium result:
 
      -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt
 
-For more on regridding see subsection :ref:`sec-regridding`. Then we turn on the earth
-deformation model with option ``-bed_def lc``; see subsection :ref:`sec-beddef`. After
+For more on regridding see section :ref:`sec-regridding`. Then we turn on the earth
+deformation model with option ``-bed_def lc``; see section :ref:`sec-beddef`. After
 that the atmosphere and surface (PDD) models are turned on and the files they need are
 identified:
 
@@ -725,14 +740,14 @@ important parameters for ice dynamics,
 - `e=` ``sia_enhancement_factor``: values larger than one give flow "enhancement" by
   making the ice deform more easily in shear than is determined by the standard flow law
   :cite:`LliboutryDuval1985`, :cite:`PatersonBudd`; applied only in the SIA stress
-  balance; see subsection :ref:`sec-rheology` for more on this parameter.
+  balance; see section :ref:`sec-rheology` for more on this parameter.
 
 By varying these parameters over full intervals of values, say `0.1\le q \le 1.0`
 and `1 \le e \le 6`, we could explore a two-dimensional parameter space. But of
 course each `(q,e)` pair needs a full computation, so we can only sample this
 two-dimensional space. Furthermore we must specify a concrete run for each parameter pair.
 In this case we choose to run for 1000 model years, in every case initializing from the
-stored state ``g10km_gridseq.nc`` generated in the previous subsection :ref:`sec-gridseq`.
+stored state ``g10km_gridseq.nc`` generated in the previous section :ref:`sec-gridseq`.
 
 The next script, which is ``param.sh`` in ``examples/std-greenland/``, gets values
 `q \in \{0.1,0.5,1.0\}` and `e\in\{1,3,6\}` in a double ``for``-loop. It
@@ -889,7 +904,7 @@ metadata so that CDO will understand the mapping. Finally, Python scripts using 
 non-trivially change a NetCDF file or make publishable figures from it. Matlab also has
 good NetCDF I/O capabilities.
 
-See Table :numref:`tab-modelhierarchy` in subsection :ref:`sec-model-hierarchy` for an
+See Table :numref:`tab-modelhierarchy` in section :ref:`sec-model-hierarchy` for an
 overview on the data necessary for modeling. For more information on the format of input
 files for PISM, see section :ref:`sec-initboot`.
 

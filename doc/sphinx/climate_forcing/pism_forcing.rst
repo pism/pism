@@ -1,3 +1,4 @@
+.. include:: ../prologue.rst
 .. default-role:: math
 
 .. |date| date::
@@ -622,12 +623,6 @@ Temperature-index scheme
 :|options|: ``-surface pdd``
 :|variables|: :var:`air_temp_sd`, :var:`snow_depth`
 :|implementation|: ``PSTemperatureIndex``
-
-.. figure:: pdd-model.png
-   :name: fig-pdd-model
-
-   PISM's positive degree day model. `F_s` and `F_i` are PDD factors for snow
-   and ice, respectively; `\theta_{\text{refreeze}}` is the refreeze fraction.
                    
 The default PDD model used by PISM, turned on by option :opt:`-surface pdd`, is based on
 :cite:`CalovGreve05` and EISMINT-Greenland intercomparison (see :cite:`RitzEISMINT`).
@@ -682,6 +677,12 @@ simulation of the white noise itself, chosen by adding the option :opt:`-pdd_ran
 Monte Carlo simulation adds the same daily variation at every point, though the seasonal
 cycle is (generally) location dependent. If repeatable randomness is desired use
 :opt:`-pdd_rand_repeatable` instead of ``-pdd_rand``.
+
+.. figure:: figures/pdd-model-flowchart.png
+   :name: fig-pdd-model
+
+   PISM's positive degree day model. `F_s` and `F_i` are PDD factors for snow
+   and ice, respectively; `\theta_{\text{refreeze}}` is the refreeze fraction.
 
 By default, the computation summarized in :numref:`fig-pdd-model` is performed
 every week. (This frequency is controlled by the :config:`pdd_max_evals_per_year`

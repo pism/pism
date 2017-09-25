@@ -2,7 +2,6 @@
 
 .. math::
 
-   \newcommand{\eps}{\epsilon}
    \newcommand{\bq}{\mathbf{q}}
    \newcommand{\grad}{\nabla}
    \newcommand{\diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
@@ -34,6 +33,9 @@
 
 .. role:: config(code)
    :class: config
+
+.. |pism-email| replace:: uaf-pism@alaska.edu
+.. |pism-docs| replace:: http://www.pism-docs.org
 
 .. external links
 
@@ -80,6 +82,7 @@
 .. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 .. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
 
+.. PISM-related external links
 
 .. _HPC-builds: https://github.com/pism/hpc-builds
 .. _pism-email: mailto:uaf-pism@alaska.edu

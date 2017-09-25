@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. _sec-jako:
 
 Example: A regional model of the Jakobshavn outlet glacier in Greenland
@@ -74,7 +76,7 @@ downloading:
 The same script also preprocesses a pre-computed 5 km grid PISM model result
 ``g5km_gridseq.nc`` for the whole ice sheet. This provides the boundary conditions, and
 the thermodynamical initial condition, for the regional flow model we are building. If you
-have already generated it by running the script in subsection :ref:`sec-gridseq` then link
+have already generated it by running the script in section :ref:`sec-gridseq` then link
 to it,
 
 .. code-block:: none

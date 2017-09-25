@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. default-role:: math
 
 .. _sec-marine:
@@ -97,11 +99,11 @@ The stress balance equations determining the velocities are only sensitive to "f
 Iceberg removal
 ^^^^^^^^^^^^^^^
 
-Any calving mechanism (see subsection :ref:`sec-calving`) removes ice along the seaward front of the ice shelf domain.  This can lead to isolated cells either filled or partially-filled with floating ice, or to patches of floating ice (icebergs) fully surrounded by ice free ocean neighbors.  This ice is detached from the flowing and partly-grounded ice sheet.  That is, calving can lead to icebergs.
+Any calving mechanism (see section :ref:`sec-calving`) removes ice along the seaward front of the ice shelf domain.  This can lead to isolated cells either filled or partially-filled with floating ice, or to patches of floating ice (icebergs) fully surrounded by ice free ocean neighbors.  This ice is detached from the flowing and partly-grounded ice sheet.  That is, calving can lead to icebergs.
 
 In terms of our basic model of ice as a viscous fluid, however, the stress balance for an iceberg is not well-posed because the ocean applies no resistance to balance the driving stress.  (See :cite:`SchoofStream`.)  In this situation the numerical SSA stress balance solver will fail.
 
-Option :opt:`-kill_icebergs` turns on the mechanism which cleans this up.  This option is therefore generally needed if there is nontrivial calving.  The mechanism identifies free-floating icebergs by using a 2-scan connected-component labeling algorithm.  It then eliminates such icebergs, with the corresponding mass loss reported as a part of the 2D discharge flux diagnostic (see subsection :ref:`sec-saving-spat-vari`).
+Option :opt:`-kill_icebergs` turns on the mechanism which cleans this up.  This option is therefore generally needed if there is nontrivial calving.  The mechanism identifies free-floating icebergs by using a 2-scan connected-component labeling algorithm.  It then eliminates such icebergs, with the corresponding mass loss reported as a part of the 2D discharge flux diagnostic (see section :ref:`sec-saving-diagnostics`).
 
 .. _sec-subgrid-grounding-line:
 
@@ -191,7 +193,7 @@ PISM-PIK introduced a physically-based 2D-calving parameterization :cite:`Leverm
    c = K\; \dot{\epsilon}_{_+}\; \dot{\epsilon}_{_-}\quad\text{and}\quad\dot{\epsilon}_{_\pm}>0\:.
 
 The rate `c` is in `\text{m}\,\text{s}^{-1}`, and the principal strain rates
-`\dot\eps_\pm` have units `\text{s}^{-1}`, so `K` has units `\text{m}\,\text{s}`. The
+`\dot\epsilon_\pm` have units `\text{s}^{-1}`, so `K` has units `\text{m}\,\text{s}`. The
 constant `K` incorporates material properties of the ice at the front. It can be set using
 the :opt:`-eigen_calving_K` option or a configuration parameter (``eigen_calving_K`` in
 ``src/pism_config.cdl``).
@@ -205,7 +207,7 @@ intended to resolve individual rifts or calving events, but it produces
 structurally-stable calving front positions which agree well with observations. Calving
 rates balance calving-front ice flow velocities on average.
 
-The partially-filled grid cell formulation (subsection :ref:`sec-part-grid`) provides a
+The partially-filled grid cell formulation (section :ref:`sec-part-grid`) provides a
 framework suitable to relate the calving rate produced by ``eigen_calving`` to the mass
 transport scheme at the ice shelf terminus. Ice shelf front advance and retreat due to
 calving are limited to a maximum of one grid cell length per (adaptive) time step. The
@@ -225,7 +227,7 @@ Von Mises stress calving
 .. warning::
 
    This code is experimental and has not yet been thoroughly tested, use at your own risk.
-   While eigen-calving (subsection :ref:`sec-eigen-calving`) is appropriate for Antartic
+   While eigen-calving (section :ref:`sec-eigen-calving`) is appropriate for Antartic
    ice shelves, it does not work for outlet glaciers that flow in narrow fjords. Along
    valleys with nearly parallel walls, the transverse component of the velocity is close
    to zero, and the transversal strain rate is therefore also close to zero and noisy.

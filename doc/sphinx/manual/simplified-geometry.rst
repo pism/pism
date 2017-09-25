@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. default-role:: math
 
 .. _sec-simp:

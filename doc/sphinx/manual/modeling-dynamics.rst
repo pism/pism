@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. default-role:: math
 
 .. _sec-modeling-dynamics:
@@ -12,8 +14,8 @@ Choosing the stress balance
 
 The basic stress balance used for all grounded ice in PISM is the non-sliding,
 thermomechanically-coupled SIA :cite:`BBL`. For the vast majority of most ice sheets, as
-measured by area or volume, this is an appropriate model, which is an `O(\eps^2)`
-approximation to the Stokes model if `\eps` is the depth-to-length ratio of the ice
+measured by area or volume, this is an appropriate model, which is an `O(\epsilon^2)`
+approximation to the Stokes model if `\epsilon` is the depth-to-length ratio of the ice
 sheet :cite:`Fowler`.
 
 The shallow shelf approximation (SSA) stress balance applies to floating ice. See the Ross
@@ -37,9 +39,9 @@ sliding law, floating ice is also subject to the SSA.
 
 Of course there is more to the use of a stress balance than just turning it on! At all
 grounded points a yield stress, or a pseudo-yield-stress in the case of power law sliding
-(subsection :ref:`sec-basestrength`), is computed from the amount of stored basal water
+(section :ref:`sec-basestrength`), is computed from the amount of stored basal water
 and from a (generally) spatially-varying till strength. The amount of stored basal water
-is modeled by the subglacial hydrology mode choice (subsection :ref:`sec-subhydro`) based
+is modeled by the subglacial hydrology mode choice (section :ref:`sec-subhydro`) based
 on the basal melt rate which is, primarily, thermodynamically-determined (subsection
 :ref:`sec-basestrength`).
 
@@ -103,8 +105,8 @@ the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice s
        depends on strain rates and ice hardness (thus temperature). The minimum value of
        the effective viscosity times the thickness (i.e. `\nu H`) largely determines the
        difficulty of solving the numerical SSA. This constant is added to keep `\nu H`
-       bounded away from zero: `\nu H \to \nu H + \eps_{\text{SSA}}`, where
-       `\eps_{\text{SSA}}` is set using this option. Units of :opt:`ssa_eps` are
+       bounded away from zero: `\nu H \to \nu H + \epsilon_{\text{SSA}}`, where
+       `\epsilon_{\text{SSA}}` is set using this option. Units of :opt:`ssa_eps` are
        `\text{Pa}\,\text{m}\,\text{s}`. Set to zero to turn off this lower bound.
 
    * - :opt:`-ssa_view_nuh`

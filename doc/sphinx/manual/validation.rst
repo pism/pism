@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. default-role:: math
 
 .. contents::
@@ -348,7 +350,7 @@ Option combination
 specifies that ice at the calving front will be removed if either a criterion on the
 product of principal stresses is satisfied :cite:`Levermannetal2012`, namely ``eigen_calving``
 with the given constant `K`, or if the ice thickness goes below the given threshold of 150
-meters. See subsection :ref:`sec-calving`.
+meters. See section :ref:`sec-calving`.
 
 There is also an extended option combination
 

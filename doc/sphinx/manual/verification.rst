@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. _sec-verif:
 
 Verification
@@ -153,9 +155,9 @@ Therefore one must "go down" a grid refinement "path" and measure numerical erro
 grid :cite:`Roache`. The refinement path is defined by a sequence of spatial grid cell sizes
 which decrease toward the refinement limit of zero size :cite:`MortonMayers`. In PISM the
 timestep :math:`\Delta t` is determined adaptively by a stability criterion (see
-subsection :ref:`sec-adapt`). In PISM one specifies the number of grid points, thus the
+section :ref:`sec-adapt`). In PISM one specifies the number of grid points, thus the
 grid cell sizes because the overall dimensions of the computational box are normally
-fixed; see subsection :ref:`sec-coords`. By "measuring the error for each grid" we mean
+fixed; see section :ref:`sec-coords`. By "measuring the error for each grid" we mean
 computing a norm (or norms) of the difference between the numerical solution and the exact
 solution.
 

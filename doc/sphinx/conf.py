@@ -79,10 +79,6 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
-# include some custom stuff. Note that this screws up line numbers in
-# warning and error messages.
-rst_prolog = """.. include:: prologue.rst"""
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -158,28 +154,3 @@ latex_documents = [
     (master_doc, 'pism_manual.tex', u'PISM, a Parallel Ice Sheet Model Documentation',
      u'the PISM authors', 'manual'),
 ]
-
-
-# -- Options for manual page output ---------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'pism', u'PISM, a Parallel Ice Sheet Model Documentation',
-     [author], 1)
-]
-
-
-# -- Options for Texinfo output -------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (master_doc, 'PISMaParallelIceSheetModel', u'PISM, a Parallel Ice Sheet Model Documentation',
-     author, 'PISMaParallelIceSheetModel', 'One line description of project.',
-     'Miscellaneous'),
-]
-
-
-

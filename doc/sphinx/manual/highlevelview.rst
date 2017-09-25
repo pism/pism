@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. _sec-dynamics:
 
 Ice dynamics, the PISM view
@@ -51,15 +53,15 @@ of ice which have different amounts of basal resistance exert strong "longitudin
 "membrane" stresses :cite:`SchoofStream` on each other.
 
 In PISM the SSA may be used as a "sliding law" for grounded ice which is already modeled
-everywhere by the non-sliding SIA :cite:`BBssasliding`, :cite:`Winkelmannetal2011`. For grounded
-ice, in addition to including shear in planes parallel to the geoid, we must balance the
-membrane stresses where there is sliding. This inclusion of a membrane stress balance is
-especially important when there are spatial and/or temporal changes in basal strength.
-This "sliding law" role for the SSA is in addition to its more obvious role in ice shelf
-modeling. The SSA plays both roles in a PISM whole ice sheet model in which there are
-large floating ice shelves (e.g. as in Antarctica :cite:`Golledgeetal2012ant`,
-:cite:`Martinetal2011`, :cite:`Winkelmannetal2011`; see also section :ref:`sec-ross` of the current
-Manual).
+everywhere by the non-sliding SIA :cite:`BBssasliding`, :cite:`Winkelmannetal2011`. For
+grounded ice, in addition to including shear in planes parallel to the geoid, we must
+balance the membrane stresses where there is sliding. This inclusion of a membrane stress
+balance is especially important when there are spatial and/or temporal changes in basal
+strength. This "sliding law" role for the SSA is in addition to its more obvious role in
+ice shelf modeling. The SSA plays both roles in a PISM whole ice sheet model in which
+there are large floating ice shelves (e.g. as in Antarctica :cite:`Golledgeetal2012ant`,
+:cite:`Martinetal2011`, :cite:`Winkelmannetal2011`; see also section :ref:`sec-ross` of
+the current Manual).
 
 The "SIA+SSA hybrid" model is recommended for most whole ice sheet modeling purposes
 because it seems to be a good compromise given currently-available data and computational
@@ -88,15 +90,15 @@ imposed in advance.
 As noted, both the SIA and SSA models are *shallow* approximations. These equations are
 derived from the Stokes equations by distinct small-parameter arguments, both based on a
 small depth-to-width ratio for the ice sheet. For the small-parameter argument in the SIA
-case see :cite:`Fowler`. For the corresponding SSA argument, see :cite:`WeisGreveHutter` or the
-appendices of :cite:`SchoofStream`. Schoof and Hindmarsh :cite:`SchoofHindmarsh` have analyzed the
-connections between these shallowest models and higher-order models, while
-:cite:`GreveBlatter2009` discusses ice dynamics and stress balances comprehensively. Note that
-SIA, SSA, and higher-order models all approximate the pressure as hydrostatic.
+case see :cite:`Fowler`. For the corresponding SSA argument, see :cite:`WeisGreveHutter`
+or the appendices of :cite:`SchoofStream`. Schoof and Hindmarsh :cite:`SchoofHindmarsh`
+have analyzed the connections between these shallowest models and higher-order models,
+while :cite:`GreveBlatter2009` discusses ice dynamics and stress balances comprehensively.
+Note that SIA, SSA, and higher-order models all approximate the pressure as hydrostatic.
 
 Instead of a SIA+SSA hybrid model as in PISM, one might use the Stokes equations, or a
-"higher-order" model (i.e. less-shallow approximations :cite:`Blatter`, :cite:`Pattyn03`), but this
-immediately leads to a resolution-versus-stress-inclusion tradeoff. The amount of
+"higher-order" model (i.e. less-shallow approximations :cite:`Blatter`, :cite:`Pattyn03`),
+but this immediately leads to a resolution-versus-stress-inclusion tradeoff. The amount of
 computation per map-plane grid location is much higher in higher-order models, although
 careful numerical analysis can generate large performance improvements for such equations
 :cite:`BrownSmithAhmadia2013`.
@@ -135,7 +137,8 @@ turned off by user options ``-no_mass`` (ice geometry does not evolve) or ``-ene
      - *same as above, but time-dependence is allowed* 
 
    * - thermo-coupled SIA
-     - non-sliding lubrication flow, temperature-dependent softness :cite:`BBL`, :cite:`EISMINT00`
+     - non-sliding lubrication flow, temperature-dependent softness :cite:`BBL`,
+       :cite:`EISMINT00`
      - *same as above, plus:*
 
        - surface temperature
@@ -147,15 +150,16 @@ turned off by user options ``-no_mass`` (ice geometry does not evolve) or ``-ene
      - *same as above* 
 
    * - SIA + SSA hybrid
-     - SSA as a sliding law for thermo-coupled SIA :cite:`BBssasliding`, :cite:`Winkelmannetal2011`;
-       polythermal by default
+     - SSA as a sliding law for thermo-coupled SIA :cite:`BBssasliding`,
+       :cite:`Winkelmannetal2011`; polythermal by default
      - *same as above, plus:*
 
        - model for subglacial water
        - model for basal resistance
 
    * - *Blatter-Pattyn*
-     - "higher-order", bridging stresses :cite:`Blatter`, :cite:`Pattyn03`, :cite:`SchoofCoulombBlatter`
+     - "higher-order", bridging stresses :cite:`Blatter`, :cite:`Pattyn03`,
+       :cite:`SchoofCoulombBlatter`
      - *same as above* 
 
 .. _sec-model-hierarchy:
@@ -233,11 +237,11 @@ explains a PISM organizing principle, namely that *climate inputs affect ice dyn
 well-defined interface*.
 
 Almost no attempt is made here to describe the physics of the climate around ice sheets,
-so see :cite:`massbalanceglossary` for terminology and :cite:`Hock05` for a review of how surface
-melt can be modeled. See the Climate Forcing Manual for much more information on PISM's
-climate-coupling-related options and on the particular fields which are shared between the
-ice dynamics core and the climate model. :numref:`tab-ice-dynamics-bc` lists fields which
-are needed as boundary conditions at the interfaces.
+so see :cite:`massbalanceglossary` for terminology and :cite:`Hock05` for a review of how
+surface melt can be modeled. See the Climate Forcing Manual for much more information on
+PISM's climate-coupling-related options and on the particular fields which are shared
+between the ice dynamics core and the climate model. :numref:`tab-ice-dynamics-bc` lists
+fields which are needed as boundary conditions at the interfaces.
 
 All PISM ice sheet models have some kind of interface green in
 :numref:`fig-climate-inputs`) to a subaerial surface processes layer containing snow,

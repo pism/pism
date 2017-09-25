@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. |diagnostics| replace:: **FIXME: link to the list of diagnostics**
 
 .. contents::
@@ -184,7 +186,7 @@ monitor the run. (See section :ref:`sec-signal` for more about PISM's signal han
    * - :opt:`-ts_times`
      - Specifies times to save at as a MATLAB-style range :math:`a:\Delta t:b`, a
        comma-separated list, or a keyword (``hourly``, ``daily``, ``monthly``,
-       ``yearly``). See section :ref:`sec-saving-spat-vari`.
+       ``yearly``). See section :ref:`sec-saving-diagnostics`.
 
    * - :opt:`-ts_vars`
      - Comma-separated list of variables. Omitting this option is equivalent to listing
@@ -247,7 +249,7 @@ several scalar diagnostics:
 
           (with or without the hydrology model)
 
-.. _sec-saving-spat-vari:
+.. _sec-saving-diagnostics:
 
 Saving time series of spatially-varying diagnostic quantities
 -------------------------------------------------------------
@@ -904,7 +906,7 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
        :config:`time_stepping.hit_ts_times`; see section :ref:`sec-saving-time-series`
 
    * - ``-extra_... reporting``
-     - the ``-extra_times`` option; see section :ref:`sec-saving-spat-vari`
+     - the ``-extra_times`` option; see section :ref:`sec-saving-diagnostics`
 
    * - ``surface``
      - a surface or an atmosphere model
@@ -1062,9 +1064,9 @@ Browser`_. The Python scripts all take option ``--help``.
        with an average of the boundary non-missing values. Depends on ``netcdf4-python``
        and ``scipy`` Python packages.
    * - ``util/flowline.py``
-     - See subsection :ref:`sec-flowline-modeling`.
+     - See section :ref:`sec-flowline-modeling`.
    * - ``util/flowlineslab.py``
-     - See subsection :ref:`sec-flowline-modeling`.
+     - See section :ref:`sec-flowline-modeling`.
    * - ``util/check_stationarity.py``
      - Evaluate stationarity of a variable in a PISM ``-ts_file`` output.
    * - ``util/nc2cdo.py``

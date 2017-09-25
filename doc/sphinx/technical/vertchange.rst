@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. default-role:: math
 
 On the vertical coordinate in PISM, and a critical change of variable

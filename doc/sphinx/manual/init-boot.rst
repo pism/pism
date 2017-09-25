@@ -1,3 +1,5 @@
+.. include:: ../prologue.rst
+
 .. _sec-initboot:
 
 Initialization and bootstrapping
@@ -53,7 +55,7 @@ The automatically-produced :var:`time` variable has a ``units`` attribute like `
 Bootstrapping
 -------------
 
-"Bootstrapping" in PISM means starting a modeling run with less than sufficient data, and letting essentially heuristic models fill in needed fields.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option :opt:`-bootstrap`; see subsection :ref:`sec-runscript` for an example.
+"Bootstrapping" in PISM means starting a modeling run with less than sufficient data, and letting essentially heuristic models fill in needed fields.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option :opt:`-bootstrap`; see section :ref:`sec-runscript` for an example.
 
 The need for an identified stage like "bootstrapping" comes from the fact that initial conditions for the evolution equations describing an ice sheet are not all observable. As a principal example of this problem, these initial conditions include the temperature within the ice. Glaciological observations, specifically remote-sensed observations which cover a large fraction or all of an ice sheet, never include this temperature field in practice. Thus ice sheet modelling often does something like this to get "reasonable" initial fields within the ice:
 
@@ -62,7 +64,7 @@ The need for an identified stage like "bootstrapping" comes from the fact that i
 #. #. *either* do a long run, often holding the current geometry and surface conditions steady, to evolve toward a steady state which has compatible temperature, stress, and velocity fields,
    #. *or* do a long run using an additional (typically spatially-imprecise) historical record from an ice core or a sea bed core (or both), to apply forcing to the surface temperature or sea level (for instance), but with the same functional result of filling in temperature, stress, and velocity fields.
       
-When using :opt:`-bootstrap` you will need to specify both grid dimensions (using :opt:`-Mx`, :opt:`-My` and :opt:`-Mz`; see subsection :ref:`sec-grid`) and the height of the computational box for the ice with :opt:`-Lz` (subsection :ref:`sec-coords`). The data read from the file can determine the horizontal extent of the model, if options :opt:`-Lx`, :opt:`-Ly` are not set. The additional required specification of vertical extent by :opt:`-Lz` is reasonably natural because typical data used in "bootstrapping" are two-dimensional. Using :opt:`-bootstrap` without specifying all four options :opt:`-Mx`, :opt:`-My`, :opt:`-Mz`, :opt:`-Lz` is an error.
+When using :opt:`-bootstrap` you will need to specify both grid dimensions (using :opt:`-Mx`, :opt:`-My` and :opt:`-Mz`; see section :ref:`sec-grid`) and the height of the computational box for the ice with :opt:`-Lz` (section :ref:`sec-coords`). The data read from the file can determine the horizontal extent of the model, if options :opt:`-Lx`, :opt:`-Ly` are not set. The additional required specification of vertical extent by :opt:`-Lz` is reasonably natural because typical data used in "bootstrapping" are two-dimensional. Using :opt:`-bootstrap` without specifying all four options :opt:`-Mx`, :opt:`-My`, :opt:`-Mz`, :opt:`-Lz` is an error.
 
 If :opt:`-Lx` and :opt:`-Ly` specify horizontal grid dimensions smaller than in the bootstrapping file, PISM will cut out the center portion of the domain. Alternatively, options :opt:`-x_range` and :opt:`-y_range` each take a list of two numbers, a list of minimum and maximum :math:`x` and :math:`y` coordinates, respectively (in meters), which makes it possible to select a subset that is not centered in the bootstrapping file's grid.
 
