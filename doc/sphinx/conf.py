@@ -94,12 +94,14 @@ numfig = True
 # documentation.
 #
 html_theme_options = {"logo" : "pism-logo.png",
-                      "github_user" : "pism",
-                      "github_repo" : "pism",
+                      "github_button" : False,
                       "show_related" : True,
+                      "show_powered_by" : True,
+                      "body_text_align" : "justify",
+                      "sidebar_collapse" : True,
 }
-                      # "show_powered_by" : False,
-                      # "body_text_align" : "justify"
+                      # "fixed_sidebar": True,
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -114,9 +116,9 @@ html_static_path = ['_static', 'logo']
 html_sidebars = {
     '**': [
         'about.html',
-        'searchbox.html',
-        'navigation.html',
         'relations.html',  # needs 'show_related': True theme option to display
+        'navigation.html',
+        'searchbox.html',
     ]
 }
 

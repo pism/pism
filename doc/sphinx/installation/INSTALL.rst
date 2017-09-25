@@ -1,5 +1,7 @@
 .. include:: ../prologue.rst
 
+.. _sec-installation:
+
 Installing PISM
 +++++++++++++++
 

@@ -9,8 +9,10 @@
 .. |seealso| replace:: See also
 .. |implementation| replace:: C++ class
 
-PISM climate forcing components
-===============================
+.. _sec-climate-forcing:
+
+Climate forcing components
+==========================
 
 .. contents:: Contents
 

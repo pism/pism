@@ -23,23 +23,18 @@ Welcome to PISM documentation!
 
 .. toctree::
    :caption: Contents
-   :titlesonly:
+   :maxdepth: 2
 
-   installation/INSTALL
+   installation/INSTALL.rst
 
-   manual/pism_manual
-   manual/getting-started
-   manual/highlevelview
-   manual/init-boot
-   manual/modeling-computational
-   manual/modeling-dynamics
-   manual/modeling-subglacier
-   manual/modeling-marine
-   manual/practical-usage
-   manual/verification
-   manual/simplified-geometry
-   manual/validation
-   manual/jako
+   manual/pism_manual.rst
 
-   climate_forcing/pism_forcing
+   climate_forcing/pism_forcing.rst
+
+   technical/technical-notes.rst
+
+   acknowledgements.rst
+
+   authorship.rst
+
    zzz_references
