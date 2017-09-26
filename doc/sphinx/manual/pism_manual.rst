@@ -14,7 +14,7 @@ PISM User's Manual
 
    initialization/initialization.rst
 
-   modeling-choices/modeling-choices.rst
+   modeling-choices/index.rst
 
    practical-usage/netcdf-tools.rst
    practical-usage/practical-usage.rst
