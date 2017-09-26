@@ -2,8 +2,8 @@
 
 .. _sec-initboot:
 
-Initialization and bootstrapping
-================================
+Model initialization
+====================
 
 There are three ways to start PISM:
 

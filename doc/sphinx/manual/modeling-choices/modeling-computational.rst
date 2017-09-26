@@ -2,8 +2,8 @@
 
 .. _sec-modeling-computational:
 
-Modeling choices: Grid and time
-===============================
+Grid and time
+=============
 
 .. _sec-coords:
 

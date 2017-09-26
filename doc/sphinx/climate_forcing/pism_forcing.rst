@@ -10,8 +10,8 @@
 
 .. _sec-climate-forcing:
 
-Climate forcing components
-==========================
+Climate forcing
+===============
 
 .. contents:: Contents
 

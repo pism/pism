@@ -2,8 +2,8 @@
 
 .. _sec-modeling-subglacier:
 
-Modeling choices:  The subglacier
-=================================
+The subglacier
+==============
 
 .. contents::
 
@@ -59,7 +59,8 @@ In PISM the sliding law can be chosen to be a purely-plastic (Coulomb) model, na
 .. math::
    :name: eq-plastic
 
-   |\boldsymbol{\tau}_b| \le \tau_c \quad \text{and} \quad \boldsymbol{\tau}_b = - \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0.
+   |\boldsymbol{\tau}_b| \le \tau_c \quad \text{and} \quad \boldsymbol{\tau}_b =
+   - \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0.
 
 Equation :eq:`eq-plastic` says that the (vector) basal shear stress `\boldsymbol{\tau}_b`
 is at most the yield stress `\tau_c`, and that only when the shear stress reaches the
@@ -424,7 +425,7 @@ thickness evolves by the simple equation
 
    \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C
 
-where `m=` :var:`basal_melt_rate_grounded}` (kg `\text{m}^{-2}\,\text{s}^{-1}`), `\rho_w`
+where `m=` :var:`basal_melt_rate_grounded` (kg `\text{m}^{-2}\,\text{s}^{-1}`), `\rho_w`
 is the density of fresh water, and `C` :var:`hydrology_tillwat_decay_rate`. At all times
 bounds `0 \le W_{til} \le W_{til}^{max}` are satisfied.
 

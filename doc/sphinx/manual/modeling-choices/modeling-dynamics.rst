@@ -2,8 +2,8 @@
 
 .. _sec-modeling-dynamics:
 
-Modeling choices: Ice dynamics and thermodynamics
-=================================================
+Ice dynamics and thermodynamics
+===============================
 
 .. _sec-stressbalance:
 

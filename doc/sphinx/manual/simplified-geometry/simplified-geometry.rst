@@ -2,8 +2,8 @@
 
 .. _sec-simp:
 
-Simplified geometry experiments with PISM
-=========================================
+Simplified geometry experiments
+===============================
 
 There have been three stages of ice sheet model intercomparisons based on simplified
 geometry experiments since the early 1990s :cite:`BuelerSpray`.
@@ -19,11 +19,12 @@ already suffices to measure the isothermal SIA performance of PISM more precisel
 would be allowed by comparison to EISMINT I results.
 
 EISMINT II :cite:`EISMINT00` pointed out interesting and surprising properties of the
-thermocoupled SIA. References :cite:`BBL`, :cite:`Hindmarsh04`, :cite:`Hindmarsh06`, :cite:`PayneBaldwin`,
-:cite:`SaitoEISMINT`, :cite:`BBssasliding` each interpret the EISMINT II experiments and/or describe
-attempts to add more complete physical models to "fix" the (perceived and real) shortfalls
-of ice sheet model behavior on EISMINT II experiments. We believe that the discussion in
-:cite:`PayneDongelmans`, :cite:`PayneBaldwin`, :cite:`BBL` adequately explains the "spokes" in EISMINT II
+thermocoupled SIA. References :cite:`BBL`, :cite:`Hindmarsh04`, :cite:`Hindmarsh06`,
+:cite:`PayneBaldwin`, :cite:`SaitoEISMINT`, :cite:`BBssasliding` each interpret the
+EISMINT II experiments and/or describe attempts to add more complete physical models to
+"fix" the (perceived and real) shortfalls of ice sheet model behavior on EISMINT II
+experiments. We believe that the discussion in :cite:`PayneDongelmans`,
+:cite:`PayneBaldwin`, :cite:`BBL` adequately explains the "spokes" in EISMINT II
 experiment F as a genuine fluid instability, while :cite:`Fowler01` and Appendix B of
 :cite:`BBssasliding` adequately cautions against the continuum model that generates the
 "spokes" in EISMINT II experiment H. Thus we can move on from that era of controversy. In
@@ -32,9 +33,9 @@ experiments; these are described in the next subsection.
 
 The ISMIP (Ice Sheet Model Intercomparison Project) [#]_ round of intercomparisons covers
 2008--2013 (at least). There are four components of ISMIP substantially completed, namely
-HOM = Higher Order Models :cite:`ISMIPHOM`, :cite:`HOMelmer`, HEINO = Heinrich Event INtercOmparison
-:cite:`GreveTakahamaCalov`, :cite:`Calovetal2009HEINOfinal`, MISMIP (below), and MISMIP3d (also
-below).
+HOM = Higher Order Models :cite:`ISMIPHOM`, :cite:`HOMelmer`, HEINO = Heinrich Event
+INtercOmparison :cite:`GreveTakahamaCalov`, :cite:`Calovetal2009HEINOfinal`, MISMIP
+(below), and MISMIP3d (also below).
 
 PISM participated in HEINO, but this ability is unmaintained. We believe the continuum
 problem described by HEINO, also used in EISMINT II experiment H (above), is not
@@ -46,8 +47,9 @@ continuum model described in :cite:`BBssasliding`, an SIA+SSA hybrid, as an alte
 continuum model used in ISMIP-HEINO and EISMINT II experiment H. Indeed the SIA+SSA hybrid
 is offered as a unified shallow model for real ice sheets (section :ref:`sec-dynamics`).
 
-There is no current plan to support ISMIP-HOM :cite:`ISMIPHOM`, :cite:`HOMelmer`, but comparison of
-shallow PISM results to exact Stokes solutions is a goal for PISM evaluation.
+There is no current plan to support ISMIP-HOM :cite:`ISMIPHOM`, :cite:`HOMelmer`, but
+comparison of shallow PISM results to exact Stokes solutions is a goal for PISM
+evaluation.
 
 A third and fourth ISMIP parts are the two parts of the Marine Ice Sheet Model
 Intercomparison Project, MISMIP :cite:`MISMIP2012` and MISMIP3D :cite:`MISMIP3d2013`. These
