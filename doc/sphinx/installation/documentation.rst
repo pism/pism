@@ -63,7 +63,7 @@ bindings documentation:
    Extension error:
    Could not import extension sphinxcontrib.bibtex (exception: No module named bibtex)
 
-To install it see http://sphinxcontrib-bibtex.readthedocs.io/en/latest/.
+To install it see |sphinxcontrib-bibtex-url|.
 
 Note that if you install Sphinx using MacPorts_, you will install a version that depends
 on your Python version, and its executables will have names that depend on the Python

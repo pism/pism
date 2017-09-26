@@ -1,5 +1,4 @@
 .. include:: ../prologue.rst
-.. default-role:: math
 
 .. |date| date::
 .. |flux| replace:: :math:`kg / (m^{2} s)`

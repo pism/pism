@@ -1,5 +1,7 @@
 .. math stuff
 
+.. default-role:: math
+
 .. math::
 
    \newcommand{\bq}{\mathbf{q}}
@@ -39,6 +41,15 @@
 .. |pism-email| replace:: uaf-pism@alaska.edu
 .. |pism-docs| replace:: http://www.pism-docs.org
 .. |petsc-download| replace:: http://www.mcs.anl.gov/petsc/download/index.html
+
+.. |pism-regional-tools-url| replace:: https://github.com/pism/regional-tools
+
+.. |mismip-url| replace:: http://homepages.ulb.ac.be/~fpattyn/mismip/
+.. |mismip3d-url| replace:: http://homepages.ulb.ac.be/~fpattyn/mismip3d/
+.. |eismint-url| replace:: http://homepages.vub.ac.be/~phuybrec/eismint.html
+.. |ismip-url| replace:: http://homepages.vub.ac.be/~phuybrec/ismip.html
+
+.. |sphinxcontrib-bibtex-url| replace:: http://sphinxcontrib-bibtex.readthedocs.io/en/latest/
 
 .. external links
 
@@ -84,6 +95,7 @@
 .. _SeaRISE-Greenland: http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
 .. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 .. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
+.. _mismip-code: http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar
 
 .. PISM-related external links
 
@@ -93,3 +105,5 @@
 .. _pism-manual: http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=pism_manual.pdf
 .. _pism-email: mailto:uaf-pism@alaska.edu
 .. _pism-browser: http://www.pism-docs.org/doxy/html/index.html
+.. _pypismtools: https://github.com/pism/pypismtools
+.. _regional-tools: https://github.com/pism/regional-tools

@@ -1,7 +1,5 @@
 .. include:: ../prologue.rst
 
-.. default-role:: math
-
 .. _sec-marine:
 
 Modeling choices: Marine ice sheet modeling
@@ -141,7 +139,7 @@ the ice is floating on the ocean or not. The result is stored in the ``mask`` va
 The ``mask`` variable has ``pism_intent`` = ``diagnostic``, and thus it does *not* need to
 be included in the input file set using the ``-i`` option.
 
-The possible values of the ``mask`` are given in Table :numref:`tab-maskvals`. The mask
+The possible values of the ``mask`` are given in :numref:`tab-maskvals`. The mask
 does not *by itself* determine ice dynamics. For instance, even when ice is floating (mask
 value ``MASK_FLOATING``), the user must turn on the usual choice for ice shelf dynamics,
 namely the SSA stress balance, by using options :opt:`-stress_balance ssa` or
@@ -269,7 +267,7 @@ limit the overall timestep of PISM--thus slowing down all of PISM--by using
 Additional calving methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-PISM also includes three more basic calving mechanisms (Table :numref:`tab-calving`). The
+PISM also includes three more basic calving mechanisms (:numref:`tab-calving`). The
 option :opt:`-calving thickness_calving` is based on the observation that ice shelf
 calving fronts are commonly thicker than about 150--250\,m (even though the physical
 reasons are not clear yet). Accordingly, any floating ice thinner than `H_{\textrm{cr}}`
@@ -297,7 +295,7 @@ Ice shelves can exist in locations where a positive thickness was supplied in th
 data set.
 
 To select several calving mechanisms, use a comma-separated list of keywords mentioned in
-Table :numref:`tab-calving`:
+:numref:`tab-calving`:
 
 .. code-block:: none
 

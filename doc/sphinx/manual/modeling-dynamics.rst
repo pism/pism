@@ -1,7 +1,5 @@
 .. include:: ../prologue.rst
 
-.. default-role:: math
-
 .. _sec-modeling-dynamics:
 
 Modeling choices: Ice dynamics and thermodynamics
@@ -45,12 +43,12 @@ is modeled by the subglacial hydrology mode choice (section :ref:`sec-subhydro`)
 on the basal melt rate which is, primarily, thermodynamically-determined (subsection
 :ref:`sec-basestrength`).
 
-Table :numref:`tab-stress-balance-choice` describes the basic choice of stress balance. If the
+:numref:`tab-stress-balance-choice` describes the basic choice of stress balance. If the
 SSA stress balance is used, a choice of two solvers is available, namely ``-ssa_method
-fd`` (default) or ``-ssa_method fem``. See Table :numref:`tab-ssa-usage`, which describes
+fd`` (default) or ``-ssa_method fem``. See :numref:`tab-ssa-usage`, which describes
 additional controls on the numerical solution of the stress balance equations. If option
 ``-ssa_method fd`` is chosen then several more controls on numerics are available; see
-Table :numref:`tab-ssafd-controls`. If the ice sheet being modeled has any floating ice then
+:numref:`tab-ssafd-controls`. If the ice sheet being modeled has any floating ice then
 the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice sheets.
 
 .. list-table:: The basic choice of stress balance
@@ -199,13 +197,14 @@ product of a function of `T,P,d` and a single power of `\sigma`, as in form
 
 There is only one choice for the flow law which takes full advantage of the enthalpy mode
 of PISM, which is the thermodynamical modeling (i.e. conservation of energy) default.
-Namely the Glen-Paterson-Budd-Lliboutry-Duval flow law :cite:`AschwandenBuelerKhroulevBlatter`,
-:cite:`LliboutryDuval1985`, :cite:`PatersonBudd`, which is a function `F(\sigma,T,\omega,P)`.
-This law is the only one in the literature where the ice softness depends on both the
-temperature and the liquid water fraction, so it parameterizes the (observed) softening of
-pressure-melting-temperature ice as its liquid fraction increases. One can use this
-default polythermal law or one may choose among a number of "cold ice" laws listed in
-Table :numref:`tab-flowlaw` which do not use the liquid water fraction.
+Namely the Glen-Paterson-Budd-Lliboutry-Duval flow law
+:cite:`AschwandenBuelerKhroulevBlatter`, :cite:`LliboutryDuval1985`, :cite:`PatersonBudd`,
+which is a function `F(\sigma,T,\omega,P)`. This law is the only one in the literature
+where the ice softness depends on both the temperature and the liquid water fraction, so
+it parameterizes the (observed) softening of pressure-melting-temperature ice as its
+liquid fraction increases. One can use this default polythermal law or one may choose
+among a number of "cold ice" laws listed in :numref:`tab-flowlaw` which do not use the
+liquid water fraction.
 
 All flow law parameters can be changed using configuration parameters; see section
 :ref:`sec-pism-defaults` and the implementation of flow laws in the \emph{Source Code
@@ -213,7 +212,7 @@ Browser}. Note that different flow laws have different numbers of parameters, bu
 at least two parameters (e.g. `A_0` and `n` in ``isothermal_glen``). One can
 create a new, and reasonably arbitrarily, scalar function `F` by modifying source
 code; see source files ``flowlaws.hh``, ``flowlaws.cc`` in ``src/base/rheology/``. To
-assist such modifications, note that Table :numref:`tab-flowlaw` below also lists the C++
+assist such modifications, note that :numref:`tab-flowlaw` below also lists the C++
 classes declared in ``flowlaw.hh``.
 
 Choosing the flow laws for SIA and SSA stress balances
@@ -330,7 +329,7 @@ respectively. Option ``-sia_e`` sets "`e`" in `D_{ij} = e\, F(\sigma,T,\omega,P,
 viscosity form so that `\sigma_{ij}' = e^{-1/n}\, 2\, \nu(D,T,\omega,P,d)\, D_{ij}.`
 
 Options :opt:`-sia_n` and :opt:`-ssa_n` set the exponent when a single-power flow law is
-used (see Table :numref:`tab-flowlaw`). Simply changing to a different value from the default
+used (see :numref:`tab-flowlaw`). Simply changing to a different value from the default
 `n=3` is not recommended without a corresponding change to the enhancement factor,
 however. This is because the coefficient and the power are non-trivially linked when a
 power law is fit to experimental data :cite:`CuffeyPaterson`, :cite:`PatersonBudd`.
@@ -374,7 +373,7 @@ because `E_{new} = 3.0 \sigma_0^{3-6} = 3.0 \times (10^5)^{-3}` from equation
 A corresponding formula applies to ``-ssa_e`` if the ``-ssa_n`` value changes.
 
 .. list-table:: For all flow laws, an enhancement factor can be added by a runtime option.
-                For the single-power flow laws in Table :numref:`tab-flowlaw`, the (Glen)
+                For the single-power flow laws in :numref:`tab-flowlaw`, the (Glen)
                 exponent can be controlled by a runtime option.
    :name: tab-enhancementandexponent
    :header-rows: 1

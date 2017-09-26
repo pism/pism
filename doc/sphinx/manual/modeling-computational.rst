@@ -1,7 +1,5 @@
 .. include:: ../prologue.rst
 
-.. default-role:: math
-
 .. _sec-modeling-computational:
 
 Modeling choices: Grid and time
@@ -55,7 +53,7 @@ the ice, the bedrock corresponds to negative `z` values regardless of its true (
 
 The extent of the computational box, along with its bedrock extension downward, is
 determined by four numbers ``Lx``, ``Ly``, ``Lz``, and ``Lbz`` (see Figure
-:numref:`fig-rectilinearbox` and Table :numref:`tab-compbox`). The first two of these are
+:numref:`fig-rectilinearbox` and :numref:`tab-compbox`). The first two of these are
 half-widths and have units of kilometers when set by options or displayed.
 
 .. figure:: figures/rectilinearbox.png
@@ -166,7 +164,7 @@ available as a spatial diagnostic field (section :ref:`sec-saving-diagnostics`).
 Model time
 ----------
 
-Table :numref:`tab-timeoptions` gives the command-line options which control PISM time. If
+:numref:`tab-timeoptions` gives the command-line options which control PISM time. If
 option ``-ys`` is absent then the start year is read from the input file (if present) or
 it defaults to zero. The default value for the end year is the start year plus the given
 (``-y``) run length. If both ``-ys`` and ``-ye`` are used then the run length is set to

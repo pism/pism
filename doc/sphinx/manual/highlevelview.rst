@@ -174,6 +174,8 @@ however, as also described in the Table.
 
 .. figure:: figures/stressbalance.png
    :name: fig-stressbalance
+   :width: 75%
+   :align: center
 
    The SIA-only, SSA-only, and SIA+SSA hybrid models represent different "routes" through
    stress balance PISM components. In each case the inputs are ice geometry and boundary
@@ -299,6 +301,8 @@ that we already have into data in the right units and with the right metadata.
 
 .. figure:: figures/data-flow.png
    :name: fig-climate-input-data-flow
+   :width: 75%
+   :align: center
 
    PISM climate input data flow. Colored arrows correspond to interfaces in
    :numref:`fig-climate-inputs`.
@@ -328,9 +332,8 @@ customize PISM's climate inputs and/or couple PISM to a climate model should add
 see the `PISM Source Browser <pism-browser_>`_ and the documentation therein.
 
 :numref:`fig-climate-input-data-flow` illustrates the data flow needed by the ice dynamics
-        core. The data flow in the other direction, i.e. needed by the model to which PISM
-        is coupled, depends on particular modeling choices, but great flexibility is
-        allowed.
+core. The data flow in the other direction, i.e. needed by the model to which PISM is
+coupled, depends on particular modeling choices, but great flexibility is allowed.
 
 Why describe all this structure here? On the one hand, some users may be interested in
 coupling PISM to other models. On the other hand, the PISM authors do not claim expertise

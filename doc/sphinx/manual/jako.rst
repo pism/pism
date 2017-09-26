@@ -45,7 +45,7 @@ the PISM website, or you can generate it by running a Section :ref:`sec-start` s
 Get the drainage basin delineation tool
 ---------------------------------------
 
-The drainage basin tool ``regional-tools`` is at https://github.com/pism/regional-tools.
+The drainage basin tool ``regional-tools`` is at |pism-regional-tools-url|.
 Get it using ``git`` and set it up as directed in its ``README.md``. Then come back to the
 ``examples/jako/`` directory and link the script. Here is the quick summary:
 
@@ -380,6 +380,3 @@ For this example ``PyPISMTools/colormaps/Full_saturation_spectrum_CCW.cpt`` was 
        modeled region.
 
 .. [#] Calculate ``620/5 + 1`` and ``425/5 + 1``, for example.
-
-.. _pypismtools: https://github.com/pism/pypismtools
-.. _regional-tools: https://github.com/pism/regional-tools

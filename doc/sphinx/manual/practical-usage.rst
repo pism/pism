@@ -50,7 +50,7 @@ basic ways to input and output NetCDF files when starting and ending PISM runs.
        :config:`output.sizes.medium`, :config:`output.sizes.big`, and
        :config:`output.sizes.big_2d` list the written variables for those sizes.
 
-Table :numref:`tab-stdout` lists the controls on what is printed to the standard output.
+:numref:`tab-stdout` lists the controls on what is printed to the standard output.
 Note the ``-help`` and ``-usage`` options for getting help at the command line.
 
 .. list-table:: Options controlling PISM's standard output
@@ -270,7 +270,7 @@ Use options ``-extra_file``, ``-extra_times``, and ``-extra_vars`` for this. For
 
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface
 and at the base of ice every 10 years. Times are specified using a comma-separated list or
-a MATLAB-style range. See Table :numref:`tab-extras` for all the options controlling this
+a MATLAB-style range. See :numref:`tab-extras` for all the options controlling this
 feature. Tables |diagnostics| list all the variable choices.
 
 Note that options :opt:`-extra_times`, :opt:`-save_times`, :opt:`-ts_times` take *dates*
@@ -472,7 +472,7 @@ reopen a large file at each snapshot when ``-save_split`` is not used. Note that
 like NCO and ``ncview`` usually behave as desired with wildcards like
 "``snapshots-*.nc``".
 
-Table :numref:`tab-snapshot-opts` lists the options related to saving snapshots of the
+:numref:`tab-snapshot-opts` lists the options related to saving snapshots of the
 model state.
 
 .. list-table:: Command-line options controlling saving snapshots of the model state.
@@ -499,7 +499,7 @@ Run-time diagnostic viewers
 ---------------------------
 
 Basic graphical views of the changing state of a PISM ice model are available at the
-command line by using options listed in table :numref:`tab-diag-viewers`. All the
+command line by using options listed in :numref:`tab-diag-viewers`. All the
 quantities listed in tables |diagnostics| are available. Additionally, a couple of
 diagnostic quantities are *only* available as run-time viewers; these are shown in table
 :numref:`tab-special-diag-viewers`.
@@ -680,7 +680,7 @@ the ice thickness at each time step anyway.
 A slightly different use of regridding occurs when "bootstrapping", as described in
 section :ref:`sec-initboot` and illustrated by example in section :ref:`sec-start`.
 
-See table :numref:`tab-regridvar` for the regriddable variables using ``-regrid_file``.
+See :numref:`tab-regridvar` for the regriddable variables using ``-regrid_file``.
 Only model state variables are regriddable, while climate and boundary data generally are
 not explicitly regriddable. (Bootstrapping, however, allows the same general interpolation
 as this explicit regrid.)
@@ -763,7 +763,7 @@ Signals, to control a running PISM model
 Ice sheet model runs sometimes take a long time, so the state of a run may need checking.
 Sometimes the run needs to be stopped, but with the possibility of restarting. PISM
 implements these behaviors using "signals" from the POSIX standard, included in Linux and
-most flavors of Unix. Table :numref:`tab-signals` summarizes how PISM responds to signals.
+most flavors of Unix. :numref:`tab-signals` summarizes how PISM responds to signals.
 A convenient form of ``kill``, for Linux users, is ``pkill`` which will find processes by
 executable name. Thus "``pkill -USR1 pismr``" might be used to send all PISM processes the
 same signal, avoiding an explicit list of |pid|.
@@ -851,7 +851,7 @@ updated ("``h``"). The rest of the flags line looks like
 Recall that the PISM time step is determined by an adaptive mechanism. Stable mass
 conservation and conservation of energy solutions require such an adaptive time-stepping
 scheme :cite:`BBL`. The first character we see here, namely "``diffusivity``", is the
-adaptive-timestepping "reason" flag. See Table :numref:`tab-adaptiveflag`. We also see
+adaptive-timestepping "reason" flag. See :numref:`tab-adaptiveflag`. We also see
 that there was a major time step of :math:`0.83945` model years divided into :math:`2`
 substeps of about :math:`0.42` years. The :opt:`-skip` option enables this mechanism,
 while :opt:`-skip_max` sets the maximum number of such substeps. The adaptive mechanism
@@ -1042,7 +1042,7 @@ Utility and test scripts
 ------------------------
 
 In the ``test/`` and ``util/`` subdirectories of the PISM directory the user will find
-some python scripts and one Matlab script, listed in Table :numref:`tab-scripts-overview`.
+some python scripts and one Matlab script, listed in :numref:`tab-scripts-overview`.
 The python scripts are all documented at the *Packages* tab on the `PISM Source Code
 Browser`_. The Python scripts all take option ``--help``.
 
@@ -1146,7 +1146,7 @@ Managing source code modifications
 PISM.
 
 We provide both user-level (this manual) and developer-level documentation. Please see
-source code browsers at http://www.pism-docs.org for the latter.
+source code browsers at |pism-docs| for the latter.
 
 - To use your (modified) version of PISM, you will need to follow the compilation from
   sources instructions in the *Installation Manual*

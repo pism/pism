@@ -1,5 +1,7 @@
 .. include:: prologue.rst
 
+..
+
    *Copyright (C) 2004 -- 2017 the PISM authors.*
 
    *This file is part of PISM. PISM is free software; you can redistribute it and/or

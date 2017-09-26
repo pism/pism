@@ -1,7 +1,5 @@
 .. include:: ../prologue.rst
 
-.. default-role:: math
-
 .. contents::
 
 .. _sec-validation:

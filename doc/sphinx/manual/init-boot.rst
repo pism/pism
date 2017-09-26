@@ -82,7 +82,7 @@ Allowed formats for a bootstrapping file are relatively simple to describe.
 #. Coordinate variables have to be strictly-increasing.
 #. Three-dimensional variables will be ignored in bootstrapping.
 #. The ``standard_name`` attribute is used, when available, to identify a variable, so variable names need not match corresponding variables in a PISM output file. See the `PISM Source Code browser <pism-browser_>`_ for a list of CF standard names used in PISM. Specifically, the bed elevation (topography) is read by ``standard_name`` = ``bedrock_altitude`` and the ice thickness by ``standard_name`` = ``land_ice_thickness``.
-#. Any two-dimensional variable except bed topography and ice thickness may be missing. For missing variables some heuristic will be applied. See table :numref:`tab-modelhierarchy` for a sketch of the data necessary for bootstrapping; see ``src/base/iMbootstrap.cc`` for all further details.
+#. Any two-dimensional variable except bed topography and ice thickness may be missing. For missing variables some heuristic will be applied. See :numref:`tab-modelhierarchy` for a sketch of the data necessary for bootstrapping; see ``src/base/iMbootstrap.cc`` for all further details.
 #. Surface elevation is ignored if present. Users with surface elevation and bed elevation data should compute the ice thickness variable, put it in the bootstrapping file, and set its ``standard_name`` to ``land_ice_thickness``.
 
 .. [#] PISM uses a library called UDUNITS-2 to convert data present in an input file to MKS. This means that having ice thickness in feet or temperature in Fahrenheit *is* allowed.

@@ -1,7 +1,5 @@
 .. include:: ../prologue.rst
 
-.. default-role:: math
-
 .. _sec-modeling-subglacier:
 
 Modeling choices:  The subglacier
@@ -368,7 +366,7 @@ on the till.
        is a "drained and conserved plastic bed" model. The state variables are ``bwat``
        and ``tillwat``.
 
-See Table :numref:`tab-hydrology` for options which apply to all hydrology models. Note
+See :numref:`tab-hydrology` for options which apply to all hydrology models. Note
 that the primary water source for these models is the energy conservation model which
 computes the basal melt rate ``basal_melt_rate_grounded``. There is, however, also option
 :opt:`-hydrology_input_to_bed_file` which allows the user to *add* water directly into the
@@ -449,7 +447,7 @@ which point it will be lost. The amount that is lost this way is reported to the
 
 In this model ``tillwat`` also evolves by equation :eq:`eq-tillwatevolve`, but several
 additional parameters are used in determining how the transportable water ``bwat`` flows
-in the model; see Table :numref:`tab-hydrologyrouting`. Specifically, the horizontal
+in the model; see :numref:`tab-hydrologyrouting`. Specifically, the horizontal
 subglacial water flux is determined by a generalized Darcy flux relation :cite:`Clarke05`,
 :cite:`Schoofetal2012`
 

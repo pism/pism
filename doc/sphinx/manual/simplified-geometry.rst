@@ -1,7 +1,5 @@
 .. include:: ../prologue.rst
 
-.. default-role:: math
-
 .. _sec-simp:
 
 Simplified geometry experiments with PISM
@@ -89,7 +87,7 @@ bed topography. Experiments K and L are similar to experiment C but with non-fla
 bed topography.
 
 See :numref:`tab-eisII` for how to run all EISMINT II experiments in PISM.
-Experiments below the horizontal line are only documented in :cite:`EISIIdescribe`.
+Experiments E -- L are only documented in :cite:`EISIIdescribe`.
 
 .. list-table:: Running the EISMINT II experiments in PISM. Use ``-skip -skip_max 5``, on
                 the `61\times 61` default grid, for significant speedup.
@@ -133,7 +131,7 @@ equally-spaced grid; in this case we suggest using enough vertical levels to giv
 spacing, for example. When there is sliding, even more vertical resolution is recommended
 (see :numref:`tab-eisII`). Also, the vertical extent must be sufficient so that when
 the ice thickness grows large, especially before thermo-softening brings it back down, the
-vertical grid is tall enough to include all the ice. Table :numref:`tab-eisII` therefore
+vertical grid is tall enough to include all the ice. :numref:`tab-eisII` therefore
 includes suggested settings of ``-Lz``; experiment F is different because ice thickness
 increases with colder temperatures.
 
@@ -165,7 +163,7 @@ EISMINT II experiments.
 
    * - :opt:`-Mmax`
      - 0.5 [ABDEFGHIK], 0.25 [CJL]
-     - `m / a`
+     - `m / year`
      - max value of accumulation rate
 
    * - :opt:`-Rel`
@@ -175,7 +173,7 @@ EISMINT II experiments.
 
    * - :opt:`-Sb`
      - `10^{-2}` [*all*]
-     - `(m/a)/km`
+     - `(m/year)/km`
      - radial gradient of accumulation rate
 
    * - :opt:`-ST`
@@ -207,7 +205,7 @@ system is modeled, the reversibility of grounding line movement under changes in
 softness is tested, different sliding laws are tested, and the behavior of grounding lines
 on reverse-slope beds is tested. The intercomparison process is described at the website
 
-   http://homepages.ulb.ac.be/~fpattyn/mismip/
+    |mismip-url|
 
 Find a full text description there, along with the published report on the results
 :cite:`MISMIP2012`; that paper includes results from PISM version 0.1. These documents are
@@ -335,7 +333,7 @@ compare to the numerical results.
 
 A full description of the MISMIP3d experiments can be found at
 
-   http://homepages.ulb.ac.be/~fpattyn/mismip3d/
+   |mismip3d-url|
 
 and the results are published in :cite:`MISMIP3d2013`.
 
@@ -409,8 +407,6 @@ x = \Delta y = 1` km.
 
 .. rubric:: Footnotes
 
-.. [#] See http://homepages.vub.ac.be/~phuybrec/eismint.html
+.. [#] See |eismint-url|
 
-.. [#] See http://homepages.vub.ac.be/~phuybrec/ismip.html
-
-.. _mismip-code: http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar
+.. [#] See |ismip-url|
