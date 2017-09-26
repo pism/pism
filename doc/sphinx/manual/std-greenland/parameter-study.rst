@@ -1,3 +1,5 @@
+.. include:: ../../prologue.rst
+
 .. _sec-paramstudy:
 
 An ice dynamics parameter study
@@ -5,7 +7,7 @@ An ice dynamics parameter study
 
 The readers of this manual should not assume the PISM authors know all the correct
 parameters for describing ice flow. While PISM must have *default* values of all
-parameters, to help users get started, [#]_ it has more than two hundred user-configurable
+parameters, to help users get started,\ [#]_ it has more than two hundred user-configurable
 parameters. The goal in this manual is to help the reader adjust them to their desired
 values. While "correct" values may never be known, or may not exist, examining the
 behavior of the model as it depends on parameters is both a nontrivial and an essential
@@ -21,13 +23,14 @@ glaciological understanding :cite:`CuffeyPaterson`.
 To illustrate a parameter study in this Manual we restrict consideration to just two
 important parameters for ice dynamics,
 
-- `q=` ``pseudo_plastic_q``: exponent used in the sliding law which relates basal
-  sliding velocity to basal shear stress in the SSA stress balance; see subsection
-  :ref:`sec-basestrength` for more on this parameter, and
-- `e=` ``sia_enhancement_factor``: values larger than one give flow "enhancement" by
-  making the ice deform more easily in shear than is determined by the standard flow law
-  :cite:`LliboutryDuval1985`, :cite:`PatersonBudd`; applied only in the SIA stress
-  balance; see section :ref:`sec-rheology` for more on this parameter.
+- `q=` :config:`basal_resistance.pseudo_plastic.q`: exponent used in
+  the sliding law which relates basal sliding velocity to basal shear stress in the SSA
+  stress balance; see subsection :ref:`sec-basestrength` for more on this parameter, and
+- `e=` :config:`stress_balance.sia.enhancement_factor`: values larger
+  than one give flow "enhancement" by making the ice deform more easily in shear than is
+  determined by the standard flow law :cite:`LliboutryDuval1985`, :cite:`PatersonBudd`;
+  applied only in the SIA stress balance; see section :ref:`sec-rheology` for more on this
+  parameter.
 
 By varying these parameters over full intervals of values, say `0.1\le q \le 1.0`
 and `1 \le e \le 6`, we could explore a two-dimensional parameter space. But of
@@ -122,7 +125,7 @@ hours to complete the whole parameter study. The runs with `q=0.1` (the more
 "plastic" end of the basal sliding spectrum) took up to four times longer than the
 `q=0.5` and `q=1.0` runs. Roughly speaking, values of `q` which are
 close to zero imply a subglacial till model with a true yield stress, and the result is
-that even small changes in overall ice sheet state (geometry, energy, \dots) will cause
+that even small changes in overall ice sheet state (geometry, energy, ...) will cause
 *some* location to exceed its yield stress and suddenly change flow regime. This will
 shorten the time steps. By contrast, the `e` value is much less significant in
 determining run times.
@@ -142,13 +145,13 @@ jobs to the scheduler. See example scripts ``advanced/paramspawn.sh`` and
 administrator if you don't know what a "job scheduler" is!) Of course, if you have a
 supercomputer then you can redo this parameter study on a 5 km grid.
 
-Results from these runs are seen in Figures :numref:`fig-ivolparamstudy` and
-:numref:`fig-paramstudy`. In the former we see that the `(0.5,3)` run simply
-continues the previous initialization run. In some other graphs we see abrupt initial
-changes, caused by abrupt parameter change, e.g. when the basal sliding becomes much more
-plastic (`q=0.1`). In all cases with `e=1` the flow slows and the sheet grows
-in volume as discharge decreases, while in all cases with `e=6` the flow accelerates
-and the sheet shrinks in volume as discharge increases.
+Results from these runs are seen in :numref:`fig-ivolparamstudy` and
+:numref:`fig-paramstudy`. In the former we see that the `(0.5,3)` run simply continues the
+previous initialization run. In some other graphs we see abrupt initial changes, caused by
+abrupt parameter change, e.g. when the basal sliding becomes much more plastic (`q=0.1`).
+In all cases with `e=1` the flow slows and the sheet grows in volume as discharge
+decreases, while in all cases with `e=6` the flow accelerates and the sheet shrinks in
+volume as discharge increases.
 
 In :numref:`fig-paramstudy` we can compare the surface speed model results to
 observations. Roughly speaking, the ice softness parameter `e` has effects seen
@@ -159,17 +162,19 @@ half of the ice sheet; scan top-to-bottom for `q=0.1,0.5,1.0`, going from
 nearly-plastic at top to linear at bottom.
 
 From such figures we can make an informal assessment and comparison of the results, but
-objective assessment is important. Example objective functionals include: *(i)* compute
-the integral of the square (or other power) of the difference between the model and
-observed surface velocity :cite:`AschwandenAdalgeirsdottirKhroulev`, or *(ii)* compute the
-model-observed differences between the histogram of the number of cells with a given
-surface speed :cite:`BKAJS`. Note that these functionals are measuring the effects of
-changing a small number of parameters, namely two parameters in the current study.
-So-called "inversion" might use the same objective functionals but with a much larger
-parameter space. Inversion is therefore capable of achieving much smaller objective
-measures :cite:`Habermannetal2013`, :cite:`Larouretal2012`, :cite:`Priceetal2011`, though
-at the cost of less understanding, perhaps, of the meaning of the optimal parameter
-values.
+objective assessment is important. Example objective functionals include:
+
+#. compute the integral of the square (or other power) of the difference between the model
+   and observed surface velocity :cite:`AschwandenAdalgeirsdottirKhroulev`, or
+#. compute the model-observed differences between the histogram of the number of cells
+   with a given surface speed :cite:`BKAJS`.
+
+Note that these functionals are measuring the effects of changing a small number of
+parameters, namely two parameters in the current study. So-called "inversion" might use
+the same objective functionals but with a much larger parameter space. Inversion is
+therefore capable of achieving much smaller objective measures :cite:`Habermannetal2013`,
+:cite:`Larouretal2012`, :cite:`Priceetal2011`, though at the cost of less understanding,
+perhaps, of the meaning of the optimal parameter values.
 
 .. rubric:: Footnotes
 
