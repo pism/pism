@@ -16,3 +16,5 @@ Grid and time
    diagnostic.rst
 
    hard-choices.rst
+
+   disabling.rst
