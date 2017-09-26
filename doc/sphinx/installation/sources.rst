@@ -1,4 +1,4 @@
-.. include:: ../prologue.rst
+.. include:: ../global.rst
 
 .. _sec-install-sources:
 

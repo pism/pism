@@ -1,4 +1,4 @@
-.. include:: ../prologue.rst
+.. include:: ../global.rst
 
 .. |date| date::
 .. |flux| replace:: :math:`kg / (m^{2} s)`

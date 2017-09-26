@@ -1,4 +1,4 @@
-.. include:: ../prologue.rst
+.. include:: ../global.rst
 
 On the vertical coordinate in PISM, and a critical change of variable
 =====================================================================
