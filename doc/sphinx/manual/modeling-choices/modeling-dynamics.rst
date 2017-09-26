@@ -1,4 +1,4 @@
-.. include:: ../prologue.rst
+.. include:: ../../prologue.rst
 
 .. _sec-modeling-dynamics:
 
@@ -412,7 +412,7 @@ PISM computes surface gradients to determine the "driving stress"
 
 .. math::
 
-   (\tau_{d,x},\tau_{d,y}) = - \rho g H \grad h,
+   (\tau_{d,x},\tau_{d,y}) = - \rho g H \nabla h,
 
 where `H` is the ice thickness, and `h = H+b` is the ice surface elevation.
 The driving stress enters into both the SIA and SSA stress balances, but in the former the
@@ -448,7 +448,7 @@ is no theoretical advice on the best, most robust mechanism. There are three
 
        .. math::
 
-          \grad h = \grad H + \grad b = \frac{n}{(2n+2)}
+          \nabla h = \nabla H + \nabla b = \frac{n}{(2n+2)}
           \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.
 
        Here `b` is the bed elevation and `h` is the surface elevation. This

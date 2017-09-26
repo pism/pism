@@ -1,4 +1,4 @@
-.. include:: ../prologue.rst
+.. include:: ../../prologue.rst
 
 .. _sec-modeling-subglacier:
 
@@ -452,9 +452,12 @@ subglacial water flux is determined by a generalized Darcy flux relation :cite:`
 :cite:`Schoofetal2012`
 
 .. math::
+   \newcommand{\bq}{\mathbf{q}}
+
+.. math::
    :name: eq-flux
 
-   \bq = - k\, W^\alpha\, |\grad \psi|^{\beta-2} \grad \psi
+   \bq = - k\, W^\alpha\, |\nabla \psi|^{\beta-2} \nabla \psi
 
 where `\bq` is the lateral water flux, `W=` ``bwat`` is the effective thickness of the
 layer of transportable water, `\psi` is the hydraulic potential, and `k`, `\alpha`,

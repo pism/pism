@@ -1,20 +1,5 @@
-.. math stuff
 
 .. default-role:: math
-
-.. math::
-
-   \newcommand{\bq}{\mathbf{q}}
-   \newcommand{\grad}{\nabla}
-   \newcommand{\diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
-
-.. Unfortunately \newcommand included in a math environment in LaTeX
-   is limited to this environment, so we need to define custom
-   commands twice: once for HTML (MathJax), once for LaTeX.
-
-.. raw:: latex
-
-   % all \newcommands above will have to be repeated to build a PDF manual
 
 .. roles
 

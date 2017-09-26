@@ -1,0 +1,18 @@
+.. math stuff
+
+.. math::
+
+   \newcommand{\diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
+   \newcommand{\pdiff}[2]{ \frac{\partial #1}{\partial #2} }
+
+.. Unfortunately \newcommand included in a math environment in LaTeX
+   is limited to this environment, so we need to define custom
+   commands twice: once for HTML (MathJax), once for LaTeX.
+
+   (This has to be done for all \newcommands, including ones defined elsewhere.)
+
+.. raw:: latex
+
+   \newcommand{\diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
+   \newcommand{\pdiff}[2]{ \frac{\partial #1}{\partial #2} }
+

@@ -1,4 +1,4 @@
-.. include:: ../prologue.rst
+.. include:: ../../prologue.rst
 
 .. |diagnostics| replace:: **FIXME: link to the list of diagnostics**
 

@@ -557,6 +557,8 @@ The option :opt:`-ice_surface_temp` (*list of 4 numbers*) determines the surface
 temperature using the 4 parameters `\T{min}`, `\T{max}`, `\h{min}`,
 `\h{max}`. Let
 
+.. include:: ../math-definitions.rst
+
 .. math::
 
   \diff{T}{h} = (\T{max} - \T{min}) / (\h{max} - \h{min})

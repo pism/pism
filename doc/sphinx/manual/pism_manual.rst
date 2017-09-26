@@ -39,14 +39,22 @@ class/object structure of the PISM source code.
    :caption: Contents
    :maxdepth: 1
 
-   netcdf-tools.rst
    std-greenland/getting-started.rst
-   highlevelview.rst
-   init-boot.rst
-   modeling-choices.rst
-   practical-usage.rst
-   simplified-geometry.rst
+
+   highlevelview/highlevelview.rst
+
+   initialization/init-boot.rst
+
+   modeling-choices/modeling-choices.rst
+
+   practical-usage/netcdf-tools.rst
+   practical-usage/practical-usage.rst
+
+   simplified-geometry/simplified-geometry.rst
+
    verification.rst
-   validation.rst
-   jako.rst
+
+   validation/validation.rst
+
+   jakobshavn/jako.rst
 

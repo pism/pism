@@ -1,4 +1,4 @@
-.. include:: ../prologue.rst
+.. include:: ../../prologue.rst
 
 .. contents::
 
