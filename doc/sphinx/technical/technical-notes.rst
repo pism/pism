@@ -6,3 +6,5 @@ Technical notes
    :titlesonly:
 
    vertchange.rst
+
+   bed_roughness.rst
