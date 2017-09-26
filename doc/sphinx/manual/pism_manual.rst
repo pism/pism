@@ -5,6 +5,28 @@
 PISM User's Manual
 ==================
 
+.. toctree::
+   :maxdepth: 2
+
+   std-greenland/getting-started.rst
+
+   highlevelview/highlevelview.rst
+
+   initialization/initialization.rst
+
+   modeling-choices/modeling-choices.rst
+
+   practical-usage/netcdf-tools.rst
+   practical-usage/practical-usage.rst
+
+   simplified-geometry/simplified-geometry.rst
+
+   verification.rst
+
+   validation/validation.rst
+
+   jakobshavn/jako.rst
+
 Welcome!  All information about PISM is online at the home page
 
     |pism-docs|
@@ -34,27 +56,3 @@ class/object structure of the PISM source code.
    don't trust the results of PISM or any other ice sheet model without a fair amount of
    exploration. Also, please don't expect all your questions to be answered here. `Write to
    us <pism-email_>`_ with questions.
-
-.. toctree::
-   :caption: Contents
-   :maxdepth: 1
-
-   std-greenland/getting-started.rst
-
-   highlevelview/highlevelview.rst
-
-   initialization/init-boot.rst
-
-   modeling-choices/modeling-choices.rst
-
-   practical-usage/netcdf-tools.rst
-   practical-usage/practical-usage.rst
-
-   simplified-geometry/simplified-geometry.rst
-
-   verification.rst
-
-   validation/validation.rst
-
-   jakobshavn/jako.rst
-
