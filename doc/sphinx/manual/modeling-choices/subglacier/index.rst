@@ -79,7 +79,7 @@ while power laws for sliding are common across the glaciological literature (e.g
 :eq:`eq-pseudoplastic` has units of stress, regardless of the power `q`.
 
 In both of the above equations :eq:`eq-plastic` and :eq:`eq-pseudoplastic` we call
-`\tau_c` the *yield stress*. It corresponds to the variable ``tauc`` in PISM output files.
+`\tau_c` the *yield stress*. It corresponds to the variable :var:`tauc` in PISM output files.
 We call the power law :eq:`eq-pseudoplastic` a "pseudo-plastic" law with power `q` and
 threshold velocity `u_{\text{threshold}}`. At the threshold velocity the basal shear
 stress `\boldsymbol{\tau}_b` has exact magnitude `\tau_c`. In equation
@@ -176,8 +176,8 @@ mohr_coulomb`` determines these variations in time and space. The value of `\tau
 determined in part by a subglacial hydrology model, including the modeled till-pore water
 amount ``tillwat`` (section :ref:`sec-subhydro`), which then determines the effective
 pressure `N_{til}` (see below). The value of `\tau_c` is also determined in part by a
-material property field `\phi=```tillphi``, the "till friction angle". These quantities
-are related by the Mohr-Coulomb criterion :cite:`CuffeyPaterson`:
+material property field `\phi=` :var:`tillphi`, the "till friction angle". These
+quantities are related by the Mohr-Coulomb criterion :cite:`CuffeyPaterson`:
 
 .. math::
    :name: eq-mohrcoulomb
@@ -188,7 +188,7 @@ Here `c_0` is called the "till cohesion", whose default value in PISM is zero (s
 :cite:`SchoofStream`, formula (2.4)) but which can be set by option :opt:`-till_cohesion`.
 
 Option combination ``-yield_stress constant -tauc X`` can be used to fix the yield stress
-to have value `\tau_c=```X`` at all grounded locations and all times if desired. This is
+to have value `\tau_c = X` at all grounded locations and all times if desired. This is
 unlikely to be a good modelling choice for real ice sheets.
 
 .. list-table:: Command-line options controlling how yield stress is determined
@@ -224,12 +224,12 @@ unlikely to be a good modelling choice for real ice sheets.
        and all times. Only effective if used with ``-yield_stress constant``, because
        otherwise `\tau_c` is updated dynamically.
 
-We find that an effective, though heuristic, way to determine `\phi=```tillphi`` in
+We find that an effective, though heuristic, way to determine `\phi=` :var:`tillphi` in
 :eq:`eq-mohrcoulomb` is to make it a function of bed elevation
 :cite:`AschwandenAdalgeirsdottirKhroulev`, :cite:`Martinetal2011`,
 :cite:`Winkelmannetal2011`. This heuristic is motivated by hypothesis that basal material
 with a marine history should be weak :cite:`HuybrechtsdeWolde`. PISM has a mechanism
-setting `\phi`=``tillphi`` to be a *piecewise-linear* function of bed elevation. The
+setting `\phi =` :var:`tillphi` to be a *piecewise-linear* function of bed elevation. The
 option is
 
 .. code-block:: none
@@ -265,7 +265,7 @@ It is worth noting that an earth deformation model (see section :ref:`sec-beddef
    pismr -i foo.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o bar.nc
    pismr -i bar.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o baz.nc
 
-will use *different* ``tillphi`` fields in the first and second runs. PISM will print a
+will use *different* :var:`tillphi` fields in the first and second runs. PISM will print a
 warning during initialization of the second run:
 
 .. code-block:: none
@@ -275,11 +275,11 @@ warning during initialization of the second run:
    PISM WARNING: -topg_to_phi computation will override the 'tillphi' field
                  present in the input file 'bar.nc'!
 
-Omitting the ``-topg_to_phi`` option in the second run would make PISM continue with the
-same ``tillphi`` field which was set in the first run.
+Omitting the :opt:`-topg_to_phi` option in the second run would make PISM continue with the
+same :var:`tillphi` field which was set in the first run.
 
 Determining the effective pressure
-----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When using the default option ``-yield_stress mohr_coulomb``, the effective pressure on
 the till `N_{til}` is determined by the modeled amount of water in the till. Lower
@@ -293,9 +293,9 @@ PISM.
 Following :cite:`Tulaczyketal2000`, based on laboratory experiments with till extracted
 from an ice stream in Antarctica, :cite:`BuelervanPelt2015` propose the following
 parameterization which is used in PISM. It is based on the ratio `s=W_{til}/W_{til}^{max}`
-where `W_{til}=` ``tillwat`` is the effective thickness of water in the till and
-`W_{til}^{max}=` ``hydrology_tillwat_max`` is the maximum amount of water in the till (see
-section :ref:`sec-subhydro`):
+where `W_{til}=` :var:`tillwat` is the effective thickness of water in the till and
+`W_{til}^{max}=` :config:`hydrology.tillwat_max` is the maximum amount of water in the
+till (see section :ref:`sec-subhydro`):
 
 .. math::
    :name: eq-computeNtil
@@ -303,15 +303,15 @@ section :ref:`sec-subhydro`):
    N_{til} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\}
 
 Here `P_o` is the ice overburden pressure, which is determined entirely by the ice
-thickness and density, and the remaining parameters are set by options in Table
-tab-effective-pressure_. While there is experimental support for the default values of
-`C_c`, `e_0`, and `N_0`, the value of `\delta=```till_effective_fraction_overburden``
-should be regarded as uncertain, important, and subject to parameter studies to assess its
-effect.
+thickness and density, and the remaining parameters are set by options in
+:numref:`tab-effective-pressure`. While there is experimental support for the default
+values of `C_c`, `e_0`, and `N_0`, the value of `\delta=`
+:config:`basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden` should be
+regarded as uncertain, important, and subject to parameter studies to assess its effect.
 
-FIXME: EVOLVING CODE: If the ``tauc_add_transportable_water`` configuration flag is set
-(either in the configuration file or using the :opt:`-tauc_add_transportable_water`
-option), then the above formula becomes FIXME
+FIXME: EVOLVING CODE: If the :config:`basal_yield_stress.add_transportable_water`
+configuration flag is set (either in the configuration file or using the
+:opt:`-tauc_add_transportable_water` option), then the above formula becomes FIXME
 
 .. list-table:: Command-line options controlling how till effective pressure `N_{til}` in
                 equation :eq:`eq-mohrcoulomb` is determined
@@ -523,9 +523,9 @@ geometry evolves, the bed elevation is equal to the starting bed elevation minus
 multiple of the increase in ice thickness from the starting time: `b(t,x,y) = b(0,x,y) - f
 [H(t,x,y) - H(0,x,y)]`. Here `f` is the density of ice divided by the density of the
 mantle, so its value is determined by setting the values of
-``bed_deformation.mantle_density`` and ``constants.ice.density`` in the configuration
-file; see section :ref:`sec-pism-defaults`. For an example and verification, see Test H in
-Verification section.
+:config:`bed_deformation.mantle_density` and :config:`constants.ice.density` in the
+configuration file; see section :ref:`sec-pism-defaults`. For an example and verification,
+see Test H in Verification section.
 
 The second model ``-bed_def lc`` is much more physical. It is based on papers by Lingle
 and Clark :cite:`LingleClark` and Bueler and others :cite:`BLKfastearth`. It generalizes
@@ -584,8 +584,7 @@ lowers the SIA diffusivity. An internal quantity used in this method is a smooth
 of the bedrock topography. As a practical matter for PISM, this theory improves the SIA's
 ability to handle bed roughness because it parameterizes the effects of "higher-order"
 stresses which act on the ice as it flows over bumps. For additional technical description
-of PISM's implementation, see the `Browser <pism-browser_>`_ page *Using Schoof's (2003)
-parameterized bed roughness technique in PISM*.
+of PISM's implementation, see :ref:`sec-bed-roughness`.
 
 This parameterization is "on" by default when using ``pismr``. There is only one
 associated option: :opt:`-bed_smoother_range` gives the half-width of the square smoothing

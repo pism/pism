@@ -19,7 +19,7 @@ PISM User's Manual
    practical-usage/netcdf-tools.rst
    practical-usage/practical-usage.rst
 
-   simplified-geometry/simplified-geometry.rst
+   simplified-geometry/index.rst
 
    verification.rst
 
