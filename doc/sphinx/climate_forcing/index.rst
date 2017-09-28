@@ -8,10 +8,11 @@ Climate forcing
 PISM has a well-defined separation of climate forcing from ice dynamics. This manual is
 about the climate forcing interface.
 
-By contrast, most options documented in the :ref:`sec-users-manual` control the ice dynamics
-part. The User's Manual does, however, give an overview of PISM's surface (atmosphere) and
-ocean (sub-shelf) interfaces. At these interfaces the surface mass and energy balances are
-determined and/or passed to the ice dynamics code.
+By contrast, most options documented in the :ref:`sec-users-manual` control the ice
+dynamics part. The User's Manual does, however, give an :ref:`overview of PISM's surface
+(atmosphere) and ocean (sub-shelf) interfaces <sec-climate-inputs>`. At these interfaces
+the surface mass and energy balances are determined and/or passed to the ice dynamics
+code.
 
 To get started with climate forcing usage we need to introduce some language to describe
 parts of PISM. In this manual a *component* is a piece of PISM code, usually a C++ class.

@@ -88,6 +88,5 @@
 .. _PISM: http://www.pism-docs.org/wiki/doku.php
 .. _pism-browser: http://www.pism-docs.org/doxy/html/index.html
 .. _pism-email: mailto:uaf-pism@alaska.edu
-.. _pism-manual: http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=pism_manual.pdf
 .. _pypismtools: https://github.com/pism/pypismtools
 .. _regional-tools: https://github.com/pism/regional-tools

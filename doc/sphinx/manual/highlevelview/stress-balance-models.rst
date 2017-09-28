@@ -52,8 +52,7 @@ balance is especially important when there are spatial and/or temporal changes i
 strength. This "sliding law" role for the SSA is in addition to its more obvious role in
 ice shelf modeling. The SSA plays both roles in a PISM whole ice sheet model in which
 there are large floating ice shelves (e.g. as in Antarctica :cite:`Golledgeetal2012ant`,
-:cite:`Martinetal2011`, :cite:`Winkelmannetal2011`; see also section :ref:`sec-ross` of
-the current Manual).
+:cite:`Martinetal2011`, :cite:`Winkelmannetal2011`; see also :ref:`sec-ross`).
 
 The "SIA+SSA hybrid" model is recommended for most whole ice sheet modeling purposes
 because it seems to be a good compromise given currently-available data and computational

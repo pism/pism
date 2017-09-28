@@ -395,4 +395,4 @@ This formula replaces the right hand side of :eq:`eq-cfbc-uv`.
 
 By default, `\lambda` is set to zero, but PISM implements a scalar time-dependent "melange
 back pressure fraction offset" forcing in which `\lambda` can be read from a file. Please
-see the *PISM's Climate Forcing Manual* for details.
+see the :ref:`Climate Forcing Manual <sec-ocean-frac-mbp>` for details.

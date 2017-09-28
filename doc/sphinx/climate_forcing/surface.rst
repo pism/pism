@@ -37,7 +37,7 @@ Reading top-surface boundary conditions from a file
 
 This model component was created to force PISM with sampled (possibly periodic) climate
 data by reading ice upper surface boundary conditions from a file. These fields are
-provided directly to the ice dynamics code (see the *User's Manual* for details).
+provided directly to the ice dynamics code (see :ref:`sec-climate-inputs` for details).
 
 PISM will stop if variables :var:`ice_surface_temp` (ice temperature at the ice surface
 but below firn) and :var:`climatic_mass_balance` (top surface mass flux into the ice) are
@@ -74,7 +74,8 @@ For example, to use monthly records and period of 1 year, create a file (say,
      (default: 60, or 5 years' worth of monthly fields).
    - when preparing a file for use with this model, it is best to use the ``t,y,x``
      variable storage order: files using this order can be read in faster than ones using
-     the ``t,x,y`` order, for reasons explained in the *User's Manual*.
+     the ``t,x,y`` order, for reasons :ref:`explained in the User's Manual
+     <sec-pism-io-performance>`.
    
      To change the storage order in a NetCDF file, use ``ncpdq``:
    

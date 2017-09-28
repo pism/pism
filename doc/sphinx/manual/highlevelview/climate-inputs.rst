@@ -14,10 +14,11 @@ well-defined interface*.
 
 Almost no attempt is made here to describe the physics of the climate around ice sheets,
 so see :cite:`massbalanceglossary` for terminology and :cite:`Hock05` for a review of how
-surface melt can be modeled. See the Climate Forcing Manual for much more information on
-PISM's climate-coupling-related options and on the particular fields which are shared
-between the ice dynamics core and the climate model. :numref:`tab-ice-dynamics-bc` lists
-fields which are needed as boundary conditions at the interfaces.
+surface melt can be modeled. See the :ref:`Climate Forcing Manual <sec-climate-forcing>`
+for much more information on PISM's climate-coupling-related options and on the particular
+fields which are shared between the ice dynamics core and the climate model.
+:numref:`tab-ice-dynamics-bc` lists fields which are needed as boundary conditions at the
+interfaces.
 
 All PISM ice sheet models have some kind of interface green in
 :numref:`fig-climate-inputs`) to a subaerial surface processes layer containing snow,
@@ -105,10 +106,11 @@ The "modifiers" in :numref:`fig-climate-input-data-flow` adjust the climate mode
 Modifiers can be chained together so that multiple modifications are made to the outputs
 of the original component. For example, ice-core-derived air temperature offsets, used to
 model the space-time distribution of paleo-climatic surface temperature, is an example of
-an implemented modifier. Please see the Climate Forcing Manual for a list of climate
-components and modifiers included in PISM source code and other details. Users wishing to
-customize PISM's climate inputs and/or couple PISM to a climate model should additionally
-see the `PISM Source Browser <pism-browser_>`_ and the documentation therein.
+an implemented modifier. Please see the :ref:`Climate Forcing Manual
+<sec-climate-forcing>` for a list of climate components and modifiers included in PISM
+source code and other details. Users wishing to customize PISM's climate inputs and/or
+couple PISM to a climate model should additionally see the `PISM Source Browser
+<pism-browser_>`_ and the documentation therein.
 
 :numref:`fig-climate-input-data-flow` illustrates the data flow needed by the ice dynamics
 core. The data flow in the other direction, i.e. needed by the model to which PISM is

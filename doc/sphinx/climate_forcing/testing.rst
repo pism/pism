@@ -12,13 +12,11 @@ This section describes how to use PISM to inspect climate forcing.
 Visualizing climate inputs, without ice dynamics
 ++++++++++++++++++++++++++++++++++++++++++++++++
 
-.. FIXME: link to the manual
-
-Recall that internally in PISM there is a separation of climate inputs from ice dynamics
-(see :ref:`sec-users-manual`). This makes it possible to turn "off" the ice dynamics code
-to visualize the climate mass balance and temperature boundary conditions produced using a
-combination of options and input files. This is helpful during the process of creating
-PISM-readable data files, and modeling with such.
+Recall that internally in PISM there is a :ref:`separation of climate inputs from ice
+dynamics <sec-climate-inputs>`. This makes it possible to turn "off" the ice dynamics
+code to visualize the climate mass balance and temperature boundary conditions produced
+using a combination of options and input files. This is helpful during the process of
+creating PISM-readable data files, and modeling with such.
 
 To do this, use the option :opt:`-test_climate_models` (which is equivalent to
 :opt:`-stress_balance none` and :opt:`-energy none`) together with PISM's reporting
@@ -49,14 +47,16 @@ same values as from ``state.nc``, in variables :var:`climatic_mass_balance`,
 :var:`ice_surface_temp`, reported back to us as the time- and space-dependent climate at
 times ``ys:dt:ye``. It is a boring "movie."
 
-A more interesting example uses a :ref:`positive degree-day scheme <sec-surface-pdd>`). This scheme uses a variable called :var:`precipitation`, and a
-calculation of melting, to get the surface mass balance :var:`climatic_mass_balance`.
+A more interesting example uses a :ref:`positive degree-day scheme <sec-surface-pdd>`).
+This scheme uses a variable called :var:`precipitation`, and a calculation of melting, to
+get the surface mass balance :var:`climatic_mass_balance`.
 
-Assuming that ``g20km_pre100.nc`` was created as described in the *User's Manual*, running
+Assuming that ``g20km_10ka.nc`` was created :ref:`as described in the User's Manual
+<sec-runscript>`, running
 
 .. code-block:: none
 
-    pismr -test_climate_models -no_mass -i g20km_pre100.nc \
+    pismr -test_climate_models -no_mass -i g20km_10ka.nc \
           -atmosphere searise_greenland -surface pdd \
           -ys 0 -ye 1 -extra_times 0:1week:1 \
           -extra_file foo.nc \

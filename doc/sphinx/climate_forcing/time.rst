@@ -42,7 +42,7 @@ Note that the reference year is given in *model years*, not calendar years.
 
 The :var:`time` variable in a forcing file that is to be used as periodic should start at
 `0`. (In other words, time in a file with periodic forcing data is *time since the
-beginning of a period*.) Please see the *User's Manual* for a discussion of time units
+beginning of a period*.) Please see the :ref:`sec-time` for a discussion of time units
 appropriate in forcing files.
 
 .. _sec-time-bounds:

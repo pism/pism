@@ -51,6 +51,8 @@ document except for the ``366_day`` (``all_leap``) calendar.
 Time units in PISM's output files always contain a reference date because it is required
 by the CF metadata conventions.
 
+.. FIXME: PISM does use a calendar, just not a "real" one (365_day).
+
 By default PISM does not use a calendar. This is appropriate for runs that do not require
 precise application of forcing data or reporting on particular dates (paleo-climate runs,
 for example). In this mode PISM ignores the reference date in time unit specifications

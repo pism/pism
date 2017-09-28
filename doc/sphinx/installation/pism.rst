@@ -101,8 +101,7 @@ Follow these steps to build PISM:
 
       export PATH=~/pism/bin:$PATH
 
-#. Now see section :ref:`sec-install-quick-tests` or the *Getting Started* section of the
-   *User’s Manual* to continue.
+#. Now see section :ref:`sec-install-quick-tests` or :ref:`sec-start` to continue.
 
 
 .. rubric:: Footnotes

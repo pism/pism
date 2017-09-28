@@ -10,11 +10,11 @@ This table lists required dependencies for PISM alphabetically.
 .. csv-table::
    :header: Required Library, Comment
 
-   FFTW_,        version >= 3.1
-   GSL_,         version >= 1.15
+   FFTW_,        version `\ge` 3.1
+   GSL_,         version `\ge` 1.15
    MPI_,         any recent version
-   NetCDF_ [#]_, version >= 4.1
-   PETSc_ [#]_,  version >= 3.5
+   NetCDF_ [#]_, version `\ge` 4.1
+   PETSc_ [#]_,  version `\ge` 3.5
    UDUNITS_,     any recent version
 
 Before installing these "by hand", check sections :ref:`sec-install-debian` and

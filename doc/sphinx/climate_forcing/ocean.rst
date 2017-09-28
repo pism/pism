@@ -214,7 +214,7 @@ fraction of the maximum melange back pressure possible at a given location. (We 
 that melange back pressure cannot exceed the pressure of the ice column at a calving
 front.)
 
-Please see the *User's Manual* for details.
+Please see :ref:`sec-model-melange-pressure` for details.
 
 This modifier takes the following command-line options:
 

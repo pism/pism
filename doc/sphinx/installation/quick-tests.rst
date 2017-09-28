@@ -16,7 +16,7 @@ correctly.
 
    If you see some output and a final ``Writing model state`` ``to file ’unnamed.nc’``
    then PISM completed successfully. At the end of this run you get measurements of the
-   difference between the numerical result and the exact solution. See the *User’s Manual*
+   difference between the numerical result and the exact solution. See :ref:`sec-verif`
    for more on PISM verification.
 
    The above "``-n 4``" run should work even if there is only one actual processor (core)

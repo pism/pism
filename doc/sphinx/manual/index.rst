@@ -35,9 +35,9 @@ Please see the extensive lists of PISM publications and applications at that pag
 
 This User's Manual gives examples of how to run PISM using publicly-available data for:
 the whole Greenland ice sheet, the Jakobshavn outlet glacier in Greenland, the Ross ice
-shelf in Antarctica, and a number of simplified geometry tests. It documents all the PISM
-options. It summarizes the continuum models used by PISM, and it illustrates how PISM's
-numerical approximations are verified.
+shelf in Antarctica, and a number of simplified geometry tests. It documents all the
+PISM's command-line options and configuration parameters. It summarizes the continuum
+models used by PISM, and it illustrates how PISM's numerical approximations are verified.
 
 See the :ref:`Installation Manual <sec-installation>` for how to download the PISM source
 code and install it, along with needed libraries. The :ref:`Climate Forcing Manual
@@ -47,7 +47,7 @@ ocean models and data.
 Users who want to understand more deeply how PISM is designed, or who want to extend it,
 will need to go beyond what is described here. See the `Source Code Browser
 <pism-browser_>`_, which is online for the latest stable version. It can be generated from
-source code as described in the PISM Installation Manual. It gives a complete view of the
+source code as described in :ref:`sec-installation`. It gives a complete view of the
 class/object structure of the PISM source code.
 
 .. warning::
