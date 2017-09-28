@@ -6,16 +6,16 @@ PISM |version| documentation
 .. toctree::
    :maxdepth: 3
 
-   installation/INSTALL.rst
+   installation/index.rst
 
-   manual/pism_manual.rst
+   manual/index.rst
 
-   climate_forcing/pism_forcing.rst
+   climate_forcing/index.rst
 
-   technical/technical-notes.rst
+   technical/index.rst
 
    acknowledgements.rst
 
    authorship.rst
 
-   zzz_references
+   zzz_references.rst
