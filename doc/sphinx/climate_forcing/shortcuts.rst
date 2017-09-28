@@ -1,0 +1,8 @@
+.. include:: ../global.rst
+
+.. |flux| replace:: :math:`kg / (m^{2} s)`
+
+.. |variables| replace:: Variables
+.. |options| replace:: Options
+.. |seealso| replace:: See also
+.. |implementation| replace:: C++ class

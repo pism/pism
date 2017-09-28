@@ -165,7 +165,7 @@ Practical application, and Taylor approximation
 
 The above formulas already reflect the recommendations Schoof gives on how to apply his
 formulas (:cite:`Schoofbasaltopg2003`, subsection 4.2). The rest of this page is devoted to
-how the class pism::stressbalance::BedSmoother implements a practical version of this
+how the class :class:`stressbalance::BedSmoother` implements a practical version of this
 theory, based on these recommendations plus some additional approximation.
 
 The averages appearing in his scaling arguments are over an infinite domain, e.g.

@@ -61,7 +61,6 @@ numfig = True
 
 html_theme_options = {"logo" : "pism-logo.png",
                       "github_button" : False,
-                      "show_related" : True,
                       "show_powered_by" : True,
                       "body_text_align" : "justify",
                       "sidebar_collapse" : True,
@@ -80,7 +79,6 @@ html_static_path = ['_static', 'logo']
 html_sidebars = {
     '**': [
         'about.html',
-        'relations.html',  # needs 'show_related': True theme option to display
         'navigation.html',
         'searchbox.html',
     ]
