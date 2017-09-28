@@ -21,7 +21,7 @@ PISM User's Manual
 
    simplified-geometry/index.rst
 
-   verification.rst
+   verification/index.rst
 
    validation/index.rst
 

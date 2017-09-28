@@ -1,5 +1,7 @@
 .. include:: ../global.rst
 
+.. FIXME: This is out of date.
+
 .. _sec-install-documentation:
 
 Rebuilding PISM documentation

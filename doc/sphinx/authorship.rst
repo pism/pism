@@ -1,6 +1,7 @@
 .. include:: global.rst
 
-..
+Authorship
+==========
 
    *Copyright (C) 2004 -- 2017 the PISM authors.*
 
@@ -13,9 +14,6 @@
    have received a copy of the GNU General Public License along with PISM. If not, write
    to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
    02110-1301 USA*
-
-Authorship
-==========
 
 PISM is a joint project between developers in the ice sheet modeling group at the
 University of Alaska (UAF), developers at the Potsdam Institute for Climate Impact

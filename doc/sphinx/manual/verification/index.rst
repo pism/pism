@@ -1,4 +1,4 @@
-.. include:: ../global.rst
+.. include:: ../../global.rst
 
 .. _sec-verif:
 
@@ -179,38 +179,16 @@ steps. Appropriate use of parallelism (``mpiexec -n NN pismv``) and of the ``-sk
 modification to adaptive timestepping accelerates such fine-grid runs; see section
 :ref:`sec-adapt`.
 
-Figures :numref:`fig-thickerrsB` through :numref:`fig-velerrsI` show a sampling of the
-results of verifying PISM using the tests described above. These figures were produced
-automatically using Python scripts ``test/vfnow.py`` } and ``test/vnreport.py``.} See
-section :ref:`sec-scripts`.
+Figures :numref:`fig-thickerrsB` through :numref:`fig-velerrsI` in
+:ref:`sec-convergence-plots` show a sampling of the results of verifying PISM using the
+tests described above. These figures were produced automatically using Python scripts
+``test/vfnow.py`` and ``test/vnreport.py``. See section :ref:`sec-scripts`.
 
 These figures *do not* show outstanding rates of convergence, relative to textbook partial
 differential equation examples. For the errors in tests B and G, see the discussion of
 free margin shape in :cite:`BLKCB`. For the errors in test I, the exact continuum solution is
 not very smooth at the free boundary :cite:`SchoofStream`.
 
-.. figure:: figures/test-B-thickness.png
-   :name: fig-thickerrsB
+.. toctree::
 
-   Numerical thickness errors in test B. See :cite:`BLKCB` for discussion.
-
-.. figure:: figures/test-G-thickness.png
-   :name: fig-thickerrsG
-
-   Numerical thickness errors in test G.  See :cite:`BBL` and :cite:`BLKCB`.
-
-.. figure:: figures/test-G-temp.png
-   :name: fig-temperrsG
-
-   Numerical temperature errors in test G. See :cite:`BBL`.
-
-.. figure:: figures/test-G-surfvels.png
-   :name: fig-surfvelerrsG
-
-   Numerical errors in computed surface velocities in test G.
-
-.. figure:: figures/test-I-errors.png
-   :name: fig-velerrsI
-
-   Numerical errors in horizontal velocities in test I, an ice stream.
-   See :cite:`SchoofStream`, :cite:`BBssasliding`.
+   convergence-figures.rst
