@@ -6,9 +6,9 @@ Utility and test scripts
 ------------------------
 
 In the ``test/`` and ``util/`` subdirectories of the PISM directory the user will find
-some python scripts and one Matlab script, listed in :numref:`tab-scripts-overview`.
-The python scripts are all documented at the *Packages* tab on the `PISM Source Code
-Browser`_. The Python scripts all take option ``--help``.
+some python scripts and one Matlab script, listed in :numref:`tab-scripts-overview`. The
+python scripts are all documented at the *Packages* tab on the `PISM Source Code
+Browser <pism-browser_>`_. The Python scripts all take option ``--help``.
 
 .. list-table:: Some scripts which help in using PISM
    :name: tab-scripts-overview

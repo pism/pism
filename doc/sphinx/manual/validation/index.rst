@@ -29,7 +29,7 @@ Though there are additional complexities to the flow of real ice sheets, an ice 
 shear-thinning fluid with a free surface. PISM ought to be able to model such flows in
 some generality. We test that ability here by comparing PISM's isothermal SIA numerical
 model to a laboratory observations of a 1% Xanthan gum suspension in water in a
-table-top, moving-margin experiment by R.~Sayag and M.~Worster
+table-top, moving-margin experiment by R. Sayag and M. Worster
 :cite:`SayagWorster2013`, :cite:`SayagPeglerWorster2012`. The "gum" fluid is more shear-thinning
 than ice, and it has much lower absolute viscosity values, but it has the same density.
 This flow has total mass `\sim 1` kg, compared to `\sim 10^{18}` kg for the Greenland ice
@@ -51,7 +51,7 @@ radius. The measured radii data are the black dots in :numref:`fig-labgumresult`
    experiment (plan view), showing an axisymmetric front.
 
 The closest glaciological analog would be an ice sheet on a flat bed fed by positive basal
-mass balance (i.e.~"refreeze") underneath the dome, but with zero mass balance elsewhere
+mass balance (i.e. "refreeze") underneath the dome, but with zero mass balance elsewhere
 on the lower and upper surfaces. However, noting that the mass-continuity equation is
 vertically-integrated, we may model the input flux (mass balance) as arriving at the
 *top* of the ice sheet, to use PISM's climate-input mechanisms. The flow though the
@@ -206,7 +206,7 @@ The computational grid here is the "native" `5` km data grid used in ALBMAP. Reg
 options,
 
 - The maximum thickness of the ice is `2766` m so we choose a height for the computational
-  box large enough to contain the ice (i.e.~``-Lz 3000``). Vertical grid resolution
+  box large enough to contain the ice (i.e. ``-Lz 3000``). Vertical grid resolution
   is, however, unimportant in this case because we use the SSA stress balance only, and
   the temperature set at bootstrapping suffices to determine the ice softness; thus the
   options ``-Mz 3 -z_spacing equal -energy none``.
@@ -332,7 +332,7 @@ The PISM command done here is (essentially, and without showing diagnostic outpu
 Several of these options are different from those used in the diagnostic case. First,
 while the command ``-pik`` is the same as before, now each part of its expansion, namely
 ``-cfbc -kill_icebergs -part_grid``, is important. As the calving front evolves
-(i.e.~regardless of the calving law choices), option ``-part_grid`` moves the calving
+(i.e. regardless of the calving law choices), option ``-part_grid`` moves the calving
 front by one grid cell only when the cell is full of the ice flowing into it; see
 :cite:`Albrechtetal2011`. The option ``-kill_icebergs`` is essential to maintain well-posedness
 of the SSA velocity problem at each time step :cite:`Winkelmannetal2011`. See section

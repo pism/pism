@@ -74,7 +74,7 @@ power law
 
 where `u_{\text{threshold}}` is a parameter with units of velocity (see below). Condition
 :eq:`eq-plastic` is studied in :cite:`SchoofStream` and :cite:`SchoofTill` in particular,
-while power laws for sliding are common across the glaciological literature (e.g.~see
+while power laws for sliding are common across the glaciological literature (e.g. see
 :cite:`CuffeyPaterson`, :cite:`GreveBlatter2009`). Notice that the coefficient `\tau_c` in
 :eq:`eq-pseudoplastic` has units of stress, regardless of the power `q`.
 
@@ -208,7 +208,7 @@ unlikely to be a good modelling choice for real ice sheets.
        cell away from floating ice or ocean. Specifically, it replaces the
        normally-computed `\tau_c` from the Mohr-Coulomb relation, which uses the effective
        pressure from the modeled amount of water in the till, by the minimum value of
-       `\tau_c` from Mohr-Coulomb, i.e.~using the effective pressure corresponding to the
+       `\tau_c` from Mohr-Coulomb, i.e. using the effective pressure corresponding to the
        maximum amount of till-stored water. Does not alter the reported amount of till
        water, nor does this mechanism affect water conservation.
    * - :opt:`-plastic_phi` (degrees)
@@ -376,7 +376,7 @@ subglacial layer, in addition to the computed ``basal_melt_rate_grounded`` value
 from surface runoff, for example. Also option :opt:`-hydrology_bmelt_file` allows the user
 to replace the computed ``basal_melt_rate_grounded`` rate by values read from a file,
 thereby effectively decoupling the hydrology model from the ice dynamics
-(esp.~conservation of energy).
+(esp. conservation of energy).
 
 .. list-table:: Subglacial hydrology command-line options which apply to all hydrology models
    :name: tab-hydrology
@@ -478,14 +478,14 @@ elevation.
 For most choices of the relevant parameters and most grid spacings, the ``routing`` model
 is at least two orders of magnitude more expensive computationally than the ``null``
 model. This follows directly from the CFL-type time-step restriction on lateral flow of a
-fluid with velocity on the order of centimeters to meters per second (i.e.~the subglacial
+fluid with velocity on the order of centimeters to meters per second (i.e. the subglacial
 liquid water ``bwat``). (By comparison, much of PISM ice dynamics time-stepping is
 controlled by the much slower velocity of the flowing ice.) Therefore the user should
 start with short runs of order a few model years. The option
 :opt:`-report_mass_accounting` is also recommended, so as to see the time-stepping
 behavior at ``stdout``. Finally, ``daily`` or even ``hourly`` reporting for scalar and
 spatially-distributed time-series to see hydrology model behavior, especially on fine
-grids (e.g.~`< 1` km).
+grids (e.g. `< 1` km).
 
 .. list-table:: Command-line options specific to hydrology model ``routing``
    :name: tab-hydrologyrouting
