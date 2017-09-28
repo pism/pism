@@ -5,28 +5,6 @@
 PISM User's Manual
 ==================
 
-.. toctree::
-   :maxdepth: 2
-
-   std-greenland/index.rst
-
-   highlevelview/index.rst
-
-   initialization/index.rst
-
-   modeling-choices/index.rst
-
-   practical-usage/netcdf-tools.rst
-   practical-usage/index.rst
-
-   simplified-geometry/index.rst
-
-   verification/index.rst
-
-   validation/index.rst
-
-   jakobshavn/index.rst
-
 Welcome!  All information about PISM is online at the home page
 
     |pism-docs|
@@ -47,7 +25,7 @@ ocean models and data.
 Users who want to understand more deeply how PISM is designed, or who want to extend it,
 will need to go beyond what is described here. See the `Source Code Browser
 <pism-browser_>`_, which is online for the latest stable version. It can be generated from
-source code as described in :ref:`sec-installation`. It gives a complete view of the
+source code as described in :ref:`sec-install-documentation`. It gives a complete view of the
 class/object structure of the PISM source code.
 
 .. warning::
@@ -56,3 +34,25 @@ class/object structure of the PISM source code.
    don't trust the results of PISM or any other ice sheet model without a fair amount of
    exploration. Also, please don't expect all your questions to be answered here. `Write to
    us <pism-email_>`_ with questions.
+
+.. toctree::
+   :caption: Contents
+
+   std-greenland/index.rst
+
+   highlevelview/index.rst
+
+   initialization/index.rst
+
+   modeling-choices/index.rst
+
+   practical-usage/netcdf-tools.rst
+   practical-usage/index.rst
+
+   simplified-geometry/index.rst
+
+   verification/index.rst
+
+   validation/index.rst
+
+   jakobshavn/index.rst
