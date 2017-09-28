@@ -9,6 +9,8 @@ Practical usage
 
 .. toctree::
 
+   netcdf-tools.rst
+
    input-output.rst
 
    saving-time-series.rst
@@ -20,6 +22,8 @@ Practical usage
    diagnostic-viewers.rst
 
    parameters.rst
+
+   parameter-list.rst
 
    regridding.rst
 

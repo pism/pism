@@ -55,6 +55,8 @@ correctly.
 Next steps
 ==========
 
+.. FIXME: documentation is not in LaTeX any more
+
 Start with the section :ref:`sec-start`. Completely up-to-date documentation can be built
 from LaTeX source in the ``doc/`` sub-directory, as described in the next section.
 

@@ -34,7 +34,7 @@ Here are some issues we know about.
    in particular.
 
 - Note that the PISM build system uses ``ncgen`` from the NetCDF package to generate the
-   configuration file ``pism_config.nc``. This means that a working NetCDF installation is
+   configuration file |config-file|. This means that a working NetCDF installation is
    required on both the "host" and the "target" systems when cross-compiling PISM.
 
 - Some systems support static libraries only. To build PISM statically and tell CMake not

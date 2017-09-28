@@ -16,8 +16,10 @@ conditions for the evolution equations describing an ice sheet are not all obser
 a principal example of this problem, these initial conditions include the temperature
 within the ice. Glaciological observations, specifically remote-sensed observations which
 cover a large fraction or all of an ice sheet, never include this temperature field in
-practice. Thus ice sheet modelling often does something like this to get "reasonable"
-initial fields within the ice:
+practice.
+
+Ice sheet models often need to do something like this to get "reasonable" initial fields
+within the ice:
 
 #. start only with (potentially) observable quantities like surface elevation, ice
    thickness, ice surface temperature, surface mass balance, and geothermal flux,
@@ -67,7 +69,7 @@ thickness, surface temperature, and geothermal flux.
 Allowed formats for a bootstrapping file are relatively simple to describe. 
 
 #. NetCDF variables should have the ``units`` containing a UDUNITS_\-compatible string. If
-   this attribute is missing, PISM will assume that a field uses MKS units. [#]_
+   this attribute is missing, PISM will assume that a field uses MKS units.\ [#]_
 #. NetCDF coordinate variables should have ``standard_name`` or ``axis`` attributes. These
    are used to determine which *spatial* dimension a NetCDF dimension corresponds to; for
    example see ``ncdump -h`` output from a file produced by PISM. The :var:`x` and
@@ -77,7 +79,11 @@ Allowed formats for a bootstrapping file are relatively simple to describe.
 #. The ``standard_name`` attribute is used, when available, to identify a variable, so
    variable names need not match corresponding variables in a PISM output file. See the
    `PISM Source Code browser <pism-browser_>`_ for a list of CF standard names used in
-   PISM. Specifically, the bed elevation (topography) is read by ``standard_name`` =
+   PISM.
+
+   .. FIXME: put the list of standard names under "Technical notes"
+
+   Specifically, the bed elevation (topography) is read by ``standard_name`` =
    ``bedrock_altitude`` and the ice thickness by ``standard_name`` =
    ``land_ice_thickness``.
 #. Any two-dimensional variable except bed topography and ice thickness may be missing.

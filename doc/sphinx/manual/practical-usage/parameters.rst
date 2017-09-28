@@ -2,13 +2,12 @@
 
 .. _sec-pism-defaults:
 
-PISM's configuration flags and parameters, and how to change them
------------------------------------------------------------------
+PISM's configuration parameters and how to change them
+------------------------------------------------------
 
-PISM's behavior depends on values of many flags and physical parameters (see `PISM Source
-Code Browser <pism-browser_>`_ for details). Most of parameters have default values [#]_
-which are read from the configuration file ``pism_config.nc`` in the ``lib``
-sub-directory.
+PISM's behavior depends on values of many flags and physical parameters (see
+:ref:`sec-parameter-list` for details). Most of parameters have default values [#]_ which
+are read from the configuration file |config-file| in the ``lib`` sub-directory.
 
 It is possible to run PISM with an alternate configuration file using the :opt:`-config`
 command-line option:
@@ -18,10 +17,10 @@ command-line option:
    pismr -i foo.nc -y 1000 -config my_config.nc
 
 The file ``my_config.nc`` has to contain *all* of the flags and parameters present in
-``pism_config.nc``.
+|config-file|.
 
-The list of parameters is too long to include here; please see the `PISM Source Code
-Browser`_ for an automatically-generated table describing them.
+The list of parameters is too long to include here; please see the
+:ref:`sec-parameter-list` for an automatically-generated table describing them.
 
 Some command-line options *set* configuration parameters; some PISM executables have
 special parameter defaults. To examine what parameters were used in a particular run, look
@@ -39,8 +38,8 @@ parameters of interest were controlled using command-line options then one can u
 Alternatively, one can change parameter values by using an "overriding" configuration
 file. The :opt:`-config_override` command-line option provides this alternative. A file
 used with this option can have a subset of the configuration flags and parameters present
-in ``pism_config.nc``. Moreover, PISM adds the ``pism_config`` variable with values used
-in a run to the output file, making it easy to see which parameters were used.
+in |config-file|. Moreover, PISM adds the ``pism_config`` variable with values used in a
+run to the output file, making it easy to see which parameters were used.
 
 Here's an example. Suppose we want to compare the dynamics of an ice-sheet on Earth to the
 same ice-sheet on Mars, where the only physical change was to the value of the
@@ -99,7 +98,7 @@ Saving PISM's configuration for post-processing
 In addition to saving ``pism_config`` in the output file, PISM automatically adds this
 variable to all files it writes (snap shots, time series of scalar and spatially-varying
 diagnostic quantities, and backups). This may be useful for post-processing and analysis
-of parameter sties as the user has easy access to all configuration options, model
+of parameter studies as the user has easy access to all configuration options, model
 choices, etc., without the need to keep run scripts around.
 
 .. rubric:: Footnotes

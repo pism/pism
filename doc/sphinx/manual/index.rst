@@ -46,7 +46,6 @@ class/object structure of the PISM source code.
 
    modeling-choices/index.rst
 
-   practical-usage/netcdf-tools.rst
    practical-usage/index.rst
 
    simplified-geometry/index.rst

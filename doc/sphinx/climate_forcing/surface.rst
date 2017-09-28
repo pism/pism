@@ -398,8 +398,8 @@ In this case ``foo.nc`` contains fields :var:`climatic_mass_balance` and
 :var:`ice_surface_temp`, as normal for ``-surface given``, and ``bar.nc`` contains fields
 :var:`thk` which will serve as the target thickness and :var:`ftt_mask` which defines the
 map plane area where this adjustment is applied. Option :opt:`-force_to_thickness_alpha`
-adjusts the value of `\alpha`, which has a default value specified in the `Source
-Code Browser <pism-browser_>`_.
+adjusts the value of `\alpha`, which has a default value specified in the
+:ref:`sec-parameter-list`.
 
 In addition to this one can specify a multiplicative factor `C` used in areas where
 the target thickness field has less than

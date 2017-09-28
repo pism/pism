@@ -178,4 +178,4 @@ perhaps, of the meaning of the optimal parameter values.
 
 .. rubric:: Footnotes
 
-.. [#] They are stored in human-readable form in the file ``src/pism_config.cdl``.
+.. [#] They are stored in human-readable form in the file |config-cdl|.

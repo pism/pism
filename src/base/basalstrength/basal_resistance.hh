@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2015, 2017 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ class Logger;
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!
-  This \e pseudo -plastic type can actually describe anything from linearly 
+  This *pseudo* -plastic type can actually describe anything from linearly
   viscous till to purely plastic till.
 */
 class IceBasalResistancePlasticLaw {

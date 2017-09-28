@@ -47,12 +47,15 @@ resulting file, like this:
    pisms -eisII A -y 10 -o foo.nc
    ncdump -h foo.nc | less
 
-Note that variables in the output file have a ``pism_intent`` attribute} attribute. When
-``pism_intent`` = ``diagnostic``, the variable can be deleted from the file without
+Note that variables in the output file have a ``pism_intent`` attribute. When
+``pism_intent`` is ``diagnostic``, the variable can be deleted from the file without
 affecting whether PISM can use it as a :opt:`-i` input file. Variables with
-``pism_intent`` = ``model_state``, by contrast, must be present when using :opt:`-i`.
+``pism_intent`` is ``model_state``, by contrast, must be present when using :opt:`-i`.
 
 The automatically-produced :var:`time` variable has a ``units`` attribute like ``"seconds
-since 1-1-1"`` because the CF metadata conventions require a reference date. By default
-PISM ignores this reference date except when it is used in unit conversions based on a
-calendar (see below).
+since 1-1-1"`` because the CF metadata conventions require a reference date.
+
+.. FIXME: double-check the statement below
+
+By default PISM ignores this reference date except when it is used in unit conversions
+based on a calendar (see below).

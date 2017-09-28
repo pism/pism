@@ -2,8 +2,8 @@
 
 .. _sec-modeling-computational:
 
-Grid and time
-=============
+Model domain, grid, and time
+============================
 
 .. toctree::
 
@@ -16,5 +16,3 @@ Grid and time
    diagnostic.rst
 
    hard-choices.rst
-
-   disabling.rst

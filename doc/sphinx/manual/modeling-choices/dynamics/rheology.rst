@@ -59,13 +59,11 @@ among a number of "cold ice" laws listed in :numref:`tab-flowlaw` which do not u
 liquid water fraction.
 
 All flow law parameters can be changed using configuration parameters; see section
-:ref:`sec-pism-defaults` and the implementation of flow laws in the \emph{Source Code
-Browser}. Note that different flow laws have different numbers of parameters, but all have
-at least two parameters (e.g. `A_0` and `n` in ``isothermal_glen``). One can
-create a new, and reasonably arbitrarily, scalar function `F` by modifying source
-code; see source files ``flowlaws.hh``, ``flowlaws.cc`` in ``src/base/rheology/``. To
-assist such modifications, note that :numref:`tab-flowlaw` below also lists the C++
-classes declared in ``flowlaw.hh``.
+:ref:`sec-pism-defaults` and the implementation of flow laws in the `Source Code Browser
+<pism-browser_>`_. Note that different flow laws have different numbers of parameters, but
+all have at least two parameters (e.g. `A_0` and `n` in ``isothermal_glen``). One can
+create a new, and reasonably arbitrarily, scalar function `F` by modifying source code;
+see source files in ``src/base/rheology/``.
 
 Choosing the flow laws for SIA and SSA stress balances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -84,11 +82,9 @@ so option "``-ssa_flow_law gk``" is an error.
    :header-rows: 1
 
    * - Name
-     - C++ class
      - Comments and References
 
    * - ``gpbld``
-     - :class:`rheology::GPBLD`
      - Glen-Paterson-Budd-Lliboutry-Duval law :cite:`LliboutryDuval1985`, the enthalpy-based
        default in PISM :cite:`AschwandenBuelerKhroulevBlatter`. Extends the Paterson-Budd law
        (below) to positive liquid water fraction. If `A_{c}(T)` is from Paterson-Budd then
@@ -103,7 +99,6 @@ so option "``-ssa_flow_law gk``" is an error.
        capped at level :config:`flow_law.gpbld.water_frac_observed_limit`.
 
    * - ``gpbld3``
-     - :class:`rheology::GPBLD3`
      - Same as ``gpbld``, but with the fixed Glen exponent `n = 3`.
 
        This flow law implementation is *significantly faster* thanks to a number of
@@ -113,7 +108,6 @@ so option "``-ssa_flow_law gk``" is an error.
        configuration parameters).
 
    * - ``pb``
-     - :class:`rheology::PatersonBudd`
      - Paterson-Budd law, the cold-mode default. Fixed Glen exponent `n=3`. Has a split
        "Arrhenius" term `A(T) = A \exp(-Q/RT^*)` where
 
@@ -136,19 +130,16 @@ so option "``-ssa_flow_law gk``" is an error.
        here `T^*` is pressure-adjusted temperature :cite:`PatersonBudd`.
 
    * - ``arr``
-     - :class:`rheology::PatersonBuddCold`
      - *Cold* part of Paterson-Budd. Regardless of temperature, the `A` and `Q` values for
        `T^*<263` K in the Paterson-Budd law apply. This is the flow law used in the
        thermomechanically-coupled exact solutions run by ``pismv -test F`` and
        ``pismv -test G`` :cite:`BBL`, :cite:`BB`.
 
    * - ``arrwarm``
-     - :class:`rheology::PatersonBuddWarm`
      - *Warm* part of Paterson-Budd. Regardless of temperature, the `A` and `Q` values for
        `T^*>263` K in Paterson-Budd apply.
 
    * - ``hooke``
-     - :class:`rheology::Hooke`
      - Hooke law with
 
        .. math::
@@ -158,7 +149,6 @@ so option "``-ssa_flow_law gk``" is an error.
        Fixed Glen exponent `n=3` and constants as in :cite:`Hooke`, :cite:`PayneBaldwin`.
 
    * - ``isothermal_glen``
-     - :class:`rheology::IsothermalGlen`
      - The isothermal Glen flow law. Here `F(\sigma) = A_0 \sigma^{n-1}` with inverse
        `\nu(D) = \frac{1}{2} B_0 D^{(1-n)/(2n)}` where `A_0` is the ice softness and
        `B_0=A_0^{-1/n}` is the ice hardness.
@@ -169,10 +159,8 @@ so option "``-ssa_flow_law gk``" is an error.
    :header-rows: 1
 
    * - Name
-     - C++ class
      - Comments and References
    * - ``gk``
-     - :class:`rheology::GoldsbyKohlstedt`
      - This law has a combination of exponents from `n=1.8` to `n=4`
        :cite:`GoldsbyKohlstedt`. It can only be used by the SIA stress balance. Because it has
        more than one power, option ``-sia_n`` has no effect, though ``-sia_e`` works as
