@@ -7,16 +7,25 @@ Ice rheology
 
 .. contents::
 
-The "rheology" of a viscous fluid refers to the relation between the applied stress and the resulting deformation, the strain rate.  The models of ice rheology available in PISM are all isotropic :cite:`Paterson`.   A rheology in this class is described by a "flow law", which is, in the most general case in PISM, a function `F(\sigma,T,\omega,P,d)` in the "constitutive relation" form
+The "rheology" of a viscous fluid refers to the relation between the applied stress and
+the resulting deformation, the strain rate. The models of ice rheology available in PISM
+are all isotropic :cite:`Paterson`. A rheology in this class is described by a "flow law",
+which is, in the most general case in PISM, a function `F(\sigma,T,\omega,P,d)` in the
+"constitutive relation" form
 
 .. math::
    :name: eq-constitutive
 
    D_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'.
 
-Here `D_{ij}` is the strain rate tensor, `\sigma_{ij}'` is the stress deviator tensor, `T` is the ice temperature, `\omega` is the liquid water fraction, `P` is the pressure, `d` is the grain size, and `\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F = \frac{1}{2} \sigma_{ij}' \sigma_{ij}'` defines the second invariant `\sigma` of the stress deviator tensor.
+Here `D_{ij}` is the strain rate tensor, `\sigma_{ij}'` is the stress deviator tensor, `T`
+is the ice temperature, `\omega` is the liquid water fraction, `P` is the pressure, `d` is
+the grain size, and `\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F = \frac{1}{2} \sigma_{ij}'
+\sigma_{ij}'` defines the second invariant `\sigma` of the stress deviator tensor.
 
-Form :eq:`eq-constitutive` of the flow law is used in the SIA, but the "viscosity" form of a flow law, found by inverting the constitutive relation :eq:`eq-constitutive`, is needed for ice shelf and ice stream (SSA) flow :cite:`BBssasliding`:
+Form :eq:`eq-constitutive` of the flow law is used in the SIA, but the "viscosity" form of
+a flow law, found by inverting the constitutive relation :eq:`eq-constitutive`, is needed
+for ice shelf and ice stream (SSA) flow :cite:`BBssasliding`:
 
 .. math::
    :name: eq-viscosityform
@@ -70,9 +79,9 @@ Choosing the flow laws for SIA and SSA stress balances
 
 Command-line options :opt:`-sia_flow_law` and :opt:`-ssa_flow_law` choose which flow law
 is used by the SIA and SSA stress balances, respectively. Allowed arguments are listed in
-Tables :numref:`tab-flowlaw` and :numref:`tab-flowlawgk` below. Viscosity form
-:eq:`eq-viscosityform` is not known for the Goldsby-Kohlstedt law :cite:`GoldsbyKohlstedt`,
-so option "``-ssa_flow_law gk``" is an error.
+:numref:`tab-flowlaw` below. Viscosity form :eq:`eq-viscosityform` is not known for the
+Goldsby-Kohlstedt law :cite:`GoldsbyKohlstedt`, so option "``-ssa_flow_law gk``" is an
+error.
 
 .. list-table:: Single-power flow laws. Choose the ice rheology using ``-sia_flow_law``
                 and ``-ssa_flow_law`` and one of the names in this table. Flow law choices
@@ -153,13 +162,6 @@ so option "``-ssa_flow_law gk``" is an error.
        `\nu(D) = \frac{1}{2} B_0 D^{(1-n)/(2n)}` where `A_0` is the ice softness and
        `B_0=A_0^{-1/n}` is the ice hardness.
 
-
-.. list-table:: The Goldsby-Kohlstedt flow law. Use option ``-sia_flow_law gk``
-   :name: tab-flowlawgk
-   :header-rows: 1
-
-   * - Name
-     - Comments and References
    * - ``gk``
      - This law has a combination of exponents from `n=1.8` to `n=4`
        :cite:`GoldsbyKohlstedt`. It can only be used by the SIA stress balance. Because it has
