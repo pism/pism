@@ -17,7 +17,7 @@ PISM User's Manual
    modeling-choices/index.rst
 
    practical-usage/netcdf-tools.rst
-   practical-usage/practical-usage.rst
+   practical-usage/index.rst
 
    simplified-geometry/index.rst
 
