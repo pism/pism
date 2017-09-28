@@ -8,11 +8,11 @@ PISM User's Manual
 .. toctree::
    :maxdepth: 2
 
-   std-greenland/getting-started.rst
+   std-greenland/index.rst
 
-   highlevelview/highlevelview.rst
+   highlevelview/index.rst
 
-   initialization/initialization.rst
+   initialization/index.rst
 
    modeling-choices/index.rst
 
@@ -23,9 +23,9 @@ PISM User's Manual
 
    verification.rst
 
-   validation/validation.rst
+   validation/index.rst
 
-   jakobshavn/jako.rst
+   jakobshavn/index.rst
 
 Welcome!  All information about PISM is online at the home page
 
