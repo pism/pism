@@ -13,62 +13,62 @@ netcdf pism_config {
     pism_config:age.initial_value_units = "years";
 
     pism_config:atmosphere.fausto_air_temp.c_ma = -0.7189;
-    pism_config:atmosphere.fausto_air_temp.c_ma_doc = "latitude-dependence coefficient for formula (1) in [@ref Faustoetal2009] ";
+    pism_config:atmosphere.fausto_air_temp.c_ma_doc = "latitude-dependence coefficient for formula (1) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.c_ma_type = "scalar";
     pism_config:atmosphere.fausto_air_temp.c_ma_units = "Kelvin / degree_north";
 
     pism_config:atmosphere.fausto_air_temp.c_mj = -0.1585;
-    pism_config:atmosphere.fausto_air_temp.c_mj_doc = "latitude-dependence coefficient for formula (2) in [@ref Faustoetal2009] ";
+    pism_config:atmosphere.fausto_air_temp.c_mj_doc = "latitude-dependence coefficient for formula (2) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.c_mj_type = "scalar";
     pism_config:atmosphere.fausto_air_temp.c_mj_units = "Kelvin / degree_north";
 
     pism_config:atmosphere.fausto_air_temp.d_ma = 314.98;
-    pism_config:atmosphere.fausto_air_temp.d_ma_doc = "41.83+273.15; base temperature for formula (1) in [@ref Faustoetal2009] ";
+    pism_config:atmosphere.fausto_air_temp.d_ma_doc = "41.83+273.15; base temperature for formula (1) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.d_ma_type = "scalar";
     pism_config:atmosphere.fausto_air_temp.d_ma_units = "Kelvin";
 
     pism_config:atmosphere.fausto_air_temp.d_mj = 287.85;
-    pism_config:atmosphere.fausto_air_temp.d_mj_doc = "= 14.70+273.15; base temperature for formula (2) in [@ref Faustoetal2009] ";
+    pism_config:atmosphere.fausto_air_temp.d_mj_doc = "= 14.70+273.15; base temperature for formula (2) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.d_mj_type = "scalar";
     pism_config:atmosphere.fausto_air_temp.d_mj_units = "Kelvin";
 
     pism_config:atmosphere.fausto_air_temp.gamma_ma = -0.006309;
-    pism_config:atmosphere.fausto_air_temp.gamma_ma_doc = "= -6.309 / 1km; mean slope lapse rate for formula (1) in [@ref Faustoetal2009] ";
+    pism_config:atmosphere.fausto_air_temp.gamma_ma_doc = "= -6.309 / 1km; mean slope lapse rate for formula (1) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.gamma_ma_type = "scalar";
     pism_config:atmosphere.fausto_air_temp.gamma_ma_units = "Kelvin / meter";
 
     pism_config:atmosphere.fausto_air_temp.gamma_mj = -0.005426;
-    pism_config:atmosphere.fausto_air_temp.gamma_mj_doc = "= -5.426 / 1km; mean slope lapse rate for formula (2) in [@ref Faustoetal2009] ";
+    pism_config:atmosphere.fausto_air_temp.gamma_mj_doc = "= -5.426 / 1km; mean slope lapse rate for formula (2) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.gamma_mj_type = "scalar";
     pism_config:atmosphere.fausto_air_temp.gamma_mj_units = "Kelvin / meter";
 
     pism_config:atmosphere.fausto_air_temp.kappa_ma = 0.0672;
-    pism_config:atmosphere.fausto_air_temp.kappa_ma_doc = "longitude-dependence coefficient for formula (1) in [@ref Faustoetal2009] ";
+    pism_config:atmosphere.fausto_air_temp.kappa_ma_doc = "longitude-dependence coefficient for formula (1) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.kappa_ma_type = "scalar";
     pism_config:atmosphere.fausto_air_temp.kappa_ma_units = "Kelvin / degree_west";
 
     pism_config:atmosphere.fausto_air_temp.kappa_mj = 0.0518;
-    pism_config:atmosphere.fausto_air_temp.kappa_mj_doc = "longitude-dependence coefficient for formula (2) in [@ref Faustoetal2009] ";
+    pism_config:atmosphere.fausto_air_temp.kappa_mj_doc = "longitude-dependence coefficient for formula (2) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.kappa_mj_type = "scalar";
     pism_config:atmosphere.fausto_air_temp.kappa_mj_units = "Kelvin / degree_west";
 
     pism_config:atmosphere.fausto_air_temp.summer_peak_day = 196;
-    pism_config:atmosphere.fausto_air_temp.summer_peak_day_doc = "day of year for July 15; used in corrected formula (4) in [@ref Faustoetal2009] ";
+    pism_config:atmosphere.fausto_air_temp.summer_peak_day_doc = "day of year for July 15; used in corrected formula (4) in :cite:`Faustoetal2009`";
     pism_config:atmosphere.fausto_air_temp.summer_peak_day_type = "integer";
     pism_config:atmosphere.fausto_air_temp.summer_peak_day_units = "ordinal day number";
 
     pism_config:atmosphere.precip_exponential_factor_for_temperature = 0.07041666667;
-    pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [@ref Huybrechts02] ";
+    pism_config:atmosphere.precip_exponential_factor_for_temperature_doc = "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "scalar";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
 
     pism_config:basal_resistance.beta_ice_free_bedrock = 1.8e9;
-    pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from [@ref HulbeMacAyeal]; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
+    pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
     pism_config:basal_resistance.beta_ice_free_bedrock_type = "scalar";
     pism_config:basal_resistance.beta_ice_free_bedrock_units = "Pascal second meter-1";
 
     pism_config:basal_resistance.plastic.regularization = 0.01;
-    pism_config:basal_resistance.plastic.regularization_doc = "Set the value of @f$\\epsilon@f$ regularization of plastic till; this is the second @f$\\epsilon@f$ in formula (4.1) in [@ref SchoofStream]";
+    pism_config:basal_resistance.plastic.regularization_doc = "Set the value of `\\epsilon` regularization of plastic till; this is the second `\\epsilon` in formula (4.1) in :cite:`SchoofStream`";
     pism_config:basal_resistance.plastic.regularization_option = "plastic_reg";
     pism_config:basal_resistance.plastic.regularization_type = "scalar";
     pism_config:basal_resistance.plastic.regularization_units = "meter / year";
@@ -126,13 +126,13 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.till_cohesion_units = "Pascal";
 
     pism_config:basal_yield_stress.mohr_coulomb.till_compressibility_coefficient = 0.12;
-    pism_config:basal_yield_stress.mohr_coulomb.till_compressibility_coefficient_doc = "coefficient of compressiblity of till; value from [@ref Tulaczyketal2000]";
+    pism_config:basal_yield_stress.mohr_coulomb.till_compressibility_coefficient_doc = "coefficient of compressiblity of till; value from :cite:`Tulaczyketal2000`";
     pism_config:basal_yield_stress.mohr_coulomb.till_compressibility_coefficient_option = "till_compressibility_coefficient";
     pism_config:basal_yield_stress.mohr_coulomb.till_compressibility_coefficient_type = "scalar";
     pism_config:basal_yield_stress.mohr_coulomb.till_compressibility_coefficient_units = "pure number";
 
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden = 0.02;
-    pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_doc = "delta in notes; N_0 = delta P_o where P_o is overburden pressure; N_0 is reference (low) value of effective pressure (i.e. normal stress); N_0 scales with overburden pressure unlike [@ref Tulaczyketal2000]; default value from Greenland and Antarctic model runs";
+    pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_doc = "`\\delta` in notes; `N_0 = \\delta P_o` where `P_o` is overburden pressure; `N_0` is reference (low) value of effective pressure (i.e. normal stress); `N_0` scales with overburden pressure unlike :cite:`Tulaczyketal2000`; default value from Greenland and Antarctic model runs";
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_option = "till_effective_fraction_overburden";
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_type = "scalar";
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_units = "pure number";
@@ -150,12 +150,12 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.till_phi_default_units = "degrees";
 
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_effective_pressure = 1000.0;
-    pism_config:basal_yield_stress.mohr_coulomb.till_reference_effective_pressure_doc = "reference effective pressure N_0; value from [@ref Tulaczyketal2000]";
+    pism_config:basal_yield_stress.mohr_coulomb.till_reference_effective_pressure_doc = "reference effective pressure N_0; value from :cite:`Tulaczyketal2000`";
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_effective_pressure_type = "scalar";
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_effective_pressure_units = "Pascal";
 
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_void_ratio = 0.69;
-    pism_config:basal_yield_stress.mohr_coulomb.till_reference_void_ratio_doc = "void ratio at reference effective pressure N_0; value from [@ref Tulaczyketal2000]";
+    pism_config:basal_yield_stress.mohr_coulomb.till_reference_void_ratio_doc = "void ratio at reference effective pressure N_0; value from :cite:`Tulaczyketal2000`";
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_void_ratio_option = "till_reference_void_ratio";
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_void_ratio_type = "scalar";
     pism_config:basal_yield_stress.mohr_coulomb.till_reference_void_ratio_units = "pure number";
@@ -195,23 +195,23 @@ netcdf pism_config {
     pism_config:bed_deformation.lc.elastic_model_type = "boolean";
 
     pism_config:bed_deformation.mantle_density = 3300.0;
-    pism_config:bed_deformation.mantle_density_doc = "half-space (mantle) density used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
+    pism_config:bed_deformation.mantle_density_doc = "half-space (mantle) density used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`";
     pism_config:bed_deformation.mantle_density_type = "scalar";
     pism_config:bed_deformation.mantle_density_units = "kg meter-3";
 
     pism_config:bed_deformation.lithosphere_flexural_rigidity = 5.0e24;
-    pism_config:bed_deformation.lithosphere_flexural_rigidity_doc = "lithosphere flexural rigidity used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
+    pism_config:bed_deformation.lithosphere_flexural_rigidity_doc = "lithosphere flexural rigidity used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`";
     pism_config:bed_deformation.lithosphere_flexural_rigidity_type = "scalar";
     pism_config:bed_deformation.lithosphere_flexural_rigidity_units = "Newton meter";
 
     pism_config:bed_deformation.mantle_viscosity = 1.0e21;
-    pism_config:bed_deformation.mantle_viscosity_doc = "half-space (mantle) viscosity used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
+    pism_config:bed_deformation.mantle_viscosity_doc = "half-space (mantle) viscosity used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`";
     pism_config:bed_deformation.mantle_viscosity_type = "scalar";
     pism_config:bed_deformation.mantle_viscosity_units = "Pascal second";
 
     pism_config:bed_deformation.model = "none";
     pism_config:bed_deformation.model_choices = "none,iso,lc";
-    pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use. 'iso' is point-wise isostasy, 'lc' is the Lingle-Clark model (see [@ref LingleClark], requires FFTW3).";
+    pism_config:bed_deformation.model_doc = "Selects a bed deformation model to use. 'iso' is point-wise isostasy, 'lc' is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW3).";
     pism_config:bed_deformation.model_option = "bed_def";
     pism_config:bed_deformation.model_type = "keyword";
 
@@ -282,7 +282,7 @@ netcdf pism_config {
     pism_config:bootstrapping.temperature_heuristic_type = "keyword";
 
     pism_config:calving.eigen_calving.K = 0.0;
-    pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references [@ref Levermannetal2012, @ref Martinetal2011] use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
+    pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
     pism_config:calving.eigen_calving.K_option = "eigen_calving_K";
     pism_config:calving.eigen_calving.K_type = "scalar";
     pism_config:calving.eigen_calving.K_units = "meter second";
@@ -324,7 +324,7 @@ netcdf pism_config {
     pism_config:calving.thickness_calving.threshold_file_type = "string";
 
     pism_config:calving.vonmises.sigma_max = 1.0e6;
-    pism_config:calving.vonmises.sigma_max_doc = "Set maximum tensile stress.  Note references [@ref Morlighem2016] use 1.0e6 Pa.";
+    pism_config:calving.vonmises.sigma_max_doc = "Set maximum tensile stress.  Note references :cite:`Morlighem2016` use 1.0e6 Pa.";
     pism_config:calving.vonmises.sigma_max_option = "vonmises_calving_sigma_max";
     pism_config:calving.vonmises.sigma_max_type = "scalar";
     pism_config:calving.vonmises.sigma_max_units = "Pa";
@@ -345,7 +345,7 @@ netcdf pism_config {
     pism_config:constants.fresh_water.density_units = "kg meter-3";
 
     pism_config:constants.fresh_water.latent_heat_of_fusion = 3.34e5;
-    pism_config:constants.fresh_water.latent_heat_of_fusion_doc = "latent heat of fusion for water [@ref AschwandenBlatter]";
+    pism_config:constants.fresh_water.latent_heat_of_fusion_doc = "latent heat of fusion for water :cite:`AschwandenBlatter`";
     pism_config:constants.fresh_water.latent_heat_of_fusion_type = "scalar";
     pism_config:constants.fresh_water.latent_heat_of_fusion_units = "Joule / kg";
 
@@ -355,22 +355,22 @@ netcdf pism_config {
     pism_config:constants.fresh_water.melting_point_temperature_units = "Kelvin";
 
     pism_config:constants.fresh_water.specific_heat_capacity = 4170.0;
-    pism_config:constants.fresh_water.specific_heat_capacity_doc = "at melting point T_0 [@ref AschwandenBlatter]";
+    pism_config:constants.fresh_water.specific_heat_capacity_doc = "at melting point T_0 :cite:`AschwandenBlatter`";
     pism_config:constants.fresh_water.specific_heat_capacity_type = "scalar";
     pism_config:constants.fresh_water.specific_heat_capacity_units = "Joule / (kg Kelvin)";
 
     pism_config:constants.ice.beta_Clausius_Clapeyron = 7.9e-8;
-    pism_config:constants.ice.beta_Clausius_Clapeyron_doc = "Clausius-Clapeyron constant relating melting temperature and pressure: beta = dT / dP [@ref Luethi2002]";
+    pism_config:constants.ice.beta_Clausius_Clapeyron_doc = "Clausius-Clapeyron constant relating melting temperature and pressure: `\\beta = dT / dP` :cite:`Luethi2002`";
     pism_config:constants.ice.beta_Clausius_Clapeyron_type = "scalar";
     pism_config:constants.ice.beta_Clausius_Clapeyron_units = "Kelvin / Pascal";
 
     pism_config:constants.ice.density = 910.0;
-    pism_config:constants.ice.density_doc = "= rho_i; density of ice in ice sheet";
+    pism_config:constants.ice.density_doc = "`\\rho_i`; density of ice in ice sheet";
     pism_config:constants.ice.density_type = "scalar";
     pism_config:constants.ice.density_units = "kg meter-3";
 
     pism_config:constants.ice.grain_size = 1.0;
-    pism_config:constants.ice.grain_size_doc = "Default constant ice grain size to use with the Goldsby-Kohlstedt [@ref GoldsbyKohlstedt] flow law";
+    pism_config:constants.ice.grain_size_doc = "Default constant ice grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law";
     pism_config:constants.ice.grain_size_option = "ice_grain_size";
     pism_config:constants.ice.grain_size_type = "scalar";
     pism_config:constants.ice.grain_size_units = "mm";
@@ -415,7 +415,7 @@ netcdf pism_config {
     pism_config:energy.basal_melt.use_grounded_cell_fraction_type  = "boolean";
 
     pism_config:energy.bedrock_thermal_conductivity = 3.0;
-    pism_config:energy.bedrock_thermal_conductivity_doc = "= W m-1 K-1; for bedrock used in thermal model [@ref RitzEISMINT]";
+    pism_config:energy.bedrock_thermal_conductivity_doc = "= W m-1 K-1; for bedrock used in thermal model :cite:`RitzEISMINT`";
     pism_config:energy.bedrock_thermal_conductivity_type = "scalar";
     pism_config:energy.bedrock_thermal_conductivity_units = "Joule / (meter Kelvin second)";
 
@@ -425,17 +425,17 @@ netcdf pism_config {
     pism_config:energy.bedrock_thermal_density_units = "kg meter-3";
 
     pism_config:energy.bedrock_thermal_specific_heat_capacity = 1000.0;
-    pism_config:energy.bedrock_thermal_specific_heat_capacity_doc = "for bedrock used in thermal model [@ref RitzEISMINT]";
+    pism_config:energy.bedrock_thermal_specific_heat_capacity_doc = "for bedrock used in thermal model :cite:`RitzEISMINT`";
     pism_config:energy.bedrock_thermal_specific_heat_capacity_type = "scalar";
     pism_config:energy.bedrock_thermal_specific_heat_capacity_units = "Joule / (kg Kelvin)";
 
     pism_config:energy.drainage_maximum_rate = 1.58443823077064e-09;
-    pism_config:energy.drainage_maximum_rate_doc = "0.05 year-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see [@ref AschwandenBuelerKhroulevBlatter]";
+    pism_config:energy.drainage_maximum_rate_doc = "0.05 year-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see :cite:`AschwandenBuelerKhroulevBlatter`";
     pism_config:energy.drainage_maximum_rate_type = "scalar";
     pism_config:energy.drainage_maximum_rate_units = "second-1";
 
     pism_config:energy.drainage_target_water_fraction = 0.01;
-    pism_config:energy.drainage_target_water_fraction_doc = "liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [@ref AschwandenBuelerKhroulevBlatter]";
+    pism_config:energy.drainage_target_water_fraction_doc = "liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see :cite:`AschwandenBuelerKhroulevBlatter`";
     pism_config:energy.drainage_target_water_fraction_type = "scalar";
     pism_config:energy.drainage_target_water_fraction_units = "1";
 
@@ -461,7 +461,7 @@ netcdf pism_config {
     pism_config:energy.minimum_allowed_temperature_units = "Kelvin";
 
     pism_config:energy.temperate_ice_enthalpy_conductivity_ratio = 0.1;
-    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_doc = "K in cold ice is multiplied by this fraction to give K0 in [@ref AschwandenBuelerKhroulevBlatter]";
+    pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_doc = "K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`";
     pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_type = "scalar";
     pism_config:energy.temperate_ice_enthalpy_conductivity_ratio_units = "pure number";
 
@@ -470,12 +470,12 @@ netcdf pism_config {
     pism_config:energy.temperature_based_type = "boolean";
 
     pism_config:energy.temperature_dependent_thermal_conductivity = "no";
-    pism_config:energy.temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [@ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice.thermal_conductivity.";
+    pism_config:energy.temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in :cite:`GreveBlatter2009`. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice.thermal_conductivity.";
     pism_config:energy.temperature_dependent_thermal_conductivity_option = "vark";
     pism_config:energy.temperature_dependent_thermal_conductivity_type = "boolean";
 
     pism_config:enthalpy_converter.T_reference = 223.15;
-    pism_config:enthalpy_converter.T_reference_doc = "= T_0 in enthalpy formulas in [@ref AschwandenBuelerKhroulevBlatter]";
+    pism_config:enthalpy_converter.T_reference_doc = "= T_0 in enthalpy formulas in :cite:`AschwandenBuelerKhroulevBlatter`";
     pism_config:enthalpy_converter.T_reference_type = "scalar";
     pism_config:enthalpy_converter.T_reference_units = "Kelvin";
 
@@ -485,52 +485,52 @@ netcdf pism_config {
     pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_units = "Kelvin";
 
     pism_config:flow_law.Hooke.A = 4.42165e-9;
-    pism_config:flow_law.Hooke.A_doc = "A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa. See [@ref Hooke]";
+    pism_config:flow_law.Hooke.A_doc = "`A_{\\text{Hooke}} = (1/B_0)^n` where n=3 and B_0 = 1.928 `a^{1/3}` Pa. See :cite:`Hooke`";
     pism_config:flow_law.Hooke.A_type = "scalar";
     pism_config:flow_law.Hooke.A_units = "Pascal-3 second-1";
 
     pism_config:flow_law.Hooke.C = 0.16612;
-    pism_config:flow_law.Hooke.C_doc = "See [@ref Hooke]";
+    pism_config:flow_law.Hooke.C_doc = "See :cite:`Hooke`";
     pism_config:flow_law.Hooke.C_type = "scalar";
     pism_config:flow_law.Hooke.C_units = "Kelvin^{flow_law.Hooke.k}";
 
     pism_config:flow_law.Hooke.Q = 7.88e4;
-    pism_config:flow_law.Hooke.Q_doc = "Activation energy, see [@ref Hooke]";
+    pism_config:flow_law.Hooke.Q_doc = "Activation energy, see :cite:`Hooke`";
     pism_config:flow_law.Hooke.Q_type = "scalar";
     pism_config:flow_law.Hooke.Q_units = "Joule / mol";
 
     pism_config:flow_law.Hooke.Tr = 273.39;
-    pism_config:flow_law.Hooke.Tr_doc = "See [@ref Hooke]";
+    pism_config:flow_law.Hooke.Tr_doc = "See :cite:`Hooke`";
     pism_config:flow_law.Hooke.Tr_type = "scalar";
     pism_config:flow_law.Hooke.Tr_units = "Kelvin";
 
     pism_config:flow_law.Hooke.k = 1.17;
-    pism_config:flow_law.Hooke.k_doc = "See [@ref Hooke]";
+    pism_config:flow_law.Hooke.k_doc = "See :cite:`Hooke`";
     pism_config:flow_law.Hooke.k_type = "scalar";
     pism_config:flow_law.Hooke.k_units = "pure number";
 
     pism_config:flow_law.Paterson_Budd.A_cold = 3.61e-13;
-    pism_config:flow_law.Paterson_Budd.A_cold_doc = "Paterson-Budd A_cold, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.A_cold_doc = "Paterson-Budd A_cold, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.A_cold_type = "scalar";
     pism_config:flow_law.Paterson_Budd.A_cold_units = "Pascal-3 / second";
 
     pism_config:flow_law.Paterson_Budd.A_warm = 1.73e3;
-    pism_config:flow_law.Paterson_Budd.A_warm_doc = "Paterson-Budd A_warm, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.A_warm_doc = "Paterson-Budd A_warm, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.A_warm_type = "scalar";
     pism_config:flow_law.Paterson_Budd.A_warm_units = "Pascal-3 / second";
 
     pism_config:flow_law.Paterson_Budd.Q_cold = 6.0e4;
-    pism_config:flow_law.Paterson_Budd.Q_cold_doc = "Paterson-Budd Q_cold, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.Q_cold_doc = "Paterson-Budd Q_cold, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.Q_cold_type = "scalar";
     pism_config:flow_law.Paterson_Budd.Q_cold_units = "Joule / mol";
 
     pism_config:flow_law.Paterson_Budd.Q_warm = 13.9e4;
-    pism_config:flow_law.Paterson_Budd.Q_warm_doc = "Paterson-Budd Q_warm, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.Q_warm_doc = "Paterson-Budd Q_warm, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.Q_warm_type = "scalar";
     pism_config:flow_law.Paterson_Budd.Q_warm_units = "Joule / mol";
 
     pism_config:flow_law.Paterson_Budd.T_critical = 263.15;
-    pism_config:flow_law.Paterson_Budd.T_critical_doc = "Paterson-Budd critical temperature, see [@ref PatersonBudd]";
+    pism_config:flow_law.Paterson_Budd.T_critical_doc = "Paterson-Budd critical temperature, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.T_critical_type = "scalar";
     pism_config:flow_law.Paterson_Budd.T_critical_units = "Kelvin";
 
@@ -545,17 +545,17 @@ netcdf pism_config {
     pism_config:flow_law.Schoof_regularizing_velocity_units = "meter / year";
 
     pism_config:flow_law.gpbld.water_frac_coeff = 181.25;
-    pism_config:flow_law.gpbld.water_frac_coeff_doc = "coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [@ref GreveBlatter2009, @ref LliboutryDuval1985]";
+    pism_config:flow_law.gpbld.water_frac_coeff_doc = "coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) :cite:`GreveBlatter2009`, :cite:`LliboutryDuval1985`";
     pism_config:flow_law.gpbld.water_frac_coeff_type = "scalar";
     pism_config:flow_law.gpbld.water_frac_coeff_units = "pure number";
 
     pism_config:flow_law.gpbld.water_frac_observed_limit = 0.01;
-    pism_config:flow_law.gpbld.water_frac_observed_limit_doc = "maximum value of liquid water fraction omega for which softness values are parameterized by [@ref LliboutryDuval1985]; used in Glen-Paterson-Budd-Lliboutry-Duval flow law; compare [@ref AschwandenBuelerKhroulevBlatter]";
+    pism_config:flow_law.gpbld.water_frac_observed_limit_doc = "maximum value of liquid water fraction omega for which softness values are parameterized by :cite:`LliboutryDuval1985`; used in Glen-Paterson-Budd-Lliboutry-Duval flow law; compare :cite:`AschwandenBuelerKhroulevBlatter`";
     pism_config:flow_law.gpbld.water_frac_observed_limit_type = "scalar";
     pism_config:flow_law.gpbld.water_frac_observed_limit_units = "1";
 
     pism_config:flow_law.isothermal_Glen.ice_softness = 3.1689e-24;
-    pism_config:flow_law.isothermal_Glen.ice_softness_doc = "ice softness used by IsothermalGlenIce [@ref EISMINT96]";
+    pism_config:flow_law.isothermal_Glen.ice_softness_doc = "ice softness used by IsothermalGlenIce :cite:`EISMINT96`";
     pism_config:flow_law.isothermal_Glen.ice_softness_type = "scalar";
     pism_config:flow_law.isothermal_Glen.ice_softness_units = "Pascal-3 second-1";
 
@@ -738,7 +738,7 @@ netcdf pism_config {
     pism_config:hydrology.creep_closure_coefficient_units = "pure number";
 
     pism_config:hydrology.gradient_power_in_flux = 1.5;
-    pism_config:hydrology.gradient_power_in_flux_doc = "= beta in notes; power beta in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by hydrology::Routing and hydrology::Distributed";
+    pism_config:hydrology.gradient_power_in_flux_doc = "power `\\beta` in Darcy's law `q = - k W^{\\alpha} |\\nabla \\psi|^{\\beta-2} \\nabla \\psi`, for subglacial water layer; used by hydrology::Routing and hydrology::Distributed";
     pism_config:hydrology.gradient_power_in_flux_option = "hydrology_gradient_power_in_flux";
     pism_config:hydrology.gradient_power_in_flux_type = "scalar";
     pism_config:hydrology.gradient_power_in_flux_units = "pure number";
@@ -747,7 +747,7 @@ netcdf pism_config {
     pism_config:hydrology.hydraulic_conductivity_doc = "= k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; units depend on powers alpha = hydrology.thickness_power_in_flux and beta = hydrology_potential_gradient_power_in_flux; used by hydrology::Routing and hydrology::Distributed";
     pism_config:hydrology.hydraulic_conductivity_option = "hydrology_hydraulic_conductivity";
     pism_config:hydrology.hydraulic_conductivity_type = "scalar";
-    pism_config:hydrology.hydraulic_conductivity_units = "m^{2 beta - alpha} s^{2 beta - 3} kg^{1-beta}";
+    pism_config:hydrology.hydraulic_conductivity_units = "`m^{2 \\beta - \\alpha} s^{2 \\beta - 3} kg^{1-\\beta}`";
 
     pism_config:hydrology.maximum_time_step = 1.0;
     pism_config:hydrology.maximum_time_step_doc = "maximum allowed time step length used by hydrology::Routing and hydrology::Distributed";
@@ -761,16 +761,16 @@ netcdf pism_config {
     pism_config:hydrology.model_type = "keyword";
 
     pism_config:hydrology.null_diffuse_till_water = "no";
-    pism_config:hydrology.null_diffuse_till_water_doc = "Diffuse stored till water laterally. See equation (11) of [@ref BBssasliding]"; 
+    pism_config:hydrology.null_diffuse_till_water_doc = "Diffuse stored till water laterally. See equation (11) of :cite:`BBssasliding`"; 
     pism_config:hydrology.null_diffuse_till_water_type = "boolean";
 
     pism_config:hydrology.null_diffusion_distance = 2e4;
-    pism_config:hydrology.null_diffusion_distance_doc = "diffusion distance for till water thickness; see equation (11) in [@ref BBssasliding]; only active if hydrology.null_diffuse_till_water is set";
+    pism_config:hydrology.null_diffusion_distance_doc = "diffusion distance for till water thickness; see equation (11) in :cite:`BBssasliding`; only active if hydrology.null_diffuse_till_water is set";
     pism_config:hydrology.null_diffusion_distance_type = "scalar";
     pism_config:hydrology.null_diffusion_distance_units = "meters";
 
     pism_config:hydrology.null_diffusion_time = 1000.0;
-    pism_config:hydrology.null_diffusion_time_doc = "diffusion time for till water thickness; see equation (11) in [@ref BBssasliding]; only active if hydrology.null_diffuse_till_water is set";
+    pism_config:hydrology.null_diffusion_time_doc = "diffusion time for till water thickness; see equation (11) in :cite:`BBssasliding`; only active if hydrology.null_diffuse_till_water is set";
     pism_config:hydrology.null_diffusion_time_type = "scalar";
     pism_config:hydrology.null_diffusion_time_units = "years";
 
@@ -792,7 +792,7 @@ netcdf pism_config {
     pism_config:hydrology.roughness_scale_units = "meters";
 
     pism_config:hydrology.thickness_power_in_flux = 1.25;
-    pism_config:hydrology.thickness_power_in_flux_doc = "= alpha in notes; power alpha in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by hydrology::Routing and hydrology::Distributed";
+    pism_config:hydrology.thickness_power_in_flux_doc = "power `\\alpha` in Darcy's law `q = - k W^{\\alpha} |\\nabla \\psi|^{\\beta-2} \\nabla \\psi`, for subglacial water layer; used by hydrology::Routing and hydrology::Distributed";
     pism_config:hydrology.thickness_power_in_flux_option = "hydrology_thickness_power_in_flux";
     pism_config:hydrology.thickness_power_in_flux_type = "scalar";
     pism_config:hydrology.thickness_power_in_flux_units = "1";
@@ -963,33 +963,33 @@ netcdf pism_config {
     pism_config:ocean.always_grounded_type = "boolean";
 
     pism_config:ocean.pik_melt_factor = 5e-3;
-    pism_config:ocean.pik_melt_factor_doc = "dimensionless tuning parameter in the '-ocean pik' ocean heat flux parameterization; see [@ref Martinetal2011]";
+    pism_config:ocean.pik_melt_factor_doc = "dimensionless tuning parameter in the '-ocean pik' ocean heat flux parameterization; see :cite:`Martinetal2011`";
     pism_config:ocean.pik_melt_factor_option = "meltfactor_pik";
     pism_config:ocean.pik_melt_factor_type = "scalar";
     pism_config:ocean.pik_melt_factor_units = "1";
 
     pism_config:ocean.runoff_to_ocean_melt_b = 0.15;
-    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in @ref Aschwanden";
+    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden`";
     pism_config:ocean.runoff_to_ocean_melt_b_type = "scalar";
     pism_config:ocean.runoff_to_ocean_melt_b_units = "1";
 
     pism_config:ocean.runoff_to_ocean_melt_power_alpha = 0.54;
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_doc = "exponent alpha in eqn. 1 in @ref Xu2013";
+    pism_config:ocean.runoff_to_ocean_melt_power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
     pism_config:ocean.runoff_to_ocean_melt_power_alpha_type = "scalar";
     pism_config:ocean.runoff_to_ocean_melt_power_alpha_units = "1";
 
     pism_config:ocean.runoff_to_ocean_melt_power_beta = 1.17;
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_doc = "exponent beta in eqn. 1 in @ref Xu2013";
+    pism_config:ocean.runoff_to_ocean_melt_power_beta_doc = "exponent `\\beta` in eqn. 1 in :cite:`Xu2013`";
     pism_config:ocean.runoff_to_ocean_melt_power_beta_type = "scalar";
     pism_config:ocean.runoff_to_ocean_melt_power_beta_units = "1";
 
     pism_config:ocean.sub_shelf_heat_flux_into_ice = 0.5;
-    pism_config:ocean.sub_shelf_heat_flux_into_ice_doc = "= J meter-2 second-1; naively chosen default value for heat from ocean; see comments in @ref pism::ocean::Constant::shelf_base_mass_flux().";
+    pism_config:ocean.sub_shelf_heat_flux_into_ice_doc = "= J meter-2 second-1; naively chosen default value for heat from ocean; see comments in pism::ocean::Constant::shelf_base_mass_flux().";
     pism_config:ocean.sub_shelf_heat_flux_into_ice_type = "scalar";
     pism_config:ocean.sub_shelf_heat_flux_into_ice_units = "W meter-2";
 
     pism_config:ocean.three_equation_model_clip_salinity = "yes";
-    pism_config:ocean.three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See [@ref HollandJenkins1999].";
+    pism_config:ocean.three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See :cite:`HollandJenkins1999`.";
     pism_config:ocean.three_equation_model_clip_salinity_option = "clip_shelf_base_salinity";
     pism_config:ocean.three_equation_model_clip_salinity_type = "boolean";
 
@@ -1129,7 +1129,7 @@ netcdf pism_config {
     pism_config:run_info.title_type = "string";
 
     pism_config:stress_balance.calving_front_stress_bc = "no";
-    pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in [@ref Albrechtetal2011, @ref Winkelmannetal2011].  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in [@ref BBssasliding].";
+    pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in :cite:`BBssasliding`.";
     pism_config:stress_balance.calving_front_stress_bc_option = "cfbc";
     pism_config:stress_balance.calving_front_stress_bc_type = "boolean";
 
@@ -1151,13 +1151,13 @@ netcdf pism_config {
     pism_config:stress_balance.sia.Glen_exponent_units = "pure number";
 
     pism_config:stress_balance.sia.bed_smoother_range = 5.0e3;
-    pism_config:stress_balance.sia.bed_smoother_range_doc = "half-width of smoothing domain for stressbalance::BedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+    pism_config:stress_balance.sia.bed_smoother_range_doc = "half-width of smoothing domain for stressbalance::BedSmoother, in implementing :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA; set value to zero to turn off mechanism";
     pism_config:stress_balance.sia.bed_smoother_range_option = "bed_smoother_range";
     pism_config:stress_balance.sia.bed_smoother_range_type = "scalar";
     pism_config:stress_balance.sia.bed_smoother_range_units = "meters";
 
     pism_config:stress_balance.sia.e_age_coupling = "no";
-    pism_config:stress_balance.sia.e_age_coupling_doc = "Couple the SIA enhancement factor to age as in [@ref Greve].";
+    pism_config:stress_balance.sia.e_age_coupling_doc = "Couple the SIA enhancement factor to age as in :cite:`Greve`.";
     pism_config:stress_balance.sia.e_age_coupling_option = "e_age_coupling";
     pism_config:stress_balance.sia.e_age_coupling_type = "boolean";
 
@@ -1180,7 +1180,7 @@ netcdf pism_config {
     pism_config:stress_balance.sia.flow_law_type = "keyword";
 
     pism_config:stress_balance.sia.grain_size_age_coupling = "no";
-    pism_config:stress_balance.sia.grain_size_age_coupling_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt [@ref GoldsbyKohlstedt] flow law";
+    pism_config:stress_balance.sia.grain_size_age_coupling_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt :cite:`GoldsbyKohlstedt` flow law";
     pism_config:stress_balance.sia.grain_size_age_coupling_option = "grain_size_age_coupling";
     pism_config:stress_balance.sia.grain_size_age_coupling_type = "boolean";
 
@@ -1218,7 +1218,7 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.enhancement_factor_interglacial_units = "1";
 
     pism_config:stress_balance.ssa.epsilon = 1.0e13;
-    pism_config:stress_balance.ssa.epsilon_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa year, the value in [@ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
+    pism_config:stress_balance.ssa.epsilon_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (`\\nu H`).  This default value for `\\nu H` comes e.g. from a hardness for the Ross ice shelf (`\\bar B`) = 1.9e8 Pa `s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving `\\nu = (\\bar B) / (2 \\cdot 0.001^{2/3})` = 9.49e+14 Pa s ~ 30 MPa year, the value in :cite:`Ritzetal2001`, but with a tiny thickness `H` of about 1 cm.";
     pism_config:stress_balance.ssa.epsilon_option = "ssa_eps";
     pism_config:stress_balance.ssa.epsilon_type = "scalar";
     pism_config:stress_balance.ssa.epsilon_units = "Pascal second meter";
@@ -1279,7 +1279,7 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.method_type = "keyword";
 
     pism_config:stress_balance.ssa.strength_extension.constant_nu = 9.48680701906572e+14;
-    pism_config:stress_balance.ssa.strength_extension.constant_nu_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa year in [@ref Ritzetal2001].";
+    pism_config:stress_balance.ssa.strength_extension.constant_nu_doc = "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 `Pa s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 year-1:  `\\nu = (\\bar B) / (2 \\cdot 0.001^{2/3})`.  Compare the value of 9.45e14 Pa s = 30 MPa year in :cite:`Ritzetal2001`.";
     pism_config:stress_balance.ssa.strength_extension.constant_nu_type = "scalar";
     pism_config:stress_balance.ssa.strength_extension.constant_nu_units = "Pascal second";
 
@@ -1330,27 +1330,27 @@ netcdf pism_config {
     pism_config:surface.pdd.balance_year_start_day_units = "ordinal day number";
 
     pism_config:surface.pdd.aschwanden.beta_ice_c = 0.006;
-    pism_config:surface.pdd.aschwanden.beta_ice_c_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_ice_c_doc = "water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`";
     pism_config:surface.pdd.aschwanden.beta_ice_c_type = "scalar";
     pism_config:surface.pdd.aschwanden.beta_ice_c_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.aschwanden.beta_ice_w = 0.008;
-    pism_config:surface.pdd.aschwanden.beta_ice_w_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_ice_w_doc = "water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`";
     pism_config:surface.pdd.aschwanden.beta_ice_w_type = "scalar";
     pism_config:surface.pdd.aschwanden.beta_ice_w_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.aschwanden.beta_snow_c = 0.0015;
-    pism_config:surface.pdd.aschwanden.beta_snow_c_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_snow_c_doc = "water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`";
     pism_config:surface.pdd.aschwanden.beta_snow_c_type = "scalar";
     pism_config:surface.pdd.aschwanden.beta_snow_c_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.aschwanden.beta_snow_w = 0.003;
-    pism_config:surface.pdd.aschwanden.beta_snow_w_doc = "water-equivalent thickness; for formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.beta_snow_w_doc = "water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`";
     pism_config:surface.pdd.aschwanden.beta_snow_w_type = "scalar";
     pism_config:surface.pdd.aschwanden.beta_snow_w_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.aschwanden.latitude_beta_w = 77.0;
-    pism_config:surface.pdd.aschwanden.latitude_beta_w_doc = "latitude below which to use warm case, in formula (6) in [@ref Aschwandenetal2009] ";
+    pism_config:surface.pdd.aschwanden.latitude_beta_w_doc = "latitude below which to use warm case, in formula (6) in :cite:`Aschwandenetal2009`";
     pism_config:surface.pdd.aschwanden.latitude_beta_w_type = "scalar";
     pism_config:surface.pdd.aschwanden.latitude_beta_w_units = "degree_north";
 
@@ -1360,47 +1360,47 @@ netcdf pism_config {
     pism_config:surface.pdd.aschwanden.warm_cold_transition_width_units = "degree_north";
 
     pism_config:surface.pdd.factor_ice = 0.00879120879120879;
-    pism_config:surface.pdd.factor_ice_doc = "EISMINT-Greenland value [@ref RitzEISMINT]; = (8 mm liquid-water-equivalent) / (pos degree day)";
+    pism_config:surface.pdd.factor_ice_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`; = (8 mm liquid-water-equivalent) / (pos degree day)";
     pism_config:surface.pdd.factor_ice_type = "scalar";
     pism_config:surface.pdd.factor_ice_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.factor_snow = 0.0032967032967033;
-    pism_config:surface.pdd.factor_snow_doc = "EISMINT-Greenland value [@ref RitzEISMINT]; = (3 mm liquid-water-equivalent) / (pos degree day)";
+    pism_config:surface.pdd.factor_snow_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`; = (3 mm liquid-water-equivalent) / (pos degree day)";
     pism_config:surface.pdd.factor_snow_type = "scalar";
     pism_config:surface.pdd.factor_snow_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.fausto.T_c = 272.15;
-    pism_config:surface.pdd.fausto.T_c_doc = "= -1 + 273.15; for formula (6) in [@ref Faustoetal2009] ";
+    pism_config:surface.pdd.fausto.T_c_doc = "= -1 + 273.15; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.T_c_type = "scalar";
     pism_config:surface.pdd.fausto.T_c_units = "Kelvin";
 
     pism_config:surface.pdd.fausto.T_w = 283.15;
-    pism_config:surface.pdd.fausto.T_w_doc = "= 10 + 273.15; for formula (6) in [@ref Faustoetal2009] ";
+    pism_config:surface.pdd.fausto.T_w_doc = "= 10 + 273.15; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.T_w_type = "scalar";
     pism_config:surface.pdd.fausto.T_w_units = "Kelvin";
 
     pism_config:surface.pdd.fausto.beta_ice_c = 0.015;
-    pism_config:surface.pdd.fausto.beta_ice_c_doc = "water-equivalent thickness; for formula (6) in [@ref Faustoetal2009] ";
+    pism_config:surface.pdd.fausto.beta_ice_c_doc = "water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.beta_ice_c_type = "scalar";
     pism_config:surface.pdd.fausto.beta_ice_c_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.fausto.beta_ice_w = 0.007;
-    pism_config:surface.pdd.fausto.beta_ice_w_doc = "water-equivalent thickness; for formula (6) in [@ref Faustoetal2009] ";
+    pism_config:surface.pdd.fausto.beta_ice_w_doc = "water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.beta_ice_w_type = "scalar";
     pism_config:surface.pdd.fausto.beta_ice_w_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.fausto.beta_snow_c = 0.003;
-    pism_config:surface.pdd.fausto.beta_snow_c_doc = "water-equivalent thickness; for formula (6) in [@ref Faustoetal2009] ";
+    pism_config:surface.pdd.fausto.beta_snow_c_doc = "water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.beta_snow_c_type = "scalar";
     pism_config:surface.pdd.fausto.beta_snow_c_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.fausto.beta_snow_w = 0.003;
-    pism_config:surface.pdd.fausto.beta_snow_w_doc = "water-equivalent thickness; for formula (6) in [@ref Faustoetal2009] ";
+    pism_config:surface.pdd.fausto.beta_snow_w_doc = "water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.beta_snow_w_type = "scalar";
     pism_config:surface.pdd.fausto.beta_snow_w_units = "meter / (Kelvin day)";
 
     pism_config:surface.pdd.fausto.latitude_beta_w = 72.0;
-    pism_config:surface.pdd.fausto.latitude_beta_w_doc = "latitude below which to use warm case, in formula (6) in [@ref Faustoetal2009] ";
+    pism_config:surface.pdd.fausto.latitude_beta_w_doc = "latitude below which to use warm case, in formula (6) in :cite:`Faustoetal2009`";
     pism_config:surface.pdd.fausto.latitude_beta_w_type = "scalar";
     pism_config:surface.pdd.fausto.latitude_beta_w_units = "degree_north";
 
@@ -1434,7 +1434,7 @@ netcdf pism_config {
     pism_config:surface.pdd.positive_threshold_temp_units = "Kelvin";
 
     pism_config:surface.pdd.refreeze = 0.6;
-    pism_config:surface.pdd.refreeze_doc = "EISMINT-Greenland value [@ref RitzEISMINT]";
+    pism_config:surface.pdd.refreeze_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`";
     pism_config:surface.pdd.refreeze_type = "scalar";
     pism_config:surface.pdd.refreeze_units = "1";
 
@@ -1443,7 +1443,7 @@ netcdf pism_config {
     pism_config:surface.pdd.refreeze_ice_melt_type = "boolean";
 
     pism_config:surface.pdd.std_dev = 5.0;
-    pism_config:surface.pdd.std_dev_doc = "std dev of daily temp variation; = EISMINT-Greenland value [@ref RitzEISMINT] ";
+    pism_config:surface.pdd.std_dev_doc = "std dev of daily temp variation; = EISMINT-Greenland value :cite:`RitzEISMINT`";
     pism_config:surface.pdd.std_dev_type = "scalar";
     pism_config:surface.pdd.std_dev_units = "Kelvin";
 
@@ -1492,17 +1492,17 @@ netcdf pism_config {
     pism_config:time.dimension_name_type = "string";
 
     pism_config:time.eemian_end = -114500.0;
-    pism_config:time.eemian_end_doc = "End of the Eemian interglacial period. See [@ref Greve97Greenland].";
+    pism_config:time.eemian_end_doc = "End of the Eemian interglacial period. See :cite:`Greve97Greenland`.";
     pism_config:time.eemian_end_type = "scalar";
     pism_config:time.eemian_end_units = "years";
 
     pism_config:time.eemian_start = -132000.0;
-    pism_config:time.eemian_start_doc = "Start of the Eemian interglacial period. See [@ref Greve97Greenland].";
+    pism_config:time.eemian_start_doc = "Start of the Eemian interglacial period. See :cite:`Greve97Greenland`.";
     pism_config:time.eemian_start_type = "scalar";
     pism_config:time.eemian_start_units = "years";
 
     pism_config:time.holocene_start = -11000.0;
-    pism_config:time.holocene_start_doc = "Start of the Holocene interglacial period. See [@ref Greve97Greenland].";
+    pism_config:time.holocene_start_doc = "Start of the Holocene interglacial period. See :cite:`Greve97Greenland`.";
     pism_config:time.holocene_start_type = "scalar";
     pism_config:time.holocene_start_units = "years";
 
@@ -1521,7 +1521,7 @@ netcdf pism_config {
     pism_config:time.start_year_units = "years";
 
     pism_config:time_stepping.adaptive_ratio = 0.12;
-    pism_config:time_stepping.adaptive_ratio_doc = "Adaptive time stepping ratio for the explicit scheme for the mass balance equation; @ref BBL, inequality (25)";
+    pism_config:time_stepping.adaptive_ratio_doc = "Adaptive time stepping ratio for the explicit scheme for the mass balance equation; :cite:`BBL`, inequality (25)";
     pism_config:time_stepping.adaptive_ratio_option = "adapt_ratio";
     pism_config:time_stepping.adaptive_ratio_type = "scalar";
     pism_config:time_stepping.adaptive_ratio_units = "1";
