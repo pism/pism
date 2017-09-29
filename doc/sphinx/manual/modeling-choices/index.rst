@@ -27,7 +27,8 @@ There are five kinds of options and parameters:
 #. Booleans (True/False, on/off, yes/no),
 #. Keywords (one of a given set of strings).
 
-Each parameter can be set using the command-line option consisting of a dash followed by the parameter name. For example,
+Each parameter can be set using the command-line option consisting of a dash followed by
+the parameter name. For example,
 
 .. code-block:: none
 
