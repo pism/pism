@@ -55,3 +55,5 @@ class/object structure of the PISM source code.
    validation/index.rst
 
    jakobshavn/index.rst
+
+   parameter-list.rst

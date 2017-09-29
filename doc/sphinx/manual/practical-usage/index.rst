@@ -23,8 +23,6 @@ Practical usage
 
    parameters.rst
 
-   parameter-list.rst
-
    regridding.rst
 
    signals.rst

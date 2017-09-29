@@ -1,14 +1,14 @@
 
 .. DO NOT EDIT: This file was automatically generated using config_parameters.py. Edit src/pism_config.cdl instead.
 
-.. include:: ../../global.rst
+.. include:: ../global.rst
 
 .. _sec-parameter-list:
 
 List of configuration parameters
 ================================
 
-Each parameter can be set using the command-line option consisting of a dash followed by
+All parameters can be set using the command-line option consisting of a dash followed by
 the parameter name. For example,
 
 .. code-block:: none
@@ -16,7 +16,7 @@ the parameter name. For example,
    -constants.standard_gravity 10
 
 sets the acceleration due to gravity (parameter :config:`constants.standard_gravity`) to
-`10`.
+`10`. Options listed below are *shortcuts*, added for convenience.
 
 
 
@@ -148,7 +148,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`basal_yield_stress.model`
 
-   :Value: mohr_coulomb
+   :Value: ``mohr_coulomb``
    :Choices: ``constant, mohr_coulomb``
    :Option: :opt:`-yield_stress`
    :Description: The basal yield stress model to use when sliding is active.
@@ -257,7 +257,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`bed_deformation.model`
 
-   :Value: none
+   :Value: ``none``
    :Choices: ``none, iso, lc``
    :Option: :opt:`-bed_def`
    :Description: Selects a bed deformation model to use. 'iso' is point-wise isostasy, 'lc' is the Lingle-Clark model (see :cite:`LingleClark`, requires FFTW3).
@@ -336,7 +336,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`bootstrapping.temperature_heuristic`
 
-   :Value: smb
+   :Value: ``smb``
    :Choices: ``smb, quartic_guess``
    :Option: :opt:`-boot_temperature_heuristic`
    :Description: The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.
@@ -835,7 +835,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`grid.ice_vertical_spacing`
 
-   :Value: quadratic
+   :Value: ``quadratic``
    :Choices: ``quadratic, equal``
    :Option: :opt:`-z_spacing`
    :Description: vertical spacing in the ice
@@ -854,7 +854,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`grid.periodicity`
 
-   :Value: xy
+   :Value: ``xy``
    :Choices: ``none, x, y, xy``
    :Option: :opt:`-periodicity`
    :Description: horizontal grid periodicity
@@ -897,7 +897,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`hydrology.model`
 
-   :Value: null
+   :Value: ``null``
    :Choices: ``null, routing, distributed``
    :Option: :opt:`-hydrology`
    :Description: Basal hydrology sub-model.
@@ -976,14 +976,14 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`inverse.design.func`
 
-   :Value: sobolevH1
+   :Value: ``sobolevH1``
    :Choices: ``sobolevH1, tv``
    :Option: :opt:`-inv_design_func`
    :Description: functional used for inversion design variables
 
 #. :config:`inverse.design.param`
 
-   :Value: exp
+   :Value: ``exp``
    :Choices: ``ident, trunc, square, exp``
    :Option: :opt:`-inv_design_param`
    :Description: parameterization of design variables used during inversion
@@ -1050,7 +1050,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`inverse.ssa.method`
 
-   :Value: tikhonov_lmvm
+   :Value: ``tikhonov_lmvm``
    :Choices: ``sd, nlcg, ign, tikhonov_lmvm, tikhonov_cg, tikhonov_blmvm, tikhonov_lcl, tikhonov_gn``
    :Option: :opt:`-inv_method`
    :Description: algorithm to use for SSA inversions
@@ -1087,7 +1087,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`inverse.state_func`
 
-   :Value: meansquare
+   :Value: ``meansquare``
    :Choices: ``meansquare, log_ratio, log_relative``
    :Option: :opt:`-inv_state_func`
    :Description: functional used for inversion design variables
@@ -1172,7 +1172,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`output.backup_size`
 
-   :Value: small
+   :Value: ``small``
    :Choices: ``none, small, medium, big_2d, big``
    :Option: :opt:`-backup_size`
    :Description: The 'size' of a backup file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big
@@ -1185,7 +1185,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`output.format`
 
-   :Value: netcdf3
+   :Value: ``netcdf3``
    :Choices: ``netcdf3, quilt, netcdf4_parallel, pnetcdf``
    :Option: :opt:`-o_format`
    :Description: The I/O format used for spatial fields; 'netcdf3' is the default, 'netcd4_parallel' is available if PISM was built with parallel NetCDF-4, and 'pnetcdf' is available if PISM was built with PnetCDF.
@@ -1240,14 +1240,14 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`output.save_size`
 
-   :Value: small
+   :Value: ``small``
    :Choices: ``none, small, medium, big_2d, big``
    :Option: :opt:`-save_size`
    :Description: The 'size' of a snapshot file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big
 
 #. :config:`output.size`
 
-   :Value: medium
+   :Value: ``medium``
    :Choices: ``none, small, medium, big_2d, big``
    :Option: :opt:`-o_size`
    :Description: The 'size' of an output file. See configuration parameters output.sizes.medium, output.sizes.big_2d, output.sizes.big
@@ -1296,7 +1296,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`output.variable_order`
 
-   :Value: yxz
+   :Value: ``yxz``
    :Choices: ``xyz, yxz, zyx``
    :Option: :opt:`-o_order`
    :Description: Variable order to use in output files.
@@ -1339,7 +1339,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`stress_balance.model`
 
-   :Value: sia
+   :Value: ``sia``
    :Choices: ``none, prescribed_sliding, sia, ssa, prescribed_sliding+sia, ssa+sia``
    :Option: :opt:`-stress_balance`
    :Description: Stress balance model
@@ -1376,7 +1376,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`stress_balance.sia.flow_law`
 
-   :Value: gpbld
+   :Value: ``gpbld``
    :Choices: ``arr, arrwarm, gk, gpbld, hooke, isothermal_glen, pb, gpbld3``
    :Option: :opt:`-sia_flow_law`
    :Description: The SIA flow law.
@@ -1389,7 +1389,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`stress_balance.sia.surface_gradient_method`
 
-   :Value: haseloff
+   :Value: ``haseloff``
    :Choices: ``eta, haseloff, mahaffy``
    :Option: :opt:`-gradient`
    :Description: method used for surface gradient calculation at staggered grid points
@@ -1480,14 +1480,14 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`stress_balance.ssa.flow_law`
 
-   :Value: gpbld
+   :Value: ``gpbld``
    :Choices: ``arr, arrwarm, gpbld, hooke, isothermal_glen, pb, gpbld3``
    :Option: :opt:`-ssa_flow_law`
    :Description: The SSA flow law.
 
 #. :config:`stress_balance.ssa.method`
 
-   :Value: fd
+   :Value: ``fd``
    :Choices: ``fd, fem``
    :Option: :opt:`-ssa_method`
    :Description: Algorithm for computing the SSA solution.
@@ -1506,7 +1506,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`stress_balance.vertical_velocity_approximation`
 
-   :Value: centered
+   :Value: ``centered``
    :Choices: ``centered, upstream``
    :Option: :opt:`-vertical_velocity_approximation`
    :Description: Vertical velocity FD approximation. "Upstream" uses first-order finite difference to compute u_x and v_y. Uses basal velocity to make decisions.
@@ -1741,7 +1741,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`time.calendar`
 
-   :Value: 365_day
+   :Value: ``365_day``
    :Choices: ``standard, gregorian, proleptic_gregorian, noleap, 365_day, 360_day, julian, none``
    :Option: :opt:`-calendar`
    :Description: The calendar to use.

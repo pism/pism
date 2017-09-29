@@ -42,6 +42,8 @@ def entry(name, value, option, description, choices=None):
     if choices is not None:
         # This is always a comma-separated list.
         choices = "``{}``".format(choices.replace(",", ", "))
+        # value is a keyword, so we should format it as a literal
+        value = "``{}``".format(value)
 
     template = """
 #. :config:`{name}`
@@ -109,14 +111,14 @@ printers = {"string" : print_string,
 header = """
 .. DO NOT EDIT: This file was automatically generated using config_parameters.py. Edit src/pism_config.cdl instead.
 
-.. include:: ../../global.rst
+.. include:: ../global.rst
 
 .. _sec-parameter-list:
 
 List of configuration parameters
 ================================
 
-Each parameter can be set using the command-line option consisting of a dash followed by
+All parameters can be set using the command-line option consisting of a dash followed by
 the parameter name. For example,
 
 .. code-block:: none
@@ -124,7 +126,7 @@ the parameter name. For example,
    -constants.standard_gravity 10
 
 sets the acceleration due to gravity (parameter :config:`constants.standard_gravity`) to
-`10`.
+`10`. Options listed below are *shortcuts*, added for convenience.
 
 """
 
