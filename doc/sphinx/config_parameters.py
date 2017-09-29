@@ -25,7 +25,7 @@ def number_to_string(number):
     else:
         return '%f' % number
 
-def entry(name, value, option, description, choices=None):
+def entry(name, T, value, option, description, choices=None):
 
     if len(value) == 0:
         value = "*no default*"
@@ -46,7 +46,7 @@ def entry(name, value, option, description, choices=None):
         value = "``{}``".format(value)
 
     template = """
-#. :config:`{name}`
+#. :config:`{name}` (*{T}*)
 
    :Value: {value}"""
 
@@ -59,29 +59,33 @@ def entry(name, value, option, description, choices=None):
    :Description: {description}"""
 
     return template.format(name=name,
+                           T=T,
                            value=value,
                            choices=choices,
                            option=option,
                            description=description)
 
-def print_string(var, name):
+def print_string(var, name, T):
     print(entry(name,
+                T,
                 value(var, name),
                 option(var, name),
                 doc(var, name)))
 
-def print_scalar(var, name):
+def print_scalar(var, name, T):
     V = "{} ({})".format(number_to_string(value(var, name)), units(var, name))
-    print(entry(name, V, option(var, name), doc(var, name)))
+    print(entry(name, T, V, option(var, name), doc(var, name)))
 
-def print_integer(var, name):
+def print_integer(var, name, T):
     print(entry(name,
+                T,
                 str(value(var, name)),
                 option(var, name),
                 doc(var, name)))
 
-def print_keyword(var, name):
+def print_keyword(var, name, T):
     print(entry(name,
+                T,
                 value(var, name),
                 option(var, name),
                 doc(var, name),
@@ -142,8 +146,10 @@ if __name__ == "__main__":
 
     print(header)
 
-    for p in var.ncattrs():     # assume that this list is sorted
-        if is_special(p):
+    for parameter in var.ncattrs():     # assume that this list is sorted
+        if is_special(parameter):
             continue
 
-        printers[var.getncattr(p + "_type")](var, p)
+        T = var.getncattr(parameter + "_type")
+
+        printers[T](var, parameter, T)
