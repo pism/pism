@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import json, argparse
 
 parser = argparse.ArgumentParser()
@@ -18,8 +20,9 @@ entry_start = """
 
 template_single = """
    :Units: {units}
-   :Description: {long_name}
-   :Standard name: {standard_name}"""
+   :Description: {long_name}"""
+
+std_name_single = """   :Standard name: ``{standard_name}``"""
 
 comment_single = """   :Comment: {comment}"""
 
@@ -27,13 +30,17 @@ template_many = """
    - ``{var_name}``
 
      :Units: {units}
-     :Description: {long_name}
-     :Standard name: {standard_name}"""
+     :Description: {long_name}"""
 
 comment_many = """     :Comment: {comment}"""
 
+std_name_many = """     :Standard name: ``{standard_name}``"""
+
+
 header = """
-.. DO NOT EDIT. This file was generated using list_diagnostics.py."""
+.. DO NOT EDIT. This file was generated using list_diagnostics.py.
+
+.. contents::"""
 
 def print_diagnostics(diagnostics):
 
@@ -46,31 +53,30 @@ def print_diagnostics(diagnostics):
 
             if len(diagnostics[name]) == 1:
                 template = template_single
+                std_name_template = std_name_single
                 comment_template = comment_single
             else:
                 template = template_many
+                std_name_template = std_name_many
                 comment_template = comment_many
 
             for data in diagnostics[name]:
                 var_name, units, long_name, standard_name, comment = data
                 if len(units) == 0:
                     units = "---"
-                if len(standard_name) == 0:
-                    standard_name = "---"
-                else:
-                    standard_name = "``" + standard_name + "``"
 
                 print(template.format(var_name=var_name,
                                       units=units,
-                                      long_name=long_name,
-                                      standard_name=standard_name,
-                                      comment=comment))
+                                      long_name=long_name))
+
+                if len(standard_name) > 0:
+                    print(std_name_template.format(standard_name=standard_name))
+
                 if len(comment) > 0:
                     print(comment_template.format(comment=comment))
 
-    print(header)
-
     print_heading("List of PISM's diagnostics", "sec-diagnostics-list", "=")
+    print(header)
 
     print_some("Spatially-variable fields", "sec-extra_vars", diagnostics["spatial"])
     print_some("Scalar time-series",  "sec-ts_vars", diagnostics["scalar"])
