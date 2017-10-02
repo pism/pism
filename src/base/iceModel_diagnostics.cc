@@ -2251,8 +2251,9 @@ void IceModel::init_diagnostics() {
   }
 }
 
-static void print_diagnostics(const Logger &log,
-                              const std::map<std::string, std::vector<VariableMetadata>> &list) {
+typedef std::map<std::string, std::vector<VariableMetadata>> Metadata;
+
+static void print_diagnostics(const Logger &log, const Metadata &list) {
   for (const auto &d : list) {
     const std::string &name = d.first;
     log.message(1, " Name: %s\n", name.c_str());
@@ -2280,8 +2281,7 @@ static void print_diagnostics(const Logger &log,
   }
 }
 
-static void print_diagnostics_json(const Logger &log,
-                                   const std::map<std::string, std::vector<VariableMetadata>> &list) {
+static void print_diagnostics_json(const Logger &log, const Metadata &list) {
   log.message(1, "{\n");
   bool first_diagnostic = true;
   for (const auto &d : list) {
@@ -2323,41 +2323,13 @@ static void print_diagnostics_json(const Logger &log,
   log.message(1, "}\n");
 }
 
-void IceModel::list_diagnostics_json() const {
-
-  m_log->message(1, "{\n");
-
-  m_log->message(1, "\"spatial\" :\n");
-  print_diagnostics_json(*m_log, describe_diagnostics());
-
-  m_log->message(1, ",\n");        // separator
-
-  m_log->message(1, "\"scalar\" :\n");
-  print_diagnostics_json(*m_log, describe_ts_diagnostics());
-
-  m_log->message(1, "}\n");
-}
-
-void IceModel::list_diagnostics() const {
-
-  m_log->message(1, "\n");
-  m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
-
-  print_diagnostics(*m_log, describe_diagnostics());
-
-  // scalar time-series
-  m_log->message(1, "======== Available time-series ========\n");
-
-  print_diagnostics(*m_log, describe_ts_diagnostics());
-}
-
 /*!
  * Return metadata of 2D and 3D diagnostics.
  */
-std::map<std::string, std::vector<VariableMetadata>> IceModel::describe_diagnostics() const {
-  std::map<std::string, std::vector<VariableMetadata>> result;
+static Metadata diag_metadata(const std::map<std::string,Diagnostic::Ptr> &diags) {
+  Metadata result;
 
-  for (auto f : m_diagnostics) {
+  for (auto f : diags) {
     Diagnostic::Ptr diag = f.second;
 
     for (unsigned int k = 0; k < diag->n_variables(); ++k) {
@@ -2371,15 +2343,44 @@ std::map<std::string, std::vector<VariableMetadata>> IceModel::describe_diagnost
 /*!
  * Return metadata of scalar diagnostics.
  */
-std::map<std::string, std::vector<VariableMetadata>> IceModel::describe_ts_diagnostics() const {
-  std::map<std::string, std::vector<VariableMetadata>> result;
+static Metadata ts_diag_metadata(const std::map<std::string,TSDiagnostic::Ptr> &ts_diags) {
+  Metadata result;
 
-  for (auto d : m_ts_diagnostics) {
+  for (auto d : ts_diags) {
     // always one variable per diagnostic
     result[d.first] = {d.second->metadata()};
   }
 
   return result;
 }
+
+void IceModel::list_diagnostics_json() const {
+
+  m_log->message(1, "{\n");
+
+  m_log->message(1, "\"spatial\" :\n");
+  print_diagnostics_json(*m_log, diag_metadata(m_diagnostics));
+
+  m_log->message(1, ",\n");        // separator
+
+  m_log->message(1, "\"scalar\" :\n");
+  print_diagnostics_json(*m_log, ts_diag_metadata(m_ts_diagnostics));
+
+  m_log->message(1, "}\n");
+}
+
+void IceModel::list_diagnostics() const {
+
+  m_log->message(1, "\n");
+  m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
+
+  print_diagnostics(*m_log, diag_metadata(m_diagnostics));
+
+  // scalar time-series
+  m_log->message(1, "======== Available time-series ========\n");
+
+  print_diagnostics(*m_log, ts_diag_metadata(m_ts_diagnostics));
+}
+
 
 } // end of namespace pism
