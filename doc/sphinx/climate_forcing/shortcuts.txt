@@ -1,3 +1,5 @@
+.. -*- mode: rst -*-
+
 .. include:: ../global.txt
 
 .. |flux| replace:: :math:`kg / (m^{2} s)`
