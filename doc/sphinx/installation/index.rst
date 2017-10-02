@@ -1,4 +1,4 @@
-.. include:: ../global.rst
+.. include:: ../global.txt
 
 .. _sec-installation:
 

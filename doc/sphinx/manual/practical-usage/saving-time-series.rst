@@ -1,4 +1,4 @@
-.. include:: ../../global.rst
+.. include:: ../../global.txt
 .. |diagnostics| replace:: **FIXME: link to the list of diagnostics**
 
 .. _sec-saving-time-series:

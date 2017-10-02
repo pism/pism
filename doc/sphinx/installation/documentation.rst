@@ -1,4 +1,4 @@
-.. include:: ../global.rst
+.. include:: ../global.txt
 
 .. FIXME: This is out of date.
 

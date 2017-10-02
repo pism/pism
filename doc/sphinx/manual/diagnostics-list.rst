@@ -1,17 +1,58 @@
 
+.. DO NOT EDIT. This file was generated using list_diagnostics.py.
+
+   To update this list, run PISM with the option -list_diagnostics_json, making sure that
+   you enabled all the sub-models that provide diagnostics (scalar and
+   spatially-variable).
+
+   At the time of writing this includes
+
+   - Evolving geometry (without -no_mass)
+   - The bedrock thermal layer model (-Mbz X for X > 1)
+   - An energy-conservation model (-energy enthalpy or -energy cold)
+   - A bed deformation model (-bed_def iso or -bed_def lc)
+   - The PDD surface model (-surface pdd)
+   - An atmosphere model using a cosine yearly cycle (e.g. -atmosphere searise_greenland)
+   - The hybric stress balance model (-stress_balance ssa+sia -ssa_method fd)
+   - The Mohr-Coulomb basal yield stress model (-yield_stress mohr_coulomb)
+   - The "routing" subglacial hydrology model (-hydrology routing)
+   - All supported calving mechanisms (-calving eigen_calving,thickness_calving,frontal_melt,ocean_kill,vonmises_calving)
+
+   The "distributed" hydrology model does add more diagnostics, but it is not supported at
+   this point (not documented in the User's Manual).
+
+   See the Makefile in this directory.
+
 .. _sec-diagnostics-list:
 
 List of PISM's diagnostics
 ==========================
 
-.. DO NOT EDIT. This file was generated using list_diagnostics.py.
-
 .. contents::
+
+.. include:: diagnostics-comments.txt
+
+
 
 .. _sec-extra_vars:
 
 Spatially-variable fields
 -------------------------
+
+#. ``air_temp_mean_july``
+
+   :Units: Kelvin
+   :Description: mean July near-surface air temperature used in the cosine yearly cycle
+
+#. ``air_temp_sd``
+
+   :Units: Kelvin
+   :Description: standard deviation of near-surface air temperature
+
+#. ``air_temp_snapshot``
+
+   :Units: Kelvin
+   :Description: instantaneous value of the near-surface air temperature
 
 #. ``basal_mass_flux_floating``
 
@@ -64,6 +105,18 @@ Spatially-variable fields
    :Units: m
    :Description: thickness of transportable water in subglacial layer
 
+#. ``bwatvel``
+
+   - ``bwatvel[0]``
+
+     :Units: m year-1
+     :Description: velocity of water in subglacial layer, i-offset
+
+   - ``bwatvel[1]``
+
+     :Units: m year-1
+     :Description: velocity of water in subglacial layer, j-offset
+
 #. ``bwp``
 
    :Units: Pa
@@ -73,6 +126,11 @@ Spatially-variable fields
 
    :Units: ---
    :Description: pressure of transportable water in subglacial layer as fraction of the overburden pressure
+
+#. ``calving_threshold``
+
+   :Units: m
+   :Description: threshold used by the 'calving at threshold' calving method
 
 #. ``cell_area``
 
@@ -147,10 +205,25 @@ Spatially-variable fields
    :Units: Pa
    :Description: effective pressure of transportable water in subglacial layer (overburden pressure minus water pressure)
 
+#. ``effective_air_temp``
+
+   :Units: Kelvin
+   :Description: effective mean-annual near-surface air temperature
+
+#. ``effective_precipitation``
+
+   :Units: kg m-2 year-1
+   :Description: effective precipitation rate
+
 #. ``effective_viscosity``
 
    :Units: kPascal second
    :Description: effective viscosity of ice
+
+#. ``eigen_calving_rate``
+
+   :Units: m year-1
+   :Description: horizontal calving rate due to eigen-calving
 
 #. ``enthalpy``
 
@@ -166,6 +239,11 @@ Spatially-variable fields
 
    :Units: J kg-1
    :Description: ice enthalpy at 1m below the ice surface
+
+#. ``firn_depth``
+
+   :Units: m
+   :Description: firn cover depth
 
 #. ``flux``
 
@@ -193,6 +271,11 @@ Spatially-variable fields
 
    :Units: m2 year-1
    :Description: fluxes through cell interfaces (sides) on the staggered grid
+
+#. ``frontal_melt_rate``
+
+   :Units: m year-1
+   :Description: horizontal front retreat rate due to melt
 
 #. ``h_x``
 
@@ -299,6 +382,23 @@ Spatially-variable fields
    :Units: 1
    :Description: dimensionless pressure fraction at calving fronts due to presence of melange 
 
+#. ``nuH``
+
+   - ``nuH[0]``
+
+     :Units: kPa s m
+     :Description: ice thickness times effective viscosity, i-offset
+
+   - ``nuH[1]``
+
+     :Units: kPa s m
+     :Description: ice thickness times effective viscosity, j-offset
+
+#. ``ocean_kill_mask``
+
+   :Units: ---
+   :Description: mask used by the 'ocean kill' calving method 
+
 #. ``ocean_pressure_difference``
 
    :Units: ---
@@ -313,6 +413,11 @@ Spatially-variable fields
 
    :Units: 1
    :Description: processor rank
+
+#. ``saccum``
+
+   :Units: kg m-2 year-1
+   :Description: accumulation (precipitation minus rain), averaged over the reporting interval
 
 #. ``schoofs_theta``
 
@@ -351,6 +456,21 @@ Spatially-variable fields
 
    :Units: Kelvin
    :Description: ice temperature at the basal surface of ice shelves
+
+#. ``smelt``
+
+   :Units: kg m-2 year-1
+   :Description: surface melt, averaged over the reporting interval
+
+#. ``snow_depth``
+
+   :Units: m
+   :Description: snow cover depth (set to zero once a year)
+
+#. ``srunoff``
+
+   :Units: kg m-2 year-1
+   :Description: surface runoff, averaged over the reporting interval
 
 #. ``ssa_bc_mask``
 
@@ -417,25 +537,30 @@ Spatially-variable fields
    :Standard name: ``magnitude_of_land_ice_basal_drag``
    :Comment: this field is purely diagnostic (not used by the model)
 
+#. ``tauc``
+
+   :Units: Pa
+   :Description: yield stress for basal till (plastic or pseudo-plastic model)
+
 #. ``taud``
 
    - ``taud_x``
 
      :Units: Pa
      :Description: X-component of the driving shear stress at the base of ice
-     :Comment: this field is purely diagnostic (not used by the model)
+     :Comment: this is the driving stress used by the SSA solver
 
    - ``taud_y``
 
      :Units: Pa
      :Description: Y-component of the driving shear stress at the base of ice
-     :Comment: this field is purely diagnostic (not used by the model)
+     :Comment: this is the driving stress used by the SSA solver
 
 #. ``taud_mag``
 
    :Units: Pa
-   :Description: magnitude of the gravitational driving stress at the base of ice
-   :Comment: this field is purely diagnostic (not used by the model)
+   :Description: magnitude of the driving shear stress at the base of ice
+   :Comment: this is the magnitude of the driving stress used by the SSA solver
 
 #. ``tauxz``
 
@@ -568,6 +693,11 @@ Spatially-variable fields
    :Units: m
    :Description: thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA
 
+#. ``tillphi``
+
+   :Units: degrees
+   :Description: friction angle for till under grounded ice sheet
+
 #. ``tillwat``
 
    :Units: m
@@ -657,6 +787,11 @@ Spatially-variable fields
 
    :Units: m year-1
    :Description: magnitude of horizontal velocity of ice at ice surface
+
+#. ``vonmises_calving_rate``
+
+   :Units: m year-1
+   :Description: horizontal calving rate due to von Mises calving
 
 #. ``vonmises_stress``
 
@@ -752,6 +887,26 @@ Scalar time-series
 
    :Units: J
    :Description: enthalpy of the ice, including seasonal cover
+
+#. ``hydro_ice_free_land_loss``
+
+   :Units: kg s-1
+   :Description: rate of liquid water loss from subglacial hydrology into cells with mask as ice free land
+
+#. ``hydro_negative_thickness_gain``
+
+   :Units: kg s-1
+   :Description: rate of non-conserving liquid water gain from subglacial hydrology transportable water thickness coming out negative during time step, and being projected up to zero
+
+#. ``hydro_null_strip_loss``
+
+   :Units: kg s-1
+   :Description: rate of liquid water loss from subglacial hydrology into cells inside the null strip
+
+#. ``hydro_ocean_loss``
+
+   :Units: kg s-1
+   :Description: rate of liquid water loss from subglacial hydrology into cells with mask as ocean
 
 #. ``limnsw``
 

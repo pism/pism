@@ -1,3 +1,4 @@
+.. -*- mode: rst -*-
 
 .. default-role:: math
 

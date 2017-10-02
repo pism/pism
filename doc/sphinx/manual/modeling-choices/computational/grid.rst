@@ -1,4 +1,4 @@
-.. include:: ../../../global.rst
+.. include:: ../../../global.txt
 
 .. FIXME: add a section about the grid extent and the way to specify it (cell centers vs.
    cell corners, etc)

@@ -1,7 +1,7 @@
 
 .. DO NOT EDIT: This file was automatically generated using config_parameters.py. Edit src/pism_config.cdl instead.
 
-.. include:: ../global.rst
+.. include:: ../global.txt
 
 .. _sec-parameter-list:
 

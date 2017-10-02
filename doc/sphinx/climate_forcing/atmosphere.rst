@@ -1,4 +1,4 @@
-.. include:: shortcuts.rst
+.. include:: shortcuts.txt
 
 Atmosphere model components
 ---------------------------

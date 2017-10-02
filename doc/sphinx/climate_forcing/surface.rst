@@ -1,4 +1,4 @@
-.. include:: shortcuts.rst
+.. include:: shortcuts.txt
 
 Surface mass and energy process model components
 ------------------------------------------------
@@ -111,7 +111,7 @@ The option :opt:`-ice_surface_temp` (*list of 4 numbers*) determines the surface
 temperature using the 4 parameters `\T{min}`, `\T{max}`, `\h{min}`,
 `\h{max}`. Let
 
-.. include:: ../math-definitions.rst
+.. include:: ../math-definitions.txt
 
 .. math::
 

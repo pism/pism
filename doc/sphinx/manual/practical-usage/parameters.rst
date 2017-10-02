@@ -1,4 +1,4 @@
-.. include:: ../../global.rst
+.. include:: ../../global.txt
 
 .. _sec-pism-defaults:
 

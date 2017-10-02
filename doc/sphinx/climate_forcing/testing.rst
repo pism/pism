@@ -1,4 +1,4 @@
-.. include:: shortcuts.rst
+.. include:: shortcuts.txt
 
 Testing if forcing data is used correctly
 ------------------------------------------
