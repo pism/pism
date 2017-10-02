@@ -1,5 +1,4 @@
 .. include:: ../../global.txt
-.. |diagnostics| replace:: **FIXME: link to the list of diagnostics**
 
 .. _sec-diagnostic-viewers:
 
@@ -7,9 +6,9 @@ Run-time diagnostic viewers
 ---------------------------
 
 Basic graphical views of the changing state of a PISM ice model are available at the
-command line by using options listed in :numref:`tab-diag-viewers`. All the
-quantities listed in tables |diagnostics| are available. Additionally, a couple of
-diagnostic quantities are *only* available as run-time viewers; these are shown in table
+command line by using options listed in :numref:`tab-diag-viewers`. All the quantities
+listed in :ref:`sec-extra_vars` are available. Additionally, a couple of diagnostic
+quantities are *only* available as run-time viewers; these are shown in table
 :numref:`tab-special-diag-viewers`.
 
 .. list-table:: Options controlling run-time diagnostic viewers
@@ -28,7 +27,7 @@ diagnostic quantities are *only* available as run-time viewers; these are shown 
        the others.
 
 The option ``-view`` shows map-plane views of 2D fields and surface and basal views of 3D
-fields (see tables |diagnostics|); for example:
+fields (see :ref:`sec-extra_vars`); for example:
 
 .. code-block:: none
 

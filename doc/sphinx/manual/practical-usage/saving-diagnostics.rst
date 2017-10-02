@@ -1,5 +1,4 @@
 .. include:: ../../global.txt
-.. |diagnostics| replace:: **FIXME: link to the list of diagnostics**
 
 .. _sec-saving-diagnostics:
 
@@ -23,7 +22,7 @@ Use options ``-extra_file``, ``-extra_times``, and ``-extra_vars`` for this. For
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface
 and at the base of ice every 10 years. Times are specified using a comma-separated list or
 a MATLAB-style range. See :numref:`tab-extras` for all the options controlling this
-feature. Tables |diagnostics| list all the variable choices.
+feature. The section :ref:`sec-extra_vars` list all the variable choices.
 
 Note that options :opt:`-extra_times`, :opt:`-save_times`, :opt:`-ts_times` take *dates*
 if a non-trivial calendar is selected. For example,

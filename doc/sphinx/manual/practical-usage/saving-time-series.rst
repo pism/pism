@@ -1,5 +1,4 @@
 .. include:: ../../global.txt
-.. |diagnostics| replace:: **FIXME: link to the list of diagnostics**
 
 .. _sec-saving-time-series:
 
@@ -17,7 +16,7 @@ combination of the options ``-ts_file``, ``-ts_times``, and ``-ts_vars``. For ex
 
 will run for 10000 years, saving total ice volume and grounded ice area to
 ``time-series.nc`` *yearly*. See tables :numref:`tab-time-series-opts` for the list of
-options and tables |diagnostics| for the full list of supported time-series.
+options and :ref:`sec-ts_vars` for the full list of supported time-series.
 
 Note that, similarly to the snapshot-saving code (section :ref:`sec-snapshots`), this
 mechanism does not affect adaptive time-stepping. Here, however, PISM will save exactly
@@ -25,8 +24,8 @@ the number of time-series records requested, *linearly interpolated onto request
 
 .. FIXME: do we still interpolate linearly?
 
-Omitting the ``-ts_vars`` option makes PISM save *all* available variables, as listed in
-tables |diagnostics|. Because scalar time-series take minimal storage space, compared to
+Omitting the ``-ts_vars`` option makes PISM save *all* available variables listed in
+:ref:`sec-ts_vars`. Because scalar time-series take minimal storage space, compared to
 spatially-varying data, this is usually a reasonable choice. Run PISM with the
 :opt:`-list_diagnostics` option to see the list of all available time-series.
 

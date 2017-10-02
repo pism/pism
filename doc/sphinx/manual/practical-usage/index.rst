@@ -1,7 +1,5 @@
 .. include:: ../../global.txt
 
-.. |diagnostics| replace:: **FIXME: link to the list of diagnostics**
-
 .. _sec-practical-usage:
 
 Practical usage
