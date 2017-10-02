@@ -56,6 +56,8 @@ pygments_style = 'sphinx'
 
 html_theme = 'alabaster'
 
+html_show_sourcelink = False
+
 # numbered figures and tables
 numfig = True
 
