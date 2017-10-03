@@ -16,6 +16,8 @@ help:
 
 .PHONY: help Makefile
 
+# Targets for publishing on GitHub Pages
+
 github: Makefile clean
 	mkdir -p ${OUTDIR}	# create the output directory
 
@@ -29,10 +31,18 @@ github_clean:
 
 clean: Makefile github_clean
 
+# Add the "latex" tag when building PDFs
+
+latex%: Makefile
+	echo "Building LaTeX stuff"
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) -t latex
+
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+# Targets for updating the list of diagnostics:
 
 .INTERMEDIATE: diagnostics.json dummy.nc
 
