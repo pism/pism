@@ -22,7 +22,7 @@ There are two cases:
 .. _sec-example-surface-given:
 
 Reading ice surface temperature and mass balance
-++++++++++++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This is the simplest case. It is often the preferred case, for example when the climate
 model in use has high quality surface mass and energy sub-models which are then preferred
@@ -35,7 +35,7 @@ to the highly simplified (e.g. temperature index) surface models in PISM.
 .. _sec-example-atmosphere-given:
 
 Reading air temperature and precipitation
-+++++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As mentioned above, if a climate model provides near-surface air temperature and
 precipitation, these data need to be converted into top-of-the-ice temperature and
