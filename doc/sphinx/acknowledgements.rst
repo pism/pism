@@ -1,5 +1,7 @@
 .. -*- coding: utf-8 -*-
 
+.. include:: global.txt
+
 .. include:: <isonum.txt>
 
 Acknowledgements
@@ -19,7 +21,7 @@ Thanks for comments/questions from many PISM users around the world, including t
 already listed as PISM authors:
 
 
-    Gudfinna (Tolly) Adalgeirsdottir, Antje Fitzner, Nick Golledge, Tore Hattermann,
+    Guðfinna Aðalgeirsdóttir, Antje Fitzner, Nick Golledge, Tore Hattermann,
     Moritz Huetten, Thomas Kleiner, Leo van Kampenhout, Marianne Madsen, Malou Maris, Tim
     Morey, Mirena Olaizola, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen,
     Anne Solgaard, Ben Sperisen, Synne Høyer Svendsen, Martin Truffer, Shuting Yang,
@@ -32,8 +34,8 @@ PISM development in many ways.
 
 PISM includes the source code for three external libraries we rely on:
 
-- CalCalcs, Copyright |copy| 2010 by David W. Pierce, GPL
+- `CalCalcs <CalCalcs-home_>`_, Copyright |copy| 2010 by David W. Pierce, GPL
 
-- VDT, Copyright |copy| 2012 Danilo Piparo, Vincenzo Innocente, Thomas Hauth (CERN), LGPL
+- VDT_, Copyright |copy| 2012 Danilo Piparo, Vincenzo Innocente, Thomas Hauth (CERN), LGPL
 
 - ``cubature.c``, Copyright |copy| 2005 Steven G. Johnson, GPL
