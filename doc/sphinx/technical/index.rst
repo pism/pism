@@ -8,3 +8,5 @@ Technical notes
    vertchange.rst
 
    bed_roughness.rst
+
+   icemodelvec2t.rst
