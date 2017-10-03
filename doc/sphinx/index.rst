@@ -6,6 +6,8 @@ PISM |version| documentation
 .. toctree::
    :maxdepth: 3
 
+   acknowledgements.rst
+
    installation/index.rst
 
    manual/index.rst
@@ -13,8 +15,6 @@ PISM |version| documentation
    climate_forcing/index.rst
 
    technical/index.rst
-
-   acknowledgements.rst
 
    authorship.rst
 

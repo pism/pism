@@ -1,5 +1,7 @@
 .. -*- coding: utf-8 -*-
 
+.. include:: <isonum.txt>
+
 Acknowledgements
 ================
 
@@ -27,3 +29,11 @@ for helpful comments and questions on PISM and this *Manual*. Dave Covey, Don Ba
 Greg Newby have supported our hardware, software, and computations. Bob Bindschadler,
 Sophie Nowicki, Jesse Johnson, and others in the SeaRISE group have motivated and assisted
 PISM development in many ways.
+
+PISM includes the source code for three external libraries we rely on:
+
+- CalCalcs, Copyright |copy| 2010 by David W. Pierce, GPL
+
+- VDT, Copyright |copy| 2012 Danilo Piparo, Vincenzo Innocente, Thomas Hauth (CERN), LGPL
+
+- ``cubature.c``, Copyright |copy| 2005 Steven G. Johnson, GPL
