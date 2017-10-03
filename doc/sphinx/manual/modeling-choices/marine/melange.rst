@@ -5,20 +5,14 @@
 Modeling melange back-pressure
 ------------------------------
 
-
 Equation :eq:`eq-cfbc` above, describing the stress boundary condition for ice shelves,
 can be written in terms of velocity components:
+
+.. include:: ../../../math-definitions.txt
 
 .. math::
    :name: eq-cfbc-uv
 
-   \newcommand{\psw}{p_{\text{ocean}}}
-   \newcommand{\pice}{p_{\text{ice}}}
-   \newcommand{\pmelange}{p_{\text{melange}}}
-   \newcommand{\n}{\mathbf{n}}
-   \newcommand{\nx}{\n_{x}}
-   \newcommand{\ny}{\n_{y}}
-   
    \begin{array}{lclcl}
      2 \nu H (2u_x + u_y) \nx &+& 2 \nu H (u_y + v_x)  \ny &=& \displaystyle \int_{b}^{h}(\pice - \psw) dz\, \nx,\\
      2 \nu H (u_y + v_x)  \nx &+& 2 \nu H (2v_y + u_x) \ny &=& \displaystyle \int_{b}^{h}(\pice - \psw) dz\, \ny.

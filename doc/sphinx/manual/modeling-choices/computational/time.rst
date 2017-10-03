@@ -51,14 +51,26 @@ document except for the ``366_day`` (``all_leap``) calendar.
 Time units in PISM's output files always contain a reference date because it is required
 by the CF metadata conventions.
 
-.. FIXME: PISM does use a calendar, just not a "real" one (365_day).
-
-By default PISM does not use a calendar. This is appropriate for runs that do not require
-precise application of forcing data or reporting on particular dates (paleo-climate runs,
-for example). In this mode PISM ignores the reference date in time unit specifications
-(such as "``days since 1969-7-20``"), though the value set using
+By default PISM uses the ``365_day`` calendar. This is appropriate for runs that do not
+require precise application of forcing data or reporting on particular dates
+(paleo-climate runs, for example). In this mode PISM ignores the reference date in time
+unit specifications (such as "``days since 1969-7-20``"), though the value set using
 :config:`time.reference_date` configuration parameter is saved in (is passed forward into)
 output files.
+
+The calendar setting also affects the year length. In particular, with the default choice
+of the calendar (``365_day``), ``-y 10`` sets the run duration to
+
+.. math::
+
+   10 \times 365 \times 24 \times 60 \times 60 = 315360000
+
+seconds, not `10 \times 365.25 \times 24 \times 60 \times 60` or similar.
+
+.. note::
+
+   This does **not** affect unit conversion: the factor used to convert `m/s` to
+   `m/\text{year}` does not depend on the calendar choice.
 
 .. list-table:: Calendars supported by PISM. Please see CalCalcs_ documentation for
                 details
@@ -81,9 +93,10 @@ output files.
    * - ``none``
      - no calendar
 
-Selecting a calendar using the :config:`time.calendar` configuration parameter or the
-:opt:`-calendar` command-line option enables calendar-based time management; see
-:numref:`tab-calendars`. The implications of selecting a calendar are:
+Selecting a non-trivial (Gregorian, Proleptic Gregorian, or Julian) calendar using the
+:config:`time.calendar` configuration parameter or the :opt:`-calendar` command-line
+option enables calendar-based time management; see :numref:`tab-calendars`. The
+implications of selecting such a calendar are:
 
 - PISM uses the ``units`` attribute of coordinate variables *literally* (including the
   reference date) in unit conversions. Please make sure that the :var:`time` variable in
@@ -117,7 +130,7 @@ Selecting a calendar using the :config:`time.calendar` configuration parameter o
 
 - options ``-ys`` and ``-ye`` take *dates* as arguments.
 
-For example, either of the following commands sets up a run covering the 21`^{st}`
+For example, either of the following commands sets up a run covering the `21^{st}`
 century:
 
 .. code-block:: none

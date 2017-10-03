@@ -119,8 +119,7 @@ in the model; see :numref:`tab-hydrologyrouting`. Specifically, the horizontal
 subglacial water flux is determined by a generalized Darcy flux relation :cite:`Clarke05`,
 :cite:`Schoofetal2012`
 
-.. math::
-   \newcommand{\bq}{\mathbf{q}}
+.. include:: ../../../math-definitions.txt
 
 .. math::
    :name: eq-flux

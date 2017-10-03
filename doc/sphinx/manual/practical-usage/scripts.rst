@@ -13,6 +13,7 @@ Browser <pism-browser_>`_. The Python scripts all take option ``--help``.
 .. list-table:: Some scripts which help in using PISM
    :name: tab-scripts-overview
    :header-rows: 1
+   :widths: 1,1
 
    * - Script
      - Function

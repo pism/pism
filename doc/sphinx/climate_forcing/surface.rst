@@ -95,14 +95,6 @@ Elevation-dependent temperature and mass balance
 :|variables|: none
 :|implementation|: ``PSElevation``
 
-.. math::
-
-  \newcommand{\var}[2]{ {#1}_{\text{#2}} }
-  \newcommand{\h}[1]{ \var{h}{#1} }
-  \newcommand{\T}[1]{ \var{T}{#1} }
-  \newcommand{\m}[1]{ \var{m}{#1} }
-  \newcommand{\ms}[1]{ \var{m^{*}}{#1} }
-
 This surface model component parameterizes the ice surface temperature `T_{h}` =
 :var:`ice_surface_temp` and the mass balance `m` = :var:`climatic_mass_balance` as
 *piecewise-linear* functions of surface elevation `h`.
@@ -147,13 +139,13 @@ Then
 
 .. math::
 
-  m(x,y) =
-  \begin{cases}
-   \m{min}, & h(x,y) \le \h{min}, \\
-   \diff{\m{abl}}{h} \, (h(x,y) - h_{\text{ELA}}), &  \h{min} < h(x,y) < \h{max}, \\
-   \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max},
-   \m{max}, & \h{max} \le h(x,y).
- \end{cases}
+   m(x,y) =
+   \begin{cases}
+    \m{min}, & h(x,y) \le \h{min}, \\
+    \diff{\m{abl}}{h} \, (h(x,y) - h_{\text{ELA}}), &  \h{min} < h(x,y) < \h{max}, \\
+    \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
+    \m{max}, & \h{max} \le h(x,y).
+   \end{cases}
 
 The option :opt:`-climatic_mass_balance_limits` (*list of 2 numbers*) limits the mass
 balance below `\h{min}` to `\ms{min}` and above `\h{max}` to
@@ -161,13 +153,13 @@ balance below `\h{min}` to `\ms{min}` and above `\h{max}` to
 
 .. math::
 
-  m(x,y) =
-  \begin{cases}
+   m(x,y) =
+   \begin{cases}
     m^{*}_{\text{min}}, & h(x,y) \le \h{min}, \\
     \diff{\m{abl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
-    \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max},
+    \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
     m^{*}_{\text{max}}, & \h{max} \le h(x,y).
-  \end{cases}
+   \end{cases}
 
 Note: this surface model *ignores* the atmosphere model selection made using the
 :opt:`-atmosphere` option.

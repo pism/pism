@@ -12,6 +12,7 @@ basic ways to input and output NetCDF files when starting and ending PISM runs.
 .. list-table:: Basic NetCDF input and output options
    :name: tab-input-output-options
    :header-rows: 1
+   :widths: 1,2
 
    * - Option
      - Description
@@ -49,6 +50,7 @@ Note the ``-help`` and ``-usage`` options for getting help at the command line.
 .. list-table:: Options controlling PISM's standard output
    :header-rows: 1
    :name: tab-stdout
+   :widths: 1,2
 
    * - Option
      - Description

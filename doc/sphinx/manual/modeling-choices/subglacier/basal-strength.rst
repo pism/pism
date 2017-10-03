@@ -229,12 +229,7 @@ option is
 
    -topg_to_phi phimin,phimax,bmin,bmax
 
-.. math::
-
-   \newcommand{\phimin}{\phi_{\mathrm{min}}}
-   \newcommand{\phimax}{\phi_{\mathrm{max}}}
-   \newcommand{\bmin}{b_{\mathrm{min}}}
-   \newcommand{\bmax}{b_{\mathrm{max}}}
+.. include:: ../../../math-definitions.txt
 
 Thus the user supplies 4 parameters: `\phimin`, `\phimax`, `\bmin`, `\bmax`, where `b`
 stands for the bed elevation. To explain these, we define `M = (\phimax - \phimin) /

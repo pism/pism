@@ -85,3 +85,11 @@ html_sidebars = {
         'searchbox.html',
     ]
 }
+
+# -- Options for LaTeX output ----------------
+
+latex_elements = {
+    'preamble': r'''
+    \usepackage{txfonts}
+'''
+}

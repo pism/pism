@@ -42,12 +42,8 @@ is no theoretical advice on the best, most robust mechanism. There are three
      - In this method we first transform the thickness `H` by `\eta =
        H^{(2n+2)/n}` and then differentiate the sum of the thickness and the bed using
        centered differences:
-
-       .. math::
-
-          \nabla h = \nabla H + \nabla b = \frac{n}{(2n+2)}
-          \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.
-
+          `\nabla h = \nabla H + \nabla b = \frac{n}{(2n+2)}
+          \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.`
        Here `b` is the bed elevation and `h` is the surface elevation. This
        transformation sometimes has the benefits that the surface values of the horizontal
        velocity and vertical velocity, and the driving stress, are better behaved near the

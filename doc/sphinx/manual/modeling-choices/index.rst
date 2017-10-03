@@ -62,4 +62,5 @@ the mass-continuity equation:
 The ``-no_`` prefix is still supported for compatibility with older scripts, but will be
 removed in a later PISM version.
    
-See FIXME for the full list of configuration parameters and corresponding options.
+See :ref:`sec-parameter-list` for the full list of configuration parameters and
+corresponding options.

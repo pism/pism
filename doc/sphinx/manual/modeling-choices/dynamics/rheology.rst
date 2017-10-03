@@ -89,6 +89,7 @@ error.
                 but only the temperature `T`.
    :name: tab-flowlaw
    :header-rows: 1
+   :widths: 1,3
 
    * - Name
      - Comments and References
@@ -99,9 +100,7 @@ error.
        (below) to positive liquid water fraction. If `A_{c}(T)` is from Paterson-Budd then
        this law returns
 
-       .. math::
-
-          A(T,\omega) = A_{c}(T) (1 + C \omega),
+          `A(T,\omega) = A_{c}(T) (1 + C \omega),`
 
        where `\omega` is the liquid water fraction, `C` is a configuration parameter
        :config:`flow_law.gpbld.water_frac_coeff` [default `C=181.25`\], and `\omega` is
@@ -120,23 +119,17 @@ error.
      - Paterson-Budd law, the cold-mode default. Fixed Glen exponent `n=3`. Has a split
        "Arrhenius" term `A(T) = A \exp(-Q/RT^*)` where
 
-       .. math::
-
-          A &= 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},
-
-          Q &= 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}
+          `A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},`
+          `Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}`
 
        if `T^* < 263` K and
+       
+          `A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},`
+          `Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}`
 
-       .. math::
+       if `T^* > 263` K.
 
-          A &= 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},
-
-          Q &= 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}
-
-       if `T^* > 263` K;
-
-       here `T^*` is pressure-adjusted temperature :cite:`PatersonBudd`.
+       Here `T^*` is pressure-adjusted temperature :cite:`PatersonBudd`.
 
    * - ``arr``
      - *Cold* part of Paterson-Budd. Regardless of temperature, the `A` and `Q` values for
@@ -151,9 +144,7 @@ error.
    * - ``hooke``
      - Hooke law with
 
-       .. math::
-
-          A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa).
+          `A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa).`
 
        Fixed Glen exponent `n=3` and constants as in :cite:`Hooke`, :cite:`PayneBaldwin`.
 

@@ -1,10 +1,11 @@
 .. include:: ../global.txt
 
-.. math::
+.. only:: html
 
-   \require{cancel}
-   \newcommand{\fint}{\cancel{\phantom{x}}\kern{-1.1em}\int}
-
+   .. in LaTeX I can just \usepackage{txfonts}...
+   
+   `\require{cancel} \newcommand{\fint}{\cancel{\phantom{x}}\kern{-1.1em}\int}`
+   
 .. _sec-bed-roughness:
 
 Using Schoof's parameterized bed roughness technique in PISM

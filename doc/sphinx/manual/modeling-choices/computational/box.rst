@@ -10,7 +10,7 @@ Computational box
 PISM does all simulations in a computational box which is rectangular in the PISM
 coordinates. The coordinate system has horizontal coordinates `x,y` and a vertical
 coordinate `z`. The `z` coordinate is measured positive upward from the base
-of the ice. The vector of gravity is in the negative `z` direction. The surface
+of the ice.\ [#]_ The vector of gravity is in the negative `z` direction. The surface
 `z=0` is the base of the ice, however, and thus is usually not horizontal in the
 sense of being parallel to the geoid. The surface `z=0` is the base of the ice both
 when the ice is grounded and when the ice is floating.
@@ -47,7 +47,7 @@ the ice, the bedrock corresponds to negative `z` values regardless of its true (
 `z'`) elevation.
 
 The extent of the computational box, along with its bedrock extension downward, is
-determined by four numbers ``Lx``, ``Ly``, ``Lz``, and ``Lbz`` (see Figure
+determined by four numbers ``Lx``, ``Ly``, ``Lz``, and ``Lbz`` (see
 :numref:`fig-rectilinearbox` and :numref:`tab-compbox`). The first two of these are
 half-widths and have units of kilometers when set by options or displayed.
 
@@ -71,3 +71,7 @@ half-widths and have units of kilometers when set by options or displayed.
      - Height of the computational domain; must exceed maximum ice thickness 
    * - :opt:`-Lbz` (meters)
      - Depth of the computational domain in the bedrock thermal layer
+
+.. rubric:: Footnotes
+
+.. [#] See :ref:`sec-vertchange` for details.

@@ -21,6 +21,7 @@ Research (PIK), and several additional developers listed here.
 
 .. list-table::
    :header-rows: 1
+   :widths: 1,2
 
    * - Name and affiliation
      - Area of contribution
