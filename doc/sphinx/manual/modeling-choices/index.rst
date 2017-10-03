@@ -5,17 +5,6 @@
 Modeling choices
 ================
 
-.. toctree::
-   :maxdepth: 1
-
-   computational/index.rst
-   dynamics/index.rst
-   subglacier/index.rst
-   marine/index.rst
-
-
-
-   
 PISM is controlled by command-line options and configuration parameters. Every parameter
 corresponds to an option; some options map to a combination of parameters.
 
@@ -64,3 +53,12 @@ removed in a later PISM version.
    
 See :ref:`sec-parameter-list` for the full list of configuration parameters and
 corresponding options.
+
+.. toctree::
+   :maxdepth: 1
+
+   computational/index.rst
+   dynamics/index.rst
+   subglacier/index.rst
+   marine/index.rst
+

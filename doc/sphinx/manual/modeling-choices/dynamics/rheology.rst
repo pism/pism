@@ -220,6 +220,7 @@ A corresponding formula applies to ``-ssa_e`` if the ``-ssa_n`` value changes.
                 exponent can be controlled by a runtime option.
    :name: tab-enhancementandexponent
    :header-rows: 1
+   :widths: 1,2,2
 
    * - Option
      - Configuration parameter

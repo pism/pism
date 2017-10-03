@@ -92,6 +92,7 @@ purely plastic case is the default; just use ``-stress_balance ssa+sia`` to turn
 .. list-table:: Sliding law command-line options
    :name: tab-sliding-power-law
    :header-rows: 1
+   :widths: 1,2
 
    * - Option
      - Description
@@ -187,6 +188,7 @@ unlikely to be a good modelling choice for real ice sheets.
 .. list-table:: Command-line options controlling how yield stress is determined
    :name: tab-yieldstress
    :header-rows: 1
+   :widths: 3,5
 
    * - Option
      - Description

@@ -96,6 +96,7 @@ actual time-steps.
 .. list-table:: Command-line options controlling extra diagnostic output
    :name: tab-extras
    :header-rows: 1
+   :widths: 1,3
 
    * - Option
      - Description
@@ -117,11 +118,3 @@ actual time-steps.
    * - :opt:`-extra_append`
      - Append variables to file if it already exists. No effect if file does not yet
        exist, and no effect if :opt:`-extra_split` is set.
-
-.. note:: Document "Scalar 3D diagnostic quantities"
-
-.. note:: Document "Vector 3D diagnostic quantities"
-
-.. note:: Document "Scalar 2D diagnostic quantities"
-
-.. note:: Document "Vector 2D diagnostic quantities"

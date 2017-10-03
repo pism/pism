@@ -55,6 +55,7 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
                 flag line.
    :header-rows: 1
    :name: tab-adaptiveflag
+   :widths: 1,2
 
    * - PISM output
      - Active adaptive constraint or PISM sub-system that limited time-step size
@@ -102,6 +103,7 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
 .. list-table:: Options controlling time-stepping
    :header-rows: 1
    :name: tab-time-stepping
+   :widths: 3,5
 
    * - Option
      - Description

@@ -13,6 +13,7 @@ implemented in PISM.
 .. list-table:: Options for the calving models in PISM.
    :name: tab-calving
    :header-rows: 1
+   :widths: 1,1
 
    * - Option
      - Description

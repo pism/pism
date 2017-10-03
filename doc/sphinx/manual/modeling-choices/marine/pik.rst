@@ -26,6 +26,7 @@ Table.
                 calving law choice is needed in addition to these options.
    :name: tab-pism-pik
    :header-rows: 1
+   :widths: 1,3
 
    * - Option
      - Description

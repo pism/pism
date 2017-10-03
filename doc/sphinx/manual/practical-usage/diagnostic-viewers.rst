@@ -14,6 +14,7 @@ quantities are *only* available as run-time viewers; these are shown in table
 .. list-table:: Options controlling run-time diagnostic viewers
    :name: tab-diag-viewers
    :header-rows: 1
+   :widths: 1,3
 
    * - Option
      - Description
@@ -38,6 +39,7 @@ shows ice thickness and ice temperature at the surface.
 .. list-table:: Special run-time-only diagnostic viewers
    :name: tab-special-diag-viewers
    :header-rows: 1
+   :widths: 3,5
 
    * - Option
      - Description

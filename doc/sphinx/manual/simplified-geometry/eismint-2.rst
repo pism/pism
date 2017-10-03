@@ -39,6 +39,7 @@ Experiments E -- L are only documented in :cite:`EISIIdescribe`.
                 the `61\times 61` default grid, for significant speedup.
    :name: tab-eisII
    :header-rows: 1
+   :widths: 5,2
 
    * - Command: "``pisms +``"
      - Relation to experiment A
@@ -95,6 +96,7 @@ EISMINT II experiments.
 .. list-table:: Changing the default settings for EISMINT II
    :name: tab-eisIIoptions
    :header-rows: 1
+   :widths: 1,2,1,2
 
    * - Option
      - Default values [experiments]
@@ -113,7 +115,9 @@ EISMINT II experiments.
      - max value of accumulation rate
 
    * - :opt:`-Rel`
-     - 450 [ABEFGHIK], 425 [CDJL]
+     - 450 [ABEFGHIK],
+
+       425 [CDJL]
      - km
      - radial distance to equilibrium line
 
@@ -128,7 +132,11 @@ EISMINT II experiments.
      - radial gradient of surface temperature
 
    * - :opt:`-Tmin`
-     - 238.15 [ACDEGHIJKL], 243.15[B], 223.15[F]
+     - 238.15 [ACDEGHIJKL],
+       
+       243.15 [B],
+       
+       223.15 [F]
      - K
      - max of surface temperature
 

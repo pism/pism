@@ -24,6 +24,7 @@ namely the SSA stress balance, by using options :opt:`-stress_balance ssa` or
                 model.
    :name: tab-maskvals
    :header-rows: 1
+   :widths: 1,2
 
    * - Mask value
      - Meaning

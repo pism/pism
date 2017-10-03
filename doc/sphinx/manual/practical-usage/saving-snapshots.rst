@@ -103,6 +103,7 @@ model state.
 .. list-table:: Command-line options controlling saving snapshots of the model state.
    :name: tab-snapshot-opts
    :header-rows: 1
+   :widths: 1,1
 
    * - Option
      - Description

@@ -76,7 +76,7 @@ seconds, not `10 \times 365.25 \times 24 \times 60 \times 60` or similar.
                 details
    :name: tab-calendars
    :header-rows: 1
-   :widths: 20, 80
+   :widths: 1, 3
 
    * - Keyword
      - Meaning

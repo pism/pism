@@ -20,6 +20,7 @@ on the till.
 .. list-table:: Command-line options to choose the hydrology model
    :name: tab-hydrologychoice
    :header-rows: 1
+   :widths: 2,5
 
    * - Option
      - Description
@@ -48,6 +49,7 @@ thereby effectively decoupling the hydrology model from the ice dynamics
 .. list-table:: Subglacial hydrology command-line options which apply to all hydrology models
    :name: tab-hydrology
    :header-rows: 1
+   :widths: 1,1
 
    * - Option
      - Description
@@ -156,6 +158,7 @@ grids (e.g. `< 1` km).
 .. list-table:: Command-line options specific to hydrology model ``routing``
    :name: tab-hydrologyrouting
    :header-rows: 1
+   :widths: 1,1
 
    * - Option
      - Description

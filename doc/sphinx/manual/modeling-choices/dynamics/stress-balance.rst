@@ -49,6 +49,7 @@ the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice s
 .. list-table:: The basic choice of stress balance
    :name: tab-stress-balance-choice
    :header-rows: 1
+   :widths: 1,2
 
    * - Option
      - Description
@@ -82,6 +83,7 @@ the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice s
 .. list-table:: Choice of, and controls on, the numerical SSA stress balance.
    :name: tab-ssa-usage
    :header-rows: 1
+   :widths: 1,2
 
    * - Option
      - Description
@@ -111,7 +113,7 @@ the user is advised to read section :ref:`sec-pism-pik` on modeling marine ice s
 .. list-table:: Controls on the numerical iteration of the ``-ssa_method fd`` solver
    :name: tab-ssafd-controls
    :header-rows: 1
-   :widths: 20, 80
+   :widths: 1,2
 
    * - Option
      - Description

@@ -18,6 +18,7 @@ same signal, avoiding an explicit list of |pid|.
 .. list-table:: Signalling running PISM processes.  "|pid|" stands for list of all identifiers of the PISM processes.
    :name: tab-signals
    :header-rows: 1
+   :widths: 1,1,2
 
    * - Command
      - Signal

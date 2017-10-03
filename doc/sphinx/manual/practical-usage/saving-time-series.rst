@@ -42,6 +42,7 @@ monitor the run. (See section :ref:`sec-signal` for more about PISM's signal han
 .. list-table:: Command-line options controlling saving scalar time-series
    :name: tab-time-series-opts
    :header-rows: 1
+   :widths: 1,3
 
    * - Option
      - Description

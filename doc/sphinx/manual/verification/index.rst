@@ -38,7 +38,7 @@ class of the PISM base class.
 .. list-table:: Exact solutions for verification
    :header-rows: 1
    :name: tab-tests
-   :widths: auto
+   :widths: 1,4,2,4
 
    * - Test
      - Continuum model tested
