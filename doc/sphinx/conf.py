@@ -11,6 +11,8 @@
 #
 # needs_sphinx = '1.0'
 
+nitpicky = True
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
@@ -52,14 +54,14 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+# numbered figures and tables
+numfig = True
+
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = 'alabaster'
 
 html_show_sourcelink = False
-
-# numbered figures and tables
-numfig = True
 
 html_theme_options = {"logo" : "pism-logo.png",
                       "github_button" : False,
@@ -88,8 +90,13 @@ html_sidebars = {
 
 # -- Options for LaTeX output ----------------
 
+latex_documents = [
+    (master_doc, 'pism_manual.tex', project, author, 'manual'),
+]
+
+# latex_show_pagerefs = True
+
 latex_elements = {
-    'preamble': r'''
-    \usepackage{txfonts}
-'''
+    'releasename' : "version",
+    'preamble': r'\usepackage{txfonts}'
 }
