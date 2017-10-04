@@ -46,19 +46,8 @@ generates a run-script for each `(q,e)` pair. For each parameter setting it call
 outputs the run command. This run command is then redirected into an appropriately-named
 ``.sh`` script file:
 
-.. code-block:: bash
-
-   #!/bin/bash
-   NN=4
-   DUR=1000
-   START=g10km_gridseq.nc
-   for PPQ in 0.1 0.5 1.0 ; do
-     for SIAE in 1 3 6 ; do
-        PISM_DO=echo REGRIDFILE=$START PARAM_PPQ=$PPQ PARAM_SIAE=$SIAE \
-          ./spinup.sh $NN const $DUR 10 hybrid p10km_${PPQ}_${SIAE}.nc \
-          &> p10km_${PPQ}_${SIAE}.sh
-     done
-   done
+.. literalinclude:: scripts/run-5-study.sh
+   :language: bash
 
 Notice that, because the stored state ``g10km_gridseq.nc`` used `q=0.5` and
 `e=3`, one of these runs simply continues with no change in the physics.
@@ -66,16 +55,9 @@ Notice that, because the stored state ``g10km_gridseq.nc`` used `q=0.5` and
 To set up and run the parameter study, without making a mess from all the generated files,
 do:
 
-.. code-block:: bash
-
-   cd examples/std-greenland/           # g10km_gridseq.nc should be in this directory
-   mkdir paramstudy
-   cd paramstudy
-   ln -s ../g10km_gridseq.nc            # these four lines make links to ...
-   ln -s ../pism_Greenland_5km_v1.1.nc  #
-   ln -s ../spinup.sh                   #
-   ln -s ../param.sh                    # ... existing files in examples/std-greenland/
-   ./param.sh
+.. literalinclude:: scripts/run-5-setup.sh
+   :language: bash
+   :lines: 3-
 
 The result of the last command is to generate nine run scripts,
 
@@ -101,24 +83,14 @@ run, over the ``NN=4`` processes specified by ``param.sh`` when generating the r
 scripts. If you have `4 \times 9 = 36` cores available then you can do the runs
 fully in parallel (this is ``runparallel.sh`` in ``examples/std-greenland/``):
 
-.. code-block:: bash
-
-   #!/bin/bash
-   for scriptname in $(ls p10km*sh) ; do
-     echo ; echo "starting ${scriptname} ..."
-     bash $scriptname &> out.$scriptname &  # start immediately in background
-   done
+.. literalinclude:: scripts/run-5-parallel.sh
+   :language: bash
 
 Otherwise you should do them in sequence (this is ``runsequential.sh`` in
 ``examples/std-greenland/``):
 
-.. code-block:: bash
-
-   #!/bin/bash
-   for scriptname in $(ls p10km*sh) ; do
-     echo ; echo "starting ${scriptname} ..."
-     bash $scriptname                       # will wait for completion
-   done
+.. literalinclude:: scripts/run-5-serial.sh
+   :language: bash
 
 On the same old 2012-era 4 core laptop, ``runsequential.sh`` took a total of just under 7
 hours to complete the whole parameter study. The runs with `q=0.1` (the more
