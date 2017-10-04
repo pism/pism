@@ -28,9 +28,9 @@ To see what can be done with the script, read the usage message it produces:
 The simplest spin-up approach is to use a "constant-climate" model. We take this approach
 first. To see a more detailed view of the PISM command for the first run, do:
 
-.. code-block:: none
-
-   PISM_DO=echo ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc
+.. literalinclude:: scripts/run-1-echo.sh
+   :language: bash
+   :lines: 3-
 
 Setting the environment variable ``PISM_DO`` in this way tells ``spinup.sh`` just to print
 out the commands it is about to run instead of executing them. The "proposed" run looks
