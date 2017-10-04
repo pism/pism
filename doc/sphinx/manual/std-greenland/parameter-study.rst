@@ -150,4 +150,4 @@ perhaps, of the meaning of the optimal parameter values.
 
 .. rubric:: Footnotes
 
-.. [#] They are stored in human-readable form in the file |config-cdl|.
+.. [#] See :ref:`sec-parameter-list` for the full list.
