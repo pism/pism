@@ -30,11 +30,6 @@ def entry(name, T, value, option, description, choices=None):
     if len(value) == 0:
         value = "*no default*"
 
-    if option is not None:
-        option = ":opt:`{}`".format(option)
-    else:
-        option = "*no short option*"
-
     if value.find(",") != -1:
         # A comma-separated list
         value = "``{}``".format(value.replace(",", ", "))
@@ -54,8 +49,12 @@ def entry(name, T, value, option, description, choices=None):
         template += """
    :Choices: {choices}"""
 
+    if option is not None:
+        option = ":opt:`{}`".format(option)
+        template += """
+   :Option: {option}"""
+
     template += """
-   :Option: {option}
    :Description: {description}"""
 
     return template.format(name=name,

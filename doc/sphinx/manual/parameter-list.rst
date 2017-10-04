@@ -29,73 +29,61 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`age.initial_value` (*scalar*)
 
    :Value: 0 (years)
-   :Option: *no short option*
    :Description: Initial age of ice
 
 #. :config:`atmosphere.fausto_air_temp.c_ma` (*scalar*)
 
    :Value: -0.718900 (Kelvin / degree_north)
-   :Option: *no short option*
    :Description: latitude-dependence coefficient for formula (1) in :cite:`Faustoetal2009`
 
 #. :config:`atmosphere.fausto_air_temp.c_mj` (*scalar*)
 
    :Value: -0.158500 (Kelvin / degree_north)
-   :Option: *no short option*
    :Description: latitude-dependence coefficient for formula (2) in :cite:`Faustoetal2009`
 
 #. :config:`atmosphere.fausto_air_temp.d_ma` (*scalar*)
 
    :Value: 314.980000 (Kelvin)
-   :Option: *no short option*
    :Description: 41.83+273.15; base temperature for formula (1) in :cite:`Faustoetal2009`
 
 #. :config:`atmosphere.fausto_air_temp.d_mj` (*scalar*)
 
    :Value: 287.850000 (Kelvin)
-   :Option: *no short option*
    :Description: = 14.70+273.15; base temperature for formula (2) in :cite:`Faustoetal2009`
 
 #. :config:`atmosphere.fausto_air_temp.gamma_ma` (*scalar*)
 
    :Value: -0.006309 (Kelvin / meter)
-   :Option: *no short option*
    :Description: = -6.309 / 1km; mean slope lapse rate for formula (1) in :cite:`Faustoetal2009`
 
 #. :config:`atmosphere.fausto_air_temp.gamma_mj` (*scalar*)
 
    :Value: -0.005426 (Kelvin / meter)
-   :Option: *no short option*
    :Description: = -5.426 / 1km; mean slope lapse rate for formula (2) in :cite:`Faustoetal2009`
 
 #. :config:`atmosphere.fausto_air_temp.kappa_ma` (*scalar*)
 
    :Value: 0.067200 (Kelvin / degree_west)
-   :Option: *no short option*
    :Description: longitude-dependence coefficient for formula (1) in :cite:`Faustoetal2009`
 
 #. :config:`atmosphere.fausto_air_temp.kappa_mj` (*scalar*)
 
    :Value: 0.051800 (Kelvin / degree_west)
-   :Option: *no short option*
    :Description: longitude-dependence coefficient for formula (2) in :cite:`Faustoetal2009`
 
 #. :config:`atmosphere.fausto_air_temp.summer_peak_day` (*integer*)
 
    :Value: 196
-   :Option: *no short option*
    :Description: day of year for July 15; used in corrected formula (4) in :cite:`Faustoetal2009`
 
 #. :config:`atmosphere.precip_exponential_factor_for_temperature` (*scalar*)
 
    :Value: 0.070417 (Kelvin-1)
-   :Option: *no short option*
    :Description: = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change :cite:`Huybrechts02`
 
 #. :config:`basal_resistance.beta_ice_free_bedrock` (*scalar*)
 
    :Value: 1.800000e+09 (Pascal second meter-1)
-   :Option: *no short option*
    :Description: value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress
 
 #. :config:`basal_resistance.plastic.regularization` (*scalar*)
@@ -186,7 +174,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`basal_yield_stress.mohr_coulomb.till_reference_effective_pressure` (*scalar*)
 
    :Value: 1000 (Pascal)
-   :Option: *no short option*
    :Description: reference effective pressure N_0; value from :cite:`Tulaczyketal2000`
 
 #. :config:`basal_yield_stress.mohr_coulomb.till_reference_void_ratio` (*scalar*)
@@ -198,31 +185,26 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`basal_yield_stress.mohr_coulomb.topg_to_phi.enabled` (*boolean*)
 
    :Value: no
-   :Option: *no short option*
    :Description: If THE OPTION -topg_to_phi IS SET THEN THIS WILL BE SET TO 'yes', and then MohrCoulombYieldStress will initialize the tillphi field using a piece-wise linear function of depth described by four parameters.
 
 #. :config:`basal_yield_stress.mohr_coulomb.topg_to_phi.phi_max` (*scalar*)
 
    :Value: 15 (degrees)
-   :Option: *no short option*
    :Description: upper value of the till friction angle; see the implementation of MohrCoulombYieldStress
 
 #. :config:`basal_yield_stress.mohr_coulomb.topg_to_phi.phi_min` (*scalar*)
 
    :Value: 5 (degrees)
-   :Option: *no short option*
    :Description: lower value of the till friction angle; see the implementation of MohrCoulombYieldStress
 
 #. :config:`basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max` (*scalar*)
 
    :Value: 1000 (meters)
-   :Option: *no short option*
    :Description: the elevation at which the upper value of the till friction angle is used; see the implementation of MohrCoulombYieldStress
 
 #. :config:`basal_yield_stress.mohr_coulomb.topg_to_phi.topg_min` (*scalar*)
 
    :Value: -1000 (meters)
-   :Option: *no short option*
    :Description: the elevation at which the lower value of the till friction angle is used; see the implementation of MohrCoulombYieldStress
 
 #. :config:`basal_yield_stress.slippery_grounding_lines` (*boolean*)
@@ -240,19 +222,16 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`bed_deformation.mantle_density` (*scalar*)
 
    :Value: 3300 (kg meter-3)
-   :Option: *no short option*
    :Description: half-space (mantle) density used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`
 
 #. :config:`bed_deformation.lithosphere_flexural_rigidity` (*scalar*)
 
    :Value: 5.000000e+24 (Newton meter)
-   :Option: *no short option*
    :Description: lithosphere flexural rigidity used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`
 
 #. :config:`bed_deformation.mantle_viscosity` (*scalar*)
 
    :Value: 1.000000e+21 (Pascal second)
-   :Option: *no short option*
    :Description: half-space (mantle) viscosity used by the bed deformation model. See :cite:`LingleClark`, :cite:`BLKfastearth`
 
 #. :config:`bed_deformation.model` (*keyword*)
@@ -265,7 +244,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`bed_deformation.update_interval` (*scalar*)
 
    :Value: 10 (years)
-   :Option: *no short option*
    :Description: Interval between bed deformation updates
 
 #. :config:`bed_deformation.bed_topography_delta_file` (*string*)
@@ -283,55 +261,46 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`bootstrapping.defaults.bed` (*scalar*)
 
    :Value: 1 (meters)
-   :Option: *no short option*
    :Description: bed elevation value to use if topg (bedrock_altitude) variable is absent in bootstrapping file
 
 #. :config:`bootstrapping.defaults.bmelt` (*scalar*)
 
    :Value: 0 (meter / second)
-   :Option: *no short option*
    :Description: basal melt rate value to use if variable bmelt is absent in bootstrapping file
 
 #. :config:`bootstrapping.defaults.bwat` (*scalar*)
 
    :Value: 0 (meters)
-   :Option: *no short option*
    :Description: till water thickness value to use if variable tillwat is absent in bootstrapping file
 
 #. :config:`bootstrapping.defaults.bwp` (*scalar*)
 
    :Value: 0 (Pascal)
-   :Option: *no short option*
    :Description: basal water pressure value to use if variable bwp is absent in bootstrapping file; most hydrology models do not use this value because bwp is diagnostic
 
 #. :config:`bootstrapping.defaults.enwat` (*scalar*)
 
    :Value: 0 (meters)
-   :Option: *no short option*
    :Description: effective englacial water thickness value to use if variable enwat is absent in bootstrapping file
 
 #. :config:`bootstrapping.defaults.geothermal_flux` (*scalar*)
 
    :Value: 0.042000 (Watt meter-2)
-   :Option: *no short option*
    :Description: geothermal flux value to use if bheatflx variable is absent in bootstrapping file
 
 #. :config:`bootstrapping.defaults.ice_thickness` (*scalar*)
 
    :Value: 0 (meters)
-   :Option: *no short option*
    :Description: thickness value to use if thk (land_ice_thickness) variable is absent in bootstrapping file
 
 #. :config:`bootstrapping.defaults.tillwat` (*scalar*)
 
    :Value: 0 (meters)
-   :Option: *no short option*
    :Description: till water thickness value to use if variable tillwat is absent in bootstrapping file
 
 #. :config:`bootstrapping.defaults.uplift` (*scalar*)
 
    :Value: 0 (meter / second)
-   :Option: *no short option*
    :Description: uplift value to use if dbdt variable is absent in bootstrapping file
 
 #. :config:`bootstrapping.temperature_heuristic` (*keyword*)
@@ -398,49 +367,41 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`climate_forcing.buffer_size` (*integer*)
 
    :Value: 60
-   :Option: *no short option*
    :Description: number of 2D climate forcing records to keep in memory; = 5 years of monthly records
 
 #. :config:`climate_forcing.evaluations_per_year` (*integer*)
 
    :Value: 52
-   :Option: *no short option*
    :Description: length of the time-series used to compute temporal averages of forcing data (such as mean annual temperature)
 
 #. :config:`constants.fresh_water.density` (*scalar*)
 
    :Value: 1000 (kg meter-3)
-   :Option: *no short option*
    :Description: density of fresh water
 
 #. :config:`constants.fresh_water.latent_heat_of_fusion` (*scalar*)
 
    :Value: 334000 (Joule / kg)
-   :Option: *no short option*
    :Description: latent heat of fusion for water :cite:`AschwandenBlatter`
 
 #. :config:`constants.fresh_water.melting_point_temperature` (*scalar*)
 
    :Value: 273.150000 (Kelvin)
-   :Option: *no short option*
    :Description: melting point of pure water
 
 #. :config:`constants.fresh_water.specific_heat_capacity` (*scalar*)
 
    :Value: 4170 (Joule / (kg Kelvin))
-   :Option: *no short option*
    :Description: at melting point T_0 :cite:`AschwandenBlatter`
 
 #. :config:`constants.ice.beta_Clausius_Clapeyron` (*scalar*)
 
    :Value: 7.900000e-08 (Kelvin / Pascal)
-   :Option: *no short option*
    :Description: Clausius-Clapeyron constant relating melting temperature and pressure: `\beta = dT / dP` :cite:`Luethi2002`
 
 #. :config:`constants.ice.density` (*scalar*)
 
    :Value: 910 (kg meter-3)
-   :Option: *no short option*
    :Description: `\rho_i`; density of ice in ice sheet
 
 #. :config:`constants.ice.grain_size` (*scalar*)
@@ -452,43 +413,36 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`constants.ice.specific_heat_capacity` (*scalar*)
 
    :Value: 2009 (Joule / (kg Kelvin))
-   :Option: *no short option*
    :Description: specific heat capacity of pure ice at melting point T_0
 
 #. :config:`constants.ice.thermal_conductivity` (*scalar*)
 
    :Value: 2.100000 (Joule / (meter Kelvin second))
-   :Option: *no short option*
    :Description: = W m-1 K-1; thermal conductivity of pure ice
 
 #. :config:`constants.ideal_gas_constant` (*scalar*)
 
    :Value: 8.314410 (Joule / (mol Kelvin))
-   :Option: *no short option*
    :Description: ideal gas constant
 
 #. :config:`constants.sea_water.density` (*scalar*)
 
    :Value: 1028 (kg meter-3)
-   :Option: *no short option*
    :Description: density of sea water
 
 #. :config:`constants.sea_water.specific_heat_capacity` (*scalar*)
 
    :Value: 3985 (Joule / (kg Kelvin))
-   :Option: *no short option*
    :Description: at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html
 
 #. :config:`constants.standard_gravity` (*scalar*)
 
    :Value: 9.810000 (meter second-2)
-   :Option: *no short option*
    :Description: acceleration due to gravity on Earth geoid
 
 #. :config:`energy.allow_temperature_above_melting` (*boolean*)
 
    :Value: no
-   :Option: *no short option*
    :Description: If set to 'yes', allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.
 
 #. :config:`energy.basal_melt.use_grounded_cell_fraction` (*boolean*)
@@ -500,43 +454,36 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`energy.bedrock_thermal_conductivity` (*scalar*)
 
    :Value: 3 (Joule / (meter Kelvin second))
-   :Option: *no short option*
    :Description: = W m-1 K-1; for bedrock used in thermal model :cite:`RitzEISMINT`
 
 #. :config:`energy.bedrock_thermal_density` (*scalar*)
 
    :Value: 3300 (kg meter-3)
-   :Option: *no short option*
    :Description: for bedrock used in thermal model
 
 #. :config:`energy.bedrock_thermal_specific_heat_capacity` (*scalar*)
 
    :Value: 1000 (Joule / (kg Kelvin))
-   :Option: *no short option*
    :Description: for bedrock used in thermal model :cite:`RitzEISMINT`
 
 #. :config:`energy.drainage_maximum_rate` (*scalar*)
 
    :Value: 1.584438e-09 (second-1)
-   :Option: *no short option*
    :Description: 0.05 year-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see :cite:`AschwandenBuelerKhroulevBlatter`
 
 #. :config:`energy.drainage_target_water_fraction` (*scalar*)
 
    :Value: 0.010000 (1)
-   :Option: *no short option*
    :Description: liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see :cite:`AschwandenBuelerKhroulevBlatter`
 
 #. :config:`energy.enabled` (*boolean*)
 
    :Value: yes
-   :Option: *no short option*
    :Description: Solve energy conservation equations.
 
 #. :config:`energy.enthalpy_cold_bulge_max` (*scalar*)
 
    :Value: 60270 (Joule / kg)
-   :Option: *no short option*
    :Description: = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value
 
 #. :config:`energy.max_low_temperature_count` (*integer*)
@@ -554,13 +501,11 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`energy.temperate_ice_enthalpy_conductivity_ratio` (*scalar*)
 
    :Value: 0.100000 (pure number)
-   :Option: *no short option*
    :Description: K in cold ice is multiplied by this fraction to give K0 in :cite:`AschwandenBuelerKhroulevBlatter`
 
 #. :config:`energy.temperature_based` (*boolean*)
 
    :Value: no
-   :Option: *no short option*
    :Description: Use cold ice (i.e. not polythermal) methods.
 
 #. :config:`energy.temperature_dependent_thermal_conductivity` (*boolean*)
@@ -572,103 +517,86 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`enthalpy_converter.T_reference` (*scalar*)
 
    :Value: 223.150000 (Kelvin)
-   :Option: *no short option*
    :Description: = T_0 in enthalpy formulas in :cite:`AschwandenBuelerKhroulevBlatter`
 
 #. :config:`enthalpy_converter.relaxed_is_temperate_tolerance` (*scalar*)
 
    :Value: 0.001000 (Kelvin)
-   :Option: *no short option*
    :Description: Tolerance within which ice is treated as temperate (cold-ice mode and diagnostics).
 
 #. :config:`flow_law.Hooke.A` (*scalar*)
 
    :Value: 4.421650e-09 (Pascal-3 second-1)
-   :Option: *no short option*
    :Description: `A_{\text{Hooke}} = (1/B_0)^n` where n=3 and B_0 = 1.928 `a^{1/3}` Pa. See :cite:`Hooke`
 
 #. :config:`flow_law.Hooke.C` (*scalar*)
 
    :Value: 0.166120 (Kelvin^{flow_law.Hooke.k})
-   :Option: *no short option*
    :Description: See :cite:`Hooke`
 
 #. :config:`flow_law.Hooke.Q` (*scalar*)
 
    :Value: 78800 (Joule / mol)
-   :Option: *no short option*
    :Description: Activation energy, see :cite:`Hooke`
 
 #. :config:`flow_law.Hooke.Tr` (*scalar*)
 
    :Value: 273.390000 (Kelvin)
-   :Option: *no short option*
    :Description: See :cite:`Hooke`
 
 #. :config:`flow_law.Hooke.k` (*scalar*)
 
    :Value: 1.170000 (pure number)
-   :Option: *no short option*
    :Description: See :cite:`Hooke`
 
 #. :config:`flow_law.Paterson_Budd.A_cold` (*scalar*)
 
    :Value: 3.610000e-13 (Pascal-3 / second)
-   :Option: *no short option*
    :Description: Paterson-Budd A_cold, see :cite:`PatersonBudd`
 
 #. :config:`flow_law.Paterson_Budd.A_warm` (*scalar*)
 
    :Value: 1730 (Pascal-3 / second)
-   :Option: *no short option*
    :Description: Paterson-Budd A_warm, see :cite:`PatersonBudd`
 
 #. :config:`flow_law.Paterson_Budd.Q_cold` (*scalar*)
 
    :Value: 60000 (Joule / mol)
-   :Option: *no short option*
    :Description: Paterson-Budd Q_cold, see :cite:`PatersonBudd`
 
 #. :config:`flow_law.Paterson_Budd.Q_warm` (*scalar*)
 
    :Value: 139000 (Joule / mol)
-   :Option: *no short option*
    :Description: Paterson-Budd Q_warm, see :cite:`PatersonBudd`
 
 #. :config:`flow_law.Paterson_Budd.T_critical` (*scalar*)
 
    :Value: 263.150000 (Kelvin)
-   :Option: *no short option*
    :Description: Paterson-Budd critical temperature, see :cite:`PatersonBudd`
 
 #. :config:`flow_law.Schoof_regularizing_length` (*scalar*)
 
    :Value: 1000 (km)
-   :Option: *no short option*
    :Description: Regularizing length (Schoof definition)
 
 #. :config:`flow_law.Schoof_regularizing_velocity` (*scalar*)
 
    :Value: 1 (meter / year)
-   :Option: *no short option*
    :Description: Regularizing velocity (Schoof definition)
 
 #. :config:`flow_law.gpbld.water_frac_coeff` (*scalar*)
 
    :Value: 181.250000 (pure number)
-   :Option: *no short option*
    :Description: coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) :cite:`GreveBlatter2009`, :cite:`LliboutryDuval1985`
 
 #. :config:`flow_law.gpbld.water_frac_observed_limit` (*scalar*)
 
    :Value: 0.010000 (1)
-   :Option: *no short option*
    :Description: maximum value of liquid water fraction omega for which softness values are parameterized by :cite:`LliboutryDuval1985`; used in Glen-Paterson-Budd-Lliboutry-Duval flow law; compare :cite:`AschwandenBuelerKhroulevBlatter`
 
 #. :config:`flow_law.isothermal_Glen.ice_softness` (*scalar*)
 
    :Value: 3.168900e-24 (Pascal-3 second-1)
-   :Option: *no short option*
    :Description: ice softness used by IsothermalGlenIce :cite:`EISMINT96`
 
 #. :config:`fracture_density.constant_fd` (*boolean*)
@@ -746,7 +674,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`geometry.ice_free_thickness_standard` (*scalar*)
 
    :Value: 0.010000 (meters)
-   :Option: *no short option*
    :Description: If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.
 
 #. :config:`geometry.part_grid.enabled` (*boolean*)
@@ -782,31 +709,26 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`grid.Lbz` (*scalar*)
 
    :Value: 0 (meters)
-   :Option: *no short option*
    :Description: Thickness of the thermal bedrock layer.
 
 #. :config:`grid.Lx` (*scalar*)
 
    :Value: 1500000 (meters)
-   :Option: *no short option*
    :Description: Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.
 
 #. :config:`grid.Ly` (*scalar*)
 
    :Value: 1500000 (meters)
-   :Option: *no short option*
    :Description: Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.
 
 #. :config:`grid.Lz` (*scalar*)
 
    :Value: 4000 (meters)
-   :Option: *no short option*
    :Description: Height of the computational domain.
 
 #. :config:`grid.Mbz` (*integer*)
 
    :Value: 1
-   :Option: *no short option*
    :Description: Number of thermal bedrock layers; 1 level corresponds to no bedrock.
 
 #. :config:`grid.Mx` (*integer*)
@@ -824,13 +746,11 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`grid.Mz` (*integer*)
 
    :Value: 31
-   :Option: *no short option*
    :Description: Number of vertical grid levels in the ice.
 
 #. :config:`grid.correct_cell_areas` (*boolean*)
 
    :Value: yes
-   :Option: *no short option*
    :Description: Compute corrected cell areas using WGS84 datum (for ice area and volume computations).
 
 #. :config:`grid.ice_vertical_spacing` (*keyword*)
@@ -843,13 +763,11 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`grid.lambda` (*scalar*)
 
    :Value: 4 (pure number)
-   :Option: *no short option*
    :Description: Vertical grid spacing parameter. Roughly equal to the factor by which the grid is coarser at an end away from the ice-bedrock interface.
 
 #. :config:`grid.max_stencil_width` (*integer*)
 
    :Value: 2
-   :Option: *no short option*
    :Description: Maximum width of the finite-difference stencil used in PISM.
 
 #. :config:`grid.periodicity` (*keyword*)
@@ -892,7 +810,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`hydrology.maximum_time_step` (*scalar*)
 
    :Value: 1 (years)
-   :Option: *no short option*
    :Description: maximum allowed time step length used by hydrology::Routing and hydrology::Distributed
 
 #. :config:`hydrology.model` (*keyword*)
@@ -905,25 +822,21 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`hydrology.null_diffuse_till_water` (*boolean*)
 
    :Value: no
-   :Option: *no short option*
    :Description: Diffuse stored till water laterally. See equation (11) of :cite:`BBssasliding`
 
 #. :config:`hydrology.null_diffusion_distance` (*scalar*)
 
    :Value: 20000 (meters)
-   :Option: *no short option*
    :Description: diffusion distance for till water thickness; see equation (11) in :cite:`BBssasliding`; only active if hydrology.null_diffuse_till_water is set
 
 #. :config:`hydrology.null_diffusion_time` (*scalar*)
 
    :Value: 1000 (years)
-   :Option: *no short option*
    :Description: diffusion time for till water thickness; see equation (11) in :cite:`BBssasliding`; only active if hydrology.null_diffuse_till_water is set
 
 #. :config:`hydrology.null_strip_width` (*scalar*)
 
    :Value: -1 (meters)
-   :Option: *no short option*
    :Description: if negative then mechanism is inactive; width of strip around computational domain in which water velocity and water amount are set to zero; used by hydrology::Routing and hydrology::Distributed
 
 #. :config:`hydrology.regularizing_porosity` (*scalar*)
@@ -991,37 +904,31 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`inverse.design.param_hardav_eps` (*scalar*)
 
    :Value: 10000 (Pascal second^(1/3))
-   :Option: *no short option*
    :Description: tiny vertically-averaged hardness used as a substitute for 0 in some tauc parameterizations
 
 #. :config:`inverse.design.param_hardav_scale` (*scalar*)
 
    :Value: 1.000000e+08 (Pascal second^(1/3))
-   :Option: *no short option*
    :Description: typical size of ice hardness
 
 #. :config:`inverse.design.param_tauc_eps` (*scalar*)
 
    :Value: 100 (Pascal)
-   :Option: *no short option*
    :Description: tiny yield stress used as a substitute for 0 in some tauc parameterizations
 
 #. :config:`inverse.design.param_tauc_scale` (*scalar*)
 
    :Value: 100000 (Pascal)
-   :Option: *no short option*
    :Description: typical size of yield stresses
 
 #. :config:`inverse.design.param_trunc_hardav0` (*scalar*)
 
    :Value: 1000000 (Pascal second^(1/3))
-   :Option: *no short option*
    :Description: transition point of change to linear behaviour for design variable parameterization type 'trunc'
 
 #. :config:`inverse.design.param_trunc_tauc0` (*scalar*)
 
    :Value: 1000 (Pascal)
-   :Option: *no short option*
    :Description: transition point of change to linear behaviour for design variable parameterization type 'trunc'
 
 #. :config:`inverse.log_ratio_scale` (*scalar*)
@@ -1033,19 +940,16 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`inverse.ssa.hardav_max` (*scalar*)
 
    :Value: 1.000000e+10 (Pascal second^(1/3))
-   :Option: *no short option*
    :Description: Maximum allowed value of hardav for inversions with bound constraints
 
 #. :config:`inverse.ssa.hardav_min` (*scalar*)
 
    :Value: 0 (Pascal second^(1/3))
-   :Option: *no short option*
    :Description: Minimum allowed value of hardav for inversions with bound constraints
 
 #. :config:`inverse.ssa.length_scale` (*scalar*)
 
    :Value: 50000 (meters)
-   :Option: *no short option*
    :Description: typical length scale for rescaling derivative norms
 
 #. :config:`inverse.ssa.method` (*keyword*)
@@ -1058,13 +962,11 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`inverse.ssa.tauc_max` (*scalar*)
 
    :Value: 5.000000e+07 (Pascal)
-   :Option: *no short option*
    :Description: Maximum allowed value of tauc for inversions with bound constraints
 
 #. :config:`inverse.ssa.tauc_min` (*scalar*)
 
    :Value: 0 (Pascal)
-   :Option: *no short option*
    :Description: Minimum allowed value of tauc for inversions with bound constraints
 
 #. :config:`inverse.ssa.tv_exponent` (*scalar*)
@@ -1076,13 +978,11 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`inverse.ssa.velocity_eps` (*scalar*)
 
    :Value: 0.100000 (meter / year)
-   :Option: *no short option*
    :Description: tiny size of ice velocities during inversion
 
 #. :config:`inverse.ssa.velocity_scale` (*scalar*)
 
    :Value: 100 (meter / year)
-   :Option: *no short option*
    :Description: typical size of ice velocities expected during inversion
 
 #. :config:`inverse.state_func` (*keyword*)
@@ -1137,25 +1037,21 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`ocean.runoff_to_ocean_melt_b` (*scalar*)
 
    :Value: 0.150000 (1)
-   :Option: *no short option*
    :Description: parameter B in eqn. 1 in :cite:`Aschwanden`
 
 #. :config:`ocean.runoff_to_ocean_melt_power_alpha` (*scalar*)
 
    :Value: 0.540000 (1)
-   :Option: *no short option*
    :Description: exponent `\alpha` in eqn. 1 in :cite:`Xu2013`
 
 #. :config:`ocean.runoff_to_ocean_melt_power_beta` (*scalar*)
 
    :Value: 1.170000 (1)
-   :Option: *no short option*
    :Description: exponent `\beta` in eqn. 1 in :cite:`Xu2013`
 
 #. :config:`ocean.sub_shelf_heat_flux_into_ice` (*scalar*)
 
    :Value: 0.500000 (W meter-2)
-   :Option: *no short option*
    :Description: = J meter-2 second-1; naively chosen default value for heat from ocean; see comments in pism::ocean::Constant::shelf_base_mass_flux().
 
 #. :config:`ocean.three_equation_model_clip_salinity` (*boolean*)
@@ -1180,7 +1076,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`output.fill_value` (*scalar*)
 
    :Value: -2.000000e+09 (none)
-   :Option: *no short option*
    :Description: _FillValue used when saving diagnostic quantities
 
 #. :config:`output.format` (*keyword*)
@@ -1193,7 +1088,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`output.ice_free_thickness_standard` (*scalar*)
 
    :Value: 10 (meters)
-   :Option: *no short option*
    :Description: If ice is thinner than this standard then a grid cell is considered ice-free for purposes of reporting glacierized area, volume, etc.
 
 #. :config:`output.runtime.area_scale_factor_log10` (*integer*)
@@ -1211,13 +1105,11 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`output.runtime.time_unit_name` (*string*)
 
    :Value: year
-   :Option: *no short option*
    :Description: Time units used when printing model time, time step, and maximum horizontal velocity at summary to stdout.  Must be valid udunits for time.  (E.g. choose from year,month,day,hour,minute,second.)
 
 #. :config:`output.runtime.time_use_calendar` (*boolean*)
 
    :Value: yes
-   :Option: *no short option*
    :Description: Whether to use the current calendar when printing model time in summary to stdout.
 
 #. :config:`output.runtime.viewer.size` (*integer*)
@@ -1255,25 +1147,21 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`output.sizes.big` (*string*)
 
    :Value: ``cts, liqfrac, temp, temp_pa, uvel, vvel, wvel, wvel_rel``
-   :Option: *no short option*
    :Description: Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium and output.sizes.big_2d) if 'big' output size is selected. Does not include fields written by sub-models.
 
 #. :config:`output.sizes.big_2d` (*string*)
 
    :Value: ``age, bfrict, bheatflx, bmelt, bwp, bwprel, cell_area, dbdt, effbwp, enthalpybase, enthalpysurf, flux_divergence, hardav, hydroinput, lat, litho_temp, lon, nuH, ocean_kill_mask, rank, tempbase, tempicethk, tempicethk_basal, temppabase, tempsurf, thk, thksmooth, tillphi, topg, velbar, velbase, wallmelt, wvelbase``
-   :Option: *no short option*
    :Description: Comma-separated list of variables to write to the output (in addition to model_state variables and variables listed in output.sizes.medium) if 'big_2d' output size is selected. Does not include fields written by boundary models.
 
 #. :config:`output.sizes.medium` (*string*)
 
    :Value: ``bwat, bwatvel, climatic_mass_balance, diffusivity, enthalpy, flux, flux_mag, ice_surface_temp, liqfrac, mask, schoofs_theta, strain_rates, taub_mag, tauc, taud_mag, temp_pa, tillwat, topgsmooth, usurf, velbar_mag, velbase_mag, velsurf, velsurf_mag, wvelsurf``
-   :Option: *no short option*
    :Description: Comma-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by sub-models.
 
 #. :config:`output.timeseries.buffer_size` (*integer*)
 
    :Value: 10000
-   :Option: *no short option*
    :Description: Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.
 
 #. :config:`output.timeseries.variables` (*string*)
@@ -1334,7 +1222,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`stress_balance.ice_free_thickness_standard` (*scalar*)
 
    :Value: 10 (meters)
-   :Option: *no short option*
    :Description: If ice is thinner than this standard then a cell is considered ice-free for purposes of computing ice velocity distribution.
 
 #. :config:`stress_balance.model` (*keyword*)
@@ -1403,7 +1290,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`stress_balance.ssa.compute_surface_gradient_inward` (*boolean*)
 
    :Value: no
-   :Option: *no short option*
    :Description: If yes then use inward first-order differencing in computing surface gradient in the SSA objects.
 
 #. :config:`stress_balance.ssa.dirichlet_bc` (*boolean*)
@@ -1445,7 +1331,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`stress_balance.ssa.fd.lateral_drag.enabled` (*boolean*)
 
    :Value: false
-   :Option: *no short option*
    :Description: set viscosity at ice shelf margin next to ice free bedrock as friction parameterization
 
 #. :config:`stress_balance.ssa.fd.lateral_drag.viscosity` (*scalar*)
@@ -1475,7 +1360,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`stress_balance.ssa.fd.replace_zero_diagonal_entries` (*boolean*)
 
    :Value: yes
-   :Option: *no short option*
    :Description: Replace zero diagonal entries in the SSAFD matrix with basal_resistance.beta_ice_free_bedrock to avoid solver failures.
 
 #. :config:`stress_balance.ssa.flow_law` (*keyword*)
@@ -1495,13 +1379,11 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`stress_balance.ssa.strength_extension.constant_nu` (*scalar*)
 
    :Value: 9.486807e+14 (Pascal second)
-   :Option: *no short option*
    :Description: The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 `Pa s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 year-1:  `\nu = (\bar B) / (2 \cdot 0.001^{2/3})`.  Compare the value of 9.45e14 Pa s = 30 MPa year in :cite:`Ritzetal2001`.
 
 #. :config:`stress_balance.ssa.strength_extension.min_thickness` (*scalar*)
 
    :Value: 50 (meters)
-   :Option: *no short option*
    :Description: The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  At ice thicknesses below this value the product nu*H switches from the normal vertical integral to a constant value.  The geometry itself is not affected by this value.
 
 #. :config:`stress_balance.vertical_velocity_approximation` (*keyword*)
@@ -1514,139 +1396,116 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`surface.force_to_thickness.alpha` (*scalar*)
 
    :Value: 0.010000 (year-1)
-   :Option: *no short option*
    :Description: exponential coefficient in force-to-thickness mechanism
 
 #. :config:`surface.force_to_thickness.ice_free_alpha_factor` (*scalar*)
 
    :Value: 1 (1)
-   :Option: *no short option*
    :Description: surface.force_to_thickness.alpha is multiplied by this factor in areas that are ice-free according to the target ice thickness and surface.force_to_thickness.ice_free_thickness_threshold
 
 #. :config:`surface.force_to_thickness.ice_free_thickness_threshold` (*scalar*)
 
    :Value: 1 (meters)
-   :Option: *no short option*
    :Description: threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use surface.force_to_thickness.ice_free_alpha_factor.
 
 #. :config:`surface.force_to_thickness.start_time` (*scalar*)
 
    :Value: -4.540000e+09 (years)
-   :Option: *no short option*
    :Description: Starting time for the "force to thickness" modifier; the default is "start from the creation of the Earth."
 
 #. :config:`surface.pdd.air_temp_all_precip_as_rain` (*scalar*)
 
    :Value: 275.150000 (Kelvin)
-   :Option: *no short option*
    :Description: threshold temperature above which all precipitation is rain; must exceed surface.pdd.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator
 
 #. :config:`surface.pdd.air_temp_all_precip_as_snow` (*scalar*)
 
    :Value: 273.150000 (Kelvin)
-   :Option: *no short option*
    :Description: threshold temperature below which all precipitation is snow
 
 #. :config:`surface.pdd.balance_year_start_day` (*integer*)
 
    :Value: 274
-   :Option: *no short option*
    :Description: day of year for October 1st, beginning of the balance year in northern latitudes.
 
 #. :config:`surface.pdd.aschwanden.beta_ice_c` (*scalar*)
 
    :Value: 0.006000 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
 
 #. :config:`surface.pdd.aschwanden.beta_ice_w` (*scalar*)
 
    :Value: 0.008000 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
 
 #. :config:`surface.pdd.aschwanden.beta_snow_c` (*scalar*)
 
    :Value: 0.001500 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
 
 #. :config:`surface.pdd.aschwanden.beta_snow_w` (*scalar*)
 
    :Value: 0.003000 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
 
 #. :config:`surface.pdd.aschwanden.latitude_beta_w` (*scalar*)
 
    :Value: 77 (degree_north)
-   :Option: *no short option*
    :Description: latitude below which to use warm case, in formula (6) in :cite:`Aschwandenetal2009`
 
 #. :config:`surface.pdd.aschwanden.warm_cold_transition_width` (*scalar*)
 
    :Value: 1 (degree_north)
-   :Option: *no short option*
    :Description: smoothing width in degrees for linear transition between warm and cold values
 
 #. :config:`surface.pdd.factor_ice` (*scalar*)
 
    :Value: 0.008791 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: EISMINT-Greenland value :cite:`RitzEISMINT`; = (8 mm liquid-water-equivalent) / (pos degree day)
 
 #. :config:`surface.pdd.factor_snow` (*scalar*)
 
    :Value: 0.003297 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: EISMINT-Greenland value :cite:`RitzEISMINT`; = (3 mm liquid-water-equivalent) / (pos degree day)
 
 #. :config:`surface.pdd.fausto.T_c` (*scalar*)
 
    :Value: 272.150000 (Kelvin)
-   :Option: *no short option*
    :Description: = -1 + 273.15; for formula (6) in :cite:`Faustoetal2009`
 
 #. :config:`surface.pdd.fausto.T_w` (*scalar*)
 
    :Value: 283.150000 (Kelvin)
-   :Option: *no short option*
    :Description: = 10 + 273.15; for formula (6) in :cite:`Faustoetal2009`
 
 #. :config:`surface.pdd.fausto.beta_ice_c` (*scalar*)
 
    :Value: 0.015000 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`
 
 #. :config:`surface.pdd.fausto.beta_ice_w` (*scalar*)
 
    :Value: 0.007000 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`
 
 #. :config:`surface.pdd.fausto.beta_snow_c` (*scalar*)
 
    :Value: 0.003000 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`
 
 #. :config:`surface.pdd.fausto.beta_snow_w` (*scalar*)
 
    :Value: 0.003000 (meter / (Kelvin day))
-   :Option: *no short option*
    :Description: water-equivalent thickness; for formula (6) in :cite:`Faustoetal2009`
 
 #. :config:`surface.pdd.fausto.latitude_beta_w` (*scalar*)
 
    :Value: 72 (degree_north)
-   :Option: *no short option*
    :Description: latitude below which to use warm case, in formula (6) in :cite:`Faustoetal2009`
 
 #. :config:`surface.pdd.firn_compaction_to_accumulation_ratio` (*scalar*)
 
    :Value: 0.750000 (1)
-   :Option: *no short option*
    :Description: How much firn as a fraction of accumulation is turned into ice
 
 #. :config:`surface.pdd.firn_depth_file` (*string*)
@@ -1664,79 +1523,66 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`surface.pdd.interpret_precip_as_snow` (*boolean*)
 
    :Value: no
-   :Option: *no short option*
    :Description: Interpret precipitation as snow fall.
 
 #. :config:`surface.pdd.max_evals_per_year` (*integer*)
 
    :Value: 52
-   :Option: *no short option*
    :Description: maximum number of times the PDD scheme will ask for air temperature and precipitation to build location-dependent time series for computing (expected) number of positive degree days and snow accumulation; the default means the PDD uses weekly samples of the annual cycle; see also surface.pdd.std_dev
 
 #. :config:`surface.pdd.positive_threshold_temp` (*scalar*)
 
    :Value: 273.150000 (Kelvin)
-   :Option: *no short option*
    :Description: temperature used to determine meaning of 'positive' degree day
 
 #. :config:`surface.pdd.refreeze` (*scalar*)
 
    :Value: 0.600000 (1)
-   :Option: *no short option*
    :Description: EISMINT-Greenland value :cite:`RitzEISMINT`
 
 #. :config:`surface.pdd.refreeze_ice_melt` (*boolean*)
 
    :Value: yes
-   :Option: *no short option*
    :Description: If set to 'yes', refreeze surface.pdd.refreeze fraction of melted ice, otherwise all of the melted ice runs off.
 
 #. :config:`surface.pdd.std_dev` (*scalar*)
 
    :Value: 5 (Kelvin)
-   :Option: *no short option*
    :Description: std dev of daily temp variation; = EISMINT-Greenland value :cite:`RitzEISMINT`
 
 #. :config:`surface.pdd.std_dev_lapse_lat_base` (*scalar*)
 
    :Value: 72 (degree_north)
-   :Option: *no short option*
    :Description: std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero 
 
 #. :config:`surface.pdd.std_dev_lapse_lat_rate` (*scalar*)
 
    :Value: 0 (Kelvin / degree_north)
-   :Option: *no short option*
    :Description: std_dev is a function of latitude, with rate of change with respect to latitude given by this constant 
 
 #. :config:`surface.pdd.std_dev_param_a` (*scalar*)
 
    :Value: -0.150000 (pure number)
-   :Option: *no short option*
    :Description: Parameter a in Sigma = a*T + b, with T in degrees C. Used only if surface.pdd.std_dev_use_param is set to yes.
 
 #. :config:`surface.pdd.std_dev_param_b` (*scalar*)
 
    :Value: 0.660000 (Kelvin)
-   :Option: *no short option*
    :Description: Parameter b in Sigma = a*T + b, with T in degrees C. Used only if surface.pdd.std_dev_use_param is set to yes.
 
 #. :config:`surface.pdd.std_dev_use_param` (*boolean*)
 
    :Value: no
-   :Option: *no short option*
    :Description: Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.
 
 #. :config:`surface.pressure` (*scalar*)
 
    :Value: 0 (Pascal)
-   :Option: *no short option*
    :Description: atmospheric pressure; = pressure at ice surface
 
 #. :config:`surface.temp_to_runoff_a` (*scalar*)
 
    :Value: 0.500000 (K-1)
-   :Option: *no short option*
    :Description: a in runoff=a * temp + b
 
 #. :config:`time.calendar` (*keyword*)
@@ -1749,43 +1595,36 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`time.dimension_name` (*string*)
 
    :Value: time
-   :Option: *no short option*
    :Description: The name of the time dimension in PISM output files.
 
 #. :config:`time.eemian_end` (*scalar*)
 
    :Value: -114500 (years)
-   :Option: *no short option*
    :Description: End of the Eemian interglacial period. See :cite:`Greve97Greenland`.
 
 #. :config:`time.eemian_start` (*scalar*)
 
    :Value: -132000 (years)
-   :Option: *no short option*
    :Description: Start of the Eemian interglacial period. See :cite:`Greve97Greenland`.
 
 #. :config:`time.holocene_start` (*scalar*)
 
    :Value: -11000 (years)
-   :Option: *no short option*
    :Description: Start of the Holocene interglacial period. See :cite:`Greve97Greenland`.
 
 #. :config:`time.reference_date` (*string*)
 
    :Value: 1-1-1
-   :Option: *no short option*
    :Description: year-month-day; reference date used for calendar computations and in PISM output files
 
 #. :config:`time.run_length` (*scalar*)
 
    :Value: 1000 (years)
-   :Option: *no short option*
    :Description: Default run length
 
 #. :config:`time.start_year` (*scalar*)
 
    :Value: 0 (years)
-   :Option: *no short option*
    :Description: Start year.
 
 #. :config:`time_stepping.adaptive_ratio` (*scalar*)
@@ -1821,7 +1660,6 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`time_stepping.hit_ts_times` (*boolean*)
 
    :Value: no
-   :Option: *no short option*
    :Description: Modify the time-stepping mechanism to hit times requested using -ts_times.
 
 #. :config:`time_stepping.maximum_time_step` (*scalar*)
