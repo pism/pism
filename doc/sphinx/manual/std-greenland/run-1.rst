@@ -36,17 +36,10 @@ Setting the environment variable ``PISM_DO`` in this way tells ``spinup.sh`` jus
 out the commands it is about to run instead of executing them. The "proposed" run looks
 like this:
 
-.. code-block:: none
+.. literalinclude:: scripts/run-1-command.sh
+   :language: bash
    :name: firstcommand
-
-   mpiexec -n 4 pismr -i pism_Greenland_5km_v1.1.nc -bootstrap -Mx 76 -My 141 \
-     -Mz 101 -Mbz 11 -z_spacing equal -Lz 4000 -Lbz 2000 -skip -skip_max 10 \
-     -ys -10000 -ye 0 -surface given -surface_given_file pism_Greenland_5km_v1.1.nc \
-     -calving ocean_kill pism_Greenland_5km_v1.1.nc -sia_e 3.0 \
-     -ts_file ts_g20km_10ka.nc -ts_times -10000:yearly:0 \
-     -extra_file ex_g20km_10ka.nc -extra_times -10000:100:0 \
-     -extra_vars diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf \
-     -o g20km_10ka.nc
+   :lines: 3-
 
 Let's briefly deconstruct this run.
 
@@ -92,9 +85,9 @@ it! The user is encouraged to experiment; that is the point of a model.
 
 Now let's actually get the run going:
 
-.. code-block:: none
-
-   ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc &> out.g20km_10ka &
+.. literalinclude:: scripts/run-1.sh
+   :lines: 3-
+   :language: bash
 
 The terminating "``&``", which is optional, asks the system to run the command in the
 background so we can keep working in the current shell. Because we have re-directed the

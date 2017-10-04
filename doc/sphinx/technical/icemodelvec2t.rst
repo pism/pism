@@ -170,122 +170,23 @@ Putting it all together to implement an "ocean model"
 Class declaration
 ^^^^^^^^^^^^^^^^^
 
-.. code-block:: c++
+.. only:: html
 
-    #include "coupler/PISMOcean.hh"
-    #include "base/util/iceModelVec2T.hh"
+   Click :download:`here <code/Example.hh>` to download this file.
 
-    namespace pism {
-    namespace ocean {
-    //! \brief An example ocean model illustrating the use of ``IceModelVec2T``.
-    class Example : public OceanModel {
-    public:
-      Example(IceGrid::ConstPtr g);
-      virtual ~Example();
-    protected:
-      virtual MaxTimestep max_timestep_impl(double t) const;
-      virtual void update_impl(double my_t, double my_dt);
-      virtual void init_impl();
-      virtual void sea_level_elevation_impl(double &result) const;
-      virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
-      virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
-    protected:
-      IceModelVec2T m_shelf_melt_rate;
-    };
-
-    } // end of namespace ocean
-    } // end of namespace pism
+.. literalinclude:: code/Example.hh
+   :language: c++
 
 Class definition
 ^^^^^^^^^^^^^^^^
 
-.. code-block:: c++
+.. only:: html
 
-    #include "Example.hh"
+   Click :download:`here <code/Example.cc>` to download this file.
 
-    #include "base/util/PISMConfigInterface.hh"
-    #include "base/util/IceGrid.hh"
-    #include "base/util/pism_options.hh"
-    #include "base/util/MaxTimestep.hh"
-
-    namespace pism {
-    namespace ocean {
-    Example::Example(IceGrid::ConstPtr g)
-      : OceanModel(g) {
-
-      // assume that climate_forcing.buffer_size is big enough
-      m_shelf_melt_rate.set_n_records(m_config->get_double("climate_forcing.buffer_size"));
-      m_shelf_melt_rate.create(m_grid, "shelf_base_melt_rate");
-      m_shelf_melt_rate.set_attrs("internal", "shelf base melt rate", "m / second", "");
-    }
-
-    Example::~Example() {
-      // empty
-    }
-
-    void Example::update_impl(double t, double dt) {
-      m_t  = t;
-      m_dt = dt;
-
-      // make sure that records covering the time step are in RAM
-      m_shelf_melt_rate.update(t, dt);
-
-      // Use mid-point of the interval. (We restricted the time step, so
-      // the choice of the point within the time step does not matter.)
-      m_shelf_melt_rate.interp(t + 0.5 * dt);
-
-      // Alternatively one could call. This does not require a time step restriction.
-      // m_shelf_melt_rate.average(t, dt);
-    }
-
-    void Example::init_impl() {
-      m_log->message(2, "* Initializing the example ocean model...\n");
-
-      // Get the name of the file. This works, but it would be better to use a configuration
-      // parameter.
-      options::String input_file("-ocean_example_file", "Shelf melt rate input file.");
-
-      if (input_file.is_set()) {
-        m_log->message(2, "  Reading shelf base melt rate from %s...\n",
-                       input_file->c_str());
-
-        // no period (zero) and no reference time for the period (also zero)
-        m_shelf_melt_rate.init(input_file, 0.0, 0.0);
-      } else {
-        // no file was provided; set to zero
-        m_shelf_melt_rate.init_constant(0.0);
-      }
-    }
-
-    MaxTimestep Example::max_timestep_impl(double t) const {
-      // Assume that temporal variations in the melt rate have to be resolved.
-      return m_shelf_melt_rate.max_timestep(t);
-
-      // Use this to disable the time step restriction
-      // return MaxTimestep("example ocean model");
-    }
-
-    void Example::shelf_base_temperature_impl(IceModelVec2S &result) const {
-      // PISM uses MKS. This is obviously wrong, but it's good enough for this example.
-      result.set(273.15);
-    }
-
-    void Example::sea_level_elevation_impl(double &result) const {
-      // Also wrong.
-      result = 0.0;
-    }
-
-    void Example::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
-      // After update_impl(t, dt) is called, m_shelf_melt_rate contains
-      // the shelf melt rate for the current time step
-      result.copy_from(m_shelf_melt_rate);
-    }
-
-    } // end of namespape ocean
-    } // end of namespace pism
+.. literalinclude:: code/Example.cc
+   :language: c++
 
 All ocean models need to provide implementatons (``_impl(...)`` methods) corresponding to
 the public API of ``pism::ocean::OceanModel``. (See ``src/coupler/PISMOcean.hh`` and note
 that some have default implementations.)
-
-

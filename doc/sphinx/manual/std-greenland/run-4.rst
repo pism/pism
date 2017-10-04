@@ -47,10 +47,9 @@ elevation :cite:`BLKfastearth`.
 
 To see how all this translates into PISM options, run
 
-.. code-block:: none
-
-   PISM_DO=echo PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
-     ./spinup.sh 4 paleo 25000 20 hybrid g20km_25ka_paleo.nc
+.. literalinclude:: scripts/run-4-echo.sh
+   :language: bash
+   :lines: 3-
 
 You will see an impressively-long command, which you can compare to the :ref:`first one
 <firstcommand>`. There are several key changes. First, we do not start from scratch but
@@ -80,10 +79,9 @@ remainder of the options are similar or identical to the run that created
 To actually start the run, which we rather arbitrarily start at year `-25000`, essentially
 at the LGM, do:
 
-.. code-block:: none
-
-   PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
-     ./spinup.sh 4 paleo 25000 20 hybrid g20km_25ka_paleo.nc &> out.g20km_25ka_paleo &
+.. literalinclude:: scripts/run-4.sh
+   :language: bash
+   :lines: 3-
 
 This run should only take one or two hours, noting it is at a coarse 20 km resolution.
 
@@ -92,7 +90,6 @@ The fields ``usurf``, ``velsurf_mag``, and ``velbase_mag`` from file
 :numref:`fig-secondoutputcoarse` that they are not shown here. Close inspection reveals
 differences, but of course these runs only differ in the applied climate and run duration
 and not in resolution or ice dynamics parameters.
-
 
 To see the difference between runs more clearly, :numref:`fig-ivolconstpaleo` compares the
 time-series variable ``volume_glacierized``. We see the effect of option ``-regrid_file

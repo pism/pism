@@ -35,15 +35,15 @@ yield stress to the basal shear stress which appears in the SSA stress balance) 
 "plastic" and more "linear" choice `q=0.5`. See section :ref:`sec-basestrength`
 for more on sliding laws. To see the run we propose, do
 
-.. code-block:: none
-
-   PISM_DO=echo PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 20 hybrid g20km_10ka_hy.nc
+.. literalinclude:: scripts/run-2-echo.sh
+   :language: bash
+   :lines: 3-
 
 Now remove "``PISM_DO=echo``" and redirect the text output into a file to start the run:
 
-.. code-block:: none
-
-   PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 20 hybrid g20km_10ka_hy.nc &> out.g20km_10ka_hy &
+.. literalinclude:: scripts/run-2.sh
+   :language: bash
+   :lines: 3-
 
 This run should take 30 minutes or less.\ [#]_
 
@@ -52,6 +52,8 @@ When this run is finished it produces ``g20km_10ka_hy.nc``.  As before do
 .. code-block:: none
 
    ncdump -h g20km_10ka_hy.nc |grep history
+
+.. FIXME: PETSc MFlops is bullshit.
 
 to see performance results for your machine. The number reported as "``PETSc MFlops``"
 from this run is about `3 \times 10^5`, much larger than the previous run, because

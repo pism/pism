@@ -11,9 +11,9 @@ elevation and climate data.
 
 If you can let it run overnight, do
 
-.. code-block:: none
-
-   PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 10 hybrid g10km_10ka_hy.nc &> out.g10km_10ka_hy &
+.. literalinclude:: scripts/run-3.sh
+   :language: bash
+   :lines: 3-
 
 This run might take 4 to 6 hours. However, supposing you have a larger parallel computer,
 you can change "``mpiexec -n 4``" to "``mpiexec -n N``" where ``N`` is a substantially
@@ -40,7 +40,7 @@ higher resolution grids allow the model to better resolve the flux through
 topographically-controlled outlet glaciers (compare :cite:`Pfefferetal2008`). However,
 because the total ice sheet volume is a highly-averaged quantity, the
 ``volume_glacierized`` difference from 20 km and 10 km resolution runs is only about one
-part in 60 (about 1.5\%) at the final time. By contrast, as is seen in the near-margin ice
+part in 60 (about 1.5%) at the final time. By contrast, as is seen in the near-margin ice
 in various locations shown in :numref:`fig-csurfvsobserved`, the ice velocity at a
 particular location may change by 100\% when the resolution changes from 20 km to 10 km.
 
