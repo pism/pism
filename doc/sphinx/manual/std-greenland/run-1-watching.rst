@@ -36,8 +36,6 @@ sheet in approximate steady-state with a steady (constant-in-time) climate. The 
 steadiness of the ``volume_glacierized`` time series is a possible standard for steady
 state (see :cite:`EISMINT00`, for exampe).
 
-.. FIXME: this is so out of date (e.g. the transpose)
-
 .. figure:: figures/growing-thk-ivol-g20km.png
    :name: fig-growing
 
@@ -56,9 +54,7 @@ we do:
 .. code-block:: none
 
    ncdump -h g20km_10ka.nc |grep history
-       :history = "user@machine 2013-11-23 15:57:22 AKST: PISM done.  Performance stats:
-   0.3435 wall clock hours, 1.3738 proc.-hours, 7274.0065 model years per proc.-hour,
-   PETSc MFlops = 0.03.\n",
+   :history = "user@machine 2017-10-04 19:16:08 AKDT: PISM done.  Performance stats: 0.1784 wall clock hours, 0.7136 proc.-hours, 14005.0054 model years per proc.-hour.\n",
 
 .. figure:: figures/g20km-10ka-usurf-csurf-mask.png
    :name: fig-firstoutput

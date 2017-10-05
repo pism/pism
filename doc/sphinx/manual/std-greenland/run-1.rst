@@ -93,7 +93,7 @@ The terminating "``&``", which is optional, asks the system to run the command i
 background so we can keep working in the current shell. Because we have re-directed the
 text output ("``&> out.g20km_10ka``"), PISM will show what it is doing in the text file
 ``out.g20km_10ka``. Using ``less`` is a good way to watch such a growing text-output file.
-This run should take 20 minutes or less.
+This run should take around 10 minutes.
 
 .. rubric:: Footnotes
 

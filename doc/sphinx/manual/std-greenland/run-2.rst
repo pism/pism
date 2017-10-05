@@ -53,12 +53,7 @@ When this run is finished it produces ``g20km_10ka_hy.nc``.  As before do
 
    ncdump -h g20km_10ka_hy.nc |grep history
 
-.. FIXME: PETSc MFlops is bullshit.
-
-to see performance results for your machine. The number reported as "``PETSc MFlops``"
-from this run is about `3 \times 10^5`, much larger than the previous run, because
-now calls to the PETSc library are used when solving the non-local SSA stress balance in
-parallel.
+to see performance results for your machine.
 
 The results of this run are shown in :numref:`fig-secondoutputcoarse`. We show the basal
 sliding speed field ``velbase_mag`` in this Figure, where :numref:`fig-firstoutput` had
