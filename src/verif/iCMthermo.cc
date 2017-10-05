@@ -478,7 +478,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
           uex = (x/r) * P.U[0],
           vex = (y/r) * P.U[0];
         // note that because getValZ does linear interpolation and H(i, j) is not exactly at
-        // a grid point, this causes nonzero errors even with option -eo
+        // a grid point, this causes nonzero errors
         const double Uerr = sqrt(PetscSqr(u3.getValZ(i, j, H) - uex) +
                                  PetscSqr(v3.getValZ(i, j, H) - vex));
         maxUerr = std::max(maxUerr, Uerr);

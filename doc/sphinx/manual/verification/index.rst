@@ -112,15 +112,15 @@ class of the PISM base class.
    K, ``pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000``
    L, ``pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000``
 
-.. FIXME: the table below is out of date
-
 .. csv-table:: ``pismv`` command-line options
    :header: Option, Description
    :name: tab-pismv-options
 
-   ``-test``,      Choose verification test by single character name; see :numref:`tab-tests`.
-   ``-no_report``, Do not report errors at the end of a verification run.
-   ``-eo``,        Only evaluate the exact solution; no numerical approximation at all.
+   ``-test``,        Choose verification test by single character name; see :numref:`tab-tests`.
+   ``-no_report``,   Do not report errors at the end of a verification run.
+   ``-eo``,          Only evaluate the exact solution; no numerical approximation at all.
+   ``-report_file``, Save error report to a netCDF file.
+   ``-append``,      Append to a report file.
 
 :numref:`tab-tests` summarizes the many exact solutions currently available in PISM. Most
 of these exact solutions are solutions of *free boundary problems* for partial

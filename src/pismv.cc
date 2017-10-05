@@ -19,7 +19,7 @@
 static char help[] =
 "Ice sheet driver for PISM (SIA and SSA) verification.  Uses exact solutions\n"
 "  to various coupled subsystems.  Computes difference between exact solution\n"
-"  and numerical solution.  Can also just compute exact solution (-eo).\n"
+"  and numerical solution.\n"
 "  Currently implements tests A, B, C, D, E, F, G, H, K, L.\n\n";
 
 #include <string>
@@ -162,11 +162,10 @@ int main(int argc, char *argv[]) {
     Logger::Ptr log = ctx->log();
 
     std::string usage =
-      "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pismv -test x [-no_report] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -test x     SIA-type verification test (x = A|B|C|D|F|G|H|K|L)\n"
       "  -no_report  do not give error report at end of run\n"
-      "  -eo         do not do numerical run; exact solution only\n"
       "(see User's Manual for tests I and J).\n";
 
     std::vector<std::string> required(1, "-test");

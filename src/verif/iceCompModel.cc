@@ -411,7 +411,7 @@ void IceCompModel::initTestL() {
     m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness);
   }
 
-  // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
+  // store copy of ice_thickness for evaluating geometry errors
   m_HexactL.copy_from(m_geometry.ice_thickness);
 }
 
