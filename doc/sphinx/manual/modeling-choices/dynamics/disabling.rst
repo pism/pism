@@ -19,3 +19,7 @@ example. PISM has the following "off" switches:
   conservation code
 - :opt:`-stress_balance none` disables the stress balance computation (useful for testing
   surface mass balance inputs)
+- :opt:`-dry` essentially disables ocean models: ice is always considered to be grounded,
+  the sub-shelf melt rate and temperature is not used, and the calving-front boundary
+  condition is computed ignoring the water pressure exerted on the vertical face at a
+  (possibly submerged) terminus.
