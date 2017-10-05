@@ -12,25 +12,21 @@
 
       \newcommand{\Diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
       \newcommand{\diff}[2]{ \frac{\partial #1}{\partial #2} }
-
       \newcommand{\var}[2]{ {#1}_{\text{#2}} }
       \newcommand{\h}[1]{ \var{h}{#1} }
       \newcommand{\T}[1]{ \var{T}{#1} }
       \newcommand{\m}[1]{ \var{m}{#1} }
       \newcommand{\ms}[1]{ \var{m^{*}}{#1} }
-
       \newcommand{\psw}{p_{\text{ocean}}}
       \newcommand{\pice}{p_{\text{ice}}}
       \newcommand{\pmelange}{p_{\text{melange}}}
       \newcommand{\n}{\mathbf{n}}
       \newcommand{\nx}{\n_{x}}
       \newcommand{\ny}{\n_{y}}
-
       \newcommand{\phimin}{\phi_{\mathrm{min}}}
       \newcommand{\phimax}{\phi_{\mathrm{max}}}
       \newcommand{\bmin}{b_{\mathrm{min}}}
       \newcommand{\bmax}{b_{\mathrm{max}}}
-
       \newcommand{\bq}{\mathbf{q}}
 
 .. raw:: latex
