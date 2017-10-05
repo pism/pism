@@ -103,5 +103,5 @@ choices, etc., without the need to keep run scripts around.
 
 .. rubric:: Footnotes
 
-.. [#] For ``pismr``, grid parameters ``Mx``, ``My``, ``Mz``, ``Mbz``, ``Lz``, ``Lbz``,
-       that must be set at bootstrapping, are exceptions. FIXME: THIS IS NOT TRUE ANY MORE
+.. [#] For ``pismr``, grid parameters ``Mx``, ``My``, that must be set at bootstrapping,
+       are exceptions. FIXME: THIS IS NOT (SHOULD NOT BE) TRUE ANY MORE
