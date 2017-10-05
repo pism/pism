@@ -133,8 +133,9 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
       const double uex = (xx/r) * F.U[0];
       const double vex = (yy/r) * F.U[0];
       // note that because getValZ does linear interpolation and H is not exactly at
-      // a grid point, this causes nonzero errors even with option -eo
-      const double Uerr = sqrt(PetscSqr(u3.getValZ(i,j,H) - uex) + PetscSqr(v3.getValZ(i,j,H) - vex));
+      // a grid point, this causes nonzero errors
+      const double Uerr = sqrt(PetscSqr(u3.getValZ(i,j,H) - uex) +
+                               PetscSqr(v3.getValZ(i,j,H) - vex));
       maxUerr = std::max(maxUerr,Uerr);
       avUerr += Uerr;
       const double Werr = fabs(w3.getValZ(i,j,H) - F.w[0]);
