@@ -23,51 +23,59 @@ Antarctica and to time-evolving ("prognostic") cases using the eigencalving
 :cite:`Levermannetal2012` mechanisms.
 
 The scripts in this subsection are found in directory ``examples/ross/``. In summary, the
-script ``preprocess.py`` downloads data and builds a NetCDF input file for PISM. For the
-diagnostic computation we document first, the script ``run_diag.sh`` (in subdirectory
-``examples/ross/diagnostic/``) runs PISM. The script ``plot.py`` shows a comparison of
-observations and model results, as in :numref:`fig-rosspython`.
+script ``preprocess.py`` downloads easily-available data and builds a NetCDF input file
+for PISM. For the diagnostic computation we document first, the script ``run_diag.sh`` (in
+subdirectory ``examples/ross/diagnostic/``) runs PISM. The script ``plot.py`` shows a
+comparison of observations and model results, as in :numref:`fig-rosspython`.
 
-Preprocessing the data
-^^^^^^^^^^^^^^^^^^^^^^
+Preprocessing input data
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-The script ``preprocess.py`` downloads ALBMAP and MEaSUREs NetCDF files using
-``wget``; these files total around 100 Mb. Then it uses NCO_ to cut out the relevant
-portion of the grid and CDO_ to conservatively-interpolate the high-resolution (500 m)
-velocity data onto the coarser (5 km) geometry grid used in ALBMAP. The script
-``nc2cdo.py`` from directory ``util/``, prepares the NetCDF file for the
-application of CDO, which requires complete projection information. Do
+NSIDC_ requires registration to download the `MEaSUREs InSAR-Based Antarctica Ice Velocity
+Map <measures-ross_>`_; please go to register, log in, and get the *first*, 900 m version
+of it (``antarctica_ice_velocity_900m.nc``) here:
+
+    https://n5eil01u.ecs.nsidc.org/MEASURES/NSIDC-0484.001/1996.01.01/
+
+Put this file in ``examples/ross``.
+
+The script ``preprocess.py`` then downloads ALBMAP using ``wget``; these two files total
+around 350 Mb. Then it uses NCO_ to cut out the relevant portion of the grid and CDO_ to
+conservatively-interpolate the high-resolution (900 m) velocity data onto the coarser (5
+km) geometry grid used in ALBMAP. The script ``nc2cdo.py`` from directory ``util/``,
+prepares the NetCDF file for the application of CDO, which requires complete projection
+information. Run
 
 .. code-block:: none
 
    cd examples/ross/
    ./preprocess.py
 
-The NetCDF file ``Ross_combined.nc`` produced by ``preprocess.py`` contains ice
-thickness, bed elevations, surface temperature, net accumulation, as well as latitude and
-longitude values. All of these are typical of ice sheet modelling data, both in diagnostic
-runs and as needed to initialize and provide boundary conditions for prognostic
-(evolutionary) runs; see below for the prognostic case with these data. The
-``_combined`` file also has variables ``u_ssa_bc`` and ``v_ssa_bc`` for the
-boundary values used in the (diagnostic and prognostic) computation of velocity. They are
-used at all grounded locations and at ice shelf cells that are immediate neighbors of
-grounded ice. The variable ``bc_mask`` specifies these locations. Finally the
-variables ``u_ssa_bc,v_ssa_bc``, which contain observed values, are used after the
-run to compare to the computed interior velocities.
+to download ALBMAP and finish the pre-processing.
+
+The NetCDF file ``Ross_combined.nc`` produced by ``preprocess.py`` contains ice thickness,
+bed elevations, surface temperature, net accumulation, as well as latitude and longitude
+values. All of these are typical of ice sheet modelling data, both in diagnostic runs and
+as needed to initialize and provide boundary conditions for prognostic (evolutionary)
+runs; see below for the prognostic case with these data. The ``_combined`` file also has
+variables ``u_ssa_bc`` and ``v_ssa_bc`` for the boundary values used in the (diagnostic
+and prognostic) computation of velocity. They are used at all grounded locations and at
+ice shelf cells that are immediate neighbors of grounded ice. The variable ``bc_mask``
+specifies these locations. Finally the variables ``u_ssa_bc,v_ssa_bc``, which contain
+observed values, are used after the run to compare to the computed interior velocities.
 
 Diagnostic computation of ice shelf velocity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The diagnostic velocity computation bootstraps from ``Ross_combined.nc`` and does a
-zero-year run; in the `211\times 211` grid case we demonstrate below, the key parts of the
+The diagnostic velocity computation bootstraps from ``Ross_combined.nc`` and performs a
+short run; in the `211\times 211` grid case we demonstrate below, the key parts of the
 PISM command are
 
 .. code-block:: none
 
    pismr -i ../Ross_combined.nc -bootstrap -Mx 211 -My 211 -Mz 3 -Lz 3000 -z_spacing equal \
-       -surface given -stress_balance ssa -energy none -yield_stress constant -tauc 1e6 \
-       -pik -ssa_dirichlet_bc -y 0 -ssa_e 0.6 -ssafd_ksp_monitor
-
+       -surface given -stress_balance ssa -energy none -no_mass -yield_stress constant -tauc 1e6 \
+       -pik -ssa_dirichlet_bc -y 1.0 -ssa_e 0.6 -ssafd_ksp_monitor
 
 The computational grid here is the "native" `5` km data grid used in ALBMAP. Regarding the
 options,
@@ -76,7 +84,7 @@ options,
   box large enough to contain the ice (i.e. ``-Lz 3000``). Vertical grid resolution
   is, however, unimportant in this case because we use the SSA stress balance only, and
   the temperature set at bootstrapping suffices to determine the ice softness; thus the
-  options ``-Mz 3 -z_spacing equal -energy none``.
+  options ``-Mz 3 -z_spacing equal``.
 
 - Option ``-stress_balance ssa`` selects the SSA stress balance and turns off the SIA
   stress balance computation, since our goal is to model the ice shelf. It also side-steps
@@ -86,18 +94,19 @@ options,
   this technical issue see section :ref:`sec-jako` about a regional model using option
   :opt:`-no_model_strip` and executable ``pismo``.
 
-- Option ``-y 0`` chooses a diagnostic run.
+- Option ``-y 1.0 -no_mass -energy none`` chooses a "diagnostic" run: in absence of
+  geometry evolution and stability restrictions of the energy balance model a
+  one-year-long run will be covered by exactly one time step.
 
-- Option ``-pik`` is equivalent to ``-cfbc -kill_icebergs`` in this non-evolving
-  example. Note that ``-kill_icebergs`` removes effectively-detached bits of ice,
-  especially in McMurdo sound area, so that the SSA problem is well-posed for the
+- Option ``-pik`` is equivalent to ``-cfbc -part_grid -kill_icebergs -subgl`` in this
+  non-evolving example. Note that ``-kill_icebergs`` removes effectively-detached bits of
+  ice, especially in McMurdo sound area, so that the SSA problem is well-posed for the
   grounded-ice-sheet-connected ice shelf.
 
-- Option :opt:`-ssa_dirichlet_bc` forces the use of fields
-  ``u_ssa_bc,v_ssa_bc,bc_mask`` described above. The field ``bc_mask`` is `1` at
-  boundary condition locations, and `0` elsewhere. For the prognostic runs below, the ice
-  thickness is also fixed at boundary condition locations, so as to prescribe ice flux as
-  an ice shelf input.
+- Option :opt:`-ssa_dirichlet_bc` forces the use of fields ``u_ssa_bc, v_ssa_bc, bc_mask``
+  described above. The field ``bc_mask`` is `1` at boundary condition locations, and `0`
+  elsewhere. For the prognostic runs below, the ice thickness is also fixed at boundary
+  condition locations, so as to prescribe ice flux as an ice shelf input.
 
 - Options ``-yield_stress constant -tauc 1e6`` essentially just turn off the
   grounded-ice evolving yield stress mechanism, which is inactive anyway, and force a high
@@ -109,14 +118,12 @@ options,
 - Option ``-ssafd_ksp_monitor`` provides feedback on the linear solver iterations
   "underneath" the nonlinear (shear-thinning) SSA solver iteration.
 
-
-There is no need to type in the above command; just do
+There is no need to type in the above command; just run
 
 .. code-block:: none
 
    cd diagnostic/
    ./run_diag.sh 2 211 0.6
-
 
 Note ``run_diag.sh`` accepts three arguments: ``run_diag.sh N Mx E`` does a run
 with ``N`` MPI processes, an ``Mx`` by ``Mx`` grid, and option
@@ -133,7 +140,7 @@ interested PISM user.
 The script ``plot.py`` takes PISM output such as ``diag_Mx211.nc`` to produce
 :numref:`fig-rosspython`. The run shown in the figure used an enhancement factor of
 `0.6` as above. The thin black line outlines the floating shelf, which is the actual
-modeling domain here. To generate this Figure yourself, do
+modeling domain here. To generate this figure yourself, run
 
 .. code-block:: none
 
@@ -177,8 +184,8 @@ Then change to the ``prognostic/`` directory and run the default example:
    cd examples/ross/prognostic/
    ./run_prog.sh 4 211 0.6 100
 
-This 100 model year run on 4 processes and a 5 km grid took about twenty minutes on a 2013
-laptop. It starts with a bootstrapping stage which does a ``y 0`` run, which generates
+This 100 model year run on 4 processes and a 5 km grid took about forty minutes on a 2016
+laptop. It starts with a bootstrapping stage which does a ``-y 1.0`` run, which generates
 ``startfile_Mx211.nc``. It then re-initializes to start the prognostic run itself. See the
 ``README.md`` for a bit more on the arguments taken by ``run_prog.sh`` and on viewing the
 output files.
@@ -189,16 +196,13 @@ The PISM command done here is (essentially, and without showing diagnostic outpu
 
    pismr -i startfile_Mx211.nc -surface given -stress_balance ssa \
        -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e 0.6 \
-       -y 100 -o prog_Mx211_yr100.nc -o_order zyx -o_size big \
+       -y 100 -o prog_Mx211_yr100.nc -o_size big \
        -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
-       -calving_cfl -thickness_calving_threshold 150.0 \
-       -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned \
-       -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu
-
+       -calving_cfl -thickness_calving_threshold 50.0
 
 Several of these options are different from those used in the diagnostic case. First,
 while the command ``-pik`` is the same as before, now each part of its expansion, namely
-``-cfbc -kill_icebergs -part_grid``, is important. As the calving front evolves
+``-cfbc -part_grid -kill_icebergs -subgl``, is important. As the calving front evolves
 (i.e. regardless of the calving law choices), option ``-part_grid`` moves the calving
 front by one grid cell only when the cell is full of the ice flowing into it; see
 :cite:`Albrechtetal2011`. The option ``-kill_icebergs`` is essential to maintain well-posedness
@@ -210,33 +214,16 @@ Option combination
 .. code-block:: none
 
        -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
-       -calving_cfl -thickness_calving_threshold 150.0
+       -calving_cfl -thickness_calving_threshold 50.0
 
 specifies that ice at the calving front will be removed if either a criterion on the
 product of principal stresses is satisfied :cite:`Levermannetal2012`, namely ``eigen_calving``
-with the given constant `K`, or if the ice thickness goes below the given threshold of 150
+with the given constant `K`, or if the ice thickness goes below the given threshold of 50
 meters. See section :ref:`sec-calving`.
 
-There is also an extended option combination
-
-.. code-block:: none
-
-       -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned \
-       -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu
-
-which tells the PETSc KSP object used by the SSA solver to solve in the most robust,
-though not necessarily fastest, way. In particular, the linear problem is spread across
-processors using an additive Schwarz domain decomposition preconditioning method
-(``-pc_type asm``) :cite:`Smithetal1996`, along with the standard ``gmres`` KSP solver,
-and then on each processor the local part of the linear system is solved by a direct
-method by the preconditioner (``-sub_pc_type lu``). These choices seem to be effective for
-solving SSA stress balances on the complicated-geometry domains which arise from
-nontrivial calving laws.
-
-.. %FIXME Evolving fracture density. See ``README.md``, ``preprocess_frac.py``, and
+.. %FIXME Use evolving fracture density. See ``README.md``, ``preprocess_frac.py``, and
    ``run_frac.sh`` in directory ``examples/ross/fracture_density/``. This example
    demonstrates the fracture density transport model in :cite:`AlbrechtLevermann2012`.
-
 
 .. rubric:: Footnotes
 

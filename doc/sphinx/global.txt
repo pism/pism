@@ -63,6 +63,8 @@
 .. _LaTeX: http://www.latex-project.org/
 .. _MPI: http://www.mcs.anl.gov/research/projects/mpi/
 .. _MacPorts: https://www.macports.org/
+.. _measures-ross: http://nsidc.org/data/NSIDC-0484
+.. _NSIDC: http://nsidc.org
 .. _NCL: http://www.ncl.ucar.edu
 .. _NCO: http://nco.sourceforge.net/
 .. _NetCDF: http://www.unidata.ucar.edu/software/netcdf/

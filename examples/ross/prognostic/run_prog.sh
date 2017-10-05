@@ -24,8 +24,8 @@ PISMPREFIX=""
 #PISMPREFIX="../../../bin/"
 
 # use these for more robust SSA solves
-#STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
-STRONGKSP=""
+# STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
+# STRONGKSP=""
 
 # preliminary bootstrap and diagnostic run:
 STARTNAME=startfile_Mx${M}.nc
@@ -42,14 +42,14 @@ ${cmd_diag}
 NAME=prog_Mx${M}_yr${YEARS}.nc
 ECALV=1e18   #  constant for eigen_calving parameterization
 CTHICK=50.0  #  constant thickness for thickness_calving
-exdt=5
-exvars="thk,mask,velsurf_mag,strain_rates,discharge_flux,discharge_flux_cumulative"
+exdt=1
+exvars="thk,mask,velsurf_mag,strain_rates,tendency_of_ice_mass_due_to_flow,tendency_of_ice_mass_due_to_discharge"
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i $STARTNAME \
   -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik \
   -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -calving_cfl \
-  -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $YEARS -o $NAME -o_order zyx -o_size big \
+  -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $YEARS -o $NAME -o_size big \
   -thickness_calving_threshold $CTHICK $STRONGKSP \
-  -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \
+  -ts_file ts-${NAME} -ts_times 0:monthly:${YEARS} \
   -extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars ${exvars} \
   -options_left"
 echo "running command:"
