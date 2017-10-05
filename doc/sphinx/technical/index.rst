@@ -5,6 +5,8 @@ Technical notes
    :caption: Contents
    :titlesonly:
 
+   cf-standard-names.rst
+
    vertchange.rst
 
    bed_roughness.rst

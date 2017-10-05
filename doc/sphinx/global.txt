@@ -49,6 +49,9 @@
 .. _CF-cell-boundaries: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#cell-boundaries
 .. _CF Conventions: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#cell-boundaries
 .. _CF-Calendars: http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html#calendar
+.. _CF-standard-names: http://cfconventions.org/standard-names.html
+.. _cf-names-for-glaciology: http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
+.. _cf-names-proposed: http://cfeditor.ceda.ac.uk/proposals/1
 .. _CMake-cross-compiling: https://cmake.org/Wiki/CMake_Cross_Compiling
 .. _Enthought: https://www.enthought.com/
 .. _FFTW: http://www.fftw.org/
