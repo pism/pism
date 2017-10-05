@@ -48,15 +48,6 @@ protected:
   IceModelVec2Int m_ocean_kill_mask;
 };
 
-/*! @brief Ocean kill mask. */
-class OceanKill_mask : public Diag<OceanKill>
-{
-public:
-  OceanKill_mask(const OceanKill *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
 } // end of namespace calving
 } // end of namespace pism
 

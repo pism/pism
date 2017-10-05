@@ -123,31 +123,8 @@ const IceModelVec2Int& OceanKill::mask() const {
 }
 
 std::map<std::string, Diagnostic::Ptr> OceanKill::diagnostics_impl() const {
-  return {{"ocean_kill_mask", Diagnostic::Ptr(new OceanKill_mask(this))}};
+  return {{"ocean_kill_mask", Diagnostic::wrap(m_ocean_kill_mask)}};
 }
-
-OceanKill_mask::OceanKill_mask(const OceanKill *m)
-  : Diag<OceanKill>(m) {
-
-  /* set metadata: */
-  m_vars.push_back(SpatialVariableMetadata(m_sys, "ocean_kill_mask"));
-
-  set_attrs("mask used by the 'ocean kill' calving method ", "",
-            "", "", 0);
-}
-
-IceModelVec::Ptr OceanKill_mask::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ocean_kill_mask", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  result->metadata(0).set_output_type(PISM_INT);
-
-  result->copy_from(model->mask());
-
-  return result;
-}
-
-
 
 } // end of namespace calving
 } // end of namespace pism
