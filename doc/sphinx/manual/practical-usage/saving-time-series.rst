@@ -20,9 +20,7 @@ options and :ref:`sec-ts_vars` for the full list of supported time-series.
 
 Note that, similarly to the snapshot-saving code (section :ref:`sec-snapshots`), this
 mechanism does not affect adaptive time-stepping. Here, however, PISM will save exactly
-the number of time-series records requested, *linearly interpolated onto requested times*.
-
-.. FIXME: do we still interpolate linearly?
+the number of time-series records requested.
 
 Omitting the ``-ts_vars`` option makes PISM save *all* available variables listed in
 :ref:`sec-ts_vars`. Because scalar time-series take minimal storage space, compared to
@@ -111,10 +109,6 @@ several scalar diagnostics:
   sub-steps for the SIA stress balance (sub-)model. ``max_hor_vel`` determines the
   CFL-type restriction for mass continuity and conservation of energy contributions of the
   SSA stress balance (i.e. sliding) velocity.
-
-.. note:: Document "Scalar time-series supported by PISM"
-
-          (with or without the hydrology model)
 
 .. rubric:: Footnotes
 

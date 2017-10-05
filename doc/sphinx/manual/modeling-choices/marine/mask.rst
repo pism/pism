@@ -18,13 +18,11 @@ value ``MASK_FLOATING``), the user must turn on the usual choice for ice shelf d
 namely the SSA stress balance, by using options :opt:`-stress_balance ssa` or
 :opt:`-stress_balance ssa+sia`.
 
-.. FIXME: this is certainly out of date
-   
 .. list-table:: The PISM mask, in combination with user options, determines the dynamical
                 model.
    :name: tab-maskvals
    :header-rows: 1
-   :widths: 1,2
+   :widths: 1,1
 
    * - Mask value
      - Meaning

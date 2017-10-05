@@ -160,7 +160,7 @@ Following :cite:`Morlighem2016` `\tilde{\sigma}` is given by
 where `B` is the ice hardness.
 
 Similar to ``eigen_calving``, the calving rate from ``vonmises_calving`` can be used to
-limit the overall timestep of PISM--thus slowing down all of PISM--by using
+limit the overall timestep of PISM --- thus slowing down all of PISM --- by using
 :opt:`-calving_cfl`.
 
 .. _sec-additional-calving:
@@ -185,7 +185,10 @@ Option :opt:`-calving float_kill` removes (calves), at each time step of the run
 that satisfies the flotation criterion. Use of this option implies that there are no ice
 shelves in the model at all.
 
-.. FIXME: float_kill has more options
+Use the option :opt:`-float_kill_margin_only` to restrict this to cells at the ice margin.
+
+Sometimes it is useful to preserve a one-cell-wide shelf near the grounding line. To do
+this, set :config:`calving.float_kill.calve_near_grounding_line` to false.
 
 Option :opt:`-calving ocean_kill` chooses the calving mechanism removing ice in the "open
 ocean". It requires the option :opt:`-ocean_kill_file`, which specifies the file

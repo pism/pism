@@ -19,7 +19,7 @@ quantities are *only* available as run-time viewers; these are shown in table
    * - Option
      - Description
    * - :opt:`-view`
-     - Turns on map-plane views of one or several variables, see tables FIXME
+     - Turns on map-plane views of one or several variables, see :ref:`sec-extra_vars`.
    * - :opt:`-view_size` (number)
      - desired viewer size, in pixels
    * - :opt:`-display`

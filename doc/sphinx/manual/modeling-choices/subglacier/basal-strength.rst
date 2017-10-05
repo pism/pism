@@ -299,9 +299,10 @@ values of `C_c`, `e_0`, and `N_0`, the value of `\delta=`
 :config:`basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden` should be
 regarded as uncertain, important, and subject to parameter studies to assess its effect.
 
-FIXME: EVOLVING CODE: If the :config:`basal_yield_stress.add_transportable_water`
-configuration flag is set (either in the configuration file or using the
-:opt:`-tauc_add_transportable_water` option), then the above formula becomes FIXME
+..
+   FIXME: EVOLVING CODE: If the :config:`basal_yield_stress.add_transportable_water`
+   configuration flag is set (either in the configuration file or using the
+   :opt:`-tauc_add_transportable_water` option), then the above formula becomes FIXME
 
 .. list-table:: Command-line options controlling how till effective pressure `N_{til}` in
                 equation :eq:`eq-mohrcoulomb` is determined
