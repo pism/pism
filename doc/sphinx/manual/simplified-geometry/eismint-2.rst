@@ -110,7 +110,9 @@ EISMINT II experiments.
        experiment. See :numref:`tab-eisII`.
 
    * - :opt:`-Mmax`
-     - 0.5 [ABDEFGHIK], 0.25 [CJL]
+     - 0.5 [ABDEFGHIK],
+
+       0.25 [CJL]
      - `m / year`
      - max value of accumulation rate
 
