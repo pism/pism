@@ -14,7 +14,7 @@ in the coarse grid file and interpolates these onto the finer grid before procee
 the actual computation.
 
 The transfer from grid to grid is reasonably general --- one can go from coarse to fine or
-vice versa in each dimension :math:`x,y,z` --- but the transfer must always be done by
+vice versa in each dimension `x,y,z` --- but the transfer must always be done by
 *interpolation* and never *extrapolation*. (An attempt to do the latter will always
 produce a PISM error.)
 

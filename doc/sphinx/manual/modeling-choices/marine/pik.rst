@@ -108,14 +108,15 @@ smooth the steep ice front after a few time steps. Instead the cell must be rega
 having ice which is comparably thick to the upstream cells, but where the ice only
 partially fills the cell.
 
-Specifically, the PIK mechanism turned on by ``-part_grid`` adds mass to the
+Specifically, the PIK mechanism turned on by :opt:`-part_grid` adds mass to the
 partially-filled cell which the advancing front enters, and it determines the coverage
 ratio according to the ice thickness of neighboring fully-filled ice shelf cells. If
-option ``-part_grid`` is used then the PISM output file will have field ``Href`` which
-shows the amount of ice in the partially-filled cells as a thickness. When a cell becomes
-fully-filled, in the sense that the ``Href`` thickness equals the average of neighbors,
-then the residual mass is redistributed to neighboring partially-filled or empty grid
-cells.
+option :opt:`-part_grid` is used then the PISM output file will have field
+``ice_area_specific_volume`` which tracks the amount of ice in the partially-filled cells
+as a "thickness", or, more appropriately, "volume per unit area". When a cell becomes
+fully-filled, in the sense that the ``ice_area_specific_volume`` reaches the average of
+the ice thickness in neighboring ice-filled cells, then the residual mass is redistributed
+to neighboring partially-filled or empty grid cells.
 
 The stress balance equations determining the velocities are only sensitive to
 "fully-filled" cells. Similarly, advection is controlled only by values of velocity in
@@ -140,10 +141,11 @@ stress. (See :cite:`SchoofStream`.) In this situation the numerical SSA stress b
 solver will fail.
 
 Option :opt:`-kill_icebergs` turns on the mechanism which cleans this up. This option is
-therefore generally needed if there is nontrivial calving. The mechanism identifies
-free-floating icebergs by using a 2-scan connected-component labeling algorithm. It then
-eliminates such icebergs, with the corresponding mass loss reported as a part of the 2D
-discharge flux diagnostic (see section :ref:`sec-saving-diagnostics`).
+therefore generally needed if there is nontrivial calving or significant variations in sea
+level during a simulation. The mechanism identifies free-floating icebergs by using a
+2-scan connected-component labeling algorithm. It then eliminates such icebergs, with the
+corresponding mass loss reported as a part of the 2D discharge flux diagnostic (see
+section :ref:`sec-saving-diagnostics`).
 
 .. _sec-subgrid-grounding-line:
 
@@ -152,12 +154,12 @@ Sub-grid treatment of the grounding line position
 
 The command-line option :opt:`-subgl` turns on a parameterization of the grounding line
 position based on the "LI" parameterization described in :cite:`Gladstoneetal2010` and
-:cite:`Feldmannetal2014`. With this option PISM computes an extra flotation mask, available as
-the ``gl_mask`` output variable, which corresponds to the fraction of the cell that is
-grounded. Cells that are ice-free or fully floating are assigned the value of `0` while
-fully-grounded icy cells get the value of `1`. Partially grounded cells, the ones which
-contain the grounding line, get a value between `0` and `1`. The resulting field has two
-uses:
+:cite:`Feldmannetal2014`. With this option PISM computes an extra flotation mask,
+available as the :var:`cell_grounded_fraction` output variable, which corresponds to the
+fraction of the cell that is grounded. Cells that are ice-free or fully floating are
+assigned the value of `0` while fully-grounded icy cells get the value of `1`. Partially
+grounded cells, the ones which contain the grounding line, get a value between `0` and
+`1`. The resulting field has two uses:
 
 - It is used to scale the basal friction in cells containing the grounding line in order
   to avoid an abrupt change in the basal friction from the "last" grounded cell to the

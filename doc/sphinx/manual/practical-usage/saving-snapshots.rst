@@ -74,7 +74,7 @@ jobs which go over their allotted time. Running PISM with options ``-y 1500``
 whole 1500 year run, we can restart from near the last multiple of :math:`100` years.
 Restarting with option ``-ye`` would finish the run on the desired year.
 
-When running PISM on such a batch system it is also possible to save re-startable
+When running PISM on such a batch system it can also be useful to save re-startable
 snapshots at equal wall-clock time (as opposed to model time) intervals by adding the
 ":opt:`-backup_interval` (hours)" option.
 

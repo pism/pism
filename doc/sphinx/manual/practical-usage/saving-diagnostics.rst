@@ -51,7 +51,7 @@ instead of a number; for example
 
 will save the rate of change of the ice thickness every month for 100 years. With
 ``-calendar none`` (the default), "monthly" means "every :math:`\frac 1 {12}` of the
-year", and "yearly" is "every :math:`3.14\dots\times10^7`" seconds, otherwise PISM uses
+year", and "yearly" is "every :math:`3.14\ldots\times10^7`" seconds, otherwise PISM uses
 month lengths computed using the selected calendar.
 
 It is frequently desirable to save diagnostic quantities at regular intervals for the
