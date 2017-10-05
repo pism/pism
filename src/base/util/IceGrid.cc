@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -1238,12 +1238,11 @@ void GridParameters::horizontal_extent_from_options() {
 }
 
 void GridParameters::vertical_grid_from_options(Config::ConstPtr config) {
-  options::Real Lz("-Lz", "height of the computational domain",
-                   z.size() > 0 ? z.back() : 0.0);
-  options::Integer Mz("-Mz", "grid size in Y direction", z.size());
-
+  double Lz = z.size() > 0 ? z.back() : config->get_double("grid.Lz");
+  int Mz = z.size() > 0 ? z.size() : config->get_double("grid.Mz");
   double lambda = config->get_double("grid.lambda");
   SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
+
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
 }
 
