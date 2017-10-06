@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -50,9 +50,7 @@ Given::Given(IceGrid::ConstPtr g)
   m_ice_surface_temp->metadata().set_double("valid_min", 0.0);
   m_ice_surface_temp->metadata().set_double("valid_max", 323.15); // 50 C
 
-  const double ice_density = m_config->get_double("constants.ice.density");
-  const double smb_max = units::convert(m_sys, 100.0 * ice_density,
-                                        "kg m-2 year-1", "kg m-2 second-1");
+  const double smb_max = m_config->get_double("surface.given.smb_max", "kg m-2 second-1");
 
   m_climatic_mass_balance->set_attrs("climate_forcing",
                                    "surface mass balance (accumulation/ablation) rate",

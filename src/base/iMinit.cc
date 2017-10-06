@@ -68,12 +68,29 @@ void IceModel::time_setup() {
                   m_config->get_string("time.dimension_name"),
                   *m_log, *m_time);
 
-  m_log->message(2,
-             "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
-             m_time->start_date().c_str(),
-             m_time->end_date().c_str(),
-             m_time->run_length().c_str(),
-             m_time->calendar().c_str());
+  bool use_calendar = m_config->get_boolean("output.runtime.time_use_calendar");
+
+  if (use_calendar) {
+    m_log->message(2,
+                   "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
+                   m_time->start_date().c_str(),
+                   m_time->end_date().c_str(),
+                   m_time->run_length().c_str(),
+                   m_time->calendar().c_str());
+  } else {
+    std::string time_units = m_config->get_string("output.runtime.time_unit_name");
+
+    double
+      start  = m_time->convert_time_interval(m_time->start(), time_units),
+      end    = m_time->convert_time_interval(m_time->end(), time_units),
+      length = end - start;
+
+    m_log->message(2,
+                   "* Run time: [%f %s, %f %s]  (%f %s)\n",
+                   start, time_units.c_str(),
+                   end, time_units.c_str(),
+                   length, time_units.c_str());
+  }
 }
 
 //! Sets the starting values of model state variables.

@@ -1316,6 +1316,11 @@ netcdf pism_config {
     pism_config:surface.force_to_thickness.start_time_type = "scalar";
     pism_config:surface.force_to_thickness.start_time_units = "years";
 
+    pism_config:surface.given.smb_max = 91000;
+    pism_config:surface.given.smb_max_doc = "Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.";
+    pism_config:surface.given.smb_max_type = "scalar";
+    pism_config:surface.given.smb_max_units = "kg m-2 year-1";
+
     pism_config:surface.pdd.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.pdd.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed surface.pdd.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";
     pism_config:surface.pdd.air_temp_all_precip_as_rain_type = "scalar";
