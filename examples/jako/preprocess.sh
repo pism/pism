@@ -30,7 +30,7 @@ ncwa -O -a t $WORKING $WORKING
 echo "adding lat and lon fields by using nc2cdo.py (which is in pism/util/)"
 nc2cdo.py $WORKING
 
-# create usurf, needed by regional-tools not pismo
+# create usurf, needed by regional-tools not pism
 ncap2 -O -s 'usurf=thk+topg' $WORKING $WORKING
 ncap2 -O -s 'where(usurf<0.0) usurf=0.0' $WORKING $WORKING
 ncatted -a standard_name,usurf,d,, $WORKING # remove it
@@ -38,7 +38,7 @@ ncatted -O -a units,usurf,a,c,"m" $WORKING
 ncatted -O -a long_name,usurf,a,c,"ice surface elevation" $WORKING
 
 echo "copying geometry fields for boundary conditions in no_model area..."
-# create fields thkstore and usrfstore so that pismo is able to appropriately
+# create fields thkstore and usrfstore so that pism is able to appropriately
 # assign Dirichlet b.c. for surface gradient & driving stress
 ncap -O -s "usurfstore=1.0*usurf" $WORKING $WORKING
 ncatted -a standard_name,usurfstore,d,, $WORKING # remove it

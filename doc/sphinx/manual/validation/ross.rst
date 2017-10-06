@@ -91,8 +91,8 @@ options,
   a technical issue: PISM uses periodic boundary conditions at domain boundaries and most
   fields in this setup are not periodic. Turning off SIA avoids operations such as
   differencing surface elevation across the domain edges. For a more complete solution to
-  this technical issue see section :ref:`sec-jako` about a regional model using option
-  :opt:`-no_model_strip` and executable ``pismo``.
+  this technical issue see section :ref:`sec-jako` about a regional model using PISM's
+  "regional mode" ``pismr -regional`` and the option :opt:`-no_model_strip`.
 
 - Option ``-y 1.0 -no_mass -energy none`` chooses a "diagnostic" run: in absence of
   geometry evolution and stability restrictions of the energy balance model a

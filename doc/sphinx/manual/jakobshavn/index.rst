@@ -6,7 +6,7 @@ Example: A regional model of the Jakobshavn outlet glacier in Greenland
 =======================================================================
 
 Jakobshavn Isbrae is a fast-flowing outlet glacier in western Greenland that drains
-approximately 7\% of the area of the Greenland ice sheet. It experienced a large
+approximately 7% of the area of the Greenland ice sheet. It experienced a large
 acceleration following the loss of its floating tongue in the 1990s
 :cite:`JoughinAbdalatiFahnestock`, an event which seems to have been driven by warmer
 ocean temperatures :cite:`Hollandetal2008`. Because it is thick, has a steep surface
@@ -17,11 +17,11 @@ this ice flow is different from the ice streams in West Antarctica or Northeast 
 
 This section describes how to build a PISM regional model of this outlet glacier
 :cite:`DellaGiustina2011` using scripts from ``examples/jako/``. The same strategy should
-work for other outlet glaciers. We also demonstrate the PISM executable ``pismo``
-("outlet-glacier mode"), and Python `drainage-basin-delineation tools <regional-tools_>`_
-which can be downloaded from the PISM source code website. Such regional models allow
-modest-size computers to run high resolution models [#]_ and large ensembles. Regional
-analysis is justified if detailed data is available for the region.
+work for other outlet glaciers. We also demonstrate the PISM regional mode ``pismr
+-regional``, and Python `drainage-basin-delineation tools <regional-tools_>`_ which can be
+downloaded from the PISM source code website. Such regional models allow modest-size
+computers to run high resolution models [#]_ and large ensembles. Regional analysis is
+justified if detailed data is available for the region.
 
 The geometric data used here is the SeaRISE :cite:`Bindschadler2013SeaRISE` 1 km dataset
 for the whole Greenland ice sheet. It contains bedrock topography from recent CReSIS radar
@@ -253,11 +253,12 @@ processes:
 
    ./spinup.sh 4 125 86 &> out.spin5km &
 
+.. This takes 4.5055 proc-hours on bueler-gazelle
+
 You can read the ``stdout`` log file while it runs: "``less out.spin5km``". The run takes
-about 5 processor-hours on a 2013 laptop. % 4.5055 proc-hours on bueler-gazelle It
-produces three files which can be viewed (e.g. with ``ncview``): ``spunjako_0.nc``,
-``ts_spunjako_0.nc``, and ``ex_spunjako_0.nc``. Some more comments on this run are
-appropriate:
+about 5 processor-hours on a 2013 laptop. It produces three files which can be viewed
+(e.g. with ``ncview``): ``spunjako_0.nc``, ``ts_spunjako_0.nc``, and ``ex_spunjako_0.nc``.
+Some more comments on this run are appropriate:
 
 - Generally the regridding techniques used at the start of this spin-up run are
   recommended for regional modeling. Read the actual run command by
@@ -272,12 +273,12 @@ appropriate:
 - A modestly-fine vertical grid with 20 m spacing is chosen, but even finer is
   recommended, especially to resolve the temperate ice layer in these outlet glaciers.
 
-- There is an option :opt:`-no_model_strip` ``10`` asking ``pismo`` to put a 10 km strip
-  around edge of the computational domain. This strip is entirely outside of the drainage
-  basin defined by ``ftt_mask``. In this strip the thermodynamical spun-up variables
-  ``bmelt,tillwat,enthalpy,litho_temp`` from ``g5km_bc.nc`` are held fixed and used as
-  boundary conditions for the conservation of energy model. A key part of putting these
-  boundary conditions into the model strip are the options
+- There is an option :opt:`-no_model_strip` ``10`` asking ``pismr -regional`` to put a 10
+  km strip around edge of the computational domain. This strip is entirely outside of the
+  drainage basin defined by ``ftt_mask``. In this strip the thermodynamical spun-up
+  variables ``bmelt,tillwat,enthalpy,litho_temp`` from ``g5km_bc.nc`` are held fixed and
+  used as boundary conditions for the conservation of energy model. A key part of putting
+  these boundary conditions into the model strip are the options
 
   .. code-block:: none
   
