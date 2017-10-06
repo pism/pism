@@ -209,8 +209,7 @@ void define_dimension(const PIO &nc, unsigned long int length,
     std::vector<std::string> dims(1, name);
     nc.def_var(name, PISM_DOUBLE, dims);
 
-    // false means "don't use glaciological_units"
-    write_attributes(nc, metadata, PISM_DOUBLE, false);
+    write_attributes(nc, metadata, PISM_DOUBLE);
 
   } catch (RuntimeError &e) {
     e.add_context("defining dimension '%s' in '%s'", name.c_str(), nc.inq_filename().c_str());
@@ -542,8 +541,7 @@ static void regrid_vec_fill_missing(const PIO &nc, const IceGrid &grid,
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const PIO &nc,
                              IO_Type default_type,
-                             const std::string &variable_order,
-                             bool use_glaciological_units) {
+                             const std::string &variable_order) {
   std::vector<std::string> dims;
   std::string name = var.get_name();
 
@@ -612,7 +610,7 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
   }
   nc.def_var(name, type, dims);
 
-  write_attributes(nc, var, type, use_glaciological_units);
+  write_attributes(nc, var, type);
 
   // add the "grid_mapping" attribute if the grid has an associated mapping. Variables lat, lon,
   // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
@@ -722,29 +720,33 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
  */
 void write_spatial_variable(const SpatialVariableMetadata &var,
                             const IceGrid& grid,
-                            const PIO &nc, bool use_glaciological_units,
+                            const PIO &file,
                             const double *input) {
 
-  nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
+  file.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
   // find or define the variable
   std::string name_found;
   bool exists, found_by_standard_name;
-  nc.inq_var(var.get_name(),
-             var.get_string("standard_name"),
-             exists, name_found, found_by_standard_name);
+  file.inq_var(var.get_name(),
+               var.get_string("standard_name"),
+               exists, name_found, found_by_standard_name);
 
   if (not exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.",
                                   var.get_name().c_str(),
-                                  nc.inq_filename().c_str());
+                                  file.inq_filename().c_str());
   }
 
   // make sure we have at least one level
   const std::vector<double>& zlevels = var.get_levels();
   unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
-  if (use_glaciological_units) {
+  std::string
+    units               = var.get_string("units"),
+    glaciological_units = var.get_string("glaciological_units");
+
+  if (units != glaciological_units) {
     size_t data_size = grid.xm() * grid.ym() * nlevels;
 
     // create a temporary array, convert to glaciological units, and
@@ -755,12 +757,12 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
     }
 
     units::Converter(var.unit_system(),
-                  var.get_string("units"),
-                  var.get_string("glaciological_units")).convert_doubles(&tmp[0], tmp.size());
+                     units,
+                     glaciological_units).convert_doubles(&tmp[0], tmp.size());
 
-    put_vec(nc, grid, name_found, nlevels, &tmp[0]);
+    put_vec(file, grid, name_found, nlevels, &tmp[0]);
   } else {
-    put_vec(nc, grid, name_found, nlevels, input);
+    put_vec(file, grid, name_found, nlevels, input);
   }
 }
 
@@ -1016,8 +1018,7 @@ void define_timeseries(const TimeseriesMetadata& var,
     nc.def_var(name, nctype, {dimension_name});
   }
 
-  const bool use_glaciological_units = true;
-  write_attributes(nc, var, nctype, use_glaciological_units);
+  write_attributes(nc, var, nctype);
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
@@ -1157,7 +1158,7 @@ void define_time_bounds(const TimeBoundsMetadata& var,
 
   nc.def_var(name, nctype, {dimension_name, bounds_name});
 
-  write_attributes(nc, var, nctype, true);
+  write_attributes(nc, var, nctype);
 }
 
 void read_time_bounds(const PIO &nc,
@@ -1303,7 +1304,9 @@ bool file_exists(MPI_Comm com, const std::string &filename) {
   }
 }
 
-void read_attributes(const PIO &nc, const std::string &variable_name, VariableMetadata &variable) {
+void read_attributes(const PIO &nc,
+                     const std::string &variable_name,
+                     VariableMetadata &variable) {
   try {
     bool variable_exists = nc.inq_var(variable_name);
 
@@ -1346,17 +1349,19 @@ void read_attributes(const PIO &nc, const std::string &variable_name, VariableMe
 
   - Skips empty text attributes.
  */
-void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type nctype,
-                      bool use_glaciological_units) {
+void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type nctype) {
   std::string var_name = variable.get_name();
+
   try {
+    std::string
+      units               = variable.get_string("units"),
+      glaciological_units = variable.get_string("glaciological_units");
+
+    bool use_glaciological_units = units != glaciological_units;
+
     // units, valid_min, valid_max and valid_range need special treatment:
     if (variable.has_attribute("units")) {
-      std::string output_units = variable.get_string("units");
-
-      if (use_glaciological_units) {
-        output_units = variable.get_string("glaciological_units");
-      }
+      std::string output_units = use_glaciological_units ? glaciological_units : units;
 
       nc.put_att_text(var_name, "units", output_units);
     }
@@ -1382,9 +1387,6 @@ void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type n
     // matching the ones in the output.
     if (use_glaciological_units) {
 
-      std::string
-        units               = variable.get_string("units"),
-        glaciological_units = variable.get_string("glaciological_units");
       units::Converter c(variable.unit_system(), units, glaciological_units);
 
       bounds[0]  = c(bounds[0]);

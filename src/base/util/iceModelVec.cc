@@ -377,8 +377,7 @@ const std::string& IceModelVec::get_name() const {
 //! Resets most IceModelVec attributes.
 void IceModelVec::reset_attrs(unsigned int N) {
 
-  write_in_glaciological_units = false;
-  m_report_range                 = true;
+  m_report_range = true;
 
   if (N > 0 && N < m_metadata.size()) {
     metadata(N).clear_all_strings();
@@ -470,8 +469,7 @@ void IceModelVec::define(const PIO &nc, IO_Type default_type) const {
   for (unsigned int j = 0; j < m_dof; ++j) {
     IO_Type type = metadata(j).get_output_type();
     type = type == PISM_NAT ? default_type : type;
-    io::define_spatial_variable(metadata(j), *m_grid, nc, type,
-                                order, write_in_glaciological_units);
+    io::define_spatial_variable(metadata(j), *m_grid, nc, type, order);
   }
 }
 
@@ -498,7 +496,7 @@ const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-void IceModelVec::write_impl(const PIO &nc) const {
+void IceModelVec::write_impl(const PIO &file) const {
 
   if (m_dof != 1) {
     throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::write_impl) only supports"
@@ -512,12 +510,12 @@ void IceModelVec::write_impl(const PIO &nc) const {
 
     petsc::VecArray tmp_array(tmp);
 
-    io::write_spatial_variable(metadata(0), *m_grid,  nc,
-                               write_in_glaciological_units, tmp_array.get());
+    io::write_spatial_variable(metadata(0), *m_grid,  file,
+                               tmp_array.get());
   } else {
     petsc::VecArray v_array(m_v);
-    io::write_spatial_variable(metadata(0), *m_grid, nc,
-                               write_in_glaciological_units, v_array.get());
+    io::write_spatial_variable(metadata(0), *m_grid, file,
+                               v_array.get());
   }
 }
 

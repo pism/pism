@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,6 @@ StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, SurfaceModel *input)
                       "kg m-2 s-1",
                       "land_ice_surface_specific_mass_balance_flux");
   m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_mass_flux.write_in_glaciological_units = true;
 
   m_temp.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
   m_temp.set_attrs("climate_state", "ice temperature at the ice surface",

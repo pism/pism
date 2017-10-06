@@ -59,9 +59,9 @@ void IceModel::write_metadata(const PIO &file, MappingTreatment mapping_flag,
     tmp.set_name("PISM_GLOBAL");
     tmp.set_string("history", tmp.get_string("history") + old_history);
 
-    io::write_attributes(file, tmp, PISM_DOUBLE, false);
+    io::write_attributes(file, tmp, PISM_DOUBLE);
   } else {
-    io::write_attributes(file, m_output_global_attributes, PISM_DOUBLE, false);
+    io::write_attributes(file, m_output_global_attributes, PISM_DOUBLE);
   }
 }
 
@@ -121,7 +121,7 @@ void IceModel::write_mapping(const PIO &file) {
       file.redef();
       file.def_var(mapping.get_name(), PISM_DOUBLE, {});
     }
-    io::write_attributes(file, mapping, PISM_DOUBLE, false);
+    io::write_attributes(file, mapping, PISM_DOUBLE);
   }
 }
 
@@ -131,7 +131,7 @@ void IceModel::write_run_stats(const PIO &file) {
     file.redef();
     file.def_var(m_run_stats.get_name(), PISM_DOUBLE, {});
   }
-  io::write_attributes(file, m_run_stats, PISM_DOUBLE, false);
+  io::write_attributes(file, m_run_stats, PISM_DOUBLE);
 }
 
 void IceModel::save_variables(const PIO &file,

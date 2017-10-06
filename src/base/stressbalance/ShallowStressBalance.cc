@@ -72,14 +72,11 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   m_velocity.metadata(0).set_string("glaciological_units", "m year-1");
   m_velocity.metadata(1).set_string("glaciological_units", "m year-1");
 
-  m_velocity.write_in_glaciological_units = true;
-
   m_basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
   m_basal_frictional_heating.set_attrs("diagnostic",
                                        "basal frictional heating",
                                        "W m-2", "");
   m_basal_frictional_heating.metadata().set_string("glaciological_units", "mW m-2");
-  m_basal_frictional_heating.write_in_glaciological_units = true;
 }
 
 ShallowStressBalance::~ShallowStressBalance() {

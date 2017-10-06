@@ -202,7 +202,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
                                     "kg m-2 s-1",
                                     "land_ice_surface_specific_mass_balance_flux");
   m_climatic_mass_balance.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_climatic_mass_balance.write_in_glaciological_units = true;
   m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // diagnostic fields:

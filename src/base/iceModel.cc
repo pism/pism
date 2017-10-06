@@ -283,7 +283,6 @@ void IceModel::allocate_storage() {
                               "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
                               "m s-1", "land_ice_basal_melt_rate");
   m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
-  m_basal_melt_rate.write_in_glaciological_units = true;
   m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
   m_grid->variables().add(m_basal_melt_rate);
 
@@ -321,7 +320,7 @@ void IceModel::allocate_storage() {
       m_ssa_dirichlet_bc_values.metadata(j).set_doubles("valid_range", {-valid_range, valid_range});
       m_ssa_dirichlet_bc_values.metadata(j).set_double("_FillValue", fill_value);
     }
-    m_ssa_dirichlet_bc_values.write_in_glaciological_units = true;
+
     // just for diagnostics...
     m_grid->variables().add(m_ssa_dirichlet_bc_values);
   }

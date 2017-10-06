@@ -74,7 +74,6 @@ SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
   m_bc_values.metadata(1).set_double("valid_max", units::convert(m_sys,  1e6, "m year-1", "m second-1"));
   m_bc_values.metadata(1).set_double("_FillValue", fill_value);
 
-  m_bc_values.write_in_glaciological_units = true;
   m_bc_values.set(fill_value);
 
   // Dirichlet B.C. mask
@@ -253,7 +252,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
   PIO nc(m_grid->com, "netcdf3", filename, mode);      // OK to use NetCDF3.
   start = nc.inq_dimlen("N");
 
-  io::write_attributes(nc, global_attributes, PISM_DOUBLE, false);
+  io::write_attributes(nc, global_attributes, PISM_DOUBLE);
 
   // Write the dimension variable:
   io::write_timeseries(nc, err, (size_t)start, (double)(start + 1), PISM_INT);
@@ -345,7 +344,6 @@ void SSATestCase::write(const std::string &filename) {
                   "m s-1", "", 1);
   exact.metadata(0).set_string("glaciological_units", "m year-1");
   exact.metadata(1).set_string("glaciological_units", "m year-1");
-  exact.write_in_glaciological_units = true;
 
   IceModelVec::AccessList list(exact);
   for (Points p(*m_grid); p; p.next()) {

@@ -39,7 +39,6 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
                                   "otherwise WGS84 ellipsoid is used");
   cell_area.set_time_independent(true);
   cell_area.metadata().set_string("glaciological_units", "km2");
-  cell_area.write_in_glaciological_units = true;
 
   latitude.create(grid, "lat", WITH_GHOSTS); // has ghosts so that we can compute cell areas
   latitude.set_attrs("mapping", "latitude", "degree_north", "latitude");

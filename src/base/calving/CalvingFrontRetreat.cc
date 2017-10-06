@@ -39,7 +39,6 @@ CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_
   m_horizontal_calving_rate.set_attrs("diagnostic", "calving rate", "m second-1", "land_ice_calving_rate");
   m_horizontal_calving_rate.set_time_independent(false);
   m_horizontal_calving_rate.metadata().set_string("glaciological_units", "m year-1");
-  m_horizontal_calving_rate.write_in_glaciological_units = true;
 
   m_mask.create(m_grid, "m_mask", WITH_GHOSTS, mask_stencil_width);
   m_mask.set_attrs("internal", "cell type mask", "", "");

@@ -268,8 +268,6 @@ public:
 
   //! If true, report range when regridding.
   bool m_report_range;
-  //! If true, data is written to a file in "human-friendly" units.
-  bool write_in_glaciological_units;
 
 protected:
 
@@ -281,7 +279,8 @@ protected:
 
   std::vector<double> m_zlevels;
 
-  petsc::Vec  m_v;                       //!< Internal storage
+  //! Internal storage
+  petsc::Vec  m_v;
   std::string m_name;
 
   //! stores metadata (NetCDF variable attributes)

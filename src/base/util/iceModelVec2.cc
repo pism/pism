@@ -286,13 +286,13 @@ void IceModelVec2S::mask_by(const IceModelVec2S &M, double fill) {
   inc_state_counter();          // mark as modified
 }
 
-void IceModelVec2::write_impl(const PIO &nc) const {
+void IceModelVec2::write_impl(const PIO &file) const {
 
   assert(m_v != NULL);
 
   // The simplest case:
   if ((m_dof == 1) and (not m_has_ghosts)) {
-    IceModelVec::write_impl(nc);
+    IceModelVec::write_impl(file);
     return;
   }
 
@@ -311,8 +311,8 @@ void IceModelVec2::write_impl(const PIO &nc) const {
     IceModelVec2::get_dof(da2, tmp, j);
 
     petsc::VecArray tmp_array(tmp);
-    io::write_spatial_variable(m_metadata[j], *m_grid, nc,
-                           write_in_glaciological_units, tmp_array.get());
+    io::write_spatial_variable(m_metadata[j], *m_grid, file,
+                           tmp_array.get());
   }
 }
 

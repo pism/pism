@@ -129,8 +129,6 @@ void ForceThickness::init_impl() {
                                  "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
                                  "m",
                                  "");  // no CF standard_name, to put it mildly
-
-    m_target_thickness.write_in_glaciological_units = true;
   }
 
   if (mask_exists) {

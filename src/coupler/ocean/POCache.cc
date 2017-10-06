@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,6 @@ Cache::Cache(IceGrid::ConstPtr g, OceanModel* in)
                                    " (positive flux is loss from ice shelf)",
                                    "kg m-2 s-1", "");
   m_shelf_base_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
   m_shelf_base_temperature.create(m_grid, "effective_shelf_base_temperature", WITHOUT_GHOSTS);
   m_shelf_base_temperature.set_attrs("climate_state",

@@ -42,7 +42,6 @@ Cache::Cache(IceGrid::ConstPtr g, SurfaceModel* in)
                         "kg m-2 s-1",
                         "land_ice_surface_specific_mass_balance_flux");
   m_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_mass_flux.write_in_glaciological_units = true;
 
   m_temperature.create(m_grid, "ice_surface_temp", WITHOUT_GHOSTS);
   m_temperature.set_attrs("climate_state",

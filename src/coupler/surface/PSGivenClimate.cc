@@ -58,8 +58,6 @@ Given::Given(IceGrid::ConstPtr g)
   m_climatic_mass_balance->metadata().set_string("glaciological_units", "kg m-2 year-1");
   m_climatic_mass_balance->metadata().set_double("valid_min", -smb_max);
   m_climatic_mass_balance->metadata().set_double("valid_max", smb_max);
-
-  m_climatic_mass_balance->write_in_glaciological_units = true;
 }
 
 Given::~Given() {

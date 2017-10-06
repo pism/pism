@@ -109,7 +109,6 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
                              " on the staggered grid",
                              "m2 s-1", "");
     flux_staggered.metadata().set_string("glaciological_units", "m2 year-1");
-    flux_staggered.write_in_glaciological_units = true;
 
     flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS);
     flux_divergence.set_attrs("diagnostic", "flux divergence", "m s-1", "");

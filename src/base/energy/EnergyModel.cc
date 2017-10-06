@@ -119,7 +119,6 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
     // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
     // have this standard name.
     m_basal_melt_rate.metadata().set_string("glaciological_units", "m year-1");
-    m_basal_melt_rate.write_in_glaciological_units = true;
     m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
   }
 

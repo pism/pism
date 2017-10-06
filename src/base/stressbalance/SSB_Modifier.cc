@@ -36,13 +36,11 @@ SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
   m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
               "m s-1", "land_ice_x_velocity");
   m_u.metadata().set_string("glaciological_units", "m year-1");
-  m_u.write_in_glaciological_units = true;
 
   m_v.create(m_grid, "vvel", WITH_GHOSTS);
   m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
               "m s-1", "land_ice_y_velocity");
   m_v.metadata().set_string("glaciological_units", "m year-1");
-  m_v.write_in_glaciological_units = true;
 
   m_strain_heating.create(m_grid, "strainheat", WITHOUT_GHOSTS); // never diff'ed in hor dirs
   m_strain_heating.set_attrs("internal",

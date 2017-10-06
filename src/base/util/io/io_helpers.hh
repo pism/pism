@@ -61,7 +61,6 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
 
 void write_spatial_variable(const SpatialVariableMetadata &var,
                             const IceGrid& grid, const PIO &nc,
-                            bool use_glaciological_units,
                             const double *input);
 
 void define_dimension(const PIO &nc, unsigned long int length,
@@ -78,8 +77,7 @@ void append_time(const PIO &nc, const std::string &name, double time_seconds);
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const PIO &nc,
                              IO_Type nctype,
-                             const std::string &variable_order,
-                             bool use_glaciological_units);
+                             const std::string &variable_order);
 
 void define_timeseries(const TimeseriesMetadata& var,
                        const PIO &nc, IO_Type nctype);
@@ -108,8 +106,7 @@ void write_time_bounds(const PIO &nc, const TimeBoundsMetadata &metadata,
 
 void read_attributes(const PIO &nc, const std::string &variable_name, VariableMetadata &variable);
 
-void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type nctype,
-                      bool use_glaciological_units);
+void write_attributes(const PIO &nc, const VariableMetadata &variable, IO_Type nctype);
 
 void read_valid_range(const PIO &nc, const std::string &name, VariableMetadata &variable);
 

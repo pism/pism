@@ -52,7 +52,6 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, OceanModel* in)
                                    " as seen by the ice dynamics code (for re-starting)",
                                    "kg m-2 s-1", "");
   m_shelf_base_mass_flux.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
   m_sea_level_elevation = 0.0;
 

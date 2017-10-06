@@ -348,7 +348,6 @@ int main(int argc, char *argv[]) {
     age.create(grid, "age", WITHOUT_GHOSTS);
     age.set_attrs("diagnostic", "age of the ice", "s", "");
     age.metadata().set_string("glaciological_units", "year");
-    age.write_in_glaciological_units = true;
     vars.add(age);
 
     // enthalpy in the ice

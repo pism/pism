@@ -56,7 +56,6 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   m_precipitation.set_attrs("model_state", "precipitation rate",
                                 "kg m-2 second-1", "", 0);
   m_precipitation.metadata(0).set_string("glaciological_units", "kg m-2 year-1");
-  m_precipitation.write_in_glaciological_units = true;
   m_precipitation.set_time_independent(true);
 }
 

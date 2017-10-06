@@ -189,9 +189,9 @@ void NetCDFConfig::write_impl(const PIO &nc) const {
     nc.def_var(m_data.get_name(),
                PISM_BYTE, std::vector<std::string>());
 
-    io::write_attributes(nc, m_data, PISM_DOUBLE, false);
+    io::write_attributes(nc, m_data, PISM_DOUBLE);
   } else {
-    io::write_attributes(nc, m_data, PISM_DOUBLE, false);
+    io::write_attributes(nc, m_data, PISM_DOUBLE);
   }
 }
 

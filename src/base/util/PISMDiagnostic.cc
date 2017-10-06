@@ -117,8 +117,7 @@ void Diagnostic::define_impl(const PIO &file, IO_Type default_type) const {
   for (unsigned int j = 0; j < m_dof; ++j) {
     io::define_spatial_variable(m_vars[j], *m_grid, file,
                                 default_type,
-                                m_grid->ctx()->config()->get_string("output.variable_order"),
-                                true);
+                                m_grid->ctx()->config()->get_string("output.variable_order"));
   }
 }
 
@@ -156,7 +155,7 @@ IceModelVec::Ptr Diagnostic::compute() const {
   m_grid->ctx()->log()->message(3, "-  Computing %s...\n", all_names.c_str());
   IceModelVec::Ptr result = this->compute_impl();
   m_grid->ctx()->log()->message(3, "-  Done computing %s.\n", all_names.c_str());
-  result->write_in_glaciological_units = true;
+
   return result;
 }
 

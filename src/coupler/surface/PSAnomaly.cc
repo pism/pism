@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -53,7 +53,6 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, SurfaceModel* in)
                                            "anomaly of the surface mass balance (accumulation/ablation) rate",
                                            "kg m-2 s-1", "");
   m_climatic_mass_balance_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
-  m_climatic_mass_balance_anomaly->write_in_glaciological_units = true;
 }
 
 Anomaly::~Anomaly() {

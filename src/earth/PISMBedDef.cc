@@ -47,7 +47,6 @@ BedDef::BedDef(IceGrid::ConstPtr g)
   m_uplift.set_attrs("model_state", "bedrock uplift rate",
                      "m s-1", "tendency_of_bedrock_altitude");
   m_uplift.metadata().set_string("glaciological_units", "mm year-1");
-  m_uplift.write_in_glaciological_units = true;
 }
 
 BedDef::~BedDef() {

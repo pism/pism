@@ -119,7 +119,6 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
                                  "upward_geothermal_heat_flux_at_ground_level"); // InitMIP "standard" name
     m_top_surface_flux.metadata().set_string("glaciological_units", "mW m-2");
     m_top_surface_flux.metadata().set_string("comment", "positive values correspond to an upward flux");
-    m_top_surface_flux.write_in_glaciological_units = true;
   }
   {
     m_bottom_surface_flux.create(m_grid, "bheatflx", WITHOUT_GHOSTS);
@@ -129,7 +128,6 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
                                     "W m-2", "");
     m_bottom_surface_flux.metadata().set_string("glaciological_units", "mW m-2");
     m_bottom_surface_flux.metadata().set_string("comment", "positive values correspond to an upward flux");
-    m_bottom_surface_flux.write_in_glaciological_units = true;
     m_bottom_surface_flux.set_time_independent(true);
   }
 }
