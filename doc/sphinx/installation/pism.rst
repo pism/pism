@@ -93,6 +93,18 @@ Follow these steps to build PISM:
       export CXXFLAGS="-fp-model precise"
       cmake [other options] ..
 
+   .. note::
+
+      To achieve best performance it can be useful to tell the compiler to target the
+      "native" architecture. (This gives it permission to use CPU instructions that may
+      not work on older CPUs.)
+
+      .. code-block:: bash
+
+         export CFLAGS="-march=native"
+         export CXXFLAGS="-march=native"
+         cmake [other options] ..
+
 #. PISM executables can be run most easily by adding the ``bin/`` sub-directory in your
    selected install path (``~/pism/bin`` in the example above) to your ``PATH``. For
    instance, this command can be done in the Bash_ shell or in your ``.bashrc`` file:
