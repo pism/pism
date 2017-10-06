@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013, 2014, 2016 the PISM Authors
+# Copyright (C) 2013, 2014, 2016, 2017 the PISM Authors
 
 # This script creates a graph of the modeled margin radius time series
 # by using the area_glacierized variable.  Compare Figure 4(a) in Sayag & Worster (2012).
@@ -28,7 +28,6 @@ parser.add_argument('infiles', metavar='FILENAME', nargs='+',
 args = parser.parse_args()
 
 plt.figure(figsize=(12, 6))
-plt.hold(True)
 
 for j in range(len(args.infiles)):
     nc = netCDF.Dataset(args.infiles[j], "r")
@@ -44,7 +43,6 @@ if args.datafile != None:
     data_rN = A[:, 1]
     plt.loglog(data_t, 100.0 * data_rN, 'ko', label='observed', ms=4)  # cm versus s
 
-plt.hold(False)
 plt.legend(loc='upper left')
 plt.xticks([1.0, 10.0, 100.0, 1000.0])
 plt.yticks([1.0, 10.0])

@@ -55,7 +55,7 @@ To run the example on the default 10 mm grid, first do
 
 .. code-block:: none
 
-   python preprocess.py
+   ./preprocess.py
 
 
 and then do a run for 746 model seconds :cite:`SayagWorster2013` on the 10 mm grid on a
@@ -89,11 +89,10 @@ several hours, make a combined figure just like :numref:`fig-labgumresult`:
 .. figure:: figures/labgumradius.png
    :name: fig-labgumresult
 
-   Radius `r_N(t)` for runs with 10 mm (``ts_lab52.nc``), 5 mm
-   (``ts_lab104.nc``), and 2.5 mm (``ts_lab208.nc``) grids, compared to
-   observations from Sayag & Worster's :cite:`SayagWorster2013` table-top "ice cap"
-   (gravity current) made from a 1% Xanthan gum suspension, as shown in Figure
-   :numref:`fig-labgumexperiment`.
+   Radius `r_N(t)` for runs with 10 mm (``ts_lab52.nc``), 5 mm (``ts_lab104.nc``), and 2.5
+   mm (``ts_lab208.nc``) grids, compared to observations from Sayag & Worster's
+   :cite:`SayagWorster2013` table-top "ice cap" (gravity current) made from a 1% Xanthan
+   gum suspension, as shown in Figure :numref:`fig-labgumexperiment`.
 
 We see that on the coarsest grid the modeled volume has "steps" because the margin
 advances discretely. Note we are computing the radius by first computing the fluid-covered
@@ -110,5 +109,5 @@ data even for small radius and time (see :cite:`SayagWorster2013`, Figure 4).
 In any case, the large-time observations are very closely-fit by the numerical results at
 all grid resolutions. We have used the Glen-law parameters `n,A` as calculated by Sayag &
 Worster, but one could do parameter-fitting to get the "best" values if desired. In
-particular, roughly speaking, `n` controls the slope of the results in Figure
+particular, roughly speaking, `n` controls the slope of the results in
 :numref:`fig-labgumresult` and `A` controls their vertical displacement.
