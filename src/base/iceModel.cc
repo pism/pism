@@ -144,8 +144,6 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   m_subglacial_hydrology = NULL;
   m_basal_yield_stress_model = NULL;
 
-  m_stress_balance = NULL;
-
   m_surface = NULL;
   m_ocean   = NULL;
   m_beddef  = NULL;
@@ -204,8 +202,6 @@ void IceModel::reset_counters() {
 IceModel::~IceModel() {
 
   delete m_age_model;
-
-  delete m_stress_balance;
 
   delete m_ocean;
 
@@ -845,7 +841,7 @@ const GeometryEvolution& IceModel::geometry_evolution() const {
 }
 
 const stressbalance::StressBalance* IceModel::stress_balance() const {
-  return this->m_stress_balance;
+  return this->m_stress_balance.get();
 }
 
 const ocean::OceanModel* IceModel::ocean_model() const {

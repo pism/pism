@@ -76,20 +76,14 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
 //! \brief Decide which stress balance model to use.
 void IceEISModel::allocate_stressbalance() {
 
-  using namespace pism::stressbalance;
-
-  if (m_stress_balance != NULL) {
+  if (m_stress_balance) {
     return;
   }
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+  // no sliding + SIA
+  m_config->set_string("stress_balance.model", "sia");
 
-  ShallowStressBalance *shallow_stress_balance = new ZeroSliding(m_grid);
-  SSB_Modifier *modifier = new SIAFD(m_grid);
-
-  // ~StressBalance() will de-allocate shallow_stress_balance and modifier.
-  m_stress_balance = new StressBalance(m_grid, shallow_stress_balance, modifier);
-  m_submodels["stress balance"] = m_stress_balance;
+  IceModel::allocate_stressbalance();
 }
 
 void IceEISModel::allocate_couplers() {

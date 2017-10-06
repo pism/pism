@@ -355,7 +355,7 @@ protected:
   static const int m_n_work2d = 4;
   mutable IceModelVec2S m_work2d[m_n_work2d];
 
-  stressbalance::StressBalance *m_stress_balance;
+  std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
   // discharge during the last time step
   IceModelVec2S m_discharge;

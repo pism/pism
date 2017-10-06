@@ -394,52 +394,17 @@ void IceModel::initialize_2d() {
 //! \brief Decide which stress balance model to use.
 void IceModel::allocate_stressbalance() {
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
-
-  using namespace pism::stressbalance;
-
-  if (m_stress_balance != NULL) {
+  if (m_stress_balance) {
     return;
   }
 
-  m_log->message(2,
-             "# Allocating a stress balance model...\n");
+  m_log->message(2, "# Allocating a stress balance model...\n");
 
-  std::string model = m_config->get_string("stress_balance.model");
+  // false means "not regional"
+  m_stress_balance = stressbalance::create(m_config->get_string("stress_balance.model"),
+                                           m_grid, false);
 
-  ShallowStressBalance *sliding = NULL;
-  if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(m_grid);
-  } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(m_grid);
-  } else if (model == "ssa" || model == "ssa+sia") {
-    std::string method = m_config->get_string("stress_balance.ssa.method");
-
-    if (method == "fem") {
-      sliding = new SSAFEM(m_grid);
-    } else if (method == "fd") {
-      sliding = new SSAFD(m_grid);
-    } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid ssa method: %s", method.c_str());
-    }
-
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
-  }
-
-  SSB_Modifier *modifier = NULL;
-  if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(m_grid);
-  } else if (model == "prescribed_sliding+sia" || model == "ssa+sia" || model == "sia") {
-    modifier = new SIAFD(m_grid);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
-  }
-
-  // ~StressBalance() will de-allocate sliding and modifier.
-  m_stress_balance = new StressBalance(m_grid, sliding, modifier);
-
-  m_submodels["stress balance"] = m_stress_balance;
+  m_submodels["stress balance"] = m_stress_balance.get();
 }
 
 void IceModel::allocate_geometry_evolution() {
@@ -447,8 +412,7 @@ void IceModel::allocate_geometry_evolution() {
     return;
   }
 
-  m_log->message(2,
-                 "# Allocating the geometry evolution model...\n");
+  m_log->message(2, "# Allocating the geometry evolution model...\n");
 
   m_geometry_evolution.reset(new GeometryEvolution(m_grid));
 
@@ -492,7 +456,7 @@ void IceModel::allocate_age_model() {
                                     "Cannot allocate an age model: m_stress_balance == NULL.");
     }
 
-    m_age_model = new AgeModel(m_grid, m_stress_balance);
+    m_age_model = new AgeModel(m_grid, m_stress_balance.get());
     m_submodels["age model"] = m_age_model;
   }
 }
@@ -507,12 +471,12 @@ void IceModel::allocate_energy_model() {
 
   if (m_config->get_boolean("energy.enabled")) {
     if (m_config->get_boolean("energy.temperature_based")) {
-      m_energy_model = new energy::TemperatureModel(m_grid, m_stress_balance);
+      m_energy_model = new energy::TemperatureModel(m_grid, m_stress_balance.get());
     } else {
-      m_energy_model = new energy::EnthalpyModel(m_grid, m_stress_balance);
+      m_energy_model = new energy::EnthalpyModel(m_grid, m_stress_balance.get());
     }
   } else {
-    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance);
+    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance.get());
   }
 
   m_submodels["energy balance model"] = m_energy_model;
@@ -552,7 +516,7 @@ void IceModel::allocate_subglacial_hydrology() {
   } else if (hydrology_model == "routing") {
     m_subglacial_hydrology = new Routing(m_grid);
   } else if (hydrology_model == "distributed") {
-    m_subglacial_hydrology = new Distributed(m_grid, m_stress_balance);
+    m_subglacial_hydrology = new Distributed(m_grid, m_stress_balance.get());
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown value for configuration string 'hydrology.model':\n"
                                   "has value '%s'", hydrology_model.c_str());
@@ -799,7 +763,7 @@ void IceModel::init_calving() {
   if (methods.find("eigen_calving") != methods.end()) {
 
     if (m_eigen_calving == NULL) {
-      m_eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance);
+      m_eigen_calving = new calving::EigenCalving(m_grid, m_stress_balance.get());
     }
 
     m_eigen_calving->init();
@@ -811,7 +775,7 @@ void IceModel::init_calving() {
   if (methods.find("vonmises_calving") != methods.end()) {
 
     if (m_vonmises_calving == NULL) {
-      m_vonmises_calving = new calving::vonMisesCalving(m_grid, m_stress_balance);
+      m_vonmises_calving = new calving::vonMisesCalving(m_grid, m_stress_balance.get());
     }
 
     m_vonmises_calving->init();

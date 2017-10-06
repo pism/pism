@@ -127,10 +127,10 @@ void IceRegionalModel::allocate_energy_model() {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "pismr -regional does not support the '-energy cold' mode.");
     } else {
-      m_energy_model = new energy::EnthalpyModel_Regional(m_grid, m_stress_balance);
+      m_energy_model = new energy::EnthalpyModel_Regional(m_grid, m_stress_balance.get());
     }
   } else {
-    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance);
+    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance.get());
   }
 
   m_submodels["energy balance model"] = m_energy_model;
@@ -138,42 +138,15 @@ void IceRegionalModel::allocate_energy_model() {
 
 void IceRegionalModel::allocate_stressbalance() {
 
-  using namespace pism::stressbalance;
-
-  if (m_stress_balance != NULL) {
+  if (m_stress_balance) {
     return;
   }
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+  bool regional = true;
+  m_stress_balance = stressbalance::create(m_config->get_string("stress_balance.model"),
+                                           m_grid, regional);
 
-  std::string model = m_config->get_string("stress_balance.model");
-
-  ShallowStressBalance *sliding = NULL;
-  if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(m_grid);
-  } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(m_grid);
-  } else if (model == "ssa" || model == "ssa+sia") {
-    sliding = new SSAFD_Regional(m_grid);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
-  }
-
-  SSB_Modifier *modifier = NULL;
-  if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(m_grid);
-  } else if (model == "prescribed_sliding+sia" ||
-             model == "ssa+sia" ||
-             model == "sia") {
-    modifier = new SIAFD_Regional(m_grid);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
-  }
-
-  // ~StressBalance() will de-allocate sliding and modifier.
-  m_stress_balance = new StressBalance(m_grid, sliding, modifier);
-
-  m_submodels["stress balance"] = m_stress_balance;
+  m_submodels["stress balance"] = m_stress_balance.get();
 }
 
 

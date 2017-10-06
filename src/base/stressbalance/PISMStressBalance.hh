@@ -139,6 +139,10 @@ protected:
   SSB_Modifier *m_modifier;
 };
 
+std::shared_ptr<StressBalance> create(const std::string &model_name,
+                                      IceGrid::ConstPtr grid,
+                                      bool regional);
+
 void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
                                        const IceModelVec2CellType &mask,
                                        IceModelVec2 &result);

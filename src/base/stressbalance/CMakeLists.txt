@@ -11,6 +11,7 @@ add_library (pismstressbalance OBJECT
   sia/SIAFD.cc
   sia/SIAFD_diagnostics.cc
   ../basalstrength/basal_resistance.cc
+  factory.cc
 )
 
 if (Pism_BUILD_EXTRA_EXECS)
