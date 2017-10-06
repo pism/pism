@@ -90,15 +90,15 @@ that we already have into data in the right units and with the right metadata.
 Thus we have PISM's design: the ice-dynamics PISM core does not contain any
 parameterization or other model for boundary mass or energy fluxes into or out of the ice.
 These boundary parameterizations and models are present in the PISM source code, however,
-as instances of :class:`pism::Component` classes. This simplifies customizing and
+as instances of ``pism::Component`` classes. This simplifies customizing and
 debugging PISM's climate inputs, and it promotes code reuse. It isolates the code that
 needs to be changed to couple PISM to different climate models.
 
-The classes :class:`pism::SurfaceModel`, :class:`pism::AtmosphereModel`, and
-:class:`pism::OceanModel` are all derived from :class:`pism::Component`. Corresponding to
-the red dashed line in :numref:`fig-climate-inputs`, a :class:`pism::AtmosphereModel`
+The classes ``pism::SurfaceModel``, ``pism::AtmosphereModel``, and
+``pism::OceanModel`` are all derived from ``pism::Component``. Corresponding to
+the red dashed line in :numref:`fig-climate-inputs`, a ``pism::AtmosphereModel``
 might not even be present in some PISM configurations. While they are required,
-:class:`pism::SurfaceModel` and :class:`pism::OceanModel` may contain (hide) anything from
+``pism::SurfaceModel`` and ``pism::OceanModel`` may contain (hide) anything from
 nearly-trivial parameterizations of ice surface temperatures and mass fluxes to a GCM of
 great complexity.
 
