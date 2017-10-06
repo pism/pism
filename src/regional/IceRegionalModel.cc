@@ -69,7 +69,7 @@ void IceRegionalModel::allocate_storage() {
   m_log->message(2, 
                  "  creating IceRegionalModel vecs ...\n");
 
-  // stencil width of 2 needed for surfaceGradientSIA() action
+  // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
   m_no_model_mask.create(m_grid, "no_model_mask", WITH_GHOSTS, 2);
   m_no_model_mask.set_attrs("model_state",
                             "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
