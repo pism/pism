@@ -82,8 +82,8 @@ WHOLE=g5km_gridseq.nc
 wget -nc ${URL}/$WHOLE
 BCFILE=g5km_bc.nc
 echo "creating PISM-readable boundary conditions file $BCFILE from whole ice sheet result ..."
-ncks -O -v u_ssa,v_ssa,basal_melt_rate_grounded,tillwat,enthalpy,litho_temp $WHOLE $BCFILE
-# rename u_ssa and v_ssa so that they are specified as b.c.
-ncrename -O -v u_ssa,u_ssa_bc -v v_ssa,v_ssa_bc $BCFILE
+ncks -O -v u_ssa,v_ssa,bmelt,tillwat,enthalpy,litho_temp $WHOLE $BCFILE
+# rename bmelt and u_ssa and v_ssa so that they are used as b.c.
+ncrename -O -v bmelt,basal_melt_rate_grounded -v u_ssa,u_ssa_bc -v v_ssa,v_ssa_bc $BCFILE
 echo "... done"
 echo
