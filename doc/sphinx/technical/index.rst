@@ -11,6 +11,8 @@ Technical notes
 
    bed_roughness.rst
 
+   coding_style.rst
+
    how-to.rst
 
    icemodelvec2t.rst
