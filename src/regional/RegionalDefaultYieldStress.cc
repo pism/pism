@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,26 +23,32 @@
 
 namespace pism {
 
-void RegionalDefaultYieldStress::init() {
-  // turn off second, redundant init message
+RegionalDefaultYieldStress::RegionalDefaultYieldStress(IceGrid::ConstPtr g,
+                                                       hydrology::Hydrology *hydro)
+  : MohrCoulombYieldStress(g, hydro) {
+}
+
+RegionalDefaultYieldStress::~RegionalDefaultYieldStress() {
+  // empty
+}
+
+void RegionalDefaultYieldStress::init_impl() {
+  // turn off the second, redundant initialization message
   m_log->disable();
-  MohrCoulombYieldStress::init();
+  MohrCoulombYieldStress::init_impl();
   m_log->enable();
 
   m_log->message(2,
-             "  using the regional version with strong till in no_model_mask==1 area ...\n");
+                 "  using the regional version with strong till in no_model_mask area...\n");
 }
 
-const IceModelVec2S& RegionalDefaultYieldStress::basal_material_yield_stress() {
+void RegionalDefaultYieldStress::update_impl() {
 
-  // do whatever you normally do
-  const IceModelVec2S &result = MohrCoulombYieldStress::basal_material_yield_stress();
-
-  // This is almost certainly redundant, but I don't want to count on
-  // the fact that the base class puts results in m_basal_yield_stress.
-  m_basal_yield_stress.copy_from(result);
+  MohrCoulombYieldStress::update_impl();
 
   const IceModelVec2Int &nmm = *m_grid->variables().get_2d_mask("no_model_mask");
+
+  double high_tauc = m_config->get_double("regional.no_model_yield_stress", "Pa");
 
   // now set tauc to a big value in no_model_strip
   IceModelVec::AccessList list{&nmm, &m_basal_yield_stress};
@@ -51,10 +57,9 @@ const IceModelVec2S& RegionalDefaultYieldStress::basal_material_yield_stress() {
     const int i = p.i(), j = p.j();
 
     if (nmm(i,j) > 0.5) {
-      m_basal_yield_stress(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
+      m_basal_yield_stress(i,j) = high_tauc;
     }
   }
-  return m_basal_yield_stress;
 }
 
 } // end of namespace pism

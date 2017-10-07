@@ -51,8 +51,10 @@ protected:
   void tauc_to_phi();
 protected:
   IceModelVec2S m_till_phi, m_tillwat, m_Po;
-  IceModelVec2S m_bwat;  // only allocated and used if basal_yield_stress.add_transportable_water = true
   hydrology::Hydrology *m_hydrology;
+
+  // only allocated and used if basal_yield_stress.add_transportable_water = true
+  IceModelVec2S m_bwat;
 };
 
 } // end of namespace pism

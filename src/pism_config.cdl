@@ -1115,6 +1115,11 @@ netcdf pism_config {
     pism_config:regional.no_model_strip_type = "scalar";
     pism_config:regional.no_model_strip_units = "km";
 
+    pism_config:regional.no_model_yield_stress = 1000.0;
+    pism_config:regional.no_model_yield_stress_doc = "High yield stress used in the 'no_model_mask' area in the regional mode.";
+    pism_config:regional.no_model_yield_stress_type = "scalar";
+    pism_config:regional.no_model_yield_stress_units = "kPa";
+
     pism_config:regional.zero_gradient = "false";
     pism_config:regional.zero_gradient_type = "boolean";
     pism_config:regional.zero_gradient_option = "zero_grad_where_no_model";
