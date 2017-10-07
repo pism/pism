@@ -36,8 +36,6 @@ public:
   SSAFD(IceGrid::ConstPtr g);
   virtual ~SSAFD();
 
-  virtual void update(const StressBalanceInputs &inputs, bool full_update);
-
   const IceModelVec2Stag & integrated_viscosity() const;
 protected:
   virtual void init_impl();

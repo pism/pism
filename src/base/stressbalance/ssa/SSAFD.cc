@@ -241,10 +241,6 @@ void SSAFD::init_impl() {
   m_default_pc_failure_max_count = 5;
 }
 
-void SSAFD::update(const StressBalanceInputs &inputs, bool full_update) {
-  SSA::update(inputs, full_update);
-}
-
 //! \brief Computes the right-hand side ("rhs") of the linear problem for the
 //! Picard iteration and finite-difference implementation of the SSA equations.
 /*!

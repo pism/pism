@@ -49,6 +49,10 @@ StressBalanceInputs::StressBalanceInputs() {
 
   bc_mask   = NULL;
   bc_values = NULL;
+
+  no_model_mask              = NULL;
+  no_model_ice_thickness     = NULL;
+  no_model_surface_elevation = NULL;
 }
 
 StressBalance::StressBalance(IceGrid::ConstPtr g,

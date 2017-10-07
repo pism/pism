@@ -34,6 +34,13 @@ public:
   virtual ~SSAFD_Regional();
   virtual void init();
   virtual void compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const;
+
+private:
+  void update(const StressBalanceInputs &inputs, bool full_update);
+
+  const IceModelVec2S   *m_h_stored;
+  const IceModelVec2S   *m_H_stored;
+  const IceModelVec2Int *m_no_model_mask;
 };
 
 } // end of namespace stressbalance
