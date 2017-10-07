@@ -1142,7 +1142,7 @@ RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
   m_no_model_mask.set_attrs("model_mask", "'no model' mask", "", "");
 }
 
-void RegionalGeometryEvolution::set_no_model_mask(const IceModelVec2Int &mask) {
+void RegionalGeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &mask) {
   m_no_model_mask.copy_from(mask);
 }
 
@@ -1185,5 +1185,15 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellT
   }
   loop.check();
 }
+
+void GeometryEvolution::set_no_model_mask(const IceModelVec2Int &mask) {
+  this->set_no_model_mask_impl(mask);
+}
+
+void GeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &mask) {
+  (void) mask;
+  // the default implementation is a no-op
+}
+
 
 } // end of namespace pism

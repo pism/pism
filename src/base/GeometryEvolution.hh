@@ -63,6 +63,9 @@ public:
   // diagnostic
   const IceModelVec2Stag& flux_staggered() const;
   const IceModelVec2S& flux_divergence() const;
+
+  // "regional" setup
+  virtual void set_no_model_mask(const IceModelVec2Int &mask);
 protected:
   std::map<std::string,Diagnostic::Ptr> diagnostics_impl() const;
 
@@ -101,6 +104,8 @@ protected:
                                     IceModelVec2S &area_specific_volume_change,
                                     IceModelVec2S &conservation_error);
 
+  virtual void set_no_model_mask_impl(const IceModelVec2Int &mask);
+
   // note: cells with area_specific_volume > 0 do not experience changes due to surface and basal
   // mass balance sources
   virtual void compute_surface_and_basal_mass_balance(double dt,
@@ -121,9 +126,9 @@ class RegionalGeometryEvolution : public GeometryEvolution {
 public:
   RegionalGeometryEvolution(IceGrid::ConstPtr grid);
 
-  void set_no_model_mask(const IceModelVec2Int &mask);
-
 protected:
+  void set_no_model_mask_impl(const IceModelVec2Int &mask);
+
   virtual void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                         const IceModelVec2S        &ice_thickness,
                                         const IceModelVec2V        &velocity,
