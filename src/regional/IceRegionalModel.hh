@@ -32,11 +32,11 @@ public:
 protected:
   virtual void bootstrap_2d(const PIO &input_file);
 
-  virtual void allocate_geometry_evolution();
-  virtual void allocate_storage();
-  virtual void allocate_stressbalance();
-  virtual void allocate_basal_yield_stress();
-  virtual void allocate_energy_model();
+  void allocate_geometry_evolution();
+  void allocate_storage();
+  void allocate_stressbalance();
+  void allocate_basal_yield_stress();
+  void allocate_energy_model();
   void model_state_setup();
 private:
   IceModelVec2Int m_no_model_mask;

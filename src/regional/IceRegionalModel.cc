@@ -176,7 +176,8 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     } else if (yield_stress_model == "mohr_coulomb") {
       m_basal_yield_stress_model = new RegionalDefaultYieldStress(m_grid, m_subglacial_hydrology);
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
     m_submodels["basal yield stress"] = m_basal_yield_stress_model;
