@@ -102,6 +102,15 @@ void IceRegionalModel::allocate_storage() {
   m_model_state.insert(&m_no_model_mask);
 }
 
+void IceRegionalModel::model_state_setup() {
+
+  // initialize the model state (including special fields)
+  IceModel::model_state_setup();
+
+  // initialize the no_model_mask
+  m_geometry_evolution->set_no_model_mask(m_no_model_mask);
+}
+
 void IceRegionalModel::allocate_geometry_evolution() {
   if (m_geometry_evolution) {
     return;

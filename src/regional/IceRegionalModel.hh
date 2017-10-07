@@ -37,6 +37,7 @@ protected:
   virtual void allocate_stressbalance();
   virtual void allocate_basal_yield_stress();
   virtual void allocate_energy_model();
+  void model_state_setup();
 private:
   IceModelVec2Int m_no_model_mask;
   IceModelVec2S   m_usurf_stored;
