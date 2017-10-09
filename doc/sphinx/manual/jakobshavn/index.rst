@@ -256,7 +256,7 @@ processes:
 .. This takes 4.5055 proc-hours on bueler-gazelle
 
 You can read the ``stdout`` log file while it runs: "``less out.spin5km``". The run takes
-about 5 processor-hours on a 2013 laptop. It produces three files which can be viewed
+about 4.4 processor-hours on a 2016 laptop. It produces three files which can be viewed
 (e.g. with ``ncview``): ``spunjako_0.nc``, ``ts_spunjako_0.nc``, and ``ex_spunjako_0.nc``.
 Some more comments on this run are appropriate:
 
