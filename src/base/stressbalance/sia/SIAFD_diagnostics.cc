@@ -138,13 +138,26 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
             "m2 s-1", "m2 s-1", 1);
 }
 
+static void copy_staggered_vec(const IceModelVec2Stag &input, IceModelVec2Stag &output) {
+  IceGrid::ConstPtr grid = output.get_grid();
+
+  IceModelVec::AccessList list{ &input, &output };
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    output(i, j, 0) = input(i, j, 0);
+    output(i, j, 1) = input(i, j, 1);
+  }
+}
+
 IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "diffusivity", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  result->copy_from(model->diffusivity());
+  copy_staggered_vec(model->diffusivity(), *result.get());
 
   return result;
 }
@@ -171,7 +184,7 @@ IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  result->copy_from(model->surface_gradient_x());
+  copy_staggered_vec(model->surface_gradient_x(), *result.get());
 
   return result;
 }
@@ -198,7 +211,7 @@ IceModelVec::Ptr SIAFD_h_y::compute_impl() const {
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  result->copy_from(model->surface_gradient_y());
+  copy_staggered_vec(model->surface_gradient_y(), *result.get());
 
   return result;
 }
