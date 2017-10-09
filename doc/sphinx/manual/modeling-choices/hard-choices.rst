@@ -1,4 +1,4 @@
-.. include:: ../../../global.txt
+.. include:: ../../global.txt
 
 .. _sec-hard-choices:
 

@@ -5,6 +5,8 @@
 Model domain, grid, and time
 ============================
 
+This section describes PISM's computational domain and grid and the way to control it.
+
 .. toctree::
 
    box.rst
@@ -12,7 +14,3 @@ Model domain, grid, and time
    grid.rst
 
    time.rst
-
-   diagnostic.rst
-
-   hard-choices.rst
