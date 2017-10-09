@@ -104,4 +104,14 @@ choices, etc., without the need to keep run scripts around.
 .. rubric:: Footnotes
 
 .. [#] For ``pismr``, grid parameters ``Mx``, ``My``, that must be set at bootstrapping,
-       are exceptions. FIXME: THIS IS NOT (SHOULD NOT BE) TRUE ANY MORE
+       are exceptions.
+
+       .. Note: This is because we don't have a way to tell if a parameter value is a
+          default *or* a conscious user choice, but we do know that command-line options
+          are meant to override defaults.
+
+          The desired behavior at bootstrapping is:
+
+          In absence of -Mx and -My use the grid size from the input file. Values set
+          with -Mx and -My override ones read from the input file. The user can set one
+          (or both) -Mx and -My.
