@@ -5,6 +5,10 @@
 Practical usage
 ===============
 
+Running PISM requires many practical decisions, from pre-processing input data and
+selecting diagnostic quantities to save to monitoring running simulations and managing
+code modifications; see the following sub-sections for details.
+
 .. toctree::
 
    netcdf-tools.rst
