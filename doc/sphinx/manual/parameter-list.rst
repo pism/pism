@@ -356,7 +356,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
    :Value: *no default*
    :Option: :opt:`-thickness_calving_threshold_file`
-   :Description: Name of the file containing the spatially-variable thickness calving threshold. 
+   :Description: Name of the file containing the spatially-variable thickness calving threshold.
 
 #. :config:`calving.vonmises.sigma_max` (*scalar*)
 
@@ -708,8 +708,8 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
 #. :config:`grid.Lbz` (*scalar*)
 
-   :Value: 0 (meters)
-   :Description: Thickness of the thermal bedrock layer.
+   :Value: 1000 (meters)
+   :Description: Thickness of the thermal bedrock layer. (Inactive if ``grid.Mbz`` < 2)
 
 #. :config:`grid.Lx` (*scalar*)
 
@@ -724,6 +724,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`grid.Lz` (*scalar*)
 
    :Value: 4000 (meters)
+   :Option: :opt:`-Lz`
    :Description: Height of the computational domain.
 
 #. :config:`grid.Mbz` (*integer*)
@@ -746,6 +747,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`grid.Mz` (*integer*)
 
    :Value: 31
+   :Option: :opt:`-Mz`
    :Description: Number of vertical grid levels in the ice.
 
 #. :config:`grid.correct_cell_areas` (*boolean*)
@@ -1195,6 +1197,11 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
    :Option: :opt:`-no_model_strip`
    :Description: Default width of the 'no model strip' in regional setups.
 
+#. :config:`regional.no_model_yield_stress` (*scalar*)
+
+   :Value: 1000 (kPa)
+   :Description: High yield stress used in the 'no_model_mask' area in the regional mode.
+
 #. :config:`regional.zero_gradient` (*boolean*)
 
    :Value: false
@@ -1413,6 +1420,11 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
    :Value: -4.540000e+09 (years)
    :Description: Starting time for the "force to thickness" modifier; the default is "start from the creation of the Earth."
 
+#. :config:`surface.given.smb_max` (*scalar*)
+
+   :Value: 91000 (kg m-2 year-1)
+   :Description: Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.
+
 #. :config:`surface.pdd.air_temp_all_precip_as_rain` (*scalar*)
 
    :Value: 275.150000 (Kelvin)
@@ -1553,12 +1565,12 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`surface.pdd.std_dev_lapse_lat_base` (*scalar*)
 
    :Value: 72 (degree_north)
-   :Description: std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero 
+   :Description: std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero
 
 #. :config:`surface.pdd.std_dev_lapse_lat_rate` (*scalar*)
 
    :Value: 0 (Kelvin / degree_north)
-   :Description: std_dev is a function of latitude, with rate of change with respect to latitude given by this constant 
+   :Description: std_dev is a function of latitude, with rate of change with respect to latitude given by this constant
 
 #. :config:`surface.pdd.std_dev_param_a` (*scalar*)
 
