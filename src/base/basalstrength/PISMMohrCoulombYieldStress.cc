@@ -31,6 +31,7 @@
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
+#include "base/Geometry.hh"
 
 namespace pism {
 
@@ -209,7 +210,7 @@ void MohrCoulombYieldStress::init_impl() {
                    "  Will compute till friction angle (tillphi) as a function"
                    " of the yield stress (tauc)...\n");
 
-    tauc_to_phi();
+    tauc_to_phi(*m_grid->variables().get_2d_cell_type("mask"));
   } else {
     m_basal_yield_stress.set(0.0);
     // will be set in update_impl()
@@ -266,7 +267,7 @@ that is, the water amount is the sum @f$ W+W_{til} @f$.  This only works
 if @f$ W @f$ is present, that is, if `hydrology` points to a
 hydrology::Routing (or derived class thereof).
  */
-void MohrCoulombYieldStress::update_impl() {
+void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
 
   bool slippery_grounding_lines = m_config->get_boolean("basal_yield_stress.slippery_grounding_lines"),
        add_transportable_water  = m_config->get_boolean("basal_yield_stress.add_transportable_water");
@@ -295,8 +296,8 @@ void MohrCoulombYieldStress::update_impl() {
     }
   }
 
-  const IceModelVec2CellType &mask           = *m_grid->variables().get_2d_cell_type("mask");
-  const IceModelVec2S        &bed_topography = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2CellType &mask           = inputs.geometry->cell_type;
+  const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
 
   IceModelVec::AccessList list{&m_tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
       &bed_topography, &m_Po};
@@ -315,9 +316,9 @@ void MohrCoulombYieldStress::update_impl() {
       // user can ask that marine grounding lines get special treatment
       const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
       double water = m_tillwat(i,j); // usual case
-      if (slippery_grounding_lines &&
-          bed_topography(i,j) <= sea_level &&
-          (mask.next_to_floating_ice(i,j) || mask.next_to_ice_free_ocean(i,j))) {
+      if (slippery_grounding_lines and
+          bed_topography(i,j) <= sea_level and
+          (mask.next_to_floating_ice(i,j) or mask.next_to_ice_free_ocean(i,j))) {
         water = tillwat_max;
       } else if (add_transportable_water) {
         water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
@@ -421,7 +422,7 @@ void MohrCoulombYieldStress::topg_to_phi(const IceModelVec2S &bed_topography) {
 }
 
 
-void MohrCoulombYieldStress::tauc_to_phi() {
+void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
   const double c0 = m_config->get_double("basal_yield_stress.mohr_coulomb.till_cohesion"),
     N0            = m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"),
     e0overCc      = (m_config->get_double("basal_yield_stress.mohr_coulomb.till_reference_void_ratio") /
@@ -433,8 +434,6 @@ void MohrCoulombYieldStress::tauc_to_phi() {
 
   m_hydrology->till_water_thickness(m_tillwat);
   m_hydrology->overburden_pressure(m_Po);
-
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   // make sure that we have enough ghosts:
   const unsigned int GHOSTS = m_till_phi.get_stencil_width();

@@ -24,6 +24,8 @@
 
 namespace pism {
 
+class IceModelVec2CellType;
+
 namespace hydrology {
 class Hydrology;
 }
@@ -45,10 +47,10 @@ protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   virtual MaxTimestep max_timestep_impl(double t) const;
-  virtual void update_impl();
+  virtual void update_impl(const YieldStressInputs &inputs);
 
   void topg_to_phi(const IceModelVec2S &bed_topography);
-  void tauc_to_phi();
+  void tauc_to_phi(const IceModelVec2CellType &mask);
 protected:
   IceModelVec2S m_till_phi, m_tillwat, m_Po;
   hydrology::Hydrology *m_hydrology;

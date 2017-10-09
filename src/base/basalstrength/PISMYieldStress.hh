@@ -24,6 +24,18 @@
 
 namespace pism {
 
+class Geometry;
+
+class YieldStressInputs {
+public:
+  YieldStressInputs();
+
+  const Geometry *geometry;
+
+  // inputs used by regional models
+  const IceModelVec2Int *no_model_mask;
+};
+
 //! \brief The PISM basal yield stress model interface (virtual base class)
 class YieldStress : public Component {
 public:
@@ -32,10 +44,10 @@ public:
 
   void init();
   const IceModelVec2S& basal_material_yield_stress();
-  void update();
+  void update(const YieldStressInputs &inputs);
 protected:
   virtual void init_impl() = 0;
-  virtual void update_impl() = 0;
+  virtual void update_impl(const YieldStressInputs &inputs) = 0;
 
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 

@@ -42,11 +42,11 @@ void RegionalDefaultYieldStress::init_impl() {
                  "  using the regional version with strong till in no_model_mask area...\n");
 }
 
-void RegionalDefaultYieldStress::update_impl() {
+void RegionalDefaultYieldStress::update_impl(const YieldStressInputs &inputs) {
 
-  MohrCoulombYieldStress::update_impl();
+  MohrCoulombYieldStress::update_impl(inputs);
 
-  const IceModelVec2Int &nmm = *m_grid->variables().get_2d_mask("no_model_mask");
+  const IceModelVec2Int &nmm = *inputs.no_model_mask;
 
   double high_tauc = m_config->get_double("regional.no_model_yield_stress", "Pa");
 

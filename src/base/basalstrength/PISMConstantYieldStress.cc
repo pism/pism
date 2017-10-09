@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -70,7 +70,8 @@ void ConstantYieldStress::write_model_state_impl(const PIO &output) const {
   m_basal_yield_stress.write(output);
 }
 
-void ConstantYieldStress::update_impl() {
+void ConstantYieldStress::update_impl(const YieldStressInputs &inputs) {
+  (void) inputs;
   // empty
 }
 

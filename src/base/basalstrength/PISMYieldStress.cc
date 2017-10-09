@@ -22,6 +22,11 @@
 
 namespace pism {
 
+YieldStressInputs::YieldStressInputs() {
+  geometry      = NULL;
+  no_model_mask = NULL;
+}
+
 YieldStress::YieldStress(IceGrid::ConstPtr g)
   : Component(g) {
   m_basal_yield_stress.create(m_grid, "tauc", WITH_GHOSTS,
@@ -40,8 +45,8 @@ void YieldStress::init() {
   this->init_impl();
 }
 
-void YieldStress::update() {
-  this->update_impl();
+void YieldStress::update(const YieldStressInputs &inputs) {
+  this->update_impl(inputs);
 }
 
 const IceModelVec2S& YieldStress::basal_material_yield_stress() {
