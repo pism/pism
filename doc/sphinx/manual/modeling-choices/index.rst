@@ -33,6 +33,8 @@ This section describes how to understand and make these modeling choices.
 
    marine/index.rst
 
+   disabling.rst
+
    hard-choices.rst
 
 .. [#] See :ref:`sec-parameter-list` for the full list of configuration parameters and

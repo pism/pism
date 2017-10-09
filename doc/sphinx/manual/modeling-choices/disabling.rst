@@ -1,9 +1,9 @@
-.. include:: ../../../global.txt
+.. include:: ../../global.txt
 
 .. _sec-turning-off:
 
-Disabling PISM components
--------------------------
+Disabling sub-models
+--------------------
 
 Certain major model components, unlike more peripheral ones like bed deformation or
 calving, are "on" by default. They do not need to be turned on explicitly. For example,

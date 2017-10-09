@@ -16,5 +16,3 @@ Ice dynamics and thermodynamics
    energy-balance.rst
 
    age.rst
-
-   disabling.rst
