@@ -349,8 +349,8 @@ combination
 are a topic for a parameter study (compare :cite:`AschwandenAdalgeirsdottirKhroulev`) or a
 study of their relation to inverse modeling results (e.g. :cite:`Habermannetal2013`).
 
-Plotting the results
---------------------
+Plotting results
+----------------
 
 :numref:`fig-jako-csurf` was generated using pypismtools_, NCO_ and CDO_.  Do
 
