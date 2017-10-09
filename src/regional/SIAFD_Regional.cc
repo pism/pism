@@ -41,7 +41,7 @@ void SIAFD_Regional::init() {
   m_log->message(2, "  using the regional version of the SIA solver...\n");
 }
 
-void SIAFD_Regional::compute_surface_gradient(const StressBalanceInputs &inputs,
+void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
                                               IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
 
   SIAFD::compute_surface_gradient(inputs, h_x, h_y);

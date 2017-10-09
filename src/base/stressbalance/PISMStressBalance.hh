@@ -34,9 +34,9 @@ namespace stressbalance {
 class ShallowStressBalance;
 class SSB_Modifier;
 
-class StressBalanceInputs {
+class Inputs {
 public:
-  StressBalanceInputs();
+  Inputs();
 
   double sea_level;             // FIXME: use the 2D field in Geometry
   const Geometry *geometry;
@@ -81,7 +81,7 @@ public:
 
   //! \brief Update all the fields if (full_update), only update diffusive flux
   //! and max. diffusivity otherwise.
-  void update(const StressBalanceInputs &inputs, bool full_update);
+  void update(const Inputs &inputs, bool full_update);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   const IceModelVec2V& advective_velocity() const;
@@ -134,7 +134,7 @@ protected:
                                          const IceModelVec3 &v,
                                          const IceModelVec2S *bmr,
                                          IceModelVec3 &result);
-  virtual void compute_volumetric_strain_heating(const StressBalanceInputs &inputs);
+  virtual void compute_volumetric_strain_heating(const Inputs &inputs);
 
   CFLData m_cfl_2d, m_cfl_3d;
 

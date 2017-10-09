@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -99,7 +99,7 @@ Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references th
 \image html BC-decision-chart.png "Setting the basal boundary condition"
  */
 
-void EnthalpyModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
+void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
   (void) t;
 

@@ -49,6 +49,8 @@
 #include "base/util/MaxTimestep.hh"
 #include "base/Geometry.hh"
 #include "base/GeometryEvolution.hh"
+#include "base/stressbalance/PISMStressBalance.hh"
+#include "base/basalstrength/PISMYieldStress.hh"
 
 namespace pism {
 
@@ -58,10 +60,6 @@ class OceanModel;
 
 namespace surface {
 class SurfaceModel;
-}
-
-namespace stressbalance {
-class StressBalance;
 }
 
 namespace hydrology {
@@ -81,7 +79,7 @@ class FrontalMelt;
 
 namespace energy {
 class BedThermalUnit;
-class EnergyModelInputs;
+class Inputs;
 class EnergyModelStats;
 class EnergyModel;
 }
@@ -91,7 +89,6 @@ class BedDef;
 }
 
 class IceGrid;
-class YieldStress;
 class AgeModel;
 class IceModelVec2CellType;
 class Component;
@@ -176,6 +173,10 @@ protected:
   virtual void allocate_couplers();
   virtual void allocate_geometry_evolution();
   virtual void allocate_iceberg_remover();
+
+  virtual stressbalance::Inputs stress_balance_inputs();
+  virtual energy::Inputs energy_model_inputs();
+  virtual YieldStressInputs yield_stress_inputs();
 
   virtual void time_setup();
   virtual void model_state_setup();

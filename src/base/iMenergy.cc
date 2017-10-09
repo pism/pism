@@ -71,36 +71,7 @@ void IceModel::energy_step() {
   m_btu->update(m_bedtoptemp, t_TempAge, dt_TempAge);
   profiling.end("btu");
 
-  energy::EnergyModelInputs inputs;
-  {
-    IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
-    IceModelVec2S &till_water_thickness              = m_work2d[2];
-    IceModelVec2S &shelf_base_temperature            = m_work2d[3];
-
-    m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
-
-    m_ocean->shelf_base_temperature(shelf_base_temperature);
-
-    m_subglacial_hydrology->till_water_thickness(till_water_thickness);
-
-    inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
-    inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
-    inputs.cell_type                = &m_geometry.cell_type;            // geometry
-    inputs.ice_thickness            = &m_geometry.ice_thickness;        // geometry
-    inputs.shelf_base_temp          = &shelf_base_temperature;            // ocean model
-    inputs.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
-    inputs.surface_temp             = &ice_surface_temperature;           // surface model
-    inputs.till_water_thickness     = &till_water_thickness;              // hydrology model
-
-    inputs.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
-    inputs.u3                       = &m_stress_balance->velocity_u();
-    inputs.v3                       = &m_stress_balance->velocity_v();
-    inputs.w3                       = &m_stress_balance->velocity_w();
-
-    inputs.check();             // make sure all data members were set
-  }
-
-  m_energy_model->update(t_TempAge, dt_TempAge, inputs);
+  m_energy_model->update(t_TempAge, dt_TempAge, energy_model_inputs());
 
   m_stdout_flags = m_energy_model->stdout_flags() + m_stdout_flags;
 }

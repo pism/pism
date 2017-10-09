@@ -49,7 +49,7 @@ void SSAFD_Regional::init() {
   }
 }
 
-void SSAFD_Regional::update(const StressBalanceInputs &inputs, bool full_update) {
+void SSAFD_Regional::update(const Inputs &inputs, bool full_update) {
   m_h_stored      = inputs.no_model_surface_elevation;
   m_H_stored      = inputs.no_model_ice_thickness;
   m_no_model_mask = inputs.no_model_mask;

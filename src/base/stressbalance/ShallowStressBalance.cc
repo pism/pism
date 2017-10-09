@@ -143,7 +143,7 @@ ZeroSliding::~ZeroSliding() {
 }
 
 //! \brief Update the trivial shallow stress balance object.
-void ZeroSliding::update(const StressBalanceInputs &inputs, bool full_update) {
+void ZeroSliding::update(const Inputs &inputs, bool full_update) {
   (void) inputs;
 
   if (full_update) {
@@ -459,7 +459,7 @@ PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 
-void PrescribedSliding::update(const StressBalanceInputs &inputs, bool full_update) {
+void PrescribedSliding::update(const Inputs &inputs, bool full_update) {
   (void) inputs;
   if (full_update) {
     m_basal_frictional_heating.set(0.0);

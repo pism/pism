@@ -18,8 +18,6 @@
  */
 
 #include "EnthalpyModel_Regional.hh"
-#include "base/util/io/PIO.hh"
-#include "base/util/PISMVars.hh"
 
 namespace pism {
 namespace energy {
@@ -70,15 +68,16 @@ void EnthalpyModel_Regional::initialize_impl(const IceModelVec2S &basal_melt_rat
 
 
 void EnthalpyModel_Regional::update_impl(double t, double dt,
-                                         const EnergyModelInputs &inputs) {
+                                         const Inputs &inputs) {
 
   unsigned int Mz = m_grid->Mz();
 
   EnthalpyModel::update_impl(t, dt, inputs);
 
-  const IceModelVec2Int &no_model_mask = *m_grid->variables().get_2d_mask("no_model_mask");
+  const IceModelVec2Int &no_model_mask = *inputs.no_model_mask;
 
-  // The call above sets m_work; ghosts are comminucated later (in EnergyModel::update()).
+  // The update_impl() call above sets m_work; ghosts are communicated
+  // later (in EnergyModel::update()).
   IceModelVec::AccessList list{&no_model_mask, &m_work, &m_ice_enthalpy,
       &m_basal_melt_rate, &m_basal_melt_rate_stored};
 

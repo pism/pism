@@ -372,6 +372,79 @@ void IceModel::enforce_consistency_of_geometry() {
   m_geometry.ensure_consistency(m_config->get_double("geometry.ice_free_thickness_standard"));
 }
 
+
+stressbalance::Inputs IceModel::stress_balance_inputs() {
+  stressbalance::Inputs result;
+  if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
+    result.basal_melt_rate = &m_basal_melt_rate;
+  }
+
+  IceModelVec2S &melange_back_pressure = m_work2d[0];
+
+  m_ocean->melange_back_pressure_fraction(melange_back_pressure);
+
+  result.sea_level             = m_ocean->sea_level_elevation();
+  result.basal_yield_stress    = &m_basal_yield_stress;
+  result.melange_back_pressure = &melange_back_pressure;
+  result.geometry              = &m_geometry;
+  result.new_bed_elevation     = m_new_bed_elevation;
+  result.enthalpy              = &m_energy_model->enthalpy();
+  result.age                   = m_age_model ? &m_age_model->age() : NULL;
+
+  if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
+    result.bc_mask   = &m_ssa_dirichlet_bc_mask;
+    result.bc_values = &m_ssa_dirichlet_bc_values;
+  }
+
+  if (m_config->get_boolean("fracture_density.enabled")) {
+    result.fracture_density = &m_fracture->density;
+  }
+
+  return result;
+}
+
+energy::Inputs IceModel::energy_model_inputs() {
+  energy::Inputs result;
+
+  IceModelVec2S &ice_surface_temperature           = m_work2d[0];
+  IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
+  IceModelVec2S &till_water_thickness              = m_work2d[2];
+  IceModelVec2S &shelf_base_temperature            = m_work2d[3];
+
+  m_surface->temperature(ice_surface_temperature);
+  m_surface->liquid_water_fraction(ice_surface_liquid_water_fraction);
+
+  m_ocean->shelf_base_temperature(shelf_base_temperature);
+
+  m_subglacial_hydrology->till_water_thickness(till_water_thickness);
+
+  result.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
+  result.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
+  result.cell_type                = &m_geometry.cell_type;            // geometry
+  result.ice_thickness            = &m_geometry.ice_thickness;        // geometry
+  result.shelf_base_temp          = &shelf_base_temperature;            // ocean model
+  result.surface_liquid_fraction  = &ice_surface_liquid_water_fraction; // surface model
+  result.surface_temp             = &ice_surface_temperature;           // surface model
+  result.till_water_thickness     = &till_water_thickness;              // hydrology model
+
+  result.strain_heating3          = &m_stress_balance->volumetric_strain_heating();
+  result.u3                       = &m_stress_balance->velocity_u();
+  result.v3                       = &m_stress_balance->velocity_v();
+  result.w3                       = &m_stress_balance->velocity_w();
+
+  result.check();             // make sure all data members were set
+
+  return result;
+}
+
+YieldStressInputs IceModel::yield_stress_inputs() {
+  YieldStressInputs result;
+
+  result.geometry = &m_geometry;
+
+  return result;
+}
+
 //! The contents of the main PISM time-step.
 /*!
 During the time-step we perform the following actions:
@@ -399,11 +472,8 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth and m_basal_yield_stress_model) {
-    YieldStressInputs inputs;
-    inputs.geometry = &m_geometry;
-
     profiling.begin("basal_yield_stress");
-    m_basal_yield_stress_model->update(inputs);
+    m_basal_yield_stress_model->update(yield_stress_inputs());
     profiling.end("basal_yield_stress");
     m_basal_yield_stress.copy_from(m_basal_yield_stress_model->basal_material_yield_stress());
     m_stdout_flags += "y";
@@ -417,35 +487,9 @@ void IceModel::step(bool do_mass_continuity,
     enforce_consistency_of_geometry(); // update h and mask
   }
 
-  IceModelVec2S &melange_back_pressure = m_work2d[0];
-
-  m_ocean->melange_back_pressure_fraction(melange_back_pressure);
-
   try {
     profiling.begin("stress_balance");
-    stressbalance::StressBalanceInputs inputs;
-    if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
-      inputs.basal_melt_rate = &m_basal_melt_rate;
-    }
-
-    inputs.sea_level             = m_ocean->sea_level_elevation();
-    inputs.basal_yield_stress    = &m_basal_yield_stress;
-    inputs.melange_back_pressure = &melange_back_pressure;
-    inputs.geometry              = &m_geometry;
-    inputs.new_bed_elevation     = m_new_bed_elevation;
-    inputs.enthalpy              = &m_energy_model->enthalpy();
-    inputs.age                   = m_age_model ? &m_age_model->age() : NULL;
-
-    if (m_config->get_boolean("stress_balance.ssa.dirichlet_bc")) {
-      inputs.bc_mask   = &m_ssa_dirichlet_bc_mask;
-      inputs.bc_values = &m_ssa_dirichlet_bc_values;
-    }
-
-    if (m_config->get_boolean("fracture_density.enabled")) {
-      inputs.fracture_density = &m_fracture->density;
-    }
-
-    m_stress_balance->update(inputs, updateAtDepth);
+    m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {
     std::string output_file = m_config->get_string("output.file_name");

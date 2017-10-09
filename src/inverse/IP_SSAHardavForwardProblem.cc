@@ -103,7 +103,7 @@ void IP_SSAHardavForwardProblem::init() {
 
     geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
-    stressbalance::StressBalanceInputs inputs;
+    stressbalance::Inputs inputs;
 
     inputs.sea_level             = 0.0;
     inputs.geometry              = &geometry;

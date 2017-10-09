@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -47,7 +47,7 @@ protected:
                        const IceModelVec2S &basal_heat_flux);
 
   using EnergyModel::update_impl;
-  void update_impl(double t, double dt, const EnergyModelInputs &inputs);
+  void update_impl(double t, double dt, const Inputs &inputs);
 
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;

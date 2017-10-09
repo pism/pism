@@ -122,7 +122,7 @@ ConstantInColumn::~ConstantInColumn()
  * - strain heating (strain_heating)
  */
 void ConstantInColumn::update(const IceModelVec2V &sliding_velocity,
-                              const StressBalanceInputs &inputs,
+                              const Inputs &inputs,
                               bool full_update) {
 
   (void) inputs;

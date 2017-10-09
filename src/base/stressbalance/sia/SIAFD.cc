@@ -135,7 +135,7 @@ void SIAFD::init() {
 //! \brief Do the update; if full_update == false skip the update of 3D velocities and strain
 //! heating.
 void SIAFD::update(const IceModelVec2V &sliding_velocity,
-                   const StressBalanceInputs &inputs,
+                   const Inputs &inputs,
                    bool full_update) {
 
   const IceModelVec2S &bed = inputs.geometry->bed_elevation;
@@ -208,7 +208,7 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   \param[out] h_x the X-component of the surface gradient, on the staggered grid
   \param[out] h_y the Y-component of the surface gradient, on the staggered grid
 */
-void SIAFD::compute_surface_gradient(const StressBalanceInputs &inputs,
+void SIAFD::compute_surface_gradient(const Inputs &inputs,
                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
 
   const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
@@ -233,7 +233,7 @@ void SIAFD::compute_surface_gradient(const StressBalanceInputs &inputs,
 }
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
-void SIAFD::surface_gradient_eta(const StressBalanceInputs &inputs,
+void SIAFD::surface_gradient_eta(const Inputs &inputs,
                                  IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -308,7 +308,7 @@ void SIAFD::surface_gradient_eta(const StressBalanceInputs &inputs,
 
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
-void SIAFD::surface_gradient_mahaffy(const StressBalanceInputs &inputs,
+void SIAFD::surface_gradient_mahaffy(const Inputs &inputs,
                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
@@ -383,7 +383,7 @@ void SIAFD::surface_gradient_mahaffy(const StressBalanceInputs &inputs,
  * words, a purely local computation would require width=3 stencil of surface,
  * mask, and bed fields.)
  */
-void SIAFD::surface_gradient_haseloff(const StressBalanceInputs &inputs,
+void SIAFD::surface_gradient_haseloff(const Inputs &inputs,
                                       IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double
     dx = m_grid->dx(),

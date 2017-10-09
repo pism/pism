@@ -40,7 +40,7 @@ static void check_input(const IceModelVec *ptr, const char *name) {
   }
 }
 
-EnergyModelInputs::EnergyModelInputs() {
+Inputs::Inputs() {
   basal_frictional_heating = NULL;
   basal_heat_flux          = NULL;
   cell_type                = NULL;
@@ -54,9 +54,11 @@ EnergyModelInputs::EnergyModelInputs() {
   u3                       = NULL;
   v3                       = NULL;
   w3                       = NULL;
+
+  no_model_mask = NULL;
 }
 
-void EnergyModelInputs::check() const {
+void Inputs::check() const {
   check_input(cell_type,                "cell_type");
   check_input(basal_frictional_heating, "basal_frictional_heating");
   check_input(basal_heat_flux,          "basal_heat_flux");
@@ -242,7 +244,7 @@ void EnergyModel::initialize(const IceModelVec2S &basal_melt_rate,
                         basal_heat_flux);
 }
 
-void EnergyModel::update(double t, double dt, const EnergyModelInputs &inputs) {
+void EnergyModel::update(double t, double dt, const Inputs &inputs) {
   // reset standard out flags at the beginning of every time step
   m_stdout_flags = "";
   m_stats = EnergyModelStats();

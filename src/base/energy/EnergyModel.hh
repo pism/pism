@@ -34,9 +34,9 @@ class IceModelVec2CellType;
 
 namespace energy {
 
-class EnergyModelInputs {
+class Inputs {
 public:
-  EnergyModelInputs();
+  Inputs();
   void check() const;
 
   const IceModelVec2CellType *cell_type;
@@ -52,6 +52,9 @@ public:
   const IceModelVec3 *u3;
   const IceModelVec3 *v3;
   const IceModelVec3 *w3;
+
+  // inputs used by regional models
+  const IceModelVec2Int *no_model_mask;
 };
 
 class EnergyModelStats {
@@ -93,7 +96,7 @@ public:
                   const IceModelVec2S &basal_heat_flux);
 
   using Component_TS::update;
-  void update(double t, double dt, const EnergyModelInputs &inputs);
+  void update(double t, double dt, const Inputs &inputs);
 
   const EnergyModelStats& stats() const;
 
@@ -120,7 +123,7 @@ protected:
                                const IceModelVec2S &climatic_mass_balance,
                                const IceModelVec2S &basal_heat_flux) = 0;
 
-  virtual void update_impl(double t, double dt, const EnergyModelInputs &inputs) = 0;
+  virtual void update_impl(double t, double dt, const Inputs &inputs) = 0;
 
   virtual void define_model_state_impl(const PIO &output) const = 0;
   virtual void write_model_state_impl(const PIO &output) const = 0;

@@ -114,7 +114,7 @@ public:
 
   SSAStrengthExtension *strength_extension;
 
-  virtual void update(const StressBalanceInputs &inputs, bool full_update);
+  virtual void update(const Inputs &inputs, bool full_update);
 
   void set_initial_guess(const IceModelVec2V &guess);
 
@@ -131,7 +131,7 @@ protected:
 
   virtual void compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const;
 
-  virtual void solve(const StressBalanceInputs &inputs) = 0;
+  virtual void solve(const Inputs &inputs) = 0;
 
   IceModelVec2CellType m_mask;
   IceModelVec2V m_taud;

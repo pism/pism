@@ -156,7 +156,7 @@ This method should be kept because it is worth having alternative physics, and
   the column minus the bulge maximum (15 K) if it is below that level.  The number of
   times this occurs is reported as a "BPbulge" percentage.
   */
-void TemperatureModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
+void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
   (void) t;
 

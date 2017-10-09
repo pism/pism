@@ -166,7 +166,7 @@ void SSA::init_impl() {
 }
 
 //! \brief Update the SSA solution.
-void SSA::update(const StressBalanceInputs &inputs, bool full_update) {
+void SSA::update(const Inputs &inputs, bool full_update) {
 
   // update the cell type mask using the ice-free thickness threshold for stress balance
   // computations

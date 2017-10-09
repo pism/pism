@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,7 +48,7 @@ void DummyEnergyModel::bootstrap_impl(const PIO &input_file,
                  "NOTE: this \"energy balance\" model holds enthalpy and basal melt rate constant in time.\n");
 }
 
-void DummyEnergyModel::update_impl(double t, double dt, const EnergyModelInputs &inputs) {
+void DummyEnergyModel::update_impl(double t, double dt, const Inputs &inputs) {
   (void) t;
   (void) dt;
   (void) inputs;

@@ -36,7 +36,7 @@ public:
   virtual void compute_driving_stress(const Geometry &geometry, IceModelVec2V &result) const;
 
 private:
-  void update(const StressBalanceInputs &inputs, bool full_update);
+  void update(const Inputs &inputs, bool full_update);
 
   const IceModelVec2S   *m_h_stored;
   const IceModelVec2S   *m_H_stored;

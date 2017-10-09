@@ -271,6 +271,8 @@
 
 %include geometry.i
 
+%rename(StressBalanceInputs) pism::stressbalance::Inputs;
+
 %include pism_SSA.i
 
 %include pism_SIA.i

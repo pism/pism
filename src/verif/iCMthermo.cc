@@ -63,7 +63,7 @@ void IceCompModel::energy_step() {
 
   m_btu->update(bedtoptemp, t_TempAge, dt_TempAge);
 
-  energy::EnergyModelInputs inputs;
+  energy::Inputs inputs;
   {
     IceModelVec2S &ice_surface_liquid_water_fraction = m_work2d[1];
     IceModelVec2S &till_water_thickness              = m_work2d[2];

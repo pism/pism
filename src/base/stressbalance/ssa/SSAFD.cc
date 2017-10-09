@@ -257,7 +257,7 @@ In the case of Dirichlet boundary conditions, the entries on the right-hand side
 come from known velocity values.  The fields m_bc_values and m_bc_mask are used for
 this.
  */
-void SSAFD::assemble_rhs(const StressBalanceInputs &inputs) {
+void SSAFD::assemble_rhs(const Inputs &inputs) {
   const IceModelVec2S
     &thickness             = inputs.geometry->ice_thickness,
     &bed                   = inputs.geometry->bed_elevation,
@@ -458,7 +458,7 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
 */
-void SSAFD::assemble_matrix(const StressBalanceInputs &inputs,
+void SSAFD::assemble_matrix(const Inputs &inputs,
                             bool include_basal_shear, Mat A) {
   PetscErrorCode ierr = 0;
 
@@ -847,7 +847,7 @@ but it may be worthwhile.  Note the user can already do `-pc_type asm
 
 FIXME: update this doxygen comment
 */
-void SSAFD::solve(const StressBalanceInputs &inputs) {
+void SSAFD::solve(const Inputs &inputs) {
 
   // Store away old SSA velocity (it might be needed in case a solver
   // fails).
@@ -900,7 +900,7 @@ void SSAFD::solve(const StressBalanceInputs &inputs) {
   }
 }
 
-void SSAFD::picard_iteration(const StressBalanceInputs &inputs,
+void SSAFD::picard_iteration(const Inputs &inputs,
                              double nuH_regularization,
                              double nuH_iter_failure_underrelax) {
 
@@ -937,7 +937,7 @@ void SSAFD::picard_iteration(const StressBalanceInputs &inputs,
 }
 
 //! \brief Manages the Picard iteration loop.
-void SSAFD::picard_manager(const StressBalanceInputs &inputs,
+void SSAFD::picard_manager(const Inputs &inputs,
                            double nuH_regularization,
                            double nuH_iter_failure_underrelax) {
   PetscErrorCode ierr;
@@ -1098,7 +1098,7 @@ void SSAFD::picard_manager(const StressBalanceInputs &inputs,
 }
 
 //! Old SSAFD recovery strategy: increase the SSA regularization parameter.
-void SSAFD::picard_strategy_regularization(const StressBalanceInputs &inputs) {
+void SSAFD::picard_strategy_regularization(const Inputs &inputs) {
   // this has no units; epsilon goes up by this ratio when previous value failed
   const double DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
   double nuH_regularization = m_config->get_double("stress_balance.ssa.epsilon");
@@ -1168,7 +1168,7 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 }
 
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
-void SSAFD::compute_hardav_staggered(const StressBalanceInputs &inputs) {
+void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
   const IceModelVec2S
     &thickness = inputs.geometry->ice_thickness;
 

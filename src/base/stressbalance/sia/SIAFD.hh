@@ -57,7 +57,7 @@ public:
   virtual void init();
 
   virtual void update(const IceModelVec2V &sliding_velocity,
-                      const StressBalanceInputs &inputs,
+                      const Inputs &inputs,
                       bool full_update);
 
   const BedSmoother& bed_smoother() const;
@@ -69,14 +69,14 @@ public:
 protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  virtual void compute_surface_gradient(const StressBalanceInputs &inputs,
+  virtual void compute_surface_gradient(const Inputs &inputs,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
-  virtual void surface_gradient_eta(const StressBalanceInputs &inputs,
+  virtual void surface_gradient_eta(const Inputs &inputs,
                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
-  virtual void surface_gradient_haseloff(const StressBalanceInputs &inputs,
+  virtual void surface_gradient_haseloff(const Inputs &inputs,
                                          IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
-  virtual void surface_gradient_mahaffy(const StressBalanceInputs &inputs,
+  virtual void surface_gradient_mahaffy(const Inputs &inputs,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
   virtual void compute_diffusivity(bool full_update,

@@ -38,6 +38,11 @@ protected:
   void allocate_basal_yield_stress();
   void allocate_energy_model();
   void model_state_setup();
+
+  stressbalance::Inputs stress_balance_inputs();
+  energy::Inputs energy_model_inputs();
+  YieldStressInputs yield_stress_inputs();
+
 private:
   IceModelVec2Int m_no_model_mask;
   IceModelVec2S   m_usurf_stored;

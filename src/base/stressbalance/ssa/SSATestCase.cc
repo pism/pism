@@ -112,7 +112,7 @@ void SSATestCase::run() {
 
   m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
-  StressBalanceInputs inputs;
+  Inputs inputs;
   inputs.sea_level             = 0.0;
   inputs.melange_back_pressure = &m_melange_back_pressure;
   inputs.geometry              = &m_geometry;

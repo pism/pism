@@ -7,6 +7,8 @@ using pism::MaskValue;
 #include "base/energy/tempSystem.hh"
 %}
 
+%rename(EnergyModelInputs) pism::energy::Inputs;
+
 /* wrap the enthalpy solver to make testing easier */
 %include "base/columnSystem.hh"
 %rename(get_lambda) pism::energy::enthSystemCtx::lambda;

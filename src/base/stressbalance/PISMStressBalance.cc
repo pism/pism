@@ -34,7 +34,7 @@
 namespace pism {
 namespace stressbalance {
 
-StressBalanceInputs::StressBalanceInputs() {
+Inputs::Inputs() {
   sea_level = 0.0;
   geometry = NULL;
   new_bed_elevation = true;
@@ -86,7 +86,7 @@ void StressBalance::init() {
 }
 
 //! \brief Performs the shallow stress balance computation.
-void StressBalance::update(const StressBalanceInputs &inputs, bool full_update) {
+void StressBalance::update(const Inputs &inputs, bool full_update) {
 
   const Profiling &profiling = m_grid->ctx()->profiling();
 
@@ -430,7 +430,7 @@ static inline double D2(double u_x, double u_y, double u_z, double v_x, double v
 
   @return 0 on success
  */
-void StressBalance::compute_volumetric_strain_heating(const StressBalanceInputs &inputs) {
+void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
   PetscErrorCode ierr;
 
   const rheology::FlowLaw *flow_law = m_shallow_stress_balance->flow_law();

@@ -396,7 +396,7 @@ int main(int argc, char *argv[]) {
     melange_back_pressure.set(0.0);
 
     bool full_update = true;
-    stressbalance::StressBalanceInputs inputs;
+    stressbalance::Inputs inputs;
     inputs.sea_level             = 0.0;
     inputs.melange_back_pressure = &melange_back_pressure;
     stress_balance.update(inputs, full_update);

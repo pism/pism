@@ -41,7 +41,7 @@ namespace stressbalance {
 double ocean_pressure_difference(bool shelf, bool dry_mode, double H, double bed, double sea_level,
                                  double rho_ice, double rho_ocean, double g);
 
-class StressBalanceInputs;
+class Inputs;
 
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance : public Component {
@@ -53,7 +53,7 @@ public:
 
   void init();
 
-  virtual void update(const StressBalanceInputs &inputs, bool full_update) = 0;
+  virtual void update(const Inputs &inputs, bool full_update) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
   const IceModelVec2V& velocity() const;
@@ -103,7 +103,7 @@ public:
   ZeroSliding(IceGrid::ConstPtr g);
   virtual ~ZeroSliding();
   
-  virtual void update(const StressBalanceInputs &inputs, bool full_update);
+  virtual void update(const Inputs &inputs, bool full_update);
 
 protected:
 };
@@ -112,7 +112,7 @@ class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(IceGrid::ConstPtr g);
   virtual ~PrescribedSliding();
-  virtual void update(const StressBalanceInputs &inputs, bool full_update);
+  virtual void update(const Inputs &inputs, bool full_update);
 protected:
   virtual void init_impl();
 };

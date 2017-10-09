@@ -179,7 +179,7 @@ void SSAFEM::init_impl() {
  difference is that SSAFEM::solve() recomputes the cached values of the coefficients before calling
  SSAFEM::solve_nocache().
  */
-void SSAFEM::solve(const StressBalanceInputs &inputs) {
+void SSAFEM::solve(const Inputs &inputs) {
 
   TerminationReason::Ptr reason = solve_with_reason(inputs);
   if (reason->failed()) {
@@ -190,7 +190,7 @@ void SSAFEM::solve(const StressBalanceInputs &inputs) {
   }
 }
 
-TerminationReason::Ptr SSAFEM::solve_with_reason(const StressBalanceInputs &inputs) {
+TerminationReason::Ptr SSAFEM::solve_with_reason(const Inputs &inputs) {
 
   // Set up the system to solve.
   cache_inputs(inputs);
@@ -274,7 +274,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
    In addition to coefficients at element nodes we store "node types" used to identify interior
    elements, exterior elements, and boundary faces.
 */
-void SSAFEM::cache_inputs(const StressBalanceInputs &inputs) {
+void SSAFEM::cache_inputs(const Inputs &inputs) {
 
   // Hold on to pointers to the B.C. mask and values: they are needed in SNES callbacks and
   // inputs.bc_{mask,values} are not available there.
@@ -555,7 +555,7 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
    This method computes FIXME.
 
  */
-void SSAFEM::cache_residual_cfbc(const StressBalanceInputs &inputs) {
+void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
   fem::BoundaryQuadrature2 bq(m_grid->dx(), m_grid->dy(), 1.0);
 
