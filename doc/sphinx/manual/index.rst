@@ -58,4 +58,4 @@ class/object structure of the PISM source code.
 
    parameter-list.rst
 
-   diagnostics-list.rst
+   diagnostics/index.rst

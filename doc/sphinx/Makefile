@@ -75,4 +75,4 @@ diagnostics.json: dummy.nc
 	      -list_diagnostics_json > $@
 
 update_diagnostics: diagnostics.json
-	python ./list_diagnostics.py $^ > manual/diagnostics-list.rst
+	python ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
