@@ -151,7 +151,7 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   }
 
   profiling.begin("sia.gradient");
-  compute_surface_gradient(*inputs.geometry, m_h_x, m_h_y);
+  compute_surface_gradient(inputs, m_h_x, m_h_y);
   profiling.end("sia.gradient");
 
   profiling.begin("sia.flux");
@@ -208,31 +208,32 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   \param[out] h_x the X-component of the surface gradient, on the staggered grid
   \param[out] h_y the Y-component of the surface gradient, on the staggered grid
 */
-void SIAFD::compute_surface_gradient(const Geometry &geometry,
+void SIAFD::compute_surface_gradient(const StressBalanceInputs &inputs,
                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
 
   const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
 
   if (method == "eta") {
 
-    surface_gradient_eta(geometry, h_x, h_y);
+    surface_gradient_eta(inputs, h_x, h_y);
 
   } else if (method == "haseloff") {
 
-    surface_gradient_haseloff(geometry, h_x, h_y);
+    surface_gradient_haseloff(inputs, h_x, h_y);
 
   } else if (method == "mahaffy") {
 
-    surface_gradient_mahaffy(geometry, h_x, h_y);
+    surface_gradient_mahaffy(inputs, h_x, h_y);
 
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "value of sia.surface_gradient_method, option '-gradient %s', is not valid",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "value of sia.surface_gradient_method, option '-gradient %s', is not valid",
                                   method.c_str());
   }
 }
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
-void SIAFD::surface_gradient_eta(const Geometry &geometry,
+void SIAFD::surface_gradient_eta(const StressBalanceInputs &inputs,
                                  IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -244,8 +245,8 @@ void SIAFD::surface_gradient_eta(const Geometry &geometry,
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
   const IceModelVec2S
-    &H = geometry.ice_thickness,
-    &b = geometry.bed_elevation;
+    &H = inputs.geometry->ice_thickness,
+    &b = inputs.geometry->bed_elevation;
 
   IceModelVec::AccessList list{&eta, &H, &h_x, &h_y, &b};
 
@@ -307,11 +308,11 @@ void SIAFD::surface_gradient_eta(const Geometry &geometry,
 
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
-void SIAFD::surface_gradient_mahaffy(const Geometry &geometry,
+void SIAFD::surface_gradient_mahaffy(const StressBalanceInputs &inputs,
                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
-  const IceModelVec2S &h = geometry.ice_surface_elevation;
+  const IceModelVec2S &h = inputs.geometry->ice_surface_elevation;
 
   IceModelVec::AccessList list{&h_x, &h_y, &h};
 
@@ -382,19 +383,19 @@ void SIAFD::surface_gradient_mahaffy(const Geometry &geometry,
  * words, a purely local computation would require width=3 stencil of surface,
  * mask, and bed fields.)
  */
-void SIAFD::surface_gradient_haseloff(const Geometry &geometry,
+void SIAFD::surface_gradient_haseloff(const StressBalanceInputs &inputs,
                                       IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience
   const IceModelVec2S
-    &h = geometry.ice_surface_elevation,
-    &b = geometry.bed_elevation;
+    &h = inputs.geometry->ice_surface_elevation,
+    &b = inputs.geometry->bed_elevation;
   IceModelVec2S
     &w_i = m_work_2d[0],
     &w_j = m_work_2d[1]; // averaging weights
 
-  const IceModelVec2CellType &mask = geometry.cell_type;
+  const IceModelVec2CellType &mask = inputs.geometry->cell_type;
 
   IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask, &b};
 

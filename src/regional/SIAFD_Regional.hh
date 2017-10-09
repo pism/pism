@@ -33,7 +33,7 @@ public:
   virtual ~SIAFD_Regional();
   virtual void init();
 protected:
-  virtual void compute_surface_gradient(const Geometry &geometry,
+  virtual void compute_surface_gradient(const StressBalanceInputs &inputs,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 };
 

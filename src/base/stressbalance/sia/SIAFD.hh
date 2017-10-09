@@ -69,14 +69,14 @@ public:
 protected:
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  virtual void compute_surface_gradient(const Geometry &geometry,
+  virtual void compute_surface_gradient(const StressBalanceInputs &inputs,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
-  virtual void surface_gradient_eta(const Geometry &geometry,
+  virtual void surface_gradient_eta(const StressBalanceInputs &inputs,
                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
-  virtual void surface_gradient_haseloff(const Geometry &geometry,
+  virtual void surface_gradient_haseloff(const StressBalanceInputs &inputs,
                                          IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
-  virtual void surface_gradient_mahaffy(const Geometry &geometry,
+  virtual void surface_gradient_mahaffy(const StressBalanceInputs &inputs,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 
   virtual void compute_diffusivity(bool full_update,
