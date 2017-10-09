@@ -23,8 +23,8 @@
 
 .. _sec-diagnostics-list:
 
-List of PISM's diagnostics
-==========================
+Diagnostic quantities
+=====================
 
 #. The availability of a diagnostic depends on modeling choices. For example, the bed
    uplift rate :var:`dbdt` is available only if a bed deformation model is selected.

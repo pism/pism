@@ -2,8 +2,8 @@
 
 .. _sec-parameter-list:
 
-List of configuration parameters
-================================
+Configuration parameters
+========================
 
 Every parameter corresponds to a command-line option; some options map to a combination of
 parameters.
