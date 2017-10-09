@@ -34,8 +34,8 @@ nc2cdo.py $WORKING
 ncap2 -O -s 'usurf=thk+topg' $WORKING $WORKING
 ncap2 -O -s 'where(usurf<0.0) usurf=0.0' $WORKING $WORKING
 ncatted -a standard_name,usurf,d,, $WORKING # remove it
-ncatted -O -a units,usurf,a,c,"m" $WORKING
-ncatted -O -a long_name,usurf,a,c,"ice surface elevation" $WORKING
+ncatted -O -a units,usurf,o,c,"m" $WORKING
+ncatted -O -a long_name,usurf,o,c,"ice surface elevation" $WORKING
 
 echo "copying geometry fields for boundary conditions in no_model area..."
 # create fields thkstore and usrfstore so that pism is able to appropriately
