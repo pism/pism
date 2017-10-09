@@ -20,7 +20,7 @@ Constant in time and space
     
 :|options|: ``-ocean constant``
 :|variables|: none
-:|implementation|: ``POConstant``
+:|implementation|: ``pism::ocean::Constant``
 
 .. note:: This is the default choice.
 
@@ -42,7 +42,7 @@ Reading forcing data from a file
 :|options|: ``-ocean given``
 :|variables|: :var:`shelfbtemp` Kelvin,
               :var:`shelfbmassflux`  |flux|
-:|implementation|: ``POGivenClimate``
+:|implementation|: ``pism::ocean::Given``
 
 This ocean model component reads sub-shelf ice temperature :var:`shelfbtemp` and the
 sub-shelf mass flux :var:`shelfbmassflux` from a file. It takes the following command-line
@@ -65,7 +65,7 @@ PIK
     
 :|options|: ``-ocean pik``
 :|variables|: none
-:|implementation|: ``POConstantPIK``
+:|implementation|: ``pism::ocean::PIK``
 
 This ocean model component implements the ocean forcing setup used in :cite:`Martinetal2011`.
 The sub-shelf ice temperature is set to pressure-melting; the sub-shelf mass flux
@@ -84,7 +84,7 @@ Basal melt rate and temperature from thermodynamics in boundary layer
 :|options|: ``-ocean th``
 :|variables|: :var:`theta_ocean` (absolute potential ocean temperature), [Kelvin],
               :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg]
-:|implementation|: ``POGivenTH``
+:|implementation|: ``pism::ocean::GivenTH``
 
 This ocean model component derives basal melt rate and basal temperature from
 thermodynamics in a boundary layer at the base of the ice shelf. It uses a set of three
@@ -124,7 +124,7 @@ Scalar sea level offsets
 
 :|options|: :opt:`-ocean ...,delta_SL`
 :|variables|: :var:`delta_SL` (meters)
-:|implementation|: ``PO_delta_SL``
+:|implementation|: ``pism::ocean::Delta_SL``
 
 The ``delta_SL`` modifier implements sea level forcing using scalar offsets.
 
@@ -146,7 +146,7 @@ Scalar sub-shelf temperature offsets
 
 :|options|: :opt:`-ocean ...,delta_T`
 :|variables|: :var:`delta_T` (Kelvin)
-:|implementation|: ``PO_delta_T``
+:|implementation|: ``pism::ocean::Delta_T``
 
 This modifier implements forcing using sub-shelf ice temperature offsets.
 
@@ -166,7 +166,7 @@ Scalar sub-shelf mass flux offsets
 
 :|options|: ``-ocean ...,delta_SMB``
 :|variables|: :var:`delta_SMB` |flux|
-:|implementation|: ``PO_delta_SMB``
+:|implementation|: ``pism::ocean::Delta_SMB``
 
 This modifier implements forcing using sub-shelf mass flux (melt rate) offsets.
 
@@ -186,7 +186,7 @@ Scalar sub-shelf mass flux fraction offsets
 
 :|options|: ``-ocean ...,frac_SMB``
 :|variables|: :var:`frac_SMB` [1]
-:|implementation|: ``PO_frac_SMB``
+:|implementation|: ``pism::ocean::Frac_SMB``
 
 This modifier implements forcing using sub-shelf mass flux (melt rate) fraction offsets.
 
@@ -206,7 +206,7 @@ Scalar melange back pressure fraction
 
 :|options|: :opt:`-ocean ...,frac_MBP`
 :|variables|: :var:`frac_MBP`
-:|implementation|: ``PO_frac_MBP``
+:|implementation|: ``pism::ocean::Frac_MBP``
 
 This modifier implements forcing using melange back pressure fraction offsets. The
 variable :var:`frac_MBP` should take on values from 0 to 1; it is understood as the
@@ -232,7 +232,7 @@ The caching modifier
 ++++++++++++++++++++
 
 :|options|: :opt:`-ocean ...,cache`
-:|implementation|: ``POCache``
+:|implementation|: ``pism::ocean::Cache``
 :|seealso|: :ref:`sec-surface-cache`
 
 This modifier skips ocean model updates, so that a ocean model is called no more than

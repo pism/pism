@@ -12,7 +12,7 @@ The "invisible" model
 
 :|options|: ``-surface simple``
 :|variables|: none
-:|implementation|: ``PSSimple``
+:|implementation|: ``pism::surface::Simple``
 
 This is the simplest "surface model" available in PISM, enabled using ``-surface simple``.
 Its job is to re-interpret precipitation as climatic mass balance, and to re-interpret
@@ -29,7 +29,7 @@ Reading top-surface boundary conditions from a file
 
 :|options|: ``-surface given``
 :|variables|: :var:`ice_surface_temp`, :var:`climatic_mass_balance` |flux|
-:|implementation|: ``PSGivenClimate``
+:|implementation|: ``pism::surface::Given``
 
 .. note::
 
@@ -93,7 +93,7 @@ Elevation-dependent temperature and mass balance
 
 :|options|: ``-surface elevation``
 :|variables|: none
-:|implementation|: ``PSElevation``
+:|implementation|: ``pism::surface::Elevation``
 
 This surface model component parameterizes the ice surface temperature `T_{h}` =
 :var:`ice_surface_temp` and the mass balance `m` = :var:`climatic_mass_balance` as
@@ -171,7 +171,7 @@ Temperature-index scheme
 
 :|options|: ``-surface pdd``
 :|variables|: :var:`air_temp_sd`, :var:`snow_depth`
-:|implementation|: ``PSTemperatureIndex``
+:|implementation|: ``pism::surface::TemperatureIndex``
                    
 The default PDD model used by PISM, turned on by option :opt:`-surface pdd`, is based on
 :cite:`CalovGreve05` and EISMINT-Greenland intercomparison (see :cite:`RitzEISMINT`).
@@ -276,7 +276,7 @@ PIK
 :|options|: ``-surface pik``
 :|variables|: :var:`climatic_mass_balance` |flux|,
               :var:`lat` (latitude), (degrees north)
-:|implementation|: ``PSConstantPIK``
+:|implementation|: ``pism::surface::PIK``
 
 This surface model component implements the setup used in :cite:`Martinetal2011`. The
 :var:`climatic_mass_balance` is read from an input (``-i``) file; the ice surface
@@ -290,7 +290,7 @@ Scalar temperature offsets
 
 :|options|: ``-surface ...,delta_T``
 :|variables|: :var:`delta_T`
-:|implementation|: ``PS_delta_T``
+:|implementation|: ``pism::surface::Delta_T``
 
 Command-line options:
 
@@ -317,7 +317,7 @@ Lapse rate corrections
 
 :|options|: ``-surface ...,lapse_rate``
 :|variables|: :var:`surface_altitude` (CF standard name),
-:|implementation|: ``PSLapseRates``
+:|implementation|: ``pism::surface::LapseRates``
 
 The ``lapse_rate`` modifier allows correcting ice-surface temperature and surface mass
 balance using elevation lapse rates. It uses the following options.
@@ -350,7 +350,7 @@ Mass flux adjustment
 :|options|: ``-surface ...,forcing``
 :|variables|: :var:`thk` (ice thickness), :var:`ftt_mask` (mask of zeros and ones; 1 where
               surface mass flux is adjusted and 0 elsewhere)
-:|implementation|: ``PSForceThickness``
+:|implementation|: ``pism::surface::ForceThickness``
 
 The ``forcing`` modifier implements a surface mass balance adjustment mechanism which
 forces the thickness of grounded ice to a target thickness distribution at the end of the
@@ -407,7 +407,7 @@ Using climate data anomalies
 :|options|: :opt:`-surface ...,anomaly`
 :|variables|: :var:`ice_surface_temp_anomaly`,
               :var:`climatic_mass_balance_anomaly` |flux|
-:|implementation|: ``PSAnomaly``
+:|implementation|: ``pism::surface::Anomaly``
 
 This modifier implements a spatially-variable version of ``-surface ...,delta_T`` which
 also applies time-dependent climatic mass balance anomalies.
@@ -430,7 +430,7 @@ The caching modifier
 ++++++++++++++++++++
 
 :|options|: ``-surface ...,cache``
-:|implementation|: ``PSCache``
+:|implementation|: ``pism::surface::Cache``
 :|seealso|: :ref:`sec-ocean-cache`
     
 This modifier skips surface model updates, so that a surface model is called no more than

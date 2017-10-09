@@ -12,7 +12,7 @@ Reading boundary conditions from a file
 
 :|options|: ``-atmosphere given``
 :|variables|: :var:`air_temp`, :var:`precipitation` |flux|
-:|implementation|: ``PAGivenClimate``
+:|implementation|: ``pism::atmosphere::Given``
 :|seealso|: :ref:`sec-surface-given`
 
 .. note:: This is the default choice.
@@ -45,7 +45,7 @@ Cosine yearly cycle
               :var:`air_temp_mean_july`,
               :var:`precipitation` |flux|
               :var:`amplitude_scaling`
-:|implementation|: ``PACosineYearlyCycle``
+:|implementation|: ``pism::atmosphere::CosineYearlyCycle``
 
 This atmosphere model component computes the near-surface air temperature using the
 following formula:
@@ -78,7 +78,7 @@ SeaRISE-Greenland
 :|variables|: :var:`lon`,
               :var:`lat`,
               :var:`precipitation` |flux|
-:|implementation|: ``PASeariseGreenland``
+:|implementation|: ``pism::atmosphere::SeaRISEGreenland``
 :|seealso|: :ref:`sec-atmosphere-paleo-precip`
 
 This atmosphere model component implements a longitude, latitude, and elevation dependent
@@ -104,7 +104,7 @@ PIK
 :|options|: :opt:`-atmosphere pik`
 :|variables|: :var:`lat`,
               :var:`precipitation`
-:|implementation|: ``PAConstantPIK``
+:|implementation|: ``pism::atmosphere::PIK``
 
 This model component reads a time-independent precipitation field from an input
 (:opt:`-i`) file and computes near-surface air temperature using a latitude and surface
@@ -122,7 +122,7 @@ One weather station
             :opt:`-atmosphere_one_station_file`
 :|variables|: :var:`air_temp` [Kelvin],
               :var:`precipitation` |flux|
-:|implementation|: ``PAWeatherStation``
+:|implementation|: ``pism::atmosphere::WeatherStation``
 
 This model component reads scalar time-series of the near-surface air temperature and
 precipitation from a file specified using the :opt:`-atmosphere_one_station_file` option
@@ -140,7 +140,7 @@ Scalar temperature offsets
 
 :|options|: ``-atmosphere ...,delta_T``
 :|variables|: :var:`delta_T`
-:|implementation|: ``PA_delta_T``
+:|implementation|: ``pism::atmosphere::Delta_T``
 
 This modifier applies scalar time-dependent air temperature offsets to the output of an
 atmosphere model. It takes the following command-line options.
@@ -161,7 +161,7 @@ Scalar precipitation offsets
 
 :|options|: :opt:`-atmosphere ...,delta_P`
 :|variables|: :var:`delta_P` |flux|
-:|implementation|: ``PA_delta_P``
+:|implementation|: ``pism::atmosphere::Delta_P``
 
 This modifier applies scalar time-dependent precipitation offsets to the output of an
 atmosphere model. It takes the following command-line options.
@@ -180,7 +180,7 @@ Scalar precipitation scaling
 
 :|options|: ``-atmosphere ...,frac_P``
 :|variables|: :var:`frac_P` [no unit]
-:|implementation|: ``PA_frac_P``
+:|implementation|: ``pism::atmosphere::Frac_P``
 
 This modifier scales precipitation output of an atmosphere model using a scalar
 time-dependent precipitation fraction, with a value of one corresponding to no change in
@@ -200,7 +200,7 @@ Precipitation correction using scalar temperature offsets
 
 :|options|: ``-atmosphere ...,paleo_precip``
 :|variables|: :var:`delta_T` [degrees Kelvin]
-:|implementation|: ``PA_paleo_precip``
+:|implementation|: ``pism::atmosphere::PaleoPrecip``
 
 This modifier implements the SeaRISE-Greenland formula for a precipitation correction from
 present; a 7.3\% change of precipitation rate for every one degree Celsius of air
@@ -224,7 +224,7 @@ Temperature and precipitation lapse rate corrections
 
 :|options|: :opt:`-atmosphere ...,lapse_rate`
 :|variables|: :var:`surface_altitude` (CF standard name)
-:|implementation|: ``PALapseRates``
+:|implementation|: ``pism::atmosphere::LapseRates``
 
 The ``lapse_rate`` modifier allows for correcting air temperature and precipitation using
 elevation lapse rates. It uses the following options.
@@ -256,7 +256,7 @@ Using climate data anomalies
 :|options|: :opt:`-atmosphere ...,anomaly`
 :|variables|: :var:`air_temp_anomaly`,
               :var:`precipitation_anomaly` |flux|
-:|implementation|: ``PAAnomaly``
+:|implementation|: ``pism::atmosphere::Anomaly``
 
 This modifier implements a spatially-variable version of ``-atmosphere
 ...,delta_T,delta_P``.
