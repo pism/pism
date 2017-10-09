@@ -32,7 +32,7 @@ Preprocessing input data
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 NSIDC_ requires registration to download the `MEaSUREs InSAR-Based Antarctica Ice Velocity
-Map <measures-ross_>`_; please go to register, log in, and get the *first*, 900 m version
+Map <measures-ross_>`_; please register, log in, and get the *first*, 900 m version
 of it (``antarctica_ice_velocity_900m.nc``) here:
 
     https://n5eil01u.ecs.nsidc.org/MEASURES/NSIDC-0484.001/1996.01.01/
