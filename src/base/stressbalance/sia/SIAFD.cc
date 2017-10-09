@@ -138,15 +138,13 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
                    const Inputs &inputs,
                    bool full_update) {
 
-  const IceModelVec2S &bed = inputs.geometry->bed_elevation;
-
   const Profiling &profiling = m_grid->ctx()->profiling();
 
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (inputs.new_bed_elevation) {
     profiling.begin("sia.bed_smoother");
-    m_bed_smoother->preprocess_bed(bed);
+    m_bed_smoother->preprocess_bed(inputs.geometry->bed_elevation);
     profiling.end("sia.bed_smoother");
   }
 
