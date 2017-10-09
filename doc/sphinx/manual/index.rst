@@ -56,6 +56,6 @@ class/object structure of the PISM source code.
 
    jakobshavn/index.rst
 
-   parameter-list.rst
+   parameters/index.rst
 
    diagnostics/index.rst

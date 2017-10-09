@@ -1,23 +1,6 @@
+.. -*- mode: rst -*-
 
-.. DO NOT EDIT: This file was automatically generated using config_parameters.py. Edit src/pism_config.cdl instead.
-
-.. include:: ../global.txt
-
-.. _sec-parameter-list:
-
-List of configuration parameters
-================================
-
-All parameters can be set using the command-line option consisting of a dash followed by
-the parameter name. For example,
-
-.. code-block:: none
-
-   -constants.standard_gravity 10
-
-sets the acceleration due to gravity (parameter :config:`constants.standard_gravity`) to
-`10`. Options listed below are *shortcuts*, added for convenience.
-
+.. DO NOT EDIT: This file was automatically generated. Edit src/pism_config.cdl instead.
 
 
 #. :config:`age.enabled` (*boolean*)
@@ -356,7 +339,7 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 
    :Value: *no default*
    :Option: :opt:`-thickness_calving_threshold_file`
-   :Description: Name of the file containing the spatially-variable thickness calving threshold.
+   :Description: Name of the file containing the spatially-variable thickness calving threshold. 
 
 #. :config:`calving.vonmises.sigma_max` (*scalar*)
 
@@ -1565,12 +1548,12 @@ sets the acceleration due to gravity (parameter :config:`constants.standard_grav
 #. :config:`surface.pdd.std_dev_lapse_lat_base` (*scalar*)
 
    :Value: 72 (degree_north)
-   :Description: std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero
+   :Description: std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero 
 
 #. :config:`surface.pdd.std_dev_lapse_lat_rate` (*scalar*)
 
    :Value: 0 (Kelvin / degree_north)
-   :Description: std_dev is a function of latitude, with rate of change with respect to latitude given by this constant
+   :Description: std_dev is a function of latitude, with rate of change with respect to latitude given by this constant 
 
 #. :config:`surface.pdd.std_dev_param_a` (*scalar*)
 

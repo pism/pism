@@ -111,26 +111,9 @@ printers = {"string" : print_string,
             "boolean" : print_string,
             "keyword" : print_keyword}
 
-header = """
-.. DO NOT EDIT: This file was automatically generated using config_parameters.py. Edit src/pism_config.cdl instead.
+header = """.. -*- mode: rst -*-
 
-.. include:: ../global.txt
-
-.. _sec-parameter-list:
-
-List of configuration parameters
-================================
-
-All parameters can be set using the command-line option consisting of a dash followed by
-the parameter name. For example,
-
-.. code-block:: none
-
-   -constants.standard_gravity 10
-
-sets the acceleration due to gravity (parameter :config:`constants.standard_gravity`) to
-`10`. Options listed below are *shortcuts*, added for convenience.
-
+.. DO NOT EDIT: This file was automatically generated. Edit src/pism_config.cdl instead.
 """
 
 if __name__ == "__main__":

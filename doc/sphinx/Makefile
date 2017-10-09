@@ -76,3 +76,8 @@ diagnostics.json: dummy.nc
 
 update_diagnostics: diagnostics.json
 	python ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
+
+PISM_CONFIG=~/local/pism/share/pism/pism_config.nc
+
+update_parameters:
+	python ./list_parameters.py ${PISM_CONFIG} > manual/parameters/parameter-list.txt
