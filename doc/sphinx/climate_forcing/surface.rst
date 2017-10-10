@@ -95,6 +95,8 @@ Elevation-dependent temperature and mass balance
 :|variables|: none
 :|implementation|: ``pism::surface::Elevation``
 
+.. include:: ../math-definitions.txt
+
 This surface model component parameterizes the ice surface temperature `T_{h}` =
 :var:`ice_surface_temp` and the mass balance `m` = :var:`climatic_mass_balance` as
 *piecewise-linear* functions of surface elevation `h`.
@@ -102,8 +104,6 @@ This surface model component parameterizes the ice surface temperature `T_{h}` =
 The option :opt:`-ice_surface_temp` (*list of 4 numbers*) determines the surface
 temperature using the 4 parameters `\T{min}`, `\T{max}`, `\h{min}`,
 `\h{max}`. Let
-
-.. include:: ../math-definitions.txt
 
 .. math::
 
