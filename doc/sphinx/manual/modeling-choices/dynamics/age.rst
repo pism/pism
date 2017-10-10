@@ -12,5 +12,17 @@ ice flow when using the default flow laws. It is very easy to turn on. Just set
 is set and the variable ``age`` is absent in the input file then the initial age is set to
 zero.
 
-..
-   describe coupling of ice age and the SIA flow
+The age of the ice can be used in two parameterizations in the SIA stress balance model:
+
+#. Ice grain size parameterization based on data from :cite:`DeLaChapelleEtAl98` and
+   :cite:`LipenkovEtAl89` (Vostok core data). In PISM, only the Goldsby-Kohlstedt flow law
+   (see :ref:`sec-rheology`) uses the grain size.
+
+#. The flow enhancement factor can be coupled to the age of the ice as in
+   :cite:`Greve97Greenland`: during Eemian and Holocene `e` is set to
+
+   - :config:`stress_balance.sia.enhancement_factor_interglacial` during Eemian and Holocene,
+   - :config:`stress_balance.sia.enhancement_factor` otherwise.
+
+See :config:`time.eemian_start`, :config:`time.eemian_end`, and
+:config:`time.holocene_start`.
