@@ -129,13 +129,10 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     SET_SOURCE_FILES_PROPERTIES(${swig_generated_file_fullname}
       PROPERTIES COMPILE_FLAGS "-w")
 
-    get_target_property(SWIG_cpp_LOCATION ${SWIG_MODULE_cpp_REAL_NAME} LOCATION)
-    get_target_property(SWIG_petsc_version_LOCATION ${SWIG_MODULE_petsc_version_REAL_NAME} LOCATION)
-
     # Install Python .py files
     install(FILES
-      ${SWIG_cpp_LOCATION}
-      ${SWIG_petsc_version_LOCATION}
+      $<TARGET_FILE:_cpp>
+      $<TARGET_FILE:_petsc_version>
       ${CMAKE_CURRENT_BINARY_DIR}/cpp.py
       ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py
       DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}/PISM
@@ -143,8 +140,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     )
 
 add_custom_target (install_python_bindings_in_the_build_directory ALL
-  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_cpp_LOCATION} ${CMAKE_BINARY_DIR}/site-packages/PISM
-  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_petsc_version_LOCATION} ${CMAKE_BINARY_DIR}/site-packages/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_cpp> ${CMAKE_BINARY_DIR}/site-packages/PISM
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_petsc_version> ${CMAKE_BINARY_DIR}/site-packages/PISM/
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
   VERBATIM
@@ -152,8 +149,8 @@ add_custom_target (install_python_bindings_in_the_build_directory ALL
 
 configure_file(${Pism_SOURCE_DIR}/test/pylintrc pylintrc)
 add_custom_target (install_python_bindings_in_the_source_directory ALL
-  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_cpp_LOCATION} ${Pism_SOURCE_DIR}/site-packages/PISM
-  COMMAND ${CMAKE_COMMAND} -E copy ${SWIG_petsc_version_LOCATION} ${Pism_SOURCE_DIR}/site-packages/PISM/
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_cpp> ${Pism_SOURCE_DIR}/site-packages/PISM
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_petsc_version> ${Pism_SOURCE_DIR}/site-packages/PISM/
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${Pism_SOURCE_DIR}/site-packages/PISM/
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/petsc_version.py ${Pism_SOURCE_DIR}/site-packages/PISM/
   VERBATIM

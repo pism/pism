@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.1)
 project (Pism C CXX)
 
 # Require C++11 compiler support.
@@ -12,11 +12,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Intel" AND NOT CMAKE_CXX_FLAGS MATCHES "-std=
   message (STATUS "Adding -std=c++11 to C++ compiler flags for Intel compilers.")
   set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
 endif()
-
-# This has to do with the way we compute dependencies of PISM's Python
-# bindings. Enabling the "old" behavior allows us to support both old
-# and new (>= 3.0) CMake versions.
-cmake_policy(SET CMP0026 OLD)
 
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
