@@ -1,8 +1,5 @@
 .. include:: ../../../global.txt
 
-.. FIXME: add a section about the grid extent and the way to specify it (cell centers vs.
-   cell corners, etc)
-
 .. _sec-grid:
 
 Spatial grid
@@ -52,6 +49,15 @@ precedence over options,
    pismr -i foo.nc -Mz 201 -y 100
 
 will give a warning that "``PISM WARNING: ignoring command-line option '-Mz'``".
+
+.. _sec-grid-registration:
+
+Grid registration
+^^^^^^^^^^^^^^^^^
+
+PISM's grid is cell-centered; in other words, the extent of the computational domain FIXME
+
+
 
 .. _sec-domain-dstribution:
 
