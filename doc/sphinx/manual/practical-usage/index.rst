@@ -31,6 +31,8 @@ code modifications; see the following sub-sections for details.
 
    time-stepping.rst
 
+   mass-conservation.rst
+
    petsc-options.rst
 
    scripts.rst
