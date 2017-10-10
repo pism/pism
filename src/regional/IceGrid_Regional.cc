@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -132,7 +132,7 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
         subset_extent("y", full.y, y_range[0], y_range[1],
                       input_grid.y0, input_grid.Ly, input_grid.My);
 
-        // Set periodicity to "NONE" to that IceGrid computes coordinates correctly.
+        // Set periodicity to "NONE" so that IceGrid computes coordinates correctly.
         input_grid.periodicity = NONE;
 
         break;
