@@ -857,9 +857,10 @@ static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
   if (not (x_min >= input_x_min - eps and x_max <= input_x_max + eps and
            y_min >= input_y_min - eps and y_max <= input_y_max + eps)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "PISM's computational domain is not a subset of the domain in an input file\n"
+                                  "PISM's computational domain is not a subset of the domain in '%s'\n"
                                   "PISM grid:       x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters\n"
                                   "input file grid: x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters",
+                                  input.filename.c_str(),
                                   x_min, x_max, y_min, y_max,
                                   input_x_min, input_x_max, input_y_min, input_y_max);
   }
@@ -874,9 +875,10 @@ static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
 
   if (not (z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "PISM's computational domain is not a subset of the domain in an input file\n"
+                                  "PISM's computational domain is not a subset of the domain in '%s'\n"
                                   "PISM grid:       z: [%3.3f, %3.3f] meters\n"
                                   "input file grid: z: [%3.3f, %3.3f] meters",
+                                  input.filename.c_str(),
                                   z_min, z_max,
                                   input_z_min, input_z_max);
   }

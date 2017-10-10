@@ -66,6 +66,7 @@ public:
     z_min,                      //!< minimal value of the z dimension
     z_max;                      //!< maximal value of the z dimension
   std::vector<double> x, y, z;       //!< coordinates
+  std::string filename;
 private:
   void reset();
 };

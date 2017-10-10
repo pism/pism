@@ -982,6 +982,8 @@ double radius(const IceGrid &grid, int i, int j) {
 
 void grid_info::reset() {
 
+  filename = "";
+
   t_len = 0;
   time  = 0;
 
@@ -1038,6 +1040,8 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
     std::string name_found;
 
     reset();
+
+    filename = file.inq_filename();
 
     // try "variable" as the standard_name first, then as the short name:
     file.inq_var(variable, variable, variable_exists,
