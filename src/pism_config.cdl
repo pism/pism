@@ -715,6 +715,11 @@ netcdf pism_config {
     pism_config:grid.max_stencil_width_type = "integer";
     pism_config:grid.max_stencil_width_units = "count";
 
+    pism_config:grid.registration = "center";
+    pism_config:grid.registration_choices = "center,corner";
+    pism_config:grid.registration_doc = "horizontal grid registration";
+    pism_config:grid.registration_type = "keyword";
+
     pism_config:grid.periodicity = "xy";
     pism_config:grid.periodicity_choices = "none,x,y,xy";
     pism_config:grid.periodicity_doc = "horizontal grid periodicity";

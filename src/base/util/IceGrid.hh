@@ -42,6 +42,11 @@ class MappingInfo;
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
+typedef enum {CELL_CENTER, CELL_CORNER} GridRegistration;
+
+GridRegistration string_to_registration(const std::string &keyword);
+std::string registration_to_string(GridRegistration registration);
+
 Periodicity string_to_periodicity(const std::string &keyword);
 std::string periodicity_to_string(Periodicity p);
 
@@ -126,6 +131,8 @@ public:
   unsigned int Mx;
   //! Number of grid points in the Y direction.
   unsigned int My;
+  //! Grid registration.
+  GridRegistration registration;
   //! Grid periodicity.
   Periodicity periodicity;
   //! Vertical levels.
@@ -215,7 +222,8 @@ public:
   static Ptr Shallow(Context::ConstPtr ctx,
                      double Lx, double Ly,
                      double x0, double y0,
-                     unsigned int Mx, unsigned int My, Periodicity p);
+                     unsigned int Mx, unsigned int My,
+                     Periodicity p);
 
   static Ptr FromFile(Context::ConstPtr ctx,
                       const PIO &file, const std::string &var_name,
@@ -275,6 +283,7 @@ public:
   double dz_max() const;
 
   Periodicity periodicity() const;
+  GridRegistration registration() const;
 
   unsigned int size() const;
   int rank() const;

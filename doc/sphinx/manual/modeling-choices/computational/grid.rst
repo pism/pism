@@ -55,9 +55,29 @@ will give a warning that "``PISM WARNING: ignoring command-line option '-Mz'``".
 Grid registration
 ^^^^^^^^^^^^^^^^^
 
-PISM's grid is cell-centered; in other words, the extent of the computational domain FIXME
+PISM's horizontal computational grid is uniform and cell-centered.\ [#]_
+
+Consider a grid with minimum and maximum `x` coordinates `x_\text{min}` and `x_\text{max}`
+and the spacing `\Delta x`. The cell-centered interpretation implies that this corresponds
+to the *domain extent* in the `x` direction from `x_\text{min} - \frac12 \Delta x` to
+`x_\text{max} + \frac12 \Delta x`, as in :numref:`fig-grid-fine`.
+
+.. figure:: figures/grid-fine.png
+   :name: fig-grid-fine
+   :width: 50%
+   :align: center
+
+   PISM's horizontal computational grid
+
+This means that
 
 
+.. figure:: figures/grid-coarse.png
+   :name: fig-grid-coarse
+   :width: 50%
+   :align: center
+
+   A coarser grid covering the same domain as in :numref:`fig-grid-fine`.
 
 .. _sec-domain-dstribution:
 
@@ -92,5 +112,10 @@ variable in the output file, e.g. using ``-o_size big``. The same :var:`rank` va
 available as a spatial diagnostic field (section :ref:`sec-saving-diagnostics`).
 
 .. rubric:: Footnotes
+
+.. [#] This is consistent with the `CF Conventions`_ document for data-sets without cell
+       bounds: "If bounds are not provided, an application might reasonably assume the
+       gridpoints to be at the centers of the cells, but we do not require that in this
+       standard."
 
 .. [#] In most cases one process corresponds to one "core" of your computer.

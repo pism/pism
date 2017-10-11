@@ -67,6 +67,7 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
 
   GridParameters P;
 
+  P.registration = CELL_CORNER;
   // use the non-periodic grid:
   P.periodicity = NOT_PERIODIC;
   // equal spacing is the default for all the tests except K

@@ -64,6 +64,8 @@ struct IceGrid::Impl {
 
   Periodicity periodicity;
 
+  GridRegistration registration;
+
   //! x-coordinates of grid points
   std::vector<double> x;
   //! y-coordinates of grid points
@@ -166,6 +168,27 @@ std::string spacing_to_string(SpacingType s) {
   }
 }
 
+GridRegistration string_to_registration(const std::string &keyword) {
+  if (keyword == "center") {
+    return CELL_CENTER;
+  } else if (keyword == "corner") {
+    return CELL_CORNER;
+  } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid grid registration: %s",
+                                  keyword.c_str());
+  }
+}
+
+std::string registration_to_string(GridRegistration registration) {
+  switch (registration) {
+  case CELL_CORNER:
+    return "corner";
+  default:
+  case CELL_CENTER:
+    return "center";
+  }
+}
+
 /*! @brief Initialize a uniform, shallow (3 z-levels) grid with half-widths (Lx,Ly) and Mx by My
  * nodes.
  */
@@ -220,6 +243,7 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
     m_impl->y0 = p.y0;
     m_impl->Lx = p.Lx;
     m_impl->Ly = p.Ly;
+    m_impl->registration = p.registration;
     m_impl->periodicity = p.periodicity;
     m_impl->z = p.z;
     m_impl->set_ownership_ranges(p.procs_x, p.procs_y);
@@ -672,6 +696,9 @@ void IceGrid::report_parameters() const {
                 (int)m_impl->procs_x.size(), (int)m_impl->procs_y.size());
 
     log.message(3,
+                "            Registration: %s\n",
+                registration_to_string(m_impl->registration).c_str());
+    log.message(3,
                 "            Periodicity: %s\n",
                 periodicity_to_string(m_impl->periodicity).c_str());
   }
@@ -799,6 +826,10 @@ petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
 //! Return grid periodicity.
 Periodicity IceGrid::periodicity() const {
   return m_impl->periodicity;
+}
+
+GridRegistration IceGrid::registration() const {
+  return m_impl->registration;
 }
 
 //! Return execution context this grid corresponds to.
@@ -1138,6 +1169,7 @@ GridParameters::GridParameters() {
   Mx = 0;
   My = 0;
 
+  registration = CELL_CENTER;
   periodicity = NONE;
 }
 
@@ -1162,6 +1194,7 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
   Mx = config->get_double("grid.Mx");
   My = config->get_double("grid.My");
 
+  registration = string_to_registration(config->get_string("grid.registration"));
   periodicity = string_to_periodicity(config->get_string("grid.periodicity"));
 
   double Lz = config->get_double("grid.Lz");

@@ -134,6 +134,7 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
 
         // Set periodicity to "NONE" so that IceGrid computes coordinates correctly.
         input_grid.periodicity = NONE;
+        input_grid.registration = CELL_CORNER;
 
         break;
       }
