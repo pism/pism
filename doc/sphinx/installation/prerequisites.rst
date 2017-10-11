@@ -14,7 +14,7 @@ This table lists required dependencies for PISM alphabetically.
    GSL_,         version `\ge` 1.15
    MPI_,         any recent version
    NetCDF_ [#]_, version `\ge` 4.1
-   PETSc_ [#]_,  version `\ge` 3.5
+   PETSc_ [#]_,  version `\ge` |petsc-min-version|
    UDUNITS_,     any recent version
 
 Before installing these "by hand", check sections :ref:`sec-install-debian` and

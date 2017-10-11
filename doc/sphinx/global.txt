@@ -24,13 +24,15 @@
 
 .. substitutions
 
+.. |petsc-min-version| replace:: 3.5
+
 .. |pism-email| replace:: uaf-pism@alaska.edu
 .. |pism-docs| replace:: http://www.pism-docs.org
 .. |petsc-download| replace:: http://www.mcs.anl.gov/petsc/download/index.html
 
 .. |config-cdl| replace:: ``src/pism_config.cdl``
 .. |config-file| replace:: ``pism_config.nc``
-                              
+
 .. |pism-regional-tools-url| replace:: https://github.com/pism/regional-tools
 
 .. |mismip-url| replace:: http://homepages.ulb.ac.be/~fpattyn/mismip/

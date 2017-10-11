@@ -11,9 +11,9 @@ source by grabbing the current gzipped tarball at:
 
     |petsc-download|
 
-(See :ref:`sec-install-prerequisites` for the minimum supported PETSc version.) The "lite"
-form of the tarball is fine if you are willing to depend on an Internet connection for
-accessing PETSc documentation.
+(Use version |petsc-min-version| or newer; see :ref:`sec-install-prerequisites` for
+details.) The "lite" form of the tarball is fine if you are willing to depend on an
+Internet connection for accessing PETSc documentation.
 
 You should configure and build PETSc as described on the PETSc installation page, but it
 might be best to read the following comments on the PETSc configure and build process
@@ -27,7 +27,9 @@ first:
 
       export PETSC_DIR=$PWD
       export PETSC_ARCH=opt
-      ./config/configure.py --with-shared-libraries --with-debugging=0 --with-fc=0
+      ./config/configure.py --with-shared-libraries \
+                            --with-debugging=0 \
+                            --with-fc=0
 
    You need to define the environment variables ``PETSC_DIR`` and ``PETSC_ARCH`` [#]_ --
    one way is shown here -- *before* running the configuration script. Turning off the
@@ -53,7 +55,8 @@ first:
    .. code-block:: bash
 
       CC=mpicc CXX=mpicxx ./config/configure.py --with-shared-libraries \
-                                                --with-debugging=0 --with-fc=0
+                                                --with-debugging=0 \
+                                                --with-fc=0
 
    If you get messages suggesting that PETSc cannot configure using your existing MPI, you
    might want to try adding the ``--download-mpich=1`` (or ``--download-openmpi=1``)
