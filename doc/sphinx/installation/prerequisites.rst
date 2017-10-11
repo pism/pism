@@ -2,14 +2,15 @@
 
 .. _sec-install-prerequisites:
 
-Required libraries
-==================
+Required tool and libraries
+===========================
 
 This table lists required dependencies for PISM alphabetically.
 
 .. csv-table::
    :header: Required Library, Comment
 
+   CMake_,       version `\ge` 3.1
    FFTW_,        version `\ge` 3.1
    GSL_,         version `\ge` 1.15
    MPI_,         any recent version
