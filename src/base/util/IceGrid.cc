@@ -196,6 +196,7 @@ IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
                               double Lx, double Ly,
                               double x0, double y0,
                               unsigned int Mx, unsigned int My,
+                              GridRegistration registration,
                               Periodicity periodicity) {
   try {
     GridParameters p(ctx->config());
@@ -205,13 +206,8 @@ IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
     p.y0 = y0;
     p.Mx = Mx;
     p.My = My;
+    p.registration = registration;
     p.periodicity = periodicity;
-
-    // FIXME!!!
-    p.registration = CELL_CORNER;
-    if (periodicity & X_PERIODIC or periodicity & Y_PERIODIC) {
-      p.registration = CELL_CENTER;
-    }
 
     double Lz = ctx->config()->get_double("grid.Lz");
     p.z.resize(3);
@@ -291,13 +287,13 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
 IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
                                const std::string &filename,
                                const std::vector<std::string> &var_names,
-                               Periodicity periodicity) {
+                               GridRegistration r) {
 
   PIO file(ctx->com(), "netcdf3", filename, PISM_READONLY);
 
   for (auto name : var_names) {
     if (file.inq_var(name)) {
-      return FromFile(ctx, file, name, periodicity);
+      return FromFile(ctx, file, name, r);
     }
   }
 
@@ -311,15 +307,9 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
 IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
                                const PIO &file,
                                const std::string &var_name,
-                               Periodicity periodicity) {
+                               GridRegistration r) {
   try {
     const Logger &log = *ctx->log();
-
-    // FIXME!!!
-    GridRegistration r = CELL_CORNER;
-    if (periodicity & X_PERIODIC or periodicity & Y_PERIODIC) {
-      r = CELL_CENTER;
-    }
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
@@ -336,8 +326,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
       p.z = {0.0, Lz};
     }
 
-    // override periodicity
-    p.periodicity = periodicity;
+
     p.ownership_ranges_from_options(ctx->size());
 
     return IceGrid::Ptr(new IceGrid(ctx, p));
@@ -1207,12 +1196,7 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
   My = config->get_double("grid.My");
 
   periodicity = string_to_periodicity(config->get_string("grid.periodicity"));
-
-  // FIXME!!!
-  registration = CELL_CORNER;
-  if (periodicity & X_PERIODIC or periodicity & Y_PERIODIC) {
-    registration = CELL_CENTER;
-  }
+  registration = string_to_registration(config->get_string("grid.registration"));
 
   double Lz = config->get_double("grid.Lz");
   unsigned int Mz = config->get_double("grid.Mz");
@@ -1345,13 +1329,7 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
   options::String input_file("-i", "Specifies a PISM input file");
   bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
 
-  Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
-
-  // FIXME!!!
-  GridRegistration r = CELL_CORNER;
-  if (p & X_PERIODIC or p & Y_PERIODIC) {
-    r = CELL_CENTER;
-  }
+  GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
 
   Logger::ConstPtr log = ctx->log();
 
@@ -1368,7 +1346,7 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
     options::ignored(*log, "-z_spacing");
 
     // get grid from a PISM input file
-    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, p);
+    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
   } else if (input_file.is_set() and bootstrap) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options

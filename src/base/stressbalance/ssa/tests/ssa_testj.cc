@@ -45,7 +45,7 @@ class SSATestCaseJ: public SSATestCase
 {
 public:
   SSATestCaseJ(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 300e3, 300e3, XY_PERIODIC) {
+    : SSATestCase(ctx, Mx, My, 300e3, 300e3, CELL_CENTER, XY_PERIODIC) {
   m_config->set_boolean("basal_resistance.pseudo_plastic.enabled", false);
 
   m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));

@@ -54,7 +54,7 @@ class SSATestCaseExp: public SSATestCase
 {
 public:
   SSATestCaseExp(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 50e3, 50e3, NOT_PERIODIC) {
+    : SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC) {
     L     = units::convert(ctx->unit_system(), 50, "km", "m"); // 50km half-width
     H0    = 500;                      // meters
     dhdx  = 0.005;                    // pure number

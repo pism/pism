@@ -42,7 +42,7 @@ def create_grid_test():
     "Test the creation of the IceGrid object"
     grid1 = create_dummy_grid()
 
-    grid2 = PISM.model.initGrid(PISM.Context(), 100e3, 100e3, 4000, 11, 11, 21, PISM.NOT_PERIODIC)
+    grid2 = PISM.model.initGrid(PISM.Context(), 100e3, 100e3, 4000, 11, 11, 21, PISM.CELL_CORNER)
 
 
 def algorithm_failure_exception_test():
@@ -171,7 +171,7 @@ def grid_from_file_test():
 
     pio = PISM.PIO(grid.com, "netcdf3", output_file, PISM.PISM_READONLY)
 
-    grid2 = PISM.IceGrid.FromFile(grid.ctx(), pio, "enthalpy", PISM.NOT_PERIODIC)
+    grid2 = PISM.IceGrid.FromFile(grid.ctx(), pio, "enthalpy", PISM.CELL_CORNER)
 
 
 def create_special_vecs_test():
@@ -393,6 +393,7 @@ def sia_test():
     params.Mx = 100
     params.My = 100
     params.Mz = 11
+    params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
     params.ownership_ranges_from_options(ctx.size)
     grid = PISM.IceGrid(ctx.ctx, params)
@@ -848,7 +849,7 @@ def ssa_trivial_test():
     class TrivialSSARun(PISM.ssa.SSAExactTestCase):
         def _initGrid(self):
             self.grid = PISM.IceGrid.Shallow(PISM.Context().ctx, L, L, 0, 0,
-                                             self.Mx, self.My, PISM.NOT_PERIODIC)
+                                             self.Mx, self.My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
         def _initPhysics(self):
             self.modeldata.setPhysics(context.enthalpy_converter)
@@ -1071,6 +1072,7 @@ def interpolation_weights_test():
 
     grid = PISM.IceGrid_Shallow(PISM.Context().ctx,
                                 Lx, Ly, 0, 0, Mx, My,
+                                PISM.CELL_CORNER,
                                 PISM.NOT_PERIODIC)
 
     x = grid.x()
@@ -1100,6 +1102,7 @@ def vertical_extrapolation_during_regridding_test():
     params.My = 3
     params.Mz = 11
     params.Lz = 1000
+    params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
     params.ownership_ranges_from_options(ctx.size)
 

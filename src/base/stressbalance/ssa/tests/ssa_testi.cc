@@ -55,6 +55,7 @@ public:
                   Mx, My,
                   std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * (3.0 * L_schoof) / (My - 1))),
                   3.0 * L_schoof,
+                  CELL_CORNER,
                   NOT_PERIODIC) {
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 

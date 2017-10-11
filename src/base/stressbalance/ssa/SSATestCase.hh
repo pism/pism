@@ -53,7 +53,9 @@ class SSATestCase
 {
 public:
   SSATestCase(Context::Ptr ctx, int Mx, int My,
-              double Lx, double Ly, Periodicity periodicity);
+              double Lx, double Ly,
+              GridRegistration registration,
+              Periodicity periodicity);
 
   virtual ~SSATestCase();
 

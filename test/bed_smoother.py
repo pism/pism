@@ -69,6 +69,7 @@ def set_config():
     "Set configuration parameters."
 
     config.set_string("grid.periodicity", "none")
+    config.set_string("grid.registration", "corner")
 
     config.set_double("grid.Mx", 81)
     config.set_double("grid.My", 81)

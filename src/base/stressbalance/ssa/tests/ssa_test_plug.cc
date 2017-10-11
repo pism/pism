@@ -52,7 +52,7 @@ class SSATestCasePlug: public SSATestCase {
 public:
   SSATestCasePlug(Context::Ptr ctx, int Mx, int My,
                   double n, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 50e3, 50e3, NOT_PERIODIC) {
+    : SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC) {
     H0    = 2000.;              // m
     L     = 50.e3;              // 50km half-width
     dhdx  = 0.001;              // pure number, slope of surface & bed

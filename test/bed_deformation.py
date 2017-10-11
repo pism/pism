@@ -55,7 +55,7 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
     M = 2 * N - 1
 
     ctx = PISM.Context().ctx
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.NOT_PERIODIC)
+    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     bed_model = PISM.PBLingleClark(grid)
 
@@ -108,7 +108,7 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
     M = 2 * N - 1
 
     ctx = PISM.Context().ctx
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.NOT_PERIODIC)
+    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     bed_model = PISM.PBLingleClark(grid)
 

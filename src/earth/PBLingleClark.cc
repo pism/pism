@@ -70,13 +70,14 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   m_extended_grid = IceGrid::Shallow(m_grid->ctx(),
                                      Lx, Ly,
                                      m_grid->x0(), m_grid->y0(),
-                                     Nx, Ny, NOT_PERIODIC);
+                                     Nx, Ny, CELL_CORNER, NOT_PERIODIC);
 
   m_viscous_bed_displacement.create(m_extended_grid,
                                     "viscous_bed_displacement", WITHOUT_GHOSTS);
   m_viscous_bed_displacement.set_attrs("model state",
-                                 "bed displacement in the viscous half-space bed deformation model; "
-                                 "see BuelerLingleBrown", "meters", "");
+                                       "bed displacement in the viscous half-space "
+                                       "bed deformation model; "
+                                       "see BuelerLingleBrown", "meters", "");
   // coordinate variables of the extended grid should have different names
   m_viscous_bed_displacement.metadata().get_x().set_name("x_lc");
   m_viscous_bed_displacement.metadata().get_y().set_name("y_lc");

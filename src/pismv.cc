@@ -49,6 +49,8 @@ Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
   Config::Ptr config = config_from_options(com, *logger, sys);
 
   config->set_string("time.calendar", "none");
+  config->set_string("grid.periodicity", "none");
+  config->set_string("grid.registration", "corner");
 
   set_config_from_options(*config);
 
@@ -67,6 +69,7 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
 
   GridParameters P;
 
+  // use the cell corner grid registration
   P.registration = CELL_CORNER;
   // use the non-periodic grid:
   P.periodicity = NOT_PERIODIC;
@@ -135,10 +138,10 @@ IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
   options::forbidden("-bootstrap");
 
   if (input_file.is_set()) {
-    Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
+    GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file
-    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, p);
+    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
   } else {
     // use defaults set by pismv_grid_defaults()
     GridParameters P = pismv_grid_defaults(ctx->config(), testname);

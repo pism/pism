@@ -223,15 +223,16 @@ public:
                      double Lx, double Ly,
                      double x0, double y0,
                      unsigned int Mx, unsigned int My,
+                     GridRegistration r,
                      Periodicity p);
 
   static Ptr FromFile(Context::ConstPtr ctx,
                       const PIO &file, const std::string &var_name,
-                      Periodicity periodicity);
+                      GridRegistration r);
 
   static Ptr FromFile(Context::ConstPtr ctx,
                       const std::string &file, const std::vector<std::string> &var_names,
-                      Periodicity periodicity);
+                      GridRegistration r);
 
   static Ptr FromOptions(Context::ConstPtr ctx);
 

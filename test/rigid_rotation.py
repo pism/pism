@@ -83,7 +83,7 @@ def mass_transport_test(t_final, C=1.0):
     Mx = 101
     My = 101
 
-    grid = PISM.IceGrid_Shallow(ctx, 1, 1, 0, 0, Mx, My, PISM.NOT_PERIODIC)
+    grid = PISM.IceGrid_Shallow(ctx, 1, 1, 0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     geometry = PISM.Geometry(grid)
 

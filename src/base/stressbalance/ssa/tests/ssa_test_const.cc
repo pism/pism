@@ -60,7 +60,7 @@ class SSATestCaseConst: public SSATestCase
 public:
   SSATestCaseConst(Context::Ptr ctx, int Mx, int My, double q,
                    SSAFactory ssafactory):
-    SSATestCase(ctx, Mx, My, 50e3, 50e3, NOT_PERIODIC),
+    SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC),
     basal_q(q)
   {
     L     = units::convert(ctx->unit_system(), 50.0, "km", "m"); // 50km half-width

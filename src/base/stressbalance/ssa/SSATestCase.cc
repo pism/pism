@@ -31,9 +31,11 @@ namespace pism {
 namespace stressbalance {
 
 SSATestCase::SSATestCase(Context::Ptr ctx, int Mx, int My,
-                         double Lx, double Ly, Periodicity periodicity)
+                         double Lx, double Ly,
+                         GridRegistration registration,
+                         Periodicity periodicity)
   : m_com(ctx->com()), m_ctx(ctx), m_config(ctx->config()),
-    m_grid(IceGrid::Shallow(m_ctx, Lx, Ly, 0.0, 0.0, Mx, My, periodicity)),
+    m_grid(IceGrid::Shallow(m_ctx, Lx, Ly, 0.0, 0.0, Mx, My, registration, periodicity)),
     m_sys(ctx->unit_system()),
     m_geometry(m_grid),
     m_ssa(NULL) {
