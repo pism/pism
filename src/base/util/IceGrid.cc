@@ -1176,7 +1176,7 @@ GridParameters::GridParameters() {
   My = 0;
 
   registration = CELL_CENTER;
-  periodicity = NONE;
+  periodicity = NOT_PERIODIC;
 }
 
 GridParameters::GridParameters(Config::ConstPtr config) {

@@ -40,7 +40,7 @@ class Logger;
 class MappingInfo;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
-typedef enum {NONE = 0, NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+typedef enum {NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
 typedef enum {CELL_CENTER, CELL_CORNER} GridRegistration;
 

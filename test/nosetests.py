@@ -848,7 +848,7 @@ def ssa_trivial_test():
     class TrivialSSARun(PISM.ssa.SSAExactTestCase):
         def _initGrid(self):
             self.grid = PISM.IceGrid.Shallow(PISM.Context().ctx, L, L, 0, 0,
-                                             self.Mx, self.My, PISM.NONE)
+                                             self.Mx, self.My, PISM.NOT_PERIODIC)
 
         def _initPhysics(self):
             self.modeldata.setPhysics(context.enthalpy_converter)

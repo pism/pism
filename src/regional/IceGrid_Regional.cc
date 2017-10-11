@@ -138,8 +138,8 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
         subset_extent("y", full.y, y_range[0], y_range[1],
                       input_grid.y0, input_grid.Ly, input_grid.My);
 
-        // Set periodicity to "NONE" so that IceGrid computes coordinates correctly.
-        input_grid.periodicity = NONE;
+        // Set periodicity to "NOT_PERIODIC" so that IceGrid computes coordinates correctly.
+        input_grid.periodicity = NOT_PERIODIC;
         input_grid.registration = CELL_CORNER;
 
         break;
