@@ -83,6 +83,12 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
 
   const Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
 
+  // FIXME!!!
+  GridRegistration r = CELL_CORNER;
+  if (p & X_PERIODIC or p & Y_PERIODIC) {
+    r = CELL_CENTER;
+  }
+
   const options::String input_file("-i", "Specifies a PISM input file");
   const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
   const options::RealList x_range("-x_range",
@@ -121,9 +127,9 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
       }
 
       if (grid_info_found) {
-        input_grid = GridParameters(ctx, file, name, p);
+        input_grid = GridParameters(ctx, file, name, r);
 
-        grid_info full = grid_info(file, name, ctx->unit_system(), p);
+        grid_info full = grid_info(file, name, ctx->unit_system(), r);
 
         // x direction
         subset_extent("x", full.x, x_range[0], x_range[1],

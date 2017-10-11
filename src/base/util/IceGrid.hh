@@ -59,7 +59,7 @@ public:
   grid_info();
   grid_info(const PIO &file, const std::string &variable,
             units::System::Ptr unit_system,
-            Periodicity p);
+            GridRegistration registration);
   void report(const Logger &log, int threshold, units::System::Ptr s) const;
   // dimension lengths
   unsigned int t_len, x_len, y_len, z_len;
@@ -100,12 +100,12 @@ public:
   GridParameters(Context::ConstPtr ctx,
                  const std::string &filename,
                  const std::string &variable_name,
-                 Periodicity p);
+                 GridRegistration r);
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
   GridParameters(Context::ConstPtr ctx,
                  const PIO &file,
                  const std::string &variable_name,
-                 Periodicity p);
+                 GridRegistration r);
 
   //! Process -Mx and -My; set Mx and My.
   void horizontal_size_from_options();
@@ -145,7 +145,7 @@ private:
   void init_from_config(Config::ConstPtr config);
   void init_from_file(Context::ConstPtr ctx, const PIO &file,
                       const std::string &variable_name,
-                      Periodicity p);
+                      GridRegistration r);
 };
 
 //! Describes the PISM grid and the distribution of data across processors.

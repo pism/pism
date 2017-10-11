@@ -454,7 +454,7 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
   const int X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   try {
-    grid_info gi(file, variable_name, grid.ctx()->unit_system(), grid.periodicity());
+    grid_info gi(file, variable_name, grid.ctx()->unit_system(), grid.registration());
     LocalInterpCtx lic(gi, grid, zlevels_out);
 
     std::vector<double> &buffer = lic.buffer;
@@ -908,7 +908,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
   if (exists) {                      // the variable was found successfully
 
     {
-      grid_info input_grid(file, name_found, sys, grid.periodicity());
+      grid_info input_grid(file, name_found, sys, grid.registration());
 
       check_input_grid(input_grid);
 

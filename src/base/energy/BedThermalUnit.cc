@@ -57,7 +57,7 @@ BTUGrid BTUGrid::FromOptions(Context::ConstPtr ctx) {
 
     if (input_file.inq_var("litho_temp")) {
       grid_info info(input_file, "litho_temp", ctx->unit_system(),
-                     NOT_PERIODIC); // periodicity is irrelevant
+                     CELL_CENTER); // grid registration is irrelevant
 
       result.Mbz = info.z_len;
       result.Lbz = -info.z_min;

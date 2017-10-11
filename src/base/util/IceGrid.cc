@@ -309,9 +309,15 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
   try {
     const Logger &log = *ctx->log();
 
+    // FIXME!!!
+    GridRegistration r = CELL_CORNER;
+    if (periodicity & X_PERIODIC or periodicity & Y_PERIODIC) {
+      r = CELL_CENTER;
+    }
+
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    GridParameters p(ctx, file, var_name, periodicity);
+    GridParameters p(ctx, file, var_name, r);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
@@ -1065,7 +1071,7 @@ void grid_info::report(const Logger &log, int threshold, units::System::Ptr s) c
 
 grid_info::grid_info(const PIO &file, const std::string &variable,
                      units::System::Ptr unit_system,
-                     Periodicity p) {
+                     GridRegistration r) {
   try {
     bool variable_exists, found_by_standard_name;
     std::string name_found;
@@ -1110,7 +1116,7 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
           this->x_len = this->x.size();
           this->x0 = 0.5 * (x_min + x_max);
           this->Lx = 0.5 * (x_max - x_min);
-          if (p & X_PERIODIC) {
+          if (r == CELL_CENTER) {
             const double dx = this->x[1] - this->x[0];
             this->Lx += 0.5 * dx;
           }
@@ -1124,7 +1130,7 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
           this->y_len = this->y.size();
           this->y0 = 0.5 * (y_min + y_max);
           this->Ly = 0.5 * (y_max - y_min);
-          if (p & Y_PERIODIC) {
+          if (r == CELL_CENTER) {
             const double dy = this->y[1] - this->y[0];
             this->Ly += 0.5 * dy;
           }
@@ -1194,8 +1200,13 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
   Mx = config->get_double("grid.Mx");
   My = config->get_double("grid.My");
 
-  registration = string_to_registration(config->get_string("grid.registration"));
   periodicity = string_to_periodicity(config->get_string("grid.periodicity"));
+
+  // FIXME!!!
+  registration = CELL_CORNER;
+  if (periodicity & X_PERIODIC or periodicity & Y_PERIODIC) {
+    registration = CELL_CENTER;
+  }
 
   double Lz = config->get_double("grid.Lz");
   unsigned int Mz = config->get_double("grid.Mz");
@@ -1208,14 +1219,14 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
 void GridParameters::init_from_file(Context::ConstPtr ctx,
                                     const PIO &file,
                                     const std::string &variable_name,
-                                    Periodicity p) {
+                                    GridRegistration r) {
   int size = 0;
   MPI_Comm_size(ctx->com(), &size);
 
   // set defaults (except for ownership ranges) from configuration parameters
   init_from_config(ctx->config());
 
-  grid_info input_grid(file, variable_name, ctx->unit_system(), p);
+  grid_info input_grid(file, variable_name, ctx->unit_system(), r);
 
   Lx = input_grid.Lx;
   Ly = input_grid.Ly;
@@ -1223,23 +1234,23 @@ void GridParameters::init_from_file(Context::ConstPtr ctx,
   y0 = input_grid.y0;
   Mx = input_grid.x_len;
   My = input_grid.y_len;
-  periodicity = p;
+  registration = r;
   z = input_grid.z;
 }
 
 GridParameters::GridParameters(Context::ConstPtr ctx,
                                const PIO &file,
                                const std::string &variable_name,
-                               Periodicity p) {
-  init_from_file(ctx, file, variable_name, p);
+                               GridRegistration r) {
+  init_from_file(ctx, file, variable_name, r);
 }
 
 GridParameters::GridParameters(Context::ConstPtr ctx,
                                const std::string &filename,
                                const std::string &variable_name,
-                               Periodicity p) {
+                               GridRegistration r) {
   PIO nc(ctx->com(), "netcdf3", filename, PISM_READONLY);
-  init_from_file(ctx, nc, variable_name, p);
+  init_from_file(ctx, nc, variable_name, r);
 }
 
 
@@ -1330,6 +1341,12 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
 
   Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
 
+  // FIXME!!!
+  GridRegistration r = CELL_CORNER;
+  if (p & X_PERIODIC or p & Y_PERIODIC) {
+    r = CELL_CENTER;
+  }
+
   Logger::ConstPtr log = ctx->log();
 
   if (input_file.is_set() and (not bootstrap)) {
@@ -1370,7 +1387,7 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
       }
 
       if (grid_info_found) {
-        input_grid = GridParameters(ctx, nc, name, p);
+        input_grid = GridParameters(ctx, nc, name, r);
         break;
       }
     }
