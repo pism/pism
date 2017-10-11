@@ -207,6 +207,12 @@ IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
     p.My = My;
     p.periodicity = periodicity;
 
+    // FIXME!!!
+    p.registration = CELL_CORNER;
+    if (periodicity & X_PERIODIC or periodicity & Y_PERIODIC) {
+      p.registration = CELL_CENTER;
+    }
+
     double Lz = ctx->config()->get_double("grid.Lz");
     p.z.resize(3);
     p.z[0] = 0.0;
@@ -570,8 +576,8 @@ static OwnershipRanges compute_ownership_ranges(unsigned int Mx,
 }
 
 //! Compute horizontal grid spacing. See compute_horizontal_coordinates() for more.
-static double compute_horizontal_spacing(double half_width, unsigned int M, bool periodic) {
-  if (periodic) {
+static double compute_horizontal_spacing(double half_width, unsigned int M, bool cell_centered) {
+  if (cell_centered) {
     return 2.0 * half_width / M;
   } else {
     return 2.0 * half_width / (M - 1);
@@ -581,13 +587,13 @@ static double compute_horizontal_spacing(double half_width, unsigned int M, bool
 //! Compute grid coordinates for one direction (X or Y).
 static std::vector<double> compute_coordinates(unsigned int M, double delta,
                                                double v_min, double v_max,
-                                               bool periodic) {
+                                               bool cell_centered) {
   std::vector<double> result(M);
 
   // Here v_min, v_max define the extent of the computational domain,
   // which is not necessarily the same thing as the smallest and
   // largest values of grid coordinates.
-  if (periodic) {
+  if (cell_centered) {
     for (unsigned int i = 0; i < M; ++i) {
       result[i] = v_min + (i + 0.5) * delta;
     }
@@ -618,11 +624,11 @@ Thus we compute  `dx = 2 * Lx / Mx`.
  */
 void IceGrid::Impl::compute_horizontal_coordinates() {
 
-  dx = compute_horizontal_spacing(Lx, Mx,
-                                  periodicity & X_PERIODIC);
+  bool cell_centered = registration == CELL_CENTER;
 
-  dy = compute_horizontal_spacing(Ly, My,
-                                  periodicity & Y_PERIODIC);
+  dx = compute_horizontal_spacing(Lx, Mx, cell_centered);
+
+  dy = compute_horizontal_spacing(Ly, My, cell_centered);
 
   double
     x_min = x0 - Lx,
@@ -630,7 +636,7 @@ void IceGrid::Impl::compute_horizontal_coordinates() {
 
   x = compute_coordinates(Mx, dx,
                           x_min, x_max,
-                          periodicity & X_PERIODIC);
+                          cell_centered);
 
   double
     y_min = y0 - Ly,
@@ -638,7 +644,7 @@ void IceGrid::Impl::compute_horizontal_coordinates() {
 
   y = compute_coordinates(My, dy,
                           y_min, y_max,
-                          periodicity & Y_PERIODIC);
+                          cell_centered);
 }
 
 //! \brief Report grid parameters.

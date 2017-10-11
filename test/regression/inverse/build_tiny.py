@@ -75,6 +75,7 @@ if __name__ == '__main__':
     p.z = PISM.DoubleVector(z)
     p.ownership_ranges_from_options(context.size)
     p.periodicity = PISM.NOT_PERIODIC
+    p.registration = PISM.CELL_CORNER
     grid = PISM.IceGrid(context.ctx, p)
 
     vecs = PISM.model.ModelVecs(grid.variables())
