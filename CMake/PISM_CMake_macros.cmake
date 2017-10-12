@@ -137,12 +137,12 @@ macro(pism_find_prerequisites)
     set(Pism_PETSC_VERSION ${PETSC_VERSION} CACHE STRING "PETSc version")
     mark_as_advanced(Pism_PETSC_VERSION)
 
-    if (PETSC_VERSION VERSION_LESS 3.3)
+    if (PETSC_VERSION VERSION_LESS 3.5)
       # Force PISM to look for PETSc again if the version we just found
       # is too old:
       set(PETSC_CURRENT "OFF" CACHE BOOL "" FORCE)
       # Stop with an error message.
-      message(FATAL_ERROR "PISM requires PETSc version 3.3 or newer (found ${PETSC_VERSION}).")
+      message(FATAL_ERROR "PISM requires PETSc version 3.5 or newer (found ${PETSC_VERSION}).")
     endif()
 
     if (PETSC_VERSION VERSION_EQUAL 3.6.0)

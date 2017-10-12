@@ -102,16 +102,11 @@ SSAFD::SSAFD(IceGrid::ConstPtr g)
   // PETSc objects and settings
   {
     PetscErrorCode ierr;
-#if PETSC_VERSION_LT(3,5,0)
-    ierr = DMCreateMatrix(*m_da, MATAIJ, m_A.rawptr());
-    PISM_CHK(ierr, "DMCreateMatrix");
-#else
     ierr = DMSetMatType(*m_da, MATAIJ);
     PISM_CHK(ierr, "DMSetMatType");
 
     ierr = DMCreateMatrix(*m_da, m_A.rawptr());
     PISM_CHK(ierr, "DMCreateMatrix");
-#endif
 
     ierr = KSPCreate(m_grid->com, m_KSP.rawptr());
     PISM_CHK(ierr, "KSPCreate");
@@ -141,13 +136,9 @@ void SSAFD::pc_setup_bjacobi() {
 
   ierr = KSPSetType(m_KSP, KSPGMRES);
   PISM_CHK(ierr, "KSPSetType");
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
-  PISM_CHK(ierr, "KSPSetOperators");
-#else
+
   ierr = KSPSetOperators(m_KSP, m_A, m_A);
   PISM_CHK(ierr, "KSPSetOperators");
-#endif
 
   // Get the PC from the KSP solver:
   ierr = KSPGetPC(m_KSP, &pc);
@@ -172,13 +163,9 @@ void SSAFD::pc_setup_asm() {
 
   ierr = KSPSetType(m_KSP, KSPGMRES);
   PISM_CHK(ierr, "KSPSetType");
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
-  PISM_CHK(ierr, "KSPSetOperators");
-#else
+
   ierr = KSPSetOperators(m_KSP, m_A, m_A);
   PISM_CHK(ierr, "KSPSetOperators");
-#endif
 
   // Switch to using the "unpreconditioned" norm.
   ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED);
@@ -987,13 +974,9 @@ void SSAFD::picard_manager(const Inputs &inputs,
     }
 
     // Call PETSc to solve linear system by iterative method; "inner iteration":
-#if PETSC_VERSION_LT(3,5,0)
-    ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
-    PISM_CHK(ierr, "KSPSetOperators");
-#else
     ierr = KSPSetOperators(m_KSP, m_A, m_A);
     PISM_CHK(ierr, "KSPSetOperator");
-#endif
+
     ierr = KSPSolve(m_KSP, m_b.get_vec(), m_velocity_global.get_vec());
     PISM_CHK(ierr, "KSPSolve");
 

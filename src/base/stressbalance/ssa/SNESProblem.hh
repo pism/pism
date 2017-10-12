@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2016 David Maxwell
+// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -120,19 +120,6 @@ SNESProblem<DOF, U>::SNESProblem(IceGrid::ConstPtr g)
   m_callbackData.da = *m_DA;
   m_callbackData.solver = this;
 
-#if PETSC_VERSION_LT(3, 5, 0)
-  typedef PetscErrorCode (*JacobianCallback)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
-  typedef PetscErrorCode (*FunctionCallback)(DMDALocalInfo*, void*, void*, void*);
-
-  ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
-                                  (FunctionCallback)SNESProblem<DOF, U>::function_callback,
-                                  &m_callbackData);
-  PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
-
-  ierr = DMDASNESSetJacobianLocal(*m_DA, (JacobianCallback)SNESProblem<DOF, U>::jacobian_callback,
-                                  &m_callbackData);
-  PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
-#else
   ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
                                   (DMDASNESFunction)SNESProblem<DOF, U>::function_callback,
                                   &m_callbackData);
@@ -141,7 +128,6 @@ SNESProblem<DOF, U>::SNESProblem(IceGrid::ConstPtr g)
   ierr = DMDASNESSetJacobianLocal(*m_DA, (DMDASNESJacobian)SNESProblem<DOF, U>::jacobian_callback,
                                   &m_callbackData);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
-#endif
 
   ierr = DMSetMatType(*m_DA, "baij");
   PISM_CHK(ierr, "DMSetMatType");

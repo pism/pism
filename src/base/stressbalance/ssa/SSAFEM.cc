@@ -66,20 +66,6 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
   m_callback_data.da = *m_da;
   m_callback_data.ssa = this;
 
-#if PETSC_VERSION_LT(3,5,0)
-  typedef PetscErrorCode (*JacobianCallback)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
-  typedef PetscErrorCode (*FunctionCallback)(DMDALocalInfo*, void*, void*, void*);
-
-  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
-                                  (FunctionCallback)function_callback,
-                                  &m_callback_data);
-  PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
-
-  ierr = DMDASNESSetJacobianLocal(*m_da,
-                                  (JacobianCallback)jacobian_callback,
-                                  &m_callback_data);
-  PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
-#else
   ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
                                   (DMDASNESFunction)function_callback,
                                   &m_callback_data);
@@ -89,7 +75,6 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr g)
                                   (DMDASNESJacobian)jacobian_callback,
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
-#endif
 
   ierr = DMSetMatType(*m_da, "baij");
   PISM_CHK(ierr, "DMSetMatType");
@@ -891,13 +876,8 @@ void SSAFEM::monitor_function(Vector2 const *const *const velocity_global,
   }
   loop.check();
 
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = PetscSynchronizedFlush(m_grid->com);
-  PISM_CHK(ierr, "PetscSynchronizedFlush");
-#else
   ierr = PetscSynchronizedFlush(m_grid->com, NULL);
   PISM_CHK(ierr, "PetscSynchronizedFlush");
-#endif
 }
 
 
@@ -1169,23 +1149,6 @@ PetscErrorCode SSAFEM::function_callback(DMDALocalInfo *info,
   return 0;
 }
 
-#if PETSC_VERSION_LT(3,5,0)
-PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, const Vector2 **velocity,
-                                         Mat A, Mat J, MatStructure *str, CallbackData *fe) {
-  try {
-    (void) A;
-    (void) info;
-    fe->ssa->compute_local_jacobian(velocity, J);
-    *str = SAME_NONZERO_PATTERN;
-  } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)fe->da, &com); CHKERRQ(ierr);
-    handle_fatal_errors(com);
-    SETERRQ(com, 1, "A PISM callback failed");
-  }
-  return 0;
-}
-#else
 PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info,
                                          Vector2 const *const *const velocity,
                                          Mat A, Mat J, CallbackData *fe) {
@@ -1201,6 +1164,6 @@ PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info,
   }
   return 0;
 }
-#endif
+
 } // end of namespace stressbalance
 } // end of namespace pism

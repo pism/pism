@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -142,13 +142,7 @@ std::string pism_filename_add_suffix(const std::string &filename,
 
 PetscLogDouble GetTime() {
   PetscLogDouble result;
-#if PETSC_VERSION_LT(3,4,0)
-  PetscErrorCode ierr = PetscGetTime(&result);
-  PISM_CHK(ierr, "PetscGetTime");
-#else
-  PetscErrorCode ierr = PetscTime(&result);
-  PISM_CHK(ierr, "PetscTime");
-#endif
+  PetscErrorCode ierr = PetscTime(&result); PISM_CHK(ierr, "PetscTime");
   return result;
 }
 

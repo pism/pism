@@ -157,18 +157,9 @@ static PetscErrorCode function_callback(DMDALocalInfo *info,
                                         Vector2 const *const *const velocity,
                                         Vector2 **residual,
                                         CallbackData *fe);
-#if PETSC_VERSION_LT(3,5,0)
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
-                                          Vector2 const *const *const xg,
-                                          Mat A, Mat J, MatStructure *str,
-                                          CallbackData *fe);
-#else
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
                                           Vector2 const *const *const xg,
                                           Mat A, Mat J, CallbackData *fe);
-#endif
-
-
 };
 
 

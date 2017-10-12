@@ -57,16 +57,11 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
   m_du_local.create(m_grid, "linearization work vector (with ghosts)",
                     WITH_GHOSTS, stencilWidth);
 
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
-  PISM_CHK(ierr, "DMCreateMatrix");
-#else
   ierr = DMSetMatType(*m_da, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");
 
   ierr = DMCreateMatrix(*m_da, m_J_state.rawptr());
   PISM_CHK(ierr, "DMCreateMatrix");
-#endif
 
   ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
   PISM_CHK(ierr, "KSPCreate");
@@ -597,13 +592,9 @@ void IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMo
   m_du_global.scale(-1);
 
   // call PETSc to solve linear system by iterative method.
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
-  PISM_CHK(ierr, "KSPSetOperators");
-#else
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
   PISM_CHK(ierr, "KSPSetOperators");
-#endif
+
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
   PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
@@ -667,13 +658,9 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
   m_du_global.end_access();
 
   // call PETSc to solve linear system by iterative method.
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
-  PISM_CHK(ierr, "KSPSetOperators");
-#else
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
   PISM_CHK(ierr, "KSPSetOperators");
-#endif
+
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
   PISM_CHK(ierr, "KSPSolve"); // SOLVE
 

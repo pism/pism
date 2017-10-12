@@ -848,11 +848,7 @@ petsc::DM::Ptr IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
 
   DM result;
   PetscErrorCode ierr = DMDACreate2d(ctx->com(),
-#if PETSC_VERSION_LT(3,5,0)
-                                     DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-#else
                                      DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
-#endif
                                      DMDA_STENCIL_BOX,
                                      Mx, My,
                                      (PetscInt)procs_x.size(),

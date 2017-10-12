@@ -611,19 +611,12 @@ void  IceModelVec::update_ghosts() {
   }
 
   assert(m_v != NULL);
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);
-  PISM_CHK(ierr, "DMDALocalToLocalBegin");
 
-  ierr = DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v);
-  PISM_CHK(ierr, "DMDALocalToLocalEnd");
-#else
   ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);
   PISM_CHK(ierr, "DMLocalToLocalBegin");
   
   ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v);
   PISM_CHK(ierr, "DMLocalToLocalEnd");
-#endif
 }
 
 void IceModelVec::global_to_local(petsc::DM::Ptr dm, Vec source, Vec destination) const {
@@ -644,27 +637,21 @@ void  IceModelVec::update_ghosts(IceModelVec &destination) const {
   // Make sure it is allocated:
   assert(m_v != NULL);
   // Make sure "destination" has ghosts to update.
-  assert(destination.m_has_ghosts == true);
+  assert(destination.m_has_ghosts);
 
-  if (m_has_ghosts == true && destination.m_has_ghosts == true) {
-#if PETSC_VERSION_LT(3,5,0)
-    ierr = DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
-    PISM_CHK(ierr, "DMDALocalToLocalBegin");
-
-    ierr = DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
-    PISM_CHK(ierr, "DMDALocalToLocalEnd");
-#else
+  if (m_has_ghosts and destination.m_has_ghosts) {
     ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);
     PISM_CHK(ierr, "DMLocalToLocalBegin");
 
     ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);
     PISM_CHK(ierr, "DMLocalToLocalEnd");
-#endif
+
     return;
   }
 
-  if (not m_has_ghosts && destination.m_has_ghosts == true) {
+  if (not m_has_ghosts and destination.m_has_ghosts) {
     global_to_local(destination.m_da, m_v, destination.m_v);
+
     return;
   }
 
