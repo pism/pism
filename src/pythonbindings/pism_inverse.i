@@ -23,12 +23,10 @@
 #include "inverse/functional/IPLogRatioFunctional.hh"
 #include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 
-#ifdef PISM_USE_TAO
 #include "inverse/TaoUtil.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
-#endif
 
 #include "base/util/TerminationReason.hh"
 %}
@@ -59,7 +57,8 @@
 
 %include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 
-#ifdef PISM_USE_TAO
+// TAO stuff
+
 %ignore TaoConvergedReasons;
 %shared_ptr(pism::taoutil::TAOTerminationReason)
 %include "inverse/TaoUtil.hh"
@@ -104,5 +103,3 @@
 %include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 
 %template(IP_SSAHardavTaoTikhonovSolver) pism::taoutil::TaoBasicSolver<pism::inverse::IP_SSAHardavTaoTikhonovProblem>;
-
-#endif  /* end of ifdef PISM_USE_TAO */

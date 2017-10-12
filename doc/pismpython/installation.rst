@@ -77,31 +77,6 @@ You can verify that you have installed ``petsc4py`` if the command
 
 Returns error free.
 
-TAO
----
-
-TAO is a software library, based on PETSc, for large-scale 
-optimization problems.  Its use is optional; if it is not installed,
-some of the inverse problem algorithms in PISM will simply not be available.
-
-`Download <http://www.mcs.anl.gov/research/projects/tao/download/index.html>`_-
-a copy of a version that is compatible with your version of PETSc 
-(TAO 2.1 is compatible with PETSc 3.2 and 3.3). Then
-
-.. code-block:: bash
-
-  export PETSC_DIR=/home/user/petsc-3.2-p7/
-  export PETSC_ARCH=linux-gnu-opt
-  export TAO_DIR=`pwd`
-  make all
-
-You will need to add the ``TAO_DIR`` environment variable 
-in your :file:`.profile` or :file:`.bashrc`, e.g.
-
-.. code-block:: bash
-
-  export TAO_DIR=/home/user/tao-2.1-p1
-
 ``Sphinx``
 ----------
 
@@ -171,17 +146,6 @@ with the error
 If this occurs, verify that ``petsc4py`` can be found
 in in your ``PYTHONPATH`` (i.e. ``python -c "import petsc4py"`` returns
 error free).
-
-PISM will link to TAO automatically if it can find a TAO installation.
-If you wish to include TAO support and see the ``cmake`` log messages:
-
-.. code-block:: bash
-
-  -- Checking for package 'TAO'
-  -- TAO_DIR is TAO_DIR-NOTFOUND
-
-verify that you have set your ``TAO_DIR`` environment variable correctly.
-
 
 Building the Documentation
 ==========================

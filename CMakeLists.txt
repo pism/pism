@@ -42,7 +42,6 @@ option (Pism_BUILD_PDFS "Build PISM's PDF documentation with 'make all'." OFF)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
-option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
 option (Pism_USE_JANSSON "Use Jansson to store configuration files." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
 
@@ -172,11 +171,6 @@ if (Pism_USE_PROJ4)
   add_definitions (-DPISM_USE_PROJ4=1)
 else()
   add_definitions (-DPISM_USE_PROJ4=0)
-endif()
-
-# Use TAO in inverse solvers.
-if (Pism_USE_TAO)
-  add_definitions (-DPISM_USE_TAO=1)
 endif()
 
 add_custom_target (etags

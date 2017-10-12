@@ -17,6 +17,7 @@ set(PISMUTIL_SRC
   base/util/petscwrappers/KSP.cc
   base/util/petscwrappers/Mat.cc
   base/util/petscwrappers/SNES.cc
+  base/util/petscwrappers/Tao.cc
   base/util/petscwrappers/Vec.cc
   base/util/petscwrappers/VecScatter.cc
   base/util/petscwrappers/Viewer.cc
@@ -69,10 +70,6 @@ set_source_files_properties (base/pism_revision.cc
 
 if(Pism_USE_JANSSON)
   list(APPEND PISMUTIL_SRC base/util/ConfigJSON.cc)
-endif()
-
-if(Pism_USE_TAO)
-  list(APPEND PISMUTIL_SRC base/util/petscwrappers/Tao.cc)
 endif()
 
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.

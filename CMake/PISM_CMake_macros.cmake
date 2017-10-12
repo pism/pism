@@ -174,14 +174,6 @@ macro(pism_find_prerequisites)
     find_package (PROJ4 REQUIRED)
   endif()
 
-  # Use TAO included in PETSc 3.5.
-  if (Pism_PETSC_VERSION VERSION_LESS "3.5")
-    message(STATUS "Disabling TAO-based inversion tools. Install PETSc 3.5 or later to use them.")
-    set (Pism_USE_TAO OFF CACHE BOOL "Use TAO in inverse solvers." FORCE)
-  else()
-    message(STATUS "Building TAO-based inversion tools.")
-  endif()
-
   if (Pism_USE_PARALLEL_NETCDF4)
     # Try to find netcdf_par.h. We assume that NetCDF was compiled with
     # parallel I/O if this header is present.
