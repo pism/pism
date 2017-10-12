@@ -1072,7 +1072,7 @@
 #. :config:`output.format` (*keyword*)
 
    :Value: ``netcdf3``
-   :Choices: ``netcdf3, quilt, netcdf4_parallel, pnetcdf``
+   :Choices: ``netcdf3, netcdf4_parallel, pnetcdf``
    :Option: :opt:`-o_format`
    :Description: The I/O format used for spatial fields; 'netcdf3' is the default, 'netcd4_parallel' is available if PISM was built with parallel NetCDF-4, and 'pnetcdf' is available if PISM was built with PnetCDF.
 

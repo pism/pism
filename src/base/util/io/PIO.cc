@@ -31,7 +31,6 @@ using std::shared_ptr;
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMTime.hh"
 #include "PISMNC3File.hh"
-#include "PISMNC4_Quilt.hh"
 
 #if (PISM_USE_PARALLEL_NETCDF4==1)
 #include "PISMNC4_Par.hh"
@@ -57,25 +56,6 @@ struct PIO::Impl {
 static io::NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   if (mode == "netcdf3") {
     return io::NCFile::Ptr(new io::NC3File(com));
-  } else if (mode.find("quilt") == 0) {
-    size_t n = mode.find(":");
-    int compression_level = 0;
-
-    if (n != string::npos) {
-      mode.replace(0, 6, "");   // 6 is the length of "quilt:"
-      char *endptr;
-      compression_level = strtol(mode.c_str(), &endptr, 10);
-      if ((*endptr != '\0') || (compression_level < 0) || (compression_level > 9)) {
-        PetscErrorCode ierr;
-        ierr = PetscPrintf(com, "PISM WARNING: invalid compression level %s."
-                           " Output compression is disabled.\n",
-                           mode.c_str());
-        PISM_CHK(ierr, "PetscPrintf");
-        compression_level = 0;
-      }
-    }
-
-    return io::NCFile::Ptr(new io::NC4_Quilt(com, compression_level));
   }
 #if (PISM_USE_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
@@ -767,11 +747,5 @@ void PIO::put_varm_double(const string &variable_name,
     throw;
   }
 }
-
-void PIO::set_local_extent(unsigned int xs, unsigned int xm,
-                           unsigned int ys, unsigned int ym) const {
-  m_impl->nc->set_local_extent(xs, xm, ys, ym);
-}
-
 
 } // end of namespace pism

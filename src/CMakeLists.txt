@@ -51,7 +51,6 @@ set(PISMUTIL_SRC
   base/util/io/PIO.cc
   base/util/io/PISMNC3File.cc
   base/util/io/PISMNC4File.cc
-  base/util/io/PISMNC4_Quilt.cc
   base/util/io/PISMNCFile.cc
   base/util/pism_const.cc
   base/util/pism_utilities.cc
@@ -226,14 +225,6 @@ target_link_libraries (pisms pism)
 add_executable (pismv pismv.cc)
 target_link_libraries (pismv pism)
 
-add_executable (pismmerge
-  pismmerge/pismmerge.cc
-  pismmerge/metadata.cc
-  pismmerge/variables.cc
-  pismmerge/util.cc
-  base/util/io/PISMNC4_Serial.cc)
-target_link_libraries (pismmerge pism)
-
 find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
 mark_as_advanced(NCGEN_PROGRAM)
 
@@ -251,7 +242,7 @@ install (
 
 # Install executables.
 install (TARGETS
-  pismr pisms pismv pismmerge ## executables
+  pismr pisms pismv ## executables
   RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 install (FILES
@@ -279,7 +270,6 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
   PATTERN "*.hh"
   PATTERN "*.h"
   PATTERN "calcalcs" EXCLUDE
-  PATTERN "pismmerge" EXCLUDE
   PATTERN "pythonbindings" EXCLUDE
   PATTERN "vdt" EXCLUDE
   PATTERN "doc" EXCLUDE

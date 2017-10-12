@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,6 @@ NCFile::NCFile(MPI_Comm c)
   : m_com(c) {
   m_file_id = -1;
   m_define_mode = false;
-  m_xs = m_xm = m_ys = m_ym = -1;
 }
 
 NCFile::~NCFile() {
@@ -63,14 +62,6 @@ void NCFile::check(const ErrorLocation &where, int return_code) const {
   if (return_code != NC_NOERR) {
     throw RuntimeError(where, nc_strerror(return_code));
   }
-}
-
-void NCFile::set_local_extent_impl(unsigned int xs, unsigned int xm,
-                                   unsigned int ys, unsigned int ym) const {
-  m_xs = xs;
-  m_xm = xm;
-  m_ys = ys;
-  m_ym = ym;
 }
 
 //! \brief Moves the file aside (file.nc -> file.nc~).
@@ -301,11 +292,6 @@ void NCFile::inq_atttype(const std::string &variable_name, const std::string &at
 
 void NCFile::set_fill(int fillmode, int &old_modep) const {
   int stat = this->set_fill_impl(fillmode, old_modep); check(PISM_ERROR_LOCATION, stat);
-}
-
-void NCFile::set_local_extent(unsigned int xs, unsigned int xm,
-                              unsigned int ys, unsigned int ym) const {
-  this->set_local_extent_impl(xs, xm, ys, ym);
 }
 
 void NCFile::move_if_exists(const std::string &filename, int rank_to_use) {

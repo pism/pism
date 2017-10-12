@@ -549,8 +549,6 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
     return;
   }
 
-  nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
-
   define_dimensions(var, grid, nc);
 
   std::string order = variable_order;
@@ -631,8 +629,6 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
                            unsigned int time, double *output) {
 
   const Logger &log = *grid.ctx()->log();
-
-  nc.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
   // Find the variable:
   std::string name_found;
@@ -722,8 +718,6 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                             const IceGrid& grid,
                             const PIO &file,
                             const double *input) {
-
-  file.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
   // find or define the variable
   std::string name_found;
@@ -892,8 +886,6 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              double default_value,
                              double *output) {
   const Logger &log = *grid.ctx()->log();
-
-  file.set_local_extent(grid.xs(), grid.xm(), grid.ys(), grid.ym());
 
   units::System::Ptr sys = variable.unit_system();
   const std::vector<double>& levels = variable.get_levels();

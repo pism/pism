@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -153,9 +153,6 @@ public:
 
   std::string get_format() const;
 
-  void set_local_extent(unsigned int xs, unsigned int xm,
-                        unsigned int ys, unsigned int ym) const;
-
   void move_if_exists(const std::string &filename, int rank_to_use = 0);
   void remove_if_exists(const std::string &filename, int rank_to_use = 0);
 
@@ -245,9 +242,6 @@ protected:
   virtual int set_fill_impl(int fillmode, int &old_modep) const = 0;
 
   virtual std::string get_format_impl() const = 0;
-
-  virtual void set_local_extent_impl(unsigned int xs, unsigned int xm,
-                                     unsigned int ys, unsigned int ym) const;
 
   virtual int move_if_exists_impl(const std::string &filename, int rank_to_use = 0);
   virtual int remove_if_exists_impl(const std::string &filename, int rank_to_use = 0);

@@ -1085,19 +1085,6 @@ grid_info::grid_info(const PIO &file, const std::string &variable,
 
     std::vector<std::string> dims = file.inq_vardims(name_found);
 
-    // use "global" dimensions (as opposed to dimensions of a patch)
-    if (file.backend_type() == "quilt") {
-      for (unsigned int i = 0; i < dims.size(); ++i) {
-        if (dims[i] == "x_patch") {
-          dims[i] = "x";
-        }
-
-        if (dims[i] == "y_patch") {
-          dims[i] = "y";
-        }
-      }
-    }
-
     for (auto dimname : dims) {
 
       AxisType dimtype = file.inq_dimtype(dimname, unit_system);
