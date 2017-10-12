@@ -44,7 +44,7 @@ latex%: Makefile
 
 # Targets for updating the list of diagnostics:
 
-.INTERMEDIATE: diagnostics.json dummy.nc
+.INTERMEDIATE: diagnostics.json dummy.nc pism_config.nc
 
 dummy.nc:
 	# use a thermal bedrock layer model and run for 1 year to complete the
@@ -77,7 +77,8 @@ diagnostics.json: dummy.nc
 update_diagnostics: diagnostics.json
 	python ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
 
-PISM_CONFIG=~/local/pism/share/pism/pism_config.nc
+pism_config.nc:
+	ncgen -o $@ ../../src/pism_config.cdl
 
-update_parameters:
-	python ./list_parameters.py ${PISM_CONFIG} > manual/parameters/parameter-list.txt
+update_parameters: pism_config.nc
+	python ./list_parameters.py $^ > manual/parameters/parameter-list.txt
