@@ -55,31 +55,119 @@ will give a warning that "``PISM WARNING: ignoring command-line option '-Mz'``".
 Grid registration
 ^^^^^^^^^^^^^^^^^
 
-PISM's horizontal computational grid is uniform and cell-centered.\ [#]_
+.. |xmin| replace:: `x_\text{min}`
+.. |xmax| replace:: `x_\text{max}`
+
+PISM's horizontal computational grid is uniform and (by default) cell-centered.\ [#]_
+
+This is not the only possible interpretation, but it is consistent with the finite-volume
+handling of mass (ice thickness) evolution is PISM.
 
 Consider a grid with minimum and maximum `x` coordinates `x_\text{min}` and `x_\text{max}`
-and the spacing `\Delta x`. The cell-centered interpretation implies that this corresponds
-to the *domain extent* in the `x` direction from `x_\text{min} - \frac12 \Delta x` to
-`x_\text{max} + \frac12 \Delta x`, as in :numref:`fig-grid-fine`.
+and the spacing `\Delta x`. The cell-centered interpretation implies that the domain
+extends *past* |xmin| and |xmax| by one half of the grid spacing, see
+:numref:`fig-cell-center`.
 
-.. figure:: figures/grid-fine.png
-   :name: fig-grid-fine
-   :width: 50%
+.. figure:: figures/grid-centered-both.png
+   :name: fig-cell-center
+   :width: 80%
    :align: center
 
-   PISM's horizontal computational grid
+   Computational grids using the default (``center``) grid registration.
 
-This means that
+   *Left*: a coarse grid. *Right*: a finer grid covering the same domain.
 
+   The solid black line represents the domain boundary, dashed red lines are cell
+   boundaries, black circles represent grid points.
 
-.. figure:: figures/grid-coarse.png
-   :name: fig-grid-coarse
-   :width: 50%
+When getting the size of the domain from an input file, PISM will compute grid parameters
+as follows:
+
+.. math::
+
+   \Delta x &= x_1 - x_0
+
+   L_x &= \frac12 ((x_\text{max} - x_\text{min}) + \Delta x).
+
+This is not an issue when re-starting from a PISM output file but can cause confusion when
+specifying grid parameters at bootstrapping and reading in fields using "regridding."
+
+For example:
+
+.. code-block:: bash
+
+   > pisms -grid.registration center \
+           -Lx 10 -Mx 4 \
+           -y 0 -verbose 1 \
+           -o grid-test.nc
+   > ncdump -v x grid-test.nc | tail -2 | head -1
+    x = -7500, -2500, 2500, 7500 ;
+
+Note that we specified the domain half width of 10 km and selected 4 grid points in the
+`x` direction. The resulting `x` coordinates range from `-7500` meters to `7500` meters with
+the grid spacing of `5` km.
+
+In summary, with the default (center) grid registration
+
+.. math::
+   :name: eq-grid-registration-center
+
+   \Delta x &= \frac{2 L_x}{M_x},
+
+   x_\text{min} &= x_c - L_x + \frac12 \Delta x,
+
+   x_\text{max} &= x_c + L_x - \frac12 \Delta x,
+
+where `x_c` is the `x`\-coordinate of the domain center.
+
+.. note::
+
+   One advantage of this approach is that it is easy to build a set of grids covering a
+   given region such that grid cells nest within each other as in
+   :numref:`fig-cell-center`. In particular, this makes it easier to create a set of
+   surface mass balance fields for the domain that use different resolutions but *have the
+   same total SMB*.
+
+Compare this to
+
+.. code-block:: bash
+
+   > pisms -grid.registration corner \
+           -Lx 10 -Mx 5 \
+           -y 0 -verbose 1 \
+           -o grid-test.nc
+   > ncdump -v x grid-test.nc | tail -2 | head -1
+    x = -10000, -5000, 0, 5000, 10000 ;
+
+Here the grid spacing is also 5 km, although there are 5 grid points in the `x` direction
+and `x` coordinates range from `-10000` to `10000`.
+
+With the "corner" grid registration
+
+.. math::
+   :name: eq-grid-registration-corner
+
+   \Delta x &= \frac{2 L_x}{M_x - 1},
+
+   x_\text{min} &= x_c - L_x,
+
+   x_\text{max} &= x_c + L_x.
+
+See :numref:`fig-cell-corner` for an illustration.
+
+.. figure:: figures/grid-corner-both.png
+   :name: fig-cell-corner
+   :width: 80%
    :align: center
 
-   A coarser grid covering the same domain as in :numref:`fig-grid-fine`.
+   Computational grids using the ``corner`` grid registration.
 
-.. _sec-domain-dstribution:
+   *Left*: a coarse grid. *Right*: a finer grid covering the same domain.
+
+To switch between :eq:`eq-grid-registration-center` and :eq:`eq-grid-registration-corner`,
+set the configuration parameter :config:`grid.registration`.
+
+.. _sec-domain-distribution:
 
 Parallel domain distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

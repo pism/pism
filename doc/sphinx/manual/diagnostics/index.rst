@@ -26,14 +26,14 @@
 Diagnostic quantities
 =====================
 
-#. The availability of a diagnostic depends on modeling choices. For example, the bed
-   uplift rate :var:`dbdt` is available only if a bed deformation model is selected.
-#. Some scalar diagnostics come in two versions: the ``_glacierized`` and
-   ``_nonglacierized``. Here the former account for the ice
-   :config:`output.ice_free_thickness_standard` meters or thicker (10 meters by default)
-   and the latter include all ice regardless of the thickness. "Glacierized" versions were
-   added to make it easier to analyze changes in glacier volumes and areas and exclude
-   changes in the seasonal snow cover.
+The availability of a diagnostic depends on modeling choices. For example, the bed uplift
+rate :var:`dbdt` is available only if a bed deformation model is selected.
+
+Some scalar diagnostics come in two versions: the ``_glacierized`` and `_nonglacierized``.
+Here the former account for the ice :config:`output.ice_free_thickness_standard` meters or
+thicker (10 meters by default) and the latter include all ice regardless of the thickness.
+"Glacierized" versions were added to make it easier to analyze changes in glacier volumes
+and areas and exclude changes in the seasonal snow cover.
 
 .. contents::
 

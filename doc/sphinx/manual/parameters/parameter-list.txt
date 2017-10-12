@@ -755,6 +755,12 @@
    :Value: 2
    :Description: Maximum width of the finite-difference stencil used in PISM.
 
+#. :config:`grid.registration` (*keyword*)
+
+   :Value: ``center``
+   :Choices: ``center, corner``
+   :Description: horizontal grid registration
+
 #. :config:`grid.periodicity` (*keyword*)
 
    :Value: ``xy``

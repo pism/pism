@@ -49,7 +49,7 @@ the ice, the bedrock corresponds to negative `z` values regardless of its true (
 The extent of the computational box, along with its bedrock extension downward, is
 determined by four numbers ``Lx``, ``Ly``, ``Lz``, and ``Lbz`` (see
 :numref:`fig-rectilinearbox` and :numref:`tab-compbox`). The first two of these are
-half-widths and have units of kilometers when set by options or displayed.
+half-widths and have units of kilometers when set by command-line options or displayed.
 
 .. figure:: figures/rectilinearbox.png
    :name: fig-rectilinearbox
@@ -64,13 +64,21 @@ half-widths and have units of kilometers when set by options or displayed.
    * - Option
      - Description
    * - :opt:`-Lx` (km)
-     - Half-width of the computational domain (in the `x`\-direction) 
+     - Half-width of the computational domain (in the `x`\-direction)
    * - :opt:`-Ly` (km)
-     - Half-width of the computational domain (in the `y`\-direction) 
+     - Half-width of the computational domain (in the `y`\-direction)
    * - :opt:`-Lz` (meters)
-     - Height of the computational domain; must exceed maximum ice thickness 
+     - Height of the computational domain; must exceed maximum ice thickness
    * - :opt:`-Lbz` (meters)
      - Depth of the computational domain in the bedrock thermal layer
+   * - :opt:`-x_range A,B` (meters)
+     - Specify the range of `x` coordinates. Use this to select a subset of an input grid
+       that isn't in the center of a domain.
+   * - :opt:`-y_range A,B` (meters)
+     - Specify the range of `y` coordinates.
+
+See :ref:`sec-grid-registration` for details about the interpretation of `L_x`, `L_y`, and
+the way the grid spacing is computed.
 
 .. rubric:: Footnotes
 
