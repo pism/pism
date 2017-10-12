@@ -14,18 +14,11 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   endif()
 
   set (browser_helpers
-    initialization-sequence.dot
-    config_doc.py
     doxybib.bst
     doxybib.py
-    bedrough.md
     bombproof_enth.md
     mainpage.md
-    std_names.md
-    vertchange.md
-    howto.md
     petsc.md
-    coding_style.md
     pism.sty
     )
 
@@ -42,17 +35,6 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   # Generate the list of references
   add_custom_command (OUTPUT references.md
     COMMAND ./doxybib.py
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-  # Generate the config file
-  add_custom_command (OUTPUT pism_config.nc
-    DEPENDS ${Pism_SOURCE_DIR}/src/pism_config.cdl
-    COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${Pism_SOURCE_DIR}/src/pism_config.cdl)
-
-  # Generate the config documentation
-  add_custom_command (OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pism_config.md
-    COMMAND ./config_doc.py > pism_config.md
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Generate the browser

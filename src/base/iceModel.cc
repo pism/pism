@@ -872,10 +872,6 @@ void IceModel::init() {
   //! regridding.
   misc_setup();
 
-  //! The following flow-chart illustrates the process.
-  //!
-  //! \dotfile initialization-sequence.dot "IceModel initialization sequence"
-
   profiling.end("initialization");
 }
 
