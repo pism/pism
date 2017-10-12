@@ -1,5 +1,7 @@
 .. include:: ../../../global.txt
 
+.. contents::
+
 .. _sec-grid:
 
 Spatial grid
@@ -166,6 +168,71 @@ See :numref:`fig-cell-corner` for an illustration.
 
 To switch between :eq:`eq-grid-registration-center` and :eq:`eq-grid-registration-corner`,
 set the configuration parameter :config:`grid.registration`.
+
+.. _sec-projections:
+
+Grid projections
+^^^^^^^^^^^^^^^^
+
+PISM can use the PROJ.4_ library (see :ref:`sec-install-prerequisites`) and projection
+information to compute
+
+- a more accurate estimate of cell areas, improving the accuracy of reported areas and
+  volumes,
+- latitudes and longitudes of grid points (variables :var:`lat` and :var:`lon`), and
+- latitudes and longitudes of cell corners (variables :var:`lat_bnds` and :var:`lon_bnds`).
+
+To use this feature, compile PISM with PROJ.4 and add the global attribute ``proj4``
+containing the parameter string describing the projection to the input file.
+
+For example, the input file ``pism_Greenland_5km_v1.1.nc`` in :ref:`sec-start` has the
+following:
+
+.. code-block:: bash
+
+   > ncdump -h pism_Greenland_5km_v1.1.nc | grep :proj4
+   :proj4 = "+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" ;
+
+The spinup run in that example disables cell area correction to avoid the dependency on
+PROJ.4 (look for :opt:`-grid.correct_cell_areas false` in the command). If we remove this
+option, PISM will report the following.
+
+.. code-block:: none
+
+   > pismr -i pism_Greenland_5km_v1.1.nc \
+           -bootstrap -Mx 76 -My 141 -Mz 101 -Mbz 11 ... \
+           -grid.correct_cell_areas true ... -o output.nc
+   ...
+   * Got projection parameters "+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" from "pism_Greenland_5km_v1.1.nc".
+   * Computing cell areas using projection parameters...
+   * Computing longitude and latitude using projection parameters...
+   ...
+   ... done with run
+   Writing model state to file `output.nc'...
+
+If the ``proj4`` attribute contains the string "``+init=epsg:XXXX``" where ``XXXX`` is
+either 3413 or 3031, PISM will also create a CF-conforming ``mapping`` variable describing
+the projection in use.
+
+"Mapping" variables following CF metadata conventions in input files are copied to output
+files (including ``-extra_file``\s) but are **not** used to compute corrected cell areas
+and latitude/longitude coordinates.
+
+To simplify post-processing and analysis with CDO PISM adds the PROJ.4 string (if known)
+to the mapping variable, putting it in the ``proj4_params`` attribute.
+
+.. code-block:: none
+
+   > ncdump -h g20km_10ka_hy.nc | grep mapping:
+
+   mapping:ellipsoid = "WGS84" ;
+   mapping:grid_mapping_name = "polar_stereographic" ;
+   mapping:false_easting = 0. ;
+   mapping:false_northing = 0. ;
+   mapping:latitude_of_projection_origin = 90. ;
+   mapping:standard_parallel = 71. ;
+   mapping:straight_vertical_longitude_from_pole = -39. ;
+   mapping:proj4_params = "+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" ;
 
 .. _sec-domain-distribution:
 
