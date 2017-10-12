@@ -1,13 +1,11 @@
 #! /usr/bin/env python
 #
 
-import sys
-import petsc4py
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
-
 import PISM
-import math
+
+PISM.set_abort_on_sigint(True)
+context = PISM.Context()
+config = PISM.Context().config
 
 # Default constants that  may get overridden later.
 
@@ -29,7 +27,7 @@ Hext = 0.    # m ice thickeness beyond the cliff
 
 tauc_hi = 2e6       # Pa
 tauc_lo = 1e4       # Pa
-tauc_free_bedrock = 0  # Will get set later
+tauc_free_bedrock = config.get_double('basal_yield_stress.ice_free_bedrock')
 
 EC = PISM.EnthalpyConverter(PISM.Context().config)
 enth0 = EC.enthalpy(273.15, 0.01, 0)  # 0.01 water fraction
@@ -55,8 +53,6 @@ def stream_tauc(x, y):
 
 # The main code for a run follows:
 if __name__ == '__main__':
-    PISM.set_abort_on_sigint(True)
-    context = PISM.Context()
 
     Mx = PISM.optionsInt("-Mx", "Number of grid points in x-direction", default=Mx)
     My = PISM.optionsInt("-My", "Number of grid points in y-direction", default=My)
@@ -64,8 +60,6 @@ if __name__ == '__main__':
     verbosity = PISM.optionsInt("-verbose", "verbosity level", default=3)
 
     # Build the grid.
-    config = PISM.Context().config
-
     p = PISM.GridParameters(config)
     p.Mx = Mx
     p.My = My
@@ -108,9 +102,7 @@ if __name__ == '__main__':
     gc.compute(sea_level, bed, thickness, vecs.mask, vecs.surface_altitude)
 
     tauc = vecs.tauc
-    mask = vecs.mask
-    tauc_free_bedrock = config.get_double('basal_yield_stress.ice_free_bedrock')
-    with PISM.vec.Access(comm=tauc, nocomm=mask):
+    with PISM.vec.Access(comm=tauc):
         for (i, j) in grid.points():
             tauc[i, j] = stream_tauc(grid.x(i), grid.y(j))
 
