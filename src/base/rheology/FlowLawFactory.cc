@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,13 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
-#include <stdexcept>
 
 #include "FlowLawFactory.hh"
 #include "base/util/PISMConfigInterface.hh"
-#include "base/util/pism_const.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/PISMUnits.hh"
 #include "base/util/error_handling.hh"
 
 #include "IsothermalGlen.hh"
