@@ -31,14 +31,12 @@ void IceModel::compute_cell_areas() {
       not projection.empty()) {
 
     m_log->message(2,
-                   "* Computing cell areas using projection parameters (%s)...\n",
-                   projection.c_str());
+                   "* Computing cell areas using projection parameters...\n");
 
     ::pism::compute_cell_areas(projection, m_geometry.cell_area);
 
     m_log->message(2,
-                   "* Computing longitude and latitude using projection parameters (%s)...\n",
-                   projection.c_str());
+                   "* Computing longitude and latitude using projection parameters...\n");
 
     compute_longitude(projection, m_geometry.longitude);
     compute_latitude(projection, m_geometry.latitude);
