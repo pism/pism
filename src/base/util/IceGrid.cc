@@ -862,6 +862,10 @@ petsc::DM::Ptr IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
                                      &result);
   PISM_CHK(ierr,"DMDACreate2d");
 
+#if PETSC_VERSION_GE(3,8,0)
+  ierr = DMSetUp(result); PISM_CHK(ierr,"DMSetUp");
+#endif
+
   return petsc::DM::Ptr(new petsc::DM(result));
 }
 
