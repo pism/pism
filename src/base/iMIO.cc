@@ -116,12 +116,19 @@ void IceModel::save_results() {
 void IceModel::write_mapping(const PIO &file) {
   // only write mapping if it is set.
   const VariableMetadata &mapping = m_grid->get_mapping_info().mapping;
+  std::string name = mapping.get_name();
   if (mapping.has_attributes()) {
-    if (not file.inq_var(mapping.get_name())) {
+    if (not file.inq_var(name)) {
       file.redef();
-      file.def_var(mapping.get_name(), PISM_DOUBLE, {});
+      file.def_var(name, PISM_DOUBLE, {});
     }
     io::write_attributes(file, mapping, PISM_DOUBLE);
+
+    // Write the PROJ.4 string to mapping:proj4_params (for CDO).
+    std::string proj4 = m_grid->get_mapping_info().proj4;
+    if (not proj4.empty()) {
+      file.put_att_text(name, "proj4_params", proj4);
+    }
   }
 }
 
