@@ -114,6 +114,7 @@ These are *unofficially* proposed by Bueler and Aschwanden, for now.
 
 .. list-table:: Desired CF standard names
    :header-rows: 1
+   :widths: 7,2,6
 
    * - Proposed name
      - Canonical units (SI)
