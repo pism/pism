@@ -38,10 +38,11 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 if tags.has('latex'):
     master_doc = 'index_latex'
     exclude_patterns.append('index.rst')
-    exclude_patterns.append('zzz_references.rst')
+    exclude_patterns.append('zzz_references_html.rst')
 else:
     master_doc = 'index'
     exclude_patterns.append('index_latex.rst')
+    exclude_patterns.append('zzz_references_latex.rst')
 
 # General information about the project.
 project = u'PISM, a Parallel Ice Sheet Model'

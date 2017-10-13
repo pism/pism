@@ -64,6 +64,7 @@
 .. _Homebrew: https://brew.sh/
 .. _IDV: http://www.unidata.ucar.edu/software/idv/
 .. _LaTeX: http://www.latex-project.org/
+.. _latexmk: http://personal.psu.edu/jcc8//software/latexmk-jcc/
 .. _MPI: http://www.mcs.anl.gov/research/projects/mpi/
 .. _MacPorts: https://www.macports.org/
 .. _measures-ross: http://nsidc.org/data/NSIDC-0484

@@ -18,6 +18,4 @@ PISM |version| documentation
 
    authorship.rst
 
-.. bibliography:: ../ice-bib.bib
-   :style: unsrt
-
+   zzz_references_latex.rst

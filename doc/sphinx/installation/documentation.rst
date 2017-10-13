@@ -1,7 +1,5 @@
 .. include:: ../global.txt
 
-.. FIXME: This is out of date.
-
 .. _sec-install-documentation:
 
 Rebuilding PISM documentation
@@ -10,21 +8,50 @@ Rebuilding PISM documentation
 You might want to rebuild the documentation from source, as PISM and its
 documentation evolve together. These tools are required:
 
-.. csv-table::
-   :header: Tool, Comment
+.. list--table::
+   :header-rows: 1
 
-   LaTeX_,    needed for rebuilding any of the documentation
-   doxygen_,  required to rebuild the *Browser* from source
-   graphviz_, required to rebuild the *Browser* from source
+   * - Tool
+     - Comment
+   * - Sphinx_
+     - needed for rebuilding this Manual
+   * - ``sphinxcontrib.bibtex``
+     - needed for rebuilding this Manual, as well as the documentation of PISM's Python
+       bindings, below
+   * - LaTeX_
+     - needed for rebuilding the PDF version of this Manual and the source code browser
+   * - ``latexmk``
+     - needed for rebuilding the PDF version of this Manual
+   * - doxygen_
+     - required to rebuild the *Browser*
+   * - graphviz_
+     - required to rebuild the *Browser*
 
-To rebuild PISM documentation, change to the PISM build directory and do
+To install ``sphinxcontrib.bibtex`` see |sphinxcontrib-bibtex-url|.
 
-.. csv-table::
-   :header: Command, Comment
+Manual
+------
 
-   ``make pism_manual``,  "to build the *User’s Manual*, ``pism_manual.pdf``"
-   ``make pism_forcing``, "to build the *PISM’s Climate Forcing Components* document, ``pism_forcing.pdf``"
-   ``make browser``,       to build the *PISM Source Code Browser*.
+Run the following commands to re-build the manual.
+
+.. code-block:: bash
+
+   # Change to the PISM source directory, then
+   cd doc/sphinx
+   make html     # to build the HTML manual
+   make latexpdf # to build the PDF manual
+
+The HTML manual will be in ``doc/sphinx/_build/html``. The PDF manual will be in
+``doc/sphinx/_build/latex``.
+
+Source Code Browser
+-------------------
+
+To rebuild the Source Code Browser, change to the PISM build directory and run
+
+.. code-block:: bash
+
+   make browser
 
 To build documentation on a system without PISM’s prerequisite libraries (such as MPI and
 PETSc), assuming that PISM sources are in ``~/pism-stable``, do the following:
@@ -39,21 +66,13 @@ PETSc), assuming that PISM sources are in ``~/pism-stable``, do the following:
 then commands "``make pism_manual``", "``make pism_forcing``" and others (see above) will
 work as expected.
 
-Building documentation for PISM’s Python bindings and inversion tools
----------------------------------------------------------------------
+Documentation for PISM’s Python bindings and inversion tools
+------------------------------------------------------------
 
-The documentation for PISM’s Python bindings uses the documentation-generation tool
-Sphinx_. The bindings make scripting and interactive PISM possible, but many PISM users
-will not need them. Installing them is required to use PISM for inversion of surface
-velocities for basal shear stress and ice hardness. Building their documentation is
-strongly-recommended before use.
-
-Sphinx_ can be installed using ``apt-get`` or MacPorts_; see the website for more details.
-For example, do
-
-.. code-block:: bash
-
-   sudo apt-get install sphinx-common
+The documentation for PISM’s Python bindings uses Sphinx_. The bindings make scripting and
+interactive PISM possible, but many PISM users will not need them. Installing them is
+required to use PISM for inversion of surface velocities for basal shear stress and ice
+hardness. Building their documentation is strongly-recommended before use.
 
 The bindings documentation also requires the Sphinx extension called
 ``sphinxcontrib.bibtex``, which may come with some Sphinx packages (but not with Debian
@@ -65,7 +84,6 @@ bindings documentation:
    Extension error:
    Could not import extension sphinxcontrib.bibtex (exception: No module named bibtex)
 
-To install it see |sphinxcontrib-bibtex-url|.
 
 Note that if you install Sphinx using MacPorts_, you will install a version that depends
 on your Python version, and its executables will have names that depend on the Python
