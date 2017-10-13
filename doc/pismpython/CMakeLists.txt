@@ -32,9 +32,8 @@ else ()
     api/invert/ssa.rst
     api/invert/ssa_siple.rst
     api/invert/sipletools.rst
+    api/invert/ssa_tao.rst
     )
-
-  list(APPEND RST_FILES api/invert/ssa_tao.rst)
 
   set (sphinx_helpers
     _static/pymunk.js
