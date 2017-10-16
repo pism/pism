@@ -45,7 +45,7 @@ Now remove "``PISM_DO=echo``" and redirect the text output into a file to start 
    :language: bash
    :lines: 3-
 
-This run should take 30 minutes or less.\ [#]_
+This run should take 10 minutes or less.\ [#]_
 
 When this run is finished it produces ``g20km_10ka_hy.nc``.  As before do
 
