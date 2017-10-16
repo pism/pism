@@ -18,4 +18,4 @@ PISM |version| documentation
 
    authorship.rst
 
-   zzz_references.rst
+   zzz_references_html.rst
