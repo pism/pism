@@ -40,7 +40,7 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   # Generate the browser
   add_custom_target (browser
     COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
-    DEPENDS pism_config.md references.md doxyfile
+    DEPENDS references.md doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Create the compressed browser
