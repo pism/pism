@@ -43,11 +43,11 @@ The output file always contains enough data to run an inversion; ``pismi``
 saves to it any variables from the model state and inverse data files
 that were used in the course of the inversion.  Thus:
 
-.. code-block:: bash
+.. code-block:: none
 
-  pismi.py -i model.nc -inv_data inv.nc -o solution.nc [OTHER FLAGS]
+   pismi.py -i model.nc -inv_data inv.nc -o solution.nc [OTHER FLAGS]
   
-  pismi.py -i solution.nc -o solution2.nc [OTHER FLAGS]
+   pismi.py -i solution.nc -o solution2.nc [OTHER FLAGS]
 
 should always result in a second inversion run that terminates immediately
 because it is already at a solution.  The data in :file:`solution.nc` and

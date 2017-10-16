@@ -32,22 +32,22 @@ sys.path.insert(0, os.path.abspath('../site-packages'))
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.graphviz',
               'sphinx.ext.inheritance_diagram',
-              'sphinx.ext.pngmath',
+              'sphinx.ext.imgmath',
               'sphinxcontrib.bibtex']
 
 
 # -- Math output --------------------------------------------------------------
 
 # Tell sphinx where to find our preamble file.
-pngmath_latex_preamble = r"""\input @CMAKE_CURRENT_BINARY_DIR@/pism-sphinx-macros.tex"""
+imgmath_latex_preamble = r"""\input @CMAKE_CURRENT_BINARY_DIR@/pism-sphinx-macros.tex"""
 
 # Small tweak to clear up png output.
-pngmath_dvipng_args = ['-gamma', '1', '-D', '110', '-bg', 'Transparent']
+imgmath_dvipng_args = ['-gamma', '1', '-D', '110', '-bg', 'Transparent']
 
 # This command ensures that the baseline of the images will agree with the
 # baseline of the HTML text.  It requires the preview-latex latex package,
 # which seems to be commonly installed.
-pngmath_use_preview = True
+imgmath_use_preview = True
 
 
 # Add a couple of new rst roles for config variables and NC file variables.
@@ -144,7 +144,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme_path='.'
+html_theme_path=['.']
 html_theme = 'pismdoc'
 
 
