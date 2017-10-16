@@ -12,25 +12,17 @@ if (NOT Pism_SOURCE_DIR)
   message(STATUS "Setting Pism_SOURCE_DIR to ${Pism_SOURCE_DIR}")
 
   add_subdirectory(${Pism_SOURCE_DIR}/site-packages ${CMAKE_BINARY_DIR}/site-packages)
-endif()
 
-list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
+  list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
+endif()
 
 # User's Manual, Climate Forcing, Installation:
 add_subdirectory(sphinx)
 
 if (PDFLATEX_COMPILER)
-
   # Source code browser:
   add_subdirectory (browser EXCLUDE_FROM_ALL)
 
   # PISM's Python bindings docs:
   add_subdirectory (pismpython EXCLUDE_FROM_ALL)
-
-  if (Pism_DOC_DIR)
-    install (FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/latex/pism_manual.pdf"
-      DESTINATION ${Pism_DOC_DIR})
-
-  endif ()                      # if Pism_DOC_DIR
 endif ()                        # if PDFLATEX_COMPILER
