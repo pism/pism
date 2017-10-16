@@ -30,6 +30,8 @@
 .. |pism-docs| replace:: http://www.pism-docs.org
 .. |petsc-download| replace:: http://www.mcs.anl.gov/petsc/download/index.html
 
+.. |pism-browser| replace:: PISM *Source Code Browser*
+
 .. |config-cdl| replace:: ``src/pism_config.cdl``
 .. |config-file| replace:: ``pism_config.nc``
 
@@ -81,6 +83,7 @@
 .. _PnetCDF: http://trac.mcs.anl.gov/projects/parallel-netcdf
 .. _Python: https://www.python.org
 .. _Sphinx: http://www.sphinx-doc.org/en/stable/install.html
+.. _sphinxcontrib.bibtex: http://sphinxcontrib-bibtex.readthedocs.io/en/latest/
 .. _UDUNITS: http://www.unidata.ucar.edu/software/udunits/
 .. _Ubuntu: https://www.ubuntu.com/desktop
 .. _X: https://www.x.org/wiki/
