@@ -29,12 +29,7 @@ Homepage
 Download and Install
 --------------------
 
-See `instructions for getting the latest release <pism-stable_>`_.
-
-Generating Documentation
-------------------------
-
-See the `INSTALL.rst <INSTALL.rst>`_ file in this directory.
+See the `Installing PISM <pism-installation_>`_ on ``pism-docs.org``.
 
 Contributing
 ------------
@@ -48,6 +43,7 @@ Want to contribute? Great! See `Committing to PISM <pism-contribute_>`_.
 .. _pism-docs: http://www.pism-docs.org/
 .. _pism-stable: http://www.pism-docs.org/wiki/doku.php?id=stable_version
 .. _pism-contribute: http://www.pism-docs.org/wiki/doku.php?id=committing
+.. _pism-installation: http://pism-docs.org/sphinx/installation/
 .. _mpi: http://www.mcs.anl.gov/research/projects/mpi/
 .. _petsc: http://www.mcs.anl.gov/petsc/
 .. _cf: http://cf-pcmdi.llnl.gov/
