@@ -24,15 +24,15 @@ and inverse library.
 
 ``SWIG`` (http://www.swig.org) is a software tool for automatically generating wrappers for C/C++ code. It can be be installed via
 
-.. code-block:: bash
+.. code-block:: none
 
-  sudo apt-get install swig
+   sudo apt-get install swig
 
 on Linux or 
 
-.. code-block:: bash
+.. code-block:: none
 
-  sudo port install swig
+   sudo port install swig
 
 on Mac OS X.
 
