@@ -243,7 +243,7 @@ the SeaRISE 1km data set) differs from that in the whole ice sheet model state.
 We will get first an equilibrium 5 km regional model, and then do a century run of a 2 km
 model based on that. While determining "equilibrium" requires a decision, of course, a
 standard satisfied here is that the ice volume in the region changes by less than 0.1
-percent in the final 100 model years. See ``volume_glacierized`` in ``ts_spunjako_0.nc``
+percent in the final 100 model years. See ``ice_volume_glacierized`` in ``ts_spunjako_0.nc``
 below.
 
 The 5 km grid [#]_ uses ``-Mx 125 -My 86``. So now we do a basic run using 4 MPI

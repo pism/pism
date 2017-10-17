@@ -23,17 +23,17 @@ We see that ``ex_g20km_10ka.nc`` contains growing "movies" of the fields chosen 
 
 The time-series file ``ts_g20km_10ka.nc`` is also growing. It contains spatially-averaged
 "scalar" diagnostics like the total ice volume or the ice-sheet-wide maximum velocity
-(variable ``volume_glacierized`` and ``max_hor_vel``, respectively). It can be viewed by
+(variable ``ice_volume_glacierized`` and ``max_hor_vel``, respectively). It can be viewed by
 running
 
 .. code-block:: none
 
    ncview ts_g20km_10ka.nc
 
-The growing time series for ``volume_glacierized`` is shown in :numref:`fig-growing`
+The growing time series for ``ice_volume_glacierized`` is shown in :numref:`fig-growing`
 (right). Recall that our intention was to generate a minimal model of the Greenland ice
 sheet in approximate steady-state with a steady (constant-in-time) climate. The measurable
-steadiness of the ``volume_glacierized`` time series is a possible standard for steady
+steadiness of the ``ice_volume_glacierized`` time series is a possible standard for steady
 state (see :cite:`EISMINT00`, for exampe).
 
 .. figure:: figures/growing-thk-ivol-g20km.png
@@ -43,7 +43,7 @@ state (see :cite:`EISMINT00`, for exampe).
 
    :Left: :var:`thk`, the ice sheet thickness, a space-dependent field, from file
           ``ex_g20km_10ka.nc``.
-   :Right: :var:`volume_glacierized`, the total ice sheet volume time-series, from file
+   :Right: :var:`ice_volume_glacierized`, the total ice sheet volume time-series, from file
            ``ts_g20km_10ka.nc``.
 
 At the end of the run the output file ``g20km_10ka.nc`` is generated.

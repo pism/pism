@@ -92,19 +92,19 @@ differences, but of course these runs only differ in the applied climate and run
 and not in resolution or ice dynamics parameters.
 
 To see the difference between runs more clearly, :numref:`fig-ivolconstpaleo` compares the
-time-series variable ``volume_glacierized``. We see the effect of option ``-regrid_file
+time-series variable ``ice_volume_glacierized``. We see the effect of option ``-regrid_file
 g20km_10ka_hy.nc -regrid_vars ...,thk,...``, which implies that the paleo-climate run
 starts with the ice geometry from the end of the constant-climate run.
 
 .. figure:: figures/ivol-const-paleo.png
    :name: fig-ivolconstpaleo
 
-   Time series of modeled ice sheet volume ``volume_glacierized`` from constant-climate
+   Time series of modeled ice sheet volume ``ice_volume_glacierized`` from constant-climate
    (blue; ``ts_g20km_10ka_hy.nc``) and paleo-climate (green; ``ts_g20km_25ka_paleo.nc``)
    spinup runs. Note that the paleo-climate run started with the ice geometry at the end
    of the constant-climate run.
 
-Another time-series comparison, of the variable ``volume_glacierized_temperate``, the
+Another time-series comparison, of the variable ``ice_volume_glacierized_temperate``, the
 total volume of temperate (at `0^\circ C`) ice, appears in
 :numref:`fig-ivoltempconstpaleo`. The paleo-climate run shows the cold period from
 `\approx -25` ka to `\approx -12` ka. Both constant-climate and paleo-climate runs then
@@ -118,7 +118,7 @@ ice dynamics.
 .. figure:: figures/ivoltemp-const-paleo.png
    :name: fig-ivoltempconstpaleo
 
-   Time series of temperate ice volume ``volume_glacierized_temperate`` from
+   Time series of temperate ice volume ``ice_volume_glacierized_temperate`` from
    constant-climate (blue; ``ts_g20km_10ka_hy.nc``) and paleo-climate (green;
    ``ts_g20km_25ka_paleo.nc``) spinup runs. The cold of the last ice age affects the
    fraction of temperate ice. Note different volume scale compared to that in

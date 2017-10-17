@@ -74,7 +74,7 @@ and ``-sia_e 1``.
 .. figure:: figures/ivol-param.png
    :name: fig-ivolparamstudy
 
-   Time series of ice volume ``volume_glacierized`` from nine runs in our parameter study
+   Time series of ice volume ``ice_volume_glacierized`` from nine runs in our parameter study
    example, with parameter choices `(q,e)` given.
 
 We have not yet run PISM, but only asked one script to create nine others. We now have the

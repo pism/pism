@@ -123,7 +123,7 @@ an obvious modification of the run in section :ref:`sec-ssarun`.
 .. figure:: figures/ivol-gridseq.png
    :name: fig-ivolgridseq
 
-   Time series of ice volume ``volume_glacierized`` from the three runs in our grid
+   Time series of ice volume ``ice_volume_glacierized`` from the three runs in our grid
    sequencing example: 20 km for 10 ka = ``ts_g20km_10ka_hy.nc``, 10 km for 2 ka =
    ``ts_g10km_gridseq.nc``, and 5 km for 200 a = ``ts_g5km_gridseq.nc``.
 

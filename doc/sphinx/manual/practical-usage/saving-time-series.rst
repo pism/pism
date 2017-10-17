@@ -11,7 +11,7 @@ combination of the options ``-ts_file``, ``-ts_times``, and ``-ts_vars``. For ex
 .. code-block:: none
 
    pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
-         -ts_times 0:1:1e4 -ts_vars volume_glacierized,area_glacierized_grounded
+         -ts_times 0:1:1e4 -ts_vars ice_volume_glacierized,ice_area_glacierized_grounded
 
 
 will run for 10000 years, saving total ice volume and grounded ice area to
@@ -69,10 +69,10 @@ several scalar diagnostics:
 - PISM reports ice volume, ice mass, and several other quantities for "glacierized" areas.
   These quantities do not include contributions from areas where the ice thickness is
   equal to or below the value of the configuration parameter
-  ``output.ice_free_thickness_standard`` (in meters). Corresponding "nonglacierized"
-  quantities *do* include areas with a thin, "seasonal" ice cover.
+  ``output.ice_free_thickness_standard`` (in meters). Corresponding quantities without the
+  suffix *do* include areas with a thin, "seasonal" ice cover.
 
-- The ``sub_shelf_ice_flux`` may be non-zero even if ``area_glacierized_shelf`` (floating
+- The ``sub_shelf_ice_flux`` may be non-zero even if ``ice_area_glacierized_shelf`` (floating
   ice area) is zero. This is due to the fact that during time-stepping fluxes are computed
   before calving is applied, and the ice area is computed *after* calving. Hence ice that
   is calved off experiences top-surface and basal fluxes, but does not contribute to the
@@ -81,16 +81,16 @@ several scalar diagnostics:
   post-processing. [#]_
 
 - Ice volume and area are computed and then split among floating and grounded portions:
-  ``volume_glacierized`` :math:`\mapsto` (``volume_glacierized_shelf``,
-  ``volume_glacierized_grounded``) while ``area_glacierized`` :math:`\mapsto`
-  (``area_glacierized_shelf``, ``area_glacierized_grounded``). The volumes have units
+  ``ice_volume_glacierized`` :math:`\mapsto` (``ice_volume_glacierized_shelf``,
+  ``ice_volume_glacierized_grounded``) while ``ice_area_glacierized`` :math:`\mapsto`
+  (``ice_area_glacierized_shelf``, ``ice_area_glacierized_grounded``). The volumes have units
   :math:`m^3` and the areas have units :math:`m^2`.
 
 - The thermodynamic state of the ice sheet can be assessed, in part, by the amount of cold
-  or temperate ("``temp``") ice. Thus there is another splitting: ``volume_glacierized``
-  :math:`\mapsto` (``volume_glacierized_cold``, ``volume_glacierized_temperate``) and
-  ``area_glacierized`` :math:`\mapsto`
-  (``area_glacierized_cold_base``, ``area_glacierized_temperate_base``).
+  or temperate ("``temp``") ice. Thus there is another splitting: ``ice_volume_glacierized``
+  :math:`\mapsto` (``ice_volume_glacierized_cold``, ``ice_volume_glacierized_temperate``) and
+  ``ice_area_glacierized`` :math:`\mapsto`
+  (``ice_area_glacierized_cold_base``, ``ice_area_glacierized_temperate_base``).
 
 - If a PISM input file contains the ``proj4`` global attribute with a PROJ.4 string
   defining the projection then PISM computes corrected cell areas using this information,

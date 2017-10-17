@@ -105,19 +105,19 @@ protected:
 };
 
 //! \brief Computes surface values of ice enthalpy.
-class EnthalpySurface : public Diag<IceModel>
+class IceEnthalpySurface : public Diag<IceModel>
 {
 public:
-  EnthalpySurface(const IceModel *m);
+  IceEnthalpySurface(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
 
 //! \brief Computes enthalpy at the base of the ice.
-class EnthalpyBasal : public Diag<IceModel>
+class IceEnthalpyBasal : public Diag<IceModel>
 {
 public:
-  EnthalpyBasal(const IceModel *m);
+  IceEnthalpyBasal(const IceModel *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
@@ -166,214 +166,6 @@ protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
 
-//! \brief Computes the total ice volume in glacierized areas.
-class VolumeGlacierized : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  VolumeGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total ice volume.
-class VolumeNonGlacierized : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  VolumeNonGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total ice volume, which is relevant for sea-level
-class SeaLevelVolume : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  SeaLevelVolume(const IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the rate of change of the total ice volume in glacierized areas.
-class VolumeRateOfChangeGlacierized : public TSDiag<TSRateDiagnostic, IceModel>
-{
-public:
-  VolumeRateOfChangeGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the rate of change of the total ice volume.
-class VolumeRateOfChangeNonGlacierized : public TSDiag<TSRateDiagnostic, IceModel>
-{
-public:
-  VolumeRateOfChangeNonGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total ice area.
-class AreaGlacierized : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  AreaGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total ice mass in glacierized areas.
-class MassGlacierized : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  MassGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total ice mass.
-class MassNonGlacierized : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  MassNonGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total mass of the ice not displacing sea water.
-class MassNotDisplacingSeaWater : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  MassNotDisplacingSeaWater(const IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the rate of change of the total ice mass in glacierized areas.
-class MassRateOfChangeGlacierized : public TSDiag<TSRateDiagnostic, IceModel>
-{
-public:
-  MassRateOfChangeGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the rate of change of the total ice mass.
-class MassRateOfChangeNonGlacierized : public TSDiag<TSRateDiagnostic, IceModel>
-{
-public:
-  MassRateOfChangeNonGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total volume of the temperate ice in glacierized areas.
-class VolumeGlacierizedTemperate : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  VolumeGlacierizedTemperate(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total volume of the temperate ice.
-class VolumeNonGlacierizedTemperate : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  VolumeNonGlacierizedTemperate(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total volume of the cold ice in glacierized areas.
-class VolumeGlacierizedCold : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  VolumeGlacierizedCold(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total volume of the cold ice.
-class VolumeNonGlacierizedCold : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  VolumeNonGlacierizedCold(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total area of the temperate ice.
-class AreaGlacierizedTemperateBase : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  AreaGlacierizedTemperateBase(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total area of the cold ice.
-class AreaGlacierizedColdBase : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  AreaGlacierizedColdBase(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total ice enthalpy in glacierized areas.
-class EnthalpyGlacierized : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  EnthalpyGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total ice enthalpy.
-class EnthalpyNonGlacierized : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  EnthalpyNonGlacierized(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total grounded ice area.
-class AreaGlacierizedGrounded : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  AreaGlacierizedGrounded(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total floating ice area.
-class AreaGlacierizedShelf : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  AreaGlacierizedShelf(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total grounded ice volume.
-class VolumeGlacierizedGrounded : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  VolumeGlacierizedGrounded(IceModel *m);
-  double compute();
-};
-
-//! \brief Computes the total floating ice volume.
-class VolumeGlacierizedShelf : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  VolumeGlacierizedShelf(IceModel *m);
-  double compute();
-};
-
-//! \brief Reports the mass continuity time step.
-class TimeStepLength : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  TimeStepLength(const IceModel *m);
-  double compute();
-};
-
-//! \brief Reports maximum diffusivity.
-class MaxDiffusivity : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  MaxDiffusivity(const IceModel *m);
-  double compute();
-};
-
-//! \brief Reports the maximum horizontal absolute velocity component over the grid.
-class MaxHorizontalVelocity : public TSDiag<TSSnapshotDiagnostic, IceModel>
-{
-public:
-  MaxHorizontalVelocity(const IceModel *m);
-  double compute();
-};
-
 //! \brief Computes the 2D height above flotation.
 class HeightAboveFloatation : public Diag<IceModel>
 {
@@ -403,19 +195,19 @@ protected:
 };
 
 /*! @brief Ice hardness computed using the SIA flow law. */
-class Hardness : public Diag<IceModel>
+class IceHardness : public Diag<IceModel>
 {
 public:
-  Hardness(const IceModel *m);
+  IceHardness(const IceModel *m);
 protected:
   IceModelVec::Ptr compute_impl() const;
 };
 
 /*! @brief Effective viscosity of ice (3D). */
-class Viscosity : public Diag<IceModel>
+class IceViscosity : public Diag<IceModel>
 {
 public:
-  Viscosity(IceModel *m);
+  IceViscosity(IceModel *m);
 protected:
   IceModelVec::Ptr compute_impl() const;
 };
@@ -425,8 +217,8 @@ class LatLonBounds : public Diag<IceModel>
 {
 public:
   LatLonBounds(const IceModel *m,
-                          const std::string &var_name,
-                          const std::string &proj_string);
+               const std::string &var_name,
+               const std::string &proj_string);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 protected:
