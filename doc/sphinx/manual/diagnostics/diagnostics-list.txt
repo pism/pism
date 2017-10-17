@@ -805,31 +805,6 @@ Spatially-variable fields
 Scalar time-series
 ------------------
 
-#. ``area_glacierized``
-
-   :Units: m2
-   :Description: glacierized area
-
-#. ``area_glacierized_cold_base``
-
-   :Units: m2
-   :Description: glacierized area where basal ice is cold
-
-#. ``area_glacierized_floating``
-
-   :Units: m2
-   :Description: area of ice shelves in glacierized areas
-
-#. ``area_glacierized_grounded``
-
-   :Units: m2
-   :Description: area of grounded ice in glacierized areas
-
-#. ``area_glacierized_temperate_base``
-
-   :Units: m2
-   :Description: glacierized area where basal ice is temperate
-
 #. ``basal_mass_flux_floating``
 
    :Units: kg year-1
@@ -846,16 +821,6 @@ Scalar time-series
 
    :Units: year
    :Description: mass continuity time step
-
-#. ``enthalpy_glacierized``
-
-   :Units: J
-   :Description: enthalpy of the ice in glacierized areas
-
-#. ``enthalpy_nonglacierized``
-
-   :Units: J
-   :Description: enthalpy of the ice, including seasonal cover
 
 #. ``hydro_ice_free_land_loss``
 
@@ -877,6 +842,91 @@ Scalar time-series
    :Units: kg s-1
    :Description: rate of liquid water loss from subglacial hydrology into cells with mask as ocean
 
+#. ``ice_area_glacierized``
+
+   :Units: m2
+   :Description: glacierized area
+
+#. ``ice_area_glacierized_cold_base``
+
+   :Units: m2
+   :Description: glacierized area where basal ice is cold
+
+#. ``ice_area_glacierized_floating``
+
+   :Units: m2
+   :Description: area of ice shelves in glacierized areas
+
+#. ``ice_area_glacierized_grounded``
+
+   :Units: m2
+   :Description: area of grounded ice in glacierized areas
+
+#. ``ice_area_glacierized_temperate_base``
+
+   :Units: m2
+   :Description: glacierized area where basal ice is temperate
+
+#. ``ice_enthalpy``
+
+   :Units: J
+   :Description: enthalpy of the ice, including seasonal cover
+
+#. ``ice_enthalpy_glacierized``
+
+   :Units: J
+   :Description: enthalpy of the ice in glacierized areas
+
+#. ``ice_mass``
+
+   :Units: kg
+   :Description: mass of the ice, including seasonal cover
+
+#. ``ice_mass_glacierized``
+
+   :Units: kg
+   :Description: mass of the ice in glacierized areas
+
+#. ``ice_volume``
+
+   :Units: m3
+   :Description: volume of the ice, including seasonal cover
+
+#. ``ice_volume_cold``
+
+   :Units: m3
+   :Description: volume of cold ice, including seasonal cover
+
+#. ``ice_volume_glacierized``
+
+   :Units: m3
+   :Description: volume of the ice in glacierized areas
+
+#. ``ice_volume_glacierized_cold``
+
+   :Units: m3
+   :Description: volume of cold ice in glacierized areas
+
+#. ``ice_volume_glacierized_floating``
+
+   :Units: m3
+   :Description: volume of ice shelves in glacierized areas
+
+#. ``ice_volume_glacierized_grounded``
+
+   :Units: m3
+   :Description: volume of grounded ice in glacierized areas
+
+#. ``ice_volume_glacierized_temperate``
+
+   :Units: m3
+   :Description: volume of temperate ice in glacierized areas
+
+#. ``ice_volume_temperate``
+
+   :Units: m3
+   :Description: volume of temperate ice, including seasonal cover
+
 #. ``limnsw``
 
    :Units: kg
@@ -887,26 +937,6 @@ Scalar time-series
    :Units: m3 / year
    :Description: rate of ice loss due to liquefaction, averaged over the reporting interval
    :Comment: positive means ice loss
-
-#. ``mass_glacierized``
-
-   :Units: kg
-   :Description: mass of the ice in glacierized areas
-
-#. ``mass_nonglacierized``
-
-   :Units: kg
-   :Description: mass of the ice, including seasonal cover
-
-#. ``mass_rate_of_change_glacierized``
-
-   :Units: kg year-1
-   :Description: rate of change of the mass of ice in glacierized areas
-
-#. ``mass_rate_of_change_nonglacierized``
-
-   :Units: kg year-1
-   :Description: rate of change of the mass of ice, including seasonal cover
 
 #. ``max_diffusivity``
 
@@ -957,52 +987,17 @@ Scalar time-series
    :Description: total over ice domain of top surface ice mass flux
    :Comment: positive means ice gain
 
-#. ``volume_glacierized``
+#. ``tendency_of_ice_mass_glacierized``
 
-   :Units: m3
-   :Description: volume of the ice in glacierized areas
+   :Units: kg year-1
+   :Description: rate of change of the ice mass in glacierized areas
 
-#. ``volume_glacierized_cold``
-
-   :Units: m3
-   :Description: volume of cold ice in glacierized areas
-
-#. ``volume_glacierized_floating``
-
-   :Units: m3
-   :Description: volume of ice shelves in glacierized areas
-
-#. ``volume_glacierized_grounded``
-
-   :Units: m3
-   :Description: volume of grounded ice in glacierized areas
-
-#. ``volume_glacierized_temperate``
-
-   :Units: m3
-   :Description: volume of temperate ice in glacierized areas
-
-#. ``volume_nonglacierized``
-
-   :Units: m3
-   :Description: volume of the ice, including seasonal cover
-
-#. ``volume_nonglacierized_cold``
-
-   :Units: m3
-   :Description: volume of cold ice, including seasonal cover
-
-#. ``volume_nonglacierized_temperate``
-
-   :Units: m3
-   :Description: volume of temperate ice, including seasonal cover
-
-#. ``volume_rate_of_change_glacierized``
-
-   :Units: m3 year-1
-   :Description: rate of change of the ice volume in glacierized areas
-
-#. ``volume_rate_of_change_nonglacierized``
+#. ``tendency_of_ice_volume``
 
    :Units: m3 year-1
    :Description: rate of change of the ice volume, including seasonal cover
+
+#. ``tendency_of_ice_volume_glacierized``
+
+   :Units: m3 year-1
+   :Description: rate of change of the ice volume in glacierized areas
