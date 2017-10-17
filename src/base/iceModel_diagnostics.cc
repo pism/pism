@@ -871,7 +871,7 @@ class IceVolumeRateOfChangeGlacierized : public TSDiag<TSRateDiagnostic, IceMode
 {
 public:
   IceVolumeRateOfChangeGlacierized(IceModel *m)
-    : TSDiag<TSRateDiagnostic, IceModel>(m, "ice_volume_rate_of_change_glacierized") {
+    : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_volume_glacierized") {
 
     m_ts.variable().set_string("units", "m3 s-1");
     m_ts.variable().set_string("glaciological_units", "m3 year-1");
@@ -888,7 +888,7 @@ class IceVolumeRateOfChange : public TSDiag<TSRateDiagnostic, IceModel>
 {
 public:
   IceVolumeRateOfChange(IceModel *m)
-    : TSDiag<TSRateDiagnostic, IceModel>(m, "ice_volume_rate_of_change") {
+    : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_volume") {
 
     m_ts.variable().set_string("units", "m3 s-1");
     m_ts.variable().set_string("glaciological_units", "m3 year-1");
@@ -985,7 +985,7 @@ class IceMassRateOfChangeGlacierized : public TSDiag<TSRateDiagnostic, IceModel>
 {
 public:
   IceMassRateOfChangeGlacierized(IceModel *m)
-    : TSDiag<TSRateDiagnostic, IceModel>(m, "ice_mass_rate_of_change_glacierized") {
+    : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass_glacierized") {
 
     m_ts.variable().set_string("units", "kg s-1");
     m_ts.variable().set_string("glaciological_units", "kg year-1");
@@ -1044,7 +1044,7 @@ class IceMassRateOfChange : public TSDiag<TSRateDiagnostic, IceModel>
 {
 public:
   IceMassRateOfChange(IceModel *m)
-    : TSDiag<TSRateDiagnostic, IceModel>(m, "ice_mass_rate_of_change") {
+    : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass") {
 
     m_ts.variable().set_string("units", "kg s-1");
     m_ts.variable().set_string("glaciological_units", "kg year-1");
@@ -2336,23 +2336,23 @@ void IceModel::init_diagnostics() {
     {"ice_area_glacierized_floating",       s(new scalar::IceAreaGlacierizedShelf(this))},
     {"ice_area_glacierized_temperate_base", s(new scalar::IceAreaGlacierizedTemperateBase(this))},
     // mass
-    {"ice_mass_glacierized",                s(new scalar::IceMassGlacierized(this))},
-    {"ice_mass",                            s(new scalar::IceMass(this))},
-    {"ice_mass_rate_of_change_glacierized", s(new scalar::IceMassRateOfChangeGlacierized(this))},
-    {"ice_mass_rate_of_change",             s(new scalar::IceMassRateOfChange(this))},
-    {"limnsw",                              s(new scalar::IceMassNotDisplacingSeaWater(this))},
+    {"ice_mass_glacierized",             s(new scalar::IceMassGlacierized(this))},
+    {"ice_mass",                         s(new scalar::IceMass(this))},
+    {"tendency_of_ice_mass_glacierized", s(new scalar::IceMassRateOfChangeGlacierized(this))},
+    {"tendency_of_ice_mass",             s(new scalar::IceMassRateOfChange(this))},
+    {"limnsw",                           s(new scalar::IceMassNotDisplacingSeaWater(this))},
     // volume
-    {"slvol",                                 s(new scalar::SeaLevelVolume(this))},
-    {"ice_volume_glacierized",                s(new scalar::IceVolumeGlacierized(this))},
-    {"ice_volume_glacierized_cold",           s(new scalar::IceVolumeGlacierizedCold(this))},
-    {"ice_volume_glacierized_grounded",       s(new scalar::IceVolumeGlacierizedGrounded(this))},
-    {"ice_volume_glacierized_floating",       s(new scalar::IceVolumeGlacierizedShelf(this))},
-    {"ice_volume_glacierized_temperate",      s(new scalar::IceVolumeGlacierizedTemperate(this))},
-    {"ice_volume",                            s(new scalar::IceVolume(this))},
-    {"ice_volume_cold",                       s(new scalar::IceVolumeCold(this))},
-    {"ice_volume_temperate",                  s(new scalar::IceVolumeTemperate(this))},
-    {"ice_volume_rate_of_change_glacierized", s(new scalar::IceVolumeRateOfChangeGlacierized(this))},
-    {"ice_volume_rate_of_change",             s(new scalar::IceVolumeRateOfChange(this))},
+    {"slvol",                              s(new scalar::SeaLevelVolume(this))},
+    {"ice_volume_glacierized",             s(new scalar::IceVolumeGlacierized(this))},
+    {"ice_volume_glacierized_cold",        s(new scalar::IceVolumeGlacierizedCold(this))},
+    {"ice_volume_glacierized_grounded",    s(new scalar::IceVolumeGlacierizedGrounded(this))},
+    {"ice_volume_glacierized_floating",    s(new scalar::IceVolumeGlacierizedShelf(this))},
+    {"ice_volume_glacierized_temperate",   s(new scalar::IceVolumeGlacierizedTemperate(this))},
+    {"ice_volume",                         s(new scalar::IceVolume(this))},
+    {"ice_volume_cold",                    s(new scalar::IceVolumeCold(this))},
+    {"ice_volume_temperate",               s(new scalar::IceVolumeTemperate(this))},
+    {"tendency_of_ice_volume_glacierized", s(new scalar::IceVolumeRateOfChangeGlacierized(this))},
+    {"tendency_of_ice_volume",             s(new scalar::IceVolumeRateOfChange(this))},
     // energy
     {"ice_enthalpy_glacierized", s(new scalar::IceEnthalpyGlacierized(this))},
     {"ice_enthalpy",         s(new scalar::IceEnthalpy(this))},
