@@ -25,7 +25,7 @@
 #include "base/util/Proj.hh"
 #endif
 
-#if (PISM_USE_JANSSON==1)
+#ifdef PISM_USE_JANSSON
 #include <jansson.h>
 #endif
 
@@ -199,7 +199,7 @@ std::string version() {
   result += buffer;
 #endif
 
-#if (PISM_USE_JANSSON==1)
+#ifdef PISM_USE_JANSSON
   snprintf(buffer, sizeof(buffer), "Jansson %s.\n", JANSSON_VERSION);
   result += buffer;
 #endif
