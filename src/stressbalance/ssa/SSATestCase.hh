@@ -23,7 +23,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/basalstrength/basal_resistance.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/geometry/Geometry.hh"

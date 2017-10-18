@@ -20,7 +20,7 @@
 #ifndef _SSAFD_DIAGNOSTIC_H_
 #define _SSAFD_DIAGNOSTIC_H_
 
-#include "pism/util/PISMDiagnostic.hh"
+#include "pism/util/Diagnostic.hh"
 
 namespace pism {
 namespace stressbalance {

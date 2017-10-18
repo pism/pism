@@ -35,17 +35,17 @@
 
 #include "util/pism_utilities.hh"
 
-#include "util/PISMUnits.hh"
+#include "util/Units.hh"
 #include "pism_python.hh"
 
 #include "geometry/grounded_cell_fraction.hh"
 #include "util/Mask.hh"
 #include "basalstrength/basal_resistance.hh"
 #include "util/EnthalpyConverter.hh"
-#include "basalstrength/PISMMohrCoulombYieldStress.hh"
+#include "basalstrength/MohrCoulombYieldStress.hh"
 #include "util/error_handling.hh"
-#include "util/PISMDiagnostic.hh"
-#include "util/PISMConfig.hh"
+#include "util/Diagnostic.hh"
+#include "util/Config.hh"
 
 #ifdef PISM_USE_JANSSON
 #include "util/ConfigJSON.hh"
@@ -61,7 +61,7 @@
 #include "energy/bootstrapping.hh"
 #include "util/node_types.hh"
 
-#include "util/PISMTime.hh"
+#include "util/Time.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -190,7 +190,7 @@
 %shared_ptr(pism::units::System);
 %feature("valuewrapper") pism::units::System;
 %feature("valuewrapper") pism::units::Unit;
-%include "util/PISMUnits.hh"
+%include "util/Units.hh"
 
 %include pism_DM.i
 %include pism_Vec.i
@@ -199,8 +199,8 @@
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
 %shared_ptr(pism::DefaultConfig);
-%include "util/PISMConfigInterface.hh"
-%include "util/PISMConfig.hh"
+%include "util/ConfigInterface.hh"
+%include "util/Config.hh"
 
 #ifdef PISM_USE_JANSSON
 %shared_ptr(pism::ConfigJSON);
@@ -213,7 +213,7 @@
 %include "util/EnthalpyConverter.hh"
 
 %shared_ptr(pism::Time);
-%include "util/PISMTime.hh"
+%include "util/Time.hh"
 
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);
@@ -238,13 +238,13 @@
 
 
 %shared_ptr(pism::Diagnostic)
-%include "util/PISMDiagnostic.hh"
+%include "util/Diagnostic.hh"
 %include "util/MaxTimestep.hh"
 %include "stressbalance/timestepping.hh"
 
 %shared_ptr(pism::Component)
 %shared_ptr(pism::Component_TS)
-%include "util/PISMComponent.hh"
+%include "util/Component.hh"
 
 %include "basalstrength/basal_resistance.hh"
 
@@ -266,8 +266,8 @@
 %shared_ptr(pism::YieldStress)
 %shared_ptr(pism::ConstantYieldStress)
 %shared_ptr(pism::MohrCoulombYieldStress)
-%include "basalstrength/PISMYieldStress.hh"
-%include "basalstrength/PISMMohrCoulombYieldStress.hh"
+%include "basalstrength/YieldStress.hh"
+%include "basalstrength/MohrCoulombYieldStress.hh"
 
 %include geometry.i
 

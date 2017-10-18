@@ -20,7 +20,7 @@
 #ifndef _PSVERIFICATION_H_
 #define _PSVERIFICATION_H_
 
-#include "pism/coupler/surface/PSFormulas.hh"
+#include "pism/coupler/surface/Formulas.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
 namespace pism {

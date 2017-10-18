@@ -21,7 +21,7 @@
 
 #include <mpi.h>
 
-#include "pism/util/PISMUnits.hh"
+#include "pism/util/Units.hh"
 
 namespace pism {
 

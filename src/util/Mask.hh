@@ -21,7 +21,7 @@
 
 // the following three includes are needed here because of inlined code
 #include "iceModelVec.hh"
-#include "PISMConfigInterface.hh"
+#include "ConfigInterface.hh"
 #include "error_handling.hh"
 
 namespace pism {

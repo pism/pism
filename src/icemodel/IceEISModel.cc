@@ -21,16 +21,16 @@
 #include "IceEISModel.hh"
 
 #include "pism/util/Context.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 
-#include "pism/coupler/ocean/POConstant.hh"
-#include "pism/coupler/ocean/POInitialization.hh"
+#include "pism/coupler/ocean/Constant.hh"
+#include "pism/coupler/ocean/Initialization.hh"
 
-#include "pism/coupler/surface/PS_EISMINTII.hh"
-#include "pism/coupler/surface/PSInitialization.hh"
+#include "pism/coupler/surface/EISMINTII.hh"
+#include "pism/coupler/surface/Initialization.hh"
 
-#include "pism/earth/PISMBedDef.hh"
+#include "pism/earth/BedDef.hh"
 
 namespace pism {
 

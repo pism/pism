@@ -21,7 +21,7 @@
 #define GEOMETRYEVOLUTION_H
 
 #include "Geometry.hh"
-#include "pism/util/PISMComponent.hh"
+#include "pism/util/Component.hh"
 
 namespace pism {
 

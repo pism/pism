@@ -23,7 +23,7 @@
 #include <string>
 #include <mpi.h>
 
-#include "pism/util/PISMUnits.hh"
+#include "pism/util/Units.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {

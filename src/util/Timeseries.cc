@@ -23,8 +23,8 @@
 #include "pism_const.hh"
 #include "IceGrid.hh"
 #include "pism/util/io/PIO.hh"
-#include "PISMTime.hh"
-#include "PISMConfigInterface.hh"
+#include "Time.hh"
+#include "ConfigInterface.hh"
 
 #include "error_handling.hh"
 #include "io/io_helpers.hh"

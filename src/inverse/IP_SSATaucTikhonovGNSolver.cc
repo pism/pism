@@ -19,7 +19,7 @@
 #include "IP_SSATaucTikhonovGNSolver.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 
 namespace pism {

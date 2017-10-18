@@ -28,16 +28,16 @@ using std::shared_ptr;
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_const.hh"
 #include "pism/util/VariableMetadata.hh"
-#include "pism/util/PISMConfigInterface.hh"
-#include "pism/util/PISMTime.hh"
-#include "PISMNC3File.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Time.hh"
+#include "NC3File.hh"
 
 #if (PISM_USE_PARALLEL_NETCDF4==1)
-#include "PISMNC4_Par.hh"
+#include "NC4_Par.hh"
 #endif
 
 #if (PISM_USE_PNETCDF==1)
-#include "PISMPNCFile.hh"
+#include "PNCFile.hh"
 #endif
 
 #include "pism/util/error_handling.hh"

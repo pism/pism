@@ -20,7 +20,7 @@
 #ifndef _PISMOCEANKILL_H_
 #define _PISMOCEANKILL_H_
 
-#include "pism/util/PISMComponent.hh"
+#include "pism/util/Component.hh"
 #include "pism/util/iceModelVec.hh"
 
 namespace pism {

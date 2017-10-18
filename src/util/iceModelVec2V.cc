@@ -25,7 +25,7 @@ using std::dynamic_pointer_cast;
 
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
-#include "PISMConfigInterface.hh"
+#include "ConfigInterface.hh"
 
 namespace pism {
 

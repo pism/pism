@@ -24,14 +24,14 @@ static char help[] =
 
 #include "pism/icemodel/IceModel.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/PISMConfig.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/icemodel/IceEISModel.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/PISMTime.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/io/PIO.hh"
 

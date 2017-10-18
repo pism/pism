@@ -19,7 +19,7 @@
 
 #include "RegionalDefaultYieldStress.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 
 namespace pism {
 

@@ -25,19 +25,19 @@
 #include "IceModel.hh"
 
 #include "pism/util/IceGrid.hh"
-#include "pism/util/PISMConfigInterface.hh"
-#include "pism/util/PISMDiagnostic.hh"
-#include "pism/util/PISMTime.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Diagnostic.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/pism_options.hh"
 
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
-#include "pism/util/PISMComponent.hh"
+#include "pism/util/Component.hh"
 #include "pism/energy/utilities.hh"
 
 namespace pism {

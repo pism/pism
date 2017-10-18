@@ -20,7 +20,7 @@
 #ifndef ENERGYMODEL_H
 #define ENERGYMODEL_H
 
-#include "pism/util/PISMComponent.hh"
+#include "pism/util/Component.hh"
 
 #include "pism/util/iceModelVec.hh"
 

@@ -21,7 +21,7 @@
 #include "pism_options.hh"
 #include "pism_utilities.hh"
 #include "VariableMetadata.hh"
-#include "PISMConfigInterface.hh"
+#include "ConfigInterface.hh"
 
 #include "error_handling.hh"
 #include "Logger.hh"

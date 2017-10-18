@@ -18,7 +18,7 @@
 
 #include "enthSystem.hh"
 #include <gsl/gsl_math.h>
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/EnthalpyConverter.hh"
 

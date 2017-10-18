@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 
 #include <string>
 
-#include "PISMUnits.hh"
+#include "Units.hh"
 #include "VariableMetadata.hh"
 
 namespace pism {

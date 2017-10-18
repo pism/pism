@@ -20,7 +20,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/pism_const.hh"
 #include "pism/util/pism_utilities.hh"

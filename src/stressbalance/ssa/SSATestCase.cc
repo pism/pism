@@ -20,12 +20,12 @@
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/PISMTime.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
 namespace stressbalance {

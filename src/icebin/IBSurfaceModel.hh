@@ -20,8 +20,8 @@
 #define _IBSURFACEMODEL_H_
 
 #include "pism/util/iceModelVec.hh"
-#include "pism/coupler/PISMAtmosphere.hh"
-#include "pism/coupler/PISMSurface.hh"
+#include "pism/coupler/AtmosphereModel.hh"
+#include "pism/coupler/SurfaceModel.hh"
 
 namespace pism {
 namespace icebin {

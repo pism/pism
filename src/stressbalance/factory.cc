@@ -19,7 +19,7 @@
 
 #include <memory>
 
-#include "PISMStressBalance.hh"
+#include "StressBalance.hh"
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
 #include "pism/regional/SSAFD_Regional.hh"

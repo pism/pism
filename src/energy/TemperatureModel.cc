@@ -22,7 +22,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/energy/utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/io/PIO.hh"
 
 namespace pism {

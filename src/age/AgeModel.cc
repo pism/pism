@@ -21,7 +21,7 @@
 
 #include "pism/age/AgeColumnSystem.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/io/PIO.hh"
 
 namespace pism {

@@ -20,7 +20,7 @@
 #ifndef _REGIONALDEFAULTYIELDSTRESS_H_
 #define _REGIONALDEFAULTYIELDSTRESS_H_
 
-#include "pism/basalstrength/PISMMohrCoulombYieldStress.hh"
+#include "pism/basalstrength/MohrCoulombYieldStress.hh"
 
 namespace pism {
 

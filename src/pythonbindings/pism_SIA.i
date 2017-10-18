@@ -1,6 +1,6 @@
 %{
 #include "stressbalance/sia/SIAFD.hh"
-#include "stressbalance/sia/PISMBedSmoother.hh"
+#include "stressbalance/sia/BedSmoother.hh"
 %}
 
 %shared_ptr(pism::stressbalance::SSB_Modifier)
@@ -10,4 +10,4 @@
 %include "stressbalance/sia/SIAFD.hh"
 
 %shared_ptr(pism::stressbalance::BedSmoother)
-%include "stressbalance/sia/PISMBedSmoother.hh"
+%include "stressbalance/sia/BedSmoother.hh"

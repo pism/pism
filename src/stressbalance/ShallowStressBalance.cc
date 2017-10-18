@@ -21,7 +21,7 @@
 #include "pism/rheology/FlowLawFactory.hh"
 
 #include "pism/util/Mask.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/IceModelVec2CellType.hh"

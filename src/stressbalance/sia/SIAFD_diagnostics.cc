@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SIAFD_diagnostics.hh"
-#include "PISMBedSmoother.hh"
-#include "pism/util/PISMVars.hh"
+#include "BedSmoother.hh"
+#include "pism/util/Vars.hh"
 
 namespace pism {
 namespace stressbalance {

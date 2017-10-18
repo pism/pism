@@ -20,7 +20,7 @@
 #define _SSB_MODIFIER_H_
 
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/PISMComponent.hh"
+#include "pism/util/Component.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
 namespace pism {

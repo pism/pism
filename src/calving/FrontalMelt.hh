@@ -22,7 +22,7 @@
 
 #include "CalvingFrontRetreat.hh"
 
-#include "pism/coupler/PISMOcean.hh"
+#include "pism/coupler/OceanModel.hh"
 
 namespace pism {
 

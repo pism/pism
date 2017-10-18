@@ -24,7 +24,7 @@
 #include "pism_options.hh"
 #include "IceGrid.hh"
 
-#include "PISMConfigInterface.hh"
+#include "ConfigInterface.hh"
 #include "error_handling.hh"
 #include "pism/util/Logger.hh"
 #include "pism_utilities.hh"

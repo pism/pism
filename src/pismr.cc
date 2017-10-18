@@ -25,7 +25,7 @@ static char help[] =
 
 #include "pism/util/IceGrid.hh"
 #include "pism/icemodel/IceModel.hh"
-#include "pism/util/PISMConfig.hh"
+#include "pism/util/Config.hh"
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"

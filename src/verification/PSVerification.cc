@@ -21,11 +21,11 @@
 #include <vector>
 
 #include "PSVerification.hh"
-#include "pism/coupler/PISMAtmosphere.hh"
+#include "pism/coupler/AtmosphereModel.hh"
 #include "pism/rheology/PatersonBuddCold.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/PISMTime.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/ConfigInterface.hh"
 
 #include "tests/exactTestsABCD.h"
 #include "tests/exactTestsFG.hh"

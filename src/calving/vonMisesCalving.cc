@@ -23,9 +23,9 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "remove_narrow_tongues.hh"
-#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/rheology/FlowLaw.hh"
 
 namespace pism {

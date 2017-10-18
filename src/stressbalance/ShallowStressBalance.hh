@@ -19,7 +19,7 @@
 #ifndef _SHALLOWSTRESSBALANCE_H_
 #define _SHALLOWSTRESSBALANCE_H_
 
-#include "pism/util/PISMComponent.hh"
+#include "pism/util/Component.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/EnthalpyConverter.hh"
 

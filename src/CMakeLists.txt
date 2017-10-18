@@ -33,14 +33,14 @@ set(PISMUTIL_SRC
   util/Logger.cc
   util/Mask.cc
   util/MaxTimestep.cc
-  util/PISMComponent.cc
-  util/PISMConfig.cc
-  util/PISMConfigInterface.cc
-  util/PISMDiagnostic.cc
-  util/PISMTime.cc
-  util/PISMTime_Calendar.cc
-  util/PISMUnits.cc
-  util/PISMVars.cc
+  util/Component.cc
+  util/Config.cc
+  util/ConfigInterface.cc
+  util/Diagnostic.cc
+  util/Time.cc
+  util/Time_Calendar.cc
+  util/Units.cc
+  util/Vars.cc
   util/Profiling.cc
   util/TerminationReason.cc
   util/Timeseries.cc
@@ -55,9 +55,9 @@ set(PISMUTIL_SRC
   util/interpolation.cc
   util/io/LocalInterpCtx.cc
   util/io/PIO.cc
-  util/io/PISMNC3File.cc
-  util/io/PISMNC4File.cc
-  util/io/PISMNCFile.cc
+  util/io/NC3File.cc
+  util/io/NC4File.cc
+  util/io/NCFile.cc
   util/io/io_helpers.cc
   util/node_types.cc
   util/options.cc
@@ -90,7 +90,7 @@ endif()
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=1")
-  list(APPEND PISMUTIL_SRC util/io/PISMNC4_Par.cc)
+  list(APPEND PISMUTIL_SRC util/io/NC4_Par.cc)
 else()
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=0")
 endif()
@@ -98,7 +98,7 @@ endif()
 # Check if PnetCDF parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PNETCDF)
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=1")
-  list(APPEND PISMUTIL_SRC util/io/PISMPNCFile.cc)
+  list(APPEND PISMUTIL_SRC util/io/PNCFile.cc)
 else()
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=0")
 endif()
@@ -121,9 +121,9 @@ add_library (pism
   ${EVERYTRACE_cf_mpi_REFADDR}
   age/AgeColumnSystem.cc
   age/AgeModel.cc
-  basalstrength/PISMConstantYieldStress.cc
-  basalstrength/PISMMohrCoulombYieldStress.cc
-  basalstrength/PISMYieldStress.cc
+  basalstrength/ConstantYieldStress.cc
+  basalstrength/MohrCoulombYieldStress.cc
+  basalstrength/YieldStress.cc
   calving/CalvingAtThickness.cc
   calving/CalvingFrontRetreat.cc
   calving/EigenCalving.cc
@@ -150,10 +150,10 @@ add_library (pism
   geometry/GeometryEvolution.cc
   geometry/grounded_cell_fraction.cc
   geometry/part_grid_threshold_thickness.cc
-  hydrology/PISMDistributedHydrology.cc
-  hydrology/PISMHydrology.cc
-  hydrology/PISMNullTransportHydrology.cc
-  hydrology/PISMRoutingHydrology.cc
+  hydrology/DistributedHydrology.cc
+  hydrology/Hydrology.cc
+  hydrology/NullTransportHydrology.cc
+  hydrology/RoutingHydrology.cc
   hydrology/hydrology_diagnostics.cc
   icemodel/IceModel.cc
   icemodel/calving.cc
@@ -198,10 +198,10 @@ endif()
 
 # Bed deformation models.
 add_library(pismearth OBJECT
-  earth/PBPointwiseIsostasy.cc
-  earth/PISMBedDef.cc
-  earth/PBLingleClark.cc
-  earth/PBNull.cc
+  earth/PointwiseIsostasy.cc
+  earth/BedDef.cc
+  earth/LingleClark.cc
+  earth/Null.cc
   earth/deformation.cc
   earth/greens.cc
   earth/cubature.c

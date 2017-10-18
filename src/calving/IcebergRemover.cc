@@ -20,7 +20,7 @@
 #include "IcebergRemover.hh"
 #include "connected_components.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/IceModelVec2CellType.hh"

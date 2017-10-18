@@ -21,9 +21,9 @@
 #include "iceModelVec2T.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism_utilities.hh"
-#include "PISMTime.hh"
+#include "Time.hh"
 #include "IceGrid.hh"
-#include "PISMConfigInterface.hh"
+#include "ConfigInterface.hh"
 
 #include "error_handling.hh"
 #include "io/io_helpers.hh"

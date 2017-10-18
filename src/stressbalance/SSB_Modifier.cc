@@ -20,9 +20,9 @@
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/PISMConfigInterface.hh"
-#include "pism/util/PISMVars.hh"
-#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Vars.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
 namespace stressbalance {

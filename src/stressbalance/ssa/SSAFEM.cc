@@ -24,8 +24,8 @@
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/PISMVars.hh"
-#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/util/Vars.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 
 #include "pism/util/node_types.hh"

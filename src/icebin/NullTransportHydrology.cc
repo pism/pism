@@ -19,7 +19,7 @@
 #include <pism/hydrology/hydrology_diagnostics.hh>
 #include <pism/util/IceModelVec2CellType.hh>
 #include <pism/util/Mask.hh>
-#include <pism/util/PISMVars.hh>
+#include <pism/util/Vars.hh>
 #include <pism/util/error_handling.hh>
 #include <pism/icebin/NullTransportHydrology.hh>
 

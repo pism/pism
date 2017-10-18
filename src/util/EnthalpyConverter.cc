@@ -18,7 +18,7 @@
 
 #include "pism/util/pism_const.hh"
 #include "EnthalpyConverter.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 
 #include "pism/util/error_handling.hh"
 

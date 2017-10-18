@@ -25,7 +25,7 @@
 #include <algorithm>
 
 #include "pism/util/pism_const.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "localMassBalance.hh"
 #include "pism/util/IceGrid.hh"
 

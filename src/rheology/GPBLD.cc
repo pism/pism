@@ -18,7 +18,7 @@
  */
 
 #include "GPBLD.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 
 namespace pism {
 namespace rheology {

@@ -18,7 +18,7 @@
  */
 
 #include "BTU_Verification.hh"
-#include "pism/util/PISMTime.hh"
+#include "pism/util/Time.hh"
 #include "pism/verification/tests/exactTestK.h"
 #include "pism/verification/tests/exactTestO.h"
 #include "pism/util/error_handling.hh"

@@ -1,5 +1,5 @@
 %{
-#include "hydrology/PISMHydrology.hh"
+#include "hydrology/Hydrology.hh"
 %}
 
 %rename(DistributedHydrology) pism::hydrology::Distributed;
@@ -10,4 +10,4 @@
 %shared_ptr(pism::hydrology::NullTransport)
 %shared_ptr(pism::hydrology::Routing)
 %shared_ptr(pism::hydrology::Distributed)
-%include "hydrology/PISMHydrology.hh"
+%include "hydrology/Hydrology.hh"

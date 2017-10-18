@@ -6,7 +6,7 @@ digraph velocity
     graph [fontname=FreeSans fontsize=8 ranksep=0.5 nodesep=0.3];
 
 subgraph cluster_pism {
-    label="class PISMStressBalance"
+    label="class StressBalance"
     labeljust=r
 
     subgraph cluster_higher_order {

@@ -8,11 +8,11 @@
 #include <pism/util/IceGrid.hh>
 
 #include <pism/util/pism_options.hh>
-#include <pism/coupler/atmosphere/PAFactory.hh>
-#include <pism/coupler/ocean/POFactory.hh>
-#include <pism/coupler/surface/PSFactory.hh>
+#include <pism/coupler/atmosphere/Factory.hh>
+#include <pism/coupler/ocean/Factory.hh>
+#include <pism/coupler/surface/Factory.hh>
 
-#include <pism/util/PISMTime.hh>
+#include <pism/util/Time.hh>
 // --------------------------------
 #include <pism/icebin/IBSurfaceModel.hh>
 #include <pism/icebin/MassEnergyBudget.hh>

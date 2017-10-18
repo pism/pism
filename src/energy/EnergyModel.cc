@@ -19,9 +19,9 @@
 
 #include "EnergyModel.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/io/PIO.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "utilities.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "bootstrapping.hh"

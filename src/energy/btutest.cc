@@ -25,9 +25,9 @@ static char help[] =
 #include "pism/util/VariableMetadata.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
-#include "pism/util/PISMTime.hh"
-#include "pism/util/PISMVars.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/ConfigInterface.hh"
 
 #include "pism/verification/tests/exactTestK.h"
 
@@ -35,7 +35,7 @@ static char help[] =
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/PISMConfig.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"

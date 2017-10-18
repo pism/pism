@@ -22,7 +22,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 

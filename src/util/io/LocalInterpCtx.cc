@@ -24,7 +24,7 @@
 #include "PIO.hh"
 #include "pism/util/pism_const.hh"
 #include "LocalInterpCtx.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 
 #include "pism/util/pism_utilities.hh"

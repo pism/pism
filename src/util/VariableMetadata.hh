@@ -24,7 +24,7 @@
 #include <vector>
 #include <string>
 
-#include "PISMUnits.hh"
+#include "Units.hh"
 
 #include "pism/util/io/IO_Flags.hh" // IO_Type
 

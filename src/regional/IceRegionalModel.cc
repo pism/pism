@@ -18,17 +18,17 @@
  */
 
 #include "IceRegionalModel.hh"
-#include "pism/util/PISMVars.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "SSAFD_Regional.hh"
 #include "pism/stressbalance/SSB_Modifier.hh"
 #include "SIAFD_Regional.hh"
-#include "pism/stressbalance/PISMStressBalance.hh"
-#include "pism/basalstrength/PISMConstantYieldStress.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/basalstrength/ConstantYieldStress.hh"
 #include "RegionalDefaultYieldStress.hh"
 #include "pism/util/io/PIO.hh"
-#include "pism/coupler/PISMOcean.hh"
+#include "pism/coupler/OceanModel.hh"
 #include "EnthalpyModel_Regional.hh"
 
 namespace pism {

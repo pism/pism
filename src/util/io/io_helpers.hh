@@ -25,7 +25,7 @@
 #include <mpi.h>
 
 #include "IO_Flags.hh"
-#include "pism/util/PISMUnits.hh"
+#include "pism/util/Units.hh"
 
 namespace pism {
 

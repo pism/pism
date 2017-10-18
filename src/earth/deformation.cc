@@ -25,7 +25,7 @@
 #include "deformation.hh"
 
 #include "pism/util/pism_const.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 

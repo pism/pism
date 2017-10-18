@@ -23,19 +23,19 @@
 #include "tests/exactTestO.h"
 #include "iceCompModel.hh"
 
-#include "pism/stressbalance/PISMStressBalance.hh"
-#include "pism/util/PISMTime.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/earth/PISMBedDef.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/earth/BedDef.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
 #include "BTU_Verification.hh"
 #include "pism/energy/TemperatureModel.hh"
-#include "pism/coupler/PISMSurface.hh"
-#include "pism/coupler/PISMOcean.hh"
-#include "pism/hydrology/PISMHydrology.hh"
+#include "pism/coupler/SurfaceModel.hh"
+#include "pism/coupler/OceanModel.hh"
+#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 

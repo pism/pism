@@ -1,13 +1,13 @@
 add_library (pismstressbalance OBJECT
-  PISMStressBalance.cc
-  PISMStressBalance_diagnostics.cc
+  StressBalance.cc
+  StressBalance_diagnostics.cc
   ShallowStressBalance.cc
   SSB_Modifier.cc
   ssa/SSA.cc
   ssa/SSAFD.cc
   ssa/SSAFEM.cc
   ssa/SSATestCase.cc
-  sia/PISMBedSmoother.cc
+  sia/BedSmoother.cc
   sia/SIAFD.cc
   sia/SIAFD_diagnostics.cc
   ../basalstrength/basal_resistance.cc

@@ -21,8 +21,8 @@
 #define AGEMODEL_H
 
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/PISMComponent.hh"
-#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/util/Component.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
 

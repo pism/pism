@@ -23,7 +23,7 @@
 
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Logger.hh"
 

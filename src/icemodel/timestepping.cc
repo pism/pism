@@ -21,11 +21,11 @@
 
 #include "IceModel.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/PISMConfigInterface.hh"
-#include "pism/util/PISMTime.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/stressbalance/PISMStressBalance.hh"
-#include "pism/util/PISMComponent.hh" // ...->max_timestep()
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Component.hh" // ...->max_timestep()
 
 namespace pism {
 

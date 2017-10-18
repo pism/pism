@@ -21,10 +21,10 @@
 #include <gsl/gsl_math.h> // M_PI
 #include <petscsys.h>
 
-#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
 #include "IceModel.hh"

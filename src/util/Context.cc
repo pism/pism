@@ -19,9 +19,9 @@
 
 #include "Context.hh"
 #include "Profiling.hh"
-#include "PISMUnits.hh"
-#include "PISMConfig.hh"
-#include "PISMTime.hh"
+#include "Units.hh"
+#include "Config.hh"
+#include "Time.hh"
 #include "Logger.hh"
 #include "pism/util/EnthalpyConverter.hh"
 

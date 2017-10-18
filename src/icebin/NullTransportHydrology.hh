@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <pism/hydrology/PISMHydrology.hh>
-#include <pism/stressbalance/PISMStressBalance.hh>
-#include <pism/util/PISMComponent.hh>
+#include <pism/hydrology/Hydrology.hh>
+#include <pism/stressbalance/StressBalance.hh>
+#include <pism/util/Component.hh>
 #include <pism/util/iceModelVec.hh>
 #include <pism/util/iceModelVec2T.hh>
 

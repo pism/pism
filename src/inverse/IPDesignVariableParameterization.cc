@@ -21,7 +21,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "IPDesignVariableParameterization.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 
