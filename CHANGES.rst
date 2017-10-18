@@ -238,6 +238,17 @@ Bed deformation
 
 - Add ``-topg_delta_file topg_delta.nc.``
 
+  With this option PISM tries to read "topg_delta" from a specified file and sets bed
+  topography at the beginning of a run to
+
+  .. literal::
+
+     bed_elevation = topg + topg_delta.
+
+  Here ``topg`` is read from an input file (``-i``), ``topg_delta`` -- from
+  ``topg_delta.nc``.
+
+
 - Lingle-Clark bed deformation model: save the viscous bed displacement on the extended
   grid so that stopping and re-starting the model does not affect results. This also makes
   it possible to refine computational grids in runs using the model.
