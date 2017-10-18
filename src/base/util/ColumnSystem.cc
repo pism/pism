@@ -22,10 +22,11 @@
 
 #include "base/util/pism_const.hh"
 #include "base/util/iceModelVec.hh"
-#include "columnSystem.hh"
+#include "ColumnSystem.hh"
 
 #include "base/util/error_handling.hh"
 #include "base/util/ColumnInterpolation.hh"
+#include "base/util/pism_utilities.hh"
 
 namespace pism {
 

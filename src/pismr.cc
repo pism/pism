@@ -24,7 +24,7 @@ static char help[] =
 #include <petscsys.h>           // PETSC_COMM_WORLD
 
 #include "base/util/IceGrid.hh"
-#include "base/iceModel.hh"
+#include "base/icemodel/IceModel.hh"
 #include "base/util/PISMConfig.hh"
 
 #include "base/util/pism_options.hh"

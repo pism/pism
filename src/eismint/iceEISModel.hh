@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef __iceEISModel_hh
 #define __iceEISModel_hh
 
-#include "base/iceModel.hh"
+#include "base/icemodel/IceModel.hh"
 
 namespace pism {
 

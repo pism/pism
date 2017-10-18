@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2016 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2017 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #include <gsl/gsl_math.h>
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/iceModelVec.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 
 #include "base/util/error_handling.hh"
 #include "base/util/ColumnInterpolation.hh"

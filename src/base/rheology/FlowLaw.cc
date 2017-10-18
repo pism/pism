@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include "FlowLaw.hh"
 #include "base/util/pism_const.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/iceModelVec.hh"
 

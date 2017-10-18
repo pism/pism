@@ -21,12 +21,12 @@
 
 #include "SSA.hh"
 #include "base/util/Context.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/basalstrength/basal_resistance.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/IceModelVec2CellType.hh"
-#include "base/Geometry.hh"
+#include "base/geometry/Geometry.hh"
 
 namespace pism {
 namespace stressbalance {

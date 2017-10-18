@@ -21,7 +21,7 @@
 
 #include "base/util/PISMComponent.hh"     // derives from Component
 #include "base/util/iceModelVec.hh"
-#include "base/timestepping.hh"
+#include "base/stressbalance/timestepping.hh"
 
 namespace pism {
 

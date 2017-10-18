@@ -22,7 +22,7 @@
 #include <algorithm>
 #include <set>
 
-#include "iceModel.hh"
+#include "IceModel.hh"
 
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMConfigInterface.hh"
@@ -41,6 +41,37 @@
 #include "base/energy/utilities.hh"
 
 namespace pism {
+
+MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
+                                   const std::string &description) {
+
+  const size_t N = times.size();
+  if (t >= times.back()) {
+    return MaxTimestep();
+  }
+
+  size_t j = 0;
+  double dt = 0.0;
+  if (t < times[0]) {
+    j = -1;
+  } else {
+    j = gsl_interp_bsearch(&times[0], t, 0, N - 1);
+  }
+
+  dt = times[j + 1] - t;
+
+  // now make sure that we don't end up taking a time-step of less than 1
+  // second long
+  if (dt < 1.0) {
+    if (j + 2 < N) {
+      return MaxTimestep(times[j + 2] - t, description);
+    } else {
+      return MaxTimestep(description);
+    }
+  } else {
+    return MaxTimestep(dt, description);
+  }
+}
 
 //! Write time-independent metadata to a file.
 void IceModel::write_metadata(const PIO &file, MappingTreatment mapping_flag,
@@ -229,228 +260,5 @@ void IceModel::write_model_state(const PIO &file) {
     d.second->write_state(file);
   }
 }
-
-
-//! Manage regridding based on user options.
-void IceModel::regrid() {
-
-  options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
-
-  options::StringSet regrid_vars("-regrid_vars",
-                                 "Specifies the list of variables to regrid",
-                                 "");
-
-
-  // Return if no regridding is requested:
-  if (not regrid_filename.is_set()) {
-     return;
-  }
-
-  m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
-
-  {
-    PIO regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
-    for (auto v : m_model_state) {
-      if (regrid_vars->find(v->get_name()) != regrid_vars->end()) {
-        v->regrid(regrid_file, CRITICAL);
-      }
-    }
-
-    // Check the range of the ice thickness.
-    {
-      double
-        max_thickness = m_geometry.ice_thickness.range().max,
-        Lz            = m_grid->Lz();
-
-      if (max_thickness >= Lz + 1e-6) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
-                                      "exceeds the height of the computational domain (%f meters).",
-                                      max_thickness, Lz);
-      }
-    }
-  }
-}
-
-//! Initializes the snapshot-saving mechanism.
-void IceModel::init_snapshots() {
-  m_current_snapshot = 0;
-
-  options::String save_file("-save_file", "Specifies a snapshot filename",
-                            m_snapshots_filename);
-  m_snapshots_filename = save_file;
-
-  options::String save_times("-save_times",
-                             "Gives a list or a MATLAB-style range of times to save snapshots at");
-
-  bool split = options::Bool("-save_split", "Specifies whether to save snapshots to separate files");
-
-  m_snapshot_vars = output_variables(m_config->get_string("output.save_size"));
-
-  if (save_file.is_set() ^ save_times.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "you need to specify both -save_file and -save_times to save snapshots.");
-  }
-
-  if (!save_file.is_set() && !save_times.is_set()) {
-    m_save_snapshots = false;
-    return;
-  }
-
-  try {
-    m_time->parse_times(save_times, m_snapshot_times);
-  } catch (RuntimeError &e) {
-    e.add_context("parsing the -save_times argument");
-    throw;
-  }
-
-  if (m_snapshot_times.size() == 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "no argument for -save_times option.");
-  }
-
-  m_save_snapshots = true;
-  m_snapshots_file_is_ready = false;
-  m_split_snapshots = false;
-
-  if (split) {
-    m_split_snapshots = true;
-  } else if (!ends_with(m_snapshots_filename, ".nc")) {
-    m_log->message(2,
-               "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
-  }
-
-  if (split) {
-    m_log->message(2, "saving snapshots to '%s+year.nc'; ",
-               m_snapshots_filename.c_str());
-  } else {
-    m_log->message(2, "saving snapshots to '%s'; ",
-               m_snapshots_filename.c_str());
-  }
-
-  m_log->message(2, "times requested: %s\n", save_times->c_str());
-}
-
-  //! Writes a snapshot of the model state (if necessary)
-void IceModel::write_snapshot() {
-  double saving_after = -1.0e30; // initialize to avoid compiler warning; this
-  // value is never used, because saving_after
-  // is only used if save_now == true, and in
-  // this case saving_after is guaranteed to be
-  // initialized. See the code below.
-  char filename[PETSC_MAX_PATH_LEN];
-
-  // determine if the user set the -save_times and -save_file options
-  if (not m_save_snapshots) {
-    return;
-  }
-
-  // do we need to save *now*?
-  if ((m_time->current() >= m_snapshot_times[m_current_snapshot]) and
-      (m_current_snapshot < m_snapshot_times.size())) {
-    saving_after = m_snapshot_times[m_current_snapshot];
-
-    while ((m_current_snapshot < m_snapshot_times.size()) and
-           (m_snapshot_times[m_current_snapshot] <= m_time->current())) {
-      m_current_snapshot++;
-    }
-  } else {
-    // we don't need to save now, so just return
-    return;
-  }
-
-  // flush time-series buffers
-  flush_timeseries();
-
-  if (m_split_snapshots) {
-    m_snapshots_file_is_ready = false;    // each snapshot is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-             m_snapshots_filename.c_str(), m_time->date(saving_after).c_str());
-  } else {
-    strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
-  }
-
-  m_log->message(2,
-             "saving snapshot to %s at %s, for time-step goal %s\n",
-             filename, m_time->date().c_str(),
-             m_time->date(saving_after).c_str());
-
-  const Profiling &profiling = m_ctx->profiling();
-
-  profiling.begin("io.snapshots");
-  IO_Mode mode = m_snapshots_file_is_ready ? PISM_READWRITE : PISM_READWRITE_MOVE;
-  {
-    PIO file(m_grid->com, m_config->get_string("output.format"), filename, mode);
-
-    if (not m_snapshots_file_is_ready) {
-      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-
-      m_snapshots_file_is_ready = true;
-    }
-
-    write_run_stats(file);
-
-    save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars);
-  }
-  profiling.end("io.snapshots");
-}
-
-//! Initialize the backup (snapshot-on-wallclock-time) mechanism.
-void IceModel::init_backups() {
-
-  std::string backup_file = m_config->get_string("output.file_name");
-  if (not backup_file.empty()) {
-    m_backup_filename = pism_filename_add_suffix(backup_file, "_backup", "");
-  } else {
-    m_backup_filename = "pism_backup.nc";
-  }
-
-  m_backup_vars = output_variables(m_config->get_string("output.backup_size"));
-  m_last_backup_time = 0.0;
-}
-
-  //! Write a backup (i.e. an intermediate result of a run).
-void IceModel::write_backup() {
-
-  double backup_interval = m_config->get_double("output.backup_interval");
-
-  double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time);
-
-  if (wall_clock_hours - m_last_backup_time < backup_interval) {
-    return;
-  }
-
-  const Profiling &profiling = m_ctx->profiling();
-
-  m_last_backup_time = wall_clock_hours;
-
-  // create a history string:
-
-  m_log->message(2,
-                 "  [%s] Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
-                 pism_timestamp(m_grid->com).c_str(), m_backup_filename.c_str(), wall_clock_hours);
-
-  PetscLogDouble backup_start_time = GetTime();
-  profiling.begin("io.backup");
-  {
-    PIO file(m_grid->com, m_config->get_string("output.format"),
-             m_backup_filename, PISM_READWRITE_MOVE);
-
-    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-    write_run_stats(file);
-
-    save_variables(file, INCLUDE_MODEL_STATE, m_backup_vars);
-  }
-  profiling.end("io.backup");
-  PetscLogDouble backup_end_time = GetTime();
-
-  // Also flush time-series:
-  flush_timeseries();
-
-  m_log->message(2,
-                 "  [%s] Done saving an automatic backup in %f seconds (%f minutes).\n",
-                 pism_timestamp(m_grid->com).c_str(),
-                 backup_end_time - backup_start_time,
-                 (backup_end_time - backup_start_time) / 60.0);
-
-}
-
 
 } // end of namespace pism

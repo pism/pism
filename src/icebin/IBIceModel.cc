@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include <base/energy/BedThermalUnit.hh>
-#include <base/enthalpyConverter.hh>
+#include <base/util/EnthalpyConverter.hh>
 #include <base/util/io/PIO.hh>
 #include <base/util/io/io_helpers.hh>
 #include "base/energy/EnergyModel.hh"

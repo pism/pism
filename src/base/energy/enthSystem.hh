@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -21,8 +21,8 @@
 
 #include <vector>
 
-#include "base/columnSystem.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/ColumnSystem.hh"
+#include "base/util/EnthalpyConverter.hh"
 
 namespace pism {
 

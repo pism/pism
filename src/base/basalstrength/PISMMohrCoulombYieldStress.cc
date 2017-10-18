@@ -31,7 +31,7 @@
 #include "base/util/MaxTimestep.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
-#include "base/Geometry.hh"
+#include "base/geometry/Geometry.hh"
 
 namespace pism {
 

@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <petscsys.h>
 
-#include "iceModel.hh"
+#include "IceModel.hh"
 
 #include "base/basalstrength/PISMYieldStress.hh"
 #include "base/basalstrength/basal_resistance.hh"
@@ -44,8 +44,8 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "earth/PISMBedDef.hh"
-#include "enthalpyConverter.hh"
-#include "pism_signal.h"
+#include "base/util/EnthalpyConverter.hh"
+#include "base/util/pism_signal.h"
 #include "base/util/PISMVars.hh"
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
@@ -503,8 +503,8 @@ void IceModel::step(bool do_mass_continuity,
       output_file = "unnamed.nc";
     }
 
-    std::string o_file = pism_filename_add_suffix(output_file,
-                                                  "_stressbalance_failed", "");
+    std::string o_file = filename_add_suffix(output_file,
+                                             "_stressbalance_failed", "");
     PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
 
     save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
@@ -645,8 +645,8 @@ void IceModel::step(bool do_mass_continuity,
       output_file = "unnamed.nc";
     }
 
-    std::string o_file = pism_filename_add_suffix(output_file,
-                                                  "_max_thickness", "");
+    std::string o_file = filename_add_suffix(output_file,
+                                             "_max_thickness", "");
     PIO file(m_grid->com, m_config->get_string("output.format"), o_file, PISM_READWRITE_MOVE);
     save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"));
 

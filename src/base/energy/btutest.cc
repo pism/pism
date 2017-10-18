@@ -36,7 +36,7 @@ static char help[] =
 #include "base/util/io/io_helpers.hh"
 #include "base/util/Context.hh"
 #include "base/util/PISMConfig.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/util/MaxTimestep.hh"
 #include "base/util/Logger.hh"
 

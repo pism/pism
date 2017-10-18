@@ -22,7 +22,7 @@
 #include "base/util/iceModelVec.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/util/Mask.hh"
-#include "base/grounded_cell_fraction.hh"
+#include "base/geometry/grounded_cell_fraction.hh"
 
 namespace pism {
 

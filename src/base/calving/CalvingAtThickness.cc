@@ -22,7 +22,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/pism_const.hh"
-#include "base/part_grid_threshold_thickness.hh"
+#include "base/geometry/part_grid_threshold_thickness.hh"
 
 
 namespace pism {

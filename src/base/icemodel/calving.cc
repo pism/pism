@@ -16,7 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "iceModel.hh"
+#include "IceModel.hh"
+
+#include "base/util/IceGrid.hh"
+#include "base/util/Mask.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/pism_const.hh"
+#include "coupler/PISMOcean.hh"
+#include "base/util/pism_utilities.hh"
+
 #include "base/calving/CalvingAtThickness.hh"
 #include "base/calving/EigenCalving.hh"
 #include "base/calving/vonMisesCalving.hh"
@@ -24,15 +32,6 @@
 #include "base/calving/FloatKill.hh"
 #include "base/calving/IcebergRemover.hh"
 #include "base/calving/OceanKill.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/Mask.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/pism_const.hh"
-#include "coupler/PISMOcean.hh"
-#include "base/util/pism_utilities.hh"
-#include "earth/PISMBedDef.hh"
-
 
 namespace pism {
 

@@ -4,7 +4,7 @@
 // PISM Includes... want to be included first
 #include <petsc.h>
 
-#include <base/iceModel.hh>
+#include <base/icemodel/IceModel.hh>
 #include <base/util/IceGrid.hh>
 
 #include <base/util/pism_options.hh>

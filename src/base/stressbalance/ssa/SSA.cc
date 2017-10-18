@@ -18,7 +18,7 @@
 
 #include "SSA.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/rheology/FlowLawFactory.hh"
 #include "base/util/Mask.hh"
 #include "base/util/PISMVars.hh"
@@ -28,7 +28,7 @@
 #include "base/util/pism_utilities.hh"
 #include "base/util/IceModelVec2CellType.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
-#include "base/Geometry.hh"
+#include "base/geometry/Geometry.hh"
 
 #include "SSA_diagnostics.hh"
 

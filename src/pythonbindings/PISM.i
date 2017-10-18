@@ -38,10 +38,10 @@
 #include "base/util/PISMUnits.hh"
 #include "pism_python.hh"
 
-#include "base/grounded_cell_fraction.hh"
+#include "base/geometry/grounded_cell_fraction.hh"
 #include "base/util/Mask.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/PISMDiagnostic.hh"
@@ -52,7 +52,7 @@
 #endif
 
 #include "base/util/MaxTimestep.hh"
-#include "base/timestepping.hh"
+#include "base/stressbalance/timestepping.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/Profiling.hh"
@@ -210,7 +210,7 @@
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::EnthalpyConverter);
 %shared_ptr(pism::ColdEnthalpyConverter);
-%include "base/enthalpyConverter.hh"
+%include "base/util/EnthalpyConverter.hh"
 
 %shared_ptr(pism::Time);
 %include "base/util/PISMTime.hh"
@@ -240,7 +240,7 @@
 %shared_ptr(pism::Diagnostic)
 %include "base/util/PISMDiagnostic.hh"
 %include "base/util/MaxTimestep.hh"
-%include "base/timestepping.hh"
+%include "base/stressbalance/timestepping.hh"
 
 %shared_ptr(pism::Component)
 %shared_ptr(pism::Component_TS)
@@ -259,7 +259,7 @@
  */
 %include pism_Hydrology.i
 
-%include "base/grounded_cell_fraction.hh"
+%include "base/geometry/grounded_cell_fraction.hh"
 %include "base/util/Mask.hh"
 %include "pism_python.hh"
 

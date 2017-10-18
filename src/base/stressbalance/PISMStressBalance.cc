@@ -20,7 +20,7 @@
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
 #include "coupler/PISMOcean.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/rheology/FlowLaw.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
@@ -29,7 +29,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/Profiling.hh"
 #include "base/util/IceModelVec2CellType.hh"
-#include "base/Geometry.hh"
+#include "base/geometry/Geometry.hh"
 
 namespace pism {
 namespace stressbalance {

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2016 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2017 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "base/util/pism_const.hh"
-#include "enthalpyConverter.hh"
+#include "EnthalpyConverter.hh"
 #include "base/util/PISMConfigInterface.hh"
 
 #include "base/util/error_handling.hh"

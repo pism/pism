@@ -859,7 +859,7 @@ void IceModelVec::write(const PIO &nc) const {
   define(nc);
 
   m_grid->ctx()->log()->message(3, "  [%s] Writing %s...",
-                               pism_timestamp(m_grid->com).c_str(),
+                               timestamp(m_grid->com).c_str(),
                                m_name.c_str());
 
   PetscLogDouble start_time = GetTime();
@@ -872,7 +872,7 @@ void IceModelVec::write(const PIO &nc) const {
     mb_double = sizeof(double) * size() / megabyte,
     mb_float =  sizeof(float) * size() / megabyte;
 
-  std::string timestamp = pism_timestamp(m_grid->com);
+  std::string timestamp = pism::timestamp(m_grid->com);
   std::string spacer(timestamp.size(), ' ');
   if (time_spent > 1) {
     m_grid->ctx()->log()->message(3,

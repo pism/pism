@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef AGECOLUMNSYSTEM_H
 #define AGECOLUMNSYSTEM_H
 
-#include "base/columnSystem.hh"
+#include "base/util/ColumnSystem.hh"
 
 namespace pism {
 

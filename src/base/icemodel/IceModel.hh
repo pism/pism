@@ -47,8 +47,8 @@
 #include "base/util/PISMTime.hh"
 #include "base/util/PISMDiagnostic.hh"
 #include "base/util/MaxTimestep.hh"
-#include "base/Geometry.hh"
-#include "base/GeometryEvolution.hh"
+#include "base/geometry/Geometry.hh"
+#include "base/geometry/GeometryEvolution.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/basalstrength/PISMYieldStress.hh"
 
@@ -423,6 +423,9 @@ private:
   TimeseriesMetadata m_timestamp;
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
+
+MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
+                                   const std::string &description);
 
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);

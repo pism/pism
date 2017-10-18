@@ -7,8 +7,8 @@ set(PISM_PARALLEL_IO_FLAGS "")
 
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
-  base/Geometry.cc
-  base/GeometryEvolution.cc
+  base/geometry/Geometry.cc
+  base/geometry/GeometryEvolution.cc
   base/util/FETools.cc
   base/util/node_types.cc
   base/util/petscwrappers/PetscInitializer.cc
@@ -28,7 +28,7 @@ set(PISMUTIL_SRC
   base/util/Context.cc
   base/util/MaxTimestep.cc
   base/util/PISMDiagnostic.cc
-  base/enthalpyConverter.cc
+  base/util/EnthalpyConverter.cc
   base/util/IceGrid.cc
   base/util/ColumnInterpolation.cc
   base/util/Mask.cc
@@ -60,11 +60,11 @@ set(PISMUTIL_SRC
   base/util/TerminationReason.cc
   base/util/PISMUnits.cc
   base/util/projection.cc
-  base/pism_revision.cc
+  base/util/pism_revision.cc
   )
 
 # PISM Revision string
-set_source_files_properties (base/pism_revision.cc
+set_source_files_properties (base/util/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
 
 if(Pism_USE_JANSSON)
@@ -96,64 +96,68 @@ add_library (pismutil OBJECT ${PISMUTIL_SRC})
 
 add_custom_target (touch_pism_revision
   COMMAND ${CMAKE_COMMAND} -E touch pism_revision.cc
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/base
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/base/util
   VERBATIM)
 
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
 add_library (pism
   ${EVERYTRACE_cf_mpi_REFADDR}
-  base/pism_signal.c
-  base/columnSystem.cc
+  base/age/AgeColumnSystem.cc
   base/age/AgeModel.cc
-  base/energy/utilities.cc
-  base/energy/EnergyModel.cc
-  base/energy/DummyEnergyModel.cc
-  base/energy/EnthalpyModel.cc
-  base/energy/TemperatureModel.cc
-  base/energy/BedThermalUnit.cc
+  base/basalstrength/PISMConstantYieldStress.cc
+  base/basalstrength/PISMMohrCoulombYieldStress.cc
+  base/basalstrength/PISMYieldStress.cc
+  base/calving/CalvingAtThickness.cc
+  base/calving/CalvingFrontRetreat.cc
+  base/calving/EigenCalving.cc
+  base/calving/FloatKill.cc
+  base/calving/FrontalMelt.cc
+  base/calving/IcebergRemover.cc
+  base/calving/OceanKill.cc
+  base/calving/StressCalving.cc
+  base/calving/connected_components.cc
+  base/calving/remove_narrow_tongues.cc
+  base/calving/vonMisesCalving.cc
   base/energy/BTU_Full.cc
   base/energy/BTU_Minimal.cc
+  base/energy/BedThermalUnit.cc
+  base/energy/DummyEnergyModel.cc
+  base/energy/EnergyModel.cc
+  base/energy/EnthalpyModel.cc
+  base/energy/TemperatureModel.cc
+  base/energy/bootstrapping.cc
   base/energy/enthSystem.cc
   base/energy/tempSystem.cc
-  base/energy/bootstrapping.cc
-  base/timestepping.cc
-  base/iMadaptive.cc
-  base/age/AgeColumnSystem.cc
-  base/iMcalving.cc
-  base/iMenergy.cc
-  base/iMfractures.cc
-  base/grounded_cell_fraction.cc
-  base/iMinit.cc
-  base/iMIO.cc
-  base/iMoptions.cc
-  base/iMreport.cc
-  base/iMtimeseries.cc
-  base/iMutil.cc
-  base/iMcell_areas.cc
-  base/iMviewers.cc
-  base/iceModel.cc
-  base/iceModel_diagnostics.cc
-  base/basalstrength/PISMYieldStress.cc
-  base/basalstrength/PISMMohrCoulombYieldStress.cc
-  base/basalstrength/PISMConstantYieldStress.cc
+  base/energy/utilities.cc
+  base/geometry/grounded_cell_fraction.cc
+  base/geometry/part_grid_threshold_thickness.cc
+  base/hydrology/PISMDistributedHydrology.cc
   base/hydrology/PISMHydrology.cc
   base/hydrology/PISMNullTransportHydrology.cc
   base/hydrology/PISMRoutingHydrology.cc
-  base/hydrology/PISMDistributedHydrology.cc
   base/hydrology/hydrology_diagnostics.cc
-  base/calving/connected_components.cc
-  base/calving/remove_narrow_tongues.cc
-  base/calving/IcebergRemover.cc
-  base/calving/CalvingAtThickness.cc
-  base/calving/FloatKill.cc
-  base/calving/OceanKill.cc
-  base/calving/StressCalving.cc
-  base/calving/EigenCalving.cc
-  base/calving/CalvingFrontRetreat.cc
-  base/calving/vonMisesCalving.cc
-  base/calving/FrontalMelt.cc
-  base/part_grid_threshold_thickness.cc
+  base/icemodel/IceModel.cc
+  base/icemodel/calving.cc
+  base/icemodel/diagnostics.cc
+  base/icemodel/diagnostics.cc
+  base/icemodel/diagnostics.hh
+  base/icemodel/energy.cc
+  base/icemodel/flux_balance.hh
+  base/icemodel/fracture_density.cc
+  base/icemodel/initialization.cc
+  base/icemodel/output.cc
+  base/icemodel/output_backup.cc
+  base/icemodel/output_extra.cc
+  base/icemodel/output_save.cc
+  base/icemodel/output_ts.cc
+  base/icemodel/printout.cc
+  base/icemodel/timestepping.cc
+  base/icemodel/utilities.cc
+  base/icemodel/viewers.cc
+  base/stressbalance/timestepping.cc
+  base/util/ColumnSystem.cc
+  base/util/pism_signal.c
   $<TARGET_OBJECTS:pismflowlaws>
   $<TARGET_OBJECTS:pismstressbalance>
   $<TARGET_OBJECTS:pismcalcalcs>

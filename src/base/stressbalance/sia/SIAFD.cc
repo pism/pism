@@ -21,7 +21,7 @@
 
 #include "SIAFD.hh"
 #include "PISMBedSmoother.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/rheology/FlowLawFactory.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
@@ -30,7 +30,7 @@
 #include "base/util/pism_const.hh"
 #include "base/util/Profiling.hh"
 #include "base/util/IceModelVec2CellType.hh"
-#include "base/Geometry.hh"
+#include "base/geometry/Geometry.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 
 #include "base/util/PISMTime.hh"

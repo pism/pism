@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,6 +29,25 @@
 namespace pism {
 
 // Utilities that do not use PETSc or PISM.
+
+#ifndef __GNUC__
+#  define  __attribute__(x)  /* nothing */
+#endif
+
+extern const char *PISM_Revision;
+extern const char *PISM_DefaultConfigFile;
+
+const int TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
+
+std::string timestamp(MPI_Comm com);
+std::string username_prefix(MPI_Comm com);
+std::string args_string();
+std::string filename_add_suffix(const std::string &filename,
+                                const std::string &separator,
+                                const std::string &suffix);
+
+double wall_clock_hours(MPI_Comm com, double start_time);
+
 
 // array
 bool is_increasing(const std::vector<double> &a);

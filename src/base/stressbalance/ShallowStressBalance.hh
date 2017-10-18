@@ -21,7 +21,7 @@
 
 #include "base/util/PISMComponent.hh"
 #include "base/util/iceModelVec.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 
 namespace pism {
 namespace rheology {

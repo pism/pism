@@ -19,7 +19,7 @@
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
 
-#include "iceModel.hh"
+#include "IceModel.hh"
 #include "base/basalstrength/PISMConstantYieldStress.hh"
 #include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
 #include "base/basalstrength/basal_resistance.hh"
@@ -51,7 +51,7 @@
 #include "coupler/surface/PSInitialization.hh"
 #include "earth/PBLingleClark.hh"
 #include "earth/PISMBedDef.hh"
-#include "enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/io/io_helpers.hh"
 #include "base/util/projection.hh"
@@ -281,7 +281,7 @@ void IceModel::model_state_setup() {
 
     snprintf(startstr, sizeof(startstr),
              "PISM (%s) started on %d procs.", PISM_Revision, (int)m_grid->size());
-    prepend_history(startstr + pism_args_string());
+    prepend_history(startstr + args_string());
   }
 }
 
@@ -389,6 +389,46 @@ void IceModel::initialize_2d() {
   // This method should NOT have the "noreturn" attribute. (This attribute does not mix with virtual
   // methods).
   throw RuntimeError(PISM_ERROR_LOCATION, "cannot initialize IceModel without an input file");
+}
+
+//! Manage regridding based on user options.
+void IceModel::regrid() {
+
+  options::String regrid_filename("-regrid_file", "Specifies the file to regrid from");
+
+  options::StringSet regrid_vars("-regrid_vars",
+                                 "Specifies the list of variables to regrid",
+                                 "");
+
+
+  // Return if no regridding is requested:
+  if (not regrid_filename.is_set()) {
+     return;
+  }
+
+  m_log->message(2, "regridding from file %s ...\n",regrid_filename->c_str());
+
+  {
+    PIO regrid_file(m_grid->com, "guess_mode", regrid_filename, PISM_READONLY);
+    for (auto v : m_model_state) {
+      if (regrid_vars->find(v->get_name()) != regrid_vars->end()) {
+        v->regrid(regrid_file, CRITICAL);
+      }
+    }
+
+    // Check the range of the ice thickness.
+    {
+      double
+        max_thickness = m_geometry.ice_thickness.range().max,
+        Lz            = m_grid->Lz();
+
+      if (max_thickness >= Lz + 1e-6) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
+                                      "exceeds the height of the computational domain (%f meters).",
+                                      max_thickness, Lz);
+      }
+    }
+  }
 }
 
 //! \brief Decide which stress balance model to use.
@@ -835,6 +875,90 @@ void IceModel::allocate_bed_deformation() {
   }
 
   m_submodels["bed deformation"] = m_beddef;
+}
+
+//! Read some runtime (command line) options and alter the
+//! corresponding parameters or flags as appropriate.
+void IceModel::process_options() {
+
+  m_log->message(3,
+             "Processing physics-related command-line options...\n");
+
+  set_config_from_options(*m_config);
+
+  // Set global attributes using the config database:
+  m_output_global_attributes.set_string("title", m_config->get_string("run_info.title"));
+  m_output_global_attributes.set_string("institution", m_config->get_string("run_info.institution"));
+  m_output_global_attributes.set_string("command", args_string());
+
+  // warn about some option combinations
+
+  if (m_config->get_double("time_stepping.maximum_time_step") <= 0) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "time_stepping.maximum_time_step has to be greater than 0.");
+  }
+
+  if (not m_config->get_boolean("geometry.update.enabled") &&
+      m_config->get_boolean("time_stepping.skip.enabled")) {
+    m_log->message(2,
+               "PISM WARNING: Both -skip and -no_mass are set.\n"
+               "              -skip only makes sense in runs updating ice geometry.\n");
+  }
+
+  if (m_config->get_string("calving.methods").find("thickness_calving") != std::string::npos &&
+      not m_config->get_boolean("geometry.part_grid.enabled")) {
+    m_log->message(2,
+               "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
+               "              without application of partially filled grid cell scheme (-part_grid)\n"
+               "              may lead to (incorrect) non-moving ice shelf front.\n");
+  }
+}
+
+//! Assembles a list of diagnostics corresponding to an output file size.
+std::set<std::string> IceModel::output_variables(const std::string &keyword) {
+
+  std::string variables;
+
+  if (keyword == "none" or
+      keyword == "small") {
+    variables = "";
+  } else if (keyword == "medium") {
+    variables = m_config->get_string("output.sizes.medium");
+  } else if (keyword == "big_2d") {
+    variables = (m_config->get_string("output.sizes.medium") + "," +
+                 m_config->get_string("output.sizes.big_2d"));
+  } else if (keyword == "big") {
+    variables = (m_config->get_string("output.sizes.medium") + "," +
+                 m_config->get_string("output.sizes.big_2d") + "," +
+                 m_config->get_string("output.sizes.big"));
+  }
+
+  return set_split(variables, ',');
+}
+
+void IceModel::compute_cell_areas() {
+
+  std::string projection = m_grid->get_mapping_info().proj4;
+
+  if (m_config->get_boolean("grid.correct_cell_areas") and
+      not projection.empty()) {
+
+    m_log->message(2,
+                   "* Computing cell areas using projection parameters...\n");
+
+    ::pism::compute_cell_areas(projection, m_geometry.cell_area);
+
+    m_log->message(2,
+                   "* Computing longitude and latitude using projection parameters...\n");
+
+    compute_longitude(projection, m_geometry.longitude);
+    compute_latitude(projection, m_geometry.latitude);
+  } else {
+    m_log->message(2,
+                   "* Computing cell areas using grid spacing (dx = %f m, dy = %f m)...\n",
+                   m_grid->dx(), m_grid->dy());
+
+    m_geometry.cell_area.set(m_grid->dx() * m_grid->dy());
+  }
 }
 
 } // end of namespace pism

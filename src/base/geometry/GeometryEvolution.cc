@@ -23,7 +23,7 @@
 #include "base/util/IceGrid.hh"
 #include "base/util/Mask.hh"
 
-#include "base/part_grid_threshold_thickness.hh"
+#include "base/geometry/part_grid_threshold_thickness.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/util/Logger.hh"
 #include "base/util/Profiling.hh"

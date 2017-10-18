@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,7 +23,7 @@
 #include "PISMConfig.hh"
 #include "PISMTime.hh"
 #include "Logger.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 
 namespace pism {
 

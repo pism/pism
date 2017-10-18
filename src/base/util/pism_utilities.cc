@@ -217,4 +217,133 @@ std::string version() {
   return result;
 }
 
+
+//! Return time since the beginning of the run, in hours.
+double wall_clock_hours(MPI_Comm com, double start_time) {
+  int rank = 0;
+  double result = 0.0;
+
+  MPI_Comm_rank(com, &rank);
+
+  ParallelSection rank0(com);
+  try {
+    if (rank == 0) {
+      result = (GetTime() - start_time) / 3600.0;
+    }
+  } catch (...) {
+    rank0.failed();
+  }
+  rank0.check();
+
+  MPI_Bcast(&result, 1, MPI_DOUBLE, 0, com);
+
+  return result;
+}
+
+//! Creates a time-stamp used for the history NetCDF attribute.
+std::string timestamp(MPI_Comm com) {
+  time_t now;
+  tm tm_now;
+  char date_str[50];
+  now = time(NULL);
+  localtime_r(&now, &tm_now);
+  // Format specifiers for strftime():
+  //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
+  strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
+
+  MPI_Bcast(date_str, 50, MPI_CHAR, 0, com);
+
+  return std::string(date_str);
+}
+
+//! Creates a string with the user name, hostname and the time-stamp (for history strings).
+std::string username_prefix(MPI_Comm com) {
+  PetscErrorCode ierr;
+
+  char username[50];
+  ierr = PetscGetUserName(username, sizeof(username));
+  PISM_CHK(ierr, "PetscGetUserName");
+  if (ierr != 0) {
+    username[0] = '\0';
+  }
+  char hostname[100];
+  ierr = PetscGetHostName(hostname, sizeof(hostname));
+  PISM_CHK(ierr, "PetscGetHostName");
+  if (ierr != 0) {
+    hostname[0] = '\0';
+  }
+
+  std::ostringstream message;
+  message << username << "@" << hostname << " " << timestamp(com) << ": ";
+
+  std::string result = message.str();
+  unsigned int length = result.size();
+  MPI_Bcast(&length, 1, MPI_UNSIGNED, 0, com);
+
+  result.resize(length);
+  MPI_Bcast(&result[0], length, MPI_CHAR, 0, com);
+
+  return result;
+}
+
+//! \brief Uses argc and argv to create the string with current PISM
+//! command-line arguments.
+std::string args_string() {
+  int argc;
+  char **argv;
+  PetscErrorCode ierr = PetscGetArgs(&argc, &argv);
+  PISM_CHK(ierr, "PetscGetArgs");
+
+  std::string cmdstr, argument;
+  for (int j = 0; j < argc; j++) {
+    argument = argv[j];
+
+    // enclose arguments containing spaces with double quotes:
+    if (argument.find(" ") != std::string::npos) {
+      argument = "\"" + argument + "\"";
+    }
+
+    cmdstr += std::string(" ") + argument;
+  }
+  cmdstr += "\n";
+
+  return cmdstr;
+}
+
+//! \brief Adds a suffix to a filename.
+/*!
+ * Returns filename + separator + suffix + .nc if the original filename had the
+ * .nc suffix, otherwise filename + separator. If the old filename had the form
+ * "name + separator + more stuff + .nc", then removes the string after the
+ * separator.
+ */
+std::string filename_add_suffix(const std::string &filename,
+                                     const std::string &separator,
+                                     const std::string &suffix) {
+  std::string basename = filename, result;
+
+  // find where the separator begins:
+  std::string::size_type j = basename.rfind(separator);
+  if (j == std::string::npos) {
+    j = basename.rfind(".nc");
+  }
+
+  // if the separator was not found, find the .nc suffix:
+  if (j == std::string::npos) {
+    j = basename.size();
+  }
+
+  // cut off everything starting from the separator (or the .nc suffix):
+  basename.resize(static_cast<int>(j));
+
+  result = basename + separator + suffix;
+
+  if (ends_with(filename, ".nc")) {
+    result += ".nc";
+  }
+
+  return result;
+}
+
+
 } // end of namespace pism

@@ -32,7 +32,7 @@
 #include "base/stressbalance/ShallowStressBalance.hh"
 #include "base/rheology/PatersonBuddCold.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/util/io/PIO.hh"
 #include "base/util/pism_options.hh"
 #include "coupler/ocean/POConstant.hh"

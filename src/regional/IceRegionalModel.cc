@@ -19,7 +19,7 @@
 
 #include "IceRegionalModel.hh"
 #include "base/util/PISMVars.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/stressbalance/ShallowStressBalance.hh"
 #include "SSAFD_Regional.hh"
 #include "base/stressbalance/SSB_Modifier.hh"

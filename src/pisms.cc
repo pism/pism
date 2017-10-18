@@ -22,7 +22,7 @@ static char help[] =
 
 #include <petscsys.h>
 
-#include "base/iceModel.hh"
+#include "base/icemodel/IceModel.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMConfig.hh"
 #include "base/util/error_handling.hh"
@@ -32,7 +32,7 @@ static char help[] =
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/PISMTime.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/util/io/PIO.hh"
 
 using namespace pism;

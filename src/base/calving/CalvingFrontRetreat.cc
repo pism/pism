@@ -24,7 +24,7 @@
 #include "base/util/MaxTimestep.hh"
 #include "base/util/PISMVars.hh"
 #include "base/util/pism_utilities.hh"
-#include "base/part_grid_threshold_thickness.hh"
+#include "base/geometry/part_grid_threshold_thickness.hh"
 
 namespace pism {
 

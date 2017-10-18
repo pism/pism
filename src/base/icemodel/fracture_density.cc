@@ -27,7 +27,7 @@
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/error_handling.hh"
 #include "base/util/pism_options.hh"
-#include "iceModel.hh"
+#include "IceModel.hh"
 
 namespace pism {
 

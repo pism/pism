@@ -26,7 +26,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/PISMVars.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
-#include "base/Geometry.hh"
+#include "base/geometry/Geometry.hh"
 
 #include "base/util/node_types.hh"
 

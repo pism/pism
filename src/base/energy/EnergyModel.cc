@@ -23,7 +23,7 @@
 #include "base/util/io/PIO.hh"
 #include "base/util/PISMVars.hh"
 #include "utilities.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "bootstrapping.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/util/error_handling.hh"

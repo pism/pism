@@ -25,7 +25,7 @@
 #include "base/util/error_handling.hh"
 #include "base/util/pism_const.hh"
 #include "base/rheology/FlowLaw.hh"
-#include "base/Geometry.hh"
+#include "base/geometry/Geometry.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 
 namespace pism {

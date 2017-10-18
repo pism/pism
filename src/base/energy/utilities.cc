@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,7 +23,7 @@
 #include "base/util/iceModelVec.hh"
 #include "base/util/Logger.hh"
 #include "base/util/error_handling.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/util/pism_utilities.hh"
 #include "bootstrapping.hh"
 

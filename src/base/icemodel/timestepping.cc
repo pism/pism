@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2016 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <sstream>              // stringstream
 #include <algorithm>            // std::sort
 
-#include "iceModel.hh"
+#include "IceModel.hh"
 #include "base/util/IceGrid.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMTime.hh"

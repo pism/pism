@@ -19,7 +19,7 @@
 #include <cstring>
 #include <cmath>
 
-#include "iceModel.hh"
+#include "IceModel.hh"
 
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMDiagnostic.hh"

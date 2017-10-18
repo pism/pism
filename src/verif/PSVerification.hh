@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 #define _PSVERIFICATION_H_
 
 #include "coupler/surface/PSFormulas.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 
 namespace pism {
 namespace surface {

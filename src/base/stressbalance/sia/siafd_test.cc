@@ -24,7 +24,7 @@ static char help[] =
 
 #include "SIAFD.hh"
 #include "base/basalstrength/basal_resistance.hh"
-#include "base/enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/rheology/PatersonBuddCold.hh"
 #include "base/stressbalance/PISMStressBalance.hh"
 #include "base/stressbalance/SSB_Modifier.hh"

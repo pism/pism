@@ -19,20 +19,15 @@
 #include <cstring>
 #include <petscsys.h>
 
-#include "iceModel.hh"
+#include "IceModel.hh"
 
-#include "base/energy/BedThermalUnit.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
 #include "base/util/IceGrid.hh"
-#include "base/util/PISMDiagnostic.hh"
+#include "base/util/PISMConfigInterface.hh"
 #include "base/util/PISMTime.hh"
-#include "base/util/error_handling.hh"
-#include "coupler/PISMSurface.hh"
-#include "enthalpyConverter.hh"
-#include "pism_signal.h"
+#include "base/util/io/PIO.hh"
 #include "base/util/pism_utilities.hh"
 #include "base/util/projection.hh"
-#include "base/util/io/PIO.hh"
+#include "base/util/pism_signal.h"
 
 namespace pism {
 
@@ -118,7 +113,7 @@ void IceModel::update_run_stats() {
 //! Get time and user/host name and add it to the given string.
 void  IceModel::prepend_history(const std::string &str) {
   m_output_global_attributes.set_string("history",
-                                        pism_username_prefix(m_grid->com) + (str + "\n") +
+                                        username_prefix(m_grid->com) + (str + "\n") +
                                         m_output_global_attributes.get_string("history"));
 }
 

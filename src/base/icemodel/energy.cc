@@ -18,7 +18,7 @@
 
 #include <cassert>
 
-#include "iceModel.hh"
+#include "IceModel.hh"
 
 #include "base/energy/BedThermalUnit.hh"
 #include "base/util/IceGrid.hh"
@@ -29,7 +29,7 @@
 #include "coupler/PISMOcean.hh"
 #include "coupler/PISMSurface.hh"
 #include "earth/PISMBedDef.hh"
-#include "enthalpyConverter.hh"
+#include "base/util/EnthalpyConverter.hh"
 #include "base/util/Profiling.hh"
 #include "base/util/pism_utilities.hh"
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015 Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2017 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef __tempSystem_hh
 #define __tempSystem_hh
 
-#include "base/columnSystem.hh"
+#include "base/util/ColumnSystem.hh"
 #include "base/util/pism_const.hh"
 #include "base/util/Mask.hh"
 
