@@ -1,11 +1,11 @@
 
 /* Does not seem like this is used anywhere, but if I don't compile
    this, it will rot. */
-%include "base/stressbalance/ssa/SNESProblem.hh"
+%include "stressbalance/ssa/SNESProblem.hh"
 %template(SNESScalarProblem) pism::SNESProblem<1,double>;
 %template(SNESVectorProblem) pism::SNESProblem<2,pism::Vector2>;
 %{
-#include "base/stressbalance/ssa/SNESProblem.hh"
+#include "stressbalance/ssa/SNESProblem.hh"
 %}
 
 /* Inverse model classes */
@@ -28,14 +28,14 @@
 #include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 
-#include "base/util/TerminationReason.hh"
+#include "util/TerminationReason.hh"
 %}
 
 %shared_ptr(pism::TerminationReason)
 %shared_ptr(pism::KSPTerminationReason)
 %shared_ptr(pism::SNESTerminationReason)
 %shared_ptr(pism::GenericTerminationReason)
-%include "base/util/TerminationReason.hh"
+%include "util/TerminationReason.hh"
 
 
 %include "inverse/functional/IPFunctional.hh"

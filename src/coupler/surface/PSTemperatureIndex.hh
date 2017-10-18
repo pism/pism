@@ -19,7 +19,7 @@
 #ifndef _PSTEMPERATUREINDEX_H_
 #define _PSTEMPERATUREINDEX_H_
 
-#include "base/util/iceModelVec2T.hh"
+#include "util/iceModelVec2T.hh"
 #include "coupler/PISMSurface.hh"
 #include "localMassBalance.hh"
 

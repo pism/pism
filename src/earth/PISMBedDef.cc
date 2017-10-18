@@ -19,11 +19,11 @@
 #include <gsl/gsl_math.h>
 
 #include "PISMBedDef.hh"
-#include "base/util/pism_utilities.hh"
-#include "base/util/PISMTime.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/PISMConfigInterface.hh"
+#include "util/pism_utilities.hh"
+#include "util/PISMTime.hh"
+#include "util/PISMVars.hh"
+#include "util/IceGrid.hh"
+#include "util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace bed {

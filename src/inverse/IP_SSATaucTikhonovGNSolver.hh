@@ -20,10 +20,10 @@
 #define IP_SSATAUCTIKHONOVGN_HH_SIU7F33G
 
 #include "IP_SSATaucForwardProblem.hh"
-#include "base/util/TerminationReason.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/iceModelVec.hh"
-#include "base/util/petscwrappers/KSP.hh"
+#include "util/TerminationReason.hh"
+#include "util/error_handling.hh"
+#include "util/iceModelVec.hh"
+#include "util/petscwrappers/KSP.hh"
 #include "functional/IPFunctional.hh"
 
 namespace pism {

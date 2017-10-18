@@ -18,8 +18,8 @@
 */
 
 #include "PISMAtmosphere.hh"
-#include "base/util/PISMTime.hh"
-#include "base/util/error_handling.hh"
+#include "util/PISMTime.hh"
+#include "util/error_handling.hh"
 
 namespace pism {
 namespace atmosphere {

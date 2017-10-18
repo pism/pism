@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,14 +19,14 @@
 #ifndef _PGIVENCLIMATE_H_
 #define _PGIVENCLIMATE_H_
 
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/PISMTime.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/iceModelVec2T.hh"
-#include "base/util/io/PIO.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/pism_utilities.hh"
-#include "base/util/PISMComponent.hh"
+#include "util/PISMConfigInterface.hh"
+#include "util/PISMTime.hh"
+#include "util/error_handling.hh"
+#include "util/iceModelVec2T.hh"
+#include "util/io/PIO.hh"
+#include "util/pism_options.hh"
+#include "util/pism_utilities.hh"
+#include "util/PISMComponent.hh"
 
 namespace pism {
 

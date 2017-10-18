@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,9 +21,9 @@
 #include <cassert>
 
 #include "POGivenTH.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/PISMConfigInterface.hh"
+#include "util/IceGrid.hh"
+#include "util/PISMVars.hh"
+#include "util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace ocean {

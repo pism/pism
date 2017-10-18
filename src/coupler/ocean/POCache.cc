@@ -21,12 +21,12 @@
 #include <cassert>
 
 #include "POCache.hh"
-#include "base/util/PISMTime.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/IceGrid.hh"
+#include "util/PISMTime.hh"
+#include "util/pism_options.hh"
+#include "util/IceGrid.hh"
 
-#include "base/util/error_handling.hh"
-#include "base/util/pism_utilities.hh"
+#include "util/error_handling.hh"
+#include "util/pism_utilities.hh"
 
 namespace pism {
 namespace ocean {

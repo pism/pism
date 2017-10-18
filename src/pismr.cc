@@ -23,15 +23,15 @@ static char help[] =
 #include <memory>
 #include <petscsys.h>           // PETSC_COMM_WORLD
 
-#include "base/util/IceGrid.hh"
-#include "base/icemodel/IceModel.hh"
-#include "base/util/PISMConfig.hh"
+#include "util/IceGrid.hh"
+#include "icemodel/IceModel.hh"
+#include "util/PISMConfig.hh"
 
-#include "base/util/pism_options.hh"
-#include "base/util/petscwrappers/PetscInitializer.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/Context.hh"
-#include "base/util/Profiling.hh"
+#include "util/pism_options.hh"
+#include "util/petscwrappers/PetscInitializer.hh"
+#include "util/error_handling.hh"
+#include "util/Context.hh"
+#include "util/Profiling.hh"
 
 #include "regional/IceGrid_Regional.hh"
 #include "regional/IceRegionalModel.hh"

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2017  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IPFunctional.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/error_handling.hh"
+#include "util/IceGrid.hh"
+#include "util/error_handling.hh"
 
 namespace pism {
 namespace inverse {

@@ -4,15 +4,15 @@
 // PISM Includes... want to be included first
 #include <petsc.h>
 
-#include <base/icemodel/IceModel.hh>
-#include <base/util/IceGrid.hh>
+#include <icemodel/IceModel.hh>
+#include <util/IceGrid.hh>
 
-#include <base/util/pism_options.hh>
+#include <util/pism_options.hh>
 #include <coupler/atmosphere/PAFactory.hh>
 #include <coupler/ocean/POFactory.hh>
 #include <coupler/surface/PSFactory.hh>
 
-#include <base/util/PISMTime.hh>
+#include <util/PISMTime.hh>
 // --------------------------------
 #include <icebin/IBSurfaceModel.hh>
 #include <icebin/MassEnergyBudget.hh>

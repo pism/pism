@@ -22,14 +22,14 @@
 
 #include "coupler/PISMSurface.hh"
 #include "coupler/PISMAtmosphere.hh"
-#include "base/util/io/PIO.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/PISMTime.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/iceModelVec.hh"
-#include "base/util/MaxTimestep.hh"
-#include "base/util/pism_utilities.hh"
+#include "util/io/PIO.hh"
+#include "util/PISMVars.hh"
+#include "util/PISMTime.hh"
+#include "util/IceGrid.hh"
+#include "util/pism_options.hh"
+#include "util/iceModelVec.hh"
+#include "util/MaxTimestep.hh"
+#include "util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {

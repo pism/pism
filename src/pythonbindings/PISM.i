@@ -31,37 +31,37 @@
 // draws in all the other needed includes as well. See the end of this file for the list
 // of PISM headers being wrapped.
 
-#include "base/util/interpolation.hh"
+#include "util/interpolation.hh"
 
-#include "base/util/pism_utilities.hh"
+#include "util/pism_utilities.hh"
 
-#include "base/util/PISMUnits.hh"
+#include "util/PISMUnits.hh"
 #include "pism_python.hh"
 
-#include "base/geometry/grounded_cell_fraction.hh"
-#include "base/util/Mask.hh"
-#include "base/basalstrength/basal_resistance.hh"
-#include "base/util/EnthalpyConverter.hh"
-#include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/PISMDiagnostic.hh"
-#include "base/util/PISMConfig.hh"
+#include "geometry/grounded_cell_fraction.hh"
+#include "util/Mask.hh"
+#include "basalstrength/basal_resistance.hh"
+#include "util/EnthalpyConverter.hh"
+#include "basalstrength/PISMMohrCoulombYieldStress.hh"
+#include "util/error_handling.hh"
+#include "util/PISMDiagnostic.hh"
+#include "util/PISMConfig.hh"
 
 #ifdef PISM_USE_JANSSON
-#include "base/util/ConfigJSON.hh"
+#include "util/ConfigJSON.hh"
 #endif
 
-#include "base/util/MaxTimestep.hh"
-#include "base/stressbalance/timestepping.hh"
-#include "base/util/Context.hh"
-#include "base/util/Logger.hh"
-#include "base/util/Profiling.hh"
+#include "util/MaxTimestep.hh"
+#include "stressbalance/timestepping.hh"
+#include "util/Context.hh"
+#include "util/Logger.hh"
+#include "util/Profiling.hh"
 
-#include "base/util/projection.hh"
-#include "base/energy/bootstrapping.hh"
-#include "base/util/node_types.hh"
+#include "util/projection.hh"
+#include "energy/bootstrapping.hh"
+#include "util/node_types.hh"
 
-#include "base/util/PISMTime.hh"
+#include "util/PISMTime.hh"
 %}
 
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
@@ -171,18 +171,18 @@
 %immutable pism::PISM_DefaultConfigFile;
 
 /* PISM header with no dependence on other PISM headers. */
-%include "base/util/pism_const.hh"
-%include "base/util/pism_utilities.hh"
-%include "base/util/interpolation.hh"
+%include "util/pism_const.hh"
+%include "util/pism_utilities.hh"
+%include "util/interpolation.hh"
 
 %shared_ptr(pism::Logger);
 %shared_ptr(pism::StringLogger);
-%include "base/util/Logger.hh"
+%include "util/Logger.hh"
 
 %include pism_options.i
 
 %ignore pism::Vector2::operator=;
-%include "base/util/Vector2.hh"
+%include "util/Vector2.hh"
 
 %ignore pism::units::Unit::operator=;
 %rename(UnitSystem) pism::units::System;
@@ -190,7 +190,7 @@
 %shared_ptr(pism::units::System);
 %feature("valuewrapper") pism::units::System;
 %feature("valuewrapper") pism::units::Unit;
-%include "base/util/PISMUnits.hh"
+%include "util/PISMUnits.hh"
 
 %include pism_DM.i
 %include pism_Vec.i
@@ -199,25 +199,25 @@
 %shared_ptr(pism::Config);
 %shared_ptr(pism::NetCDFConfig);
 %shared_ptr(pism::DefaultConfig);
-%include "base/util/PISMConfigInterface.hh"
-%include "base/util/PISMConfig.hh"
+%include "util/PISMConfigInterface.hh"
+%include "util/PISMConfig.hh"
 
 #ifdef PISM_USE_JANSSON
 %shared_ptr(pism::ConfigJSON);
-%include "base/util/ConfigJSON.hh"
+%include "util/ConfigJSON.hh"
 #endif
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
 %shared_ptr(pism::EnthalpyConverter);
 %shared_ptr(pism::ColdEnthalpyConverter);
-%include "base/util/EnthalpyConverter.hh"
+%include "util/EnthalpyConverter.hh"
 
 %shared_ptr(pism::Time);
-%include "base/util/PISMTime.hh"
+%include "util/PISMTime.hh"
 
-%include "base/util/Profiling.hh"
+%include "util/Profiling.hh"
 %shared_ptr(pism::Context);
-%include "base/util/Context.hh"
+%include "util/Context.hh"
 
 %include pism_IceGrid.i
 
@@ -238,15 +238,15 @@
 
 
 %shared_ptr(pism::Diagnostic)
-%include "base/util/PISMDiagnostic.hh"
-%include "base/util/MaxTimestep.hh"
-%include "base/stressbalance/timestepping.hh"
+%include "util/PISMDiagnostic.hh"
+%include "util/MaxTimestep.hh"
+%include "stressbalance/timestepping.hh"
 
 %shared_ptr(pism::Component)
 %shared_ptr(pism::Component_TS)
-%include "base/util/PISMComponent.hh"
+%include "util/PISMComponent.hh"
 
-%include "base/basalstrength/basal_resistance.hh"
+%include "basalstrength/basal_resistance.hh"
 
 %include pism_FlowLaw.i
 
@@ -259,15 +259,15 @@
  */
 %include pism_Hydrology.i
 
-%include "base/geometry/grounded_cell_fraction.hh"
-%include "base/util/Mask.hh"
+%include "geometry/grounded_cell_fraction.hh"
+%include "util/Mask.hh"
 %include "pism_python.hh"
 
 %shared_ptr(pism::YieldStress)
 %shared_ptr(pism::ConstantYieldStress)
 %shared_ptr(pism::MohrCoulombYieldStress)
-%include "base/basalstrength/PISMYieldStress.hh"
-%include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
+%include "basalstrength/PISMYieldStress.hh"
+%include "basalstrength/PISMMohrCoulombYieldStress.hh"
 
 %include geometry.i
 
@@ -294,7 +294,7 @@
 %shared_ptr(pism::stressbalance::SIAFD_Regional)
 %include "regional/SIAFD_Regional.hh"
 
-%include "base/util/projection.hh"
+%include "util/projection.hh"
 
 
 %ignore pism::fem::q1::chi;
@@ -304,8 +304,8 @@
 %ignore pism::fem::p1::chi;
 %ignore pism::fem::p1::n_sides;
 %ignore pism::fem::p1::incident_nodes;
-%include "base/util/FETools.hh"
-%include "base/util/node_types.hh"
+%include "util/FETools.hh"
+%include "util/node_types.hh"
 
 %include pism_inverse.i
 
@@ -313,4 +313,4 @@
 
 %include pism_verification.i
 
-%include "base/energy/bootstrapping.hh"
+%include "energy/bootstrapping.hh"

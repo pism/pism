@@ -20,7 +20,7 @@
 #ifndef _SSAFD_REGIONAL_H_
 #define _SSAFD_REGIONAL_H_
 
-#include "base/stressbalance/ssa/SSAFD.hh"
+#include "stressbalance/ssa/SSAFD.hh"
 
 namespace pism {
 

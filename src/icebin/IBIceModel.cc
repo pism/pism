@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include <base/energy/BedThermalUnit.hh>
-#include <base/util/EnthalpyConverter.hh>
-#include <base/util/io/PIO.hh>
-#include <base/util/io/io_helpers.hh>
-#include "base/energy/EnergyModel.hh"
+#include <energy/BedThermalUnit.hh>
+#include <util/EnthalpyConverter.hh>
+#include <util/io/PIO.hh>
+#include <util/io/io_helpers.hh>
+#include "energy/EnergyModel.hh"
 
 #include <icebin/IBIceModel.hh>
 #include <icebin/IBSurfaceModel.hh>

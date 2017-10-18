@@ -21,18 +21,18 @@
 
 #include "PSTemperatureIndex.hh"
 #include "localMassBalance.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/PISMTime.hh"
+#include "util/IceGrid.hh"
+#include "util/pism_options.hh"
+#include "util/PISMVars.hh"
+#include "util/PISMTime.hh"
 #include "coupler/PISMAtmosphere.hh"
-#include "base/util/Mask.hh"
-#include "base/util/io/PIO.hh"
+#include "util/Mask.hh"
+#include "util/io/PIO.hh"
 
-#include "base/util/error_handling.hh"
-#include "base/util/io/io_helpers.hh"
-#include "base/util/pism_utilities.hh"
-#include "base/util/IceModelVec2CellType.hh"
+#include "util/error_handling.hh"
+#include "util/io/io_helpers.hh"
+#include "util/pism_utilities.hh"
+#include "util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace surface {

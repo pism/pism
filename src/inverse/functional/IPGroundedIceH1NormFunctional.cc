@@ -17,11 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IPGroundedIceH1NormFunctional.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/pism_const.hh"
-#include "base/util/pism_utilities.hh"
-#include "base/util/IceModelVec2CellType.hh"
+#include "util/error_handling.hh"
+#include "util/IceGrid.hh"
+#include "util/pism_const.hh"
+#include "util/pism_utilities.hh"
+#include "util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace inverse {

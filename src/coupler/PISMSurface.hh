@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -25,7 +25,7 @@
  * Implementations should go in separate files.
  */
 
-#include "base/util/PISMComponent.hh"
+#include "util/PISMComponent.hh"
 
 namespace pism {
 

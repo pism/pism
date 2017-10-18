@@ -19,7 +19,7 @@
 #include <gsl/gsl_math.h>
 
 #include "PSGivenClimate.hh"
-#include "base/util/IceGrid.hh"
+#include "util/IceGrid.hh"
 
 namespace pism {
 namespace surface {

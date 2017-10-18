@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -25,14 +25,14 @@
 #include <gsl/gsl_math.h>
 
 #include "PASeariseGreenland.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/PISMTime.hh"
-#include "base/util/PISMConfigInterface.hh"
+#include "util/PISMVars.hh"
+#include "util/IceGrid.hh"
+#include "util/pism_options.hh"
+#include "util/PISMTime.hh"
+#include "util/PISMConfigInterface.hh"
 
-#include "base/util/error_handling.hh"
-#include "base/util/MaxTimestep.hh"
+#include "util/error_handling.hh"
+#include "util/MaxTimestep.hh"
 
 namespace pism {
 namespace atmosphere {

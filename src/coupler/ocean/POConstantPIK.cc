@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -20,14 +20,14 @@
 #include <gsl/gsl_math.h>
 
 #include "POConstantPIK.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/iceModelVec.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/io/io_helpers.hh"
-#include "base/util/MaxTimestep.hh"
-#include "base/util/pism_utilities.hh"
+#include "util/PISMVars.hh"
+#include "util/PISMConfigInterface.hh"
+#include "util/IceGrid.hh"
+#include "util/iceModelVec.hh"
+#include "util/pism_options.hh"
+#include "util/io/io_helpers.hh"
+#include "util/MaxTimestep.hh"
+#include "util/pism_utilities.hh"
 
 namespace pism {
 namespace ocean {

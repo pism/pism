@@ -18,7 +18,7 @@
  */
 
 #include "coupler/PISMOcean.hh"
-#include "base/util/iceModelVec.hh"
+#include "util/iceModelVec.hh"
 
 namespace pism {
 namespace ocean {

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _PAMODIFIER_H_
 
 #include "coupler/PISMAtmosphere.hh"
-#include "base/util/Modifier.hh"
+#include "util/Modifier.hh"
 
 namespace pism {
 namespace atmosphere {

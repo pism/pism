@@ -18,8 +18,8 @@
  */
 
 #include "SSAFD_Regional.hh"
-#include "base/util/PISMVars.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
+#include "util/PISMVars.hh"
+#include "stressbalance/PISMStressBalance.hh"
 
 namespace pism {
 

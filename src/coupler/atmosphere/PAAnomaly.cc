@@ -19,9 +19,9 @@
 #include <gsl/gsl_math.h>
 
 #include "PAAnomaly.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/io/io_helpers.hh"
+#include "util/PISMConfigInterface.hh"
+#include "util/IceGrid.hh"
+#include "util/io/io_helpers.hh"
 
 namespace pism {
 namespace atmosphere {

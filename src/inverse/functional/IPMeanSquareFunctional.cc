@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,9 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IPMeanSquareFunctional.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/pism_const.hh"
-#include "base/util/pism_utilities.hh"
+#include "util/IceGrid.hh"
+#include "util/pism_const.hh"
+#include "util/pism_utilities.hh"
 
 namespace pism {
 namespace inverse {

@@ -20,7 +20,7 @@
 #ifndef ENTHALPYMODEL_REGIONAL_H
 #define ENTHALPYMODEL_REGIONAL_H
 
-#include "base/energy/EnthalpyModel.hh"
+#include "energy/EnthalpyModel.hh"
 
 namespace pism {
 namespace energy {

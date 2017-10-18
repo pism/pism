@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 #define _PAWEATHERSTATION_H_
 
 #include "coupler/PISMAtmosphere.hh"
-#include "base/util/Timeseries.hh"
+#include "util/Timeseries.hh"
 
 namespace pism {
 namespace atmosphere {

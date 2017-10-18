@@ -19,13 +19,13 @@
 #include <gsl/gsl_math.h>
 
 #include "PAConstantPIK.hh"
-#include "base/util/pism_utilities.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/pism_const.hh"
-#include "base/util/io/io_helpers.hh"
-#include "base/util/MaxTimestep.hh"
+#include "util/pism_utilities.hh"
+#include "util/PISMVars.hh"
+#include "util/IceGrid.hh"
+#include "util/PISMConfigInterface.hh"
+#include "util/pism_const.hh"
+#include "util/io/io_helpers.hh"
+#include "util/MaxTimestep.hh"
 
 namespace pism {
 namespace atmosphere {

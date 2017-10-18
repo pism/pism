@@ -19,9 +19,9 @@
 #include <gsl/gsl_math.h>
 
 #include "PA_delta_T.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/io/io_helpers.hh"
-#include "base/util/pism_utilities.hh"
+#include "util/PISMConfigInterface.hh"
+#include "util/io/io_helpers.hh"
+#include "util/pism_utilities.hh"
 
 namespace pism {
 namespace atmosphere {

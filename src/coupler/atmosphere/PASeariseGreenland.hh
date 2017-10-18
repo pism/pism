@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2017 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -21,7 +21,7 @@
 #define __PASeariseGreenland_hh
 
 #include "PAYearlyCycle.hh"
-#include "base/util/Timeseries.hh"
+#include "util/Timeseries.hh"
 
 namespace pism {
 namespace atmosphere {

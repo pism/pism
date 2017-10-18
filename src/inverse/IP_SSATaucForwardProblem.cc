@@ -17,14 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_SSATaucForwardProblem.hh"
-#include "base/basalstrength/basal_resistance.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/Mask.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/pism_const.hh"
-#include "base/geometry/Geometry.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
+#include "basalstrength/basal_resistance.hh"
+#include "util/IceGrid.hh"
+#include "util/Mask.hh"
+#include "util/PISMVars.hh"
+#include "util/error_handling.hh"
+#include "util/pism_const.hh"
+#include "geometry/Geometry.hh"
+#include "stressbalance/PISMStressBalance.hh"
 
 namespace pism {
 namespace inverse {

@@ -18,10 +18,10 @@
  */
 
 #include "PSInitialization.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/pism_utilities.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/io/PIO.hh"
+#include "util/error_handling.hh"
+#include "util/pism_utilities.hh"
+#include "util/pism_options.hh"
+#include "util/io/PIO.hh"
 
 namespace pism {
 namespace surface {

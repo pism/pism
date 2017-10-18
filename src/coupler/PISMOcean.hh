@@ -20,7 +20,7 @@
 #ifndef __PISMOceanModel_hh
 #define __PISMOceanModel_hh
 
-#include "base/util/PISMComponent.hh"
+#include "util/PISMComponent.hh"
 
 namespace pism {
 class IceModelVec2S;

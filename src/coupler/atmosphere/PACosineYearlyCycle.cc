@@ -19,15 +19,15 @@
 #include <gsl/gsl_math.h>       // M_PI, GSL_NAN
 
 #include "PACosineYearlyCycle.hh"
-#include "base/util/Timeseries.hh"
-#include "base/util/PISMTime.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/io/PIO.hh"
+#include "util/Timeseries.hh"
+#include "util/PISMTime.hh"
+#include "util/pism_options.hh"
+#include "util/PISMConfigInterface.hh"
+#include "util/IceGrid.hh"
+#include "util/io/PIO.hh"
 
-#include "base/util/error_handling.hh"
-#include "base/util/MaxTimestep.hh"
+#include "util/error_handling.hh"
+#include "util/MaxTimestep.hh"
 
 namespace pism {
 namespace atmosphere {

@@ -19,8 +19,8 @@
 #include <gsl/gsl_math.h>
 
 #include "PAGivenClimate.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/PISMConfigInterface.hh"
+#include "util/IceGrid.hh"
+#include "util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace atmosphere {

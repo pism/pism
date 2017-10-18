@@ -3,8 +3,8 @@
 // --------------------------------
 // PISM Includes... want to be included first
 #include <petsc.h>
-#include <base/util/IceGrid.hh>
-#include <base/util/iceModelVec.hh>
+#include <util/IceGrid.hh>
+#include <util/iceModelVec.hh>
 // --------------------------------
 
 namespace pism {

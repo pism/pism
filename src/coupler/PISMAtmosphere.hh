@@ -22,7 +22,7 @@
 
 #include <vector>
 
-#include "base/util/PISMComponent.hh"
+#include "util/PISMComponent.hh"
 
 namespace pism {
 class IceModelVec2S;

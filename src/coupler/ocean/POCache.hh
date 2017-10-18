@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 #define _POCACHE_H_
 
 #include "POModifier.hh"
-#include "base/util/iceModelVec.hh"
+#include "util/iceModelVec.hh"
 
 namespace pism {
 namespace ocean {

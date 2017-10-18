@@ -22,18 +22,18 @@ static char help[] =
 
 #include <petscsys.h>
 
-#include "base/icemodel/IceModel.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/PISMConfig.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/petscwrappers/PetscInitializer.hh"
-#include "base/util/pism_options.hh"
-#include "base/icemodel/IceEISModel.hh"
-#include "base/util/Context.hh"
-#include "base/util/Logger.hh"
-#include "base/util/PISMTime.hh"
-#include "base/util/EnthalpyConverter.hh"
-#include "base/util/io/PIO.hh"
+#include "icemodel/IceModel.hh"
+#include "util/IceGrid.hh"
+#include "util/PISMConfig.hh"
+#include "util/error_handling.hh"
+#include "util/petscwrappers/PetscInitializer.hh"
+#include "util/pism_options.hh"
+#include "icemodel/IceEISModel.hh"
+#include "util/Context.hh"
+#include "util/Logger.hh"
+#include "util/PISMTime.hh"
+#include "util/EnthalpyConverter.hh"
+#include "util/io/PIO.hh"
 
 using namespace pism;
 

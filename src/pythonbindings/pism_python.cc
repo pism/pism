@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2014, 2015, 2016, 2017 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,8 +21,8 @@
 #include <petscsys.h>
 
 #include "pism_python.hh"
-#include "base/util/pism_const.hh"
-#include "base/util/error_handling.hh"
+#include "util/pism_const.hh"
+#include "util/error_handling.hh"
 
 namespace pism {
 namespace python {

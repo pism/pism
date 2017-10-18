@@ -17,11 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMBedDef.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/PISMTime.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/MaxTimestep.hh"
+#include "util/IceGrid.hh"
+#include "util/PISMTime.hh"
+#include "util/PISMConfigInterface.hh"
+#include "util/PISMVars.hh"
+#include "util/MaxTimestep.hh"
 
 namespace pism {
 namespace bed {

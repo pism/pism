@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _PSMODIFIER_H_
 
 #include "coupler/PISMSurface.hh"
-#include "base/util/Modifier.hh"
+#include "util/Modifier.hh"
 
 namespace pism {
 namespace surface {

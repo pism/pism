@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2017  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,10 +23,10 @@
 #include <stdexcept>
 #include <string>
 
-#include "base/util/pism_const.hh"
-#include "base/util/TerminationReason.hh"
-#include "base/util/petscwrappers/Tao.hh"
-#include "base/util/error_handling.hh"
+#include "util/pism_const.hh"
+#include "util/TerminationReason.hh"
+#include "util/petscwrappers/Tao.hh"
+#include "util/error_handling.hh"
 
 namespace pism {
 
