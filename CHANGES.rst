@@ -223,6 +223,10 @@ Diagnostics
 - Add numerous new diagnostic quantities, including sets of diagnostics needed to "balance
   the books" when accounting for mass changes (conservation).
 
+- Add scalar diagnostics using the new (higher) thickness threshold used to determine if a
+  cell ice "ice-free". These diagnostics have the "``_glacierized``" suffix and can be
+  interpreted as tracking changes in glacierized areas (ignoring the seasonal cover).
+
 - Rates of change reported by PISM are *mean* rates of change over reporting intervals
   computed using finite differences.
 
