@@ -245,7 +245,7 @@ Bed deformation
   With this option PISM tries to read "topg_delta" from a specified file and sets bed
   topography at the beginning of a run to
 
-  .. literal::
+  .. code::
 
      bed_elevation = topg + topg_delta.
 
@@ -285,13 +285,15 @@ Climate forcing
 Bug fixes
 ---------
 
-- Fix #328 (diagnostic computation of wvelsurf).
+(This is an incomplete list.)
 
-- Fix a bug in pism::ocean::Constant (-shelf_base_melt_rate was ignored)
+- Fix #328 (diagnostic computation of ``wvelsurf``).
+
+- Fix a bug in ``pism::ocean::Constant`` (``-shelf_base_melt_rate`` was ignored)
 
 - Fix #351 (duplicate history in -extra_files).
 
-- Fix a bug in the code implementing -save_file with -save_split (see #325).
+- Fix a bug in the code implementing ``-save_file`` with ``-save_split`` (see #325).
 
 - Fix #323 (fix EISMINT II settings so v0.7 conforms).
 
@@ -353,7 +355,7 @@ Miscellaneous
 
 - Improve processing of boolean command-line options
 
-  .. literal::
+  .. code::
 
      -foo yes
      -foo on
@@ -363,7 +365,7 @@ Miscellaneous
 
   set the boolean flag to "true."
 
-  .. literal::
+  .. code::
 
      -foo no
      -foo false
