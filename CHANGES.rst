@@ -22,7 +22,7 @@ Prerequisites
 - Require CMake 3.1 and compilers supporting C++11.
 
 - Require PETSc built with ``PetscScalar`` as ``double``. Stop if ``PetscScalar`` is
-  ``complex``. See #237.
+  ``complex``. See `issue 237`_.
 
 - Drop Subversion support: use Git to download PISM source code.
 
@@ -33,41 +33,44 @@ Library and directory structure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Install PISM headers in ``include/pism``, skipping 3rd party headers and empty
-  directories (see #166.)
+  directories (see `issue 166`_.)
 
 - Link all of PISM into one single library.
 
-- Install all Python scripts in ``util/``. Fixes #346.
+- Install all Python scripts in ``util/``. Fixes `issue 346`_.
 
 - Fix the directory structure created by ``make install``.
 
 Other
 ^^^^^
 
-- Remove all ``simpleXXX`` executables. See #343. Use Python wrappers to access exact
-  solutions of PISM's verification tests.
+- Remove all ``simpleXXX`` executables. See `issue 343`_. Use Python wrappers to access exact
+  solutions used in PISM's verification tests.
 
 - Remove ``pismo`` (use ``pismr -regional``).
 
 Documentation
 -------------
 
-- Migrate documentation to Sphinx.
+- Migrate documentation to Sphinx_.
 
 - New PISM support e-mail address: uaf-pism@alaska.edu instead of help@pism-docs.org.
 
 Computational domain and grid
 -----------------------------
 
-- Add options ``-x_range``, ``-y_range`` to extract a subset of a grid for a regional run.
+- Add options ``-x_range``, ``-y_range``, which specify domain extent in the `x` and `y`
+  direction during bootstrapping. These can be used to extract a subset of a grid for a
+  regional run.
 
 - De-couple grid periodicity from grid registration and add the ``grid.registration``
   parameter. This changes the interpretation of ``-Lx`` and ``-Ly`` during bootstrapping.
+  See `issue 347`_.
 
 - Support EPSG:26710, EPSG:3413, and EPSG:3031. When an input file contains the global
   attribute ``proj4`` containing the string "``+init=epsg:XXXX``" where ``XXXX`` is one of
   these codes PISM will create a CF-conforming ``mapping`` variable with projection
-  parameters corresponding to the selected mapping.
+  parameters corresponding to the selected mapping. See `issue 350`_.
 
 - Write PROJ.4 parameters to ``mapping:proj4_params`` (for CDO).
 
@@ -94,14 +97,14 @@ Stress balance
   This prevents the SSAFD solver from failing when the solver has no work to do.
 
 - Make the SSAFD solver a little more robust by replacing zero diagonal matrix entries
-  with large beta, effectively "disabling" sliding at these locations. See #349.
+  with large beta, effectively "disabling" sliding at these locations. See `issue 349`_.
 
 - Remove ``SIA_Sliding``, EISMINT II tests G and H, verification test E.
 
 - Add ``stress_balance.vertical_velocity_approximation``. I.e. (optionally) use
   first-order upwinding to compute u_x and v_y in the vertical velocity computation.
 
-- Add enhancement factors for interglacial periods (See :cite:`Greve97Greenland`.)
+- Add enhancement factors for interglacial periods (See ``Greve97Greenland``.)
 
   Use the following configuration parameters to control this:
 
@@ -116,7 +119,7 @@ Geometry and mass transport
 
 - Completely redesign and re-implement the mass transport code. The new code is
   well-isolated and extensible, designed to make "balancing the books" easier, and can be
-  tested in isolation.
+  tested in isolation. See also `issue 201`_.
 
 - Add the class ``Geometry`` that can be used to provide geometry information to PISM's
   sub-models. This improves interfaces of PISM's sub-models, reducing undesirable "tight"
@@ -136,7 +139,7 @@ Calving
 - Make it possible to disable ``float_kill`` near grounding lines. See
   ``-float_kill_calve_near_grounding_line``.
 
-- Add option ``-float_kill_margin_only``. See #340.
+- Add option ``-float_kill_margin_only``. See `issue 340`_.
 
 - Allow using spatially-variable calving at thickness thresholds.
 
@@ -146,12 +149,12 @@ Energy conservation
 -------------------
 
 - ``BedThermalUnit`` ensures that computed bedrock temperatures exceed
-  zero Kelvin. See #313.
+  zero Kelvin. See `issue 313`_.
 
 - PISM no longer ignores horizontal enthalpy advection and strain
-  heating near ice margins. See #292.
+  heating near ice margins. See `issue 292`_.
 
-- Following a re-interpretation of AschwandenBuelerKhroulevBlatter we
+- Following a re-interpretation of ``AschwandenBuelerKhroulevBlatter`` we
   require that dH/dp=0.
 
   Assuming that specific heat capacities of ice and water do not depend
@@ -168,7 +171,7 @@ Energy conservation
      ``p_air`` , air (atmospheric) pressure
 
   Note that this form of ``L(p)`` also follows from Kirchhoff's law of thermochemistry.
-  See ``EnthalpyConverter::L(T_pm)`` for details.
+  See ``EnthalpyConverter::L(T_pm)`` for details. See `issue 334`_.
 
 - To allow for better code optimization, ``EnthalpyConverter`` no longer uses virtual
   methods. ``ColdEnthalpyConverter`` used in temperature-based verification tests sets ice
@@ -211,7 +214,10 @@ Input and output
   This makes it easier to track changes corresponding to "glacierized" areas while
   excluding the seasonal cover.
 
-- Write run statistics to extra and time-series files. (See #324, #330.)
+  See ``output.ice_free_thickness_standard`` and
+  ``stress_balance.ice_free_thickness_standard``.
+
+- Write run statistics to extra and time-series files. (See `issue 324`_, `issue 330`_.)
 
 - New option: ``-save_force_output_times``.
 
@@ -252,12 +258,11 @@ Bed deformation
   Here ``topg`` is read from an input file (``-i``), ``topg_delta`` -- from
   ``topg_delta.nc``.
 
-
 - Lingle-Clark bed deformation model: save the viscous bed displacement on the extended
   grid so that stopping and re-starting the model does not affect results. This also makes
-  it possible to refine computational grids in runs using the model.
+  it possible to refine computational grids in runs using the model. See `issue 370`_.
 
-- Bed deformation models can be used and tested in isolation (see #181).
+- Bed deformation models can be used and tested in isolation (see `issue 181`_).
 
 Subglacial hydrology
 --------------------
@@ -287,19 +292,19 @@ Bug fixes
 
 (This is an incomplete list.)
 
-- Fix #328 (diagnostic computation of ``wvelsurf``).
+- Fix `issue 328`_ (diagnostic computation of ``wvelsurf``).
 
-- Fix a bug in ``pism::ocean::Constant`` (``-shelf_base_melt_rate`` was ignored)
+- Fix a bug in ``pism::ocean::Constant`` (``-shelf_base_melt_rate`` was ignored).
 
-- Fix #351 (duplicate history in -extra_files).
+- Fix `issue 351`_ (duplicate history in -extra_files).
 
-- Fix a bug in the code implementing ``-save_file`` with ``-save_split`` (see #325).
+- Fix a bug in the code implementing ``-save_file`` with ``-save_split`` (see `issue 325`_).
 
-- Fix #323 (fix EISMINT II settings so v0.7 conforms).
+- Fix `issue 323`_ (fix EISMINT II settings so v0.7 conforms).
 
-- Fix #321: Sea level affects margin stress B.C. in the "dry simulation" mode.
+- Fix `issue 321`_: Sea level affects margin stress B.C. in the "dry simulation" mode.
 
-- Fix interpolation weights and add a test. See #326.
+- Fix interpolation weights and add a test. See `issue 326`_.
 
 Miscellaneous
 -------------
@@ -311,7 +316,7 @@ Miscellaneous
 
 - Allow extrapolation during regridding to simplify restarting in runs where ice thickness
   exceeded the height of the computational domain *and* to extend the domain in
-  continental ice sheet simulations. See #302.
+  continental ice sheet simulations. See `issue 302`_.
 
 - Save the model state if the ice thickness exceeds the height of the computational
   domain.
@@ -375,6 +380,32 @@ Miscellaneous
   set the flag to "false."
 
 - Add numerous regression tests.
+
+.. _Sphinx: http://pism-docs.org/sphinx/
+
+.. _issue 237: https://github.com/pism/pism/issues/237
+.. _issue 166: https://github.com/pism/pism/issues/166
+.. _issue 346: https://github.com/pism/pism/issues/346
+.. _issue 343: https://github.com/pism/pism/issues/343
+.. _issue 349: https://github.com/pism/pism/issues/349
+.. _issue 340: https://github.com/pism/pism/issues/340
+.. _issue 313: https://github.com/pism/pism/issues/313
+.. _issue 292: https://github.com/pism/pism/issues/292
+.. _issue 324: https://github.com/pism/pism/issues/324
+.. _issue 330: https://github.com/pism/pism/issues/330
+.. _issue 181: https://github.com/pism/pism/issues/181
+.. _issue 328: https://github.com/pism/pism/issues/328
+.. _issue 351: https://github.com/pism/pism/issues/351
+.. _issue 325: https://github.com/pism/pism/issues/325
+.. _issue 323: https://github.com/pism/pism/issues/323
+.. _issue 321: https://github.com/pism/pism/issues/321
+.. _issue 326: https://github.com/pism/pism/issues/326
+.. _issue 302: https://github.com/pism/pism/issues/302
+.. _issue 347: https://github.com/pism/pism/issues/347
+.. _issue 350: https://github.com/pism/pism/issues/350
+.. _issue 370: https://github.com/pism/pism/issues/370
+.. _issue 201: https://github.com/pism/pism/issues/201
+.. _issue 334: https://github.com/pism/pism/issues/334
 
 ..
    Local Variables:
