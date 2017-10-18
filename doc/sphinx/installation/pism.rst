@@ -61,14 +61,14 @@ Follow these steps to build PISM:
    Commands above will configure PISM to be installed in ``~/pism/bin`` and
    ``~/pism/lib/`` then compile and install all its executables and scripts.
 
-   If your operating system does not support shared libraries [#]_, then set
+   If your operating system does not support shared libraries\ [#]_, then set
    ``Pism_LINK_STATICALLY`` to "ON". This can be done by either running
 
    .. code-block:: bash
 
       cmake -DPism_LINK_STATICALLY=ON ..
 
-   or by using ``ccmake`` [#]_ run
+   or by using ``ccmake``\ [#]_ run
 
    .. code-block:: bash
 
@@ -82,16 +82,18 @@ Follow these steps to build PISM:
    is an issue. You can also delete the build directory altogether if you are not planning
    on re-compiling PISM.
 
-   Note that when using Intel's compiler high optimization settings such as ``-O3``,
-   ``-fp-model precise`` may be needed to get reproducible model results. Set it using
-   ``ccmake`` or by setting ``CFLAGS`` and ``CXXFLAGS`` environment variables when
-   building PISM's prerequisites and PISM itself.
+   .. note::
 
-   .. code-block:: bash
+      When using Intel's compiler high optimization settings such as ``-O3``, ``-fp-model
+      precise`` may be needed to get reproducible model results. Set it using ``ccmake``
+      or by setting ``CFLAGS`` and ``CXXFLAGS`` environment variables when building PISM's
+      prerequisites and PISM itself.
 
-      export CFLAGS="-fp-model precise"
-      export CXXFLAGS="-fp-model precise"
-      cmake [other options] ..
+      .. code-block:: bash
+
+         export CFLAGS="-fp-model precise"
+         export CXXFLAGS="-fp-model precise"
+         cmake [other options] ..
 
    .. note::
 
