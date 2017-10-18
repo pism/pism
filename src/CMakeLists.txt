@@ -222,7 +222,7 @@ target_link_libraries (pismr pism)
 
 # Simplified geometry
 add_executable (pisms pisms.cc
-  eismint/iceEISModel.cc)
+  base/icemodel/IceEISModel.cc)
 target_link_libraries (pisms pism)
 
 # Verification mode "driver".
@@ -282,7 +282,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
   PATTERN "verif/tests/fortran" EXCLUDE
   )
 
-add_subdirectory (calcalcs)
+add_subdirectory (external/calcalcs)
 add_subdirectory (base/rheology)
 add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include "gpbld.hh"
 
-#include "vdt/vdtMath.h"        // fast_exp
+#include "external/vdt/vdtMath.h"        // fast_exp
 
 #include "inverse_cbrt.h"       // inverse_cbrt
 

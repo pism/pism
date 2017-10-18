@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,8 +25,8 @@
 #include "PISMTime_Calendar.hh"
 #include "pism_options.hh"
 #include "base/util/io/PIO.hh"
-#include "calcalcs/utCalendar2_cal.h"
-#include "calcalcs/calcalcs.h"
+#include "external/calcalcs/utCalendar2_cal.h"
+#include "external/calcalcs/calcalcs.h"
 #include "PISMConfigInterface.hh"
 #include "VariableMetadata.hh"
 #include "io/io_helpers.hh"

@@ -28,7 +28,7 @@ static char help[] =
 #include "base/util/error_handling.hh"
 #include "base/util/petscwrappers/PetscInitializer.hh"
 #include "base/util/pism_options.hh"
-#include "eismint/iceEISModel.hh"
+#include "base/icemodel/IceEISModel.hh"
 #include "base/util/Context.hh"
 #include "base/util/Logger.hh"
 #include "base/util/PISMTime.hh"

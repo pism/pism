@@ -18,15 +18,11 @@
 
 #include <gsl/gsl_math.h>       // M_PI
 
-#include "iceEISModel.hh"
+#include "IceEISModel.hh"
 
 #include "base/util/Context.hh"
 #include "base/util/PISMConfigInterface.hh"
 #include "base/util/IceGrid.hh"
-
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "base/stressbalance/ShallowStressBalance.hh"
-#include "base/stressbalance/sia/SIAFD.hh"
 
 #include "coupler/ocean/POConstant.hh"
 #include "coupler/ocean/POInitialization.hh"
@@ -35,9 +31,6 @@
 #include "coupler/surface/PSInitialization.hh"
 
 #include "earth/PISMBedDef.hh"
-
-#include "base/energy/BedThermalUnit.hh"
-#include "base/energy/utilities.hh"
 
 namespace pism {
 
@@ -71,19 +64,9 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, Context::Ptr context, char experiment)
                        m_config->get_double("constants.ice.thermal_conductivity"));
   m_config->set_double("energy.bedrock_thermal_specific_heat_capacity",
                        m_config->get_double("constants.ice.specific_heat_capacity"));
-}
-
-//! \brief Decide which stress balance model to use.
-void IceEISModel::allocate_stressbalance() {
-
-  if (m_stress_balance) {
-    return;
-  }
 
   // no sliding + SIA
   m_config->set_string("stress_balance.model", "sia");
-
-  IceModel::allocate_stressbalance();
 }
 
 void IceEISModel::allocate_couplers() {

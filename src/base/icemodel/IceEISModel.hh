@@ -35,7 +35,6 @@ public:
 protected:
   virtual void initialize_2d();
 
-  virtual void allocate_stressbalance();
   virtual void allocate_couplers();
 
   char m_experiment;
