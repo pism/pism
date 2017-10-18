@@ -18,20 +18,20 @@
 
 #include "IceModel.hh"
 
-#include "util/IceGrid.hh"
-#include "util/Mask.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/pism_const.hh"
-#include "coupler/PISMOcean.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/coupler/PISMOcean.hh"
+#include "pism/util/pism_utilities.hh"
 
-#include "calving/CalvingAtThickness.hh"
-#include "calving/EigenCalving.hh"
-#include "calving/vonMisesCalving.hh"
-#include "calving/FrontalMelt.hh"
-#include "calving/FloatKill.hh"
-#include "calving/IcebergRemover.hh"
-#include "calving/OceanKill.hh"
+#include "pism/calving/CalvingAtThickness.hh"
+#include "pism/calving/EigenCalving.hh"
+#include "pism/calving/vonMisesCalving.hh"
+#include "pism/calving/FrontalMelt.hh"
+#include "pism/calving/FloatKill.hh"
+#include "pism/calving/IcebergRemover.hh"
+#include "pism/calving/OceanKill.hh"
 
 namespace pism {
 

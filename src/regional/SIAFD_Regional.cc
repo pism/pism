@@ -18,7 +18,7 @@
  */
 
 #include "SIAFD_Regional.hh"
-#include "stressbalance/PISMStressBalance.hh"
+#include "pism/stressbalance/PISMStressBalance.hh"
 
 
 namespace pism {

@@ -19,14 +19,14 @@
 #include <cassert>
 
 #include "PISMBedSmoother.hh"
-#include "util/Mask.hh"
-#include "util/IceGrid.hh"
-#include "util/petscwrappers/Vec.hh"
-#include "util/IceModelVec2CellType.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
-#include "util/error_handling.hh"
-#include "util/pism_const.hh"
-#include "util/Logger.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {

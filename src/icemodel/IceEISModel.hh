@@ -19,7 +19,7 @@
 #ifndef __iceEISModel_hh
 #define __iceEISModel_hh
 
-#include "icemodel/IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 namespace pism {
 

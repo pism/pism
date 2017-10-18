@@ -25,7 +25,7 @@
 
 #include "TaoUtil.hh"
 #include "IPTwoBlockVec.hh"
-#include "util/iceModelVec.hh"
+#include "pism/util/iceModelVec.hh"
 #include "IP_SSATaucForwardProblem.hh"
 #include "functional/IPFunctional.hh"
 

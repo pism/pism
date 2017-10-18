@@ -19,8 +19,8 @@
 #include "PISMNCFile.hh"
 
 #include <cstdio>               // fprintf, stderr, rename, remove
-#include "util/pism_const.hh"
-#include "util/error_handling.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/error_handling.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:

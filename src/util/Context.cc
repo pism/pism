@@ -23,7 +23,7 @@
 #include "PISMConfig.hh"
 #include "PISMTime.hh"
 #include "Logger.hh"
-#include "util/EnthalpyConverter.hh"
+#include "pism/util/EnthalpyConverter.hh"
 
 namespace pism {
 

@@ -21,7 +21,7 @@
 #define BTU_FULL_H
 
 #include "BedThermalUnit.hh"
-#include "util/Context.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace energy {

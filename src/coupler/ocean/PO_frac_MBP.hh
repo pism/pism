@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef _PO_DELTA_MBP_H_
 #define _PO_DELTA_MBP_H_
 
-#include "coupler/util/PScalarForcing.hh"
+#include "pism/coupler/util/PScalarForcing.hh"
 #include "POModifier.hh"
 
 namespace pism {

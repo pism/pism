@@ -4,19 +4,19 @@
 // PISM Includes... want to be included first
 #include <petsc.h>
 
-#include <icemodel/IceModel.hh>
-#include <util/IceGrid.hh>
+#include <pism/icemodel/IceModel.hh>
+#include <pism/util/IceGrid.hh>
 
-#include <util/pism_options.hh>
-#include <coupler/atmosphere/PAFactory.hh>
-#include <coupler/ocean/POFactory.hh>
-#include <coupler/surface/PSFactory.hh>
+#include <pism/util/pism_options.hh>
+#include <pism/coupler/atmosphere/PAFactory.hh>
+#include <pism/coupler/ocean/POFactory.hh>
+#include <pism/coupler/surface/PSFactory.hh>
 
-#include <util/PISMTime.hh>
+#include <pism/util/PISMTime.hh>
 // --------------------------------
-#include <icebin/IBSurfaceModel.hh>
-#include <icebin/MassEnergyBudget.hh>
-#include <icebin/NullTransportHydrology.hh>
+#include <pism/icebin/IBSurfaceModel.hh>
+#include <pism/icebin/MassEnergyBudget.hh>
+#include <pism/icebin/NullTransportHydrology.hh>
 
 // Stuff defined in the icebin library
 // (NOT a dependency of ours)

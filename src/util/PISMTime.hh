@@ -24,7 +24,7 @@
 
 #include "pism_const.hh"
 #include "PISMUnits.hh"
-#include "util/PISMConfigInterface.hh"
+#include "pism/util/PISMConfigInterface.hh"
 
 namespace pism {
 

@@ -20,9 +20,9 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
-#include "util/IceGrid.hh"
-#include "util/iceModelVec.hh"
-#include "util/IceModelVec2CellType.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 

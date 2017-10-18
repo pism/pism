@@ -17,10 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "basal_resistance.hh"
-#include "util/pism_const.hh"
-#include "util/EnthalpyConverter.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/Logger.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

@@ -1,4 +1,22 @@
-include_directories (.)
+# Create a link from build/include/pism to src so that PISM can use
+# #include "pism/..." in its source files. This way other code using
+# PISM needs to add only *one* directory to the compiler search path.
+# See #166.
+
+execute_process(
+  COMMAND
+  ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/include/
+  COMMAND
+  ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/include/pism)
+
+# Alternatively: copy headers to the build directory
+# file(COPY .
+#   DESTINATION ${CMAKE_BINARY_DIR}/include/pism/
+#   FILES_MATCHING
+#   PATTERN "*.hh"
+#   PATTERN "*.h")
+
+include_directories (${CMAKE_BINARY_DIR}/include)
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
@@ -7,60 +25,58 @@ set(PISM_PARALLEL_IO_FLAGS "")
 
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
-  geometry/Geometry.cc
-  geometry/GeometryEvolution.cc
-  util/FETools.cc
-  util/node_types.cc
-  util/petscwrappers/PetscInitializer.cc
-  util/petscwrappers/DM.cc
-  util/petscwrappers/IS.cc
-  util/petscwrappers/KSP.cc
-  util/petscwrappers/Mat.cc
-  util/petscwrappers/SNES.cc
-  util/petscwrappers/Tao.cc
-  util/petscwrappers/Vec.cc
-  util/petscwrappers/VecScatter.cc
-  util/petscwrappers/Viewer.cc
-  util/Logger.cc
-  util/error_handling.cc
-  util/options.cc
-  util/interpolation.cc
-  util/Context.cc
-  util/MaxTimestep.cc
-  util/PISMDiagnostic.cc
-  util/EnthalpyConverter.cc
-  util/IceGrid.cc
   util/ColumnInterpolation.cc
+  util/Context.cc
+  util/EnthalpyConverter.cc
+  util/FETools.cc
+  util/IceGrid.cc
+  util/Logger.cc
   util/Mask.cc
-  util/VariableMetadata.cc
+  util/MaxTimestep.cc
+  util/PISMComponent.cc
   util/PISMConfig.cc
   util/PISMConfigInterface.cc
-  util/PISMComponent.cc
+  util/PISMDiagnostic.cc
   util/PISMTime.cc
   util/PISMTime_Calendar.cc
+  util/PISMUnits.cc
   util/PISMVars.cc
+  util/Profiling.cc
+  util/TerminationReason.cc
   util/Timeseries.cc
+  util/VariableMetadata.cc
+  util/error_handling.cc
   util/iceModelVec.cc
   util/iceModelVec2.cc
   util/iceModelVec2T.cc
   util/iceModelVec2V.cc
   util/iceModelVec3.cc
   util/iceModelVec3Custom.cc
-  util/io/io_helpers.cc
+  util/interpolation.cc
   util/io/LocalInterpCtx.cc
   util/io/PIO.cc
   util/io/PISMNC3File.cc
   util/io/PISMNC4File.cc
   util/io/PISMNCFile.cc
+  util/io/io_helpers.cc
+  util/node_types.cc
+  util/options.cc
+  util/petscwrappers/DM.cc
+  util/petscwrappers/IS.cc
+  util/petscwrappers/KSP.cc
+  util/petscwrappers/Mat.cc
+  util/petscwrappers/PetscInitializer.cc
+  util/petscwrappers/SNES.cc
+  util/petscwrappers/Tao.cc
+  util/petscwrappers/Vec.cc
+  util/petscwrappers/VecScatter.cc
+  util/petscwrappers/Viewer.cc
   util/pism_const.cc
-  util/pism_utilities.cc
-  util/Profiling.cc
   util/pism_default_config.cc
   util/pism_options.cc
-  util/TerminationReason.cc
-  util/PISMUnits.cc
-  util/projection.cc
   util/pism_revision.cc
+  util/pism_utilities.cc
+  util/projection.cc
   )
 
 # PISM Revision string
@@ -130,6 +146,8 @@ add_library (pism
   energy/enthSystem.cc
   energy/tempSystem.cc
   energy/utilities.cc
+  geometry/Geometry.cc
+  geometry/GeometryEvolution.cc
   geometry/grounded_cell_fraction.cc
   geometry/part_grid_threshold_thickness.cc
   hydrology/PISMDistributedHydrology.cc

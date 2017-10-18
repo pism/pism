@@ -26,12 +26,12 @@
 #include <gsl/gsl_interp.h>
 
 #include "VariableMetadata.hh"
-#include "util/petscwrappers/Viewer.hh"
+#include "pism/util/petscwrappers/Viewer.hh"
 #include "Vector2.hh"
 #include "StarStencil.hh"
-#include "util/petscwrappers/DM.hh"
-#include "util/petscwrappers/Vec.hh"
-#include "util/IceGrid.hh"
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/IceGrid.hh"
 
 namespace pism {
 

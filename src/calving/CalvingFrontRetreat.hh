@@ -20,9 +20,9 @@
 #ifndef CALVINGFRONTRETREAT_H
 #define CALVINGFRONTRETREAT_H
 
-#include "util/PISMComponent.hh"
-#include "util/iceModelVec.hh"
-#include "util/IceModelVec2CellType.hh"
+#include "pism/util/PISMComponent.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 
 namespace pism {

@@ -32,7 +32,7 @@
 #include <gsl/gsl_odeiv2.h>
 #endif
 
-#include "util/error_handling.hh"
+#include "pism/util/error_handling.hh"
 using pism::RuntimeError;
 
 static const double SperA = 31556926.0;    /* seconds per year; 365.2422 days */

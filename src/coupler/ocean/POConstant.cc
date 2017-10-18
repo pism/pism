@@ -19,15 +19,15 @@
 #include <gsl/gsl_math.h>
 
 #include "POConstant.hh"
-#include "util/PISMVars.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/IceGrid.hh"
-#include "util/pism_options.hh"
-#include "util/iceModelVec.hh"
-#include "util/error_handling.hh"
-#include "util/io/io_helpers.hh"
-#include "util/MaxTimestep.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace ocean {

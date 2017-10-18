@@ -20,8 +20,8 @@
 #ifndef _PSFORMULAS_H_
 #define _PSFORMULAS_H_
 
-#include "coupler/PISMSurface.hh"
-#include "util/iceModelVec.hh"
+#include "pism/coupler/PISMSurface.hh"
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {

@@ -18,13 +18,13 @@
 
 #include <gsl/gsl_math.h>
 
-#include "util/IceGrid.hh"
-#include "util/MaxTimestep.hh"
-#include "util/PISMVars.hh"
-#include "util/io/PIO.hh"
-#include "util/pism_const.hh"
-#include "util/pism_utilities.hh"
-#include "icebin/IBSurfaceModel.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/icebin/IBSurfaceModel.hh"
 
 namespace pism {
 namespace icebin {

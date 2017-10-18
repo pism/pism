@@ -19,13 +19,13 @@
 #include "SSATestCase.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
-#include "util/Mask.hh"
-#include "util/PISMTime.hh"
-#include "util/io/PIO.hh"
-#include "util/pism_options.hh"
-#include "util/io/io_helpers.hh"
-#include "util/pism_utilities.hh"
-#include "stressbalance/PISMStressBalance.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/stressbalance/PISMStressBalance.hh"
 
 namespace pism {
 namespace stressbalance {

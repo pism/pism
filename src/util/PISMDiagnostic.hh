@@ -26,9 +26,9 @@
 #include "IceGrid.hh"
 #include "PISMConfigInterface.hh"
 #include "iceModelVec.hh"
-#include "util/error_handling.hh"
-#include "util/io/PIO.hh"
-#include "util/io/io_helpers.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 

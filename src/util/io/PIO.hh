@@ -23,8 +23,8 @@
 #include <string>
 #include <mpi.h>
 
-#include "util/PISMUnits.hh"
-#include "util/io/IO_Flags.hh"
+#include "pism/util/PISMUnits.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

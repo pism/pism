@@ -18,8 +18,8 @@
 
 #include <cmath>
 
-#include "geometry/part_grid_threshold_thickness.hh"
-#include "util/Mask.hh"
+#include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/util/Mask.hh"
 
 namespace pism {
 

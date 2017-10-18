@@ -20,7 +20,7 @@
 #ifndef VONMISESCALVING_H
 #define VONMISESCALVING_H
 
-#include "util/iceModelVec.hh"
+#include "pism/util/iceModelVec.hh"
 #include "StressCalving.hh"
 
 namespace pism {

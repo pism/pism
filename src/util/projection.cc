@@ -25,11 +25,11 @@
 #include "error_handling.hh"
 #include "io/PIO.hh"
 #include "io/io_helpers.hh"
-#include "util/IceGrid.hh"
-#include "util/iceModelVec.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/iceModelVec.hh"
 
 #if (PISM_USE_PROJ4==1)
-#include "util/Proj.hh"
+#include "pism/util/Proj.hh"
 #endif
 
 namespace pism {

@@ -20,7 +20,7 @@
 #ifndef TEMPERATUREMODEL_VERIFICATION_H
 #define TEMPERATUREMODEL_VERIFICATION_H
 
-#include "energy/TemperatureModel.hh"
+#include "pism/energy/TemperatureModel.hh"
 
 namespace pism {
 namespace energy {

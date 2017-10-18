@@ -19,8 +19,8 @@
 
 #include "IceModel.hh"
 
-#include "util/pism_utilities.hh"
-#include "util/Profiling.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 

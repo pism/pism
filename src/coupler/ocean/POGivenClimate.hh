@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _PODIRECTFORCING_H_
 #define _PODIRECTFORCING_H_
 
-#include "coupler/util/PGivenClimate.hh"
+#include "pism/coupler/util/PGivenClimate.hh"
 #include "POModifier.hh"
 
 namespace pism {

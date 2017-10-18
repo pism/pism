@@ -19,11 +19,11 @@
 #ifndef _PISMEIGENCALVING_H_
 #define _PISMEIGENCALVING_H_
 
-#include "util/iceModelVec.hh"
 #include "StressCalving.hh"
 
 namespace pism {
 
+class IceModelVec2S;
 class IceModelVec2CellType;
 
 namespace calving {

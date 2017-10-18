@@ -19,9 +19,9 @@
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
 
-#include "util/PISMComponent.hh"     // derives from Component
-#include "util/iceModelVec.hh"
-#include "stressbalance/timestepping.hh"
+#include "pism/util/PISMComponent.hh"     // derives from Component
+#include "pism/util/iceModelVec.hh"
+#include "pism/stressbalance/timestepping.hh"
 
 namespace pism {
 

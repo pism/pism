@@ -17,12 +17,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMHydrology.hh"
-#include "util/Mask.hh"
-#include "util/error_handling.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/error_handling.hh"
 #include "hydrology_diagnostics.hh"
-#include "util/PISMVars.hh"
-#include "util/MaxTimestep.hh"
-#include "util/IceModelVec2CellType.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {

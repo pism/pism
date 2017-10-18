@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMNC4_Par.hh"
-#include "util/error_handling.hh"
+#include "pism/util/error_handling.hh"
 
 // netcdf_par.h has to be included *after* mpi.h
 extern "C" {

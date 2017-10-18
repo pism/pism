@@ -18,7 +18,7 @@
 
 #include "SIAFD_diagnostics.hh"
 #include "PISMBedSmoother.hh"
-#include "util/PISMVars.hh"
+#include "pism/util/PISMVars.hh"
 
 namespace pism {
 namespace stressbalance {

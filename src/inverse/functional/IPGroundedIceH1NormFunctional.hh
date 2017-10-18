@@ -20,7 +20,7 @@
 #define IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR
 
 #include "IPFunctional.hh"
-#include "util/Mask.hh"
+#include "pism/util/Mask.hh"
 
 namespace pism {
 

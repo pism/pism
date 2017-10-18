@@ -19,14 +19,14 @@
 
 #include "GeometryEvolution.hh"
 
-#include "util/iceModelVec.hh"
-#include "util/IceGrid.hh"
-#include "util/Mask.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Mask.hh"
 
-#include "geometry/part_grid_threshold_thickness.hh"
-#include "util/pism_utilities.hh"
-#include "util/Logger.hh"
-#include "util/Profiling.hh"
+#include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 

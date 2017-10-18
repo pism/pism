@@ -19,8 +19,8 @@
 #include <cassert>
 
 #include "FlowLawFactory.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/error_handling.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/error_handling.hh"
 
 #include "IsothermalGlen.hh"
 #include "PatersonBudd.hh"

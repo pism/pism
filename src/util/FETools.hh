@@ -29,7 +29,7 @@
 
 #include <petscmat.h>
 
-#include "util/Vector2.hh"
+#include "pism/util/Vector2.hh"
 
 namespace pism {
 class IceModelVec;

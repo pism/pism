@@ -19,9 +19,9 @@
 #ifndef _PSSTUFFASANOMALY_H_
 #define _PSSTUFFASANOMALY_H_
 
-#include "coupler/PISMSurface.hh"
+#include "pism/coupler/PISMSurface.hh"
 #include "PSModifier.hh"
-#include "util/iceModelVec.hh"
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {

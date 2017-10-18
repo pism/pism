@@ -26,7 +26,7 @@ using std::dynamic_pointer_cast;
 #include <gsl/gsl_math.h>
 #include <petscdmda.h>
 
-#include "util/io/PIO.hh"
+#include "pism/util/io/PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 #include "PISMConfigInterface.hh"

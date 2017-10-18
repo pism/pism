@@ -21,17 +21,18 @@
 #include <gsl/gsl_math.h>
 
 #include "PISMMohrCoulombYieldStress.hh"
-#include "hydrology/PISMHydrology.hh"
-#include "util/IceGrid.hh"
-#include "util/Mask.hh"
-#include "util/PISMVars.hh"
-#include "util/error_handling.hh"
-#include "util/io/PIO.hh"
-#include "util/pism_options.hh"
-#include "util/MaxTimestep.hh"
-#include "util/pism_utilities.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "geometry/Geometry.hh"
+
+#include "pism/hydrology/PISMHydrology.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 

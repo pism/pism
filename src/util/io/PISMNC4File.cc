@@ -29,8 +29,8 @@
 #include <netcdf.h>
 
 #include "pism_type_conversion.hh"
-#include "util/pism_utilities.hh"
-#include "util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace io {

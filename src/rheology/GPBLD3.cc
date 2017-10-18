@@ -21,8 +21,8 @@
 
 #include "GPBLD3.hh"
 
-#include "util/PISMConfigInterface.hh"
-#include "util/error_handling.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/error_handling.hh"
 
 #include "approximate/gpbld.hh"
 #include "approximate/enthalpy_converter.h"

@@ -22,7 +22,7 @@
 
 #include <gsl/gsl_rng.h>
 
-#include "util/iceModelVec.hh"  // only needed for FaustoGrevePDDObject
+#include "pism/util/iceModelVec.hh"  // only needed for FaustoGrevePDDObject
 
 namespace pism {
 namespace surface {

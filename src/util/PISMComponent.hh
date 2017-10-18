@@ -23,12 +23,12 @@
 #include <set>
 #include <map>
 
-#include "util/io/IO_Flags.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/PISMUnits.hh"
-#include "util/Logger.hh"
-#include "util/IceGrid.hh"
-#include "util/PISMDiagnostic.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/PISMUnits.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/PISMDiagnostic.hh"
 
 namespace pism {
 

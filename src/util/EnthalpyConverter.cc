@@ -16,11 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "util/pism_const.hh"
+#include "pism/util/pism_const.hh"
 #include "EnthalpyConverter.hh"
-#include "util/PISMConfigInterface.hh"
+#include "pism/util/PISMConfigInterface.hh"
 
-#include "util/error_handling.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

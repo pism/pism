@@ -22,7 +22,7 @@
 #include <vector>
 #include <memory>
 
-#include "util/interpolation.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 

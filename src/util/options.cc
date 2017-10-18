@@ -21,8 +21,8 @@
 
 #include "pism_options.hh"
 #include "error_handling.hh"
-#include "util/Logger.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace options {

@@ -18,15 +18,15 @@
  */
 
 #include "vonMisesCalving.hh"
-#include "util/IceGrid.hh"
-#include "util/Mask.hh"
-#include "util/error_handling.hh"
-#include "util/IceModelVec2CellType.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 #include "remove_narrow_tongues.hh"
-#include "stressbalance/PISMStressBalance.hh"
-#include "stressbalance/ShallowStressBalance.hh"
-#include "util/PISMVars.hh"
-#include "rheology/FlowLaw.hh"
+#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/rheology/FlowLaw.hh"
 
 namespace pism {
 namespace calving {

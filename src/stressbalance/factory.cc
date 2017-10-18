@@ -22,8 +22,8 @@
 #include "PISMStressBalance.hh"
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
-#include "regional/SSAFD_Regional.hh"
-#include "regional/SIAFD_Regional.hh"
+#include "pism/regional/SSAFD_Regional.hh"
+#include "pism/regional/SIAFD_Regional.hh"
 
 namespace pism {
 namespace stressbalance {

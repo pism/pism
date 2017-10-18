@@ -19,7 +19,7 @@
 
 #include "PISMUnits.hh"
 
-#include "util/error_handling.hh"
+#include "pism/util/error_handling.hh"
 
 #include "pism_const.hh"
 

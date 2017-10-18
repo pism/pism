@@ -18,8 +18,9 @@
  */
 
 #include "FrontalMelt.hh"
-#include "util/PISMVars.hh"
-#include "geometry/part_grid_threshold_thickness.hh"
+
+#include "pism/util/PISMVars.hh"
+#include "pism/geometry/part_grid_threshold_thickness.hh"
 
 namespace pism {
 

@@ -18,7 +18,7 @@
  */
 
 #include "EnthalpyModel.hh"
-#include "util/MaxTimestep.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace energy {

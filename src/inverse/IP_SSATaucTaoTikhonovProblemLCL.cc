@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_SSATaucTaoTikhonovProblemLCL.hh"
-#include "util/IceGrid.hh"
-#include "util/PISMConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace inverse {

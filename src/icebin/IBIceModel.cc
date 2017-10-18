@@ -1,13 +1,13 @@
 #include <iostream>
 
-#include <energy/BedThermalUnit.hh>
-#include <util/EnthalpyConverter.hh>
-#include <util/io/PIO.hh>
-#include <util/io/io_helpers.hh>
-#include "energy/EnergyModel.hh"
+#include <pism/energy/BedThermalUnit.hh>
+#include <pism/util/EnthalpyConverter.hh>
+#include <pism/util/io/PIO.hh>
+#include <pism/util/io/io_helpers.hh>
+#include "pism/energy/EnergyModel.hh"
 
-#include <icebin/IBIceModel.hh>
-#include <icebin/IBSurfaceModel.hh>
+#include "pism/icebin/IBIceModel.hh"
+#include "pism/icebin/IBSurfaceModel.hh"
 
 
 namespace pism {

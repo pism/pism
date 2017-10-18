@@ -23,10 +23,10 @@
 #include <stdexcept>
 #include <string>
 
-#include "util/pism_const.hh"
-#include "util/TerminationReason.hh"
-#include "util/petscwrappers/Tao.hh"
-#include "util/error_handling.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/TerminationReason.hh"
+#include "pism/util/petscwrappers/Tao.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

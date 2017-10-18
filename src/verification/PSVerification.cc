@@ -21,20 +21,20 @@
 #include <vector>
 
 #include "PSVerification.hh"
-#include "coupler/PISMAtmosphere.hh"
-#include "rheology/PatersonBuddCold.hh"
-#include "util/EnthalpyConverter.hh"
-#include "util/PISMTime.hh"
-#include "util/PISMConfigInterface.hh"
+#include "pism/coupler/PISMAtmosphere.hh"
+#include "pism/rheology/PatersonBuddCold.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/PISMConfigInterface.hh"
 
 #include "tests/exactTestsABCD.h"
 #include "tests/exactTestsFG.hh"
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.hh"
 
-#include "util/error_handling.hh"
-#include "util/IceGrid.hh"
-#include "util/MaxTimestep.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace surface {

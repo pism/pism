@@ -19,8 +19,8 @@
 #ifndef __iceCompModel_hh
 #define __iceCompModel_hh
 
-#include "icemodel/IceModel.hh"
-#include "energy/BedThermalUnit.hh"
+#include "pism/icemodel/IceModel.hh"
+#include "pism/energy/BedThermalUnit.hh"
 
 namespace pism {
 

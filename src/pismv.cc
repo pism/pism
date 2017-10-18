@@ -24,16 +24,16 @@ static char help[] =
 
 #include <string>
 
-#include "util/IceGrid.hh"
-#include "util/PISMConfig.hh"
-#include "util/error_handling.hh"
-#include "util/petscwrappers/PetscInitializer.hh"
-#include "util/pism_options.hh"
-#include "verification/iceCompModel.hh"
-#include "util/Context.hh"
-#include "util/Logger.hh"
-#include "util/PISMTime.hh"
-#include "util/EnthalpyConverter.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/PISMConfig.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/PetscInitializer.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/verification/iceCompModel.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/EnthalpyConverter.hh"
 
 using namespace pism;
 

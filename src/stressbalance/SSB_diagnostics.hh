@@ -20,7 +20,7 @@
 #ifndef _SSB_DIAGNOSTICS_H_
 #define _SSB_DIAGNOSTICS_H_
 
-#include "util/PISMDiagnostic.hh"
+#include "pism/util/PISMDiagnostic.hh"
 
 namespace pism {
 

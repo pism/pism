@@ -19,9 +19,9 @@
 
 #include "node_types.hh"
 
-#include "util/iceModelVec.hh"
-#include "util/IceGrid.hh"
-#include "util/error_handling.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

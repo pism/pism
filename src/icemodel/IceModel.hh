@@ -39,18 +39,18 @@
 #include <vector>
 
 // IceModel owns a bunch of fields, so we have to include this.
-#include "util/iceModelVec.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/Context.hh"
-#include "util/Logger.hh"
-#include "util/PISMTime.hh"
-#include "util/PISMDiagnostic.hh"
-#include "util/MaxTimestep.hh"
-#include "geometry/Geometry.hh"
-#include "geometry/GeometryEvolution.hh"
-#include "stressbalance/PISMStressBalance.hh"
-#include "basalstrength/PISMYieldStress.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/PISMDiagnostic.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/geometry/GeometryEvolution.hh"
+#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/basalstrength/PISMYieldStress.hh"
 
 namespace pism {
 

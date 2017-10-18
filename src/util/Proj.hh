@@ -24,7 +24,7 @@
 
 #include <proj_api.h>
 
-#include "util/error_handling.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

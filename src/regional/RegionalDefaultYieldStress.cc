@@ -18,8 +18,8 @@
  */
 
 #include "RegionalDefaultYieldStress.hh"
-#include "util/Logger.hh"
-#include "util/PISMVars.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/PISMVars.hh"
 
 namespace pism {
 

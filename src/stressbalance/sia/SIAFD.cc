@@ -21,20 +21,20 @@
 
 #include "SIAFD.hh"
 #include "PISMBedSmoother.hh"
-#include "util/EnthalpyConverter.hh"
-#include "rheology/FlowLawFactory.hh"
-#include "util/IceGrid.hh"
-#include "util/Mask.hh"
-#include "util/PISMVars.hh"
-#include "util/error_handling.hh"
-#include "util/pism_const.hh"
-#include "util/Profiling.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "geometry/Geometry.hh"
-#include "stressbalance/PISMStressBalance.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/rheology/FlowLawFactory.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/stressbalance/PISMStressBalance.hh"
 
-#include "util/PISMTime.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {

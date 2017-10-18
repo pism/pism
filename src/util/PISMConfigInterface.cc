@@ -19,7 +19,7 @@
 
 #include <mpi.h>
 
-#include "util/io/PIO.hh"
+#include "pism/util/io/PIO.hh"
 #include "PISMConfigInterface.hh"
 #include "PISMUnits.hh"
 #include "pism_const.hh"
@@ -30,7 +30,7 @@
 // include an implementation header so that we can allocate a DefaultConfig instance in
 // config_from_options()
 #include "PISMConfig.hh"
-#include "util/Logger.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

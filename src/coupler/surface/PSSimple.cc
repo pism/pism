@@ -20,13 +20,13 @@
 #include <gsl/gsl_math.h>
 
 #include "PSSimple.hh"
-#include "util/IceGrid.hh"
-#include "util/pism_const.hh"
-#include "util/iceModelVec.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/io/io_helpers.hh"
-#include "util/MaxTimestep.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {

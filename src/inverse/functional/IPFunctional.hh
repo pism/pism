@@ -19,8 +19,8 @@
 #ifndef IPFUNCTIONAL_HH_1E2DIXE6
 #define IPFUNCTIONAL_HH_1E2DIXE6
 
-#include "util/iceModelVec.hh"
-#include "util/FETools.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/FETools.hh"
 
 namespace pism {
 

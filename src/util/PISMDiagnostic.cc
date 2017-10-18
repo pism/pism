@@ -18,11 +18,11 @@
  */
 
 #include "PISMDiagnostic.hh"
-#include "util/PISMTime.hh"
+#include "pism/util/PISMTime.hh"
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
-#include "util/Logger.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 

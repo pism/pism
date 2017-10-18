@@ -18,11 +18,12 @@
  */
 
 #include "EigenCalving.hh"
-#include "util/IceGrid.hh"
-#include "util/Mask.hh"
-#include "util/error_handling.hh"
-#include "util/IceModelVec2CellType.hh"
 #include "remove_narrow_tongues.hh"
+
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace calving {

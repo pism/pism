@@ -18,12 +18,12 @@
  */
 
 #include "TemperatureModel.hh"
-#include "energy/tempSystem.hh"
-#include "util/pism_utilities.hh"
-#include "energy/utilities.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "util/PISMVars.hh"
-#include "util/io/PIO.hh"
+#include "pism/energy/tempSystem.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/energy/utilities.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/io/PIO.hh"
 
 namespace pism {
 namespace energy {

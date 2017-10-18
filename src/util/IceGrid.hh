@@ -24,9 +24,9 @@
 #include <string>
 #include <memory>
 
-#include "util/Context.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/petscwrappers/DM.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/petscwrappers/DM.hh"
 
 namespace pism {
 

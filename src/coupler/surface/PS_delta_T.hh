@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,8 @@
 #ifndef _PS_DELTA_T_H_
 #define _PS_DELTA_T_H_
 
-#include "coupler/util/PScalarForcing.hh"
-#include "coupler/PISMSurface.hh"
+#include "pism/coupler/util/PScalarForcing.hh"
+#include "pism/coupler/PISMSurface.hh"
 #include "PSModifier.hh"
 
 namespace pism {

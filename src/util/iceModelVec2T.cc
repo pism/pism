@@ -19,7 +19,7 @@
 #include <petsc.h>
 #include <algorithm>
 #include "iceModelVec2T.hh"
-#include "util/io/PIO.hh"
+#include "pism/util/io/PIO.hh"
 #include "pism_utilities.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
@@ -27,7 +27,7 @@
 
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
-#include "util/Logger.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

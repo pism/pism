@@ -18,18 +18,18 @@
  */
 
 #include "EnergyModel.hh"
-#include "util/MaxTimestep.hh"
-#include "stressbalance/PISMStressBalance.hh"
-#include "util/io/PIO.hh"
-#include "util/PISMVars.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/PISMVars.hh"
 #include "utilities.hh"
-#include "util/EnthalpyConverter.hh"
+#include "pism/util/EnthalpyConverter.hh"
 #include "bootstrapping.hh"
-#include "util/pism_utilities.hh"
-#include "util/error_handling.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "util/pism_options.hh"
-#include "util/Profiling.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 namespace energy {

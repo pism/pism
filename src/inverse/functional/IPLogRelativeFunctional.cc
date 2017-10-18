@@ -17,9 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IPLogRelativeFunctional.hh"
-#include "util/IceGrid.hh"
-#include "util/pism_const.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace inverse {

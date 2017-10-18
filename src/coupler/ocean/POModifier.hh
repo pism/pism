@@ -19,8 +19,8 @@
 #ifndef _POMODIFIER_H_
 #define _POMODIFIER_H_
 
-#include "coupler/PISMOcean.hh"
-#include "util/Modifier.hh"
+#include "pism/coupler/PISMOcean.hh"
+#include "pism/util/Modifier.hh"
 
 namespace pism {
 namespace ocean {

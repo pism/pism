@@ -18,11 +18,12 @@
  */
 
 #include "CalvingAtThickness.hh"
-#include "util/Mask.hh"
-#include "util/error_handling.hh"
-#include "util/IceGrid.hh"
-#include "util/pism_const.hh"
-#include "geometry/part_grid_threshold_thickness.hh"
+
+#include "pism/util/Mask.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/geometry/part_grid_threshold_thickness.hh"
 
 
 namespace pism {

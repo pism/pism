@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,8 @@
 #ifndef _PSELEVATION_H_
 #define _PSELEVATION_H_
 
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMAtmosphere.hh"
+#include "pism/coupler/PISMSurface.hh"
+#include "pism/coupler/PISMAtmosphere.hh"
 
 namespace pism {
 namespace surface {

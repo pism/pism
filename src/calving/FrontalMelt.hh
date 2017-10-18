@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,8 @@
 #define FRONTALMELT_H
 
 #include "CalvingFrontRetreat.hh"
-#include "coupler/PISMOcean.hh"
+
+#include "pism/coupler/PISMOcean.hh"
 
 namespace pism {
 

@@ -20,7 +20,7 @@
 #define _PISMSTRESSBALANCE_DIAGNOSTICS_H_
 
 #include "PISMStressBalance.hh"
-#include "util/PISMDiagnostic.hh"
+#include "pism/util/PISMDiagnostic.hh"
 
 namespace pism {
 namespace stressbalance {

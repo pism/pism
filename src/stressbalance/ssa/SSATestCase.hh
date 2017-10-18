@@ -20,13 +20,13 @@
 #define _SSATESTCASE_H_
 
 #include "SSA.hh"
-#include "util/Context.hh"
-#include "util/EnthalpyConverter.hh"
-#include "basalstrength/basal_resistance.hh"
-#include "util/PISMVars.hh"
-#include "util/IceGrid.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "geometry/Geometry.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/basalstrength/basal_resistance.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace stressbalance {

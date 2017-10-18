@@ -20,8 +20,8 @@
 #ifndef _MODIFIER_H_
 #define _MODIFIER_H_
 
-#include "util/MaxTimestep.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 //! \brief This template allows creating Component_TS (AtmosphereModel,

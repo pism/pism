@@ -18,12 +18,13 @@
  */
 
 #include "TemperatureModel_Verification.hh"
-#include "util/error_handling.hh"
-#include "verification/tests/exactTestsFG.hh"
-#include "verification/tests/exactTestK.h"
-#include "verification/tests/exactTestO.h"
-#include "energy/utilities.hh"
-#include "util/PISMTime.hh"
+
+#include "pism/util/error_handling.hh"
+#include "pism/verification/tests/exactTestsFG.hh"
+#include "pism/verification/tests/exactTestK.h"
+#include "pism/verification/tests/exactTestO.h"
+#include "pism/energy/utilities.hh"
+#include "pism/util/PISMTime.hh"
 
 namespace pism {
 namespace energy {

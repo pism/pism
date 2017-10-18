@@ -20,8 +20,8 @@
 #ifndef _PSVERIFICATION_H_
 #define _PSVERIFICATION_H_
 
-#include "coupler/surface/PSFormulas.hh"
-#include "util/EnthalpyConverter.hh"
+#include "pism/coupler/surface/PSFormulas.hh"
+#include "pism/util/EnthalpyConverter.hh"
 
 namespace pism {
 namespace surface {

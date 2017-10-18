@@ -20,12 +20,12 @@
 #include "EnthalpyModel.hh"
 
 #include "DrainageCalculator.hh"
-#include "util/EnthalpyConverter.hh"
-#include "energy/enthSystem.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "util/io/PIO.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/energy/enthSystem.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/io/PIO.hh"
 #include "utilities.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {

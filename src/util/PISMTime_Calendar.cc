@@ -24,13 +24,13 @@
 
 #include "PISMTime_Calendar.hh"
 #include "pism_options.hh"
-#include "util/io/PIO.hh"
-#include "external/calcalcs/utCalendar2_cal.h"
-#include "external/calcalcs/calcalcs.h"
+#include "pism/util/io/PIO.hh"
+#include "pism/external/calcalcs/utCalendar2_cal.h"
+#include "pism/external/calcalcs/calcalcs.h"
 #include "PISMConfigInterface.hh"
 #include "VariableMetadata.hh"
 #include "io/io_helpers.hh"
-#include "util/Logger.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

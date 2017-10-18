@@ -23,11 +23,11 @@
 #include <gsl/gsl_math.h>       // M_PI, GSL_NAN
 
 #include "PAYearlyCycle.hh"
-#include "util/PISMTime.hh"
-#include "util/IceGrid.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/io/io_helpers.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace atmosphere {

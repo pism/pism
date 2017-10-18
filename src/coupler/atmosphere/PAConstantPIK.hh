@@ -19,8 +19,8 @@
 #ifndef _PACONSTANTPIK_H_
 #define _PACONSTANTPIK_H_
 
-#include "util/iceModelVec.hh"
-#include "coupler/PISMAtmosphere.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/coupler/PISMAtmosphere.hh"
 
 namespace pism {
 namespace atmosphere {

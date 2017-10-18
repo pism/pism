@@ -21,8 +21,8 @@
 
 #include <vector>
 
-#include "util/ColumnSystem.hh"
-#include "util/EnthalpyConverter.hh"
+#include "pism/util/ColumnSystem.hh"
+#include "pism/util/EnthalpyConverter.hh"
 
 namespace pism {
 

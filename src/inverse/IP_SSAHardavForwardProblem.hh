@@ -19,10 +19,10 @@
 #ifndef IP_SSAHARDAVFORWARDPROBLEM_HH_HAD68BK7
 #define IP_SSAHARDAVFORWARDPROBLEM_HH_HAD68BK7
 
-#include "stressbalance/ssa/SSAFEM.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "IPDesignVariableParameterization.hh"
-#include "util/petscwrappers/KSP.hh"
-#include "util/petscwrappers/Mat.hh"
+#include "pism/util/petscwrappers/KSP.hh"
+#include "pism/util/petscwrappers/Mat.hh"
 
 namespace pism {
 namespace inverse {

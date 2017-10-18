@@ -19,10 +19,10 @@
 #ifndef IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
 #define IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
 
-#include "stressbalance/ssa/SSAFEM.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "IPDesignVariableParameterization.hh"
-#include "util/petscwrappers/KSP.hh"
-#include "util/petscwrappers/Mat.hh"
+#include "pism/util/petscwrappers/KSP.hh"
+#include "pism/util/petscwrappers/Mat.hh"
 
 namespace pism {
 namespace inverse {

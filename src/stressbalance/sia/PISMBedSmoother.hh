@@ -21,8 +21,8 @@
 
 #include <petsc.h>
 
-#include "util/iceModelVec.hh"
-#include "util/PISMConfigInterface.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/PISMConfigInterface.hh"
 
 namespace pism {
 

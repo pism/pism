@@ -22,8 +22,8 @@
 #include "pism_options.hh"
 #include "pism_utilities.hh"
 #include "error_handling.hh"
-#include "util/io/PIO.hh"
-#include "util/Logger.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

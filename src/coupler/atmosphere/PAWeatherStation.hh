@@ -20,8 +20,8 @@
 #ifndef _PAWEATHERSTATION_H_
 #define _PAWEATHERSTATION_H_
 
-#include "coupler/PISMAtmosphere.hh"
-#include "util/Timeseries.hh"
+#include "pism/coupler/PISMAtmosphere.hh"
+#include "pism/util/Timeseries.hh"
 
 namespace pism {
 namespace atmosphere {

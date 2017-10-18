@@ -25,11 +25,11 @@ using std::shared_ptr;
 #include <petscvec.h>
 
 #include "PIO.hh"
-#include "util/IceGrid.hh"
-#include "util/pism_const.hh"
-#include "util/VariableMetadata.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/PISMTime.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/PISMTime.hh"
 #include "PISMNC3File.hh"
 
 #if (PISM_USE_PARALLEL_NETCDF4==1)
@@ -40,7 +40,7 @@ using std::shared_ptr;
 #include "PISMPNCFile.hh"
 #endif
 
-#include "util/error_handling.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

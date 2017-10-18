@@ -20,10 +20,10 @@
 #define _SSAFEM_H_
 
 #include "SSA.hh"
-#include "util/FETools.hh"
-#include "util/petscwrappers/SNES.hh"
-#include "util/TerminationReason.hh"
-#include "util/Mask.hh"
+#include "pism/util/FETools.hh"
+#include "pism/util/petscwrappers/SNES.hh"
+#include "pism/util/TerminationReason.hh"
+#include "pism/util/Mask.hh"
 
 namespace pism {
 

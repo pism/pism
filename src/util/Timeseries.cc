@@ -22,13 +22,13 @@
 #include "Timeseries.hh"
 #include "pism_const.hh"
 #include "IceGrid.hh"
-#include "util/io/PIO.hh"
+#include "pism/util/io/PIO.hh"
 #include "PISMTime.hh"
 #include "PISMConfigInterface.hh"
 
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
-#include "util/Logger.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

@@ -19,9 +19,9 @@
 #ifndef _SHALLOWSTRESSBALANCE_H_
 #define _SHALLOWSTRESSBALANCE_H_
 
-#include "util/PISMComponent.hh"
-#include "util/iceModelVec.hh"
-#include "util/EnthalpyConverter.hh"
+#include "pism/util/PISMComponent.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/EnthalpyConverter.hh"
 
 namespace pism {
 namespace rheology {

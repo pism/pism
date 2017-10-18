@@ -21,17 +21,17 @@
 
 #include "SSAFD.hh"
 #include "SSAFD_diagnostics.hh"
-#include "util/Mask.hh"
-#include "basalstrength/basal_resistance.hh"
-#include "util/pism_options.hh"
-#include "rheology/FlowLaw.hh"
-#include "util/PISMVars.hh"
-#include "util/IceGrid.hh"
-#include "util/PISMTime.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "stressbalance/PISMStressBalance.hh"
-#include "geometry/Geometry.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/Mask.hh"
+#include "pism/basalstrength/basal_resistance.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/rheology/FlowLaw.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {

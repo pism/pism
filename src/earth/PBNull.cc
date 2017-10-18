@@ -18,9 +18,9 @@
  */
 
 #include "PISMBedDef.hh"
-#include "util/IceGrid.hh"
-#include "util/pism_const.hh"
-#include "util/MaxTimestep.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace bed {

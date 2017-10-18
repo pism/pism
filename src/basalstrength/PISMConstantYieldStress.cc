@@ -18,11 +18,11 @@
 
 #include "PISMConstantYieldStress.hh"
 
-#include "util/pism_options.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/IceGrid.hh"
-#include "util/MaxTimestep.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 

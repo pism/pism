@@ -19,7 +19,7 @@
 #ifndef _SIAFD_H_
 #define _SIAFD_H_
 
-#include "stressbalance/SSB_Modifier.hh"      // derives from SSB_Modifier
+#include "pism/stressbalance/SSB_Modifier.hh"      // derives from SSB_Modifier
 
 namespace pism {
 

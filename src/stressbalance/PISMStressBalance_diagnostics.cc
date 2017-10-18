@@ -19,13 +19,13 @@
 #include "PISMStressBalance_diagnostics.hh"
 #include "SSB_Modifier.hh"
 #include "ShallowStressBalance.hh"
-#include "util/Mask.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/PISMVars.hh"
-#include "util/error_handling.hh"
-#include "util/pism_utilities.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "rheology/FlowLaw.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/rheology/FlowLaw.hh"
 
 namespace pism {
 namespace stressbalance {

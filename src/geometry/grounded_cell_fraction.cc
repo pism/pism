@@ -19,11 +19,11 @@
 
 #include <vector>
 
-#include "util/iceModelVec.hh"
-#include "util/error_handling.hh"
-#include "util/Mask.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "util/FETools.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/FETools.hh"
 
 namespace pism {
 

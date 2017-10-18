@@ -22,9 +22,9 @@
 #include <petscis.h>
 #include <petscvec.h>
 
-#include "util/petscwrappers/Vec.hh"
-#include "util/petscwrappers/IS.hh"
-#include "util/petscwrappers/VecScatter.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/petscwrappers/IS.hh"
+#include "pism/util/petscwrappers/VecScatter.hh"
 
 namespace pism {
 namespace inverse {

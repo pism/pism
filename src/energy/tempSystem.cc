@@ -18,12 +18,12 @@
 
 #include <cassert>
 
-#include "util/pism_const.hh"
-#include "util/iceModelVec.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/iceModelVec.hh"
 #include "tempSystem.hh"
-#include "util/Mask.hh"
+#include "pism/util/Mask.hh"
 
-#include "util/error_handling.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace energy {

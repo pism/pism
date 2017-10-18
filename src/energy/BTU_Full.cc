@@ -19,11 +19,11 @@
 #include <gsl/gsl_math.h>
 
 #include "BTU_Full.hh"
-#include "util/pism_options.hh"
-#include "util/io/PIO.hh"
-#include "util/error_handling.hh"
-#include "util/pism_utilities.hh"
-#include "util/MaxTimestep.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace energy {

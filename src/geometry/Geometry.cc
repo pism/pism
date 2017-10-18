@@ -19,10 +19,10 @@
 
 #include "Geometry.hh"
 
-#include "util/iceModelVec.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "util/Mask.hh"
-#include "geometry/grounded_cell_fraction.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Mask.hh"
+#include "pism/geometry/grounded_cell_fraction.hh"
 
 namespace pism {
 

@@ -20,12 +20,12 @@
 #include <algorithm>            // std::sort
 
 #include "IceModel.hh"
-#include "util/IceGrid.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/PISMTime.hh"
-#include "util/MaxTimestep.hh"
-#include "stressbalance/PISMStressBalance.hh"
-#include "util/PISMComponent.hh" // ...->max_timestep()
+#include "pism/util/IceGrid.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/util/PISMComponent.hh" // ...->max_timestep()
 
 namespace pism {
 

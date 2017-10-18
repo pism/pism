@@ -19,8 +19,8 @@
 #ifndef _PAMODIFIER_H_
 #define _PAMODIFIER_H_
 
-#include "coupler/PISMAtmosphere.hh"
-#include "util/Modifier.hh"
+#include "pism/coupler/PISMAtmosphere.hh"
+#include "pism/util/Modifier.hh"
 
 namespace pism {
 namespace atmosphere {

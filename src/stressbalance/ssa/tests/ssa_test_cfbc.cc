@@ -23,20 +23,20 @@ static char help[] =
   "  class thereof. Uses the van der Veen flow-line shelf geometry. Also may be\n"
   "  used in a PISM software (regression) test.\n\n";
 
-#include "basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
-#include "stressbalance/ssa/SSAFD.hh"
-#include "stressbalance/ssa/SSAFD_diagnostics.hh"
-#include "stressbalance/ssa/SSATestCase.hh"
-#include "stressbalance/ssa/SSAFEM.hh"
-#include "util/Mask.hh"
-#include "util/Context.hh"
-#include "util/VariableMetadata.hh"
-#include "util/error_handling.hh"
-#include "util/iceModelVec.hh"
-#include "util/io/PIO.hh"
-#include "util/petscwrappers/PetscInitializer.hh"
-#include "util/pism_const.hh"
-#include "util/pism_options.hh"
+#include "pism/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
+#include "pism/stressbalance/ssa/SSAFD.hh"
+#include "pism/stressbalance/ssa/SSAFD_diagnostics.hh"
+#include "pism/stressbalance/ssa/SSATestCase.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/petscwrappers/PetscInitializer.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/pism_options.hh"
 
 namespace pism {
 namespace stressbalance {

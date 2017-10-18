@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _POFACTORY_H_
 #define _POFACTORY_H_
 
-#include "coupler/util/PCFactory.hh"
+#include "pism/coupler/util/PCFactory.hh"
 #include "POModifier.hh"
 
 namespace pism {

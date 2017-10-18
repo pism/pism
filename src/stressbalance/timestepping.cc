@@ -18,10 +18,10 @@
  */
 
 #include "timestepping.hh"
-#include "util/IceGrid.hh"
-#include "util/iceModelVec.hh"
-#include "util/IceModelVec2CellType.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 

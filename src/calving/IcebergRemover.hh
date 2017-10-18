@@ -20,8 +20,8 @@
 #ifndef _PISMICEBERGREMOVER_H_
 #define _PISMICEBERGREMOVER_H_
 
-#include "util/PISMComponent.hh"
-#include "util/iceModelVec.hh"
+#include "pism/util/PISMComponent.hh"
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 

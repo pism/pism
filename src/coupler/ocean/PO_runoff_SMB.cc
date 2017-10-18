@@ -18,7 +18,7 @@
 
 #include <gsl/gsl_math.h>       // GSL_NAN
 #include "PO_runoff_SMB.hh"
-#include "util/PISMConfigInterface.hh"
+#include "pism/util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace ocean {

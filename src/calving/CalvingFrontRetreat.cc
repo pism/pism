@@ -17,14 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "CalvingFrontRetreat.hh"
-
-#include "util/iceModelVec.hh"
-#include "util/IceModelVec2CellType.hh"
 #include "remove_narrow_tongues.hh"
-#include "util/MaxTimestep.hh"
-#include "util/PISMVars.hh"
-#include "util/pism_utilities.hh"
-#include "geometry/part_grid_threshold_thickness.hh"
+
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/geometry/part_grid_threshold_thickness.hh"
 
 namespace pism {
 

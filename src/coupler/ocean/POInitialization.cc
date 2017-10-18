@@ -18,10 +18,10 @@
  */
 
 #include "POInitialization.hh"
-#include "util/pism_utilities.hh"
-#include "util/io/io_helpers.hh"
-#include "util/io/PIO.hh"
-#include "util/pism_options.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/pism_options.hh"
 
 namespace pism {
 namespace ocean {

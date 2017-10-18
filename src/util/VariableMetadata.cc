@@ -20,13 +20,13 @@
 #include <algorithm>
 
 #include "VariableMetadata.hh"
-#include "util/io/PIO.hh"
+#include "pism/util/io/PIO.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
 
 #include "PISMConfigInterface.hh"
 #include "error_handling.hh"
-#include "util/Logger.hh"
+#include "pism/util/Logger.hh"
 #include "pism_utilities.hh"
 
 namespace pism {

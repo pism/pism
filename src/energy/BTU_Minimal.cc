@@ -18,7 +18,7 @@
  */
 
 #include "BTU_Minimal.hh"
-#include "util/MaxTimestep.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace energy {

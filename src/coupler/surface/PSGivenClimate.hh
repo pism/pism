@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,10 @@
 #ifndef _PSGIVEN_H_
 #define _PSGIVEN_H_
 
-#include "coupler/util/PGivenClimate.hh"
-#include "coupler/PISMSurface.hh"
+#include "pism/coupler/util/PGivenClimate.hh"
+#include "pism/coupler/PISMSurface.hh"
 #include "PSModifier.hh"
-#include "coupler/PISMAtmosphere.hh"
+#include "pism/coupler/PISMAtmosphere.hh"
 
 namespace pism {
 namespace surface {

@@ -19,8 +19,8 @@
 #ifndef _SSA_H_
 #define _SSA_H_
 
-#include "stressbalance/ShallowStressBalance.hh"
-#include "util/IceModelVec2CellType.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 

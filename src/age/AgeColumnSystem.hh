@@ -20,7 +20,7 @@
 #ifndef AGECOLUMNSYSTEM_H
 #define AGECOLUMNSYSTEM_H
 
-#include "util/ColumnSystem.hh"
+#include "pism/util/ColumnSystem.hh"
 
 namespace pism {
 

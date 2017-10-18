@@ -55,8 +55,8 @@ ENDMACRO(SWIG_GET_WRAPPER_DEPENDENCIES)
 if (Pism_BUILD_PYTHON_BINDINGS)
     include(${SWIG_USE_FILE})
 
-    include_directories (. ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDES})
-    
+    include_directories (. ${PETSC4PY_INCLUDES} ${PYTHON_INCLUDES} ${CMAKE_SOURCE_DIR}/src)
+
     set(PISM_PYTHON_BINDING_LIBRARIES "pism")
 
     # Get module dependencies:

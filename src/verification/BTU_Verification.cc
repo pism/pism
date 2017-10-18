@@ -18,10 +18,10 @@
  */
 
 #include "BTU_Verification.hh"
-#include "util/PISMTime.hh"
-#include "verification/tests/exactTestK.h"
-#include "verification/tests/exactTestO.h"
-#include "util/error_handling.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/verification/tests/exactTestK.h"
+#include "pism/verification/tests/exactTestO.h"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace energy {

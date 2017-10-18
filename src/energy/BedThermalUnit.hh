@@ -19,10 +19,10 @@
 #ifndef _PISMBEDTHERMALUNIT_H_
 #define _PISMBEDTHERMALUNIT_H_
 
-#include "util/PISMComponent.hh"
-#include "util/iceModelVec3Custom.hh"
+#include "pism/util/PISMComponent.hh"
+#include "pism/util/iceModelVec3Custom.hh"
 
-#include "util/PISMDiagnostic.hh"
+#include "pism/util/PISMDiagnostic.hh"
 
 namespace pism {
 

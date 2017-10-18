@@ -20,7 +20,7 @@
 #define _PSFORCETHICKNESS_H_
 
 #include "PSModifier.hh"
-#include "util/iceModelVec.hh"
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace surface {

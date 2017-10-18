@@ -27,7 +27,7 @@ using std::dynamic_pointer_cast;
 #include <petscdraw.h>
 #include <petscdmda.h>
 
-#include "util/io/PIO.hh"
+#include "pism/util/io/PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 #include "PISMConfigInterface.hh"
@@ -35,12 +35,12 @@ using std::dynamic_pointer_cast;
 #include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
 
-#include "util/petscwrappers/Vec.hh"
-#include "util/petscwrappers/VecScatter.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/petscwrappers/VecScatter.hh"
 #include "pism_const.hh"
 #include "pism_utilities.hh"
 #include "io/io_helpers.hh"
-#include "util/Logger.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

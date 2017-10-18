@@ -20,9 +20,9 @@
 #include <gsl/gsl_math.h>
 
 #include "PO_frac_MBP.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/io/io_helpers.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace ocean {

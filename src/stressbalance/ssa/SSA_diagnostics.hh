@@ -21,7 +21,7 @@
 #define _SSA_DIAGNOSTICS_H_
 
 #include "SSA.hh"
-#include "util/PISMDiagnostic.hh"
+#include "pism/util/PISMDiagnostic.hh"
 
 namespace pism {
 namespace stressbalance {

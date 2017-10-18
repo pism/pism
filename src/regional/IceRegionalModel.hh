@@ -20,7 +20,7 @@
 #ifndef _ICEREGIONALMODEL_H_
 #define _ICEREGIONALMODEL_H_
 
-#include "icemodel/IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 namespace pism {
 

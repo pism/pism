@@ -20,15 +20,15 @@
 
 #include <gsl/gsl_math.h>       // GSL_NAN
 
-#include "util/io/PIO.hh"
-#include "util/PISMTime.hh"
-#include "util/IceGrid.hh"
-#include "util/pism_options.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/error_handling.hh"
-#include "util/PISMVars.hh"
-#include "util/MaxTimestep.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
 #include "deformation.hh"
 
 namespace pism {

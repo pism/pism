@@ -24,10 +24,10 @@
 #include "greens.hh"
 #include "deformation.hh"
 
-#include "util/pism_const.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/error_handling.hh"
-#include "util/petscwrappers/Vec.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace bed {

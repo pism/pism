@@ -24,18 +24,18 @@
 
 #include "IceModel.hh"
 
-#include "stressbalance/PISMStressBalance.hh"
-#include "util/IceGrid.hh"
-#include "util/Mask.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/PISMTime.hh"
-#include "util/error_handling.hh"
-#include "coupler/PISMOcean.hh"
-#include "earth/PISMBedDef.hh"
-#include "util/EnthalpyConverter.hh"
-#include "util/pism_utilities.hh"
-#include "age/AgeModel.hh"
-#include "energy/EnergyModel.hh"
+#include "pism/stressbalance/PISMStressBalance.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/coupler/PISMOcean.hh"
+#include "pism/earth/PISMBedDef.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/age/AgeModel.hh"
+#include "pism/energy/EnergyModel.hh"
 
 namespace pism {
 

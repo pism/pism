@@ -20,7 +20,7 @@
 #ifndef BTU_VERIFICATION_H
 #define BTU_VERIFICATION_H
 
-#include "energy/BTU_Full.hh"
+#include "pism/energy/BTU_Full.hh"
 
 namespace pism {
 namespace energy {

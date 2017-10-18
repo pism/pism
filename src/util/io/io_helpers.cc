@@ -24,17 +24,17 @@
 
 #include "io_helpers.hh"
 #include "PIO.hh"
-#include "util/IceGrid.hh"
-#include "util/VariableMetadata.hh"
-#include "util/error_handling.hh"
-#include "util/pism_utilities.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/io/LocalInterpCtx.hh"
-#include "util/PISMTime.hh"
-#include "util/Logger.hh"
-#include "util/Context.hh"
-#include "util/projection.hh"
-#include "util/interpolation.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/projection.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 namespace io {

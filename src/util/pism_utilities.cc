@@ -22,7 +22,7 @@
 #include <fftw3.h>
 #include <gsl/gsl_version.h>
 #if (PISM_USE_PROJ4==1)
-#include "util/Proj.hh"
+#include "pism/util/Proj.hh"
 #endif
 
 #ifdef PISM_USE_JANSSON

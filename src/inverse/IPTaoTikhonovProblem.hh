@@ -23,9 +23,9 @@
 
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/IceGrid.hh"
-#include "util/Logger.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace inverse {

@@ -19,8 +19,8 @@
 
 #include "remove_narrow_tongues.hh"
 
-#include "util/IceGrid.hh"
-#include "util/IceModelVec2CellType.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 

@@ -19,8 +19,8 @@
 #ifndef _PSMODIFIER_H_
 #define _PSMODIFIER_H_
 
-#include "coupler/PISMSurface.hh"
-#include "util/Modifier.hh"
+#include "pism/coupler/PISMSurface.hh"
+#include "pism/util/Modifier.hh"
 
 namespace pism {
 namespace surface {

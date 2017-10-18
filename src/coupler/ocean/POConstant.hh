@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _POCONSTANT_H_
 #define _POCONSTANT_H_
 
-#include "coupler/PISMOcean.hh"
+#include "pism/coupler/PISMOcean.hh"
 
 namespace pism {
 namespace ocean {

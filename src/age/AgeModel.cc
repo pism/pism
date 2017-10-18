@@ -18,10 +18,11 @@
  */
 
 #include "AgeModel.hh"
-#include "util/error_handling.hh"
-#include "age/AgeColumnSystem.hh"
-#include "util/PISMVars.hh"
-#include "util/io/PIO.hh"
+
+#include "pism/age/AgeColumnSystem.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/io/PIO.hh"
 
 namespace pism {
 

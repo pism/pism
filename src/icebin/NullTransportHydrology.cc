@@ -16,12 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <hydrology/hydrology_diagnostics.hh>
-#include <util/IceModelVec2CellType.hh>
-#include <util/Mask.hh>
-#include <util/PISMVars.hh>
-#include <util/error_handling.hh>
-#include <icebin/NullTransportHydrology.hh>
+#include <pism/hydrology/hydrology_diagnostics.hh>
+#include <pism/util/IceModelVec2CellType.hh>
+#include <pism/util/Mask.hh>
+#include <pism/util/PISMVars.hh>
+#include <pism/util/error_handling.hh>
+#include <pism/icebin/NullTransportHydrology.hh>
 
 namespace pism {
 namespace icebin {

@@ -20,7 +20,7 @@
 #ifndef TIMESTEPPING_H
 #define TIMESTEPPING_H
 
-#include "util/MaxTimestep.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 

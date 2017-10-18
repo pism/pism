@@ -2,10 +2,10 @@
 
 // --------------------------------
 // PISM Includes... want to be included first
-#include <icemodel/IceModel.hh>
-#include <util/IceGrid.hh>
-#include <util/io/PISMNCFile.hh>
 #include <petsc.h>
+#include <pism/icemodel/IceModel.hh>
+#include <pism/util/IceGrid.hh>
+#include <pism/util/io/PISMNCFile.hh>
 // --------------------------------
 
 #include <string>

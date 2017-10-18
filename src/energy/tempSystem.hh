@@ -19,9 +19,9 @@
 #ifndef __tempSystem_hh
 #define __tempSystem_hh
 
-#include "util/ColumnSystem.hh"
-#include "util/pism_const.hh"
-#include "util/Mask.hh"
+#include "pism/util/ColumnSystem.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/Mask.hh"
 
 namespace pism {
 

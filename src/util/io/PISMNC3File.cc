@@ -27,8 +27,8 @@
 #include <cstring>              // memset
 #include <cstdio>               // stderr, fprintf
 
-#include "util/pism_utilities.hh" // join
-#include "util/error_handling.hh"
+#include "pism/util/pism_utilities.hh" // join
+#include "pism/util/error_handling.hh"
 
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 

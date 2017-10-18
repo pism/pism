@@ -21,8 +21,8 @@
 
 #include <string>
 
-#include "util/EnthalpyConverter.hh"
-#include "util/Vector2.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/Vector2.hh"
 
 namespace pism {
 

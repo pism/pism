@@ -22,15 +22,15 @@
 #include <gsl/gsl_interp.h>
 
 #include "PIO.hh"
-#include "util/pism_const.hh"
+#include "pism/util/pism_const.hh"
 #include "LocalInterpCtx.hh"
-#include "util/PISMConfigInterface.hh"
-#include "util/IceGrid.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
 
-#include "util/pism_utilities.hh"
-#include "util/interpolation.hh"
-#include "util/error_handling.hh"
-#include "util/Logger.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/interpolation.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

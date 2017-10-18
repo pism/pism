@@ -1,10 +1,10 @@
 // See here for useful changes:
 // https://github.com/pism/pism/commit/443050f30743d6c2ef431c53e87dc6eb19a73dfd
 
-#include <util/PISMTime.hh>
-#include <util/io/PIO.hh>
-#include <util/io/io_helpers.hh>
-#include <icebin/VecBundleWriter.hh>
+#include <pism/util/PISMTime.hh>
+#include <pism/util/io/PIO.hh>
+#include <pism/util/io/io_helpers.hh>
+#include <pism/icebin/VecBundleWriter.hh>
 
 using namespace pism;
 

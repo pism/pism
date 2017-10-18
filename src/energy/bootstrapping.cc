@@ -19,7 +19,7 @@
 
 #include <cmath>
 
-#include "energy/bootstrapping.hh"
+#include "pism/energy/bootstrapping.hh"
 
 namespace pism {
 namespace energy {

@@ -21,11 +21,11 @@
 
 #include "IceModel.hh"
 
-#include "util/PISMConfigInterface.hh"
-#include "util/PISMDiagnostic.hh"
-#include "util/error_handling.hh"
-#include "util/PISMVars.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/PISMConfigInterface.hh"
+#include "pism/util/PISMDiagnostic.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 

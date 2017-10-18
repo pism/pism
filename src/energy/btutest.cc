@@ -19,26 +19,26 @@
 static char help[] =
   "Tests BedThermalUnit using Test K, without IceModel.\n\n";
 
-#include "util/pism_options.hh"
-#include "util/IceGrid.hh"
-#include "util/io/PIO.hh"
-#include "util/VariableMetadata.hh"
-#include "verification/BTU_Verification.hh"
-#include "energy/BTU_Minimal.hh"
-#include "util/PISMTime.hh"
-#include "util/PISMVars.hh"
-#include "util/PISMConfigInterface.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/verification/BTU_Verification.hh"
+#include "pism/energy/BTU_Minimal.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/PISMConfigInterface.hh"
 
-#include "verification/tests/exactTestK.h"
+#include "pism/verification/tests/exactTestK.h"
 
-#include "util/petscwrappers/PetscInitializer.hh"
-#include "util/error_handling.hh"
-#include "util/io/io_helpers.hh"
-#include "util/Context.hh"
-#include "util/PISMConfig.hh"
-#include "util/EnthalpyConverter.hh"
-#include "util/MaxTimestep.hh"
-#include "util/Logger.hh"
+#include "pism/util/petscwrappers/PetscInitializer.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/PISMConfig.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Logger.hh"
 
 //! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
 pism::Context::Ptr btutest_context(MPI_Comm com, const std::string &prefix) {

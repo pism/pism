@@ -20,13 +20,13 @@
 #include <fstream>
 #include <iostream>
 
-#include "util/pism_const.hh"
-#include "util/iceModelVec.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/iceModelVec.hh"
 #include "ColumnSystem.hh"
 
-#include "util/error_handling.hh"
-#include "util/ColumnInterpolation.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/ColumnInterpolation.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 

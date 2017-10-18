@@ -21,9 +21,9 @@
 #include <cassert>
 
 #include "POGivenTH.hh"
-#include "util/IceGrid.hh"
-#include "util/PISMVars.hh"
-#include "util/PISMConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/PISMConfigInterface.hh"
 
 namespace pism {
 namespace ocean {

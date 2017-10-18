@@ -26,7 +26,7 @@
 
 #include "PISMUnits.hh"
 
-#include "util/io/IO_Flags.hh" // IO_Type
+#include "pism/util/io/IO_Flags.hh" // IO_Type
 
 namespace pism {
 

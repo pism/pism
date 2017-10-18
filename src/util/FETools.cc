@@ -23,12 +23,12 @@
 #include <cstdlib>              // malloc, free
 
 #include "FETools.hh"
-#include "util/IceGrid.hh"
-#include "util/iceModelVec.hh"
-#include "util/pism_const.hh"
-#include "util/Logger.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/Logger.hh"
 
-#include "util/error_handling.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

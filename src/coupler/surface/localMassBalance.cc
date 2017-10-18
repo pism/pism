@@ -24,10 +24,10 @@
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <algorithm>
 
-#include "util/pism_const.hh"
-#include "util/PISMConfigInterface.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/PISMConfigInterface.hh"
 #include "localMassBalance.hh"
-#include "util/IceGrid.hh"
+#include "pism/util/IceGrid.hh"
 
 namespace pism {
 namespace surface {

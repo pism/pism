@@ -19,7 +19,7 @@
 
 #include "gpbld.hh"
 
-#include "external/vdt/vdtMath.h"        // fast_exp
+#include "pism/external/vdt/vdtMath.h"        // fast_exp
 
 #include "inverse_cbrt.h"       // inverse_cbrt
 

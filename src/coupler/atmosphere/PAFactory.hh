@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2014, 2015, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,9 +19,9 @@
 #ifndef _PAFACTORY_H_
 #define _PAFACTORY_H_
 
-#include "coupler/PISMAtmosphere.hh"
+#include "pism/coupler/PISMAtmosphere.hh"
 #include "PAModifier.hh"
-#include "coupler/util/PCFactory.hh"
+#include "pism/coupler/util/PCFactory.hh"
 
 namespace pism {
 namespace atmosphere {

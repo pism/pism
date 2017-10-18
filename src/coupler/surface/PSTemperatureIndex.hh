@@ -19,8 +19,8 @@
 #ifndef _PSTEMPERATUREINDEX_H_
 #define _PSTEMPERATUREINDEX_H_
 
-#include "util/iceModelVec2T.hh"
-#include "coupler/PISMSurface.hh"
+#include "pism/util/iceModelVec2T.hh"
+#include "pism/coupler/PISMSurface.hh"
 #include "localMassBalance.hh"
 
 namespace pism {

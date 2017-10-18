@@ -20,7 +20,7 @@
 #include <cassert>
 
 #include "PISMComponent.hh"
-#include "util/io/PIO.hh"
+#include "pism/util/io/PIO.hh"
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "pism_utilities.hh"
@@ -30,7 +30,7 @@
 #include "error_handling.hh"
 #include "PISMConfigInterface.hh"
 #include "MaxTimestep.hh"
-#include "util/PISMTime.hh"
+#include "pism/util/PISMTime.hh"
 
 namespace pism {
 

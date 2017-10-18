@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "coupler/PISMOcean.hh"
-#include "util/iceModelVec.hh"
+#include "pism/coupler/PISMOcean.hh"
+#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 namespace ocean {

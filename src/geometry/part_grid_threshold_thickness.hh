@@ -19,7 +19,7 @@
 #ifndef PART_GRID_THRESHOLD_THICKNESS_H
 #define PART_GRID_THRESHOLD_THICKNESS_H
 
-#include "util/StarStencil.hh"
+#include "pism/util/StarStencil.hh"
 
 namespace pism {
 

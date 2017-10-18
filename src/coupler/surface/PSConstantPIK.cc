@@ -19,12 +19,12 @@
 #include <gsl/gsl_math.h>
 
 #include "PSConstantPIK.hh"
-#include "util/io/PIO.hh"
-#include "util/PISMVars.hh"
-#include "util/IceGrid.hh"
-#include "util/pism_const.hh"
-#include "util/MaxTimestep.hh"
-#include "util/pism_utilities.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {

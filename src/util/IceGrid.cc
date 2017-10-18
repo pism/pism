@@ -31,10 +31,10 @@
 #include "PISMConfigInterface.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
-#include "util/io/PIO.hh"
-#include "util/PISMVars.hh"
-#include "util/Logger.hh"
-#include "util/projection.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/projection.hh"
 
 namespace pism {
 

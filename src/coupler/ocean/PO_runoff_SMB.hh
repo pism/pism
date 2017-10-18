@@ -19,7 +19,7 @@
 #ifndef _PO_RUNOFF_SMB_H_
 #define _PO_RUNOFF_SMB_H_
 
-#include "coupler/util/PScalarForcing.hh"
+#include "pism/coupler/util/PScalarForcing.hh"
 #include "POModifier.hh"
 
 namespace pism {

@@ -20,16 +20,16 @@
 #include <cassert>
 #include <gsl/gsl_math.h>
 
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMAtmosphere.hh"
-#include "util/io/PIO.hh"
-#include "util/PISMVars.hh"
-#include "util/PISMTime.hh"
-#include "util/IceGrid.hh"
-#include "util/pism_options.hh"
-#include "util/iceModelVec.hh"
-#include "util/MaxTimestep.hh"
-#include "util/pism_utilities.hh"
+#include "pism/coupler/PISMSurface.hh"
+#include "pism/coupler/PISMAtmosphere.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/PISMVars.hh"
+#include "pism/util/PISMTime.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {
