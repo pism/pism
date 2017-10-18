@@ -35,6 +35,20 @@ Alternatively one can request the same 2D diagnostics in terms of ice mass:
                            tendency_of_ice_mass_due_to_basal_mass_balance +
                            tendency_of_ice_mass_due_to_discharge)
 
+Use a shortcut
+
+.. code-block:: none
+
+   pismr -extra_file ex.nc -extra_times N -extra_vars amount_fluxes,...
+
+to save fluxes in terms of "ice amount" and
+
+.. code-block:: none
+
+   pismr -extra_file ex.nc -extra_times N -extra_vars mass_fluxes,...
+
+to save fluxes in terms of "ice mass."
+
 Comments
 ^^^^^^^^
 
