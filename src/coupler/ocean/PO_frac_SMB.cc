@@ -36,8 +36,7 @@ Frac_SMB::Frac_SMB(IceGrid::ConstPtr g, OceanModel* in)
 
   m_offset->variable().set_string("units", "1");
   m_offset->dimension().set_string("units", m_grid->ctx()->time()->units_string());
-  m_offset->variable().set_string("long_name",
-                                    "ice-shelf-base mass flux fractional offsets");
+  m_offset->variable().set_string("long_name", "ice-shelf-base mass flux factor");
 }
 
 Frac_SMB::~Frac_SMB() {
