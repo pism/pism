@@ -211,8 +211,8 @@ option, PISM will report the following.
    Writing model state to file `output.nc'...
 
 If the ``proj4`` attribute contains the string "``+init=epsg:XXXX``" where ``XXXX`` is
-either 3413 or 3031, PISM will also create a CF-conforming ``mapping`` variable describing
-the projection in use.
+3413, 3031, or 26710, PISM will also create a CF-conforming ``mapping`` variable
+describing the projection in use.
 
 "Mapping" variables following CF metadata conventions in input files are copied to output
 files (including ``-extra_file``\s) but are **not** used to compute corrected cell areas
