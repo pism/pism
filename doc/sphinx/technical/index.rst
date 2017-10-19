@@ -11,7 +11,7 @@ Technical notes
 
    bed_roughness.rst
 
-   coding_style.rst
+   coding_guidelines.rst
 
    how-to.rst
 
