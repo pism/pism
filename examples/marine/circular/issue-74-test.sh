@@ -32,7 +32,7 @@ pismopts="-i $infile -bootstrap $grid -stress_balance ssa -ssa_dirichlet_bc -o_o
 
 doit="mpiexec -n $N pismr $pismopts"
 
-extra="-extra_times 10 -extra_vars thk,mask,velbar_mag,Href,velbar,usurf -extra_file issue-74_ex.nc"
+extra="-extra_times 10 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,usurf -extra_file issue-74_ex.nc"
 ts="-ts_file issue-74_ts.nc -ts_times 1"
 
 $doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -o issue-74_o.nc $extra $ts -calving float_kill
