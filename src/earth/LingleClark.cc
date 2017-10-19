@@ -59,7 +59,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
   const int
     Mx = m_grid->Mx(),
     My = m_grid->My(),
-    Z  = 4,                     // use Z = 4 for now; to reduce global drift?
+    Z  = m_config->get_double("bed_deformation.lc.grid_size_factor"),
     Nx = Z*(Mx - 1) + 1,
     Ny = Z*(My - 1) + 1;
 
