@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,10 +22,10 @@
 
 #include <gsl/gsl_interp.h>
 
-#include "base/util/pism_options.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/io/PIO.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/io/PIO.hh"
 
 namespace pism {
 
@@ -68,6 +68,7 @@ static void subset_extent(const std::string& axis,
   // include one more point if we can
   x_end = std::min(x.size() - 1, x_end + 1);
 
+  // NOTE: this assumes the CELL_CORNER grid registration
   Lx = (x[x_end] - x[x_start]) / 2.0;
 
   x0 = (x[x_start] + x[x_end]) / 2.0;
@@ -80,8 +81,6 @@ static void subset_extent(const std::string& axis,
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
 IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
-
-  const Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
 
   const options::String input_file("-i", "Specifies a PISM input file");
   const bool bootstrap = options::Bool("-bootstrap", "enable bootstrapping heuristics");
@@ -121,9 +120,9 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
       }
 
       if (grid_info_found) {
-        input_grid = GridParameters(ctx, file, name, p);
+        input_grid = GridParameters(ctx, file, name, CELL_CORNER);
 
-        grid_info full = grid_info(file, name, ctx->unit_system(), p);
+        grid_info full = grid_info(file, name, ctx->unit_system(), CELL_CORNER);
 
         // x direction
         subset_extent("x", full.x, x_range[0], x_range[1],
@@ -132,8 +131,9 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
         subset_extent("y", full.y, y_range[0], y_range[1],
                       input_grid.y0, input_grid.Ly, input_grid.My);
 
-        // Set periodicity to "NONE" to that IceGrid computes coordinates correctly.
-        input_grid.periodicity = NONE;
+        // Set registration to "CELL_CORNER" so that IceGrid computes
+        // coordinates correctly.
+        input_grid.registration = CELL_CORNER;
 
         break;
       }

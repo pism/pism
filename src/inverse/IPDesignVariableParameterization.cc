@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -18,12 +18,12 @@
 
 #include <cmath>
 
-#include "base/util/iceModelVec.hh"
+#include "pism/util/iceModelVec.hh"
 #include "IPDesignVariableParameterization.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/error_handling.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace inverse {

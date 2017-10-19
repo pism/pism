@@ -19,6 +19,7 @@ def allocate_grid(ctx):
     params.My = 7
     params.Mz = 5
     params.periodicity = PISM.NOT_PERIODIC
+    params.registration = PISM.CELL_CORNER
     params.ownership_ranges_from_options(ctx.size)
     return PISM.IceGrid(ctx.ctx, params)
 

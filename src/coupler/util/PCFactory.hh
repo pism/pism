@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,10 +22,10 @@
 #include <memory>
 #include <map>
 
-#include "base/util/IceGrid.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/pism_const.hh"
-#include "base/util/pism_options.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/pism_options.hh"
 
 namespace pism {
 

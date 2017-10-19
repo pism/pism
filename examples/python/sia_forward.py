@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -49,12 +49,12 @@ is_regional = PISM.optionsFlag("-regional",
                                "Compute SIA using regional model semantics", default=False)
 verbosity = PISM.optionsInt("-verbose", "verbosity level", default=2)
 
-periodicity = PISM.XY_PERIODIC
+registration = PISM.CELL_CENTER
 if is_regional:
-    periodicity = PISM.NOT_PERIODIC
+    registration = PISM.CELL_CORNER
 
 input_file = PISM.PIO(ctx.com(), "netcdf3", input_filename, PISM.PISM_READONLY)
-grid = PISM.IceGrid.FromFile(ctx, input_file, "enthalpy", periodicity)
+grid = PISM.IceGrid.FromFile(ctx, input_file, "enthalpy", registration)
 
 config.set_boolean("basal_resistance.pseudo_plastic.enabled", False)
 

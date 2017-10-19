@@ -1,4 +1,4 @@
-// Copyright (C) 2012,2013,2014,2015,2016  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012,2013,2014,2015,2016,2017  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,9 +23,9 @@
 
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/Logger.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace inverse {

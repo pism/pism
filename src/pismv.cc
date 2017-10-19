@@ -19,21 +19,21 @@
 static char help[] =
 "Ice sheet driver for PISM (SIA and SSA) verification.  Uses exact solutions\n"
 "  to various coupled subsystems.  Computes difference between exact solution\n"
-"  and numerical solution.  Can also just compute exact solution (-eo).\n"
+"  and numerical solution.\n"
 "  Currently implements tests A, B, C, D, E, F, G, H, K, L.\n\n";
 
 #include <string>
 
-#include "base/util/IceGrid.hh"
-#include "base/util/PISMConfig.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/petscwrappers/PetscInitializer.hh"
-#include "base/util/pism_options.hh"
-#include "verif/iceCompModel.hh"
-#include "base/util/Context.hh"
-#include "base/util/Logger.hh"
-#include "base/util/PISMTime.hh"
-#include "base/enthalpyConverter.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Config.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/PetscInitializer.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/verification/iceCompModel.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/EnthalpyConverter.hh"
 
 using namespace pism;
 
@@ -49,6 +49,8 @@ Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
   Config::Ptr config = config_from_options(com, *logger, sys);
 
   config->set_string("time.calendar", "none");
+  config->set_string("grid.periodicity", "none");
+  config->set_string("grid.registration", "corner");
 
   set_config_from_options(*config);
 
@@ -67,6 +69,8 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
 
   GridParameters P;
 
+  // use the cell corner grid registration
+  P.registration = CELL_CORNER;
   // use the non-periodic grid:
   P.periodicity = NOT_PERIODIC;
   // equal spacing is the default for all the tests except K
@@ -134,10 +138,10 @@ IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
   options::forbidden("-bootstrap");
 
   if (input_file.is_set()) {
-    Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
+    GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file
-    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, p);
+    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
   } else {
     // use defaults set by pismv_grid_defaults()
     GridParameters P = pismv_grid_defaults(ctx->config(), testname);
@@ -162,11 +166,10 @@ int main(int argc, char *argv[]) {
     Logger::Ptr log = ctx->log();
 
     std::string usage =
-      "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pismv -test x [-no_report] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -test x     SIA-type verification test (x = A|B|C|D|F|G|H|K|L)\n"
       "  -no_report  do not give error report at end of run\n"
-      "  -eo         do not do numerical run; exact solution only\n"
       "(see User's Manual for tests I and J).\n";
 
     std::vector<std::string> required(1, "-test");

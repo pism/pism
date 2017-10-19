@@ -17,14 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_SSATaucForwardProblem.hh"
-#include "base/basalstrength/basal_resistance.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/Mask.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/pism_const.hh"
-#include "base/Geometry.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
+#include "pism/basalstrength/basal_resistance.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
 namespace inverse {
@@ -57,15 +57,10 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
                         "yield stress for basal till (plastic or pseudo-plastic model)",
                         "Pa", "");
 
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = DMCreateMatrix(*m_da, "baij", m_J_state.rawptr());
-  PISM_CHK(ierr, "DMCreateMatrix");
-#else
   ierr = DMSetMatType(*m_da, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");
   ierr = DMCreateMatrix(*m_da, m_J_state.rawptr());
   PISM_CHK(ierr, "DMCreateMatrix");
-#endif
 
   ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
   PISM_CHK(ierr, "KSPCreate");
@@ -108,7 +103,7 @@ void IP_SSATaucForwardProblem::init() {
 
     geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
 
-    stressbalance::StressBalanceInputs inputs;
+    stressbalance::Inputs inputs;
 
     inputs.sea_level             = 0.0;
     inputs.geometry              = &geometry;
@@ -565,13 +560,8 @@ void IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMode
   m_du_global.scale(-1);
 
   // call PETSc to solve linear system by iterative method.
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
-  PISM_CHK(ierr, "KSPSetOperators");
-#else
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
   PISM_CHK(ierr, "KSPSetOperators");
-#endif
 
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
   PISM_CHK(ierr, "KSPSolve"); // SOLVE
@@ -580,7 +570,8 @@ void IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMode
   ierr = KSPGetConvergedReason(m_ksp, &reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
   if (reason < 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IP_SSATaucForwardProblem::apply_linearization solve"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "IP_SSATaucForwardProblem::apply_linearization solve"
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {
@@ -636,13 +627,9 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
   m_du_global.end_access();
 
   // call PETSc to solve linear system by iterative method.
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
-  PISM_CHK(ierr, "KSPSetOperators");
-#else
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
   PISM_CHK(ierr, "KSPSetOperators");
-#endif
+
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
   PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
@@ -651,7 +638,8 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
   PISM_CHK(ierr, "KSPGetConvergedReason");
 
   if (reason < 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IP_SSATaucForwardProblem::apply_linearization solve"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "IP_SSATaucForwardProblem::apply_linearization solve"
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   } else {

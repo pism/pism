@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014, 2016 PISM Authors
+// Copyright (C) 2012-2014, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,11 +18,11 @@
 
 #pragma once
 
-#include <base/hydrology/PISMHydrology.hh>
-#include <base/stressbalance/PISMStressBalance.hh>
-#include <base/util/PISMComponent.hh>
-#include <base/util/iceModelVec.hh>
-#include <base/util/iceModelVec2T.hh>
+#include <pism/hydrology/Hydrology.hh>
+#include <pism/stressbalance/StressBalance.hh>
+#include <pism/util/Component.hh>
+#include <pism/util/iceModelVec.hh>
+#include <pism/util/iceModelVec2T.hh>
 
 //! The PISM minimal model has till in a "can".  Water that overflows the can is not conserved.  There is no model for lateral transport.
 /*!

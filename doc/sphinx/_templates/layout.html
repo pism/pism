@@ -1,0 +1,35 @@
+{% extends '!layout.html' %}
+
+{%- block document %}
+<div class="documentwrapper">
+  {%- if render_sidebar %}
+  <div class="bodywrapper">
+    {%- endif %}
+    <div class="body" role="main">
+      {% block body %} {% endblock %}
+      <hr>
+      <table style="width: 100%">
+        <tr>
+          <td style="text-align: left; width: 30%">
+            {%- if prev %}
+              <a class="reference internal" href="{{ prev.link|e }}">Previous</a>
+            {%- endif %}
+          </td>
+          <td style="text-align: center; width: 30%">
+            {%- if parents[-1] %}
+              <a class="reference internal" href="{{ parents[-1].link|e }}">Up</a>
+            {%- endif %}
+          </td>
+          <td style="text-align: right; width: 30%">
+            {%- if next %}
+              <a class="reference internal" href="{{ next.link|e }}">Next</a>
+            {%- endif %}
+          </td>
+        </tr>
+      </table>
+    </div>
+    {%- if render_sidebar %}
+  </div>
+  {%- endif %}
+</div>
+{%- endblock %}

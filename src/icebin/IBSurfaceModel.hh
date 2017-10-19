@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,9 +19,9 @@
 #ifndef _IBSURFACEMODEL_H_
 #define _IBSURFACEMODEL_H_
 
-#include "base/util/iceModelVec.hh"
-#include "coupler/PISMAtmosphere.hh"
-#include "coupler/PISMSurface.hh"
+#include "pism/util/iceModelVec.hh"
+#include "pism/coupler/AtmosphereModel.hh"
+#include "pism/coupler/SurfaceModel.hh"
 
 namespace pism {
 namespace icebin {

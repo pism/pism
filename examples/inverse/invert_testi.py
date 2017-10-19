@@ -141,7 +141,9 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
         Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)))
 
         ctx = PISM.Context().ctx
-        self.grid = PISM.IceGrid.Shallow(ctx, Lx, Ly, x0, y0, Mx, My, PISM.X_PERIODIC)
+        self.grid = PISM.IceGrid.Shallow(ctx, Lx, Ly, x0, y0, Mx, My,
+                                         PISM.CELL_CENTER,
+                                         PISM.X_PERIODIC)
 
     def _initPhysics(self):
         config = self.config

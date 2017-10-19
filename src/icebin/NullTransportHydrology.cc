@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2014, 2016 PISM Authors
+// Copyright (C) 2012-2014, 2016, 2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,12 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <base/hydrology/hydrology_diagnostics.hh>
-#include <base/util/IceModelVec2CellType.hh>
-#include <base/util/Mask.hh>
-#include <base/util/PISMVars.hh>
-#include <base/util/error_handling.hh>
-#include <icebin/NullTransportHydrology.hh>
+#include <pism/hydrology/hydrology_diagnostics.hh>
+#include <pism/util/IceModelVec2CellType.hh>
+#include <pism/util/Mask.hh>
+#include <pism/util/Vars.hh>
+#include <pism/util/error_handling.hh>
+#include <pism/icebin/NullTransportHydrology.hh>
 
 namespace pism {
 namespace icebin {

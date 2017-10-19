@@ -8,12 +8,12 @@ MPIEXEC=$2
 # Test name:
 echo "Test #12: mass conservation within rounding error (SIA moving margin)."
 # The list of files to delete when done.
-files="verify-12.nc volume_nonglacierized-12.nc"
+files="verify-12.nc ice_volume-12.nc"
 
 rm -f $files
 GRID="-Mx 31 -My 31 -Mz 31 -y 5000 -ys 1000"
 OPTS="-test B -max_dt 25 -o_size small"
-TS_OPTS="-ts_file volume_nonglacierized-12.nc -ts_vars volume_nonglacierized -ts_times 1000:25:1e4"
+TS_OPTS="-ts_file ice_volume-12.nc -ts_vars ice_volume -ts_times 1000:25:1e4"
 # run test B 
 
 set -x
@@ -30,8 +30,8 @@ try:
 except:
     from netCDF4 import Dataset
 
-nc = Dataset("volume_nonglacierized-12.nc", 'r')
-volume = nc.variables['volume_nonglacierized'][:]
+nc = Dataset("ice_volume-12.nc", 'r')
+volume = nc.variables['ice_volume'][:]
 volume_max = volume.max()
 threshold = 10**(floor(log10(volume_max)) - 14) # 14 digits of accuracy
 diff_max = diff(volume).max()

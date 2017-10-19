@@ -30,6 +30,7 @@ class testj(PISM.ssa.SSAExactTestCase):
         ctx = PISM.Context().ctx
         self.grid = PISM.IceGrid.Shallow(ctx, Lx, Ly, 0, 0,
                                          self.Mx, self.My,
+                                         PISM.CELL_CENTER,
                                          PISM.XY_PERIODIC)
 
     def _initPhysics(self):

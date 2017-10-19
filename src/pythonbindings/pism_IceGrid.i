@@ -1,5 +1,5 @@
 %{
-#include "base/util/IceGrid.hh"
+#include "util/IceGrid.hh"
 %}
 
 %extend pism::IceGrid
@@ -22,4 +22,4 @@
 }
 
 %shared_ptr(pism::IceGrid);
-%include "base/util/IceGrid.hh"
+%include "util/IceGrid.hh"

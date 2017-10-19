@@ -33,7 +33,9 @@ class test_plug(PISM.ssa.SSAExactTestCase):
 
     def _initGrid(self):
         self.grid = PISM.IceGrid.Shallow(PISM.Context().ctx, L, L, 0, 0,
-                                         self.Mx, self.My, PISM.NONE)
+                                         self.Mx, self.My,
+                                         PISM.CELL_CORNER,
+                                         PISM.NOT_PERIODIC)
 
     def _initPhysics(self):
         config = self.config

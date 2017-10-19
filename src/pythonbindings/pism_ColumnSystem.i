@@ -5,7 +5,7 @@
  */
 
 %{
-#include "base/util/ColumnInterpolation.hh"
+#include "util/ColumnInterpolation.hh"
 %}
 
-%include "base/util/ColumnInterpolation.hh"
+%include "util/ColumnInterpolation.hh"

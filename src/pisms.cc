@@ -22,18 +22,18 @@ static char help[] =
 
 #include <petscsys.h>
 
-#include "base/iceModel.hh"
-#include "base/util/IceGrid.hh"
-#include "base/util/PISMConfig.hh"
-#include "base/util/error_handling.hh"
-#include "base/util/petscwrappers/PetscInitializer.hh"
-#include "base/util/pism_options.hh"
-#include "eismint/iceEISModel.hh"
-#include "base/util/Context.hh"
-#include "base/util/Logger.hh"
-#include "base/util/PISMTime.hh"
-#include "base/enthalpyConverter.hh"
-#include "base/util/io/PIO.hh"
+#include "pism/icemodel/IceModel.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Config.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/PetscInitializer.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/icemodel/IceEISModel.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/io/PIO.hh"
 
 using namespace pism;
 
@@ -51,6 +51,7 @@ Context::Ptr pisms_context(MPI_Comm com) {
   config->set_double("grid.Lx", 750e3);
   config->set_double("grid.Ly", 750e3);
   config->set_string("grid.periodicity", "none");
+  config->set_string("grid.registration", "corner");
   config->set_string("stress_balance.sia.flow_law", "pb");
 
   set_config_from_options(*config);
@@ -69,10 +70,10 @@ IceGrid::Ptr pisms_grid(Context::Ptr ctx) {
   options::forbidden("-bootstrap");
 
   if (input_file.is_set()) {
-    Periodicity p = string_to_periodicity(ctx->config()->get_string("grid.periodicity"));
+    GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file
-    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, p);
+    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
   } else {
     // use defaults from the configuration database
     GridParameters P(ctx->config());

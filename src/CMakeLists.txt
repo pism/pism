@@ -1,4 +1,22 @@
-include_directories (.)
+# Create a link from build/include/pism to src so that PISM can use
+# #include "pism/..." in its source files. This way other code using
+# PISM needs to add only *one* directory to the compiler search path.
+# See #166.
+
+execute_process(
+  COMMAND
+  ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/include/
+  COMMAND
+  ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/include/pism)
+
+# Alternatively: copy headers to the build directory
+# file(COPY .
+#   DESTINATION ${CMAKE_BINARY_DIR}/include/pism/
+#   FILES_MATCHING
+#   PATTERN "*.hh"
+#   PATTERN "*.h")
+
+include_directories (${CMAKE_BINARY_DIR}/include)
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
@@ -7,78 +25,72 @@ set(PISM_PARALLEL_IO_FLAGS "")
 
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
-  base/Geometry.cc
-  base/GeometryEvolution.cc
-  base/util/FETools.cc
-  base/util/node_types.cc
-  base/util/petscwrappers/PetscInitializer.cc
-  base/util/petscwrappers/DM.cc
-  base/util/petscwrappers/IS.cc
-  base/util/petscwrappers/KSP.cc
-  base/util/petscwrappers/Mat.cc
-  base/util/petscwrappers/SNES.cc
-  base/util/petscwrappers/Vec.cc
-  base/util/petscwrappers/VecScatter.cc
-  base/util/petscwrappers/Viewer.cc
-  base/util/Logger.cc
-  base/util/error_handling.cc
-  base/util/options.cc
-  base/util/interpolation.cc
-  base/util/Context.cc
-  base/util/MaxTimestep.cc
-  base/util/PISMDiagnostic.cc
-  base/enthalpyConverter.cc
-  base/util/IceGrid.cc
-  base/util/ColumnInterpolation.cc
-  base/util/Mask.cc
-  base/util/VariableMetadata.cc
-  base/util/PISMConfig.cc
-  base/util/PISMConfigInterface.cc
-  base/util/PISMComponent.cc
-  base/util/PISMTime.cc
-  base/util/PISMTime_Calendar.cc
-  base/util/PISMVars.cc
-  base/util/Timeseries.cc
-  base/util/iceModelVec.cc
-  base/util/iceModelVec2.cc
-  base/util/iceModelVec2T.cc
-  base/util/iceModelVec2V.cc
-  base/util/iceModelVec3.cc
-  base/util/iceModelVec3Custom.cc
-  base/util/io/io_helpers.cc
-  base/util/io/LocalInterpCtx.cc
-  base/util/io/PIO.cc
-  base/util/io/PISMNC3File.cc
-  base/util/io/PISMNC4File.cc
-  base/util/io/PISMNC4_Quilt.cc
-  base/util/io/PISMNCFile.cc
-  base/util/pism_const.cc
-  base/util/pism_utilities.cc
-  base/util/Profiling.cc
-  base/util/pism_default_config.cc
-  base/util/pism_options.cc
-  base/util/TerminationReason.cc
-  base/util/PISMUnits.cc
-  base/util/projection.cc
-  base/pism_revision.cc
+  util/ColumnInterpolation.cc
+  util/Context.cc
+  util/EnthalpyConverter.cc
+  util/FETools.cc
+  util/IceGrid.cc
+  util/Logger.cc
+  util/Mask.cc
+  util/MaxTimestep.cc
+  util/Component.cc
+  util/Config.cc
+  util/ConfigInterface.cc
+  util/Diagnostic.cc
+  util/Time.cc
+  util/Time_Calendar.cc
+  util/Units.cc
+  util/Vars.cc
+  util/Profiling.cc
+  util/TerminationReason.cc
+  util/Timeseries.cc
+  util/VariableMetadata.cc
+  util/error_handling.cc
+  util/iceModelVec.cc
+  util/iceModelVec2.cc
+  util/iceModelVec2T.cc
+  util/iceModelVec2V.cc
+  util/iceModelVec3.cc
+  util/iceModelVec3Custom.cc
+  util/interpolation.cc
+  util/io/LocalInterpCtx.cc
+  util/io/PIO.cc
+  util/io/NC3File.cc
+  util/io/NC4File.cc
+  util/io/NCFile.cc
+  util/io/io_helpers.cc
+  util/node_types.cc
+  util/options.cc
+  util/petscwrappers/DM.cc
+  util/petscwrappers/IS.cc
+  util/petscwrappers/KSP.cc
+  util/petscwrappers/Mat.cc
+  util/petscwrappers/PetscInitializer.cc
+  util/petscwrappers/SNES.cc
+  util/petscwrappers/Tao.cc
+  util/petscwrappers/Vec.cc
+  util/petscwrappers/VecScatter.cc
+  util/petscwrappers/Viewer.cc
+  util/pism_const.cc
+  util/pism_default_config.cc
+  util/pism_options.cc
+  util/pism_revision.cc
+  util/pism_utilities.cc
+  util/projection.cc
   )
 
 # PISM Revision string
-set_source_files_properties (base/pism_revision.cc
+set_source_files_properties (util/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
 
 if(Pism_USE_JANSSON)
-  list(APPEND PISMUTIL_SRC base/util/ConfigJSON.cc)
-endif()
-
-if(Pism_USE_TAO)
-  list(APPEND PISMUTIL_SRC base/util/petscwrappers/Tao.cc)
+  list(APPEND PISMUTIL_SRC util/ConfigJSON.cc)
 endif()
 
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=1")
-  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4_Par.cc)
+  list(APPEND PISMUTIL_SRC util/io/NC4_Par.cc)
 else()
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=0")
 endif()
@@ -86,78 +98,84 @@ endif()
 # Check if PnetCDF parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PNETCDF)
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=1")
-  list(APPEND PISMUTIL_SRC base/util/io/PISMPNCFile.cc)
+  list(APPEND PISMUTIL_SRC util/io/PNCFile.cc)
 else()
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=0")
 endif()
 
 # The list of headers included in PIO.cc depends on parallel I/O settings.
 # These flags determine which headers are included.
-set_source_files_properties (base/util/io/PIO.cc
+set_source_files_properties (util/io/PIO.cc
   PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
 
 add_library (pismutil OBJECT ${PISMUTIL_SRC})
 
 add_custom_target (touch_pism_revision
   COMMAND ${CMAKE_COMMAND} -E touch pism_revision.cc
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/base
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/util
   VERBATIM)
 
 # This library contains PISM code implementing the ice-sheet model itself
 # (using other PISM libraries and a good deal of non-trivial code).
 add_library (pism
   ${EVERYTRACE_cf_mpi_REFADDR}
-  base/pism_signal.c
-  base/columnSystem.cc
-  base/age/AgeModel.cc
-  base/energy/utilities.cc
-  base/energy/EnergyModel.cc
-  base/energy/DummyEnergyModel.cc
-  base/energy/EnthalpyModel.cc
-  base/energy/TemperatureModel.cc
-  base/energy/BedThermalUnit.cc
-  base/energy/BTU_Full.cc
-  base/energy/BTU_Minimal.cc
-  base/energy/enthSystem.cc
-  base/energy/tempSystem.cc
-  base/energy/bootstrapping.cc
-  base/timestepping.cc
-  base/iMadaptive.cc
-  base/age/AgeColumnSystem.cc
-  base/iMcalving.cc
-  base/iMenergy.cc
-  base/iMfractures.cc
-  base/grounded_cell_fraction.cc
-  base/iMinit.cc
-  base/iMIO.cc
-  base/iMoptions.cc
-  base/iMreport.cc
-  base/iMtimeseries.cc
-  base/iMutil.cc
-  base/iMcell_areas.cc
-  base/iMviewers.cc
-  base/iceModel.cc
-  base/iceModel_diagnostics.cc
-  base/basalstrength/PISMYieldStress.cc
-  base/basalstrength/PISMMohrCoulombYieldStress.cc
-  base/basalstrength/PISMConstantYieldStress.cc
-  base/hydrology/PISMHydrology.cc
-  base/hydrology/PISMNullTransportHydrology.cc
-  base/hydrology/PISMRoutingHydrology.cc
-  base/hydrology/PISMDistributedHydrology.cc
-  base/hydrology/hydrology_diagnostics.cc
-  base/calving/connected_components.cc
-  base/calving/remove_narrow_tongues.cc
-  base/calving/IcebergRemover.cc
-  base/calving/CalvingAtThickness.cc
-  base/calving/FloatKill.cc
-  base/calving/OceanKill.cc
-  base/calving/StressCalving.cc
-  base/calving/EigenCalving.cc
-  base/calving/CalvingFrontRetreat.cc
-  base/calving/vonMisesCalving.cc
-  base/calving/FrontalMelt.cc
-  base/part_grid_threshold_thickness.cc
+  age/AgeColumnSystem.cc
+  age/AgeModel.cc
+  basalstrength/ConstantYieldStress.cc
+  basalstrength/MohrCoulombYieldStress.cc
+  basalstrength/YieldStress.cc
+  calving/CalvingAtThickness.cc
+  calving/CalvingFrontRetreat.cc
+  calving/EigenCalving.cc
+  calving/FloatKill.cc
+  calving/FrontalMelt.cc
+  calving/IcebergRemover.cc
+  calving/OceanKill.cc
+  calving/StressCalving.cc
+  calving/connected_components.cc
+  calving/remove_narrow_tongues.cc
+  calving/vonMisesCalving.cc
+  energy/BTU_Full.cc
+  energy/BTU_Minimal.cc
+  energy/BedThermalUnit.cc
+  energy/DummyEnergyModel.cc
+  energy/EnergyModel.cc
+  energy/EnthalpyModel.cc
+  energy/TemperatureModel.cc
+  energy/bootstrapping.cc
+  energy/enthSystem.cc
+  energy/tempSystem.cc
+  energy/utilities.cc
+  geometry/Geometry.cc
+  geometry/GeometryEvolution.cc
+  geometry/grounded_cell_fraction.cc
+  geometry/part_grid_threshold_thickness.cc
+  hydrology/DistributedHydrology.cc
+  hydrology/Hydrology.cc
+  hydrology/NullTransportHydrology.cc
+  hydrology/RoutingHydrology.cc
+  hydrology/hydrology_diagnostics.cc
+  icemodel/IceModel.cc
+  icemodel/calving.cc
+  icemodel/diagnostics.cc
+  icemodel/diagnostics.cc
+  icemodel/diagnostics.hh
+  icemodel/energy.cc
+  icemodel/flux_balance.hh
+  icemodel/fracture_density.cc
+  icemodel/initialization.cc
+  icemodel/output.cc
+  icemodel/output_backup.cc
+  icemodel/output_extra.cc
+  icemodel/output_save.cc
+  icemodel/output_ts.cc
+  icemodel/printout.cc
+  icemodel/timestepping.cc
+  icemodel/utilities.cc
+  icemodel/viewers.cc
+  stressbalance/timestepping.cc
+  util/ColumnSystem.cc
+  util/pism_signal.c
   $<TARGET_OBJECTS:pismflowlaws>
   $<TARGET_OBJECTS:pismstressbalance>
   $<TARGET_OBJECTS:pismcalcalcs>
@@ -180,40 +198,40 @@ endif()
 
 # Bed deformation models.
 add_library(pismearth OBJECT
-  earth/PBPointwiseIsostasy.cc
-  earth/PISMBedDef.cc
-  earth/PBLingleClark.cc
-  earth/PBNull.cc
+  earth/PointwiseIsostasy.cc
+  earth/BedDef.cc
+  earth/LingleClark.cc
+  earth/Null.cc
   earth/deformation.cc
   earth/greens.cc
-  earth/cubature.c
   earth/matlablike.cc
+  external/cubature/cubature.c
   )
 
 # Disable compiler warnings for cubature.c (source file not by PISM authors)
 set_source_files_properties (earth/cubature.c
   PROPERTIES COMPILE_FLAGS "-w")
 
-set_source_files_properties (base/util/pism_default_config.cc
+set_source_files_properties (util/pism_default_config.cc
   PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
 
 # Verification tests.
 add_library (pismverif OBJECT
-  verif/TemperatureModel_Verification.cc
-  verif/iCMthermo.cc
-  verif/iceCompModel.cc
-  verif/PSVerification.cc
-  verif/BTU_Verification.cc
-  verif/tests/exactTestH.c
-  verif/tests/exactTestK.c
-  verif/tests/exactTestO.c
-  verif/tests/exactTestL.cc
-  verif/tests/exactTestsABCD.c
-  verif/tests/exactTestsFG.cc
-  verif/tests/exactTestsIJ.c
-  verif/tests/exactTestM.c
-  verif/tests/exactTestN.c
-  verif/tests/exactTestP.cc
+  verification/TemperatureModel_Verification.cc
+  verification/iCMthermo.cc
+  verification/iceCompModel.cc
+  verification/PSVerification.cc
+  verification/BTU_Verification.cc
+  verification/tests/exactTestH.c
+  verification/tests/exactTestK.c
+  verification/tests/exactTestO.c
+  verification/tests/exactTestL.cc
+  verification/tests/exactTestsABCD.c
+  verification/tests/exactTestsFG.cc
+  verification/tests/exactTestsIJ.c
+  verification/tests/exactTestM.c
+  verification/tests/exactTestN.c
+  verification/tests/exactTestP.cc
 )
 
 # Main executables:
@@ -222,20 +240,12 @@ target_link_libraries (pismr pism)
 
 # Simplified geometry
 add_executable (pisms pisms.cc
-  eismint/iceEISModel.cc)
+  icemodel/IceEISModel.cc)
 target_link_libraries (pisms pism)
 
 # Verification mode "driver".
 add_executable (pismv pismv.cc)
 target_link_libraries (pismv pism)
-
-add_executable (pismmerge
-  pismmerge/pismmerge.cc
-  pismmerge/metadata.cc
-  pismmerge/variables.cc
-  pismmerge/util.cc
-  base/util/io/PISMNC4_Serial.cc)
-target_link_libraries (pismmerge pism)
 
 find_program (NCGEN_PROGRAM "ncgen" REQUIRED)
 mark_as_advanced(NCGEN_PROGRAM)
@@ -254,7 +264,7 @@ install (
 
 # Install executables.
 install (TARGETS
-  pismr pisms pismv pismmerge ## executables
+  pismr pisms pismv ## executables
   RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 install (FILES
@@ -263,7 +273,7 @@ install (FILES
 
 # miscellaneous executables needed by software tests
 if (Pism_BUILD_EXTRA_EXECS)
-  add_executable (btutest base/energy/btutest.cc)
+  add_executable (btutest energy/btutest.cc)
   target_link_libraries (btutest pism)
   list (APPEND EXTRA_EXECS btutest)
 
@@ -281,20 +291,20 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
   FILES_MATCHING
   PATTERN "*.hh"
   PATTERN "*.h"
-  PATTERN "calcalcs" EXCLUDE
-  PATTERN "pismmerge" EXCLUDE
+  PATTERN "external" EXCLUDE
   PATTERN "pythonbindings" EXCLUDE
-  PATTERN "vdt" EXCLUDE
   PATTERN "doc" EXCLUDE
   PATTERN "figs" EXCLUDE
   PATTERN "ssa/tests" EXCLUDE
-  PATTERN "verif/tests/fortran" EXCLUDE
+  PATTERN "verification/tests/fortran" EXCLUDE
+  PATTERN "rheology/approximate" EXCLUDE
+  PATTERN "tracer" EXCLUDE
   )
 
-add_subdirectory (calcalcs)
-add_subdirectory (base/rheology)
+add_subdirectory (external/calcalcs)
+add_subdirectory (rheology)
 add_subdirectory (coupler)
-add_subdirectory (base/stressbalance)
+add_subdirectory (stressbalance)
 add_subdirectory (regional)
 
 # Right now the inverse library is not very useful without Python

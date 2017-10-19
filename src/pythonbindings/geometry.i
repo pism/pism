@@ -1,6 +1,6 @@
 %{
-#include "base/Geometry.hh"
-#include "base/GeometryEvolution.hh"
+#include "geometry/Geometry.hh"
+#include "geometry/GeometryEvolution.hh"
 %}
 
 
@@ -8,9 +8,9 @@
 
 // Treat data members of Geometry as read-only.
 %feature("immutable", "1");
-%include "base/Geometry.hh"
+%include "geometry/Geometry.hh"
 %feature("immutable", "0");
 
 %shared_ptr(pism::GeometryEvolution)
 %shared_ptr(pism::RegionalGeometryEvolution)
-%include "base/GeometryEvolution.hh"
+%include "geometry/GeometryEvolution.hh"

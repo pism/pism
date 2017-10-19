@@ -10,7 +10,7 @@ files="simp_exper-13.nc"
 
 rm -f $files
 # run pisms
-$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 5000 -Mx 12 -My 12 -o_size big -energy enthalpy -o simp_exper-13.nc -periodicity none
+$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 5000 -Mx 12 -My 12 -o_size big -energy enthalpy -o simp_exper-13.nc
 
 /usr/bin/env python <<EOF
 try:

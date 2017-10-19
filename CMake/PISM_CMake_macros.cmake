@@ -137,12 +137,12 @@ macro(pism_find_prerequisites)
     set(Pism_PETSC_VERSION ${PETSC_VERSION} CACHE STRING "PETSc version")
     mark_as_advanced(Pism_PETSC_VERSION)
 
-    if (PETSC_VERSION VERSION_LESS 3.3)
+    if (PETSC_VERSION VERSION_LESS 3.5)
       # Force PISM to look for PETSc again if the version we just found
       # is too old:
       set(PETSC_CURRENT "OFF" CACHE BOOL "" FORCE)
       # Stop with an error message.
-      message(FATAL_ERROR "PISM requires PETSc version 3.3 or newer (found ${PETSC_VERSION}).")
+      message(FATAL_ERROR "PISM requires PETSc version 3.5 or newer (found ${PETSC_VERSION}).")
     endif()
 
     if (PETSC_VERSION VERSION_EQUAL 3.6.0)
@@ -172,14 +172,6 @@ macro(pism_find_prerequisites)
 
   if (Pism_USE_PROJ4)
     find_package (PROJ4 REQUIRED)
-  endif()
-
-  # Use TAO included in PETSc 3.5.
-  if (Pism_PETSC_VERSION VERSION_LESS "3.5")
-    message(STATUS "Disabling TAO-based inversion tools. Install PETSc 3.5 or later to use them.")
-    set (Pism_USE_TAO OFF CACHE BOOL "Use TAO in inverse solvers." FORCE)
-  else()
-    message(STATUS "Building TAO-based inversion tools.")
   endif()
 
   if (Pism_USE_PARALLEL_NETCDF4)

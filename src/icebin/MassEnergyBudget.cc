@@ -1,6 +1,6 @@
 #include <iostream>
-#include <icebin/MassEnergyBudget.hh>
-#include <base/util/error_handling.hh>
+#include <pism/icebin/MassEnergyBudget.hh>
+#include <pism/util/error_handling.hh>
 
 namespace pism{
 namespace icebin{

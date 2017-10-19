@@ -1,6 +1,6 @@
 #!/bin/bash
 # Tests a simple inversion setup.
-# Requires PISM's Python bindings and TAO.
+# Requires PISM's Python bindings
 PYTHONEXEC=$5
 PISM_BUILD_DIR=$1
 

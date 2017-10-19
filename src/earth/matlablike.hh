@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2009, 2015 Ed Bueler
+/* Copyright (C) 2004-2009, 2015, 2017 Ed Bueler
 
  This file is part of PISM.
 
@@ -22,7 +22,7 @@
 
 #include <petscvec.h>
 
-#include "cubature.h"  /* for 'integrand' type */
+#include "pism/external/cubature/cubature.h"  /* for 'integrand' type */
 
 /*! Functions like Matlab's conv2(A,B,'same').
 

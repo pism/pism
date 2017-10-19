@@ -42,7 +42,7 @@ fi
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
-  PISM_EXEC="pismo"
+  PISM_EXEC="pismr -regional"
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 
@@ -68,8 +68,9 @@ EXDT=20    # 20 year between saves, thus 100 frames
 cmd="$PISM_MPIDO $NN $PISM -i $BOOT -bootstrap -no_model_strip 10 \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
   -no_model_strip 10 $PHYS \
+  -regional.zero_gradient \
   -extra_file ex_spunjako_0.nc -extra_times -$LENGTH:$EXDT:0 \
-  -extra_vars thk,velbase_mag,tillwat,tauc,dhdt,hardav,velsurf_mag,temppabase,diffusivity,bmelt,tempicethk_basal \
+  -extra_vars thk,velbase_mag,tillwat,tauc,dHdt,hardav,velsurf_mag,temppabase,diffusivity,bmelt,tempicethk_basal \
   -ts_file ts_spunjako_0.nc -ts_times -$LENGTH:yearly:0 \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars basal_melt_rate_grounded,tillwat,enthalpy,litho_temp,vel_ssa_bc \
   $CLIMATE -ys -$LENGTH -ye 0 -skip -skip_max $SKIP -o spunjako_0.nc"

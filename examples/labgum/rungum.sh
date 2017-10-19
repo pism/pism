@@ -21,11 +21,12 @@ initfile=init$oname
 
 grid="-Mx $myMx -My $myMx -Mz 101 -Lz 0.1 -Mbz 0 -Lbz 0 -z_spacing equal"
 
-climate="-surface given -surface_given_file $initfile"
+climate="-surface given -surface_given_file $initfile -surface.given.smb_max 1e10"
 
 physics="-config_override gumparams.nc -energy none -sia_flow_law isothermal_glen -sia_e 1.0 -gradient mahaffy"
 
-endtime=2.3640e-05   # = 746 / 31556926; = 746 s in years; Sayag personal communication
+endtime=2.36555048199e-5   # = 746 / (365*24*60*60); = 746 s in years;
+                           # Sayag personal communication
 
 ts_dt=3.1689e-09     # = 0.1 / 31556926 = 0.1 s
 timediag="-ts_file ts_$oname -ts_times $ts_dt:$ts_dt:$endtime"
@@ -36,4 +37,3 @@ exdiag="-extra_file ex_$oname -extra_vars $exvars -extra_times 0:$ex_dt:$endtime
 
 mpiexec -n $NN $pismexec -i $initfile -bootstrap $grid $climate $physics \
     $timediag $exdiag -ys 0.0 -y $endtime -max_dt $ts_dt -o $oname
-

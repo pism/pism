@@ -1,5 +1,5 @@
 %{
-  #include "base/util/PISMVars.hh"
+  #include "util/Vars.hh"
 %}
 
 /* disable methods that use regular pointers */
@@ -60,4 +60,4 @@ def get(self, key):
   %}
 }
 
-%include "base/util/PISMVars.hh"
+%include "util/Vars.hh"

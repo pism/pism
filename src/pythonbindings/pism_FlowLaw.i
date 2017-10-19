@@ -1,12 +1,12 @@
 %{
-#include "base/rheology/FlowLaw.hh"
-#include "base/rheology/GPBLD3.hh"
-#include "base/rheology/GPBLD.hh"
-#include "base/rheology/FlowLawFactory.hh"
+#include "rheology/FlowLaw.hh"
+#include "rheology/GPBLD3.hh"
+#include "rheology/GPBLD.hh"
+#include "rheology/FlowLawFactory.hh"
 %}
 
-%include "base/rheology/FlowLaw.hh"
-%include "base/rheology/GPBLD.hh"
-%include "base/rheology/GPBLD3.hh"
+%include "rheology/FlowLaw.hh"
+%include "rheology/GPBLD.hh"
+%include "rheology/GPBLD3.hh"
 
-%include "base/rheology/FlowLawFactory.hh"
+%include "rheology/FlowLawFactory.hh"

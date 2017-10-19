@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# see src/verif/tests/simpleP.c
+# see src/verification/tests/simpleP.c
 simpleP_c_result = """$ ./simpleP
 Enter  r  (in km; 0 <= r <= TESTP_L = 22.5):   20.0
 Results from Test P:

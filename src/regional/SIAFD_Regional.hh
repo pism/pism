@@ -20,7 +20,7 @@
 #ifndef _SIAFD_REGIONAL_H_
 #define _SIAFD_REGIONAL_H_
 
-#include "base/stressbalance/sia/SIAFD.hh"
+#include "pism/stressbalance/sia/SIAFD.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -33,7 +33,7 @@ public:
   virtual ~SIAFD_Regional();
   virtual void init();
 protected:
-  virtual void compute_surface_gradient(const Geometry &geometry,
+  virtual void compute_surface_gradient(const Inputs &inputs,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) const;
 };
 

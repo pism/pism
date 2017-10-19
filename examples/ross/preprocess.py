@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+from sys import exit
 
 # Import all necessary modules here so that if it fails, it fails early.
 try:
     import netCDF4 as NC
 except:
     print "netCDF4 is not installed!"
-    sys.exit(1)
+    exit(1)
 
 import subprocess
 import numpy as np
@@ -33,12 +34,15 @@ def preprocess_ice_velocity():
     url = " ftp://n5eil01u.ecs.nsidc.org/SAN/MEASURES/NSIDC-0484.001/1996.01.01/"
     input_filename = "antarctica_ice_velocity_900m.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
-    commands = ["wget -nc %s%s" % (url, input_filename),  # NSIDC supports compression on demand!
-                "ncrename -d nx,x -d ny,y -O %s %s" % (input_filename, input_filename)
-                ]
+
+    commands = ["ncrename -d nx,x -d ny,y -O %s %s" % (input_filename, input_filename)]
 
     if not os.path.exists(input_filename):
-        run(commands)
+        print("Please downlaod the InSAR velocity dataset from http://nsidc.org/data/nsidc-0484.html")
+        print("Version 1 (900m spacing) can be found here: https://n5eil01u.ecs.nsidc.org/MEASURES/NSIDC-0484.001/")
+        exit(1)
+
+    run(commands)
 
     nc = NC.Dataset(input_filename, 'a')
 
@@ -64,7 +68,7 @@ def preprocess_ice_velocity():
         try:
             x_var = nc.createVariable('x', 'f8', ('x',))
             y_var = nc.createVariable('y', 'f8', ('y',))
-        except:
+        except Exception as e:
             x_var = nc.variables['x']
             y_var = nc.variables['y']
 

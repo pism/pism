@@ -17,10 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_SSATaucTikhonovGNSolver.hh"
-#include "base/util/TerminationReason.hh"
-#include "base/util/pism_options.hh"
-#include "base/util/PISMConfigInterface.hh"
-#include "base/util/IceGrid.hh"
+#include "pism/util/TerminationReason.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/IceGrid.hh"
 
 namespace pism {
 namespace inverse {
@@ -171,13 +171,9 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::solve_linearized() {
 
   this->assemble_GN_rhs(m_GN_rhs);
 
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN);
-  PISM_CHK(ierr, "KSPSetOperators");
-#else
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN);
   PISM_CHK(ierr, "KSPSetOperators");
-#endif
+
   ierr = KSPSolve(m_ksp,m_GN_rhs.get_vec(),m_hGlobal.get_vec());
   PISM_CHK(ierr, "KSPSolve");
 
@@ -415,13 +411,9 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlo
   m_dalpha_rhs.scale(-1);
 
   // Solve linear equation for dh/dalpha. 
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN);
-  PISM_CHK(ierr, "KSPSetOperators");
-#else
   ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN);
   PISM_CHK(ierr, "KSPSetOperators");
-#endif
+
   ierr = KSPSolve(m_ksp,m_dalpha_rhs.get_vec(),m_dh_dalphaGlobal.get_vec());
   PISM_CHK(ierr, "KSPSolve");
 

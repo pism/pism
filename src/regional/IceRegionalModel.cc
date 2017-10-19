@@ -18,17 +18,17 @@
  */
 
 #include "IceRegionalModel.hh"
-#include "base/util/PISMVars.hh"
-#include "base/enthalpyConverter.hh"
-#include "base/stressbalance/ShallowStressBalance.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "SSAFD_Regional.hh"
-#include "base/stressbalance/SSB_Modifier.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 #include "SIAFD_Regional.hh"
-#include "base/stressbalance/PISMStressBalance.hh"
-#include "base/basalstrength/PISMConstantYieldStress.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/basalstrength/ConstantYieldStress.hh"
 #include "RegionalDefaultYieldStress.hh"
-#include "base/util/io/PIO.hh"
-#include "coupler/PISMOcean.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/coupler/OceanModel.hh"
 #include "EnthalpyModel_Regional.hh"
 
 namespace pism {
@@ -69,37 +69,46 @@ void IceRegionalModel::allocate_storage() {
   m_log->message(2, 
                  "  creating IceRegionalModel vecs ...\n");
 
-  // stencil width of 2 needed for surfaceGradientSIA() action
+  // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
   m_no_model_mask.create(m_grid, "no_model_mask", WITH_GHOSTS, 2);
   m_no_model_mask.set_attrs("model_state",
-                            "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
+                            "mask: zeros (modeling domain) and ones"
+                            " (no-model buffer near grid edges)",
                             "", ""); // no units and no standard name
   m_no_model_mask.metadata().set_doubles("flag_values", {0, 1});
   m_no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   m_no_model_mask.set_time_independent(true);
   m_no_model_mask.metadata().set_output_type(PISM_BYTE);
   m_no_model_mask.set(0);
-  m_grid->variables().add(m_no_model_mask);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
   m_usurf_stored.create(m_grid, "usurfstore", WITH_GHOSTS, 2);
   m_usurf_stored.set_attrs("model_state",
-                           "saved surface elevation for use to keep surface gradient constant in no_model strip",
+                           "saved surface elevation for use to keep surface gradient constant"
+                           " in no_model strip",
                            "m",
                            ""); //  no standard name
-  m_grid->variables().add(m_usurf_stored);
 
   // stencil width of 1 needed for differentiation
   m_thk_stored.create(m_grid, "thkstore", WITH_GHOSTS, 1);
   m_thk_stored.set_attrs("model_state",
-                         "saved ice thickness for use to keep driving stress constant in no_model strip",
+                         "saved ice thickness for use to keep driving stress constant"
+                         " in no_model strip",
                          "m",
                          ""); //  no standard name
-  m_grid->variables().add(m_thk_stored);
 
   m_model_state.insert(&m_thk_stored);
   m_model_state.insert(&m_usurf_stored);
   m_model_state.insert(&m_no_model_mask);
+}
+
+void IceRegionalModel::model_state_setup() {
+
+  // initialize the model state (including special fields)
+  IceModel::model_state_setup();
+
+  // initialize the no_model_mask
+  m_geometry_evolution->set_no_model_mask(m_no_model_mask);
 }
 
 void IceRegionalModel::allocate_geometry_evolution() {
@@ -127,10 +136,10 @@ void IceRegionalModel::allocate_energy_model() {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "pismr -regional does not support the '-energy cold' mode.");
     } else {
-      m_energy_model = new energy::EnthalpyModel_Regional(m_grid, m_stress_balance);
+      m_energy_model = new energy::EnthalpyModel_Regional(m_grid, m_stress_balance.get());
     }
   } else {
-    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance);
+    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance.get());
   }
 
   m_submodels["energy balance model"] = m_energy_model;
@@ -138,42 +147,15 @@ void IceRegionalModel::allocate_energy_model() {
 
 void IceRegionalModel::allocate_stressbalance() {
 
-  using namespace pism::stressbalance;
-
-  if (m_stress_balance != NULL) {
+  if (m_stress_balance) {
     return;
   }
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+  bool regional = true;
+  m_stress_balance = stressbalance::create(m_config->get_string("stress_balance.model"),
+                                           m_grid, regional);
 
-  std::string model = m_config->get_string("stress_balance.model");
-
-  ShallowStressBalance *sliding = NULL;
-  if (model == "none" || model == "sia") {
-    sliding = new ZeroSliding(m_grid);
-  } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
-    sliding = new PrescribedSliding(m_grid);
-  } else if (model == "ssa" || model == "ssa+sia") {
-    sliding = new SSAFD_Regional(m_grid);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
-  }
-
-  SSB_Modifier *modifier = NULL;
-  if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
-    modifier = new ConstantInColumn(m_grid);
-  } else if (model == "prescribed_sliding+sia" ||
-             model == "ssa+sia" ||
-             model == "sia") {
-    modifier = new SIAFD_Regional(m_grid);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s", model.c_str());
-  }
-
-  // ~StressBalance() will de-allocate sliding and modifier.
-  m_stress_balance = new StressBalance(m_grid, sliding, modifier);
-
-  m_submodels["stress balance"] = m_stress_balance;
+  m_submodels["stress balance"] = m_stress_balance.get();
 }
 
 
@@ -194,7 +176,8 @@ void IceRegionalModel::allocate_basal_yield_stress() {
     } else if (yield_stress_model == "mohr_coulomb") {
       m_basal_yield_stress_model = new RegionalDefaultYieldStress(m_grid, m_subglacial_hydrology);
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "yield stress model '%s' is not supported.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "yield stress model '%s' is not supported.",
                                     yield_stress_model.c_str());
     }
     m_submodels["basal yield stress"] = m_basal_yield_stress_model;
@@ -218,8 +201,8 @@ void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
     double strip_width = m_config->get_double("regional.no_model_strip", "meters");
     set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
 
-    // allow overriding via regridding
-    m_no_model_mask.regrid(input_file, OPTIONAL, 0.0);
+    // m_no_model_mask was added to m_model_state, so
+    // IceModel::regrid() will take care of regridding it, if necessary.
   }
 
   if (m_config->get_boolean("regional.zero_gradient")) {
@@ -247,6 +230,32 @@ void IceRegionalModel::bootstrap_2d(const PIO &input_file) {
       }
     }
   }
+}
+
+stressbalance::Inputs IceRegionalModel::stress_balance_inputs() {
+  stressbalance::Inputs result = IceModel::stress_balance_inputs();
+
+  result.no_model_mask              = &m_no_model_mask;
+  result.no_model_ice_thickness     = &m_thk_stored;
+  result.no_model_surface_elevation = &m_usurf_stored;
+
+  return result;
+}
+
+energy::Inputs IceRegionalModel::energy_model_inputs() {
+  energy::Inputs result = IceModel::energy_model_inputs();
+
+  result.no_model_mask = &m_no_model_mask;
+
+  return result;
+}
+
+YieldStressInputs IceRegionalModel::yield_stress_inputs() {
+  YieldStressInputs result = IceModel::yield_stress_inputs();
+
+  result.no_model_mask = &m_no_model_mask;
+
+  return result;
 }
 
 } // end of namespace pism

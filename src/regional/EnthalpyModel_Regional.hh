@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef ENTHALPYMODEL_REGIONAL_H
 #define ENTHALPYMODEL_REGIONAL_H
 
-#include "base/energy/EnthalpyModel.hh"
+#include "pism/energy/EnthalpyModel.hh"
 
 namespace pism {
 namespace energy {
@@ -46,7 +46,7 @@ protected:
                                const IceModelVec2S &basal_heat_flux);
 
   using EnergyModel::update_impl;
-  void update_impl(double t, double dt, const EnergyModelInputs &inputs);
+  void update_impl(double t, double dt, const Inputs &inputs);
 
   IceModelVec2Int *m_no_model_mask;
   IceModelVec2S m_basal_melt_rate_stored;

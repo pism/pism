@@ -25,7 +25,7 @@
 #include <fftw3.h>
 #include <vector>
 
-#include "base/util/petscwrappers/Vec.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 

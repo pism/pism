@@ -20,10 +20,10 @@ Contents:
    inverse/index.rst
 
 .. toctree::
-  :maxdepth: 1
+   :maxdepth: 1
 
-  api/index.rst
-  zbib
+   api/index.rst
+   zbib
 
 Indices and tables
 ==================

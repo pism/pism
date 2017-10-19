@@ -48,7 +48,7 @@ fi
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
-  PISM_EXEC="pismo"
+  PISM_EXEC="pismr -regional"
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 

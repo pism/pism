@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 3.1)
 project (Pism C CXX)
 
 # Require C++11 compiler support.
@@ -12,11 +12,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Intel" AND NOT CMAKE_CXX_FLAGS MATCHES "-std=
   message (STATUS "Adding -std=c++11 to C++ compiler flags for Intel compilers.")
   set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
 endif()
-
-# This has to do with the way we compute dependencies of PISM's Python
-# bindings. Enabling the "old" behavior allows us to support both old
-# and new (>= 3.0) CMake versions.
-cmake_policy(SET CMP0026 OLD)
 
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
@@ -43,13 +38,15 @@ option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verifica
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries" ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_BUILD_ICEBIN "Build PISM portions of IceBin library" OFF)
-option (Pism_BUILD_PDFS "Build PISM's PDF documentation with 'make all'." OFF)
+option (Pism_BUILD_DOCS "Build PISM's documentation with 'make all'." OFF)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
-option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
-option (Pism_USE_JANSSON "Use Jansson to store configuration files." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
+
+# PISM will eventually use Jansson to read configuration files.
+set (Pism_USE_JANSSON OFF)
+# option (Pism_USE_JANSSON "Use Jansson to read configuration files." OFF)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
 mark_as_advanced (Pism_TEST_USING_VALGRIND)
@@ -179,11 +176,6 @@ else()
   add_definitions (-DPISM_USE_PROJ4=0)
 endif()
 
-# Use TAO in inverse solvers.
-if (Pism_USE_TAO)
-  add_definitions (-DPISM_USE_TAO=1)
-endif()
-
 add_custom_target (etags
   COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh)" | xargs etags --class-qualify --no-defines
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
@@ -218,7 +210,7 @@ add_subdirectory (src)
 add_subdirectory (site-packages)
 
 if (Pism_ENABLE_DOCUMENTATION)
-  if (Pism_BUILD_PDFS)
+  if (Pism_BUILD_DOCS)
     add_subdirectory (doc)
   else()
     add_subdirectory (doc EXCLUDE_FROM_ALL)

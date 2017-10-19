@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,17 +20,17 @@
 #ifndef _REGIONALDEFAULTYIELDSTRESS_H_
 #define _REGIONALDEFAULTYIELDSTRESS_H_
 
-#include "base/basalstrength/PISMMohrCoulombYieldStress.hh"
+#include "pism/basalstrength/MohrCoulombYieldStress.hh"
 
 namespace pism {
 
 class RegionalDefaultYieldStress : public MohrCoulombYieldStress {
 public:
-  RegionalDefaultYieldStress(IceGrid::ConstPtr g, hydrology::Hydrology *hydro)
-    : MohrCoulombYieldStress(g, hydro) {}
-  virtual ~RegionalDefaultYieldStress() {}
-  virtual void init();
-  virtual const IceModelVec2S& basal_material_yield_stress();
+  RegionalDefaultYieldStress(IceGrid::ConstPtr g, hydrology::Hydrology *hydro);
+  virtual ~RegionalDefaultYieldStress();
+protected:
+  virtual void init_impl();
+  virtual void update_impl(const YieldStressInputs &inputs);
 };
 
 } // end of namespace pism

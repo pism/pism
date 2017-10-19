@@ -58,11 +58,8 @@ these classes*. (This is a summary.)
 
 ### Other useful pages
 
-The [Related Pages tab](pages.html) links to some
-overview pages for PISM usage and design.  You will find
-- [table of standard names used by PISM](@ref std_names),
-- [table of configuration parameters for PISM](@ref config),
-- ['how do I?' page for developers](@ref howto),
+The [Related Pages tab](pages.html) links to some overview pages for
+PISM usage and design. You will find
 - [list of References](@ref references), and other helpful material.
 
 This doxygen source *Browser* can be regenerated in any source code release.

@@ -14,15 +14,10 @@ set(PISM_INVERSE_SOURCES
   ./functional/IPLogRelativeFunctional.cc
   ./functional/IPTotalVariationFunctional.cc
   ./functional/IPMeanSquareFunctional.cc
+  ./TaoUtil.cc
+  ./IP_SSATaucTaoTikhonovProblem.cc
+  ./IP_SSATaucTaoTikhonovProblemLCL.cc
+  ./IP_SSAHardavTaoTikhonovProblem.cc
   )
-
-if(Pism_USE_TAO)
-  list (APPEND PISM_INVERSE_SOURCES
-    ./TaoUtil.cc
-    ./IP_SSATaucTaoTikhonovProblem.cc
-    ./IP_SSATaucTaoTikhonovProblemLCL.cc
-    ./IP_SSAHardavTaoTikhonovProblem.cc
-    )
-endif()
 
 add_library (pisminverse OBJECT ${PISM_INVERSE_SOURCES})

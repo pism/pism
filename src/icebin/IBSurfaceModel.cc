@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 PISM Authors
+// Copyright (C) 2008-2017 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,13 +18,13 @@
 
 #include <gsl/gsl_math.h>
 
-#include "base/util/IceGrid.hh"
-#include "base/util/MaxTimestep.hh"
-#include "base/util/PISMVars.hh"
-#include "base/util/io/PIO.hh"
-#include "base/util/pism_const.hh"
-#include "base/util/pism_utilities.hh"
-#include "icebin/IBSurfaceModel.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/io/PIO.hh"
+#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/icebin/IBSurfaceModel.hh"
 
 namespace pism {
 namespace icebin {
@@ -40,7 +40,6 @@ IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g) : SurfaceModel(g) {
                          "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
                          "kg m-2 s-1", "land_ice_surface_specific_mass_balance");
   icebin_wflux.metadata().set_string("glaciological_units", "kg m-2 year-1");
-  icebin_wflux.write_in_glaciological_units = true;
 
   icebin_deltah.create(m_grid, "icebin_deltah", WITHOUT_GHOSTS);
   icebin_deltah.set_attrs(
