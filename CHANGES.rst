@@ -11,10 +11,11 @@ Summary
 - Adds an optimized implementation of the GPBLD flow law for the Glen n=3 case.
 - Adds von Mises calving (see Morlighem et al, *Modeling of Store Gletscher's calving
   dynamics, West Greenland, in response to ocean thermal forcing*, 2016)
-- Adds more diagnostic quantities (total: 127 spatially-variable and 38 scalar variables)
+- Adds more diagnostic quantities (127 spatially-variable and 38 scalar variables in
+  total)
 - Better code, `better documentation`_, more regression and verification tests.
 
-Please run ``git log v0.7..v1.0`` for the full list.
+Please run ``git log v0.7..v0.8`` for the full list.
 
 See files in the ``doc/`` sub-directory for changes from v0.6 to v0.7, etc.
 
@@ -31,7 +32,7 @@ Prerequisites
 - Require PETSc built with ``PetscScalar`` as ``double``. Stop if ``PetscScalar`` is
   ``complex``. See `issue 237`_.
 
-- Drop Subversion support: use Git to download PISM source code.
+- Drop Subversion support. Please use Git to download PISM source code.
 
 - PETSc < 3.5 is not supported; use PETSc 3.5 and newer (PETSc 3.6.0 is not supported due
   to a bug).
@@ -86,13 +87,13 @@ Ice rheology
 
 - Add ``gpbld3``, the ``n==3`` optimized flow law.
 
-  This is an optimized (vectorized) implementation of the
+  This is an optimized (vectorized_) implementation of the
   Glen-Paterson-Budd-Lliboutry-Duval flow law with the fixed Glen exponent of 3.
 
   On modern (2011 and on) CPUs this flow law implementation is almost 4 times faster than
   the default one. This significantly reduces the cost of high-resolution runs.
 
-  The implementation uses ``exp()`` from VDT, a vectorized math library developed at CERN.
+  The implementation uses ``exp()`` from VDT_, a vectorized math library developed at CERN.
   To reduce the number of external dependencies a copy of VDT (v0.3.6) is included in
   PISM's source tree.
 
@@ -111,7 +112,9 @@ Stress balance
 - Add ``stress_balance.vertical_velocity_approximation``. I.e. (optionally) use
   first-order upwinding to compute u_x and v_y in the vertical velocity computation.
 
-- Add enhancement factors for interglacial periods (See ``Greve97Greenland``.)
+- Add enhancement factors for interglacial periods (See Ralf Greve, *Application of a
+  polythermal three-dimensional ice sheet model to the Greenland ice sheet: Response
+  to steady-state and transient climate scenarios*, 1997.)
 
   Use the following configuration parameters to control this:
 
@@ -161,11 +164,11 @@ Energy conservation
 - PISM no longer ignores horizontal enthalpy advection and strain
   heating near ice margins. See `issue 292`_.
 
-- Following a re-interpretation of ``AschwandenBuelerKhroulevBlatter`` we
-  require that dH/dp=0.
+- Following a re-interpretation of Aschwanden et al, *An enthalpy formulation for glaciers
+  and ice sheets*, 2012 we require that dH/dp=0.
 
-  Assuming that specific heat capacities of ice and water do not depend
-  on temperature, this gives
+  Assuming that specific heat capacities of ice and water do not depend on temperature,
+  this gives
 
   ``L(p) = (T_m(p) - T_m(p_air)) (c_w - c_i) + L_0``, where
 
@@ -177,8 +180,9 @@ Energy conservation
      ``L_0``   , latent heat of fusion at air pressure
      ``p_air`` , air (atmospheric) pressure
 
-  Note that this form of ``L(p)`` also follows from Kirchhoff's law of thermochemistry.
-  See ``EnthalpyConverter::L(T_pm)`` for details. See `issue 334`_.
+  Note that this form of the latent heat of fusion ``L(p)`` also follows from Kirchhoff's
+  law of thermochemistry. See ``EnthalpyConverter::L(T_pm)`` for details. See `issue
+  334`_.
 
 - To allow for better code optimization, ``EnthalpyConverter`` no longer uses virtual
   methods. ``ColdEnthalpyConverter`` used in temperature-based verification tests sets ice
@@ -391,6 +395,8 @@ Miscellaneous
 
 .. _Sphinx: http://pism-docs.org/sphinx/
 .. _better documentation: Sphinx_
+.. _vectorized: https://en.wikipedia.org/wiki/Automatic_vectorization
+.. _VDT: https://github.com/dpiparo/vdt
 
 .. _issue 166: https://github.com/pism/pism/issues/166
 .. _issue 181: https://github.com/pism/pism/issues/181
