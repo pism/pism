@@ -204,8 +204,8 @@ add_library(pismearth OBJECT
   earth/Null.cc
   earth/deformation.cc
   earth/greens.cc
-  earth/cubature.c
   earth/matlablike.cc
+  external/cubature/cubature.c
   )
 
 # Disable compiler warnings for cubature.c (source file not by PISM authors)
@@ -291,13 +291,14 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
   FILES_MATCHING
   PATTERN "*.hh"
   PATTERN "*.h"
-  PATTERN "calcalcs" EXCLUDE
+  PATTERN "external" EXCLUDE
   PATTERN "pythonbindings" EXCLUDE
-  PATTERN "vdt" EXCLUDE
   PATTERN "doc" EXCLUDE
   PATTERN "figs" EXCLUDE
   PATTERN "ssa/tests" EXCLUDE
   PATTERN "verification/tests/fortran" EXCLUDE
+  PATTERN "rheology/approximate" EXCLUDE
+  PATTERN "tracer" EXCLUDE
   )
 
 add_subdirectory (external/calcalcs)

@@ -20,7 +20,7 @@
 #include <math.h>
 #include <gsl/gsl_spline.h>
 #include <petscvec.h>
-#include "cubature.h"
+#include "pism/external/cubature/cubature.h"
 #include "pism/util/petscwrappers/Vec.hh"
 
 void conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
