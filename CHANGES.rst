@@ -244,7 +244,7 @@ Bed deformation
 
 - Add a new command-line option: ``-uplift_file``. Use it to specify the name of a file
   containing the variable ``dbdt`` to use when initializing the Lingle-Clark bed
-  deformation model.
+  deformation model. See `issue 390`_.
 
 - Add ``-topg_delta_file topg_delta.nc.``
 
@@ -383,29 +383,30 @@ Miscellaneous
 
 .. _Sphinx: http://pism-docs.org/sphinx/
 
-.. _issue 237: https://github.com/pism/pism/issues/237
 .. _issue 166: https://github.com/pism/pism/issues/166
-.. _issue 346: https://github.com/pism/pism/issues/346
-.. _issue 343: https://github.com/pism/pism/issues/343
-.. _issue 349: https://github.com/pism/pism/issues/349
-.. _issue 340: https://github.com/pism/pism/issues/340
-.. _issue 313: https://github.com/pism/pism/issues/313
-.. _issue 292: https://github.com/pism/pism/issues/292
-.. _issue 324: https://github.com/pism/pism/issues/324
-.. _issue 330: https://github.com/pism/pism/issues/330
 .. _issue 181: https://github.com/pism/pism/issues/181
-.. _issue 328: https://github.com/pism/pism/issues/328
-.. _issue 351: https://github.com/pism/pism/issues/351
-.. _issue 325: https://github.com/pism/pism/issues/325
-.. _issue 323: https://github.com/pism/pism/issues/323
-.. _issue 321: https://github.com/pism/pism/issues/321
-.. _issue 326: https://github.com/pism/pism/issues/326
-.. _issue 302: https://github.com/pism/pism/issues/302
-.. _issue 347: https://github.com/pism/pism/issues/347
-.. _issue 350: https://github.com/pism/pism/issues/350
-.. _issue 370: https://github.com/pism/pism/issues/370
 .. _issue 201: https://github.com/pism/pism/issues/201
+.. _issue 237: https://github.com/pism/pism/issues/237
+.. _issue 292: https://github.com/pism/pism/issues/292
+.. _issue 302: https://github.com/pism/pism/issues/302
+.. _issue 313: https://github.com/pism/pism/issues/313
+.. _issue 321: https://github.com/pism/pism/issues/321
+.. _issue 323: https://github.com/pism/pism/issues/323
+.. _issue 324: https://github.com/pism/pism/issues/324
+.. _issue 325: https://github.com/pism/pism/issues/325
+.. _issue 326: https://github.com/pism/pism/issues/326
+.. _issue 328: https://github.com/pism/pism/issues/328
+.. _issue 330: https://github.com/pism/pism/issues/330
 .. _issue 334: https://github.com/pism/pism/issues/334
+.. _issue 340: https://github.com/pism/pism/issues/340
+.. _issue 343: https://github.com/pism/pism/issues/343
+.. _issue 346: https://github.com/pism/pism/issues/346
+.. _issue 347: https://github.com/pism/pism/issues/347
+.. _issue 349: https://github.com/pism/pism/issues/349
+.. _issue 350: https://github.com/pism/pism/issues/350
+.. _issue 351: https://github.com/pism/pism/issues/351
+.. _issue 370: https://github.com/pism/pism/issues/370
+.. _issue 390: https://github.com/pism/pism/issues/390
 
 ..
    Local Variables:
