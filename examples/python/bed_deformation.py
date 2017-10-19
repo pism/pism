@@ -103,7 +103,7 @@ def run(scenario, plot, pause, save):
 
     time.init(ctx.ctx.log())
 
-    model = PISM.PBLingleClark(grid)
+    model = PISM.LingleClark(grid)
 
     model.bootstrap(bed, uplift, thickness)
 

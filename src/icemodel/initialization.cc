@@ -865,13 +865,13 @@ void IceModel::allocate_bed_deformation() {
                  "# Allocating a bed deformation model...\n");
 
   if (model == "none") {
-    m_beddef = new bed::PBNull(m_grid);
+    m_beddef = new bed::Null(m_grid);
   }
   else if (model == "iso") {
-    m_beddef = new bed::PBPointwiseIsostasy(m_grid);
+    m_beddef = new bed::PointwiseIsostasy(m_grid);
   }
   else if (model == "lc") {
-    m_beddef = new bed::PBLingleClark(m_grid);
+    m_beddef = new bed::LingleClark(m_grid);
   }
 
   m_submodels["bed deformation"] = m_beddef;

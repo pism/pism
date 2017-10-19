@@ -51,13 +51,13 @@ def exact(dics_radius, disc_thickness, t, L, N):
     return (r, z)
 
 def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
-    "Use the PBLingleClark class to compute plate deflection."
+    "Use the LingleClark class to compute plate deflection."
     M = 2 * N - 1
 
     ctx = PISM.Context().ctx
     grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
-    bed_model = PISM.PBLingleClark(grid)
+    bed_model = PISM.LingleClark(grid)
 
     ice_thickness = PISM.IceModelVec2S()
     ice_thickness.create(grid, "thk", PISM.WITHOUT_GHOSTS)
@@ -104,13 +104,13 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, N, dt):
     return r, z
 
 def modeled_steady_state(dics_radius, disc_thickness, time, L, N):
-    "Use the PBLingleClark class to compute plate deflection."
+    "Use the LingleClark class to compute plate deflection."
     M = 2 * N - 1
 
     ctx = PISM.Context().ctx
     grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
-    bed_model = PISM.PBLingleClark(grid)
+    bed_model = PISM.LingleClark(grid)
 
     ice_thickness = PISM.IceModelVec2S()
     ice_thickness.create(grid, "thk", PISM.WITHOUT_GHOSTS)
