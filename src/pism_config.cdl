@@ -980,21 +980,6 @@ netcdf pism_config {
     pism_config:ocean.pik_melt_factor_type = "scalar";
     pism_config:ocean.pik_melt_factor_units = "1";
 
-    pism_config:ocean.runoff_to_ocean_melt_b = 0.15;
-    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden`";
-    pism_config:ocean.runoff_to_ocean_melt_b_type = "scalar";
-    pism_config:ocean.runoff_to_ocean_melt_b_units = "1";
-
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha = 0.54;
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_type = "scalar";
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_units = "1";
-
-    pism_config:ocean.runoff_to_ocean_melt_power_beta = 1.17;
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_doc = "exponent `\\beta` in eqn. 1 in :cite:`Xu2013`";
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_type = "scalar";
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_units = "1";
-
     pism_config:ocean.sub_shelf_heat_flux_into_ice = 0.5;
     pism_config:ocean.sub_shelf_heat_flux_into_ice_doc = "= J meter-2 second-1; naively chosen default value for heat from ocean; see comments in pism::ocean::Constant::shelf_base_mass_flux().";
     pism_config:ocean.sub_shelf_heat_flux_into_ice_type = "scalar";
@@ -1497,11 +1482,6 @@ netcdf pism_config {
     pism_config:surface.pressure_doc = "atmospheric pressure; = pressure at ice surface";
     pism_config:surface.pressure_type = "scalar";
     pism_config:surface.pressure_units = "Pascal";
-
-    pism_config:surface.temp_to_runoff_a = 0.5;
-    pism_config:surface.temp_to_runoff_a_doc = "a in runoff=a * temp + b";
-    pism_config:surface.temp_to_runoff_a_type = "scalar";
-    pism_config:surface.temp_to_runoff_a_units = "K-1";
 
     pism_config:time.calendar = "365_day";
     pism_config:time.calendar_choices = "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none";
