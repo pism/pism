@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015  PISM authors
+# Copyright (C) 2009-2015, 2017  PISM authors
 ##################################################################################
 # Coarse grid spinup of Antarctic ice sheet model using data from Anne Le Brocq
 # (see SeaRISE wiki).  Uses PIK physics and enthalpy model
@@ -113,7 +113,7 @@ RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 RUNTIME=100000
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
-exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,Href,gl_mask"
+exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,cell_grounded_fraction,ice_area_specific_volume,amount_fluxes,basal_mass_flux_grounded,basal_mass_flux_floating"
 expackage="-extra_times 0:1000:$RUNTIME -extra_vars $exvars"
 
 echo
