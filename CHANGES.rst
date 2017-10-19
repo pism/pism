@@ -1,13 +1,20 @@
 Changes from v0.7 to v0.8
 =========================
 
-This document lists notable changes from PISM v0.7 to v0.8. Please run
+This document lists notable changes from PISM v0.7 to v0.8.
 
-.. code::
+Summary
+-------
 
-   git log v0.7..v0.8
+- New mass transport code makes it easier to "balance the books".
+- PISM's grids are no longer transposed ( ``(y,x)`` versus ``(x,y)`` ).
+- Adds an optimized implementation of the GPBLD flow law for the Glen n=3 case.
+- Adds von Mises calving (see Morlighem et al, *Modeling of Store Gletscher's calving
+  dynamics, West Greenland, in response to ocean thermal forcing*, 2016)
+- Adds more diagnostic quantities (total: 127 spatially-variable and 38 scalar variables)
+- Better code, `better documentation`_, more regression and verification tests.
 
-for the full list.
+Please run ``git log v0.7..v1.0`` for the full list.
 
 See files in the ``doc/`` sub-directory for changes from v0.6 to v0.7, etc.
 
@@ -331,6 +338,7 @@ Miscellaneous
 
   - Add committer's name and date to the version string.
   - ``pismr -version`` prints versions of
+
     - PISM
     - PETSc (including configuration options)
     - MPI
@@ -382,6 +390,7 @@ Miscellaneous
 - Add numerous regression tests.
 
 .. _Sphinx: http://pism-docs.org/sphinx/
+.. _better documentation: Sphinx_
 
 .. _issue 166: https://github.com/pism/pism/issues/166
 .. _issue 181: https://github.com/pism/pism/issues/181
