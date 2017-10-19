@@ -76,9 +76,9 @@ protected:
   IceModelVec2S m_uplift;
 };
 
-class PBNull : public BedDef {
+class Null : public BedDef {
 public:
-  PBNull(IceGrid::ConstPtr g);
+  Null(IceGrid::ConstPtr g);
 protected:
   void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                   double my_t, double my_dt);
@@ -87,10 +87,10 @@ protected:
 };
 
 //! Pointwide isostasy bed deformation model.
-class PBPointwiseIsostasy : public BedDef {
+class PointwiseIsostasy : public BedDef {
 public:
-  PBPointwiseIsostasy(IceGrid::ConstPtr g);
-  virtual ~PBPointwiseIsostasy();
+  PointwiseIsostasy(IceGrid::ConstPtr g);
+  virtual ~PointwiseIsostasy();
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl(const InputOptions &opts);

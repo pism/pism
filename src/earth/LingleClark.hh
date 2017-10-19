@@ -28,10 +28,10 @@ namespace bed {
 class BedDeformLC;
 
 //! A wrapper class around BedDeformLC.
-class PBLingleClark : public BedDef {
+class LingleClark : public BedDef {
 public:
-  PBLingleClark(IceGrid::ConstPtr g);
-  virtual ~PBLingleClark();
+  LingleClark(IceGrid::ConstPtr g);
+  virtual ~LingleClark();
 
   const IceModelVec2S& total_displacement() const;
 

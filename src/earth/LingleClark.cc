@@ -34,7 +34,7 @@
 namespace pism {
 namespace bed {
 
-PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
+LingleClark::LingleClark(IceGrid::ConstPtr g)
   : BedDef(g) {
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
@@ -59,7 +59,7 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   const int
     Mx = m_grid->Mx(),
     My = m_grid->My(),
-    Z  = 4,                     // use Z = 4 for now; to reduce global drift?
+    Z  = m_config->get_double("bed_deformation.lc.grid_size_factor"),
     Nx = Z*(Mx - 1) + 1,
     Ny = Z*(My - 1) + 1;
 
@@ -97,7 +97,7 @@ PBLingleClark::PBLingleClark(IceGrid::ConstPtr g)
   rank0.check();
 }
 
-PBLingleClark::~PBLingleClark() {
+LingleClark::~LingleClark() {
   if (m_bdLC != NULL) {
     delete m_bdLC;
     m_bdLC = NULL;
@@ -110,7 +110,7 @@ PBLingleClark::~PBLingleClark() {
  *
  * Then compute the bed relief as the difference between bed elevation and total bed displacement.
  */
-void PBLingleClark::bootstrap_impl(const IceModelVec2S &bed,
+void LingleClark::bootstrap_impl(const IceModelVec2S &bed,
                                    const IceModelVec2S &bed_uplift,
                                    const IceModelVec2S &ice_thickness) {
   m_t_beddef_last = m_grid->ctx()->time()->start();
@@ -163,7 +163,7 @@ void PBLingleClark::bootstrap_impl(const IceModelVec2S &bed,
  * - plate displacement (either read from a file or bootstrapped using uplift) and
  *   possibly re-gridded.
  */
-void PBLingleClark::init_impl(const InputOptions &opts) {
+void LingleClark::init_impl(const InputOptions &opts) {
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
 
   // Initialize bed topography and uplift maps.
@@ -214,7 +214,7 @@ void PBLingleClark::init_impl(const InputOptions &opts) {
   m_topg.add(-1.0, m_bed_displacement, m_relief);
 }
 
-MaxTimestep PBLingleClark::max_timestep_impl(double t) const {
+MaxTimestep LingleClark::max_timestep_impl(double t) const {
   (void) t;
   // no time-step restriction
   return MaxTimestep("bed_def lc");
@@ -225,12 +225,12 @@ MaxTimestep PBLingleClark::max_timestep_impl(double t) const {
  *
  * This method uses the fact that m_bed_displacement is used to store bed displacement
  */
-const IceModelVec2S& PBLingleClark::total_displacement() const {
+const IceModelVec2S& LingleClark::total_displacement() const {
   return m_bed_displacement;
 }
 
 //! Update the Lingle-Clark bed deformation model.
-void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+void LingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                                double t, double dt) {
 
   if ((fabs(t - m_t)   < 1e-12) &&
@@ -289,12 +289,12 @@ void PBLingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thicknes
   m_topg_last.copy_from(m_topg);
 }
 
-void PBLingleClark::define_model_state_impl(const PIO &output) const {
+void LingleClark::define_model_state_impl(const PIO &output) const {
   BedDef::define_model_state_impl(output);
   m_viscous_bed_displacement.define(output);
 }
 
-void PBLingleClark::write_model_state_impl(const PIO &output) const {
+void LingleClark::write_model_state_impl(const PIO &output) const {
   BedDef::write_model_state_impl(output);
 
   m_viscous_bed_displacement.write(output);

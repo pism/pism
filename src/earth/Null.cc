@@ -25,12 +25,12 @@
 namespace pism {
 namespace bed {
 
-PBNull::PBNull(IceGrid::ConstPtr g)
+Null::Null(IceGrid::ConstPtr g)
   : BedDef(g) {
   // empty
 }
 
-void PBNull::init_impl(const InputOptions &opts) {
+void Null::init_impl(const InputOptions &opts) {
   m_log->message(2,
              "* Initializing the dummy (no-op) bed deformation model...\n");
 
@@ -39,12 +39,12 @@ void PBNull::init_impl(const InputOptions &opts) {
   m_uplift.set(0.0);
 }
 
-MaxTimestep PBNull::max_timestep_impl(double t) const {
+MaxTimestep Null::max_timestep_impl(double t) const {
   (void) t;
   return MaxTimestep("bed_def none");
 }
 
-void PBNull::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
+void Null::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
                                         double t, double dt) {
   (void) ice_thickness;
   (void) t;

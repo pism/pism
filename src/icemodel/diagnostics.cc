@@ -168,15 +168,21 @@ protected:
     const IceModelVec2S &input = model->geometry_evolution().bottom_surface_mass_balance();
     const IceModelVec2CellType &cell_type = model->geometry().cell_type;
 
+    double ice_density = m_config->get_double("constants.ice.density");
+
+    // the accumulator has the units of kg/m^2, computed as
+    //
+    // accumulator += BMB (m) * ice_density (kg / m^3)
+
     IceModelVec::AccessList list{&input, &cell_type, &m_accumulator};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_kind == GROUNDED and cell_type.grounded(i, j)) {
-        m_accumulator(i, j) += input(i, j);
+        m_accumulator(i, j) += input(i, j) * ice_density;
       } else if (m_kind == SHELF and cell_type.ocean(i, j)) {
-        m_accumulator(i, j) += input(i, j);
+        m_accumulator(i, j) += input(i, j) * ice_density;
       } else {
         m_accumulator(i, j) = 0.0;
       }
