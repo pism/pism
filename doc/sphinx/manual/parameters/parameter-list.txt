@@ -1030,6 +1030,21 @@
    :Option: :opt:`-meltfactor_pik`
    :Description: dimensionless tuning parameter in the '-ocean pik' ocean heat flux parameterization; see :cite:`Martinetal2011`
 
+#. :config:`ocean.runoff_to_ocean_melt_b` (*scalar*)
+
+   :Value: 0.150000 (1)
+   :Description: parameter B in eqn. 1 in :cite:`Aschwanden`
+
+#. :config:`ocean.runoff_to_ocean_melt_power_alpha` (*scalar*)
+
+   :Value: 0.540000 (1)
+   :Description: exponent `\alpha` in eqn. 1 in :cite:`Xu2013`
+
+#. :config:`ocean.runoff_to_ocean_melt_power_beta` (*scalar*)
+
+   :Value: 1.170000 (1)
+   :Description: exponent `\beta` in eqn. 1 in :cite:`Xu2013`
+
 #. :config:`ocean.sub_shelf_heat_flux_into_ice` (*scalar*)
 
    :Value: 0.500000 (W meter-2)
@@ -1419,6 +1434,36 @@
    :Value: 274
    :Description: day of year for October 1st, beginning of the balance year in northern latitudes.
 
+#. :config:`surface.pdd.aschwanden.beta_ice_c` (*scalar*)
+
+   :Value: 0.006000 (meter / (Kelvin day))
+   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
+
+#. :config:`surface.pdd.aschwanden.beta_ice_w` (*scalar*)
+
+   :Value: 0.008000 (meter / (Kelvin day))
+   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
+
+#. :config:`surface.pdd.aschwanden.beta_snow_c` (*scalar*)
+
+   :Value: 0.001500 (meter / (Kelvin day))
+   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
+
+#. :config:`surface.pdd.aschwanden.beta_snow_w` (*scalar*)
+
+   :Value: 0.003000 (meter / (Kelvin day))
+   :Description: water-equivalent thickness; for formula (6) in :cite:`Aschwandenetal2009`
+
+#. :config:`surface.pdd.aschwanden.latitude_beta_w` (*scalar*)
+
+   :Value: 77 (degree_north)
+   :Description: latitude below which to use warm case, in formula (6) in :cite:`Aschwandenetal2009`
+
+#. :config:`surface.pdd.aschwanden.warm_cold_transition_width` (*scalar*)
+
+   :Value: 1 (degree_north)
+   :Description: smoothing width in degrees for linear transition between warm and cold values
+
 #. :config:`surface.pdd.factor_ice` (*scalar*)
 
    :Value: 0.008791 (meter / (Kelvin day))
@@ -1540,6 +1585,11 @@
 
    :Value: 0 (Pascal)
    :Description: atmospheric pressure; = pressure at ice surface
+
+#. :config:`surface.temp_to_runoff_a` (*scalar*)
+
+   :Value: 0.500000 (K-1)
+   :Description: a in runoff=a * temp + b
 
 #. :config:`time.calendar` (*keyword*)
 
