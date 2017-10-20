@@ -1,7 +1,7 @@
-Changes from v0.7 to v0.8
+Changes from v0.7 to v1.0
 =========================
 
-This document lists notable changes from PISM v0.7 to v0.8.
+This document lists notable changes from PISM v0.7 to v1.0.
 
 Summary
 -------
@@ -15,7 +15,7 @@ Summary
   total)
 - Better code, `better documentation`_, more regression and verification tests.
 
-Please run ``git log v0.7..v0.8`` for the full list.
+Please run ``git log v0.7..v1.0`` for the full list.
 
 See files in the ``doc/`` sub-directory for changes from v0.6 to v0.7, etc.
 
