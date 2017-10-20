@@ -78,9 +78,14 @@ LingleClark::LingleClark(IceGrid::ConstPtr g)
                                        "bed displacement in the viscous half-space "
                                        "bed deformation model; "
                                        "see BuelerLingleBrown", "meters", "");
+
   // coordinate variables of the extended grid should have different names
   m_viscous_bed_displacement.metadata().get_x().set_name("x_lc");
   m_viscous_bed_displacement.metadata().get_y().set_name("y_lc");
+
+  // "lat lon" is not appropriate here
+  m_viscous_bed_displacement.metadata().set_string("coordinates", "");
+
   m_viscous_bed_displacement0 = m_viscous_bed_displacement.allocate_proc0_copy();
 
   ParallelSection rank0(m_grid->com);
