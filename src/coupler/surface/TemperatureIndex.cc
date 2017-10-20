@@ -673,6 +673,85 @@ protected:
   }
 };
 
+/*!
+ * Integrate a field over the computational domain.
+ *
+ * If the input has units kg/m^2, the output will be in kg.
+ */
+static double integrate(const IceModelVec2S &input,
+                        const IceModelVec2S &cell_area) {
+  IceGrid::ConstPtr grid = input.get_grid();
+
+  IceModelVec::AccessList list{&input, &cell_area};
+
+  double result = 0.0;
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result += input(i, j) * cell_area(i, j);
+  }
+
+  return GlobalSum(grid->com, result);
+}
+
+
+//! \brief Reports the total accumulation rate.
+class TotalSurfaceAccumulation : public TSDiag<TSFluxDiagnostic, TemperatureIndex>
+{
+public:
+  TotalSurfaceAccumulation(const TemperatureIndex *m)
+    : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_accumulation_rate") {
+
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "surface accumulation rate (PDD model)");
+  }
+
+  double compute() {
+    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+    return integrate(model->accumulation(), cell_area);
+  }
+};
+
+
+//! \brief Reports the total melt rate.
+class TotalSurfaceMelt : public TSDiag<TSFluxDiagnostic, TemperatureIndex>
+{
+public:
+  TotalSurfaceMelt(const TemperatureIndex *m)
+    : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_melt_rate") {
+
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "surface melt rate (PDD model)");
+  }
+
+  double compute() {
+    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+    return integrate(model->melt(), cell_area);
+  }
+};
+
+
+//! \brief Reports the total top surface ice flux.
+class TotalSurfaceRunoff : public TSDiag<TSFluxDiagnostic, TemperatureIndex>
+{
+public:
+  TotalSurfaceRunoff(const TemperatureIndex *m)
+    : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_runoff_rate") {
+
+    m_ts.variable().set_string("units", "kg s-1");
+    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("long_name", "surface runoff rate (PDD model)");
+  }
+
+  double compute() {
+    const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+    return integrate(model->runoff(), cell_area);
+  }
+};
+
 } // end of namespace diagnostics
 
 std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() const {
@@ -688,6 +767,20 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());
+
+  return result;
+}
+
+std::map<std::string, TSDiagnostic::Ptr> TemperatureIndex::ts_diagnostics_impl() const {
+  using namespace diagnostics;
+
+  std::map<std::string, TSDiagnostic::Ptr> result = {
+    {"surface_accumulation_rate", TSDiagnostic::Ptr(new TotalSurfaceAccumulation(this))},
+    {"surface_melt_rate",         TSDiagnostic::Ptr(new TotalSurfaceMelt(this))},
+    {"surface_runoff_rate",       TSDiagnostic::Ptr(new TotalSurfaceRunoff(this))},
+  };
+
+  result = pism::combine(result, SurfaceModel::ts_diagnostics_impl());
 
   return result;
 }

@@ -57,6 +57,7 @@ protected:
   virtual void write_model_state_impl(const PIO &output) const;
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
   virtual void mass_flux_impl(IceModelVec2S &result) const;
   virtual void temperature_impl(IceModelVec2S &result) const;
