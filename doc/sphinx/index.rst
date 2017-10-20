@@ -3,6 +3,8 @@
 PISM |version| documentation
 ============================
 
+This *Manual* was built using revision |git-revision| committed on |git-date|.
+
 .. toctree::
    :maxdepth: 3
 
