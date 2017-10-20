@@ -34,15 +34,17 @@ basic ways to input and output NetCDF files when starting and ending PISM runs.
      - Chooses the output file name.  Default name is ``unnamed.nc``.
 
    * - :opt:`-o_size` ``size_keyword``
-     - Chooses the size of the output file to produce. Possible sizes are ``none`` (*no*
-       output file at all), ``small`` (only variables necessary to restart PISM),
-       ``medium`` (the default, includes a few diagnostic quantities), ``big`` (writes all
-       the variables mentioned in :ref:`sec-extra_vars`), and ``big_2d`` writes all
-       2D variables but only 3D variables that are model state. Configuration variables
-       :config:`output.sizes.medium`, :config:`output.sizes.big`, and
-       :config:`output.sizes.big_2d` list the written variables for those sizes.
+     - Chooses the size of the output file to produce. Possible sizes are
 
-       .. FIXME: this description of -o_size is incorrect
+       - ``none`` (*no* output file at all),
+       - ``small`` (only variables necessary to restart PISM),
+       - ``medium`` (the default, includes diagnostic quantities listed in the
+         configuration parameter :config:`output.sizes.medium`, if they are available in
+         the current PISM setup),
+       - ``big_2d`` (same as ``medium``, plus variables listed in
+         :config:`output.sizes.big_2d`), and
+       - ``big`` (same as ``big_2d``, plus variables listed in
+         :config:`output.sizes.big`).
 
 :numref:`tab-stdout` lists the controls on what is printed to the standard output.
 Note the ``-help`` and ``-usage`` options for getting help at the command line.
