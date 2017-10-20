@@ -89,8 +89,7 @@ for k, v in funding.iteritems():
 if options.manual:
     print header
     print """
-Development of PISM is supported by {grants}.
-""".format(grants=join(grants))
+Development of PISM is supported by {grants}.""".format(grants=join(grants))
 else:
     print header
     print acknowledgement
