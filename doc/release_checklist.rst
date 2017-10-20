@@ -1,38 +1,40 @@
 PISM release checklist
 ======================
 
-#. [ ] Create a new ``stableXX`` branch, if needed.
-#. [ ] Merge, if needed.
-#. [ ] Set ``Pism_BRANCH`` in ``CMakeLists.txt``
-#. [ ] Replace ``0.x`` with ``0.x+1`` in docs.
-#. [ ] Update ``CHANGES.rst``.
-#. [ ] Tag.
+#. Run ``make`` in the ``doc/sphinx`` directory to update lists of diagnostics and
+   configuration parameters.
+#. Run ``make`` in the ``doc`` directory to update funding sources.
+#. Create a new branch and merge (if needed).
+#. Set ``Pism_BRANCH`` in ``CMakeLists.txt`` to "stable".
+#. Update ``version`` and ``release`` in ``doc/sphinx/conf.py``.
+#. Update ``CHANGES.rst``.
+#. Tag.
 
    ::
 
-       git tag -a v0.X -m "The v0.X release. See CHANGES.rst for the list of changes since v0.X-1."
+      git tag -a v0.X -m "The v0.X release. See CHANGES.rst for the list of changes since v0.X-1."
 
-#. [ ] Push.
-
-   ::
-
-       git push -u origin HEAD
-
-#. [ ] Push tags.
+#. Push.
 
    ::
 
-       git push --tags
+      git push -u origin HEAD
 
-#. [ ] Re-build docs.
+#. Push tags.
 
    ::
 
-       make manual_html manual_pdf browser.tgz pismpython_docs
+      git push --tags
 
-#. [ ] Upload these docs.
-#. [ ] Switch the default branch on https://github.com/pism/pism
-#. [ ] Write a news item for ``pism-docs.org``.
-#. [ ] Replace ``0.x`` with ``0.x+1`` on ``pism-docs.org``.
-#. [ ] Send an e-mail to CRYOLIST.
-#. [ ] Tell more people, if desired.
+#. Re-build docs.
+
+   ::
+
+      make manual_html manual_pdf browser.tgz pismpython_docs
+
+#. Upload these docs.
+#. Update the default branch on https://github.com/pism/pism
+#. Write a news item for ``pism-docs.org``.
+#. Update the current PISM version on ``pism-docs.org``.
+#. Send an e-mail to CRYOLIST.
+#. Tell more people, if desired.
