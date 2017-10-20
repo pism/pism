@@ -39,8 +39,6 @@ PISM (i.e. the PETSc program) is started. It can have a list of options, one per
 theory, these two PETSc mechanisms (``PETSC_OPTIONS`` and ``.petscrc``) can be used
 together.
 
-.. "-da_processors_x M -da_processors_y N" should not be documented here because they do not work. the reason is that IceModelVec2 and IceModelVec3 put the Mx, My dimensions in different arguments to the DACreate commands (FIXME: I don't think this is true.)
-
 Now we address controls on how PETSc solves systems of linear equations, which uses the
 PETSc "KSP" component (Krylov methods). Such linear solves are needed each time the
 nonlinear SSA stress balance equations are used (e.g. with the option ``-stress_balance

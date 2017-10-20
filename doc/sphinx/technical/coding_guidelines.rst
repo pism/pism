@@ -52,6 +52,12 @@ Bad:
    #include "IceGrid.hh"
    #include <cassert>
 
+Whenever appropriate add comments explaining why a particular header was included.
+
+.. code-block:: c++
+
+   #include <cstring> // strcmp
+
 Naming
 ------
 
@@ -106,7 +112,7 @@ Do import *specific* names with `using ::foo::bar;` in `.cc` files.
 Formatting
 ----------
 
-PISM includes a ``.clang-format`` file that makes it easy to re-format source to make it
+PISM includes a `.clang-format` file that makes it easy to re-format source to make it
 conform to these guidelines.
 
 To re-format a file, commit it to the repository, then run
@@ -115,7 +121,7 @@ To re-format a file, commit it to the repository, then run
 
     clang-format -i filename.cc
 
-(Here ``-i`` tells clang-format to edit files "in place." Note that editing in place is
+(Here `-i` tells clang-format to edit files "in place." Note that editing in place is
 safe because you added it to the repository.)
 
 Boolean operators should be surrounded by spaces
@@ -226,7 +232,6 @@ Conditionals
 - `if (condition)` should always be on its own line
 - the `else` should be on the same line as the closing parenthesis: `} else { ...`
 
-
 .. code-block:: c++
 
    // Good
@@ -264,7 +269,7 @@ Error handling
 --------------
 
 First of all, PISM is written in C++, so unless we use a non-throwing `new` and completely
-avoid STL, exceptions are something we have to deal with. This means that we more or less
+avoid STL, exceptions are something we have to live with. This means that we more or less
 have to use exceptions to handle errors in PISM. (Mixing two error handling styles is a
 *bad* idea.)
 
@@ -378,29 +383,52 @@ classes accessible using Python wrappers. (Use exceptions instead.)
 Function design
 ---------------
 
-FIXME
+Functions are the way to *manage complexity*. They are not just for code reuse: the main
+benefit of creating a function is that a self-contained piece of code is easier both to
+**understand** and **test**.
+
+Functions should not have side effects (if at all possible). In particular, do not use and
+especially do not *modify* "global" objects. If a function needs to modify an existing
+field "in place", pass a reference to that field as an argument and document this argument
+as an "input" or an "input/output" argument.
 
 Function arguments; constness
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-FIXME
+Pass C++ class instances by const reference *unless* an instance is modified in place.
+This makes it easier to recognize *input* (read-only) and *output* arguments.
 
-Class design
-------------
+Do **not** use `const` when passing C types: `f()` and `g()` below are equivalent.
 
-FIXME
+.. code-block:: c++
+
+   double f(const double x) {
+     return x*x;
+   }
+
+   double g(double x) {
+     return x*x;
+   }
 
 Method versus a function
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-FIXME
+Do **not** implement something as a class method if the same functionality can be
+implemented as a standalone function. Turn a class method into a standalone function if
+you notice that it uses the *public* class interface only.
 
 Virtual methods
 ^^^^^^^^^^^^^^^
 
-FIXME
+- Do not make a method virtual unless you have to.
+- Public methods should not be virtual (create "non-virtual interfaces")
+- **Never** add `__attribute__((noreturn))` to a virtual class method.
 
 private versus protected versus public
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-FIXME
+Most data members and class methods should be `private`.
+
+Make it `protected` if it should be accessible from a derived class.
+
+Make it `public` only if it is a part of the interface.

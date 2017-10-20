@@ -78,10 +78,8 @@ Allowed formats for a bootstrapping file are relatively simple to describe.
 #. Three-dimensional variables will be ignored in bootstrapping.
 #. The ``standard_name`` attribute is used, when available, to identify a variable, so
    variable names need not match corresponding variables in a PISM output file. See the
-   `PISM Source Code browser <pism-browser_>`_ for a list of CF standard names used in
+   :ref:`sec-cf-standard-names` for a list of CF standard names used in
    PISM.
-
-   .. FIXME: put the list of standard names under "Technical notes"
 
    Specifically, the bed elevation (topography) is read by ``standard_name`` =
    ``bedrock_altitude`` and the ice thickness by ``standard_name`` =

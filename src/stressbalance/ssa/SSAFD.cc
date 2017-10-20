@@ -344,7 +344,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         if (melange_back_pressure != NULL) {
           double lambda = (*melange_back_pressure)(i, j);
 
-          // adjust the "pressure imbalance term" using the provided
+          // adjust the "pressure difference term" using the provided
           // "melange back pressure fraction".
           ocean_pressure *= (1.0 - lambda);
         }

@@ -44,8 +44,6 @@ with PISM and post-processing results; see :numref:`tab-NetCDFview`.
    * - PyNGL_
      - Python version of NCL
 
-.. FIXME: do we need nc2cdo.py?
-
 The PISM authors use ``ncview`` and "``ncdump -h``" for quick visualization and metadata
 examination. NCO has powerful command-line manipulation of NetCDF files, but requires some
 learning. Another such command-line tool is CDO, but to use CDO on PISM files first run

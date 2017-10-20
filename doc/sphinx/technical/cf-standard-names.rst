@@ -1,5 +1,7 @@
 .. include:: ../global.txt
 
+.. _sec-cf-standard-names:
+
 CF standard names used by PISM
 ==============================
 

@@ -55,10 +55,10 @@ correctly.
 Next steps
 ==========
 
-.. FIXME: documentation is not in LaTeX any more
+Start with the section :ref:`sec-start`.
 
-Start with the section :ref:`sec-start`. Completely up-to-date documentation can be built
-from LaTeX source in the ``doc/`` sub-directory, as described in the next section.
+Completely up-to-date documentation can be built from source; see
+:ref:`sec-install-documentation` for details.
 
 A final reminder with respect to installation: Let’s assume you have checked out a copy of
 PISM using Git, :ref:`as described above <git-clone>`. You can then update your copy of PISM
