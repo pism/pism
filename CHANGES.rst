@@ -11,8 +11,8 @@ Summary
 - Adds an optimized implementation of the GPBLD flow law for the Glen n=3 case.
 - Adds von Mises calving (see Morlighem et al, *Modeling of Store Gletscher's calving
   dynamics, West Greenland, in response to ocean thermal forcing*, 2016)
-- Adds more diagnostic quantities (127 spatially-variable and 38 scalar variables in
-  total)
+- Adds more diagnostic quantities (127 spatially-variable fields and 38 scalar variables
+  in total)
 - Better code, `better documentation`_, more regression and verification tests.
 
 Please run ``git log v0.7..v1.0`` for the full list.
