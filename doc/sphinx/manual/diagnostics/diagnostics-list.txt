@@ -953,6 +953,21 @@ Scalar time-series
    :Units: m
    :Description: total sea-level relevant ice IN SEA-LEVEL EQUIVALENT
 
+#. ``surface_accumulation_rate``
+
+   :Units: kg year-1
+   :Description: surface accumulation rate (PDD model)
+
+#. ``surface_melt_rate``
+
+   :Units: kg year-1
+   :Description: surface melt rate (PDD model)
+
+#. ``surface_runoff_rate``
+
+   :Units: kg year-1
+   :Description: surface runoff rate (PDD model)
+
 #. ``tendency_of_ice_mass``
 
    :Units: kg year-1
