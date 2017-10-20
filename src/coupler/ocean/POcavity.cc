@@ -1402,19 +1402,19 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
       overturning(i,j) = overturning_coeff*cc.rho_star* (cc.beta*(Soc_box0(i,j)-Soc(i,j)) -
                             cc.alpha*(Toc_box0(i,j)-Toc(i,j))); // in m^3/s
 
-      // average the temperature, salinity and overturning at the boundary between box1 and box2
-      // this is used as input for box 2
-      // using the values at the boundary helps smoothing discontinuities between boxes
-      // (here we sum up)
-      if (ocean_box_mask(i-1,j)==2 || ocean_box_mask(i+1,j)==2 ||
-          ocean_box_mask(i,j-1)==2 || ocean_box_mask(i,j+1)==2){
+      // TEST: Compute average over the entire box ( instead of the boundary between box1 and box2)
+      // // average the temperature, salinity and overturning at the boundary between box1 and box2
+      // // this is used as input for box 2
+      // // using the values at the boundary helps smoothing discontinuities between boxes
+      // // (here we sum up)
+      // if (ocean_box_mask(i-1,j)==2 || ocean_box_mask(i+1,j)==2 ||
+      //     ocean_box_mask(i,j-1)==2 || ocean_box_mask(i,j+1)==2){
         lcounter_edge_of_box1_vector[shelf_id]++;
         lmean_salinity_box1_vector[shelf_id] += Soc(i,j);
         lmean_temperature_box1_vector[shelf_id] += Toc(i,j); // in Kelvin
         lmean_meltrate_box1_vector[shelf_id] += basalmeltrate_shelf(i,j);
         lmean_overturning_box1_vector[shelf_id] += overturning(i,j);
-
-      } // no else-case necessary since all variables are set to zero at the beginning of this routine
+      //} // no else-case necessary since all variables are set to zero at the beginning of this routine
 
       // in situ pressure melting point
       T_pressure_melting(i,j) = cc.as*Soc(i,j) + cc.bs - cc.cs*pressure; //  in Kelvin
@@ -1569,15 +1569,16 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) {
           // in situ pressure melting point in Kelvin
           T_pressure_melting(i,j) = cc.as*Soc(i,j) + cc.bs - cc.cs*pressure;
 
-          // average the temperature, salinity and overturning at the boundary between box i and box i+1
-          // this is used as input for box i+1
-          // using the values at the boundary helps smoothing discontinuities between boxes
-          // (here we sum up)
-          if (ocean_box_mask(i-1,j)==(boxi+1) || ocean_box_mask(i+1,j)==(boxi+1) || ocean_box_mask(i,j-1)==(boxi+1) || ocean_box_mask(i,j+1)==(boxi+1)){
+          // TEST: Compute averages over the entire box ( and not only along the box-box boundary) 
+          // // average the temperature, salinity and overturning at the boundary between box i and box i+1
+          // // this is used as input for box i+1
+          // // using the values at the boundary helps smoothing discontinuities between boxes
+          // // (here we sum up)
+          // if (ocean_box_mask(i-1,j)==(boxi+1) || ocean_box_mask(i+1,j)==(boxi+1) || ocean_box_mask(i,j-1)==(boxi+1) || ocean_box_mask(i,j+1)==(boxi+1)){
             lcounter_edge_of_boxi_vector[shelf_id]++;
             lmean_salinity_boxi_vector[shelf_id] += Soc(i,j);
             lmean_temperature_boxi_vector[shelf_id] += Toc(i,j);
-          } // no else-case necessary since all variables are set to zero at the beginning of this routine
+          //} // no else-case necessary since all variables are set to zero at the beginning of this routine
         }
       } // no else-case, since  calculate_basal_melt_box1() and calculate_basal_melt_missing_cells() cover all other cases and we would overwrite those results here.
     }
