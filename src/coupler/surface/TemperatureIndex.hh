@@ -70,9 +70,6 @@ protected:
   //! if not NULL then user wanted fausto PDD stuff
   FaustoGrevePDDObject *m_faustogreve;
 
-  //! if not NULL then user wanted Aschwanden PDD stuff
-  AschwandenPDDObject *m_aschwanden;
-
   //! holds degree-day factors in location-independent case
   LocalMassBalance::DegreeDayFactors m_base_ddf;
 

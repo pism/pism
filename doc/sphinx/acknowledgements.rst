@@ -7,10 +7,9 @@
 Acknowledgements
 ================
 
-NASA Modeling, Analysis, and Prediction (MAP) program grant #NNX13AM16G and NASA
-Cryospheric Sciences program grant #NNX13AK27G support the development of PISM from 2013
-to 2017. NASA MAP grant #NNX09AJ38G supported the development of PISM from 2009 to 2013.
-Development from 2002 to 2008 was supported by the NASA Cryospheric Sciences program.
+.. include:: funding.txt
+
+See :numref:`tab-funding` for the full list of grants that supported PISM development.
 
 The Snow, Ice, and Permafrost group at the Geophysical Institute is the home for the
 University of Alaska PISM developers; find us in Elvey 410D. The Arctic Region
@@ -39,3 +38,9 @@ PISM includes the source code for three external libraries we rely on:
 - VDT_, Copyright |copy| 2012 Danilo Piparo, Vincenzo Innocente, Thomas Hauth (CERN), LGPL
 
 - ``cubature.c``, Copyright |copy| 2005 Steven G. Johnson, GPL
+
+.. csv-table:: Past and current grants supporting PISM development.
+   :name: tab-funding
+   :header-rows: 1
+   :widths: 1,1,1,2,5
+   :file: ../funding.csv

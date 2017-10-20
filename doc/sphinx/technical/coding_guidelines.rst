@@ -1,5 +1,5 @@
-PISM coding style guidelines
-============================
+PISM coding guidelines
+======================
 
 .. default-role:: literal
 
@@ -105,6 +105,18 @@ Do import *specific* names with `using ::foo::bar;` in `.cc` files.
 
 Formatting
 ----------
+
+PISM includes a ``.clang-format`` file that makes it easy to re-format source to make it
+conform to these guidelines.
+
+To re-format a file, commit it to the repository, then run
+
+.. code-block:: none
+
+    clang-format -i filename.cc
+
+(Here ``-i`` tells clang-format to edit files "in place." Note that editing in place is
+safe because you added it to the repository.)
 
 Boolean operators should be surrounded by spaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -16,10 +16,8 @@ PISM is jointly developed at the `University of Alaska, Fairbanks (UAF) <uaf_>`_
 `Potsdam Institute for Climate Impact Research (PIK) <pik_>`_. UAF developers are based in
 the `Glaciers Group <glaciers_>`_ at the `Geophysical Institute <gi_>`_.
 
-PISM development is supported by the `NASA Modeling, Analysis, and Prediction program
-<NASA-MAP_>`_ (grant #NNX13AM16G) and the `NASA Cryospheric Sciences program
-<NASA-Cryosphere_>`_ (grant NNX16AQ40G) and by `NSF Polar Programs <NSF-Polar_>`_ grants
-PLR-1603799 and PLR-1644277.
+Please see ``ACKNOWLEDGE.rst`` and ``doc/funding.csv`` for a list of grants supporting
+PISM development.
 
 Homepage
 --------
