@@ -102,7 +102,7 @@ html_theme_options = {"logo" : "pism-logo.png",
                       "github_button" : False,
                       "show_powered_by" : False,
                       "body_text_align" : "justify",
-                      "sidebar_collapse" : True,
+#                      "sidebar_collapse" : True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
