@@ -98,7 +98,7 @@ InputOptions process_input_options(MPI_Comm com);
 
   \subsection pismcomponent_timestep Restricting time-steps
 
-  Implement Component_TS::max_timestep() to affect PISM's adaptive time-stepping mechanism.
+  Implement Component::max_timestep() to affect PISM's adaptive time-stepping mechanism.
 */
 class Component {
 public:
@@ -107,7 +107,6 @@ public:
   Component(IceGrid::ConstPtr g);
   virtual ~Component();
 
-  //! Add pointers to available diagnostic quantities to a dictionary.
   std::map<std::string, Diagnostic::Ptr> diagnostics() const;
   std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics() const;
 
@@ -143,18 +142,8 @@ protected:
   const units::System::Ptr m_sys;
   //! logger (for easy access)
   const Logger::ConstPtr m_log;
-};
 
-//! \brief An abstract class for time-stepping PISM components. Created to
-//! simplify creating basic surface, snow, atmosphere, ocean... models for
-//! PISM.
-class Component_TS : public Component {
-public:
-  /** Create an instance of Component_TS given a grid. */
-  Component_TS(IceGrid::ConstPtr g);
-  virtual ~Component_TS();
-
-protected:
+  // FIXME: these should go away eventually
   //! Last time used as an argument for the update() method.
   double m_t;
   //! Last time-step used as an argument for the update() method.

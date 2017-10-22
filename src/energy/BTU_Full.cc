@@ -190,9 +190,6 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
     m_bootstrapping_needed = false;
   }
 
-  // as a derived class of Component_TS, has t, dt members which keep track
-  // of last update time-interval; so we do some checks ...
-
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (dt < 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Full::update() does not allow negative timesteps");

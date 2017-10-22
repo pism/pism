@@ -110,7 +110,7 @@ BedThermalUnit* BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
 
 
 BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
-  : Component_TS(g) {
+  : Component(g) {
 
   {
     m_top_surface_flux.create(m_grid, "heat_flux_from_bedrock", WITHOUT_GHOSTS);

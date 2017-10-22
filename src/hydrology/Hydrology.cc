@@ -31,7 +31,7 @@ namespace pism {
 namespace hydrology {
 
 Hydrology::Hydrology(IceGrid::ConstPtr g)
-  : Component_TS(g) {
+  : Component(g) {
   m_inputtobed = NULL;
   m_hold_bmelt = false;
 

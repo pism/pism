@@ -84,7 +84,7 @@ protected:
 ///// PISMSurfaceModel base class:
 
 SurfaceModel::SurfaceModel(IceGrid::ConstPtr g)
-  : Component_TS(g) {
+  : Component(g) {
   m_atmosphere = NULL;
 }
 

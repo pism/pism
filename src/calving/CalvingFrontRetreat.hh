@@ -32,7 +32,7 @@ namespace pism {
 /*! The retreat rate may correspond to frontal melting or calving. Requires the "part_grid"
     mechanism.
  */
-class CalvingFrontRetreat : public Component_TS {
+class CalvingFrontRetreat : public Component {
 public:
   CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width);
   virtual ~CalvingFrontRetreat();

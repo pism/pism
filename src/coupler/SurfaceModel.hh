@@ -41,7 +41,7 @@ class IceModelVec2S;
 namespace surface {
 
 //! \brief The interface of PISM's surface models.
-class SurfaceModel : public Component_TS {
+class SurfaceModel : public Component {
 public:
   SurfaceModel(IceGrid::ConstPtr g);
   virtual ~SurfaceModel();

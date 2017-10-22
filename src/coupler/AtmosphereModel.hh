@@ -30,7 +30,7 @@ class IceModelVec2S;
 //! temperature to a surface::SurfaceModel below
 namespace atmosphere {
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
-class AtmosphereModel : public Component_TS {
+class AtmosphereModel : public Component {
 public:
   AtmosphereModel(IceGrid::ConstPtr g);
   virtual ~AtmosphereModel();

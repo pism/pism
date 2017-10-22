@@ -30,7 +30,7 @@ class IceModelVec2S;
 //! temperature.
 namespace ocean {
 //! A very rudimentary PISM ocean model.
-class OceanModel : public Component_TS {
+class OceanModel : public Component {
 public:
   OceanModel(IceGrid::ConstPtr g);
   virtual ~OceanModel();

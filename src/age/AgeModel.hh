@@ -41,7 +41,7 @@ public:
   const IceModelVec3 *w3;
 };
 
-class AgeModel : public Component_TS {
+class AgeModel : public Component {
 public:
   AgeModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 

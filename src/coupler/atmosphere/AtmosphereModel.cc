@@ -25,7 +25,7 @@ namespace pism {
 namespace atmosphere {
 
 AtmosphereModel::AtmosphereModel(IceGrid::ConstPtr g)
-  : Component_TS(g) {
+  : Component(g) {
   // empty
 }
 

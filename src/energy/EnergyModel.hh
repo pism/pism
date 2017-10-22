@@ -71,7 +71,7 @@ public:
   double liquified_ice_volume;
 };
 
-class EnergyModel : public Component_TS {
+class EnergyModel : public Component {
 public:
   EnergyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 

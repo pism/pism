@@ -243,7 +243,6 @@
 %include "stressbalance/timestepping.hh"
 
 %shared_ptr(pism::Component)
-%shared_ptr(pism::Component_TS)
 %include "util/Component.hh"
 
 %include "basalstrength/basal_resistance.hh"

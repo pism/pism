@@ -29,7 +29,7 @@ namespace pism {
 namespace bed {
 
 BedDef::BedDef(IceGrid::ConstPtr g)
-  : Component_TS(g) {
+  : Component(g) {
 
   m_t_beddef_last = GSL_NAN;
 

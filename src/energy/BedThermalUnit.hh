@@ -97,7 +97,7 @@ struct BTUGrid {
   top_heat_flux() method uses first-order differencing to compute the
   values of \f$G_0\f$.
 */
-class BedThermalUnit : public Component_TS {
+class BedThermalUnit : public Component {
 public:
 
   static BedThermalUnit* FromOptions(IceGrid::ConstPtr g,

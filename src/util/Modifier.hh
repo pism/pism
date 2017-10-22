@@ -24,7 +24,7 @@
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
-//! \brief This template allows creating Component_TS (AtmosphereModel,
+//! \brief This template allows creating Component (AtmosphereModel,
 //! SurfaceModel and OceanModel) modifiers with minimum effort.
 /*!
  * A specialization of this template will implement all important methods

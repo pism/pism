@@ -100,7 +100,7 @@ void EnergyModelStats::sum(MPI_Comm com) {
 
 EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
                          stressbalance::StressBalance *stress_balance)
-  : Component_TS(grid), m_stress_balance(stress_balance) {
+  : Component(grid), m_stress_balance(stress_balance) {
 
   const unsigned int WIDE_STENCIL = m_config->get_double("grid.max_stencil_width");
 

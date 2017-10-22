@@ -76,7 +76,7 @@ namespace hydrology {
   calculation.  Here in Hydrology only the till water thickness tillwat is
   computed.
 
-  Hydrology is a timestepping component (Component_TS).  Because of the
+  Hydrology is a timestepping component.  Because of the
   short physical timescales associated to liquid water moving under a glacier,
   Hydrology (and derived) classes generally take many substeps in PISM's major
   ice dynamics time steps.  Thus when an update() method in a Hydrology
@@ -98,7 +98,7 @@ namespace hydrology {
   during the update() call for the interval [t,t+dt].  Thus the coupling is
   one-way during the update() call.
 */
-class Hydrology : public Component_TS {
+class Hydrology : public Component {
 public:
   Hydrology(IceGrid::ConstPtr g);
   virtual ~Hydrology();

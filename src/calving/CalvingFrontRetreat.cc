@@ -29,7 +29,7 @@
 namespace pism {
 
 CalvingFrontRetreat::CalvingFrontRetreat(IceGrid::ConstPtr g, unsigned int mask_stencil_width)
-  : Component_TS(g) {
+  : Component(g) {
 
   m_tmp.create(m_grid, "temporary_storage", WITH_GHOSTS, 1);
   m_tmp.set_attrs("internal", "additional mass loss at points near the calving front",

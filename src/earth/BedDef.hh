@@ -29,7 +29,7 @@ namespace pism {
 namespace bed {
 
 //! PISM bed deformation model (base class).
-class BedDef : public Component_TS {
+class BedDef : public Component {
 public:
   BedDef(IceGrid::ConstPtr g);
   virtual ~BedDef();

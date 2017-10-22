@@ -85,7 +85,7 @@ InputOptions process_input_options(MPI_Comm com) {
 Component::Component(IceGrid::ConstPtr g)
   : m_grid(g), m_config(g->ctx()->config()), m_sys(g->ctx()->unit_system()),
     m_log(g->ctx()->log()) {
-  // empty
+  m_t = m_dt = GSL_NAN;
 }
 
 Component::~Component() {
@@ -179,15 +179,6 @@ void Component::regrid(const std::string &module_name, IceModelVec &variable,
 
     variable.regrid(regrid_file, CRITICAL);
   }
-}
-
-Component_TS::Component_TS(IceGrid::ConstPtr g)
-  : Component(g) {
-  m_t = m_dt = GSL_NAN;
-}
-
-Component_TS::~Component_TS() {
-  // empty
 }
 
 MaxTimestep Component::max_timestep(double t) const {
