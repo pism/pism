@@ -39,7 +39,6 @@ public:
                  const IceModelVec2S &bed_uplift,
                  const IceModelVec2S &ice_thickness);
 
-  using Component_TS::update;
   void update(const IceModelVec2S &ice_thickness,
               double my_t, double my_dt);
 
@@ -52,9 +51,8 @@ protected:
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
-  void update_impl(double my_t, double my_dt);
-  virtual void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                          double my_t, double my_dt) = 0;
+  virtual void update_impl(const IceModelVec2S &ice_thickness,
+                           double my_t, double my_dt) = 0;
   virtual void init_impl(const InputOptions &opts);
   virtual void bootstrap_impl(const IceModelVec2S &bed_elevation,
                               const IceModelVec2S &bed_uplift,
@@ -80,8 +78,8 @@ class Null : public BedDef {
 public:
   Null(IceGrid::ConstPtr g);
 protected:
-  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                  double my_t, double my_dt);
+  void update_impl(const IceModelVec2S &ice_thickness,
+                   double my_t, double my_dt);
   MaxTimestep max_timestep_impl(double t) const;
   void init_impl(const InputOptions &opts);
 };
@@ -94,8 +92,8 @@ public:
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void init_impl(const InputOptions &opts);
-  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                  double my_t, double my_dt);
+  void update_impl(const IceModelVec2S &ice_thickness,
+                   double my_t, double my_dt);
   IceModelVec2S m_thk_last;       //!< last ice thickness
 };
 

@@ -44,8 +44,8 @@ MaxTimestep Null::max_timestep_impl(double t) const {
   return MaxTimestep("bed_def none");
 }
 
-void Null::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                        double t, double dt) {
+void Null::update_impl(const IceModelVec2S &ice_thickness,
+                       double t, double dt) {
   (void) ice_thickness;
   (void) t;
   (void) dt;

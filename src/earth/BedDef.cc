@@ -101,13 +101,8 @@ void BedDef::bootstrap_impl(const IceModelVec2S &bed,
   (void) ice_thickness;
 }
 
-void BedDef::update_impl(double t, double dt) {
-  const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  this->update_with_thickness_impl(*thk, t, dt);
-}
-
 void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
-  this->update_with_thickness_impl(ice_thickness, t, dt);
+  this->update_impl(ice_thickness, t, dt);
 }
 
 //! Initialize from the context (input file and the "variables" database).

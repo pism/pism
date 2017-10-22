@@ -235,8 +235,8 @@ const IceModelVec2S& LingleClark::total_displacement() const {
 }
 
 //! Update the Lingle-Clark bed deformation model.
-void LingleClark::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                               double t, double dt) {
+void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
+                              double t, double dt) {
 
   if ((fabs(t - m_t)   < 1e-12) &&
       (fabs(dt - m_dt) < 1e-12)) {

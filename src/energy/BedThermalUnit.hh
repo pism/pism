@@ -118,7 +118,6 @@ public:
   //! Return the upward heat flux through the bottom surface of the bedrock thermal layer.
   const IceModelVec2S& flux_through_bottom_surface() const;
 
-  using Component_TS::update;
   void update(const IceModelVec2S &bedrock_top_temperature,
               double t, double dt);
 

@@ -35,6 +35,10 @@ void OceanModel::init() {
   this->init_impl();
 }
 
+void OceanModel::update(double t, double dt) {
+  this->update_impl(t, dt);
+}
+
 double OceanModel::sea_level_elevation() const {
   double result;
   this->sea_level_elevation_impl(result);

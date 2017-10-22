@@ -44,8 +44,8 @@ protected:
   void bootstrap_impl(const IceModelVec2S &bed_elevation,
                       const IceModelVec2S &bed_uplift,
                       const IceModelVec2S &ice_thickness);
-  void update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                  double my_t, double my_dt);
+  void update_impl(const IceModelVec2S &ice_thickness,
+                   double my_t, double my_dt);
 
   //! Total (viscous and elastic) bed displacement.
   IceModelVec2S m_bed_displacement;

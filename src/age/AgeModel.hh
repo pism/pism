@@ -45,7 +45,6 @@ class AgeModel : public Component_TS {
 public:
   AgeModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
-  using Component_TS::update;
   void update(double t, double dt, const AgeModelInputs &inputs);
 
   void init(const InputOptions &opts);

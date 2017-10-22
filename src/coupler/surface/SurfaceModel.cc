@@ -141,6 +141,10 @@ void SurfaceModel::init_impl() {
   m_atmosphere->init();
 }
 
+void SurfaceModel::update(double t, double dt) {
+  this->update_impl(t, dt);
+}
+
 //! \brief Returns mass held in the surface layer.
 /*!
  * Basic surface models currently implemented in PISM do not model the mass of

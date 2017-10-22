@@ -604,7 +604,7 @@ void IceModel::step(bool do_mass_continuity,
     int topg_state_counter = m_beddef->bed_elevation().get_state_counter();
 
     profiling.begin("bed_deformation");
-    m_beddef->update(current_time, m_dt);
+    m_beddef->update(m_geometry.ice_thickness, current_time, m_dt);
     profiling.end("bed_deformation");
 
     if (m_beddef->bed_elevation().get_state_counter() != topg_state_counter) {

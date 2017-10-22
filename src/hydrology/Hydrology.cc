@@ -149,6 +149,9 @@ void Hydrology::init() {
   regrid("Hydrology", m_Wtil);
 }
 
+void Hydrology::update(double t, double dt) {
+  this->update_impl(t, dt);
+}
 
 std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result = {

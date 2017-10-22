@@ -52,8 +52,8 @@ MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
 }
 
 //! Updates the pointwise isostasy model.
-void PointwiseIsostasy::update_with_thickness_impl(const IceModelVec2S &ice_thickness,
-                                                     double my_t, double my_dt) {
+void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
+                                    double my_t, double my_dt) {
   if ((fabs(my_t - m_t)   < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
     return;

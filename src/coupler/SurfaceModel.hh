@@ -53,6 +53,8 @@ public:
   // the interface:
   void mass_flux(IceModelVec2S &result) const;
 
+  void update(double t, double dt);
+
   void temperature(IceModelVec2S &result) const;
   void liquid_water_fraction(IceModelVec2S &result) const;
 
@@ -60,6 +62,7 @@ public:
   void layer_thickness(IceModelVec2S &result) const;
 protected:
   virtual void init_impl();
+  virtual void update_impl(double t, double dt) = 0;
 
   virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
 

@@ -22,6 +22,7 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/pism_options.hh"
+#include "pism/coupler/util/init_step.hh"
 
 namespace pism {
 namespace ocean {
@@ -99,7 +100,7 @@ void InitializationHelper::init_impl() {
   } else {
     m_log->message(2, "* Performing a 'fake' ocean model time-step for bootstrapping...\n");
 
-    init_step(*this, *m_grid->ctx()->time());
+    init_step(this, *m_grid->ctx()->time());
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to

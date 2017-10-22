@@ -190,38 +190,12 @@ Component_TS::~Component_TS() {
   // empty
 }
 
-MaxTimestep Component_TS::max_timestep(double t) const {
+MaxTimestep Component::max_timestep(double t) const {
   return this->max_timestep_impl(t);
 }
 
-void Component_TS::update(double t, double dt) {
-  this->update_impl(t, dt);
-}
-
-/*!
- * Update a `model` by asking it to perform time-stepping from the current time to one year in the
- * future (or as far as the time step restriction allows).
- *
- * This is sometimes necessary during initialization, but should be avoided if possible.
- */
-void init_step(Component_TS &model, const Time& time) {
-  const double
-    now               = time.current(),
-    one_year_from_now = time.increment_date(now, 1.0);
-
-  // Take a one year long step if we can.
-  MaxTimestep max_dt(one_year_from_now - now);
-
-  max_dt = std::min(max_dt, model.max_timestep(now));
-
-  // Do not take time-steps shorter than 1 second
-  if (max_dt.value() < 1.0) {
-    max_dt = MaxTimestep(1.0);
-  }
-
-  assert(max_dt.finite() == true);
-
-  model.update(now, max_dt.value());
+MaxTimestep Component::max_timestep_impl(double t) const {
+  return MaxTimestep();
 }
 
 

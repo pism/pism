@@ -95,7 +95,6 @@ public:
                   const IceModelVec2S &climatic_mass_balance,
                   const IceModelVec2S &basal_heat_flux);
 
-  using Component_TS::update;
   void update(double t, double dt, const Inputs &inputs);
 
   const EnergyModelStats& stats() const;

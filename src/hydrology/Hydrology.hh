@@ -105,6 +105,8 @@ public:
 
   virtual void init();
 
+  void update(double t, double dt);
+
   friend class Hydrology_hydrobmelt;
   friend class Hydrology_hydroinput;
 

@@ -37,6 +37,10 @@ void AtmosphereModel::init() {
   this->init_impl();
 }
 
+void AtmosphereModel::update(double t, double dt) {
+  this->update_impl(t, dt);
+}
+
 void AtmosphereModel::mean_precipitation(IceModelVec2S &result) const {
   this->mean_precipitation_impl(result);
 }

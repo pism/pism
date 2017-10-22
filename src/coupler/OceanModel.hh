@@ -37,12 +37,15 @@ public:
 
   void init();
 
+  void update(double t, double dt);
+
   double sea_level_elevation() const;
   void shelf_base_temperature(IceModelVec2S &result) const;
   void shelf_base_mass_flux(IceModelVec2S &result) const;
   void melange_back_pressure_fraction(IceModelVec2S &result) const;
 protected:
   virtual void init_impl() = 0;
+  virtual void update_impl(double t, double dt) = 0;
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
