@@ -728,9 +728,6 @@ void SIAFD::compute_diffusivity(bool full_update,
 
         D_max = std::max(D_max, D);
 
-        // vertically-averaged SIA-only flux, sans sliding; note
-        //   result(i, j, 0) is  u  at E (east)  staggered point (i+1/2, j)
-        //   result(i, j, 1) is  v  at N (north) staggered point (i, j+1/2)
         result(i, j, o) = D;
 
         // if doing the full update, fill the delta column above the ice and
