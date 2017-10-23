@@ -186,6 +186,7 @@ MaxTimestep Component::max_timestep(double t) const {
 }
 
 MaxTimestep Component::max_timestep_impl(double t) const {
+  (void) t;
   return MaxTimestep();
 }
 
