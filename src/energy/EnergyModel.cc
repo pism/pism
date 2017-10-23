@@ -284,15 +284,6 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
   }
 }
 
-void EnergyModel::update_impl(double t, double dt) {
-  // This method should NOT have the "noreturn" attribute. (This attribute does not mix with virtual
-  // methods).
-  (void) t;
-  (void) dt;
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "EnergyModel::update_impl(t, dt) is not implemented");
-}
-
 MaxTimestep EnergyModel::max_timestep_impl(double t) const {
   // silence a compiler warning
   (void) t;

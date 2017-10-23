@@ -105,7 +105,6 @@ public:
   const std::string& stdout_flags() const;
 protected:
 
-  virtual void update_impl(double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
 
   virtual void restart_impl(const PIO &input_file, int record) = 0;

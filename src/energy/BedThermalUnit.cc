@@ -204,13 +204,6 @@ std::map<std::string, Diagnostic::Ptr> BedThermalUnit::diagnostics_impl() const 
     {"hfgeoubed", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
 }
 
-void BedThermalUnit::update_impl(double t, double dt) {
-  (void) t;
-  (void) dt;
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "BedThermalUnit::update(t, dt) is not implemented");
-}
-
 void BedThermalUnit::update(const IceModelVec2S &bedrock_top_temperature,
                             double t, double dt) {
   this->update_impl(bedrock_top_temperature, t, dt);

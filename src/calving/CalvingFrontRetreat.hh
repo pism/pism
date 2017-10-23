@@ -48,9 +48,6 @@ public:
   const IceModelVec2S& calving_rate() const;
 
 protected:
-  // NB! not virtual
-  void update_impl(double t, double dt) __attribute__((noreturn));
-
   MaxTimestep max_timestep_impl(double t) const ;
 
   virtual void compute_calving_rate(const IceModelVec2CellType &mask,

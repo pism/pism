@@ -302,14 +302,6 @@ void CalvingFrontRetreat::update(double dt,
   gc.compute_mask(sea_level, bed_topography, ice_thickness, mask);
 }
 
-void CalvingFrontRetreat::update_impl(double t, double dt) {
-  (void) t;
-  (void) dt;
-
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "update(t, dt) is not implemented");
-}
-
-
 const IceModelVec2S& CalvingFrontRetreat::calving_rate() const {
   return m_horizontal_calving_rate;
 }
