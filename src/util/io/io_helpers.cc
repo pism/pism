@@ -280,7 +280,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
     define_dimension(nc, grid.Mx(), var.get_x());
     nc.put_att_double(x_name, "spacing_meters", PISM_DOUBLE,
                       grid.x(1) - grid.x(0));
-    nc.put_att_double(x_name, "written", PISM_INT, 0.0);
+    nc.put_att_double(x_name, "not_written", PISM_INT, 1.0);
   }
 
   // y
@@ -289,7 +289,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
     define_dimension(nc, grid.My(), var.get_y());
     nc.put_att_double(y_name, "spacing_meters", PISM_DOUBLE,
                       grid.y(1) - grid.y(0));
-    nc.put_att_double(y_name, "written", PISM_INT, 0.0);
+    nc.put_att_double(y_name, "not_written", PISM_INT, 1.0);
   }
 
   // z
@@ -300,7 +300,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
       define_dimension(nc, nlevels, var.get_z());
-      nc.put_att_double(z_name, "written", PISM_INT, 0.0);
+      nc.put_att_double(z_name, "not_written", PISM_INT, 1.0);
 
       bool spatial_dim = not var.get_z().get_string("axis").empty();
 
@@ -324,11 +324,11 @@ static void define_dimensions(const SpatialVariableMetadata& var,
 }
 
 static void write_dimension_data(const PIO &file, const std::string &name, const std::vector<double> &data) {
-  std::vector<double> attr = file.get_att_double(name, "written");
-  const bool written = attr.size() > 0 and attr[0] > 0.0;
+  bool written = file.inq_atttype(name, "not_written") == PISM_NAT;
   if (not written) {
     file.put_1d_var(name, 0, data.size(), data);
-    file.put_att_double(name, "written", PISM_INT, 1.0);
+    file.redef();
+    file.del_att(name, "not_written");
   }
 }
 
