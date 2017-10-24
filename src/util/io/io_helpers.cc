@@ -658,6 +658,12 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
     file.put_att_text(var.get_name(), "grid_mapping",
                       mapping.get_name());
   }
+
+  if (var.get_time_independent()) {
+    // mark this variable as "not written" so that write_spatial_variable can avoid
+    // writing it more than once.
+    file.put_att_double(var.get_name(), "not_written", PISM_INT, 1.0);
+  }
 }
 
 //! Read a variable from a file into an array `output`.
@@ -766,6 +772,18 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   }
 
   write_dimensions(var, grid, file);
+
+  // avoid writing time-independent variables more than once (saves time when writing to
+  // extra_files)
+  if (var.get_time_independent()) {
+    bool written = file.inq_atttype(var.get_name(), "not_written") == PISM_NAT;
+    if (written) {
+      return;
+    } else {
+      file.redef();
+      file.del_att(var.get_name(), "not_written");
+    }
+  }
 
   // make sure we have at least one level
   unsigned int nlevels = std::max(var.get_levels().size(), (size_t)1);
