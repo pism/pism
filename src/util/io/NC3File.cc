@@ -112,10 +112,10 @@ int NC3File::close_impl() {
 int NC3File::enddef_impl() const {
   int stat = 0;
 
+  int header_size = 200 * 1024;
+
   if (m_rank == 0) {
-    //! 50000 (below) means that we allocate ~50Kb for metadata in NetCDF files
-    //! created by PISM.
-    stat = nc__enddef(m_file_id, 50000, 4, 0, 4); check(PISM_ERROR_LOCATION, stat);
+    stat = nc__enddef(m_file_id, header_size, 4, 0, 4); check(PISM_ERROR_LOCATION, stat);
   }
 
   MPI_Barrier(m_com);
