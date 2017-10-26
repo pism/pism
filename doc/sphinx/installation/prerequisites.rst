@@ -2,8 +2,8 @@
 
 .. _sec-install-prerequisites:
 
-Required tool and libraries
-===========================
+Required tools and libraries
+============================
 
 This table lists required dependencies for PISM alphabetically.
 
