@@ -28,27 +28,27 @@ static const struct enth_constants enth = {
   /* .L0 = */ 3.34e5
 };
 
-double enth_melting_temperature(double P) {
+inline double enth_melting_temperature(double P) {
   return enth.T_melting - enth.beta * P;
 }
 
-double enth_temp_cold(double E) {
+inline double enth_temp_cold(double E) {
   return (1.0 / enth.c_i) * E + enth.T_0;
 }
 
-double enth_pressure_adjusted_temperature(double E, double P) {
+inline double enth_pressure_adjusted_temperature(double E, double P) {
   return enth_temp_cold(E) - enth_melting_temperature(P) + enth.T_melting;
 }
 
-double enth_enthalpy_cts(double P) {
+inline double enth_enthalpy_cts(double P) {
   return enth.c_i * (enth_melting_temperature(P) - enth.T_0);
 }
 
-double enth_L(double T_pm) {
+inline double enth_L(double T_pm) {
   return enth.L0 + (enth.c_w - enth.c_i) * (T_pm - enth.T_melting);
 }
 
-double enth_water_fraction(double E, double E_cts, double P) {
+inline double enth_water_fraction(double E, double E_cts, double P) {
   return (E - E_cts) / enth_L(enth_melting_temperature(P));
 }
 
