@@ -73,6 +73,7 @@ double paterson_budd_hardness(double T_pa) {
 
 void paterson_budd_hardness_n(double *T_pa,
                               unsigned int n, double *result) {
+#pragma ivdep
   for (unsigned int k = 0; k < n; ++k) {
     result[k] = paterson_budd_hardness(T_pa[k]);
   }
@@ -126,6 +127,7 @@ double gpbld_hardness(double E, double P) {
 
 void gpbld_hardness_n(const double *E, const double *P,
                       unsigned int n, double *result) {
+#pragma ivdep
   for (unsigned int k = 0; k < n; ++k) {
     // we could call gpbld_hardness(E[k], P[k]), but clang thinks that inlining it is too costly
     const double E_cts = enth_enthalpy_cts(P[k]);
@@ -146,6 +148,7 @@ double gpbld_flow(double stress, double E, double P) {
 
 void gpbld_flow_n(const double *stress, const double *E, const double *P,
                   unsigned int n, double *result) {
+#pragma ivdep
   for (unsigned int k = 0; k < n; ++k) {
     result[k] = gpbld_flow(stress[k], E[k], P[k]);
   }
