@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015-2017 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,10 +20,6 @@
 #ifndef _C_ENTHALPY_CONVERTER_H_
 #define _C_ENTHALPY_CONVERTER_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct enth_constants {
   /* Melting temperature of water, Kelvin */
   double T_melting;
@@ -39,30 +35,49 @@ struct enth_constants {
   double L0;
 };
 
+static const struct enth_constants enth = {
+  /* .T_melting = */ 273.15,
+  /* .c_i = */ 2009.0,
+  /* .c_w = */ 4170,
+  /* .T_0 = */ 223.15,
+  /* .beta = */ 7.9e-8,
+  /* .L0 = */ 3.34e5
+};
+
 /* Melting temperature as a function of pressure. */
-double enth_melting_temperature(double P);
+inline double enth_melting_temperature(double P) {
+  return enth.T_melting - enth.beta * P;
+}
 
 /* Temperature as a function of enthalpy, cold case. */
-double enth_temp_cold(double E);
+inline double enth_temp_cold(double E) {
+  return (1.0 / enth.c_i) * E + enth.T_0;
+}
 
 /* Pressure-adjusted temperature. */
-double enth_pressure_adjusted_temperature(double E, double P);
+inline double enth_pressure_adjusted_temperature(double E, double P) {
+  return enth_temp_cold(E) - enth_melting_temperature(P) + enth.T_melting;
+}
 
 /* Cold-temperate transition enthalpy. */
-double enth_enthalpy_cts(double P);
+inline double enth_enthalpy_cts(double P) {
+  return enth.c_i * (enth_melting_temperature(P) - enth.T_0);
+}
 
 /* Latent heat of fusion as a function of melting temperature. */
-double enth_L(double T_pm);
+inline double enth_L(double T_pm) {
+  return enth.L0 + (enth.c_w - enth.c_i) * (T_pm - enth.T_melting);
+}
 
 /* Liquid water fraction as a function of enthalpy, enthalpy at the
    cold-temperate transition, and pressure.*/
-double enth_water_fraction(double E, double E_cts, double P);
+inline double enth_water_fraction(double E, double E_cts, double P) {
+  return (E - E_cts) / enth_L(enth_melting_temperature(P));
+}
 
 /* Returns constants used by the enthalpy converter code. */
-struct enth_constants enth_get_constants();
-
-#ifdef __cplusplus
+inline struct enth_constants enth_get_constants() {
+  return enth;
 }
-#endif
 
 #endif /* _C_ENTHALPY_CONVERTER_H_ */

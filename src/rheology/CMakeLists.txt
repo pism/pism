@@ -10,5 +10,5 @@ add_library (pismflowlaws OBJECT
   PatersonBuddCold.cc
   PatersonBuddWarm.cc
   GPBLD3.cc
-  approximate/gpbld.cc
+  approximate/gpbld_n.cc
   )
