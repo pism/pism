@@ -1,22 +1,19 @@
-# Create a link from build/include/pism to src so that PISM can use
-# #include "pism/..." in its source files. This way other code using
-# PISM needs to add only *one* directory to the compiler search path.
-# See #166.
+# Create a link from build/pism to src so that PISM can use #include "pism/..." in its
+# source files. This way other code using PISM needs to add only *one* directory to the
+# compiler search path. See #166.
 
 execute_process(
   COMMAND
-  ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/include/
-  COMMAND
-  ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/include/pism)
+  ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/pism)
 
 # Alternatively: copy headers to the build directory
 # file(COPY .
-#   DESTINATION ${CMAKE_BINARY_DIR}/include/pism/
+#   DESTINATION ${CMAKE_BINARY_DIR}/pism/
 #   FILES_MATCHING
 #   PATTERN "*.hh"
 #   PATTERN "*.h")
 
-include_directories (${CMAKE_BINARY_DIR}/include)
+include_directories (${CMAKE_BINARY_DIR})
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
