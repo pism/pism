@@ -113,7 +113,7 @@ inline double gpbld_hardness_temperate(double E, double E_cts, double P) {
   return paterson_budd_hardness(gpbld.T_melting) * C;
 }
 
-inline double gpbld_hardness(double E, double P) {
+double gpbld_hardness(double E, double P) {
   const double E_cts = enth_enthalpy_cts(P);
   const double hardness_cold = paterson_budd_hardness(enth_pressure_adjusted_temperature(E, P));
   const double hardness_temp = gpbld_hardness_temperate(E, E_cts, P);
