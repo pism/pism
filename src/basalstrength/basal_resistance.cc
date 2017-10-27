@@ -17,7 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "basal_resistance.hh"
-#include "pism/util/pism_const.hh"
+
+#include <petscsys.h>
+
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Logger.hh"

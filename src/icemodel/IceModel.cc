@@ -843,7 +843,7 @@ explanations of their intended uses.
 void IceModel::init() {
   // Get the start time in seconds and ensure that it is consistent
   // across all processors.
-  m_start_time = GlobalMax(m_grid->com, GetTime());
+  m_start_time = GlobalMax(m_grid->com, get_time());
 
   const Profiling &profiling = m_ctx->profiling();
 

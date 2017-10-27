@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2007 Jed Brown
+  Copyright (C) 2007, 2017 Jed Brown and Constantine Khrulev
 
  This file is part of Pism.
 
@@ -18,23 +18,19 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __pism_signal_h
-#define __pism_signal_h
-
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
+#ifndef PISM_SIGNAL_H
+#define PISM_SIGNAL_H
 
 #include <signal.h>
 
-  extern volatile sig_atomic_t pism_signal;
-
-  void pism_signal_handler(int sig);
+extern volatile sig_atomic_t pism_signal;
 
 #ifdef __cplusplus
+extern "C" {
+void pism_signal_handler(int sig);
 }
+#else
+void pism_signal_handler(int sig);
 #endif
 
-#endif
-
+#endif /* PISM_SIGNAL_H */

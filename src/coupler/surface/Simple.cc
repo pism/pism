@@ -21,12 +21,11 @@
 
 #include "Simple.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {

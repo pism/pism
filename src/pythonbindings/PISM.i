@@ -171,7 +171,6 @@
 %immutable pism::PISM_DefaultConfigFile;
 
 /* PISM header with no dependence on other PISM headers. */
-%include "util/pism_const.hh"
 %include "util/pism_utilities.hh"
 %include "util/interpolation.hh"
 

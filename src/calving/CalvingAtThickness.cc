@@ -22,7 +22,7 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 
 

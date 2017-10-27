@@ -15,11 +15,6 @@ execute_process(
 
 include_directories (${CMAKE_BINARY_DIR})
 
-# Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
-# utility functions and classes plus the "enthalpy converter" (which is used
-# all over the place).
-set(PISM_PARALLEL_IO_FLAGS "")
-
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
   util/ColumnInterpolation.cc
@@ -68,17 +63,14 @@ set(PISMUTIL_SRC
   util/petscwrappers/Vec.cc
   util/petscwrappers/VecScatter.cc
   util/petscwrappers/Viewer.cc
-  util/pism_const.cc
-  util/pism_default_config.cc
   util/pism_options.cc
-  util/pism_revision.cc
   util/pism_utilities.cc
   util/projection.cc
   )
 
-# PISM Revision string
-set_source_files_properties (util/pism_revision.cc
-  PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
+add_definitions(
+  "-DPISM_REVISION=\"${Pism_REVISION_TAG}\""
+  "-DPISM_DEFAULT_CONFIG_FILE=\"${Pism_DEFAULT_CONFIG_FILE}\"")
 
 if(Pism_USE_JANSSON)
   list(APPEND PISMUTIL_SRC util/ConfigJSON.cc)
@@ -86,24 +78,19 @@ endif()
 
 # Check if NetCDF-4 parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PARALLEL_NETCDF4)
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=1")
+  add_definitions(-DPISM_USE_PARALLEL_NETCDF4=1)
   list(APPEND PISMUTIL_SRC util/io/NC4_Par.cc)
 else()
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PARALLEL_NETCDF4=0")
+  add_definitions(-DPISM_USE_PARALLEL_NETCDF4=0)
 endif()
 
 # Check if PnetCDF parallel I/O is enabled. If so, set compiler flags and add a source code file.
 if (Pism_USE_PNETCDF)
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=1")
+  add_definitions(-DPISM_USE_PNETCDF=1)
   list(APPEND PISMUTIL_SRC util/io/PNCFile.cc)
 else()
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=0")
+  add_definitions(-DPISM_USE_PNETCDF=0)
 endif()
-
-# The list of headers included in PIO.cc depends on parallel I/O settings.
-# These flags determine which headers are included.
-set_source_files_properties (util/io/PIO.cc
-  PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
 
 add_library (pismutil OBJECT ${PISMUTIL_SRC})
 
@@ -206,11 +193,8 @@ add_library(pismearth OBJECT
   )
 
 # Disable compiler warnings for cubature.c (source file not by PISM authors)
-set_source_files_properties (earth/cubature.c
+set_source_files_properties (external/cubature/cubature.c
   PROPERTIES COMPILE_FLAGS "-w")
-
-set_source_files_properties (util/pism_default_config.cc
-  PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
 
 # Verification tests.
 add_library (pismverif OBJECT

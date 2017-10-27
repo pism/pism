@@ -33,7 +33,7 @@ static char help[] =
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/verification/tests/exactTestsIJ.h"
 

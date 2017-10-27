@@ -37,7 +37,6 @@ using std::dynamic_pointer_cast;
 
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/petscwrappers/VecScatter.hh"
-#include "pism_const.hh"
 #include "pism_utilities.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"

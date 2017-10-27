@@ -25,7 +25,7 @@
 #include "FETools.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/Logger.hh"
 
 #include "pism/util/error_handling.hh"

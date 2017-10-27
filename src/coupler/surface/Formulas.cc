@@ -19,7 +19,6 @@
 
 #include "Formulas.hh"
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/pism_const.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {

@@ -20,7 +20,7 @@
 #include <gsl/gsl_math.h>
 
 #include "Timeseries.hh"
-#include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "IceGrid.hh"
 #include "pism/util/io/PIO.hh"
 #include "Time.hh"

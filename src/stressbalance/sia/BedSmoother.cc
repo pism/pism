@@ -25,7 +25,7 @@
 #include "pism/util/IceModelVec2CellType.hh"
 
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/Logger.hh"
 
 namespace pism {

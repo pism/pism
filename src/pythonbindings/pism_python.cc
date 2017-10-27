@@ -21,7 +21,7 @@
 #include <petscsys.h>
 
 #include "pism_python.hh"
-#include "util/pism_const.hh"
+#include "util/pism_utilities.hh"
 #include "util/error_handling.hh"
 
 namespace pism {

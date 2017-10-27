@@ -28,7 +28,7 @@
 
 namespace pism {
 
-// Utilities that do not use PETSc or PISM.
+// Utilities that do not expose PETSc's or PISM's API.
 
 #ifndef __GNUC__
 #  define  __attribute__(x)  /* nothing */
@@ -39,6 +39,7 @@ extern const char *PISM_DefaultConfigFile;
 
 const int TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
+double get_time();
 std::string timestamp(MPI_Comm com);
 std::string username_prefix(MPI_Comm com);
 std::string args_string();

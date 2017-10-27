@@ -20,9 +20,10 @@
 #include <unistd.h>
 #include <sstream>
 #include <stdarg.h>
+#include <petscsys.h>
 
 #include "Logger.hh"
-#include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
 

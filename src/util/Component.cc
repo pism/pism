@@ -22,7 +22,6 @@
 #include "Component.hh"
 #include "pism/util/io/PIO.hh"
 #include "IceGrid.hh"
-#include "pism_const.hh"
 #include "pism_utilities.hh"
 #include "VariableMetadata.hh"
 #include "iceModelVec.hh"

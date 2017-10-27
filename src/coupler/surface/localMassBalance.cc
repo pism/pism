@@ -24,7 +24,7 @@
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <algorithm>
 
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "localMassBalance.hh"
 #include "pism/util/IceGrid.hh"

@@ -18,7 +18,7 @@
 
 #include <cassert>
 
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/iceModelVec.hh"
 #include "tempSystem.hh"
 #include "pism/util/Mask.hh"

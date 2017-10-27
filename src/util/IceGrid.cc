@@ -24,7 +24,6 @@
 #include <gsl/gsl_interp.h>
 
 #include "IceGrid.hh"
-#include "pism_const.hh"
 #include "pism_utilities.hh"
 #include "Time.hh"
 #include "Time_Calendar.hh"

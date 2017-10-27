@@ -26,7 +26,7 @@ using std::shared_ptr;
 
 #include "PIO.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"

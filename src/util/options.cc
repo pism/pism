@@ -18,6 +18,7 @@
  */
 
 #include <sstream>
+#include <petscsys.h>
 
 #include "pism_options.hh"
 #include "error_handling.hh"

@@ -20,7 +20,7 @@
 #define __tempSystem_hh
 
 #include "pism/util/ColumnSystem.hh"
-#include "pism/util/pism_const.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/Mask.hh"
 
 namespace pism {

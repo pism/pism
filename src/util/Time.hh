@@ -22,7 +22,7 @@
 #include <vector>
 #include <memory>
 
-#include "pism_const.hh"
+#include "pism_utilities.hh"
 #include "Units.hh"
 #include "pism/util/ConfigInterface.hh"
 
