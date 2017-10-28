@@ -12,3 +12,7 @@ add_library (pismflowlaws OBJECT
   GPBLD3.cc
   approximate/gpbld_n.cc
   )
+
+add_executable(gpbld_speed_test
+  gpbld_speed_test.cc)
+target_link_libraries (gpbld_speed_test pism)
