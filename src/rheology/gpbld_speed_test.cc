@@ -87,8 +87,6 @@ int main(int argc, char **argv) {
 
     // initialize
     const double
-      rho   = config->get_double("constants.ice.density"),
-      g     = config->get_double("constants.standard_gravity"),
       omega = 0.01,             // water fraction
       H     = 1000.0,           // slab thickness
       dz    = H / (N - 1);      // grid spacing
