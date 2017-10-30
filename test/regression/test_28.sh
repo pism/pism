@@ -21,8 +21,8 @@ OPTS="-i foo-28.nc -bootstrap -Mx 61 -My 61 -Mz 11 -y 10 -Lz 1000"
 # bootstrap and run for 100 years:
 $MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o bar-28.nc
 
-# remove topg and tillwat (all contain zeros in the file and will default to zero):
-ncks -x -v bmelt,tillwat,dbdt,lon,lat -O foo-28.nc foo-28.nc
+# remove some variables
+ncks -x -v basal_melt_rate_grounded,tillwat,dbdt -O foo-28.nc foo-28.nc
 
 # bootstrap and run for 100 years:
 $MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o baz-28.nc
