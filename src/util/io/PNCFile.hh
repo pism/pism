@@ -126,7 +126,7 @@ protected:
   virtual int del_att_impl(const std::string &variable_name, const std::string &att_name) const;
 
 private:
-  std::vector<std::string> mpi_io_hints;
+  std::vector<std::string> m_mpi_io_hints;
   virtual int integer_open_mode(IO_Mode input) const;
   void check(const ErrorLocation &where, int return_code) const;
 
@@ -144,7 +144,7 @@ private:
 
   void init_hints();
 
-  MPI_Info mpi_info;            // MPI hints
+  MPI_Info m_mpi_info;            // MPI hints
 };
 
 } // end of namespace io

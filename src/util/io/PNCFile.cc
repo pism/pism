@@ -31,13 +31,12 @@ namespace io {
 
 PNCFile::PNCFile(MPI_Comm c)
   : NCFile(c) {
-  // MPI_Info_create(&mpi_info);
-  mpi_info = MPI_INFO_NULL;
+  MPI_Info_create(&m_mpi_info);
 }
 
 
 PNCFile::~PNCFile() {
-  // MPI_Info_free(&mpi_info);
+  MPI_Info_free(&m_mpi_info);
 }
 
 void PNCFile::check(const ErrorLocation &where, int return_code) const {
@@ -60,7 +59,7 @@ int PNCFile::open_impl(const std::string &fname, IO_Mode mode) {
   init_hints();
 
   int nc_mode = integer_open_mode(mode);
-  stat = ncmpi_open(m_com, fname.c_str(), nc_mode, mpi_info, &m_file_id); check(PISM_ERROR_LOCATION, stat);
+  stat = ncmpi_open(m_com, fname.c_str(), nc_mode, m_mpi_info, &m_file_id); check(PISM_ERROR_LOCATION, stat);
 
   return stat;
 }
@@ -72,7 +71,7 @@ int PNCFile::create_impl(const std::string &fname) {
   init_hints();
 
   stat = ncmpi_create(m_com, fname.c_str(), NC_CLOBBER|NC_64BIT_DATA,
-                      mpi_info, &m_file_id); check(PISM_ERROR_LOCATION, stat);
+                      m_mpi_info, &m_file_id); check(PISM_ERROR_LOCATION, stat);
 
   return stat;
 }
@@ -642,7 +641,7 @@ int PNCFile::put_var_double(const std::string &variable_name,
 
 void PNCFile::init_hints() {
 
-  for (auto hint : mpi_io_hints) {
+  for (auto hint : m_mpi_io_hints) {
     std::istringstream arg(hint);
     std::vector<std::string> words;
     std::string word;
@@ -654,7 +653,7 @@ void PNCFile::init_hints() {
       // printf("Setting MPI I/O hint \"%s\" to \"%s\"...\n",
       //        words[0].c_str(), words[1].c_str());
 
-      MPI_Info_set(mpi_info,
+      MPI_Info_set(m_mpi_info,
                    const_cast<char*>(words[0].c_str()),
                    const_cast<char*>(words[1].c_str()));
     } else {
