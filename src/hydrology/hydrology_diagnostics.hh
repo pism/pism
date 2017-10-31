@@ -42,40 +42,40 @@ namespace hydrology {
 
 
 //! \brief Reports the thickness of the transportable water in the subglacial layer.
-class Hydrology_bwat : public Diag<Hydrology>
+class Hydrology_bwat : public Diag<Routing>
 {
 public:
-  Hydrology_bwat(const Hydrology *m);
+  Hydrology_bwat(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
 //! \brief Reports the pressure of the transportable water in the subglacial layer.
-class Hydrology_bwp : public Diag<Hydrology>
+class Hydrology_bwp : public Diag<Routing>
 {
 public:
-  Hydrology_bwp(const Hydrology *m);
+  Hydrology_bwp(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
 //! \brief Reports the pressure of the transportable water in the subglacial layer as a fraction of the overburden pressure.
-class Hydrology_bwprel : public Diag<Hydrology>
+class Hydrology_bwprel : public Diag<Routing>
 {
 public:
-  Hydrology_bwprel(const Hydrology *m);
+  Hydrology_bwprel(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
 //! \brief Reports the effective pressure of the transportable water in the subglacial layer, that is, the overburden pressure minus the pressure.
-class Hydrology_effbwp : public Diag<Hydrology>
+class Hydrology_effbwp : public Diag<Routing>
 {
 public:
-  Hydrology_effbwp(const Hydrology *m);
+  Hydrology_effbwp(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
@@ -102,10 +102,10 @@ protected:
 
 
 //! \brief Report the wall melt rate from dissipation of the potential energy of the transportable water.
-class Hydrology_wallmelt : public Diag<Hydrology>
+class Hydrology_wallmelt : public Diag<Routing>
 {
 public:
-  Hydrology_wallmelt(const Hydrology *m);
+  Hydrology_wallmelt(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };

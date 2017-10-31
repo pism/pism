@@ -63,27 +63,12 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
                                                hydrology::Hydrology *hydro)
   : YieldStress(g), m_hydrology(hydro) {
 
-  const unsigned int stencil_width = m_config->get_double("grid.max_stencil_width");
-
-  m_till_phi.create(m_grid, "tillphi", WITH_GHOSTS, stencil_width);
+  m_till_phi.create(m_grid, "tillphi", WITHOUT_GHOSTS);
   m_till_phi.set_attrs("model_state",
                        "friction angle for till under grounded ice sheet",
                        "degrees", "");
   m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
-
-  // internal working space; stencil width needed because redundant computation
-  // on overlaps
-  m_tillwat.create(m_grid, "tillwat_for_MohrCoulomb", WITH_GHOSTS, stencil_width);
-  m_tillwat.set_attrs("internal",
-                      "copy of till water thickness held by MohrCoulombYieldStress",
-                      "m", "");
-
-  m_Po.create(m_grid, "overburden_pressure_for_MohrCoulomb",
-              WITH_GHOSTS, stencil_width);
-  m_Po.set_attrs("internal",
-                 "copy of overburden pressure held by MohrCoulombYieldStress",
-                 "Pa", "");
 
   if (m_config->get_boolean("basal_yield_stress.add_transportable_water")) {
     m_bwat.create(m_grid, "bwat_for_MohrCoulomb", WITHOUT_GHOSTS);
@@ -289,19 +274,19 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
                delta       = m_config->get_double("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"),
                tlftw       = m_config->get_double("basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water");
 
-  if (m_hydrology) {
-    m_hydrology->till_water_thickness(m_tillwat);
-    m_hydrology->overburden_pressure(m_Po);
-    if (add_transportable_water) {
-      hydrowithtransport->subglacial_water_thickness(m_bwat);
-    }
+  const IceModelVec2S
+    &tillwat = m_hydrology->till_water_thickness(),
+    &Po      = m_hydrology->overburden_pressure();
+
+  if (add_transportable_water) {
+    m_bwat.copy_from(hydrowithtransport->subglacial_water_thickness());
   }
 
   const IceModelVec2CellType &mask           = inputs.geometry->cell_type;
   const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
 
-  IceModelVec::AccessList list{&m_tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
-      &bed_topography, &m_Po};
+  IceModelVec::AccessList list{&tillwat, &m_till_phi, &m_basal_yield_stress, &mask,
+      &bed_topography, &Po};
   if (add_transportable_water) {
     list.add(m_bwat);
   }
@@ -316,18 +301,18 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs) {
     } else { // grounded and there is some ice
       // user can ask that marine grounding lines get special treatment
       const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
-      double water = m_tillwat(i,j); // usual case
+      double water = tillwat(i,j); // usual case
       if (slippery_grounding_lines and
           bed_topography(i,j) <= sea_level and
           (mask.next_to_floating_ice(i,j) or mask.next_to_ice_free_ocean(i,j))) {
         water = tillwat_max;
       } else if (add_transportable_water) {
-        water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
+        water = tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
       }
       double
         s    = water / tillwat_max,
-        Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntil = std::min(m_Po(i,j), Ntil);
+        Ntil = N0 * pow(delta * Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntil = std::min(Po(i,j), Ntil);
 
       m_basal_yield_stress(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
     }
@@ -433,20 +418,13 @@ void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
 
   assert(m_hydrology != NULL);
 
-  m_hydrology->till_water_thickness(m_tillwat);
-  m_hydrology->overburden_pressure(m_Po);
+  const IceModelVec2S
+    &tillwat = m_hydrology->till_water_thickness(),
+    &Po      = m_hydrology->overburden_pressure();
 
-  // make sure that we have enough ghosts:
-  const unsigned int GHOSTS = m_till_phi.get_stencil_width();
+  IceModelVec::AccessList list{&mask, &m_basal_yield_stress, &tillwat, &Po, &m_till_phi};
 
-  assert(mask.get_stencil_width()                 >= GHOSTS);
-  assert(m_basal_yield_stress.get_stencil_width() >= GHOSTS);
-  assert(m_tillwat.get_stencil_width()            >= GHOSTS);
-  assert(m_Po.get_stencil_width()                 >= GHOSTS);
-
-  IceModelVec::AccessList list{&mask, &m_basal_yield_stress, &m_tillwat, &m_Po, &m_till_phi};
-
-  for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+  for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ocean(i, j)) {
@@ -454,15 +432,17 @@ void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
     } else if (mask.ice_free(i, j)) {
       // no change
     } else { // grounded and there is some ice
-      const double s = m_tillwat(i, j) / tillwat_max;
+      const double s = tillwat(i, j) / tillwat_max;
 
       double Ntil = 0.0;
-      Ntil = N0 * pow(delta * m_Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-      Ntil = std::min(m_Po(i, j), Ntil);
+      Ntil = N0 * pow(delta * Po(i, j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntil = std::min(Po(i, j), Ntil);
 
       m_till_phi(i, j) = 180.0/M_PI * atan((m_basal_yield_stress(i, j) - c0) / Ntil);
     }
   }
+
+  m_till_phi.update_ghosts();
 }
 
 std::map<std::string, Diagnostic::Ptr> MohrCoulombYieldStress::diagnostics_impl() const {

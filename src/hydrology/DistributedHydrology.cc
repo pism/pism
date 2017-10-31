@@ -94,6 +94,7 @@ void Distributed::init() {
     m_log->message(2,
                "  option -init_P_from_steady seen ...\n"
                "  initializing P from P(W) formula which applies in steady state\n");
+    compute_overburden_pressure(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
     P_from_W_steady(m_P);
   }
 
@@ -171,8 +172,8 @@ std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() cons
 
 
 //! Copies the P state variable which is the modeled water pressure.
-void Distributed::subglacial_water_pressure(IceModelVec2S &result) const {
-  result.copy_from(m_P);
+const IceModelVec2S& Distributed::subglacial_water_pressure() const {
+  return m_P;
 }
 
 
@@ -181,8 +182,6 @@ void Distributed::subglacial_water_pressure(IceModelVec2S &result) const {
 The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
  */
 void Distributed::check_P_bounds(bool enforce_upper) {
-
-  overburden_pressure(m_Pover);
 
   IceModelVec::AccessList list{&m_P, &m_Pover};
 
@@ -220,22 +219,25 @@ cavitation (opening) caused by sliding and creep closure.
 
 This will be used in initialization when P is otherwise unknown, and
 in verification and/or reporting.  It is not used during time-dependent
-model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
+model runs.  To be more complete, \f$P = P(W,P_o,|v_b|)\f$.
  */
 void Distributed::P_from_W_steady(IceModelVec2S &result) {
-  double CC = m_config->get_double("hydrology.cavitation_opening_coefficient") /
-                    (m_config->get_double("hydrology.creep_closure_coefficient") * m_config->get_double("flow_law.isothermal_Glen.ice_softness")),
-    powglen = 1.0 / m_config->get_double("stress_balance.sia.Glen_exponent"), // choice is SIA; see #285
-    Wr = m_config->get_double("hydrology.roughness_scale");
 
-  overburden_pressure(m_Pover);
+  const double
+    ice_softness                   = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
+    creep_closure_coefficient      = m_config->get_double("hydrology.creep_closure_coefficient"),
+    cavitation_opening_coefficient = m_config->get_double("hydrology.cavitation_opening_coefficient"),
+    Glen_exponent                  = m_config->get_double("stress_balance.sia.Glen_exponent"),
+    Wr                             = m_config->get_double("hydrology.roughness_scale");
+
+  const double CC = cavitation_opening_coefficient / (creep_closure_coefficient * ice_softness);
 
   IceModelVec::AccessList list{&m_W, &m_Pover, &m_velbase_mag, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double sb = pow(CC * m_velbase_mag(i, j), powglen);
+    double sb = pow(CC * m_velbase_mag(i, j), 1.0 / Glen_exponent);
     if (m_W(i, j) == 0.0) {
       // see P(W) formula in steady state; note P(W) is continuous (in steady
       // state); these facts imply:
@@ -249,7 +251,7 @@ void Distributed::P_from_W_steady(IceModelVec2S &result) {
       // in cases where steady state is actually possible this will
       //   come out positive, but otherwise we should get underpressure P=0,
       //   and that is what it yields
-      result(i, j) = std::max(0.0, m_Pover(i, j) - sb * pow(Wratio, powglen));
+      result(i, j) = std::max(0.0, m_Pover(i, j) - sb * pow(Wratio, 1.0 / Glen_exponent));
     }
   }
 }
@@ -268,9 +270,9 @@ void Distributed::update_velbase_mag(IceModelVec2S &result) {
 
 //! Computes the adaptive time step for this (W,P) state space model.
 void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
-                                                        double &dt_result,
-                                                        double &maxV_result, double &maxD_result,
-                                                        double &PtoCFLratio) {
+                                               double &dt_result,
+                                               double &maxV_result, double &maxD_result,
+                                               double &PtoCFLratio) {
   double dtCFL, dtDIFFW, dtDIFFP;
 
   adaptive_for_W_evolution(t_current,t_end, maxKW,
@@ -288,15 +290,13 @@ void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, d
     PtoCFLratio = 1.0;
   }
 
+  units::Converter years(m_sys, "seconds", "years");
+
   using units::convert;
   m_log->message(4,
                  "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
                  convert(m_sys, maxV_result, "m second-1", "m year-1"),
-                 convert(m_sys, dtCFL,       "seconds",  "years"),
-                 convert(m_sys, dtDIFFW,     "seconds",  "years"),
-                 convert(m_sys, dtDIFFP,     "seconds",  "years"),
-                 convert(m_sys, dt_result,   "seconds",  "years"),
-                 convert(m_sys, t_current,   "seconds",  "years"));
+                 years(dtCFL), years(dtDIFFW), years(dtDIFFP), years(dt_result), years(t_current));
 }
 
 
@@ -325,7 +325,7 @@ void Distributed::update_impl(double icet, double icedt) {
   m_P.update_ghosts();
 
   // from current ice geometry/velocity variables, initialize Po and velbase_mag
-  if (!m_hold_velbase_mag) {
+  if (not m_hold_velbase_mag) {
     update_velbase_mag(m_velbase_mag);
   }
 
@@ -370,6 +370,8 @@ void Distributed::update_impl(double icet, double icedt) {
     check_Wtil_bounds();
 #endif
 
+    compute_overburden_pressure(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
+
     // note that ice dynamics can change overburden pressure, so we can only check P
     //   bounds if thk has not changed; if thk could have just changed, such as in the
     //   first time through the current loop, we enforce them
@@ -398,10 +400,10 @@ void Distributed::update_impl(double icet, double icedt) {
     raw_update_Wtil(hdt);
     boundary_mass_changes(m_Wtilnew, delta_icefree, delta_ocean,
                           delta_neggain, delta_nullstrip);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
+    icefreelost   += delta_icefree;
+    oceanlost     += delta_ocean;
+    negativegain  += delta_neggain;
+    nullstriplost += delta_nullstrip;
 
     // update Pnew from time step
     const double
@@ -409,7 +411,7 @@ void Distributed::update_impl(double icet, double icedt) {
       wux = 1.0 / (m_dx * m_dx),
       wuy = 1.0 / (m_dy * m_dy);
     double diffW;
-    overburden_pressure(m_Pover);
+    compute_overburden_pressure(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
 
     const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 

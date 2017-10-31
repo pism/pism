@@ -53,7 +53,7 @@ protected:
   void topg_to_phi(const IceModelVec2S &bed_topography);
   void tauc_to_phi(const IceModelVec2CellType &mask);
 protected:
-  IceModelVec2S m_till_phi, m_tillwat, m_Po;
+  IceModelVec2S m_till_phi;
   hydrology::Hydrology *m_hydrology;
 
   // only allocated and used if basal_yield_stress.add_transportable_water = true

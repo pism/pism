@@ -51,6 +51,10 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
                    "effective thickness of subglacial water stored in till",
                    "m", "");
   m_Wtil.metadata().set_double("valid_min", 0.0);
+
+  m_Pover.create(m_grid, "overburden_pressure", WITHOUT_GHOSTS);
+  m_Pover.set_attrs("internal", "overburden pressure", "Pa", "");
+  m_Pover.metadata().set_double("valid_min", 0.0);
 }
 
 
@@ -155,13 +159,8 @@ void Hydrology::update(double t, double dt) {
 
 std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result = {
-    {"bwat",       Diagnostic::Ptr(new Hydrology_bwat(this))},
-    {"bwp",        Diagnostic::Ptr(new Hydrology_bwp(this))},
-    {"bwprel",     Diagnostic::Ptr(new Hydrology_bwprel(this))},
-    {"effbwp",     Diagnostic::Ptr(new Hydrology_effbwp(this))},
     {"hydrobmelt", Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
     {"hydroinput", Diagnostic::Ptr(new Hydrology_hydroinput(this))},
-    {"wallmelt",   Diagnostic::Ptr(new Hydrology_wallmelt(this))},
     {"tillwat",    Diagnostic::wrap(m_Wtil)},
   };
   return result;
@@ -179,28 +178,31 @@ void Hydrology::write_model_state_impl(const PIO &output) const {
 /*!
 Uses the standard hydrostatic (shallow) approximation of overburden pressure,
   \f[ P_0 = \rho_i g H \f]
-Accesses H=thk from Vars, which points into IceModel.
  */
-void Hydrology::overburden_pressure(IceModelVec2S &result) const {
+void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness) {
   // FIXME issue #15
-  const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("thk");
 
-  result.copy_from(*thk);  // copies into ghosts if result has them
-  result.scale(m_config->get_double("constants.ice.density") * m_config->get_double("constants.standard_gravity"));
+  const double
+    ice_density      = m_config->get_double("constants.ice.density"),
+    standard_gravity = m_config->get_double("constants.standard_gravity");
+
+  IceModelVec::AccessList list{&ice_thickness, &m_Pover};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    m_Pover(i, j) = ice_density * standard_gravity * ice_thickness(i, j);
+  }
 }
 
+const IceModelVec2S& Hydrology::overburden_pressure() const {
+  return m_Pover;
+}
 
 //! Return the effective thickness of the water stored in till.
-void Hydrology::till_water_thickness(IceModelVec2S &result) const {
-  result.copy_from(m_Wtil);
+const IceModelVec2S& Hydrology::till_water_thickness() const {
+  return m_Wtil;
 }
-
-
-//! Set the wall melt rate to zero.  (The most basic subglacial hydrologies have no lateral flux or potential gradient.)
-void Hydrology::wall_melt(IceModelVec2S &result) const {
-  result.set(0.0);
-}
-
 
 /*!
 Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.

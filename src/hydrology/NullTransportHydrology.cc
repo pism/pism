@@ -76,18 +76,6 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
   }
 }
 
-//! Set the transportable subglacial water thickness to zero; there is no tranport.
-void NullTransport::subglacial_water_thickness(IceModelVec2S &result) const {
-  result.set(0.0);
-}
-
-
-//! Returns the (trivial) overburden pressure as the pressure of the non-existent transportable water, because this is the least harmful output if this is misused.
-void NullTransport::subglacial_water_pressure(IceModelVec2S &result) const {
-  overburden_pressure(result);
-}
-
-
 //! Update the till water thickness by simply integrating the melt input.
 /*!
 Does a step of the trivial integration
