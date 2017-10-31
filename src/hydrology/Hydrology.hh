@@ -124,16 +124,17 @@ protected:
   void compute_overburden_pressure(const IceModelVec2S &ice_thickness);
 
   virtual void get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
-  virtual void check_Wtil_bounds();
+  void check_Wtil_bounds();
 protected:
   //! effective thickness of basal water stored in till
   IceModelVec2S m_Wtil;
 
+  //! overburden pressure
+  IceModelVec2S m_Pover;
+
   // work space
   IceModelVec2S m_total_input;
   IceModelVec2S m_bmelt_local;
-
-  IceModelVec2S m_Pover;
 
   bool m_hold_bmelt;
 
