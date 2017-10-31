@@ -174,8 +174,6 @@ std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
     {"bwp",        Diagnostic::Ptr(new Hydrology_bwp(this))},
     {"bwprel",     Diagnostic::Ptr(new Hydrology_bwprel(this))},
     {"effbwp",     Diagnostic::Ptr(new Hydrology_effbwp(this))},
-    {"hydrobmelt", Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
-    {"hydroinput", Diagnostic::Ptr(new Hydrology_hydroinput(this))},
     {"wallmelt",   Diagnostic::Ptr(new Hydrology_wallmelt(this))},
   };
   return combine(result, Hydrology::diagnostics_impl());

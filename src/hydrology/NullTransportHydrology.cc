@@ -17,9 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Hydrology.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
-#include "hydrology_diagnostics.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/IceModelVec2CellType.hh"

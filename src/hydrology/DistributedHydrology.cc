@@ -149,8 +149,6 @@ std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result = {
     {"bwprel",           Diagnostic::Ptr(new Hydrology_bwprel(this))},
     {"effbwp",           Diagnostic::Ptr(new Hydrology_effbwp(this))},
-    {"hydrobmelt",       Diagnostic::Ptr(new Hydrology_hydrobmelt(this))},
-    {"hydroinput",       Diagnostic::Ptr(new Hydrology_hydroinput(this))},
     {"wallmelt",         Diagnostic::Ptr(new Hydrology_wallmelt(this))},
     {"bwatvel",          Diagnostic::Ptr(new Routing_bwatvel(this))},
     {"hydrovelbase_mag", Diagnostic::Ptr(new Distributed_hydrovelbase_mag(this))}

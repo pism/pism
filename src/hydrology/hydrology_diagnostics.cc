@@ -112,43 +112,6 @@ IceModelVec::Ptr Hydrology_effbwp::compute_impl() const {
   return result;
 }
 
-
-Hydrology_hydrobmelt::Hydrology_hydrobmelt(const Hydrology *m)
-  : Diag<Hydrology>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, "hydrobmelt")};
-  set_attrs("the version of bmelt seen by the hydrology model",
-            "", "m s-1", "m year-1", 0);
-}
-
-
-IceModelVec::Ptr Hydrology_hydrobmelt::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydrobmelt", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  // the value reported diagnostically is merely the last value filled
-  result->copy_from(model->m_bmelt_local);
-
-  return result;
-}
-
-
-Hydrology_hydroinput::Hydrology_hydroinput(const Hydrology *m)
-  : Diag<Hydrology>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, "hydroinput")};
-  set_attrs("total water input into subglacial hydrology layer",
-            "", "m s-1", "m year-1", 0);
-}
-
-
-IceModelVec::Ptr Hydrology_hydroinput::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydroinput", WITHOUT_GHOSTS));
-  result->metadata() = m_vars[0];
-  // the value reported diagnostically is merely the last value filled
-  result->copy_from(model->m_total_input);
-
-  return result;
-}
-
-
 Hydrology_wallmelt::Hydrology_wallmelt(const Routing *m)
   : Diag<Routing>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "wallmelt")};

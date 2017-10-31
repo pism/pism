@@ -107,10 +107,6 @@ public:
 
   void update(double t, double dt);
 
-  // FIXME: remove these two
-  friend class Hydrology_hydrobmelt;
-  friend class Hydrology_hydroinput;
-
   const IceModelVec2S& till_water_thickness() const;
   const IceModelVec2S& overburden_pressure() const;
 

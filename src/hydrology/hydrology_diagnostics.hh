@@ -71,7 +71,8 @@ protected:
 };
 
 
-//! \brief Reports the effective pressure of the transportable water in the subglacial layer, that is, the overburden pressure minus the pressure.
+//! \brief Reports the effective pressure of the transportable water in the subglacial
+//! layer, that is, the overburden pressure minus the pressure.
 class Hydrology_effbwp : public Diag<Routing>
 {
 public:
@@ -81,27 +82,8 @@ protected:
 };
 
 
-//! \brief Reports the values of bmelt seen by the Hydrology model.
-class Hydrology_hydrobmelt : public Diag<Hydrology>
-{
-public:
-  Hydrology_hydrobmelt(const Hydrology *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl() const;
-};
-
-
-//! \brief Reports the total input rate of water into the subglacial layer.
-class Hydrology_hydroinput : public Diag<Hydrology>
-{
-public:
-  Hydrology_hydroinput(const Hydrology *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl() const;
-};
-
-
-//! \brief Report the wall melt rate from dissipation of the potential energy of the transportable water.
+//! \brief Report the wall melt rate from dissipation of the potential energy of the
+//! transportable water.
 class Hydrology_wallmelt : public Diag<Routing>
 {
 public:
