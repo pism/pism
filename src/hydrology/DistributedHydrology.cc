@@ -153,7 +153,6 @@ std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result = {
     {"effbwp",           Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
     {"wallmelt",         Diagnostic::Ptr(new WallMelt(this))},
-    {"bwatvel",          Diagnostic::Ptr(new BasalWaterVelocity(this))},
   };
   return combine(result, Routing::diagnostics_impl());
 }
