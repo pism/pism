@@ -18,9 +18,16 @@
  */
 
 #include <mpi.h>
-#include <netcdf.h>
 #include <fftw3.h>
 #include <gsl/gsl_version.h>
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
+#include <netcdf.h>
+
 #if (PISM_USE_PROJ4==1)
 #include "pism/util/Proj.hh"
 #endif
