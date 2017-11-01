@@ -154,7 +154,6 @@ std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
     {"effbwp",           Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
     {"wallmelt",         Diagnostic::Ptr(new WallMelt(this))},
     {"bwatvel",          Diagnostic::Ptr(new BasalWaterVelocity(this))},
-    {"hydrovelbase_mag", Diagnostic::Ptr(new Distributed_hydrovelbase_mag(this))}
   };
   return combine(result, Routing::diagnostics_impl());
 }
@@ -170,13 +169,10 @@ std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() cons
   return result;
 }
 
-
-
 //! Copies the P state variable which is the modeled water pressure.
 const IceModelVec2S& Distributed::subglacial_water_pressure() const {
   return m_P;
 }
-
 
 //! Check bounds on P and fail with message if not satisfied.  Optionally, enforces the upper bound instead of checking it.
 /*!
@@ -496,24 +492,6 @@ void Distributed::update_impl(double icet, double icedt) {
   m_boundary_accounting.negative_thickness_gain += negativegain;
   m_boundary_accounting.null_strip_loss         += nullstriplost;
 }
-
-
-Distributed_hydrovelbase_mag::Distributed_hydrovelbase_mag(const Distributed *m)
-  : Diag<Distributed>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, "hydrovelbase_mag")};
-  set_attrs("the version of velbase_mag seen by the 'distributed' hydrology model",
-            "", "m s-1", "m year-1", 0);
-}
-
-
-IceModelVec::Ptr Distributed_hydrovelbase_mag::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydrovelbase_mag", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-  // the value reported diagnostically is merely the last value filled
-  result->copy_from(model->m_velbase_mag);
-  return result;
-}
-
 
 } // end of namespace hydrology
 } // end of namespace pism

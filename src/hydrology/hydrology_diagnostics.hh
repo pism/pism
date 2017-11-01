@@ -103,17 +103,6 @@ protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
 
-//! \brief Reports the values of velbase_mag seen by the Hydrology model.
-/*! Only available for hydrology::Distributed. */
-class Distributed_hydrovelbase_mag : public Diag<Distributed>
-{
-public:
-  Distributed_hydrovelbase_mag(const Distributed *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl() const;
-};
-
-
 // Diagnostic time-series for mass-conserving ("MC") subglacial hydrology models.
 // These eight report the quantities computed in hydrology::Routing::boundary_mass_changes()
 
