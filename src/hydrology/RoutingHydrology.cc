@@ -100,6 +100,14 @@ Routing::Routing(IceGrid::ConstPtr g)
                     "new thickness of till (subglacial) water layer during update",
                     "m", "");
   m_Wtilnew.metadata().set_double("valid_min", 0.0);
+
+  {
+    double alpha = m_config->get_double("hydrology.thickness_power_in_flux");
+    if (alpha < 1.0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "alpha = %f < 1 which is not allowed", alpha);
+    }
+  }
 }
 
 Routing::~Routing() {
@@ -134,8 +142,8 @@ MaxTimestep Routing::max_timestep_impl(double t) const {
 
 void Routing::init_bwat() {
 
-  // initialize water layer thickness from the context if present, otherwise from -i file, otherwise
-  // with constant value
+  // initialize water layer thickness from the context if present, otherwise from -i file,
+  // otherwise with constant value
 
   InputOptions opts = process_input_options(m_grid->com);
 
@@ -169,12 +177,12 @@ void Routing::write_model_state_impl(const PIO &output) const {
 
 std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result = {
-    {"bwat",       Diagnostic::Ptr(new Hydrology_bwat(this))},
-    {"bwatvel",    Diagnostic::Ptr(new Routing_bwatvel(this))},
-    {"bwp",        Diagnostic::Ptr(new Hydrology_bwp(this))},
-    {"bwprel",     Diagnostic::Ptr(new Hydrology_bwprel(this))},
-    {"effbwp",     Diagnostic::Ptr(new Hydrology_effbwp(this))},
-    {"wallmelt",   Diagnostic::Ptr(new Hydrology_wallmelt(this))},
+    {"bwat",       Diagnostic::Ptr(new BasalWaterThickness(this))},
+    {"bwatvel",    Diagnostic::Ptr(new BasalWaterVelocity(this))},
+    {"bwp",        Diagnostic::Ptr(new BasalWaterPressure(this))},
+    {"bwprel",     Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
+    {"effbwp",     Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
+    {"wallmelt",   Diagnostic::Ptr(new WallMelt(this))},
   };
   return combine(result, Hydrology::diagnostics_impl());
 }
@@ -299,30 +307,27 @@ const IceModelVec2S& Routing::subglacial_water_pressure() const {
 //! Get the hydraulic potential from bedrock topography and current state variables.
 /*!
   Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
-  Calls subglacial_water_pressure() method to get water pressure.
 */
-void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
+void Routing::compute_hydraulic_potential(const IceModelVec2S &W,
+                                          const IceModelVec2S &P,
+                                          const IceModelVec2S &P_overburden,
+                                          const IceModelVec2S &bed,
+                                          const IceModelVec2CellType &mask,
+                                          IceModelVec2S &result) const {
 
   const double
     rho = m_config->get_double("constants.fresh_water.density"),
     g   = m_config->get_double("constants.standard_gravity");
 
-  const IceModelVec2S        &bed  = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-
-  compute_overburden_pressure(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
-
-  const IceModelVec2S &P = subglacial_water_pressure();
-
-  IceModelVec::AccessList list{&P, &m_Pover, &m_W, &mask, &bed, &result};
+  IceModelVec::AccessList list{&P, &P_overburden, &W, &mask, &bed, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ocean(i, j)) {
-      result(i, j) = m_Pover(i, j);
+      result(i, j) = P_overburden(i, j);
     } else {
-      result(i, j) = P(i, j) + rho * g * (bed(i, j) + m_W(i, j));
+      result(i, j) = P(i, j) + rho * g * (bed(i, j) + W(i, j));
     }
   }
 }
@@ -331,11 +336,11 @@ void Routing::subglacial_hydraulic_potential(IceModelVec2S &result) {
 //! Average the regular grid water thickness to values at the center of cell edges.
 /*! Uses mask values to avoid averaging using water thickness values from
   either ice-free or floating areas. */
-void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
+void Routing::water_thickness_staggered(const IceModelVec2S &W,
+                                        const IceModelVec2CellType &mask,
+                                        IceModelVec2Stag &result) {
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-
-  IceModelVec::AccessList list{&mask, &m_W, &result};
+  IceModelVec::AccessList list{&mask, &W, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -343,13 +348,13 @@ void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
     // east
     if (mask.grounded_ice(i, j)) {
       if (mask.grounded_ice(i+1, j)) {
-        result(i, j, 0) = 0.5 * (m_W(i, j) + m_W(i+1, j));
+        result(i, j, 0) = 0.5 * (W(i, j) + W(i+1, j));
       } else {
-        result(i, j, 0) = m_W(i, j);
+        result(i, j, 0) = W(i, j);
       }
     } else {
       if (mask.grounded_ice(i+1, j)) {
-        result(i, j, 0) = m_W(i+1, j);
+        result(i, j, 0) = W(i+1, j);
       } else {
         result(i, j, 0) = 0.0;
       }
@@ -357,18 +362,20 @@ void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
     // north
     if (mask.grounded_ice(i, j)) {
       if (mask.grounded_ice(i, j+1)) {
-        result(i, j, 1) = 0.5 * (m_W(i, j) + m_W(i, j+1));
+        result(i, j, 1) = 0.5 * (W(i, j) + W(i, j+1));
       } else {
-        result(i, j, 1) = m_W(i, j);
+        result(i, j, 1) = W(i, j);
       }
     } else {
       if (mask.grounded_ice(i, j+1)) {
-        result(i, j, 1) = m_W(i, j+1);
+        result(i, j, 1) = W(i, j+1);
       } else {
         result(i, j, 1) = 0.0;
       }
     }
   }
+
+  result.update_ghosts();
 }
 
 
@@ -383,8 +390,11 @@ void Routing::water_thickness_staggered(IceModelVec2Stag &result) {
 
   Also returns the maximum over all staggered points of \f$ K W \f$.
 */
-void Routing::conductivity_staggered(IceModelVec2Stag &result,
-                                     double &maxKW) {
+void Routing::compute_conductivity(const IceModelVec2Stag &W,
+                                   const IceModelVec2S &P,
+                                   const IceModelVec2S &bed,
+                                   IceModelVec2Stag &result,
+                                   double &maxKW) const {
   const double
     k     = m_config->get_double("hydrology.hydraulic_conductivity"),
     alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
@@ -392,20 +402,14 @@ void Routing::conductivity_staggered(IceModelVec2Stag &result,
     rg    = (m_config->get_double("constants.standard_gravity") *
              m_config->get_double("constants.fresh_water.density"));
 
-  if (alpha < 1.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "alpha = %f < 1 which is not allowed", alpha);
-  }
-
   IceModelVec::AccessList list(result);
-
-  const IceModelVec2S *bed = m_grid->variables().get_2d_scalar("bedrock_altitude");
 
   // the following calculation is bypassed if beta == 2.0 exactly; it puts
   // the squared norm of the gradient of the simplified hydrolic potential
   // temporarily in "result"
   if (beta != 2.0) {
-    m_R.copy_from(subglacial_water_pressure());  // yes, it updates ghosts
-    m_R.add(rg, *bed); // R  <-- P + rhow g b
+    m_R.copy_from(P);  // yes, it updates ghosts
+    m_R.add(rg, bed); // R  <-- P + rhow g b
     m_R.update_ghosts();
 
     list.add(m_R);
@@ -424,12 +428,13 @@ void Routing::conductivity_staggered(IceModelVec2Stag &result,
 
   double betapow = (beta-2.0)/2.0, mymaxKW = 0.0;
 
-  list.add(m_Wstag);
+  list.add(W);
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o = 0; o < 2; ++o) {
-      double Ktmp = k * pow(m_Wstag(i, j, o), alpha-1.0);
+      double Ktmp = k * pow(W(i, j, o), alpha-1.0);
       if (beta < 2.0) {
         // regularize negative power |\grad psi|^{beta-2} by adding eps because
         //   large head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m
@@ -440,11 +445,13 @@ void Routing::conductivity_staggered(IceModelVec2Stag &result,
       } else { // beta == 2.0
         result(i, j, o) = Ktmp;
       }
-      mymaxKW = std::max(mymaxKW, result(i, j, o) * m_Wstag(i, j, o));
+      mymaxKW = std::max(mymaxKW, result(i, j, o) * W(i, j, o));
     }
   }
 
   maxKW = GlobalMax(m_grid->com, mymaxKW);
+
+  result.update_ghosts();
 }
 
 
@@ -528,50 +535,51 @@ void wall_melt(const Routing &model, IceModelVec2S &result) {
 
 //! Get the advection velocity V at the center of cell edges.
 /*!
-Computes the advection velocity \f$\mathbf{V}\f$ on the staggered
+Computes the advection velocity @f$\mathbf{V}@f$ on the staggered
 (edge-centered) grid.  If V = (u, v) in components then we have
 <code> result(i, j, 0) = u(i+1/2, j) </code> and
 <code> result(i, j, 1) = v(i, j+1/2) </code>
 
 The advection velocity is given by the formula
-  \f[ \mathbf{V} = - K \left(\nabla P + \rho_w g \nabla b\right) \f]
-where \f$\mathbf{V}\f$ is the water velocity, \f$P\f$ is the water
-pressure, and \f$b\f$ is the bedrock elevation.
+  @f[ \mathbf{V} = - K \left(\nabla P + \rho_w g \nabla b\right) @f]
+where @f$\mathbf{V}@f$ is the water velocity, @f$P@f$ is the water
+pressure, and @f$b@f$ is the bedrock elevation.
 
 If the corresponding staggered grid value of the water thickness is zero then
 that component of V is set to zero.  This does not change the flux value (which
 would be zero anyway) but it does provide the correct max velocity in the
 CFL calculation.  We assume Wstag and K are up-to-date.  We assume P and b
 have valid ghosts.
-
-Calls subglacial_water_pressure() method to get water pressure.
  */
-void Routing::velocity_staggered(IceModelVec2Stag &result) const {
-  const double  rg = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
+void Routing::compute_velocity(const IceModelVec2Stag &W,
+                               const IceModelVec2S &P,
+                               const IceModelVec2S &bed,
+                               const IceModelVec2Stag &K,
+                               IceModelVec2Stag &result) const {
+  const double  rg = (m_config->get_double("constants.standard_gravity") *
+                      m_config->get_double("constants.fresh_water.density"));
   double dbdx, dbdy, dPdx, dPdy;
 
   IceModelVec2S &pressure = m_R;
-  pressure.copy_from(subglacial_water_pressure());  // yes, it updates ghosts
+  pressure.copy_from(P);  // yes, it updates ghosts
 
-  const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-
-  IceModelVec::AccessList list{&pressure, &m_Wstag, &m_K, &bed, &result};
+  IceModelVec::AccessList list{&pressure, &W, &K, &bed, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_Wstag(i, j, 0) > 0.0) {
+    if (W(i, j, 0) > 0.0) {
       dPdx = (pressure(i + 1, j) - pressure(i, j)) / m_dx;
       dbdx = (bed(i + 1, j) - bed(i, j)) / m_dx;
-      result(i, j, 0) =  - m_K(i, j, 0) * (dPdx + rg * dbdx);
+      result(i, j, 0) =  - K(i, j, 0) * (dPdx + rg * dbdx);
     } else {
       result(i, j, 0) = 0.0;
     }
 
-    if (m_Wstag(i, j, 1) > 0.0) {
+    if (W(i, j, 1) > 0.0) {
       dPdy = (pressure(i, j + 1) - pressure(i, j)) / m_dy;
       dbdy = (bed(i, j + 1) - bed(i, j)) / m_dy;
-      result(i, j, 1) =  - m_K(i, j, 1) * (dPdy + rg * dbdy);
+      result(i, j, 1) =  - K(i, j, 1) * (dPdy + rg * dbdy);
     } else {
       result(i, j, 1) = 0.0;
     }
@@ -595,17 +603,21 @@ The field W must have valid ghost values, but V does not need them.
 
 FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
  */
-void Routing::advective_fluxes(IceModelVec2Stag &result) {
-  IceModelVec::AccessList list{&m_W, &m_V, &result};
+void Routing::advective_fluxes(const IceModelVec2Stag &V,
+                               const IceModelVec2S &W,
+                               IceModelVec2Stag &result) const {
+  IceModelVec::AccessList list{&W, &V, &result};
 
-  assert(m_W.get_stencil_width() >= 1);
+  assert(W.get_stencil_width() >= 1);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j, 0) = (m_V(i, j, 0) >= 0.0) ? m_V(i, j, 0) * m_W(i, j) :  m_V(i, j, 0) * m_W(i+1, j);
-    result(i, j, 1) = (m_V(i, j, 1) >= 0.0) ? m_V(i, j, 1) * m_W(i, j) :  m_V(i, j, 1) * m_W(i, j+1);
+    result(i, j, 0) = V(i, j, 0) * (V(i, j, 0) >= 0.0 ? W(i, j) :  W(i+1, j));
+    result(i, j, 1) = V(i, j, 1) * (V(i, j, 1) >= 0.0 ? W(i, j) :  W(i, j+1));
   }
+
+  result.update_ghosts();
 }
 
 
@@ -740,17 +752,26 @@ void Routing::update_impl(double icet, double icedt) {
     check_Wtil_bounds();
 #endif
 
-    water_thickness_staggered(m_Wstag);
-    m_Wstag.update_ghosts();
+    const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+    const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
-    conductivity_staggered(m_K, maxKW);
-    m_K.update_ghosts();
+    water_thickness_staggered(m_W,
+                              mask,
+                              m_Wstag);
 
-    velocity_staggered(m_V);
+    compute_conductivity(m_Wstag,
+                         subglacial_water_pressure(),
+                         bed,
+                         m_K, maxKW);
+
+    compute_velocity(m_Wstag,
+                     subglacial_water_pressure(),
+                     bed,
+                     m_K,
+                     m_V);
 
     // to get Q, W needs valid ghosts
-    advective_fluxes(m_Q);
-    m_Q.update_ghosts();
+    advective_fluxes(m_V, m_W, m_Q);
 
     adaptive_for_W_evolution(ht, m_t+m_dt, maxKW,
                              hdt, maxV, maxD, dtCFL, dtDIFFW);
@@ -761,6 +782,7 @@ void Routing::update_impl(double icet, double icedt) {
 
     // update Wtilnew from Wtil
     raw_update_Wtil(hdt);
+
     boundary_mass_changes(m_Wtilnew, delta_icefree, delta_ocean,
                           delta_neggain, delta_nullstrip);
     icefreelost  += delta_icefree;
@@ -798,8 +820,11 @@ void Routing::update_impl(double icet, double icedt) {
   m_boundary_accounting.null_strip_loss         += nullstriplost;
 }
 
+const IceModelVec2Stag& Routing::velocity_staggered() const {
+  return m_V;
+}
 
-Routing_bwatvel::Routing_bwatvel(const Routing *m)
+BasalWaterVelocity::BasalWaterVelocity(const Routing *m)
   : Diag<Routing>(m) {
 
   // set metadata:
@@ -813,14 +838,13 @@ Routing_bwatvel::Routing_bwatvel(const Routing *m)
             "m s-1", "m year-1", 1);
 }
 
-
-IceModelVec::Ptr Routing_bwatvel::compute_impl() const {
+IceModelVec::Ptr BasalWaterVelocity::compute_impl() const {
   IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
   result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  model->velocity_staggered(*result);
+  result->copy_from(model->velocity_staggered());
 
   return result;
 }

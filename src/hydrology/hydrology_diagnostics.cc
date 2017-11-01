@@ -22,27 +22,27 @@
 namespace pism {
 namespace hydrology {
 
-Hydrology_bwat::Hydrology_bwat(const Routing *m)
+BasalWaterThickness::BasalWaterThickness(const Routing *m)
   : Diag<Routing>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "bwat")};
   set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
 }
 
-IceModelVec::Ptr Hydrology_bwat::compute_impl() const {
+IceModelVec::Ptr BasalWaterThickness::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwat", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   result->copy_from(model->subglacial_water_thickness());
   return result;
 }
 
-Hydrology_bwp::Hydrology_bwp(const Routing *m)
+BasalWaterPressure::BasalWaterPressure(const Routing *m)
   : Diag<Routing>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "bwp")};
   set_attrs("pressure of transportable water in subglacial layer", "", "Pa", "Pa", 0);
 }
 
 
-IceModelVec::Ptr Hydrology_bwp::compute_impl() const {
+IceModelVec::Ptr BasalWaterPressure::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwp", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   result->copy_from(model->subglacial_water_pressure());
@@ -50,7 +50,7 @@ IceModelVec::Ptr Hydrology_bwp::compute_impl() const {
 }
 
 
-Hydrology_bwprel::Hydrology_bwprel(const Routing *m)
+RelativeBasalWaterPressure::RelativeBasalWaterPressure(const Routing *m)
   : Diag<Routing>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "bwprel")};
   set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
@@ -59,7 +59,7 @@ Hydrology_bwprel::Hydrology_bwprel(const Routing *m)
 }
 
 
-IceModelVec::Ptr Hydrology_bwprel::compute_impl() const {
+IceModelVec::Ptr RelativeBasalWaterPressure::compute_impl() const {
   double fill_value = m_fill_value;
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwprel", WITHOUT_GHOSTS));
@@ -84,7 +84,7 @@ IceModelVec::Ptr Hydrology_bwprel::compute_impl() const {
 }
 
 
-Hydrology_effbwp::Hydrology_effbwp(const Routing *m)
+EffectiveBasalWaterPressure::EffectiveBasalWaterPressure(const Routing *m)
   : Diag<Routing>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "effbwp")};
   set_attrs("effective pressure of transportable water in subglacial layer (overburden pressure minus water pressure)",
@@ -92,7 +92,7 @@ Hydrology_effbwp::Hydrology_effbwp(const Routing *m)
 }
 
 
-IceModelVec::Ptr Hydrology_effbwp::compute_impl() const {
+IceModelVec::Ptr EffectiveBasalWaterPressure::compute_impl() const {
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effbwp", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
@@ -112,7 +112,7 @@ IceModelVec::Ptr Hydrology_effbwp::compute_impl() const {
   return result;
 }
 
-Hydrology_wallmelt::Hydrology_wallmelt(const Routing *m)
+WallMelt::WallMelt(const Routing *m)
   : Diag<Routing>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "wallmelt")};
   set_attrs("wall melt into subglacial hydrology layer from (turbulent) dissipation of energy in transportable water",
@@ -120,7 +120,7 @@ Hydrology_wallmelt::Hydrology_wallmelt(const Routing *m)
 }
 
 
-IceModelVec::Ptr Hydrology_wallmelt::compute_impl() const {
+IceModelVec::Ptr WallMelt::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wallmelt", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   wall_melt(*model, *result);

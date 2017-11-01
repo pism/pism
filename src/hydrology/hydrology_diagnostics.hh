@@ -42,30 +42,30 @@ namespace hydrology {
 
 
 //! \brief Reports the thickness of the transportable water in the subglacial layer.
-class Hydrology_bwat : public Diag<Routing>
+class BasalWaterThickness : public Diag<Routing>
 {
 public:
-  Hydrology_bwat(const Routing *m);
+  BasalWaterThickness(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
 //! \brief Reports the pressure of the transportable water in the subglacial layer.
-class Hydrology_bwp : public Diag<Routing>
+class BasalWaterPressure : public Diag<Routing>
 {
 public:
-  Hydrology_bwp(const Routing *m);
+  BasalWaterPressure(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
 
 
 //! \brief Reports the pressure of the transportable water in the subglacial layer as a fraction of the overburden pressure.
-class Hydrology_bwprel : public Diag<Routing>
+class RelativeBasalWaterPressure : public Diag<Routing>
 {
 public:
-  Hydrology_bwprel(const Routing *m);
+  RelativeBasalWaterPressure(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
@@ -73,10 +73,10 @@ protected:
 
 //! \brief Reports the effective pressure of the transportable water in the subglacial
 //! layer, that is, the overburden pressure minus the pressure.
-class Hydrology_effbwp : public Diag<Routing>
+class EffectiveBasalWaterPressure : public Diag<Routing>
 {
 public:
-  Hydrology_effbwp(const Routing *m);
+  EffectiveBasalWaterPressure(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
@@ -84,10 +84,10 @@ protected:
 
 //! \brief Report the wall melt rate from dissipation of the potential energy of the
 //! transportable water.
-class Hydrology_wallmelt : public Diag<Routing>
+class WallMelt : public Diag<Routing>
 {
 public:
-  Hydrology_wallmelt(const Routing *m);
+  WallMelt(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };
@@ -95,10 +95,10 @@ protected:
 
 //! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
 /*! Only available for hydrology::Routing and its derived classes. */
-class Routing_bwatvel : public Diag<Routing>
+class BasalWaterVelocity : public Diag<Routing>
 {
 public:
-  Routing_bwatvel(const Routing *m);
+  BasalWaterVelocity(const Routing *m);
 protected:
   virtual IceModelVec::Ptr compute_impl() const;
 };

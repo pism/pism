@@ -25,6 +25,7 @@
 namespace pism {
 
 class IceModelVec2T;
+class IceModelVec2CellType;
 
 namespace stressbalance {
 class StressBalance;
@@ -117,7 +118,8 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  void compute_overburden_pressure(const IceModelVec2S &ice_thickness);
+  void compute_overburden_pressure(const IceModelVec2S &ice_thickness,
+                                   IceModelVec2S &result) const;
 
   virtual void get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
   void check_Wtil_bounds();
@@ -259,6 +261,8 @@ public:
 
   BoundaryAccounting boundary_mass_accounting() const;
 
+  const IceModelVec2Stag& velocity_staggered() const;
+
 protected:
   virtual void update_impl(double icet, double icedt);
 
@@ -306,13 +310,32 @@ protected:
 
   void check_water_thickness_nonnegative(const IceModelVec2S &thk);
 
-  virtual void water_thickness_staggered(IceModelVec2Stag &result);
-  virtual void subglacial_hydraulic_potential(IceModelVec2S &result);
+  void water_thickness_staggered(const IceModelVec2S &W,
+                                 const IceModelVec2CellType &mask,
+                                 IceModelVec2Stag &result);
+  
+  void compute_hydraulic_potential(const IceModelVec2S &W,
+                                   const IceModelVec2S &P,
+                                   const IceModelVec2S &P_overburden,
+                                   const IceModelVec2S &bed,
+                                   const IceModelVec2CellType &mask,
+                                   IceModelVec2S &result) const;
 
-  virtual void conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
-  virtual void velocity_staggered(IceModelVec2Stag &result) const;
-  friend class Routing_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
-  virtual void advective_fluxes(IceModelVec2Stag &result);
+  void compute_conductivity(const IceModelVec2Stag &W,
+                            const IceModelVec2S &P,
+                            const IceModelVec2S &bed,
+                            IceModelVec2Stag &result,
+                            double &maxKW) const;
+
+  void compute_velocity(const IceModelVec2Stag &W,
+                        const IceModelVec2S &P,
+                        const IceModelVec2S &bed,
+                        const IceModelVec2Stag &K,
+                        IceModelVec2Stag &result) const;
+
+  void advective_fluxes(const IceModelVec2Stag &V,
+                        const IceModelVec2S &W,
+                        IceModelVec2Stag &result) const;
 
   virtual void adaptive_for_W_evolution(double t_current, double t_end, double maxKW,
                                         double &dt_result,
@@ -365,7 +388,10 @@ protected:
   virtual void check_P_bounds(bool enforce_upper);
 
   virtual void update_velbase_mag(IceModelVec2S &result);
-  virtual void P_from_W_steady(IceModelVec2S &result);
+  virtual void P_from_W_steady(const IceModelVec2S &W,
+                               const IceModelVec2S &P_overburden,
+                               const IceModelVec2S &sliding_speed,
+                               IceModelVec2S &result);
 
   virtual void adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
                                             double &dt_result,

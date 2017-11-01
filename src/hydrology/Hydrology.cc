@@ -174,7 +174,8 @@ void Hydrology::write_model_state_impl(const PIO &output) const {
 Uses the standard hydrostatic (shallow) approximation of overburden pressure,
   \f[ P_0 = \rho_i g H \f]
  */
-void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness) {
+void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness,
+                                            IceModelVec2S &result) const {
   // FIXME issue #15
 
   const double
@@ -186,7 +187,7 @@ void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness) 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_Pover(i, j) = ice_density * standard_gravity * ice_thickness(i, j);
+    result(i, j) = ice_density * standard_gravity * ice_thickness(i, j);
   }
 }
 

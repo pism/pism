@@ -90,20 +90,24 @@ void Distributed::init() {
 
   m_boundary_accounting.reset();
 
-  if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
-    m_log->message(2,
-               "  option -init_P_from_steady seen ...\n"
-               "  initializing P from P(W) formula which applies in steady state\n");
-    compute_overburden_pressure(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
-    P_from_W_steady(m_P);
-  }
-
   if (hydrology_velbase_mag_file.is_set()) {
     m_log->message(2,
                "  reading velbase_mag for 'distributed' hydrology from '%s'.\n",
                hydrology_velbase_mag_file->c_str());
     m_velbase_mag.regrid(hydrology_velbase_mag_file, CRITICAL_FILL_MISSING, 0.0);
     m_hold_velbase_mag = true;
+  }
+
+  if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
+    m_log->message(2,
+               "  option -init_P_from_steady seen ...\n"
+               "  initializing P from P(W) formula which applies in steady state\n");
+    const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+    compute_overburden_pressure(ice_thickness, m_Pover);
+
+    P_from_W_steady(m_W, m_Pover, m_velbase_mag,
+                    m_P);
   }
 }
 
@@ -147,10 +151,9 @@ void Distributed::write_model_state_impl(const PIO &output) const {
 
 std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
   std::map<std::string, Diagnostic::Ptr> result = {
-    {"bwprel",           Diagnostic::Ptr(new Hydrology_bwprel(this))},
-    {"effbwp",           Diagnostic::Ptr(new Hydrology_effbwp(this))},
-    {"wallmelt",         Diagnostic::Ptr(new Hydrology_wallmelt(this))},
-    {"bwatvel",          Diagnostic::Ptr(new Routing_bwatvel(this))},
+    {"effbwp",           Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
+    {"wallmelt",         Diagnostic::Ptr(new WallMelt(this))},
+    {"bwatvel",          Diagnostic::Ptr(new BasalWaterVelocity(this))},
     {"hydrovelbase_mag", Diagnostic::Ptr(new Distributed_hydrovelbase_mag(this))}
   };
   return combine(result, Routing::diagnostics_impl());
@@ -159,10 +162,10 @@ std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
 std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() const {
   std::map<std::string, TSDiagnostic::Ptr> result = {
     // add mass-conservation time-series diagnostics
-    {"hydro_ice_free_land_loss",                 TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
-    {"hydro_ocean_loss",                         TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
-    {"hydro_negative_thickness_gain",            TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},
-    {"hydro_null_strip_loss",                    TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this))}
+    {"hydro_ice_free_land_loss",      TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
+    {"hydro_ocean_loss",              TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
+    {"hydro_negative_thickness_gain", TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},
+    {"hydro_null_strip_loss",         TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this))}
   };
   return result;
 }
@@ -219,7 +222,10 @@ This will be used in initialization when P is otherwise unknown, and
 in verification and/or reporting.  It is not used during time-dependent
 model runs.  To be more complete, \f$P = P(W,P_o,|v_b|)\f$.
  */
-void Distributed::P_from_W_steady(IceModelVec2S &result) {
+void Distributed::P_from_W_steady(const IceModelVec2S &W,
+                                  const IceModelVec2S &P_overburden,
+                                  const IceModelVec2S &sliding_speed,
+                                  IceModelVec2S &result) {
 
   const double
     ice_softness                   = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
@@ -230,26 +236,27 @@ void Distributed::P_from_W_steady(IceModelVec2S &result) {
 
   const double CC = cavitation_opening_coefficient / (creep_closure_coefficient * ice_softness);
 
-  IceModelVec::AccessList list{&m_W, &m_Pover, &m_velbase_mag, &result};
+  IceModelVec::AccessList list{&W, &P_overburden, &sliding_speed, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double sb = pow(CC * m_velbase_mag(i, j), 1.0 / Glen_exponent);
-    if (m_W(i, j) == 0.0) {
+    double sb = pow(CC * sliding_speed(i, j), 1.0 / Glen_exponent);
+    if (W(i, j) == 0.0) {
       // see P(W) formula in steady state; note P(W) is continuous (in steady
       // state); these facts imply:
       if (sb > 0.0) {
-        result(i, j) = 0.0;        // no water + cavitation = underpressure
+        // no water + cavitation = underpressure
+        result(i, j) = 0.0;
       } else {
-        result(i, j) = m_Pover(i, j); // no water + no cavitation = creep repressurizes = overburden
+        // no water + no cavitation = creep repressurizes = overburden
+        result(i, j) = P_overburden(i, j);
       }
     } else {
-      double Wratio = std::max(0.0, Wr - m_W(i, j)) / m_W(i, j);
-      // in cases where steady state is actually possible this will
-      //   come out positive, but otherwise we should get underpressure P=0,
-      //   and that is what it yields
-      result(i, j) = std::max(0.0, m_Pover(i, j) - sb * pow(Wratio, 1.0 / Glen_exponent));
+      double Wratio = std::max(0.0, Wr - W(i, j)) / W(i, j);
+      // in cases where steady state is actually possible this will come out positive, but
+      // otherwise we should get underpressure P=0, and that is what it yields
+      result(i, j) = std::max(0.0, P_overburden(i, j) - sb * pow(Wratio, 1.0 / Glen_exponent));
     }
   }
 }
@@ -328,13 +335,14 @@ void Distributed::update_impl(double icet, double icedt) {
   }
 
   const double
-            rg    = m_config->get_double("constants.fresh_water.density") * m_config->get_double("constants.standard_gravity"),
-            nglen = m_config->get_double("stress_balance.sia.Glen_exponent"), // choice is SIA; see #285
-            Aglen = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
-            c1    = m_config->get_double("hydrology.cavitation_opening_coefficient"),
-            c2    = m_config->get_double("hydrology.creep_closure_coefficient"),
-            Wr    = m_config->get_double("hydrology.roughness_scale"),
-            phi0  = m_config->get_double("hydrology.regularizing_porosity");
+    rg    = (m_config->get_double("constants.fresh_water.density") *
+             m_config->get_double("constants.standard_gravity")),
+    nglen = m_config->get_double("stress_balance.sia.Glen_exponent"),
+    Aglen = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
+    c1    = m_config->get_double("hydrology.cavitation_opening_coefficient"),
+    c2    = m_config->get_double("hydrology.creep_closure_coefficient"),
+    Wr    = m_config->get_double("hydrology.roughness_scale"),
+    phi0  = m_config->get_double("hydrology.regularizing_porosity");
 
   double
     ht    = m_t,
@@ -358,39 +366,48 @@ void Distributed::update_impl(double icet, double icedt) {
     PtoCFLratio = 0.0,          // for reporting ratio of dtCFL to dtDIFFP
     cumratio    = 0.0;
 
-  unsigned int hydrocount = 0; // count hydrology time steps
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
+  compute_overburden_pressure(ice_thickness, m_Pover);
+
+  unsigned int step_counter = 0;
   while (ht < m_t + m_dt) {
-    hydrocount++;
+    step_counter++;
 
 #if (PISM_DEBUG==1)
     check_water_thickness_nonnegative(m_W);
     check_Wtil_bounds();
 #endif
 
-    compute_overburden_pressure(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
-
     // note that ice dynamics can change overburden pressure, so we can only check P
     //   bounds if thk has not changed; if thk could have just changed, such as in the
     //   first time through the current loop, we enforce them
-    check_P_bounds((hydrocount == 1));
+    check_P_bounds((step_counter == 1));
 
-    water_thickness_staggered(m_Wstag);
-    m_Wstag.update_ghosts();
+    water_thickness_staggered(m_W,
+                              mask,
+                              m_Wstag);
 
-    conductivity_staggered(m_K,maxKW);
-    m_K.update_ghosts();
+    compute_conductivity(m_Wstag,
+                         subglacial_water_pressure(),
+                         bed,
+                         m_K, maxKW);
 
-    velocity_staggered(m_V);
+    compute_velocity(m_Wstag,
+                     subglacial_water_pressure(),
+                     bed,
+                     m_K,
+                     m_V);
 
     // to get Qstag, W needs valid ghosts
-    advective_fluxes(m_Q);
-    m_Q.update_ghosts();
+    advective_fluxes(m_V, m_W, m_Q);
 
     adaptive_for_WandP_evolution(ht, m_t+m_dt, maxKW, hdt, maxV, maxD, PtoCFLratio);
     cumratio += PtoCFLratio;
 
-    if ((m_inputtobed != NULL) || (hydrocount == 1)) {
+    if ((m_inputtobed != NULL) || (step_counter == 1)) {
       get_input_rate(ht,hdt,m_total_input);
     }
 
@@ -409,9 +426,6 @@ void Distributed::update_impl(double icet, double icedt) {
       wux = 1.0 / (m_dx * m_dx),
       wuy = 1.0 / (m_dy * m_dy);
     double diffW;
-    compute_overburden_pressure(*m_grid->variables().get_2d_scalar("land_ice_thickness"));
-
-    const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
     IceModelVec::AccessList list{&m_P, &m_W, &m_Wtil, &m_Wtilnew, &m_velbase_mag, &m_Wstag,
         &m_K, &m_Q, &m_total_input, &mask, &m_Pover, &m_Pnew};
@@ -471,11 +485,11 @@ void Distributed::update_impl(double icet, double icedt) {
   m_log->message(2,
              "  'distributed' hydrology took %d hydrology sub-steps"
              " with average dt = %.6f years\n",
-             hydrocount, units::convert(m_sys, m_dt/hydrocount, "seconds", "years"));
+             step_counter, units::convert(m_sys, m_dt/step_counter, "seconds", "years"));
   m_log->message(3,
              "  (hydrology info: dt = %.2f s,  av %.2f steps per CFL,  max |V| = %.2e m s-1,"
              "  max D = %.2e m^2 s-1)\n",
-             m_dt/hydrocount, cumratio/hydrocount, maxV, maxD);
+             m_dt/step_counter, cumratio/step_counter, maxV, maxD);
 
   m_boundary_accounting.ice_free_land_loss      += icefreelost;
   m_boundary_accounting.ocean_loss              += oceanlost;
