@@ -742,18 +742,18 @@ void Routing::update_impl(double icet, double icedt) {
     maxKW = 0.0, maxV = 0.0, maxD = 0.0, dtCFL = 0.0, dtDIFFW = 0.0;
   double icefreelost = 0.0, oceanlost = 0.0, negativegain = 0.0, nullstriplost = 0.0,
     delta_icefree = 0.0, delta_ocean = 0.0, delta_neggain = 0.0, delta_nullstrip = 0.0;
-  unsigned int hydrocount = 0; // count hydrology time steps
 
+  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+
+  unsigned int step_counter = 0;
   while (ht < m_t + m_dt) {
-    hydrocount++;
+    step_counter++;
 
 #if (PISM_DEBUG==1)
     check_water_thickness_nonnegative(m_W);
     check_Wtil_bounds();
 #endif
-
-    const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-    const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
     water_thickness_staggered(m_W,
                               mask,
@@ -776,7 +776,7 @@ void Routing::update_impl(double icet, double icedt) {
     adaptive_for_W_evolution(ht, m_t+m_dt, maxKW,
                              hdt, maxV, maxD, dtCFL, dtDIFFW);
 
-    if ((m_inputtobed != NULL) || (hydrocount==1)) {
+    if ((m_inputtobed != NULL) || (step_counter==1)) {
       get_input_rate(ht, hdt, m_total_input);
     }
 
@@ -808,11 +808,11 @@ void Routing::update_impl(double icet, double icedt) {
 
   m_log->message(2,
              "  'routing' hydrology took %d hydrology sub-steps with average dt = %.6f years\n",
-             hydrocount, units::convert(m_sys, m_dt/hydrocount, "seconds", "years"));
+             step_counter, units::convert(m_sys, m_dt/step_counter, "seconds", "years"));
 
   m_log->message(3,
              "  (hydrology info: dt = %.2f s, max |V| = %.2e m s-1, max D = %.2e m^2 s-1)\n",
-             m_dt/hydrocount, maxV, maxD);
+             m_dt/step_counter, maxV, maxD);
 
   m_boundary_accounting.ice_free_land_loss      += icefreelost;
   m_boundary_accounting.ocean_loss              += oceanlost;
