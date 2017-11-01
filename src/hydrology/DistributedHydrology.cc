@@ -159,11 +159,7 @@ std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
 
 std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() const {
   std::map<std::string, TSDiagnostic::Ptr> result = {
-    // add mass-conservation time-series diagnostics
-    {"hydro_ice_free_land_loss",      TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
-    {"hydro_ocean_loss",              TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
-    {"hydro_negative_thickness_gain", TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},
-    {"hydro_null_strip_loss",         TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this))}
+    // FIXME: add mass-conservation time-series diagnostics
   };
   return result;
 }
@@ -306,7 +302,7 @@ Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
 is generally on the order of months to years.  This hydrology model will take its
 own shorter time steps, perhaps hours to weeks.
  */
-void Distributed::update_impl(double icet, double icedt) {
+void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time
@@ -361,9 +357,12 @@ void Distributed::update_impl(double icet, double icedt) {
     PtoCFLratio = 0.0,          // for reporting ratio of dtCFL to dtDIFFP
     cumratio    = 0.0;
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-  const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-  const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const IceModelVec2CellType &mask = *inputs.mask;
+  const IceModelVec2S &bed = *inputs.bed_elevation;
+  const IceModelVec2S &ice_thickness = *inputs.ice_thickness;
+
+  get_input_rate(*inputs.basal_melt_rate, *inputs.surface_input_rate, mask,
+                 m_total_input);
 
   compute_overburden_pressure(ice_thickness, m_Pover);
 
@@ -402,18 +401,9 @@ void Distributed::update_impl(double icet, double icedt) {
     adaptive_for_WandP_evolution(ht, m_t+m_dt, maxKW, hdt, maxV, maxD, PtoCFLratio);
     cumratio += PtoCFLratio;
 
-    if ((m_inputtobed != NULL) || (step_counter == 1)) {
-      get_input_rate(ht,hdt,m_total_input);
-    }
-
     // update Wtilnew from Wtil
     raw_update_Wtil(hdt);
-    boundary_mass_changes(m_Wtilnew, delta_icefree, delta_ocean,
-                          delta_neggain, delta_nullstrip);
-    icefreelost   += delta_icefree;
-    oceanlost     += delta_ocean;
-    negativegain  += delta_neggain;
-    nullstriplost += delta_nullstrip;
+    // correct water thickness and account for the changes
 
     // update Pnew from time step
     const double
@@ -462,12 +452,7 @@ void Distributed::update_impl(double icet, double icedt) {
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     raw_update_W(hdt);
-    boundary_mass_changes(m_Wnew, delta_icefree, delta_ocean,
-                          delta_neggain, delta_nullstrip);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
+    // correct water thickness and account for the changes
 
     // transfer new into old
     m_Wnew.update_ghosts(m_W);

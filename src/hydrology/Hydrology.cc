@@ -30,6 +30,14 @@
 namespace pism {
 namespace hydrology {
 
+Inputs::Inputs() {
+  surface_input_rate = NULL;
+  basal_melt_rate = NULL;
+  mask = NULL;
+  ice_thickness = NULL;
+  bed_elevation = NULL;
+}
+
 Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component(g) {
   m_inputtobed = NULL;
@@ -153,8 +161,8 @@ void Hydrology::init() {
   regrid("Hydrology", m_Wtil);
 }
 
-void Hydrology::update(double t, double dt) {
-  this->update_impl(t, dt);
+void Hydrology::update(double t, double dt, const Inputs& inputs) {
+  this->update_impl(t, dt, inputs);
 }
 
 std::map<std::string, Diagnostic::Ptr> Hydrology::diagnostics_impl() const {
@@ -235,47 +243,23 @@ void Hydrology::check_Wtil_bounds() {
 }
 
 
-//! Compute the total water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input from a file.
+//! Compute the total water input rate into the basal hydrology layer in the ice-covered
+//! region.
 /*!
-The user can specify the total of en- and supra-glacial drainage contributions
-to subglacial hydrology in a time-dependent input file using option -hydrology_input_to_bed.
-This method includes that possible input along with `basal_melt_rate_grounded` to get the total water
-input into the subglacial hydrology.
-
-This method crops the input rate to the ice-covered region.  It
-also uses hydrology_const_bmelt if that is requested.
-
-Call this method using the current \e hydrology time step.  This method
-may be called many times per IceModel time step.  See update() method
-in derived classes of Hydrology.
+  This method ignores the input rate in the ice-free region.
  */
-void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
+void Hydrology::get_input_rate(const IceModelVec2S &basal_melt_rate,
+                               const IceModelVec2S &surface_input_rate,
+                               const IceModelVec2CellType &mask,
                                IceModelVec2S &result) {
-  bool   use_const   = m_config->get_boolean("hydrology.use_const_bmelt");
-  double const_bmelt = m_config->get_double("hydrology.const_bmelt", "meter / second");
 
-  const IceModelVec2S        &bmelt = *m_grid->variables().get_2d_scalar("bmelt");
-  const IceModelVec2CellType &mask  = *m_grid->variables().get_2d_cell_type("mask");
-
-  if (not m_hold_bmelt) {
-    m_bmelt_local.copy_from(bmelt);
-  }
-
-  IceModelVec::AccessList list{&m_bmelt_local, &mask, &result};
-  if (m_inputtobed != NULL) {
-    m_inputtobed->update(hydro_t, hydro_dt);
-    m_inputtobed->interp(hydro_t + hydro_dt/2.0);
-    list.add(*m_inputtobed);
-  }
+  IceModelVec::AccessList list{&basal_melt_rate, &surface_input_rate, &mask, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      result(i,j) = (use_const) ? const_bmelt : m_bmelt_local(i,j);
-      if (m_inputtobed != NULL) {
-        result(i,j) += (*m_inputtobed)(i,j);
-      }
+      result(i,j) = basal_melt_rate(i, j) + surface_input_rate(i, j);
     } else {
       result(i,j) = 0.0;
     }

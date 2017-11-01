@@ -11,12 +11,12 @@
 #include <pism/coupler/atmosphere/Factory.hh>
 #include <pism/coupler/ocean/Factory.hh>
 #include <pism/coupler/surface/Factory.hh>
+#include <pism/hydrology/Hydrology.hh>
 
 #include <pism/util/Time.hh>
 // --------------------------------
 #include <pism/icebin/IBSurfaceModel.hh>
 #include <pism/icebin/MassEnergyBudget.hh>
-#include <pism/icebin/NullTransportHydrology.hh>
 
 // Stuff defined in the icebin library
 // (NOT a dependency of ours)
@@ -121,8 +121,8 @@ public:
   pism::icebin::IBSurfaceModel *ib_surface_model() {
     return dynamic_cast<IBSurfaceModel *>(m_surface);
   }
-  pism::icebin::NullTransportHydrology *null_hydrology() {
-    return dynamic_cast<NullTransportHydrology *>(pism::IceModel::m_subglacial_hydrology);
+  pism::hydrology::NullTransport* null_hydrology() {
+    return dynamic_cast<hydrology::NullTransport *>(pism::IceModel::m_subglacial_hydrology);
   }
 
 

@@ -34,6 +34,17 @@ class StressBalance;
 //! @brief Sub-glacial hydrology models and related diagnostics.
 namespace hydrology {
 
+class Inputs {
+public:
+  Inputs();
+
+  const IceModelVec2S        *surface_input_rate;
+  const IceModelVec2S        *basal_melt_rate;
+  const IceModelVec2CellType *mask;
+  const IceModelVec2S        *ice_thickness;
+  const IceModelVec2S        *bed_elevation;
+};
+
 //! \brief The PISM subglacial hydrology model interface.
 /*!
   This is a virtual base class.
@@ -106,13 +117,13 @@ public:
 
   virtual void init();
 
-  void update(double t, double dt);
+  void update(double t, double dt, const Inputs& inputs);
 
   const IceModelVec2S& till_water_thickness() const;
   const IceModelVec2S& overburden_pressure() const;
 
 protected:
-  virtual void update_impl(double icet, double icedt) = 0;
+  virtual void update_impl(double icet, double icedt, const Inputs& inputs) = 0;
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   virtual void define_model_state_impl(const PIO &output) const;
@@ -121,7 +132,11 @@ protected:
   void compute_overburden_pressure(const IceModelVec2S &ice_thickness,
                                    IceModelVec2S &result) const;
 
-  void get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
+  void get_input_rate(const IceModelVec2S &basal_melt_rate,
+                      const IceModelVec2S &surface_input_rate,
+                      const IceModelVec2CellType &mask,
+                      IceModelVec2S &result);
+
   void check_Wtil_bounds();
 protected:
   //! effective thickness of basal water stored in till
@@ -165,9 +180,9 @@ protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
 
   //! Solves an implicit step of a highly-simplified ODE.
-  virtual void update_impl(double icet, double icedt);
+  virtual void update_impl(double icet, double icedt, const Inputs& inputs);
 
-  void diffuse_till_water(double dt);
+  void diffuse_till_water(double dt, const IceModelVec2CellType &mask);
 
 private:
   double m_diffuse_tillwat;
@@ -264,7 +279,7 @@ public:
   const IceModelVec2Stag& velocity_staggered() const;
 
 protected:
-  virtual void update_impl(double icet, double icedt);
+  virtual void update_impl(double icet, double icedt, const Inputs& inputs);
 
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
@@ -302,9 +317,9 @@ protected:
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed; we update the new thickness variable, a temporary during update
-  virtual void boundary_mass_changes(IceModelVec2S &newthk,
-                                     double &icefreelost, double &oceanlost,
-                                     double &negativegain, double &nullstriplost);
+  void boundary_mass_changes(const IceModelVec2S &cell_area,
+                             const IceModelVec2CellType &mask,
+                             IceModelVec2S &water_thickness);
 
   BoundaryAccounting m_boundary_accounting;
 
@@ -375,7 +390,7 @@ public:
   virtual const IceModelVec2S& subglacial_water_pressure() const;
 
 protected:
-  virtual void update_impl(double icet, double icedt);
+  virtual void update_impl(double icet, double icedt, const Inputs& inputs);
 
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
   virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;

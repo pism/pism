@@ -572,9 +572,13 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
-  profiling.begin("basal_hydrology");
-  m_subglacial_hydrology->update(current_time, m_dt);
-  profiling.end("basal_hydrology");
+  {
+    hydrology::Inputs inputs;
+
+    profiling.begin("basal_hydrology");
+    m_subglacial_hydrology->update(current_time, m_dt, inputs);
+    profiling.end("basal_hydrology");
+  }
 
   //! \li update the fracture density field; see update_fracture_density()
   if (m_config->get_boolean("fracture_density.enabled")) {

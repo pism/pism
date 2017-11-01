@@ -32,7 +32,7 @@ void IBIceModel::allocate_subglacial_hydrology() {
     return; // indicates it has already been allocated
   }
 
-  m_subglacial_hydrology = new pism::icebin::NullTransportHydrology(m_grid);
+  m_subglacial_hydrology = new pism::hydrology::NullTransport(m_grid);
 
   m_submodels["subglacial hydrology"] = m_subglacial_hydrology;
 

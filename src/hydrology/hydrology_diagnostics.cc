@@ -127,59 +127,5 @@ IceModelVec::Ptr WallMelt::compute_impl() const {
   return result;
 }
 
-
-MCHydrology_ice_free_land_loss::MCHydrology_ice_free_land_loss(const Routing *m)
-  : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_ice_free_land_loss") {
-
-  m_ts.variable().set_string("units", "kg s-1");
-  m_ts.variable().set_string("long_name",
-                              "rate of liquid water loss from subglacial hydrology into "
-                              "cells with mask as ice free land");
-}
-
-double MCHydrology_ice_free_land_loss::compute() {
-  return model->boundary_mass_accounting().ice_free_land_loss;
-}
-
-MCHydrology_ocean_loss::MCHydrology_ocean_loss(const Routing *m)
-  : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_ocean_loss") {
-
-  m_ts.variable().set_string("units", "kg s-1");
-  m_ts.variable().set_string("long_name",
-                             "rate of liquid water loss from subglacial hydrology into "
-                             "cells with mask as ocean");
-}
-
-double MCHydrology_ocean_loss::compute() {
-  return model->boundary_mass_accounting().ocean_loss;
-}
-
-MCHydrology_negative_thickness_gain::MCHydrology_negative_thickness_gain(const Routing *m)
-  : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_negative_thickness_gain") {
-
-  m_ts.variable().set_string("units", "kg s-1");
-  m_ts.variable().set_string("long_name",
-                             "rate of non-conserving liquid water gain from subglacial "
-                             "hydrology transportable water thickness coming out negative "
-                             "during time step, and being projected up to zero");
-}
-
-double MCHydrology_negative_thickness_gain::compute() {
-  return model->boundary_mass_accounting().negative_thickness_gain;
-}
-
-MCHydrology_null_strip_loss::MCHydrology_null_strip_loss(const Routing *m)
-  : TSDiag<TSFluxDiagnostic, Routing>(m, "hydro_null_strip_loss") {
-
-  m_ts.variable().set_string("units", "kg s-1");
-  m_ts.variable().set_string("long_name",
-                             "rate of liquid water loss from subglacial hydrology into "
-                             "cells inside the null strip");
-}
-
-double MCHydrology_null_strip_loss::compute() {
-  return model->boundary_mass_accounting().null_strip_loss;
-}
-
 } // end of namespace hydrology
 } // end of namespace pism

@@ -91,7 +91,7 @@ hydrology::NullTransport model does not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-void NullTransport::update_impl(double t, double dt) {
+void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(t - m_t) < 1e-6) and (fabs(dt - m_dt) < 1e-6)) {
     return;
@@ -99,9 +99,12 @@ void NullTransport::update_impl(double t, double dt) {
   m_t = t;
   m_dt = dt;
 
-  get_input_rate(t, dt, m_total_input);
+  get_input_rate(*inputs.basal_melt_rate,
+                 *inputs.surface_input_rate,
+                 *inputs.mask,
+                 m_total_input);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec2CellType &mask = *inputs.mask;
 
   IceModelVec::AccessList list{&mask, &m_Wtil, &m_total_input};
   for (Points p(*m_grid); p; p.next()) {
@@ -116,11 +119,11 @@ void NullTransport::update_impl(double t, double dt) {
   }
 
   if (m_diffuse_tillwat) {
-    diffuse_till_water(dt);
+    diffuse_till_water(dt, *inputs.mask);
   }
 }
 
-void NullTransport::diffuse_till_water(double dt) {
+void NullTransport::diffuse_till_water(double dt, const IceModelVec2CellType &mask) {
   // note: this call updates ghosts of m_Wtil_old
   m_Wtil_old.copy_from(m_Wtil);
 
@@ -132,8 +135,6 @@ void NullTransport::diffuse_till_water(double dt) {
     K  = L * L / (2.0 * T),
     Rx = K * dt / (dx * dx),
     Ry = K * dt / (dy * dy);
-
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list{&mask, &m_Wtil, &m_Wtil_old};
   for (Points p(*m_grid); p; p.next()) {

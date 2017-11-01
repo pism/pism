@@ -199,7 +199,7 @@ void Routing::check_water_thickness_nonnegative(const IceModelVec2S &waterthk) {
 }
 
 
-//! Correct the new water thickness based on boundary requirements.  Do mass accounting.
+//! Correct the new water thickness based on boundary requirements.
 /*!
 At ice free locations and ocean locations we require that water thicknesses
 (i.e. both the transportable water thickness \f$W\f$ and the till water
@@ -208,21 +208,17 @@ that any negative water thicknesses be set to zero (i.e. we do projection to
 enforce lower bound).  This method does not enforce any upper bounds.
 
 This method should be called once for each thickness field which needs to be
-processed.  This method alters the field water_thickness in-place and sums
-the boundary adjustments.
+processed.  This method alters the field water_thickness in-place.
  */
-void Routing::boundary_mass_changes(IceModelVec2S &water_thickness,
-                                    double &icefreelost, double &oceanlost,
-                                    double &negativegain, double &nullstriplost) {
+void Routing::boundary_mass_changes(const IceModelVec2S &cell_area,
+                                    const IceModelVec2CellType &mask,
+                                    IceModelVec2S &water_thickness) {
   const double fresh_water_density = m_config->get_double("constants.fresh_water.density");
 
   double
     my_icefreelost  = 0.0,
     my_oceanlost    = 0.0,
     my_negativegain = 0.0;
-
-  const IceModelVec2S        &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
-  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list{&water_thickness, &cell_area, &mask};
 
@@ -244,13 +240,7 @@ void Routing::boundary_mass_changes(IceModelVec2S &water_thickness,
     }
   }
 
-  // make global over all processor domains (i.e. whole glacier/ice sheet)
-  icefreelost  = GlobalSum(m_grid->com, my_icefreelost);
-  oceanlost    = GlobalSum(m_grid->com, my_oceanlost);
-  negativegain = GlobalSum(m_grid->com, my_negativegain);
-
   if (m_stripwidth <= 0.0) {
-    nullstriplost = 0.0;
     return;
   }
 
@@ -264,8 +254,6 @@ void Routing::boundary_mass_changes(IceModelVec2S &water_thickness,
       water_thickness(i, j) = 0.0;
     }
   }
-
-  nullstriplost = GlobalSum(m_grid->com, my_nullstriplost);
 }
 
 
@@ -694,7 +682,7 @@ own shorter time steps, perhaps hours to weeks.
 To update W = `bwat` we call raw_update_W(), and to update Wtil = `tillwat` we
 call raw_update_Wtil().
  */
-void Routing::update_impl(double icet, double icedt) {
+void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
 
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t, my_t+my_dt] is the time
@@ -718,11 +706,15 @@ void Routing::update_impl(double icet, double icedt) {
 
   double ht = m_t, hdt = 0.0, // hydrology model time and time step
     maxKW = 0.0, maxV = 0.0, maxD = 0.0, dtCFL = 0.0, dtDIFFW = 0.0;
-  double icefreelost = 0.0, oceanlost = 0.0, negativegain = 0.0, nullstriplost = 0.0,
-    delta_icefree = 0.0, delta_ocean = 0.0, delta_neggain = 0.0, delta_nullstrip = 0.0;
+  double icefreelost = 0.0, oceanlost = 0.0, negativegain = 0.0, nullstriplost = 0.0;
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-  const IceModelVec2S &bed = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+  const IceModelVec2CellType &mask = *inputs.mask;
+  const IceModelVec2S &bed = *inputs.bed_elevation;
+
+  get_input_rate(*inputs.basal_melt_rate,
+                 *inputs.surface_input_rate,
+                 mask,
+                 m_total_input);
 
   unsigned int step_counter = 0;
   while (ht < m_t + m_dt) {
@@ -754,28 +746,13 @@ void Routing::update_impl(double icet, double icedt) {
     adaptive_for_W_evolution(ht, m_t+m_dt, maxKW,
                              hdt, maxV, maxD, dtCFL, dtDIFFW);
 
-    if ((m_inputtobed != NULL) || (step_counter==1)) {
-      get_input_rate(ht, hdt, m_total_input);
-    }
-
     // update Wtilnew from Wtil
     raw_update_Wtil(hdt);
-
-    boundary_mass_changes(m_Wtilnew, delta_icefree, delta_ocean,
-                          delta_neggain, delta_nullstrip);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
+    // remove water in ice-free areas and account for changes
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Q, total_input
     raw_update_W(hdt);
-    boundary_mass_changes(m_Wnew, delta_icefree, delta_ocean,
-                          delta_neggain, delta_nullstrip);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
+    // remove water in ice-free areas and account for changes
 
     // transfer new into old
     m_Wnew.update_ghosts(m_W);
@@ -847,10 +824,7 @@ std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
 
 std::map<std::string, TSDiagnostic::Ptr> Routing::ts_diagnostics_impl() const {
   std::map<std::string, TSDiagnostic::Ptr> result = {
-    {"hydro_ice_free_land_loss",      TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
-    {"hydro_ocean_loss",              TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
-    {"hydro_negative_thickness_gain", TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},
-    {"hydro_null_strip_loss",         TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this))}
+    // FIXME: add mass-conservation diagnostics
   };
   return result;
 }
