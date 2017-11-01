@@ -22,9 +22,16 @@
 #include <sstream>
 
 #include <mpi.h>                // MPI_Get_library_version
-#include <netcdf.h>             // nc_inq_libvers
 #include <fftw3.h>              // fftw_version
 #include <gsl/gsl_version.h>
+
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#ifndef MPI_INCLUDED
+#define MPI_INCLUDED 1
+#endif
+#include <netcdf.h>             // nc_inq_libvers
+
 
 #if (PISM_USE_PROJ4==1)
 #include "pism/util/Proj.hh"    // pj_release
