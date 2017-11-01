@@ -19,15 +19,15 @@
 #include <cassert>
 
 #include "Hydrology.hh"
+#include "hydrology_diagnostics.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/PIO.hh"
+
 #include "pism/util/pism_options.hh"
-#include "hydrology_diagnostics.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace hydrology {
@@ -173,28 +173,6 @@ void Routing::define_model_state_impl(const PIO &output) const {
 void Routing::write_model_state_impl(const PIO &output) const {
   Hydrology::write_model_state_impl(output);
   m_W.write(output);
-}
-
-std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
-    {"bwat",       Diagnostic::Ptr(new BasalWaterThickness(this))},
-    {"bwatvel",    Diagnostic::Ptr(new BasalWaterVelocity(this))},
-    {"bwp",        Diagnostic::Ptr(new BasalWaterPressure(this))},
-    {"bwprel",     Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
-    {"effbwp",     Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt",   Diagnostic::Ptr(new WallMelt(this))},
-  };
-  return combine(result, Hydrology::diagnostics_impl());
-}
-
-std::map<std::string, TSDiagnostic::Ptr> Routing::ts_diagnostics_impl() const {
-  std::map<std::string, TSDiagnostic::Ptr> result = {
-    {"hydro_ice_free_land_loss",      TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
-    {"hydro_ocean_loss",              TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
-    {"hydro_negative_thickness_gain", TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},
-    {"hydro_null_strip_loss",         TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this))}
-  };
-  return result;
 }
 
 
@@ -824,28 +802,56 @@ const IceModelVec2Stag& Routing::velocity_staggered() const {
   return m_V;
 }
 
-BasalWaterVelocity::BasalWaterVelocity(const Routing *m)
-  : Diag<Routing>(m) {
+//! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
+/*! Only available for hydrology::Routing and its derived classes. */
+class BasalWaterVelocity : public Diag<Routing>
+{
+public:
+  BasalWaterVelocity(const Routing *m)
+    : Diag<Routing>(m) {
 
-  // set metadata:
-  m_dof = 2;
-  m_vars = {SpatialVariableMetadata(m_sys, "bwatvel[0]"),
-            SpatialVariableMetadata(m_sys, "bwatvel[1]")};
+    // set metadata:
+    m_dof = 2;
+    m_vars = {SpatialVariableMetadata(m_sys, "bwatvel[0]"),
+              SpatialVariableMetadata(m_sys, "bwatvel[1]")};
 
-  set_attrs("velocity of water in subglacial layer, i-offset", "",
-            "m s-1", "m year-1", 0);
-  set_attrs("velocity of water in subglacial layer, j-offset", "",
-            "m s-1", "m year-1", 1);
+    set_attrs("velocity of water in subglacial layer, i-offset", "",
+              "m s-1", "m year-1", 0);
+    set_attrs("velocity of water in subglacial layer, j-offset", "",
+              "m s-1", "m year-1", 1);
+  }
+protected:
+  virtual IceModelVec::Ptr compute_impl() const {
+    IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
+    result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
+    result->metadata(0) = m_vars[0];
+    result->metadata(1) = m_vars[1];
+
+    result->copy_from(model->velocity_staggered());
+
+    return result;
+  }
+};
+
+std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
+  std::map<std::string, Diagnostic::Ptr> result = {
+    {"bwat",       Diagnostic::Ptr(new BasalWaterThickness(this))},
+    {"bwatvel",    Diagnostic::Ptr(new BasalWaterVelocity(this))},
+    {"bwp",        Diagnostic::Ptr(new BasalWaterPressure(this))},
+    {"bwprel",     Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
+    {"effbwp",     Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
+    {"wallmelt",   Diagnostic::Ptr(new WallMelt(this))},
+  };
+  return combine(result, Hydrology::diagnostics_impl());
 }
 
-IceModelVec::Ptr BasalWaterVelocity::compute_impl() const {
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag);
-  result->create(m_grid, "bwatvel", WITHOUT_GHOSTS);
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
-
-  result->copy_from(model->velocity_staggered());
-
+std::map<std::string, TSDiagnostic::Ptr> Routing::ts_diagnostics_impl() const {
+  std::map<std::string, TSDiagnostic::Ptr> result = {
+    {"hydro_ice_free_land_loss",      TSDiagnostic::Ptr(new MCHydrology_ice_free_land_loss(this))},
+    {"hydro_ocean_loss",              TSDiagnostic::Ptr(new MCHydrology_ocean_loss(this))},
+    {"hydro_negative_thickness_gain", TSDiagnostic::Ptr(new MCHydrology_negative_thickness_gain(this))},
+    {"hydro_null_strip_loss",         TSDiagnostic::Ptr(new MCHydrology_null_strip_loss(this))}
+  };
   return result;
 }
 

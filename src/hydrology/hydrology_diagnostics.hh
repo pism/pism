@@ -93,15 +93,6 @@ protected:
 };
 
 
-//! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
-/*! Only available for hydrology::Routing and its derived classes. */
-class BasalWaterVelocity : public Diag<Routing>
-{
-public:
-  BasalWaterVelocity(const Routing *m);
-protected:
-  virtual IceModelVec::Ptr compute_impl() const;
-};
 
 // Diagnostic time-series for mass-conserving ("MC") subglacial hydrology models.
 // These eight report the quantities computed in hydrology::Routing::boundary_mass_changes()
