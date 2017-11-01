@@ -252,7 +252,7 @@ in derived classes of Hydrology.
 void Hydrology::get_input_rate(double hydro_t, double hydro_dt,
                                IceModelVec2S &result) {
   bool   use_const   = m_config->get_boolean("hydrology.use_const_bmelt");
-  double const_bmelt = m_config->get_double("hydrology.const_bmelt");
+  double const_bmelt = m_config->get_double("hydrology.const_bmelt", "meter / second");
 
   const IceModelVec2S        &bmelt = *m_grid->variables().get_2d_scalar("bmelt");
   const IceModelVec2CellType &mask  = *m_grid->variables().get_2d_cell_type("mask");
