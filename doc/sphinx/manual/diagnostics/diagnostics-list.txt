@@ -383,11 +383,6 @@ Spatially-variable fields
    :Units: 1
    :Description: processor rank
 
-#. ``saccum``
-
-   :Units: kg m-2 year-1
-   :Description: accumulation (precipitation minus rain), averaged over the reporting interval
-
 #. ``schoofs_theta``
 
    :Units: 1
@@ -426,20 +421,10 @@ Spatially-variable fields
    :Units: Kelvin
    :Description: ice temperature at the basal surface of ice shelves
 
-#. ``smelt``
-
-   :Units: kg m-2 year-1
-   :Description: surface melt, averaged over the reporting interval
-
 #. ``snow_depth``
 
    :Units: m
    :Description: snow cover depth (set to zero once a year)
-
-#. ``srunoff``
-
-   :Units: kg m-2 year-1
-   :Description: surface runoff, averaged over the reporting interval
 
 #. ``ssa_bc_mask``
 
@@ -475,6 +460,16 @@ Spatially-variable fields
    :Units: mW m-3
    :Description: rate of strain heating in ice (dissipation heating)
 
+#. ``surface_accumulation_flux``
+
+   :Units: kg m-2 year-1
+   :Description: accumulation (precipitation minus rain), averaged over the reporting interval
+
+#. ``surface_accumulation_rate``
+
+   :Units: Gt year-1
+   :Description: accumulation (precipitation minus rain), averaged over the reporting interval
+
 #. ``surface_layer_mass``
 
    :Units: kg
@@ -484,6 +479,28 @@ Spatially-variable fields
 
    :Units: meters
    :Description: thickness of the surface layer (snow and firn)
+
+#. ``surface_melt_flux``
+
+   :Units: kg m-2 year-1
+   :Description: surface melt, averaged over the reporting interval
+   :Standard name: ``surface_snow_and_ice_melt_flux``
+
+#. ``surface_melt_rate``
+
+   :Units: Gt year-1
+   :Description: surface melt, averaged over the reporting interval
+
+#. ``surface_runoff_flux``
+
+   :Units: kg m-2 year-1
+   :Description: surface runoff, averaged over the reporting interval
+   :Standard name: ``surface_runoff_flux``
+
+#. ``surface_runoff_rate``
+
+   :Units: Gt year-1
+   :Description: surface runoff, averaged over the reporting interval
 
 #. ``taub``
 
