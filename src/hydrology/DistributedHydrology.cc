@@ -44,10 +44,6 @@ Distributed::Distributed(IceGrid::ConstPtr g)
                  "new transportable subglacial water pressure during update",
                  "Pa", "");
   m_Pnew.metadata().set_double("valid_min", 0.0);
-  m_psi.create(m_grid, "hydraulic_potential", WITH_GHOSTS, 1);
-  m_psi.set_attrs("internal",
-                "hydraulic potential of water in subglacial layer",
-                "Pa", "");
 }
 
 Distributed::~Distributed() {

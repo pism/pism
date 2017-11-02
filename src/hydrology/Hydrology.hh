@@ -402,12 +402,8 @@ protected:
                                             double &maxV_result, double &maxD_result,
                                             double &PtoCFLratio);
 protected:
-  // this model's state, in addition to what is in hydrology::Routing
-  IceModelVec2S m_P;      //!< water pressure
-  // this model's auxiliary variables, in addition ...
-  IceModelVec2S m_psi,    //!< hydraulic potential
-    m_Pnew;   //!< pressure during update
-
+  IceModelVec2S m_P;
+  IceModelVec2S m_Pnew;
 };
 
 
