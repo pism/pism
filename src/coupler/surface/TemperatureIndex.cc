@@ -149,7 +149,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
     m_melt.create(m_grid, "surface_melt_flux", WITHOUT_GHOSTS);
     m_melt.set_attrs("diagnostic", "surface melt", "kg m-2", "");
 
-    m_runoff.create(m_grid, "srunoff", WITHOUT_GHOSTS);
+    m_runoff.create(m_grid, "surface_runoff_flux", WITHOUT_GHOSTS);
     m_runoff.set_attrs("diagnostic", "surface meltwater runoff",
                        "kg m-2", "");
   }
@@ -615,9 +615,9 @@ class SurfaceRunoff : public DiagAverageRate<TemperatureIndex>
 {
 public:
   SurfaceRunoff(const TemperatureIndex *m)
-    : DiagAverageRate<TemperatureIndex>(m, "srunoff", TOTAL_CHANGE) {
+    : DiagAverageRate<TemperatureIndex>(m, "surface_runoff_flux", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "srunoff")};
+    m_vars = {SpatialVariableMetadata(m_sys, "surface_runoff_flux")};
     m_accumulator.metadata().set_string("units", "kg m-2");
 
     set_attrs("surface runoff, averaged over the reporting interval",
@@ -788,7 +788,7 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
     {"surface_accumulation_rate", Diagnostic::Ptr(new Accumulation(this, MASS))},
     {"surface_melt_flux",         Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
     {"surface_melt_rate",         Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
-    {"srunoff",                   Diagnostic::Ptr(new SurfaceRunoff(this))},
+    {"surface_runoff_flux",       Diagnostic::Ptr(new SurfaceRunoff(this))},
     {"air_temp_sd",               Diagnostic::wrap(m_air_temp_sd)},
     {"snow_depth",                Diagnostic::wrap(m_snow_depth)},
     {"firn_depth",                Diagnostic::wrap(m_firn_depth)},
