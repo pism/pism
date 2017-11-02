@@ -27,10 +27,6 @@ namespace pism {
 class IceModelVec2T;
 class IceModelVec2CellType;
 
-namespace stressbalance {
-class StressBalance;
-}
-
 //! @brief Sub-glacial hydrology models and related diagnostics.
 namespace hydrology {
 
@@ -43,6 +39,7 @@ public:
   const IceModelVec2CellType *mask;
   const IceModelVec2S        *ice_thickness;
   const IceModelVec2S        *bed_elevation;
+  const IceModelVec2S        *ice_sliding_speed;
 };
 
 //! \brief The PISM subglacial hydrology model interface.
@@ -150,10 +147,6 @@ protected:
   IceModelVec2S m_bmelt_local;
 
   bool m_hold_bmelt;
-
-  IceModelVec2T *m_inputtobed;// time dependent input of water to bed, in addition to bmelt
-  unsigned int m_inputtobed_period;      // in years
-  double m_inputtobed_reference_time; // in seconds
 };
 
 
@@ -379,12 +372,10 @@ protected:
 */
 class Distributed : public Routing {
 public:
-  Distributed(IceGrid::ConstPtr g, stressbalance::StressBalance *sb);
+  Distributed(IceGrid::ConstPtr g);
   virtual ~Distributed();
 
   virtual void init();
-
-  friend class Distributed_hydrovelbase_mag;
 
   virtual const IceModelVec2S& subglacial_water_pressure() const;
 
@@ -401,11 +392,10 @@ protected:
 
   virtual void check_P_bounds(bool enforce_upper);
 
-  virtual void update_velbase_mag(IceModelVec2S &result);
-  virtual void P_from_W_steady(const IceModelVec2S &W,
-                               const IceModelVec2S &P_overburden,
-                               const IceModelVec2S &sliding_speed,
-                               IceModelVec2S &result);
+  void P_from_W_steady(const IceModelVec2S &W,
+                       const IceModelVec2S &P_overburden,
+                       const IceModelVec2S &sliding_speed,
+                       IceModelVec2S &result);
 
   virtual void adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
                                             double &dt_result,
@@ -416,12 +406,8 @@ protected:
   IceModelVec2S m_P;      //!< water pressure
   // this model's auxiliary variables, in addition ...
   IceModelVec2S m_psi,    //!< hydraulic potential
-    m_velbase_mag,  //!< sliding speed of overlying ice
     m_Pnew;   //!< pressure during update
-  bool m_hold_velbase_mag;
 
-  // need to get basal sliding velocity (thus speed):
-  stressbalance::StressBalance* m_stressbalance;
 };
 
 

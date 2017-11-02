@@ -36,11 +36,11 @@ Inputs::Inputs() {
   mask = NULL;
   ice_thickness = NULL;
   bed_elevation = NULL;
+  ice_sliding_speed  = NULL;
 }
 
 Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component(g) {
-  m_inputtobed = NULL;
   m_hold_bmelt = false;
 
   m_total_input.create(m_grid, "total_input", WITHOUT_GHOSTS);
@@ -99,46 +99,6 @@ void Hydrology::init() {
                "  option -hydrology_bmelt_file seen; reading basal_melt_rate_grounded from '%s'.\n", bmelt_file->c_str());
     m_bmelt_local.regrid(bmelt_file, CRITICAL);
     m_hold_bmelt = true;
-  }
-
-
-  if (itb_file.is_set()) {
-    m_inputtobed_period = itb_period_years;
-    m_inputtobed_reference_time = units::convert(m_sys, itb_reference_year, "years", "seconds");
-
-    unsigned int buffer_size = (unsigned int) m_config->get_double("climate_forcing.buffer_size");
-
-    PIO nc(m_grid->com, "netcdf3", itb_file, PISM_READONLY);
-    unsigned int n_records = nc.inq_nrecords("inputtobed", "", m_sys);
-
-    // if -..._period is not set, make n_records the minimum of the
-    // buffer size and the number of available records. Otherwise try
-    // to keep all available records in memory.
-    if (not itb_period_years.is_set()) {
-      n_records = std::min(n_records, buffer_size);
-    }
-
-    if (n_records == 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find 'inputtobed' in -hydrology_input_to_bed"
-                                    " file with name '%s'",
-                                    itb_file->c_str());
-    }
-
-    m_log->message(2,
-               "    option -hydrology_input_to_bed_file seen ... creating 'inputtobed' variable ...\n");
-    m_log->message(2,
-               "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records);
-    m_inputtobed = new IceModelVec2T;
-    m_inputtobed->set_n_records(n_records);
-    m_inputtobed->create(m_grid, "inputtobed");
-    m_inputtobed->set_attrs("climate_forcing",
-                            "amount of water (depth per time like basal_melt_rate_grounded)"
-                            " which should be put at the ice sheet bed",
-                            "m s-1", "");
-    m_log->message(2,
-               "    reading 'inputtobed' variable from file '%s' ...\n",
-               itb_file->c_str());
-    m_inputtobed->init(itb_file, m_inputtobed_period, m_inputtobed_reference_time);
   }
 
   InputOptions opts = process_input_options(m_grid->com);

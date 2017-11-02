@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Hydrology.hh"
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
@@ -30,10 +29,8 @@
 namespace pism {
 namespace hydrology {
 
-Distributed::Distributed(IceGrid::ConstPtr g, stressbalance::StressBalance *sb)
+Distributed::Distributed(IceGrid::ConstPtr g)
   : Routing(g) {
-  m_stressbalance = sb;
-  m_hold_velbase_mag = false;
 
   // additional variables beyond hydrology::Routing::allocate()
   m_P.create(m_grid, "bwp", WITH_GHOSTS, 1);
@@ -41,11 +38,7 @@ Distributed::Distributed(IceGrid::ConstPtr g, stressbalance::StressBalance *sb)
               "pressure of transportable water in subglacial layer",
               "Pa", "");
   m_P.metadata().set_double("valid_min", 0.0);
-  m_velbase_mag.create(m_grid, "velbase_mag", WITHOUT_GHOSTS);
-  m_velbase_mag.set_attrs("internal",
-                        "ice sliding speed seen by subglacial hydrology",
-                        "m s-1", "");
-  m_velbase_mag.metadata().set_double("valid_min", 0.0);
+
   m_Pnew.create(m_grid, "Pnew_internal", WITHOUT_GHOSTS);
   m_Pnew.set_attrs("internal",
                  "new transportable subglacial water pressure during update",
@@ -90,14 +83,6 @@ void Distributed::init() {
 
   m_boundary_accounting.reset();
 
-  if (hydrology_velbase_mag_file.is_set()) {
-    m_log->message(2,
-               "  reading velbase_mag for 'distributed' hydrology from '%s'.\n",
-               hydrology_velbase_mag_file->c_str());
-    m_velbase_mag.regrid(hydrology_velbase_mag_file, CRITICAL_FILL_MISSING, 0.0);
-    m_hold_velbase_mag = true;
-  }
-
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     m_log->message(2,
                "  option -init_P_from_steady seen ...\n"
@@ -106,7 +91,9 @@ void Distributed::init() {
 
     compute_overburden_pressure(ice_thickness, m_Pover);
 
-    P_from_W_steady(m_W, m_Pover, m_velbase_mag,
+    IceModelVec2S velbase_mag;  // FIXME: pass this is as an argument
+
+    P_from_W_steady(m_W, m_Pover, velbase_mag,
                     m_P);
   }
 }
@@ -253,17 +240,6 @@ void Distributed::P_from_W_steady(const IceModelVec2S &W,
 }
 
 
-//! Update the the sliding speed |v_b| from ice quantities.
-/*!
-Calls a StressBalance method to get the vector basal velocity of the ice,
-and then computes the magnitude of that.
- */
-void Distributed::update_velbase_mag(IceModelVec2S &result) {
-  // velbase_mag = |v_b|
-  result.set_to_magnitude(m_stressbalance->advective_velocity());
-}
-
-
 //! Computes the adaptive time step for this (W,P) state space model.
 void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
                                                double &dt_result,
@@ -320,11 +296,6 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   m_W.update_ghosts();
   m_P.update_ghosts();
 
-  // from current ice geometry/velocity variables, initialize Po and velbase_mag
-  if (not m_hold_velbase_mag) {
-    update_velbase_mag(m_velbase_mag);
-  }
-
   const double
     rg    = (m_config->get_double("constants.fresh_water.density") *
              m_config->get_double("constants.standard_gravity")),
@@ -355,6 +326,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   const IceModelVec2CellType &mask = *inputs.mask;
   const IceModelVec2S &bed = *inputs.bed_elevation;
   const IceModelVec2S &ice_thickness = *inputs.ice_thickness;
+  const IceModelVec2S &sliding_speed = *inputs.ice_sliding_speed;
 
   get_input_rate(*inputs.basal_melt_rate, *inputs.surface_input_rate, mask,
                  m_total_input);
@@ -407,7 +379,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
       wuy = 1.0 / (m_dy * m_dy);
     double diffW;
 
-    IceModelVec::AccessList list{&m_P, &m_W, &m_Wtil, &m_Wtilnew, &m_velbase_mag, &m_Wstag,
+    IceModelVec::AccessList list{&m_P, &m_W, &m_Wtil, &m_Wtilnew, &sliding_speed, &m_Wstag,
         &m_K, &m_Q, &m_total_input, &mask, &m_Pover, &m_Pnew};
 
     for (Points p(*m_grid); p; p.next()) {
@@ -421,7 +393,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
         m_Pnew(i,j) = m_Pover(i,j);
       } else {
         // opening and closure terms in pressure equation
-        double Open = std::max(0.0,c1 * m_velbase_mag(i,j) * (Wr - m_W(i,j)));
+        double Open = std::max(0.0,c1 * sliding_speed(i,j) * (Wr - m_W(i,j)));
         double Close = c2 * Aglen * pow(m_Pover(i,j) - m_P(i,j),nglen) * m_W(i,j);
 
         // compute the flux divergence the same way as in raw_update_W()

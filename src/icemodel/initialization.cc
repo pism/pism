@@ -548,18 +548,17 @@ void IceModel::allocate_subglacial_hydrology() {
     return;
   }
 
-  m_log->message(2,
-                 "# Allocating a subglacial hydrology model...\n");
+  m_log->message(2, "# Allocating a subglacial hydrology model...\n");
 
   if (hydrology_model == "null") {
     m_subglacial_hydrology = new NullTransport(m_grid);
   } else if (hydrology_model == "routing") {
     m_subglacial_hydrology = new Routing(m_grid);
   } else if (hydrology_model == "distributed") {
-    m_subglacial_hydrology = new Distributed(m_grid, m_stress_balance.get());
+    m_subglacial_hydrology = new Distributed(m_grid);
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown value for configuration string 'hydrology.model':\n"
-                                  "has value '%s'", hydrology_model.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "unknown 'hydrology.model': %s", hydrology_model.c_str());
   }
 
   m_submodels["subglacial hydrology"] = m_subglacial_hydrology;
