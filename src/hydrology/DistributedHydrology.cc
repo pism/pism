@@ -324,7 +324,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     cumratio    = 0.0;
 
   const IceModelVec2CellType &mask = *inputs.mask;
-  const IceModelVec2S &bed = *inputs.bed_elevation;
+  const IceModelVec2S &bed_elevation = *inputs.bed_elevation;
   const IceModelVec2S &ice_thickness = *inputs.ice_thickness;
   const IceModelVec2S &sliding_speed = *inputs.ice_sliding_speed;
 
@@ -353,12 +353,12 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
-                         bed,
+                         bed_elevation,
                          m_K, maxKW);
 
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
-                     bed,
+                     bed_elevation,
                      m_K,
                      m_V);
 
