@@ -347,11 +347,6 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     oceanlost       = 0.0,
     negativegain    = 0.0,
     nullstriplost   = 0.0;
-  double
-    delta_icefree   = 0.0,
-    delta_ocean     = 0.0,
-    delta_neggain   = 0.0,
-    delta_nullstrip = 0.0;
 
   double
     PtoCFLratio = 0.0,          // for reporting ratio of dtCFL to dtDIFFP
