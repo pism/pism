@@ -142,7 +142,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   // diagnostic fields:
 
   {
-    m_accumulation.create(m_grid, "saccum", WITHOUT_GHOSTS);
+    m_accumulation.create(m_grid, "surface_accumulation_flux", WITHOUT_GHOSTS);
     m_accumulation.set_attrs("diagnostic", "surface accumulation (precipitation minus rain)",
                              "kg m-2", "");
 
@@ -641,9 +641,9 @@ class Accumulation : public DiagAverageRate<TemperatureIndex>
 {
 public:
   Accumulation(const TemperatureIndex *m)
-    : DiagAverageRate<TemperatureIndex>(m, "saccum", TOTAL_CHANGE) {
+    : DiagAverageRate<TemperatureIndex>(m, "surface_accumulation_flux", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "saccum")};
+    m_vars = {SpatialVariableMetadata(m_sys, "surface_accumulation_flux")};
     m_accumulator.metadata().set_string("units", "kg m-2");
 
     set_attrs("accumulation (precipitation minus rain), averaged over the reporting interval",
@@ -748,13 +748,13 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
   using namespace diagnostics;
 
   std::map<std::string, Diagnostic::Ptr> result = {
-    {"saccum",            Diagnostic::Ptr(new Accumulation(this))},
-    {"surface_melt_flux", Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
-    {"surface_melt_rate", Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
-    {"srunoff",           Diagnostic::Ptr(new SurfaceRunoff(this))},
-    {"air_temp_sd",       Diagnostic::wrap(m_air_temp_sd)},
-    {"snow_depth",        Diagnostic::wrap(m_snow_depth)},
-    {"firn_depth",        Diagnostic::wrap(m_firn_depth)},
+    {"surface_accumulation_flux", Diagnostic::Ptr(new Accumulation(this))},
+    {"surface_melt_flux",         Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
+    {"surface_melt_rate",         Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
+    {"srunoff",                   Diagnostic::Ptr(new SurfaceRunoff(this))},
+    {"air_temp_sd",               Diagnostic::wrap(m_air_temp_sd)},
+    {"snow_depth",                Diagnostic::wrap(m_snow_depth)},
+    {"firn_depth",                Diagnostic::wrap(m_firn_depth)},
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());
