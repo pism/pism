@@ -37,68 +37,6 @@
 namespace pism {
 namespace surface {
 
-namespace diagnostics {
-
-/*! @brief Snow cover depth. */
-class PDD_snow_depth : public Diag<TemperatureIndex>
-{
-public:
-  PDD_snow_depth(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
-/*! @brief Standard deviation of near-surface air temperature. */
-class PDD_air_temp_sd : public Diag<TemperatureIndex>
-{
-public:
-  PDD_air_temp_sd(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
-PDD_snow_depth::PDD_snow_depth(const TemperatureIndex *m)
-  : Diag<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "snow_depth")};
-
-  set_attrs("snow cover depth (set to zero once a year)", "",
-            "m", "m", 0);
-}
-
-IceModelVec::Ptr PDD_snow_depth::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "snow_depth", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->snow_depth());
-
-  return result;
-}
-
-PDD_air_temp_sd::PDD_air_temp_sd(const TemperatureIndex *m)
-  : Diag<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "air_temp_sd")};
-
-  set_attrs("standard deviation of near-surface air temperature", "",
-            "Kelvin", "Kelvin", 0);
-}
-
-IceModelVec::Ptr PDD_air_temp_sd::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_sd", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->air_temp_sd());
-
-  return result;
-}
-
-} // end of namespace diagnostics
-
 ///// PISM surface model implementing a PDD scheme.
 
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
@@ -761,8 +699,8 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
     {"saccum",      Diagnostic::Ptr(new Accumulation(this))},
     {"smelt",       Diagnostic::Ptr(new SurfaceMelt(this))},
     {"srunoff",     Diagnostic::Ptr(new SurfaceRunoff(this))},
-    {"air_temp_sd", Diagnostic::Ptr(new PDD_air_temp_sd(this))},
-    {"snow_depth",  Diagnostic::Ptr(new PDD_snow_depth(this))},
+    {"air_temp_sd", Diagnostic::wrap(m_air_temp_sd)},
+    {"snow_depth",  Diagnostic::wrap(m_snow_depth)},
     {"firn_depth",  Diagnostic::wrap(m_firn_depth)},
   };
 
