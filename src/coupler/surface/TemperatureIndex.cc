@@ -546,30 +546,67 @@ void TemperatureIndex::write_model_state_impl(const PIO &output) const {
 
 namespace diagnostics {
 
+enum AmountKind {AMOUNT, MASS};
+
 /*! @brief Report surface melt, averaged over the reporting interval */
 class SurfaceMelt : public DiagAverageRate<TemperatureIndex>
 {
 public:
-  SurfaceMelt(const TemperatureIndex *m)
-    : DiagAverageRate<TemperatureIndex>(m, "smelt", TOTAL_CHANGE) {
+  SurfaceMelt(const TemperatureIndex *m, AmountKind kind)
+    : DiagAverageRate<TemperatureIndex>(m,
+                                        kind == AMOUNT
+                                        ? "smelt"
+                                        : "surface_melt_rate",
+                                        TOTAL_CHANGE),
+    m_kind(kind) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "smelt")};
-    m_accumulator.metadata().set_string("units", "kg m-2");
+    std::string
+      name              = "smelt",
+      long_name         = "surface melt, averaged over the reporting interval",
+      standard_name     = "surface_snow_and_ice_melt_flux",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_melt_rate";
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
 
-    set_attrs("surface melt, averaged over the reporting interval", "",
-              "kg m-2 s-1", "kg m-2 year-1", 0);
+      m_melt_mass.create(m_grid, "melt_mass", WITHOUT_GHOSTS);
+    }
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", accumulator_units);
+
+    set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
+    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
     m_vars[0].set_double("_FillValue", fill_value);
   }
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->melt();
+    const IceModelVec2S &melt_amount = model->melt();
+
+    if (m_kind == MASS) {
+      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+
+      IceModelVec::AccessList list{&m_melt_mass, &melt_amount, &cell_area};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_melt_mass(i, j) = melt_amount(i, j) * cell_area(i, j);
+      }
+      return m_melt_mass;
+    } else {
+      return melt_amount;
+    }
   }
+private:
+  IceModelVec2S m_melt_mass;
+  AmountKind m_kind;
 };
 
 /*! @brief Report surface runoff, averaged over the reporting interval */
@@ -709,12 +746,13 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
   using namespace diagnostics;
 
   std::map<std::string, Diagnostic::Ptr> result = {
-    {"saccum",      Diagnostic::Ptr(new Accumulation(this))},
-    {"smelt",       Diagnostic::Ptr(new SurfaceMelt(this))},
-    {"srunoff",     Diagnostic::Ptr(new SurfaceRunoff(this))},
-    {"air_temp_sd", Diagnostic::wrap(m_air_temp_sd)},
-    {"snow_depth",  Diagnostic::wrap(m_snow_depth)},
-    {"firn_depth",  Diagnostic::wrap(m_firn_depth)},
+    {"saccum",            Diagnostic::Ptr(new Accumulation(this))},
+    {"smelt",             Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
+    {"surface_melt_rate", Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
+    {"srunoff",           Diagnostic::Ptr(new SurfaceRunoff(this))},
+    {"air_temp_sd",       Diagnostic::wrap(m_air_temp_sd)},
+    {"snow_depth",        Diagnostic::wrap(m_snow_depth)},
+    {"firn_depth",        Diagnostic::wrap(m_firn_depth)},
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());
