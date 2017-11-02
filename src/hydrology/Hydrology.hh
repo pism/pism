@@ -348,6 +348,8 @@ protected:
   void raw_update_Wtil(double hdt);
 protected:
   double m_dx, m_dy;
+
+  double m_rg;
 };
 
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.

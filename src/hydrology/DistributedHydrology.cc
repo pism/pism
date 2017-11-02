@@ -293,8 +293,6 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   m_P.update_ghosts();
 
   const double
-    rg    = (m_config->get_double("constants.fresh_water.density") *
-             m_config->get_double("constants.standard_gravity")),
     nglen = m_config->get_double("stress_balance.sia.Glen_exponent"),
     Aglen = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
     c1    = m_config->get_double("hydrology.cavitation_opening_coefficient"),
@@ -372,7 +370,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
     // update Pnew from time step
     const double
-      CC  = (rg * hdt) / phi0,
+      CC  = (m_rg * hdt) / phi0,
       wux = 1.0 / (m_dx * m_dx),
       wuy = 1.0 / (m_dy * m_dy);
     double diffW;
@@ -399,10 +397,10 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
           (m_Q(i,j,0) - m_Q(i-1,j  ,0)) / m_dx +
           (m_Q(i,j,1) - m_Q(i,  j-1,1)) / m_dy;
         const double
-          De = rg * m_K(i,  j,0) * m_Wstag(i,  j,0),
-          Dw = rg * m_K(i-1,j,0) * m_Wstag(i-1,j,0),
-          Dn = rg * m_K(i,j  ,1) * m_Wstag(i,j  ,1),
-          Ds = rg * m_K(i,j-1,1) * m_Wstag(i,j-1,1);
+          De = m_rg * m_K(i,  j,0) * m_Wstag(i,  j,0),
+          Dw = m_rg * m_K(i-1,j,0) * m_Wstag(i-1,j,0),
+          Dn = m_rg * m_K(i,j  ,1) * m_Wstag(i,j  ,1),
+          Ds = m_rg * m_K(i,j-1,1) * m_Wstag(i,j-1,1);
         diffW =   wux * (De * (m_W(i+1,j) - m_W(i,j)) - Dw * (m_W(i,j) - m_W(i-1,j)))
           + wuy * (Dn * (m_W(i,j+1) - m_W(i,j)) - Ds * (m_W(i,j) - m_W(i,j-1)));
         double divflux = - divadflux + diffW;

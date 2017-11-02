@@ -50,6 +50,9 @@ Routing::BoundaryAccounting Routing::boundary_mass_accounting() const {
 Routing::Routing(IceGrid::ConstPtr g)
   : Hydrology(g), m_dx(g->dx()), m_dy(g->dy())
 {
+  m_rg    = (m_config->get_double("constants.fresh_water.density") *
+             m_config->get_double("constants.standard_gravity"));
+
   m_stripwidth = m_config->get_double("hydrology.null_strip_width");
 
   // these variables are also set to zero every time init() is called
@@ -275,10 +278,6 @@ void Routing::compute_hydraulic_potential(const IceModelVec2S &W,
                                           const IceModelVec2CellType &mask,
                                           IceModelVec2S &result) const {
 
-  const double
-    rho = m_config->get_double("constants.fresh_water.density"),
-    g   = m_config->get_double("constants.standard_gravity");
-
   IceModelVec::AccessList list{&P, &P_overburden, &W, &mask, &bed, &result};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -287,7 +286,7 @@ void Routing::compute_hydraulic_potential(const IceModelVec2S &W,
     if (mask.ocean(i, j)) {
       result(i, j) = P_overburden(i, j);
     } else {
-      result(i, j) = P(i, j) + rho * g * (bed(i, j) + W(i, j));
+      result(i, j) = P(i, j) + m_rg * (bed(i, j) + W(i, j));
     }
   }
 }
@@ -358,9 +357,7 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
   const double
     k     = m_config->get_double("hydrology.hydraulic_conductivity"),
     alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
-    beta  = m_config->get_double("hydrology.gradient_power_in_flux"),
-    rg    = (m_config->get_double("constants.standard_gravity") *
-             m_config->get_double("constants.fresh_water.density"));
+    beta  = m_config->get_double("hydrology.gradient_power_in_flux");
 
   IceModelVec::AccessList list(result);
 
@@ -369,7 +366,7 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
   // temporarily in "result"
   if (beta != 2.0) {
     m_R.copy_from(P);  // yes, it updates ghosts
-    m_R.add(rg, bed); // R  <-- P + rhow g b
+    m_R.add(m_rg, bed); // R  <-- P + rhow g b
     m_R.update_ghosts();
 
     list.add(m_R);
@@ -516,8 +513,6 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
                                const IceModelVec2S &bed,
                                const IceModelVec2Stag &K,
                                IceModelVec2Stag &result) const {
-  const double  rg = (m_config->get_double("constants.standard_gravity") *
-                      m_config->get_double("constants.fresh_water.density"));
   double dbdx, dbdy, dPdx, dPdy;
 
   IceModelVec2S &pressure = m_R;
@@ -531,7 +526,7 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
     if (W(i, j, 0) > 0.0) {
       dPdx = (pressure(i + 1, j) - pressure(i, j)) / m_dx;
       dbdx = (bed(i + 1, j) - bed(i, j)) / m_dx;
-      result(i, j, 0) =  - K(i, j, 0) * (dPdx + rg * dbdx);
+      result(i, j, 0) =  - K(i, j, 0) * (dPdx + m_rg * dbdx);
     } else {
       result(i, j, 0) = 0.0;
     }
@@ -539,7 +534,7 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
     if (W(i, j, 1) > 0.0) {
       dPdy = (pressure(i, j + 1) - pressure(i, j)) / m_dy;
       dbdy = (bed(i, j + 1) - bed(i, j)) / m_dy;
-      result(i, j, 1) =  - K(i, j, 1) * (dPdy + rg * dbdy);
+      result(i, j, 1) =  - K(i, j, 1) * (dPdy + m_rg * dbdy);
     } else {
       result(i, j, 1) = 0.0;
     }
@@ -587,13 +582,15 @@ void Routing::adaptive_for_W_evolution(double t_current, double t_end, double ma
                                        double &maxV_result, double &maxD_result,
                                        double &dtCFL_result, double &dtDIFFW_result) {
   const double
-    dtmax = m_config->get_double("hydrology.maximum_time_step", "seconds"),
-    rg    = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
+    dtmax = m_config->get_double("hydrology.maximum_time_step", "seconds");
 
   // V could be zero if P is constant and bed is flat
   std::vector<double> tmp = m_V.absmaxcomponents();
+
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
-  maxD_result = rg * maxKW;
+
+  maxD_result = m_rg * maxKW;
+
   dtCFL_result = 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
   dtDIFFW_result = 1.0/(m_dx*m_dx) + 1.0/(m_dy*m_dy);
   dtDIFFW_result = 0.25 / (maxD_result * dtDIFFW_result);
@@ -639,8 +636,7 @@ void Routing::raw_update_Wtil(double hdt) {
 void Routing::raw_update_W(double hdt) {
   const double
     wux = 1.0 / (m_dx * m_dx),
-    wuy = 1.0 / (m_dy * m_dy),
-    rg  = m_config->get_double("constants.standard_gravity") * m_config->get_double("constants.fresh_water.density");
+    wuy = 1.0 / (m_dy * m_dy);
 
   IceModelVec::AccessList list{&m_W, &m_Wtil, &m_Wtilnew, &m_Wstag, &m_K, &m_Q,
       &m_total_input, &m_Wnew};
@@ -653,10 +649,10 @@ void Routing::raw_update_W(double hdt) {
       (m_Q(i, j, 1) - m_Q(i, j - 1, 1)) / m_dy;
 
     const double
-      De = rg * m_K(i,     j,     0) * m_Wstag(i,     j,     0),
-      Dw = rg * m_K(i - 1, j,     0) * m_Wstag(i - 1, j,     0),
-      Dn = rg * m_K(i,     j,     1) * m_Wstag(i,     j,     1),
-      Ds = rg * m_K(i,     j - 1, 1) * m_Wstag(i,     j - 1, 1);
+      De = m_rg * m_K(i,     j,     0) * m_Wstag(i,     j,     0),
+      Dw = m_rg * m_K(i - 1, j,     0) * m_Wstag(i - 1, j,     0),
+      Dn = m_rg * m_K(i,     j,     1) * m_Wstag(i,     j,     1),
+      Ds = m_rg * m_K(i,     j - 1, 1) * m_Wstag(i,     j - 1, 1);
 
     const double diffW =
       wux * (De * (m_W(i + 1, j) - m_W(i, j)) - Dw * (m_W(i, j) - m_W(i - 1, j))) +
