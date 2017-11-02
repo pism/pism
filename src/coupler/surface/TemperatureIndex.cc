@@ -146,7 +146,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
     m_accumulation.set_attrs("diagnostic", "surface accumulation (precipitation minus rain)",
                              "kg m-2", "");
 
-    m_melt.create(m_grid, "smelt", WITHOUT_GHOSTS);
+    m_melt.create(m_grid, "surface_melt_flux", WITHOUT_GHOSTS);
     m_melt.set_attrs("diagnostic", "surface melt", "kg m-2", "");
 
     m_runoff.create(m_grid, "srunoff", WITHOUT_GHOSTS);
@@ -555,13 +555,13 @@ public:
   SurfaceMelt(const TemperatureIndex *m, AmountKind kind)
     : DiagAverageRate<TemperatureIndex>(m,
                                         kind == AMOUNT
-                                        ? "smelt"
+                                        ? "surface_melt_flux"
                                         : "surface_melt_rate",
                                         TOTAL_CHANGE),
     m_kind(kind) {
 
     std::string
-      name              = "smelt",
+      name              = "surface_melt_flux",
       long_name         = "surface melt, averaged over the reporting interval",
       standard_name     = "surface_snow_and_ice_melt_flux",
       accumulator_units = "kg m-2",
@@ -749,7 +749,7 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
 
   std::map<std::string, Diagnostic::Ptr> result = {
     {"saccum",            Diagnostic::Ptr(new Accumulation(this))},
-    {"smelt",             Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
+    {"surface_melt_flux", Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
     {"surface_melt_rate", Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
     {"srunoff",           Diagnostic::Ptr(new SurfaceRunoff(this))},
     {"air_temp_sd",       Diagnostic::wrap(m_air_temp_sd)},
