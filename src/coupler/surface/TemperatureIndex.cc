@@ -619,7 +619,8 @@ public:
     m_vars = {SpatialVariableMetadata(m_sys, "srunoff")};
     m_accumulator.metadata().set_string("units", "kg m-2");
 
-    set_attrs("surface runoff, averaged over the reporting interval", "",
+    set_attrs("surface runoff, averaged over the reporting interval",
+              "surface_runoff_flux",
               "kg m-2 s-1", "kg m-2 year-1", 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
