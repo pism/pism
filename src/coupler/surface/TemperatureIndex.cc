@@ -42,9 +42,6 @@ namespace surface {
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   : SurfaceModel(g) {
 
-  m_aschwanden                 = NULL;
-  m_mbscheme                   = NULL;
-  m_faustogreve                = NULL;
   m_sd_period                  = 0;
   m_base_ddf.snow              = m_config->get_double("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_double("surface.pdd.factor_ice");
@@ -74,20 +71,20 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_sd_period = period;
 
   if (randomized_repeatable) {
-    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE);
+    m_mbscheme.reset(new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE));
   } else if (randomized) {
-    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::NOT_REPEATABLE);
+    m_mbscheme.reset(new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::NOT_REPEATABLE));
   } else {
-    m_mbscheme = new PDDMassBalance(m_config, m_sys);
+    m_mbscheme.reset(new PDDMassBalance(m_config, m_sys));
   }
 
   if (use_fausto_params) {
-    m_faustogreve = new FaustoGrevePDDObject(m_grid);
+    m_faustogreve.reset(new FaustoGrevePDDObject(m_grid));
     m_base_pddStdDev = 2.53;
   }
 
   if (use_aschwanden_params) {
-    m_aschwanden = new AschwandenPDDObject(m_grid->ctx()->config());
+    m_aschwanden.reset(new AschwandenPDDObject(m_grid->ctx()->config()));
   }
 
   if (use_aschwanden_params and use_fausto_params) {
@@ -171,9 +168,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 }
 
 TemperatureIndex::~TemperatureIndex() {
-  delete m_mbscheme;
-  delete m_faustogreve;
-  delete m_aschwanden;
+  // empty
 }
 
 void TemperatureIndex::init_impl() {
@@ -303,8 +298,8 @@ void TemperatureIndex::update_impl(double t, double dt) {
 
   // make a copy of the pointer to convince clang static analyzer that its value does not
   // change during the call
-  FaustoGrevePDDObject *fausto_greve = m_faustogreve;
-  AschwandenPDDObject *aschwanden = m_aschwanden;
+  FaustoGrevePDDObject *fausto_greve = m_faustogreve.get();
+  AschwandenPDDObject *aschwanden = m_aschwanden.get();
 
   m_t  = t;
   m_dt = dt;
