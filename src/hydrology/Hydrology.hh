@@ -281,7 +281,6 @@ public:
 protected:
   virtual void update_impl(double icet, double icedt, const Inputs& inputs);
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
   virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
   virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 

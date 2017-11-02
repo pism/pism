@@ -134,12 +134,6 @@ void Routing::init() {
   m_boundary_accounting.reset();
 }
 
-MaxTimestep Routing::max_timestep_impl(double t) const {
-  (void) t;
-  return MaxTimestep("routing hydrology");
-}
-
-
 void Routing::init_bwat() {
 
   // initialize water layer thickness from the context if present, otherwise from -i file,
