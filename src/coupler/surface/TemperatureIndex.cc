@@ -359,14 +359,6 @@ void TemperatureIndex::update_impl(double t, double dt) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // reset total accumulation, melt, and runoff, and SMB
-      {
-        m_accumulation(i, j)          = 0.0;
-        m_melt(i, j)                  = 0.0;
-        m_runoff(i, j)                = 0.0;
-        m_climatic_mass_balance(i, j) = 0.0;
-      }
-
       // the temperature time series from the AtmosphereModel and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
 
@@ -384,8 +376,9 @@ void TemperatureIndex::update_impl(double t, double dt) {
       if (m_sd_file_set) {
         m_air_temp_sd.interp(i, j, S);
       } else {
+        double tmp = m_air_temp_sd(i, j);
         for (int k = 0; k < N; ++k) {
-          S[k] = m_air_temp_sd(i, j);
+          S[k] = tmp;
         }
       }
 
@@ -403,8 +396,9 @@ void TemperatureIndex::update_impl(double t, double dt) {
 
       // apply standard deviation lapse rate on top of prescribed values
       if (sigmalapserate != 0.0) {
+        double lat = (*latitude)(i, j);
         for (int k = 0; k < N; ++k) {
-          S[k] += sigmalapserate * ((*latitude)(i,j) - sigmabaselat);
+          S[k] += sigmalapserate * (lat - sigmabaselat);
         }
         m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
       }
@@ -435,9 +429,22 @@ void TemperatureIndex::update_impl(double t, double dt) {
       {
         double next_snow_depth_reset = m_next_balance_year_start;
 
+        // make copies of firn and snow depth values at this point to avoid accessing 2D
+        // fields in the inner loop
+        double
+          firn_depth = m_firn_depth(i, j),
+          snow_depth = m_snow_depth(i, j);
+
+        // accumulation, melt, runoff over this time-step
+        double
+          A   = 0.0,
+          M   = 0.0,
+          R   = 0.0,
+          SMB = 0.0;
+
         for (int k = 0; k < N; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
-            m_snow_depth(i,j)       = 0.0;
+            snow_depth = 0.0;
             while (next_snow_depth_reset <= ts[k]) {
               next_snow_depth_reset = m_grid->ctx()->time()->increment_date(next_snow_depth_reset, 1);
             }
@@ -446,30 +453,41 @@ void TemperatureIndex::update_impl(double t, double dt) {
           const double accumulation = P[k] * dtseries;
 
           LocalMassBalance::Changes changes;
-          changes = m_mbscheme->step(ddf, PDDs[k], m_firn_depth(i, j), m_snow_depth(i, j), accumulation);
+          changes = m_mbscheme->step(ddf, PDDs[k], firn_depth, snow_depth, accumulation);
 
           // update firn depth
-          m_firn_depth(i, j) += changes.firn_depth;
+          firn_depth += changes.firn_depth;
           // update snow depth
-          m_snow_depth(i, j) += changes.snow_depth;
+          snow_depth += changes.snow_depth;
 
-          // update total accumulation, melt, and runoff, converting from "meters, ice equivalent"
-          // to "kg / meter^2"
+          // update total accumulation, melt, and runoff
           {
-            m_accumulation(i, j) += accumulation * ice_density;
-            m_melt(i, j)         += changes.melt * ice_density;
-            m_runoff(i, j)       += changes.runoff * ice_density;
+            A   += accumulation;
+            M   += changes.melt;
+            R   += changes.runoff;
+            SMB += changes.smb;
           }
-
-          // m_climatic_mass_balance (unlike m_accumulation, m_melt, and m_runoff), is a rate.
-          // m * (kg / m^3) / second = kg / m^2 / second
-          m_climatic_mass_balance(i, j) += changes.smb * ice_density / m_dt;
         } // end of the time-stepping loop
+
+        // set firn and snow depths
+        m_firn_depth(i, j) = firn_depth;
+        m_snow_depth(i, j) = snow_depth;
+
+        // set total accumulation, melt, and runoff, and SMB at this point, converting
+        // from "meters, ice equivalent" to "kg / m^2"
+        {
+          m_accumulation(i, j)          = A * ice_density;
+          m_melt(i, j)                  = M * ice_density;
+          m_runoff(i, j)                = R * ice_density;
+          // m_climatic_mass_balance (unlike m_accumulation, m_melt, and m_runoff), is a
+          // rate. m * (kg / m^3) / second = kg / m^2 / second
+          m_climatic_mass_balance(i, j) = SMB * ice_density / m_dt;
+        }
       }
 
-      if (mask.ocean(i,j)) {
-        m_firn_depth(i,j) = 0.0;  // no firn over the ocean
-        m_snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
+      if (mask.ocean(i, j)) {
+        m_firn_depth(i, j) = 0.0;  // no firn in the ocean
+        m_snow_depth(i, j) = 0.0;  // snow over the ocean does not stick
       }
     }
   } catch (...) {
