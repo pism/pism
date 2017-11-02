@@ -32,7 +32,7 @@ namespace hydrology {
 Distributed::Distributed(IceGrid::ConstPtr g)
   : Routing(g) {
 
-  // additional variables beyond hydrology::Routing::allocate()
+  // additional variables beyond hydrology::Routing
   m_P.create(m_grid, "bwp", WITH_GHOSTS, 1);
   m_P.set_attrs("model_state",
               "pressure of transportable water in subglacial layer",

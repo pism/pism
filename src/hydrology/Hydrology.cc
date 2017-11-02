@@ -32,10 +32,10 @@ namespace hydrology {
 
 Inputs::Inputs() {
   surface_input_rate = NULL;
-  basal_melt_rate = NULL;
-  mask = NULL;
-  ice_thickness = NULL;
-  bed_elevation = NULL;
+  basal_melt_rate    = NULL;
+  mask               = NULL;
+  ice_thickness      = NULL;
+  bed_elevation      = NULL;
   ice_sliding_speed  = NULL;
 }
 

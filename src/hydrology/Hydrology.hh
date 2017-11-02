@@ -258,11 +258,6 @@ public:
 
   virtual void init();
 
-  friend class MCHydrology_ice_free_land_loss;
-  friend class MCHydrology_ocean_loss;
-  friend class MCHydrology_negative_thickness_gain;
-  friend class MCHydrology_null_strip_loss;
-
   const IceModelVec2S& subglacial_water_thickness() const;
 
   const IceModelVec2S& subglacial_water_pressure() const;
@@ -320,7 +315,7 @@ protected:
   void water_thickness_staggered(const IceModelVec2S &W,
                                  const IceModelVec2CellType &mask,
                                  IceModelVec2Stag &result);
-  
+
   void compute_hydraulic_potential(const IceModelVec2S &W,
                                    const IceModelVec2S &P,
                                    const IceModelVec2S &P_overburden,
@@ -377,30 +372,30 @@ public:
 
   virtual void init();
 
-  virtual const IceModelVec2S& subglacial_water_pressure() const;
+  const IceModelVec2S& subglacial_water_pressure() const;
 
 protected:
-  virtual void update_impl(double icet, double icedt, const Inputs& inputs);
+  void update_impl(double icet, double icedt, const Inputs& inputs);
 
-  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
-  virtual std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
+  std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+  std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
-  virtual void define_model_state_impl(const PIO &output) const;
-  virtual void write_model_state_impl(const PIO &output) const;
+  void define_model_state_impl(const PIO &output) const;
+  void write_model_state_impl(const PIO &output) const;
 
-  virtual void init_bwp();
+  void init_bwp();
 
-  virtual void check_P_bounds(bool enforce_upper);
+  void check_P_bounds(bool enforce_upper);
 
   void P_from_W_steady(const IceModelVec2S &W,
                        const IceModelVec2S &P_overburden,
                        const IceModelVec2S &sliding_speed,
                        IceModelVec2S &result);
 
-  virtual void adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
-                                            double &dt_result,
-                                            double &maxV_result, double &maxD_result,
-                                            double &PtoCFLratio);
+  void adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
+                                    double &dt_result,
+                                    double &maxV_result, double &maxD_result,
+                                    double &PtoCFLratio);
 protected:
   IceModelVec2S m_P;
   IceModelVec2S m_Pnew;
