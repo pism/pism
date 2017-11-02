@@ -434,7 +434,9 @@ staggered-versus-regular change.
 
 At the current state of the code, this is a diagnostic calculation only.
  */
-void wall_melt(const Routing &model, IceModelVec2S &result) {
+void wall_melt(const Routing &model,
+               const IceModelVec2S &bed_elevation,
+               IceModelVec2S &result) {
 
   IceGrid::ConstPtr grid = result.get_grid();
 
@@ -450,8 +452,6 @@ void wall_melt(const Routing &model, IceModelVec2S &result) {
     rg    = rhow * g,
     CC    = k / (L * rhow);
 
-  const IceModelVec2S *bed = grid->variables().get_2d_scalar("bedrock_altitude");
-
   // FIXME:  could be scaled with overall factor hydrology_coefficient_wall_melt ?
   if (alpha < 1.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "alpha = %f < 1 which is not allowed", alpha);
@@ -461,7 +461,7 @@ void wall_melt(const Routing &model, IceModelVec2S &result) {
   R.create(grid, "R", WITH_GHOSTS);
 
   R.copy_from(model.subglacial_water_pressure());  // yes, it updates ghosts
-  R.add(rg, *bed); // R  <-- P + rhow g b
+  R.add(rg, bed_elevation); // R  <-- P + rhow g b
 
   IceModelVec2S W;
   W.create(grid, "W", WITH_GHOSTS);

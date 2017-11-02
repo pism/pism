@@ -18,6 +18,7 @@
 
 
 #include "hydrology_diagnostics.hh"
+#include "pism/util/Vars.hh"
 
 namespace pism {
 namespace hydrology {
@@ -123,7 +124,10 @@ WallMelt::WallMelt(const Routing *m)
 IceModelVec::Ptr WallMelt::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wallmelt", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
-  wall_melt(*model, *result);
+
+  const IceModelVec2S &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+
+  wall_melt(*model, bed_elevation, *result);
   return result;
 }
 

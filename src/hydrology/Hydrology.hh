@@ -426,8 +426,9 @@ protected:
 };
 
 
-void wall_melt(const Routing &model, IceModelVec2S &result);
-
+void wall_melt(const Routing &model,
+               const IceModelVec2S &bed_elevation,
+               IceModelVec2S &result);
 
 } // end of namespace hydrology
 } // end of namespace pism
