@@ -60,6 +60,20 @@ static std::set<std::string> process_extra_shortcuts(const std::set<std::string>
     result.insert("tendency_of_ice_mass_due_to_surface_mass_flux");
   }
 
+  if (result.find("pdd_fluxes") != result.end()) {
+    result.erase("pdd_fluxes");
+    result.insert("surface_accumulation_flux");
+    result.insert("surface_runoff_flux");
+    result.insert("surface_melt_flux");
+  }
+
+  if (result.find("pdd_rates") != result.end()) {
+    result.erase("pdd_rates");
+    result.insert("surface_accumulation_rate");
+    result.insert("surface_runoff_rate");
+    result.insert("surface_melt_rate");
+  }
+
   return result;
 }
 
