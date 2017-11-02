@@ -702,12 +702,12 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     maxKW = 0.0, maxV = 0.0, maxD = 0.0, dtCFL = 0.0, dtDIFFW = 0.0;
   double icefreelost = 0.0, oceanlost = 0.0, negativegain = 0.0, nullstriplost = 0.0;
 
-  const IceModelVec2CellType &mask = *inputs.mask;
+  const IceModelVec2CellType &cell_type = *inputs.cell_type;
   const IceModelVec2S &bed = *inputs.bed_elevation;
 
   get_input_rate(*inputs.basal_melt_rate,
                  *inputs.surface_input_rate,
-                 mask,
+                 cell_type,
                  m_total_input);
 
   unsigned int step_counter = 0;
@@ -720,7 +720,7 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
 #endif
 
     water_thickness_staggered(m_W,
-                              mask,
+                              cell_type,
                               m_Wstag);
 
     compute_conductivity(m_Wstag,

@@ -36,7 +36,7 @@ public:
 
   const IceModelVec2S        *surface_input_rate;
   const IceModelVec2S        *basal_melt_rate;
-  const IceModelVec2CellType *mask;
+  const IceModelVec2CellType *cell_type;
   const IceModelVec2S        *ice_thickness;
   const IceModelVec2S        *bed_elevation;
   const IceModelVec2S        *ice_sliding_speed;

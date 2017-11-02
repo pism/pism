@@ -101,16 +101,16 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 
   get_input_rate(*inputs.basal_melt_rate,
                  *inputs.surface_input_rate,
-                 *inputs.mask,
+                 *inputs.cell_type,
                  m_total_input);
 
-  const IceModelVec2CellType &mask = *inputs.mask;
+  const IceModelVec2CellType &cell_type = *inputs.cell_type;
 
-  IceModelVec::AccessList list{&mask, &m_Wtil, &m_total_input};
+  IceModelVec::AccessList list{&cell_type, &m_Wtil, &m_total_input};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.ocean(i,j) || mask.ice_free(i,j)) {
+    if (cell_type.ocean(i,j) || cell_type.ice_free(i,j)) {
       m_Wtil(i, j) = 0.0;
     } else {
       m_Wtil(i, j) += dt * (m_total_input(i, j) - m_tillwat_decay_rate);
@@ -119,7 +119,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   }
 
   if (m_diffuse_tillwat) {
-    diffuse_till_water(dt, *inputs.mask);
+    diffuse_till_water(dt, *inputs.cell_type);
   }
 }
 

@@ -319,12 +319,14 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     PtoCFLratio = 0.0,          // for reporting ratio of dtCFL to dtDIFFP
     cumratio    = 0.0;
 
-  const IceModelVec2CellType &mask = *inputs.mask;
-  const IceModelVec2S &bed_elevation = *inputs.bed_elevation;
-  const IceModelVec2S &ice_thickness = *inputs.ice_thickness;
-  const IceModelVec2S &sliding_speed = *inputs.ice_sliding_speed;
+  const IceModelVec2CellType &cell_type     = *inputs.cell_type;
+  const IceModelVec2S        &bed_elevation = *inputs.bed_elevation;
+  const IceModelVec2S        &ice_thickness = *inputs.ice_thickness;
+  const IceModelVec2S        &sliding_speed = *inputs.ice_sliding_speed;
 
-  get_input_rate(*inputs.basal_melt_rate, *inputs.surface_input_rate, mask,
+  get_input_rate(*inputs.basal_melt_rate,
+                 *inputs.surface_input_rate,
+                 cell_type,
                  m_total_input);
 
   compute_overburden_pressure(ice_thickness, m_Pover);
@@ -344,7 +346,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     check_P_bounds((step_counter == 1));
 
     water_thickness_staggered(m_W,
-                              mask,
+                              cell_type,
                               m_Wstag);
 
     compute_conductivity(m_Wstag,
@@ -376,14 +378,14 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     double diffW;
 
     IceModelVec::AccessList list{&m_P, &m_W, &m_Wtil, &m_Wtilnew, &sliding_speed, &m_Wstag,
-        &m_K, &m_Q, &m_total_input, &mask, &m_Pover, &m_Pnew};
+        &m_K, &m_Q, &m_total_input, &cell_type, &m_Pover, &m_Pnew};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.ice_free_land(i,j)) {
+      if (cell_type.ice_free_land(i,j)) {
         m_Pnew(i,j) = 0.0;
-      } else if (mask.ocean(i,j)) {
+      } else if (cell_type.ocean(i,j)) {
         m_Pnew(i,j) = m_Pover(i,j);
       } else if (m_W(i,j) <= 0.0) {
         m_Pnew(i,j) = m_Pover(i,j);
