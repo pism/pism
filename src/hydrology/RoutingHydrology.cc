@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
+#include <algorithm>
 
 #include "Hydrology.hh"
 #include "hydrology_diagnostics.hh"
@@ -341,11 +342,15 @@ void Routing::water_thickness_staggered(const IceModelVec2S &W,
 //! Compute the nonlinear conductivity at the center of cell edges.
 /*!
   Computes
+
   \f[ K = K(W, \nabla P, \nabla b) = k W^{\alpha-1} |\nabla R|^{\beta-2} \f]
+
   on the staggered grid, where \f$R = P+\rho_w g b\f$.  We denote
-  \f$\Pi = |\nabla R|^2\f$ internally; this is computed on a staggered grid
-  by a [\ref Mahaffy] -like scheme.  This requires \f$R\f$ to be defined on a box
-  stencil of width 1.
+
+  \f[ \Pi = |\nabla R|^2 \f]
+
+  internally; this is computed on a staggered grid by a Mahaffy-like ([@ref Mahaffy])
+  scheme. This requires \f$R\f$ to be defined on a box stencil of width 1.
 
   Also returns the maximum over all staggered points of \f$ K W \f$.
 */
@@ -353,7 +358,7 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
                                    const IceModelVec2S &P,
                                    const IceModelVec2S &bed,
                                    IceModelVec2Stag &result,
-                                   double &maxKW) const {
+                                   double &KW_max) const {
   const double
     k     = m_config->get_double("hydrology.hydraulic_conductivity"),
     alpha = m_config->get_double("hydrology.thickness_power_in_flux"),
@@ -361,13 +366,11 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
 
   IceModelVec::AccessList list(result);
 
-  // the following calculation is bypassed if beta == 2.0 exactly; it puts
-  // the squared norm of the gradient of the simplified hydrolic potential
-  // temporarily in "result"
+  // the following calculation is bypassed if beta == 2.0 exactly; it puts the squared
+  // norm of the gradient of the simplified hydrolic potential (Pi) in "result"
   if (beta != 2.0) {
-    m_R.copy_from(P);  // yes, it updates ghosts
-    m_R.add(m_rg, bed); // R  <-- P + rhow g b
-    m_R.update_ghosts();
+    // R  <-- P + rhow g b
+    P.add(m_rg, bed, m_R);  // yes, it updates ghosts
 
     list.add(m_R);
     for (Points p(*m_grid); p; p.next()) {
@@ -383,30 +386,37 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
     }
   }
 
-  double betapow = (beta-2.0)/2.0, mymaxKW = 0.0;
+  const double betapow = (beta-2.0)/2.0;
 
   list.add(W);
+
+  KW_max = 0.0;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o = 0; o < 2; ++o) {
-      double Ktmp = k * pow(W(i, j, o), alpha-1.0);
-      if (beta < 2.0) {
-        // regularize negative power |\grad psi|^{beta-2} by adding eps because
-        //   large head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m
-        const double eps = 1.0;   // Pa m-1
-        result(i, j, o) = Ktmp * pow(result(i, j, o) + eps * eps, betapow);
-      } else if (beta > 2.0) {
-        result(i, j, o) = Ktmp * pow(result(i, j, o), betapow);
-      } else { // beta == 2.0
-        result(i, j, o) = Ktmp;
+      double B = 1.0;
+
+      if (beta != 2.0) {
+        const double Pi = result(i, j, 0);
+
+        // We regularize negative power |\grad psi|^{beta-2} by adding eps because large
+        // head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m.
+        const double eps = beta < 2.0 ? 1.0 : 0.0;
+
+        B = pow(Pi + eps * eps, betapow);
+      } else {
+        B = 1.0;
       }
-      mymaxKW = std::max(mymaxKW, result(i, j, o) * W(i, j, o));
+
+      result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0) * B;
+
+      KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
     }
   }
 
-  maxKW = GlobalMax(m_grid->com, mymaxKW);
+  KW_max = GlobalMax(m_grid->com, KW_max);
 
   result.update_ghosts();
 }
@@ -451,8 +461,9 @@ void wall_melt(const Routing &model,
   IceModelVec2S R;
   R.create(grid, "R", WITH_GHOSTS);
 
-  R.copy_from(model.subglacial_water_pressure());  // yes, it updates ghosts
-  R.add(rg, bed_elevation); // R  <-- P + rhow g b
+  // R  <-- P + rhow g b
+  model.subglacial_water_pressure().add(m_rg, bed_elevation, R);
+  // yes, it updates ghosts
 
   IceModelVec2S W;
   W.create(grid, "W", WITH_GHOSTS);
@@ -577,29 +588,34 @@ void Routing::advective_fluxes(const IceModelVec2Stag &V,
 
 
 //! Compute the adaptive time step for evolution of W.
-void Routing::adaptive_for_W_evolution(double t_current, double t_end, double maxKW,
-                                       double &dt_result,
-                                       double &maxV_result, double &maxD_result,
-                                       double &dtCFL_result, double &dtDIFFW_result) {
-  const double
-    dtmax = m_config->get_double("hydrology.maximum_time_step", "seconds");
+void Routing::W_max_timestep(double dt_max, double maxKW,
+                             double &dt,
+                             double &maxV, double &maxD,
+                             double &dtCFL, double &dtDIFFW) {
 
+  dtCFL = max_timestep_cfl();
+
+  dtDIFFW = max_timestep_diffusivity(maxKW);
+
+  // dt = min {dt_max, dtCFL, dtDIFFW}
+  dt = std::min(dt_max, dtCFL);
+  dt = std::min(dt, dtDIFFW);
+}
+
+double Routing::max_timestep_diffusivity(double KW_max) {
+  double D_max = m_rg * maxKW;
+  double result = 1.0/(m_dx*m_dx) + 1.0/(m_dy*m_dy);
+  return 0.25 / (D_max * result);
+}
+
+double Routing::max_timestep_cfl() {
   // V could be zero if P is constant and bed is flat
   std::vector<double> tmp = m_V.absmaxcomponents();
 
-  maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
+  maxV = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
 
-  maxD_result = m_rg * maxKW;
-
-  dtCFL_result = 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
-  dtDIFFW_result = 1.0/(m_dx*m_dx) + 1.0/(m_dy*m_dy);
-  dtDIFFW_result = 0.25 / (maxD_result * dtDIFFW_result);
-  // dt = min { te-t, dtmax, dtCFL, dtDIFFW }
-  dt_result = std::min(t_end - t_current, dtmax);
-  dt_result = std::min(dt_result, dtCFL_result);
-  dt_result = std::min(dt_result, dtDIFFW_result);
+  return 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
 }
-
 
 //! The computation of Wtilnew, called by update().
 /*!
@@ -706,6 +722,9 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
                  cell_type,
                  m_total_input);
 
+  double t_final = m_t + m_dt;
+  double dt_max = m_config->get_double("hydrology.maximum_time_step");
+
   unsigned int step_counter = 0;
   while (ht < m_t + m_dt) {
     step_counter++;
@@ -733,8 +752,8 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     // to get Q, W needs valid ghosts
     advective_fluxes(m_V, m_W, m_Q);
 
-    adaptive_for_W_evolution(ht, m_t+m_dt, maxKW,
-                             hdt, maxV, maxD, dtCFL, dtDIFFW);
+    W_max_timestep(std::min(t_final - ht, dt_max), maxKW,
+                   hdt, maxV, maxD, dtCFL, dtDIFFW);
 
     // update Wtilnew from Wtil
     raw_update_Wtil(hdt);

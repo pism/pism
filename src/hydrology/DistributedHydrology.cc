@@ -237,14 +237,15 @@ void Distributed::P_from_W_steady(const IceModelVec2S &W,
 
 
 //! Computes the adaptive time step for this (W,P) state space model.
-void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
+void Distributed::adaptive_for_WandP_evolution(double dt_max, double maxKW,
                                                double &dt_result,
                                                double &maxV_result, double &maxD_result,
                                                double &PtoCFLratio) {
   double dtCFL, dtDIFFW, dtDIFFP;
 
-  adaptive_for_W_evolution(t_current,t_end, maxKW,
-                           dt_result,maxV_result,maxD_result,dtCFL,dtDIFFW);
+  W_max_timestep(dt_max, maxKW,
+                 dt_result,
+                 maxV_result, maxD_result, dtCFL, dtDIFFW);
 
   const double phi0 = m_config->get_double("hydrology.regularizing_porosity");
   dtDIFFP = 2.0 * phi0 * dtDIFFW;
@@ -257,14 +258,6 @@ void Distributed::adaptive_for_WandP_evolution(double t_current, double t_end, d
   } else {
     PtoCFLratio = 1.0;
   }
-
-  units::Converter years(m_sys, "seconds", "years");
-
-  using units::convert;
-  m_log->message(4,
-                 "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
-                 convert(m_sys, maxV_result, "m second-1", "m year-1"),
-                 years(dtCFL), years(dtDIFFW), years(dtDIFFP), years(dt_result), years(t_current));
 }
 
 
@@ -329,6 +322,9 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
   compute_overburden_pressure(ice_thickness, m_Pover);
 
+  double t_final = m_t + m_dt;
+  double dt_max = m_config->get_double("hydrology.maximum_time_step");
+
   unsigned int step_counter = 0;
   while (ht < m_t + m_dt) {
     step_counter++;
@@ -361,7 +357,18 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     // to get Qstag, W needs valid ghosts
     advective_fluxes(m_V, m_W, m_Q);
 
-    adaptive_for_WandP_evolution(ht, m_t+m_dt, maxKW, hdt, maxV, maxD, PtoCFLratio);
+    adaptive_for_WandP_evolution(std::min(t_final - ht, dt_max), maxKW,
+                                 hdt, maxV, maxD, PtoCFLratio);
+    // {
+    //   units::Converter years(m_sys, "seconds", "years");
+
+    //   using units::convert;
+    //   m_log->message(4,
+    //                  "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
+    //                  convert(m_sys, maxV, "m second-1", "m year-1"),
+    //                  years(dtCFL), years(dtDIFFW), years(dtDIFFP), years(hdt), years(ht));
+    // }
+
     cumratio += PtoCFLratio;
 
     // update Wtilnew from Wtil

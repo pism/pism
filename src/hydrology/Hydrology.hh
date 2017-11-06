@@ -339,10 +339,10 @@ protected:
                         const IceModelVec2S &W,
                         IceModelVec2Stag &result) const;
 
-  virtual void adaptive_for_W_evolution(double t_current, double t_end, double maxKW,
-                                        double &dt_result,
-                                        double &maxV_result, double &maxD_result,
-                                        double &dtCFL_result, double &dtDIFFW_result);
+  void W_max_timestep(double dt_max, double maxKW,
+                      double &dt_result,
+                      double &maxV_result, double &maxD_result,
+                      double &dtCFL_result, double &dtDIFFW_result);
 
   void raw_update_W(double hdt);
   void raw_update_Wtil(double hdt);
@@ -394,7 +394,7 @@ protected:
                        const IceModelVec2S &sliding_speed,
                        IceModelVec2S &result);
 
-  void adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
+  void adaptive_for_WandP_evolution(double dt_max, double maxKW,
                                     double &dt_result,
                                     double &maxV_result, double &maxD_result,
                                     double &PtoCFLratio);
