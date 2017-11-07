@@ -102,8 +102,6 @@ protected:
   const units::System::Ptr m_sys;
   //! Configuration flags and parameters
   const Config::ConstPtr m_config;
-  //! number of degrees of freedom; 1 for scalar fields, 2 for vector fields
-  unsigned int m_dof;
   //! metadata corresponding to NetCDF variables
   std::vector<SpatialVariableMetadata> m_vars;
   //! fill value (used often enough to justify storing it)
@@ -123,8 +121,7 @@ public:
     : Diagnostic(input.get_grid()),
       m_input(input)
   {
-    m_dof = input.get_ndof();
-    for (unsigned int j = 0; j < m_dof; ++j) {
+    for (unsigned int j = 0; j < input.get_ndof(); ++j) {
       m_vars.push_back(input.metadata(j));
     }
   }
@@ -132,7 +129,7 @@ protected:
   IceModelVec::Ptr compute_impl() const {
     typename T::Ptr result(new T(m_input.get_grid(), "unnamed", WITHOUT_GHOSTS));
     result->set_name(m_input.get_name());
-    for (unsigned int k = 0; k < m_dof; ++k) {
+    for (unsigned int k = 0; k < m_vars.size(); ++k) {
       result->metadata(k) = m_vars[k];
     }
 

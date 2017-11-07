@@ -20,6 +20,9 @@
 #include "pism/util/error_handling.hh"
 
 // netcdf_par.h has to be included *after* mpi.h
+//
+// note that we don't need to define MPI_INCLUDED because this code is built *only* if we
+// have a parallel NetCDF library.
 extern "C" {
 #include <netcdf_par.h>
 #include <netcdf.h>

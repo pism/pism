@@ -1656,8 +1656,6 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
   : Diag<SSAFD>(m) {
 
   // set metadata:
-  m_dof = 2;
-
   m_vars = {SpatialVariableMetadata(m_sys, "nuH[0]"),
             SpatialVariableMetadata(m_sys, "nuH[1]")};
 

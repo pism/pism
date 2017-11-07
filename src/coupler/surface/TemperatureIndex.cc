@@ -37,76 +37,11 @@
 namespace pism {
 namespace surface {
 
-namespace diagnostics {
-
-/*! @brief Snow cover depth. */
-class PDD_snow_depth : public Diag<TemperatureIndex>
-{
-public:
-  PDD_snow_depth(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
-/*! @brief Standard deviation of near-surface air temperature. */
-class PDD_air_temp_sd : public Diag<TemperatureIndex>
-{
-public:
-  PDD_air_temp_sd(const TemperatureIndex *m);
-protected:
-  IceModelVec::Ptr compute_impl() const;
-};
-
-PDD_snow_depth::PDD_snow_depth(const TemperatureIndex *m)
-  : Diag<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "snow_depth")};
-
-  set_attrs("snow cover depth (set to zero once a year)", "",
-            "m", "m", 0);
-}
-
-IceModelVec::Ptr PDD_snow_depth::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "snow_depth", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->snow_depth());
-
-  return result;
-}
-
-PDD_air_temp_sd::PDD_air_temp_sd(const TemperatureIndex *m)
-  : Diag<TemperatureIndex>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "air_temp_sd")};
-
-  set_attrs("standard deviation of near-surface air temperature", "",
-            "Kelvin", "Kelvin", 0);
-}
-
-IceModelVec::Ptr PDD_air_temp_sd::compute_impl() const {
-
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_sd", WITHOUT_GHOSTS));
-  result->metadata(0) = m_vars[0];
-
-  result->copy_from(model->air_temp_sd());
-
-  return result;
-}
-
-} // end of namespace diagnostics
-
 ///// PISM surface model implementing a PDD scheme.
 
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   : SurfaceModel(g) {
 
-  m_aschwanden                 = NULL;
-  m_mbscheme                   = NULL;
-  m_faustogreve                = NULL;
   m_sd_period                  = 0;
   m_base_ddf.snow              = m_config->get_double("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_double("surface.pdd.factor_ice");
@@ -136,20 +71,20 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   m_sd_period = period;
 
   if (randomized_repeatable) {
-    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE);
+    m_mbscheme.reset(new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE));
   } else if (randomized) {
-    m_mbscheme = new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::NOT_REPEATABLE);
+    m_mbscheme.reset(new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::NOT_REPEATABLE));
   } else {
-    m_mbscheme = new PDDMassBalance(m_config, m_sys);
+    m_mbscheme.reset(new PDDMassBalance(m_config, m_sys));
   }
 
   if (use_fausto_params) {
-    m_faustogreve = new FaustoGrevePDDObject(m_grid);
+    m_faustogreve.reset(new FaustoGrevePDDObject(m_grid));
     m_base_pddStdDev = 2.53;
   }
 
   if (use_aschwanden_params) {
-    m_aschwanden = new AschwandenPDDObject(m_grid->ctx()->config());
+    m_aschwanden.reset(new AschwandenPDDObject(m_grid->ctx()->config()));
   }
 
   if (use_aschwanden_params and use_fausto_params) {
@@ -207,14 +142,14 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
   // diagnostic fields:
 
   {
-    m_accumulation.create(m_grid, "saccum", WITHOUT_GHOSTS);
+    m_accumulation.create(m_grid, "surface_accumulation_flux", WITHOUT_GHOSTS);
     m_accumulation.set_attrs("diagnostic", "surface accumulation (precipitation minus rain)",
                              "kg m-2", "");
 
-    m_melt.create(m_grid, "smelt", WITHOUT_GHOSTS);
+    m_melt.create(m_grid, "surface_melt_flux", WITHOUT_GHOSTS);
     m_melt.set_attrs("diagnostic", "surface melt", "kg m-2", "");
 
-    m_runoff.create(m_grid, "srunoff", WITHOUT_GHOSTS);
+    m_runoff.create(m_grid, "surface_runoff_flux", WITHOUT_GHOSTS);
     m_runoff.set_attrs("diagnostic", "surface meltwater runoff",
                        "kg m-2", "");
   }
@@ -233,9 +168,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g)
 }
 
 TemperatureIndex::~TemperatureIndex() {
-  delete m_mbscheme;
-  delete m_faustogreve;
-  delete m_aschwanden;
+  // empty
 }
 
 void TemperatureIndex::init_impl() {
@@ -365,8 +298,8 @@ void TemperatureIndex::update_impl(double t, double dt) {
 
   // make a copy of the pointer to convince clang static analyzer that its value does not
   // change during the call
-  FaustoGrevePDDObject *fausto_greve = m_faustogreve;
-  AschwandenPDDObject *aschwanden = m_aschwanden;
+  FaustoGrevePDDObject *fausto_greve = m_faustogreve.get();
+  AschwandenPDDObject *aschwanden = m_aschwanden.get();
 
   m_t  = t;
   m_dt = dt;
@@ -426,14 +359,6 @@ void TemperatureIndex::update_impl(double t, double dt) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // reset total accumulation, melt, and runoff, and SMB
-      {
-        m_accumulation(i, j)          = 0.0;
-        m_melt(i, j)                  = 0.0;
-        m_runoff(i, j)                = 0.0;
-        m_climatic_mass_balance(i, j) = 0.0;
-      }
-
       // the temperature time series from the AtmosphereModel and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
 
@@ -451,8 +376,9 @@ void TemperatureIndex::update_impl(double t, double dt) {
       if (m_sd_file_set) {
         m_air_temp_sd.interp(i, j, S);
       } else {
+        double tmp = m_air_temp_sd(i, j);
         for (int k = 0; k < N; ++k) {
-          S[k] = m_air_temp_sd(i, j);
+          S[k] = tmp;
         }
       }
 
@@ -470,8 +396,9 @@ void TemperatureIndex::update_impl(double t, double dt) {
 
       // apply standard deviation lapse rate on top of prescribed values
       if (sigmalapserate != 0.0) {
+        double lat = (*latitude)(i, j);
         for (int k = 0; k < N; ++k) {
-          S[k] += sigmalapserate * ((*latitude)(i,j) - sigmabaselat);
+          S[k] += sigmalapserate * (lat - sigmabaselat);
         }
         m_air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
       }
@@ -502,9 +429,22 @@ void TemperatureIndex::update_impl(double t, double dt) {
       {
         double next_snow_depth_reset = m_next_balance_year_start;
 
+        // make copies of firn and snow depth values at this point to avoid accessing 2D
+        // fields in the inner loop
+        double
+          firn_depth = m_firn_depth(i, j),
+          snow_depth = m_snow_depth(i, j);
+
+        // accumulation, melt, runoff over this time-step
+        double
+          A   = 0.0,
+          M   = 0.0,
+          R   = 0.0,
+          SMB = 0.0;
+
         for (int k = 0; k < N; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
-            m_snow_depth(i,j)       = 0.0;
+            snow_depth = 0.0;
             while (next_snow_depth_reset <= ts[k]) {
               next_snow_depth_reset = m_grid->ctx()->time()->increment_date(next_snow_depth_reset, 1);
             }
@@ -513,30 +453,41 @@ void TemperatureIndex::update_impl(double t, double dt) {
           const double accumulation = P[k] * dtseries;
 
           LocalMassBalance::Changes changes;
-          changes = m_mbscheme->step(ddf, PDDs[k], m_firn_depth(i, j), m_snow_depth(i, j), accumulation);
+          changes = m_mbscheme->step(ddf, PDDs[k], firn_depth, snow_depth, accumulation);
 
           // update firn depth
-          m_firn_depth(i, j) += changes.firn_depth;
+          firn_depth += changes.firn_depth;
           // update snow depth
-          m_snow_depth(i, j) += changes.snow_depth;
+          snow_depth += changes.snow_depth;
 
-          // update total accumulation, melt, and runoff, converting from "meters, ice equivalent"
-          // to "kg / meter^2"
+          // update total accumulation, melt, and runoff
           {
-            m_accumulation(i, j) += accumulation * ice_density;
-            m_melt(i, j)         += changes.melt * ice_density;
-            m_runoff(i, j)       += changes.runoff * ice_density;
+            A   += accumulation;
+            M   += changes.melt;
+            R   += changes.runoff;
+            SMB += changes.smb;
           }
-
-          // m_climatic_mass_balance (unlike m_accumulation, m_melt, and m_runoff), is a rate.
-          // m * (kg / m^3) / second = kg / m^2 / second
-          m_climatic_mass_balance(i, j) += changes.smb * ice_density / m_dt;
         } // end of the time-stepping loop
+
+        // set firn and snow depths
+        m_firn_depth(i, j) = firn_depth;
+        m_snow_depth(i, j) = snow_depth;
+
+        // set total accumulation, melt, and runoff, and SMB at this point, converting
+        // from "meters, ice equivalent" to "kg / m^2"
+        {
+          m_accumulation(i, j)          = A * ice_density;
+          m_melt(i, j)                  = M * ice_density;
+          m_runoff(i, j)                = R * ice_density;
+          // m_climatic_mass_balance (unlike m_accumulation, m_melt, and m_runoff), is a
+          // rate. m * (kg / m^3) / second = kg / m^2 / second
+          m_climatic_mass_balance(i, j) = SMB * ice_density / m_dt;
+        }
       }
 
-      if (mask.ocean(i,j)) {
-        m_firn_depth(i,j) = 0.0;  // no firn over the ocean
-        m_snow_depth(i,j) = 0.0;  // snow over the ocean does not stick
+      if (mask.ocean(i, j)) {
+        m_firn_depth(i, j) = 0.0;  // no firn in the ocean
+        m_snow_depth(i, j) = 0.0;  // snow over the ocean does not stick
       }
     }
   } catch (...) {
@@ -595,82 +546,192 @@ void TemperatureIndex::write_model_state_impl(const PIO &output) const {
 
 namespace diagnostics {
 
+enum AmountKind {AMOUNT, MASS};
+
 /*! @brief Report surface melt, averaged over the reporting interval */
 class SurfaceMelt : public DiagAverageRate<TemperatureIndex>
 {
 public:
-  SurfaceMelt(const TemperatureIndex *m)
-    : DiagAverageRate<TemperatureIndex>(m, "smelt", TOTAL_CHANGE) {
+  SurfaceMelt(const TemperatureIndex *m, AmountKind kind)
+    : DiagAverageRate<TemperatureIndex>(m,
+                                        kind == AMOUNT
+                                        ? "surface_melt_flux"
+                                        : "surface_melt_rate",
+                                        TOTAL_CHANGE),
+    m_kind(kind) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "smelt")};
-    m_accumulator.metadata().set_string("units", "kg m-2");
+    std::string
+      name              = "surface_melt_flux",
+      long_name         = "surface melt, averaged over the reporting interval",
+      standard_name     = "surface_snow_and_ice_melt_flux",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_melt_rate";
+      standard_name     = "";
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
 
-    set_attrs("surface melt, averaged over the reporting interval", "",
-              "kg m-2 s-1", "kg m-2 year-1", 0);
+      m_melt_mass.create(m_grid, "melt_mass", WITHOUT_GHOSTS);
+    }
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", accumulator_units);
+
+    set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
+    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
     m_vars[0].set_double("_FillValue", fill_value);
   }
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->melt();
+    const IceModelVec2S &melt_amount = model->melt();
+
+    if (m_kind == MASS) {
+      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+
+      IceModelVec::AccessList list{&m_melt_mass, &melt_amount, &cell_area};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_melt_mass(i, j) = melt_amount(i, j) * cell_area(i, j);
+      }
+      return m_melt_mass;
+    } else {
+      return melt_amount;
+    }
   }
+private:
+  IceModelVec2S m_melt_mass;
+  AmountKind m_kind;
 };
 
 /*! @brief Report surface runoff, averaged over the reporting interval */
 class SurfaceRunoff : public DiagAverageRate<TemperatureIndex>
 {
 public:
-  SurfaceRunoff(const TemperatureIndex *m)
-    : DiagAverageRate<TemperatureIndex>(m, "srunoff", TOTAL_CHANGE) {
+  SurfaceRunoff(const TemperatureIndex *m, AmountKind kind)
+    : DiagAverageRate<TemperatureIndex>(m,
+                                        kind == AMOUNT
+                                        ? "surface_runoff_flux"
+                                        : "surface_runoff_rate",
+                                        TOTAL_CHANGE),
+    m_kind(kind) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "srunoff")};
-    m_accumulator.metadata().set_string("units", "kg m-2");
+    std::string
+      name              = "surface_runoff_flux",
+      long_name         = "surface runoff, averaged over the reporting interval",
+      standard_name     = "surface_runoff_flux",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_runoff_rate";
+      standard_name     = "",
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
 
-    set_attrs("surface runoff, averaged over the reporting interval", "",
-              "kg m-2 s-1", "kg m-2 year-1", 0);
+      m_runoff_mass.create(m_grid, "runoff_mass", WITHOUT_GHOSTS);
+    }
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", accumulator_units);
+
+    set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
+    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
     m_vars[0].set_double("_FillValue", fill_value);
   }
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->runoff();
+    const IceModelVec2S &runoff_amount = model->runoff();
+
+    if (m_kind == MASS) {
+      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+
+      IceModelVec::AccessList list{&m_runoff_mass, &runoff_amount, &cell_area};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_runoff_mass(i, j) = runoff_amount(i, j) * cell_area(i, j);
+      }
+      return m_runoff_mass;
+    } else {
+      return runoff_amount;
+    }
   }
+private:
+  AmountKind m_kind;
+  IceModelVec2S m_runoff_mass;
 };
 
 /*! @brief Report accumulation (precipitation minus rain), averaged over the reporting interval */
 class Accumulation : public DiagAverageRate<TemperatureIndex>
 {
 public:
-  Accumulation(const TemperatureIndex *m)
-    : DiagAverageRate<TemperatureIndex>(m, "saccum", TOTAL_CHANGE) {
+  Accumulation(const TemperatureIndex *m, AmountKind kind)
+    : DiagAverageRate<TemperatureIndex>(m,
+                                        kind == AMOUNT
+                                        ? "surface_accumulation_flux"
+                                        : "surface_accumulation_rate",
+                                        TOTAL_CHANGE),
+    m_kind(kind) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "saccum")};
-    m_accumulator.metadata().set_string("units", "kg m-2");
+    // possible standard name: surface_accumulation_flux
+    std::string
+      name              = "surface_accumulation_flux",
+      long_name         = "accumulation (precipitation minus rain), averaged over the reporting interval",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_accumulation_rate";
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
 
-    set_attrs("accumulation (precipitation minus rain), averaged over the reporting interval", "",
-              "kg m-2 s-1", "kg m-2 year-1", 0);
+      m_accumulation_mass.create(m_grid, "accumulation_mass", WITHOUT_GHOSTS);
+    }
+
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", accumulator_units);
+
+    set_attrs(long_name, "", internal_units, external_units, 0);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value,
-                                       m_vars[0].get_string("glaciological_units"),
-                                       m_vars[0].get_string("units"));
+    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
     m_vars[0].set_double("_FillValue", fill_value);
   }
 
 protected:
   const IceModelVec2S& model_input() {
-    return model->accumulation();
+    const IceModelVec2S &accumulation_amount = model->accumulation();
+
+    if (m_kind == MASS) {
+      const IceModelVec2S &cell_area = *m_grid->variables().get_2d_scalar("cell_area");
+
+      IceModelVec::AccessList list{&m_accumulation_mass, &accumulation_amount, &cell_area};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_accumulation_mass(i, j) = accumulation_amount(i, j) * cell_area(i, j);
+      }
+      return m_accumulation_mass;
+    } else {
+      return accumulation_amount;
+    }
   }
+private:
+  AmountKind m_kind;
+  IceModelVec2S m_accumulation_mass;
 };
 
 /*!
@@ -758,12 +819,15 @@ std::map<std::string, Diagnostic::Ptr> TemperatureIndex::diagnostics_impl() cons
   using namespace diagnostics;
 
   std::map<std::string, Diagnostic::Ptr> result = {
-    {"saccum",      Diagnostic::Ptr(new Accumulation(this))},
-    {"smelt",       Diagnostic::Ptr(new SurfaceMelt(this))},
-    {"srunoff",     Diagnostic::Ptr(new SurfaceRunoff(this))},
-    {"air_temp_sd", Diagnostic::Ptr(new PDD_air_temp_sd(this))},
-    {"snow_depth",  Diagnostic::Ptr(new PDD_snow_depth(this))},
-    {"firn_depth",  Diagnostic::wrap(m_firn_depth)},
+    {"surface_accumulation_flux", Diagnostic::Ptr(new Accumulation(this, AMOUNT))},
+    {"surface_accumulation_rate", Diagnostic::Ptr(new Accumulation(this, MASS))},
+    {"surface_melt_flux",         Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
+    {"surface_melt_rate",         Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
+    {"surface_runoff_flux",       Diagnostic::Ptr(new SurfaceRunoff(this, AMOUNT))},
+    {"surface_runoff_rate",       Diagnostic::Ptr(new SurfaceRunoff(this, MASS))},
+    {"air_temp_sd",               Diagnostic::wrap(m_air_temp_sd)},
+    {"snow_depth",                Diagnostic::wrap(m_snow_depth)},
+    {"firn_depth",                Diagnostic::wrap(m_firn_depth)},
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());

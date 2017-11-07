@@ -127,8 +127,6 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
-  m_dof = 2;
-
   m_vars = {SpatialVariableMetadata(m_sys, "diffusivity_i"),
             SpatialVariableMetadata(m_sys, "diffusivity_j")};
 
@@ -166,8 +164,6 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
-  m_dof = 2;
-
   m_vars = {SpatialVariableMetadata(m_sys, "h_x_i"),
             SpatialVariableMetadata(m_sys, "h_x_j")};
 
@@ -193,8 +189,6 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
-  m_dof = 2;
-
   m_vars = {SpatialVariableMetadata(m_sys, "h_y_i"),
             SpatialVariableMetadata(m_sys, "h_y_j")};
 

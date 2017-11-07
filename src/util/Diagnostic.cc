@@ -38,7 +38,6 @@ Diagnostic::Diagnostic(IceGrid::ConstPtr g)
   : m_grid(g),
     m_sys(g->ctx()->unit_system()),
     m_config(g->ctx()->config()),
-    m_dof(1),
     m_fill_value(m_config->get_double("output.fill_value")) {
   // empty
 }
@@ -66,7 +65,7 @@ void Diagnostic::reset_impl() {
 
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
 unsigned int Diagnostic::n_variables() const {
-  return m_dof;
+  return m_vars.size();
 }
 
 void Diagnostic::init(const PIO &input, unsigned int time) {
@@ -99,7 +98,7 @@ void Diagnostic::write_state_impl(const PIO &output) const {
 
 //! Get a metadata object corresponding to variable number N.
 SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
-  if (N >= m_dof) {
+  if (N >= m_vars.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "variable metadata index %d is out of bounds",
                                   N);
@@ -114,9 +113,8 @@ void Diagnostic::define(const PIO &file, IO_Type default_type) const {
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
 void Diagnostic::define_impl(const PIO &file, IO_Type default_type) const {
-  for (unsigned int j = 0; j < m_dof; ++j) {
-    io::define_spatial_variable(m_vars[j], *m_grid, file,
-                                default_type,
+  for (auto &v : m_vars) {
+    io::define_spatial_variable(v, *m_grid, file, default_type,
                                 m_grid->ctx()->config()->get_string("output.variable_order"));
   }
 }
@@ -127,8 +125,9 @@ void Diagnostic::set_attrs(const std::string &long_name,
                            const std::string &units,
                            const std::string &glaciological_units,
                            unsigned int N) {
-  if (N >= m_dof) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "N (%d) >= m_dof (%d)", N, m_dof);
+  if (N >= m_vars.size()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "N (%d) >= m_dof (%d)", N, (int)m_vars.size());
   }
 
   m_vars[N].set_string("pism_intent", "diagnostic");

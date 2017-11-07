@@ -19,6 +19,8 @@
 #ifndef _PSTEMPERATUREINDEX_H_
 #define _PSTEMPERATUREINDEX_H_
 
+#include <memory>
+
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "localMassBalance.hh"
@@ -66,13 +68,14 @@ protected:
   double compute_next_balance_year_start(double time);
 protected:
   //! mass balance scheme to use
-  LocalMassBalance *m_mbscheme;
+
+  std::unique_ptr<LocalMassBalance> m_mbscheme;
 
   //! if not NULL then user wanted fausto PDD stuff
-  FaustoGrevePDDObject *m_faustogreve;
+  std::unique_ptr<FaustoGrevePDDObject> m_faustogreve;
 
   //! if not NULL then user wanted Aschwanden PDD stuff
-  AschwandenPDDObject *m_aschwanden;
+  std::unique_ptr<AschwandenPDDObject> m_aschwanden;
 
   //! holds degree-day factors in location-independent case
   LocalMassBalance::DegreeDayFactors m_base_ddf;

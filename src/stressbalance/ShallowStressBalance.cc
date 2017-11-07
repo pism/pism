@@ -294,8 +294,6 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
 SSB_taud::SSB_taud(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
-  m_dof = 2;
-
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "taud_x"),
             SpatialVariableMetadata(m_sys, "taud_y")};
@@ -305,9 +303,9 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
   set_attrs("Y-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (unsigned int k = 0; k < m_dof; ++k) {
-    m_vars[k].set_string("comment",
-                       "this field is purely diagnostic (not used by the model)");
+  for (auto &v : m_vars) {
+    v.set_string("comment",
+                 "this field is purely diagnostic (not used by the model)");
   }
 }
 
@@ -372,8 +370,6 @@ IceModelVec::Ptr SSB_taud_mag::compute_impl() const {
 
 SSB_taub::SSB_taub(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
-  m_dof = 2;
-
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "taub_x"),
             SpatialVariableMetadata(m_sys, "taub_y")};
@@ -383,9 +379,9 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
   set_attrs("Y-component of the shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (unsigned int k = 0; k < m_dof; ++k) {
-    m_vars[k].set_string("comment",
-                       "this field is purely diagnostic (not used by the model)");
+  for (auto &v : m_vars) {
+    v.set_string("comment",
+                 "this field is purely diagnostic (not used by the model)");
   }
 }
 
