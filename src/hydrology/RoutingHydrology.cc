@@ -793,7 +793,6 @@ Routing_bwatvel::Routing_bwatvel(const Routing *m)
   : Diag<Routing>(m) {
 
   // set metadata:
-  m_dof = 2;
   m_vars = {SpatialVariableMetadata(m_sys, "bwatvel[0]"),
             SpatialVariableMetadata(m_sys, "bwatvel[1]")};
 

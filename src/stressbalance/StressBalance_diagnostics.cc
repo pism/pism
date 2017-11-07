@@ -73,8 +73,6 @@ std::map<std::string, TSDiagnostic::Ptr> StressBalance::ts_diagnostics_impl() co
 PSB_velbar::PSB_velbar(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
-  m_dof = 2;
-
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "ubar"),
             SpatialVariableMetadata(m_sys, "vbar")};
@@ -153,8 +151,6 @@ IceModelVec::Ptr PSB_velbar_mag::compute_impl() const {
 
 PSB_flux::PSB_flux(const StressBalance *m)
   : Diag<StressBalance>(m) {
-
-  m_dof = 2;
 
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "uflux"),
@@ -362,8 +358,6 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_dof = 2;
-
   m_vars = {SpatialVariableMetadata(m_sys, "uvelsurf"),
             SpatialVariableMetadata(m_sys, "vvelsurf")};
 
@@ -609,8 +603,6 @@ PSB_velbase::PSB_velbase(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
   // set metadata:
-  m_dof = 2;
-
   m_vars = {SpatialVariableMetadata(m_sys, "uvelbase"),
             SpatialVariableMetadata(m_sys, "vvelbase")};
 
@@ -864,8 +856,6 @@ IceModelVec::Ptr PSB_strainheat::compute_impl() const {
 
 PSB_strain_rates::PSB_strain_rates(const StressBalance *m)
   : Diag<StressBalance>(m) {
-  m_dof = 2;
-
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "eigen1"),
             SpatialVariableMetadata(m_sys, "eigen2")};
@@ -899,8 +889,6 @@ IceModelVec::Ptr PSB_strain_rates::compute_impl() const {
 
 PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
   : Diag<StressBalance>(m) {
-  m_dof = 3;
-
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "sigma_xx"),
             SpatialVariableMetadata(m_sys, "sigma_yy"),
