@@ -83,8 +83,8 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
                                const std::vector<double> &z_output) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
-  grid.ctx()->log()->message(3, "\nRegridding file grid info:\n");
-  input.report(*grid.ctx()->log(), 3, grid.ctx()->unit_system());
+  grid.ctx()->log()->message(4, "\nRegridding file grid info:\n");
+  input.report(*grid.ctx()->log(), 4, grid.ctx()->unit_system());
 
   // limits of the processor's part of the target computational domain
   const double
