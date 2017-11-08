@@ -19,12 +19,12 @@
 #include <cassert>
 #include <algorithm>
 
-#include "Hydrology.hh"
+#include "Routing.hh"
 #include "hydrology_diagnostics.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/Vars.hh"
+
 #include "pism/util/error_handling.hh"
 
 #include "pism/util/pism_options.hh"

@@ -22,7 +22,7 @@
 
 #include "MohrCoulombYieldStress.hh"
 
-#include "pism/hydrology/Hydrology.hh"
+#include "pism/hydrology/Routing.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"

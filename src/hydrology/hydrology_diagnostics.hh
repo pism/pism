@@ -22,6 +22,7 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/Diagnostic.hh"
 #include "Hydrology.hh"
+#include "Routing.hh"
 
 namespace pism {
 namespace hydrology {

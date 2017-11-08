@@ -11,7 +11,7 @@
 #include <pism/coupler/atmosphere/Factory.hh>
 #include <pism/coupler/ocean/Factory.hh>
 #include <pism/coupler/surface/Factory.hh>
-#include <pism/hydrology/Hydrology.hh>
+#include <pism/hydrology/NullTransport.hh>
 
 #include <pism/util/Time.hh>
 // --------------------------------
