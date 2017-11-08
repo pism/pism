@@ -275,6 +275,9 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
+  double max_timestep_diffusivity(double KW_max) const;
+  double max_timestep_cfl() const;
+
 protected:
   // this model's state
   // water layer thickness
@@ -339,11 +342,6 @@ protected:
                         const IceModelVec2S &W,
                         IceModelVec2Stag &result) const;
 
-  void W_max_timestep(double dt_max, double maxKW,
-                      double &dt_result,
-                      double &maxV_result, double &maxD_result,
-                      double &dtCFL_result, double &dtDIFFW_result);
-
   void raw_update_W(double hdt);
   void raw_update_Wtil(double hdt);
 protected:
@@ -393,11 +391,6 @@ protected:
                        const IceModelVec2S &P_overburden,
                        const IceModelVec2S &sliding_speed,
                        IceModelVec2S &result);
-
-  void adaptive_for_WandP_evolution(double dt_max, double maxKW,
-                                    double &dt_result,
-                                    double &maxV_result, double &maxD_result,
-                                    double &PtoCFLratio);
 protected:
   IceModelVec2S m_P;
   IceModelVec2S m_Pnew;

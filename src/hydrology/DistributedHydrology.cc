@@ -235,32 +235,6 @@ void Distributed::P_from_W_steady(const IceModelVec2S &W,
   }
 }
 
-
-//! Computes the adaptive time step for this (W,P) state space model.
-void Distributed::adaptive_for_WandP_evolution(double dt_max, double maxKW,
-                                               double &dt_result,
-                                               double &maxV_result, double &maxD_result,
-                                               double &PtoCFLratio) {
-  double dtCFL, dtDIFFW, dtDIFFP;
-
-  W_max_timestep(dt_max, maxKW,
-                 dt_result,
-                 maxV_result, maxD_result, dtCFL, dtDIFFW);
-
-  const double phi0 = m_config->get_double("hydrology.regularizing_porosity");
-  dtDIFFP = 2.0 * phi0 * dtDIFFW;
-
-  // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
-  dt_result = std::min(dt_result, dtDIFFP);
-
-  if (dtDIFFP > 0.0) {
-    PtoCFLratio = std::max(1.0, dtCFL / dtDIFFP);
-  } else {
-    PtoCFLratio = 1.0;
-  }
-}
-
-
 //! Update the model state variables W,P by running the subglacial hydrology model.
 /*!
 Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
@@ -322,8 +296,9 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
   compute_overburden_pressure(ice_thickness, m_Pover);
 
-  double t_final = m_t + m_dt;
-  double dt_max = m_config->get_double("hydrology.maximum_time_step");
+  const double
+    t_final = m_t + m_dt,
+    dt_max  = m_config->get_double("hydrology.maximum_time_step");
 
   unsigned int step_counter = 0;
   while (ht < m_t + m_dt) {
@@ -357,8 +332,27 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     // to get Qstag, W needs valid ghosts
     advective_fluxes(m_V, m_W, m_Q);
 
-    adaptive_for_WandP_evolution(std::min(t_final - ht, dt_max), maxKW,
-                                 hdt, maxV, maxD, PtoCFLratio);
+    {
+      const double
+        dt_cfl    = max_timestep_cfl(),
+        dt_diff_w = max_timestep_diffusivity(maxKW),
+        dt_diff_p = 2.0 * phi0 * dt_diff_w;
+
+      // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
+
+      hdt = std::min(t_final - ht, dt_max);
+      hdt = std::min(hdt, dt_cfl);
+      hdt = std::min(hdt, dt_diff_w);
+      hdt = std::min(hdt, dt_diff_p);
+
+      if (dt_diff_p > 0.0) {
+        PtoCFLratio = std::max(1.0, dt_cfl / dt_diff_p);
+      } else {
+        PtoCFLratio = 1.0;
+      }
+    }
+
+
     // {
     //   units::Converter years(m_sys, "seconds", "years");
 

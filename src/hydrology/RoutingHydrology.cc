@@ -462,7 +462,7 @@ void wall_melt(const Routing &model,
   R.create(grid, "R", WITH_GHOSTS);
 
   // R  <-- P + rhow g b
-  model.subglacial_water_pressure().add(m_rg, bed_elevation, R);
+  model.subglacial_water_pressure().add(rg, bed_elevation, R);
   // yes, it updates ghosts
 
   IceModelVec2S W;
@@ -586,33 +586,15 @@ void Routing::advective_fluxes(const IceModelVec2Stag &V,
   result.update_ghosts();
 }
 
-
-//! Compute the adaptive time step for evolution of W.
-void Routing::W_max_timestep(double dt_max, double maxKW,
-                             double &dt,
-                             double &maxV, double &maxD,
-                             double &dtCFL, double &dtDIFFW) {
-
-  dtCFL = max_timestep_cfl();
-
-  dtDIFFW = max_timestep_diffusivity(maxKW);
-
-  // dt = min {dt_max, dtCFL, dtDIFFW}
-  dt = std::min(dt_max, dtCFL);
-  dt = std::min(dt, dtDIFFW);
-}
-
-double Routing::max_timestep_diffusivity(double KW_max) {
-  double D_max = m_rg * maxKW;
+double Routing::max_timestep_diffusivity(double KW_max) const {
+  double D_max = m_rg * KW_max;
   double result = 1.0/(m_dx*m_dx) + 1.0/(m_dy*m_dy);
   return 0.25 / (D_max * result);
 }
 
-double Routing::max_timestep_cfl() {
+double Routing::max_timestep_cfl() const {
   // V could be zero if P is constant and bed is flat
   std::vector<double> tmp = m_V.absmaxcomponents();
-
-  maxV = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
 
   return 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
 }
@@ -710,8 +692,9 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
 
-  double ht = m_t, hdt = 0.0, // hydrology model time and time step
-    maxKW = 0.0, maxV = 0.0, maxD = 0.0, dtCFL = 0.0, dtDIFFW = 0.0;
+  // hydrology model time and time step
+  double ht = m_t, hdt = 0.0;
+
   double icefreelost = 0.0, oceanlost = 0.0, negativegain = 0.0, nullstriplost = 0.0;
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
@@ -722,8 +705,9 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
                  cell_type,
                  m_total_input);
 
-  double t_final = m_t + m_dt;
-  double dt_max = m_config->get_double("hydrology.maximum_time_step");
+  const double
+    t_final = m_t + m_dt,
+    dt_max  = m_config->get_double("hydrology.maximum_time_step");
 
   unsigned int step_counter = 0;
   while (ht < m_t + m_dt) {
@@ -738,6 +722,7 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
                               cell_type,
                               m_Wstag);
 
+    double maxKW = 0.0;
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
                          bed,
@@ -752,8 +737,16 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     // to get Q, W needs valid ghosts
     advective_fluxes(m_V, m_W, m_Q);
 
-    W_max_timestep(std::min(t_final - ht, dt_max), maxKW,
-                   hdt, maxV, maxD, dtCFL, dtDIFFW);
+    {
+      const double
+        dt_cfl    = max_timestep_cfl(),
+        dt_diff_w = max_timestep_diffusivity(maxKW);
+
+      // dt = min {dt_max, dtCFL, dtDIFFW}
+      hdt = std::min(t_final - ht, dt_max);
+      hdt = std::min(hdt, dt_cfl);
+      hdt = std::min(hdt, dt_diff_w);
+    }
 
     // update Wtilnew from Wtil
     raw_update_Wtil(hdt);
@@ -775,8 +768,8 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
              step_counter, units::convert(m_sys, m_dt/step_counter, "seconds", "years"));
 
   m_log->message(3,
-             "  (hydrology info: dt = %.2f s, max |V| = %.2e m s-1, max D = %.2e m^2 s-1)\n",
-             m_dt/step_counter, maxV, maxD);
+                 "  (hydrology info: dt = %.2f s)\n",
+                 m_dt/step_counter);
 
   m_boundary_accounting.ice_free_land_loss      += icefreelost;
   m_boundary_accounting.ocean_loss              += oceanlost;
@@ -797,7 +790,6 @@ public:
     : Diag<Routing>(m) {
 
     // set metadata:
-    m_dof = 2;
     m_vars = {SpatialVariableMetadata(m_sys, "bwatvel[0]"),
               SpatialVariableMetadata(m_sys, "bwatvel[1]")};
 
