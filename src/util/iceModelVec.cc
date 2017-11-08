@@ -413,8 +413,6 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
  */
 void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
                               double default_value) {
-  m_grid->ctx()->log()->message(3, "  Regridding %s...\n", m_name.c_str());
-
   if (m_dof != 1) {
     throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::regrid_impl)"
                        " only supports IceModelVecs with dof == 1.");
@@ -845,8 +843,22 @@ void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
  */
 void IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
                          double default_value) {
-  this->regrid_impl(nc, flag, default_value);
-  inc_state_counter();          // mark as modified
+  m_grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
+                                timestamp(m_grid->com).c_str(), m_name.c_str());
+  double start_time = get_time();
+  {
+    this->regrid_impl(nc, flag, default_value);
+    inc_state_counter();          // mark as modified
+  }
+  double
+    end_time   = get_time(),
+    time_spent = end_time - start_time;
+
+  if (time_spent > 1.0) {
+    m_grid->ctx()->log()->message(3, "  done in %f seconds.\n", time_spent);
+  } else {
+    m_grid->ctx()->log()->message(3, "  done.\n");
+  }
 }
 
 void IceModelVec::read(const PIO &nc, const unsigned int time) {

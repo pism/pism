@@ -359,8 +359,6 @@ void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
     return;
   }
 
-  m_grid->ctx()->log()->message(3, "  Regridding %s...\n", m_name.c_str());
-
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
   petsc::DM::Ptr da2 = m_grid->get_dm(1, 0);
