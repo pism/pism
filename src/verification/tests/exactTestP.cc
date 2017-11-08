@@ -143,7 +143,7 @@ EPS_ABS = 1e-12, EPS_REL=0.0, method = RK Dormand-Prince O(8)/O(9)
 is believed for now to be predictable and accurate.  Note hstart is negative
 so that the ODE solver does negative steps.  Assumes
    0 <= r[N-1] <= r[N-2] <= ... <= r[1] <= r[0] <= L.                            */
-int getW(const double *r, int N, double *W, const double EPS_ABS, const double EPS_REL, const int ode_method) {
+int getW(const double *r, int N, double *W, double EPS_ABS, double EPS_REL, int ode_method) {
   int count;
   int status = TESTP_NOT_DONE;
   double rr, hstart;
@@ -190,7 +190,7 @@ int getW(const double *r, int N, double *W, const double EPS_ABS, const double E
 
 #else
 int getW(const double *r, int N, double *W,
-         const double EPS_ABS, const double EPS_REL, const int ode_method) {
+         double EPS_ABS, double EPS_REL, int ode_method) {
   (void) r;
   (void) EPS_ABS;
   (void) EPS_REL;
@@ -204,7 +204,7 @@ int getW(const double *r, int N, double *W,
 #endif
 
 int exactP_list(const double *r, int N, double *h, double *magvb, double *Wcrit, double *W, double *P,
-                const double EPS_ABS, const double EPS_REL, const int ode_method) {
+                double EPS_ABS, double EPS_REL, int ode_method) {
 
   int i, M, status;
   /* check first: we have a list, r is decreasing, r is in range [0,L) */
