@@ -266,7 +266,6 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   double
     ht    = m_t,
     hdt   = 0.0,                  // hydrology model time and time step
-    maxKW = 0.0,
     maxV  = 0.0,
     maxD  = 0.0;
 
@@ -291,7 +290,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     dt_max  = m_config->get_double("hydrology.maximum_time_step");
 
   unsigned int step_counter = 0;
-  while (ht < m_t + m_dt) {
+  while (ht < t_final) {
     step_counter++;
 
 #if (PISM_DEBUG==1)
@@ -300,14 +299,15 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 #endif
 
     // note that ice dynamics can change overburden pressure, so we can only check P
-    //   bounds if thk has not changed; if thk could have just changed, such as in the
-    //   first time through the current loop, we enforce them
+    // bounds if thk has not changed; if thk could have just changed, such as in the first
+    // time through the current loop, we enforce them
     check_P_bounds((step_counter == 1));
 
     water_thickness_staggered(m_W,
                               cell_type,
                               m_Wstag);
 
+    double maxKW = 0.0;
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
                          bed_elevation,
@@ -319,7 +319,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
                      m_K,
                      m_V);
 
-    // to get Qstag, W needs valid ghosts
+    // to get Q, W needs valid ghosts
     advective_fluxes(m_V, m_W, m_Q);
 
     {
@@ -327,8 +327,6 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
         dt_cfl    = max_timestep_cfl(),
         dt_diff_w = max_timestep_diffusivity(maxKW),
         dt_diff_p = 2.0 * phi0 * dt_diff_w;
-
-      // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
 
       hdt = std::min(t_final - ht, dt_max);
       hdt = std::min(hdt, dt_cfl);
@@ -342,65 +340,55 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
       }
     }
 
-
-    // {
-    //   units::Converter years(m_sys, "seconds", "years");
-
-    //   using units::convert;
-    //   m_log->message(4,
-    //                  "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
-    //                  convert(m_sys, maxV, "m second-1", "m year-1"),
-    //                  years(dtCFL), years(dtDIFFW), years(dtDIFFP), years(hdt), years(ht));
-    // }
-
-    cumratio += PtoCFLratio;
-
     // update Wtilnew from Wtil
     raw_update_Wtil(hdt);
     // correct water thickness and account for the changes
 
-    // update Pnew from time step
-    const double
-      CC  = (m_rg * hdt) / phi0,
-      wux = 1.0 / (m_dx * m_dx),
-      wuy = 1.0 / (m_dy * m_dy);
-    double diffW;
+    {
+      // update Pnew from time step
+      const double
+        CC  = (m_rg * hdt) / phi0,
+        wux = 1.0 / (m_dx * m_dx),
+        wuy = 1.0 / (m_dy * m_dy);
 
-    IceModelVec::AccessList list{&m_P, &m_W, &m_Wtil, &m_Wtilnew, &sliding_speed, &m_Wstag,
-        &m_K, &m_Q, &m_total_input, &cell_type, &m_Pover, &m_Pnew};
+      IceModelVec::AccessList list{&m_P, &m_W, &m_Wtil, &m_Wtilnew, &sliding_speed, &m_Wstag,
+          &m_K, &m_Q, &m_total_input, &cell_type, &m_Pover, &m_Pnew};
 
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
 
-      if (cell_type.ice_free_land(i,j)) {
-        m_Pnew(i,j) = 0.0;
-      } else if (cell_type.ocean(i,j)) {
-        m_Pnew(i,j) = m_Pover(i,j);
-      } else if (m_W(i,j) <= 0.0) {
-        m_Pnew(i,j) = m_Pover(i,j);
-      } else {
-        // opening and closure terms in pressure equation
-        double Open = std::max(0.0,c1 * sliding_speed(i,j) * (Wr - m_W(i,j)));
-        double Close = c2 * Aglen * pow(m_Pover(i,j) - m_P(i,j),nglen) * m_W(i,j);
+        if (cell_type.ice_free_land(i, j)) {
+          m_Pnew(i, j) = 0.0;
+        } else if (cell_type.ocean(i, j)) {
+          m_Pnew(i, j) = m_Pover(i, j);
+        } else if (m_W(i, j) <= 0.0) {
+          m_Pnew(i, j) = m_Pover(i, j);
+        } else {
+          // opening and closure terms in pressure equation
+          double Open  = std::max(0.0, c1 * sliding_speed(i, j) * (Wr - m_W(i, j)));
+          double Close = c2 * Aglen * pow(m_Pover(i, j) - m_P(i, j), nglen) * m_W(i, j);
 
-        // compute the flux divergence the same way as in raw_update_W()
-        const double divadflux =
-          (m_Q(i,j,0) - m_Q(i-1,j  ,0)) / m_dx +
-          (m_Q(i,j,1) - m_Q(i,  j-1,1)) / m_dy;
-        const double
-          De = m_rg * m_K(i,  j,0) * m_Wstag(i,  j,0),
-          Dw = m_rg * m_K(i-1,j,0) * m_Wstag(i-1,j,0),
-          Dn = m_rg * m_K(i,j  ,1) * m_Wstag(i,j  ,1),
-          Ds = m_rg * m_K(i,j-1,1) * m_Wstag(i,j-1,1);
-        diffW =   wux * (De * (m_W(i+1,j) - m_W(i,j)) - Dw * (m_W(i,j) - m_W(i-1,j)))
-          + wuy * (Dn * (m_W(i,j+1) - m_W(i,j)) - Ds * (m_W(i,j) - m_W(i,j-1)));
-        double divflux = - divadflux + diffW;
+          // compute the flux divergence the same way as in raw_update_W()
+          const double divadflux = ((m_Q(i, j, 0) - m_Q(i - 1, j, 0)) / m_dx +
+                                    (m_Q(i, j, 1) - m_Q(i, j - 1, 1)) / m_dy);
+          const double
+            De = m_rg * m_K(i, j, 0) * m_Wstag(i, j, 0),
+            Dw = m_rg * m_K(i - 1, j, 0) * m_Wstag(i - 1, j, 0),
+            Dn = m_rg * m_K(i, j, 1) * m_Wstag(i, j, 1),
+            Ds = m_rg * m_K(i, j - 1, 1) * m_Wstag(i, j - 1, 1);
 
-        // pressure update equation
-        double ZZ = Close - Open + m_total_input(i,j) - (m_Wtilnew(i,j) - m_Wtil(i,j)) / hdt;
-        m_Pnew(i,j) = m_P(i,j) + CC * (divflux + ZZ);
-        // projection to enforce  0 <= P <= P_o
-        m_Pnew(i,j) = std::min(std::max(0.0, m_Pnew(i,j)), m_Pover(i,j));
+          double diffW = (wux * (De * (m_W(i + 1, j) - m_W(i, j)) - Dw * (m_W(i, j) - m_W(i - 1, j))) +
+                          wuy * (Dn * (m_W(i, j + 1) - m_W(i, j)) - Ds * (m_W(i, j) - m_W(i, j - 1))));
+
+          double divflux = -divadflux + diffW;
+
+          // pressure update equation
+          double ZZ = Close - Open + m_total_input(i, j) - (m_Wtilnew(i, j) - m_Wtil(i, j)) / hdt;
+          m_Pnew(i, j) = m_P(i, j) + CC * (divflux + ZZ);
+
+          // projection to enforce  0 <= P <= P_o
+          m_Pnew(i, j) = std::min(std::max(0.0, m_Pnew(i, j)), m_Pover(i, j));
+        }
       }
     }
 

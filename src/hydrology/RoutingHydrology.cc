@@ -562,12 +562,18 @@ void Routing::advective_fluxes(const IceModelVec2Stag &V,
   result.update_ghosts();
 }
 
+/*!
+ * See equation (51) in Bueler and van Pelt.
+ */
 double Routing::max_timestep_diffusivity(double KW_max) const {
   double D_max = m_rg * KW_max;
   double result = 1.0/(m_dx*m_dx) + 1.0/(m_dy*m_dy);
   return 0.25 / (D_max * result);
 }
 
+/*!
+ * See equation (50) in Bueler and van Pelt.
+ */
 double Routing::max_timestep_cfl() const {
   // V could be zero if P is constant and bed is flat
   std::vector<double> tmp = m_V.absmaxcomponents();
@@ -670,7 +676,7 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
   double ht = m_t, hdt = 0.0;
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
-  const IceModelVec2S &bed = *inputs.bed_elevation;
+  const IceModelVec2S &bed_elevation = *inputs.bed_elevation;
 
   get_input_rate(*inputs.basal_melt_rate,
                  *inputs.surface_input_rate,
@@ -682,7 +688,7 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     dt_max  = m_config->get_double("hydrology.maximum_time_step");
 
   unsigned int step_counter = 0;
-  while (ht < m_t + m_dt) {
+  while (ht < t_final) {
     step_counter++;
 
 #if (PISM_DEBUG==1)
@@ -697,12 +703,12 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     double maxKW = 0.0;
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
-                         bed,
+                         bed_elevation,
                          m_K, maxKW);
 
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
-                     bed,
+                     bed_elevation,
                      m_K,
                      m_V);
 
