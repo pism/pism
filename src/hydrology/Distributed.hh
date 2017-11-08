@@ -58,9 +58,10 @@ protected:
   void define_model_state_impl(const PIO &output) const;
   void write_model_state_impl(const PIO &output) const;
 
-  void init_bwp();
-
   void check_P_bounds(bool enforce_upper);
+
+  // initialization
+  void init_bwp();
 
   void P_from_W_steady(const IceModelVec2S &W,
                        const IceModelVec2S &P_overburden,

@@ -118,7 +118,6 @@ Routing::~Routing() {
   // empty
 }
 
-
 void Routing::init() {
   m_log->message(2,
              "* Initializing the routing subglacial hydrology model ...\n");
@@ -162,7 +161,6 @@ void Routing::init_bwat() {
   regrid("hydrology::Routing", m_W);
 }
 
-
 void Routing::define_model_state_impl(const PIO &output) const {
   Hydrology::define_model_state_impl(output);
   m_W.define(output);
@@ -172,7 +170,6 @@ void Routing::write_model_state_impl(const PIO &output) const {
   Hydrology::write_model_state_impl(output);
   m_W.write(output);
 }
-
 
 //! Check thk >= 0 and fails with message if not satisfied.
 void Routing::check_water_thickness_nonnegative(const IceModelVec2S &waterthk) {
@@ -254,7 +251,6 @@ void Routing::boundary_mass_changes(const IceModelVec2S &cell_area,
   }
 }
 
-
 //! Copies the W variable, the modeled transportable water layer thickness.
 const IceModelVec2S& Routing::subglacial_water_thickness() const {
   return m_W;
@@ -300,35 +296,35 @@ void Routing::water_thickness_staggered(const IceModelVec2S &W,
                                         const IceModelVec2CellType &mask,
                                         IceModelVec2Stag &result) {
 
-  IceModelVec::AccessList list{&mask, &W, &result};
+  IceModelVec::AccessList list{ &mask, &W, &result };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // east
     if (mask.grounded_ice(i, j)) {
-      if (mask.grounded_ice(i+1, j)) {
-        result(i, j, 0) = 0.5 * (W(i, j) + W(i+1, j));
+      if (mask.grounded_ice(i + 1, j)) {
+        result(i, j, 0) = 0.5 * (W(i, j) + W(i + 1, j));
       } else {
         result(i, j, 0) = W(i, j);
       }
     } else {
-      if (mask.grounded_ice(i+1, j)) {
-        result(i, j, 0) = W(i+1, j);
+      if (mask.grounded_ice(i + 1, j)) {
+        result(i, j, 0) = W(i + 1, j);
       } else {
         result(i, j, 0) = 0.0;
       }
     }
     // north
     if (mask.grounded_ice(i, j)) {
-      if (mask.grounded_ice(i, j+1)) {
-        result(i, j, 1) = 0.5 * (W(i, j) + W(i, j+1));
+      if (mask.grounded_ice(i, j + 1)) {
+        result(i, j, 1) = 0.5 * (W(i, j) + W(i, j + 1));
       } else {
         result(i, j, 1) = W(i, j);
       }
     } else {
-      if (mask.grounded_ice(i, j+1)) {
-        result(i, j, 1) = W(i, j+1);
+      if (mask.grounded_ice(i, j + 1)) {
+        result(i, j, 1) = W(i, j + 1);
       } else {
         result(i, j, 1) = 0.0;
       }
@@ -356,7 +352,7 @@ void Routing::water_thickness_staggered(const IceModelVec2S &W,
 */
 void Routing::compute_conductivity(const IceModelVec2Stag &W,
                                    const IceModelVec2S &P,
-                                   const IceModelVec2S &bed,
+                                   const IceModelVec2S &bed_elevation,
                                    IceModelVec2Stag &result,
                                    double &KW_max) const {
   const double
@@ -370,7 +366,7 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
   // norm of the gradient of the simplified hydrolic potential (Pi) in "result"
   if (beta != 2.0) {
     // R  <-- P + rhow g b
-    P.add(m_rg, bed, m_R);  // yes, it updates ghosts
+    P.add(m_rg, bed_elevation, m_R);  // yes, it updates ghosts
 
     list.add(m_R);
     for (Points p(*m_grid); p; p.next()) {

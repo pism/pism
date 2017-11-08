@@ -97,8 +97,8 @@ void Distributed::init() {
 
 void Distributed::init_bwp() {
 
-  // initialize water layer thickness from the context if present, otherwise from -i otherwise with
-  // constant value
+  // initialize water layer thickness from the context if present, otherwise from -i
+  // otherwise with constant value
 
   InputOptions opts = process_input_options(m_grid->com);
 
@@ -109,8 +109,8 @@ void Distributed::init_bwp() {
   switch (opts.type) {
   case INIT_RESTART:
   case INIT_BOOTSTRAP:
-    // regridding is equivalent to reading in if grids match, but this way we can start from a file
-    // that does not have 'bwp', setting it to bwp_default
+    // regridding is equivalent to reading in if grids match, but this way we can start
+    // from a file that does not have 'bwp', setting it to bwp_default
     m_P.regrid(opts.filename, OPTIONAL, bwp_default);
     break;
   case INIT_OTHER:

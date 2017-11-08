@@ -149,8 +149,6 @@ protected:
                              const IceModelVec2CellType &mask,
                              IceModelVec2S &water_thickness);
 
-  BoundaryAccounting m_boundary_accounting;
-
   void check_water_thickness_nonnegative(const IceModelVec2S &thk);
 
   void water_thickness_staggered(const IceModelVec2S &W,
@@ -183,6 +181,8 @@ protected:
   void raw_update_W(double hdt);
   void raw_update_Wtil(double hdt);
 protected:
+  BoundaryAccounting m_boundary_accounting;
+
   double m_dx, m_dy;
 
   double m_rg;
