@@ -77,8 +77,6 @@ void Distributed::init() {
 
   init_bwp();
 
-  m_boundary_accounting.reset();
-
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
     m_log->message(2,
                "  option -init_P_from_steady seen ...\n"
@@ -253,8 +251,6 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   m_t = icet;
   m_dt = icedt;
 
-  m_boundary_accounting.reset();
-
   // make sure W,P have valid ghosts before starting hydrology steps
   m_W.update_ghosts();
   m_P.update_ghosts();
@@ -273,12 +269,6 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     maxKW = 0.0,
     maxV  = 0.0,
     maxD  = 0.0;
-
-  double
-    icefreelost     = 0.0,
-    oceanlost       = 0.0,
-    negativegain    = 0.0,
-    nullstriplost   = 0.0;
 
   double
     PtoCFLratio = 0.0,          // for reporting ratio of dtCFL to dtDIFFP
@@ -434,11 +424,6 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
              "  (hydrology info: dt = %.2f s,  av %.2f steps per CFL,  max |V| = %.2e m s-1,"
              "  max D = %.2e m^2 s-1)\n",
              m_dt/step_counter, cumratio/step_counter, maxV, maxD);
-
-  m_boundary_accounting.ice_free_land_loss      += icefreelost;
-  m_boundary_accounting.ocean_loss              += oceanlost;
-  m_boundary_accounting.negative_thickness_gain += negativegain;
-  m_boundary_accounting.null_strip_loss         += nullstriplost;
 }
 
 } // end of namespace hydrology

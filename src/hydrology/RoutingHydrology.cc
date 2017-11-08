@@ -33,21 +33,6 @@
 namespace pism {
 namespace hydrology {
 
-Routing::BoundaryAccounting::BoundaryAccounting() {
-  reset();
-}
-
-void Routing::BoundaryAccounting::reset() {
-  ice_free_land_loss      = 0.0;
-  ocean_loss              = 0.0;
-  null_strip_loss         = 0.0;
-  negative_thickness_gain = 0.0;
-}
-
-Routing::BoundaryAccounting Routing::boundary_mass_accounting() const {
-  return m_boundary_accounting;
-}
-
 Routing::Routing(IceGrid::ConstPtr g)
   : Hydrology(g), m_dx(g->dx()), m_dy(g->dy())
 {
@@ -55,9 +40,6 @@ Routing::Routing(IceGrid::ConstPtr g)
              m_config->get_double("constants.standard_gravity"));
 
   m_stripwidth = m_config->get_double("hydrology.null_strip_width");
-
-  // these variables are also set to zero every time init() is called
-  m_boundary_accounting.reset();
 
   // model state variables; need ghosts
   m_W.create(m_grid, "bwat", WITH_GHOSTS, 1);
@@ -133,8 +115,6 @@ void Routing::init() {
   Hydrology::init();
 
   init_bwat();
-
-  m_boundary_accounting.reset();
 }
 
 void Routing::init_bwat() {
@@ -678,8 +658,6 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
   m_t = icet;
   m_dt = icedt;
 
-  m_boundary_accounting.reset();
-
   if (m_config->get_double("hydrology.tillwat_max") < 0.0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "hydrology::Routing: hydrology.tillwat_max is negative.\n"
                        "This is not allowed.");
@@ -690,8 +668,6 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
 
   // hydrology model time and time step
   double ht = m_t, hdt = 0.0;
-
-  double icefreelost = 0.0, oceanlost = 0.0, negativegain = 0.0, nullstriplost = 0.0;
 
   const IceModelVec2CellType &cell_type = *inputs.cell_type;
   const IceModelVec2S &bed = *inputs.bed_elevation;
@@ -766,11 +742,6 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
   m_log->message(3,
                  "  (hydrology info: dt = %.2f s)\n",
                  m_dt/step_counter);
-
-  m_boundary_accounting.ice_free_land_loss      += icefreelost;
-  m_boundary_accounting.ocean_loss              += oceanlost;
-  m_boundary_accounting.negative_thickness_gain += negativegain;
-  m_boundary_accounting.null_strip_loss         += nullstriplost;
 }
 
 const IceModelVec2Stag& Routing::velocity_staggered() const {

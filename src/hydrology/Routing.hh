@@ -81,16 +81,6 @@ namespace hydrology {
 class Routing : public Hydrology {
 public:
 
-  //! Mass losses and gains at the boundary (over the last time step).
-  struct BoundaryAccounting {
-    BoundaryAccounting();
-    double ice_free_land_loss;
-    double ocean_loss;
-    double null_strip_loss;
-    double negative_thickness_gain;
-    void reset();
-  };
-
   Routing(IceGrid::ConstPtr g);
   virtual ~Routing();
 
@@ -99,8 +89,6 @@ public:
   const IceModelVec2S& subglacial_water_thickness() const;
 
   const IceModelVec2S& subglacial_water_pressure() const;
-
-  BoundaryAccounting boundary_mass_accounting() const;
 
   const IceModelVec2Stag& velocity_staggered() const;
 
@@ -181,8 +169,6 @@ protected:
   void raw_update_W(double hdt);
   void raw_update_Wtil(double hdt);
 protected:
-  BoundaryAccounting m_boundary_accounting;
-
   double m_dx, m_dy;
 
   double m_rg;
