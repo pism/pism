@@ -861,9 +861,9 @@ void IceModelVec::write(const PIO &nc) const {
                                timestamp(m_grid->com).c_str(),
                                m_name.c_str());
 
-  PetscLogDouble start_time = get_time();
+  double start_time = get_time();
   write_impl(nc);
-  PetscLogDouble end_time = get_time();
+  double end_time = get_time();
 
   const double
     time_spent = end_time - start_time,
