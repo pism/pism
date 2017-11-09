@@ -20,8 +20,6 @@
 #include <memory>
 #include <cassert>
 
-#include <gsl/gsl_interp.h>
-
 #include "io_helpers.hh"
 #include "PIO.hh"
 #include "pism/util/IceGrid.hh"
