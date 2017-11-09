@@ -29,6 +29,7 @@
 #include "iceModelVec_helpers.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 
@@ -846,10 +847,12 @@ void IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
   m_grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
                                 timestamp(m_grid->com).c_str(), m_name.c_str());
   double start_time = get_time();
+  m_grid->ctx()->profiling().begin("io.regridding");
   {
     this->regrid_impl(nc, flag, default_value);
     inc_state_counter();          // mark as modified
   }
+  m_grid->ctx()->profiling().end("io.regridding");
   double
     end_time   = get_time(),
     time_spent = end_time - start_time;
