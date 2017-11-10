@@ -50,6 +50,8 @@ public:
   const IceModelVec2S& subglacial_water_pressure() const;
 
 protected:
+  virtual double max_timestep_P_diff(double phi0, double dt_diff_w) const;
+
   void update_impl(double icet, double icedt, const Inputs& inputs);
 
   std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;

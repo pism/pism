@@ -224,6 +224,10 @@ void Distributed::P_from_W_steady(const IceModelVec2S &W,
   }
 }
 
+double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
+  return 2.0 * phi0 * dt_diff_w;
+}
+
 //! Update the model state variables W,P by running the subglacial hydrology model.
 /*!
 Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
@@ -315,9 +319,9 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
 
     {
       const double
-        dt_cfl    = max_timestep_cfl(),
-        dt_diff_w = max_timestep_diffusivity(maxKW),
-        dt_diff_p = 2.0 * phi0 * dt_diff_w;
+        dt_cfl    = max_timestep_W_cfl(),
+        dt_diff_w = max_timestep_W_diff(maxKW),
+        dt_diff_p = max_timestep_P_diff(phi0, dt_diff_w);
 
       hdt = std::min(t_final - ht, dt_max);
       hdt = std::min(hdt, dt_cfl);

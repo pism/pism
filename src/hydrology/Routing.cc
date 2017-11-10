@@ -710,7 +710,7 @@ void Routing::advective_fluxes(const IceModelVec2Stag &V,
 /*!
  * See equation (51) in Bueler and van Pelt.
  */
-double Routing::max_timestep_diffusivity(double KW_max) const {
+double Routing::max_timestep_W_diff(double KW_max) const {
   double D_max = m_rg * KW_max;
   double result = 1.0/(m_dx*m_dx) + 1.0/(m_dy*m_dy);
   return 0.25 / (D_max * result);
@@ -719,12 +719,18 @@ double Routing::max_timestep_diffusivity(double KW_max) const {
 /*!
  * See equation (50) in Bueler and van Pelt.
  */
-double Routing::max_timestep_cfl() const {
+double Routing::max_timestep_W_cfl() const {
   // V could be zero if P is constant and bed is flat
   std::vector<double> tmp = m_V.absmaxcomponents();
 
   return 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy); // FIXME: is regularization needed?
 }
+
+double Routing::max_timestep_P_diff(double phi0, double dt_W_diff) const {
+  (void) phi0;
+  return dt_W_diff;
+}
+
 
 //! The computation of Wtilnew, called by update().
 /*!
@@ -862,8 +868,8 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
 
     {
       const double
-        dt_cfl    = max_timestep_cfl(),
-        dt_diff_w = max_timestep_diffusivity(maxKW);
+        dt_cfl    = max_timestep_W_cfl(),
+        dt_diff_w = max_timestep_W_diff(maxKW);
 
       // dt = min {dt_max, dtCFL, dtDIFFW}
       hdt = std::min(t_final - ht, dt_max);

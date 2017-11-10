@@ -101,9 +101,9 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
-  double max_timestep_diffusivity(double KW_max) const;
-  double max_timestep_cfl() const;
-
+  double max_timestep_W_diff(double KW_max) const;
+  double max_timestep_W_cfl() const;
+  virtual double max_timestep_P_diff(double phi0, double dt_diff_w) const;
 protected:
   // this model's state
   // water layer thickness
