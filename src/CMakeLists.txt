@@ -138,7 +138,6 @@ add_library (pism
   hydrology/Hydrology.cc
   hydrology/NullTransportHydrology.cc
   hydrology/RoutingHydrology.cc
-  hydrology/hydrology_diagnostics.cc
   icemodel/IceModel.cc
   icemodel/calving.cc
   icemodel/diagnostics.cc

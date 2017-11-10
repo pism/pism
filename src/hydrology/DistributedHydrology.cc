@@ -22,7 +22,6 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/pism_options.hh"
-#include "hydrology_diagnostics.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 
@@ -128,14 +127,6 @@ void Distributed::define_model_state_impl(const PIO &output) const {
 void Distributed::write_model_state_impl(const PIO &output) const {
   Routing::write_model_state_impl(output);
   m_P.write(output);
-}
-
-std::map<std::string, Diagnostic::Ptr> Distributed::diagnostics_impl() const {
-  std::map<std::string, Diagnostic::Ptr> result = {
-    {"effbwp",           Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt",         Diagnostic::Ptr(new WallMelt(this))},
-  };
-  return combine(result, Routing::diagnostics_impl());
 }
 
 std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() const {

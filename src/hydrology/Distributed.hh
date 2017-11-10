@@ -52,7 +52,6 @@ public:
 protected:
   void update_impl(double icet, double icedt, const Inputs& inputs);
 
-  std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
   std::map<std::string, TSDiagnostic::Ptr> ts_diagnostics_impl() const;
 
   void define_model_state_impl(const PIO &output) const;

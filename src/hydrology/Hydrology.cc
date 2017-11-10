@@ -23,7 +23,6 @@
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/util/io/PIO.hh"
 #include "pism/util/pism_options.hh"
-#include "hydrology_diagnostics.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 

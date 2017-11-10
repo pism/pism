@@ -20,7 +20,6 @@
 #include <algorithm>
 
 #include "Routing.hh"
-#include "hydrology_diagnostics.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -29,9 +28,155 @@
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Vars.hh"
 
 namespace pism {
 namespace hydrology {
+
+namespace diagnostics {
+
+//! \brief Reports the thickness of the transportable water in the subglacial layer.
+class BasalWaterThickness : public Diag<Routing>
+{
+public:
+  BasalWaterThickness(const Routing *m)
+    : Diag<Routing>(m) {
+    m_vars = {SpatialVariableMetadata(m_sys, "bwat")};
+    set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
+  }
+
+protected:
+  virtual IceModelVec::Ptr compute_impl() const {
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwat", WITHOUT_GHOSTS));
+    result->metadata() = m_vars[0];
+    result->copy_from(model->subglacial_water_thickness());
+    return result;
+  }
+};
+
+
+//! \brief Reports the pressure of the transportable water in the subglacial layer.
+class BasalWaterPressure : public Diag<Routing>
+{
+public:
+  BasalWaterPressure(const Routing *m)
+    : Diag<Routing>(m) {
+    m_vars = {SpatialVariableMetadata(m_sys, "bwp")};
+    set_attrs("pressure of transportable water in subglacial layer", "", "Pa", "Pa", 0);
+  }
+
+protected:
+  virtual IceModelVec::Ptr compute_impl() const {
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwp", WITHOUT_GHOSTS));
+    result->metadata() = m_vars[0];
+    result->copy_from(model->subglacial_water_pressure());
+    return result;
+  }
+};
+
+
+//! \brief Reports the pressure of the transportable water in the subglacial layer as a
+//! fraction of the overburden pressure.
+class RelativeBasalWaterPressure : public Diag<Routing>
+{
+public:
+  RelativeBasalWaterPressure(const Routing *m)
+    : Diag<Routing>(m) {
+    m_vars = {SpatialVariableMetadata(m_sys, "bwprel")};
+    set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
+              "", "", 0);
+    m_vars[0].set_double("_FillValue", m_fill_value);
+  }
+
+protected:
+  virtual IceModelVec::Ptr compute_impl() const {
+    double fill_value = m_fill_value;
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwprel", WITHOUT_GHOSTS));
+    result->metadata(0) = m_vars[0];
+
+    const IceModelVec2S
+      &P  = model->subglacial_water_pressure(),
+      &Po = model->overburden_pressure();
+
+    IceModelVec::AccessList list{result.get(), &Po, &P};
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (Po(i,j) > 0.0) {
+        (*result)(i,j) = P(i, j) / Po(i,j);
+      } else {
+        (*result)(i,j) = fill_value;
+      }
+    }
+
+    return result;
+  }
+};
+
+
+//! \brief Reports the effective pressure of the transportable water in the subglacial
+//! layer, that is, the overburden pressure minus the pressure.
+class EffectiveBasalWaterPressure : public Diag<Routing>
+{
+public:
+  EffectiveBasalWaterPressure(const Routing *m)
+    : Diag<Routing>(m) {
+    m_vars = {SpatialVariableMetadata(m_sys, "effbwp")};
+    set_attrs("effective pressure of transportable water in subglacial layer"
+              " (overburden pressure minus water pressure)",
+              "", "Pa", "Pa", 0);
+  }
+
+protected:
+  virtual IceModelVec::Ptr compute_impl() const {
+
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effbwp", WITHOUT_GHOSTS));
+    result->metadata() = m_vars[0];
+
+    const IceModelVec2S
+      &P  = model->subglacial_water_pressure(),
+      &Po = model->overburden_pressure();
+
+    IceModelVec::AccessList list{&Po, &P, result.get()};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      (*result)(i, j) = Po(i, j) - P(i, j);
+    }
+
+    return result;
+  }
+};
+
+
+//! \brief Report the wall melt rate from dissipation of the potential energy of the
+//! transportable water.
+class WallMelt : public Diag<Routing>
+{
+public:
+  WallMelt(const Routing *m)
+    : Diag<Routing>(m) {
+    m_vars = {SpatialVariableMetadata(m_sys, "wallmelt")};
+    set_attrs("wall melt into subglacial hydrology layer"
+              " from (turbulent) dissipation of energy in transportable water",
+              "", "m s-1", "m year-1", 0);
+  }
+
+protected:
+  virtual IceModelVec::Ptr compute_impl() const {
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wallmelt", WITHOUT_GHOSTS));
+    result->metadata() = m_vars[0];
+
+    const IceModelVec2S &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+
+    wall_melt(*model, bed_elevation, *result);
+    return result;
+  }
+};
+
+} // end of namespace diagnostics
 
 Routing::Routing(IceGrid::ConstPtr g)
   : Hydrology(g), m_dx(g->dx()), m_dy(g->dy())
@@ -785,6 +930,8 @@ protected:
 };
 
 std::map<std::string, Diagnostic::Ptr> Routing::diagnostics_impl() const {
+  using namespace diagnostics;
+
   std::map<std::string, Diagnostic::Ptr> result = {
     {"bwat",       Diagnostic::Ptr(new BasalWaterThickness(this))},
     {"bwatvel",    Diagnostic::Ptr(new BasalWaterVelocity(this))},
