@@ -747,7 +747,7 @@ hydrology::Routing model; (3) does not check mask because the boundary_mass_chan
 call addresses that.  Otherwise this is the same physical model with the
 same configurable parameters.
  */
-void Routing::raw_update_Wtil(double hdt) {
+void Routing::update_Wtil(double hdt) {
   const double
     tillwat_max = m_config->get_double("hydrology.tillwat_max"),
     C           = m_config->get_double("hydrology.tillwat_decay_rate");
@@ -764,7 +764,7 @@ void Routing::raw_update_Wtil(double hdt) {
 
 
 //! The computation of Wnew, called by update().
-void Routing::raw_update_W(double hdt) {
+void Routing::update_W(double hdt) {
   const double
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
@@ -878,11 +878,11 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     }
 
     // update Wtilnew from Wtil
-    raw_update_Wtil(hdt);
+    update_Wtil(hdt);
     // remove water in ice-free areas and account for changes
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Q, total_input
-    raw_update_W(hdt);
+    update_W(hdt);
     // remove water in ice-free areas and account for changes
 
     // transfer new into old

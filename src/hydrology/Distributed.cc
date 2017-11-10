@@ -228,6 +228,88 @@ double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
   return 2.0 * phi0 * dt_diff_w;
 }
 
+static inline double clip(double x, double a, double b) {
+  return std::min(std::max(a, x), b);
+}
+
+void Distributed::update_P(double dt,
+                           const IceModelVec2CellType &cell_type,
+                           const IceModelVec2S &sliding_speed,
+                           const IceModelVec2S &total_input,
+                           const IceModelVec2S &P_overburden,
+                           const IceModelVec2S &Wtil,
+                           const IceModelVec2S &Wtil_new,
+                           const IceModelVec2S &P,
+                           const IceModelVec2S &W,
+                           const IceModelVec2Stag &Ws,
+                           const IceModelVec2Stag &K,
+                           const IceModelVec2Stag &Q,
+                           IceModelVec2S &P_new) const {
+
+  const double
+    n    = m_config->get_double("stress_balance.sia.Glen_exponent"),
+    A    = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
+    c1   = m_config->get_double("hydrology.cavitation_opening_coefficient"),
+    c2   = m_config->get_double("hydrology.creep_closure_coefficient"),
+    Wr   = m_config->get_double("hydrology.roughness_scale"),
+    phi0 = m_config->get_double("hydrology.regularizing_porosity");
+
+  // update Pnew from time step
+  const double
+    CC  = (m_rg * dt) / phi0,
+    wux = 1.0 / (m_dx * m_dx),
+    wuy = 1.0 / (m_dy * m_dy);
+
+  IceModelVec::AccessList list{&P, &W, &Wtil, &Wtil_new, &sliding_speed, &Ws,
+      &K, &Q, &total_input, &cell_type, &P_overburden, &P_new};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto w = W.star(i, j);
+    double P_o = P_overburden(i, j);
+
+    if (cell_type.ice_free_land(i, j)) {
+      P_new(i, j) = 0.0;
+    } else if (cell_type.ocean(i, j)) {
+      P_new(i, j) = P_o;
+    } else if (w.ij <= 0.0) {
+      P_new(i, j) = P_o;
+    } else {
+      auto q = Q.star(i, j);
+      auto k = K.star(i, j);
+      auto ws = Ws.star(i, j);
+
+      double
+        Open  = c1 * sliding_speed(i, j) * std::max(0.0, Wr - w.ij),
+        Close = c2 * A * pow(P_o - P(i, j), n) * w.ij;
+
+      // compute the flux divergence the same way as in raw_update_W()
+      const double divadflux = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
+      const double
+        De = m_rg * k.e * ws.e,
+        Dw = m_rg * k.w * ws.w,
+        Dn = m_rg * k.n * ws.n,
+        Ds = m_rg * k.s * ws.s;
+
+      double diffW = (wux * (De * (w.e - w.ij) - Dw * (w.ij - w.w)) +
+                      wuy * (Dn * (w.n - w.ij) - Ds * (w.ij - w.s)));
+
+      double divflux = -divadflux + diffW;
+
+      // pressure update equation
+      double Wtil_change = Wtil_new(i, j) - Wtil(i, j);
+      double ZZ = Close - Open + total_input(i, j) - Wtil_change / dt;
+
+      P_new(i, j) = P(i, j) + CC * (divflux + ZZ);
+
+      // projection to enforce  0 <= P <= P_o
+      P_new(i, j) = clip(P_new(i, j), 0.0, P_o);
+    }
+  }
+}
+
+
 //! Update the model state variables W,P by running the subglacial hydrology model.
 /*!
 Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
@@ -251,12 +333,7 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
   m_P.update_ghosts();
 
   const double
-    nglen = m_config->get_double("stress_balance.sia.Glen_exponent"),
-    Aglen = m_config->get_double("flow_law.isothermal_Glen.ice_softness"),
-    c1    = m_config->get_double("hydrology.cavitation_opening_coefficient"),
-    c2    = m_config->get_double("hydrology.creep_closure_coefficient"),
-    Wr    = m_config->get_double("hydrology.roughness_scale"),
-    phi0  = m_config->get_double("hydrology.regularizing_porosity");
+    phi0 = m_config->get_double("hydrology.regularizing_porosity");
 
   double
     ht    = m_t,
@@ -336,59 +413,18 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     }
 
     // update Wtilnew from Wtil
-    raw_update_Wtil(hdt);
+    update_Wtil(hdt);
     // correct water thickness and account for the changes
 
-    {
-      // update Pnew from time step
-      const double
-        CC  = (m_rg * hdt) / phi0,
-        wux = 1.0 / (m_dx * m_dx),
-        wuy = 1.0 / (m_dy * m_dy);
-
-      IceModelVec::AccessList list{&m_P, &m_W, &m_Wtil, &m_Wtilnew, &sliding_speed, &m_Wstag,
-          &m_K, &m_Q, &m_total_input, &cell_type, &m_Pover, &m_Pnew};
-
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        if (cell_type.ice_free_land(i, j)) {
-          m_Pnew(i, j) = 0.0;
-        } else if (cell_type.ocean(i, j)) {
-          m_Pnew(i, j) = m_Pover(i, j);
-        } else if (m_W(i, j) <= 0.0) {
-          m_Pnew(i, j) = m_Pover(i, j);
-        } else {
-          // opening and closure terms in pressure equation
-          double Open  = std::max(0.0, c1 * sliding_speed(i, j) * (Wr - m_W(i, j)));
-          double Close = c2 * Aglen * pow(m_Pover(i, j) - m_P(i, j), nglen) * m_W(i, j);
-
-          // compute the flux divergence the same way as in raw_update_W()
-          const double divadflux = ((m_Q(i, j, 0) - m_Q(i - 1, j, 0)) / m_dx +
-                                    (m_Q(i, j, 1) - m_Q(i, j - 1, 1)) / m_dy);
-          const double
-            De = m_rg * m_K(i, j, 0) * m_Wstag(i, j, 0),
-            Dw = m_rg * m_K(i - 1, j, 0) * m_Wstag(i - 1, j, 0),
-            Dn = m_rg * m_K(i, j, 1) * m_Wstag(i, j, 1),
-            Ds = m_rg * m_K(i, j - 1, 1) * m_Wstag(i, j - 1, 1);
-
-          double diffW = (wux * (De * (m_W(i + 1, j) - m_W(i, j)) - Dw * (m_W(i, j) - m_W(i - 1, j))) +
-                          wuy * (Dn * (m_W(i, j + 1) - m_W(i, j)) - Ds * (m_W(i, j) - m_W(i, j - 1))));
-
-          double divflux = -divadflux + diffW;
-
-          // pressure update equation
-          double ZZ = Close - Open + m_total_input(i, j) - (m_Wtilnew(i, j) - m_Wtil(i, j)) / hdt;
-          m_Pnew(i, j) = m_P(i, j) + CC * (divflux + ZZ);
-
-          // projection to enforce  0 <= P <= P_o
-          m_Pnew(i, j) = std::min(std::max(0.0, m_Pnew(i, j)), m_Pover(i, j));
-        }
-      }
-    }
+    update_P(hdt, cell_type, sliding_speed, m_total_input, m_Pover,
+             m_Wtil, m_Wtilnew,
+             subglacial_water_pressure(),
+             m_W, m_Wstag,
+             m_K, m_Q,
+             m_Pnew);
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
-    raw_update_W(hdt);
+    update_W(hdt);
     // correct water thickness and account for the changes
 
     // transfer new into old

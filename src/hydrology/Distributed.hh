@@ -68,6 +68,19 @@ protected:
                        const IceModelVec2S &P_overburden,
                        const IceModelVec2S &sliding_speed,
                        IceModelVec2S &result);
+  void update_P(double dt,
+                const IceModelVec2CellType &cell_type,
+                const IceModelVec2S &sliding_speed,
+                const IceModelVec2S &total_input,
+                const IceModelVec2S &P_overburden,
+                const IceModelVec2S &Wtil,
+                const IceModelVec2S &Wtil_new,
+                const IceModelVec2S &P,
+                const IceModelVec2S &W,
+                const IceModelVec2Stag &Ws,
+                const IceModelVec2Stag &K,
+                const IceModelVec2Stag &Q,
+                IceModelVec2S &P_new) const;
 protected:
   IceModelVec2S m_P;
   IceModelVec2S m_Pnew;

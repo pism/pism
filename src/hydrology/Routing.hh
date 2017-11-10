@@ -166,8 +166,8 @@ protected:
                         const IceModelVec2S &W,
                         IceModelVec2Stag &result) const;
 
-  void raw_update_W(double hdt);
-  void raw_update_Wtil(double hdt);
+  void update_W(double hdt);
+  void update_Wtil(double hdt);
 protected:
   double m_dx, m_dy;
 
