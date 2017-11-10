@@ -1,5 +1,5 @@
 # Flow laws.
-add_library (pismflowlaws OBJECT
+add_library (flowlaws OBJECT
   FlowLaw.cc
   FlowLawFactory.cc
   GPBLD.cc

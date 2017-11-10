@@ -743,8 +743,6 @@ void IceModel::run_to(double run_end) {
  * specified by the IceModel::grid::time object.
  *
  * This is the method used by PISM in the "standalone" mode.
- *
- * @return 0 on success
  */
 void IceModel::run() {
   const Profiling &profiling = m_ctx->profiling();
