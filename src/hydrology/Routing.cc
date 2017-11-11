@@ -238,6 +238,11 @@ Routing::Routing(IceGrid::ConstPtr g)
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "alpha = %f < 1 which is not allowed", alpha);
     }
+
+    if (m_config->get_double("hydrology.tillwat_max") < 0.0) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "hydrology::Routing: hydrology.tillwat_max is negative.\n"
+                         "This is not allowed.");
+    }
   }
 }
 
@@ -828,11 +833,6 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
   // update Component times: t = current time, t+dt = target time
   m_t = icet;
   m_dt = icedt;
-
-  if (m_config->get_double("hydrology.tillwat_max") < 0.0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "hydrology::Routing: hydrology.tillwat_max is negative.\n"
-                       "This is not allowed.");
-  }
 
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
