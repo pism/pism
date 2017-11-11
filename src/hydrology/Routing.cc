@@ -747,18 +747,21 @@ hydrology::Routing model; (3) does not check mask because the boundary_mass_chan
 call addresses that.  Otherwise this is the same physical model with the
 same configurable parameters.
  */
-void Routing::update_Wtil(double hdt) {
+void Routing::update_Wtil(double hdt,
+                          const IceModelVec2S &Wtil,
+                          const IceModelVec2S &input_rate,
+                          IceModelVec2S &Wtil_new) {
   const double
     tillwat_max = m_config->get_double("hydrology.tillwat_max"),
     C           = m_config->get_double("hydrology.tillwat_decay_rate");
 
-  IceModelVec::AccessList list{&m_Wtil, &m_Wtilnew, &m_total_input};
+  IceModelVec::AccessList list{&Wtil, &Wtil_new, &input_rate};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_Wtilnew(i, j) = m_Wtil(i, j) + hdt * (m_total_input(i, j) - C);
-    m_Wtilnew(i, j) = std::min(std::max(0.0, m_Wtilnew(i, j)), tillwat_max);
+    Wtil_new(i, j) = Wtil(i, j) + hdt * (input_rate(i, j) - C);
+    Wtil_new(i, j) = std::min(std::max(0.0, Wtil_new(i, j)), tillwat_max);
   }
 }
 
@@ -889,7 +892,10 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     }
 
     // update Wtilnew from Wtil
-    update_Wtil(hdt);
+    update_Wtil(hdt,
+                m_Wtil,
+                m_total_input,
+                m_Wtilnew);
     // remove water in ice-free areas and account for changes
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Q, total_input

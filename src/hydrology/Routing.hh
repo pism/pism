@@ -176,7 +176,10 @@ protected:
                 const IceModelVec2Stag &Q,
                 IceModelVec2S &W_new);
 
-  void update_Wtil(double hdt);
+  void update_Wtil(double hdt,
+                   const IceModelVec2S &Wtil,
+                   const IceModelVec2S &input_rate,
+                   IceModelVec2S &Wtil_new);
 protected:
   double m_dx, m_dy;
 

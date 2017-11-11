@@ -413,7 +413,10 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
     }
 
     // update Wtilnew from Wtil
-    update_Wtil(hdt);
+    update_Wtil(hdt,
+                m_Wtil,
+                m_total_input,
+                m_Wtilnew);
     // correct water thickness and account for the changes
 
     update_P(hdt, cell_type, sliding_speed, m_total_input, m_Pover,
