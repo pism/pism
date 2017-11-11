@@ -764,32 +764,43 @@ void Routing::update_Wtil(double hdt) {
 
 
 //! The computation of Wnew, called by update().
-void Routing::update_W(double hdt) {
+void Routing::update_W(double dt,
+                       const IceModelVec2S &input_rate,
+                       const IceModelVec2S &W,
+                       const IceModelVec2Stag &Wstag,
+                       const IceModelVec2S &Wtil,
+                       const IceModelVec2S &Wtil_new,
+                       const IceModelVec2Stag &K,
+                       const IceModelVec2Stag &Q,
+                       IceModelVec2S &W_new) {
   const double
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
 
-  IceModelVec::AccessList list{&m_W, &m_Wtil, &m_Wtilnew, &m_Wstag, &m_K, &m_Q,
-      &m_total_input, &m_Wnew};
+  IceModelVec::AccessList list{&W, &Wtil, &Wtil_new, &Wstag, &K, &Q,
+      &input_rate, &W_new};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double divadflux =
-      (m_Q(i, j, 0) - m_Q(i - 1, j, 0)) / m_dx +
-      (m_Q(i, j, 1) - m_Q(i, j - 1, 1)) / m_dy;
+    auto q = Q.star(i, j);
+    const double divQ = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
+
+    auto k  = K.star(i, j);
+    auto ws = Wstag.star(i, j);
 
     const double
-      De = m_rg * m_K(i,     j,     0) * m_Wstag(i,     j,     0),
-      Dw = m_rg * m_K(i - 1, j,     0) * m_Wstag(i - 1, j,     0),
-      Dn = m_rg * m_K(i,     j,     1) * m_Wstag(i,     j,     1),
-      Ds = m_rg * m_K(i,     j - 1, 1) * m_Wstag(i,     j - 1, 1);
+      De = m_rg * k.e * ws.e,
+      Dw = m_rg * k.w * ws.w,
+      Dn = m_rg * k.n * ws.n,
+      Ds = m_rg * k.s * ws.s;
 
-    const double diffW =
-      wux * (De * (m_W(i + 1, j) - m_W(i, j)) - Dw * (m_W(i, j) - m_W(i - 1, j))) +
-      wuy * (Dn * (m_W(i, j + 1) - m_W(i, j)) - Ds * (m_W(i, j) - m_W(i, j - 1)));
+    auto w = W.star(i, j);
+    const double diffW = (wux * (De * (w.e - w.ij) - Dw * (w.ij - w.w)) +
+                          wuy * (Dn * (w.n - w.ij) - Ds * (w.ij - w.s)));
 
-    m_Wnew(i, j) = m_W(i, j) - m_Wtilnew(i, j) + m_Wtil(i, j) + hdt * ( - divadflux + diffW + m_total_input(i, j));
+    double Wtil_change = Wtil(i, j) - Wtil_new(i, j);
+    W_new(i, j) = w.ij + Wtil_change + dt * (- divQ + diffW + input_rate(i, j));
   }
 }
 
@@ -882,7 +893,12 @@ void Routing::update_impl(double icet, double icedt, const Inputs& inputs) {
     // remove water in ice-free areas and account for changes
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Q, total_input
-    update_W(hdt);
+    update_W(hdt,
+             m_total_input,
+             m_W, m_Wstag,
+             m_Wtil, m_Wtilnew,
+             m_K, m_Q,
+             m_Wnew);
     // remove water in ice-free areas and account for changes
 
     // transfer new into old

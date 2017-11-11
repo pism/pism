@@ -424,7 +424,12 @@ void Distributed::update_impl(double icet, double icedt, const Inputs& inputs) {
              m_Pnew);
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
-    update_W(hdt);
+    update_W(hdt,
+             m_total_input,
+             m_W, m_Wstag,
+             m_Wtil, m_Wtilnew,
+             m_K, m_Q,
+             m_Wnew);
     // correct water thickness and account for the changes
 
     // transfer new into old
