@@ -254,7 +254,8 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
       for (int k = 0; k <= k0; ++k) {
         if (Tbnew[k] <= 0.0) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "invalid bedrock temperature: %f", Tbnew[k]);
+                                        "invalid bedrock temperature: %f Kelvin at %d,%d,%d",
+                                        Tbnew[k], i, j, k);
         }
       }
 
