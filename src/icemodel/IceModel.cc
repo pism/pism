@@ -355,15 +355,16 @@ void IceModel::allocate_storage() {
   other hand, we want the mask to reflect that the ice is floating if the flotation
   criterion applies at a point.
 
-  Also calls the code which removes icebergs, to avoid stress balance
-  solver problems associated to not-attached-to-grounded ice.
+  If `remove_icebergs` is `true`, also calls the code which removes icebergs, to avoid
+  stress balance solver problems caused by ice that is not attached to the grounded ice
+  sheet.
 */
-void IceModel::enforce_consistency_of_geometry() {
+void IceModel::enforce_consistency_of_geometry(bool remove_icebergs) {
 
   m_geometry.bed_elevation.copy_from(m_beddef->bed_elevation());
   m_geometry.sea_level_elevation.set(m_ocean->sea_level_elevation());
 
-  if (m_config->get_boolean("geometry.remove_icebergs") and m_iceberg_remover != NULL) {
+  if (m_iceberg_remover and remove_icebergs) {
     // The iceberg remover has to use the same mask as the stress balance code, hence the
     // stress-balance-related threshold here.
     m_geometry.ensure_consistency(m_config->get_double("stress_balance.ice_free_thickness_standard"));
@@ -484,12 +485,6 @@ void IceModel::step(bool do_mass_continuity,
     m_stdout_flags += "$";
   }
 
-  // Update the fractional grounded/floating mask (used by the SSA
-  // stress balance and the energy code)
-  if (m_config->get_boolean("geometry.grounded_cell_fraction")) {
-    enforce_consistency_of_geometry(); // update h and mask
-  }
-
   try {
     profiling.begin("stress_balance");
     m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
@@ -531,8 +526,8 @@ void IceModel::step(bool do_mass_continuity,
   m_ocean->update(current_time, m_dt);
   profiling.end("ocean");
 
-  // The sea level elevation might have changed.
-  enforce_consistency_of_geometry();
+  // The sea level elevation might have changed, so we need to update the mask, etc.
+  enforce_consistency_of_geometry(false); // don't remove icebergs
 
   dt_TempAge += m_dt;
 
@@ -612,7 +607,7 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   if (m_new_bed_elevation) {
-    enforce_consistency_of_geometry();
+    enforce_consistency_of_geometry(false); // don't remove icebergs
     m_stdout_flags += "b";
   } else {
     m_stdout_flags += " ";
@@ -664,6 +659,22 @@ void IceModel::step(bool do_mass_continuity,
 void IceModel::update_ice_geometry(bool skip) {
   const Profiling &profiling = m_ctx->profiling();
 
+  // Note that there are three adaptive time-stepping criteria. Two of them (using max.
+  // diffusion and 2D CFL) are limiting the mass-continuity time-step and the third (3D
+  // CFL) limits the energy and age time-steps.
+
+  // The mass-continuity time-step is usually smaller, and the skipping mechanism lets us
+  // do several mass-continuity steps for each energy step.
+
+  // When -no_mass is set, mass-continuity-related time-step restrictions are disabled,
+  // making "skipping" unnecessary.
+
+  // This is why the following two lines appear here and are executed only if
+  // do_mass_continuity is true.
+  if (skip and m_skip_countdown > 0) {
+    m_skip_countdown--;
+  }
+
   IceModelVec2S &surface_mass_balance_rate = m_work2d[0];
   m_surface->mass_flux(surface_mass_balance_rate);
 
@@ -681,27 +692,39 @@ void IceModel::update_ice_geometry(bool skip) {
 
   m_geometry_evolution->update_geometry(m_geometry);
 
-  enforce_consistency_of_geometry(); // update h and mask
+  enforce_consistency_of_geometry(false); // don't remove icebergs
 
-  // Note that there are three adaptive time-stepping criteria. Two of them
-  // (using max. diffusion and 2D CFL) are limiting the mass-continuity
-  // time-step and the third (3D CFL) limits the energy and age time-steps.
+  // calving, frontal melt, and discharge accounting
+  {
+    IceModelVec2S
+      &old_H    = m_work2d[0],
+      &old_Href = m_work2d[1];
 
-  // The mass-continuity time-step is usually smaller, and the skipping
-  // mechanism lets us do several mass-continuity steps for each energy step.
+    {
+      old_H.copy_from(m_geometry.ice_thickness);
+      old_Href.copy_from(m_geometry.ice_area_specific_volume);
+    }
 
-  // When -no_mass is set, mass-continuity-related time-step restrictions are
-  // disabled, making "skipping" unnecessary.
+    profiling.begin("calving");
+    do_calving();
+    profiling.end("calving");
 
-  // This is why the following two lines appear here and are executed only
-  // if do_mass_continuity is true.
-  if (skip and m_skip_countdown > 0) {
-    m_skip_countdown--;
+    enforce_consistency_of_geometry(true); // remove icebergs
+
+    // Removing icebergs may leave some non-zero area_specific_volume values in the middle
+    // of the ocean. We clean them up here.
+    Href_cleanup();
+
+    // Note that Href_cleanup() changes ice thickness, so we have to update the mask and
+    // surface elevation. *But* Href_cleanup() never decreases ice thickness, so it cannot
+    // create new "icebergs" and we don't need to remove them again.
+    enforce_consistency_of_geometry(false); // don't remove icebergs
+
+    compute_discharge(m_geometry.ice_thickness,
+                      m_geometry.ice_area_specific_volume,
+                      old_H, old_Href,
+                      m_discharge);
   }
-
-  profiling.begin("calving");
-  do_calving();
-  profiling.end("calving");
 }
 
 //! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
@@ -752,7 +775,10 @@ void IceModel::run() {
   // de-allocate diagnostics that are not needed
   prune_diagnostics();
 
-  enforce_consistency_of_geometry();
+  // Enforce consistency *and* remove icebergs. During time-stepping we remove icebergs at
+  // the end of the time step, so we need to ensure that ice geometry is "OK" before the
+  // first step.
+  enforce_consistency_of_geometry(true); // remove icebergs
 
   // Update spatially-variable diagnostics at the beginning of the run.
   write_extras();
