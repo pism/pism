@@ -461,7 +461,7 @@ void IceModel::step(bool do_mass_continuity,
   double current_time = m_time->current();
 
   //! \li call pre_step_hook() to let derived classes do more
-  pre_step_hook();  // might set maxdt_temporary
+  pre_step_hook();
 
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
@@ -536,10 +536,6 @@ void IceModel::step(bool do_mass_continuity,
   enforce_consistency_of_geometry();
 
   dt_TempAge += m_dt;
-  // IceModel::dt,dtTempAge are now set correctly according to
-  // mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and
-  // other criteria from derived class pre_step_hook(), and from
-  // "-skip" mechanism
 
   //! \li update the age of the ice (if appropriate)
   if (m_age_model != NULL and updateAtDepth) {
