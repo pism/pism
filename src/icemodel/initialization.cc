@@ -184,7 +184,12 @@ void IceModel::model_state_setup() {
 
   // Now ice thickness, bed elevation, and sea level are available, so we can compute the ice
   // surface elevation and the cell type mask. This also ensures consistency of ice geometry.
-  enforce_consistency_of_geometry();
+  //
+  // The stress balance code is executed near the beginning of a step and ice geometry is
+  // updated near the end, so during the second time step the stress balance code is
+  // guaranteed not to see "icebergs". Here we make sure that the first time step is OK
+  // too.
+  enforce_consistency_of_geometry(true); // remove icebergs
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).

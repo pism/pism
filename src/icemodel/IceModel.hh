@@ -320,7 +320,7 @@ protected:
 
   virtual void combine_basal_melt_rate(IceModelVec2S &result);
 
-  virtual void enforce_consistency_of_geometry();
+  void enforce_consistency_of_geometry(bool remove_icebergs);
 
   virtual void update_ice_geometry(bool skip);
   virtual void do_calving();

@@ -36,23 +36,9 @@ namespace pism {
 
 void IceModel::do_calving() {
 
-  // if no calving method was selected, stop
-  if (m_config->get_string("calving.methods").empty()) {
-    return;
-  }
-
   if (not m_config->get_boolean("geometry.part_grid.enabled")) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "calving requires geometry.part_grid.enabled");
-  }
-
-  IceModelVec2S
-    &old_H    = m_work2d[0],
-    &old_Href = m_work2d[1];
-
-  {
-    old_H.copy_from(m_geometry.ice_thickness);
-    old_Href.copy_from(m_geometry.ice_area_specific_volume);
   }
 
   // eigen-calving should go first: it uses the ice velocity field,
@@ -99,20 +85,6 @@ void IceModel::do_calving() {
   if (m_thickness_threshold_calving) {
     m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
   }
-
-  // This call removes icebergs, too.
-  enforce_consistency_of_geometry();
-
-  Href_cleanup();
-
-  // note that Href_cleanup() changes ice thickness, so we have to
-  // update the mask and surface elevation.
-  enforce_consistency_of_geometry();
-
-  compute_discharge(m_geometry.ice_thickness,
-                    m_geometry.ice_area_specific_volume,
-                    old_H, old_Href,
-                    m_discharge);
 }
 
 /**
