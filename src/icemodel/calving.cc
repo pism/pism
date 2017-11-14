@@ -58,7 +58,7 @@ void IceModel::do_calving() {
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
-  if (m_eigen_calving != NULL) {
+  if (m_eigen_calving) {
     m_eigen_calving->update(m_dt,
                             m_ocean->sea_level_elevation(),
                             m_ssa_dirichlet_bc_mask,
@@ -68,7 +68,7 @@ void IceModel::do_calving() {
                             m_geometry.ice_thickness);
   }
 
-  if (m_vonmises_calving != NULL) {
+  if (m_vonmises_calving) {
     m_vonmises_calving->update(m_dt,
                                m_ocean->sea_level_elevation(),
                                m_ssa_dirichlet_bc_mask,
@@ -78,7 +78,7 @@ void IceModel::do_calving() {
                                m_geometry.ice_thickness);
   }
 
-  if (m_frontal_melt != NULL) {
+  if (m_frontal_melt) {
     m_frontal_melt->update(m_dt,
                            m_ocean->sea_level_elevation(),
                            m_ssa_dirichlet_bc_mask,
@@ -88,15 +88,15 @@ void IceModel::do_calving() {
                            m_geometry.ice_thickness);
   }
 
-  if (m_ocean_kill_calving != NULL) {
+  if (m_ocean_kill_calving) {
     m_ocean_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
   }
 
-  if (m_float_kill_calving != NULL) {
+  if (m_float_kill_calving) {
     m_float_kill_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
   }
 
-  if (m_thickness_threshold_calving != NULL) {
+  if (m_thickness_threshold_calving) {
     m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
   }
 
