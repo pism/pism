@@ -91,7 +91,7 @@ void IceModel::energy_step() {
 void IceModel::combine_basal_melt_rate(IceModelVec2S &result) {
 
   IceModelVec2S &shelf_base_mass_flux = m_work2d[0];
-  assert(m_ocean != NULL);
+  assert(m_ocean);
   m_ocean->shelf_base_mass_flux(shelf_base_mass_flux);
 
   const bool sub_gl = (m_config->get_boolean("geometry.grounded_cell_fraction") and

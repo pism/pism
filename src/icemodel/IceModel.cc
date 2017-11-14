@@ -376,7 +376,6 @@ void IceModel::enforce_consistency_of_geometry() {
   m_geometry.ensure_consistency(m_config->get_double("geometry.ice_free_thickness_standard"));
 }
 
-
 stressbalance::Inputs IceModel::stress_balance_inputs() {
   stressbalance::Inputs result;
   if (m_config->get_boolean("geometry.update.use_basal_melt_rate")) {
@@ -538,7 +537,7 @@ void IceModel::step(bool do_mass_continuity,
   dt_TempAge += m_dt;
 
   //! \li update the age of the ice (if appropriate)
-  if (m_age_model != NULL and updateAtDepth) {
+  if (m_age_model and updateAtDepth) {
     AgeModelInputs inputs;
     inputs.ice_thickness = &m_geometry.ice_thickness;
     inputs.u3            = &m_stress_balance->velocity_u();
@@ -791,7 +790,7 @@ void IceModel::run() {
 
     // report a summary for major steps or the last one
     bool updateAtDepth = m_skip_countdown == 0;
-    bool tempAgeStep = updateAtDepth and (do_energy or m_age_model != NULL);
+    bool tempAgeStep   = updateAtDepth and (m_age_model or do_energy);
 
     const bool show_step = tempAgeStep or m_adaptive_timestep_reason == "end of the run";
     print_summary(show_step);
