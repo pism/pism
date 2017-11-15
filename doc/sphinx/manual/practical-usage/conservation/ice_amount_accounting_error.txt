@@ -1,0 +1,8 @@
+ice_amount_accounting_error = tendency_of_ice_amount -
+  (tendency_of_ice_amount_due_to_flow +
+   tendency_of_ice_amount_due_to_conservation_error +
+   tendency_of_ice_amount_due_to_surface_mass_flux +
+   tendency_of_ice_amount_due_to_basal_mass_flux +
+   tendency_of_ice_amount_due_to_discharge);
+
+ice_amount_accounting_error@long_name = "ice amount accounting error";
