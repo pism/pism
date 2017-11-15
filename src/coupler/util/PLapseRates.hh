@@ -151,6 +151,36 @@ protected:
     m_reference_surface.init(file, m_bc_period, m_bc_reference_time);
   }
 
+
+  void lapse_rate_scale(IceModelVec2S &result, double lapse_rate) const {
+    if (fabs(lapse_rate) < 1e-12) {
+      return;
+    }
+
+    const IceModelVec2S
+      &surface = *Mod::m_grid->variables().get_2d_scalar("surface_altitude"),
+      &thk     = *Mod::m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+    IceModelVec::AccessList list{&surface, &thk, &m_reference_surface, &result};
+
+    for (Points p(*Mod::m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (thk(i,j) > 0) {
+        //as in paleo_precip
+        const double correction = exp(-lapse_rate * (surface(i,j) - m_reference_surface(i,j)));
+        //as in paleo_precip, but taylor expansion
+        //const double correction = 1.0 - lapse_rate * ((*surface)(i,j) - m_reference_surface(i,j));
+        //as in Pollard et al., 2012
+        //const double correction = pow(2.0, -lapse_rate/0.05/10.0 * ((*surface)(i,j) - m_reference_surface(i,j)));
+        result(i,j) *= correction;
+      }
+    }
+  }
+
+
+
+
   void lapse_rate_correction(IceModelVec2S &result, double lapse_rate) const {
     if (fabs(lapse_rate) < 1e-12) {
       return;
@@ -167,6 +197,7 @@ protected:
       result(i, j) -= lapse_rate * (surface(i,j) - m_reference_surface(i, j));
     }
   }
+
 protected:
   // "mutable" is needed here because some methods (average, interp) change the state of an
   // "IceModelVec2T"

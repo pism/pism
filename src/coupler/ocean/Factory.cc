@@ -30,6 +30,8 @@
 #include "Frac_SMB.hh"
 #include "Cache.hh"
 #include "GivenTH.hh"
+#include "Cavity.hh"
+
 
 namespace pism {
 namespace ocean {
@@ -42,6 +44,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<PIK>("pik");
   add_model<Constant>("constant");
   add_model<Given>("given");
+  add_model<Cavity>("cavity");
   set_default("constant");
 
   add_modifier<Cache>("cache");

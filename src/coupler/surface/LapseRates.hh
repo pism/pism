@@ -37,7 +37,11 @@ protected:
   virtual void mass_flux_impl(IceModelVec2S &result) const;
   virtual void temperature_impl(IceModelVec2S &result) const;
 protected:
-  double m_smb_lapse_rate;
+
+  double m_smb_lapse_rate,m_precip_scale_factor;
+  //SpatialVariableMetadata m_climatic_mass_balance, m_ice_surface_temp;
+  bool do_precip_scale;
+
 };
 
 } // end of namespace surface
