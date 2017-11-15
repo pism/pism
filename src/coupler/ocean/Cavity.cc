@@ -38,12 +38,17 @@ namespace ocean {
 
 Cavity::Constants::Constants(const Config &config) {
 
-  default_numberOfBasins = 20; // standard value for Antarctic basin mask
-  default_numberOfBoxes = 5; // maximum number of boxes (applies for big ice shelves)
+  // standard value for Antarctic basin mask
+  default_numberOfBasins = static_cast<int>(config.get_double("ocean.pico.number_of_basins"));
 
-  continental_shelf_depth = -800; // threshold between deep ocean and continental shelf
+  // maximum number of boxes (applies for big ice shelves)
+  default_numberOfBoxes = static_cast<int>(config.get_double("ocean.pico.number_of_boxes"));
 
-  T_dummy = -1.5 + 273.15; // value for ocean temperature around Antarctica if no other data available (cold conditions)
+  // threshold between deep ocean and continental shelf
+  continental_shelf_depth = config.get_double("ocean.pico.continental_shelf_depth");
+
+  // value for ocean temperature around Antarctica if no other data available (cold conditions)
+  T_dummy = -1.5 + config.get_double("constants.fresh_water.melting_point_temperature");
   S_dummy = 34.7; // value for ocean salinity around Antarctica if no other data available (cold conditions)
 
   earth_grav = config.get_double("constants.standard_gravity");
@@ -74,14 +79,14 @@ Cavity::Constants::Constants(const Config &config) {
   alpha      = 7.5e-5;       // 1/K
   beta       = 7.7e-4;       // 1/psu
 
-  default_gamma_T    = 2e-5;        // m/s, best fit value in paper 
-  default_overturning_coeff    = 1e6;         // kg−1 s−1, best fit value in paper 
+  default_gamma_T           = config.get_double("ocean.pico.heat_exchange_coefficent");// m s-1, best fit value in paper 
+  default_overturning_coeff = config.get_double("ocean.pico.overturning_coefficent"); // m6 kg−1 s−1, best fit value in paper 
 
   // for shelf cells where normal box model is not calculated,
   // used in calculate_basal_melt_missing_cells(), compare POConstantPIK
   // m/s, thermal exchange velocity for Beckmann-Goose parameterization
-  // this is a different meltFactor as in POConstantPIK
-  meltFactor   = 0.01;
+  // this is the same meltFactor as in POConstantPIK
+  meltFactor   = config.get_double("ocean.pik_melt_factor");
 
 }
 
@@ -355,13 +360,7 @@ void Cavity::initBasinsOptions(const Constants &cc) {
   m_log->message(5, "starting initBasinOptions\n");
 
   numberOfBasins = cc.default_numberOfBasins;
-  numberOfBasins = options::Integer("-number_of_basins",
-                                    "number of drainage basins for SIMPEL model",
-                                    numberOfBasins);
   numberOfBoxes = cc.default_numberOfBoxes;
-  numberOfBoxes = options::Integer("-number_of_boxes",
-                                    "number of ocean boxes for SIMPEL model",
-                                    numberOfBoxes);
 
   Toc_box0_vec.resize(numberOfBasins);
   Soc_box0_vec.resize(numberOfBasins);
@@ -372,28 +371,16 @@ void Cavity::initBasinsOptions(const Constants &cc) {
   mean_overturning_box1_vector.resize(numberOfBasins);
 
   gamma_T = cc.default_gamma_T;
-  gamma_T = options::Real("-gamma_T","gamma_T for ocean cavity model",gamma_T); // meter per second
-
   overturning_coeff = cc.default_overturning_coeff;
-  overturning_coeff = options::Real("-overturning_coeff",
-                                    "overturning_coeff for ocean cavity model",overturning_coeff);
-
-  m_log->message(2, "     Using %d drainage basins and values: \n"
-                                "     gamma_T= %.2e, overturning_coeff = %.2e... \n"
-                                 , numberOfBasins, gamma_T, overturning_coeff);
+  m_log->message(2, "  -Using %d drainage basins and values: \n"
+                    "   gamma_T= %.2e, overturning_coeff = %.2e... \n"
+                        ,numberOfBasins, gamma_T, overturning_coeff);
 
   continental_shelf_depth = cc.continental_shelf_depth;
-  options::Real cont_shelf_depth("-continental_shelf_depth",
-                                 "continental shelf depth for ocean cavity model",
-                                 (double)continental_shelf_depth);
-
-  if (cont_shelf_depth.is_set()) {
-    m_log->message(2,
-    "  Depth of continental shelf for computation of temperature and salinity input\n"
-    "  is set for whole domain to continental_shelf_depth=%.0f meter\n",
-    continental_shelf_depth);
-    //continental_shelf_depth=cont_shelf_depth;
-  }
+  m_log->message(2,
+    "  -Depth of continental shelf for computation of temperature and salinity input\n"
+    "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
+        continental_shelf_depth);
 
 }
 
