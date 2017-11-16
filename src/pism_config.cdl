@@ -636,6 +636,11 @@ netcdf pism_config {
     pism_config:geometry.part_grid.enabled_option = "part_grid";
     pism_config:geometry.part_grid.enabled_type = "boolean";
 
+    pism_config:geometry.part_grid.max_iterations = 10;
+    pism_config:geometry.part_grid.max_iterations_doc = "maximum number of residual redistribution iterations";
+    pism_config:geometry.part_grid.max_iterations_units = "count";
+    pism_config:geometry.part_grid.max_iterations_type = "integer";
+
     pism_config:geometry.remove_icebergs = "no";
     pism_config:geometry.remove_icebergs_doc = "identify and kill detached ice-shelf areas";
     pism_config:geometry.remove_icebergs_option = "kill_icebergs";
