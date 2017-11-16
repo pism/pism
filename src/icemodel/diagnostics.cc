@@ -1011,11 +1011,11 @@ public:
 /*!
  * This is the change in mass resulting from prescribing (fixing) ice thickness.
  */
-class IceMassRateOfChangeDueToInflux : public TSDiag<TSRateDiagnostic, IceModel>
+class IceMassRateOfChangeDueToInflux : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   IceMassRateOfChangeDueToInflux(IceModel *m)
-    : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_flow") {
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_flow") {
 
     m_ts.variable().set_string("units", "kg s-1");
     m_ts.variable().set_string("glaciological_units", "Gt year-1");
@@ -1029,16 +1029,17 @@ public:
       ice_density = m_config->get_double("constants.ice.density");
 
     const IceModelVec2S
-      &dH_flow   = model->geometry_evolution().thickness_change_due_to_flow(),
+      &dH        = model->geometry_evolution().thickness_change_due_to_flow(),
+      &dV        = model->geometry_evolution().area_specific_volume_change_due_to_flow(),
       &cell_area = model->geometry().cell_area;
 
-    IceModelVec::AccessList list{&dH_flow, &cell_area};
+    IceModelVec::AccessList list{&dH, &dV, &cell_area};
 
     double volume_change = 0.0;
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       // m * m^2 = m^3
-      volume_change += dH_flow(i, j) * cell_area(i, j);
+      volume_change += (dH(i, j) + dV(i, j)) * cell_area(i, j);
     }
 
     // (kg/m^3) * m^3 = kg
