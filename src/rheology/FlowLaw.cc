@@ -187,7 +187,7 @@ void averaged_hardness_vec(const FlowLaw &ice,
                            const IceModelVec3  &enthalpy,
                            IceModelVec2S &result) {
 
-  const IceGrid &grid = *thickness.get_grid();
+  const IceGrid &grid = *thickness.grid();
 
   IceModelVec::AccessList list{&thickness, &result, &enthalpy};
 

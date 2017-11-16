@@ -978,7 +978,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
     ierr = KSPSetOperators(m_KSP, m_A, m_A);
     PISM_CHK(ierr, "KSPSetOperator");
 
-    ierr = KSPSolve(m_KSP, m_b.get_vec(), m_velocity_global.get_vec());
+    ierr = KSPSolve(m_KSP, m_b.vec(), m_velocity_global.vec());
     PISM_CHK(ierr, "KSPSolve");
 
     // Check if diverged; report to standard out about iteration
@@ -1414,9 +1414,9 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
 
   IceModelVec::AccessList list{&m_mask, &m_work, &m_velocity};
 
-  assert(m_velocity.get_stencil_width() >= 2);
-  assert(m_mask.get_stencil_width()    >= 2);
-  assert(m_work.get_stencil_width()     >= 1);
+  assert(m_velocity.stencil_width() >= 2);
+  assert(m_mask.stencil_width()    >= 2);
+  assert(m_work.stencil_width()     >= 1);
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1648,7 +1648,7 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
   ierr = MatView(m_A, viewer);
   PISM_CHK(ierr, "MatView");
 
-  ierr = VecView(m_b.get_vec(), viewer);
+  ierr = VecView(m_b.vec(), viewer);
   PISM_CHK(ierr, "VecView");
 }
 

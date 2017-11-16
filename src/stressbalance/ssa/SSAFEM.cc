@@ -205,7 +205,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector before SSASolve_FE\n");
     PISM_CHK(ierr, "PetscViewerASCIIPrintf");
 
-    ierr = VecView(m_velocity_global.get_vec(), viewer);
+    ierr = VecView(m_velocity_global.vec(), viewer);
     PISM_CHK(ierr, "VecView");
   }
 
@@ -215,7 +215,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
   }
 
   // Solve:
-  ierr = SNESSolve(m_snes, NULL, m_velocity_global.get_vec());
+  ierr = SNESSolve(m_snes, NULL, m_velocity_global.vec());
   PISM_CHK(ierr, "SNESSolve");
 
   // See if it worked.
@@ -238,7 +238,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
       ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
       PISM_CHK(ierr, "PetscViewerASCIIPrintf");
 
-      ierr = VecView(m_velocity_global.get_vec(), viewer);
+      ierr = VecView(m_velocity_global.vec(), viewer);
       PISM_CHK(ierr, "VecView");
     }
 

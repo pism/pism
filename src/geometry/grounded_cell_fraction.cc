@@ -158,7 +158,7 @@ void compute_grounded_cell_fraction(double ice_density,
     list.add(*result_y);
   }
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
 
   ParallelSection loop(grid->com);
   try {
@@ -236,7 +236,7 @@ void compute_grounded_cell_fraction(double ice_density, double ocean_density,
                                     const IceModelVec2S &bed_topography,
                                     IceModelVec2S &result) {
 
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  IceGrid::ConstPtr grid = ice_thickness.grid();
 
   GeometryCalculator gc(*grid->ctx()->config());
 

@@ -54,7 +54,7 @@ unsigned int count_CFL_violations(const IceModelVec3 &u3,
     return 0;
   }
 
-  IceGrid::ConstPtr grid = u3.get_grid();
+  IceGrid::ConstPtr grid = u3.grid();
 
   const double
     CFL_x = grid->dx() / dt,

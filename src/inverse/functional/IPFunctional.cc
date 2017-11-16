@@ -24,7 +24,7 @@ namespace pism {
 namespace inverse {
 
 void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
-  const IceGrid &grid = *x.get_grid();
+  const IceGrid &grid = *x.grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
@@ -61,7 +61,7 @@ void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S 
 }
 
 void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
-  const IceGrid &grid = *x.get_grid();
+  const IceGrid &grid = *x.grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;

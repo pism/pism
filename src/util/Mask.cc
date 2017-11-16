@@ -44,12 +44,12 @@ void GeometryCalculator::compute_mask(const IceModelVec2S &sea_level,
                                       IceModelVec2Int &result) const {
   IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
 
-  const IceGrid &grid = *bed.get_grid();
+  const IceGrid &grid = *bed.grid();
 
-  const unsigned int stencil = result.get_stencil_width();
-  assert(sea_level.get_stencil_width() >= stencil);
-  assert(bed.get_stencil_width()       >= stencil);
-  assert(thickness.get_stencil_width() >= stencil);
+  const unsigned int stencil = result.stencil_width();
+  assert(sea_level.stencil_width() >= stencil);
+  assert(bed.stencil_width()       >= stencil);
+  assert(thickness.stencil_width() >= stencil);
 
   for (PointsWithGhosts p(grid, stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -64,11 +64,11 @@ void GeometryCalculator::compute_mask(double sea_level,
                                       IceModelVec2Int &result) const {
   IceModelVec::AccessList list{&bed, &thickness, &result};
 
-  const IceGrid &grid = *bed.get_grid();
+  const IceGrid &grid = *bed.grid();
 
-  const unsigned int stencil = result.get_stencil_width();
-  assert(bed.get_stencil_width()       >= stencil);
-  assert(thickness.get_stencil_width() >= stencil);
+  const unsigned int stencil = result.stencil_width();
+  assert(bed.stencil_width()       >= stencil);
+  assert(thickness.stencil_width() >= stencil);
 
   for (PointsWithGhosts p(grid, stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -83,12 +83,12 @@ void GeometryCalculator::compute_surface(const IceModelVec2S &sea_level,
                                          IceModelVec2S &result) const {
   IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
 
-  const IceGrid &grid = *bed.get_grid();
+  const IceGrid &grid = *bed.grid();
 
-  const unsigned int stencil = result.get_stencil_width();
-  assert(sea_level.get_stencil_width() >= stencil);
-  assert(bed.get_stencil_width()       >= stencil);
-  assert(thickness.get_stencil_width() >= stencil);
+  const unsigned int stencil = result.stencil_width();
+  assert(sea_level.stencil_width() >= stencil);
+  assert(bed.stencil_width()       >= stencil);
+  assert(thickness.stencil_width() >= stencil);
 
   for (PointsWithGhosts p(grid, stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -103,11 +103,11 @@ void GeometryCalculator::compute_surface(double sea_level,
                                          IceModelVec2S &result) const {
   IceModelVec::AccessList list{&bed, &thickness, &result};
 
-  const IceGrid &grid = *bed.get_grid();
+  const IceGrid &grid = *bed.grid();
 
-  const unsigned int stencil = result.get_stencil_width();
-  assert(bed.get_stencil_width()       >= stencil);
-  assert(thickness.get_stencil_width() >= stencil);
+  const unsigned int stencil = result.stencil_width();
+  assert(bed.stencil_width()       >= stencil);
+  assert(thickness.stencil_width() >= stencil);
 
   for (PointsWithGhosts p(grid, stencil); p; p.next()) {
     const int i = p.i(), j = p.j();

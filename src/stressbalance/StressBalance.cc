@@ -613,10 +613,10 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
 
   using mask::ice_free;
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
   double    dx = grid->dx(), dy = grid->dy();
 
-  if (result.get_ndof() != 2) {
+  if (result.ndof() != 2) {
     throw RuntimeError(PISM_ERROR_LOCATION, "result.dof() == 2 is required");
   }
 

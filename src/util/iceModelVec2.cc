@@ -602,12 +602,12 @@ double IceModelVec2S::min() const {
 
 void IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) const {
 
-  IceModelVec2::get_dof(result.get_dm(), result.m_v, n);
+  IceModelVec2::get_dof(result.dm(), result.m_v, n);
 }
 
 void IceModelVec2::set_component(unsigned int n, const IceModelVec2S &source) {
 
-  IceModelVec2::set_dof(source.get_dm(), source.m_v, n);
+  IceModelVec2::set_dof(source.dm(), source.m_v, n);
 }
 
 void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,

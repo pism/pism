@@ -741,7 +741,7 @@ private:
  */
 static double integrate(const IceModelVec2S &input,
                         const IceModelVec2S &cell_area) {
-  IceGrid::ConstPtr grid = input.get_grid();
+  IceGrid::ConstPtr grid = input.grid();
 
   IceModelVec::AccessList list{&input, &cell_area};
 

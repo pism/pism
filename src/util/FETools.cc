@@ -614,7 +614,7 @@ void DirichletData::init(const IceModelVec2Int *indices,
 
 void DirichletData::finish(const IceModelVec *values) {
   if (m_indices != NULL) {
-    MPI_Comm com = m_indices->get_grid()->ctx()->com();
+    MPI_Comm com = m_indices->grid()->ctx()->com();
     try {
       m_indices->end_access();
       m_indices = NULL;
@@ -624,7 +624,7 @@ void DirichletData::finish(const IceModelVec *values) {
   }
 
   if (values != NULL) {
-    MPI_Comm com = values->get_grid()->ctx()->com();
+    MPI_Comm com = values->grid()->ctx()->com();
     try {
       values->end_access();
     } catch (...) {
@@ -679,7 +679,7 @@ void DirichletData_Scalar::enforce_homogeneous(const ElementMap &element, double
 void DirichletData_Scalar::fix_residual(double const *const *const x_global, double **r_global) {
   assert(m_values != NULL);
 
-  const IceGrid &grid = *m_indices->get_grid();
+  const IceGrid &grid = *m_indices->grid();
 
   // For each node that we own:
   for (Points p(grid); p; p.next()) {
@@ -693,7 +693,7 @@ void DirichletData_Scalar::fix_residual(double const *const *const x_global, dou
 }
 
 void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
-  const IceGrid &grid = *m_indices->get_grid();
+  const IceGrid &grid = *m_indices->grid();
 
   // For each node that we own:
   for (Points p(grid); p; p.next()) {
@@ -707,7 +707,7 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
 }
 
 void DirichletData_Scalar::fix_jacobian(Mat J) {
-  const IceGrid &grid = *m_indices->get_grid();
+  const IceGrid &grid = *m_indices->grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
   // have not been set. We now put an identity block in for these
@@ -776,7 +776,7 @@ void DirichletData_Vector::enforce_homogeneous(const ElementMap &element, Vector
 void DirichletData_Vector::fix_residual(Vector2 const *const *const x_global, Vector2 **r_global) {
   assert(m_values != NULL);
 
-  const IceGrid &grid = *m_indices->get_grid();
+  const IceGrid &grid = *m_indices->grid();
 
   // For each node that we own:
   for (Points p(grid); p; p.next()) {
@@ -790,7 +790,7 @@ void DirichletData_Vector::fix_residual(Vector2 const *const *const x_global, Ve
 }
 
 void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
-  const IceGrid &grid = *m_indices->get_grid();
+  const IceGrid &grid = *m_indices->grid();
 
   // For each node that we own:
   for (Points p(grid); p; p.next()) {
@@ -805,7 +805,7 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
 }
 
 void DirichletData_Vector::fix_jacobian(Mat J) {
-  const IceGrid &grid = *m_indices->get_grid();
+  const IceGrid &grid = *m_indices->grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
   // have not been set. We now put an identity block in for these

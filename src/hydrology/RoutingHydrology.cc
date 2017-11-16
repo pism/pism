@@ -588,7 +588,7 @@ FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
 void Routing::advective_fluxes(IceModelVec2Stag &result) {
   IceModelVec::AccessList list{&m_W, &m_V, &result};
 
-  assert(m_W.get_stencil_width() >= 1);
+  assert(m_W.stencil_width() >= 1);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

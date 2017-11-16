@@ -437,12 +437,12 @@ void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
   m_hydrology->overburden_pressure(m_Po);
 
   // make sure that we have enough ghosts:
-  const unsigned int GHOSTS = m_till_phi.get_stencil_width();
+  const unsigned int GHOSTS = m_till_phi.stencil_width();
 
-  assert(mask.get_stencil_width()                 >= GHOSTS);
-  assert(m_basal_yield_stress.get_stencil_width() >= GHOSTS);
-  assert(m_tillwat.get_stencil_width()            >= GHOSTS);
-  assert(m_Po.get_stencil_width()                 >= GHOSTS);
+  assert(mask.stencil_width()                 >= GHOSTS);
+  assert(m_basal_yield_stress.stencil_width() >= GHOSTS);
+  assert(m_tillwat.stencil_width()            >= GHOSTS);
+  assert(m_Po.stencil_width()                 >= GHOSTS);
 
   IceModelVec::AccessList list{&mask, &m_basal_yield_stress, &m_tillwat, &m_Po, &m_till_phi};
 

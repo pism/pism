@@ -137,7 +137,7 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
 }
 
 static void copy_staggered_vec(const IceModelVec2Stag &input, IceModelVec2Stag &output) {
-  IceGrid::ConstPtr grid = output.get_grid();
+  IceGrid::ConstPtr grid = output.grid();
 
   IceModelVec::AccessList list{ &input, &output };
 

@@ -193,7 +193,7 @@ void ShallowStressBalance::compute_2D_stresses(const IceModelVec2V &V,
     dx = m_grid->dx(),
     dy = m_grid->dy();
 
-  if (result.get_ndof() != 3) {
+  if (result.ndof() != 3) {
     throw RuntimeError(PISM_ERROR_LOCATION, "result.get_dof() == 3 is required");
   }
 

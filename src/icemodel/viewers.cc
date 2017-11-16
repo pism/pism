@@ -32,13 +32,13 @@ namespace pism {
 void IceModel::view_field(const IceModelVec *field) {
   unsigned int viewer_size = (unsigned int)m_config->get_double("output.runtime.viewer.size");
 
-  unsigned int dims = field->get_ndims();
+  unsigned int dims = field->ndims();
 
   if (dims != 2) {
     throw RuntimeError(PISM_ERROR_LOCATION, "map-plane views of 3D quantities are not supported.");
   }
 
-  if (field->get_ndof() == 1) {    // scalar fields
+  if (field->ndof() == 1) {    // scalar fields
     std::string name = field->metadata().get_string("short_name");
     petsc::Viewer::Ptr viewer = m_viewers[name];
 
@@ -54,7 +54,7 @@ void IceModel::view_field(const IceModelVec *field) {
 
     v2d->view(viewer, petsc::Viewer::Ptr());
 
-  } else if (field->get_ndof() == 2) { // vector fields
+  } else if (field->ndof() == 2) { // vector fields
     std::string
       name_1 = field->metadata(0).get_string("short_name"),
       name_2 = field->metadata(1).get_string("short_name");

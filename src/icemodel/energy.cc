@@ -133,7 +133,7 @@ void bedrock_surface_temperature(double sea_level,
                                  const IceModelVec2S &ice_surface_temperature,
                                  IceModelVec2S &result) {
 
-  IceGrid::ConstPtr grid  = result.get_grid();
+  IceGrid::ConstPtr grid  = result.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   const double

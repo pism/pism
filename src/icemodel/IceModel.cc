@@ -591,13 +591,13 @@ void IceModel::step(bool do_mass_continuity,
   //! \li compute the bed deformation, which only depends on current thickness
   //! and bed elevation
   if (m_beddef) {
-    int topg_state_counter = m_beddef->bed_elevation().get_state_counter();
+    int topg_state_counter = m_beddef->bed_elevation().state_counter();
 
     profiling.begin("bed_deformation");
     m_beddef->update(m_geometry.ice_thickness, current_time, m_dt);
     profiling.end("bed_deformation");
 
-    if (m_beddef->bed_elevation().get_state_counter() != topg_state_counter) {
+    if (m_beddef->bed_elevation().state_counter() != topg_state_counter) {
       m_new_bed_elevation = true;
     } else {
       m_new_bed_elevation = false;

@@ -45,7 +45,7 @@ void compute_enthalpy_cold(const IceModelVec3 &temperature,
                            const IceModelVec2S &ice_thickness,
                            IceModelVec3 &result) {
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   IceModelVec::AccessList list{&temperature, &result, &ice_thickness};
@@ -74,7 +74,7 @@ void compute_temperature(const IceModelVec3 &enthalpy,
                          const IceModelVec2S &ice_thickness,
                          IceModelVec3 &result) {
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   IceModelVec::AccessList list{&enthalpy, &ice_thickness, &result};
@@ -107,7 +107,7 @@ void compute_enthalpy(const IceModelVec3 &temperature,
                       const IceModelVec2S &ice_thickness,
                       IceModelVec3 &result) {
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   IceModelVec::AccessList list{&temperature, &liquid_water_fraction, &ice_thickness, &result};
@@ -138,7 +138,7 @@ void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
                                    const IceModelVec2S &ice_thickness,
                                    IceModelVec3 &result) {
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
 
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
@@ -182,7 +182,7 @@ void compute_cts(const IceModelVec3 &ice_enthalpy,
                  const IceModelVec2S &ice_thickness,
                  IceModelVec3 &result) {
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   result.set_name("cts");
@@ -224,7 +224,7 @@ double total_ice_enthalpy(double thickness_threshold,
                           const IceModelVec2S &cell_area) {
   double enthalpy_sum = 0.0;
 
-  IceGrid::ConstPtr grid = ice_enthalpy.get_grid();
+  IceGrid::ConstPtr grid = ice_enthalpy.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   const std::vector<double> &z = grid->z();
@@ -333,7 +333,7 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
                                const IceModelVec2S &basal_heat_flux,
                                IceModelVec3 &result) {
 
-  IceGrid::ConstPtr      grid   = result.get_grid();
+  IceGrid::ConstPtr      grid   = result.grid();
   Context::ConstPtr      ctx    = grid->ctx();
   Config::ConstPtr       config = ctx->config();
   Logger::ConstPtr       log    = ctx->log();

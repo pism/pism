@@ -104,9 +104,9 @@ void OceanKill::init() {
 void OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
   IceModelVec::AccessList list{&m_ocean_kill_mask, &pism_mask, &ice_thickness};
 
-  unsigned int GHOSTS = pism_mask.get_stencil_width();
-  assert(m_ocean_kill_mask.get_stencil_width() >= GHOSTS);
-  assert(ice_thickness.get_stencil_width()     >= GHOSTS);
+  unsigned int GHOSTS = pism_mask.stencil_width();
+  assert(m_ocean_kill_mask.stencil_width() >= GHOSTS);
+  assert(ice_thickness.stencil_width()     >= GHOSTS);
 
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();

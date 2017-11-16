@@ -62,7 +62,7 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
                         double thickness_threshold,
                         IceModelVec2Int &result) {
 
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  IceGrid::ConstPtr grid = ice_thickness.grid();
 
   const IceModelVec2S &H     = ice_thickness;
   const double        &H_min = thickness_threshold;

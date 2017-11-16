@@ -53,7 +53,7 @@ void IPDesignVariableParameterization::convertToDesignVariable(IceModelVec2S &ze
 
   IceModelVec::AccessList list{&zeta, &d};
 
-  const IceGrid &grid = *zeta.get_grid();
+  const IceGrid &grid = *zeta.grid();
 
   ParallelSection loop(grid.com);
   try {
@@ -85,7 +85,7 @@ void IPDesignVariableParameterization::convertFromDesignVariable(IceModelVec2S &
   PetscErrorCode ierr;
   IceModelVec::AccessList list{&zeta, &d};
 
-  const IceGrid &grid = *zeta.get_grid();
+  const IceGrid &grid = *zeta.grid();
 
   ParallelSection loop(grid.com);
   try {

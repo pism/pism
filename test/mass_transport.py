@@ -18,7 +18,7 @@ def disc(thickness, x0, y0, H0, R_inner, R_outer):
 
     """
 
-    grid = thickness.get_grid()
+    grid = thickness.grid()
 
     R_inner_2 = R_inner**2
     R_outer_2 = R_outer**2
@@ -44,7 +44,7 @@ def set_velocity(scalar_velocity, v):
     origin. This is slow, but it works.
 
     """
-    grid = v.get_grid()
+    grid = v.grid()
 
     with PISM.vec.Access(nocomm=v):
         for (i, j) in grid.points():
@@ -167,7 +167,7 @@ def average_error(N):
     # combine stuff stored as thickness and as area specific volume
     geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
 
-    grid = geometry.ice_thickness.get_grid()
+    grid = geometry.ice_thickness.grid()
 
     diff = PISM.IceModelVec2S()
     diff.create(grid, "difference", PISM.WITHOUT_GHOSTS)
@@ -206,7 +206,7 @@ def part_grid_symmetry_test():
     # combine stuff stored as thickness and as area specific volume
     geometry.ice_thickness.add(1.0, geometry.ice_area_specific_volume)
 
-    grid = geometry.ice_thickness.get_grid()
+    grid = geometry.ice_thickness.grid()
 
     p0 = PISM.vec.ToProcZero(grid)
 
