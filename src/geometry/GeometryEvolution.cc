@@ -769,16 +769,15 @@ void GeometryEvolution::update_in_place(double dt,
     Redistribute residual ice mass from subgrid-scale parameterization.
 
     See [@ref Albrechtetal2011].
-
-    FIXME: resolve fixed number (=3) of loops issue
   */
   if (m_impl->use_part_grid) {
-    const int max_n_iterations = 3;
+    const int max_n_iterations = m_config->get_double("geometry.part_grid.max_iterations");
 
-    for (int i = 0; i < max_n_iterations; ++i) {
+    bool done = false;
+    for (int i = 0; i < max_n_iterations and not done; ++i) {
       m_log->message(4, "redistribution iteration %d\n", i);
 
-      bool done = false;
+      // this call may set done to true
       residual_redistribution_iteration(bed_topography,
                                         sea_level,
                                         m_impl->surface_elevation,
@@ -787,9 +786,12 @@ void GeometryEvolution::update_in_place(double dt,
                                         area_specific_volume,
                                         m_impl->residual,
                                         done);
-      if (done) {
-        break;
-      }
+    }
+
+    if (not done) {
+      m_log->message(2,
+                     "WARNING: not done redistributing mass after %d iterations, remaining residual: %f m^3.\n",
+                     max_n_iterations, m_impl->residual.sum()*m_grid->dx()*m_grid->dy());
     }
   }
 }
