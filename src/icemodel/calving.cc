@@ -37,11 +37,6 @@ namespace pism {
 
 void IceModel::do_calving() {
 
-  if (not m_config->get_boolean("geometry.part_grid.enabled")) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "calving requires geometry.part_grid.enabled");
-  }
-
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
