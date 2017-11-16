@@ -45,8 +45,9 @@ protected:
   virtual void temp_time_series_impl(int i, int j, std::vector<double> &result) const;
 
 protected:
-  double m_precip_lapse_rate;
+  double m_precip_lapse_rate,m_precip_scale_factor;
   const IceModelVec2S *m_surface;
+  bool do_precip_scale;
 };
 
 } // end of namespace atmosphere
