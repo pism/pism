@@ -29,6 +29,11 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, SurfaceModel* in)
   : PLapseRates<SurfaceModel,SurfaceModifier>(g, in) {
   m_smb_lapse_rate = 0;
   m_option_prefix = "-surface_lapse_rate";
+
+  m_smb_scale_factor = 0.0;
+  do_smb_scale = options::Bool("-smb_scale_factor", 
+                               "Scale surface mass balance according to change in surface elevation");
+
 }
 
 LapseRates::~LapseRates() {
@@ -50,10 +55,24 @@ void LapseRates::init_impl() {
                                    " in m year-1 per km",
                                    m_smb_lapse_rate);
 
-  m_log->message(2,
+  //This is basically temperature lapse rate 8.2 K/Km as in TemperaturPIK times precipitation scale rate 5%/K )
+  m_smb_scale_factor = options::Real("-smb_scale_factor",
+                                      "Elevation scale factor for the surface mass balance,"
+                                      " in units per km",
+                                      m_smb_scale_factor);
+  if (do_smb_scale){
+
+    m_log->message(2,
+              "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
+              "   ice-equivalent surface mass balance scale factor: %3.3f per km\n",
+              m_temp_lapse_rate, m_smb_scale_factor);
+  } else {
+
+    m_log->message(2,
              "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
              "   ice-equivalent surface mass balance lapse rate: %3.3f m year-1 per km\n",
              m_temp_lapse_rate, m_smb_lapse_rate);
+  }
 
   m_temp_lapse_rate = units::convert(m_sys, m_temp_lapse_rate, "K/km", "K/m");
 
@@ -61,11 +80,18 @@ void LapseRates::init_impl() {
   m_smb_lapse_rate *= m_config->get_double("constants.ice.density");
   m_smb_lapse_rate = units::convert(m_sys, m_smb_lapse_rate,
                                     "(kg m-2) year-1 / km", "(kg m-2) second-1 / m");
+
+  m_smb_scale_factor = units::convert(m_sys, m_smb_scale_factor, "km-1", "m-1");
+
 }
 
 void LapseRates::mass_flux_impl(IceModelVec2S &result) const {
   m_input_model->mass_flux(result);
-  lapse_rate_correction(result, m_smb_lapse_rate);
+  if (do_smb_scale) {
+    lapse_rate_scale(result, m_smb_scale_factor);
+  } else {
+    lapse_rate_correction(result, m_smb_lapse_rate);
+  }
 }
 
 void LapseRates::temperature_impl(IceModelVec2S &result) const {

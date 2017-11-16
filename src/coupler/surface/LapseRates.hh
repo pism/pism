@@ -37,7 +37,8 @@ protected:
   virtual void mass_flux_impl(IceModelVec2S &result) const;
   virtual void temperature_impl(IceModelVec2S &result) const;
 protected:
-  double m_smb_lapse_rate;
+  double m_smb_lapse_rate,m_smb_scale_factor;
+  bool do_smb_scale;
 };
 
 } // end of namespace surface
