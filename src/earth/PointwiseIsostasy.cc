@@ -42,8 +42,8 @@ void PointwiseIsostasy::init_impl(const InputOptions &opts) {
 
   BedDef::init_impl(opts);
 
-  const IceModelVec2S *ice_thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  m_thk_last.copy_from(*ice_thickness);
+  const IceModelVec2S *load_thickness = m_grid->variables().get_2d_scalar("beddef_load");
+  m_thk_last.copy_from(*load_thickness);
 }
 
 MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {

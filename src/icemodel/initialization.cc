@@ -180,6 +180,12 @@ void IceModel::model_state_setup() {
     m_beddef->init(input);
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
+
+    //if (m_config->get_boolean("bed_deformation.include_ocean_load")) {
+      // FIXME: workaround to get bed topography for load calculation
+      compute_load_for_beddef();
+      m_beddef->init(input);
+    //}
   }
 
   // Now ice thickness, bed elevation, and sea level are available, so we can compute the ice

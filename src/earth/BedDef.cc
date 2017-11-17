@@ -47,6 +47,12 @@ BedDef::BedDef(IceGrid::ConstPtr g)
   m_uplift.set_attrs("model_state", "bedrock uplift rate",
                      "m s-1", "tendency_of_bedrock_altitude");
   m_uplift.metadata().set_string("glaciological_units", "mm year-1");
+
+  m_load.create(m_grid, "beddef_load", WITH_GHOSTS, WIDE_STENCIL);
+  m_load.set_attrs("model_state", "thickness of load of ice and ocean",
+                  "m", "");
+
+  add_ocean_load = m_config->get_boolean("bed_deformation.include_ocean_load");
 }
 
 BedDef::~BedDef() {
@@ -64,11 +70,15 @@ const IceModelVec2S& BedDef::uplift() const {
 void BedDef::define_model_state_impl(const PIO &output) const {
   m_uplift.define(output);
   m_topg.define(output);
+  if (add_ocean_load)
+    m_load.define(output);
 }
 
 void BedDef::write_model_state_impl(const PIO &output) const {
   m_uplift.write(output);
   m_topg.write(output);
+  if (add_ocean_load)
+    m_load.write(output);
 }
 
 std::map<std::string, Diagnostic::Ptr> BedDef::diagnostics_impl() const {
@@ -99,14 +109,20 @@ void BedDef::bootstrap_impl(const IceModelVec2S &bed,
   m_uplift.copy_from(bed_uplift);
   // suppress a compiler warning:
   (void) ice_thickness;
+
+  const IceModelVec2S *load_thickness = m_grid->variables().get_2d_scalar("beddef_load");
+  m_load.copy_from(*load_thickness);
 }
 
 void BedDef::update_impl(double t, double dt) {
-  const IceModelVec2S *thk = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  this->update_with_thickness_impl(*thk, t, dt);
+  const IceModelVec2S *load_thickness = m_grid->variables().get_2d_scalar("beddef_load");
+  m_load.copy_from(*load_thickness);
+  this->update_with_thickness_impl(*load_thickness, t, dt);
 }
 
 void BedDef::update(const IceModelVec2S &ice_thickness, double t, double dt) {
+  // ice_thickness here is actually m_beddef_load called in iceModel.cc
+  m_load.copy_from(ice_thickness);
   this->update_with_thickness_impl(ice_thickness, t, dt);
 }
 
@@ -159,6 +175,10 @@ void BedDef::init_impl(const InputOptions &opts) {
   if (not correction_file.empty()) {
     apply_topg_offset(correction_file);
   }
+
+  // write load thickness field to output
+  const IceModelVec2S *load = m_grid->variables().get_2d_scalar("beddef_load");
+  m_load.copy_from(*load);
 
   // this should be the last thing we do here
   m_topg_last.copy_from(m_topg);
