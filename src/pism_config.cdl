@@ -565,7 +565,7 @@ netcdf pism_config {
     pism_config:flow_law.isothermal_Glen.ice_softness_units = "Pascal-3 second-1";
 
     pism_config:fracture_density.constant_fd = "no";
-    pism_config:fracture_density.constant_fd_doc = "FIXME";
+    pism_config:fracture_density.constant_fd_doc = "Do not update fracture density field";
     pism_config:fracture_density.constant_fd_option = "constant_fd";
     pism_config:fracture_density.constant_fd_type = "boolean";
 
@@ -620,6 +620,11 @@ netcdf pism_config {
     pism_config:fracture_density.write_fields_doc = "Writing of fracture density related fields to nc-file.";
     pism_config:fracture_density.write_fields_option = "write_fd_fields";
     pism_config:fracture_density.write_fields_type = "boolean";
+
+    pism_config:fracture_density.borstad_limit = "no";
+    pism_config:fracture_density.borstad_limit_doc = "Define fracture growth dependent on empirical function from Bortstad et al., 2016";
+    pism_config:fracture_density.borstad_limit_option = "constitutive_stress_limit";
+    pism_config:fracture_density.borstad_limit_type = "boolean";
 
     pism_config:geometry.grounded_cell_fraction  = "false";
     pism_config:geometry.grounded_cell_fraction_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";

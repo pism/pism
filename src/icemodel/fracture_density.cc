@@ -29,9 +29,13 @@
 #include "pism/util/pism_options.hh"
 #include "IceModel.hh"
 
+#include "pism/rheology/FlowLaw.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/energy/EnergyModel.hh"
+
 namespace pism {
 
-//! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
+//! \file fracture_density.cc implementing calculation of fracture density with PIK options -fractures.
 
 void IceModel::update_fracture_density() {
   const double dx = m_grid->dx(), dy = m_grid->dy(), Mx = m_grid->Mx(), My = m_grid->My();
@@ -62,6 +66,19 @@ void IceModel::update_fracture_density() {
           &m_fracture->flow_enhancement, &m_fracture->toughness, &A, &A_new});
     A_new.copy_from(A);
   }
+
+  double glenexp = m_config->get_double("stress_balance.ssa.Glen_exponent");
+  double softness = m_config->get_double("flow_law.isothermal_Glen.ice_softness"); //const
+  double minH = m_config->get_double("stress_balance.ice_free_thickness_standard");
+
+  const bool borstad_limit = m_config->get_boolean("fracture_density.borstad_limit");
+  //if (borstad_limit){
+    const IceModelVec3 &enthalpy = m_energy_model->enthalpy();
+    list.add(enthalpy);
+    const double *z = &m_grid->z()[0];
+    const rheology::FlowLaw*
+    flow_law = m_stress_balance->shallow()->flow_law();
+  //}
 
   //options
   /////////////////////////////////////////////////////////
@@ -221,12 +238,56 @@ void IceModel::update_fracture_density() {
       sigmat = KSImax;
     }
 
-    //////////////////////////////////////////////////////////////////////////////
 
+    //////////////////////////////////////////////////////////////////////////////
     //fracture density
-    double fdnew = gamma * (strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
-    if (sigmat > initThreshold) {
-      D_new(i, j) += fdnew * m_dt;
+    double fdnew = 0.0;
+
+    //Borstad et al. 2016, constitutive framework for ice weakening
+    if (borstad_limit) {
+
+      double H = m_geometry.ice_thickness(i, j);
+      if (H > minH) {
+
+      //get vertical average hardness
+      unsigned int k = m_grid->kBelowHeight(H);
+      double hardness = averaged_hardness(*flow_law, H, k, &z[0], enthalpy.get_column(i, j));
+      softness = pow(hardness, -glenexp);
+
+      //mean parameters from paper
+      double t0 = 130000.0; //Pa
+      t0 = initThreshold;
+      double kappa = 2.8;
+
+      //effective strain rate
+      double e1=strain_rates(i, j, 0);
+      double e2=strain_rates(i, j, 1);
+      double ee = sqrt(PetscSqr(e1) + PetscSqr(e2) - e1 * e2);
+
+      //threshold for unfractured ice
+      double e0 = pow( (t0/hardness) , glenexp); 
+
+      //threshold for fractured ice (exponential law)
+      double ex = exp((e0-ee)/(e0*(kappa-1)));
+
+      // stress threshold for fractures ice
+      double te = t0 * ex; 
+
+      //actual effective stress
+      double ts = hardness * pow(ee,1/glenexp) * (1-D_new(i, j));
+
+      //fracture formation if threshold is hit
+      if (ts > te && ee > e0) {
+        fdnew = 1.0- ( ex * pow((ee/e0),-1/glenexp) ); //new fracture density
+        D_new(i, j) = fdnew;
+      }
+      }
+
+    } else { //default fracture growth
+      fdnew = gamma * (strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
+      if (sigmat > initThreshold) {
+        D_new(i, j) += fdnew * m_dt;
+      }
     }
 
     //healing
@@ -294,10 +355,9 @@ void IceModel::update_fracture_density() {
       }
 
       // additional flow enhancement due to fracture softening
-      double phi_exp   = 3.0; //flow_law->exponent();
-      double softening = pow((1.0 - (1.0 - soft_residual) * D_new(i, j)), -phi_exp);
+      double softening = pow((1.0 - (1.0 - soft_residual) * D_new(i, j)), -glenexp);
       if (m_geometry.ice_thickness(i, j) > 0.0) {
-        m_fracture->flow_enhancement(i, j) = 1.0 / pow(softening, 1 / 3.0);
+        m_fracture->flow_enhancement(i, j) = 1.0 / pow(softening, 1 / glenexp);
       } else {
         m_fracture->flow_enhancement(i, j) = 1.0;
       }
