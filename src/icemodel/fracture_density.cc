@@ -242,6 +242,7 @@ void IceModel::update_fracture_density() {
     //////////////////////////////////////////////////////////////////////////////
     //fracture density
     double fdnew = 0.0;
+    bool add_fractures;
 
     //Borstad et al. 2016, constitutive framework for ice weakening
     if (borstad_limit) {
@@ -272,12 +273,14 @@ void IceModel::update_fracture_density() {
 
       // stress threshold for fractures ice
       double te = t0 * ex; 
+      sigmat    = te;
 
       //actual effective stress
       double ts = hardness * pow(ee,1/glenexp) * (1-D_new(i, j));
 
       //fracture formation if threshold is hit
-      if (ts > te && ee > e0) {
+      add_fractures = (ts > te && ee > e0);
+      if (add_fractures) {
         fdnew = 1.0- ( ex * pow((ee/e0),-1/glenexp) ); //new fracture density
         D_new(i, j) = fdnew;
       }
@@ -285,7 +288,8 @@ void IceModel::update_fracture_density() {
 
     } else { //default fracture growth
       fdnew = gamma * (strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
-      if (sigmat > initThreshold) {
+      add_fractures = (sigmat > initThreshold);
+      if (add_fractures) {
         D_new(i, j) += fdnew * m_dt;
       }
     }
@@ -322,16 +326,15 @@ void IceModel::update_fracture_density() {
     // write related fracture quantities to nc-file
     // if option -write_fd_fields is set
     if (write_fd && m_geometry.ice_thickness(i, j) > 0.0) {
+
       //fracture toughness
       m_fracture->toughness(i, j) = sigmat;
 
       // fracture growth rate
-      if (sigmat > initThreshold) {
-        m_fracture->growth_rate(i, j) = fdnew;
-        //m_fracture->growth_rate(i,j)=gamma*(vPrinStrain1(i,j)-0.0)*(1-D_new(i,j));
-      } else {
-        m_fracture->growth_rate(i, j) = 0.0;
-      }
+      if (add_fractures)
+          m_fracture->growth_rate(i, j) = fdnew;
+      else
+          m_fracture->growth_rate(i, j) = 0.0;
 
       // fracture healing rate
       if (m_geometry.ice_thickness(i, j) > 0.0) {
@@ -350,7 +353,7 @@ void IceModel::update_fracture_density() {
       A_new(i, j) -= m_dt * uvel * (uvel < 0 ? A(i + 1, j) - A(i, j) : A(i, j) - A(i - 1, j)) / dx;
       A_new(i, j) -= m_dt * vvel * (vvel < 0 ? A(i, j + 1) - A(i, j) : A(i, j) - A(i, j - 1)) / dy;
       A_new(i, j) += m_dt / one_year;
-      if (sigmat > initThreshold) {
+      if (add_fractures) {
         A_new(i, j) = 0.0;
       }
 

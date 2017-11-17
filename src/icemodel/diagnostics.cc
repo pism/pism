@@ -2323,6 +2323,13 @@ void IceModel::init_diagnostics() {
 
     // misc
     {"rank", f(new Rank(this))},
+
+    // fractures
+    {"fracture_density", d::wrap(m_fracture->density)},
+    {"fracture_growth_rate", d::wrap(m_fracture->growth_rate)},
+    {"fracture_healing_rate", d::wrap(m_fracture->healing_rate)},
+    {"fracture_flow_enhancement", d::wrap(m_fracture->flow_enhancement)},
+    {"fracture_toughness", d::wrap(m_fracture->toughness)},
   };
 
 #if (PISM_USE_PROJ4==1)
