@@ -52,9 +52,14 @@ protected:
 
   void topg_to_phi(const IceModelVec2S &bed_topography);
   void tauc_to_phi(const IceModelVec2CellType &mask);
+
 protected:
   IceModelVec2S m_till_phi, m_tillwat, m_Po;
   hydrology::Hydrology *m_hydrology;
+
+  bool m_iterative_phi;
+  IceModelVec2S m_target_usurf, m_diff_usurf,m_usurf,m_diff_mask;
+  double m_last_time, m_last_inverse_time;
 
   // only allocated and used if basal_yield_stress.add_transportable_water = true
   IceModelVec2S m_bwat;

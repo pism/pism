@@ -104,6 +104,7 @@ protected:
                                     IceModelVec2S &area_specific_volume_change,
                                     IceModelVec2S &conservation_error);
 
+
   virtual void set_no_model_mask_impl(const IceModelVec2Int &mask);
 
   // note: cells with area_specific_volume > 0 do not experience changes due to surface and basal
@@ -117,6 +118,17 @@ protected:
                                                       const IceModelVec2S &basal_melt_rate,
                                                       IceModelVec2S &effective_SMB,
                                                       IceModelVec2S &effective_BMB);
+
+  virtual void prescribe_groundingline(const IceModelVec2S &ice_thickness,
+                                       IceModelVec2S &thickness_change,
+                                       const IceModelVec2S& bed_topography,
+                                       const IceModelVec2S& sea_level,
+                                       const IceModelVec2CellType& cell_type,
+                                       IceModelVec2S &effective_SMB,
+                                       IceModelVec2S &effective_BMB,
+                                       IceModelVec2S &area_specific_volume_change,
+                                       IceModelVec2S &conservation_error);
+
 protected:
   struct Impl;
   Impl *m_impl;
