@@ -2326,7 +2326,17 @@ void IceModel::init_diagnostics() {
 
     // earth
     {"beddef_load_thickness", d::wrap(m_beddef_load)},
+
   };
+
+  // fractures
+  if (m_config->get_boolean("fracture_density.enabled")) {
+    m_diagnostics["fracture_density"] = d::wrap(m_fracture->density);
+    m_diagnostics["fracture_growth_rate"] = d::wrap(m_fracture->growth_rate);
+    m_diagnostics["fracture_healing_rate"] = d::wrap(m_fracture->healing_rate);
+    m_diagnostics["fracture_flow_enhancement"] = d::wrap(m_fracture->flow_enhancement);
+    m_diagnostics["fracture_toughness"] = d::wrap(m_fracture->toughness);
+  }
 
 #if (PISM_USE_PROJ4==1)
   std::string proj4 = m_grid->get_mapping_info().proj4;
