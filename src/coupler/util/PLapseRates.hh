@@ -199,6 +199,7 @@ protected:
       result(i, j) -= lapse_rate * (surface(i,j) - m_reference_surface(i, j));
     }
   }
+
 protected:
   // "mutable" is needed here because some methods (average, interp) change the state of an
   // "IceModelVec2T"

@@ -27,6 +27,8 @@ namespace surface {
 
 LapseRates::LapseRates(IceGrid::ConstPtr g, SurfaceModel* in)
   : PLapseRates<SurfaceModel,SurfaceModifier>(g, in) {
+
+
   m_smb_lapse_rate = 0;
   m_option_prefix = "-surface_lapse_rate";
 
@@ -84,6 +86,7 @@ void LapseRates::init_impl() {
   m_smb_scale_factor = units::convert(m_sys, m_smb_scale_factor, "km-1", "m-1");
 
 }
+
 
 void LapseRates::mass_flux_impl(IceModelVec2S &result) const {
   m_input_model->mass_flux(result);
