@@ -32,24 +32,6 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, SurfaceModel* in)
   m_smb_lapse_rate = 0;
   m_option_prefix = "-surface_lapse_rate";
 
-
-  //m_climatic_mass_balance.set_string("pism_intent", "diagnostic");
-  //m_climatic_mass_balance.set_string("long_name",
-  //                "surface mass balance (accumulation/ablation) rate");
-  //m_climatic_mass_balance.set_string("standard_name",
-  //                "land_ice_surface_specific_mass_balance_flux");
-  //m_climatic_mass_balance.set_string("units", "kg m-2 s-1");
-  //m_climatic_mass_balance.set_string("glaciological_units", "kg m-2 year-1");
-
-  //m_ice_surface_temp.set_string("pism_intent", "diagnostic");
-  //m_ice_surface_temp.set_string("long_name",
-  //                            "ice temperature at the ice surface");
-  //m_ice_surface_temp.set_string("units", "K");
-
-  m_precip_scale_factor = 0.0;
-  do_precip_scale = options::Bool("-precip_scale_factor", "Scale precipitation according to change in surface elevation");
-
-
 }
 
 LapseRates::~LapseRates() {
@@ -71,27 +53,13 @@ void LapseRates::init_impl() {
                                    " in m year-1 per km",
                                    m_smb_lapse_rate);
 
-  m_precip_scale_factor = options::Real("-precip_scale_factor",
-                                    "Elevation scale factor for the surface mass balance,"
-                                    " in units per km",
-                                    m_precip_scale_factor);
-  //This is basically temperature lapse rate 8.2 K/Km as in PATemperaturPIK times precipitation scale rate 5%/K )
-  if (do_precip_scale){
-        m_log->message(2,
-             "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
-             "   precipitation scale factor: %3.3f per km\n",
-             m_temp_lapse_rate, m_precip_scale_factor);
-  } else {
-
-    m_log->message(2,
+  m_log->message(2,
              "   ice upper-surface temperature lapse rate: %3.3f K per km\n"
              "   ice-equivalent surface mass balance lapse rate: %3.3f m year-1 per km\n",
              m_temp_lapse_rate, m_smb_lapse_rate);
-  }
+  
 
   m_temp_lapse_rate = units::convert(m_sys, m_temp_lapse_rate, "K/km", "K/m");
-
-  m_precip_scale_factor = units::convert(m_sys, m_precip_scale_factor, "km-1", "m-1");
 
   // convert from [m year-1 / km] to [kg m-2 year-1 / km]
   m_smb_lapse_rate *= m_config->get_double("constants.ice.density");
@@ -102,14 +70,7 @@ void LapseRates::init_impl() {
 
 void LapseRates::mass_flux_impl(IceModelVec2S &result) const {
   m_input_model->mass_flux(result);
-  //lapse_rate_correction(result, m_smb_lapse_rate);
-
-  if (do_precip_scale) {
-    lapse_rate_scale(result, m_precip_scale_factor);
-  } else {
-    lapse_rate_correction(result, m_smb_lapse_rate);
-  }
-
+  lapse_rate_correction(result, m_smb_lapse_rate);
 }
 
 void LapseRates::temperature_impl(IceModelVec2S &result) const {
