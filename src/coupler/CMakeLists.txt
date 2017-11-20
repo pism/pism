@@ -2,6 +2,7 @@
 add_library (pismboundary OBJECT
   ./atmosphere/AtmosphereModel.cc
   ./atmosphere/ConstantPIK.cc
+  ./atmosphere/TemperaturePIK.cc
   ./atmosphere/SeariseGreenland.cc
   ./atmosphere/YearlyCycle.cc
   ./atmosphere/CosineYearlyCycle.cc
