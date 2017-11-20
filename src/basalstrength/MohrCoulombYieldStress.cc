@@ -71,7 +71,6 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
   m_till_phi.set_attrs("model_state",
                        "friction angle for till under grounded ice sheet",
                        "degrees", "");
-  //m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
 
   // internal working space; stencil width needed because redundant computation
@@ -127,6 +126,8 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr g,
     m_diff_mask.set_attrs("internal",
                  "mask for till phi iteration",
                  "", ""); 
+  } else{
+    m_till_phi.set_time_independent(true);
   }
 
 }
@@ -638,11 +639,17 @@ void MohrCoulombYieldStress::tauc_to_phi(const IceModelVec2CellType &mask) {
 }
 
 std::map<std::string, Diagnostic::Ptr> MohrCoulombYieldStress::diagnostics_impl() const {
-  return combine({{"tillphi", Diagnostic::wrap(m_till_phi)},
+
+  if (m_iterative_phi) {
+    return combine({{"tillphi", Diagnostic::wrap(m_till_phi)},
                   {"diff_usurf", Diagnostic::wrap(m_diff_usurf)},
                   //{"target_usurf", Diagnostic::wrap(m_target_usurf)},
                   {"diff_mask", Diagnostic::wrap(m_diff_mask)}},
+                   YieldStress::diagnostics_impl());
+  } else{
+    return combine({{"tillphi", Diagnostic::wrap(m_till_phi)}},
                  YieldStress::diagnostics_impl());
+  }
 }
 
 } // end of namespace pism
