@@ -74,6 +74,10 @@ protected:
 
   //! bed uplift rate
   IceModelVec2S m_uplift;
+
+  //! load of the ice (and the ocean)
+  IceModelVec2S m_load;
+  bool add_ocean_load;
 };
 
 class Null : public BedDef {

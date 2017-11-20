@@ -336,6 +336,14 @@ void IceModel::allocate_storage() {
     m_grid->variables().add(m_fracture->density);
   }
 
+  {
+    m_beddef_load.create(m_grid, "beddef_load", WITHOUT_GHOSTS);
+    m_beddef_load.set_attrs("internal",
+                      "thickness of ice (and ice-equivalent ocean column)",
+                      "", "");
+    m_grid->variables().add(m_beddef_load);
+  }
+
   // Add some variables to the list of "model state" fields.
   m_model_state.insert(&m_ssa_dirichlet_bc_mask);
   m_model_state.insert(&m_ssa_dirichlet_bc_values);
@@ -374,6 +382,38 @@ void IceModel::enforce_consistency_of_geometry() {
   }
 
   m_geometry.ensure_consistency(m_config->get_double("geometry.ice_free_thickness_standard"));
+}
+
+
+//! Compute load
+void IceModel::compute_load_for_beddef() {
+
+  // consider the load of the ocean water column and neglect the load of ice shelves
+  if (m_config->get_boolean("bed_deformation.include_ocean_load")) {
+    
+    const double
+    ice_density   = m_config->get_double("constants.ice.density"),
+    ocean_density = m_config->get_double("constants.sea_water.density");
+
+    assert(m_ocean != NULL);
+    const double sea_level = m_ocean->sea_level_elevation();
+
+    assert(m_beddef != NULL);
+    const IceModelVec2S &bed_topography = m_beddef->bed_elevation();
+
+    IceModelVec::AccessList list{&m_beddef_load, &m_geometry.ice_thickness, &bed_topography};
+
+    //ice_equivalent_load_thickness = max(thk - rhow/rhoi*(sl - bed), 0.0) + rhow/rhoi*(sl - bed)
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      double ocean_load = ocean_density/ice_density*(sea_level - bed_topography(i, j));
+      m_beddef_load(i, j) = std::max(0.0, m_geometry.ice_thickness(i, j) - ocean_load) + ocean_load;
+    }
+
+  } else {
+     // consider the load of the ice column including ice shelves (not physical!)
+     m_beddef_load.copy_from(m_geometry.ice_thickness);
+  }
 }
 
 
@@ -599,12 +639,13 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   //! \li compute the bed deformation, which only depends on current thickness
-  //! and bed elevation
+  //! and bed elevation (and ocean layer depth if indicated by option)
   if (m_beddef) {
     int topg_state_counter = m_beddef->bed_elevation().get_state_counter();
 
     profiling.begin("bed_deformation");
-    m_beddef->update(current_time, m_dt);
+    compute_load_for_beddef();
+    m_beddef->update(m_beddef_load,current_time, m_dt);
     profiling.end("bed_deformation");
 
     if (m_beddef->bed_elevation().get_state_counter() != topg_state_counter) {

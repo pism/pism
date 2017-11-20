@@ -2323,6 +2323,9 @@ void IceModel::init_diagnostics() {
 
     // misc
     {"rank", f(new Rank(this))},
+
+    // earth
+    {"beddef_load_thickness", d::wrap(m_beddef_load)},
   };
 
 #if (PISM_USE_PROJ4==1)

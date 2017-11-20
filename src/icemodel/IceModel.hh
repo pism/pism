@@ -294,6 +294,9 @@ protected:
   //! Dirichlet boundary velocities
   IceModelVec2V m_ssa_dirichlet_bc_values;
 
+  //! thickness of ice-equivalent load for bed deformation model
+  IceModelVec2S m_beddef_load;
+
   // parameters
   //! mass continuity time step, s
   double m_dt;
@@ -314,6 +317,8 @@ protected:
   virtual MaxTimestep max_timestep_diffusivity();
   virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
+
+  virtual void compute_load_for_beddef();
 
   // see iMenergy.cc
   virtual void energy_step();
