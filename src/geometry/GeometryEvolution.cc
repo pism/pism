@@ -45,12 +45,16 @@ struct GeometryEvolution::Impl {
   GeometryCalculator gc;
 
   double ice_density;
+  double ocean_density;
 
   //! True if the basal melt rate contributes to geometry evolution.
   bool use_bmr;
 
   //! True if the part-grid scheme is enabled.
   bool use_part_grid;
+
+  //! True if grounding line location is fixed for till_phi optimization
+  bool prescribe_gl;
 
   //! Flux divergence (used to track thickness changes due to flow).
   IceModelVec2S flux_divergence;
@@ -99,6 +103,9 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
     ice_density   = config->get_double("constants.ice.density");
     use_bmr       = config->get_boolean("geometry.update.use_basal_melt_rate");
     use_part_grid = config->get_boolean("geometry.part_grid.enabled");
+
+    ocean_density = config->get_double("constants.sea_water.density");
+    prescribe_gl  = config->get_boolean("geometry.update.prescribe_groundingline");
   }
 
   // reported quantities
@@ -319,6 +326,7 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
                        m_impl->conservation_error);             // out
   m_impl->profile.end("ge.ensure_nonnegativity");
 
+
   m_impl->profile.begin("ge.source_terms");
   compute_surface_and_basal_mass_balance(dt,                        // in
                                          thickness_bc_mask,         // in
@@ -337,6 +345,22 @@ void GeometryEvolution::step(const Geometry &geometry, double dt,
   // Href_new = Href_old + ice_area_specific_volume_change.
 
   // calving is a separate issue
+
+
+  if (m_impl->prescribe_gl) {
+    m_impl->profile.begin("ge.prescribe_gl");
+    prescribe_groundingline(geometry.ice_thickness,        // in
+                            m_impl->thickness_change,      // in/out
+                            m_impl->bed_elevation,         // in
+                            m_impl->sea_level,             // in
+                            m_impl->cell_type,             // in
+                            m_impl->effective_SMB,         // in
+                            m_impl->effective_BMB,         // in
+                            m_impl->ice_area_specific_volume_change, // in/out
+                            m_impl->conservation_error);   // out
+    m_impl->profile.end("ge.prescribe_gl");
+  }
+
 }
 
 /*!
@@ -956,6 +980,7 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
   IceModelVec::AccessList list{&ice_thickness, &area_specific_volume, &thickness_change,
       &area_specific_volume_change, &conservation_error};
 
+
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -987,6 +1012,64 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
   }
   loop.check();
 }
+
+
+////////////////////////////////////////////////////////////////
+
+void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &ice_thickness,
+                                             IceModelVec2S &thickness_change,
+                                             const IceModelVec2S  &bed_topography,
+                                             const IceModelVec2S  &sea_level,
+                                             const IceModelVec2CellType &cell_type,
+                                             IceModelVec2S  &effective_SMB,
+                                             IceModelVec2S  &effective_BMB,
+                                             IceModelVec2S &area_specific_volume_change,
+                                             IceModelVec2S &conservation_error) {
+
+  IceModelVec::AccessList list{&ice_thickness, &thickness_change, &bed_topography,&sea_level, 
+               &cell_type, &effective_SMB, &effective_BMB, &area_specific_volume_change, &conservation_error};
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      conservation_error(i, j) = 0.0;
+
+      const double
+        H    = ice_thickness(i, j),
+        dHMB = effective_SMB(i, j)+effective_BMB(i, j),
+        dH   = thickness_change(i, j),
+        rho  = m_impl->ocean_density/m_impl->ice_density,
+        Hfl  = 1.0-(bed_topography(i,j)-sea_level(i,j))*rho;
+
+        if (cell_type.grounded(i, j)) {
+          // prevent grounded parts form becoming afloat
+          if (H+dH+dHMB-Hfl < 0.0){
+            thickness_change(i, j)    = (Hfl-H-dHMB);
+            conservation_error(i, j) += - (H+dH+dHMB-Hfl);
+          }
+        }
+        else {
+          //avoid artefacts for floating cells surrounded by grounded neighbors
+          if (cell_type.grounded(i-1,j) && cell_type.grounded(i+1,j) && cell_type.grounded(i,j-1) && cell_type.grounded(i,j+1)){
+            //thickness_change(i, j)    = dH;
+            conservation_error(i, j) += 0.0;
+          //floating ice shelves remain unchanged
+          } else {
+            thickness_change(i, j)    = (0.0-dHMB);
+            area_specific_volume_change(i, j)  = 0.0;
+            conservation_error(i, j) += - (dH+dHMB);
+          }
+        }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
+
 
 /*!
  * Given ice thickness `H` and the "proposed" change `dH`, compute the corrected change preserving
