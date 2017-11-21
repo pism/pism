@@ -670,6 +670,11 @@
    :Option: :opt:`-part_grid`
    :Description: apply partially filled grid cell scheme
 
+#. :config:`geometry.part_grid.max_iterations` (*integer*)
+
+   :Value: 10
+   :Description: maximum number of residual redistribution iterations
+
 #. :config:`geometry.remove_icebergs` (*boolean*)
 
    :Value: no

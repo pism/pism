@@ -807,13 +807,13 @@ Scalar time-series
 
 #. ``basal_mass_flux_floating``
 
-   :Units: kg year-1
+   :Units: Gt year-1
    :Description: total sub-shelf ice flux
    :Comment: positive means ice gain
 
 #. ``basal_mass_flux_grounded``
 
-   :Units: kg year-1
+   :Units: Gt year-1
    :Description: total over grounded ice domain of basal mass flux
    :Comment: positive means ice gain
 
@@ -955,41 +955,41 @@ Scalar time-series
 
 #. ``tendency_of_ice_mass``
 
-   :Units: kg year-1
+   :Units: Gt year-1
    :Description: rate of change of the mass of ice, including seasonal cover
 
-#. ``tendency_of_ice_mass_due_to_basal_mass_balance``
+#. ``tendency_of_ice_mass_due_to_basal_mass_flux``
 
-   :Units: kg year-1
+   :Units: Gt year-1
    :Description: total over ice domain of bottom surface ice mass flux
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_due_to_conservation_error``
 
-   :Units: kg year-1
+   :Units: Gt year-1
    :Description: total numerical flux needed to preserve non-negativity of ice thickness
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_due_to_discharge``
 
-   :Units: kg year-1
+   :Units: Gt year-1
    :Description: discharge (calving & icebergs) flux
    :Comment: positive means ice gain
 
-#. ``tendency_of_ice_mass_due_to_influx``
+#. ``tendency_of_ice_mass_due_to_flow``
 
-   :Units: kg year-1
-   :Description: rate of change of the mass of ice due to influx (i.e. prescribed ice thickness)
+   :Units: Gt year-1
+   :Description: rate of change of the mass of ice due to flow (i.e. prescribed ice thickness)
 
-#. ``tendency_of_ice_mass_due_to_surface_mass_balance``
+#. ``tendency_of_ice_mass_due_to_surface_mass_flux``
 
-   :Units: kg year-1
+   :Units: Gt year-1
    :Description: total over ice domain of top surface ice mass flux
    :Comment: positive means ice gain
 
 #. ``tendency_of_ice_mass_glacierized``
 
-   :Units: kg year-1
+   :Units: Gt year-1
    :Description: rate of change of the ice mass in glacierized areas
 
 #. ``tendency_of_ice_volume``
