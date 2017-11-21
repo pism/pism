@@ -94,7 +94,7 @@ void BTU_Full::init_impl(const InputOptions &opts) {
   // Initialize the temperature field.
   {
     // store the current "revision number" of the temperature field
-    const int temp_revision = m_temp.get_state_counter();
+    const int temp_revision = m_temp.state_counter();
 
     if (opts.type == INIT_RESTART) {
       PIO input_file(m_grid->com, "guess_mode", opts.filename, PISM_READONLY);
@@ -108,7 +108,7 @@ void BTU_Full::init_impl(const InputOptions &opts) {
 
     regrid("bedrock thermal layer", m_temp, REGRID_WITHOUT_REGRID_VARS);
 
-    if (m_temp.get_state_counter() == temp_revision) {
+    if (m_temp.state_counter() == temp_revision) {
       m_bootstrapping_needed = true;
     } else {
       m_bootstrapping_needed = false;
@@ -254,7 +254,8 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
       for (int k = 0; k <= k0; ++k) {
         if (Tbnew[k] <= 0.0) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "invalid bedrock temperature: %f", Tbnew[k]);
+                                        "invalid bedrock temperature: %f Kelvin at %d,%d,%d",
+                                        Tbnew[k], i, j, k);
         }
       }
 

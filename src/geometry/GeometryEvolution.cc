@@ -81,7 +81,7 @@ struct GeometryEvolution::Impl {
   IceModelVec2S        area_specific_volume; // ghosted; updated in place
   IceModelVec2S        surface_elevation;    // ghosted; updated to maintain consistency
   IceModelVec2CellType cell_type;            // ghosted; updated to maintain consistency
-  IceModelVec2S        residual;             // not ghosted; temporary storage
+  IceModelVec2S        residual;             // ghosted; temporary storage
   IceModelVec2S        thickness;            // ghosted; temporary storage
   IceModelVec2Int      velocity_bc_mask;
 };
@@ -166,7 +166,7 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
     cell_type.set_attrs("internal", "working (ghosted) copy of the cell type mask",
                         "", "");
 
-    residual.create(grid, "residual", WITHOUT_GHOSTS);
+    residual.create(grid, "residual", WITH_GHOSTS);
     residual.set_attrs("internal", "residual area specific volume",
                        "meters3 / meters2", "");
 
@@ -769,16 +769,15 @@ void GeometryEvolution::update_in_place(double dt,
     Redistribute residual ice mass from subgrid-scale parameterization.
 
     See [@ref Albrechtetal2011].
-
-    FIXME: resolve fixed number (=3) of loops issue
   */
   if (m_impl->use_part_grid) {
-    const int max_n_iterations = 3;
+    const int max_n_iterations = m_config->get_double("geometry.part_grid.max_iterations");
 
-    for (int i = 0; i < max_n_iterations; ++i) {
+    bool done = false;
+    for (int i = 0; i < max_n_iterations and not done; ++i) {
       m_log->message(4, "redistribution iteration %d\n", i);
 
-      bool done = false;
+      // this call may set done to true
       residual_redistribution_iteration(bed_topography,
                                         sea_level,
                                         m_impl->surface_elevation,
@@ -787,9 +786,17 @@ void GeometryEvolution::update_in_place(double dt,
                                         area_specific_volume,
                                         m_impl->residual,
                                         done);
-      if (done) {
-        break;
-      }
+    }
+
+    if (not done) {
+      m_log->message(2,
+                     "WARNING: not done redistributing mass after %d iterations, remaining residual: %f m^3.\n",
+                     max_n_iterations, m_impl->residual.sum()*m_grid->dx()*m_grid->dy());
+
+      // Add residual to ice thickness, preserving total ice mass. (This is not great, but
+      // better than losing mass.)
+      ice_thickness.add(1.0, m_impl->residual);
+      m_impl->residual.set(0.0);
     }
   }
 }
@@ -798,12 +805,11 @@ void GeometryEvolution::update_in_place(double dt,
 /*!
   @param[in] bed_topography bed elevation
   @param[in] sea_level sea level elevation
-  @param[in,out] ice_surface_elevation surface elevation
-  @param[in,out] ice_thickness ice thickness
-  @param[in,out] cell_type cell type mask
-  @param[in,out] area_specific_volume area specific volume
-  @param[in,out] residual ice volume that still needs to be distributed
-  @param[in,out] work temporary storage for the ice thickness
+  @param[in,out] ice_surface_elevation surface elevation; used as temp. storage
+  @param[in,out] ice_thickness ice thickness; updated
+  @param[in,out] cell_type cell type mask; used as temp. storage
+  @param[in,out] area_specific_volume area specific volume; updated
+  @param[in,out] residual ice volume that still needs to be distributed; updated
   @param[in,out] done result flag: true if this iteration should be the last one
  */
 void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &bed_topography,
@@ -832,44 +838,43 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
       }
 
       StarStencil<int> m = cell_type.int_star(i, j);
-      int N = 0; // number of empty or partially filled neighbors
-      StarStencil<bool> neighbors;
-      neighbors.set(false);
 
+      int N = 0; // number of empty or partially filled neighbors
       for (unsigned int n = 0; n < 4; ++n) {
-          const Direction direction = directions[n];
-          if (ice_free_ocean(m[direction])) {
-            N++;
-            neighbors[direction] = true;
-          }
+        const Direction direction = directions[n];
+        if (ice_free_ocean(m[direction])) {
+          N++;
+        }
       }
 
       if (N > 0)  {
-        // Remaining ice mass will be redistributed equally among all
-        // adjacent partially-filled cells (is there a more physical
-        // way?)
-        if (neighbors.e) {
-          area_specific_volume(i + 1, j) += residual(i, j) / N;
-        }
-        if (neighbors.w) {
-          area_specific_volume(i - 1, j) += residual(i, j) / N;
-        }
-        if (neighbors.n) {
-          area_specific_volume(i, j + 1) += residual(i, j) / N;
-        }
-        if (neighbors.s) {
-          area_specific_volume(i, j - 1) += residual(i, j) / N;
-        }
-
-        residual(i, j) = 0.0;
+        // Remaining ice mass will be redistributed equally among all adjacent
+        // ice-free-ocean cells (is there a more physical way?)
+        residual(i, j) /= N;
       } else {
         // Conserve mass, but (possibly) create a "ridge" at the shelf
         // front
         ice_thickness(i, j) += residual(i, j);
         residual(i, j) = 0.0;
       }
+    }
+
+    residual.update_ghosts();
+
+    // update area_specific_volume using adjusted residuals
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (cell_type.ice_free_ocean(i, j)) {
+        area_specific_volume(i, j) += (residual(i + 1, j) +
+                                       residual(i - 1, j) +
+                                       residual(i, j + 1) +
+                                       residual(i, j - 1));
+      }
 
     }
+
+    residual.set(0.0);
   }
 
   ice_thickness.update_ghosts();
@@ -883,14 +888,14 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
   // The loop above updated ice_thickness, so we need to re-calculate the mask and the surface elevation:
   m_impl->gc.compute(sea_level, bed_topography, ice_thickness, cell_type, ice_surface_elevation);
 
-  double
-    remaining_residual = 0.0;
+  double remaining_residual = 0.0;
 
   // Second step: we need to redistribute residual ice volume if
   // neighbors which gained redistributed ice also become full.
   {
     // will be destroyed at the end of the block
-    IceModelVec::AccessList list{&m_impl->thickness, &ice_thickness, &ice_surface_elevation, &bed_topography, &cell_type};
+    IceModelVec::AccessList list{&m_impl->thickness, &ice_thickness,
+        &ice_surface_elevation, &bed_topography, &cell_type};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();

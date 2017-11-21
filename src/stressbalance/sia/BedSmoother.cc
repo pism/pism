@@ -288,12 +288,12 @@ void BedSmoother::smoothed_thk(const IceModelVec2S &usurf,
 
   IceModelVec::AccessList list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
 
-  unsigned int GHOSTS = result.get_stencil_width();
-  assert(mask.get_stencil_width()         >= GHOSTS);
-  assert(m_maxtl.get_stencil_width()      >= GHOSTS);
-  assert(thk.get_stencil_width()          >= GHOSTS);
-  assert(m_topgsmooth.get_stencil_width() >= GHOSTS);
-  assert(usurf.get_stencil_width()        >= GHOSTS);
+  unsigned int GHOSTS = result.stencil_width();
+  assert(mask.stencil_width()         >= GHOSTS);
+  assert(m_maxtl.stencil_width()      >= GHOSTS);
+  assert(thk.stencil_width()          >= GHOSTS);
+  assert(m_topgsmooth.stencil_width() >= GHOSTS);
+  assert(usurf.stencil_width()        >= GHOSTS);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -357,13 +357,13 @@ void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const
 
   IceModelVec::AccessList list{&m_C2, &m_C3, &m_C4, &m_maxtl, &result, &m_topgsmooth, &usurf};
 
-  unsigned int GHOSTS = result.get_stencil_width();
-  assert(m_C2.get_stencil_width()         >= GHOSTS);
-  assert(m_C3.get_stencil_width()         >= GHOSTS);
-  assert(m_C4.get_stencil_width()         >= GHOSTS);
-  assert(m_maxtl.get_stencil_width()      >= GHOSTS);
-  assert(m_topgsmooth.get_stencil_width() >= GHOSTS);
-  assert(usurf.get_stencil_width()        >= GHOSTS);
+  unsigned int GHOSTS = result.stencil_width();
+  assert(m_C2.stencil_width()         >= GHOSTS);
+  assert(m_C3.stencil_width()         >= GHOSTS);
+  assert(m_C4.stencil_width()         >= GHOSTS);
+  assert(m_maxtl.stencil_width()      >= GHOSTS);
+  assert(m_topgsmooth.stencil_width() >= GHOSTS);
+  assert(usurf.stencil_width()        >= GHOSTS);
 
   ParallelSection loop(m_grid->com);
   try {

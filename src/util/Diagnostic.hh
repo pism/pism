@@ -118,16 +118,16 @@ template<class T>
 class DiagWithDedicatedStorage : public Diagnostic {
 public:
   DiagWithDedicatedStorage(const T &input)
-    : Diagnostic(input.get_grid()),
+    : Diagnostic(input.grid()),
       m_input(input)
   {
-    for (unsigned int j = 0; j < input.get_ndof(); ++j) {
+    for (unsigned int j = 0; j < input.ndof(); ++j) {
       m_vars.push_back(input.metadata(j));
     }
   }
 protected:
   IceModelVec::Ptr compute_impl() const {
-    typename T::Ptr result(new T(m_input.get_grid(), "unnamed", WITHOUT_GHOSTS));
+    typename T::Ptr result(new T(m_input.grid(), "unnamed", WITHOUT_GHOSTS));
     result->set_name(m_input.get_name());
     for (unsigned int k = 0; k < m_vars.size(); ++k) {
       result->metadata(k) = m_vars[k];

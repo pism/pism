@@ -103,7 +103,7 @@ Geometry::Geometry(IceGrid::ConstPtr grid) {
 }
 
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  IceGrid::ConstPtr grid = ice_thickness.grid();
 
   IceModelVec::AccessList list(ice_thickness);
 
@@ -125,7 +125,7 @@ void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
 }
 
 void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  IceGrid::ConstPtr grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   check_minimum_ice_thickness(ice_thickness);

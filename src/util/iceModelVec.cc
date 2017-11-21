@@ -29,6 +29,7 @@
 #include "iceModelVec_helpers.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 
@@ -67,19 +68,19 @@ IceModelVec::IceModelVec() {
  *
  * See also inc_state_counter().
  */
-int IceModelVec::get_state_counter() const {
+int IceModelVec::state_counter() const {
   return m_state_counter;
 }
 
-IceGrid::ConstPtr IceModelVec::get_grid() const {
+IceGrid::ConstPtr IceModelVec::grid() const {
   return m_grid;
 }
 
-unsigned int IceModelVec::get_ndof() const {
+unsigned int IceModelVec::ndof() const {
   return m_dof;
 }
 
-std::vector<double> IceModelVec::get_levels() const {
+std::vector<double> IceModelVec::levels() const {
   return m_zlevels;
 }
 
@@ -105,7 +106,7 @@ bool IceModelVec::was_created() const {
 }
 
 //! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
-unsigned int IceModelVec::get_ndims() const {
+unsigned int IceModelVec::ndims() const {
   if (m_zlevels.size() > 1) {
     return 3;
   }
@@ -336,7 +337,7 @@ void  IceModelVec::copy_from(const IceModelVec &source) {
 
 //! @brief Get the stencil width of the current IceModelVec. Returns 0
 //! if ghosts are not available.
-unsigned int IceModelVec::get_stencil_width() const {
+unsigned int IceModelVec::stencil_width() const {
   if (m_has_ghosts) {
     return m_da_stencil_width;
   } else {
@@ -344,11 +345,11 @@ unsigned int IceModelVec::get_stencil_width() const {
   }
 }
 
-Vec IceModelVec::get_vec() {
+Vec IceModelVec::vec() {
   return m_v;
 }
 
-petsc::DM::Ptr IceModelVec::get_dm() const {
+petsc::DM::Ptr IceModelVec::dm() const {
   return m_da;
 }
 
@@ -413,8 +414,6 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
  */
 void IceModelVec::regrid_impl(const PIO &file, RegriddingFlag flag,
                               double default_value) {
-  m_grid->ctx()->log()->message(3, "  Regridding %s...\n", m_name.c_str());
-
   if (m_dof != 1) {
     throw RuntimeError(PISM_ERROR_LOCATION, "This method (IceModelVec::regrid_impl)"
                        " only supports IceModelVecs with dof == 1.");
@@ -707,13 +706,13 @@ void compute_params(const IceModelVec* const x, const IceModelVec* const y,
 		    const IceModelVec* const z, int &ghosts, bool &scatter) {
 
   // We have 2^3=8 cases here (x,y,z having or not having ghosts).
-  if (z->get_stencil_width() == 0) {
+  if (z->stencil_width() == 0) {
     // z has no ghosts; we can update everything locally
     // (This covers 4 cases.)
     ghosts = 0;
     scatter = false;
-  } else if (x->get_stencil_width() == 0 ||
-             y->get_stencil_width() == 0) {
+  } else if (x->stencil_width() == 0 ||
+             y->stencil_width() == 0) {
     // z has ghosts, but at least one of x and y does not. we have to scatter
     // ghosts.
     // (This covers 3 cases.)
@@ -722,10 +721,10 @@ void compute_params(const IceModelVec* const x, const IceModelVec* const y,
   } else {
     // all of x, y, z have ghosts
     // (The remaining 8-th case.)
-    if (z->get_stencil_width() <= x->get_stencil_width() &&
-        z->get_stencil_width() <= y->get_stencil_width()) {
+    if (z->stencil_width() <= x->stencil_width() &&
+        z->stencil_width() <= y->stencil_width()) {
       // x and y have enough ghosts to update ghosts of z locally
-      ghosts = z->get_stencil_width();
+      ghosts = z->stencil_width();
       scatter = false;
     } else {
       // z has ghosts, but at least one of x and y doesn't have a wide enough
@@ -845,8 +844,24 @@ void IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
  */
 void IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
                          double default_value) {
-  this->regrid_impl(nc, flag, default_value);
-  inc_state_counter();          // mark as modified
+  m_grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
+                                timestamp(m_grid->com).c_str(), m_name.c_str());
+  double start_time = get_time();
+  m_grid->ctx()->profiling().begin("io.regridding");
+  {
+    this->regrid_impl(nc, flag, default_value);
+    inc_state_counter();          // mark as modified
+  }
+  m_grid->ctx()->profiling().end("io.regridding");
+  double
+    end_time   = get_time(),
+    time_spent = end_time - start_time;
+
+  if (time_spent > 1.0) {
+    m_grid->ctx()->log()->message(3, "  done in %f seconds.\n", time_spent);
+  } else {
+    m_grid->ctx()->log()->message(3, "  done.\n");
+  }
 }
 
 void IceModelVec::read(const PIO &nc, const unsigned int time) {
@@ -861,9 +876,9 @@ void IceModelVec::write(const PIO &nc) const {
                                timestamp(m_grid->com).c_str(),
                                m_name.c_str());
 
-  PetscLogDouble start_time = get_time();
+  double start_time = get_time();
   write_impl(nc);
-  PetscLogDouble end_time = get_time();
+  double end_time = get_time();
 
   const double
     time_spent = end_time - start_time,

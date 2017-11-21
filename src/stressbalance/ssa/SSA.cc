@@ -110,7 +110,7 @@ SSA::SSA(IceGrid::ConstPtr g)
 
   m_velocity_global.create(m_grid, "bar", WITHOUT_GHOSTS);
 
-  m_da = m_velocity_global.get_dm();
+  m_da = m_velocity_global.dm();
 
   {
     rheology::FlowLawFactory ice_factory("stress_balance.ssa.", m_config, m_EC);

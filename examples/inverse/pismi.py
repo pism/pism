@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -230,7 +230,7 @@ def adjustTauc(mask, tauc):
 
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
-    grid = mask.get_grid()
+    grid = mask.grid()
     high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):

@@ -565,7 +565,7 @@ void wall_melt(const Routing &model,
                const IceModelVec2S &bed_elevation,
                IceModelVec2S &result) {
 
-  IceGrid::ConstPtr grid = result.get_grid();
+  IceGrid::ConstPtr grid = result.grid();
 
   Config::ConstPtr config = grid->ctx()->config();
 
@@ -700,7 +700,7 @@ void Routing::advective_fluxes(const IceModelVec2Stag &V,
                                IceModelVec2Stag &result) const {
   IceModelVec::AccessList list{&W, &V, &result};
 
-  assert(W.get_stencil_width() >= 1);
+  assert(W.stencil_width() >= 1);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

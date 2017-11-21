@@ -359,8 +359,6 @@ void IceModelVec2::regrid_impl(const PIO &file, RegriddingFlag flag,
     return;
   }
 
-  m_grid->ctx()->log()->message(3, "  Regridding %s...\n", m_name.c_str());
-
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
   petsc::DM::Ptr da2 = m_grid->get_dm(1, 0);
@@ -605,12 +603,12 @@ double IceModelVec2S::min() const {
 
 void IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) const {
 
-  IceModelVec2::get_dof(result.get_dm(), result.m_v, n);
+  IceModelVec2::get_dof(result.dm(), result.m_v, n);
 }
 
 void IceModelVec2::set_component(unsigned int n, const IceModelVec2S &source) {
 
-  IceModelVec2::set_dof(source.get_dm(), source.m_v, n);
+  IceModelVec2::set_dof(source.dm(), source.m_v, n);
 }
 
 void IceModelVec2::create(IceGrid::ConstPtr grid, const std::string & name,

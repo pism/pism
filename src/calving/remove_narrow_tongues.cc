@@ -60,7 +60,7 @@ namespace pism {
 void remove_narrow_tongues(const IceModelVec2CellType &mask,
                            IceModelVec2S &ice_thickness) {
 
-  IceGrid::ConstPtr grid = mask.get_grid();
+  IceGrid::ConstPtr grid = mask.grid();
 
   IceModelVec::AccessList list{&mask, &ice_thickness};
 

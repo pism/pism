@@ -52,7 +52,7 @@ def allocate_storage(grid):
 
 def set_topg(topg):
     "Initialize the bed topography."
-    grid = topg.get_grid()
+    grid = topg.grid()
 
     with PISM.vec.Access(comm=[topg]):
         for (i, j) in grid.points():
@@ -83,7 +83,7 @@ def set_config():
 
 def smooth(topg, topg_smoothed, usurf, theta):
     "Smooth the bed topography."
-    grid = topg.get_grid()
+    grid = topg.grid()
 
     smoother = PISM.BedSmoother(grid, 1)
 

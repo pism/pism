@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012, 2014, 2015, 2016 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -32,7 +32,7 @@ import PISM
 def adjustTauc(mask, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
-    grid = mask.get_grid()
+    grid = mask.grid()
     high_tauc = grid.ctx().config().get_double("basal_yield_stress.ice_free_bedrock")
 
     with PISM.vec.Access(comm=tauc, nocomm=mask):

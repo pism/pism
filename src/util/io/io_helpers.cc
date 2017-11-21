@@ -20,8 +20,6 @@
 #include <memory>
 #include <cassert>
 
-#include <gsl/gsl_interp.h>
-
 #include "io_helpers.hh"
 #include "PIO.hh"
 #include "pism/util/IceGrid.hh"
@@ -35,6 +33,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/interpolation.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 namespace io {
@@ -453,6 +452,8 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
                                double *output) {
   const int X = 1, Y = 2, Z = 3; // indices, just for clarity
 
+  const Profiling& profiling = grid.ctx()->profiling();
+
   try {
     grid_info gi(file, variable_name, grid.ctx()->unit_system(), grid.registration());
     LocalInterpCtx lic(gi, grid, zlevels_out);
@@ -471,11 +472,13 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
                             start, count, imap);
 
     bool mapped_io = use_mapped_io(file, grid.ctx()->unit_system(), variable_name);
+    profiling.begin("io.regridding.read");
     if (mapped_io) {
       file.get_varm_double(variable_name, start, count, imap, &buffer[0]);
     } else {
       file.get_vara_double(variable_name, start, count, &buffer[0]);
     }
+    profiling.end("io.regridding.read");
 
     // Replace missing values if the _FillValue attribute is present,
     // and if we have missing values to replace.
@@ -493,7 +496,9 @@ static void regrid_vec_generic(const PIO &file, const IceGrid &grid,
     }
 
     // interpolate
+    profiling.begin("io.regridding.interpolate");
     regrid(grid, zlevels_out, &lic, output);
+    profiling.end("io.regridding.interpolate");
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
                   variable_name.c_str(), file.inq_filename().c_str());

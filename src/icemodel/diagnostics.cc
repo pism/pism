@@ -994,7 +994,7 @@ public:
     : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass_glacierized") {
 
     m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("glaciological_units", "Gt year-1");
     m_ts.variable().set_string("long_name", "rate of change of the ice mass in glacierized areas");
   }
 
@@ -1006,19 +1006,20 @@ public:
   }
 };
 
-//! \brief Computes the rate of change of the total ice mass due to influx.
+//! \brief Computes the rate of change of the total ice mass due to flow (influx due to
+//! prescribed constant-in-time ice thickness).
 /*!
  * This is the change in mass resulting from prescribing (fixing) ice thickness.
  */
-class IceMassRateOfChangeDueToInflux : public TSDiag<TSRateDiagnostic, IceModel>
+class IceMassRateOfChangeDueToInflux : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   IceMassRateOfChangeDueToInflux(IceModel *m)
-    : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_influx") {
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_flow") {
 
     m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
-    m_ts.variable().set_string("long_name", "rate of change of the mass of ice due to influx"
+    m_ts.variable().set_string("glaciological_units", "Gt year-1");
+    m_ts.variable().set_string("long_name", "rate of change of the mass of ice due to flow"
                                " (i.e. prescribed ice thickness)");
   }
 
@@ -1028,16 +1029,17 @@ public:
       ice_density = m_config->get_double("constants.ice.density");
 
     const IceModelVec2S
-      &dH_flow   = model->geometry_evolution().thickness_change_due_to_flow(),
+      &dH        = model->geometry_evolution().thickness_change_due_to_flow(),
+      &dV        = model->geometry_evolution().area_specific_volume_change_due_to_flow(),
       &cell_area = model->geometry().cell_area;
 
-    IceModelVec::AccessList list{&dH_flow, &cell_area};
+    IceModelVec::AccessList list{&dH, &dV, &cell_area};
 
     double volume_change = 0.0;
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       // m * m^2 = m^3
-      volume_change += dH_flow(i, j) * cell_area(i, j);
+      volume_change += (dH(i, j) + dV(i, j)) * cell_area(i, j);
     }
 
     // (kg/m^3) * m^3 = kg
@@ -1053,7 +1055,7 @@ public:
     : TSDiag<TSRateDiagnostic, IceModel>(m, "tendency_of_ice_mass") {
 
     m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("glaciological_units", "Gt year-1");
     m_ts.variable().set_string("long_name",
                                "rate of change of the mass of ice, including seasonal cover");
   }
@@ -1469,10 +1471,10 @@ class IceMassFluxBasal : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   IceMassFluxBasal(const IceModel *m)
-    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_basal_mass_balance") {
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_basal_mass_flux") {
 
     m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("glaciological_units", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over ice domain of bottom surface ice mass flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
@@ -1487,10 +1489,10 @@ class IceMassFluxSurface : public TSDiag<TSFluxDiagnostic, IceModel>
 {
 public:
   IceMassFluxSurface(const IceModel *m)
-    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_surface_mass_balance") {
+    : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_surface_mass_flux") {
 
     m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("glaciological_units", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over ice domain of top surface ice mass flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
@@ -1508,7 +1510,7 @@ public:
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_grounded") {
 
     m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("glaciological_units", "Gt year-1");
     m_ts.variable().set_string("long_name", "total over grounded ice domain of basal mass flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
@@ -1526,7 +1528,7 @@ public:
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_floating") {
 
     m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("glaciological_units", "Gt year-1");
     m_ts.variable().set_string("long_name", "total sub-shelf ice flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
@@ -1545,7 +1547,7 @@ public:
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_conservation_error") {
 
     m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("glaciological_units", "Gt year-1");
     m_ts.variable().set_string("long_name", "total numerical flux needed to preserve non-negativity"
                                " of ice thickness");
     m_ts.variable().set_string("comment", "positive means ice gain");
@@ -1564,7 +1566,7 @@ public:
     : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_discharge") {
 
     m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
+    m_ts.variable().set_string("glaciological_units", "Gt year-1");
     m_ts.variable().set_string("long_name", "discharge (calving & icebergs) flux");
     m_ts.variable().set_string("comment", "positive means ice gain");
   }
@@ -2305,7 +2307,7 @@ void IceModel::init_diagnostics() {
     // same, in terms of mass
     // tendency_of_ice_mass = (tendency_of_ice_mass_due_to_flow +
     //                         tendency_of_ice_mass_due_to_conservation_error +
-    //                         tendency_of_ice_mass_due_to_surface_mass_balance +
+    //                         tendency_of_ice_mass_due_to_surface_mass_flux +
     //                         tendency_of_ice_mass_due_to_basal_mass_balance +
     //                         tendency_of_ice_mass_due_to_discharge)
     {"tendency_of_ice_mass",                           f(new TendencyOfIceAmount(this,          MASS))},
@@ -2345,7 +2347,6 @@ void IceModel::init_diagnostics() {
     {"ice_mass_glacierized",             s(new scalar::IceMassGlacierized(this))},
     {"ice_mass",                         s(new scalar::IceMass(this))},
     {"tendency_of_ice_mass_glacierized", s(new scalar::IceMassRateOfChangeGlacierized(this))},
-    {"tendency_of_ice_mass",             s(new scalar::IceMassRateOfChange(this))},
     {"limnsw",                           s(new scalar::IceMassNotDisplacingSeaWater(this))},
     // volume
     {"slvol",                              s(new scalar::SeaLevelVolume(this))},
@@ -2367,12 +2368,12 @@ void IceModel::init_diagnostics() {
     {"max_hor_vel",     s(new scalar::MaxHorizontalVelocity(this))},
     {"dt",              s(new scalar::TimeStepLength(this))},
     // balancing the books
-    {"tendency_of_ice_mass",                             s(new scalar::IceMassRateOfChange(this))},
-    {"tendency_of_ice_mass_due_to_influx",               s(new scalar::IceMassRateOfChangeDueToInflux(this))},
-    {"tendency_of_ice_mass_due_to_conservation_error",   s(new scalar::IceMassFluxConservationError(this))},
-    {"tendency_of_ice_mass_due_to_basal_mass_balance",   s(new scalar::IceMassFluxBasal(this))},
-    {"tendency_of_ice_mass_due_to_surface_mass_balance", s(new scalar::IceMassFluxSurface(this))},
-    {"tendency_of_ice_mass_due_to_discharge",            s(new scalar::IceMassFluxDischarge(this))},
+    {"tendency_of_ice_mass",                           s(new scalar::IceMassRateOfChange(this))},
+    {"tendency_of_ice_mass_due_to_flow",               s(new scalar::IceMassRateOfChangeDueToInflux(this))},
+    {"tendency_of_ice_mass_due_to_conservation_error", s(new scalar::IceMassFluxConservationError(this))},
+    {"tendency_of_ice_mass_due_to_basal_mass_flux",    s(new scalar::IceMassFluxBasal(this))},
+    {"tendency_of_ice_mass_due_to_surface_mass_flux",  s(new scalar::IceMassFluxSurface(this))},
+    {"tendency_of_ice_mass_due_to_discharge",          s(new scalar::IceMassFluxDischarge(this))},
     // other fluxes
     {"basal_mass_flux_grounded", s(new scalar::IceMassFluxBasalGrounded(this))},
     {"basal_mass_flux_floating", s(new scalar::IceMassFluxBasalFloating(this))},

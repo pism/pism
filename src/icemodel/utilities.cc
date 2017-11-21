@@ -121,7 +121,7 @@ void  IceModel::prepend_history(const std::string &str) {
 /*! Return true if the ice thickness exceeds the height of the computational domain.
  */
 bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness) {
-  IceGrid::ConstPtr grid = ice_thickness.get_grid();
+  IceGrid::ConstPtr grid = ice_thickness.grid();
 
   const double Lz = grid->Lz();
 

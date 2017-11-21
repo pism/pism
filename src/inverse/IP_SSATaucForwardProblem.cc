@@ -243,7 +243,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
   IceModelVec2S *dzeta_local;
-  if (dzeta.get_stencil_width() > 0) {
+  if (dzeta.stencil_width() > 0) {
     dzeta_local = &dzeta;
   } else {
     m_dzeta_local.copy_from(dzeta);
@@ -415,7 +415,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
   IceModelVec2V *du_local;
-  if (du.get_stencil_width() > 0) {
+  if (du.stencil_width() > 0) {
     du_local = &du;
   } else {
     m_du_local.copy_from(du);
@@ -563,7 +563,7 @@ void IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceMode
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
   PISM_CHK(ierr, "KSPSetOperators");
 
-  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
+  ierr = KSPSolve(m_ksp, m_du_global.vec(), m_du_global.vec());
   PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
   KSPConvergedReason  reason;
@@ -630,7 +630,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
   PISM_CHK(ierr, "KSPSetOperators");
 
-  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
+  ierr = KSPSolve(m_ksp, m_du_global.vec(), m_du_global.vec());
   PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
   KSPConvergedReason  reason;
@@ -652,7 +652,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
   this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta);
   dzeta.scale(-1);
 
-  if (dzeta.get_stencil_width() > 0) {
+  if (dzeta.stencil_width() > 0) {
     dzeta.update_ghosts();
   }
 }

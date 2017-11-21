@@ -71,7 +71,7 @@ private:
  */
 template<class F, typename T>
 T interpolate(const F &field, double x, double y) {
-  auto grid = field.get_grid();
+  auto grid = field.grid();
 
   int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
   grid->compute_point_neighbors(x, y, i_left, i_right, j_bottom, j_top);
@@ -211,12 +211,12 @@ public:
 
 
   virtual bool was_created() const;
-  IceGrid::ConstPtr get_grid() const;
-  unsigned int get_ndims() const;
+  IceGrid::ConstPtr grid() const;
+  unsigned int ndims() const;
   //! \brief Returns the number of degrees of freedom per grid point.
-  unsigned int get_ndof() const;
-  unsigned int get_stencil_width() const;
-  std::vector<double> get_levels() const;
+  unsigned int ndof() const;
+  unsigned int stencil_width() const;
+  std::vector<double> levels() const;
 
   virtual Range range() const;
   double norm(int n) const;
@@ -230,8 +230,8 @@ public:
   void copy_to_vec(petsc::DM::Ptr destination_da, Vec destination) const;
   void copy_from_vec(Vec source);
   virtual void copy_from(const IceModelVec &source);
-  Vec get_vec();
-  petsc::DM::Ptr get_dm() const;
+  Vec vec();
+  petsc::DM::Ptr dm() const;
   virtual void  set_name(const std::string &name);
   const std::string& get_name() const;
   virtual void  set_attrs(const std::string &pism_intent, const std::string &long_name,
@@ -262,7 +262,7 @@ public:
 
   const SpatialVariableMetadata& metadata(unsigned int N = 0) const;
 
-  int get_state_counter() const;
+  int state_counter() const;
   void inc_state_counter();
   void set_time_independent(bool flag);
 
