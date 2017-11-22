@@ -69,6 +69,8 @@ protected:
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
 
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
+
   std::vector<IceModelVec*> m_variables;
 
   bool   exicerises_set; // FIXME shouldn't this be always used?
