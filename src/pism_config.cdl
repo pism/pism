@@ -339,6 +339,11 @@ netcdf pism_config {
     pism_config:calving.vonmises.sigma_max_type = "scalar";
     pism_config:calving.vonmises.sigma_max_units = "Pa";
 
+    pism_config:calving.ocean_kill.mask_set = "false";
+    pism_config:calving.ocean_kill.mask_set_doc = "Specifies that ocean_kill mask is read from file";
+    pism_config:calving.ocean_kill.mask_set_option = "ocean_kill_mask";
+    pism_config:calving.ocean_kill.mask_set_type = "boolean";
+
     pism_config:climate_forcing.buffer_size = 60;
     pism_config:climate_forcing.buffer_size_doc = "number of 2D climate forcing records to keep in memory; = 5 years of monthly records";
     pism_config:climate_forcing.buffer_size_type = "integer";
