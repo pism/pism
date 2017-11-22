@@ -26,7 +26,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_poly.h>
 
-#include "Cavity.hh"
+#include "Pico.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/iceModelVec.hh"

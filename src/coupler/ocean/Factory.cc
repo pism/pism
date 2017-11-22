@@ -30,7 +30,7 @@
 #include "Frac_SMB.hh"
 #include "Cache.hh"
 #include "GivenTH.hh"
-#include "Cavity.hh"
+#include "Pico.hh"
 
 
 namespace pism {
