@@ -110,6 +110,7 @@ public:
    */
   virtual Changes step(const DegreeDayFactors &ddf,
                        double PDDs,
+                       double ice_thickness,
                        double old_firn_depth,
                        double old_snow_depth,
                        double accumulation) = 0;
@@ -146,6 +147,7 @@ public:
 
   virtual Changes step(const DegreeDayFactors &ddf,
                        double PDDs,
+                       double ice_thickness,
                        double firn_depth,
                        double snow_depth,
                        double accumulation);

@@ -33,10 +33,11 @@ namespace pism {
 namespace surface {
 
 LocalMassBalance::Changes::Changes() {
-  snow_depth = 0.0;
-  melt       = 0.0;
-  runoff     = 0.0;
-  smb        = 0.0;
+  firn_depth    = 0.0;
+  snow_depth    = 0.0;
+  melt          = 0.0;
+  runoff        = 0.0;
+  smb           = 0.0;
 }
 
 LocalMassBalance::LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr system)
@@ -196,19 +197,25 @@ void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
  */
 PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
                                              double PDDs,
+                                             double ice_thickness,
                                              double old_firn_depth,
                                              double old_snow_depth,
                                              double accumulation) {
-
-  Changes result;
-
   double
     firn_depth      = old_firn_depth,
-    snow_depth      = old_snow_depth + accumulation,
+    snow_depth      = old_snow_depth,
     max_snow_melted = PDDs * ddf.snow,
     firn_melted     = 0.0,
     snow_melted     = 0.0,
     excess_pdds     = 0.0;
+
+  // snow depth cannot exceed ice thickness
+  snow_depth = std::min(snow_depth, ice_thickness);
+
+  // firn depth cannot exceed ice_thickness - snow_depth
+  firn_depth = std::min(firn_depth, ice_thickness - snow_depth);
+
+  snow_depth += accumulation;
 
   if (PDDs <= 0.0) {            // The "no melt" case.
     snow_melted = 0.0;
@@ -224,12 +231,12 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   } else if (max_snow_melted <= firn_depth + snow_depth) {
     // All of the snow is melted but some firn is left; in any case, all of
     // the energy available for melt, namely all of the positive
-    // degree days (PDDs) were used up in melting snow.
+    // degree days (PDDs) were used up in melting snow and firn.
     snow_melted = snow_depth;
     firn_melted = max_snow_melted - snow_melted;
     excess_pdds = 0.0;
   } else {
-    // All (firn and snow_depth meters) of snow melted. Excess_pddsum is the
+    // All (firn_depth and snow_depth meters) of snow and firn melted. Excess_pdds is the
     // positive degree days available to melt ice.
     firn_melted = firn_depth;
     snow_melted = snow_depth;
@@ -237,7 +244,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   }
 
   double
-    ice_melted              = excess_pdds * ddf.ice,
+    ice_melted              = std::min(excess_pdds * ddf.ice, ice_thickness),
     melt                    = snow_melted + firn_melted + ice_melted,
     ice_created_by_refreeze = 0.0;
 
@@ -248,27 +255,22 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
     ice_created_by_refreeze = (firn_melted + snow_melted) * ddf.refreeze_fraction;
   }
 
-  firn_depth -= firn_melted;
+  const double runoff = melt - ice_created_by_refreeze;
+
+  snow_depth = std::max(snow_depth - snow_melted, 0.0);
+  firn_depth = std::max(firn_depth - firn_melted, 0.0);
+
   // FIXME: need to add snow that hasn't melted, is this correct?
   // firn_depth += (snow_depth - snow_melted);
   // Turn firn into ice at X times accumulation
   // firn_depth -= accumulation *  m_config->get_double("surface.pdd.firn_compaction_to_accumulation_ratio");
 
-  if (firn_depth < 0.0) {
-    firn_depth = 0.0;
-  }
-  snow_depth -= snow_melted;
-  if (snow_depth < 0.0) {
-    snow_depth = 0.0;
-  }
-
-  const double runoff = melt - ice_created_by_refreeze;
-
-  result.firn_depth = firn_depth - old_firn_depth;
-  result.snow_depth = snow_depth - old_snow_depth;
-  result.melt       = melt;
-  result.runoff     = runoff;
-  result.smb        = accumulation - runoff;
+  Changes result;
+  result.firn_depth    = firn_depth - old_firn_depth;
+  result.snow_depth    = snow_depth - old_snow_depth;
+  result.melt          = melt;
+  result.runoff        = runoff;
+  result.smb           = accumulation - runoff;
 
   return result;
 }
