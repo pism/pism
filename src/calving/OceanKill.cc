@@ -57,8 +57,7 @@ void OceanKill::init() {
     throw RuntimeError(PISM_ERROR_LOCATION, "option -ocean_kill_file is required.");
   }
 
-  bool ocean_kill_mask_set = options::Bool("-ocean_kill_mask",
-                                           "Specifies that ocean_kill mask is read from file");
+  bool ocean_kill_mask_set = m_config->get_boolean("calving.ocean_kill.mask_set");
 
   if (ocean_kill_mask_set) {
   
