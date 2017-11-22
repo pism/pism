@@ -1061,7 +1061,7 @@ void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &ice_thickne
             area_specific_volume_change(i, j)  = 0.0;
             conservation_error(i, j) += - (dH+dHMB);
           }
-        }
+        }//FIXME: Check for negative H as in effective_change(H,dH)
     }
   } catch (...) {
     loop.failed();

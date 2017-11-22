@@ -53,6 +53,10 @@ protected:
   void topg_to_phi(const IceModelVec2S &bed_topography);
   void tauc_to_phi(const IceModelVec2CellType &mask);
 
+  void iterative_phi_step(const IceModelVec2S &ice_surface_elevation,
+                          const IceModelVec2S &bed_topography,
+                          const IceModelVec2CellType &mask);
+
 protected:
   IceModelVec2S m_till_phi, m_tillwat, m_Po;
   hydrology::Hydrology *m_hydrology;
