@@ -166,8 +166,6 @@ protected:
     for (Points p(*Mod::m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (thk(i,j) > 0) {
-
         //as in paleo_precip
         const double correction = exp(-lapse_rate * (surface(i,j) - m_reference_surface(i,j)));
 
@@ -178,7 +176,6 @@ protected:
         //const double correction = pow(2.0, -lapse_rate/0.05/10.0 * ((*surface)(i,j) - m_reference_surface(i,j)));
 
         result(i,j) *= correction;
-      }
     }
   }
 

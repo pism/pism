@@ -33,8 +33,7 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, SurfaceModel* in)
   m_option_prefix = "-surface_lapse_rate";
 
   m_smb_scale_factor = 0.0;
-  do_smb_scale = options::Bool("-smb_scale_factor", 
-                               "Scale surface mass balance according to change in surface elevation");
+  do_smb_scale  = m_config->get_double("surface.smb_lapse_rate");
 
 }
 
@@ -52,16 +51,11 @@ void LapseRates::init_impl() {
 
   init_internal();
 
-  m_smb_lapse_rate = options::Real("-smb_lapse_rate",
-                                   "Elevation lapse rate for the surface mass balance,"
-                                   " in m year-1 per km",
-                                   m_smb_lapse_rate);
+  m_smb_lapse_rate  = m_config->get_double("surface.smb_lapse_rate");
 
-  //This is basically temperature lapse rate 8.2 K/Km as in TemperaturPIK times precipitation scale rate 5%/K )
-  m_smb_scale_factor = options::Real("-smb_scale_factor",
-                                      "Elevation scale factor for the surface mass balance,"
-                                      " in units per km",
-                                      m_smb_scale_factor);
+  //This is basically temperature lapse rate 8.2 K/Km as in TemperaturPIK times smb scale rate 5%/K )
+  m_smb_scale_factor  = m_config->get_double("surface.smb_lapse_scale_factor");
+
   if (do_smb_scale){
 
     m_log->message(2,

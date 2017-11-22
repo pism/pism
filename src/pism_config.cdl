@@ -62,6 +62,23 @@ netcdf pism_config {
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "scalar";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
 
+    pism_config:atmosphere.precip_lapse_scaling = "false";
+    pism_config:atmosphere.precip_lapse_scaling_doc = "Enable precipitation scaling according to change in surface elevation";
+    pism_config:atmosphere.precip_lapse_scaling_option = "precip_lapse_scaling";
+    pism_config:atmosphere.precip_lapse_scaling_type = "boolean";
+
+    pism_config:atmosphere.precip_lapse_scale_factor = 0.5;
+    pism_config:atmosphere.precip_lapse_scale_factor_doc = "Scale precipitation according to change in surface elevation";
+    pism_config:atmosphere.precip_lapse_scale_factor_option = "precip_scale_factor";
+    pism_config:atmosphere.precip_lapse_scale_factor_type = "scalar";
+    pism_config:atmosphere.precip_lapse_scale_factor_units = "km-1";
+
+    pism_config:atmosphere.precip_lapse_rate = 0.0;
+    pism_config:atmosphere.precip_lapse_rate_doc = "Elevation lapse rate for the precipitation";
+    pism_config:atmosphere.precip_lapse_rate_option = "precip_lapse_rate";
+    pism_config:atmosphere.precip_lapse_rate_type = "scalar";
+    pism_config:atmosphere.precip_lapse_rate_units = "m year-1 km-1";
+
     pism_config:basal_resistance.beta_ice_free_bedrock = 1.8e9;
     pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
     pism_config:basal_resistance.beta_ice_free_bedrock_type = "scalar";
@@ -1503,6 +1520,23 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev_use_param = "no";
     pism_config:surface.pdd.std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.";
     pism_config:surface.pdd.std_dev_use_param_type = "boolean";
+
+    pism_config:surface.smb_lapse_scaling = "false";
+    pism_config:surface.smb_lapse_scaling_doc = "Enable surface mass balance scaling according to change in surface elevation";
+    pism_config:surface.smb_scaling_option = "smb_lapse_scaling";
+    pism_config:surface.smb_lapse_scaling_type = "boolean";
+
+    pism_config:surface.smb_lapse_scale_factor = 0.5;
+    pism_config:surface.smb_lapse_scale_factor_doc = "Scale surface mass balance according to change in surface elevation";
+    pism_config:surface.smb_lapse_scale_factor_option = "smb_scale_factor";
+    pism_config:surface.smb_lapse_scale_factor_type = "scalar";
+    pism_config:surface.smb_lapse_scale_factor_units = "km-1";
+
+    pism_config:surface.smb_lapse_rate = 0.0;
+    pism_config:surface.smb_lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
+    pism_config:surface.smb_lapse_rate_option = "precip_lapse_rate";
+    pism_config:surface.smb_lapse_rate_type = "scalar";
+    pism_config:surface.smb_lapse_rate_units = "kg m-2 year-1 km-1";
 
     pism_config:surface.pressure = 0.0;
     pism_config:surface.pressure_doc = "atmospheric pressure; = pressure at ice surface";
