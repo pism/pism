@@ -1034,34 +1034,41 @@ void GeometryEvolution::prescribe_groundingline(const IceModelVec2S &ice_thickne
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      conservation_error(i, j) = 0.0;
+      //conservation_error(i, j) = 0.0;
 
       const double
-        H    = ice_thickness(i, j),
-        dHMB = effective_SMB(i, j)+effective_BMB(i, j),
-        dH   = thickness_change(i, j),
-        rho  = m_impl->ocean_density/m_impl->ice_density,
-        Hfl  = 1.0-(bed_topography(i,j)-sea_level(i,j))*rho;
+        H       = ice_thickness(i, j),
+        dH_MB   = effective_SMB(i, j)+effective_BMB(i, j),
+        dH_flow = thickness_change(i, j),
+        rho     = m_impl->ocean_density/m_impl->ice_density,
+        Hfl     = 1.0-(bed_topography(i,j)-sea_level(i,j))*rho,
+        Hnew    = H + dH_flow + dH_MB;
 
         if (cell_type.grounded(i, j)) {
           // prevent grounded parts form becoming afloat
-          if (H+dH+dHMB-Hfl < 0.0){
-            thickness_change(i, j)    = (Hfl-H-dHMB);
-            conservation_error(i, j) += - (H+dH+dHMB-Hfl);
+          if (Hnew - Hfl < 0.0) {
+            thickness_change(i, j)    = (Hfl - Hnew + dH_flow);
+            conservation_error(i, j) += - (Hnew - Hfl);
           }
         }
-        else {
+        else if (H > 0.0) {
+
           //avoid artefacts for floating cells surrounded by grounded neighbors
-          if (cell_type.grounded(i-1,j) && cell_type.grounded(i+1,j) && cell_type.grounded(i,j-1) && cell_type.grounded(i,j+1)){
-            //thickness_change(i, j)    = dH;
-            conservation_error(i, j) += 0.0;
-          //floating ice shelves remain unchanged
-          } else {
-            thickness_change(i, j)    = (0.0-dHMB);
+          bool floating_lake = (cell_type.grounded(i-1,j) && cell_type.grounded(i+1,j) && 
+                                cell_type.grounded(i,j-1) && cell_type.grounded(i,j+1));
+          //thickness_change(i, j)    = dH;
+          //conservation_error(i, j) += 0.0;
+
+          //floating ice shelves thickness remains unchanged
+          if (floating_lake == false) {
+            double dH_mismatch = std::min(0.0, Hnew - dH_flow - dH_MB);
+            //if (dH_mismatch < 0.0)
+            //  m_log->message(4, "!!!!!!!! Hnew negative %e at %d,%d\n",Hnew-dH_flow-dH_MB,i,j);
+            thickness_change(i, j)    = (-dH_mismatch - dH_MB);
             area_specific_volume_change(i, j)  = 0.0;
-            conservation_error(i, j) += - (dH+dHMB);
+            conservation_error(i, j) += - (dH_flow + dH_MB);
           }
-        }//FIXME: Check for negative H as in effective_change(H,dH)
+        }
     }
   } catch (...) {
     loop.failed();
