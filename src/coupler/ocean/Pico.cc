@@ -20,7 +20,8 @@
 // Please cite this model as 
 // Antarctic sub-shelf melt rates via PICO
 // R. Reese, T. Albrecht, M. Mengel, X. Asay-Davis, R. Winkelmann 
-// (subm.)
+// The Cryosphere Discussions (2017) 
+// DOI: 10.5194/tc-2017-70
 
 
 #include <gsl/gsl_math.h>
