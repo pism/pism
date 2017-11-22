@@ -323,8 +323,9 @@ void TemperatureIndex::update_impl(double t, double dt) {
   }
 
   const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const IceModelVec2S &H = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec::AccessList list{&mask, &m_air_temp_sd, &m_climatic_mass_balance,
+  IceModelVec::AccessList list{&mask, &H, &m_air_temp_sd, &m_climatic_mass_balance,
       &m_firn_depth, &m_snow_depth, &m_accumulation, &m_melt, &m_runoff};
 
   const double
@@ -362,8 +363,15 @@ void TemperatureIndex::update_impl(double t, double dt) {
       // the temperature time series from the AtmosphereModel and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
 
-      // the precipitation time series from AtmosphereModel and its modifiers
-      m_atmosphere->precip_time_series(i, j, P);
+      if (mask.ice_free_ocean(i, j)) {
+        // ignore precipitation over ice-free ocean
+        for (int k = 0; k < N; ++k) {
+          P[k] = 0.0;
+        }
+      } else {
+        // elsewhere, get precipitation from the atmosphere model
+        m_atmosphere->precip_time_series(i, j, P);
+      }
 
       // convert precipitation from "kg m-2 second-1" to "m second-1" (PDDMassBalance expects
       // accumulation in m/second ice equivalent)
@@ -432,8 +440,9 @@ void TemperatureIndex::update_impl(double t, double dt) {
         // make copies of firn and snow depth values at this point to avoid accessing 2D
         // fields in the inner loop
         double
-          firn_depth = m_firn_depth(i, j),
-          snow_depth = m_snow_depth(i, j);
+          ice  = H(i, j),
+          firn = m_firn_depth(i, j),
+          snow = m_snow_depth(i, j);
 
         // accumulation, melt, runoff over this time-step
         double
@@ -444,7 +453,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
 
         for (int k = 0; k < N; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
-            snow_depth = 0.0;
+            snow = 0.0;
             while (next_snow_depth_reset <= ts[k]) {
               next_snow_depth_reset = m_grid->ctx()->time()->increment_date(next_snow_depth_reset, 1);
             }
@@ -453,12 +462,15 @@ void TemperatureIndex::update_impl(double t, double dt) {
           const double accumulation = P[k] * dtseries;
 
           LocalMassBalance::Changes changes;
-          changes = m_mbscheme->step(ddf, PDDs[k], firn_depth, snow_depth, accumulation);
+          changes = m_mbscheme->step(ddf, PDDs[k],
+                                     ice, firn, snow, accumulation);
 
+          // update ice thickness
+          ice += changes.smb;
           // update firn depth
-          firn_depth += changes.firn_depth;
+          firn += changes.firn_depth;
           // update snow depth
-          snow_depth += changes.snow_depth;
+          snow += changes.snow_depth;
 
           // update total accumulation, melt, and runoff
           {
@@ -470,8 +482,8 @@ void TemperatureIndex::update_impl(double t, double dt) {
         } // end of the time-stepping loop
 
         // set firn and snow depths
-        m_firn_depth(i, j) = firn_depth;
-        m_snow_depth(i, j) = snow_depth;
+        m_firn_depth(i, j) = firn;
+        m_snow_depth(i, j) = snow;
 
         // set total accumulation, melt, and runoff, and SMB at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
@@ -485,7 +497,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
         }
       }
 
-      if (mask.ocean(i, j)) {
+      if (mask.ice_free_ocean(i, j)) {
         m_firn_depth(i, j) = 0.0;  // no firn in the ocean
         m_snow_depth(i, j) = 0.0;  // snow over the ocean does not stick
       }
