@@ -22,6 +22,7 @@
 #include "LapseRates.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/ConfigInterface.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -33,8 +34,7 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, AtmosphereModel* in)
   m_surface = NULL;
 
   m_precip_scale_factor = 0.0;
-  do_precip_scale = options::Bool("-precip_scale_factor", 
-                                  "Scale precipitation according to change in surface elevation");
+  do_precip_scale  = m_config->get_boolean("atmosphere.precip_lapse_scaling");
 
 }
 
@@ -53,20 +53,16 @@ void LapseRates::init_impl() {
 
   init_internal();
 
-  m_precip_lapse_rate = options::Real("-precip_lapse_rate",
-                                    "Elevation lapse rate for the surface mass balance,"
-                                    " in m year-1 per km",
-                                    m_precip_lapse_rate);
+  m_precip_lapse_rate  = m_config->get_double("atmosphere.precip_lapse_rate");
 
   //This is basically temperature lapse rate 8.2 K/Km as in TemperaturPIK times precipitation scale rate 5%/K )
-  m_precip_scale_factor = options::Real("-precip_scale_factor",
-                                      "Elevation scale factor for the surface mass balance,"
-                                      " in units per km",
-                                      m_precip_scale_factor);
+  m_precip_scale_factor  = m_config->get_double("atmosphere.precip_lapse_scale_factor");
+
+
   if (do_precip_scale){
 
     m_log->message(2,
-              "   ait temperature lapse rate: %3.3f K per km\n"
+              "   air temperature lapse rate: %3.3f K per km\n"
               "   precipitation scale factor: %3.3f per km\n",
               m_temp_lapse_rate, m_precip_scale_factor);
   } else {
