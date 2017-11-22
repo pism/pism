@@ -28,7 +28,7 @@
 
 namespace pism {
 namespace ocean {
-//! \brief Implements the SIMPEL ocean model as submitted to The Cryosphere (March 2017).
+//! \brief Implements the PICO ocean model as submitted to The Cryosphere (March 2017).
 //!
 //! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
 //! use in PISM, i.e. three dimensions.
@@ -68,6 +68,8 @@ protected:
 
   virtual void define_model_state_impl(const PIO &output) const;
   virtual void write_model_state_impl(const PIO &output) const;
+
+  virtual std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
   std::vector<IceModelVec*> m_variables;
 

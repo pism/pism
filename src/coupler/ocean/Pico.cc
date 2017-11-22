@@ -20,13 +20,14 @@
 // Please cite this model as 
 // Antarctic sub-shelf melt rates via PICO
 // R. Reese, T. Albrecht, M. Mengel, X. Asay-Davis, R. Winkelmann 
-// (subm.)
+// The Cryosphere Discussions (2017) 
+// DOI: 10.5194/tc-2017-70
 
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_poly.h>
 
-#include "Cavity.hh"
+#include "Pico.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/iceModelVec.hh"
@@ -157,71 +158,71 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   m_variables.push_back(&cbasins);
 
   // mask to identify the ocean boxes
-  ocean_box_mask.create(m_grid, "ocean_box_mask", WITH_GHOSTS);
+  ocean_box_mask.create(m_grid, "pico_ocean_box_mask", WITH_GHOSTS);
   ocean_box_mask.set_attrs("model_state", "mask displaying ocean box model grid","", "");
   m_variables.push_back(&ocean_box_mask);
 
   // mask to identify the ice rises
-  icerise_mask.create(m_grid, "icerise_mask", WITH_GHOSTS);
+  icerise_mask.create(m_grid, "pico_icerise_mask", WITH_GHOSTS);
   icerise_mask.set_attrs("model_state", "mask displaying ice rises","", "");
   m_variables.push_back(&icerise_mask);
 
   // mask displaying continental shelf - region where mean salinity and ocean temperature is calculated
-  ocean_contshelf_mask.create(m_grid, "ocean_contshelf_mask", WITH_GHOSTS);
+  ocean_contshelf_mask.create(m_grid, "pico_ocean_contshelf_mask", WITH_GHOSTS);
   ocean_contshelf_mask.set_attrs("model_state", "mask displaying ocean region for parameter input","", "");
   m_variables.push_back(&ocean_contshelf_mask);
 
   // mask displaying open ocean - ice-free regions below sea-level except 'holes' in ice shelves
-  ocean_mask.create(m_grid, "ocean_mask", WITH_GHOSTS);
+  ocean_mask.create(m_grid, "pico_ocean_mask", WITH_GHOSTS);
   ocean_mask.set_attrs("model_state", "mask displaying open ocean","", "");
   m_variables.push_back(&ocean_mask);
 
   // mask displaying subglacial lakes - floating regions with no connection to the ocean
-  lake_mask.create(m_grid, "lake_mask", WITH_GHOSTS);
+  lake_mask.create(m_grid, "pico_lake_mask", WITH_GHOSTS);
   lake_mask.set_attrs("model_state", "mask displaying subglacial lakes","", "");
   m_variables.push_back(&lake_mask);
 
   // mask with distance (in boxes) to grounding line
-  DistGL.create(m_grid, "DistGL", WITH_GHOSTS);
+  DistGL.create(m_grid, "pico_dist_grounding_line", WITH_GHOSTS);
   DistGL.set_attrs("model_state", "mask displaying distance to grounding line","", "");
   m_variables.push_back(&DistGL);
 
   // mask with distance (in boxes) to ice front
-  DistIF.create(m_grid, "DistIF", WITH_GHOSTS);
+  DistIF.create(m_grid, "pico_dist_iceshelf_front", WITH_GHOSTS);
   DistIF.set_attrs("model_state", "mask displaying distance to ice shelf calving front","", "");
   m_variables.push_back(&DistIF);
 
   // computed salinity in ocean boxes
-  Soc.create(m_grid, "Soc", WITHOUT_GHOSTS);
+  Soc.create(m_grid, "pico_Soc", WITHOUT_GHOSTS);
   Soc.set_attrs("model_state", "ocean salinity field","", "ocean salinity field");  //NOTE unit=psu
   m_variables.push_back(&Soc);
 
   // salinity input for box 1
-  Soc_box0.create(m_grid, "Soc_box0", WITHOUT_GHOSTS);
+  Soc_box0.create(m_grid, "pico_salinity_box0", WITHOUT_GHOSTS);
   Soc_box0.set_attrs("model_state", "ocean base salinity field","", "ocean base salinity field");  //NOTE unit=psu
   m_variables.push_back(&Soc_box0);
 
   // computed temperature in ocean boxes
-  Toc.create(m_grid, "Toc", WITHOUT_GHOSTS);
+  Toc.create(m_grid, "pico_Toc", WITHOUT_GHOSTS);
   Toc.set_attrs("model_state", "ocean temperature field","K", "ocean temperature field");
   m_variables.push_back(&Toc);
 
   // temperature input for box 1
-  Toc_box0.create(m_grid, "Toc_box0", WITHOUT_GHOSTS);
+  Toc_box0.create(m_grid, "pico_temperature_box0", WITHOUT_GHOSTS);
   Toc_box0.set_attrs("model_state", "ocean base temperature","K", "ocean base temperature");
   m_variables.push_back(&Toc_box0);
 
   // in ocean box i: T_star = aS_{i-1} + b -c p_i - T_{i-1} with T_{-1} = Toc_box0 and S_{-1}=Soc_box0
   // FIXME convert to internal field
-  T_star.create(m_grid, "T_star", WITHOUT_GHOSTS);
+  T_star.create(m_grid, "pico_T_star", WITHOUT_GHOSTS);
   T_star.set_attrs("model_state", "T_star field","degree C", "T_star field");
   m_variables.push_back(&T_star);
 
-  overturning.create(m_grid, "overturning", WITHOUT_GHOSTS);
+  overturning.create(m_grid, "pico_overturning", WITHOUT_GHOSTS);
   overturning.set_attrs("model_state", "cavity overturning","m^3 s-1", "cavity overturning"); // no CF standard_name?
   m_variables.push_back(&overturning);
 
-  basalmeltrate_shelf.create(m_grid, "basalmeltrate_shelf", WITHOUT_GHOSTS);
+  basalmeltrate_shelf.create(m_grid, "pico_bmelt_shelf", WITHOUT_GHOSTS);
   basalmeltrate_shelf.set_attrs("model_state", "PICO sub-shelf melt rate", "m/s",
                                 "PICO sub-shelf melt rate");
   basalmeltrate_shelf.metadata().set_string("glaciological_units", "m year-1");
@@ -229,7 +230,7 @@ Cavity::Cavity(IceGrid::ConstPtr g)
   m_variables.push_back(&basalmeltrate_shelf);
 
   // TODO: this may be initialized to NA, it should only have valid values below ice shelves.
-  T_pressure_melting.create(m_grid, "T_pressure_melting", WITHOUT_GHOSTS);
+  T_pressure_melting.create(m_grid, "pico_T_pressure_melting", WITHOUT_GHOSTS);
   T_pressure_melting.set_attrs("model_state", "pressure melting temperature at ice shelf base",
                         "Kelvin", "pressure melting temperature at ice shelf base"); // no CF standard_name? // This is the in-situ pressure melting point
   m_variables.push_back(&T_pressure_melting);
@@ -256,7 +257,7 @@ void Cavity::init_impl() {
 
   cbasins.regrid(m_filename, CRITICAL);
 
-  m_log->message(4, "SIMPEL basin min=%f,max=%f\n",cbasins.min(),cbasins.max());
+  m_log->message(4, "PICO basin min=%f,max=%f\n",cbasins.min(),cbasins.max());
 
   Constants cc(*m_config);
   initBasinsOptions(cc);
@@ -303,20 +304,10 @@ void Cavity::define_model_state_impl(const PIO &output) const {
   
   cbasins.define(output);
   ocean_box_mask.define(output);
-  icerise_mask.define(output);
-  ocean_contshelf_mask.define(output);
-  ocean_mask.define(output);
-  lake_mask.define(output);
-  DistGL.define(output);
-  DistIF.define(output);
-  Soc.define(output);
   Soc_box0.define(output);
-  Toc.define(output);
   Toc_box0.define(output);
-  T_star.define(output);
   overturning.define(output);
-  basalmeltrate_shelf.define(output);
-  T_pressure_melting.define(output);
+  //basalmeltrate_shelf.define(output);
 
   OceanModel::define_model_state_impl(output);
 }
@@ -325,30 +316,20 @@ void Cavity::write_model_state_impl(const PIO &output) const {
   
   cbasins.write(output);
   ocean_box_mask.write(output);
-  icerise_mask.write(output);
-  ocean_contshelf_mask.write(output);
-  ocean_mask.write(output);
-  lake_mask.write(output);
-  DistGL.write(output);
-  DistIF.write(output);
-  Soc.write(output);
   Soc_box0.write(output);
-  Toc.write(output);
   Toc_box0.write(output);
-  T_star.write(output);
   overturning.write(output);
-  basalmeltrate_shelf.write(output);
-  T_pressure_melting.write(output);
+  //basalmeltrate_shelf.write(output);
 
   OceanModel::define_model_state_impl(output);
 }
 
 
-//! initialize SIMPEL model variables, can be user-defined.
+//! initialize PICO model variables, can be user-defined.
 
-//! numberOfBasins: number of drainage basins for SIMPEL model
+//! numberOfBasins: number of drainage basins for PICO model
 //!                 FIXME: we should infer that from the read-in basin mask
-//! numberOfBoxes: maximum number of ocean boxes for SIMPEL model
+//! numberOfBoxes: maximum number of ocean boxes for PICO model
 //!                for smaller shelves, the model may use less.
 //! gamma_T: turbulent heat exchange coefficient for ice-ocean boundary layer
 //! overturning_coeff: coefficient that scales strength of overturning circulation
@@ -651,7 +632,7 @@ void Cavity::compute_ocean_input_per_basin(const Constants &cc) {
     // FIXME: the following warning occurs once at initialization before input is available.
     // Please ignore this very first warning for now.
     if(shelf_id>0 && m_count[shelf_id]==0){
-      m_log->message(2, "SIMPEL ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
+      m_log->message(2, "PICO ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
                         "(no values with ocean_contshelf_mask=2).\n"
                         "No mean salinity or temperature values are computed, instead using\n"
                         "the standard values T_dummy =%.3f, S_dummy=%.3f.\n"
@@ -1034,7 +1015,7 @@ void Cavity::set_ocean_input_fields(const Constants &cc) {
 
     counterTpmp = GlobalSum(m_grid->com, lcounterTpmp);
     if (counterTpmp > 0) {
-      m_log->message(2, "SIMPEL ocean warning: temperature has been below pressure melting temperature in %.0f cases,\n"
+      m_log->message(2, "PICO ocean warning: temperature has been below pressure melting temperature in %.0f cases,\n"
                         "setting it to pressure melting temperature\n", counterTpmp);
     }
 
@@ -1043,7 +1024,7 @@ void Cavity::set_ocean_input_fields(const Constants &cc) {
 
 //! Compute the basal melt for each ice shelf cell in box 1
 
-//! Here are the core physical equations of the SIMPEL model (for box1):
+//! Here are the core physical equations of the PICO model (for box1):
 //! We here calculate basal melt rate, ambient ocean temperature and salinity
 //! and overturning within box1. We calculate the average values at the boundary
 //! between box 1 and box 2 as input for box 2.
@@ -1126,7 +1107,7 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
       if ((0.25*PetscSqr(p_coeff) - q_coeff) < 0.0) {
 
         m_log->message(5,
-          "SIMPEL ocean WARNING: negative square root argument at %d, %d\n"
+          "PICO ocean WARNING: negative square root argument at %d, %d\n"
           "probably because of positive T_star=%f \n"
           "Not aborting, but setting square root to 0... \n",
           i, j, T_star(i,j));
@@ -1202,7 +1183,7 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 
     countHelpterm = GlobalSum(m_grid->com, lcountHelpterm);
     if (countHelpterm > 0) {
-      m_log->message(2, "SIMPEL ocean warning: square-root argument for temperature calculation "
+      m_log->message(2, "PICO ocean warning: square-root argument for temperature calculation "
                         "has been negative in %.0f cases!\n", countHelpterm);
     }
 
@@ -1210,7 +1191,7 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 
 //! Compute the basal melt for each ice shelf cell in boxes other than box1
 
-//! Here are the core physical equations of the SIMPEL model:
+//! Here are the core physical equations of the PICO model:
 //! We here calculate basal melt rate, ambient ocean temperature and salinity.
 //! Overturning is only calculated for box 1.
 //! We calculate the average values at the boundary between box i and box i+1 as input for box i+1.
@@ -1356,7 +1337,7 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) {
 
     countGl0 = GlobalSum(m_grid->com, lcountGl0);
     if (countGl0 > 0) {
-      m_log->message(2, "SIMPEL ocean WARNING: box %d, no boundary data from previous box in %.0f case(s)!\n"
+      m_log->message(2, "PICO ocean WARNING: box %d, no boundary data from previous box in %.0f case(s)!\n"
                         "switching to Beckmann Goose (2003) meltrate calculation\n",
                         boxi,countGl0);
     }
@@ -1435,6 +1416,31 @@ void Cavity::calculate_basal_melt_missing_cells(const Constants &cc) {
 
   }
 
+}
+// Write diagnostic variables to extra files if requested
+std::map<std::string, Diagnostic::Ptr> Cavity::diagnostics_impl() const {
+
+  std::map<std::string, Diagnostic::Ptr> result = OceanModel::diagnostics_impl();
+
+  result["basins"] = Diagnostic::wrap(cbasins);
+  result["pico_overturning"] = Diagnostic::wrap(overturning);
+  result["pico_salinity_box0"] = Diagnostic::wrap(Soc_box0);
+  result["pico_temperature_box0"] = Diagnostic::wrap(Toc_box0); 
+  result["pico_ocean_box_mask"] = Diagnostic::wrap(ocean_box_mask);  
+
+  result["pico_bmelt_shelf"] = Diagnostic::wrap(basalmeltrate_shelf);
+  result["pico_icerise_mask"] = Diagnostic::wrap(icerise_mask);
+  result["pico_ocean_contshelf_mask"] = Diagnostic::wrap(ocean_contshelf_mask);
+  result["pico_ocean_mask"] = Diagnostic::wrap(ocean_mask);
+  result["pico_lake_mask"] = Diagnostic::wrap(lake_mask);
+  result["pico_dist_grounding_line"] = Diagnostic::wrap(DistGL);
+  result["pico_dist_iceshelf_front"] = Diagnostic::wrap(DistIF);
+  result["pico_salinity"] = Diagnostic::wrap(Soc);
+  result["pico_temperature"] = Diagnostic::wrap(Toc);
+  result["pico_T_star"] = Diagnostic::wrap(T_star);
+  result["pico_T_pressure_melting"] = Diagnostic::wrap(T_pressure_melting);
+
+  return result;
 }
 
 } // end of namespace ocean
