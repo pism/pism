@@ -28,7 +28,7 @@
 
 namespace pism {
 namespace ocean {
-//! \brief Implements the SIMPEL ocean model as submitted to The Cryosphere (March 2017).
+//! \brief Implements the PICO ocean model as submitted to The Cryosphere (March 2017).
 //!
 //! Generalizes the two dimensional ocean box model of [@ref OlbersHellmer2010] for
 //! use in PISM, i.e. three dimensions.

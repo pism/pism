@@ -256,7 +256,7 @@ void Cavity::init_impl() {
 
   cbasins.regrid(m_filename, CRITICAL);
 
-  m_log->message(4, "SIMPEL basin min=%f,max=%f\n",cbasins.min(),cbasins.max());
+  m_log->message(4, "PICO basin min=%f,max=%f\n",cbasins.min(),cbasins.max());
 
   Constants cc(*m_config);
   initBasinsOptions(cc);
@@ -324,11 +324,11 @@ void Cavity::write_model_state_impl(const PIO &output) const {
 }
 
 
-//! initialize SIMPEL model variables, can be user-defined.
+//! initialize PICO model variables, can be user-defined.
 
-//! numberOfBasins: number of drainage basins for SIMPEL model
+//! numberOfBasins: number of drainage basins for PICO model
 //!                 FIXME: we should infer that from the read-in basin mask
-//! numberOfBoxes: maximum number of ocean boxes for SIMPEL model
+//! numberOfBoxes: maximum number of ocean boxes for PICO model
 //!                for smaller shelves, the model may use less.
 //! gamma_T: turbulent heat exchange coefficient for ice-ocean boundary layer
 //! overturning_coeff: coefficient that scales strength of overturning circulation
@@ -631,7 +631,7 @@ void Cavity::compute_ocean_input_per_basin(const Constants &cc) {
     // FIXME: the following warning occurs once at initialization before input is available.
     // Please ignore this very first warning for now.
     if(shelf_id>0 && m_count[shelf_id]==0){
-      m_log->message(2, "SIMPEL ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
+      m_log->message(2, "PICO ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
                         "(no values with ocean_contshelf_mask=2).\n"
                         "No mean salinity or temperature values are computed, instead using\n"
                         "the standard values T_dummy =%.3f, S_dummy=%.3f.\n"
@@ -1014,7 +1014,7 @@ void Cavity::set_ocean_input_fields(const Constants &cc) {
 
     counterTpmp = GlobalSum(m_grid->com, lcounterTpmp);
     if (counterTpmp > 0) {
-      m_log->message(2, "SIMPEL ocean warning: temperature has been below pressure melting temperature in %.0f cases,\n"
+      m_log->message(2, "PICO ocean warning: temperature has been below pressure melting temperature in %.0f cases,\n"
                         "setting it to pressure melting temperature\n", counterTpmp);
     }
 
@@ -1023,7 +1023,7 @@ void Cavity::set_ocean_input_fields(const Constants &cc) {
 
 //! Compute the basal melt for each ice shelf cell in box 1
 
-//! Here are the core physical equations of the SIMPEL model (for box1):
+//! Here are the core physical equations of the PICO model (for box1):
 //! We here calculate basal melt rate, ambient ocean temperature and salinity
 //! and overturning within box1. We calculate the average values at the boundary
 //! between box 1 and box 2 as input for box 2.
@@ -1106,7 +1106,7 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
       if ((0.25*PetscSqr(p_coeff) - q_coeff) < 0.0) {
 
         m_log->message(5,
-          "SIMPEL ocean WARNING: negative square root argument at %d, %d\n"
+          "PICO ocean WARNING: negative square root argument at %d, %d\n"
           "probably because of positive T_star=%f \n"
           "Not aborting, but setting square root to 0... \n",
           i, j, T_star(i,j));
@@ -1182,7 +1182,7 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 
     countHelpterm = GlobalSum(m_grid->com, lcountHelpterm);
     if (countHelpterm > 0) {
-      m_log->message(2, "SIMPEL ocean warning: square-root argument for temperature calculation "
+      m_log->message(2, "PICO ocean warning: square-root argument for temperature calculation "
                         "has been negative in %.0f cases!\n", countHelpterm);
     }
 
@@ -1190,7 +1190,7 @@ void Cavity::calculate_basal_melt_box1(const Constants &cc) {
 
 //! Compute the basal melt for each ice shelf cell in boxes other than box1
 
-//! Here are the core physical equations of the SIMPEL model:
+//! Here are the core physical equations of the PICO model:
 //! We here calculate basal melt rate, ambient ocean temperature and salinity.
 //! Overturning is only calculated for box 1.
 //! We calculate the average values at the boundary between box i and box i+1 as input for box i+1.
@@ -1336,7 +1336,7 @@ void Cavity::calculate_basal_melt_other_boxes(const Constants &cc) {
 
     countGl0 = GlobalSum(m_grid->com, lcountGl0);
     if (countGl0 > 0) {
-      m_log->message(2, "SIMPEL ocean WARNING: box %d, no boundary data from previous box in %.0f case(s)!\n"
+      m_log->message(2, "PICO ocean WARNING: box %d, no boundary data from previous box in %.0f case(s)!\n"
                         "switching to Beckmann Goose (2003) meltrate calculation\n",
                         boxi,countGl0);
     }
