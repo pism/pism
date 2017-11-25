@@ -421,6 +421,7 @@ void TemperatureIndex::update_impl(double t, double dt) {
       // the precipitation time series from AtmosphereModel and its modifiers
       m_atmosphere->precip_time_series(i, j, P);
 
+
       // convert precipitation from "kg m-2 second-1" to "m second-1" (PDDMassBalance expects
       // accumulation in m/second ice equivalent)
       for (int k = 0; k < N; ++k) {

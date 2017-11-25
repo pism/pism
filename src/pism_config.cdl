@@ -62,7 +62,7 @@ netcdf pism_config {
     pism_config:atmosphere.precip_exponential_factor_for_temperature_type = "scalar";
     pism_config:atmosphere.precip_exponential_factor_for_temperature_units = "Kelvin-1";
 
-    pism_config:atmosphere.precip_lapse_scaling = "false";
+    pism_config:atmosphere.precip_lapse_scaling = "no";
     pism_config:atmosphere.precip_lapse_scaling_doc = "Enable precipitation scaling according to change in surface elevation";
     pism_config:atmosphere.precip_lapse_scaling_option = "precip_lapse_scaling";
     pism_config:atmosphere.precip_lapse_scaling_type = "boolean";
@@ -1521,9 +1521,9 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.";
     pism_config:surface.pdd.std_dev_use_param_type = "boolean";
 
-    pism_config:surface.smb_lapse_scaling = "false";
+    pism_config:surface.smb_lapse_scaling = "no";
     pism_config:surface.smb_lapse_scaling_doc = "Enable surface mass balance scaling according to change in surface elevation";
-    pism_config:surface.smb_scaling_option = "smb_lapse_scaling";
+    pism_config:surface.smb_lapse_scaling_option = "smb_lapse_scaling";
     pism_config:surface.smb_lapse_scaling_type = "boolean";
 
     pism_config:surface.smb_lapse_scale_factor = 0.5;

@@ -58,7 +58,6 @@ void LapseRates::init_impl() {
   //This is basically temperature lapse rate 8.2 K/Km as in TemperaturPIK times precipitation scale rate 5%/K )
   m_precip_scale_factor  = m_config->get_double("atmosphere.precip_lapse_scale_factor");
 
-
   if (do_precip_scale){
 
     m_log->message(2,
@@ -84,6 +83,7 @@ void LapseRates::init_impl() {
 
 void LapseRates::mean_precipitation_impl(IceModelVec2S &result) const {
   m_input_model->mean_precipitation(result);
+
   if (do_precip_scale) {
     lapse_rate_scale(result, m_precip_scale_factor);
   } else {
@@ -143,7 +143,12 @@ void LapseRates::precip_time_series_impl(int i, int j, std::vector<double> &resu
   assert(m_surface != NULL);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    result[m] -= m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
+
+    if (do_precip_scale) {
+      result[m] *= exp(m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]));
+    } else {
+      result[m] -= m_precip_lapse_rate * ((*m_surface)(i, j) - usurf[m]);
+    }
   }
 }
 

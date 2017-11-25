@@ -33,7 +33,7 @@ LapseRates::LapseRates(IceGrid::ConstPtr g, SurfaceModel* in)
   m_option_prefix = "-surface_lapse_rate";
 
   m_smb_scale_factor = 0.0;
-  do_smb_scale  = m_config->get_double("surface.smb_lapse_rate");
+  do_smb_scale  = m_config->get_boolean("surface.smb_lapse_scaling");
 
 }
 
@@ -84,6 +84,7 @@ void LapseRates::init_impl() {
 
 void LapseRates::mass_flux_impl(IceModelVec2S &result) const {
   m_input_model->mass_flux(result);
+
   if (do_smb_scale) {
     lapse_rate_scale(result, m_smb_scale_factor);
   } else {
