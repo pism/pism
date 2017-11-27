@@ -561,7 +561,15 @@ void IceModel::step(bool do_mass_continuity,
 
   // Combine basal melt rate in grounded (computed during the energy
   // step) and floating (provided by an ocean model) areas.
-  combine_basal_melt_rate(m_basal_melt_rate);
+  {
+    IceModelVec2S &shelf_base_mass_flux = m_work2d[0];
+    m_ocean->shelf_base_mass_flux(shelf_base_mass_flux);
+
+    combine_basal_melt_rate(m_geometry,
+                            shelf_base_mass_flux,
+                            m_energy_model->basal_melt_rate(),
+                            m_basal_melt_rate);
+  }
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)

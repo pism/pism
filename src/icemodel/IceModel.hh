@@ -318,7 +318,10 @@ protected:
   // see iMenergy.cc
   virtual void energy_step();
 
-  virtual void combine_basal_melt_rate(IceModelVec2S &result);
+  virtual void combine_basal_melt_rate(const Geometry &geometry,
+                                       const IceModelVec2S &shelf_base_mass_flux,
+                                       const IceModelVec2S &grounded_basal_melt_rate,
+                                       IceModelVec2S &result);
 
   void enforce_consistency_of_geometry(bool remove_icebergs);
 
