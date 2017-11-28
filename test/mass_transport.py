@@ -89,12 +89,6 @@ def run(Mx, My, t_final, part_grid, C=1.0):
     H_bc_mask = PISM.IceModelVec2Int()
     H_bc_mask.create(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
 
-    SMB = PISM.IceModelVec2S()
-    SMB.create(grid, "SMB", PISM.WITHOUT_GHOSTS)
-
-    BMR = PISM.IceModelVec2S()
-    BMR.create(grid, "BMR", PISM.WITHOUT_GHOSTS)
-
     ge = PISM.GeometryEvolution(grid)
 
     # grid info
@@ -113,8 +107,6 @@ def run(Mx, My, t_final, part_grid, C=1.0):
     set_velocity(spreading_velocity, v)
     v_bc_mask.set(0.0)
     disc(H_bc_mask, 0, 0, 1, R_inner, R_inner)
-    SMB.set(0.0)
-    BMR.set(0.0)
 
     profiling = ctx.profiling()
     profiling.start()
@@ -133,13 +125,11 @@ def run(Mx, My, t_final, part_grid, C=1.0):
         log.message(2, "{}, {}\n".format(t, dt))
 
         profiling.begin("step")
-        ge.step(geometry, dt,
-                v,
-                Q,
-                v_bc_mask,
-                H_bc_mask,
-                SMB,
-                BMR)
+        ge.flow_step(geometry, dt,
+                     v,
+                     Q,
+                     v_bc_mask,
+                     H_bc_mask)
         profiling.end("step")
 
         profiling.begin("modify")

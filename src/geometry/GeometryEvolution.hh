@@ -42,15 +42,19 @@ public:
 
   void init(const InputOptions &opts);
 
-  void step(const Geometry &ice_geometry, double dt,
-            const IceModelVec2V    &advective_velocity,
-            const IceModelVec2Stag &diffusive_flux,
-            const IceModelVec2Int  &velocity_bc_mask,
-            const IceModelVec2Int  &thickness_bc_mask,
-            const IceModelVec2S    &surface_mass_balance_rate,
-            const IceModelVec2S    &basal_melt_rate);
+  void flow_step(const Geometry &ice_geometry, double dt,
+                 const IceModelVec2V    &advective_velocity,
+                 const IceModelVec2Stag &diffusive_flux,
+                 const IceModelVec2Int  &velocity_bc_mask,
+                 const IceModelVec2Int  &thickness_bc_mask);
 
-  void update_geometry(Geometry &ice_geometry) const;
+  void source_term_step(const Geometry &geometry, double dt,
+                        const IceModelVec2Int &thickness_bc_mask,
+                        const IceModelVec2S   &surface_mass_flux,
+                        const IceModelVec2S   &basal_melt_rate);
+
+  void apply_flux_divergence(Geometry &geometry) const;
+  void apply_mass_fluxes(Geometry &geometry) const;
 
   const IceModelVec2S& top_surface_mass_balance() const;
   const IceModelVec2S& bottom_surface_mass_balance() const;
@@ -109,14 +113,13 @@ protected:
   // note: cells with area_specific_volume > 0 do not experience changes due to surface and basal
   // mass balance sources
   virtual void compute_surface_and_basal_mass_balance(double dt,
-                                                      const IceModelVec2Int &thickness_bc_mask,
-                                                      const IceModelVec2S &ice_thickness,
-                                                      const IceModelVec2S &thickness_change,
+                                                      const IceModelVec2Int      &thickness_bc_mask,
+                                                      const IceModelVec2S        &ice_thickness,
                                                       const IceModelVec2CellType &cell_type,
-                                                      const IceModelVec2S &smb_rate,
-                                                      const IceModelVec2S &basal_melt_rate,
-                                                      IceModelVec2S &effective_SMB,
-                                                      IceModelVec2S &effective_BMB);
+                                                      const IceModelVec2S        &surface_mass_flux,
+                                                      const IceModelVec2S        &basal_melt_rate,
+                                                      IceModelVec2S              &effective_SMB,
+                                                      IceModelVec2S              &effective_BMB);
 protected:
   struct Impl;
   Impl *m_impl;

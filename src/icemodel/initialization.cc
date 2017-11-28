@@ -189,7 +189,7 @@ void IceModel::model_state_setup() {
   // updated near the end, so during the second time step the stress balance code is
   // guaranteed not to see "icebergs". Here we make sure that the first time step is OK
   // too.
-  enforce_consistency_of_geometry(true); // remove icebergs
+  enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).

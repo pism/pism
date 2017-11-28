@@ -323,16 +323,16 @@ protected:
                                        const IceModelVec2S &grounded_basal_melt_rate,
                                        IceModelVec2S &result);
 
-  void enforce_consistency_of_geometry(bool remove_icebergs);
+  enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
+  void enforce_consistency_of_geometry(ConsistencyFlag flag);
 
-  virtual void update_ice_geometry(bool skip);
   virtual void do_calving();
-  virtual void Href_cleanup();
-  virtual void compute_discharge(const IceModelVec2S &thickness,
-                                 const IceModelVec2S &Href,
-                                 const IceModelVec2S &thickness_old,
-                                 const IceModelVec2S &Href_old,
-                                 IceModelVec2S &output);
+
+  virtual void accumulate_discharge(const IceModelVec2S &thickness,
+                                    const IceModelVec2S &Href,
+                                    const IceModelVec2S &thickness_old,
+                                    const IceModelVec2S &Href_old,
+                                    IceModelVec2S &output);
 
   // see iMIO.cc
   virtual void regrid();
