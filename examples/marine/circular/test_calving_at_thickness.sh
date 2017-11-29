@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -x
+set -e
+
 N=4
 M=101
 xx=$M
@@ -10,7 +13,7 @@ infile="circular_noshelf.nc"
 
 output_basename="test_calving_at_thickness"
 
-./circular_dirichlet.py -o $infile
+./circular_dirichlet.py -Mx $xx -My $yy -o $infile
 
 grid="-Mx $xx -My $yy -Mz 3 -Mbz 1 -Lz 1500 -Lbz 0"
 
@@ -18,7 +21,7 @@ stressbalance="-ssa_method fd -stress_balance ssa -ssa_dirichlet_bc $pc"
 
 calving="-calving thickness_calving -thickness_calving_threshold_file circular_noshelf.nc"
 
-diagnostics="thk,mask,velbar_mag,ice_area_specific_volume,velbar,tendency_of_ice_mass_due_to_discharge"
+diagnostics="thk,mask,velbase_mag,ice_area_specific_volume,velbase,mass_fluxes,flux_staggered,flux_divergence"
 
 viewers="-view $diagnostics"
 
